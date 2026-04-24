@@ -36,6 +36,26 @@
     try { await SetAuthFileStatus(name, !disabled); await loadAccounts(); } catch (e) { alert('ERROR: ' + e); }
   }
 
+  async function deleteAccount(name) {
+    if (!confirm(`${$t('common.delete')} ${name}?`)) return;
+    try {
+      await DeleteAuthFiles([name]);
+      selectedNames.delete(name);
+      selectedNames = selectedNames;
+      await loadAccounts();
+    } catch (e) { alert('DELETE FAILED: ' + e); }
+  }
+
+  async function deleteSelected() {
+    if (selectedNames.size === 0) return;
+    if (!confirm(`${$t('common.delete')} ${selectedNames.size} ITEMS?`)) return;
+    try {
+      await DeleteAuthFiles(Array.from(selectedNames));
+      selectedNames = new Set();
+      await loadAccounts();
+    } catch (e) { alert('DELETE FAILED: ' + e); }
+  }
+
   function handleSelect(name, checked) {
     if (checked) selectedNames.add(name); else selectedNames.delete(name);
     selectedNames = selectedNames;
@@ -45,7 +65,6 @@
   $: if (sidecarStatus.code === 'ready') loadAccounts();
 </script>
 
-<!-- 增加 h-full, p-12, overflow-auto, 以及 max-w 约束 -->
 <div class="h-full w-full p-12 overflow-auto" data-collaboration-id="PAGE_ACCOUNTS">
   <div class="max-w-6xl mx-auto space-y-8">
     <header class="flex items-end justify-between border-b-4 border-[var(--border-color)] pb-4">
@@ -77,6 +96,12 @@
         <input type="checkbox" bind:checked={onlyProblem} class="w-4 h-4 border-2 border-[var(--border-color)] rounded-none bg-[var(--bg-main)] text-[var(--border-color)] focus:ring-0" />
         <span class="text-[10px] font-black uppercase group-hover:underline">{$t('accounts.errors_only')}</span>
       </label>
+      
+      {#if selectedNames.size > 0}
+        <button on:click={deleteSelected} class="btn-swiss !text-red-500 border-red-500 ml-auto !py-1 !px-3">
+          {$t('common.delete')} ({selectedNames.size})
+        </button>
+      {/if}
     </div>
 
     {#if filteredAccounts.length === 0}
@@ -107,7 +132,7 @@
               <div class="text-[9px] font-black uppercase mb-auto border-b border-[var(--border-color)] pb-1">{$t('accounts.quick_actions')}</div>
               <button on:click={() => toggleStatus(acc.name, acc.disabled)} class="btn-swiss !shadow-hard-sm uppercase">{acc.disabled ? $t('common.enable') : $t('common.disable')}</button>
               <button on:click={() => selectedAccount = acc} class="btn-swiss !shadow-hard-sm uppercase">{$t('common.details')}</button>
-              <button class="btn-swiss !text-red-500 !shadow-hard-sm uppercase">{$t('common.delete')}</button>
+              <button on:click={() => deleteAccount(acc.name)} class="btn-swiss !text-red-500 !shadow-hard-sm uppercase">{$t('common.delete')}</button>
             </div>
           </div>
         {/each}
