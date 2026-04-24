@@ -31,8 +31,9 @@
     "diagnostic": "接口连通性诊断报告"
   },
   "accounts": {
-    "title": "资源库存",
+    "title": "账号池",
     "subtitle": "已授权的凭据资产库",
+    "add_account": "添加账号",
     "empty": "当前库中无匹配记录",
     "provider": "供应商",
     "size": "实体大小",

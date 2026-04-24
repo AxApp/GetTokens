@@ -14,6 +14,8 @@ export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
 
+export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
+
 export function GetSidecarStatus():Promise<sidecar.Status>;
 
 export function GetVersion():Promise<string>;

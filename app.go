@@ -5,7 +5,7 @@ import (
 
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/updater"
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 )
 
 // Version is injected at build time via -ldflags
@@ -14,72 +14,164 @@ var Version = "dev"
 // GitHubRepo is the repository used for auto-update checks
 const GitHubRepo = "linhay/GetTokens"
 
-// App is the main application struct bound to the Wails frontend.
 type App struct {
-	ctx     context.Context
-	sidecar *sidecar.Manager
-	updater *updater.Updater
+	core *wailsapp.App
 }
 
-// NewApp creates and returns a new App instance.
+type AuthFileItem struct {
+	Name          string      `json:"name"`
+	Type          string      `json:"type,omitempty"`
+	Provider      string      `json:"provider,omitempty"`
+	Size          int64       `json:"size,omitempty"`
+	AuthIndex     interface{} `json:"authIndex,omitempty"`
+	RuntimeOnly   bool        `json:"runtimeOnly,omitempty"`
+	Disabled      bool        `json:"disabled,omitempty"`
+	Unavailable   bool        `json:"unavailable,omitempty"`
+	Status        string      `json:"status,omitempty"`
+	StatusMessage string      `json:"statusMessage,omitempty"`
+	LastRefresh   interface{} `json:"lastRefresh,omitempty"`
+	Modified      int64       `json:"modified,omitempty"`
+}
+
+type AuthFilesResponse struct {
+	Files []AuthFileItem `json:"files"`
+	Total int            `json:"total,omitempty"`
+}
+
+type UploadFilePayload struct {
+	Name          string `json:"name"`
+	ContentBase64 string `json:"contentBase64"`
+}
+
+type DownloadFileResponse struct {
+	Name          string `json:"name"`
+	ContentBase64 string `json:"contentBase64"`
+}
+
+type CodexQuotaWindow struct {
+	ID               string `json:"id"`
+	Label            string `json:"label"`
+	RemainingPercent *int   `json:"remainingPercent,omitempty"`
+	ResetLabel       string `json:"resetLabel"`
+}
+
+type CodexQuotaResponse struct {
+	PlanType string             `json:"planType,omitempty"`
+	Windows  []CodexQuotaWindow `json:"windows"`
+}
+
 func NewApp() *App {
 	return &App{
-		sidecar: sidecar.NewManager(),
-		updater: updater.New(GitHubRepo, Version),
+		core: wailsapp.New(Version, GitHubRepo),
 	}
 }
 
-// startup is called by Wails when the application starts.
 func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
-
-	// Start backend sidecar; notify frontend of status changes.
-	go func() {
-		a.sidecar.Start(ctx, func(status sidecar.Status) {
-			wailsRuntime.EventsEmit(ctx, "sidecar:status", status)
-		})
-	}()
-
-	// Check for app updates in background.
-	go func() {
-		release, ok, err := a.updater.Check(ctx)
-		if err != nil || !ok {
-			return
-		}
-		wailsRuntime.EventsEmit(ctx, "updater:available", release)
-	}()
+	a.core.Startup(ctx)
 }
 
-// shutdown is called by Wails when the application is closing.
 func (a *App) shutdown(ctx context.Context) {
-	a.sidecar.Stop()
+	a.core.Shutdown()
 }
 
-// --- Wails-bound methods (callable from JS) ---
-
-// GetSidecarStatus returns the current backend status.
 func (a *App) GetSidecarStatus() sidecar.Status {
-	return a.sidecar.CurrentStatus()
+	return a.core.GetSidecarStatus()
 }
 
-// GetVersion returns the client version string.
 func (a *App) GetVersion() string {
-	return Version
+	return a.core.GetVersion()
 }
 
-// CheckUpdate manually triggers an update check and returns update info.
 func (a *App) CheckUpdate() (*updater.ReleaseInfo, error) {
-	release, ok, err := a.updater.Check(a.ctx)
+	return a.core.CheckUpdate()
+}
+
+func (a *App) ApplyUpdate() error {
+	return a.core.ApplyUpdate()
+}
+
+func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
+	result, err := a.core.ListAuthFiles()
 	if err != nil {
 		return nil, err
 	}
-	if !ok {
-		return nil, nil
+
+	files := make([]AuthFileItem, 0, len(result.Files))
+	for _, file := range result.Files {
+		files = append(files, AuthFileItem{
+			Name:          file.Name,
+			Type:          file.Type,
+			Provider:      file.Provider,
+			Size:          file.Size,
+			AuthIndex:     file.AuthIndex,
+			RuntimeOnly:   file.RuntimeOnly,
+			Disabled:      file.Disabled,
+			Unavailable:   file.Unavailable,
+			Status:        file.Status,
+			StatusMessage: file.StatusMessage,
+			LastRefresh:   file.LastRefresh,
+			Modified:      file.Modified,
+		})
 	}
-	return release, nil
+
+	return &AuthFilesResponse{
+		Files: files,
+		Total: result.Total,
+	}, nil
 }
 
-// ApplyUpdate downloads and applies the cached update, then prompts restart.
-func (a *App) ApplyUpdate() error {
-	return a.updater.Apply(a.ctx)
+func (a *App) SetAuthFileStatus(name string, disabled bool) error {
+	return a.core.SetAuthFileStatus(name, disabled)
+}
+
+func (a *App) DeleteAuthFiles(names []string) error {
+	return a.core.DeleteAuthFiles(names)
+}
+
+func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
+	payload := make([]wailsapp.UploadFilePayload, 0, len(files))
+	for _, file := range files {
+		payload = append(payload, wailsapp.UploadFilePayload{
+			Name:          file.Name,
+			ContentBase64: file.ContentBase64,
+		})
+	}
+	return a.core.UploadAuthFiles(payload)
+}
+
+func (a *App) GetAuthFileModels(name string) ([]map[string]interface{}, error) {
+	return a.core.GetAuthFileModels(name)
+}
+
+func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
+	result, err := a.core.DownloadAuthFile(name)
+	if err != nil {
+		return nil, err
+	}
+	return &DownloadFileResponse{
+		Name:          result.Name,
+		ContentBase64: result.ContentBase64,
+	}, nil
+}
+
+func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
+	result, err := a.core.GetCodexQuota(name)
+	if err != nil {
+		return nil, err
+	}
+
+	windows := make([]CodexQuotaWindow, 0, len(result.Windows))
+	for _, window := range result.Windows {
+		windows = append(windows, CodexQuotaWindow{
+			ID:               window.ID,
+			Label:            window.Label,
+			RemainingPercent: window.RemainingPercent,
+			ResetLabel:       window.ResetLabel,
+		})
+	}
+
+	return &CodexQuotaResponse{
+		PlanType: result.PlanType,
+		Windows:  windows,
+	}, nil
 }

@@ -9,6 +9,7 @@ export type LocaleCode = 'zh' | 'en';
 export type SidecarStatus = sidecar.Status;
 
 export type AuthFile = main.AuthFileItem;
+export type CodexQuota = main.CodexQuotaResponse;
 
 export interface AuthModel {
   id?: string;

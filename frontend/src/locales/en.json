@@ -31,8 +31,9 @@
     "diagnostic": "API Diagnostic"
   },
   "accounts": {
-    "title": "Inventory",
+    "title": "Accounts",
     "subtitle": "Authorized credential files",
+    "add_account": "Add Account",
     "empty": "No accounts matched",
     "provider": "Provider",
     "size": "Size",

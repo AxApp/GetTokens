@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DeleteAuthFiles, ListAuthFiles } from '../../wailsjs/go/main/App';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DeleteAuthFiles, GetCodexQuota, ListAuthFiles, UploadAuthFiles } from '../../wailsjs/go/main/App';
 import AccountDetailModal from '../components/biz/AccountDetailModal';
 import { useI18n } from '../context/I18nContext';
-import type { AuthFile, SidecarStatus } from '../types';
+import type { AuthFile, CodexQuota, SidecarStatus } from '../types';
 import { toErrorMessage } from '../utils/error';
 
 interface AccountsPageProps {
@@ -15,6 +15,11 @@ interface TextInputEvent {
   };
 }
 
+interface CodexQuotaState {
+  status: 'loading' | 'success' | 'error';
+  quota?: CodexQuota;
+}
+
 export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
   const { t } = useI18n();
   const [accounts, setAccounts] = useState<AuthFile[]>([]);
@@ -23,31 +28,11 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
   const [selectedAccount, setSelectedAccount] = useState<AuthFile | null>(null);
   const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
+  const [codexQuotaByName, setCodexQuotaByName] = useState<Record<string, CodexQuotaState>>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const quotaRequestIdRef = useRef(0);
 
   const ready = sidecarStatus?.code === 'ready';
-
-  const loadAccounts = useCallback(async () => {
-    if (!ready) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await ListAuthFiles();
-      setAccounts(response.files || []);
-      setPendingDeleteName(null);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [ready]);
-
-  useEffect(() => {
-    if (ready) {
-      loadAccounts();
-    }
-  }, [ready, loadAccounts]);
 
   const filteredAccounts = useMemo(() => {
     const query = searchTerm.toLowerCase();
@@ -62,6 +47,72 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
     });
   }, [accounts, searchTerm]);
 
+  const loadCodexQuotas = useCallback(async (items: AuthFile[]) => {
+    const codexAccounts = items.filter((account) => isCodexAccount(account));
+    quotaRequestIdRef.current += 1;
+    const requestID = quotaRequestIdRef.current;
+
+    if (codexAccounts.length === 0) {
+      setCodexQuotaByName({});
+      return;
+    }
+
+    setCodexQuotaByName(
+      codexAccounts.reduce<Record<string, CodexQuotaState>>((result, account) => {
+        result[account.name] = { status: 'loading' };
+        return result;
+      }, {})
+    );
+
+    const results = await Promise.all(
+      codexAccounts.map(async (account) => {
+        try {
+          const quota = await GetCodexQuota(account.name);
+          return [account.name, { status: 'success', quota } satisfies CodexQuotaState] as const;
+        } catch (error) {
+          console.error(error);
+          return [account.name, { status: 'error' } satisfies CodexQuotaState] as const;
+        }
+      })
+    );
+
+    if (quotaRequestIdRef.current !== requestID) {
+      return;
+    }
+
+    setCodexQuotaByName(
+      results.reduce<Record<string, CodexQuotaState>>((result, [name, state]) => {
+        result[name] = state;
+        return result;
+      }, {})
+    );
+  }, []);
+
+  const loadAccounts = useCallback(async () => {
+    if (!ready) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await ListAuthFiles();
+      const files = response.files || [];
+      setAccounts(files);
+      setPendingDeleteName(null);
+      void loadCodexQuotas(files);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loadCodexQuotas, ready]);
+
+  useEffect(() => {
+    if (ready) {
+      loadAccounts();
+    }
+  }, [ready, loadAccounts]);
+
   async function deleteAccount(name: string) {
     setDeleteError('');
     try {
@@ -72,6 +123,80 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
       console.error(error);
       setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
     }
+  }
+
+  async function uploadAccounts(files: FileList | null) {
+    if (!files?.length) {
+      return;
+    }
+
+    setDeleteError('');
+    try {
+      const payload = await Promise.all(
+        Array.from(files).map(
+          (file) =>
+            new Promise<{ name: string; contentBase64: string }>((resolve, reject) => {
+              const reader = new FileReader();
+
+              reader.onload = () => {
+                const result = reader.result;
+                if (typeof result !== 'string') {
+                  reject(new Error('文件读取失败'));
+                  return;
+                }
+
+                const marker = 'base64,';
+                const base64Index = result.indexOf(marker);
+                resolve({
+                  name: file.name,
+                  contentBase64: base64Index >= 0 ? result.slice(base64Index + marker.length) : result,
+                });
+              };
+
+              reader.onerror = () => reject(reader.error ?? new Error('文件读取失败'));
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+
+      await UploadAuthFiles(payload);
+      await loadAccounts();
+    } catch (error) {
+      console.error(error);
+      setDeleteError(`UPLOAD ERROR: ${toErrorMessage(error)}`);
+    }
+  }
+
+  function providerLabel(account: AuthFile) {
+    return String(account.provider || account.type || 'UNKNOWN').trim().toUpperCase();
+  }
+
+  function quotaSummary(account: AuthFile) {
+    if (!isCodexAccount(account)) {
+      return '';
+    }
+
+    const state = codexQuotaByName[account.name];
+    if (!state || state.status === 'loading') {
+      return 'SYNCING...';
+    }
+    if (state.status === 'error' || !state.quota) {
+      return 'UNAVAILABLE';
+    }
+
+    const preferredWindows = state.quota.windows.filter(
+      (window) => window.id === 'five-hour' || window.id === 'weekly'
+    );
+    const windows = preferredWindows.length > 0 ? preferredWindows : state.quota.windows.slice(0, 2);
+    if (windows.length === 0) {
+      return state.quota.planType ? state.quota.planType.toUpperCase() : 'READY';
+    }
+
+    const parts = windows.map((window) => {
+      const remaining = window.remainingPercent === undefined ? '--' : `${window.remainingPercent}%`;
+      return `${window.label} ${remaining}`;
+    });
+    return parts.join(' · ');
   }
 
   return (
@@ -90,25 +215,41 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
                 {t('accounts.subtitle')} / {accounts.length} TOTAL
               </p>
             </div>
-            <button onClick={loadAccounts} className="btn-swiss" disabled={!ready || loading}>
-              {t('common.refresh')}
-            </button>
+            <div className="flex items-center gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(event) => {
+                  void uploadAccounts(event.target.files);
+                  event.target.value = '';
+                }}
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="btn-swiss"
+                disabled={!ready || loading}
+              >
+                {t('accounts.add_account')}
+              </button>
+              <button onClick={loadAccounts} className="btn-swiss" disabled={!ready || loading}>
+                {t('common.refresh')}
+              </button>
+            </div>
           </header>
 
-          <div className="flex flex-wrap items-center gap-6 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-hard shadow-[var(--shadow-color)]">
-            <div className="flex min-w-[300px] flex-1 items-center gap-3">
-              <span className="text-[10px] font-black uppercase">{t('common.search')}:</span>
-              <input
-                value={searchTerm}
-                onChange={(event: TextInputEvent) => {
-                  setSearchTerm(event.target.value);
-                  setPendingDeleteName(null);
-                }}
-                type="text"
-                className="input-swiss flex-1 uppercase"
-                placeholder="NAME / PROVIDER..."
-              />
-            </div>
+          <div className="flex w-full items-center">
+            <input
+              value={searchTerm}
+              onChange={(event: TextInputEvent) => {
+                setSearchTerm(event.target.value);
+                setPendingDeleteName(null);
+              }}
+              type="text"
+              className="input-swiss w-full uppercase"
+              placeholder="NAME / PROVIDER..."
+            />
           </div>
 
           {deleteError ? (
@@ -135,6 +276,17 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
                   <h3 className="mb-4 break-all text-sm font-black uppercase text-[var(--text-primary)]">
                     {account.name}
                   </h3>
+
+                  <div className="mb-6 space-y-2 border-t border-dashed border-[var(--border-color)] pt-3">
+                    <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                      <span className="text-[var(--text-muted)]">Provider</span>
+                      <span>{providerLabel(account)}</span>
+                    </div>
+                    <div className="flex items-start justify-between gap-3 text-[9px] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                      <span className="text-[var(--text-muted)]">Quota</span>
+                      <span className="text-right">{quotaSummary(account)}</span>
+                    </div>
+                  </div>
 
                   <div className="mt-auto space-y-3">
                     <div className="flex justify-between border-t border-dashed border-[var(--border-color)] pt-3 text-[10px] font-bold uppercase text-[var(--text-primary)]">
@@ -193,4 +345,11 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
       ) : null}
     </>
   );
+}
+
+function isCodexAccount(account: AuthFile) {
+  const provider = String(account.provider || account.type || '')
+    .trim()
+    .toLowerCase();
+  return provider === 'codex';
 }

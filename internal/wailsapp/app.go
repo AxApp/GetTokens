@@ -1,7 +1,8 @@
-package main
+package wailsapp
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -13,12 +14,15 @@ import (
 	"strings"
 	"time"
 
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/sidecar"
+	"github.com/linhay/gettokens/internal/updater"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-const sidecarRequestTimeout = 30 * time.Second
+const SidecarRequestTimeout = 30 * time.Second
 
-const managementAPIPrefix = "/v0/management"
+const ManagementAPIPrefix = "/v0/management"
 
 type AuthFileItem struct {
 	Name          string      `json:"name"`
@@ -50,7 +54,79 @@ type DownloadFileResponse struct {
 	ContentBase64 string `json:"contentBase64"`
 }
 
-func (a *App) sidecarBaseURL() (string, error) {
+type CodexQuotaWindow struct {
+	ID               string
+	Label            string
+	RemainingPercent *int
+	ResetLabel       string
+}
+
+type CodexQuotaResponse struct {
+	PlanType string
+	Windows  []CodexQuotaWindow
+}
+
+type App struct {
+	ctx     context.Context
+	sidecar *sidecar.Manager
+	updater *updater.Updater
+	version string
+}
+
+func New(version string, repo string) *App {
+	return &App{
+		sidecar: sidecar.NewManager(),
+		updater: updater.New(repo, version),
+		version: version,
+	}
+}
+
+func (a *App) Startup(ctx context.Context) {
+	a.ctx = ctx
+
+	go func() {
+		a.sidecar.Start(ctx, func(status sidecar.Status) {
+			wailsRuntime.EventsEmit(ctx, "sidecar:status", status)
+		})
+	}()
+
+	go func() {
+		release, ok, err := a.updater.Check(ctx)
+		if err != nil || !ok {
+			return
+		}
+		wailsRuntime.EventsEmit(ctx, "updater:available", release)
+	}()
+}
+
+func (a *App) Shutdown() {
+	a.sidecar.Stop()
+}
+
+func (a *App) GetSidecarStatus() sidecar.Status {
+	return a.sidecar.CurrentStatus()
+}
+
+func (a *App) GetVersion() string {
+	return a.version
+}
+
+func (a *App) CheckUpdate() (*updater.ReleaseInfo, error) {
+	release, ok, err := a.updater.Check(a.ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return release, nil
+}
+
+func (a *App) ApplyUpdate() error {
+	return a.updater.Apply(a.ctx)
+}
+
+func (a *App) SidecarBaseURL() (string, error) {
 	status := a.sidecar.CurrentStatus()
 	if status.Code != sidecar.StatusReady || status.Port <= 0 {
 		return "", errors.New("后端未就绪")
@@ -58,8 +134,8 @@ func (a *App) sidecarBaseURL() (string, error) {
 	return fmt.Sprintf("http://127.0.0.1:%d", status.Port), nil
 }
 
-func (a *App) sidecarRequest(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-	baseURL, err := a.sidecarBaseURL()
+func (a *App) SidecarRequest(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+	baseURL, err := a.SidecarBaseURL()
 	if err != nil {
 		return nil, 0, err
 	}
@@ -80,7 +156,7 @@ func (a *App) sidecarRequest(method string, path string, query url.Values, body 
 		req.Header.Set("Content-Type", contentType)
 	}
 
-	client := &http.Client{Timeout: sidecarRequestTimeout}
+	client := &http.Client{Timeout: SidecarRequestTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, 0, err
@@ -104,7 +180,7 @@ func (a *App) sidecarRequest(method string, path string, query url.Values, body 
 }
 
 func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
-	body, _, err := a.sidecarRequest(http.MethodGet, managementAPIPrefix+"/auth-files", nil, nil, "")
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +203,7 @@ func (a *App) SetAuthFileStatus(name string, disabled bool) error {
 	if err != nil {
 		return err
 	}
-	_, _, err = a.sidecarRequest(http.MethodPatch, managementAPIPrefix+"/auth-files/status", nil, bytes.NewReader(b), "application/json")
+	_, _, err = a.SidecarRequest(http.MethodPatch, ManagementAPIPrefix+"/auth-files/status", nil, bytes.NewReader(b), "application/json")
 	return err
 }
 
@@ -139,7 +215,7 @@ func (a *App) DeleteAuthFiles(names []string) error {
 	if err != nil {
 		return err
 	}
-	_, _, err = a.sidecarRequest(http.MethodDelete, managementAPIPrefix+"/auth-files", nil, bytes.NewReader(b), "application/json")
+	_, _, err = a.SidecarRequest(http.MethodDelete, ManagementAPIPrefix+"/auth-files", nil, bytes.NewReader(b), "application/json")
 	return err
 }
 
@@ -172,14 +248,14 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 		return err
 	}
 
-	_, _, err := a.sidecarRequest(http.MethodPost, managementAPIPrefix+"/auth-files", nil, &buf, w.FormDataContentType())
+	_, _, err := a.SidecarRequest(http.MethodPost, ManagementAPIPrefix+"/auth-files", nil, &buf, w.FormDataContentType())
 	return err
 }
 
 func (a *App) GetAuthFileModels(name string) ([]map[string]interface{}, error) {
 	query := url.Values{}
 	query.Set("name", name)
-	body, _, err := a.sidecarRequest(http.MethodGet, managementAPIPrefix+"/auth-files/models", query, nil, "")
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files/models", query, nil, "")
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +277,7 @@ func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 	}
 	query := url.Values{}
 	query.Set("name", name)
-	body, _, err := a.sidecarRequest(http.MethodGet, managementAPIPrefix+"/auth-files/download", query, nil, "")
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files/download", query, nil, "")
 	if err != nil {
 		return nil, err
 	}
@@ -209,5 +285,38 @@ func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 	return &DownloadFileResponse{
 		Name:          name,
 		ContentBase64: base64.StdEncoding.EncodeToString(body),
+	}, nil
+}
+
+func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return nil, errors.New("name 不能为空")
+	}
+
+	query := url.Values{}
+	query.Set("name", name)
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files/download", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	quota, err := accountsdomain.GetCodexQuota(a.ctx, body, SidecarRequestTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	windows := make([]CodexQuotaWindow, 0, len(quota.Windows))
+	for _, window := range quota.Windows {
+		windows = append(windows, CodexQuotaWindow{
+			ID:               window.ID,
+			Label:            window.Label,
+			RemainingPercent: window.RemainingPercent,
+			ResetLabel:       window.ResetLabel,
+		})
+	}
+
+	return &CodexQuotaResponse{
+		PlanType: quota.PlanType,
+		Windows:  windows,
 	}, nil
 }

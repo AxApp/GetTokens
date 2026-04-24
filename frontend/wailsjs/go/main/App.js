@@ -22,6 +22,10 @@ export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
 }
 
+export function GetCodexQuota(arg1) {
+  return window['go']['main']['App']['GetCodexQuota'](arg1);
+}
+
 export function GetSidecarStatus() {
   return window['go']['main']['App']['GetSidecarStatus']();
 }
