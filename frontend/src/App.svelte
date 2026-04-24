@@ -8,7 +8,7 @@
   import { GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
 
   let activePage = 'accounts';
-  let sidecarStatus = { code: 'stopped', port: 0 };
+  let sidecarStatus = { code: 'ready', port: 0 };
   let version = 'dev';
 
   function updateTheme(mode) {
@@ -19,27 +19,26 @@
   $: updateTheme($themeMode);
 
   onMount(async () => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const listener = () => updateTheme($themeMode);
-    mediaQuery.addEventListener('change', listener);
+    // 强制打印到 Go 终端
+    if (window.runtime) window.runtime.LogInfo('!!! APP_SVELTE_MOUNTED !!!');
     
     try {
       version = await GetVersion();
-      sidecarStatus = await GetSidecarStatus();
-    } catch {}
+      const s = await GetSidecarStatus();
+      if (s) sidecarStatus = s;
+    } catch (e) {}
 
     if (window.runtime?.EventsOn) {
-      window.runtime.EventsOn('sidecar:status', (s) => sidecarStatus = s);
+      window.runtime.EventsOn('sidecar:status', (s) => {
+        sidecarStatus = s;
+      });
     }
-
-    return () => mediaQuery.removeEventListener('change', listener);
   });
 </script>
 
 <div class="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]">
   <Sidebar bind:activePage {version} />
 
-  <!-- 现在 main 标签不再带 Padding，作为透明的路由容器 -->
   <main class="flex-1 bg-[var(--bg-surface)] overflow-hidden">
     {#if activePage === 'status'}
       <StatusPage {sidecarStatus} {version} />

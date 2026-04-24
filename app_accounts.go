@@ -133,9 +133,7 @@ func (a *App) SetAuthFileStatus(name string, disabled bool) error {
 
 func (a *App) DeleteAuthFiles(names []string) error {
 	payload := map[string]interface{}{
-		"data": map[string]interface{}{
-			"names": names,
-		},
+		"names": names,
 	}
 	b, err := json.Marshal(payload)
 	if err != nil {
