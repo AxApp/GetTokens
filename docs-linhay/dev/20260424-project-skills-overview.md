@@ -18,10 +18,14 @@
    把历史会话蒸馏成项目级 skills 的方法论，覆盖 transcript 定位、重复模式提炼、skill 边界划分与写回。
 6. `.agents/skills/gettokens-agents-governance-sync`
    把 AGENTS 约束真正落到仓库动作上的方法论，覆盖 docs-linhay 落位、记忆写回、qmd 索引和 `.gitignore` 对齐。
+7. `.agents/skills/gettokens-space-governance`
+   `spaces` 工作空间治理，覆盖 `space-key` 命名、`README.md` 模板，以及 `plans`、`screenshots`、`debate` 的归档边界。
+8. `.agents/skills/gettokens-doc-writeback`
+   文档与记忆写回流程，覆盖落位判断、memory 精简写回，以及 `qmd update` / `qmd embed` 的强制同步。
 
-## 为什么是这四个
+## 为什么是这些 skills
 
-原会话里最高频、且对后续仍有复用价值的并不是某几个孤立 bug，而是六类工作模式：
+当前沉淀出来的长期知识并不是若干孤立 bug，而是八类工作模式：
 
 1. 账号池是当前最复杂、最容易回归的业务面。
 2. Wails 开发态存在“看起来编译通过，但桌面窗口没加载新代码”的高频风险。
@@ -29,6 +33,8 @@
 4. 视觉与文案已经形成明确风格，不应每轮重新定义。
 5. 会话中沉淀出来的项目知识需要有一套稳定的 skill 提炼流程。
 6. AGENTS、文档、记忆、索引如果不同步，项目规则很快会失真。
+7. `spaces` 结构落地后，单个需求空间的创建、命名和归档需要稳定执行模式。
+8. 文档写回、memory 写回和索引同步是固定动作，应该独立成 skill，避免每次靠人工回忆。
 
 ## 不纳入 skill 的内容
 

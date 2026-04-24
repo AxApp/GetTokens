@@ -5,26 +5,27 @@ description: Use when a task affects AGENTS-level working rules, project documen
 
 # GetTokens AGENTS Governance Sync
 
-This skill exists for tasks that change how the project should be worked on, not just what the app should do.
+This skill exists for tasks that change repo-wide working rules, not just a single `space` or a one-off doc update.
 
 ## Primary files
 
 - `AGENTS.md`
 - `.gitignore`
 - `docs-linhay/dev/`
-- `docs-linhay/features/`
 - `docs-linhay/memory/`
 
 ## Workflow
 
 1. Read `AGENTS.md` before deciding where process knowledge should live.
-2. Preserve the required path conventions and migration direction toward `docs-linhay/`.
+2. Update `AGENTS.md` only when the rule is repo-wide and durable.
 3. Decide whether the change belongs in:
-   - `docs-linhay/features/` for requirement changes
+   - `.agents/skills/` for reusable task-class workflows
+   - `docs-linhay/spaces/<space-key>/README.md` for requirement changes
    - `docs-linhay/dev/` for implementation or workflow guidance
    - `docs-linhay/memory/YYYY-MM-DD.md` for durable decisions, milestones, risks, or preferences
 4. If the repo ignores `docs-linhay/`, fix `.gitignore` so governance docs can actually be tracked.
-5. After memory write-back, run `qmd update` and `qmd embed`.
+5. If the change is about `space` operations or doc write-back mechanics, prefer `gettokens-space-governance` or `gettokens-doc-writeback` instead of expanding `AGENTS.md`.
+6. After memory write-back, run `qmd update` and `qmd embed`.
 
 ## Retrieval and write-back rules
 
