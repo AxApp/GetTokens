@@ -21,6 +21,8 @@ const (
 	healthzPath    = "/healthz"
 	startupTimeout = 30 * time.Second
 	pollInterval   = 500 * time.Millisecond
+	// ManagementKey is used for local management API auth between app frontend and sidecar.
+	ManagementKey = "gettokens-local-management-key"
 )
 
 // StatusCode describes the current state of the sidecar.
@@ -253,9 +255,13 @@ func ensureConfigDir() (string, error) {
 
 // sidecarConfig is the YAML config written for CLIProxyAPI.
 type sidecarConfig struct {
-	Host    string `yaml:"host"`
-	Port    int    `yaml:"port"`
-	AuthDir string `yaml:"auth-dir"`
+	Host             string `yaml:"host"`
+	Port             int    `yaml:"port"`
+	AuthDir          string `yaml:"auth-dir"`
+	RemoteManagement struct {
+		AllowRemote bool   `yaml:"allow-remote"`
+		SecretKey   string `yaml:"secret-key"`
+	} `yaml:"remote-management"`
 }
 
 // writeConfig serialises a minimal YAML config for CLIProxyAPI.
@@ -265,6 +271,8 @@ func writeConfig(path string, port int, authDir string) error {
 		Port:    port,
 		AuthDir: authDir,
 	}
+	cfg.RemoteManagement.AllowRemote = false
+	cfg.RemoteManagement.SecretKey = ManagementKey
 	data, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err

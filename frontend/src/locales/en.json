@@ -1,0 +1,50 @@
+{
+  "common": {
+    "refresh": "Refresh",
+    "upload": "Upload",
+    "delete": "Delete",
+    "details": "Details",
+    "enable": "Enable",
+    "disable": "Disable",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search",
+    "type": "Type",
+    "status": "Status"
+  },
+  "nav": {
+    "status": "STATUS",
+    "accounts": "ACCOUNTS",
+    "settings": "SETTINGS"
+  },
+  "status": {
+    "title": "System Status",
+    "online": "Online",
+    "offline": "Offline",
+    "core_state": "Core State",
+    "port": "Port Mapping",
+    "uptime": "Uptime",
+    "build": "Build Version",
+    "diagnostic": "API Diagnostic"
+  },
+  "accounts": {
+    "title": "Inventory",
+    "subtitle": "Authorized credential files",
+    "empty": "No accounts matched",
+    "provider": "Provider",
+    "size": "Size",
+    "quick_actions": "Quick Actions",
+    "errors_only": "Errors Only"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Control Panel / Configuration",
+    "appearance": "Visual Appearance",
+    "theme_mode": "Interface Theme Mode",
+    "language": "System Language",
+    "system_info": "System Information",
+    "architecture": "Architecture",
+    "status": "Status"
+  }
+}

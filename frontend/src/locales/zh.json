@@ -1,0 +1,50 @@
+{
+  "common": {
+    "refresh": "刷新",
+    "upload": "上传",
+    "delete": "删除",
+    "details": "详情",
+    "enable": "启用",
+    "disable": "禁用",
+    "close": "关闭",
+    "save": "保存",
+    "cancel": "取消",
+    "search": "搜索",
+    "type": "类型",
+    "status": "状态"
+  },
+  "nav": {
+    "status": "运行状态",
+    "accounts": "账号池",
+    "settings": "应用设置"
+  },
+  "status": {
+    "title": "系统状态",
+    "online": "已上线",
+    "offline": "离线",
+    "core_state": "核心状态",
+    "port": "端口映射",
+    "uptime": "运行时长",
+    "build": "构建版本",
+    "diagnostic": "接口连通性诊断"
+  },
+  "accounts": {
+    "title": "资源库存",
+    "subtitle": "已授权的凭据文件",
+    "empty": "暂无匹配账号",
+    "provider": "供应商",
+    "size": "文件大小",
+    "quick_actions": "快速操作",
+    "errors_only": "仅看问题账号"
+  },
+  "settings": {
+    "title": "应用配置",
+    "subtitle": "控制面板 / 系统参数",
+    "appearance": "视觉外观",
+    "theme_mode": "界面主题模式",
+    "language": "系统语言",
+    "system_info": "系统信息",
+    "architecture": "架构体系",
+    "status": "运行状态"
+  }
+}

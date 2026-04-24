@@ -10,10 +10,34 @@ export function CheckUpdate() {
   return window['go']['main']['App']['CheckUpdate']();
 }
 
+export function DeleteAuthFiles(arg1) {
+  return window['go']['main']['App']['DeleteAuthFiles'](arg1);
+}
+
+export function DownloadAuthFile(arg1) {
+  return window['go']['main']['App']['DownloadAuthFile'](arg1);
+}
+
+export function GetAuthFileModels(arg1) {
+  return window['go']['main']['App']['GetAuthFileModels'](arg1);
+}
+
 export function GetSidecarStatus() {
   return window['go']['main']['App']['GetSidecarStatus']();
 }
 
 export function GetVersion() {
   return window['go']['main']['App']['GetVersion']();
+}
+
+export function ListAuthFiles() {
+  return window['go']['main']['App']['ListAuthFiles']();
+}
+
+export function SetAuthFileStatus(arg1, arg2) {
+  return window['go']['main']['App']['SetAuthFileStatus'](arg1, arg2);
+}
+
+export function UploadAuthFiles(arg1) {
+  return window['go']['main']['App']['UploadAuthFiles'](arg1);
 }
