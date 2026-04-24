@@ -1,0 +1,186 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  # ── Build frontend once, share across platform jobs ──────────────────────
+  build-frontend:
+    name: Build H5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        env:
+          VITE_VERSION: ${{ github.ref_name }}
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+  # ── Platform matrix ───────────────────────────────────────────────────────
+  build:
+    name: Build ${{ matrix.os-name }}
+    needs: build-frontend
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            os-name: macOS
+            goos: darwin
+            goarch: universal
+            wails-platform: darwin/universal
+            package-ext: dmg
+            asset-name: GetTokens_darwin_universal.dmg
+
+          - runner: windows-latest
+            os-name: Windows
+            goos: windows
+            goarch: amd64
+            wails-platform: windows/amd64
+            wails-extra: -nsis
+            package-ext: exe
+            asset-name: GetTokens_windows_amd64.exe
+
+          - runner: ubuntu-latest
+            os-name: Linux
+            goos: linux
+            goarch: amd64
+            wails-platform: linux/amd64
+            package-ext: AppImage
+            asset-name: GetTokens_linux_amd64.AppImage
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── Go ────────────────────────────────────────────────────────────────
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      # ── Node ──────────────────────────────────────────────────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # ── Restore built frontend ────────────────────────────────────────────
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      # ── Wails ────────────────────────────────────────────────────────────
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      # ── Fetch sidecar binary ──────────────────────────────────────────────
+      - name: Fetch CLIProxyAPI sidecar (macOS/Linux)
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x scripts/fetch-sidecar.sh
+          ./scripts/fetch-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch == 'universal' && 'arm64' || matrix.goarch }} latest build/bin
+          # For darwin/universal also fetch amd64
+          if [ "${{ matrix.goos }}" = "darwin" ]; then
+            ./scripts/fetch-sidecar.sh darwin amd64 latest build/bin/amd64
+          fi
+
+      - name: Fetch CLIProxyAPI sidecar (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          chmod +x scripts/fetch-sidecar.sh
+          ./scripts/fetch-sidecar.sh windows amd64 latest build/bin
+
+      # ── Platform-specific dependencies ───────────────────────────────────
+      - name: Install macOS packaging tools
+        if: runner.os == 'macOS'
+        run: brew install create-dmg
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - name: Wails build
+        run: |
+          wails build \
+            -platform ${{ matrix.wails-platform }} \
+            ${{ matrix.wails-extra || '' }} \
+            -ldflags "-X main.Version=${{ github.ref_name }}"
+
+      # ── Package ───────────────────────────────────────────────────────────
+      - name: Package DMG (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist/release
+          create-dmg \
+            --volname "GetTokens" \
+            --window-size 660 400 \
+            --icon-size 100 \
+            "dist/release/${{ matrix.asset-name }}" \
+            "build/bin/GetTokens.app"
+
+      - name: Copy Windows installer
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist/release
+          cp build/bin/GetTokens-*-installer.exe "dist/release/${{ matrix.asset-name }}"
+
+      - name: Package AppImage (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir -p dist/release
+          # Minimal AppImage packaging — replace with appimagetool for production
+          cp build/bin/GetTokens "dist/release/${{ matrix.asset-name }}"
+
+      # ── Upload artifact ───────────────────────────────────────────────────
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset-name }}
+          path: dist/release/${{ matrix.asset-name }}
+
+  # ── Publish GitHub Release ────────────────────────────────────────────────
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist/release/
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          chmod +x scripts/gen-checksums.sh
+          ./scripts/gen-checksums.sh dist/release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/release/GetTokens_darwin_universal.dmg
+            dist/release/GetTokens_windows_amd64.exe
+            dist/release/GetTokens_linux_amd64.AppImage
+            dist/release/checksums.txt
+          generate_release_notes: true
