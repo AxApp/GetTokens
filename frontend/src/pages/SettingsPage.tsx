@@ -1,17 +1,25 @@
-import SegmentedControl from '../components/ui/SegmentedControl.jsx';
-import { useI18n } from '../context/I18nContext.jsx';
-import { useTheme } from '../context/ThemeContext.jsx';
+import SegmentedControl from '../components/ui/SegmentedControl';
+import { useI18n } from '../context/I18nContext';
+import { useTheme } from '../context/ThemeContext';
+import type { LocaleCode, SegmentedOption, ThemeMode } from '../types';
 
-const themes = [
+const themes: ReadonlyArray<SegmentedOption<ThemeMode>> = [
   { id: 'system', label: 'SYSTEM' },
   { id: 'light', label: 'LIGHT' },
   { id: 'dark', label: 'DARK' },
 ];
 
-const languages = [
+const languages: ReadonlyArray<SegmentedOption<LocaleCode>> = [
   { id: 'zh', label: '简体中文' },
   { id: 'en', label: 'ENGLISH' },
 ];
+
+const sourceMappings = [
+  ['MAIN_FRAME', 'src/App.tsx'],
+  ['PAGE_ACCOUNTS', 'src/pages/AccountsPage.tsx'],
+  ['PAGE_STATUS', 'src/pages/StatusPage.tsx'],
+  ['UI_SEGMENT', 'src/components/ui/SegmentedControl.tsx'],
+] as const;
 
 export default function SettingsPage() {
   const { themeMode, setThemeMode } = useTheme();
@@ -100,12 +108,7 @@ export default function SettingsPage() {
                   Dev_Helper / {t('settings.source_mapping')}
                 </div>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 font-mono text-[8px]">
-                  {[
-                    ['MAIN_FRAME', 'src/App.jsx'],
-                    ['PAGE_ACCOUNTS', 'src/pages/AccountsPage.jsx'],
-                    ['PAGE_STATUS', 'src/pages/StatusPage.jsx'],
-                    ['UI_SEGMENT', 'src/components/ui/SegmentedControl.jsx'],
-                  ].map(([id, path]) => (
+                  {sourceMappings.map(([id, path]) => (
                     <div
                       key={id}
                       className="flex justify-between border-b border-[var(--border-color)]/10 pb-0.5"

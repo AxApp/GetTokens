@@ -1,15 +1,27 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useI18n } from '../context/I18nContext.jsx';
 import { DeleteAuthFiles, ListAuthFiles } from '../../wailsjs/go/main/App';
-import AccountDetailModal from '../components/biz/AccountDetailModal.jsx';
+import AccountDetailModal from '../components/biz/AccountDetailModal';
+import { useI18n } from '../context/I18nContext';
+import type { AuthFile, SidecarStatus } from '../types';
+import { toErrorMessage } from '../utils/error';
 
-export default function AccountsPage({ sidecarStatus }) {
+interface AccountsPageProps {
+  sidecarStatus: SidecarStatus;
+}
+
+interface TextInputEvent {
+  target: {
+    value: string;
+  };
+}
+
+export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
   const { t } = useI18n();
-  const [accounts, setAccounts] = useState([]);
+  const [accounts, setAccounts] = useState<AuthFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAccount, setSelectedAccount] = useState(null);
-  const [pendingDeleteName, setPendingDeleteName] = useState(null);
+  const [selectedAccount, setSelectedAccount] = useState<AuthFile | null>(null);
+  const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
 
   const ready = sidecarStatus?.code === 'ready';
@@ -50,7 +62,7 @@ export default function AccountsPage({ sidecarStatus }) {
     });
   }, [accounts, searchTerm]);
 
-  async function deleteAccount(name) {
+  async function deleteAccount(name: string) {
     setDeleteError('');
     try {
       await DeleteAuthFiles([name]);
@@ -58,7 +70,7 @@ export default function AccountsPage({ sidecarStatus }) {
       await loadAccounts();
     } catch (error) {
       console.error(error);
-      setDeleteError(`DELETE ERROR: ${error?.message || error}`);
+      setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
     }
   }
 
@@ -88,7 +100,7 @@ export default function AccountsPage({ sidecarStatus }) {
               <span className="text-[10px] font-black uppercase">{t('common.search')}:</span>
               <input
                 value={searchTerm}
-                onChange={(event) => {
+                onChange={(event: TextInputEvent) => {
                   setSearchTerm(event.target.value);
                   setPendingDeleteName(null);
                 }}

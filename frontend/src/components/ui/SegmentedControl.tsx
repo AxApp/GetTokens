@@ -1,4 +1,16 @@
-export default function SegmentedControl({ options, value, onChange }) {
+import type { SegmentedOption } from '../../types';
+
+interface SegmentedControlProps<T extends string> {
+  options: ReadonlyArray<SegmentedOption<T>>;
+  value: T;
+  onChange: (value: T) => void;
+}
+
+export default function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: SegmentedControlProps<T>) {
   return (
     <div className="flex w-full max-w-sm border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
       {options.map((option, index) => (

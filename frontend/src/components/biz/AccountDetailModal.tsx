@@ -1,24 +1,49 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useI18n } from '../../context/I18nContext.jsx';
 import { DownloadAuthFile, GetAuthFileModels } from '../../../wailsjs/go/main/App';
+import { useI18n } from '../../context/I18nContext';
+import type { AuthFile, AuthModel } from '../../types';
+import { toErrorMessage } from '../../utils/error';
 
-export default function AccountDetailModal({ account, onClose }) {
+interface AccountDetailModalProps {
+  account: AuthFile;
+  onClose: () => void;
+}
+
+type DetailField = readonly [string, string];
+
+interface ClickEventLike {
+  stopPropagation: () => void;
+}
+
+function formatRefreshValue(value: unknown): string {
+  if (!value) {
+    return '—';
+  }
+  const date = new Date(value as string | number | Date);
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleTimeString();
+}
+
+function getModelLabel(model: AuthModel): string {
+  return model.display_name || model.id || model.name || 'MODEL';
+}
+
+export default function AccountDetailModal({ account, onClose }: AccountDetailModalProps) {
   const { t } = useI18n();
-  const [models, setModels] = useState([]);
+  const [models, setModels] = useState<AuthModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [rawContent, setRawContent] = useState('');
   const [loadingRaw, setLoadingRaw] = useState(false);
   const [verifyResult, setVerifyResult] = useState('');
   const [verifying, setVerifying] = useState(false);
 
-  const detailFields = useMemo(
+  const detailFields = useMemo<DetailField[]>(
     () => [
       [t('common.type'), account.type || '—'],
       [t('accounts.provider'), account.provider || '—'],
       [t('accounts.size'), account.size ? `${account.size} B` : '—'],
       [t('common.status'), account.status || '—'],
       [t('common.enable'), account.disabled ? 'NO' : 'YES'],
-      ['REFRESH', account.lastRefresh ? new Date(account.lastRefresh).toLocaleTimeString() : '—'],
+      ['REFRESH', formatRefreshValue(account.lastRefresh)],
     ],
     [account, t]
   );
@@ -56,7 +81,7 @@ export default function AccountDetailModal({ account, onClose }) {
         }
       } catch (error) {
         if (mounted) {
-          setRawContent(`READ_ERROR: ${error.message}`);
+          setRawContent(`READ_ERROR: ${toErrorMessage(error)}`);
         }
       } finally {
         if (mounted) {
@@ -92,8 +117,8 @@ export default function AccountDetailModal({ account, onClose }) {
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
-        onClick={(event) => event.stopPropagation()}
+      className="flex max-h-[90vh] w-full max-w-2xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
           <div className="flex flex-col">
@@ -133,10 +158,10 @@ export default function AccountDetailModal({ account, onClose }) {
               {models.length > 0 ? (
                 models.map((model, index) => (
                   <span
-                    key={`${model.display_name || model.id || model.name || 'model'}-${index}`}
+                    key={`${getModelLabel(model)}-${index}`}
                     className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[10px] font-black italic uppercase"
                   >
-                    {model.display_name || model.id || model.name}
+                    {getModelLabel(model)}
                   </span>
                 ))
               ) : !loadingModels ? (

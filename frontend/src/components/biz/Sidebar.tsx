@@ -1,12 +1,19 @@
-import { useI18n } from '../../context/I18nContext.jsx';
+import { useI18n } from '../../context/I18nContext';
+import type { AppPage } from '../../types';
 
 const navItems = [
   { id: 'status', label: 'nav.status', icon: 'M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 8v4l3 3' },
   { id: 'accounts', label: 'nav.accounts', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' },
   { id: 'settings', label: 'nav.settings', icon: 'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2' },
-];
+ ] as const satisfies ReadonlyArray<{ id: AppPage; label: string; icon: string }>;
 
-export default function Sidebar({ activePage, setActivePage, version }) {
+interface SidebarProps {
+  activePage: AppPage;
+  setActivePage: (page: AppPage) => void;
+  version: string;
+}
+
+export default function Sidebar({ activePage, setActivePage, version }: SidebarProps) {
   const { t } = useI18n();
 
   return (

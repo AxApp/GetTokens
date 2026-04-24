@@ -1,7 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { useI18n } from '../context/I18nContext.jsx';
+import { useI18n } from '../context/I18nContext';
+import type { SidecarStatus } from '../types';
+import { toErrorMessage } from '../utils/error';
 
-export default function StatusPage({ sidecarStatus = { code: 'stopped', port: 0 }, version = 'dev' }) {
+interface StatusPageProps {
+  sidecarStatus?: SidecarStatus;
+  version?: string;
+}
+
+const defaultSidecarStatus: SidecarStatus = {
+  code: 'stopped',
+  port: 0,
+  message: '',
+  version: '',
+};
+
+export default function StatusPage({
+  sidecarStatus = defaultSidecarStatus,
+  version = 'dev',
+}: StatusPageProps) {
   const { t } = useI18n();
   const startTimeRef = useRef(Date.now());
   const [healthz, setHealthz] = useState('CHECKING...');
@@ -51,7 +68,7 @@ export default function StatusPage({ sidecarStatus = { code: 'stopped', port: 0 
         }
       } catch (error) {
         if (!cancelled) {
-          setHealthz(`ERROR: ${error.message}`);
+          setHealthz(`ERROR: ${toErrorMessage(error)}`);
         }
       }
     }

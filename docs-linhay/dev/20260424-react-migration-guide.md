@@ -82,6 +82,27 @@
 
 原因：会把“框架迁移”扩大成“架构迁移”。
 
+## 5.1 后续补充：第二阶段 TSX 收敛
+
+2026-04-25 已完成第二阶段收敛，范围仍然控制在前端边界内：
+
+1. 将 React 前端入口、context、pages、biz/ui components 从 `.jsx` 迁移为 `.tsx`
+2. 新增 `frontend/tsconfig.json`
+3. 正式接入 `typescript`、`@types/react@18`、`@types/react-dom@18`
+4. 补齐基础领域类型与错误收敛工具，避免继续扩散隐式 `any`
+5. 保持 Go 接口契约、Wails bridge 和 sidecar API 不变
+
+这一阶段的验证结果：
+
+1. `npm run typecheck` 通过
+2. `npm run build` 通过
+3. `npm_config_offline=true ./scripts/wails-cli.sh build -skipbindings` 通过
+
+结论：
+
+- “第一轮不同时升级 TypeScript” 仍然是正确策略，因为它避免了 React 迁移与类型系统迁移耦合爆炸
+- 但在 React 版稳定后，单独进行第二阶段 `jsx -> tsx` 收敛是有收益且可控的
+
 ## 6. 高层迁移策略
 
 ### 6.1 总原则

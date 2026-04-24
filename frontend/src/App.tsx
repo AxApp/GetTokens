@@ -1,16 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
-import Sidebar from './components/biz/Sidebar.jsx';
-import StatusPage from './pages/StatusPage.jsx';
-import AccountsPage from './pages/AccountsPage.jsx';
-import SettingsPage from './pages/SettingsPage.jsx';
-import { ThemeProvider, useTheme } from './context/ThemeContext.jsx';
-import { I18nProvider } from './context/I18nContext.jsx';
 import { GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
+import { EventsOn } from '../wailsjs/runtime/runtime';
+import Sidebar from './components/biz/Sidebar';
+import AccountsPage from './pages/AccountsPage';
+import SettingsPage from './pages/SettingsPage';
+import StatusPage from './pages/StatusPage';
+import { I18nProvider } from './context/I18nContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import type { AppPage, SidecarStatus } from './types';
+
+const defaultSidecarStatus: SidecarStatus = {
+  code: 'stopped',
+  port: 0,
+  message: '',
+  version: '',
+};
 
 function AppShell() {
   const { themeMode } = useTheme();
-  const [activePage, setActivePage] = useState('accounts');
-  const [sidecarStatus, setSidecarStatus] = useState({ code: 'stopped', port: 0 });
+  const [activePage, setActivePage] = useState<AppPage>('accounts');
+  const [sidecarStatus, setSidecarStatus] = useState<SidecarStatus>(defaultSidecarStatus);
   const [version, setVersion] = useState('dev');
 
   useEffect(() => {
@@ -41,14 +50,13 @@ function AppShell() {
 
     loadInitialState();
 
-    if (window.runtime?.EventsOn) {
-      window.runtime.EventsOn('sidecar:status', (status) => {
-        setSidecarStatus(status);
-      });
-    }
+    const offStatus = EventsOn('sidecar:status', (status: SidecarStatus) => {
+      setSidecarStatus(status);
+    });
 
     return () => {
       mounted = false;
+      offStatus?.();
     };
   }, []);
 
