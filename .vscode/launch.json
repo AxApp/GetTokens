@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run GetTokens App",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "${workspaceFolder}/scripts/wails-cli.sh dev",
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
