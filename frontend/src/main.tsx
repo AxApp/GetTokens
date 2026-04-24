@@ -1,14 +1,11 @@
 import ReactDOM from 'react-dom/client';
-import setupLocator from '@locator/runtime';
+import { initInspector } from '@linhey/react-debug-inspector';
 import App from './App';
 import './style.css';
 
-// 仅在开发环境下启用调试工具
-if (import.meta.env.MODE === 'development') {
-  console.log('!!! DEV_MODE: Enabling LocatorJS...');
-  setupLocator({
-    adapter: 'react',
-  });
+// 仅在开发环境下启用节点检查与复制工具
+if (import.meta.env.DEV) {
+  initInspector();
 }
 
 const rootElement = document.getElementById('app');

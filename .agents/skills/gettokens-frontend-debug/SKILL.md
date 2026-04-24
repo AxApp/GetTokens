@@ -1,24 +1,24 @@
 ---
 name: gettokens-frontend-debug
-description: Use when debugging GetTokens frontend interactions, tracing which Svelte component owns a UI element, or restoring dev-only inspection tools such as LocatorJS, Svelte Inspector, and explicit runtime logging.
+description: Use when debugging GetTokens frontend interactions, tracing which React component owns a UI element, or restoring dev-only inspection tools such as react-debug-inspector and explicit runtime logging.
 ---
 
 # GetTokens Frontend Debug
 
-Use this skill when the task is not the business feature itself, but proving what code is running and why a specific interaction fails.
+Use this skill when the task is not the business feature itself, but proving what code is running, which React component owns a node, and why a specific interaction fails.
 
 ## Primary files
 
-- `frontend/src/main.js`: dev-only debug injection point
-- `frontend/vite.config.js`: Svelte Inspector setup
-- `frontend/src/App.svelte`: shell mount boundary
-- `frontend/src/pages/SettingsPage.svelte`: current source-mapping hints exposed in UI
+- `frontend/src/main.tsx`: dev-only debug injection point
+- `frontend/vite.config.js`: React debug inspector plugin setup
+- `frontend/src/App.tsx`: shell mount boundary
+- `frontend/src/pages/SettingsPage.tsx`: current source-mapping hints exposed in UI
 
 ## Preferred tools
 
 1. Keep debug helpers development-only.
-2. LocatorJS belongs in `frontend/src/main.js`, guarded by `import.meta.env.MODE === 'development'`.
-3. Svelte Inspector stays in `frontend/vite.config.js`; current shortcut is `alt-x`.
+2. `@linhey/react-debug-inspector` belongs in `frontend/src/main.tsx`, guarded by `import.meta.env.DEV`.
+3. Use `createViteDebugInspectorPlugin()` together with `@vitejs/plugin-react` in `frontend/vite.config.js` so JSX nodes get stable debug metadata and line numbers.
 4. Use stable `data-collaboration-id` markers on major containers when it helps agent collaboration.
 
 ## Debug workflow
@@ -30,7 +30,8 @@ Use this skill when the task is not the business feature itself, but proving wha
 
 ## Known project-specific traps
 
-- A copied path pointing to `App.svelte` does not automatically mean the real bug is in `App.svelte`; it may reflect shell ownership, stale bundle state, or a debug overlay boundary.
+- A copied path pointing to `App.tsx` does not automatically mean the real bug is in `App.tsx`; it may reflect shell ownership, stale bundle state, or a debug overlay boundary.
+- If the inspector overlay appears but copied metadata is empty or missing line numbers, check the Vite plugin chain first, not the runtime init call.
 - Heavy runtime debug helpers can break Wails webview startup. If the app stops mounting after adding one, revert the helper before deeper speculation.
 - When a user says "clicking does nothing", treat it as an instrumentation task first, not a styling task.
 
