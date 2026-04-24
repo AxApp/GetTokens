@@ -24,7 +24,10 @@
   }
 
   $: filteredAccounts = accounts.filter(acc => {
-    const matchesSearch = !searchTerm || acc.name.toLowerCase().includes(searchTerm.toLowerCase()) || (acc.provider || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const nameStr = (acc.name || '').toLowerCase();
+    const providerStr = (acc.provider || '').toLowerCase();
+    const q = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || nameStr.includes(q) || providerStr.includes(q);
     const matchesType = typeFilter === 'all' || (acc.type || 'unknown').toLowerCase() === typeFilter.toLowerCase();
     const isProblem = acc.unavailable || (acc.statusMessage && acc.statusMessage.trim() !== '') || acc.status === 'error';
     return matchesSearch && matchesType && (!onlyProblem || isProblem);
@@ -98,7 +101,7 @@
       </label>
       
       {#if selectedNames.size > 0}
-        <button on:click={deleteSelected} class="btn-swiss !text-red-500 border-red-500 ml-auto !py-1 !px-3">
+        <button on:click={deleteSelected} class="btn-swiss !text-red-500 border-red-500 ml-auto !py-1 !px-3 shadow-hard-sm hover:shadow-hard transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
           {$t('common.delete')} ({selectedNames.size})
         </button>
       {/if}
@@ -123,11 +126,13 @@
                 </div>
               </div>
             </div>
-            <div class="space-y-1.5 border-t-2 border-[var(--border-color)] pt-4 mt-auto">
-              <div class="flex justify-between text-[10px] font-bold uppercase italic"><span class="text-[var(--text-muted)]">{$t('accounts.provider')}</span><span class="text-[var(--text-primary)]">{acc.provider || 'generic'}</span></div>
-              <div class="flex justify-between text-[10px] font-bold uppercase italic"><span class="text-[var(--text-muted)]">{$t('accounts.size')}</span><span class="text-[var(--text-primary)]">{acc.size || 0} B</span></div>
-              <div class="flex justify-between text-[10px] font-bold uppercase italic pt-2"><span class="text-[var(--text-muted)]">{$t('common.status')}</span><span class={acc.disabled ? 'text-zinc-500' : 'text-green-600'}>{acc.disabled ? 'DIS' : 'ACT'}</span></div>
+            <div class="space-y-1.5 border-t-2 border-[var(--border-color)] pt-4 mt-auto text-[10px] font-bold uppercase italic">
+              <div class="flex justify-between"><span class="text-[var(--text-muted)]">{$t('accounts.provider')}</span><span class="text-[var(--text-primary)]">{acc.provider || 'generic'}</span></div>
+              <div class="flex justify-between"><span class="text-[var(--text-muted)]">{$t('accounts.size')}</span><span class="text-[var(--text-primary)]">{acc.size || 0} B</span></div>
+              <div class="flex justify-between pt-2"><span class="text-[var(--text-muted)]">{$t('common.status')}</span><span class={acc.disabled ? 'text-zinc-500' : 'text-green-600'}>{acc.disabled ? 'DIS' : 'ACT'}</span></div>
             </div>
+            
+            <!-- Hover Actions Overlay -->
             <div class="absolute inset-0 bg-[var(--bg-main)] border-2 border-[var(--border-color)] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col p-4 gap-2">
               <div class="text-[9px] font-black uppercase mb-auto border-b border-[var(--border-color)] pb-1">{$t('accounts.quick_actions')}</div>
               <button on:click={() => toggleStatus(acc.name, acc.disabled)} class="btn-swiss !shadow-hard-sm uppercase">{acc.disabled ? $t('common.enable') : $t('common.disable')}</button>
