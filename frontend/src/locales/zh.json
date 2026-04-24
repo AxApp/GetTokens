@@ -1,17 +1,19 @@
 {
   "common": {
-    "refresh": "刷新",
-    "upload": "上传",
-    "delete": "删除",
-    "details": "详情",
-    "enable": "启用",
-    "disable": "禁用",
-    "close": "关闭",
-    "save": "保存",
-    "cancel": "取消",
-    "search": "搜索",
-    "type": "类型",
-    "status": "状态"
+    "refresh": "强制刷新",
+    "upload": "上传文件",
+    "delete": "删除记录",
+    "details": "详细参数",
+    "enable": "激活账户",
+    "disable": "禁用账户",
+    "close": "关闭面板",
+    "save": "保存更改",
+    "cancel": "放弃操作",
+    "search": "关键词检索",
+    "type": "协议类型",
+    "status": "核心状态",
+    "confirm_delete": "确认删除此记录吗？",
+    "loading": "数据加载中..."
   },
   "nav": {
     "status": "运行状态",
@@ -19,32 +21,33 @@
     "settings": "应用设置"
   },
   "status": {
-    "title": "系统状态",
+    "title": "系统运行状态",
     "online": "已上线",
     "offline": "离线",
-    "core_state": "核心状态",
+    "core_state": "运行核心",
     "port": "端口映射",
-    "uptime": "运行时长",
+    "uptime": "持续运行时长",
     "build": "构建版本",
-    "diagnostic": "接口连通性诊断"
+    "diagnostic": "接口连通性诊断报告"
   },
   "accounts": {
     "title": "资源库存",
-    "subtitle": "已授权的凭据文件",
-    "empty": "暂无匹配账号",
+    "subtitle": "已授权的凭据资产库",
+    "empty": "当前库中无匹配记录",
     "provider": "供应商",
-    "size": "文件大小",
-    "quick_actions": "快速操作",
-    "errors_only": "仅看问题账号"
+    "size": "实体大小",
+    "quick_actions": "快速控制指令",
+    "errors_only": "故障过滤"
   },
   "settings": {
     "title": "应用配置",
-    "subtitle": "控制面板 / 系统参数",
-    "appearance": "视觉外观",
-    "theme_mode": "界面主题模式",
-    "language": "系统语言",
-    "system_info": "系统信息",
+    "subtitle": "底层参数控制面板",
+    "appearance": "视觉偏好",
+    "theme_mode": "色彩主题",
+    "language": "语言环境",
+    "system_info": "系统层信息",
     "architecture": "架构体系",
-    "status": "运行状态"
+    "status": "版本状态",
+    "source_mapping": "源码路径映射"
   }
 }

@@ -4,9 +4,8 @@ import en from '../locales/en.json';
 
 const locales = { zh, en };
 
-// 从本地存储读取初始语言，默认使用系统语言或中文
-const savedLocale = localStorage.getItem('app-locale') || 
-  (navigator.language.startsWith('en') ? 'en' : 'zh');
+// 默认优先使用中文
+const savedLocale = localStorage.getItem('app-locale') || 'zh';
 
 export const locale = writable(savedLocale);
 
