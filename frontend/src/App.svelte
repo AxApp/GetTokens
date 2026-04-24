@@ -36,18 +36,17 @@
   });
 </script>
 
-<div class="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]" data-collaboration-id="MAIN_FRAME">
+<div class="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]">
   <Sidebar bind:activePage {version} />
 
-  <main class="flex-1 bg-[var(--bg-surface)] overflow-auto p-12">
-    <div class="max-w-6xl mx-auto h-full">
-      {#if activePage === 'status'}
-        <StatusPage {sidecarStatus} {version} />
-      {:else if activePage === 'accounts'}
-        <AccountsPage {sidecarStatus} />
-      {:else if activePage === 'settings'}
-        <SettingsPage />
-      {/if}
-    </div>
+  <!-- 现在 main 标签不再带 Padding，作为透明的路由容器 -->
+  <main class="flex-1 bg-[var(--bg-surface)] overflow-hidden">
+    {#if activePage === 'status'}
+      <StatusPage {sidecarStatus} {version} />
+    {:else if activePage === 'accounts'}
+      <AccountsPage {sidecarStatus} />
+    {:else if activePage === 'settings'}
+      <SettingsPage />
+    {/if}
   </main>
 </div>
