@@ -11,7 +11,9 @@
     "cancel": "Cancel",
     "search": "Search",
     "type": "Type",
-    "status": "Status"
+    "status": "Status",
+    "confirm_delete": "Delete this record?",
+    "loading": "Loading..."
   },
   "nav": {
     "status": "STATUS",
@@ -45,6 +47,7 @@
     "language": "System Language",
     "system_info": "System Information",
     "architecture": "Architecture",
-    "status": "Status"
+    "status": "Status",
+    "source_mapping": "Source Mapping"
   }
 }
