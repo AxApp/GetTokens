@@ -1,4 +1,6 @@
 docs-*/
+!docs-linhay/
+!docs-linhay/**
 build/
 
 frontend/dist
