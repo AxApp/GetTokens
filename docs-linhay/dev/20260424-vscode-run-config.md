@@ -8,6 +8,7 @@
 
 1. 新增仓库脚本 `scripts/wails-cli.sh`
    - 优先使用全局 `wails`
+   - 若 VS Code 终端的 `PATH` 没包含 Wails，则自动探测 `~/go/bin/wails`、`/opt/homebrew/bin/wails`、`/usr/local/bin/wails`
    - 若本机未安装全局 `wails`，则回退到 `go run github.com/wailsapp/wails/v2/cmd/wails@v2.12.0`
 2. 新增 `.vscode/tasks.json`
    - `GetTokens: Run App` 对应 `wails dev`
@@ -28,3 +29,4 @@
 - 当前项目的稳定启动入口是 `wails dev`，不是直接 `go run main.go`
 - `go run main.go` 不能替代 Wails CLI，因为它不会按 Wails 开发流程启动前端 dev server 与桌面壳
 - 若首次 fallback 到 `go run github.com/wailsapp/wails/v2/cmd/wails@v2.12.0`，可能会有一次依赖拉取耗时
+- 若终端无外网但本机已经有 `~/go/bin/wails`，脚本会直接复用本地 CLI，不再访问 `proxy.golang.org`
