@@ -1,5 +1,6 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
+  import { t } from '../../lib/i18n';
   import { GetAuthFileModels, DownloadAuthFile } from '../../../wailsjs/go/main/App';
 
   export let account;
@@ -12,13 +13,13 @@
   let verifyResult = '';
   let verifying = false;
 
-  const DETAIL_FIELDS = [
-    ['类型', account.type || '—'],
-    ['Provider', account.provider || '—'],
-    ['大小', account.size ? `${account.size} bytes` : '—'],
-    ['状态', account.status || '—'],
-    ['已禁用', account.disabled ? '是' : '否'],
-    ['刷新时间', account.lastRefresh ? new Date(account.lastRefresh).toLocaleTimeString() : '—'],
+  $: DETAIL_FIELDS = [
+    [$t('common.type'), account.type || '—'],
+    [$t('accounts.provider'), account.provider || '—'],
+    [$t('accounts.size'), account.size ? `${account.size} B` : '—'],
+    [$t('common.status'), account.status || '—'],
+    [$t('common.enable'), account.disabled ? 'NO' : 'YES'],
+    ['REFRESH', account.lastRefresh ? new Date(account.lastRefresh).toLocaleTimeString() : '—'],
   ];
 
   async function loadData() {
@@ -26,124 +27,120 @@
     try {
       const res = await GetAuthFileModels(account.name);
       models = res || [];
-    } catch (e) {
-      console.error(e);
-    } finally {
-      loadingModels = false;
-    }
+    } catch (e) { console.error(e); } finally { loadingModels = false; }
 
     loadingRaw = true;
     try {
       const res = await DownloadAuthFile(account.name);
       const binary = atob(res.contentBase64);
       rawContent = new TextDecoder().decode(Uint8Array.from(binary, c => c.charCodeAt(0)));
-      try {
-        rawContent = JSON.stringify(JSON.parse(rawContent), null, 2);
-      } catch {}
-    } catch (e) {
-      rawContent = '读取失败: ' + e.message;
-    } finally {
-      loadingRaw = false;
-    }
+      try { rawContent = JSON.stringify(JSON.parse(rawContent), null, 2); } catch {}
+    } catch (e) { rawContent = 'READ_ERROR: ' + e.message; } finally { loadingRaw = false; }
   }
 
   async function verify() {
     verifying = true;
-    verifyResult = '验证中...';
+    verifyResult = 'VERIFYING...';
     try {
       await GetAuthFileModels(account.name);
-      verifyResult = '✓ 账号可用';
-    } catch (e) {
-      verifyResult = '✗ 验证失败';
-    } finally {
-      verifying = false;
-    }
+      verifyResult = '✓ VALID';
+    } catch (e) { verifyResult = '✗ FAILED'; } finally { verifying = false; }
   }
 
   onMount(loadData);
 </script>
 
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" on:click={() => dispatch('close')}>
-  <div class="bg-[#111114] border border-[#27272a] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" on:click|stopPropagation>
-    <!-- Header -->
-    <header class="px-6 py-3 border-b border-[#27272a] flex items-center justify-between bg-[#16161a]">
-      <div>
-        <div class="text-[9px] uppercase tracking-widest text-zinc-500 font-bold mb-0.5">账号详情</div>
-        <h3 class="text-sm font-semibold text-zinc-200 truncate max-w-[400px]">{account.name}</h3>
+<!-- Backdrop with Industrial Blur -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-8 bg-black/80 backdrop-blur-sm" on:click={() => dispatch('close')}>
+  <div 
+    class="bg-[var(--bg-main)] border-2 border-[var(--border-color)] w-full max-w-2xl max-h-[90vh] flex flex-col shadow-hard shadow-[var(--shadow-color)]" 
+    on:click|stopPropagation
+  >
+    <!-- Header: Rigid & Bold -->
+    <header class="px-6 py-4 border-b-2 border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-main)]">
+      <div class="flex flex-col">
+        <div class="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Object_Inspection</div>
+        <h3 class="text-sm font-black italic uppercase tracking-tighter text-[var(--text-primary)] truncate max-w-[450px]">
+          {account.name}
+        </h3>
       </div>
-      <button on:click={() => dispatch('close')} class="text-zinc-500 hover:text-zinc-200 transition-colors p-1">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      <button on:click={() => dispatch('close')} class="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </header>
 
-    <!-- Body -->
-    <div class="flex-1 overflow-y-auto p-5 space-y-5">
-      <!-- Compact Grid Info -->
-      <div class="grid grid-cols-3 gap-x-6 gap-y-3 bg-[#16161a] p-3 rounded-xl border border-[#27272a]">
+    <!-- Body: Data Intensive Grid -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-8 selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]">
+      
+      <!-- Metrics Grid -->
+      <div class="grid grid-cols-3 gap-y-6 border-b-2 border-[var(--border-color)] border-dashed pb-8">
         {#each DETAIL_FIELDS as [label, value]}
-          <div class="space-y-0.5">
-            <div class="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">{label}</div>
-            <div class="text-xs text-zinc-300 font-medium truncate">{value}</div>
+          <div class="space-y-1">
+            <div class="text-[9px] font-black text-[var(--text-muted)] uppercase italic">{label}</div>
+            <div class="text-[11px] font-black text-[var(--text-primary)] uppercase truncate">{value}</div>
           </div>
         {/each}
       </div>
 
-      <!-- Models & Raw Content Row -->
-      <div class="grid grid-cols-1 gap-5">
-        <!-- Models -->
-        <section>
-          <div class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mb-2 flex items-center justify-between">
-            <span>支持模型</span>
-            {#if loadingModels}
-              <span class="animate-pulse text-zinc-600">加载中...</span>
-            {/if}
+      <!-- Models Section -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
+            <span class="w-2 h-2 bg-[var(--border-color)]"></span>
+            COMPATIBLE_MODELS
           </div>
-          <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1">
-            {#if models.length > 0}
-              {#each models as model}
-                <span class="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-medium">
-                  {model.display_name || model.id || model.name}
-                </span>
-              {/each}
-            {:else if !loadingModels}
-              <div class="text-xs text-zinc-600 italic">暂无模型信息</div>
-            {/if}
-          </div>
-        </section>
+          {#if loadingModels}
+            <span class="text-[9px] font-black animate-pulse">LOADING...</span>
+          {/if}
+        </div>
+        <div class="flex flex-wrap gap-2 max-h-24 overflow-y-auto pr-2">
+          {#if models.length > 0}
+            {#each models as model}
+              <span class="px-2 py-0.5 border border-[var(--border-color)] text-[10px] font-black italic uppercase bg-[var(--bg-surface)]">
+                {model.display_name || model.id || model.name}
+              </span>
+            {/each}
+          {:else if !loadingModels}
+            <div class="text-[10px] font-bold text-[var(--text-muted)] italic">NO_DATA_AVAILABLE</div>
+          {/if}
+        </div>
+      </section>
 
-        <!-- Raw Content - Increased priority/visibility -->
-        <section class="flex flex-col flex-1">
-          <div class="flex items-center justify-between mb-2">
-            <div class="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">原始文件内容</div>
-            {#if loadingRaw}
-              <div class="text-[9px] text-zinc-600 italic animate-pulse">读取中...</div>
-            {/if}
+      <!-- Source Content -->
+      <section class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest flex items-center gap-2">
+            <span class="w-2 h-2 bg-[var(--border-color)]"></span>
+            RAW_SOURCE_DAT
           </div>
-          <div class="bg-[#0d0d0f] border border-[#27272a] rounded-lg p-3 font-mono text-[10px] leading-snug text-zinc-400 overflow-auto max-h-[300px] whitespace-pre">
-            {rawContent}
-          </div>
-        </section>
-      </div>
+          {#if loadingRaw}
+            <span class="text-[9px] font-black animate-pulse text-[var(--text-muted)]">FETCHING_FS...</span>
+          {/if}
+        </div>
+        <div class="bg-[var(--bg-main)] border-2 border-[var(--border-color)] p-4 font-mono text-[10px] leading-relaxed text-[var(--text-primary)] overflow-auto max-h-[300px] whitespace-pre shadow-inner">
+          {rawContent}
+        </div>
+      </section>
     </div>
 
-    <!-- Footer -->
-    <footer class="px-6 py-3 border-t border-[#27272a] flex items-center justify-between bg-[#16161a]">
-      <div class="flex items-center gap-3">
+    <!-- Footer: Controlled Action Area -->
+    <footer class="px-6 py-4 border-t-2 border-[var(--border-color)] flex items-center justify-between bg-[var(--bg-surface)]">
+      <div class="flex items-center gap-4">
         <button 
           on:click={verify}
           disabled={verifying}
-          class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-medium transition-colors"
+          class="btn-swiss bg-[var(--border-color)] !text-[var(--bg-main)]"
         >
-          验证账号
+          {verifying ? 'VERIFYING...' : 'VERIFY_ACCOUNT'}
         </button>
         {#if verifyResult}
-          <span class="text-xs {verifyResult.startsWith('✓') ? 'text-green-500' : 'text-red-500'} font-medium">
+          <span class="text-[10px] font-black italic {verifyResult.includes('✓') ? 'text-green-600' : 'text-red-600'}">
             {verifyResult}
           </span>
         {/if}
       </div>
-      <button on:click={() => dispatch('close')} class="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg text-xs transition-colors">
-        关闭
+      <button on:click={() => dispatch('close')} class="btn-swiss">
+        {$t('common.close')}
       </button>
     </footer>
   </div>

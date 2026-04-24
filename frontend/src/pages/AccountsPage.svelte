@@ -70,8 +70,6 @@
           <option value="all">ALL</option>
           {#each types as type}
             <option value={type}>{type.toUpperCase()}</option>
-          {#each types as type}
-            <option value={type}>{type.toUpperCase()}</option>
           {/each}
         </select>
       </div>
