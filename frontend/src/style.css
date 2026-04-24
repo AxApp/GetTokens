@@ -5,20 +5,20 @@
 @layer base {
   :root {
     --bg-main: #ffffff;
-    --bg-surface: #f0f0f0;
+    --bg-surface: #f9f9f9;
     --border-color: #000000;
     --text-primary: #000000;
-    --text-muted: #525252;
+    --text-muted: #666666;
     --shadow-color: #e5e5e5;
   }
 
   .dark {
     --bg-main: #000000;
-    --bg-surface: #121212;
+    --bg-surface: #111111; /* 稍微亮一点，区别于纯黑背景 */
     --border-color: #ffffff;
     --text-primary: #ffffff;
-    --text-muted: #a3a3a3;
-    --shadow-color: #262626;
+    --text-muted: #888888;
+    --shadow-color: #222222;
   }
 
   body {
@@ -28,7 +28,6 @@
 }
 
 @layer components {
-  /* 瑞士军刀风格按钮 - 手动定义所有属性以避免 tailwind config 识别问题 */
   .btn-swiss {
     display: flex;
     align-items: center;
@@ -58,7 +57,6 @@
     box-shadow: none;
   }
 
-  /* 紧凑卡片 */
   .card-swiss {
     border: 2px solid var(--border-color);
     border-radius: 0px;
@@ -67,7 +65,6 @@
     box-shadow: 4px 4px 0px 0px var(--shadow-color);
   }
 
-  /* 输入框 */
   .input-swiss {
     padding: 0.5rem 0.75rem;
     border: 2px solid var(--border-color);
@@ -75,16 +72,9 @@
     background-color: var(--bg-main);
     color: var(--text-primary);
     font-size: 0.875rem;
-    transition: background-color 200ms;
-  }
-
-  .input-swiss:focus {
-    outline: none;
-    background-color: var(--bg-surface);
   }
 }
 
-/* Custom scrollbar - Rigid style */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background-color: var(--bg-main); }
 ::-webkit-scrollbar-thumb { 

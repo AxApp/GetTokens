@@ -8,7 +8,7 @@
   import { GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
 
   let activePage = 'accounts';
-  let sidecarStatus = { code: 'ready', port: 0 };
+  let sidecarStatus = { code: 'stopped', port: 0 };
   let version = 'dev';
 
   function updateTheme(mode) {
@@ -19,9 +19,6 @@
   $: updateTheme($themeMode);
 
   onMount(async () => {
-    // 强制打印到 Go 终端
-    if (window.runtime) window.runtime.LogInfo('!!! APP_SVELTE_MOUNTED !!!');
-    
     try {
       version = await GetVersion();
       const s = await GetSidecarStatus();
