@@ -20,7 +20,7 @@
     try {
       const res = await ListAuthFiles();
       accounts = res.files || [];
-    } catch (e) { console.error(e); } finally { loading = false; }
+    } catch (e) { console.error('LOAD_ERROR:', e); } finally { loading = false; }
   }
 
   $: filteredAccounts = accounts.filter(acc => {
@@ -40,23 +40,23 @@
   }
 
   async function deleteAccount(name) {
-    if (!confirm(`${$t('common.delete')} ${name}?`)) return;
+    if (!confirm(`CONFIRM_DELETE: ${name}?`)) return;
     try {
       await DeleteAuthFiles([name]);
       selectedNames.delete(name);
       selectedNames = selectedNames;
       await loadAccounts();
-    } catch (e) { alert('DELETE FAILED: ' + e); }
+    } catch (e) { alert('DELETE_FAILED: ' + e); }
   }
 
   async function deleteSelected() {
     if (selectedNames.size === 0) return;
-    if (!confirm(`${$t('common.delete')} ${selectedNames.size} ITEMS?`)) return;
+    if (!confirm(`CONFIRM_DELETE: ${selectedNames.size} ITEMS?`)) return;
     try {
       await DeleteAuthFiles(Array.from(selectedNames));
       selectedNames = new Set();
       await loadAccounts();
-    } catch (e) { alert('DELETE FAILED: ' + e); }
+    } catch (e) { alert('DELETE_FAILED: ' + e); }
   }
 
   function handleSelect(name, checked) {
@@ -69,10 +69,10 @@
 </script>
 
 <div class="h-full w-full p-12 overflow-auto" data-collaboration-id="PAGE_ACCOUNTS">
-  <div class="max-w-6xl mx-auto space-y-8">
+  <div class="max-w-6xl mx-auto space-y-8 pb-32">
     <header class="flex items-end justify-between border-b-4 border-[var(--border-color)] pb-4">
       <div>
-        <h2 class="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">{$t('accounts.title')}</h2>
+        <h2 class="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">Inventory</h2>
         <p class="text-[10px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-widest">{$t('accounts.subtitle')} / {filteredAccounts.length} TOTAL</p>
       </div>
       <div class="flex gap-4">
@@ -81,63 +81,56 @@
       </div>
     </header>
 
+    <!-- Toolbar -->
     <div class="flex flex-wrap gap-6 items-center bg-[var(--bg-main)] border-2 border-[var(--border-color)] p-4 shadow-hard shadow-[var(--shadow-color)]">
       <div class="flex-1 min-w-[300px] flex items-center gap-3">
-        <span class="text-[10px] font-black uppercase">{$t('common.search')}:</span>
+        <span class="text-[10px] font-black uppercase">Search:</span>
         <input bind:value={searchTerm} type="text" class="input-swiss flex-1 uppercase" placeholder="NAME / PROVIDER..." />
       </div>
-      <div class="flex items-center gap-3 border-l-2 border-[var(--border-color)] pl-6 h-10">
-        <span class="text-[10px] font-black uppercase">{$t('common.type')}:</span>
-        <select bind:value={typeFilter} class="input-swiss !py-1">
-          <option value="all">ALL</option>
-          {#each types as type}
-            <option value={type}>{type.toUpperCase()}</option>
-          {/each}
-        </select>
-      </div>
-      <label class="flex items-center gap-2 cursor-pointer border-l-2 border-[var(--border-color)] pl-6 h-10 group">
-        <input type="checkbox" bind:checked={onlyProblem} class="w-4 h-4 border-2 border-[var(--border-color)] rounded-none bg-[var(--bg-main)] text-[var(--border-color)] focus:ring-0" />
-        <span class="text-[10px] font-black uppercase group-hover:underline">{$t('accounts.errors_only')}</span>
-      </label>
-      
       {#if selectedNames.size > 0}
-        <button on:click={deleteSelected} class="btn-swiss !text-red-500 border-red-500 ml-auto !py-1 !px-3 shadow-hard-sm hover:shadow-hard transition-all active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
-          {$t('common.delete')} ({selectedNames.size})
+        <button on:click={deleteSelected} class="btn-swiss !text-red-500 border-red-500 !py-1 !px-3 shadow-hard-sm">
+          DELETE_SELECTED ({selectedNames.size})
         </button>
       {/if}
     </div>
 
+    <!-- Grid -->
     {#if filteredAccounts.length === 0}
       <div class="border-2 border-dashed border-[var(--border-color)] p-20 text-center uppercase font-black italic text-[var(--text-muted)]">
-        {$t('accounts.empty')}
+        NO_RECORDS_FOUND
       </div>
     {:else}
-      <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6 pb-20">
-        {#each filteredAccounts as acc}
-          <div class="card-swiss group relative overflow-hidden">
-            <div class="flex items-start justify-between mb-6">
-              <div class="flex gap-3">
-                <input type="checkbox" checked={selectedNames.has(acc.name)} on:change={(e) => handleSelect(acc.name, e.target.checked)} class="mt-1 w-4 h-4 border-2 border-[var(--border-color)] rounded-none bg-[var(--bg-main)] text-[var(--border-color)] focus:ring-0" />
-                <div>
-                  <h3 class="font-black text-sm break-all uppercase leading-none text-[var(--text-primary)]">{acc.name}</h3>
-                  <div class="text-[9px] font-bold text-[var(--text-muted)] mt-2 uppercase tracking-tighter bg-[var(--bg-surface)] px-1.5 py-0.5 inline-block border border-[var(--border-color)]">
+      <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-8">
+        {#each filteredAccounts as acc (acc.name)}
+          <div class="card-swiss bg-[var(--bg-main)] flex flex-col h-full relative group hover:translate-x-[-2px] hover:translate-y-[-2px] transition-transform">
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex gap-3 overflow-hidden">
+                <input type="checkbox" checked={selectedNames.has(acc.name)} on:change={(e) => handleSelect(acc.name, e.target.checked)} class="mt-1 w-4 h-4 border-2 border-[var(--border-color)] rounded-none bg-[var(--bg-main)] text-[var(--border-color)] focus:ring-0 cursor-pointer" />
+                <div class="overflow-hidden">
+                  <h3 class="font-black text-sm break-all uppercase leading-tight text-[var(--text-primary)]">{acc.name}</h3>
+                  <div class="text-[9px] font-bold text-[var(--text-muted)] mt-1 uppercase tracking-tighter bg-[var(--bg-surface)] px-1.5 py-0.5 inline-block border border-[var(--border-color)]">
                     {acc.type || 'unknown'}
                   </div>
                 </div>
               </div>
             </div>
-            <div class="space-y-1.5 border-t-2 border-[var(--border-color)] pt-4 mt-auto text-[10px] font-bold uppercase italic">
-              <div class="flex justify-between"><span class="text-[var(--text-muted)]">{$t('accounts.provider')}</span><span class="text-[var(--text-primary)]">{acc.provider || 'generic'}</span></div>
-              <div class="flex justify-between"><span class="text-[var(--text-muted)]">{$t('accounts.size')}</span><span class="text-[var(--text-primary)]">{acc.size || 0} B</span></div>
-              <div class="flex justify-between pt-2"><span class="text-[var(--text-muted)]">{$t('common.status')}</span><span class={acc.disabled ? 'text-zinc-500' : 'text-green-600'}>{acc.disabled ? 'DIS' : 'ACT'}</span></div>
+
+            <div class="my-4 space-y-1 text-[9px] font-bold uppercase italic border-t-2 border-[var(--border-color)] border-dashed pt-4">
+              <div class="flex justify-between"><span class="text-[var(--text-muted)]">Provider</span><span class="text-[var(--text-primary)] truncate ml-4">{acc.provider || '—'}</span></div>
+              <div class="flex justify-between"><span class="text-[var(--text-muted)]">Status</span><span class={acc.disabled ? 'text-zinc-500' : 'text-green-600'}>{acc.disabled ? 'DISABLED' : 'ACTIVE'}</span></div>
             </div>
-            
-            <!-- Hover Actions Overlay -->
-            <div class="absolute inset-0 bg-[var(--bg-main)] border-2 border-[var(--border-color)] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col p-4 gap-2">
-              <div class="text-[9px] font-black uppercase mb-auto border-b border-[var(--border-color)] pb-1">{$t('accounts.quick_actions')}</div>
-              <button on:click={() => toggleStatus(acc.name, acc.disabled)} class="btn-swiss !shadow-hard-sm uppercase">{acc.disabled ? $t('common.enable') : $t('common.disable')}</button>
-              <button on:click={() => selectedAccount = acc} class="btn-swiss !shadow-hard-sm uppercase">{$t('common.details')}</button>
-              <button on:click={() => deleteAccount(acc.name)} class="btn-swiss !text-red-500 !shadow-hard-sm uppercase">{$t('common.delete')}</button>
+
+            <!-- 常驻操作按钮，移除 Hover Overlay -->
+            <div class="grid grid-cols-2 gap-2 mt-auto">
+              <button on:click={() => toggleStatus(acc.name, acc.disabled)} class="btn-swiss !py-1 !text-[9px] !shadow-hard-sm">
+                {acc.disabled ? 'ENABLE' : 'DISABLE'}
+              </button>
+              <button on:click={() => selectedAccount = acc} class="btn-swiss !py-1 !text-[9px] !shadow-hard-sm">
+                DETAILS
+              </button>
+              <button on:click={() => deleteAccount(acc.name)} class="btn-swiss !py-1 !text-[9px] !shadow-hard-sm !text-red-500 col-span-2">
+                DELETE_RECORD
+              </button>
             </div>
           </div>
         {/each}
