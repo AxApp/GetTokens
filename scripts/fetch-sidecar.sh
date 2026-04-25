@@ -38,7 +38,7 @@ fi
 if [[ "$VERSION" == "latest" ]]; then
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     VERSION=$(curl "${curl_args[@]}" "https://api.github.com/repos/${REPO}/releases/latest" \
-      | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+      | python3 -c 'import json, sys; print(json.load(sys.stdin)["tag_name"])')
   else
     VERSION=$(curl --retry 5 --retry-delay 2 --retry-all-errors -fsSIL -o /dev/null -w '%{url_effective}' \
       "https://github.com/${REPO}/releases/latest")
