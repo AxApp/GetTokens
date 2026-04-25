@@ -87,3 +87,23 @@ func TestNeedsAuthFileMetadataInference(t *testing.T) {
 		})
 	}
 }
+
+func TestUniqueAuthFileUploadName(t *testing.T) {
+	existing := map[string]struct{}{
+		"auth.json": {},
+	}
+
+	first := uniqueAuthFileUploadName("auth.json", existing)
+	second := uniqueAuthFileUploadName("auth.json", existing)
+	third := uniqueAuthFileUploadName("session", existing)
+
+	if first != "auth-2.json" {
+		t.Fatalf("unexpected first candidate: %q", first)
+	}
+	if second != "auth-3.json" {
+		t.Fatalf("unexpected second candidate: %q", second)
+	}
+	if third != "session.json" {
+		t.Fatalf("unexpected third candidate: %q", third)
+	}
+}

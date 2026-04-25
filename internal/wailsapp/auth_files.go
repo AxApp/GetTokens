@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
@@ -111,6 +112,11 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 		return errors.New("未选择文件")
 	}
 
+	existingNames, err := a.listExistingAuthFileNames()
+	if err != nil {
+		return err
+	}
+
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 
@@ -122,7 +128,8 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 		if err != nil {
 			return fmt.Errorf("文件 %s base64 解码失败: %w", f.Name, err)
 		}
-		part, err := w.CreateFormFile("file", f.Name)
+		resolvedName := uniqueAuthFileUploadName(f.Name, existingNames)
+		part, err := w.CreateFormFile("file", resolvedName)
 		if err != nil {
 			return err
 		}
@@ -135,8 +142,65 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 		return err
 	}
 
-	_, _, err := a.SidecarRequest(http.MethodPost, ManagementAPIPrefix+"/auth-files", nil, &buf, w.FormDataContentType())
+	_, _, err = a.SidecarRequest(http.MethodPost, ManagementAPIPrefix+"/auth-files", nil, &buf, w.FormDataContentType())
 	return err
+}
+
+func (a *App) listExistingAuthFileNames() (map[string]struct{}, error) {
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var result struct {
+		Files []struct {
+			Name string `json:"name"`
+		} `json:"files"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
+
+	names := make(map[string]struct{}, len(result.Files))
+	for _, file := range result.Files {
+		if trimmed := strings.TrimSpace(file.Name); trimmed != "" {
+			names[strings.ToLower(trimmed)] = struct{}{}
+		}
+	}
+	return names, nil
+}
+
+func uniqueAuthFileUploadName(name string, existing map[string]struct{}) string {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		trimmed = "auth.json"
+	}
+
+	ext := filepath.Ext(trimmed)
+	base := strings.TrimSuffix(trimmed, ext)
+	if strings.TrimSpace(ext) == "" {
+		ext = ".json"
+	}
+	if strings.TrimSpace(base) == "" {
+		base = "auth"
+	}
+
+	candidate := base + ext
+	key := strings.ToLower(candidate)
+	if _, ok := existing[key]; !ok {
+		existing[key] = struct{}{}
+		return candidate
+	}
+
+	for index := 2; ; index++ {
+		candidate = fmt.Sprintf("%s-%d%s", base, index, ext)
+		key = strings.ToLower(candidate)
+		if _, ok := existing[key]; ok {
+			continue
+		}
+		existing[key] = struct{}{}
+		return candidate
+	}
 }
 
 func (a *App) GetAuthFileModels(name string) ([]map[string]interface{}, error) {

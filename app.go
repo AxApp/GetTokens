@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/updater"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
@@ -60,6 +61,35 @@ type CodexQuotaWindow struct {
 type CodexQuotaResponse struct {
 	PlanType string             `json:"planType,omitempty"`
 	Windows  []CodexQuotaWindow `json:"windows"`
+}
+
+type AccountRecord struct {
+	ID               string      `json:"id"`
+	Provider         string      `json:"provider"`
+	CredentialSource string      `json:"credentialSource"`
+	DisplayName      string      `json:"displayName"`
+	Status           string      `json:"status"`
+	Disabled         bool        `json:"disabled,omitempty"`
+	Email            string      `json:"email,omitempty"`
+	PlanType         string      `json:"planType,omitempty"`
+	Name             string      `json:"name,omitempty"`
+	APIKey           string      `json:"apiKey,omitempty"`
+	KeyFingerprint   string      `json:"keyFingerprint,omitempty"`
+	KeySuffix        string      `json:"keySuffix,omitempty"`
+	BaseURL          string      `json:"baseUrl,omitempty"`
+	Prefix           string      `json:"prefix,omitempty"`
+	AuthIndex        interface{} `json:"authIndex,omitempty"`
+	QuotaKey         string      `json:"quotaKey,omitempty"`
+	LocalOnly        bool        `json:"localOnly,omitempty"`
+}
+
+type CreateCodexAPIKeyInput struct {
+	APIKey         string            `json:"apiKey"`
+	BaseURL        string            `json:"baseUrl"`
+	Prefix         string            `json:"prefix,omitempty"`
+	ProxyURL       string            `json:"proxyUrl,omitempty"`
+	Headers        map[string]string `json:"headers,omitempty"`
+	ExcludedModels []string          `json:"excludedModels,omitempty"`
 }
 
 func NewApp() *App {
@@ -178,4 +208,54 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 		PlanType: result.PlanType,
 		Windows:  windows,
 	}, nil
+}
+
+func (a *App) ListAccounts() ([]AccountRecord, error) {
+	result, err := a.core.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	records := make([]AccountRecord, 0, len(result))
+	for _, record := range result {
+		records = append(records, mapAccountRecord(record))
+	}
+	return records, nil
+}
+
+func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
+	return a.core.CreateCodexAPIKey(wailsapp.CreateCodexAPIKeyInput{
+		APIKey:         input.APIKey,
+		BaseURL:        input.BaseURL,
+		Prefix:         input.Prefix,
+		ProxyURL:       input.ProxyURL,
+		Headers:        input.Headers,
+		ExcludedModels: input.ExcludedModels,
+	})
+}
+
+func (a *App) DeleteCodexAPIKey(id string) error {
+	return a.core.DeleteCodexAPIKey(id)
+}
+
+func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
+	return AccountRecord{
+		ID:               record.ID,
+		Provider:         record.Provider,
+		CredentialSource: record.CredentialSource,
+		DisplayName:      record.DisplayName,
+		Status:           record.Status,
+		Disabled:         record.Disabled,
+		Email:            record.Email,
+		PlanType:         record.PlanType,
+		Name:             record.Name,
+		APIKey:           record.APIKey,
+		KeyFingerprint:   record.KeyFingerprint,
+		KeySuffix:        record.KeySuffix,
+		BaseURL:          record.BaseURL,
+		Prefix:           record.Prefix,
+		AuthIndex:        record.AuthIndex,
+		QuotaKey:         record.QuotaKey,
+		LocalOnly:        record.LocalOnly,
+	}
 }
