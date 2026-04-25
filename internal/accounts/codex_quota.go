@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -27,6 +28,27 @@ type CodexQuotaWindow struct {
 type CodexQuotaResponse struct {
 	PlanType string
 	Windows  []CodexQuotaWindow
+}
+
+type CodexQuotaRequestInfo struct {
+	ChatGPTAccountID string
+	PlanType         string
+}
+
+type CodexQuotaDebugRequest struct {
+	Method  string            `json:"method"`
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers,omitempty"`
+}
+
+type CodexQuotaDebugRecord struct {
+	Request    CodexQuotaDebugRequest `json:"request"`
+	Response   interface{}            `json:"response,omitempty"`
+	Error      string                 `json:"error,omitempty"`
+	StartedAt  time.Time              `json:"startedAt"`
+	EndedAt    time.Time              `json:"endedAt"`
+	DurationMs int64                  `json:"durationMs"`
+	StatusCode int                    `json:"statusCode,omitempty"`
 }
 
 type codexUsagePayload struct {
@@ -76,7 +98,7 @@ type codexAuthInfo struct {
 	PlanType         string
 }
 
-func GetCodexQuota(ctx context.Context, authFileBody []byte, timeout time.Duration) (*CodexQuotaResponse, error) {
+func GetCodexQuota(ctx context.Context, authFileBody []byte, timeout time.Duration, observer func(CodexQuotaDebugRecord)) (*CodexQuotaResponse, error) {
 	authFile, err := parseCodexAuthFile(authFileBody)
 	if err != nil {
 		return nil, err
@@ -97,7 +119,7 @@ func GetCodexQuota(ctx context.Context, authFileBody []byte, timeout time.Durati
 		return nil, errors.New("codex 凭证缺少 chatgpt_account_id")
 	}
 
-	payload, err := fetchCodexQuotaPayload(ctx, authFile.AccessToken, authFile.ChatGPTAccountID, timeout)
+	payload, err := fetchCodexQuotaPayload(ctx, authFile.AccessToken, authFile.ChatGPTAccountID, timeout, observer)
 	if err != nil {
 		if cachedQuota != nil {
 			return cachedQuota, nil
@@ -108,6 +130,49 @@ func GetCodexQuota(ctx context.Context, authFileBody []byte, timeout time.Durati
 	result := &CodexQuotaResponse{
 		PlanType: normalizePlanType(firstNonEmpty(payload.PlanType, payload.PlanTypeCamel, authFile.PlanType)),
 		Windows:  buildCodexQuotaWindows(payload),
+	}
+	if cachedQuota != nil {
+		if result.PlanType == "" {
+			result.PlanType = cachedQuota.PlanType
+		}
+		if len(result.Windows) == 0 {
+			result.Windows = cachedQuota.Windows
+		}
+	}
+	return result, nil
+}
+
+func ResolveCodexQuotaRequestInfo(authFileBody []byte) (*CodexQuotaRequestInfo, error) {
+	authFile, err := parseCodexAuthFile(authFileBody)
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.TrimSpace(authFile.ChatGPTAccountID) == "" {
+		return nil, errors.New("codex 凭证缺少 chatgpt_account_id")
+	}
+
+	return &CodexQuotaRequestInfo{
+		ChatGPTAccountID: authFile.ChatGPTAccountID,
+		PlanType:         authFile.PlanType,
+	}, nil
+}
+
+func BuildCodexQuotaResponse(authFileBody []byte, usagePayloadBody []byte) (*CodexQuotaResponse, error) {
+	authFile, err := parseCodexAuthFile(authFileBody)
+	if err != nil {
+		return nil, err
+	}
+
+	var payload codexUsagePayload
+	if err := json.Unmarshal(usagePayloadBody, &payload); err != nil {
+		return nil, fmt.Errorf("codex 额度响应解析失败: %w", err)
+	}
+
+	cachedQuota := parseCachedCodexQuota(authFileBody)
+	result := &CodexQuotaResponse{
+		PlanType: normalizePlanType(firstNonEmpty(payload.PlanType, payload.PlanTypeCamel, authFile.PlanType)),
+		Windows:  buildCodexQuotaWindows(&payload),
 	}
 	if cachedQuota != nil {
 		if result.PlanType == "" {
@@ -134,13 +199,20 @@ func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
 	attributesToken := nestedMap(attributes, "token")
 
 	accessToken := firstNonEmpty(
-		stringValue(payload, "access_token"),
-		stringValue(metadata, "access_token"),
-		stringValue(attributes, "access_token"),
-		stringValue(rootToken, "access_token"),
 		stringValue(tokens, "access_token"),
+		stringValue(tokens, "accessToken"),
+		stringValue(payload, "access_token"),
+		stringValue(payload, "accessToken"),
+		stringValue(metadata, "access_token"),
+		stringValue(metadata, "accessToken"),
+		stringValue(attributes, "access_token"),
+		stringValue(attributes, "accessToken"),
+		stringValue(rootToken, "access_token"),
+		stringValue(rootToken, "accessToken"),
 		stringValue(metadataToken, "access_token"),
+		stringValue(metadataToken, "accessToken"),
 		stringValue(attributesToken, "access_token"),
+		stringValue(attributesToken, "accessToken"),
 	)
 
 	idTokenRaw := firstNonEmpty(
@@ -154,6 +226,9 @@ func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
 	openAIAuthClaims := nestedMap(idClaims, "https://api.openai.com/auth")
 	chatgptAccountID := firstNonEmpty(
 		stringValue(tokens, "account_id"),
+		stringValue(tokens, "accountId"),
+		stringValue(payload, "account_id"),
+		stringValue(payload, "accountId"),
 		stringValue(idClaims, "chatgpt_account_id"),
 		stringValue(idClaims, "chatgptAccountId"),
 		stringValue(openAIAuthClaims, "chatgpt_account_id"),
@@ -180,34 +255,147 @@ func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
 	}, nil
 }
 
-func fetchCodexQuotaPayload(ctx context.Context, accessToken string, accountID string, timeout time.Duration) (*codexUsagePayload, error) {
+func fetchCodexQuotaPayload(ctx context.Context, accessToken string, accountID string, timeout time.Duration, observer func(CodexQuotaDebugRecord)) (*codexUsagePayload, error) {
+	startedAt := time.Now()
 	req, err := http.NewRequestWithContext(ctxOrBackground(ctx), http.MethodGet, codexUsageURL, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+accessToken)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "codex_cli_rs/0.76.0 (Debian 13.0.0; x86_64) WindowsTerminal")
-	req.Header.Set("Chatgpt-Account-Id", accountID)
+	requestHeaders := codexQuotaRequestHeaders(accessToken, accountID)
+	for key, value := range requestHeaders {
+		req.Header.Set(key, value)
+	}
 
 	client := &http.Client{Timeout: timeout}
 	resp, err := client.Do(req)
 	if err != nil {
+		emitCodexQuotaDebugRecord(observer, CodexQuotaDebugRecord{
+			Request: CodexQuotaDebugRequest{
+				Method:  http.MethodGet,
+				URL:     codexUsageURL,
+				Headers: redactCodexQuotaHeaders(requestHeaders),
+			},
+			Error:      err.Error(),
+			StartedAt:  startedAt,
+			EndedAt:    time.Now(),
+			DurationMs: time.Since(startedAt).Milliseconds(),
+		})
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		emitCodexQuotaDebugRecord(observer, CodexQuotaDebugRecord{
+			Request: CodexQuotaDebugRequest{
+				Method:  http.MethodGet,
+				URL:     codexUsageURL,
+				Headers: redactCodexQuotaHeaders(requestHeaders),
+			},
+			Error:      err.Error(),
+			StartedAt:  startedAt,
+			EndedAt:    time.Now(),
+			DurationMs: time.Since(startedAt).Milliseconds(),
+			StatusCode: resp.StatusCode,
+		})
+		return nil, err
+	}
+
+	responsePayload := parseCodexQuotaDebugResponse(responseBody)
+
 	var payload codexUsagePayload
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+	if err := json.Unmarshal(responseBody, &payload); err != nil {
+		emitCodexQuotaDebugRecord(observer, CodexQuotaDebugRecord{
+			Request: CodexQuotaDebugRequest{
+				Method:  http.MethodGet,
+				URL:     codexUsageURL,
+				Headers: redactCodexQuotaHeaders(requestHeaders),
+			},
+			Response:   responsePayload,
+			Error:      fmt.Sprintf("codex 额度响应解析失败: %v", err),
+			StartedAt:  startedAt,
+			EndedAt:    time.Now(),
+			DurationMs: time.Since(startedAt).Milliseconds(),
+			StatusCode: resp.StatusCode,
+		})
 		return nil, fmt.Errorf("codex 额度响应解析失败: %w", err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		emitCodexQuotaDebugRecord(observer, CodexQuotaDebugRecord{
+			Request: CodexQuotaDebugRequest{
+				Method:  http.MethodGet,
+				URL:     codexUsageURL,
+				Headers: redactCodexQuotaHeaders(requestHeaders),
+			},
+			Response:   responsePayload,
+			Error:      fmt.Sprintf("codex 额度请求失败 (%d)", resp.StatusCode),
+			StartedAt:  startedAt,
+			EndedAt:    time.Now(),
+			DurationMs: time.Since(startedAt).Milliseconds(),
+			StatusCode: resp.StatusCode,
+		})
 		return nil, fmt.Errorf("codex 额度请求失败 (%d)", resp.StatusCode)
 	}
 
+	emitCodexQuotaDebugRecord(observer, CodexQuotaDebugRecord{
+		Request: CodexQuotaDebugRequest{
+			Method:  http.MethodGet,
+			URL:     codexUsageURL,
+			Headers: redactCodexQuotaHeaders(requestHeaders),
+		},
+		Response:   responsePayload,
+		StartedAt:  startedAt,
+		EndedAt:    time.Now(),
+		DurationMs: time.Since(startedAt).Milliseconds(),
+		StatusCode: resp.StatusCode,
+	})
+
 	return &payload, nil
+}
+
+func codexQuotaRequestHeaders(accessToken string, accountID string) map[string]string {
+	return map[string]string{
+		"Authorization":      "Bearer " + accessToken,
+		"chatgpt-account-id": accountID,
+		"Accept":             "application/json",
+	}
+}
+
+func redactCodexQuotaHeaders(headers map[string]string) map[string]string {
+	if len(headers) == 0 {
+		return nil
+	}
+	result := make(map[string]string, len(headers))
+	for key, value := range headers {
+		if strings.EqualFold(key, "Authorization") {
+			result[key] = "Bearer <redacted>"
+			continue
+		}
+		result[key] = value
+	}
+	return result
+}
+
+func parseCodexQuotaDebugResponse(body []byte) interface{} {
+	trimmed := strings.TrimSpace(string(body))
+	if trimmed == "" {
+		return ""
+	}
+
+	var payload interface{}
+	if err := json.Unmarshal(body, &payload); err == nil {
+		return payload
+	}
+	return trimmed
+}
+
+func emitCodexQuotaDebugRecord(observer func(CodexQuotaDebugRecord), record CodexQuotaDebugRecord) {
+	if observer == nil {
+		return
+	}
+	observer(record)
 }
 
 func buildCodexQuotaWindows(payload *codexUsagePayload) []CodexQuotaWindow {
@@ -222,10 +410,10 @@ func buildCodexQuotaWindows(payload *codexUsagePayload) []CodexQuotaWindow {
 		limitReached := boolPtrValue(infoLimitReached(info))
 		allowed := infoAllowedValue(info)
 
-		if window := newCodexQuotaWindow(prefix+"-five-hour", labelFive, fiveHourWindow, limitReached, allowed); window != nil {
+		if window := newCodexQuotaWindow(quotaWindowID(prefix, "five-hour"), labelFive, fiveHourWindow, limitReached, allowed); window != nil {
 			windows = append(windows, *window)
 		}
-		if window := newCodexQuotaWindow(prefix+"-weekly", labelWeekly, weeklyWindow, limitReached, allowed); window != nil {
+		if window := newCodexQuotaWindow(quotaWindowID(prefix, "weekly"), labelWeekly, weeklyWindow, limitReached, allowed); window != nil {
 			windows = append(windows, *window)
 		}
 	}
@@ -247,6 +435,13 @@ func buildCodexQuotaWindows(payload *codexUsagePayload) []CodexQuotaWindow {
 	}
 
 	return windows
+}
+
+func quotaWindowID(prefix string, suffix string) string {
+	if strings.TrimSpace(prefix) == "" {
+		return suffix
+	}
+	return prefix + "-" + suffix
 }
 
 func newCodexQuotaWindow(id string, label string, window *codexUsageWindow, limitReached bool, allowed *bool) *CodexQuotaWindow {
