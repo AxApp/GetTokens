@@ -12,12 +12,14 @@ type App struct {
 	sidecar *sidecar.Manager
 	updater *updater.Updater
 	version string
+	releaseLabel string
 }
 
-func New(version string, repo string) *App {
+func New(version string, releaseLabel string, repo string) *App {
 	return &App{
 		sidecar: sidecar.NewManager(),
 		updater: updater.New(repo, version),
 		version: version,
+		releaseLabel: releaseLabel,
 	}
 }

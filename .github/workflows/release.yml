@@ -117,13 +117,18 @@ jobs:
           sudo apt-get update -y
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
 
+      - name: Compute release label
+        shell: bash
+        run: |
+          echo "RELEASE_LABEL=$(TZ=Asia/Shanghai date +'%Y.%m.%d.%H')" >> "$GITHUB_ENV"
+
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Wails build
         run: |
           wails build \
             -platform ${{ matrix.wails-platform }} \
             ${{ matrix.wails-extra || '' }} \
-            -ldflags "-X main.Version=${{ github.ref_name }}"
+            -ldflags "-X main.Version=${{ github.ref_name }} -X main.ReleaseLabel=${RELEASE_LABEL}"
 
       # ── Package ───────────────────────────────────────────────────────────
       - name: Package DMG (macOS)

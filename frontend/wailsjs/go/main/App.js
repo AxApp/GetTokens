@@ -34,6 +34,10 @@ export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
 }
 
+export function GetReleaseLabel() {
+  return window['go']['main']['App']['GetReleaseLabel']();
+}
+
 export function GetSidecarStatus() {
   return window['go']['main']['App']['GetSidecarStatus']();
 }

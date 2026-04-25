@@ -12,6 +12,9 @@ import (
 // Version is injected at build time via -ldflags
 var Version = "dev"
 
+// ReleaseLabel is injected at build time for UI display, format: YYYY.MM.DD.HH
+var ReleaseLabel = ""
+
 // GitHubRepo is the repository used for auto-update checks
 const GitHubRepo = "linhay/GetTokens"
 
@@ -94,7 +97,7 @@ type CreateCodexAPIKeyInput struct {
 
 func NewApp() *App {
 	return &App{
-		core: wailsapp.New(Version, GitHubRepo),
+		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
 	}
 }
 
@@ -114,6 +117,10 @@ func (a *App) GetVersion() string {
 	return a.core.GetVersion()
 }
 
+
+func (a *App) GetReleaseLabel() string {
+	return a.core.GetReleaseLabel()
+}
 func (a *App) CheckUpdate() (*updater.ReleaseInfo, error) {
 	return a.core.CheckUpdate()
 }

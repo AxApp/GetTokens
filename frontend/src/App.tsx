@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
+import { GetReleaseLabel, GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
 import AccountsPage from './pages/AccountsPage';
@@ -24,6 +24,7 @@ function AppShell() {
   const [activePage, setActivePage] = useState<AppPage>('accounts');
   const [sidecarStatus, setSidecarStatus] = useState<SidecarStatus>(defaultSidecarStatus);
   const [version, setVersion] = useState('dev');
+  const [releaseLabel, setReleaseLabel] = useState('');
 
   useEffect(() => {
     const isDark =
@@ -37,12 +38,14 @@ function AppShell() {
 
     async function loadInitialState() {
       try {
-        const [currentVersion, currentStatus] = await Promise.all([
+        const [currentVersion, currentReleaseLabel, currentStatus] = await Promise.all([
           trackRequest('GetVersion', { args: [] }, () => GetVersion()),
+          trackRequest('GetReleaseLabel', { args: [] }, () => GetReleaseLabel()),
           trackRequest('GetSidecarStatus', { args: [] }, () => GetSidecarStatus()),
         ]);
         if (!mounted) return;
         setVersion(currentVersion || 'dev');
+        setReleaseLabel(currentReleaseLabel || '');
         if (currentStatus) {
           setSidecarStatus(currentStatus);
         }
@@ -81,7 +84,7 @@ function AppShell() {
       className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]"
       data-collaboration-id="MAIN_FRAME"
     >
-      <Sidebar activePage={activePage} setActivePage={setActivePage} version={version} />
+      <Sidebar activePage={activePage} setActivePage={setActivePage} releaseLabel={releaseLabel} />
       <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">{page}</main>
     </div>
   );

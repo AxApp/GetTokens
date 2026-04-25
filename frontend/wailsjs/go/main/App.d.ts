@@ -20,6 +20,8 @@ export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>
 
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 
+export function GetReleaseLabel():Promise<string>;
+
 export function GetSidecarStatus():Promise<sidecar.Status>;
 
 export function GetVersion():Promise<string>;

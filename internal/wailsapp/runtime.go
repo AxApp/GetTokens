@@ -44,3 +44,7 @@ func (a *App) GetSidecarStatus() sidecar.Status {
 func (a *App) GetVersion() string {
 	return a.version
 }
+
+func (a *App) GetReleaseLabel() string {
+	return a.releaseLabel
+}

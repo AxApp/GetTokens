@@ -1,5 +1,6 @@
 import { useI18n } from '../../context/I18nContext';
 import type { AppPage } from '../../types';
+import { formatSidebarVersion } from '../../utils/version';
 
 const navItems = [
   { id: 'status', label: 'nav.status', icon: 'M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 8v4l3 3' },
@@ -11,11 +12,12 @@ const navItems = [
 interface SidebarProps {
   activePage: AppPage;
   setActivePage: (page: AppPage) => void;
-  version: string;
+  releaseLabel: string;
 }
 
-export default function Sidebar({ activePage, setActivePage, version }: SidebarProps) {
+export default function Sidebar({ activePage, setActivePage, releaseLabel }: SidebarProps) {
   const { t } = useI18n();
+  const sidebarVersion = formatSidebarVersion(releaseLabel);
 
   return (
     <aside
@@ -50,7 +52,7 @@ export default function Sidebar({ activePage, setActivePage, version }: SidebarP
 
       <div className="border-t-2 border-[var(--border-color)] p-6">
         <div className="text-[9px] font-bold uppercase tracking-tighter text-[var(--text-muted)]">
-          BUILD {version}
+          VERSION {sidebarVersion}
         </div>
       </div>
     </aside>
