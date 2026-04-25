@@ -9,6 +9,7 @@ permissions:
   contents: write
 
 env:
+  GITHUB_TOKEN: ${{ github.token }}
   MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
   MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
   MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}

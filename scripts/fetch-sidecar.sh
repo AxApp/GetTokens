@@ -18,10 +18,37 @@ REPO="router-for-me/CLIProxyAPI"
 BINARY_NAME="cli-proxy-api"
 [[ "$GOOS" == "windows" ]] && BINARY_NAME="${BINARY_NAME}.exe"
 
+curl_args=(
+  --retry 5
+  --retry-delay 2
+  --retry-all-errors
+  -fsSL
+  -H "Accept: application/vnd.github+json"
+  -H "User-Agent: GetTokens-Release-Script"
+)
+
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  curl_args+=(
+    -H "Authorization: Bearer ${GITHUB_TOKEN}"
+    -H "X-GitHub-Api-Version: 2022-11-28"
+  )
+fi
+
 # Resolve latest tag if needed
 if [[ "$VERSION" == "latest" ]]; then
-  VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+    VERSION=$(curl "${curl_args[@]}" "https://api.github.com/repos/${REPO}/releases/latest" \
+      | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": "\(.*\)".*/\1/')
+  else
+    VERSION=$(curl --retry 5 --retry-delay 2 --retry-all-errors -fsSIL -o /dev/null -w '%{url_effective}' \
+      "https://github.com/${REPO}/releases/latest")
+    VERSION="${VERSION##*/}"
+  fi
+fi
+
+if [[ -z "$VERSION" ]]; then
+  echo "failed to resolve release version for ${REPO}" >&2
+  exit 1
 fi
 
 echo "→ Fetching CLIProxyAPI ${VERSION} for ${GOOS}/${GOARCH}"
@@ -37,7 +64,7 @@ URL="https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-curl --retry 5 --retry-delay 2 --retry-all-errors -fsSL "$URL" -o "${TMP}/${ASSET}"
+curl "${curl_args[@]}" "$URL" -o "${TMP}/${ASSET}"
 
 mkdir -p "$DEST_DIR"
 
