@@ -15,13 +15,15 @@
 4. `.agents/skills/gettokens-ui-system`
    视觉系统与本地化约束，固化黑白灰工业风、主题切换、设置页组织方式，以及中英文文案同步规则。
 5. `.agents/skills/gettokens-session-skill-distill`
-   把历史会话蒸馏成项目级 skills 的方法论，覆盖 transcript 定位、重复模式提炼、skill 边界划分与写回。
+   把历史会话蒸馏成项目级 skills 的方法论，覆盖 transcript 定位、重复模式提炼、skill 边界划分与写回；当用户只说“整理”且语境明显指向当前会话时，也默认触发这条流程。
 6. `.agents/skills/gettokens-agents-governance-sync`
    把 AGENTS 约束真正落到仓库动作上的方法论，覆盖 docs-linhay 落位、记忆写回、qmd 索引和 `.gitignore` 对齐。
 7. `.agents/skills/gettokens-space-governance`
    `spaces` 工作空间治理，覆盖 `space-key` 命名、`README.md` 模板，以及 `plans`、`screenshots`、`debate` 的归档边界。
 8. `.agents/skills/gettokens-doc-writeback`
    文档与记忆写回流程，覆盖落位判断、memory 精简写回，以及 `qmd update` / `qmd embed` 的强制同步。
+9. `.agents/skills/gettokens-cliproxyapi-fork-maintenance`
+   当问题落到 `CLIProxyAPI` 行为本身时，覆盖 fork/upstream 关系、上游同步、补丁平移、app bundle sidecar 替换与运行态核验。
 
 ## 为什么是这些 skills
 
@@ -35,6 +37,8 @@
 6. AGENTS、文档、记忆、索引如果不同步，项目规则很快会失真。
 7. `spaces` 结构落地后，单个需求空间的创建、命名和归档需要稳定执行模式。
 8. 文档写回、memory 写回和索引同步是固定动作，应该独立成 skill，避免每次靠人工回忆。
+9. “整理”已经成为会话收尾口令，后续应直接把它解释为一次 `skills + AGENTS + docs + memory` 的沉淀动作，而不是只做聊天总结。
+10. sidecar 行为问题已经不再只是“看参考项目”，而是需要正式维护 `CLIProxyAPI` fork，并分清源码、fork 分支和 app bundle 实际二进制三层关系。
 
 ## 不纳入 skill 的内容
 
