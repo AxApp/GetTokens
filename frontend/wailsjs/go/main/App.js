@@ -10,8 +10,16 @@ export function CheckUpdate() {
   return window['go']['main']['App']['CheckUpdate']();
 }
 
+export function CreateCodexAPIKey(arg1) {
+  return window['go']['main']['App']['CreateCodexAPIKey'](arg1);
+}
+
 export function DeleteAuthFiles(arg1) {
   return window['go']['main']['App']['DeleteAuthFiles'](arg1);
+}
+
+export function DeleteCodexAPIKey(arg1) {
+  return window['go']['main']['App']['DeleteCodexAPIKey'](arg1);
 }
 
 export function DownloadAuthFile(arg1) {
@@ -32,6 +40,10 @@ export function GetSidecarStatus() {
 
 export function GetVersion() {
   return window['go']['main']['App']['GetVersion']();
+}
+
+export function ListAccounts() {
+  return window['go']['main']['App']['ListAccounts']();
 }
 
 export function ListAuthFiles() {

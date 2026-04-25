@@ -13,6 +13,27 @@ export type AuthFile = main.AuthFileItem & {
   planType?: string;
 };
 export type CodexQuota = main.CodexQuotaResponse;
+export type CredentialSource = 'auth-file' | 'api-key';
+
+export interface AccountRecord {
+  id: string;
+  provider: string;
+  credentialSource: CredentialSource;
+  displayName: string;
+  status: string;
+  disabled?: boolean;
+  email?: string;
+  planType?: string;
+  name?: string;
+  apiKey?: string;
+  keyFingerprint?: string;
+  keySuffix?: string;
+  baseUrl?: string;
+  prefix?: string;
+  quotaKey?: string;
+  localOnly?: boolean;
+  rawAuthFile?: AuthFile;
+}
 
 export interface AuthModel {
   id?: string;

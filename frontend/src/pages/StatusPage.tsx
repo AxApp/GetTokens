@@ -114,30 +114,30 @@ export default function StatusPage({
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-muted)]">
+            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
               {t('status.core_state')}
             </div>
-            <div className="text-xl font-black italic">{sidecarStatus.code.toUpperCase()}</div>
+            <div className="text-xl font-black italic text-[var(--text-primary)]">{sidecarStatus.code.toUpperCase()}</div>
           </div>
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-muted)]">
+            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
               {t('status.port')}
             </div>
-            <div className="text-xl font-black italic">
+            <div className="text-xl font-black italic text-[var(--text-primary)]">
               {sidecarStatus.port ? `:${sidecarStatus.port}` : '—'}
             </div>
           </div>
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-muted)]">
+            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
               {t('status.uptime')}
             </div>
-            <div className="text-xl font-black italic">{uptime}</div>
+            <div className="text-xl font-black italic text-[var(--text-primary)]">{uptime}</div>
           </div>
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-muted)]">
+            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
               {t('status.build')}
             </div>
-            <div className="text-xl font-black italic">{version}</div>
+            <div className="text-xl font-black italic text-[var(--text-primary)]">{version}</div>
           </div>
         </div>
 
@@ -148,7 +148,7 @@ export default function StatusPage({
           <div className="flex items-center gap-4 p-6">
             <div
               className={`h-3 w-3 border-2 border-[var(--border-color)] ${
-                sidecarStatus.code === 'ready' ? 'bg-green-500' : 'bg-red-500'
+                sidecarStatus.code === 'ready' ? 'bg-green-600' : 'bg-red-600'
               }`}
             ></div>
             <div className="font-mono text-xs font-bold uppercase text-[var(--text-primary)]">{healthz}</div>

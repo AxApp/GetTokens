@@ -1,5 +1,6 @@
 import {
   createContext,
+  useEffect,
   useCallback,
   useContext,
   useMemo,
@@ -7,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { EventsOn } from '../../wailsjs/runtime/runtime';
 
 export interface DebugEntry {
   id: string;
@@ -24,6 +26,19 @@ export interface DebugEntry {
 interface TrackRequestOptions<T> {
   transport?: 'wails' | 'http';
   mapSuccess?: (result: T) => unknown;
+}
+
+interface DebugEventPayload {
+  id?: string;
+  name: string;
+  transport?: 'wails' | 'http';
+  status: 'pending' | 'success' | 'error';
+  request: unknown;
+  response?: unknown;
+  error?: string;
+  startedAt?: string;
+  endedAt?: string;
+  durationMs?: number;
 }
 
 interface DebugContextValue {
@@ -60,6 +75,38 @@ export function DebugProvider({ children }: { children?: ReactNode }) {
   const clearEntries = useCallback(() => {
     setEntries([]);
   }, []);
+
+  const appendExternalEntry = useCallback((payload: DebugEventPayload) => {
+    sequenceRef.current += 1;
+    const id = payload.id || `${Date.now()}-${sequenceRef.current}`;
+    const startedAt = payload.startedAt || new Date().toISOString();
+
+    setEntries((prev) => [
+      {
+        id,
+        name: payload.name,
+        transport: payload.transport ?? 'http',
+        status: payload.status,
+        request: payload.request,
+        response: payload.response,
+        error: payload.error,
+        startedAt,
+        endedAt: payload.endedAt,
+        durationMs: payload.durationMs,
+      },
+      ...prev,
+    ]);
+  }, []);
+
+  useEffect(() => {
+    const offDebugEntry = EventsOn('debug:entry', (payload: DebugEventPayload) => {
+      appendExternalEntry(payload);
+    });
+
+    return () => {
+      offDebugEntry?.();
+    };
+  }, [appendExternalEntry]);
 
   const trackRequest = useCallback(
     async <T,>(

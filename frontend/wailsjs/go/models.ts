@@ -1,5 +1,49 @@
 export namespace main {
 	
+	export class AccountRecord {
+	    id: string;
+	    provider: string;
+	    credentialSource: string;
+	    displayName: string;
+	    status: string;
+	    disabled?: boolean;
+	    email?: string;
+	    planType?: string;
+	    name?: string;
+	    apiKey?: string;
+	    keyFingerprint?: string;
+	    keySuffix?: string;
+	    baseUrl?: string;
+	    prefix?: string;
+	    authIndex?: any;
+	    quotaKey?: string;
+	    localOnly?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AccountRecord(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.provider = source["provider"];
+	        this.credentialSource = source["credentialSource"];
+	        this.displayName = source["displayName"];
+	        this.status = source["status"];
+	        this.disabled = source["disabled"];
+	        this.email = source["email"];
+	        this.planType = source["planType"];
+	        this.name = source["name"];
+	        this.apiKey = source["apiKey"];
+	        this.keyFingerprint = source["keyFingerprint"];
+	        this.keySuffix = source["keySuffix"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.authIndex = source["authIndex"];
+	        this.quotaKey = source["quotaKey"];
+	        this.localOnly = source["localOnly"];
+	    }
+	}
 	export class AuthFileItem {
 	    name: string;
 	    type?: string;
@@ -121,6 +165,28 @@ export namespace main {
 		}
 	}
 	
+	export class CreateCodexAPIKeyInput {
+	    apiKey: string;
+	    baseUrl: string;
+	    prefix?: string;
+	    proxyUrl?: string;
+	    headers?: Record<string, string>;
+	    excludedModels?: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateCodexAPIKeyInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.apiKey = source["apiKey"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.proxyUrl = source["proxyUrl"];
+	        this.headers = source["headers"];
+	        this.excludedModels = source["excludedModels"];
+	    }
+	}
 	export class DownloadFileResponse {
 	    name: string;
 	    contentBase64: string;

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDebug } from '../context/DebugContext';
 import { useI18n } from '../context/I18nContext';
 
@@ -19,8 +19,61 @@ function formatPayload(value: unknown) {
 export default function DebugPage() {
   const { t } = useI18n();
   const { entries, clearEntries } = useDebug();
+  const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
+  const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
 
   const sortedEntries = useMemo(() => entries, [entries]);
+  const selectedEntries = useMemo(
+    () => sortedEntries.filter((entry) => selectedIDs.includes(entry.id)),
+    [selectedIDs, sortedEntries]
+  );
+  const allSelected = sortedEntries.length > 0 && selectedIDs.length === sortedEntries.length;
+
+  useEffect(() => {
+    setSelectedIDs((prev) => prev.filter((id) => sortedEntries.some((entry) => entry.id === id)));
+  }, [sortedEntries]);
+
+  useEffect(() => {
+    if (copyState === 'idle') {
+      return;
+    }
+    const timer = window.setTimeout(() => setCopyState('idle'), 1600);
+    return () => window.clearTimeout(timer);
+  }, [copyState]);
+
+  function toggleEntry(id: string) {
+    setSelectedIDs((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  }
+
+  function toggleSelectAll() {
+    setSelectedIDs(allSelected ? [] : sortedEntries.map((entry) => entry.id));
+  }
+
+  async function copySelectedEntries() {
+    if (selectedEntries.length === 0) {
+      return;
+    }
+
+    const payload = selectedEntries.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      transport: entry.transport,
+      status: entry.status,
+      startedAt: entry.startedAt,
+      endedAt: entry.endedAt,
+      durationMs: entry.durationMs,
+      request: entry.request,
+      response: entry.response,
+      error: entry.error,
+    }));
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+      setCopyState('success');
+    } catch {
+      setCopyState('error');
+    }
+  }
 
   return (
     <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_DEBUG">
@@ -31,12 +84,27 @@ export default function DebugPage() {
               {t('debug.title')}
             </h2>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-              {t('debug.subtitle')} / {sortedEntries.length} TOTAL
+              {t('debug.subtitle')} / {sortedEntries.length} UNITS
             </p>
           </div>
-          <button onClick={clearEntries} className="btn-swiss" disabled={sortedEntries.length === 0}>
-            {t('debug.clear')}
-          </button>
+          <div className="flex items-center gap-3">
+            <button onClick={toggleSelectAll} className="btn-swiss" disabled={sortedEntries.length === 0}>
+              {allSelected ? t('debug.unselect_all') : t('debug.select_all')}
+            </button>
+            <button onClick={() => setSelectedIDs([])} className="btn-swiss" disabled={selectedIDs.length === 0}>
+              {t('debug.clear_selection')}
+            </button>
+            <button onClick={copySelectedEntries} className="btn-swiss" disabled={selectedEntries.length === 0}>
+              {copyState === 'success'
+                ? t('debug.copy_success')
+                : copyState === 'error'
+                  ? t('debug.copy_error')
+                  : `${t('debug.copy_selected')} (${selectedEntries.length})`}
+            </button>
+            <button onClick={clearEntries} className="btn-swiss" disabled={sortedEntries.length === 0}>
+              {t('debug.clear')}
+            </button>
+          </div>
         </header>
 
         {sortedEntries.length === 0 ? (
@@ -46,14 +114,27 @@ export default function DebugPage() {
         ) : (
           <div className="space-y-6">
             {sortedEntries.map((entry) => (
-              <section key={entry.id} className="card-swiss !p-0 overflow-hidden">
-                <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
-                  <div className="space-y-1">
-                    <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                      {entry.transport} / {entry.startedAt}
-                    </div>
-                    <div className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
-                      {entry.name}
+              <section
+                key={entry.id}
+                className={`card-swiss flex max-h-[600px] flex-col !p-0 overflow-hidden ${selectedIDs.includes(entry.id) ? 'ring-2 ring-[var(--accent-red)]' : ''}`}
+              >
+                <div className="sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
+                  <div className="flex items-start gap-4">
+                    <label className="mt-1 flex cursor-pointer items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIDs.includes(entry.id)}
+                        onChange={() => toggleEntry(entry.id)}
+                        className="h-4 w-4 accent-[var(--accent-red)]"
+                      />
+                    </label>
+                    <div className="space-y-1">
+                      <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                        {entry.transport} / {entry.startedAt}
+                      </div>
+                      <div className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+                        {entry.name}
+                      </div>
                     </div>
                   </div>
                   <div className="text-right text-[9px] font-black uppercase tracking-widest">
@@ -72,7 +153,7 @@ export default function DebugPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-0 md:grid-cols-2">
+                <div className="grid flex-grow grid-cols-1 overflow-y-auto gap-0 md:grid-cols-2">
                   <div className="border-b-2 border-[var(--border-color)] p-5 md:border-b-0 md:border-r-2">
                     <div className="mb-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                       {t('debug.request')}

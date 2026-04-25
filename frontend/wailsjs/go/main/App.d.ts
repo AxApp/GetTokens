@@ -8,7 +8,11 @@ export function ApplyUpdate():Promise<void>;
 
 export function CheckUpdate():Promise<updater.ReleaseInfo>;
 
+export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
+
 export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
+
+export function DeleteCodexAPIKey(arg1:string):Promise<void>;
 
 export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>;
 
@@ -19,6 +23,8 @@ export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 export function GetSidecarStatus():Promise<sidecar.Status>;
 
 export function GetVersion():Promise<string>;
+
+export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
