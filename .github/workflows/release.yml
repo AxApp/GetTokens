@@ -119,6 +119,18 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install create-dmg
 
+      - name: Install Windows packaging tools
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install nsis --no-progress -y
+          $nsisDir = "${env:ProgramFiles(x86)}\NSIS"
+          if (-not (Test-Path "$nsisDir\\makensis.exe")) {
+            throw "makensis not found at $nsisDir"
+          }
+          $nsisDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          & "$nsisDir\\makensis.exe" /VERSION
+
       - name: Prepare macOS signing materials
         if: runner.os == 'macOS'
         env:
