@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DownloadAuthFile, GetAuthFileModels } from '../../../wailsjs/go/main/App';
+import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import type { AuthFile, AuthModel } from '../../types';
 import { toErrorMessage } from '../../utils/error';
@@ -29,6 +30,7 @@ function getModelLabel(model: AuthModel): string {
 
 export default function AccountDetailModal({ account, onClose }: AccountDetailModalProps) {
   const { t } = useI18n();
+  const { trackRequest } = useDebug();
   const [models, setModels] = useState<AuthModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [rawContent, setRawContent] = useState('');
@@ -54,7 +56,9 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
     async function loadData() {
       setLoadingModels(true);
       try {
-        const response = await GetAuthFileModels(account.name);
+        const response = await trackRequest('GetAuthFileModels', { name: account.name }, () =>
+          GetAuthFileModels(account.name)
+        );
         if (mounted) {
           setModels(response || []);
         }
@@ -68,7 +72,9 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
 
       setLoadingRaw(true);
       try {
-        const response = await DownloadAuthFile(account.name);
+        const response = await trackRequest('DownloadAuthFile', { name: account.name }, () =>
+          DownloadAuthFile(account.name)
+        );
         const binary = atob(response.contentBase64);
         let decoded = new TextDecoder().decode(Uint8Array.from(binary, (char) => char.charCodeAt(0)));
         try {
@@ -94,13 +100,15 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
     return () => {
       mounted = false;
     };
-  }, [account.name]);
+  }, [account.name, trackRequest]);
 
   async function verify() {
     setVerifying(true);
     setVerifyResult('VERIFYING...');
     try {
-      await GetAuthFileModels(account.name);
+      await trackRequest('GetAuthFileModels', { name: account.name, mode: 'verify' }, () =>
+        GetAuthFileModels(account.name)
+      );
       setVerifyResult('✓ VALID');
     } catch (error) {
       console.error(error);

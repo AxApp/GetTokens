@@ -1,6 +1,6 @@
 import type { main, sidecar } from '../wailsjs/go/models';
 
-export type AppPage = 'status' | 'accounts' | 'settings';
+export type AppPage = 'status' | 'accounts' | 'settings' | 'debug';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -8,7 +8,10 @@ export type LocaleCode = 'zh' | 'en';
 
 export type SidecarStatus = sidecar.Status;
 
-export type AuthFile = main.AuthFileItem;
+export type AuthFile = main.AuthFileItem & {
+  email?: string;
+  planType?: string;
+};
 export type CodexQuota = main.CodexQuotaResponse;
 
 export interface AuthModel {

@@ -22,6 +22,8 @@ type AuthFileItem struct {
 	Name          string      `json:"name"`
 	Type          string      `json:"type,omitempty"`
 	Provider      string      `json:"provider,omitempty"`
+	Email         string      `json:"email,omitempty"`
+	PlanType      string      `json:"planType,omitempty"`
 	Size          int64       `json:"size,omitempty"`
 	AuthIndex     interface{} `json:"authIndex,omitempty"`
 	RuntimeOnly   bool        `json:"runtimeOnly,omitempty"`
@@ -102,6 +104,8 @@ func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
 			Name:          file.Name,
 			Type:          file.Type,
 			Provider:      file.Provider,
+			Email:         file.Email,
+			PlanType:      file.PlanType,
 			Size:          file.Size,
 			AuthIndex:     file.AuthIndex,
 			RuntimeOnly:   file.RuntimeOnly,

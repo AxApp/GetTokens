@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useDebug } from '../context/DebugContext';
 import { useI18n } from '../context/I18nContext';
 import type { SidecarStatus } from '../types';
 import { toErrorMessage } from '../utils/error';
@@ -20,6 +21,7 @@ export default function StatusPage({
   version = 'dev',
 }: StatusPageProps) {
   const { t } = useI18n();
+  const { trackRequest } = useDebug();
   const startTimeRef = useRef(Date.now());
   const [healthz, setHealthz] = useState('CHECKING...');
   const [uptime, setUptime] = useState('0s');
@@ -55,10 +57,24 @@ export default function StatusPage({
       }
 
       try {
-        const response = await fetch(`http://127.0.0.1:${sidecarStatus.port}/healthz`, {
-          method: 'HEAD',
-          cache: 'no-store',
-        });
+        const url = `http://127.0.0.1:${sidecarStatus.port}/healthz`;
+        const response = await trackRequest(
+          'fetch /healthz',
+          { url, method: 'HEAD', cache: 'no-store' },
+          () =>
+            fetch(url, {
+              method: 'HEAD',
+              cache: 'no-store',
+            }),
+          {
+            transport: 'http',
+            mapSuccess: (result) => ({
+              ok: result.ok,
+              status: result.status,
+              url: result.url,
+            }),
+          }
+        );
         if (!cancelled) {
           setHealthz(
             response.ok
@@ -78,7 +94,7 @@ export default function StatusPage({
     return () => {
       cancelled = true;
     };
-  }, [sidecarStatus.code, sidecarStatus.port]);
+  }, [sidecarStatus.code, sidecarStatus.port, trackRequest]);
 
   return (
     <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_STATUS">

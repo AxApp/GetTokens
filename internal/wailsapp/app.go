@@ -28,6 +28,8 @@ type AuthFileItem struct {
 	Name          string      `json:"name"`
 	Type          string      `json:"type,omitempty"`
 	Provider      string      `json:"provider,omitempty"`
+	Email         string      `json:"email,omitempty"`
+	PlanType      string      `json:"planType,omitempty"`
 	Size          int64       `json:"size,omitempty"`
 	AuthIndex     interface{} `json:"authIndex,omitempty"`
 	RuntimeOnly   bool        `json:"runtimeOnly,omitempty"`
@@ -191,7 +193,59 @@ func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
 	if result.Files == nil {
 		result.Files = []AuthFileItem{}
 	}
+
+	for index := range result.Files {
+		file := &result.Files[index]
+		if !needsAuthFileMetadataInference(*file) {
+			continue
+		}
+
+		body, inferErr := a.downloadAuthFileBody(file.Name)
+		if inferErr != nil {
+			continue
+		}
+
+		if needsAuthFileKindInference(*file) {
+			inferredKind := accountsdomain.InferAuthFileKind(body)
+			if inferredKind != "" {
+				file.Provider = inferredKind
+				file.Type = inferredKind
+			}
+		}
+
+		profile := accountsdomain.ExtractAuthFileProfile(body)
+		if strings.TrimSpace(file.Email) == "" {
+			file.Email = profile.Email
+		}
+		if strings.TrimSpace(file.PlanType) == "" {
+			file.PlanType = profile.PlanType
+		}
+	}
+
 	return &result, nil
+}
+
+func needsAuthFileMetadataInference(file AuthFileItem) bool {
+	return needsAuthFileKindInference(file) || strings.TrimSpace(file.Email) == "" || strings.TrimSpace(file.PlanType) == ""
+}
+
+func needsAuthFileKindInference(file AuthFileItem) bool {
+	return isUnknownKind(file.Provider) || isUnknownKind(file.Type)
+}
+
+func isUnknownKind(value string) bool {
+	trimmed := strings.TrimSpace(strings.ToLower(value))
+	return trimmed == "" || trimmed == "unknown"
+}
+
+func (a *App) downloadAuthFileBody(name string) ([]byte, error) {
+	query := url.Values{}
+	query.Set("name", strings.TrimSpace(name))
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files/download", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	return body, nil
 }
 
 func (a *App) SetAuthFileStatus(name string, disabled bool) error {

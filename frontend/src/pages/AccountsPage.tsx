@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeleteAuthFiles, GetCodexQuota, ListAuthFiles, UploadAuthFiles } from '../../wailsjs/go/main/App';
 import AccountDetailModal from '../components/biz/AccountDetailModal';
+import { useDebug } from '../context/DebugContext';
 import { useI18n } from '../context/I18nContext';
 import type { AuthFile, CodexQuota, SidecarStatus } from '../types';
 import { toErrorMessage } from '../utils/error';
@@ -20,8 +21,23 @@ interface CodexQuotaState {
   quota?: CodexQuota;
 }
 
+interface QuotaWindowDisplay {
+  id: string;
+  label: string;
+  remainingPercent: number | null;
+  usedLabel: string;
+  resetLabel: string;
+}
+
+interface QuotaDisplay {
+  status: 'unsupported' | 'loading' | 'error' | 'empty' | 'success';
+  planType: string;
+  windows: QuotaWindowDisplay[];
+}
+
 export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
   const { t } = useI18n();
+  const { trackRequest } = useDebug();
   const [accounts, setAccounts] = useState<AuthFile[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,7 +83,9 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
     const results = await Promise.all(
       codexAccounts.map(async (account) => {
         try {
-          const quota = await GetCodexQuota(account.name);
+          const quota = await trackRequest('GetCodexQuota', { name: account.name }, () =>
+            GetCodexQuota(account.name)
+          );
           return [account.name, { status: 'success', quota } satisfies CodexQuotaState] as const;
         } catch (error) {
           console.error(error);
@@ -86,7 +104,34 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
         return result;
       }, {})
     );
-  }, []);
+  }, [trackRequest]);
+
+  const refreshCodexQuota = useCallback(async (account: AuthFile) => {
+    if (!isCodexAccount(account)) {
+      return;
+    }
+
+    setCodexQuotaByName((prev) => ({
+      ...prev,
+      [account.name]: { status: 'loading' },
+    }));
+
+    try {
+      const quota = await trackRequest('GetCodexQuota', { name: account.name }, () =>
+        GetCodexQuota(account.name)
+      );
+      setCodexQuotaByName((prev) => ({
+        ...prev,
+        [account.name]: { status: 'success', quota },
+      }));
+    } catch (error) {
+      console.error(error);
+      setCodexQuotaByName((prev) => ({
+        ...prev,
+        [account.name]: { status: 'error' },
+      }));
+    }
+  }, [trackRequest]);
 
   const loadAccounts = useCallback(async () => {
     if (!ready) {
@@ -95,7 +140,7 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
 
     setLoading(true);
     try {
-      const response = await ListAuthFiles();
+      const response = await trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles());
       const files = response.files || [];
       setAccounts(files);
       setPendingDeleteName(null);
@@ -116,7 +161,7 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
   async function deleteAccount(name: string) {
     setDeleteError('');
     try {
-      await DeleteAuthFiles([name]);
+      await trackRequest('DeleteAuthFiles', { names: [name] }, () => DeleteAuthFiles([name]));
       setPendingDeleteName(null);
       await loadAccounts();
     } catch (error) {
@@ -159,7 +204,9 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
         )
       );
 
-      await UploadAuthFiles(payload);
+      await trackRequest('UploadAuthFiles', { files: payload.map((item) => ({ name: item.name })) }, () =>
+        UploadAuthFiles(payload)
+      );
       await loadAccounts();
     } catch (error) {
       console.error(error);
@@ -167,37 +214,16 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
     }
   }
 
-  function providerLabel(account: AuthFile) {
-    return String(account.provider || account.type || 'UNKNOWN').trim().toUpperCase();
-  }
+function providerLabel(account: AuthFile) {
+  return String(account.provider || account.type || 'UNKNOWN').trim().toUpperCase();
+}
 
-  function quotaSummary(account: AuthFile) {
-    if (!isCodexAccount(account)) {
-      return '';
-    }
-
-    const state = codexQuotaByName[account.name];
-    if (!state || state.status === 'loading') {
-      return 'SYNCING...';
-    }
-    if (state.status === 'error' || !state.quota) {
-      return 'UNAVAILABLE';
-    }
-
-    const preferredWindows = state.quota.windows.filter(
-      (window) => window.id === 'five-hour' || window.id === 'weekly'
-    );
-    const windows = preferredWindows.length > 0 ? preferredWindows : state.quota.windows.slice(0, 2);
-    if (windows.length === 0) {
-      return state.quota.planType ? state.quota.planType.toUpperCase() : 'READY';
-    }
-
-    const parts = windows.map((window) => {
-      const remaining = window.remainingPercent === undefined ? '--' : `${window.remainingPercent}%`;
-      return `${window.label} ${remaining}`;
-    });
-    return parts.join(' · ');
-  }
+function resolveAccountPlanLabel(account: AuthFile, quotaDisplay: QuotaDisplay) {
+  const plan = String(quotaDisplay.planType || account.planType || '')
+    .trim()
+    .toUpperCase();
+  return plan || '';
+}
 
   return (
     <>
@@ -268,73 +294,152 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 2xl:grid-cols-3">
-              {filteredAccounts.map((account) => (
-                <div
-                  key={account.name}
-                  className="card-swiss flex min-h-[200px] flex-col bg-[var(--bg-main)] p-6 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px]"
-                >
-                  <h3 className="mb-4 break-all text-sm font-black uppercase text-[var(--text-primary)]">
-                    {account.name}
-                  </h3>
+              {filteredAccounts.map((account) => {
+                const quotaDisplay = buildQuotaDisplay(account, codexQuotaByName[account.name]);
 
-                  <div className="mb-6 space-y-2 border-t border-dashed border-[var(--border-color)] pt-3">
-                    <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                      <span className="text-[var(--text-muted)]">Provider</span>
-                      <span>{providerLabel(account)}</span>
-                    </div>
-                    <div className="flex items-start justify-between gap-3 text-[9px] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                      <span className="text-[var(--text-muted)]">Quota</span>
-                      <span className="text-right">{quotaSummary(account)}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto space-y-3">
-                    <div className="flex justify-between border-t border-dashed border-[var(--border-color)] pt-3 text-[10px] font-bold uppercase text-[var(--text-primary)]">
-                      <span className="text-[var(--text-muted)]">{t('common.status')}</span>
-                      <span className={account.disabled ? 'text-zinc-500' : 'text-green-600'}>
-                        {account.disabled ? 'DIS' : 'ACT'}
-                      </span>
-                    </div>
-
-                    {pendingDeleteName === account.name ? (
-                      <div className="space-y-2">
-                        <div className="text-[9px] font-black uppercase tracking-wide text-red-500">
-                          {t('common.confirm_delete')}
+                return (
+                  <div
+                    key={account.name}
+                    className="card-swiss flex min-h-[320px] flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                  >
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div className="min-w-0 space-y-1">
+                        <div className="break-all text-[12px] font-bold uppercase leading-snug tracking-[0.08em] text-[var(--text-primary)]">
+                          {account.name}
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => setPendingDeleteName(null)}
-                            className="btn-swiss !py-1 !text-[9px]"
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[8px] font-bold uppercase tracking-[0.06em] text-[var(--text-muted)]">
+                          {account.email ? (
+                            <span className="normal-case tracking-normal">{account.email}</span>
+                          ) : null}
+                          {account.email && resolveAccountPlanLabel(account, quotaDisplay) ? <span>/</span> : null}
+                          {resolveAccountPlanLabel(account, quotaDisplay) ? <span>{resolveAccountPlanLabel(account, quotaDisplay)}</span> : null}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center justify-end">
+                        <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-primary)]">
+                          {providerLabel(account)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mb-4 space-y-3 border-t border-dashed border-[var(--border-color)] pt-4">
+                      <div className="space-y-2.5">
+                        {(quotaDisplay.windows.length > 0 ? quotaDisplay.windows : createPlaceholderWindows()).map((window) => (
+                          <div
+                            key={window.id}
+                            className="space-y-2.5 border-b border-dashed border-[var(--border-color)] pb-3 last:border-b-0 last:pb-0"
                           >
-                            {t('common.cancel')}
+                            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-end gap-x-3 gap-y-1 text-[8px] font-black uppercase">
+                              <span className="tracking-[0.2em] text-[var(--text-muted)]">{window.label}</span>
+                              <span className="truncate text-right text-[var(--text-primary)]" title={`${t('accounts.quota_reset')} ${window.resetLabel}`}>
+                                {formatQuotaResetDisplay(window.resetLabel)}
+                              </span>
+                              <span className="text-green-600">
+                                {t('accounts.quota_remaining')} {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
+                              </span>
+                            </div>
+                            <div
+                              className={`relative h-5 w-full overflow-hidden ${
+                                quotaDisplay.status === 'loading' ? 'animate-pulse' : ''
+                              }`}
+                            >
+                              <div
+                                className="absolute inset-0 opacity-50"
+                                style={{
+                                  backgroundImage:
+                                    'linear-gradient(to right, var(--border-color) 0 8px, transparent 8px 11px)',
+                                  backgroundSize: '11px 100%',
+                                  backgroundRepeat: 'repeat-x',
+                                }}
+                              />
+                              <div
+                                className="absolute inset-y-0 left-0"
+                                style={{
+                                  width:
+                                    window.remainingPercent === null
+                                      ? quotaDisplay.status === 'loading'
+                                        ? '40%'
+                                        : '0%'
+                                      : `${window.remainingPercent}%`,
+                                  backgroundImage:
+                                    'linear-gradient(to right, rgb(22 163 74) 0 8px, transparent 8px 11px)',
+                                  backgroundSize: '11px 100%',
+                                  backgroundRepeat: 'repeat-x',
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {quotaDisplay.windows.length === 0 ? (
+                        <div className="text-[9px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                          {quotaDisplay.status === 'loading'
+                            ? t('accounts.quota_syncing')
+                            : quotaDisplay.status === 'error'
+                              ? t('accounts.quota_unavailable')
+                              : t('accounts.quota_unsupported')}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-auto space-y-2.5">
+                      <div className="flex justify-between border-t border-dashed border-[var(--border-color)] pt-3 text-[10px] font-bold uppercase text-[var(--text-primary)]">
+                        <span className="text-[var(--text-muted)]">{t('common.status')}</span>
+                        <span className={account.disabled ? 'text-zinc-500' : 'text-green-600'}>
+                          {account.disabled ? 'DIS' : 'ACT'}
+                        </span>
+                      </div>
+
+                      {pendingDeleteName === account.name ? (
+                        <div className="space-y-2">
+                          <div className="text-[9px] font-black uppercase tracking-wide text-red-500">
+                            {t('common.confirm_delete')}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => setPendingDeleteName(null)}
+                              className="btn-swiss !py-1 !text-[9px]"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                            <button
+                              onClick={() => deleteAccount(account.name)}
+                              className="btn-swiss !py-1 !text-[9px] !text-red-500"
+                            >
+                              {t('common.delete')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className={`grid gap-2 ${isCodexAccount(account) ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                          <button onClick={() => setSelectedAccount(account)} className="btn-swiss !py-1.5 !text-[9px]">
+                            {t('common.details')}
                           </button>
+                          {isCodexAccount(account) ? (
+                            <button
+                              onClick={() => void refreshCodexQuota(account)}
+                              className="btn-swiss !py-1.5 !text-[9px]"
+                              disabled={!ready || codexQuotaByName[account.name]?.status === 'loading'}
+                            >
+                              REFRESH
+                            </button>
+                          ) : null}
                           <button
-                            onClick={() => deleteAccount(account.name)}
-                            className="btn-swiss !py-1 !text-[9px] !text-red-500"
+                            onClick={() => {
+                              setDeleteError('');
+                              setPendingDeleteName(account.name);
+                            }}
+                            className="btn-swiss !py-1.5 !text-[9px] !text-red-500"
                           >
                             {t('common.delete')}
                           </button>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-2">
-                        <button onClick={() => setSelectedAccount(account)} className="btn-swiss !py-1 !text-[9px]">
-                          {t('common.details')}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setDeleteError('');
-                            setPendingDeleteName(account.name);
-                          }}
-                          className="btn-swiss !py-1 !text-[9px] !text-red-500"
-                        >
-                          {t('common.delete')}
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -352,4 +457,101 @@ function isCodexAccount(account: AuthFile) {
     .trim()
     .toLowerCase();
   return provider === 'codex';
+}
+
+function buildQuotaDisplay(account: AuthFile, state?: CodexQuotaState): QuotaDisplay {
+  if (!isCodexAccount(account)) {
+    return {
+      status: 'unsupported',
+      planType: '',
+      windows: [],
+    };
+  }
+
+  if (!state || state.status === 'loading') {
+    return {
+      status: 'loading',
+      planType: '',
+      windows: [],
+    };
+  }
+
+  if (state.status === 'error' || !state.quota) {
+    return {
+      status: 'error',
+      planType: '',
+      windows: [],
+    };
+  }
+
+  const windows = selectQuotaWindows(state.quota).map((window) => {
+    const remainingPercent = normalizePercent(window.remainingPercent);
+    const usedPercent = remainingPercent === null ? null : Math.max(0, 100 - remainingPercent);
+
+    return {
+      id: window.id,
+      label: window.label,
+      remainingPercent,
+      usedLabel: usedPercent === null ? '--' : `${usedPercent}%`,
+      resetLabel: window.resetLabel || '--',
+    };
+  });
+
+  if (windows.length === 0) {
+    return {
+      status: 'empty',
+      planType: state.quota.planType || '',
+      windows: [],
+    };
+  }
+
+  return {
+    status: 'success',
+    planType: state.quota.planType || '',
+    windows,
+  };
+}
+
+function selectQuotaWindows(quota: CodexQuota) {
+  const preferredWindows = quota.windows.filter((window) => window.id === 'five-hour' || window.id === 'weekly');
+  return preferredWindows.length > 0 ? preferredWindows : quota.windows.slice(0, 2);
+}
+
+function normalizePercent(value: number | null | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return null;
+  }
+  return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+function createPlaceholderWindows(): QuotaWindowDisplay[] {
+  return [
+    { id: 'placeholder-five-hour', label: '5H', remainingPercent: null, usedLabel: '--', resetLabel: '--' },
+    { id: 'placeholder-weekly', label: '7D', remainingPercent: null, usedLabel: '--', resetLabel: '--' },
+  ];
+}
+
+function formatQuotaResetDisplay(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '-') {
+    return '--';
+  }
+
+  const chineseMatch = trimmed.match(/(\d{4})年(\d{1,2})月(\d{1,2})日\s*(上午|下午)?(\d{1,2}):(\d{2})/);
+  if (chineseMatch) {
+    const [, , month, day, meridiem, rawHour, minute] = chineseMatch;
+    let hour = Number(rawHour);
+    if (meridiem === '下午' && hour < 12) {
+      hour += 12;
+    }
+    if (meridiem === '上午' && hour === 12) {
+      hour = 0;
+    }
+    return `${month.padStart(2, '0')}/${day.padStart(2, '0')} ${String(hour).padStart(2, '0')}:${minute}`;
+  }
+
+  return trimmed
+    .replace(/^重置于\s*/u, '')
+    .replace(/^reset\s*/iu, '')
+    .trim();
 }

@@ -4,6 +4,8 @@ export namespace main {
 	    name: string;
 	    type?: string;
 	    provider?: string;
+	    email?: string;
+	    planType?: string;
 	    size?: number;
 	    authIndex?: any;
 	    runtimeOnly?: boolean;
@@ -23,6 +25,8 @@ export namespace main {
 	        this.name = source["name"];
 	        this.type = source["type"];
 	        this.provider = source["provider"];
+	        this.email = source["email"];
+	        this.planType = source["planType"];
 	        this.size = source["size"];
 	        this.authIndex = source["authIndex"];
 	        this.runtimeOnly = source["runtimeOnly"];

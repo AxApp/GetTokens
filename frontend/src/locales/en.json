@@ -18,7 +18,8 @@
   "nav": {
     "status": "STATUS",
     "accounts": "ACCOUNTS",
-    "settings": "SETTINGS"
+    "settings": "SETTINGS",
+    "debug": "DEBUG"
   },
   "status": {
     "title": "System Status",
@@ -37,6 +38,13 @@
     "empty": "No accounts matched",
     "provider": "Provider",
     "size": "Size",
+    "quota_remaining": "Remain",
+    "quota_window": "Window",
+    "quota_usage": "Usage",
+    "quota_reset": "Reset",
+    "quota_syncing": "Quota syncing...",
+    "quota_unavailable": "Quota unavailable",
+    "quota_unsupported": "No quota telemetry",
     "quick_actions": "Quick Actions",
     "errors_only": "Errors Only"
   },
@@ -50,5 +58,14 @@
     "architecture": "Architecture",
     "status": "Status",
     "source_mapping": "Source Mapping"
+  },
+  "debug": {
+    "title": "Debug",
+    "subtitle": "Request / response trace stream",
+    "clear": "Clear Logs",
+    "empty": "No interface logs yet",
+    "request": "Request",
+    "response": "Response",
+    "response_error": "Error"
   }
 }

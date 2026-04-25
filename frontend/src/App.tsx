@@ -3,8 +3,10 @@ import { GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
 import AccountsPage from './pages/AccountsPage';
+import DebugPage from './pages/DebugPage';
 import SettingsPage from './pages/SettingsPage';
 import StatusPage from './pages/StatusPage';
+import { DebugProvider, useDebug } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import type { AppPage, SidecarStatus } from './types';
@@ -18,6 +20,7 @@ const defaultSidecarStatus: SidecarStatus = {
 
 function AppShell() {
   const { themeMode } = useTheme();
+  const { trackRequest } = useDebug();
   const [activePage, setActivePage] = useState<AppPage>('accounts');
   const [sidecarStatus, setSidecarStatus] = useState<SidecarStatus>(defaultSidecarStatus);
   const [version, setVersion] = useState('dev');
@@ -35,8 +38,8 @@ function AppShell() {
     async function loadInitialState() {
       try {
         const [currentVersion, currentStatus] = await Promise.all([
-          GetVersion(),
-          GetSidecarStatus(),
+          trackRequest('GetVersion', { args: [] }, () => GetVersion()),
+          trackRequest('GetSidecarStatus', { args: [] }, () => GetSidecarStatus()),
         ]);
         if (!mounted) return;
         setVersion(currentVersion || 'dev');
@@ -64,6 +67,9 @@ function AppShell() {
     if (activePage === 'status') {
       return <StatusPage sidecarStatus={sidecarStatus} version={version} />;
     }
+    if (activePage === 'debug') {
+      return <DebugPage />;
+    }
     if (activePage === 'settings') {
       return <SettingsPage />;
     }
@@ -85,7 +91,9 @@ export default function App() {
   return (
     <ThemeProvider>
       <I18nProvider>
-        <AppShell />
+        <DebugProvider>
+          <AppShell />
+        </DebugProvider>
       </I18nProvider>
     </ThemeProvider>
   );

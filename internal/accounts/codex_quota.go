@@ -82,22 +82,42 @@ func GetCodexQuota(ctx context.Context, authFileBody []byte, timeout time.Durati
 		return nil, err
 	}
 
+	cachedQuota := parseCachedCodexQuota(authFileBody)
+
 	if authFile.AccessToken == "" {
+		if cachedQuota != nil {
+			return cachedQuota, nil
+		}
 		return nil, errors.New("codex 凭证缺少 access_token")
 	}
 	if authFile.ChatGPTAccountID == "" {
+		if cachedQuota != nil {
+			return cachedQuota, nil
+		}
 		return nil, errors.New("codex 凭证缺少 chatgpt_account_id")
 	}
 
 	payload, err := fetchCodexQuotaPayload(ctx, authFile.AccessToken, authFile.ChatGPTAccountID, timeout)
 	if err != nil {
+		if cachedQuota != nil {
+			return cachedQuota, nil
+		}
 		return nil, err
 	}
 
-	return &CodexQuotaResponse{
+	result := &CodexQuotaResponse{
 		PlanType: normalizePlanType(firstNonEmpty(payload.PlanType, payload.PlanTypeCamel, authFile.PlanType)),
 		Windows:  buildCodexQuotaWindows(payload),
-	}, nil
+	}
+	if cachedQuota != nil {
+		if result.PlanType == "" {
+			result.PlanType = cachedQuota.PlanType
+		}
+		if len(result.Windows) == 0 {
+			result.Windows = cachedQuota.Windows
+		}
+	}
+	return result, nil
 }
 
 func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
@@ -109,6 +129,7 @@ func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
 	metadata := nestedMap(payload, "metadata")
 	attributes := nestedMap(payload, "attributes")
 	rootToken := nestedMap(payload, "token")
+	tokens := nestedMap(payload, "tokens")
 	metadataToken := nestedMap(metadata, "token")
 	attributesToken := nestedMap(attributes, "token")
 
@@ -117,6 +138,7 @@ func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
 		stringValue(metadata, "access_token"),
 		stringValue(attributes, "access_token"),
 		stringValue(rootToken, "access_token"),
+		stringValue(tokens, "access_token"),
 		stringValue(metadataToken, "access_token"),
 		stringValue(attributesToken, "access_token"),
 	)
@@ -125,12 +147,17 @@ func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
 		stringValue(payload, "id_token"),
 		stringValue(metadata, "id_token"),
 		stringValue(attributes, "id_token"),
+		stringValue(tokens, "id_token"),
 	)
 
 	idClaims := parseJWTClaims(idTokenRaw)
+	openAIAuthClaims := nestedMap(idClaims, "https://api.openai.com/auth")
 	chatgptAccountID := firstNonEmpty(
+		stringValue(tokens, "account_id"),
 		stringValue(idClaims, "chatgpt_account_id"),
 		stringValue(idClaims, "chatgptAccountId"),
+		stringValue(openAIAuthClaims, "chatgpt_account_id"),
+		stringValue(openAIAuthClaims, "chatgptAccountId"),
 	)
 
 	planType := normalizePlanType(firstNonEmpty(
@@ -142,6 +169,8 @@ func parseCodexAuthFile(body []byte) (*codexAuthInfo, error) {
 		stringValue(attributes, "planType"),
 		stringValue(idClaims, "plan_type"),
 		stringValue(idClaims, "planType"),
+		stringValue(openAIAuthClaims, "chatgpt_plan_type"),
+		stringValue(openAIAuthClaims, "chatgptPlanType"),
 	))
 
 	return &codexAuthInfo{
@@ -512,4 +541,75 @@ func ctxOrBackground(ctx context.Context) context.Context {
 		return ctx
 	}
 	return context.Background()
+}
+
+func parseCachedCodexQuota(body []byte) *CodexQuotaResponse {
+	var payload map[string]interface{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil
+	}
+
+	usage := nestedMap(nestedMap(nestedMap(payload, "nolon"), "usage_cache"), "usage")
+	if len(usage) == 0 {
+		return nil
+	}
+
+	identity := nestedMap(usage, "identity")
+	planType := normalizePlanType(firstNonEmpty(
+		stringValue(payload, "plan_type"),
+		stringValue(payload, "planType"),
+		stringValue(payload, "plan"),
+		stringValue(identity, "plan"),
+	))
+
+	windows := make([]CodexQuotaWindow, 0, 2)
+	for _, spec := range []struct {
+		key   string
+		id    string
+		label string
+	}{
+		{key: "primary", id: "five-hour", label: "5H"},
+		{key: "secondary", id: "weekly", label: "7D"},
+	} {
+		window := nestedMap(usage, spec.key)
+		if len(window) == 0 {
+			continue
+		}
+
+		usedPercent := numberValue(firstNonNil(window["usedPercent"], window["used_percent"]))
+		var remainingPercent *int
+		if usedPercent != nil {
+			remaining := int(roundNumber(clampNumber(100-*usedPercent, 0, 100)))
+			remainingPercent = &remaining
+		}
+
+		resetLabel := firstNonEmpty(
+			stringValue(window, "resetDescription"),
+			stringValue(window, "reset_description"),
+		)
+		if resetLabel == "" {
+			if resetsAt := numberValue(firstNonNil(window["resetsAt"], window["resets_at"])); resetsAt != nil {
+				resetLabel = formatUnixSeconds(int64(*resetsAt))
+			}
+		}
+		if resetLabel == "" {
+			resetLabel = "-"
+		}
+
+		windows = append(windows, CodexQuotaWindow{
+			ID:               spec.id,
+			Label:            spec.label,
+			RemainingPercent: remainingPercent,
+			ResetLabel:       resetLabel,
+		})
+	}
+
+	if planType == "" && len(windows) == 0 {
+		return nil
+	}
+
+	return &CodexQuotaResponse{
+		PlanType: planType,
+		Windows:  windows,
+	}
 }

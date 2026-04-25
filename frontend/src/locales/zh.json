@@ -18,7 +18,8 @@
   "nav": {
     "status": "运行状态",
     "accounts": "账号池",
-    "settings": "应用设置"
+    "settings": "应用设置",
+    "debug": "调试面板"
   },
   "status": {
     "title": "系统运行状态",
@@ -37,6 +38,13 @@
     "empty": "当前库中无匹配记录",
     "provider": "供应商",
     "size": "实体大小",
+    "quota_remaining": "剩余",
+    "quota_window": "窗口",
+    "quota_usage": "用量",
+    "quota_reset": "重置时间",
+    "quota_syncing": "额度同步中...",
+    "quota_unavailable": "额度暂不可用",
+    "quota_unsupported": "当前凭证无额度遥测",
     "quick_actions": "快速控制指令",
     "errors_only": "故障过滤"
   },
@@ -50,5 +58,14 @@
     "architecture": "架构体系",
     "status": "版本状态",
     "source_mapping": "源码路径映射"
+  },
+  "debug": {
+    "title": "调试面板",
+    "subtitle": "接口发送与响应明细",
+    "clear": "清空记录",
+    "empty": "当前还没有接口调用记录",
+    "request": "发送数据",
+    "response": "响应数据",
+    "response_error": "错误响应"
   }
 }

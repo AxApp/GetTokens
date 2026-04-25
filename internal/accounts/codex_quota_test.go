@@ -8,8 +8,10 @@ import (
 
 func TestParseCodexAuthFile(t *testing.T) {
 	claims := map[string]interface{}{
-		"chatgpt_account_id": "acct_123",
-		"plan_type":          "pro",
+		"https://api.openai.com/auth": map[string]interface{}{
+			"chatgpt_account_id": "acct_123",
+			"chatgpt_plan_type":  "pro",
+		},
 	}
 	claimBytes, err := json.Marshal(claims)
 	if err != nil {
@@ -17,7 +19,8 @@ func TestParseCodexAuthFile(t *testing.T) {
 	}
 
 	raw := map[string]interface{}{
-		"metadata": map[string]interface{}{
+		"auth_mode": "chatgpt",
+		"tokens": map[string]interface{}{
 			"access_token": "token_abc",
 			"id_token":     "header." + base64.RawURLEncoding.EncodeToString(claimBytes) + ".sig",
 		},
@@ -74,5 +77,48 @@ func TestBuildCodexQuotaWindows(t *testing.T) {
 	}
 	if windows[1].RemainingPercent == nil || *windows[1].RemainingPercent != 45 {
 		t.Fatalf("unexpected weekly remaining: %#v", windows[1].RemainingPercent)
+	}
+}
+
+func TestParseCachedCodexQuota(t *testing.T) {
+	body := []byte(`{
+		"plan":"plus",
+		"nolon":{
+			"usage_cache":{
+				"usage":{
+					"identity":{"plan":"plus"},
+					"primary":{
+						"windowMinutes":300,
+						"usedPercent":26,
+						"resetsAt":1710000000
+					},
+					"secondary":{
+						"windowMinutes":10080,
+						"usedPercent":53,
+						"resetDescription":"重置于 2026年4月9日 下午5:26"
+					}
+				}
+			}
+		}
+	}`)
+
+	quota := parseCachedCodexQuota(body)
+	if quota == nil {
+		t.Fatal("expected cached quota")
+	}
+	if quota.PlanType != "plus" {
+		t.Fatalf("unexpected plan type: %q", quota.PlanType)
+	}
+	if len(quota.Windows) != 2 {
+		t.Fatalf("expected 2 windows, got %d", len(quota.Windows))
+	}
+	if quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 74 {
+		t.Fatalf("unexpected primary remaining: %#v", quota.Windows[0].RemainingPercent)
+	}
+	if quota.Windows[1].RemainingPercent == nil || *quota.Windows[1].RemainingPercent != 47 {
+		t.Fatalf("unexpected secondary remaining: %#v", quota.Windows[1].RemainingPercent)
+	}
+	if quota.Windows[1].ResetLabel != "重置于 2026年4月9日 下午5:26" {
+		t.Fatalf("unexpected reset label: %q", quota.Windows[1].ResetLabel)
 	}
 }
