@@ -2,6 +2,7 @@
 package sidecar
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -273,9 +274,86 @@ func writeConfig(path string, port int, authDir string) error {
 	}
 	cfg.RemoteManagement.AllowRemote = false
 	cfg.RemoteManagement.SecretKey = ManagementKey
-	data, err := yaml.Marshal(cfg)
+
+	data, err := os.ReadFile(path)
+	if err == nil {
+		var original yaml.Node
+		if unmarshalErr := yaml.Unmarshal(data, &original); unmarshalErr == nil &&
+			original.Kind == yaml.DocumentNode &&
+			len(original.Content) > 0 &&
+			original.Content[0] != nil &&
+			original.Content[0].Kind == yaml.MappingNode {
+			root := original.Content[0]
+			upsertMappingScalar(root, "host", cfg.Host, "!!str")
+			upsertMappingScalar(root, "port", fmt.Sprintf("%d", cfg.Port), "!!int")
+			upsertMappingScalar(root, "auth-dir", cfg.AuthDir, "!!str")
+			remoteManagement := ensureMappingNode(root, "remote-management")
+			upsertMappingScalar(remoteManagement, "allow-remote", "false", "!!bool")
+			upsertMappingScalar(remoteManagement, "secret-key", cfg.RemoteManagement.SecretKey, "!!str")
+
+			var buf bytes.Buffer
+			encoder := yaml.NewEncoder(&buf)
+			encoder.SetIndent(2)
+			if encodeErr := encoder.Encode(&original); encodeErr == nil {
+				if closeErr := encoder.Close(); closeErr == nil {
+					return os.WriteFile(path, buf.Bytes(), 0600)
+				}
+			}
+			_ = encoder.Close()
+		}
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	rendered, err := yaml.Marshal(cfg)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, data, 0600)
+	return os.WriteFile(path, rendered, 0600)
+}
+
+func ensureMappingNode(parent *yaml.Node, key string) *yaml.Node {
+	if parent == nil || parent.Kind != yaml.MappingNode {
+		return &yaml.Node{Kind: yaml.MappingNode}
+	}
+
+	for index := 0; index+1 < len(parent.Content); index += 2 {
+		keyNode := parent.Content[index]
+		if keyNode != nil && keyNode.Value == key {
+			valueNode := parent.Content[index+1]
+			if valueNode == nil {
+				valueNode = &yaml.Node{Kind: yaml.MappingNode}
+				parent.Content[index+1] = valueNode
+			}
+			if valueNode.Kind != yaml.MappingNode {
+				*valueNode = yaml.Node{Kind: yaml.MappingNode}
+			}
+			return valueNode
+		}
+	}
+
+	keyNode := &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key}
+	valueNode := &yaml.Node{Kind: yaml.MappingNode}
+	parent.Content = append(parent.Content, keyNode, valueNode)
+	return valueNode
+}
+
+func upsertMappingScalar(parent *yaml.Node, key string, value string, tag string) {
+	if parent == nil || parent.Kind != yaml.MappingNode {
+		return
+	}
+
+	for index := 0; index+1 < len(parent.Content); index += 2 {
+		keyNode := parent.Content[index]
+		if keyNode != nil && keyNode.Value == key {
+			parent.Content[index+1] = &yaml.Node{Kind: yaml.ScalarNode, Tag: tag, Value: value}
+			return
+		}
+	}
+
+	parent.Content = append(
+		parent.Content,
+		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
+		&yaml.Node{Kind: yaml.ScalarNode, Tag: tag, Value: value},
+	)
 }

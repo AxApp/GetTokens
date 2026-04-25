@@ -2,6 +2,7 @@ package wailsapp
 
 import (
 	"context"
+	"log"
 
 	"github.com/linhay/gettokens/internal/sidecar"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -12,6 +13,13 @@ func (a *App) Startup(ctx context.Context) {
 
 	go func() {
 		a.sidecar.Start(ctx, func(status sidecar.Status) {
+			if status.Code == sidecar.StatusReady {
+				go func() {
+					if err := a.syncStoredCodexAPIKeysToSidecar(); err != nil {
+						log.Printf("sync codex api keys to sidecar failed: %v", err)
+					}
+				}()
+			}
 			wailsRuntime.EventsEmit(ctx, "sidecar:status", status)
 		})
 	}()
