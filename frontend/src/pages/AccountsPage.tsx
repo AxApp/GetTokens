@@ -87,8 +87,10 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
   const [apiKeyLabels, setAPIKeyLabels] = useState<Record<string, string>>(() => loadAPIKeyLabels());
   const [selectedAccountIDs, setSelectedAccountIDs] = useState<string[]>([]);
   const [groupCardHeights, setGroupCardHeights] = useState<Record<string, number>>({});
+  const [isHeaderActionsMenuOpen, setIsHeaderActionsMenuOpen] = useState(false);
   const pageRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const headerActionsMenuRef = useRef<HTMLDivElement | null>(null);
   const quotaRequestIdRef = useRef(0);
 
   const ready = sidecarStatus?.code === 'ready';
@@ -249,6 +251,23 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
       loadAccounts();
     }
   }, [ready, loadAccounts]);
+
+  useEffect(() => {
+    if (!isHeaderActionsMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!headerActionsMenuRef.current?.contains(event.target as Node)) {
+        setIsHeaderActionsMenuOpen(false);
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [isHeaderActionsMenuOpen]);
 
   useLayoutEffect(() => {
     if (!pageRef.current) {
@@ -575,6 +594,42 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
     }
   }
 
+  const headerImportActions = (
+    <>
+      <button
+        onClick={() => {
+          fileInputRef.current?.click();
+          setIsHeaderActionsMenuOpen(false);
+        }}
+        className="btn-swiss whitespace-nowrap"
+        disabled={!ready || loading}
+      >
+        {t('accounts.import_auth_file')}
+      </button>
+      <button
+        onClick={() => {
+          setPasteError('');
+          setPasteContent('');
+          setIsPasteModalOpen(true);
+          setIsHeaderActionsMenuOpen(false);
+        }}
+        className="btn-swiss whitespace-nowrap"
+        disabled={!ready || loading}
+      >
+        {t('accounts.paste_auth_file')}
+      </button>
+      <button
+        onClick={() => {
+          openApiKeyModal();
+          setIsHeaderActionsMenuOpen(false);
+        }}
+        className="btn-swiss whitespace-nowrap"
+      >
+        {t('accounts.add_codex_api_key')}
+      </button>
+    </>
+  );
+
   return (
     <>
       <div
@@ -583,8 +638,8 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
         data-collaboration-id="PAGE_ACCOUNTS"
       >
         <div className="mx-auto max-w-6xl space-y-8 pb-32">
-          <header className="flex flex-col gap-5 border-b-4 border-[var(--border-color)] pb-4 xl:flex-row xl:items-end xl:justify-between">
-            <div>
+          <header className="flex items-end justify-between gap-6 border-b-4 border-[var(--border-color)] pb-4">
+            <div className="min-w-0 flex-1">
               <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
                 {t('accounts.title')}
               </h2>
@@ -592,45 +647,57 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
                 {t('accounts.subtitle')} / {accounts.length} UNITS
               </p>
             </div>
-            <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={(event) => {
-                  void uploadAccounts(event.target.files);
-                  event.target.value = '';
-                }}
-              />
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(event) => {
+                void uploadAccounts(event.target.files);
+                event.target.value = '';
+              }}
+            />
+            <div className="flex items-center justify-end gap-3">
               <button
-                onClick={() => fileInputRef.current?.click()}
-                className="btn-swiss min-w-[170px]"
+                onClick={loadAccounts}
+                className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
                 disabled={!ready || loading}
+                title={t('common.refresh')}
               >
-                {t('accounts.import_auth_file')}
+                <svg
+                  className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="square"
+                >
+                  <path d="M23 4v6h-6M1 20v-6h6" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
               </button>
+            </div>
+            <div ref={headerActionsMenuRef} className="relative">
               <button
-                onClick={() => {
-                  setPasteError('');
-                  setPasteContent('');
-                  setIsPasteModalOpen(true);
-                }}
-                className="btn-swiss min-w-[170px]"
-                disabled={!ready || loading}
+                onClick={() => setIsHeaderActionsMenuOpen((prev) => !prev)}
+                className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
+                aria-label="Open account actions menu"
               >
-                {t('accounts.paste_auth_file')}
+                <span className="flex flex-col gap-1.5">
+                  <span className="block h-0.5 w-4 bg-[var(--text-primary)]" />
+                  <span className="block h-0.5 w-4 bg-[var(--text-primary)]" />
+                  <span className="block h-0.5 w-4 bg-[var(--text-primary)]" />
+                </span>
               </button>
-              <button onClick={openApiKeyModal} className="btn-swiss min-w-[170px]">
-                {t('accounts.add_codex_api_key')}
-              </button>
-              <button onClick={loadAccounts} className="btn-swiss" disabled={!ready || loading}>
-                {t('common.refresh')}
-              </button>
+              {isHeaderActionsMenuOpen ? (
+                <div className="absolute right-0 top-full z-20 mt-3 flex min-w-[220px] flex-col gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[8px_8px_0_var(--shadow-color)]">
+                  {headerImportActions}
+                </div>
+              ) : null}
             </div>
           </header>
 
-          <section className="card-swiss !p-4">
+          <section className="space-y-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="flex w-full items-center">
                 <input
@@ -644,25 +711,29 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
                   placeholder={t('accounts.search_placeholder')}
                 />
               </div>
-              <div className="flex flex-wrap justify-end gap-2">
-                {(['all', 'auth-file', 'api-key'] as const).map((source) => (
-                  <button
-                    key={source}
-                    onClick={() => setSourceFilter(source)}
-                    className={`btn-swiss !px-3 !py-2 !text-[9px] ${
-                      sourceFilter === source ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
-                    }`}
-                  >
-                    {source === 'all'
-                      ? t('accounts.filter_all')
-                      : source === 'auth-file'
-                        ? t('accounts.source_auth_file')
-                        : t('accounts.source_api_key')}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  {(['all', 'auth-file', 'api-key'] as const).map((source) => (
+                    <button
+                      key={source}
+                      onClick={() => setSourceFilter(source)}
+                      className={`btn-swiss !px-3 !py-2 !text-[9px] ${
+                        sourceFilter === source ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
+                      }`}
+                    >
+                      {source === 'all'
+                        ? t('accounts.filter_all')
+                        : source === 'auth-file'
+                          ? t('accounts.source_auth_file')
+                          : t('accounts.source_api_key')}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center justify-end">
+                  <button onClick={toggleSelectionMode} className="btn-swiss !px-3 !py-2 !text-[9px]">
+                    {isSelectionMode ? t('accounts.unselect_all') : t('accounts.selection_mode')}
                   </button>
-                ))}
-                <button onClick={toggleSelectionMode} className="btn-swiss !px-3 !py-2 !text-[9px]">
-                  {isSelectionMode ? t('accounts.unselect_all') : t('accounts.selection_mode')}
-                </button>
+                </div>
               </div>
               {isSelectionMode ? (
                 <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-color)] pt-4">
@@ -718,16 +789,15 @@ export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
               {groupedAccounts.map((group) => (
                 <section key={group.id} className="space-y-4">
                   <div className="flex items-end justify-between gap-4 border-b-2 border-[var(--border-color)] pb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="h-5 w-5 bg-[var(--accent-red)]" />
-                      <h3 className="text-3xl font-black uppercase italic leading-none tracking-tighter text-[var(--text-primary)]">
-                        {group.label}
-                      </h3>
-                      <span className="mb-0.5 text-[10px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">
+                    <div className="space-y-1">
+                      <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
                         {groupProviderLabel(group.accounts)}
                       </span>
+                      <h3 className="text-[28px] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
+                        {group.label}
+                      </h3>
                     </div>
-                    <p className="mb-0.5 text-[10px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
+                    <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       {group.accounts.length} {t('accounts.plan_group_meta')}
                     </p>
                   </div>
