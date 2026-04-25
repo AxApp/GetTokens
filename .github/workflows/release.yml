@@ -173,6 +173,7 @@ jobs:
 
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Wails build
+        shell: bash
         run: |
           wails build \
             -platform ${{ matrix.wails-platform }} \
