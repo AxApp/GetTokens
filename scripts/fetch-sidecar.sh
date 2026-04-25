@@ -37,7 +37,7 @@ URL="https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-curl -fsSL "$URL" -o "${TMP}/${ASSET}"
+curl --retry 5 --retry-delay 2 --retry-all-errors -fsSL "$URL" -o "${TMP}/${ASSET}"
 
 mkdir -p "$DEST_DIR"
 
