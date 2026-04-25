@@ -6,7 +6,9 @@ import {sidecar} from '../models';
 
 export function ApplyUpdate():Promise<void>;
 
-export function CheckUpdate():Promise<updater.ReleaseInfo>;
+export function CanApplyUpdate():Promise<boolean>;
+
+export function CheckUpdate():Promise<updater.ReleaseInfo | null>;
 
 export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
 
@@ -20,6 +22,8 @@ export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>
 
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 
+export function GetRelayServiceConfig():Promise<main.RelayServiceConfig>;
+
 export function GetReleaseLabel():Promise<string>;
 
 export function GetSidecarStatus():Promise<sidecar.Status>;
@@ -31,5 +35,9 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
+
+export function UpdateRelayServiceAPIKey(arg1:string):Promise<main.RelayServiceConfig>;
+
+export function UpdateRelayServiceAPIKeys(arg1:Array<string>):Promise<main.RelayServiceConfig>;
 
 export function UploadAuthFiles(arg1:Array<main.UploadFilePayload>):Promise<void>;

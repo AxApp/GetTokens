@@ -6,6 +6,10 @@ export function ApplyUpdate() {
   return window['go']['main']['App']['ApplyUpdate']();
 }
 
+export function CanApplyUpdate() {
+  return window['go']['main']['App']['CanApplyUpdate']();
+}
+
 export function CheckUpdate() {
   return window['go']['main']['App']['CheckUpdate']();
 }
@@ -34,6 +38,10 @@ export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
 }
 
+export function GetRelayServiceConfig() {
+  return window['go']['main']['App']['GetRelayServiceConfig']();
+}
+
 export function GetReleaseLabel() {
   return window['go']['main']['App']['GetReleaseLabel']();
 }
@@ -56,6 +64,14 @@ export function ListAuthFiles() {
 
 export function SetAuthFileStatus(arg1, arg2) {
   return window['go']['main']['App']['SetAuthFileStatus'](arg1, arg2);
+}
+
+export function UpdateRelayServiceAPIKey(arg1) {
+  return window['go']['main']['App']['UpdateRelayServiceAPIKey'](arg1);
+}
+
+export function UpdateRelayServiceAPIKeys(arg1) {
+  return window['go']['main']['App']['UpdateRelayServiceAPIKeys'](arg1);
 }
 
 export function UploadAuthFiles(arg1) {

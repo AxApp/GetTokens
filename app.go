@@ -59,6 +59,7 @@ type CodexQuotaWindow struct {
 	Label            string `json:"label"`
 	RemainingPercent *int   `json:"remainingPercent,omitempty"`
 	ResetLabel       string `json:"resetLabel"`
+	ResetAtUnix      int64  `json:"resetAtUnix,omitempty"`
 }
 
 type CodexQuotaResponse struct {
@@ -95,6 +96,18 @@ type CreateCodexAPIKeyInput struct {
 	ExcludedModels []string          `json:"excludedModels,omitempty"`
 }
 
+type RelayServiceConfig struct {
+	APIKeys   []string               `json:"apiKeys"`
+	Endpoints []RelayServiceEndpoint `json:"endpoints"`
+}
+
+type RelayServiceEndpoint struct {
+	ID      string `json:"id"`
+	Kind    string `json:"kind"`
+	Host    string `json:"host"`
+	BaseURL string `json:"baseUrl"`
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -117,10 +130,14 @@ func (a *App) GetVersion() string {
 	return a.core.GetVersion()
 }
 
-
 func (a *App) GetReleaseLabel() string {
 	return a.core.GetReleaseLabel()
 }
+
+func (a *App) CanApplyUpdate() bool {
+	return a.core.CanApplyUpdate()
+}
+
 func (a *App) CheckUpdate() (*updater.ReleaseInfo, error) {
 	return a.core.CheckUpdate()
 }
@@ -208,6 +225,7 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 			Label:            window.Label,
 			RemainingPercent: window.RemainingPercent,
 			ResetLabel:       window.ResetLabel,
+			ResetAtUnix:      window.ResetAtUnix,
 		})
 	}
 
@@ -228,6 +246,42 @@ func (a *App) ListAccounts() ([]AccountRecord, error) {
 		records = append(records, mapAccountRecord(record))
 	}
 	return records, nil
+}
+
+func (a *App) GetRelayServiceConfig() (*RelayServiceConfig, error) {
+	result, err := a.core.GetRelayServiceConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelayServiceConfig{
+		APIKeys:   append([]string(nil), result.APIKeys...),
+		Endpoints: mapRelayServiceEndpoints(result.Endpoints),
+	}, nil
+}
+
+func (a *App) UpdateRelayServiceAPIKey(apiKey string) (*RelayServiceConfig, error) {
+	result, err := a.core.UpdateRelayServiceAPIKey(apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelayServiceConfig{
+		APIKeys:   append([]string(nil), result.APIKeys...),
+		Endpoints: mapRelayServiceEndpoints(result.Endpoints),
+	}, nil
+}
+
+func (a *App) UpdateRelayServiceAPIKeys(apiKeys []string) (*RelayServiceConfig, error) {
+	result, err := a.core.UpdateRelayServiceAPIKeys(apiKeys)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelayServiceConfig{
+		APIKeys:   append([]string(nil), result.APIKeys...),
+		Endpoints: mapRelayServiceEndpoints(result.Endpoints),
+	}, nil
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -265,4 +319,17 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		QuotaKey:         record.QuotaKey,
 		LocalOnly:        record.LocalOnly,
 	}
+}
+
+func mapRelayServiceEndpoints(items []wailsapp.RelayServiceEndpoint) []RelayServiceEndpoint {
+	endpoints := make([]RelayServiceEndpoint, 0, len(items))
+	for _, item := range items {
+		endpoints = append(endpoints, RelayServiceEndpoint{
+			ID:      item.ID,
+			Kind:    item.Kind,
+			Host:    item.Host,
+			BaseURL: item.BaseURL,
+		})
+	}
+	return endpoints
 }

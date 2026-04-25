@@ -33,6 +33,38 @@ func (c *Client) ListCodexAPIKeys() ([]CodexAPIKey, error) {
 	return response.Items, nil
 }
 
+func (c *Client) ListAPIKeys() ([]string, error) {
+	body, _, err := c.request("GET", "/v0/management/api-keys", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Items []string `json:"api-keys"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []string{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) PutAPIKeys(items []string) error {
+	if items == nil {
+		items = []string{}
+	}
+
+	payload, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = c.request("PUT", "/v0/management/api-keys", nil, bytes.NewReader(payload), "application/json")
+	return err
+}
+
 func (c *Client) PutCodexAPIKeys(items []CodexAPIKeyInput) error {
 	if items == nil {
 		items = []CodexAPIKeyInput{}

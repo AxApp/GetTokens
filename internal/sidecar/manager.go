@@ -4,6 +4,8 @@ package sidecar
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"net/http"
@@ -11,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,10 +49,11 @@ type Status struct {
 
 // Manager controls the backend subprocess.
 type Manager struct {
-	mu     sync.Mutex
-	cmd    *exec.Cmd
-	port   int
-	status Status
+	mu            sync.Mutex
+	cmd           *exec.Cmd
+	port          int
+	status        Status
+	serviceAPIKey string
 }
 
 // NewManager creates a Manager with default configuration.
@@ -88,10 +92,14 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 
 	// Write YAML config file (CLIProxyAPI reads host/port from config, not CLI flags).
 	configFile := filepath.Join(configDir, "config.yaml")
-	if err := writeConfig(configFile, port, configDir); err != nil {
+	serviceAPIKey, err := writeConfig(configFile, port, configDir)
+	if err != nil {
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("写配置文件失败: %v", err)}, notify)
 		return
 	}
+	m.mu.Lock()
+	m.serviceAPIKey = serviceAPIKey
+	m.mu.Unlock()
 
 	cmd := exec.CommandContext(ctx, binPath, "-config", configFile)
 
@@ -151,6 +159,18 @@ func (m *Manager) CurrentStatus() Status {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.status
+}
+
+func (m *Manager) CurrentServiceAPIKey() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.serviceAPIKey
+}
+
+func (m *Manager) SetCurrentServiceAPIKey(apiKey string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.serviceAPIKey = strings.TrimSpace(apiKey)
 }
 
 func (m *Manager) setStatus(s Status, notify func(Status)) {
@@ -256,9 +276,10 @@ func ensureConfigDir() (string, error) {
 
 // sidecarConfig is the YAML config written for CLIProxyAPI.
 type sidecarConfig struct {
-	Host             string `yaml:"host"`
-	Port             int    `yaml:"port"`
-	AuthDir          string `yaml:"auth-dir"`
+	Host             string   `yaml:"host"`
+	Port             int      `yaml:"port"`
+	AuthDir          string   `yaml:"auth-dir"`
+	APIKeys          []string `yaml:"api-keys"`
 	RemoteManagement struct {
 		AllowRemote bool   `yaml:"allow-remote"`
 		SecretKey   string `yaml:"secret-key"`
@@ -266,11 +287,12 @@ type sidecarConfig struct {
 }
 
 // writeConfig serialises a minimal YAML config for CLIProxyAPI.
-func writeConfig(path string, port int, authDir string) error {
+func writeConfig(path string, port int, authDir string) (string, error) {
 	cfg := sidecarConfig{
-		Host:    "127.0.0.1",
+		Host:    "",
 		Port:    port,
 		AuthDir: authDir,
+		APIKeys: []string{mustGenerateServiceAPIKey()},
 	}
 	cfg.RemoteManagement.AllowRemote = false
 	cfg.RemoteManagement.SecretKey = ManagementKey
@@ -287,6 +309,16 @@ func writeConfig(path string, port int, authDir string) error {
 			upsertMappingScalar(root, "host", cfg.Host, "!!str")
 			upsertMappingScalar(root, "port", fmt.Sprintf("%d", cfg.Port), "!!int")
 			upsertMappingScalar(root, "auth-dir", cfg.AuthDir, "!!str")
+			apiKeys := existingAPIKeys(root)
+			if len(apiKeys) == 0 {
+				apiKeys = cfg.APIKeys
+			}
+			if len(apiKeys) == 0 {
+				apiKeys = []string{mustGenerateServiceAPIKey()}
+			}
+			if upsertSequenceString(root, "api-keys", apiKeys) == 0 {
+				return "", fmt.Errorf("写入 api-keys 失败")
+			}
 			remoteManagement := ensureMappingNode(root, "remote-management")
 			upsertMappingScalar(remoteManagement, "allow-remote", "false", "!!bool")
 			upsertMappingScalar(remoteManagement, "secret-key", cfg.RemoteManagement.SecretKey, "!!str")
@@ -296,20 +328,26 @@ func writeConfig(path string, port int, authDir string) error {
 			encoder.SetIndent(2)
 			if encodeErr := encoder.Encode(&original); encodeErr == nil {
 				if closeErr := encoder.Close(); closeErr == nil {
-					return os.WriteFile(path, buf.Bytes(), 0600)
+					if writeErr := os.WriteFile(path, buf.Bytes(), 0600); writeErr != nil {
+						return "", writeErr
+					}
+					return apiKeys[0], nil
 				}
 			}
 			_ = encoder.Close()
 		}
 	} else if !os.IsNotExist(err) {
-		return err
+		return "", err
 	}
 
 	rendered, err := yaml.Marshal(cfg)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return os.WriteFile(path, rendered, 0600)
+	if err := os.WriteFile(path, rendered, 0600); err != nil {
+		return "", err
+	}
+	return cfg.APIKeys[0], nil
 }
 
 func ensureMappingNode(parent *yaml.Node, key string) *yaml.Node {
@@ -356,4 +394,79 @@ func upsertMappingScalar(parent *yaml.Node, key string, value string, tag string
 		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
 		&yaml.Node{Kind: yaml.ScalarNode, Tag: tag, Value: value},
 	)
+}
+
+func existingAPIKeys(parent *yaml.Node) []string {
+	if parent == nil || parent.Kind != yaml.MappingNode {
+		return nil
+	}
+
+	for index := 0; index+1 < len(parent.Content); index += 2 {
+		keyNode := parent.Content[index]
+		if keyNode == nil || keyNode.Value != "api-keys" {
+			continue
+		}
+
+		valueNode := parent.Content[index+1]
+		if valueNode == nil || valueNode.Kind != yaml.SequenceNode {
+			return nil
+		}
+
+		keys := make([]string, 0, len(valueNode.Content))
+		for _, item := range valueNode.Content {
+			if item == nil {
+				continue
+			}
+			trimmed := strings.TrimSpace(item.Value)
+			if trimmed == "" {
+				continue
+			}
+			keys = append(keys, trimmed)
+		}
+		return keys
+	}
+
+	return nil
+}
+
+func upsertSequenceString(parent *yaml.Node, key string, values []string) int {
+	if parent == nil || parent.Kind != yaml.MappingNode {
+		return 0
+	}
+
+	content := make([]*yaml.Node, 0, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		content = append(content, &yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: trimmed})
+	}
+	if len(content) == 0 {
+		return 0
+	}
+
+	sequenceNode := &yaml.Node{Kind: yaml.SequenceNode, Tag: "!!seq", Content: content}
+	for index := 0; index+1 < len(parent.Content); index += 2 {
+		keyNode := parent.Content[index]
+		if keyNode != nil && keyNode.Value == key {
+			parent.Content[index+1] = sequenceNode
+			return len(content)
+		}
+	}
+
+	parent.Content = append(
+		parent.Content,
+		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
+		sequenceNode,
+	)
+	return len(content)
+}
+
+func mustGenerateServiceAPIKey() string {
+	buffer := make([]byte, 12)
+	if _, err := rand.Read(buffer); err != nil {
+		return "sk-gettokens-local"
+	}
+	return "sk-gettokens-" + hex.EncodeToString(buffer)
 }
