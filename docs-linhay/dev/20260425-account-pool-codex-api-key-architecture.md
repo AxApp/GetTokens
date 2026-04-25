@@ -84,6 +84,32 @@ Codex 额度不再由 app 直接拼 bearer 请求外网，而是走：
 
 后续如果需要更细的排障，应补“内部桥接请求”和“外部目标请求”双层展示。
 
+## 前端边界
+
+账号池页面已经不再适合维持单文件结构。
+
+当前边界应保持为：
+
+1. `frontend/src/pages/AccountsPage.tsx`
+   - 只做页面装配
+   - 组合 header / toolbar / group / modal
+2. `frontend/src/pages/accounts/*`
+   - 承载单卡、分组、弹窗、helper
+3. `frontend/src/pages/accounts/useAccountsPageState.ts`
+   - 承载数据加载、导入、删除、额度刷新、选择态
+
+后续继续迭代账号池时，优先扩这套模块边界，不要把 UI、状态和 helper 再塞回单个页面文件。
+
+## 额度时间显示规则
+
+最近一次排障确认：
+
+1. `resetLabel` 只是展示文案，不能作为相对时间计算源
+2. 后端展示文案默认只保留到分钟，秒数会丢失
+3. 相对倒计时必须基于 `resetAtUnix`
+
+否则在窗口临近重置时，会出现“真实还有几十秒，但页面显示 `0s`”的假阴性。
+
 ## 维护建议
 
 1. 账号池相关任务优先走 `gettokens-accounts-domain`

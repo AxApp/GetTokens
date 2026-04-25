@@ -4,28 +4,31 @@
 
 这轮沉淀只保留对 GetTokens 后续开发仍然稳定有效的能力边界，不保留一次性的修复细节。
 
-## 新增 skills
+## 20260520 更新：Skills 整合
 
-1. `.agents/skills/gettokens-accounts-domain`
-   账号池与 auth-file 领域闭环，覆盖 Wails 到 sidecar 的接口桥接、列表、详情、验证、删除与启停。
-2. `.agents/skills/gettokens-wails-dev-loop`
-   Wails + Vite 开发回路，强调何时必须冷重启、何时不能信任 HMR、以及如何确认桌面窗口加载的是最新 bundle。
-3. `.agents/skills/gettokens-frontend-debug`
-   前端调试与交互归因，覆盖 LocatorJS、Svelte Inspector、`!!!` 打点和 Wails WebView 兼容性陷阱。
-4. `.agents/skills/gettokens-ui-system`
-   视觉系统与本地化约束，固化黑白灰工业风、主题切换、设置页组织方式，以及中英文文案同步规则。
-5. `.agents/skills/gettokens-session-skill-distill`
-   把历史会话蒸馏成项目级 skills 的方法论，覆盖 transcript 定位、重复模式提炼、skill 边界划分与写回；当用户只说“整理”且语境明显指向当前会话时，也默认触发这条流程。
-6. `.agents/skills/gettokens-agents-governance-sync`
-   把 AGENTS 约束真正落到仓库动作上的方法论，覆盖 docs-linhay 落位、记忆写回、qmd 索引和 `.gitignore` 对齐。
-7. `.agents/skills/gettokens-space-governance`
-   `spaces` 工作空间治理，覆盖 `space-key` 命名、`README.md` 模板，以及 `plans`、`screenshots`、`debate` 的归档边界。
-8. `.agents/skills/gettokens-doc-writeback`
-   文档与记忆写回流程，覆盖落位判断、memory 精简写回，以及 `qmd update` / `qmd embed` 的强制同步。
-9. `.agents/skills/gettokens-cliproxyapi-fork-maintenance`
-   当问题落到 `CLIProxyAPI` 行为本身时，覆盖 fork/upstream 关系、上游同步、补丁平移、app bundle sidecar 替换与运行态核验。
+由于项目级 skills 数量过多（9个）导致 CLI 上下文预算超标，现将其整合为 2 个核心技能，以保持高效响应并减少冗余。
 
-## 为什么是这些 skills
+## 整合后的 Skills
+
+1. `.agents/skills/gettokens-ops-governance`
+   **项目运营与治理**。整合了 Wails 开发回路（重启规则、就绪模型）、`spaces` 工作空间治理、文档与记忆写回流程、AGENTS 同步，以及会话技能蒸馏。它定义了“如何在 GetTokens 仓库里正确地工作”。
+
+2. `.agents/skills/gettokens-domain-engineering`
+   **领域工程与技术**。整合了账号池（unified inventory）、配额规则（quota rules）、UI 视觉系统（Swiss-industrial）、前端调试归因，以及 CLIProxyAPI fork 维护。它定义了“GetTokens 的技术实现与工程约束”。
+
+## 为什么进行整合
+
+1. **解决预算告警**：原先 9 个技能的描述总和超出了 CLI 的上下文配额，导致描述被截断。
+2. **逻辑内聚**：原先的多个流程类技能（治理、写回、同步、蒸馏）本质上都是关于“工作流”的，将其内聚后更易于理解和调用。
+3. **清晰边界**：通过“流程治理” vs “领域工程”的划分，使得技能的触发场景更加明确。
+
+---
+
+## 历史记录 (20260424 蒸馏)
+
+（以下为整合前的原始 skills 列表，仅供参考）
+...
+
 
 当前沉淀出来的长期知识并不是若干孤立 bug，而是八类工作模式：
 

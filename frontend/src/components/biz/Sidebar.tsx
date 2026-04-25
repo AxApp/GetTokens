@@ -25,9 +25,19 @@ export default function Sidebar({ activePage, setActivePage, releaseLabel }: Sid
       data-collaboration-id="NAV_SIDEBAR"
     >
       <div className="border-b-2 border-[var(--border-color)] p-8">
-        <div className="flex flex-col text-2xl font-black italic tracking-tighter uppercase">
-          <span>GET</span>
-          <span className="mt-[-8px] text-[var(--text-muted)]">TOKENS</span>
+        <div className="flex items-center gap-4">
+          <div className="h-10 w-10 shrink-0 text-[var(--accent-red)]">
+            <svg viewBox="0 0 100 100" className="h-full w-full" fill="currentColor">
+              <rect x="10" y="14" width="80" height="32" />
+              <rect x="58" y="46" width="32" height="24" />
+              <rect x="74" y="70" width="16" height="16" />
+              <circle cx="26" cy="30" r="6.4" fill="var(--bg-main)" />
+            </svg>
+          </div>
+          <div className="flex flex-col text-2xl font-black italic tracking-tighter uppercase leading-none">
+            <span>GET</span>
+            <span className="mt-[-4px] text-[var(--text-muted)]">TOKENS</span>
+          </div>
         </div>
       </div>
 

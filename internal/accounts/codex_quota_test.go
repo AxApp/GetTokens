@@ -108,6 +108,12 @@ func TestBuildCodexQuotaWindows(t *testing.T) {
 	if windows[1].RemainingPercent == nil || *windows[1].RemainingPercent != 45 {
 		t.Fatalf("unexpected weekly remaining: %#v", windows[1].RemainingPercent)
 	}
+	if windows[0].ResetAtUnix != 1710000000 {
+		t.Fatalf("unexpected primary resetAtUnix: %d", windows[0].ResetAtUnix)
+	}
+	if windows[1].ResetAtUnix != 1710600000 {
+		t.Fatalf("unexpected weekly resetAtUnix: %d", windows[1].ResetAtUnix)
+	}
 }
 
 func TestParseCachedCodexQuota(t *testing.T) {
@@ -150,6 +156,12 @@ func TestParseCachedCodexQuota(t *testing.T) {
 	}
 	if quota.Windows[1].ResetLabel != "重置于 2026年4月9日 下午5:26" {
 		t.Fatalf("unexpected reset label: %q", quota.Windows[1].ResetLabel)
+	}
+	if quota.Windows[0].ResetAtUnix != 1710000000 {
+		t.Fatalf("unexpected primary resetAtUnix: %d", quota.Windows[0].ResetAtUnix)
+	}
+	if quota.Windows[1].ResetAtUnix != 0 {
+		t.Fatalf("unexpected secondary resetAtUnix: %d", quota.Windows[1].ResetAtUnix)
 	}
 }
 

@@ -8,7 +8,7 @@ export function ApplyUpdate():Promise<void>;
 
 export function CanApplyUpdate():Promise<boolean>;
 
-export function CheckUpdate():Promise<updater.ReleaseInfo | null>;
+export function CheckUpdate():Promise<updater.ReleaseInfo>;
 
 export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
 

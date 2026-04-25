@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GetReleaseLabel, GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
+import { CanApplyUpdate, GetReleaseLabel, GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
 import AccountsPage from './pages/AccountsPage';
@@ -9,7 +9,7 @@ import StatusPage from './pages/StatusPage';
 import { DebugProvider, useDebug } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
-import type { AppPage, SidecarStatus } from './types';
+import type { AppPage, ReleaseInfo, SidecarStatus } from './types';
 
 const defaultSidecarStatus: SidecarStatus = {
   code: 'stopped',
@@ -25,6 +25,8 @@ function AppShell() {
   const [sidecarStatus, setSidecarStatus] = useState<SidecarStatus>(defaultSidecarStatus);
   const [version, setVersion] = useState('dev');
   const [releaseLabel, setReleaseLabel] = useState('');
+  const [availableRelease, setAvailableRelease] = useState<ReleaseInfo | null>(null);
+  const [canApplyUpdate, setCanApplyUpdate] = useState(true);
 
   useEffect(() => {
     const isDark =
@@ -38,14 +40,16 @@ function AppShell() {
 
     async function loadInitialState() {
       try {
-        const [currentVersion, currentReleaseLabel, currentStatus] = await Promise.all([
+        const [currentVersion, currentReleaseLabel, currentStatus, currentCanApplyUpdate] = await Promise.all([
           trackRequest('GetVersion', { args: [] }, () => GetVersion()),
           trackRequest('GetReleaseLabel', { args: [] }, () => GetReleaseLabel()),
           trackRequest('GetSidecarStatus', { args: [] }, () => GetSidecarStatus()),
+          trackRequest('CanApplyUpdate', { args: [] }, () => CanApplyUpdate()),
         ]);
         if (!mounted) return;
         setVersion(currentVersion || 'dev');
         setReleaseLabel(currentReleaseLabel || '');
+        setCanApplyUpdate(Boolean(currentCanApplyUpdate));
         if (currentStatus) {
           setSidecarStatus(currentStatus);
         }
@@ -59,10 +63,14 @@ function AppShell() {
     const offStatus = EventsOn('sidecar:status', (status: SidecarStatus) => {
       setSidecarStatus(status);
     });
+    const offRelease = EventsOn('updater:available', (release: ReleaseInfo) => {
+      setAvailableRelease(release);
+    });
 
     return () => {
       mounted = false;
       offStatus?.();
+      offRelease?.();
     };
   }, []);
 
@@ -74,10 +82,18 @@ function AppShell() {
       return <DebugPage />;
     }
     if (activePage === 'settings') {
-      return <SettingsPage />;
+      return (
+        <SettingsPage
+          version={version}
+          releaseLabel={releaseLabel}
+          canApplyUpdate={canApplyUpdate}
+          availableRelease={availableRelease}
+          setAvailableRelease={setAvailableRelease}
+        />
+      );
     }
     return <AccountsPage sidecarStatus={sidecarStatus} />;
-  }, [activePage, sidecarStatus, version]);
+  }, [activePage, availableRelease, canApplyUpdate, releaseLabel, sidecarStatus, version]);
 
   return (
     <div

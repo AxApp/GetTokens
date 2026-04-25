@@ -1,4 +1,4 @@
-import type { main, sidecar } from '../wailsjs/go/models';
+import type { main, sidecar, updater } from '../wailsjs/go/models';
 
 export type AppPage = 'status' | 'accounts' | 'settings' | 'debug';
 
@@ -7,6 +7,7 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 export type LocaleCode = 'zh' | 'en';
 
 export type SidecarStatus = sidecar.Status;
+export type ReleaseInfo = updater.ReleaseInfo;
 
 export type AuthFile = main.AuthFileItem & {
   email?: string;

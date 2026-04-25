@@ -8,18 +8,18 @@ import (
 )
 
 type App struct {
-	ctx     context.Context
-	sidecar *sidecar.Manager
-	updater *updater.Updater
-	version string
+	ctx          context.Context
+	sidecar      *sidecar.Manager
+	updater      *updater.Updater
+	version      string
 	releaseLabel string
 }
 
 func New(version string, releaseLabel string, repo string) *App {
 	return &App{
-		sidecar: sidecar.NewManager(),
-		updater: updater.New(repo, version),
-		version: version,
+		sidecar:      sidecar.NewManager(),
+		updater:      updater.New(repo, version),
+		version:      version,
 		releaseLabel: releaseLabel,
 	}
 }

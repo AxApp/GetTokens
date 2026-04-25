@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/linhay/gettokens/internal/sidecar"
+	"github.com/linhay/gettokens/internal/updater"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -47,4 +48,8 @@ func (a *App) GetVersion() string {
 
 func (a *App) GetReleaseLabel() string {
 	return a.releaseLabel
+}
+
+func (a *App) CanApplyUpdate() bool {
+	return updater.SupportsInPlaceApply()
 }

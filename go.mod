@@ -3,6 +3,7 @@ module github.com/linhay/gettokens
 go 1.23.0
 
 require (
+	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/creativeprojects/go-selfupdate v1.4.0
 	github.com/wailsapp/wails/v2 v2.12.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -11,7 +12,6 @@ require (
 require (
 	code.gitea.io/sdk/gitea v0.19.0 // indirect
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
-	github.com/Masterminds/semver/v3 v3.3.0 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/davidmz/go-pageant v1.0.2 // indirect
 	github.com/go-fed/httpsig v1.1.0 // indirect

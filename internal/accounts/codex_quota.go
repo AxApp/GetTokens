@@ -23,6 +23,7 @@ type CodexQuotaWindow struct {
 	Label            string
 	RemainingPercent *int
 	ResetLabel       string
+	ResetAtUnix      int64
 }
 
 type CodexQuotaResponse struct {
@@ -449,6 +450,7 @@ func newCodexQuotaWindow(id string, label string, window *codexUsageWindow, limi
 		return nil
 	}
 
+	resetAtUnix := codexResetUnixSeconds(window)
 	resetLabel := formatCodexResetLabel(window)
 	usedPercent := numberValue(firstNonNil(window.UsedPercent, window.UsedPercentCamel))
 	remainingPercent := remainingPercentFromUsed(usedPercent, limitReached, allowed, resetLabel)
@@ -458,6 +460,7 @@ func newCodexQuotaWindow(id string, label string, window *codexUsageWindow, limi
 		Label:            label,
 		RemainingPercent: remainingPercent,
 		ResetLabel:       resetLabel,
+		ResetAtUnix:      resetAtUnix,
 	}
 }
 
@@ -536,17 +539,25 @@ func firstAdditionalRateLimits(primary []codexAdditionalLimit, secondary []codex
 }
 
 func formatCodexResetLabel(window *codexUsageWindow) string {
+	resetAtUnix := codexResetUnixSeconds(window)
+	if resetAtUnix > 0 {
+		return formatUnixSeconds(resetAtUnix)
+	}
+	return "-"
+}
+
+func codexResetUnixSeconds(window *codexUsageWindow) int64 {
 	if window == nil {
-		return "-"
+		return 0
 	}
 
 	if resetAt := numberValue(firstNonNil(window.ResetAt, window.ResetAtCamel)); resetAt != nil && *resetAt > 0 {
-		return formatUnixSeconds(int64(*resetAt))
+		return int64(*resetAt)
 	}
 	if resetAfter := numberValue(firstNonNil(window.ResetAfterSeconds, window.ResetAfterSecondsCam)); resetAfter != nil && *resetAfter > 0 {
-		return formatUnixSeconds(time.Now().Unix() + int64(*resetAfter))
+		return time.Now().Unix() + int64(*resetAfter)
 	}
-	return "-"
+	return 0
 }
 
 func windowSeconds(window *codexUsageWindow) int64 {
@@ -782,9 +793,13 @@ func parseCachedCodexQuota(body []byte) *CodexQuotaResponse {
 			stringValue(window, "resetDescription"),
 			stringValue(window, "reset_description"),
 		)
+		var resetAtUnix int64
+		if resetsAt := numberValue(firstNonNil(window["resetsAt"], window["resets_at"])); resetsAt != nil {
+			resetAtUnix = int64(*resetsAt)
+		}
 		if resetLabel == "" {
-			if resetsAt := numberValue(firstNonNil(window["resetsAt"], window["resets_at"])); resetsAt != nil {
-				resetLabel = formatUnixSeconds(int64(*resetsAt))
+			if resetAtUnix > 0 {
+				resetLabel = formatUnixSeconds(resetAtUnix)
 			}
 		}
 		if resetLabel == "" {
@@ -796,6 +811,7 @@ func parseCachedCodexQuota(body []byte) *CodexQuotaResponse {
 			Label:            spec.label,
 			RemainingPercent: remainingPercent,
 			ResetLabel:       resetLabel,
+			ResetAtUnix:      resetAtUnix,
 		})
 	}
 

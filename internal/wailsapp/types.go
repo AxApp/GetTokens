@@ -37,6 +37,7 @@ type CodexQuotaWindow struct {
 	Label            string
 	RemainingPercent *int
 	ResetLabel       string
+	ResetAtUnix      int64
 }
 
 type CodexQuotaResponse struct {

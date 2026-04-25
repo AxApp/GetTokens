@@ -124,6 +124,7 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 			Label:            window.Label,
 			RemainingPercent: window.RemainingPercent,
 			ResetLabel:       window.ResetLabel,
+			ResetAtUnix:      window.ResetAtUnix,
 		})
 	}
 

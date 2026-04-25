@@ -1,0 +1,84 @@
+# GetTokens 发布准备指南
+
+## 目标版本
+当前首发版本建议采用 `v0.1.0`，原因：
+
+1. 仓库当前还没有任何 git tag。
+2. `frontend/package.json` 版本号已是 `0.1.0`。
+3. 当前功能集合更接近首个公开可用版本，而不是后续增量 patch。
+
+## 发布资产分层
+后续 release 统一分成两类资产：
+
+1. 用户下载安装包
+   - macOS: `GetTokens_darwin_universal.dmg`
+   - Windows: `GetTokens_windows_amd64_installer.exe`
+   - Linux: 保持现有下载包策略
+2. 自动升级资产
+   - macOS: `GetTokens_darwin_universal.tar.gz`
+   - Windows: `GetTokens_windows_amd64.tar.gz`
+   - Linux: `GetTokens_linux_amd64.tar.gz`
+
+说明：
+- Windows / Linux 继续使用 `go-selfupdate` 做原地替换。
+- macOS 保留 `tar.gz` 资产用于检测最新版本和统一校验链，但签名发布包不做 bundle 内原地替换，设置页会跳转到 release 页面安装。
+- 原因是 Apple 对签名 bundle 的 seal 有要求；修改 `.app` 主可执行文件会破坏签名边界。参见 Apple Technical Note TN2206。
+
+## macOS 签名与公证
+macOS release 现在按以下顺序处理：
+
+1. 使用 `Developer ID Application` 证书对 `GetTokens.app` 做 hardened runtime 签名
+2. 使用 `notarytool` 提交 `.app` 的 zip 包并等待公证完成
+3. 对 `.app` 执行 `stapler staple`
+4. 基于已 stapled 的 `.app` 生成 DMG
+5. 对 DMG 重新签名后再次提交 notarization
+6. 对 DMG 执行 `stapler staple`
+7. 最后再从签名后的 `.app` 中提取 updater 原始可执行文件，打成 `tar.gz`
+
+对应脚本：
+- [scripts/sign-notarize-macos-release.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/sign-notarize-macos-release.sh)
+- [scripts/package-updater-asset.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/package-updater-asset.sh)
+
+`sign-notarize-macos-release.sh` 分成两个模式：
+1. `app <path>`：签名、notarize、staple `.app`
+2. `dmg <path>`：签名、notarize、staple `.dmg`
+
+## GitHub Secrets
+CI release workflow 需要以下 secrets：
+
+1. `MACOS_SIGNING_IDENTITY`
+   示例：`Developer ID Application: HAN LIN (3L8RM3MDLS)`
+2. `MACOS_DEVELOPER_ID_P12_BASE64`
+   Developer ID Application 证书导出的 `.p12` 内容做 base64 后存入
+3. `MACOS_DEVELOPER_ID_P12_PASSWORD`
+   上述 `.p12` 的导出密码
+4. `MACOS_NOTARY_KEY_ID`
+   App Store Connect API Key 的 key id
+5. `MACOS_NOTARY_ISSUER_ID`
+   App Store Connect API Key 的 issuer id
+6. `MACOS_NOTARY_API_KEY_BASE64`
+   `AuthKey_<KEY_ID>.p8` 文件内容做 base64 后存入
+
+## 原则
+1. 自动升级资产必须可直接解压出目标可执行文件，不能是安装器。
+2. 自动升级比较继续使用语义化版本 tag，例如 `v0.1.0`。
+3. UI 展示版本时间使用 `ReleaseLabel`，不和 `Version` 混用。
+4. Windows 安装包必须避开 `go-selfupdate` 的默认匹配规则，因此使用 `_installer.exe` 后缀。
+5. macOS universal updater 资产需要和 `UniversalArch=universal` 对齐。
+6. macOS release workflow 必须先 notarize `.app`，再从已 stapled 的 `.app` 生成 DMG，最后再 notarize DMG；不能先打 DMG 再签 app。
+7. 已签名 macOS `.app` 在当前框架下只支持“检查更新 + 跳转 release 页面”，不支持 bundle 内 `ApplyUpdate`。
+
+## 建议发布步骤
+1. 确认工作区只包含本次准备发布的变更。
+2. 运行前端类型检查、Go 测试、文档校验。
+3. 合并到干净提交后创建 tag：`v0.1.0`。
+4. 推送 tag 触发 GitHub Actions release workflow。
+5. 在生成的 release 页面检查：
+   - 安装包资产存在
+   - updater 资产存在
+   - `checksums.txt` 包含全部资产
+   - macOS DMG 已经 stapled，`xcrun stapler validate` 通过
+6. 使用非 dev 构建验证：
+   - `CheckUpdate` 能发现新版本
+   - Windows / Linux: `ApplyUpdate` 能下载并替换二进制，应用退出后重启进入新版本
+   - macOS: 设置页能打开对应 release 页面，下载安装后进入新版本

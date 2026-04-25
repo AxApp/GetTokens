@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/creativeprojects/go-selfupdate"
 )
 
@@ -28,6 +29,39 @@ type Updater struct {
 	cachedRelease *selfupdate.Release
 }
 
+func updaterConfig() selfupdate.Config {
+	return selfupdate.Config{
+		Validator:     &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
+		UniversalArch: "universal",
+	}
+}
+
+func newSelfUpdater() (*selfupdate.Updater, error) {
+	return selfupdate.NewUpdater(updaterConfig())
+}
+
+func hasNewerVersion(currentVersion, latestVersion string) (bool, error) {
+	current, err := semver.NewVersion(currentVersion)
+	if err != nil {
+		return false, fmt.Errorf("parse current version: %w", err)
+	}
+
+	latest, err := semver.NewVersion(latestVersion)
+	if err != nil {
+		return false, fmt.Errorf("parse latest version: %w", err)
+	}
+
+	return latest.GreaterThan(current), nil
+}
+
+func supportsInPlaceApply(goos string) bool {
+	return goos != "darwin"
+}
+
+func SupportsInPlaceApply() bool {
+	return supportsInPlaceApply(runtime.GOOS)
+}
+
 // New creates an Updater targeting the given GitHub repo slug (e.g. "owner/repo").
 func New(repo, currentVersion string) *Updater {
 	return &Updater{repo: repo, current: currentVersion}
@@ -41,9 +75,7 @@ func (u *Updater) Check(ctx context.Context) (*ReleaseInfo, bool, error) {
 		return nil, false, nil
 	}
 
-	up, err := selfupdate.NewUpdater(selfupdate.Config{
-		Validator: &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
-	})
+	up, err := newSelfUpdater()
 	if err != nil {
 		return nil, false, fmt.Errorf("create updater: %w", err)
 	}
@@ -52,14 +84,22 @@ func (u *Updater) Check(ctx context.Context) (*ReleaseInfo, bool, error) {
 	if err != nil {
 		return nil, false, fmt.Errorf("detect latest: %w", err)
 	}
-	if !found || latest.LessThan(u.current) {
+	if !found {
+		return nil, false, nil
+	}
+
+	hasNewer, err := hasNewerVersion(u.current, latest.Version())
+	if err != nil {
+		return nil, false, fmt.Errorf("compare versions: %w", err)
+	}
+	if !hasNewer {
 		return nil, false, nil
 	}
 
 	u.cachedRelease = latest
 	return &ReleaseInfo{
 		Version:     latest.Version(),
-		ReleaseURL:  latest.AssetURL,
+		ReleaseURL:  latest.URL,
 		AssetName:   latest.AssetName,
 		ReleaseNote: latest.ReleaseNotes,
 	}, true, nil
@@ -68,6 +108,10 @@ func (u *Updater) Check(ctx context.Context) (*ReleaseInfo, bool, error) {
 // Apply downloads and installs the cached release, replacing the running executable.
 // Call Check first; if no release is cached this returns an error.
 func (u *Updater) Apply(ctx context.Context) error {
+	if !SupportsInPlaceApply() {
+		return fmt.Errorf("in-place update is not supported on %s; download and reinstall from the release page", runtime.GOOS)
+	}
+
 	if u.cachedRelease == nil {
 		return fmt.Errorf("no update available; call Check first")
 	}
@@ -77,9 +121,7 @@ func (u *Updater) Apply(ctx context.Context) error {
 		return fmt.Errorf("resolve executable path: %w", err)
 	}
 
-	up, err := selfupdate.NewUpdater(selfupdate.Config{
-		Validator: &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
-	})
+	up, err := newSelfUpdater()
 	if err != nil {
 		return fmt.Errorf("create updater: %w", err)
 	}
