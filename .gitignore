@@ -1,7 +1,9 @@
 docs-*/
 !docs-linhay/
 !docs-linhay/**
-build/
+build/*
+!build/appicon.png
+!build/appicon.svg
 
 frontend/dist
 frontend/node_modules
