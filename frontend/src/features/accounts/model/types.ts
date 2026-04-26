@@ -1,4 +1,4 @@
-import type { AccountRecord, AuthFile, CodexQuota, CredentialSource } from '../../types';
+import type { AccountRecord, AuthFile, CodexQuota, CredentialSource } from '../../../types';
 
 export interface AccountsPageProps {
   sidecarStatus: {
@@ -49,6 +49,16 @@ export interface AccountGroup {
   rank: number;
   accounts: AccountRecord[];
 }
+
+export type TrackRequest = <T>(
+  name: string,
+  request: unknown,
+  executor: () => Promise<T>,
+  options?: {
+    transport?: 'wails' | 'http';
+    mapSuccess?: (result: T) => unknown;
+  }
+) => Promise<T>;
 
 export type Translator = (key: string) => string;
 export type SourceFilter = 'all' | CredentialSource;

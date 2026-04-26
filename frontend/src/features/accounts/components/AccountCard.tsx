@@ -1,6 +1,7 @@
-import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRelative, supportsQuota } from './accountQuota';
-import { resolveAccountPrimaryLabel } from './accountPresentation';
-import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from './types';
+import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRelative, supportsQuota } from '../model/accountQuota';
+import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
+import { resolveAccountFailureReason, resolveAccountPrimaryLabel } from '../model/accountPresentation';
+import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from '../model/types';
 import AccountCardSkeleton from './AccountCardSkeleton';
 
 interface AccountCardProps {
@@ -38,6 +39,14 @@ export default function AccountCard({
 }: AccountCardProps) {
   const quotaDisplay = buildQuotaDisplay(account, quotaState);
   const primaryLabel = resolveAccountPrimaryLabel(account);
+  const failureReason = resolveAccountFailureReason(account);
+
+  function openDetails() {
+    if (isSelectionMode || isPendingDelete) {
+      return;
+    }
+    onOpenDetails(account);
+  }
 
   if (quotaDisplay.status === 'loading') {
     return <AccountCardSkeleton />;
@@ -46,8 +55,28 @@ export default function AccountCard({
   return (
     <div
       data-account-card
-      className="card-swiss flex h-full flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px]"
+      className={`card-swiss flex h-full flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] ${
+        isSelectionMode || isPendingDelete ? '' : 'cursor-pointer'
+      }`}
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
+      onClick={(event) => {
+        if (!shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
+          return;
+        }
+        openDetails();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+        if (!shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
+          return;
+        }
+        event.preventDefault();
+        openDetails();
+      }}
+      role="button"
+      tabIndex={isSelectionMode || isPendingDelete ? -1 : 0}
     >
       <div className="mb-5 flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
@@ -66,6 +95,11 @@ export default function AccountCard({
               {primaryLabel}
             </span>
           </h3>
+          {failureReason ? (
+            <div className="break-words text-[10px] font-bold leading-relaxed text-red-500" title={failureReason}>
+              {failureReason}
+            </div>
+          ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           {isSelectionMode ? (

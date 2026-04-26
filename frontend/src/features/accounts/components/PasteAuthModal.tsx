@@ -1,4 +1,4 @@
-import type { ClickEventLike, Translator } from './types';
+import type { ClickEventLike, Translator } from '../model/types';
 
 interface PasteAuthModalProps {
   t: Translator;

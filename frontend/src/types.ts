@@ -22,6 +22,7 @@ export interface AccountRecord {
   credentialSource: CredentialSource;
   displayName: string;
   status: string;
+  statusMessage?: string;
   disabled?: boolean;
   email?: string;
   planType?: string;

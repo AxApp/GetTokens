@@ -1,4 +1,4 @@
-import type { SourceFilter, Translator } from './types';
+import type { SourceFilter, Translator } from '../model/types';
 
 interface AccountsToolbarProps {
   t: Translator;

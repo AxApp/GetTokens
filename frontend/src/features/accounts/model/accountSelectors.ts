@@ -1,4 +1,4 @@
-import type { AccountRecord } from '../../types';
+import type { AccountRecord } from '../../../types';
 import type { AccountGroup, CodexQuotaState, SourceFilter, Translator } from './types';
 import { buildQuotaDisplay } from './accountQuota.ts';
 import {

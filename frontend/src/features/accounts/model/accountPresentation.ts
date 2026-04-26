@@ -1,5 +1,5 @@
-import type { main } from '../../../wailsjs/go/models';
-import type { AccountRecord, AuthFile, CredentialSource } from '../../types';
+import type { main } from '../../../../wailsjs/go/models';
+import type { AccountRecord, AuthFile, CredentialSource } from '../../../types';
 import type { QuotaDisplay, Translator } from './types';
 import { buildAPIKeyLabelStorageKey } from './accountConfig.ts';
 
@@ -23,6 +23,7 @@ export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
     credentialSource: 'auth-file',
     displayName: account.name,
     status: String(account.status || 'active').trim().toUpperCase() || 'ACTIVE',
+    statusMessage: String(account.statusMessage || '').trim(),
     disabled: account.disabled,
     email: account.email,
     planType: account.planType,
@@ -45,6 +46,17 @@ export function mapBackendAccountRecord(account: main.AccountRecord, apiKeyLabel
     displayName: localDisplayName || account.displayName,
     credentialSource,
   };
+}
+
+export function resolveAccountFailureReason(account: AccountRecord) {
+  const status = String(account.status || '')
+    .trim()
+    .toUpperCase();
+  if (status === 'ACTIVE' || status === 'CONFIGURED' || status === 'DISABLED' || status === 'LOCAL') {
+    return '';
+  }
+  return String(account.statusMessage || account.rawAuthFile?.statusMessage || '')
+    .trim();
 }
 
 export function resolveAccountPlanLabel(account: AccountRecord, quotaDisplay: QuotaDisplay) {

@@ -1,5 +1,5 @@
-import { groupProviderLabel } from './accountPresentation';
-import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from './types';
+import { groupProviderLabel } from '../model/accountPresentation';
+import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from '../model/types';
 import AccountCard from './AccountCard';
 
 interface AccountGroupSectionProps {

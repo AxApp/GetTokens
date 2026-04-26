@@ -9,7 +9,7 @@ import {
   buildManagedConfigTomlSnippet,
   normalizeBaseUrl,
   normalizePrefix,
-} from './accountConfig.ts';
+} from '../model/accountConfig.ts';
 
 test('normalizeBaseUrl trims and removes trailing slashes', () => {
   assert.equal(normalizeBaseUrl(' https://api.example.com/v1/// '), 'https://api.example.com/v1');

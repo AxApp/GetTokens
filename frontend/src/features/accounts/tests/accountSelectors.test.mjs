@@ -5,7 +5,7 @@ import {
   buildAccountsView,
   filterAccounts,
   groupAccountsByPlan,
-} from './accountSelectors.ts';
+} from '../model/accountSelectors.ts';
 
 const t = (key) =>
   ({

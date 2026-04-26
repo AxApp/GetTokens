@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState, type MutableRefObject } from 'react';
-import type { AccountGroup } from './types';
+import type { AccountGroup } from '../model/types';
 
 export default function useGroupCardHeights(
   pageRef: MutableRefObject<HTMLDivElement | null>,

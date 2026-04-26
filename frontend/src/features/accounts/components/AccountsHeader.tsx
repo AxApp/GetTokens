@@ -1,5 +1,5 @@
 import type { MutableRefObject } from 'react';
-import type { Translator } from './types';
+import type { Translator } from '../model/types';
 
 interface AccountsHeaderProps {
   t: Translator;

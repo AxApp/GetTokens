@@ -1,4 +1,4 @@
-import type { AccountRecord, AuthFile, CodexQuota } from '../../types';
+import type { AccountRecord, AuthFile, CodexQuota } from '../../../types';
 import type { CodexQuotaState, QuotaDisplay, QuotaWindowDisplay } from './types';
 
 export function supportsQuota(account: AccountRecord) {

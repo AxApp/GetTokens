@@ -1,4 +1,4 @@
-import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from './types';
+import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from '../model/types';
 
 interface ApiKeyComposeModalProps {
   t: Translator;
