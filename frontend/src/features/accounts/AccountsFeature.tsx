@@ -11,6 +11,7 @@ import ApiKeyComposeModal from './components/ApiKeyComposeModal';
 import ApiKeyDetailModal from './components/ApiKeyDetailModal';
 import PasteAuthModal from './components/PasteAuthModal';
 import useAccountsPageState from './hooks/useAccountsPageState';
+import { isCodexAuthFile } from './model/accountPresentation';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
 
 interface AccountsFeatureProps {
@@ -32,6 +33,9 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     selectedAccount,
     pendingDeleteID,
     deleteError,
+    oauthBanner,
+    oauthPendingAccountID,
+    isOAuthPending,
     apiKeyFormError,
     isApiKeyModalOpen,
     apiKeyForm,
@@ -48,6 +52,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
+    startCodexOAuth,
     refreshCodexQuota,
     setSearchTerm,
     setSourceFilter,
@@ -55,6 +60,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     setPendingDeleteID,
     setDeleteError,
     setApiKeyFormError,
+    setOAuthBanner,
     setIsApiKeyModalOpen,
     setApiKeyForm,
     setIsPasteModalOpen,
@@ -109,6 +115,10 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
               openApiKeyModal();
               setIsHeaderActionsMenuOpen(false);
             }}
+            onStartCodexOAuth={() => {
+              void startCodexOAuth();
+              setIsHeaderActionsMenuOpen(false);
+            }}
             onRefresh={loadAccounts}
           />
 
@@ -133,6 +143,24 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           {deleteError ? (
             <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
               {deleteError}
+            </div>
+          ) : null}
+          {oauthBanner ? (
+            <div
+              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[10px] font-black uppercase tracking-wide ${
+                oauthBanner.tone === 'error'
+                  ? 'border-red-500 bg-red-500/10 text-red-500'
+                  : oauthBanner.tone === 'success'
+                    ? 'border-green-600 bg-green-600/10 text-green-700'
+                    : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
+              }`}
+            >
+              <span>{oauthBanner.message}</span>
+              {!isOAuthPending ? (
+                <button onClick={() => setOAuthBanner(null)} className="btn-swiss !px-2 !py-1 !text-[8px]">
+                  {t('common.close')}
+                </button>
+              ) : null}
             </div>
           ) : null}
 
@@ -165,9 +193,11 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
                   isSelectionMode={isSelectionMode}
                   selectedAccountIDSet={selectedAccountIDSet}
                   pendingDeleteID={pendingDeleteID}
+                  oauthPendingAccountID={oauthPendingAccountID}
                   onToggleSelection={toggleAccountSelection}
                   onOpenDetails={setSelectedAccount}
                   onRefreshQuota={(account) => void refreshCodexQuota(account)}
+                  onStartReauth={(account) => void startCodexOAuth(account)}
                   onRequestDelete={(accountID) => {
                     setDeleteError('');
                     setPendingDeleteID(accountID);
@@ -182,7 +212,17 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
       </div>
 
       {selectedAccount?.credentialSource === 'auth-file' && selectedAccount.rawAuthFile ? (
-        <AccountDetailModal account={selectedAccount.rawAuthFile} onClose={() => setSelectedAccount(null)} />
+        <AccountDetailModal
+          account={selectedAccount.rawAuthFile}
+          canStartReauth={isCodexAuthFile(selectedAccount)}
+          isReauthing={oauthPendingAccountID === selectedAccount.id}
+          onClose={() => setSelectedAccount(null)}
+          onStartReauth={() => {
+            const targetAccount = selectedAccount;
+            setSelectedAccount(null);
+            void startCodexOAuth(targetAccount);
+          }}
+        />
       ) : null}
 
       {selectedAccount?.credentialSource === 'api-key' ? (

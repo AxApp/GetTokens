@@ -8,7 +8,10 @@ import { canCopyRawContent, copyRawContent, RAW_CONTENT_COPY_RESET_MS } from './
 
 interface AccountDetailModalProps {
   account: AuthFile;
+  canStartReauth?: boolean;
+  isReauthing?: boolean;
   onClose: () => void;
+  onStartReauth?: () => void;
 }
 
 type DetailField = readonly [string, string];
@@ -34,7 +37,13 @@ function getModelLabel(model: AuthModel): string {
   return model.display_name || model.id || model.name || 'MODEL';
 }
 
-export default function AccountDetailModal({ account, onClose }: AccountDetailModalProps) {
+export default function AccountDetailModal({
+  account,
+  canStartReauth = false,
+  isReauthing = false,
+  onClose,
+  onStartReauth,
+}: AccountDetailModalProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
   const [models, setModels] = useState<AuthModel[]>([]);
@@ -219,11 +228,22 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
               {account.name}
             </h3>
           </div>
-          <button onClick={onClose} className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-3">
+            {canStartReauth ? (
+              <button
+                onClick={onStartReauth}
+                disabled={isReauthing}
+                className="btn-swiss !px-3 !py-1 !text-[9px]"
+              >
+                {isReauthing ? t('accounts.reauth_pending') : t('accounts.reauth')}
+              </button>
+            ) : null}
+            <button onClick={onClose} className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]">
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 space-y-8 overflow-y-auto p-6 selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]">
@@ -235,6 +255,30 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
               </div>
             ))}
           </div>
+
+          {canStartReauth ? (
+            <section className="space-y-4 border-b-2 border-dashed border-[var(--border-color)] pb-8">
+              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                <span className="h-2 w-2 bg-[var(--border-color)]"></span>
+                ACCOUNT_ACTIONS
+              </div>
+              <div className="flex items-center justify-between gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+                <div className="space-y-1">
+                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">{t('accounts.reauth')}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                    {t('accounts.reauth_detail_hint')}
+                  </div>
+                </div>
+                <button
+                  onClick={onStartReauth}
+                  disabled={isReauthing}
+                  className="btn-swiss shrink-0 !px-3 !py-2 !text-[9px]"
+                >
+                  {isReauthing ? t('accounts.reauth_pending') : t('accounts.reauth')}
+                </button>
+              </div>
+            </section>
+          ) : null}
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">

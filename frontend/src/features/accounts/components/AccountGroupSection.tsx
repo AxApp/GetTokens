@@ -11,9 +11,11 @@ interface AccountGroupSectionProps {
   isSelectionMode: boolean;
   selectedAccountIDSet: Set<string>;
   pendingDeleteID: string | null;
+  oauthPendingAccountID: string | null;
   onToggleSelection: (accountID: string) => void;
   onOpenDetails: (account: AccountRecord) => void;
   onRefreshQuota: (account: AccountRecord) => void;
+  onStartReauth: (account: AccountRecord) => void;
   onRequestDelete: (accountID: string) => void;
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
@@ -28,9 +30,11 @@ export default function AccountGroupSection({
   isSelectionMode,
   selectedAccountIDSet,
   pendingDeleteID,
+  oauthPendingAccountID,
   onToggleSelection,
   onOpenDetails,
   onRefreshQuota,
+  onStartReauth,
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
@@ -63,9 +67,11 @@ export default function AccountGroupSection({
             isSelectionMode={isSelectionMode}
             isSelected={selectedAccountIDSet.has(account.id)}
             isPendingDelete={pendingDeleteID === account.id}
+            isOAuthPending={oauthPendingAccountID === account.id}
             onToggleSelection={onToggleSelection}
             onOpenDetails={onOpenDetails}
             onRefreshQuota={onRefreshQuota}
+            onStartReauth={onStartReauth}
             onRequestDelete={onRequestDelete}
             onCancelDelete={onCancelDelete}
             onConfirmDelete={onConfirmDelete}

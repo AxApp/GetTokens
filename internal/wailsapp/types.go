@@ -32,6 +32,21 @@ type DownloadFileResponse struct {
 	ContentBase64 string `json:"contentBase64"`
 }
 
+type OAuthStartResult struct {
+	URL   string `json:"url"`
+	State string `json:"state,omitempty"`
+}
+
+type OAuthStatusResult struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+type CompleteCodexOAuthInput struct {
+	ExistingName  string   `json:"existingName"`
+	PreviousNames []string `json:"previousNames"`
+}
+
 type CodexQuotaWindow struct {
 	ID               string
 	Label            string

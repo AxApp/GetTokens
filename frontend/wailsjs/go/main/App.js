@@ -34,12 +34,20 @@ export function DownloadAuthFile(arg1) {
   return window['go']['main']['App']['DownloadAuthFile'](arg1);
 }
 
+export function FinalizeCodexOAuth(arg1) {
+  return window['go']['main']['App']['FinalizeCodexOAuth'](arg1);
+}
+
 export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
 }
 
 export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
+}
+
+export function GetOAuthStatus(arg1) {
+  return window['go']['main']['App']['GetOAuthStatus'](arg1);
 }
 
 export function GetRelayRoutingConfig() {
@@ -76,6 +84,10 @@ export function NormalizeAuthFileContent(arg1) {
 
 export function SetAuthFileStatus(arg1, arg2) {
   return window['go']['main']['App']['SetAuthFileStatus'](arg1, arg2);
+}
+
+export function StartCodexOAuth() {
+  return window['go']['main']['App']['StartCodexOAuth']();
 }
 
 export function UpdateRelayServiceAPIKey(arg1) {

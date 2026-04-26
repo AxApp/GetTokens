@@ -1,6 +1,6 @@
 import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRelative, supportsQuota } from '../model/accountQuota';
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
-import { resolveAccountFailureReason, resolveAccountPrimaryLabel } from '../model/accountPresentation';
+import { isCodexReauthEligible, resolveAccountFailureReason, resolveAccountPrimaryLabel } from '../model/accountPresentation';
 import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from '../model/types';
 import AccountCardSkeleton from './AccountCardSkeleton';
 
@@ -13,9 +13,11 @@ interface AccountCardProps {
   isSelectionMode: boolean;
   isSelected: boolean;
   isPendingDelete: boolean;
+  isOAuthPending: boolean;
   onToggleSelection: (accountID: string) => void;
   onOpenDetails: (account: AccountRecord) => void;
   onRefreshQuota: (account: AccountRecord) => void;
+  onStartReauth: (account: AccountRecord) => void;
   onRequestDelete: (accountID: string) => void;
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
@@ -30,9 +32,11 @@ export default function AccountCard({
   isSelectionMode,
   isSelected,
   isPendingDelete,
+  isOAuthPending,
   onToggleSelection,
   onOpenDetails,
   onRefreshQuota,
+  onStartReauth,
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
@@ -40,6 +44,7 @@ export default function AccountCard({
   const quotaDisplay = buildQuotaDisplay(account, quotaState);
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account);
+  const canReauth = isCodexReauthEligible(account);
 
   function openDetails() {
     if (isSelectionMode || isPendingDelete) {
@@ -134,7 +139,11 @@ export default function AccountCard({
             </div>
           </div>
         ) : (
-          <div className={`grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${supportsQuota(account) ? 'grid-cols-3' : 'grid-cols-2'}`}>
+          <div
+            className={`grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${
+              supportsQuota(account) ? (canReauth ? 'grid-cols-4' : 'grid-cols-3') : canReauth ? 'grid-cols-3' : 'grid-cols-2'
+            }`}
+          >
             <button onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[9px]">
               {t('common.details')}
             </button>
@@ -145,6 +154,15 @@ export default function AccountCard({
                 disabled={!ready || quotaState?.status === 'loading'}
               >
                 {t('accounts.refresh_quota')}
+              </button>
+            ) : null}
+            {canReauth ? (
+              <button
+                onClick={() => onStartReauth(account)}
+                className="btn-swiss !py-1.5 !text-[9px]"
+                disabled={isOAuthPending}
+              >
+                {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
               </button>
             ) : null}
             <button onClick={() => onRequestDelete(account.id)} className="btn-swiss !py-1.5 !text-[9px] !text-red-500">

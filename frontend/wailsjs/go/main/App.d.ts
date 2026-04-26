@@ -20,9 +20,13 @@ export function DeleteCodexAPIKey(arg1:string):Promise<void>;
 
 export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>;
 
+export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
+
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
 
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
+
+export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;
 
 export function GetRelayRoutingConfig():Promise<main.RelayRoutingConfig>;
 
@@ -41,6 +45,8 @@ export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
+
+export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 
 export function UpdateRelayServiceAPIKey(arg1:string):Promise<main.RelayServiceConfig>;
 

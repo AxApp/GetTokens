@@ -167,6 +167,20 @@ export namespace main {
 		}
 	}
 	
+	export class CompleteCodexOAuthInput {
+	    existingName: string;
+	    previousNames: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new CompleteCodexOAuthInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.existingName = source["existingName"];
+	        this.previousNames = source["previousNames"];
+	    }
+	}
 	export class CreateCodexAPIKeyInput {
 	    apiKey: string;
 	    baseUrl: string;
@@ -201,6 +215,34 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.contentBase64 = source["contentBase64"];
+	    }
+	}
+	export class OAuthStartResult {
+	    url: string;
+	    state?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OAuthStartResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.state = source["state"];
+	    }
+	}
+	export class OAuthStatusResult {
+	    status: string;
+	    error?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OAuthStatusResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.error = source["error"];
 	    }
 	}
 	export class RelayLocalApplyResult {

@@ -54,6 +54,21 @@ type DownloadFileResponse struct {
 	ContentBase64 string `json:"contentBase64"`
 }
 
+type OAuthStartResult struct {
+	URL   string `json:"url"`
+	State string `json:"state,omitempty"`
+}
+
+type OAuthStatusResult struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+type CompleteCodexOAuthInput struct {
+	ExistingName  string   `json:"existingName"`
+	PreviousNames []string `json:"previousNames"`
+}
+
 type CodexQuotaWindow struct {
 	ID               string `json:"id"`
 	Label            string `json:"label"`
@@ -228,6 +243,35 @@ func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 		Name:          result.Name,
 		ContentBase64: result.ContentBase64,
 	}, nil
+}
+
+func (a *App) StartCodexOAuth() (*OAuthStartResult, error) {
+	result, err := a.core.StartCodexOAuth()
+	if err != nil {
+		return nil, err
+	}
+	return &OAuthStartResult{
+		URL:   result.URL,
+		State: result.State,
+	}, nil
+}
+
+func (a *App) GetOAuthStatus(state string) (*OAuthStatusResult, error) {
+	result, err := a.core.GetOAuthStatus(state)
+	if err != nil {
+		return nil, err
+	}
+	return &OAuthStatusResult{
+		Status: result.Status,
+		Error:  result.Error,
+	}, nil
+}
+
+func (a *App) FinalizeCodexOAuth(input CompleteCodexOAuthInput) error {
+	return a.core.FinalizeCodexOAuth(wailsapp.CompleteCodexOAuthInput{
+		ExistingName:  input.ExistingName,
+		PreviousNames: input.PreviousNames,
+	})
 }
 
 func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {

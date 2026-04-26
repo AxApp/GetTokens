@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from 'react';
 import {
+  FinalizeCodexOAuth,
+  GetOAuthStatus,
   ListAccounts,
   ListAuthFiles,
+  StartCodexOAuth,
 } from '../../../../wailsjs/go/main/App';
+import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
 import type { AccountRecord } from '../../../types';
+import { toErrorMessage } from '../../../utils/error';
 import {
   emptyApiKeyForm,
   loadAPIKeyLabels,
@@ -12,8 +17,10 @@ import {
   filterSelectedAccountIDs,
   useAccountSelectionState,
 } from '../model/accountSelection';
+import { buildCodexOAuthBannerMessage } from '../model/accountOAuth';
 import { buildAccountsView } from '../model/accountSelectors';
 import {
+  isCodexReauthEligible,
   mapAuthFileToRecord,
   mapBackendAccountRecord,
 } from '../model/accountPresentation';
@@ -26,6 +33,22 @@ import type {
   TrackRequest,
   Translator,
 } from '../model/types';
+
+type OAuthFlowState =
+  | {
+      state: string;
+      existingName: string;
+      previousNames: string[];
+      pendingAccountID: string | null;
+    }
+  | null;
+
+type OAuthBanner =
+  | {
+      tone: 'info' | 'success' | 'error';
+      message: string;
+    }
+  | null;
 
 interface UseAccountsPageStateArgs {
   ready: boolean;
@@ -56,6 +79,8 @@ export default function useAccountsPageState({
   const [pasteError, setPasteError] = useState('');
   const [apiKeyLabels, setAPIKeyLabels] = useState<Record<string, string>>(() => loadAPIKeyLabels());
   const [isHeaderActionsMenuOpen, setIsHeaderActionsMenuOpen] = useState(false);
+  const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
+  const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -131,6 +156,75 @@ export default function useAccountsPageState({
   }, [ready, loadAccounts]);
 
   useEffect(() => {
+    if (!oauthFlow) {
+      return;
+    }
+    const currentFlow = oauthFlow;
+
+    let cancelled = false;
+
+    async function pollOnce() {
+      try {
+        const result = await trackRequest('GetOAuthStatus', { state: currentFlow.state }, () => GetOAuthStatus(currentFlow.state));
+        if (cancelled) {
+          return;
+        }
+
+        if (result.status === 'wait') {
+          return;
+        }
+
+        if (result.status === 'error') {
+          setOAuthBanner({
+            tone: 'error',
+            message: result.error || t('accounts.codex_login_failed'),
+          });
+          setOAuthFlow(null);
+          return;
+        }
+
+        if (currentFlow.existingName) {
+          await trackRequest(
+            'FinalizeCodexOAuth',
+            { existingName: currentFlow.existingName },
+            () =>
+              FinalizeCodexOAuth({
+                existingName: currentFlow.existingName,
+                previousNames: currentFlow.previousNames,
+              })
+          );
+        }
+
+        await loadAccounts();
+        setOAuthBanner({
+          tone: 'success',
+          message: buildCodexOAuthBannerMessage(t, 'success', currentFlow.existingName),
+        });
+        setOAuthFlow(null);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        setOAuthBanner({
+          tone: 'error',
+          message: toErrorMessage(error),
+        });
+        setOAuthFlow(null);
+      }
+    }
+
+    void pollOnce();
+    const timer = window.setInterval(() => {
+      void pollOnce();
+    }, 3000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [loadAccounts, oauthFlow, t, trackRequest]);
+
+  useEffect(() => {
     if (!isHeaderActionsMenuOpen) {
       return;
     }
@@ -150,6 +244,38 @@ export default function useAccountsPageState({
   function toggleSelectAllFiltered() {
     applyToggleSelectAllFiltered(filteredAccounts, allFilteredSelected);
   }
+
+  const startCodexOAuth = useCallback(
+    async (account?: AccountRecord) => {
+      if (!ready || oauthFlow) {
+        return;
+      }
+
+      setOAuthBanner(null);
+      try {
+        const result = await trackRequest('StartCodexOAuth', {}, () => StartCodexOAuth());
+        const existingName = account && isCodexReauthEligible(account) ? String(account.name || '').trim() : '';
+        BrowserOpenURL(result.url);
+        setOAuthFlow({
+          state: String(result.state || '').trim(),
+          existingName,
+          previousNames: authFiles.map((file) => file.name),
+          pendingAccountID: account?.id || null,
+        });
+        setOAuthBanner({
+          tone: 'info',
+          message: buildCodexOAuthBannerMessage(t, 'pending', existingName),
+        });
+      } catch (error) {
+        setOAuthBanner({
+          tone: 'error',
+          message: toErrorMessage(error),
+        });
+      }
+    },
+    [authFiles, oauthFlow, ready, t, trackRequest]
+  );
+
   const {
     deleteAccount,
     uploadAccounts,
@@ -193,6 +319,9 @@ export default function useAccountsPageState({
     pendingDeleteID,
     deleteError,
     apiKeyFormError,
+    oauthBanner,
+    oauthPendingAccountID: oauthFlow?.pendingAccountID || null,
+    isOAuthPending: oauthFlow !== null,
     isApiKeyModalOpen,
     apiKeyForm,
     isPasteModalOpen,
@@ -208,6 +337,7 @@ export default function useAccountsPageState({
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
+    startCodexOAuth,
     refreshCodexQuota,
     setSearchTerm,
     setSourceFilter,
@@ -215,6 +345,7 @@ export default function useAccountsPageState({
     setPendingDeleteID,
     setDeleteError,
     setApiKeyFormError,
+    setOAuthBanner,
     setIsApiKeyModalOpen,
     setApiKeyForm,
     setIsPasteModalOpen,

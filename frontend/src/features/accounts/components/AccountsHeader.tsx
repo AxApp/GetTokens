@@ -13,6 +13,7 @@ interface AccountsHeaderProps {
   onToggleMenu: () => void;
   onOpenPasteModal: () => void;
   onOpenApiKeyModal: () => void;
+  onStartCodexOAuth: () => void;
   onRefresh: () => void;
 }
 
@@ -28,10 +29,14 @@ export default function AccountsHeader({
   onToggleMenu,
   onOpenPasteModal,
   onOpenApiKeyModal,
+  onStartCodexOAuth,
   onRefresh,
 }: AccountsHeaderProps) {
   const headerImportActions = (
     <>
+      <button onClick={onStartCodexOAuth} className="btn-swiss whitespace-nowrap" disabled={!ready || loading}>
+        {t('accounts.login_chatgpt')}
+      </button>
       <button
         onClick={() => {
           fileInputRef.current?.click();

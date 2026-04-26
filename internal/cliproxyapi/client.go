@@ -7,6 +7,17 @@ import (
 	"net/url"
 )
 
+type OAuthStartResponse struct {
+	Status string `json:"status,omitempty"`
+	URL    string `json:"url"`
+	State  string `json:"state,omitempty"`
+}
+
+type OAuthStatusResponse struct {
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
 type RequestFunc func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error)
 
 type Client struct {
@@ -104,4 +115,38 @@ func (c *Client) DeleteCodexAPIKey(apiKey string, baseURL string) error {
 
 	_, _, err := c.request("DELETE", "/v0/management/codex-api-key", query, nil, "")
 	return err
+}
+
+func (c *Client) RequestCodexAuthURL(isWebUI bool) (*OAuthStartResponse, error) {
+	query := url.Values{}
+	if isWebUI {
+		query.Set("is_webui", "true")
+	}
+
+	body, _, err := c.request("GET", "/v0/management/codex-auth-url", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var response OAuthStartResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
+func (c *Client) GetAuthStatus(state string) (*OAuthStatusResponse, error) {
+	query := url.Values{}
+	query.Set("state", state)
+
+	body, _, err := c.request("GET", "/v0/management/get-auth-status", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var response OAuthStatusResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
 }

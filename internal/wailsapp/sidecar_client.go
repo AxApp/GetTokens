@@ -25,6 +25,10 @@ func (a *App) SidecarBaseURL() (string, error) {
 }
 
 func (a *App) SidecarRequest(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+	if a.sidecarRequest != nil {
+		return a.sidecarRequest(method, path, query, body, contentType)
+	}
+
 	baseURL, err := a.SidecarBaseURL()
 	if err != nil {
 		return nil, 0, err

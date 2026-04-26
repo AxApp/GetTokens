@@ -59,6 +59,33 @@ export function resolveAccountFailureReason(account: AccountRecord) {
     .trim();
 }
 
+export function isCodexReauthEligible(account: AccountRecord) {
+  if (account.credentialSource !== 'auth-file') {
+    return false;
+  }
+  if (String(account.provider || '').trim().toLowerCase() !== 'codex') {
+    return false;
+  }
+  if (!String(account.name || '').trim()) {
+    return false;
+  }
+
+  const status = String(account.status || '')
+    .trim()
+    .toUpperCase();
+  return status !== 'ACTIVE' && status !== 'CONFIGURED' && status !== 'DISABLED' && status !== 'LOCAL';
+}
+
+export function isCodexAuthFile(account: AccountRecord) {
+  if (account.credentialSource !== 'auth-file') {
+    return false;
+  }
+  if (!String(account.name || '').trim()) {
+    return false;
+  }
+  return String(account.provider || '').trim().toLowerCase() === 'codex';
+}
+
 export function resolveAccountPlanLabel(account: AccountRecord, quotaDisplay: QuotaDisplay) {
   const plan = String(quotaDisplay.planType || account.planType || '')
     .trim()
