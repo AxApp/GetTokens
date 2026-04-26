@@ -51,6 +51,14 @@ export interface AccountGroup {
   accounts: AccountRecord[];
 }
 
+export type AccountsFilterSource = 'all' | CredentialSource;
+
+export interface AccountsFilterState {
+  source: AccountsFilterSource;
+  hasLongestQuota: boolean;
+  errorsOnly: boolean;
+}
+
 export type TrackRequest = <T>(
   name: string,
   request: unknown,
@@ -62,5 +70,4 @@ export type TrackRequest = <T>(
 ) => Promise<T>;
 
 export type Translator = (key: string) => string;
-export type SourceFilter = 'all' | CredentialSource;
 export type { AccountRecord, AuthFile };

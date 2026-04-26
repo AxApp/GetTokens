@@ -1,29 +1,41 @@
 import type { AccountRecord } from '../../../types';
-import type { AccountGroup, CodexQuotaState, SourceFilter, Translator } from './types';
-import { buildQuotaDisplay } from './accountQuota.ts';
+import type { AccountGroup, AccountsFilterState, CodexQuotaState, Translator } from './types';
+import { buildQuotaDisplay, hasPositiveLongestQuota } from './accountQuota.ts';
 import {
   compareAccountRecords,
+  isAccountUnavailable,
   planGroupRank,
   resolvePlanGroupLabel,
 } from './accountPresentation.ts';
 
 interface FilterAccountsArgs {
   searchTerm: string;
-  sourceFilter: SourceFilter;
+  filters: AccountsFilterState;
+  codexQuotaByName: Record<string, CodexQuotaState>;
 }
 
-interface BuildAccountsViewArgs extends FilterAccountsArgs {
+interface BuildAccountsViewArgs {
   authFileRecords: AccountRecord[];
   apiKeyRecords: AccountRecord[];
   codexQuotaByName: Record<string, CodexQuotaState>;
+  filters: AccountsFilterState;
+  searchTerm: string;
   selectedAccountIDs: string[];
   t: Translator;
 }
 
-export function filterAccounts(accounts: AccountRecord[], { searchTerm, sourceFilter }: FilterAccountsArgs) {
+export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters, codexQuotaByName }: FilterAccountsArgs) {
   const query = searchTerm.trim().toLowerCase();
   return accounts.filter((account) => {
-    if (sourceFilter !== 'all' && account.credentialSource !== sourceFilter) {
+    if (filters.source !== 'all' && account.credentialSource !== filters.source) {
+      return false;
+    }
+
+    if (filters.hasLongestQuota && !hasPositiveLongestQuota(account, codexQuotaByName[account.quotaKey || ''])) {
+      return false;
+    }
+
+    if (filters.errorsOnly && !isAccountUnavailable(account)) {
       return false;
     }
 
@@ -82,12 +94,12 @@ export function buildAccountsView({
   apiKeyRecords,
   codexQuotaByName,
   searchTerm,
-  sourceFilter,
+  filters,
   selectedAccountIDs,
   t,
 }: BuildAccountsViewArgs) {
   const accounts = [...authFileRecords, ...apiKeyRecords].sort(compareAccountRecords);
-  const filteredAccounts = filterAccounts(accounts, { searchTerm, sourceFilter });
+  const filteredAccounts = filterAccounts(accounts, { searchTerm, filters, codexQuotaByName });
   const groupedAccounts = groupAccountsByPlan(filteredAccounts, codexQuotaByName, t);
   const selectedAccountIDSet = new Set(selectedAccountIDs);
   const selectedAccounts = accounts.filter((account) => selectedAccountIDSet.has(account.id));

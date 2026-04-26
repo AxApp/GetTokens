@@ -24,7 +24,7 @@ import {
   readUploadFiles,
   resolvePastedAuthFileName,
 } from '../model/accountTransfer';
-import type { ApiKeyFormState, SourceFilter, TrackRequest, Translator } from '../model/types';
+import type { ApiKeyFormState, TrackRequest, Translator } from '../model/types';
 
 interface UseAccountsActionsArgs {
   t: Translator;
@@ -43,7 +43,6 @@ interface UseAccountsActionsArgs {
   setPasteContent: Dispatch<SetStateAction<string>>;
   setPasteError: Dispatch<SetStateAction<string>>;
   setSearchTerm: Dispatch<SetStateAction<string>>;
-  setSourceFilter: Dispatch<SetStateAction<SourceFilter>>;
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
   setAPIKeyLabels: Dispatch<SetStateAction<Record<string, string>>>;
   loadAccounts: () => Promise<void>;
@@ -66,7 +65,6 @@ export default function useAccountsActions({
   setPasteContent,
   setPasteError,
   setSearchTerm,
-  setSourceFilter,
   setSelectedAccountIDs,
   setAPIKeyLabels,
   loadAccounts,
@@ -191,7 +189,6 @@ export default function useAccountsActions({
       setIsApiKeyModalOpen(false);
       setApiKeyForm(emptyApiKeyForm);
       setApiKeyFormError('');
-      setSourceFilter('all');
       setSearchTerm('');
       await loadAccounts();
     } catch (error) {
@@ -206,7 +203,6 @@ export default function useAccountsActions({
     setApiKeyFormError,
     setIsApiKeyModalOpen,
     setSearchTerm,
-    setSourceFilter,
     t,
     trackRequest,
   ]);

@@ -77,6 +77,30 @@ export function selectQuotaWindows(quota: CodexQuota) {
   return preferredWindows.length > 0 ? preferredWindows : quota.windows.slice(0, 2);
 }
 
+export function selectLongestQuotaWindow(windows: QuotaWindowDisplay[]) {
+  if (windows.length === 0) {
+    return null;
+  }
+  if (windows.length === 1) {
+    return windows[0];
+  }
+  return [...windows].reverse().find((window) => window.id === 'weekly' || window.id.endsWith('-weekly')) || windows[windows.length - 1];
+}
+
+export function hasPositiveLongestQuota(account: AccountRecord, state?: CodexQuotaState) {
+  if (!supportsQuota(account)) {
+    return false;
+  }
+
+  const quotaDisplay = buildQuotaDisplay(account, state);
+  if (quotaDisplay.status !== 'success') {
+    return false;
+  }
+
+  const longestWindow = selectLongestQuotaWindow(quotaDisplay.windows);
+  return typeof longestWindow?.remainingPercent === 'number' && longestWindow.remainingPercent > 0;
+}
+
 export function normalizePercent(value: number | null | undefined) {
   if (typeof value !== 'number' || Number.isNaN(value)) {
     return null;

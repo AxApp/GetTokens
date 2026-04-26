@@ -14,6 +14,11 @@ import {
   loadAPIKeyLabels,
 } from '../model/accountConfig';
 import {
+  defaultAccountsFilterState,
+  persistAccountsFilterState,
+  readStoredAccountsFilterState,
+} from '../model/accountFilters';
+import {
   filterSelectedAccountIDs,
   useAccountSelectionState,
 } from '../model/accountSelection';
@@ -28,8 +33,8 @@ import useAccountsActions from './useAccountsActions';
 import useAccountsQuotaState from './useAccountsQuotaState';
 import type {
   ApiKeyFormState,
+  AccountsFilterState,
   AuthFile,
-  SourceFilter,
   TrackRequest,
   Translator,
 } from '../model/types';
@@ -74,7 +79,9 @@ export default function useAccountsPageState({
   const [apiKeyRecords, setApiKeyRecords] = useState<AccountRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [filters, setFilters] = useState<AccountsFilterState>(() =>
+    typeof window === 'undefined' ? defaultAccountsFilterState : readStoredAccountsFilterState(window.localStorage)
+  );
   const [selectedAccount, setSelectedAccount] = useState<AccountRecord | null>(null);
   const [pendingDeleteID, setPendingDeleteID] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState('');
@@ -119,12 +126,19 @@ export default function useAccountsPageState({
         apiKeyRecords,
         codexQuotaByName,
         searchTerm,
-        sourceFilter,
+        filters,
         selectedAccountIDs,
         t,
       }),
-    [apiKeyRecords, authFileRecords, codexQuotaByName, searchTerm, selectedAccountIDs, sourceFilter, t]
+    [apiKeyRecords, authFileRecords, codexQuotaByName, filters, searchTerm, selectedAccountIDs, t]
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    persistAccountsFilterState(window.localStorage, filters);
+  }, [filters]);
 
   const loadAccounts = useCallback(async () => {
     if (!ready) {
@@ -324,7 +338,6 @@ export default function useAccountsPageState({
     setPasteContent,
     setPasteError,
     setSearchTerm,
-    setSourceFilter,
     setSelectedAccountIDs,
     setAPIKeyLabels,
     loadAccounts,
@@ -337,7 +350,7 @@ export default function useAccountsPageState({
   return {
     loading,
     searchTerm,
-    sourceFilter,
+    filters,
     selectedAccount,
     pendingDeleteID,
     deleteError,
@@ -366,7 +379,7 @@ export default function useAccountsPageState({
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
-    setSourceFilter,
+    setFilters,
     setSelectedAccount,
     setPendingDeleteID,
     setDeleteError,

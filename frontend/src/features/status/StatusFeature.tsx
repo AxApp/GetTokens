@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ApplyRelayServiceConfigToLocal,
-  GetRelayRoutingConfig,
   GetRelayServiceConfig,
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
@@ -17,6 +16,14 @@ interface StatusFeatureProps {
   version?: string;
 }
 
+interface RelayKeyEditorState {
+  mode: 'create' | 'rename';
+  index: number | null;
+  name: string;
+  apiKey: string;
+  error: string;
+}
+
 const defaultSidecarStatus: SidecarStatus = {
   code: 'stopped',
   port: 0,
@@ -24,12 +31,45 @@ const defaultSidecarStatus: SidecarStatus = {
   version: '',
 };
 
+const relayKeyAliasStorageKey = 'gettokens.status.relay-key-aliases';
+const relayModelOptions = ['GT', 'gpt-5.4'] as const;
+
 function maskRelayKey(value: string) {
   const trimmed = value.trim();
   if (trimmed.length <= 12) {
     return trimmed || 'KEY';
   }
   return `${trimmed.slice(0, 8)}...${trimmed.slice(-4)}`;
+}
+
+function loadRelayKeyAliases() {
+  if (typeof window === 'undefined') {
+    return {} as Record<string, string>;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(relayKeyAliasStorageKey);
+    if (!raw) {
+      return {} as Record<string, string>;
+    }
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : ({} as Record<string, string>);
+  } catch (error) {
+    console.error(error);
+    return {} as Record<string, string>;
+  }
+}
+
+function saveRelayKeyAliases(aliases: Record<string, string>) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(relayKeyAliasStorageKey, JSON.stringify(aliases));
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 export default function StatusFeature({
@@ -42,40 +82,48 @@ export default function StatusFeature({
   const [healthz, setHealthz] = useState('CHECKING...');
   const [uptime, setUptime] = useState('0s');
   const [relayKeys, setRelayKeys] = useState<string[]>([]);
-  const [relayKeysDraft, setRelayKeysDraft] = useState('');
   const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
-  const [routingConfig, setRoutingConfig] = useState<main.RelayRoutingConfig | null>(null);
+  const [relayKeyAliases, setRelayKeyAliases] = useState<Record<string, string>>(() => loadRelayKeyAliases());
   const [selectedKeyIndex, setSelectedKeyIndex] = useState(0);
   const [selectedEndpointID, setSelectedEndpointID] = useState('localhost');
+  const [isLANAccessEnabled, setIsLANAccessEnabled] = useState(true);
+  const [selectedRelayModel, setSelectedRelayModel] = useState<(typeof relayModelOptions)[number]>('GT');
+  const [openKeyMenuIndex, setOpenKeyMenuIndex] = useState<number | null>(null);
+  const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [serviceMessage, setServiceMessage] = useState('');
   const [localApplyMessage, setLocalApplyMessage] = useState('');
-  const [routingMessage, setRoutingMessage] = useState('');
   const [isSavingServiceKeys, setIsSavingServiceKeys] = useState(false);
   const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
 
   const selectedKey = relayKeys[selectedKeyIndex] || '';
   const selectedEndpoint =
     relayEndpoints.find((endpoint) => endpoint.id === selectedEndpointID) ||
+    relayEndpoints.find((endpoint) => isLANAccessEnabled || endpoint.kind !== 'lan') ||
     relayEndpoints[0] || {
       id: 'localhost',
       kind: 'localhost',
       host: '127.0.0.1',
       baseUrl: `http://127.0.0.1:${sidecarStatus.port || 8317}/v1`,
     };
+  const visibleRelayEndpoints = relayEndpoints
+    .filter((endpoint) => isLANAccessEnabled || endpoint.kind !== 'lan')
+    .slice(0, 3);
 
   const serviceAuthJSON = useMemo(
     () =>
       buildRelayCodexAuthJSONSnippet({
         apiKey: selectedKey,
+        model: selectedRelayModel,
       }),
-    [selectedKey]
+    [selectedKey, selectedRelayModel]
   );
   const serviceConfigToml = useMemo(
     () =>
       buildRelayCodexConfigTomlSnippet({
         baseUrl: selectedEndpoint.baseUrl,
+        model: selectedRelayModel,
       }),
-    [selectedEndpoint.baseUrl]
+    [selectedEndpoint.baseUrl, selectedRelayModel]
   );
 
   useEffect(() => {
@@ -105,7 +153,6 @@ export default function StatusFeature({
     async function loadRelayServiceConfig() {
       if (sidecarStatus.code !== 'ready') {
         setRelayKeys([]);
-        setRelayKeysDraft('');
         setRelayEndpoints([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
@@ -120,7 +167,6 @@ export default function StatusFeature({
           return;
         }
         setRelayKeys(config.apiKeys || []);
-        setRelayKeysDraft((config.apiKeys || []).join('\n'));
         setRelayEndpoints(config.endpoints || []);
         setSelectedKeyIndex(0);
         setSelectedEndpointID(config.endpoints?.[0]?.id || 'localhost');
@@ -131,7 +177,6 @@ export default function StatusFeature({
           return;
         }
         setRelayKeys([]);
-        setRelayKeysDraft('');
         setRelayEndpoints([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
@@ -148,37 +193,44 @@ export default function StatusFeature({
   }, [sidecarStatus.code, t, trackRequest]);
 
   useEffect(() => {
-    let cancelled = false;
+    setRelayKeyAliases((prev) => {
+      const next: Record<string, string> = {};
+      let changed = false;
 
-    async function loadRelayRoutingConfig() {
-      if (sidecarStatus.code !== 'ready') {
-        setRoutingConfig(null);
-        setRoutingMessage('');
-        return;
+      relayKeys.forEach((key) => {
+        const alias = prev[key];
+        if (alias) {
+          next[key] = alias;
+        }
+      });
+
+      const prevKeys = Object.keys(prev);
+      if (prevKeys.length !== Object.keys(next).length) {
+        changed = true;
+      } else {
+        changed = prevKeys.some((key) => prev[key] !== next[key]);
       }
 
-      try {
-        const config = await trackRequest('GetRelayRoutingConfig', { args: [] }, () => GetRelayRoutingConfig());
-        if (cancelled) {
-          return;
-        }
-        setRoutingConfig(config);
-        setRoutingMessage(t('status.routing_loaded'));
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-        setRoutingConfig(null);
-        setRoutingMessage(`${t('status.routing_missing')}: ${toErrorMessage(error)}`);
+      if (changed) {
+        saveRelayKeyAliases(next);
       }
+
+      return changed ? next : prev;
+    });
+  }, [relayKeys]);
+
+  useEffect(() => {
+    if (isLANAccessEnabled) {
+      return;
     }
 
-    void loadRelayRoutingConfig();
+    const currentEndpoint = relayEndpoints.find((endpoint) => endpoint.id === selectedEndpointID);
+    if (!currentEndpoint || currentEndpoint.kind !== 'lan') {
+      return;
+    }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [sidecarStatus.code, t, trackRequest]);
+    setSelectedEndpointID(relayEndpoints.find((endpoint) => endpoint.kind !== 'lan')?.id || 'localhost');
+  }, [isLANAccessEnabled, relayEndpoints, selectedEndpointID]);
 
   useEffect(() => {
     let cancelled = false;
@@ -229,23 +281,35 @@ export default function StatusFeature({
     };
   }, [sidecarStatus.code, sidecarStatus.port, trackRequest]);
 
-  async function copyText(value: string) {
+  async function copyText(value: string, successMessage?: string) {
     try {
       await navigator.clipboard.writeText(value);
+      if (successMessage) {
+        setServiceMessage(successMessage);
+      }
+      return true;
     } catch (error) {
       console.error(error);
+      setServiceMessage(t('status.copy_failed'));
+      return false;
     }
   }
 
-  async function saveRelayServiceAPIKeys() {
-    const normalized = relayKeysDraft
-      .split('\n')
-      .map((item) => item.trim())
-      .filter(Boolean);
+  function setRelayKeyAliasesWithPersist(nextAliases: Record<string, string>) {
+    setRelayKeyAliases(nextAliases);
+    saveRelayKeyAliases(nextAliases);
+  }
+
+  function relayKeyDisplayName(value: string, index: number) {
+    return relayKeyAliases[value]?.trim() || `KEY ${index + 1}`;
+  }
+
+  async function saveRelayServiceAPIKeys(nextKeys: string[], nextSelectedIndex = selectedKeyIndex) {
+    const normalized = nextKeys.map((item) => item.trim()).filter(Boolean);
 
     if (normalized.length === 0) {
       setServiceMessage(t('status.service_keys_required'));
-      return;
+      return false;
     }
 
     setIsSavingServiceKeys(true);
@@ -256,19 +320,120 @@ export default function StatusFeature({
       const nextKeys = config.apiKeys || [];
       const nextEndpoints = config.endpoints || [];
       setRelayKeys(nextKeys);
-      setRelayKeysDraft(nextKeys.join('\n'));
       setRelayEndpoints(nextEndpoints);
-      setSelectedKeyIndex((prev) => Math.min(prev, Math.max(nextKeys.length - 1, 0)));
+      setSelectedKeyIndex(Math.min(nextSelectedIndex, Math.max(nextKeys.length - 1, 0)));
       setSelectedEndpointID((prev) =>
         nextEndpoints.some((endpoint) => endpoint.id === prev) ? prev : (nextEndpoints[0]?.id || 'localhost')
       );
       setServiceMessage(t('status.service_keys_saved'));
+      return true;
     } catch (error) {
       console.error(error);
       setServiceMessage(`${t('status.service_keys_save_failed')}: ${toErrorMessage(error)}`);
+      return false;
     } finally {
       setIsSavingServiceKeys(false);
     }
+  }
+
+  function openCreateRelayKeyEditor() {
+    setOpenKeyMenuIndex(null);
+    setRelayKeyEditor({
+      mode: 'create',
+      index: null,
+      name: '',
+      apiKey: '',
+      error: '',
+    });
+  }
+
+  function openRenameRelayKeyEditor(index: number) {
+    const currentKey = relayKeys[index];
+    if (!currentKey) {
+      return;
+    }
+
+    setOpenKeyMenuIndex(null);
+    setRelayKeyEditor({
+      mode: 'rename',
+      index,
+      name: relayKeyAliases[currentKey] || '',
+      apiKey: currentKey,
+      error: '',
+    });
+  }
+
+  async function deleteRelayServiceAPIKey(index: number) {
+    const currentKey = relayKeys[index];
+    if (!currentKey) {
+      return;
+    }
+
+    const nextKeys = relayKeys.filter((_, itemIndex) => itemIndex !== index);
+    if (nextKeys.length === 0) {
+      setServiceMessage(t('status.service_keys_required'));
+      return;
+    }
+
+    const saved = await saveRelayServiceAPIKeys(nextKeys, Math.max(0, Math.min(selectedKeyIndex, nextKeys.length - 1)));
+    if (!saved) {
+      return;
+    }
+
+    const nextAliases = { ...relayKeyAliases };
+    delete nextAliases[currentKey];
+    setRelayKeyAliasesWithPersist(nextAliases);
+  }
+
+  async function submitRelayKeyEditor() {
+    if (!relayKeyEditor) {
+      return;
+    }
+
+    const trimmedName = relayKeyEditor.name.trim();
+    const trimmedKey = relayKeyEditor.apiKey.trim();
+
+    if (relayKeyEditor.mode === 'create') {
+      if (!trimmedKey) {
+        setRelayKeyEditor((prev) => (prev ? { ...prev, error: t('status.service_key_required') } : prev));
+        return;
+      }
+
+      const nextKeys = [...relayKeys, trimmedKey];
+      const saved = await saveRelayServiceAPIKeys(nextKeys, nextKeys.length - 1);
+      if (!saved) {
+        return;
+      }
+
+      if (trimmedName) {
+        setRelayKeyAliasesWithPersist({
+          ...relayKeyAliases,
+          [trimmedKey]: trimmedName,
+        });
+      }
+
+      setRelayKeyEditor(null);
+      return;
+    }
+
+    const currentIndex = relayKeyEditor.index;
+    if (currentIndex === null) {
+      return;
+    }
+    const currentKey = relayKeys[currentIndex];
+    if (!currentKey) {
+      return;
+    }
+
+    const nextAliases = { ...relayKeyAliases };
+    if (trimmedName) {
+      nextAliases[currentKey] = trimmedName;
+    } else {
+      delete nextAliases[currentKey];
+    }
+    setRelayKeyAliasesWithPersist(nextAliases);
+    setRelayKeyEditor(null);
+    setServiceMessage(t('status.service_key_name_saved'));
   }
 
   async function applyRelayConfigToLocal() {
@@ -293,34 +458,6 @@ export default function StatusFeature({
       setIsApplyingToLocal(false);
     }
   }
-
-  function endpointLabel(endpoint: main.RelayServiceEndpoint) {
-    if (endpoint.kind === 'hostname') {
-      return t('status.endpoint_hostname');
-    }
-    if (endpoint.kind === 'lan') {
-      return t('status.endpoint_lan');
-    }
-    return t('status.endpoint_localhost');
-  }
-
-  function boolLabel(value: boolean) {
-    return value ? t('status.enabled') : t('status.disabled');
-  }
-
-  const routingItems = routingConfig
-    ? [
-        { label: t('status.routing_strategy'), value: routingConfig.strategy || 'round-robin' },
-        { label: t('status.routing_session_affinity'), value: boolLabel(routingConfig.sessionAffinity) },
-        { label: t('status.routing_session_affinity_ttl'), value: routingConfig.sessionAffinityTTL || '1h' },
-        { label: t('status.routing_request_retry'), value: String(routingConfig.requestRetry) },
-        { label: t('status.routing_max_retry_credentials'), value: String(routingConfig.maxRetryCredentials) },
-        { label: t('status.routing_max_retry_interval'), value: String(routingConfig.maxRetryInterval) },
-        { label: t('status.routing_switch_project'), value: boolLabel(routingConfig.switchProject) },
-        { label: t('status.routing_switch_preview_model'), value: boolLabel(routingConfig.switchPreviewModel) },
-        { label: t('status.routing_antigravity_credits'), value: boolLabel(routingConfig.antigravityCredits) },
-      ]
-    : [];
 
   return (
     <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_STATUS">
@@ -396,91 +533,130 @@ export default function StatusFeature({
           </div>
 
           <div className="space-y-6 border-b-2 border-[var(--border-color)] p-6">
-            <div className="space-y-2">
-              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                {t('status.service_api_keys')}
-              </div>
-              <textarea
-                value={relayKeysDraft}
-                onChange={(event) => {
-                  setRelayKeysDraft(event.target.value);
-                  setServiceMessage('');
-                }}
-                placeholder="sk-gettokens-a\nsk-gettokens-b"
-                rows={4}
-                className="w-full resize-y border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 font-mono text-sm font-bold text-[var(--text-primary)] outline-none"
-              />
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                  {t('status.service_keys_hint')}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  {t('status.service_api_keys')}
                 </div>
                 <button
-                  onClick={() => void saveRelayServiceAPIKeys()}
+                  onClick={openCreateRelayKeyEditor}
                   disabled={isSavingServiceKeys || sidecarStatus.code !== 'ready'}
-                  className="btn-swiss !px-4 !py-3 !text-[10px] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-swiss !px-3 !py-1 !text-[10px] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isSavingServiceKeys ? t('status.service_keys_saving') : t('status.service_keys_save')}
+                  +
                 </button>
+              </div>
+              <div className="overflow-hidden border-2 border-[var(--border-color)]">
+                {relayKeys.map((item, index) => (
+                  <div
+                    key={`${item}-${index}`}
+                    className={`flex items-center gap-3 px-4 py-3 ${
+                      index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
+                    } ${
+                      selectedKeyIndex === index
+                        ? 'bg-[var(--bg-main)]'
+                        : 'bg-[var(--bg-surface)]'
+                    }`}
+                  >
+                    <button onClick={() => setSelectedKeyIndex(index)} className="min-w-0 flex-1 text-left">
+                      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                        {relayKeyDisplayName(item, index)}
+                      </div>
+                      <div className="mt-1 font-mono text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                        {maskRelayKey(item)}
+                      </div>
+                    </button>
+                    <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
+                      <button
+                        onClick={() => setOpenKeyMenuIndex((prev) => (prev === index ? null : index))}
+                        className="flex h-7 w-7 items-center justify-center text-base font-black text-[var(--text-muted)]"
+                      >
+                        ⋮
+                      </button>
+                      {openKeyMenuIndex === index ? (
+                        <div className="absolute right-0 top-full z-10 mt-2 min-w-28 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+                          <button
+                            onClick={() => openRenameRelayKeyEditor(index)}
+                            className="block w-full px-3 py-2 text-left text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]"
+                          >
+                            {t('status.service_key_rename')}
+                          </button>
+                          <button
+                            onClick={() => void deleteRelayServiceAPIKey(index)}
+                            className="block w-full border-t-2 border-[var(--border-color)] px-3 py-2 text-left text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]"
+                          >
+                            {t('status.service_key_delete')}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                {t('status.service_keys_hint')}
               </div>
             </div>
 
             <div className="space-y-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                {t('status.preview_key')}
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  {t('status.endpoint_title')}
+                </div>
+                <button
+                  onClick={() => setIsLANAccessEnabled((prev) => !prev)}
+                  className={`btn-swiss !px-3 !py-1 !text-[9px] ${
+                    isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
+                  }`}
+                >
+                  {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {relayKeys.map((item, index) => (
-                  <button
-                    key={`${item}-${index}`}
-                    onClick={() => setSelectedKeyIndex(index)}
-                    className={`border-2 px-3 py-2 font-mono text-[10px] font-black uppercase tracking-wide ${
-                      selectedKeyIndex === index
-                        ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                        : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
+              <div className="overflow-hidden border-2 border-[var(--border-color)]">
+                {visibleRelayEndpoints.map((endpoint, index) => (
+                  <div
+                    key={endpoint.id}
+                    className={`flex items-center gap-3 px-4 py-3 ${
+                      index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
+                    } ${
+                      selectedEndpointID === endpoint.id ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'bg-[var(--bg-surface)]'
                     }`}
                   >
-                    {`KEY ${index + 1} · ${maskRelayKey(item)}`}
-                  </button>
+                    <button
+                      onClick={() => setSelectedEndpointID(endpoint.id)}
+                      className="min-w-0 flex-1 text-left"
+                    >
+                      <div className="font-mono text-xs font-bold break-all text-[var(--text-primary)]">
+                        {endpoint.baseUrl}
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => void copyText(endpoint.baseUrl, t('status.endpoint_copied'))}
+                      className="shrink-0 text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]"
+                    >
+                      复制
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                {t('status.endpoint_title')}
+                {t('status.model_name_title')}
               </div>
-              <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
-                {relayEndpoints.map((endpoint) => (
+              <div className="flex flex-wrap gap-2">
+                {relayModelOptions.map((model) => (
                   <button
-                    key={endpoint.id}
-                    onClick={() => setSelectedEndpointID(endpoint.id)}
-                    className={`space-y-3 border-2 p-4 text-left ${
-                      selectedEndpointID === endpoint.id
-                        ? 'border-[var(--border-color)] bg-[var(--bg-main)]'
-                        : 'border-[var(--border-color)] bg-[var(--bg-surface)]'
+                    key={model}
+                    onClick={() => setSelectedRelayModel(model)}
+                    className={`border-2 px-3 py-2 font-mono text-[10px] font-black uppercase tracking-wide ${
+                      selectedRelayModel === model
+                        ? 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
+                        : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                          {endpointLabel(endpoint)}
-                        </div>
-                        <div className="mt-1 font-mono text-sm font-black text-[var(--text-primary)]">{endpoint.host}</div>
-                      </div>
-                      <span className="text-[10px] font-black uppercase text-[var(--text-muted)]">{endpoint.kind}</span>
-                    </div>
-                    <div className="font-mono text-xs font-bold break-all text-[var(--text-primary)]">{endpoint.baseUrl}</div>
-                    <div className="flex justify-end">
-                      <span
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          void copyText(endpoint.baseUrl);
-                        }}
-                        className="cursor-pointer text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]"
-                      >
-                        复制
-                      </span>
-                    </div>
+                    {model}
                   </button>
                 ))}
               </div>
@@ -494,7 +670,10 @@ export default function StatusFeature({
                   <div className="font-mono text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
                     {t('status.codex_auth_json')}
                   </div>
-                  <button onClick={() => void copyText(serviceAuthJSON)} className="btn-swiss !px-3 !py-1 !text-[9px]">
+                  <button
+                    onClick={() => void copyText(serviceAuthJSON, t('status.auth_json_copied'))}
+                    className="btn-swiss !px-3 !py-1 !text-[9px]"
+                  >
                     复制
                   </button>
                 </div>
@@ -508,7 +687,10 @@ export default function StatusFeature({
                   <div className="font-mono text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
                     {t('status.codex_config_toml')}
                   </div>
-                  <button onClick={() => void copyText(serviceConfigToml)} className="btn-swiss !px-3 !py-1 !text-[9px]">
+                  <button
+                    onClick={() => void copyText(serviceConfigToml, t('status.config_toml_copied'))}
+                    className="btn-swiss !px-3 !py-1 !text-[9px]"
+                  >
                     复制
                   </button>
                 </div>
@@ -520,32 +702,75 @@ export default function StatusFeature({
 
             <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">{localApplyMessage}</div>
           </div>
-
-          <div className="space-y-5 p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-[10px] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
-                {t('status.routing_title')}
-              </div>
-              <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">{routingMessage}</div>
-            </div>
-
-            {routingItems.length > 0 ? (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {routingItems.map((item) => (
-                  <div key={item.label} className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-                    <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">{item.label}</div>
-                    <div className="mt-2 font-mono text-sm font-black uppercase text-[var(--text-primary)]">{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                {t('status.routing_missing')}
-              </div>
-            )}
-          </div>
         </div>
       </div>
+
+      {relayKeyEditor ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
+          onClick={() => setRelayKeyEditor(null)}
+        >
+          <div
+            className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                {t('status.service_api_keys')}
+              </div>
+              <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+                {relayKeyEditor.mode === 'create' ? t('status.service_key_create_title') : t('status.service_key_rename')}
+              </h3>
+            </header>
+            <div className="space-y-4 p-6">
+              <label className="space-y-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {t('status.service_key_name_label')}
+                </span>
+                <input
+                  value={relayKeyEditor.name}
+                  onChange={(event) =>
+                    setRelayKeyEditor((prev) => (prev ? { ...prev, name: event.target.value, error: '' } : prev))
+                  }
+                  className="input-swiss w-full"
+                  placeholder={t('status.service_key_name_placeholder')}
+                />
+              </label>
+              <label className="space-y-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {t('status.service_key_value_label')}
+                </span>
+                <input
+                  value={relayKeyEditor.apiKey}
+                  onChange={(event) =>
+                    setRelayKeyEditor((prev) => (prev ? { ...prev, apiKey: event.target.value, error: '' } : prev))
+                  }
+                  className="input-swiss w-full"
+                  placeholder={t('status.service_key_value_placeholder')}
+                  type="password"
+                  disabled={relayKeyEditor.mode === 'rename'}
+                />
+              </label>
+              {relayKeyEditor.error ? (
+                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+                  {relayKeyEditor.error}
+                </div>
+              ) : null}
+            </div>
+            <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
+              <button onClick={() => setRelayKeyEditor(null)} className="btn-swiss">
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => void submitRelayKeyEditor()}
+                className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
+              >
+                {relayKeyEditor.mode === 'create' ? t('status.service_key_create_submit') : t('common.save')}
+              </button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

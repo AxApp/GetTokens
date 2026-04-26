@@ -6,6 +6,7 @@ import {
   filterAccounts,
   groupAccountsByPlan,
 } from '../model/accountSelectors.ts';
+import { defaultAccountsFilterState } from '../model/accountFilters.ts';
 
 const t = (key) =>
   ({
@@ -41,8 +42,144 @@ test('filterAccounts applies source filter and text query across key fields', ()
   ];
 
   assert.deepEqual(
-    filterAccounts(accounts, { searchTerm: 'relay', sourceFilter: 'api-key' }).map((item) => item.id),
+    filterAccounts(accounts, {
+      searchTerm: 'relay',
+      filters: {
+        ...defaultAccountsFilterState,
+        source: 'api-key',
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
     ['api-key:beta']
+  );
+});
+
+test('filterAccounts keeps only auth-file codex accounts with positive longest-window quota when enabled', () => {
+  const accounts = [
+    {
+      id: 'auth-file:weekly-ok',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Weekly OK',
+      status: 'ACTIVE',
+      quotaKey: 'weekly-ok',
+    },
+    {
+      id: 'auth-file:weekly-empty',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Weekly Empty',
+      status: 'ACTIVE',
+      quotaKey: 'weekly-empty',
+    },
+    {
+      id: 'auth-file:single-ok',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Single OK',
+      status: 'ACTIVE',
+      quotaKey: 'single-ok',
+    },
+    {
+      id: 'api-key:beta',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'Beta',
+      status: 'ACTIVE',
+    },
+  ];
+
+  const codexQuotaByName = {
+    'weekly-ok': {
+      status: 'success',
+      quota: {
+        planType: 'plus',
+        windows: [
+          { id: 'five-hour', label: '5H', remainingPercent: 80, resetLabel: '05/01 10:00', resetAtUnix: 1 },
+          { id: 'weekly', label: '7D', remainingPercent: 25, resetLabel: '05/07 10:00', resetAtUnix: 2 },
+        ],
+      },
+    },
+    'weekly-empty': {
+      status: 'success',
+      quota: {
+        planType: 'plus',
+        windows: [
+          { id: 'five-hour', label: '5H', remainingPercent: 80, resetLabel: '05/01 10:00', resetAtUnix: 1 },
+          { id: 'weekly', label: '7D', remainingPercent: 0, resetLabel: '05/07 10:00', resetAtUnix: 2 },
+        ],
+      },
+    },
+    'single-ok': {
+      status: 'success',
+      quota: {
+        planType: 'free',
+        windows: [{ id: 'five-hour', label: '5H', remainingPercent: 10, resetLabel: '05/01 10:00', resetAtUnix: 1 }],
+      },
+    },
+  };
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        hasLongestQuota: true,
+      },
+      codexQuotaByName,
+    }).map((item) => item.id),
+    ['auth-file:weekly-ok', 'auth-file:single-ok']
+  );
+});
+
+test('filterAccounts keeps only unavailable or unusable accounts when errorsOnly is enabled', () => {
+  const accounts = [
+    {
+      id: 'auth-file:active',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Active',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'auth-file:disabled',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Disabled',
+      status: 'DISABLED',
+      disabled: true,
+    },
+    {
+      id: 'auth-file:error',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Error',
+      status: 'ERROR',
+      statusMessage: 'expired',
+    },
+    {
+      id: 'auth-file:unavailable',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Unavailable',
+      status: 'ACTIVE',
+      rawAuthFile: {
+        name: 'unavailable',
+        unavailable: true,
+      },
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        errorsOnly: true,
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:disabled', 'auth-file:error', 'auth-file:unavailable']
   );
 });
 
@@ -108,7 +245,7 @@ test('buildAccountsView sorts, filters, groups, and resolves selection state tog
     apiKeyRecords: [accounts[0]],
     codexQuotaByName: {},
     searchTerm: 'a',
-    sourceFilter: 'all',
+    filters: defaultAccountsFilterState,
     selectedAccountIDs: ['auth-file:alpha'],
     t,
   });
@@ -151,7 +288,7 @@ test('buildAccountsView sorts api keys by priority before display name', () => {
     ],
     codexQuotaByName: {},
     searchTerm: '',
-    sourceFilter: 'all',
+    filters: defaultAccountsFilterState,
     selectedAccountIDs: [],
     t,
   });

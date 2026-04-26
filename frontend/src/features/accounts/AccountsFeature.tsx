@@ -31,7 +31,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
   const {
     loading,
     searchTerm,
-    sourceFilter,
+    filters,
     selectedAccount,
     pendingDeleteID,
     deleteError,
@@ -60,7 +60,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
-    setSourceFilter,
+    setFilters,
     setSelectedAccount,
     setPendingDeleteID,
     setDeleteError,
@@ -137,7 +137,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           <AccountsToolbar
             t={t}
             searchTerm={searchTerm}
-            sourceFilter={sourceFilter}
+            filters={filters}
             isSelectionMode={isSelectionMode}
             allFilteredSelected={allFilteredSelected}
             selectedAccountCount={selectedAccountIDs.length}
@@ -145,7 +145,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
               setSearchTerm(value);
               setPendingDeleteID(null);
             }}
-            onSourceFilterChange={setSourceFilter}
+            onFiltersChange={setFilters}
             onToggleSelectionMode={toggleSelectionMode}
             onToggleSelectAllFiltered={toggleSelectAllFiltered}
             onClearSelection={() => setSelectedAccountIDs([])}

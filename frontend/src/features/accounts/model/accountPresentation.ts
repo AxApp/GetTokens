@@ -3,6 +3,12 @@ import type { AccountRecord, AuthFile, CredentialSource } from '../../../types';
 import type { QuotaDisplay, Translator } from './types';
 import { buildAPIKeyLabelStorageKey } from './accountConfig.ts';
 
+export interface AccountStabilitySummary {
+  title: string;
+  body: string;
+  tone: 'neutral' | 'positive' | 'warning';
+}
+
 export function compareAccountRecords(left: AccountRecord, right: AccountRecord) {
   if (left.credentialSource === 'api-key' && right.credentialSource === 'api-key') {
     const leftPriority = Number(left.priority || 0);
@@ -67,6 +73,17 @@ export function resolveAccountFailureReason(account: AccountRecord) {
     .trim();
 }
 
+export function isAccountUnavailable(account: AccountRecord) {
+  if (account.disabled || account.rawAuthFile?.unavailable) {
+    return true;
+  }
+
+  const status = String(account.status || '')
+    .trim()
+    .toUpperCase();
+  return status !== 'ACTIVE' && status !== 'CONFIGURED' && status !== 'LOCAL';
+}
+
 export function isCodexReauthEligible(account: AccountRecord) {
   if (account.credentialSource !== 'auth-file') {
     return false;
@@ -109,6 +126,55 @@ export function resolveAccountPrimaryLabel(account: AccountRecord) {
     }
   }
   return account.displayName;
+}
+
+export function buildAccountStabilitySummary(account: AccountRecord, quotaDisplay: QuotaDisplay, t: Translator): AccountStabilitySummary {
+  const failureReason = resolveAccountFailureReason(account);
+  if (failureReason) {
+    return {
+      title: t('accounts.stability_attention_title'),
+      body: failureReason,
+      tone: 'warning',
+    };
+  }
+
+  if (account.disabled) {
+    return {
+      title: t('accounts.stability_attention_title'),
+      body: t('accounts.stability_disabled_body'),
+      tone: 'warning',
+    };
+  }
+
+  if (quotaDisplay.status === 'loading') {
+    return {
+      title: t('accounts.stability_loading_title'),
+      body: t('accounts.quota_syncing'),
+      tone: 'neutral',
+    };
+  }
+
+  if (quotaDisplay.status === 'success' && quotaDisplay.windows.length > 0) {
+    return {
+      title: t('accounts.stability_ready_title'),
+      body: t('accounts.stability_ready_body'),
+      tone: 'positive',
+    };
+  }
+
+  if (quotaDisplay.status === 'error' || quotaDisplay.status === 'empty') {
+    return {
+      title: t('accounts.stability_pending_title'),
+      body: t('accounts.stability_pending_body'),
+      tone: 'neutral',
+    };
+  }
+
+  return {
+    title: t('accounts.stability_placeholder_title'),
+    body: t('accounts.stability_placeholder_body'),
+    tone: 'neutral',
+  };
 }
 
 export function fallbackAPIKeyDisplayName(apiKey: string) {
