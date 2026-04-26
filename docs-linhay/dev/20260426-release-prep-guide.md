@@ -36,6 +36,12 @@
 对应脚本：
 - `scripts/build-sidecar.sh <goos> <goarch> <output-dir>`
 
+补充：
+
+1. 本地开发默认优先使用 `docs-linhay/references/CLIProxyAPI`
+2. CI runner 若没有该目录，脚本会自动 clone `https://github.com/linhay/CLIProxyAPI.git`
+3. 默认构建分支为 `gettokens/wham-token-fix`，可通过 `CLI_PROXY_SOURCE_REF` 覆盖
+
 示例：
 
 ```bash

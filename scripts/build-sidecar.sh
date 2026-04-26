@@ -12,21 +12,35 @@ OUTPUT_DIR="$3"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SOURCE_DIR="${CLI_PROXY_SOURCE_DIR:-${ROOT_DIR}/docs-linhay/references/CLIProxyAPI}"
+SOURCE_REPO="${CLI_PROXY_SOURCE_REPO:-https://github.com/linhay/CLIProxyAPI.git}"
+SOURCE_REF="${CLI_PROXY_SOURCE_REF:-gettokens/wham-token-fix}"
 BINARY_NAME="cli-proxy-api"
+TEMP_SOURCE_DIR=""
+STAGE_DIR=""
 
 if [[ "$GOOS" == "windows" ]]; then
   BINARY_NAME="${BINARY_NAME}.exe"
 fi
 
-if [[ ! -d "${SOURCE_DIR}" ]]; then
-  echo "CLIProxyAPI source dir not found: ${SOURCE_DIR}" >&2
-  exit 1
-fi
+ensure_source_dir() {
+  if [[ -f "${SOURCE_DIR}/go.mod" ]]; then
+    return 0
+  fi
 
-if [[ ! -f "${SOURCE_DIR}/go.mod" ]]; then
-  echo "CLIProxyAPI source dir is missing go.mod: ${SOURCE_DIR}" >&2
-  exit 1
-fi
+  TEMP_SOURCE_DIR="$(mktemp -d)"
+
+  echo "→ CLIProxyAPI source missing locally, cloning ${SOURCE_REPO}#${SOURCE_REF}" >&2
+  git clone --depth 1 --branch "${SOURCE_REF}" "${SOURCE_REPO}" "${TEMP_SOURCE_DIR}/CLIProxyAPI" >&2
+  SOURCE_DIR="${TEMP_SOURCE_DIR}/CLIProxyAPI"
+
+  if [[ ! -f "${SOURCE_DIR}/go.mod" ]]; then
+    echo "CLIProxyAPI source dir is missing go.mod after clone: ${SOURCE_DIR}" >&2
+    exit 1
+  fi
+}
+
+ensure_source_dir
+trap 'rm -rf "${TEMP_SOURCE_DIR}" "${STAGE_DIR}"' EXIT
 
 resolve_git_value() {
   local cmd="$1"
@@ -65,7 +79,6 @@ case "${GOOS}:${GOARCH}" in
     fi
 
     STAGE_DIR="$(mktemp -d)"
-    trap 'rm -rf "${STAGE_DIR}"' EXIT
 
     ARM64_PATH="${STAGE_DIR}/cli-proxy-api-arm64"
     AMD64_PATH="${STAGE_DIR}/cli-proxy-api-amd64"
