@@ -6,7 +6,7 @@ import (
 	"github.com/creativeprojects/go-selfupdate"
 )
 
-func TestUpdaterConfigSupportsChecksumsAndUniversalMacAssets(t *testing.T) {
+func TestUpdaterConfigSupportsChecksums(t *testing.T) {
 	config := updaterConfig()
 
 	validator, ok := config.Validator.(*selfupdate.ChecksumValidator)
@@ -18,8 +18,8 @@ func TestUpdaterConfigSupportsChecksumsAndUniversalMacAssets(t *testing.T) {
 		t.Fatalf("validator.UniqueFilename = %q, want %q", validator.UniqueFilename, "checksums.txt")
 	}
 
-	if config.UniversalArch != "universal" {
-		t.Fatalf("config.UniversalArch = %q, want %q", config.UniversalArch, "universal")
+	if config.UniversalArch != "" {
+		t.Fatalf("config.UniversalArch = %q, want empty string", config.UniversalArch)
 	}
 }
 

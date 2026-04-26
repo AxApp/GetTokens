@@ -31,8 +31,7 @@ type Updater struct {
 
 func updaterConfig() selfupdate.Config {
 	return selfupdate.Config{
-		Validator:     &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
-		UniversalArch: "universal",
+		Validator: &selfupdate.ChecksumValidator{UniqueFilename: "checksums.txt"},
 	}
 }
 

@@ -82,8 +82,10 @@ Releases are published on GitHub Releases:
 
 The current release workflow produces the following asset types:
 
-- macOS：`GetTokens_darwin_universal.dmg`
-- macOS updater asset：`GetTokens_darwin_universal.tar.gz`
+- macOS Apple Silicon：`GetTokens_darwin_arm64.dmg`
+- macOS Apple Silicon updater asset：`GetTokens_darwin_arm64.tar.gz`
+- macOS Intel：`GetTokens_darwin_amd64.dmg`
+- macOS Intel updater asset：`GetTokens_darwin_amd64.tar.gz`
 - Checksums：`checksums.txt`
 
 ## 自动更新说明 | Auto Update Notes

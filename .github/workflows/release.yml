@@ -20,8 +20,8 @@ jobs:
     name: Build H5
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
@@ -32,7 +32,7 @@ jobs:
         env:
           VITE_VERSION: ${{ github.ref_name }}
         working-directory: frontend
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: frontend-dist
           path: frontend/dist/
@@ -47,29 +47,38 @@ jobs:
       matrix:
         include:
           - runner: macos-latest
-            os-name: macOS
+            os-name: macOS arm64
             goos: darwin
-            goarch: universal
-            wails-platform: darwin/universal
+            goarch: arm64
+            wails-platform: darwin/arm64
             package-ext: dmg
-            asset-name: GetTokens_darwin_universal.dmg
-            updater-asset-name: GetTokens_darwin_universal.tar.gz
+            asset-name: GetTokens_darwin_arm64.dmg
+            updater-asset-name: GetTokens_darwin_arm64.tar.gz
+
+          - runner: macos-15-intel
+            os-name: macOS amd64
+            goos: darwin
+            goarch: amd64
+            wails-platform: darwin/amd64
+            package-ext: dmg
+            asset-name: GetTokens_darwin_amd64.dmg
+            updater-asset-name: GetTokens_darwin_amd64.tar.gz
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # ── Go ────────────────────────────────────────────────────────────────
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: '1.23'
 
       # ── Node ──────────────────────────────────────────────────────────────
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
 
       # ── Restore built frontend ────────────────────────────────────────────
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: frontend-dist
           path: frontend/dist/
@@ -140,13 +149,13 @@ jobs:
             ${{ matrix.wails-extra || '' }} \
             -ldflags "-X main.Version=${{ github.ref_name }} -X main.ReleaseLabel=${RELEASE_LABEL}"
 
-      - name: Reinstall universal sidecar into macOS app bundle
+      - name: Reinstall sidecar into macOS app bundle
         if: runner.os == 'macOS'
         shell: bash
         run: |
           cp build/bin/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
           chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
-          lipo -info build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+          file build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
 
       # ── Package ───────────────────────────────────────────────────────────
       - name: Sign and notarize macOS app
@@ -174,9 +183,9 @@ jobs:
           scripts/package-updater-asset.sh ${{ matrix.goos }} ${{ matrix.goarch }}
 
       # ── Upload artifact ───────────────────────────────────────────────────
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
-          name: release-${{ matrix.goos }}
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
           path: |
             dist/release/${{ matrix.asset-name }}
             dist/release/${{ matrix.updater-asset-name }}
@@ -194,9 +203,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: dist/release/
           merge-multiple: true
@@ -207,10 +216,12 @@ jobs:
           ./scripts/gen-checksums.sh dist/release
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
-            dist/release/GetTokens_darwin_universal.dmg
-            dist/release/GetTokens_darwin_universal.tar.gz
+            dist/release/GetTokens_darwin_arm64.dmg
+            dist/release/GetTokens_darwin_arm64.tar.gz
+            dist/release/GetTokens_darwin_amd64.dmg
+            dist/release/GetTokens_darwin_amd64.tar.gz
             dist/release/checksums.txt
           generate_release_notes: true
