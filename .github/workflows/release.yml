@@ -97,23 +97,12 @@ jobs:
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      # ── Fetch sidecar binary ──────────────────────────────────────────────
-      - name: Fetch CLIProxyAPI sidecar (macOS/Linux)
-        if: runner.os != 'Windows'
-        run: |
-          chmod +x scripts/fetch-sidecar.sh
-          ./scripts/fetch-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch == 'universal' && 'arm64' || matrix.goarch }} latest build/bin
-          # For darwin/universal also fetch amd64
-          if [ "${{ matrix.goos }}" = "darwin" ]; then
-            ./scripts/fetch-sidecar.sh darwin amd64 latest build/bin/amd64
-          fi
-
-      - name: Fetch CLIProxyAPI sidecar (Windows)
-        if: runner.os == 'Windows'
+      # ── Build sidecar from fork source ───────────────────────────────────
+      - name: Build CLIProxyAPI sidecar from source
         shell: bash
         run: |
-          chmod +x scripts/fetch-sidecar.sh
-          ./scripts/fetch-sidecar.sh windows amd64 latest build/bin
+          chmod +x scripts/build-sidecar.sh
+          ./scripts/build-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch }} build/bin
 
       # ── Platform-specific dependencies ───────────────────────────────────
       - name: Install macOS packaging tools
@@ -200,6 +189,14 @@ jobs:
             -platform ${{ matrix.wails-platform }} \
             ${{ matrix.wails-extra || '' }} \
             -ldflags "-X main.Version=${{ github.ref_name }} -X main.ReleaseLabel=${RELEASE_LABEL}"
+
+      - name: Reinstall universal sidecar into macOS app bundle
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cp build/bin/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+          chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+          lipo -info build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
 
       - name: Package updater asset
         if: runner.os != 'macOS'

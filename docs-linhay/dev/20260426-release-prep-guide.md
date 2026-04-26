@@ -24,18 +24,42 @@
 - macOS 保留 `tar.gz` 资产用于检测最新版本和统一校验链，但签名发布包不做 bundle 内原地替换，设置页会跳转到 release 页面安装。
 - 原因是 Apple 对签名 bundle 的 seal 有要求；修改 `.app` 主可执行文件会破坏签名边界。参见 Apple Technical Note TN2206。
 
+## sidecar 构建边界
+发布前必须先从仓库内维护的 `docs-linhay/references/CLIProxyAPI` 源码构建 sidecar，不能直接下载上游 release 二进制。
+
+原因：
+
+1. `CLIProxyAPI` 已经进入 fork 维护态，行为修复首先落在 fork 源码，而不是等 fork release。
+2. fork release 可能滞后，直接下载 release 无法保证包含本轮补丁。
+3. 对 `darwin/universal`，最终写入 `GetTokens.app` 的 `Contents/MacOS/cli-proxy-api` 必须是 universal binary；不能只塞一份 `arm64`。
+
+对应脚本：
+- `scripts/build-sidecar.sh <goos> <goarch> <output-dir>`
+
+示例：
+
+```bash
+./scripts/build-sidecar.sh darwin universal build/bin
+./scripts/build-sidecar.sh windows amd64 build/bin
+./scripts/build-sidecar.sh linux amd64 build/bin
+```
+
 ## macOS 签名与公证
 macOS release 现在按以下顺序处理：
 
-1. 使用 `Developer ID Application` 证书对 `GetTokens.app` 做 hardened runtime 签名
-2. 使用 `notarytool` 提交 `.app` 的 zip 包并等待公证完成
-3. 对 `.app` 执行 `stapler staple`
-4. 基于已 stapled 的 `.app` 生成 DMG
-5. 对 DMG 重新签名后再次提交 notarization
-6. 对 DMG 执行 `stapler staple`
-7. 最后再从签名后的 `.app` 中提取 updater 原始可执行文件，打成 `tar.gz`
+0. 从 `docs-linhay/references/CLIProxyAPI` 源码构建 universal sidecar，写入 `build/bin/cli-proxy-api`
+1. 执行 `wails build`
+2. 用 `build/bin/cli-proxy-api` 显式覆盖 `build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api`，确保 app bundle 内 sidecar 仍是 universal binary
+3. 使用 `Developer ID Application` 证书对 `GetTokens.app` 做 hardened runtime 签名
+4. 使用 `notarytool` 提交 `.app` 的 zip 包并等待公证完成
+5. 对 `.app` 执行 `stapler staple`
+6. 基于已 stapled 的 `.app` 生成 DMG
+7. 对 DMG 重新签名后再次提交 notarization
+8. 对 DMG 执行 `stapler staple`
+9. 最后再从签名后的 `.app` 中提取 updater 原始可执行文件，打成 `tar.gz`
 
 对应脚本：
+- [scripts/build-sidecar.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/build-sidecar.sh)
 - [scripts/sign-notarize-macos-release.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/sign-notarize-macos-release.sh)
 - [scripts/package-updater-asset.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/package-updater-asset.sh)
 
@@ -65,20 +89,21 @@ CI release workflow 需要以下 secrets：
 3. UI 展示版本时间使用 `ReleaseLabel`，不和 `Version` 混用。
 4. Windows 安装包必须避开 `go-selfupdate` 的默认匹配规则，因此使用 `_installer.exe` 后缀。
 5. macOS universal updater 资产需要和 `UniversalArch=universal` 对齐。
-6. macOS release workflow 必须先 notarize `.app`，再从已 stapled 的 `.app` 生成 DMG，最后再 notarize DMG；不能先打 DMG 再签 app。
+6. macOS release workflow 必须先把源码构建出来的 universal sidecar 回填进 `.app`，再 notarize `.app`，然后从已 stapled 的 `.app` 生成 DMG，最后再 notarize DMG。
 7. 已签名 macOS `.app` 在当前框架下只支持“检查更新 + 跳转 release 页面”，不支持 bundle 内 `ApplyUpdate`。
 
 ## 建议发布步骤
 1. 确认工作区只包含本次准备发布的变更。
 2. 运行前端类型检查、Go 测试、文档校验。
-3. 合并到干净提交后创建 tag：`v0.1.0`。
-4. 推送 tag 触发 GitHub Actions release workflow。
-5. 在生成的 release 页面检查：
+3. 从 fork 源码构建 sidecar，并确认 macOS 场景下 `build/bin/cli-proxy-api` 为 universal binary。
+4. 合并到干净提交后创建 tag：`v0.1.0`。
+5. 推送 tag 触发 GitHub Actions release workflow。
+6. 在生成的 release 页面检查：
    - 安装包资产存在
    - updater 资产存在
    - `checksums.txt` 包含全部资产
    - macOS DMG 已经 stapled，`xcrun stapler validate` 通过
-6. 使用非 dev 构建验证：
+7. 使用非 dev 构建验证：
    - `CheckUpdate` 能发现新版本
    - Windows / Linux: `ApplyUpdate` 能下载并替换二进制，应用退出后重启进入新版本
    - macOS: 设置页能打开对应 release 页面，下载安装后进入新版本
