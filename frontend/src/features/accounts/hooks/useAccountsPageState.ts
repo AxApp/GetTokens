@@ -31,6 +31,7 @@ import {
 } from '../model/accountPresentation';
 import useAccountsActions from './useAccountsActions';
 import useAccountsQuotaState from './useAccountsQuotaState';
+import useAccountsUsageState from './useAccountsUsageState';
 import type {
   ApiKeyFormState,
   AccountsFilterState,
@@ -106,6 +107,7 @@ export default function useAccountsPageState({
     toggleSelectionMode,
   } = useAccountSelectionState();
   const { codexQuotaByName, loadCodexQuotas, refreshCodexQuota } = useAccountsQuotaState(trackRequest);
+  const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
 
   const authFileRecords = useMemo(
     () => authFiles.map((account) => mapAuthFileToRecord(account)),
@@ -155,6 +157,7 @@ export default function useAccountsPageState({
       const apiKeyAccounts = (accountResponse || [])
         .map((account) => mapBackendAccountRecord(account, apiKeyLabels))
         .filter((account) => account.credentialSource === 'api-key');
+      const nextAuthFileRecords = files.map((account) => mapAuthFileToRecord(account));
       setAuthFiles(files);
       setApiKeyRecords(apiKeyAccounts);
       setPendingDeleteID(null);
@@ -165,12 +168,13 @@ export default function useAccountsPageState({
         ])
       );
       void loadCodexQuotas(files);
+      void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [apiKeyLabels, loadCodexQuotas, ready, trackRequest]);
+  }, [apiKeyLabels, loadAccountUsage, loadCodexQuotas, ready, trackRequest]);
 
   useEffect(() => {
     if (ready) {
@@ -312,6 +316,12 @@ export default function useAccountsPageState({
     BrowserOpenURL(oauthDialog.url);
   }, [oauthDialog]);
 
+  const cancelCodexOAuth = useCallback(() => {
+    setOAuthDialog(null);
+    setOAuthFlow(null);
+    setOAuthBanner(null);
+  }, []);
+
   const {
     deleteAccount,
     uploadAccounts,
@@ -366,6 +376,7 @@ export default function useAccountsPageState({
     pasteContent,
     pasteError,
     codexQuotaByName,
+    accountUsageByID,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,
@@ -376,6 +387,7 @@ export default function useAccountsPageState({
     allFilteredSelected,
     loadAccounts,
     startCodexOAuth,
+    cancelCodexOAuth,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,

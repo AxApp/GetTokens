@@ -1,5 +1,6 @@
 import { groupProviderLabel } from '../model/accountPresentation';
 import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from '../model/types';
+import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountCard from './AccountCard';
 
 interface AccountGroupSectionProps {
@@ -7,6 +8,7 @@ interface AccountGroupSectionProps {
   group: AccountGroup;
   groupCardHeight?: number;
   codexQuotaByName: Record<string, CodexQuotaState>;
+  accountUsageByID: Record<string, AccountUsageSummary>;
   ready: boolean;
   isSelectionMode: boolean;
   selectedAccountIDSet: Set<string>;
@@ -26,6 +28,7 @@ export default function AccountGroupSection({
   group,
   groupCardHeight,
   codexQuotaByName,
+  accountUsageByID,
   ready,
   isSelectionMode,
   selectedAccountIDSet,
@@ -62,6 +65,7 @@ export default function AccountGroupSection({
             t={t}
             account={account}
             quotaState={codexQuotaByName[account.quotaKey || '']}
+            usageSummary={accountUsageByID[account.id]}
             minHeight={groupCardHeight}
             ready={ready}
             isSelectionMode={isSelectionMode}

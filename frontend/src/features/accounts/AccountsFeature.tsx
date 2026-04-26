@@ -47,6 +47,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     pasteContent,
     pasteError,
     codexQuotaByName,
+    accountUsageByID,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,
@@ -57,6 +58,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     allFilteredSelected,
     loadAccounts,
     startCodexOAuth,
+    cancelCodexOAuth,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
@@ -201,6 +203,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
                   group={group}
                   groupCardHeight={groupCardHeights[group.id]}
                   codexQuotaByName={codexQuotaByName}
+                  accountUsageByID={accountUsageByID}
                   ready={ready}
                   isSelectionMode={isSelectionMode}
                   selectedAccountIDSet={selectedAccountIDSet}
@@ -226,20 +229,22 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
       {selectedAccount?.credentialSource === 'auth-file' && selectedAccount.rawAuthFile ? (
         <AccountDetailModal
           account={selectedAccount.rawAuthFile}
+          usageSummary={accountUsageByID[selectedAccount.id]}
           canStartReauth={isCodexAuthFile(selectedAccount)}
           isReauthing={oauthPendingAccountID === selectedAccount.id}
           onClose={() => setSelectedAccount(null)}
           onStartReauth={() => {
             const targetAccount = selectedAccount;
-            setSelectedAccount(null);
             void startCodexOAuth(targetAccount);
           }}
+          onCancelReauth={cancelCodexOAuth}
         />
       ) : null}
 
       {selectedAccount?.credentialSource === 'api-key' ? (
         <ApiKeyDetailModal
           account={selectedAccount}
+          usageSummary={accountUsageByID[selectedAccount.id]}
           onClose={() => setSelectedAccount(null)}
           onRename={renameSelectedApiKey}
           onSavePriority={(priority) => void updateSelectedApiKeyPriority(priority)}
@@ -292,7 +297,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           t={t}
           existingName={oauthDialog.existingName}
           url={oauthDialog.url}
-          onClose={() => setOAuthDialog(null)}
+          onClose={cancelCodexOAuth}
           onOpenInBrowser={openOAuthDialogInBrowser}
         />
       ) : null}

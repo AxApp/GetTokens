@@ -66,6 +66,10 @@ export function GetSidecarStatus() {
   return window['go']['main']['App']['GetSidecarStatus']();
 }
 
+export function GetUsageStatistics() {
+  return window['go']['main']['App']['GetUsageStatistics']();
+}
+
 export function GetVersion() {
   return window['go']['main']['App']['GetVersion']();
 }

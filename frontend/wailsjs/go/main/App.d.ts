@@ -36,6 +36,8 @@ export function GetReleaseLabel():Promise<string>;
 
 export function GetSidecarStatus():Promise<sidecar.Status>;
 
+export function GetUsageStatistics():Promise<main.UsageStatisticsResponse>;
+
 export function GetVersion():Promise<string>;
 
 export function ListAccounts():Promise<Array<main.AccountRecord>>;

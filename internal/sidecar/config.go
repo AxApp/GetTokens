@@ -13,11 +13,12 @@ import (
 
 // sidecarConfig is the YAML config written for CLIProxyAPI.
 type sidecarConfig struct {
-	Host             string   `yaml:"host"`
-	Port             int      `yaml:"port"`
-	AuthDir          string   `yaml:"auth-dir"`
-	APIKeys          []string `yaml:"api-keys"`
-	RemoteManagement struct {
+	Host                   string   `yaml:"host"`
+	Port                   int      `yaml:"port"`
+	AuthDir                string   `yaml:"auth-dir"`
+	APIKeys                []string `yaml:"api-keys"`
+	UsageStatisticsEnabled bool     `yaml:"usage-statistics-enabled"`
+	RemoteManagement       struct {
 		AllowRemote bool   `yaml:"allow-remote"`
 		SecretKey   string `yaml:"secret-key"`
 	} `yaml:"remote-management"`
@@ -26,10 +27,11 @@ type sidecarConfig struct {
 // writeConfig serialises a minimal YAML config for CLIProxyAPI.
 func writeConfig(path string, port int, authDir string) (string, error) {
 	cfg := sidecarConfig{
-		Host:    "",
-		Port:    port,
-		AuthDir: authDir,
-		APIKeys: []string{mustGenerateServiceAPIKey()},
+		Host:                   "",
+		Port:                   port,
+		AuthDir:                authDir,
+		APIKeys:                []string{mustGenerateServiceAPIKey()},
+		UsageStatisticsEnabled: true,
 	}
 	cfg.RemoteManagement.AllowRemote = false
 	cfg.RemoteManagement.SecretKey = ManagementKey
@@ -46,6 +48,7 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 			upsertMappingScalar(root, "host", cfg.Host, "!!str")
 			upsertMappingScalar(root, "port", fmt.Sprintf("%d", cfg.Port), "!!int")
 			upsertMappingScalar(root, "auth-dir", cfg.AuthDir, "!!str")
+			upsertMappingScalar(root, "usage-statistics-enabled", "true", "!!bool")
 			apiKeys := existingAPIKeys(root)
 			if len(apiKeys) == 0 {
 				apiKeys = cfg.APIKeys

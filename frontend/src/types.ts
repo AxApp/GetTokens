@@ -34,6 +34,7 @@ export interface AccountRecord {
   keySuffix?: string;
   baseUrl?: string;
   prefix?: string;
+  authIndex?: unknown;
   quotaKey?: string;
   localOnly?: boolean;
   rawAuthFile?: AuthFile;

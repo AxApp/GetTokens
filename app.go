@@ -153,6 +153,11 @@ type RelayLocalApplyResult struct {
 	ConfigPath    string `json:"configPath"`
 }
 
+type UsageStatisticsResponse struct {
+	Usage          map[string]interface{} `json:"usage"`
+	FailedRequests int64                  `json:"failedRequests,omitempty"`
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -265,6 +270,18 @@ func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 	return &DownloadFileResponse{
 		Name:          result.Name,
 		ContentBase64: result.ContentBase64,
+	}, nil
+}
+
+func (a *App) GetUsageStatistics() (*UsageStatisticsResponse, error) {
+	result, err := a.core.GetUsageStatistics()
+	if err != nil {
+		return nil, err
+	}
+
+	return &UsageStatisticsResponse{
+		Usage:          result.Usage,
+		FailedRequests: result.FailedRequests,
 	}, nil
 }
 

@@ -2,16 +2,26 @@ import { useEffect, useMemo, useState } from 'react';
 import { buildManagedAuthJSONSnippet, buildManagedConfigTomlSnippet } from '../model/accountConfig';
 import { providerLabel, sourceLabel } from '../model/accountPresentation';
 import type { AccountRecord, ClickEventLike, TextInputEvent, Translator } from '../model/types';
+import type { AccountUsageSummary } from '../model/accountUsage';
+import AccountHealthBar from './AccountHealthBar';
 
 interface ApiKeyDetailModalProps {
   account: AccountRecord;
+  usageSummary?: AccountUsageSummary;
   onClose: () => void;
   onRename: (nextName: string) => void;
   onSavePriority: (priority: string) => void;
   t: Translator;
 }
 
-export default function ApiKeyDetailModal({ account, onClose, onRename, onSavePriority, t }: ApiKeyDetailModalProps) {
+export default function ApiKeyDetailModal({
+  account,
+  usageSummary,
+  onClose,
+  onRename,
+  onSavePriority,
+  t,
+}: ApiKeyDetailModalProps) {
   const [draftName, setDraftName] = useState(account.displayName);
   const [draftPriority, setDraftPriority] = useState(String(account.priority ?? 0));
   const [configDraft, setConfigDraft] = useState({
@@ -166,6 +176,44 @@ export default function ApiKeyDetailModal({ account, onClose, onRename, onSavePr
                   <div className="break-all text-[11px] font-black uppercase text-[var(--text-primary)]">{value}</div>
                 </div>
               ))}
+            </div>
+
+            <div className="space-y-3 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {t('accounts.recent_health')}
+                </div>
+                <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+                  {usageSummary?.successRate !== null && usageSummary?.successRate !== undefined
+                    ? `${Math.round(usageSummary.successRate)}%`
+                    : t('accounts.no_recent_activity')}
+                </div>
+              </div>
+
+              {usageSummary?.hasData ? <AccountHealthBar summary={usageSummary} /> : null}
+
+              <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
+                <div className="space-y-1">
+                  <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('accounts.recent_success')}
+                  </div>
+                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">{usageSummary?.success ?? 0}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('accounts.recent_failure')}
+                  </div>
+                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">{usageSummary?.failure ?? 0}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('accounts.average_latency')}
+                  </div>
+                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">
+                    {usageSummary?.averageLatencyMs ? `${usageSummary.averageLatencyMs} ms` : '—'}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">

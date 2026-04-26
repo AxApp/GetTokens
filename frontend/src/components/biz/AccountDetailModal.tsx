@@ -4,14 +4,18 @@ import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import type { AuthFile, AuthModel } from '../../types';
 import { toErrorMessage } from '../../utils/error';
+import type { AccountUsageSummary } from '../../features/accounts/model/accountUsage';
+import AccountHealthBar from '../../features/accounts/components/AccountHealthBar';
 import { canCopyRawContent, copyRawContent, RAW_CONTENT_COPY_RESET_MS } from './accountDetailClipboard';
 
 interface AccountDetailModalProps {
   account: AuthFile;
+  usageSummary?: AccountUsageSummary;
   canStartReauth?: boolean;
   isReauthing?: boolean;
   onClose: () => void;
   onStartReauth?: () => void;
+  onCancelReauth?: () => void;
 }
 
 type DetailField = readonly [string, string];
@@ -39,10 +43,12 @@ function getModelLabel(model: AuthModel): string {
 
 export default function AccountDetailModal({
   account,
+  usageSummary,
   canStartReauth = false,
   isReauthing = false,
   onClose,
   onStartReauth,
+  onCancelReauth,
 }: AccountDetailModalProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
@@ -55,8 +61,6 @@ export default function AccountDetailModal({
   const [sanitizeState, setSanitizeState] = useState<'idle' | 'success' | 'error'>('idle');
   const [viewMode, setViewMode] = useState<'raw' | 'sanitized'>('raw');
   const [sanitizing, setSanitizing] = useState(false);
-  const [verifyResult, setVerifyResult] = useState('');
-  const [verifying, setVerifying] = useState(false);
 
   const detailFields = useMemo<DetailField[]>(
     () => [
@@ -65,9 +69,27 @@ export default function AccountDetailModal({
       [t('accounts.size'), account.size ? `${account.size} B` : '—'],
       [t('common.status'), account.status || '—'],
       [t('common.enable'), account.disabled ? 'NO' : 'YES'],
-      ['REFRESH', formatRefreshValue(account.lastRefresh)],
+      [t('accounts.last_refresh'), formatRefreshValue(account.lastRefresh)],
     ],
     [account, t]
+  );
+
+  const statisticsFields = useMemo<DetailField[]>(
+    () => [
+      [
+        t('accounts.success_rate'),
+        usageSummary?.successRate !== null && usageSummary?.successRate !== undefined
+          ? `${Math.round(usageSummary.successRate)}%`
+          : t('accounts.no_recent_activity'),
+      ],
+      [t('accounts.recent_success'), String(usageSummary?.success ?? 0)],
+      [t('accounts.recent_failure'), String(usageSummary?.failure ?? 0)],
+      [
+        t('accounts.average_latency'),
+        usageSummary?.averageLatencyMs ? `${usageSummary.averageLatencyMs} ms` : '—',
+      ],
+    ],
+    [t, usageSummary]
   );
 
   useEffect(() => {
@@ -193,22 +215,6 @@ export default function AccountDetailModal({
     }
   }
 
-  async function verify() {
-    setVerifying(true);
-    setVerifyResult('VERIFYING...');
-    try {
-      await trackRequest('GetAuthFileModels', { name: account.name, mode: 'verify' }, () =>
-        GetAuthFileModels(account.name)
-      );
-      setVerifyResult('✓ VALID');
-    } catch (error) {
-      console.error(error);
-      setVerifyResult('✗ FAILED');
-    } finally {
-      setVerifying(false);
-    }
-  }
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
@@ -216,7 +222,7 @@ export default function AccountDetailModal({
       onClick={onClose}
     >
       <div
-      className="flex max-h-[90vh] w-full max-w-2xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        className="flex max-h-[90vh] w-full max-w-2xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
@@ -231,11 +237,10 @@ export default function AccountDetailModal({
           <div className="flex items-center gap-3">
             {canStartReauth ? (
               <button
-                onClick={onStartReauth}
-                disabled={isReauthing}
+                onClick={isReauthing ? onCancelReauth : onStartReauth}
                 className="btn-swiss !px-3 !py-1 !text-[9px]"
               >
-                {isReauthing ? t('accounts.reauth_pending') : t('accounts.reauth')}
+                {isReauthing ? t('common.cancel') : t('accounts.reauth')}
               </button>
             ) : null}
             <button onClick={onClose} className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]">
@@ -256,29 +261,30 @@ export default function AccountDetailModal({
             ))}
           </div>
 
-          {canStartReauth ? (
-            <section className="space-y-4 border-b-2 border-dashed border-[var(--border-color)] pb-8">
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                <span className="h-2 w-2 bg-[var(--border-color)]"></span>
-                ACCOUNT_ACTIONS
+          <section className="space-y-4 border-b-2 border-dashed border-[var(--border-color)] pb-8">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                {t('accounts.recent_health')}
               </div>
-              <div className="flex items-center justify-between gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-                <div className="space-y-1">
-                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">{t('accounts.reauth')}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-                    {t('accounts.reauth_detail_hint')}
-                  </div>
-                </div>
-                <button
-                  onClick={onStartReauth}
-                  disabled={isReauthing}
-                  className="btn-swiss shrink-0 !px-3 !py-2 !text-[9px]"
+              <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+                {usageSummary?.hasData ? t('accounts.stability_signal_synced') : t('accounts.no_recent_activity')}
+              </div>
+            </div>
+
+            {usageSummary?.hasData ? <AccountHealthBar summary={usageSummary} /> : null}
+
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {statisticsFields.map(([label, value]) => (
+                <div
+                  key={label}
+                  className="space-y-1 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3"
                 >
-                  {isReauthing ? t('accounts.reauth_pending') : t('accounts.reauth')}
-                </button>
-              </div>
-            </section>
-          ) : null}
+                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{label}</div>
+                  <div className="text-[12px] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{value}</div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -310,13 +316,13 @@ export default function AccountDetailModal({
                 <span className="h-2 w-2 bg-[var(--border-color)]"></span>
                 {viewMode === 'sanitized' ? 'SANITIZED_SOURCE_DATA' : 'RAW_SOURCE_DATA'}
               </div>
-              <div className="flex items-center gap-3">
-                {copyState !== 'idle' || sanitizeState !== 'idle' ? (
-                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    {copyState === 'success' || sanitizeState === 'success'
-                      ? t('accounts.copy_done')
-                      : t('accounts.copy_failed')}
-                  </span>
+	              <div className="flex items-center gap-3">
+	                {copyState !== 'idle' || sanitizeState !== 'idle' ? (
+	                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--border-color)]">
+	                    {copyState === 'success' || sanitizeState === 'success'
+	                      ? t('accounts.copy_done')
+	                      : t('accounts.copy_failed')}
+	                  </span>
                 ) : null}
                 {loadingRaw ? (
                   <span className="animate-pulse text-[9px] font-black text-[var(--text-muted)]">FETCHING_FS...</span>
@@ -367,25 +373,7 @@ export default function AccountDetailModal({
           </section>
         </div>
 
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={verify}
-              disabled={verifying}
-              className="btn-swiss bg-[var(--border-color)] !text-[var(--bg-main)]"
-            >
-              {verifying ? 'VERIFYING...' : 'VERIFY_ACCOUNT'}
-            </button>
-            {verifyResult ? (
-              <span
-                className={`text-[10px] font-black italic ${
-                  verifyResult.includes('✓') ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                {verifyResult}
-              </span>
-            ) : null}
-          </div>
+        <footer className="flex items-center justify-end border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
           <button onClick={onClose} className="btn-swiss">
             {t('common.close')}
           </button>

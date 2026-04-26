@@ -1,13 +1,7 @@
 import type { main } from '../../../../wailsjs/go/models';
 import type { AccountRecord, AuthFile, CredentialSource } from '../../../types';
-import type { QuotaDisplay, Translator } from './types';
+import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
 import { buildAPIKeyLabelStorageKey } from './accountConfig.ts';
-
-export interface AccountStabilitySummary {
-  title: string;
-  body: string;
-  tone: 'neutral' | 'positive' | 'warning';
-}
 
 export function compareAccountRecords(left: AccountRecord, right: AccountRecord) {
   if (left.credentialSource === 'api-key' && right.credentialSource === 'api-key') {
@@ -42,6 +36,7 @@ export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
     email: account.email,
     planType: account.planType,
     name: account.name,
+    authIndex: account.authIndex,
     quotaKey: account.name,
     rawAuthFile: account,
   };

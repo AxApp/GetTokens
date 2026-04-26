@@ -17,3 +17,13 @@ export function buildCodexOAuthBannerMessage(
   }
   return mode === 'reauth' ? t('accounts.reauth_success') : t('accounts.login_chatgpt_success');
 }
+
+export function buildCodexOAuthDialogTitle(t: Translator, existingName?: string | null) {
+  const mode = resolveCodexOAuthMode(existingName);
+  return mode === 'reauth' ? t('accounts.oauth_dialog_title_reauth') : t('accounts.oauth_dialog_title_login');
+}
+
+export function buildCodexOAuthDialogHint(t: Translator, existingName?: string | null) {
+  const mode = resolveCodexOAuthMode(existingName);
+  return mode === 'reauth' ? t('accounts.oauth_dialog_hint_reauth') : t('accounts.oauth_dialog_hint_login');
+}

@@ -386,6 +386,20 @@ export namespace main {
 	        this.contentBase64 = source["contentBase64"];
 	    }
 	}
+	export class UsageStatisticsResponse {
+	    usage: Record<string, any>;
+	    failedRequests?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new UsageStatisticsResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.usage = source["usage"];
+	        this.failedRequests = source["failedRequests"];
+	    }
+	}
 
 }
 

@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --test src/utils/version.test.mjs src/utils/pagePersistence.test.mjs src/features/settings/settingsRelease.test.mjs src/features/accounts/tests/accountConfig.test.mjs src/features/accounts/tests/accountFilters.test.mjs src/features/accounts/tests/accountSelectors.test.mjs src/features/accounts/tests/accountSelection.test.mjs src/features/accounts/tests/accountTransfer.test.mjs src/features/accounts/tests/accountPresentation.test.mjs src/features/accounts/tests/accountOAuth.test.mjs src/features/accounts/tests/accountCardInteractions.test.mjs src/features/accounts/tests/accountRotation.test.mjs src/components/biz/accountDetailClipboard.test.mjs"
+    "test:unit": "node --test src/utils/version.test.mjs src/utils/pagePersistence.test.mjs src/features/settings/settingsRelease.test.mjs src/features/accounts/tests/accountConfig.test.mjs src/features/accounts/tests/accountFilters.test.mjs src/features/accounts/tests/accountSelectors.test.mjs src/features/accounts/tests/accountSelection.test.mjs src/features/accounts/tests/accountTransfer.test.mjs src/features/accounts/tests/accountPresentation.test.mjs src/features/accounts/tests/accountOAuth.test.mjs src/features/accounts/tests/accountCardInteractions.test.mjs src/features/accounts/tests/accountRotation.test.mjs src/features/accounts/tests/accountUsage.test.mjs src/components/biz/accountDetailClipboard.test.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

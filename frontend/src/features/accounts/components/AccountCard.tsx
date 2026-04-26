@@ -1,13 +1,20 @@
 import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRelative, supportsQuota } from '../model/accountQuota';
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
-import { isCodexReauthEligible, resolveAccountFailureReason, resolveAccountPrimaryLabel } from '../model/accountPresentation';
+import {
+  isCodexReauthEligible,
+  resolveAccountFailureReason,
+  resolveAccountPrimaryLabel,
+} from '../model/accountPresentation';
 import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from '../model/types';
+import type { AccountUsageSummary } from '../model/accountUsage';
+import AccountHealthBar from './AccountHealthBar';
 import AccountCardSkeleton from './AccountCardSkeleton';
 
 interface AccountCardProps {
   t: Translator;
   account: AccountRecord;
   quotaState?: CodexQuotaState;
+  usageSummary?: AccountUsageSummary;
   minHeight?: number;
   ready: boolean;
   isSelectionMode: boolean;
@@ -27,6 +34,7 @@ export default function AccountCard({
   t,
   account,
   quotaState,
+  usageSummary,
   minHeight,
   ready,
   isSelectionMode,
@@ -83,8 +91,8 @@ export default function AccountCard({
       role="button"
       tabIndex={isSelectionMode || isPendingDelete ? -1 : 0}
     >
-      <div className="mb-5 flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-2">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-3">
           <h3 className="flex items-center gap-2 break-all text-[12px] font-black uppercase leading-snug tracking-[0.08em] text-[var(--text-primary)]">
             <div
               title={account.localOnly ? t('accounts.status_local') : account.status}
@@ -120,6 +128,17 @@ export default function AccountCard({
           ) : null}
         </div>
       </div>
+
+      {usageSummary?.hasData ? (
+        <div className="mb-4 border-t border-dashed border-[var(--border-color)] pt-4">
+          <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+            <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              {t('accounts.recent_health')}
+            </div>
+            <AccountHealthBar summary={usageSummary} />
+          </div>
+        </div>
+      ) : null}
 
       {quotaDisplay.windows.length > 0 ? <QuotaWindows t={t} quotaDisplay={quotaDisplay} /> : null}
 
@@ -189,9 +208,7 @@ function QuotaWindows({ t, quotaDisplay }: { t: Translator; quotaDisplay: QuotaD
               {t('accounts.quota_remaining')} {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
             </span>
           </div>
-          <div
-            className={`relative h-6 w-full overflow-hidden ${quotaDisplay.status === 'loading' ? 'animate-pulse' : ''}`}
-          >
+          <div className="relative h-6 w-full overflow-hidden">
             <div
               className="absolute inset-0 opacity-50"
               style={{
@@ -204,12 +221,7 @@ function QuotaWindows({ t, quotaDisplay }: { t: Translator; quotaDisplay: QuotaD
             <div
               className="absolute inset-y-0 left-0"
               style={{
-                width:
-                  window.remainingPercent === null
-                    ? quotaDisplay.status === 'loading'
-                      ? '40%'
-                      : '0%'
-                    : `${window.remainingPercent}%`,
+                width: window.remainingPercent === null ? '0%' : `${window.remainingPercent}%`,
                 backgroundImage:
                   'linear-gradient(to right, rgb(22 163 74) 0 8px, transparent 8px 12px)',
                 backgroundSize: '12px 100%',

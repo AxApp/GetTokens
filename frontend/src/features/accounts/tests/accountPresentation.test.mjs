@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { isCodexAuthFile, isCodexReauthEligible, mapAuthFileToRecord, resolveAccountFailureReason } from '../model/accountPresentation.ts';
+import {
+  buildAccountStabilitySummary,
+  isCodexAuthFile,
+  isCodexReauthEligible,
+  mapAuthFileToRecord,
+  resolveAccountFailureReason,
+} from '../model/accountPresentation.ts';
 
 test('mapAuthFileToRecord keeps auth file status message', () => {
   const record = mapAuthFileToRecord({
@@ -100,5 +106,79 @@ test('isCodexAuthFile allows any codex auth-file with a file name', () => {
       status: 'ACTIVE',
     }),
     false
+  );
+});
+
+test('buildAccountStabilitySummary prefers failure reason and falls back to placeholder states', () => {
+  const t = (key) => key;
+
+  assert.deepEqual(
+    buildAccountStabilitySummary(
+      {
+        id: 'auth-file:broken',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'broken.json',
+        status: 'ERROR',
+        statusMessage: 'refresh token expired',
+      },
+      {
+        status: 'success',
+        planType: '',
+        windows: [{ id: 'month', label: 'MONTH', remainingPercent: 80, usedLabel: '', resetLabel: '' }],
+      },
+      t
+    ),
+    {
+      title: 'accounts.stability_attention_title',
+      body: 'refresh token expired',
+      tone: 'warning',
+    }
+  );
+
+  assert.deepEqual(
+    buildAccountStabilitySummary(
+      {
+        id: 'auth-file:healthy',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'healthy.json',
+        status: 'ACTIVE',
+      },
+      {
+        status: 'success',
+        planType: '',
+        windows: [{ id: 'month', label: 'MONTH', remainingPercent: 80, usedLabel: '', resetLabel: '' }],
+      },
+      t
+    ),
+    {
+      title: 'accounts.stability_ready_title',
+      body: 'accounts.stability_ready_body',
+      tone: 'positive',
+    }
+  );
+
+  assert.deepEqual(
+    buildAccountStabilitySummary(
+      {
+        id: 'api-key:codex',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'CODEX API KEY',
+        status: 'ACTIVE',
+      },
+      {
+        status: 'unsupported',
+        planType: '',
+        windows: [],
+      },
+      t
+    ),
+    {
+      title: 'accounts.stability_placeholder_title',
+      body: 'accounts.stability_placeholder_body',
+      tone: 'neutral',
+    }
   );
 });

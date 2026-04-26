@@ -32,6 +32,12 @@ export interface QuotaDisplay {
   windows: QuotaWindowDisplay[];
 }
 
+export interface AccountStabilitySummary {
+  title: string;
+  body: string;
+  tone: 'positive' | 'warning' | 'neutral';
+}
+
 export interface ApiKeyFormState {
   label: string;
   apiKey: string;
