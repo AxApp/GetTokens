@@ -12,21 +12,21 @@ import {
 import type { AccountRecord } from '../../types';
 import { toErrorMessage } from '../../utils/error';
 import {
-  buildAPIKeyLabelStorageKey,
-  compareAccountRecords,
   decodeBase64Utf8,
   downloadTextFile,
   emptyApiKeyForm,
-  fallbackAPIKeyDisplayName,
-  groupAccountsByPlan,
-  isCodexAuthFile,
   loadAPIKeyLabels,
-  mapAuthFileToRecord,
-  mapBackendAccountRecord,
   parseMaybeJSON,
   persistAPIKeyLabels,
-  supportsQuota,
-} from './helpers';
+  buildAPIKeyLabelStorageKey,
+} from './accountConfig';
+import { isCodexAuthFile, supportsQuota } from './accountQuota';
+import { buildAccountsView } from './accountSelectors';
+import {
+  fallbackAPIKeyDisplayName,
+  mapAuthFileToRecord,
+  mapBackendAccountRecord,
+} from './accountPresentation';
 import type {
   ApiKeyFormState,
   AuthFile,
@@ -84,50 +84,26 @@ export default function useAccountsPageState({
     [authFiles]
   );
 
-  const accounts = useMemo(
-    () => [...authFileRecords, ...apiKeyRecords].sort(compareAccountRecords),
-    [authFileRecords, apiKeyRecords]
+  const {
+    accounts,
+    filteredAccounts,
+    groupedAccounts,
+    selectedAccountIDSet,
+    selectedAccounts,
+    allFilteredSelected,
+  } = useMemo(
+    () =>
+      buildAccountsView({
+        authFileRecords,
+        apiKeyRecords,
+        codexQuotaByName,
+        searchTerm,
+        sourceFilter,
+        selectedAccountIDs,
+        t,
+      }),
+    [apiKeyRecords, authFileRecords, codexQuotaByName, searchTerm, selectedAccountIDs, sourceFilter, t]
   );
-
-  const filteredAccounts = useMemo(() => {
-    const query = searchTerm.trim().toLowerCase();
-    return accounts.filter((account) => {
-      if (sourceFilter !== 'all' && account.credentialSource !== sourceFilter) {
-        return false;
-      }
-
-      if (!query) {
-        return true;
-      }
-
-      return [
-        account.displayName,
-        account.provider,
-        account.email,
-        account.planType,
-        account.keyFingerprint,
-        account.baseUrl,
-        account.prefix,
-      ]
-        .filter(Boolean)
-        .some((value) => String(value).toLowerCase().includes(query));
-    });
-  }, [accounts, searchTerm, sourceFilter]);
-
-  const groupedAccounts = useMemo(
-    () => groupAccountsByPlan(filteredAccounts, codexQuotaByName, t),
-    [codexQuotaByName, filteredAccounts, t]
-  );
-
-  const selectedAccountIDSet = useMemo(() => new Set(selectedAccountIDs), [selectedAccountIDs]);
-
-  const selectedAccounts = useMemo(
-    () => accounts.filter((account) => selectedAccountIDSet.has(account.id)),
-    [accounts, selectedAccountIDSet]
-  );
-
-  const allFilteredSelected =
-    filteredAccounts.length > 0 && filteredAccounts.every((account) => selectedAccountIDSet.has(account.id));
 
   const loadCodexQuotas = useCallback(
     async (items: AuthFile[]) => {

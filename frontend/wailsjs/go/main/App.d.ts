@@ -22,6 +22,8 @@ export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>
 
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 
+export function GetRelayRoutingConfig():Promise<main.RelayRoutingConfig>;
+
 export function GetRelayServiceConfig():Promise<main.RelayServiceConfig>;
 
 export function GetReleaseLabel():Promise<string>;

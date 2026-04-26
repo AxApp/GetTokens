@@ -81,8 +81,31 @@ sidecar 顶层 `api-keys` 原生支持列表，因此状态页不能再只建模
 
 - sidecar 配置写入：`internal/sidecar/manager.go`
 - relay service 读写聚合：`internal/wailsapp/relay_service.go`
+- relay routing 配置读取：`internal/wailsapp/routing_config.go`
 - management API client：`internal/cliproxyapi/client.go`
 - 状态页配置 UI：`frontend/src/pages/StatusPage.tsx`
+
+## 状态页补充
+
+`StatusPage` 除了展示客户端接入用的 `auth.json` 和 relay service `api-keys` 之外，还应直接显示 sidecar 当前实际生效的轮动配置，避免用户把“支持哪些模式”和“当前正在用什么模式”混为一谈。
+
+当前展示项包括：
+
+1. `routing.strategy`
+2. `routing.session-affinity`
+3. `routing.session-affinity-ttl`
+4. `request-retry`
+5. `max-retry-credentials`
+6. `max-retry-interval`
+7. `quota-exceeded.switch-project`
+8. `quota-exceeded.switch-preview-model`
+9. `quota-exceeded.antigravity-credits`
+
+其中：
+
+1. `strategy` 缺省时按 `round-robin` 展示
+2. `session-affinity-ttl` 缺省时按 `1h` 展示
+3. 状态页当前只做“生效值观察”，不在这一层直接开放轮动策略写入
 
 ## 后续建议
 

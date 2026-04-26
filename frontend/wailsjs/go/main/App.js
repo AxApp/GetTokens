@@ -38,6 +38,10 @@ export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
 }
 
+export function GetRelayRoutingConfig() {
+  return window['go']['main']['App']['GetRelayRoutingConfig']();
+}
+
 export function GetRelayServiceConfig() {
   return window['go']['main']['App']['GetRelayServiceConfig']();
 }

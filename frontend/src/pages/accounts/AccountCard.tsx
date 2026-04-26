@@ -1,10 +1,5 @@
-import {
-  buildQuotaDisplay,
-  formatQuotaResetDisplayWithUnix,
-  formatQuotaResetRelative,
-  resolveAccountPrimaryLabel,
-  supportsQuota,
-} from './helpers';
+import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRelative, supportsQuota } from './accountQuota';
+import { resolveAccountPrimaryLabel } from './accountPresentation';
 import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from './types';
 import AccountCardSkeleton from './AccountCardSkeleton';
 

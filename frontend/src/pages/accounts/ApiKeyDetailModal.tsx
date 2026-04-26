@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildManagedAuthJSONSnippet, buildManagedConfigTomlSnippet, providerLabel, sourceLabel } from './helpers';
+import { buildManagedAuthJSONSnippet, buildManagedConfigTomlSnippet } from './accountConfig';
+import { providerLabel, sourceLabel } from './accountPresentation';
 import type { AccountRecord, ClickEventLike, TextInputEvent, Translator } from './types';
 
 interface ApiKeyDetailModalProps {

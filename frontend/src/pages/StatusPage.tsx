@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GetRelayServiceConfig, UpdateRelayServiceAPIKeys } from '../../wailsjs/go/main/App';
+import { GetRelayRoutingConfig, GetRelayServiceConfig, UpdateRelayServiceAPIKeys } from '../../wailsjs/go/main/App';
 import type { main } from '../../wailsjs/go/models';
 import { useDebug } from '../context/DebugContext';
 import { useI18n } from '../context/I18nContext';
@@ -38,9 +38,11 @@ export default function StatusPage({
   const [relayKeys, setRelayKeys] = useState<string[]>([]);
   const [relayKeysDraft, setRelayKeysDraft] = useState('');
   const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
+  const [routingConfig, setRoutingConfig] = useState<main.RelayRoutingConfig | null>(null);
   const [selectedKeyIndex, setSelectedKeyIndex] = useState(0);
   const [selectedEndpointID, setSelectedEndpointID] = useState('localhost');
   const [serviceMessage, setServiceMessage] = useState('');
+  const [routingMessage, setRoutingMessage] = useState('');
   const [isSavingServiceKeys, setIsSavingServiceKeys] = useState(false);
 
   const selectedKey = relayKeys[selectedKeyIndex] || '';
@@ -127,6 +129,39 @@ export default function StatusPage({
     }
 
     void loadRelayServiceConfig();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sidecarStatus.code, t, trackRequest]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRelayRoutingConfig() {
+      if (sidecarStatus.code !== 'ready') {
+        setRoutingConfig(null);
+        setRoutingMessage('');
+        return;
+      }
+
+      try {
+        const config = await trackRequest('GetRelayRoutingConfig', { args: [] }, () => GetRelayRoutingConfig());
+        if (cancelled) {
+          return;
+        }
+        setRoutingConfig(config);
+        setRoutingMessage(t('status.routing_loaded'));
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        setRoutingConfig(null);
+        setRoutingMessage(`${t('status.routing_missing')}: ${toErrorMessage(error)}`);
+      }
+    }
+
+    void loadRelayRoutingConfig();
 
     return () => {
       cancelled = true;
@@ -233,6 +268,24 @@ export default function StatusPage({
     }
     return t('status.endpoint_localhost');
   }
+
+  function boolLabel(value: boolean) {
+    return value ? t('status.enabled') : t('status.disabled');
+  }
+
+  const routingItems = routingConfig
+    ? [
+        { label: t('status.routing_strategy'), value: routingConfig.strategy || 'round-robin' },
+        { label: t('status.routing_session_affinity'), value: boolLabel(routingConfig.sessionAffinity) },
+        { label: t('status.routing_session_affinity_ttl'), value: routingConfig.sessionAffinityTTL || '1h' },
+        { label: t('status.routing_request_retry'), value: String(routingConfig.requestRetry) },
+        { label: t('status.routing_max_retry_credentials'), value: String(routingConfig.maxRetryCredentials) },
+        { label: t('status.routing_max_retry_interval'), value: String(routingConfig.maxRetryInterval) },
+        { label: t('status.routing_switch_project'), value: boolLabel(routingConfig.switchProject) },
+        { label: t('status.routing_switch_preview_model'), value: boolLabel(routingConfig.switchPreviewModel) },
+        { label: t('status.routing_antigravity_credits'), value: boolLabel(routingConfig.antigravityCredits) },
+      ]
+    : [];
 
   return (
     <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_STATUS">
@@ -400,6 +453,33 @@ export default function StatusPage({
           <pre className="overflow-auto p-6 font-mono text-xs font-bold leading-6 text-[var(--text-primary)]">
             {serviceConfig}
           </pre>
+        </div>
+
+        <div className="card-swiss !p-0 overflow-hidden">
+          <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-3 text-[10px] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
+            {t('status.routing_title')}
+          </div>
+          <div className="space-y-4 p-6">
+            <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              {routingMessage || t('status.routing_hint')}
+            </div>
+            {routingConfig ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {routingItems.map((item) => (
+                  <div key={item.label} className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                      {item.label}
+                    </div>
+                    <div className="font-mono text-sm font-black text-[var(--text-primary)]">{item.value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-6 font-mono text-sm font-bold text-[var(--text-primary)]">
+                {t('status.routing_empty')}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -13,6 +13,7 @@
 - 在状态页展示本地后端中转服务可用的最小 `auth.json` 配置示例
 - 支持在状态页查看并修改聚合服务自己的客户端 API KEY
 - 支持多客户端 API KEY 管理，并展示 `localhost` / `hostname` / `LAN IP` 三类访问地址
+- 在状态页展示 sidecar 当前实际生效的账号轮动策略与重试配置
 
 ## 范围
 - `frontend/src/pages/accounts/ApiKeyDetailModal.tsx`
@@ -35,6 +36,7 @@
 - 状态页可查看并保存聚合服务自己的客户端 API KEY，而不是复用上游供应商 API KEY 资产
 - 状态页支持一次维护多条客户端 API KEY，并可选择任意一条 key 与任意一个访问地址生成配置
 - sidecar 默认绑定全接口，保证局域网内设备可通过主机名或内网 IP 访问
+- 状态页可直接看到当前实际生效的 `routing.strategy / session-affinity / retry / quota-exceeded` 配置
 - 中英文文案同步更新
 - `frontend` 的 `typecheck` 与 `build` 通过
 
@@ -45,4 +47,4 @@
 ## 当前状态
 - 状态：in_progress
 - 最近更新：2026-04-26
-- 补充：状态页新增“后端中转服务配置”卡片，直接读取 sidecar 顶层 `api-keys` 作为聚合服务自己的客户端 API KEY，并支持多 key 编辑、主机名展示与局域网地址选择
+- 补充：状态页新增“后端中转服务配置”卡片，直接读取 sidecar 顶层 `api-keys` 作为聚合服务自己的客户端 API KEY，并支持多 key 编辑、主机名展示、局域网地址选择，以及当前实际轮动配置观察

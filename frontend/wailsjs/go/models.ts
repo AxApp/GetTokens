@@ -203,6 +203,34 @@ export namespace main {
 	        this.contentBase64 = source["contentBase64"];
 	    }
 	}
+	export class RelayRoutingConfig {
+	    strategy: string;
+	    sessionAffinity: boolean;
+	    sessionAffinityTTL: string;
+	    requestRetry: number;
+	    maxRetryCredentials: number;
+	    maxRetryInterval: number;
+	    switchProject: boolean;
+	    switchPreviewModel: boolean;
+	    antigravityCredits: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new RelayRoutingConfig(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.strategy = source["strategy"];
+	        this.sessionAffinity = source["sessionAffinity"];
+	        this.sessionAffinityTTL = source["sessionAffinityTTL"];
+	        this.requestRetry = source["requestRetry"];
+	        this.maxRetryCredentials = source["maxRetryCredentials"];
+	        this.maxRetryInterval = source["maxRetryInterval"];
+	        this.switchProject = source["switchProject"];
+	        this.switchPreviewModel = source["switchPreviewModel"];
+	        this.antigravityCredits = source["antigravityCredits"];
+	    }
+	}
 	export class RelayServiceEndpoint {
 	    id: string;
 	    kind: string;

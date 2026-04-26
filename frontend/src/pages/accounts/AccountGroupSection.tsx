@@ -1,4 +1,4 @@
-import { groupProviderLabel } from './helpers';
+import { groupProviderLabel } from './accountPresentation';
 import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from './types';
 import AccountCard from './AccountCard';
 

@@ -108,6 +108,18 @@ type RelayServiceEndpoint struct {
 	BaseURL string `json:"baseUrl"`
 }
 
+type RelayRoutingConfig struct {
+	Strategy            string `json:"strategy"`
+	SessionAffinity     bool   `json:"sessionAffinity"`
+	SessionAffinityTTL  string `json:"sessionAffinityTTL"`
+	RequestRetry        int    `json:"requestRetry"`
+	MaxRetryCredentials int    `json:"maxRetryCredentials"`
+	MaxRetryInterval    int    `json:"maxRetryInterval"`
+	SwitchProject       bool   `json:"switchProject"`
+	SwitchPreviewModel  bool   `json:"switchPreviewModel"`
+	AntigravityCredits  bool   `json:"antigravityCredits"`
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -281,6 +293,25 @@ func (a *App) UpdateRelayServiceAPIKeys(apiKeys []string) (*RelayServiceConfig, 
 	return &RelayServiceConfig{
 		APIKeys:   append([]string(nil), result.APIKeys...),
 		Endpoints: mapRelayServiceEndpoints(result.Endpoints),
+	}, nil
+}
+
+func (a *App) GetRelayRoutingConfig() (*RelayRoutingConfig, error) {
+	result, err := a.core.GetRelayRoutingConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelayRoutingConfig{
+		Strategy:            result.Strategy,
+		SessionAffinity:     result.SessionAffinity,
+		SessionAffinityTTL:  result.SessionAffinityTTL,
+		RequestRetry:        result.RequestRetry,
+		MaxRetryCredentials: result.MaxRetryCredentials,
+		MaxRetryInterval:    result.MaxRetryInterval,
+		SwitchProject:       result.SwitchProject,
+		SwitchPreviewModel:  result.SwitchPreviewModel,
+		AntigravityCredits:  result.AntigravityCredits,
 	}, nil
 }
 
