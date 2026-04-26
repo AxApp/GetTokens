@@ -72,6 +72,7 @@
     "routing_switch_project": "额度耗尽自动切项目",
     "routing_switch_preview_model": "额度耗尽自动切预览模型",
     "routing_antigravity_credits": "启用 Antigravity Credits",
+    "default_value": "默认",
     "enabled": "启用",
     "disabled": "关闭"
   },

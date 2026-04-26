@@ -10,7 +10,7 @@ import { useI18n } from '../../../context/I18nContext';
 import { toErrorMessage } from '../../../utils/error';
 import type { ClickEventLike } from '../model/types';
 import type { AccountRecord } from '../../../types';
-import { buildPriorityUpdates, reorderPriorityAccounts } from '../model/accountRotation';
+import { buildPriorityUpdates, buildRoutingDefaultLabel, reorderPriorityAccounts } from '../model/accountRotation';
 import { compareAccountRecords, resolveAccountPrimaryLabel } from '../model/accountPresentation';
 
 interface AccountRotationModalProps {
@@ -93,6 +93,16 @@ export default function AccountRotationModal({
   const routingChanged = useMemo(
     () => JSON.stringify(routingDraft) !== JSON.stringify(routingConfig),
     [routingConfig, routingDraft]
+  );
+  const routingToggleFields = useMemo(
+    () =>
+      [
+        ['sessionAffinity', t('status.routing_session_affinity')],
+        ['switchProject', t('status.routing_switch_project')],
+        ['switchPreviewModel', t('status.routing_switch_preview_model')],
+        ['antigravityCredits', t('status.routing_antigravity_credits')],
+      ] as const,
+    [t]
   );
 
   function handleDrop(targetID: string) {
@@ -234,6 +244,9 @@ export default function AccountRotationModal({
                     <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
                       {t('status.routing_strategy')}
                     </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
+                      {buildRoutingDefaultLabel(t, 'strategy')}
+                    </span>
                     <select
                       value={routingDraft.strategy}
                       onChange={(event) =>
@@ -250,6 +263,9 @@ export default function AccountRotationModal({
                     <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
                       {t('status.routing_session_affinity_ttl')}
                     </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
+                      {buildRoutingDefaultLabel(t, 'sessionAffinityTTL')}
+                    </span>
                     <input
                       value={routingDraft.sessionAffinityTTL}
                       onChange={(event) =>
@@ -263,6 +279,9 @@ export default function AccountRotationModal({
                   <label className="space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
                       {t('status.routing_request_retry')}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
+                      {buildRoutingDefaultLabel(t, 'requestRetry')}
                     </span>
                     <input
                       value={String(routingDraft.requestRetry)}
@@ -279,6 +298,9 @@ export default function AccountRotationModal({
                   <label className="space-y-2">
                     <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
                       {t('status.routing_max_retry_credentials')}
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
+                      {buildRoutingDefaultLabel(t, 'maxRetryCredentials')}
                     </span>
                     <input
                       value={String(routingDraft.maxRetryCredentials)}
@@ -301,6 +323,9 @@ export default function AccountRotationModal({
                     <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
                       {t('status.routing_max_retry_interval')}
                     </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
+                      {buildRoutingDefaultLabel(t, 'maxRetryInterval')}
+                    </span>
                     <input
                       value={String(routingDraft.maxRetryInterval)}
                       onChange={(event) =>
@@ -315,12 +340,7 @@ export default function AccountRotationModal({
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  {[
-                    ['sessionAffinity', t('status.routing_session_affinity')],
-                    ['switchProject', t('status.routing_switch_project')],
-                    ['switchPreviewModel', t('status.routing_switch_preview_model')],
-                    ['antigravityCredits', t('status.routing_antigravity_credits')],
-                  ].map(([field, label]) => (
+                  {routingToggleFields.map(([field, label]) => (
                     <label
                       key={field}
                       className="flex items-center gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4"
@@ -334,7 +354,14 @@ export default function AccountRotationModal({
                           )
                         }
                       />
-                      <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]">{label}</span>
+                      <div className="space-y-1">
+                        <span className="block text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                          {label}
+                        </span>
+                        <span className="block text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
+                          {buildRoutingDefaultLabel(t, field)}
+                        </span>
+                      </div>
                     </label>
                   ))}
                 </div>

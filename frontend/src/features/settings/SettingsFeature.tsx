@@ -5,6 +5,7 @@ import SegmentedControl from '../../components/ui/SegmentedControl';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import { useTheme } from '../../context/ThemeContext';
+import { mapCheckedRelease } from './settingsRelease';
 import { toErrorMessage } from '../../utils/error';
 import type { LocaleCode, ReleaseInfo, SegmentedOption, ThemeMode } from '../../types';
 
@@ -18,14 +19,6 @@ const languages: ReadonlyArray<SegmentedOption<LocaleCode>> = [
   { id: 'zh', label: '简体中文' },
   { id: 'en', label: 'ENGLISH' },
 ];
-
-const sourceMappings = [
-  ['MAIN_FRAME', 'src/App.tsx'],
-  ['PAGE_ACCOUNTS', 'src/features/accounts/AccountsFeature.tsx'],
-  ['PAGE_STATUS', 'src/features/status/StatusFeature.tsx'],
-  ['PAGE_SETTINGS', 'src/features/settings/SettingsFeature.tsx'],
-  ['UI_SEGMENT', 'src/components/ui/SegmentedControl.tsx'],
-] as const;
 
 interface SettingsFeatureProps {
   version: string;
@@ -59,13 +52,7 @@ export default function SettingsFeature({
         { args: [] },
         () => CheckUpdate(),
         {
-          mapSuccess: (result) =>
-            result
-              ? {
-                  version: result.version,
-                  assetName: result.assetName,
-                }
-              : { version: null },
+          mapSuccess: (result) => mapCheckedRelease(result),
         }
       );
       setAvailableRelease(release ?? null);
@@ -248,53 +235,6 @@ export default function SettingsFeature({
                   <div className="text-[8px] font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]">
                     {t(canApplyUpdate ? 'settings.apply_update_hint' : 'settings.manual_update_hint')}
                   </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-3 opacity-80">
-            <div className="flex items-center gap-2">
-              <span className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono text-[8px] font-black uppercase text-[var(--bg-main)]">
-                INFO
-              </span>
-              <h3 className="text-xs font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
-                {t('settings.system_info')}
-              </h3>
-            </div>
-
-            <div className="card-swiss bg-[var(--bg-surface)] !p-5">
-              <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-1">
-                  <div className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                    {t('settings.architecture')}
-                  </div>
-                  <div className="text-[10px] font-black uppercase italic text-[var(--text-primary)]">
-                    WAILS_V2 / REACT_CORE
-                  </div>
-                </div>
-                <div className="space-y-1 border-l border-[var(--border-color)]/20 pl-8 text-right">
-                  <div className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                    {t('settings.status')}
-                  </div>
-                  <div className="text-[10px] font-black uppercase italic text-green-600">STABLE_READY</div>
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-3 border-t border-dashed border-[var(--border-color)] pt-5">
-                <div className="text-[8px] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                  Dev_Helper / {t('settings.source_mapping')}
-                </div>
-                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 font-mono text-[8px]">
-                  {sourceMappings.map(([id, path]) => (
-                    <div
-                      key={id}
-                      className="flex justify-between border-b border-[var(--border-color)]/10 pb-0.5"
-                    >
-                      <span className="text-[var(--text-muted)]">{id}</span>
-                      <span className="font-bold text-[var(--text-primary)]">{path}</span>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>

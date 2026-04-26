@@ -72,6 +72,7 @@
     "routing_switch_project": "Switch Project On Quota Exhaustion",
     "routing_switch_preview_model": "Switch Preview Model On Quota Exhaustion",
     "routing_antigravity_credits": "Use Antigravity Credits",
+    "default_value": "Default",
     "enabled": "Enabled",
     "disabled": "Disabled"
   },

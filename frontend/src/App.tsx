@@ -10,6 +10,7 @@ import { DebugProvider, useDebug } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import type { AppPage, ReleaseInfo, SidecarStatus } from './types';
+import { persistActivePage, readStoredActivePage } from './utils/pagePersistence';
 
 const defaultSidecarStatus: SidecarStatus = {
   code: 'stopped',
@@ -21,12 +22,18 @@ const defaultSidecarStatus: SidecarStatus = {
 function AppShell() {
   const { themeMode } = useTheme();
   const { trackRequest } = useDebug();
-  const [activePage, setActivePage] = useState<AppPage>('accounts');
+  const [activePage, setActivePage] = useState<AppPage>(() =>
+    readStoredActivePage(typeof window === 'undefined' ? null : window.localStorage),
+  );
   const [sidecarStatus, setSidecarStatus] = useState<SidecarStatus>(defaultSidecarStatus);
   const [version, setVersion] = useState('dev');
   const [releaseLabel, setReleaseLabel] = useState('');
   const [availableRelease, setAvailableRelease] = useState<ReleaseInfo | null>(null);
   const [canApplyUpdate, setCanApplyUpdate] = useState(true);
+
+  useEffect(() => {
+    persistActivePage(typeof window === 'undefined' ? null : window.localStorage, activePage);
+  }, [activePage]);
 
   useEffect(() => {
     const isDark =
