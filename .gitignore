@@ -4,6 +4,7 @@ docs-*/
 build/*
 !build/appicon.png
 !build/appicon.svg
+dist/
 
 frontend/dist
 frontend/node_modules
