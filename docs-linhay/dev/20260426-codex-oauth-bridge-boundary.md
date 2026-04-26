@@ -31,7 +31,7 @@ GetTokens 是桌面端账号池，不是 Web 管理后台。
 前端负责：
 
 1. 调 Wails `StartCodexOAuth`
-2. 用 `BrowserOpenURL(...)` 打开系统浏览器
+2. 展示登录 URL 确认框，提供复制 / 手动打开浏览器 / 关闭
 3. 轮询 `GetOAuthStatus`
 
 Wails 负责：
@@ -78,6 +78,7 @@ Wails 负责：
 1. Header 菜单提供 `ChatGPT 登录`
 2. 失败态 `codex auth-file` 卡片提供 `重新登录`
 3. 轮询 OAuth 状态并显示进行中 / 失败提示
+4. 不再无提示自动拉起系统浏览器，而是由用户在确认框中手动决定是否打开
 
 ### Wails
 

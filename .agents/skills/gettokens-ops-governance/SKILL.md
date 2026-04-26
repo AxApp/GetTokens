@@ -31,6 +31,29 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Goal**: Extract durable workflows and failure modes into skills. Avoid copying transient guesses or chat fluff.
 - **Output**: Create/update skills in `.agents/skills/` and record the decision in project memory.
 
+## 5. Release Governance
+- **Scope**: Current release scope is macOS only.
+- **Assets**:
+  - `GetTokens_darwin_arm64.dmg`
+  - `GetTokens_darwin_arm64.tar.gz`
+  - `GetTokens_darwin_amd64.dmg`
+  - `GetTokens_darwin_amd64.tar.gz`
+  - `checksums.txt`
+- **Versioning**:
+  - If a release tag has already failed or been consumed, bump to the next patch tag instead of reusing it.
+  - Keep `frontend/package.json`, `frontend/package-lock.json`, and `frontend/package.json.md5` in sync with the release version.
+- **Sidecar Build Rule**:
+  - Do not fetch sidecar binaries from upstream release assets for GetTokens release builds.
+  - Build `CLIProxyAPI` from the maintained fork source first.
+  - If `docs-linhay/references/CLIProxyAPI` is missing in CI, auto-clone the fork and checkout the maintained branch before building.
+- **macOS Packaging Rule**:
+  - Build `arm64` and `amd64` as separate release jobs; do not collapse them back into a universal DMG workflow.
+  - After `wails build`, explicitly copy the freshly built sidecar back into `GetTokens.app/Contents/MacOS/cli-proxy-api` before notarization.
+  - Sign and notarize the `.app` first, then build/sign/notarize the `.dmg`.
+- **CI Hygiene**:
+  - Keep GitHub Actions dependencies on Node 24 compatible major versions to avoid Node 20 deprecation warnings.
+  - When a release run fails, inspect the exact failed job logs before changing tag strategy or packaging assumptions.
+
 ## Acceptance Checklist
 - App launches with latest code and reaches `ready` state.
 - Space boundaries are clear; screenshots and debate notes follow naming rules.

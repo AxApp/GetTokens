@@ -4,17 +4,31 @@
 
 这轮沉淀只保留对 GetTokens 后续开发仍然稳定有效的能力边界，不保留一次性的修复细节。
 
+## 20260427 更新：补回会话蒸馏入口
+
+此前 `AGENTS.md` 已把“用户说整理 => 触发会话沉淀”写成正式规则，但仓库里缺少实际的 `gettokens-session-skill-distill` 入口文件，导致规则和落地物不一致。
+
+本次已补：
+
+1. `.agents/skills/gettokens-session-skill-distill`
+   - 负责把“整理”解释为一次正式沉淀动作
+   - 先抽模式，再判断是 skill、docs、memory，还是 AGENTS
+   - 固定要求在收尾时执行 `qmd update` 与 `qmd embed`
+
 ## 20260520 更新：Skills 整合
 
-由于项目级 skills 数量过多（9个）导致 CLI 上下文预算超标，现将其整合为 2 个核心技能，以保持高效响应并减少冗余。
+由于项目级 skills 数量过多（9个）导致 CLI 上下文预算超标，现将高频工程规则整合为少量核心技能，以保持高效响应并减少冗余。
 
-## 整合后的 Skills
+## 当前 Skills
 
 1. `.agents/skills/gettokens-ops-governance`
    **项目运营与治理**。整合了 Wails 开发回路（重启规则、就绪模型）、`spaces` 工作空间治理、文档与记忆写回流程、AGENTS 同步，以及会话技能蒸馏。它定义了“如何在 GetTokens 仓库里正确地工作”。
 
 2. `.agents/skills/gettokens-domain-engineering`
    **领域工程与技术**。整合了账号池（unified inventory）、配额规则（quota rules）、UI 视觉系统（Swiss-industrial）、前端调试归因，以及 CLIProxyAPI fork 维护。它定义了“GetTokens 的技术实现与工程约束”。
+
+3. `.agents/skills/gettokens-session-skill-distill`
+   **会话沉淀入口**。专门处理“整理”场景：提炼会话里真正稳定的模式，决定是否补 skill、写 docs/memory，或升级到 AGENTS。
 
 ## 为什么进行整合
 

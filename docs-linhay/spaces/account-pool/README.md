@@ -41,7 +41,8 @@
 
 - Given sidecar 已就绪，账号池页面可操作
 - When 用户点击 `ChatGPT 登录`
-- Then 应用调用 sidecar OAuth 起始接口并打开系统浏览器
+- Then 应用调用 sidecar OAuth 起始接口并弹出登录确认框
+- And 确认框展示登录 URL，并提供 `复制`、`在浏览器中打开`、`关闭`
 - And 前端显示登录进行中状态
 - When sidecar OAuth 流程完成
 - Then 账号池刷新并出现新的 `codex` 账号记录
@@ -64,7 +65,15 @@
 - And 不修改现有账号内容
 - And 用户可以再次触发登录
 
-#### 场景 4：账号失效后的可恢复性
+#### 场景 4：登录 URL 手动操作
+
+- Given 用户已发起 `ChatGPT 登录` 或 `重新登录`
+- When 前端展示登录确认框
+- Then 用户可以复制登录 URL
+- And 用户可以手动打开浏览器继续登录
+- And 用户可以关闭确认框而不影响后续列表刷新
+
+#### 场景 5：账号失效后的可恢复性
 
 - Given `codex` auth-file 账号状态不是 `ACTIVE / CONFIGURED / DISABLED / LOCAL`
 - When 用户查看账号卡片
@@ -81,6 +90,7 @@
 - 实现后至少覆盖后端 bridge 测试与前端账号动作测试
 - 过期 `codex` 账号不再只是显示失败原因，而是可直接触发重新登录
 - 成功重登后默认回填原账号资产，不新增重复账号
+- 登录入口改为手动确认框，不再无提示直接拉起系统浏览器
 
 ## 相关链接
 - [docs-linhay 文档入口](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/README.md)
