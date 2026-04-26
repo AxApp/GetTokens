@@ -70,6 +70,10 @@ export function ListAuthFiles() {
   return window['go']['main']['App']['ListAuthFiles']();
 }
 
+export function NormalizeAuthFileContent(arg1) {
+  return window['go']['main']['App']['NormalizeAuthFileContent'](arg1);
+}
+
 export function SetAuthFileStatus(arg1, arg2) {
   return window['go']['main']['App']['SetAuthFileStatus'](arg1, arg2);
 }

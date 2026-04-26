@@ -13,41 +13,45 @@ func NormalizeAuthFileForSidecar(body []byte) ([]byte, bool, error) {
 	kind := InferAuthFileKind(body)
 	profile := ExtractAuthFileProfile(body)
 	tokens := nestedMap(payload, "tokens")
-	changed := false
+	if kind == "codex" {
+		minimalPayload := map[string]interface{}{
+			"type": "codex",
+		}
+
+		for _, key := range []string{"access_token", "id_token", "refresh_token", "account_id"} {
+			value := firstNonEmpty(
+				stringValue(payload, key),
+				stringValue(tokens, key),
+			)
+			if value != "" {
+				minimalPayload[key] = value
+			}
+		}
+
+		if profile.Email != "" {
+			minimalPayload["email"] = profile.Email
+		}
+		if profile.PlanType != "" {
+			minimalPayload["plan_type"] = profile.PlanType
+		}
+
+		normalized, err := json.MarshalIndent(minimalPayload, "", "  ")
+		if err != nil {
+			return nil, false, err
+		}
+		normalized = append(normalized, '\n')
+		return normalized, string(normalized) != string(body), nil
+	}
 
 	if kind != "" && stringValue(payload, "type") == "" {
 		payload["type"] = kind
-		changed = true
-	}
-
-	if kind == "codex" {
-		for _, key := range []string{"access_token", "id_token", "refresh_token", "account_id"} {
-			if stringValue(payload, key) != "" {
-				continue
-			}
-			if value := stringValue(tokens, key); value != "" {
-				payload[key] = value
-				changed = true
-			}
+		normalized, err := json.MarshalIndent(payload, "", "  ")
+		if err != nil {
+			return nil, false, err
 		}
-
-		if stringValue(payload, "email") == "" && profile.Email != "" {
-			payload["email"] = profile.Email
-			changed = true
-		}
-		if stringValue(payload, "plan_type") == "" && profile.PlanType != "" {
-			payload["plan_type"] = profile.PlanType
-			changed = true
-		}
+		normalized = append(normalized, '\n')
+		return normalized, true, nil
 	}
 
-	if !changed {
-		return body, false, nil
-	}
-
-	normalized, err := json.MarshalIndent(payload, "", "  ")
-	if err != nil {
-		return nil, false, err
-	}
-	return append(normalized, '\n'), true, nil
+	return body, false, nil
 }

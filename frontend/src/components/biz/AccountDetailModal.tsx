@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { DownloadAuthFile, GetAuthFileModels } from '../../../wailsjs/go/main/App';
+import { DownloadAuthFile, GetAuthFileModels, NormalizeAuthFileContent } from '../../../wailsjs/go/main/App';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import type { AuthFile, AuthModel } from '../../types';
@@ -40,8 +40,12 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
   const [models, setModels] = useState<AuthModel[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [rawContent, setRawContent] = useState('');
+  const [sanitizedContent, setSanitizedContent] = useState('');
   const [loadingRaw, setLoadingRaw] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [sanitizeState, setSanitizeState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [viewMode, setViewMode] = useState<'raw' | 'sanitized'>('raw');
+  const [sanitizing, setSanitizing] = useState(false);
   const [verifyResult, setVerifyResult] = useState('');
   const [verifying, setVerifying] = useState(false);
 
@@ -91,10 +95,16 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
         }
         if (mounted) {
           setRawContent(decoded);
+          setSanitizedContent('');
+          setViewMode('raw');
+          setSanitizeState('idle');
         }
       } catch (error) {
         if (mounted) {
           setRawContent(`READ_ERROR: ${toErrorMessage(error)}`);
+          setSanitizedContent('');
+          setViewMode('raw');
+          setSanitizeState('idle');
         }
       } finally {
         if (mounted) {
@@ -110,24 +120,26 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
   }, [account.name, trackRequest]);
 
   useEffect(() => {
-    if (copyState === 'idle') {
+    if (copyState === 'idle' && sanitizeState === 'idle') {
       return;
     }
 
     const timer = window.setTimeout(() => {
       setCopyState('idle');
+      setSanitizeState('idle');
     }, RAW_CONTENT_COPY_RESET_MS);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [copyState]);
+  }, [copyState, sanitizeState]);
 
-  const rawContentCopyable = canCopyRawContent(rawContent, loadingRaw);
+  const displayedContent = viewMode === 'sanitized' && sanitizedContent ? sanitizedContent : rawContent;
+  const displayedContentCopyable = canCopyRawContent(displayedContent, loadingRaw || sanitizing);
 
-  async function handleCopyRawContent() {
-    const status = await copyRawContent(rawContent, {
-      loading: loadingRaw,
+  async function handleCopyDisplayedContent() {
+    const status = await copyRawContent(displayedContent, {
+      loading: loadingRaw || sanitizing,
       writeText: (value) => navigator.clipboard.writeText(value),
     });
 
@@ -135,13 +147,40 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
   }
 
   function handleRawContentKeyDown(event: KeyboardEventLike) {
-    if (!rawContentCopyable) {
+    if (!displayedContentCopyable) {
       return;
     }
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      void handleCopyRawContent();
+      void handleCopyDisplayedContent();
+    }
+  }
+
+  async function handleSanitizeContent() {
+    if (viewMode === 'sanitized' && sanitizedContent) {
+      setViewMode('raw');
+      return;
+    }
+
+    if (sanitizedContent) {
+      setViewMode('sanitized');
+      return;
+    }
+
+    setSanitizing(true);
+    try {
+      const normalized = await trackRequest('NormalizeAuthFileContent', { name: account.name }, () =>
+        NormalizeAuthFileContent(rawContent)
+      );
+      setSanitizedContent(normalized);
+      setViewMode('sanitized');
+      setSanitizeState('success');
+    } catch (error) {
+      console.error(error);
+      setSanitizeState('error');
+    } finally {
+      setSanitizing(false);
     }
   }
 
@@ -225,42 +264,61 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                 <span className="h-2 w-2 bg-[var(--border-color)]"></span>
-                RAW_SOURCE_DATA
+                {viewMode === 'sanitized' ? 'SANITIZED_SOURCE_DATA' : 'RAW_SOURCE_DATA'}
               </div>
               <div className="flex items-center gap-3">
-                {copyState !== 'idle' ? (
+                {copyState !== 'idle' || sanitizeState !== 'idle' ? (
                   <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
+                    {copyState === 'success' || sanitizeState === 'success'
+                      ? t('accounts.copy_done')
+                      : t('accounts.copy_failed')}
                   </span>
                 ) : null}
                 {loadingRaw ? (
                   <span className="animate-pulse text-[9px] font-black text-[var(--text-muted)]">FETCHING_FS...</span>
                 ) : (
-                  <button onClick={() => void handleCopyRawContent()} disabled={!rawContentCopyable} className="btn-swiss !px-3 !py-1 !text-[9px]">
-                    {t('accounts.copy_raw_source')}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => void handleSanitizeContent()}
+                      disabled={!canCopyRawContent(rawContent, loadingRaw) || sanitizing}
+                      className="btn-swiss !px-3 !py-1 !text-[9px]"
+                    >
+                      {sanitizing
+                        ? t('accounts.sanitizing_source')
+                        : viewMode === 'sanitized'
+                          ? t('accounts.show_raw_source')
+                          : t('accounts.sanitize_source')}
+                    </button>
+                    <button
+                      onClick={() => void handleCopyDisplayedContent()}
+                      disabled={!displayedContentCopyable}
+                      className="btn-swiss !px-3 !py-1 !text-[9px]"
+                    >
+                      {viewMode === 'sanitized' ? t('accounts.copy_sanitized_source') : t('accounts.copy_raw_source')}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
             <div
               role="button"
-              tabIndex={rawContentCopyable ? 0 : -1}
-              aria-disabled={!rawContentCopyable}
+              tabIndex={displayedContentCopyable ? 0 : -1}
+              aria-disabled={!displayedContentCopyable}
               onClick={() => {
-                if (!rawContentCopyable) {
+                if (!displayedContentCopyable) {
                   return;
                 }
-                void handleCopyRawContent();
+                void handleCopyDisplayedContent();
               }}
               onKeyDown={handleRawContentKeyDown}
               className={`max-h-[300px] overflow-auto whitespace-pre border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 font-mono text-[10px] leading-relaxed text-[var(--text-primary)] shadow-inner ${
-                rawContentCopyable
+                displayedContentCopyable
                   ? 'cursor-copy transition-colors hover:bg-[var(--bg-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]'
                   : ''
               }`}
-              title={rawContentCopyable ? t('accounts.copy_raw_source') : undefined}
+              title={displayedContentCopyable ? (viewMode === 'sanitized' ? t('accounts.copy_sanitized_source') : t('accounts.copy_raw_source')) : undefined}
             >
-              {rawContent}
+              {displayedContent}
             </div>
           </section>
         </div>

@@ -53,19 +53,40 @@ func TestNormalizeAuthFileForSidecarCodexLegacyPayload(t *testing.T) {
 	if got := stringValue(payload, "plan_type"); got != "plus" {
 		t.Fatalf("plan_type = %q, want plus", got)
 	}
+	if _, ok := payload["nolon"]; ok {
+		t.Fatalf("expected nolon metadata to be removed: %#v", payload)
+	}
+	if _, ok := payload["tokens"]; ok {
+		t.Fatalf("expected nested tokens to be removed: %#v", payload)
+	}
+	if len(payload) != 7 {
+		t.Fatalf("expected minimal codex payload, got %d keys: %#v", len(payload), payload)
+	}
 }
 
-func TestNormalizeAuthFileForSidecarLeavesNormalizedPayloadUntouched(t *testing.T) {
-	body := []byte(`{"type":"codex","access_token":"access-token","email":"tester@example.com"}`)
+func TestNormalizeAuthFileForSidecarStripsExtraFieldsFromCodexPayload(t *testing.T) {
+	body := []byte(`{"type":"codex","access_token":"access-token","email":"tester@example.com","tokens":{"access_token":"nested"},"nolon":{"account":{"kind":"chatgptAccount"}}}`)
 
 	normalized, changed, err := NormalizeAuthFileForSidecar(body)
 	if err != nil {
 		t.Fatalf("NormalizeAuthFileForSidecar returned error: %v", err)
 	}
-	if changed {
-		t.Fatal("expected normalized payload to remain unchanged")
+	if !changed {
+		t.Fatal("expected normalized payload with extra fields to change")
 	}
-	if string(normalized) != string(body) {
-		t.Fatalf("normalized body changed unexpectedly: %s", string(normalized))
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal(normalized, &payload); err != nil {
+		t.Fatalf("normalized payload is invalid json: %v", err)
+	}
+
+	if _, ok := payload["tokens"]; ok {
+		t.Fatalf("expected nested tokens to be removed: %#v", payload)
+	}
+	if _, ok := payload["nolon"]; ok {
+		t.Fatalf("expected nolon metadata to be removed: %#v", payload)
+	}
+	if len(payload) != 3 {
+		t.Fatalf("expected minimal payload, got %d keys: %#v", len(payload), payload)
 	}
 }

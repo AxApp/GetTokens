@@ -38,6 +38,8 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
+export function NormalizeAuthFileContent(arg1:string):Promise<string>;
+
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
 export function UpdateRelayServiceAPIKey(arg1:string):Promise<main.RelayServiceConfig>;
