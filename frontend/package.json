@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test:unit": "node --test src/utils/version.test.mjs src/pages/accounts/accountConfig.test.mjs src/pages/accounts/accountSelectors.test.mjs"
+    "test:unit": "node --test src/utils/version.test.mjs src/pages/accounts/accountConfig.test.mjs src/pages/accounts/accountSelectors.test.mjs src/components/biz/accountDetailClipboard.test.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

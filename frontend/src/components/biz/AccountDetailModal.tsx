@@ -4,6 +4,7 @@ import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import type { AuthFile, AuthModel } from '../../types';
 import { toErrorMessage } from '../../utils/error';
+import { canCopyRawContent, copyRawContent, RAW_CONTENT_COPY_RESET_MS } from './accountDetailClipboard';
 
 interface AccountDetailModalProps {
   account: AuthFile;
@@ -14,6 +15,11 @@ type DetailField = readonly [string, string];
 
 interface ClickEventLike {
   stopPropagation: () => void;
+}
+
+interface KeyboardEventLike {
+  key: string;
+  preventDefault: () => void;
 }
 
 function formatRefreshValue(value: unknown): string {
@@ -35,6 +41,7 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
   const [loadingModels, setLoadingModels] = useState(false);
   const [rawContent, setRawContent] = useState('');
   const [loadingRaw, setLoadingRaw] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
   const [verifyResult, setVerifyResult] = useState('');
   const [verifying, setVerifying] = useState(false);
 
@@ -101,6 +108,42 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
       mounted = false;
     };
   }, [account.name, trackRequest]);
+
+  useEffect(() => {
+    if (copyState === 'idle') {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setCopyState('idle');
+    }, RAW_CONTENT_COPY_RESET_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [copyState]);
+
+  const rawContentCopyable = canCopyRawContent(rawContent, loadingRaw);
+
+  async function handleCopyRawContent() {
+    const status = await copyRawContent(rawContent, {
+      loading: loadingRaw,
+      writeText: (value) => navigator.clipboard.writeText(value),
+    });
+
+    setCopyState(status);
+  }
+
+  function handleRawContentKeyDown(event: KeyboardEventLike) {
+    if (!rawContentCopyable) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      void handleCopyRawContent();
+    }
+  }
 
   async function verify() {
     setVerifying(true);
@@ -184,11 +227,39 @@ export default function AccountDetailModal({ account, onClose }: AccountDetailMo
                 <span className="h-2 w-2 bg-[var(--border-color)]"></span>
                 RAW_SOURCE_DATA
               </div>
-              {loadingRaw ? (
-                <span className="animate-pulse text-[9px] font-black text-[var(--text-muted)]">FETCHING_FS...</span>
-              ) : null}
+              <div className="flex items-center gap-3">
+                {copyState !== 'idle' ? (
+                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
+                  </span>
+                ) : null}
+                {loadingRaw ? (
+                  <span className="animate-pulse text-[9px] font-black text-[var(--text-muted)]">FETCHING_FS...</span>
+                ) : (
+                  <button onClick={() => void handleCopyRawContent()} disabled={!rawContentCopyable} className="btn-swiss !px-3 !py-1 !text-[9px]">
+                    {t('accounts.copy_raw_source')}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="max-h-[300px] overflow-auto whitespace-pre border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 font-mono text-[10px] leading-relaxed text-[var(--text-primary)] shadow-inner">
+            <div
+              role="button"
+              tabIndex={rawContentCopyable ? 0 : -1}
+              aria-disabled={!rawContentCopyable}
+              onClick={() => {
+                if (!rawContentCopyable) {
+                  return;
+                }
+                void handleCopyRawContent();
+              }}
+              onKeyDown={handleRawContentKeyDown}
+              className={`max-h-[300px] overflow-auto whitespace-pre border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 font-mono text-[10px] leading-relaxed text-[var(--text-primary)] shadow-inner ${
+                rawContentCopyable
+                  ? 'cursor-copy transition-colors hover:bg-[var(--bg-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]'
+                  : ''
+              }`}
+              title={rawContentCopyable ? t('accounts.copy_raw_source') : undefined}
+            >
               {rawContent}
             </div>
           </section>
