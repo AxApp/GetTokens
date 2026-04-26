@@ -37,6 +37,7 @@ type AccountRecord struct {
 	CredentialSource string      `json:"credentialSource"`
 	DisplayName      string      `json:"displayName"`
 	Status           string      `json:"status"`
+	StatusMessage    string      `json:"statusMessage,omitempty"`
 	Disabled         bool        `json:"disabled,omitempty"`
 	Email            string      `json:"email,omitempty"`
 	PlanType         string      `json:"planType,omitempty"`
@@ -105,6 +106,7 @@ func BuildAuthFileAccountRecord(file AuthFileRecord) AccountRecord {
 		CredentialSource: CredentialSourceAuthFile,
 		DisplayName:      displayName,
 		Status:           status,
+		StatusMessage:    strings.TrimSpace(file.StatusMessage),
 		Disabled:         file.Disabled,
 		Email:            strings.TrimSpace(file.Email),
 		PlanType:         strings.TrimSpace(file.PlanType),
