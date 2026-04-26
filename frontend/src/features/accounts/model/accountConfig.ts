@@ -4,6 +4,7 @@ export const emptyApiKeyForm = {
   label: '',
   apiKey: '',
   baseUrl: '',
+  priority: '0',
   prefix: '',
 };
 
@@ -120,14 +121,17 @@ export function buildManagedConfigTomlSnippet(
 export function buildRelayCodexAuthJSONSnippet(
   draft: {
     apiKey?: string;
+    model?: string;
   }
 ) {
   const apiKey = String(draft.apiKey || '').trim() || '<YOUR_API_KEY>';
+  const model = String(draft.model || '').trim() || 'GT';
 
   return JSON.stringify(
     {
       auth_mode: 'apikey',
       OPENAI_API_KEY: apiKey,
+      model,
     },
     null,
     2
@@ -141,7 +145,7 @@ export function buildRelayCodexConfigTomlSnippet(
   }
 ) {
   const baseUrl = normalizeBaseUrl(String(draft.baseUrl || '')) || 'http://127.0.0.1:8317/v1';
-  const model = String(draft.model || '').trim() || 'gpt-5.4';
+  const model = String(draft.model || '').trim() || 'GT';
 
   return [`model = ${quoteYAMLString(model)}`, `openai_base_url = ${quoteYAMLString(baseUrl)}`].join('\n');
 }

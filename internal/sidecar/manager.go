@@ -33,10 +33,11 @@ const (
 
 // Status is emitted to the frontend on every state transition.
 type Status struct {
-	Code    StatusCode `json:"code"`
-	Port    int        `json:"port"`
-	Message string     `json:"message"`
-	Version string     `json:"version"`
+	Code          StatusCode `json:"code"`
+	Port          int        `json:"port"`
+	Message       string     `json:"message"`
+	Version       string     `json:"version"`
+	StartedAtUnix int64      `json:"startedAtUnix"`
 }
 
 // Manager controls the backend subprocess.
@@ -116,6 +117,16 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 		return
 	}
 
+	m.setStatus(
+		Status{
+			Code:          StatusStarting,
+			Port:          port,
+			Message:       "正在启动后端服务…",
+			StartedAtUnix: time.Now().UnixMilli(),
+		},
+		notify,
+	)
+
 	// Wait for health check or timeout.
 	healthURL := fmt.Sprintf("http://127.0.0.1:%d%s", port, healthzPath)
 	if err := m.waitHealthy(ctx, healthURL); err != nil {
@@ -171,6 +182,9 @@ func (m *Manager) SetCurrentServiceAPIKey(apiKey string) {
 
 func (m *Manager) setStatus(s Status, notify func(Status)) {
 	m.mu.Lock()
+	if s.StartedAtUnix == 0 && s.Code != StatusStopped {
+		s.StartedAtUnix = m.status.StartedAtUnix
+	}
 	m.status = s
 	m.mu.Unlock()
 	if notify != nil {

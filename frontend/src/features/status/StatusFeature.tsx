@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ApplyRelayServiceConfigToLocal,
   GetRelayServiceConfig,
@@ -24,15 +24,24 @@ interface RelayKeyEditorState {
   error: string;
 }
 
+interface RelayModelEditorState {
+  value: string;
+  error: string;
+}
+
 const defaultSidecarStatus: SidecarStatus = {
   code: 'stopped',
   port: 0,
   message: '',
   version: '',
+  startedAtUnix: 0,
 };
 
 const relayKeyAliasStorageKey = 'gettokens.status.relay-key-aliases';
-const relayModelOptions = ['GT', 'gpt-5.4'] as const;
+const relayLANAccessStorageKey = 'gettokens.status.lan-access-enabled';
+const relayModelOptionsStorageKey = 'gettokens.status.relay-model-options';
+const relaySelectedModelStorageKey = 'gettokens.status.selected-relay-model';
+const defaultRelayModelOptions = ['GT', 'gpt-5.4'];
 
 function maskRelayKey(value: string) {
   const trimmed = value.trim();
@@ -72,24 +81,115 @@ function saveRelayKeyAliases(aliases: Record<string, string>) {
   }
 }
 
+function loadLANAccessEnabled() {
+  if (typeof window === 'undefined') {
+    return true;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(relayLANAccessStorageKey);
+    return raw === null ? true : raw === 'true';
+  } catch (error) {
+    console.error(error);
+    return true;
+  }
+}
+
+function saveLANAccessEnabled(value: boolean) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(relayLANAccessStorageKey, String(value));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function loadRelayModelOptions() {
+  if (typeof window === 'undefined') {
+    return defaultRelayModelOptions;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(relayModelOptionsStorageKey);
+    if (!raw) {
+      return defaultRelayModelOptions;
+    }
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return defaultRelayModelOptions;
+    }
+    const normalized = parsed
+      .map((item) => String(item || '').trim())
+      .filter(Boolean);
+    return normalized.length > 0 ? Array.from(new Set(normalized)) : defaultRelayModelOptions;
+  } catch (error) {
+    console.error(error);
+    return defaultRelayModelOptions;
+  }
+}
+
+function saveRelayModelOptions(values: string[]) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(relayModelOptionsStorageKey, JSON.stringify(values));
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function loadSelectedRelayModel(modelOptions: string[]) {
+  if (typeof window === 'undefined') {
+    return modelOptions[0] || 'GT';
+  }
+
+  try {
+    const raw = String(window.localStorage.getItem(relaySelectedModelStorageKey) || '').trim();
+    return raw && modelOptions.includes(raw) ? raw : (modelOptions[0] || 'GT');
+  } catch (error) {
+    console.error(error);
+    return modelOptions[0] || 'GT';
+  }
+}
+
+function saveSelectedRelayModel(value: string) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(relaySelectedModelStorageKey, value);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 export default function StatusFeature({
   sidecarStatus = defaultSidecarStatus,
   version = 'dev',
 }: StatusFeatureProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
-  const startTimeRef = useRef(Date.now());
   const [healthz, setHealthz] = useState('CHECKING...');
   const [uptime, setUptime] = useState('0s');
   const [relayKeys, setRelayKeys] = useState<string[]>([]);
   const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
+  const [relayModelOptions, setRelayModelOptions] = useState<string[]>(() => loadRelayModelOptions());
   const [relayKeyAliases, setRelayKeyAliases] = useState<Record<string, string>>(() => loadRelayKeyAliases());
   const [selectedKeyIndex, setSelectedKeyIndex] = useState(0);
   const [selectedEndpointID, setSelectedEndpointID] = useState('localhost');
-  const [isLANAccessEnabled, setIsLANAccessEnabled] = useState(true);
-  const [selectedRelayModel, setSelectedRelayModel] = useState<(typeof relayModelOptions)[number]>('GT');
+  const [isLANAccessEnabled, setIsLANAccessEnabled] = useState(() => loadLANAccessEnabled());
+  const [selectedRelayModel, setSelectedRelayModel] = useState<string>(() =>
+    loadSelectedRelayModel(loadRelayModelOptions())
+  );
   const [openKeyMenuIndex, setOpenKeyMenuIndex] = useState<number | null>(null);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
+  const [relayModelEditor, setRelayModelEditor] = useState<RelayModelEditorState | null>(null);
   const [serviceMessage, setServiceMessage] = useState('');
   const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [isSavingServiceKeys, setIsSavingServiceKeys] = useState(false);
@@ -127,8 +227,13 @@ export default function StatusFeature({
   );
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      const seconds = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    function syncUptime() {
+      if (!sidecarStatus.startedAtUnix || sidecarStatus.code !== 'ready') {
+        setUptime('0s');
+        return;
+      }
+
+      const seconds = Math.max(0, Math.floor((Date.now() - sidecarStatus.startedAtUnix) / 1000));
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
       const remainingSeconds = seconds % 60;
@@ -140,12 +245,15 @@ export default function StatusFeature({
       } else {
         setUptime(`${remainingSeconds}S`);
       }
-    }, 1000);
+    }
+
+    syncUptime();
+    const timer = window.setInterval(syncUptime, 1000);
 
     return () => {
       window.clearInterval(timer);
     };
-  }, []);
+  }, [sidecarStatus.code, sidecarStatus.startedAtUnix]);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +326,28 @@ export default function StatusFeature({
       return changed ? next : prev;
     });
   }, [relayKeys]);
+
+  useEffect(() => {
+    saveLANAccessEnabled(isLANAccessEnabled);
+  }, [isLANAccessEnabled]);
+
+  useEffect(() => {
+    const normalized = Array.from(
+      new Set(relayModelOptions.map((item) => item.trim()).filter(Boolean))
+    );
+    if (normalized.length === 0) {
+      return;
+    }
+    saveRelayModelOptions(normalized);
+  }, [relayModelOptions]);
+
+  useEffect(() => {
+    if (!relayModelOptions.includes(selectedRelayModel)) {
+      setSelectedRelayModel(relayModelOptions[0] || 'GT');
+      return;
+    }
+    saveSelectedRelayModel(selectedRelayModel);
+  }, [relayModelOptions, selectedRelayModel]);
 
   useEffect(() => {
     if (isLANAccessEnabled) {
@@ -436,6 +566,49 @@ export default function StatusFeature({
     setServiceMessage(t('status.service_key_name_saved'));
   }
 
+  function openCreateRelayModelEditor() {
+    setRelayModelEditor({
+      value: '',
+      error: '',
+    });
+  }
+
+  function addRelayModelOption() {
+    if (!relayModelEditor) {
+      return;
+    }
+
+    const nextValue = relayModelEditor.value.trim();
+    if (!nextValue) {
+      setRelayModelEditor((prev) => (prev ? { ...prev, error: t('status.model_name_required') } : prev));
+      return;
+    }
+    if (relayModelOptions.includes(nextValue)) {
+      setRelayModelEditor((prev) => (prev ? { ...prev, error: t('status.model_name_exists') } : prev));
+      return;
+    }
+
+    const nextOptions = [...relayModelOptions, nextValue];
+    setRelayModelOptions(nextOptions);
+    setSelectedRelayModel(nextValue);
+    setRelayModelEditor(null);
+    setServiceMessage(t('status.model_name_saved'));
+  }
+
+  function deleteRelayModelOption(value: string) {
+    const nextOptions = relayModelOptions.filter((item) => item !== value);
+    if (nextOptions.length === 0) {
+      setServiceMessage(t('status.model_name_required'));
+      return;
+    }
+
+    setRelayModelOptions(nextOptions);
+    if (selectedRelayModel === value) {
+      setSelectedRelayModel(nextOptions[0]);
+    }
+    setServiceMessage(t('status.model_name_deleted'));
+  }
+
   async function applyRelayConfigToLocal() {
     const normalizedKey = selectedKey.trim();
     if (!normalizedKey) {
@@ -574,16 +747,16 @@ export default function StatusFeature({
                         ⋮
                       </button>
                       {openKeyMenuIndex === index ? (
-                        <div className="absolute right-0 top-full z-10 mt-2 min-w-28 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+                        <div className="absolute right-full top-1/2 z-10 mr-2 flex -translate-y-1/2 items-center gap-2">
                           <button
                             onClick={() => openRenameRelayKeyEditor(index)}
-                            className="block w-full px-3 py-2 text-left text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]"
+                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[9px]"
                           >
                             {t('status.service_key_rename')}
                           </button>
                           <button
                             onClick={() => void deleteRelayServiceAPIKey(index)}
-                            className="block w-full border-t-2 border-[var(--border-color)] px-3 py-2 text-left text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]"
+                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[9px]"
                           >
                             {t('status.service_key_delete')}
                           </button>
@@ -626,13 +799,19 @@ export default function StatusFeature({
                       onClick={() => setSelectedEndpointID(endpoint.id)}
                       className="min-w-0 flex-1 text-left"
                     >
-                      <div className="font-mono text-xs font-bold break-all text-[var(--text-primary)]">
+                      <div
+                        className={`font-mono text-xs font-bold break-all ${
+                          selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'
+                        }`}
+                      >
                         {endpoint.baseUrl}
                       </div>
                     </button>
                     <button
                       onClick={() => void copyText(endpoint.baseUrl, t('status.endpoint_copied'))}
-                      className="shrink-0 text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]"
+                      className={`shrink-0 text-[10px] font-black uppercase tracking-wide ${
+                        selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'
+                      }`}
                     >
                       复制
                     </button>
@@ -642,22 +821,36 @@ export default function StatusFeature({
             </div>
 
             <div className="space-y-3">
-              <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                {t('status.model_name_title')}
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  {t('status.model_name_title')}
+                </div>
+                <button onClick={openCreateRelayModelEditor} className="btn-swiss !px-3 !py-1 !text-[10px]">
+                  +
+                </button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {relayModelOptions.map((model) => (
-                  <button
+                  <div
                     key={model}
-                    onClick={() => setSelectedRelayModel(model)}
                     className={`border-2 px-3 py-2 font-mono text-[10px] font-black uppercase tracking-wide ${
                       selectedRelayModel === model
-                        ? 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
+                        ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                         : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
                     }`}
                   >
-                    {model}
-                  </button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => setSelectedRelayModel(model)} className="text-left">
+                        {model}
+                      </button>
+                      <button
+                        onClick={() => deleteRelayModelOption(model)}
+                        className={selectedRelayModel === model ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -766,6 +959,55 @@ export default function StatusFeature({
                 className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
               >
                 {relayKeyEditor.mode === 'create' ? t('status.service_key_create_submit') : t('common.save')}
+              </button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
+
+      {relayModelEditor ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
+          onClick={() => setRelayModelEditor(null)}
+        >
+          <div
+            className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
+              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                {t('status.model_name_title')}
+              </div>
+              <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+                {t('status.model_name_create_title')}
+              </h3>
+            </header>
+            <div className="space-y-4 p-6">
+              <label className="space-y-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {t('status.model_name_label')}
+                </span>
+                <input
+                  value={relayModelEditor.value}
+                  onChange={(event) =>
+                    setRelayModelEditor((prev) => (prev ? { ...prev, value: event.target.value, error: '' } : prev))
+                  }
+                  className="input-swiss w-full"
+                  placeholder={t('status.model_name_placeholder')}
+                />
+              </label>
+              {relayModelEditor.error ? (
+                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+                  {relayModelEditor.error}
+                </div>
+              ) : null}
+            </div>
+            <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
+              <button onClick={() => setRelayModelEditor(null)} className="btn-swiss">
+                {t('common.cancel')}
+              </button>
+              <button onClick={addRelayModelOption} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
+                {t('status.model_name_create_submit')}
               </button>
             </footer>
           </div>

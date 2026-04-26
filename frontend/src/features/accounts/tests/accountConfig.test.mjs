@@ -63,11 +63,13 @@ test('buildRelayCodexAuthJSONSnippet only keeps the fields codex actually uses',
   assert.equal(
     buildRelayCodexAuthJSONSnippet({
       apiKey: ' sk-service-key ',
+      model: ' GT ',
     }),
     JSON.stringify(
       {
         auth_mode: 'apikey',
         OPENAI_API_KEY: 'sk-service-key',
+        model: 'GT',
       },
       null,
       2
@@ -80,5 +82,5 @@ test('buildRelayCodexConfigTomlSnippet writes the codex base url config', () => 
     baseUrl: ' http://127.0.0.1:8317/v1/ ',
   });
 
-  assert.equal(snippet, 'model = "gpt-5.4"\nopenai_base_url = "http://127.0.0.1:8317/v1"');
+  assert.equal(snippet, 'model = "GT"\nopenai_base_url = "http://127.0.0.1:8317/v1"');
 });

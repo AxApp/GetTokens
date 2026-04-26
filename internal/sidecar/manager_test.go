@@ -7,6 +7,30 @@ import (
 	"testing"
 )
 
+func TestSetStatusPreservesStartedAtUnixUntilStopped(t *testing.T) {
+	manager := NewManager()
+	manager.setStatus(Status{Code: StatusStarting, StartedAtUnix: 12345}, nil)
+
+	if got := manager.CurrentStatus().StartedAtUnix; got != 12345 {
+		t.Fatalf("startedAtUnix = %d, want 12345", got)
+	}
+
+	manager.setStatus(Status{Code: StatusReady, Port: 8317}, nil)
+	if got := manager.CurrentStatus().StartedAtUnix; got != 12345 {
+		t.Fatalf("startedAtUnix after ready = %d, want 12345", got)
+	}
+
+	manager.setStatus(Status{Code: StatusError, Message: "boom"}, nil)
+	if got := manager.CurrentStatus().StartedAtUnix; got != 12345 {
+		t.Fatalf("startedAtUnix after error = %d, want 12345", got)
+	}
+
+	manager.setStatus(Status{Code: StatusStopped}, nil)
+	if got := manager.CurrentStatus().StartedAtUnix; got != 0 {
+		t.Fatalf("startedAtUnix after stopped = %d, want 0", got)
+	}
+}
+
 func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")

@@ -17,6 +17,7 @@ const defaultSidecarStatus: SidecarStatus = {
   port: 0,
   message: '',
   version: '',
+  startedAtUnix: 0,
 };
 
 function AppShell() {

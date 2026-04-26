@@ -396,6 +396,7 @@ export namespace sidecar {
 	    port: number;
 	    message: string;
 	    version: string;
+	    startedAtUnix: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new Status(source);
@@ -407,6 +408,7 @@ export namespace sidecar {
 	        this.port = source["port"];
 	        this.message = source["message"];
 	        this.version = source["version"];
+	        this.startedAtUnix = source["startedAtUnix"];
 	    }
 	}
 
