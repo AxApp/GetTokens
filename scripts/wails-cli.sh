@@ -13,6 +13,38 @@ if [[ $# -gt 0 ]]; then
   shift
 fi
 
+case "$(uname -s)" in
+  Darwin)
+    GOOS="darwin"
+    GOARCH="$(uname -m)"
+    ;;
+  Linux)
+    GOOS="linux"
+    GOARCH="$(uname -m)"
+    ;;
+  MINGW*|MSYS*|CYGWIN*)
+    GOOS="windows"
+    GOARCH="amd64"
+    ;;
+  *)
+    GOOS="darwin"
+    GOARCH="$(uname -m)"
+    ;;
+esac
+
+case "${GOARCH}" in
+  arm64|aarch64)
+    GOARCH="arm64"
+    ;;
+  x86_64|amd64)
+    GOARCH="amd64"
+    ;;
+esac
+
+if [[ -x "${ROOT_DIR}/scripts/ensure-sidecar.sh" ]]; then
+  "${ROOT_DIR}/scripts/ensure-sidecar.sh" "${GOOS}" "${GOARCH}"
+fi
+
 if command -v wails >/dev/null 2>&1; then
   echo "→ Using global wails CLI from PATH"
   exec wails "$COMMAND" "$@"
