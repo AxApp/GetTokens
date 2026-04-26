@@ -16,7 +16,7 @@ var Version = "dev"
 var ReleaseLabel = ""
 
 // GitHubRepo is the repository used for auto-update checks
-const GitHubRepo = "linhay/GetTokens"
+const GitHubRepo = "AxApp/GetTokens"
 
 type App struct {
 	core *wailsapp.App
