@@ -48,6 +48,12 @@ export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 
+export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<void>;
+
+export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInput):Promise<void>;
+
+export function UpdateRelayRoutingConfig(arg1:main.RelayRoutingConfig):Promise<main.RelayRoutingConfig>;
+
 export function UpdateRelayServiceAPIKey(arg1:string):Promise<main.RelayServiceConfig>;
 
 export function UpdateRelayServiceAPIKeys(arg1:Array<string>):Promise<main.RelayServiceConfig>;

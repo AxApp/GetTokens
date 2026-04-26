@@ -18,6 +18,7 @@ type AuthFileRecord struct {
 	Name          string
 	Type          string
 	Provider      string
+	Priority      int
 	Email         string
 	PlanType      string
 	Size          int64
@@ -38,6 +39,7 @@ type AccountRecord struct {
 	DisplayName      string      `json:"displayName"`
 	Status           string      `json:"status"`
 	StatusMessage    string      `json:"statusMessage,omitempty"`
+	Priority         int         `json:"priority,omitempty"`
 	Disabled         bool        `json:"disabled,omitempty"`
 	Email            string      `json:"email,omitempty"`
 	PlanType         string      `json:"planType,omitempty"`
@@ -107,6 +109,7 @@ func BuildAuthFileAccountRecord(file AuthFileRecord) AccountRecord {
 		DisplayName:      displayName,
 		Status:           status,
 		StatusMessage:    strings.TrimSpace(file.StatusMessage),
+		Priority:         file.Priority,
 		Disabled:         file.Disabled,
 		Email:            strings.TrimSpace(file.Email),
 		PlanType:         strings.TrimSpace(file.PlanType),
@@ -139,6 +142,7 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		CredentialSource: CredentialSourceAPIKey,
 		DisplayName:      displayName,
 		Status:           status,
+		Priority:         key.Priority,
 		APIKey:           strings.TrimSpace(key.APIKey),
 		KeyFingerprint:   fingerprint,
 		KeySuffix:        suffix,

@@ -4,6 +4,13 @@ import type { QuotaDisplay, Translator } from './types';
 import { buildAPIKeyLabelStorageKey } from './accountConfig.ts';
 
 export function compareAccountRecords(left: AccountRecord, right: AccountRecord) {
+  if (left.credentialSource === 'api-key' && right.credentialSource === 'api-key') {
+    const leftPriority = Number(left.priority || 0);
+    const rightPriority = Number(right.priority || 0);
+    if (leftPriority !== rightPriority) {
+      return rightPriority - leftPriority;
+    }
+  }
   return left.displayName.localeCompare(right.displayName, undefined, { sensitivity: 'base' });
 }
 
@@ -24,6 +31,7 @@ export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
     displayName: account.name,
     status: String(account.status || 'active').trim().toUpperCase() || 'ACTIVE',
     statusMessage: String(account.statusMessage || '').trim(),
+    priority: account.priority,
     disabled: account.disabled,
     email: account.email,
     planType: account.planType,

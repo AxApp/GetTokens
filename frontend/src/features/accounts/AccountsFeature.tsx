@@ -4,11 +4,13 @@ import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import type { SidecarStatus } from '../../types';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
+import AccountRotationModal from './components/AccountRotationModal';
 import AccountGroupSection from './components/AccountGroupSection';
 import AccountsHeader from './components/AccountsHeader';
 import AccountsToolbar from './components/AccountsToolbar';
 import ApiKeyComposeModal from './components/ApiKeyComposeModal';
 import ApiKeyDetailModal from './components/ApiKeyDetailModal';
+import CodexOAuthModal from './components/CodexOAuthModal';
 import PasteAuthModal from './components/PasteAuthModal';
 import useAccountsPageState from './hooks/useAccountsPageState';
 import { isCodexAuthFile } from './model/accountPresentation';
@@ -34,10 +36,12 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     pendingDeleteID,
     deleteError,
     oauthBanner,
+    oauthDialog,
     oauthPendingAccountID,
     isOAuthPending,
     apiKeyFormError,
     isApiKeyModalOpen,
+    isRotationModalOpen,
     apiKeyForm,
     isPasteModalOpen,
     pasteContent,
@@ -53,6 +57,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     allFilteredSelected,
     loadAccounts,
     startCodexOAuth,
+    openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
     setSourceFilter,
@@ -61,7 +66,9 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     setDeleteError,
     setApiKeyFormError,
     setOAuthBanner,
+    setOAuthDialog,
     setIsApiKeyModalOpen,
+    setIsRotationModalOpen,
     setApiKeyForm,
     setIsPasteModalOpen,
     setPasteContent,
@@ -78,6 +85,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     exportSelectedAccounts,
     deleteAccount,
     renameSelectedApiKey,
+    updateSelectedApiKeyPriority,
   } = useAccountsPageState({
     ready,
     t,
@@ -113,6 +121,10 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
             }}
             onOpenApiKeyModal={() => {
               openApiKeyModal();
+              setIsHeaderActionsMenuOpen(false);
+            }}
+            onOpenRotationModal={() => {
+              setIsRotationModalOpen(true);
               setIsHeaderActionsMenuOpen(false);
             }}
             onStartCodexOAuth={() => {
@@ -230,6 +242,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           account={selectedAccount}
           onClose={() => setSelectedAccount(null)}
           onRename={renameSelectedApiKey}
+          onSavePriority={(priority) => void updateSelectedApiKeyPriority(priority)}
           t={t}
         />
       ) : null}
@@ -251,6 +264,15 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
         />
       ) : null}
 
+      {isRotationModalOpen ? (
+        <AccountRotationModal
+          accounts={accounts}
+          ready={ready}
+          onClose={() => setIsRotationModalOpen(false)}
+          onReloadAccounts={loadAccounts}
+        />
+      ) : null}
+
       {isPasteModalOpen ? (
         <PasteAuthModal
           t={t}
@@ -262,6 +284,16 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
             setPasteError('');
           }}
           onSubmit={submitPasteImport}
+        />
+      ) : null}
+
+      {oauthDialog ? (
+        <CodexOAuthModal
+          t={t}
+          existingName={oauthDialog.existingName}
+          url={oauthDialog.url}
+          onClose={() => setOAuthDialog(null)}
+          onOpenInBrowser={openOAuthDialogInBrowser}
         />
       ) : null}
     </>

@@ -74,7 +74,7 @@ func TestNeedsAuthFileMetadataInference(t *testing.T) {
 		},
 		{
 			name: "all metadata present",
-			file: AuthFileItem{Provider: "codex", Type: "codex", Email: "user@example.com", PlanType: "plus"},
+			file: AuthFileItem{Provider: "codex", Type: "codex", Priority: 5, Email: "user@example.com", PlanType: "plus"},
 			want: false,
 		},
 	}

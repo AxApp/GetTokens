@@ -7,11 +7,13 @@ interface ApiKeyDetailModalProps {
   account: AccountRecord;
   onClose: () => void;
   onRename: (nextName: string) => void;
+  onSavePriority: (priority: string) => void;
   t: Translator;
 }
 
-export default function ApiKeyDetailModal({ account, onClose, onRename, t }: ApiKeyDetailModalProps) {
+export default function ApiKeyDetailModal({ account, onClose, onRename, onSavePriority, t }: ApiKeyDetailModalProps) {
   const [draftName, setDraftName] = useState(account.displayName);
+  const [draftPriority, setDraftPriority] = useState(String(account.priority ?? 0));
   const [configDraft, setConfigDraft] = useState({
     apiKey: account.apiKey || '',
     baseUrl: account.baseUrl || '',
@@ -28,6 +30,10 @@ export default function ApiKeyDetailModal({ account, onClose, onRename, t }: Api
   useEffect(() => {
     setDraftName(account.displayName);
   }, [account.displayName]);
+
+  useEffect(() => {
+    setDraftPriority(String(account.priority ?? 0));
+  }, [account.priority]);
 
   useEffect(() => {
     setConfigDraft({
@@ -54,6 +60,7 @@ export default function ApiKeyDetailModal({ account, onClose, onRename, t }: Api
   const detailRows: Array<[string, string]> = [
     [t('accounts.provider'), providerLabel(account)],
     [t('accounts.source_api_key'), sourceLabel(t, account.credentialSource)],
+    [t('accounts.api_key_priority'), String(account.priority ?? 0)],
     ['FINGERPRINT', account.keyFingerprint || '--'],
     ...(account.prefix ? [['PREFIX', account.prefix]] as Array<[string, string]> : []),
     [t('common.status'), account.localOnly ? t('accounts.status_local') : account.status],
@@ -115,6 +122,23 @@ export default function ApiKeyDetailModal({ account, onClose, onRename, t }: Api
                     placeholder={t('accounts.api_key_label_placeholder')}
                   />
                   <button onClick={() => onRename(draftName)} className="btn-swiss shrink-0">
+                    {t('common.save')}
+                  </button>
+                </div>
+              </div>
+              <div className="mt-3 space-y-2">
+                <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {t('accounts.api_key_priority')}
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    value={draftPriority}
+                    onChange={(event: TextInputEvent) => setDraftPriority(event.target.value)}
+                    className="input-swiss w-full"
+                    inputMode="numeric"
+                    placeholder={t('accounts.api_key_priority_placeholder')}
+                  />
+                  <button onClick={() => onSavePriority(draftPriority)} className="btn-swiss shrink-0">
                     {t('common.save')}
                   </button>
                 </div>

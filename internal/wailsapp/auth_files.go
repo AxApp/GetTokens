@@ -54,13 +54,14 @@ func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
 		if strings.TrimSpace(file.PlanType) == "" {
 			file.PlanType = profile.PlanType
 		}
+		file.Priority = accountsdomain.ExtractAuthFilePriority(body)
 	}
 
 	return &result, nil
 }
 
 func needsAuthFileMetadataInference(file AuthFileItem) bool {
-	return needsAuthFileKindInference(file) || strings.TrimSpace(file.Email) == "" || strings.TrimSpace(file.PlanType) == ""
+	return needsAuthFileKindInference(file) || strings.TrimSpace(file.Email) == "" || strings.TrimSpace(file.PlanType) == "" || file.Priority == 0
 }
 
 func needsAuthFileKindInference(file AuthFileItem) bool {
@@ -147,6 +148,36 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 
 	_, _, err = a.SidecarRequest(http.MethodPost, ManagementAPIPrefix+"/auth-files", nil, &buf, w.FormDataContentType())
 	return err
+}
+
+func (a *App) updateAuthFilePriority(name string, priority int) error {
+	trimmedName := strings.TrimSpace(name)
+	if trimmedName == "" {
+		return errors.New("auth file name 不能为空")
+	}
+
+	body, err := a.downloadAuthFileBody(trimmedName)
+	if err != nil {
+		return err
+	}
+
+	updated, err := accountsdomain.SetAuthFilePriority(body, priority)
+	if err != nil {
+		return err
+	}
+
+	return a.replaceAuthFile(trimmedName, updated)
+}
+
+func (a *App) replaceAuthFile(name string, content []byte) error {
+	if err := a.DeleteAuthFiles([]string{name}); err != nil {
+		return err
+	}
+
+	return a.UploadAuthFiles([]UploadFilePayload{{
+		Name:          name,
+		ContentBase64: base64.StdEncoding.EncodeToString(content),
+	}})
 }
 
 func (a *App) listExistingAuthFileNames() (map[string]struct{}, error) {

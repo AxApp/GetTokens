@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 )
 
 func (a *App) StartCodexOAuth() (*OAuthStartResult, error) {
@@ -67,13 +69,28 @@ func (a *App) FinalizeCodexOAuth(input CompleteCodexOAuthInput) error {
 		return fmt.Errorf("新登录账号 %s 内容不是合法 base64: %w", replacementName, err)
 	}
 
+	existingBody, err := a.downloadAuthFileBody(existingName)
+	if err != nil {
+		return err
+	}
+	replacementBody, err := base64.StdEncoding.DecodeString(downloaded.ContentBase64)
+	if err != nil {
+		return fmt.Errorf("新登录账号 %s 内容不是合法 base64: %w", replacementName, err)
+	}
+	if priority := accountsdomain.ExtractAuthFilePriority(existingBody); priority > 0 {
+		replacementBody, err = accountsdomain.SetAuthFilePriority(replacementBody, priority)
+		if err != nil {
+			return err
+		}
+	}
+
 	if err := a.DeleteAuthFiles([]string{existingName}); err != nil {
 		return err
 	}
 
 	if err := a.UploadAuthFiles([]UploadFilePayload{{
 		Name:          existingName,
-		ContentBase64: downloaded.ContentBase64,
+		ContentBase64: base64.StdEncoding.EncodeToString(replacementBody),
 	}}); err != nil {
 		return err
 	}

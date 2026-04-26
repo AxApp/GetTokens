@@ -90,6 +90,18 @@ export function StartCodexOAuth() {
   return window['go']['main']['App']['StartCodexOAuth']();
 }
 
+export function UpdateAccountPriority(arg1) {
+  return window['go']['main']['App']['UpdateAccountPriority'](arg1);
+}
+
+export function UpdateCodexAPIKeyPriority(arg1) {
+  return window['go']['main']['App']['UpdateCodexAPIKeyPriority'](arg1);
+}
+
+export function UpdateRelayRoutingConfig(arg1) {
+  return window['go']['main']['App']['UpdateRelayRoutingConfig'](arg1);
+}
+
 export function UpdateRelayServiceAPIKey(arg1) {
   return window['go']['main']['App']['UpdateRelayServiceAPIKey'](arg1);
 }

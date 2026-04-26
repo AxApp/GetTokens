@@ -89,7 +89,7 @@ sidecar 顶层 `api-keys` 原生支持列表，因此状态页不能再只建模
 
 `StatusPage` 除了展示客户端接入用的 `auth.json` 和 relay service `api-keys` 之外，还应直接显示 sidecar 当前实际生效的轮动配置，避免用户把“支持哪些模式”和“当前正在用什么模式”混为一谈。
 
-当前展示项包括：
+当前展示与编辑项包括：
 
 1. `routing.strategy`
 2. `routing.session-affinity`
@@ -105,7 +105,18 @@ sidecar 顶层 `api-keys` 原生支持列表，因此状态页不能再只建模
 
 1. `strategy` 缺省时按 `round-robin` 展示
 2. `session-affinity-ttl` 缺省时按 `1h` 展示
-3. 状态页当前只做“生效值观察”，不在这一层直接开放轮动策略写入
+3. 状态页当前已经支持轮动策略写入，但写回边界仍然固定在 sidecar 现有 `config.yaml` 能力内
+
+## 当前实现更新（2026-04-26）
+
+1. `StatusFeature` 已支持直接编辑并保存轮动配置。
+2. 写回路径不是虚构新的 JSON 管理接口，而是：
+   `GET /v0/management/config.yaml` -> 局部修改 `routing / request-retry / quota-exceeded` 节点 -> `PUT /v0/management/config.yaml`
+3. 该实现的目标是继续复用 sidecar 既有配置语义，而不是在 GetTokens 前端额外定义一套轮动领域模型。
+4. 自动化测试应优先覆盖：
+   - 默认值归一化
+   - 负数重试值归零
+   - YAML 写回时保留无关节点，仅更新轮动相关字段
 
 ## 后续建议
 

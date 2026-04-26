@@ -119,3 +119,42 @@ test('buildAccountsView sorts, filters, groups, and resolves selection state tog
   assert.equal(view.allFilteredSelected, false);
   assert.deepEqual(view.groupedAccounts.map((group) => group.label), ['PRO', 'API KEY']);
 });
+
+test('buildAccountsView sorts api keys by priority before display name', () => {
+  const view = buildAccountsView({
+    authFileRecords: [],
+    apiKeyRecords: [
+      {
+        id: 'api-key:beta',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Alpha',
+        status: 'ACTIVE',
+        priority: 1,
+      },
+      {
+        id: 'api-key:alpha',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Zulu',
+        status: 'ACTIVE',
+        priority: 9,
+      },
+      {
+        id: 'api-key:gamma',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Bravo',
+        status: 'ACTIVE',
+        priority: 1,
+      },
+    ],
+    codexQuotaByName: {},
+    searchTerm: '',
+    sourceFilter: 'all',
+    selectedAccountIDs: [],
+    t,
+  });
+
+  assert.deepEqual(view.accounts.map((item) => item.id), ['api-key:alpha', 'api-key:beta', 'api-key:gamma']);
+});

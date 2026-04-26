@@ -40,10 +40,11 @@ func TestStartCodexOAuthReturnsAuthURLAndState(t *testing.T) {
 
 func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 	existingNames := map[string]struct{}{
-		"expired.json":   {},
+		"expired.json":     {},
 		"fresh-login.json": {},
 	}
 	const freshContent = `{"type":"codex","access_token":"fresh-access","refresh_token":"fresh-refresh"}`
+	const existingContent = `{"type":"codex","access_token":"expired-access","priority":6}`
 
 	var uploadedBody string
 
@@ -66,12 +67,17 @@ func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 				}
 				payload, _ := json.Marshal(map[string]any{"files": files, "total": len(files)})
 				return payload, http.StatusOK, nil
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-				if got := query.Get("name"); got != "fresh-login.json" {
-					t.Fatalf("download name = %q, want fresh-login.json", got)
-				}
-				return []byte(freshContent), http.StatusOK, nil
-			case method == http.MethodDelete && path == ManagementAPIPrefix+"/auth-files":
+				case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
+					switch got := query.Get("name"); got {
+					case "fresh-login.json":
+						return []byte(freshContent), http.StatusOK, nil
+					case "expired.json":
+						return []byte(existingContent), http.StatusOK, nil
+					default:
+						t.Fatalf("download name = %q, want fresh-login.json or expired.json", got)
+					}
+					return nil, 0, nil
+				case method == http.MethodDelete && path == ManagementAPIPrefix+"/auth-files":
 				raw, err := io.ReadAll(body)
 				if err != nil {
 					t.Fatalf("ReadAll delete body: %v", err)
@@ -120,6 +126,9 @@ func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 	}
 	if !strings.Contains(uploadedBody, `"access_token":"fresh-access"`) {
 		t.Fatalf("upload body should contain new auth content: %s", uploadedBody)
+	}
+	if !strings.Contains(uploadedBody, `"priority":6`) {
+		t.Fatalf("upload body should preserve old priority: %s", uploadedBody)
 	}
 }
 

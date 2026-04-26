@@ -6,6 +6,7 @@ export namespace main {
 	    credentialSource: string;
 	    displayName: string;
 	    status: string;
+	    priority?: number;
 	    disabled?: boolean;
 	    email?: string;
 	    planType?: string;
@@ -30,6 +31,7 @@ export namespace main {
 	        this.credentialSource = source["credentialSource"];
 	        this.displayName = source["displayName"];
 	        this.status = source["status"];
+	        this.priority = source["priority"];
 	        this.disabled = source["disabled"];
 	        this.email = source["email"];
 	        this.planType = source["planType"];
@@ -184,6 +186,7 @@ export namespace main {
 	export class CreateCodexAPIKeyInput {
 	    apiKey: string;
 	    baseUrl: string;
+	    priority?: number;
 	    prefix?: string;
 	    proxyUrl?: string;
 	    headers?: Record<string, string>;
@@ -197,6 +200,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
 	        this.baseUrl = source["baseUrl"];
+	        this.priority = source["priority"];
 	        this.prefix = source["prefix"];
 	        this.proxyUrl = source["proxyUrl"];
 	        this.headers = source["headers"];
@@ -340,6 +344,34 @@ export namespace main {
 		}
 	}
 	
+	export class UpdateCodexAPIKeyPriorityInput {
+	    id: string;
+	    priority?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateCodexAPIKeyPriorityInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.priority = source["priority"];
+	    }
+	}
+	export class UpdateAccountPriorityInput {
+	    id: string;
+	    priority?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateAccountPriorityInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.priority = source["priority"];
+	    }
+	}
 	export class UploadFilePayload {
 	    name: string;
 	    contentBase64: string;
@@ -402,4 +434,3 @@ export namespace updater {
 	}
 
 }
-

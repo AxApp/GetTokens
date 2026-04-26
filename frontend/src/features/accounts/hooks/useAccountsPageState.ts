@@ -50,6 +50,13 @@ type OAuthBanner =
     }
   | null;
 
+type OAuthDialogState =
+  | {
+      url: string;
+      existingName: string;
+    }
+  | null;
+
 interface UseAccountsPageStateArgs {
   ready: boolean;
   t: Translator;
@@ -73,6 +80,7 @@ export default function useAccountsPageState({
   const [deleteError, setDeleteError] = useState('');
   const [apiKeyFormError, setApiKeyFormError] = useState('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isRotationModalOpen, setIsRotationModalOpen] = useState(false);
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState>(emptyApiKeyForm);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pasteContent, setPasteContent] = useState('');
@@ -81,6 +89,7 @@ export default function useAccountsPageState({
   const [isHeaderActionsMenuOpen, setIsHeaderActionsMenuOpen] = useState(false);
   const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
   const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
+  const [oauthDialog, setOAuthDialog] = useState<OAuthDialogState>(null);
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -175,6 +184,7 @@ export default function useAccountsPageState({
         }
 
         if (result.status === 'error') {
+          setOAuthDialog(null);
           setOAuthBanner({
             tone: 'error',
             message: result.error || t('accounts.codex_login_failed'),
@@ -196,6 +206,7 @@ export default function useAccountsPageState({
         }
 
         await loadAccounts();
+        setOAuthDialog(null);
         setOAuthBanner({
           tone: 'success',
           message: buildCodexOAuthBannerMessage(t, 'success', currentFlow.existingName),
@@ -205,6 +216,7 @@ export default function useAccountsPageState({
         if (cancelled) {
           return;
         }
+        setOAuthDialog(null);
         setOAuthBanner({
           tone: 'error',
           message: toErrorMessage(error),
@@ -255,12 +267,15 @@ export default function useAccountsPageState({
       try {
         const result = await trackRequest('StartCodexOAuth', {}, () => StartCodexOAuth());
         const existingName = account && isCodexReauthEligible(account) ? String(account.name || '').trim() : '';
-        BrowserOpenURL(result.url);
         setOAuthFlow({
           state: String(result.state || '').trim(),
           existingName,
           previousNames: authFiles.map((file) => file.name),
           pendingAccountID: account?.id || null,
+        });
+        setOAuthDialog({
+          url: String(result.url || '').trim(),
+          existingName,
         });
         setOAuthBanner({
           tone: 'info',
@@ -276,6 +291,13 @@ export default function useAccountsPageState({
     [authFiles, oauthFlow, ready, t, trackRequest]
   );
 
+  const openOAuthDialogInBrowser = useCallback(() => {
+    if (!oauthDialog?.url) {
+      return;
+    }
+    BrowserOpenURL(oauthDialog.url);
+  }, [oauthDialog]);
+
   const {
     deleteAccount,
     uploadAccounts,
@@ -284,6 +306,7 @@ export default function useAccountsPageState({
     submitPasteImport,
     exportSelectedAccounts,
     renameSelectedApiKey,
+    updateSelectedApiKeyPriority,
   } = useAccountsActions({
     t,
     trackRequest,
@@ -320,9 +343,11 @@ export default function useAccountsPageState({
     deleteError,
     apiKeyFormError,
     oauthBanner,
+    oauthDialog,
     oauthPendingAccountID: oauthFlow?.pendingAccountID || null,
     isOAuthPending: oauthFlow !== null,
     isApiKeyModalOpen,
+    isRotationModalOpen,
     apiKeyForm,
     isPasteModalOpen,
     pasteContent,
@@ -338,6 +363,7 @@ export default function useAccountsPageState({
     allFilteredSelected,
     loadAccounts,
     startCodexOAuth,
+    openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
     setSourceFilter,
@@ -346,7 +372,9 @@ export default function useAccountsPageState({
     setDeleteError,
     setApiKeyFormError,
     setOAuthBanner,
+    setOAuthDialog,
     setIsApiKeyModalOpen,
+    setIsRotationModalOpen,
     setApiKeyForm,
     setIsPasteModalOpen,
     setPasteContent,
@@ -363,6 +391,7 @@ export default function useAccountsPageState({
     exportSelectedAccounts,
     deleteAccount,
     renameSelectedApiKey,
+    updateSelectedApiKeyPriority,
     closeHeaderActionsMenu,
   };
 }

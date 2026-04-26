@@ -4,6 +4,7 @@ import {
   DeleteAuthFiles,
   DeleteCodexAPIKey,
   DownloadAuthFile,
+  UpdateCodexAPIKeyPriority,
   UploadAuthFiles,
 } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
@@ -165,6 +166,7 @@ export default function useAccountsActions({
       const trimmedBaseURL = apiKeyForm.baseUrl.trim();
       const trimmedPrefix = apiKeyForm.prefix.trim();
       const trimmedLabel = apiKeyForm.label.trim();
+      const parsedPriority = Number.parseInt(apiKeyForm.priority.trim() || '0', 10);
       await trackRequest(
         'CreateCodexAPIKey',
         { baseUrl: trimmedBaseURL },
@@ -172,6 +174,7 @@ export default function useAccountsActions({
           CreateCodexAPIKey({
             apiKey,
             baseUrl: trimmedBaseURL,
+            priority: Number.isFinite(parsedPriority) ? parsedPriority : 0,
             prefix: trimmedPrefix,
           })
       );
@@ -339,6 +342,36 @@ export default function useAccountsActions({
     [selectedAccount, setAPIKeyLabels, setSelectedAccount]
   );
 
+  const updateSelectedApiKeyPriority = useCallback(
+    async (priorityDraft: string) => {
+      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
+        return;
+      }
+
+      try {
+        const parsedPriority = Number.parseInt(priorityDraft.trim() || '0', 10);
+        const nextPriority = Number.isFinite(parsedPriority) ? parsedPriority : 0;
+
+        await trackRequest(
+          'UpdateCodexAPIKeyPriority',
+          { id: selectedAccount.id, priority: nextPriority },
+          () =>
+            UpdateCodexAPIKeyPriority({
+              id: selectedAccount.id,
+              priority: nextPriority,
+            })
+        );
+
+        setSelectedAccount((prev) => (prev ? { ...prev, priority: nextPriority } : prev));
+        await loadAccounts();
+      } catch (error) {
+        console.error(error);
+        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
+      }
+    },
+    [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, trackRequest]
+  );
+
   return {
     deleteAccount,
     uploadAccounts,
@@ -347,5 +380,6 @@ export default function useAccountsActions({
     submitPasteImport,
     exportSelectedAccounts,
     renameSelectedApiKey,
+    updateSelectedApiKeyPriority,
   };
 }

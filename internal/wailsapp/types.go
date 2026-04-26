@@ -4,6 +4,7 @@ type AuthFileItem struct {
 	Name          string      `json:"name"`
 	Type          string      `json:"type,omitempty"`
 	Provider      string      `json:"provider,omitempty"`
+	Priority      int         `json:"priority,omitempty"`
 	Email         string      `json:"email,omitempty"`
 	PlanType      string      `json:"planType,omitempty"`
 	Size          int64       `json:"size,omitempty"`

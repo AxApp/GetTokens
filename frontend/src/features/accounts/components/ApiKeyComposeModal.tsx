@@ -67,6 +67,18 @@ export default function ApiKeyComposeModal({
                 placeholder="https://api.openai.com/v1"
               />
             </label>
+            <label className="space-y-2">
+              <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {t('accounts.api_key_priority')}
+              </span>
+              <input
+                value={form.priority}
+                onChange={(event: TextInputEvent) => onChange('priority', event.target.value)}
+                className="input-swiss w-full"
+                placeholder={t('accounts.api_key_priority_placeholder')}
+                inputMode="numeric"
+              />
+            </label>
           </div>
 
           <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">

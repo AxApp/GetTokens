@@ -10,6 +10,7 @@ export type SidecarStatus = sidecar.Status;
 export type ReleaseInfo = updater.ReleaseInfo;
 
 export type AuthFile = main.AuthFileItem & {
+  priority?: number;
   email?: string;
   planType?: string;
 };
@@ -23,6 +24,7 @@ export interface AccountRecord {
   displayName: string;
   status: string;
   statusMessage?: string;
+  priority?: number;
   disabled?: boolean;
   email?: string;
   planType?: string;

@@ -34,6 +34,9 @@ func NormalizeAuthFileForSidecar(body []byte) ([]byte, bool, error) {
 		if profile.PlanType != "" {
 			minimalPayload["plan_type"] = profile.PlanType
 		}
+		if priority := priorityValue(payload["priority"]); priority > 0 {
+			minimalPayload["priority"] = priority
+		}
 
 		normalized, err := json.MarshalIndent(minimalPayload, "", "  ")
 		if err != nil {

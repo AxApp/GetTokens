@@ -90,3 +90,24 @@ func TestNormalizeAuthFileForSidecarStripsExtraFieldsFromCodexPayload(t *testing
 		t.Fatalf("expected minimal payload, got %d keys: %#v", len(payload), payload)
 	}
 }
+
+func TestNormalizeAuthFileForSidecarKeepsPriorityForCodexPayload(t *testing.T) {
+	body := []byte(`{"type":"codex","access_token":"access-token","priority":"5","tokens":{"access_token":"nested"}}`)
+
+	normalized, changed, err := NormalizeAuthFileForSidecar(body)
+	if err != nil {
+		t.Fatalf("NormalizeAuthFileForSidecar returned error: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected normalized payload with priority to change")
+	}
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal(normalized, &payload); err != nil {
+		t.Fatalf("normalized payload is invalid json: %v", err)
+	}
+
+	if got := priorityValue(payload["priority"]); got != 5 {
+		t.Fatalf("priority = %d, want 5", got)
+	}
+}
