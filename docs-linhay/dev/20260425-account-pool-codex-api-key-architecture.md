@@ -115,6 +115,39 @@ Codex 额度不再由 app 直接拼 bearer 请求外网，而是走：
 
 否则在窗口临近重置时，会出现“真实还有几十秒，但页面显示 `0s`”的假阴性。
 
+## 账号筛选边界
+
+最近一次账号池筛选迭代确认：
+
+1. 列表筛选不能再继续复用单一 `SourceFilter` 枚举
+2. “来源”和“账号可用性 / 额度状态”是两类不同维度
+3. 稳定状态模型应拆为：
+   - `source`
+   - `hasLongestQuota`
+   - `errorsOnly`
+4. 这些筛选配置可以持久化；搜索词、批量选择态、弹窗开关等仍属于瞬时 UI 状态，不应一起落盘
+
+### 最长窗口额度语义
+
+“仅显示有最长窗口额度” 的稳定语义为：
+
+1. 只对 `auth-file + codex` 生效
+2. quota 只有一条窗口时，该窗口就是最长窗口
+3. quota 有多条窗口时，优先取 `weekly / *-weekly`
+4. 若没有 `weekly`，回退到当前展示窗口中的最后一个窗口
+5. 只有该窗口存在且 `remainingPercent > 0` 时，账号才保留
+6. `loading / error / empty / 无窗口` 统一视为“不满足该筛选”
+
+### 异常账号语义
+
+“仅显示异常账号” 的稳定语义为：
+
+1. `disabled === true`
+2. `rawAuthFile.unavailable === true`
+3. `status` 不属于 `ACTIVE / CONFIGURED / LOCAL`
+
+这条边界的目标不是做全量诊断，而是让账号池列表在第一跳就能把“不能用 / 需要处理”的资产快速筛出来。
+
 ## 维护建议
 
 1. 账号池相关任务优先走 `gettokens-accounts-domain`

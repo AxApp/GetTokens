@@ -22,6 +22,11 @@ This skill unifies the technical rules for building, styling, and debugging GetT
     - `model/`
     - `tests/`
   - Do not re-introduce `helpers.ts`-style catch-all files. Split by responsibility such as config snippets, selectors, presentation, quota formatting, and actions.
+  - Account list filters must not be collapsed into a single enum once source and availability semantics diverge. Prefer a filter object such as:
+    - `source`
+    - `hasLongestQuota`
+    - `errorsOnly`
+  - Persist account-list filter preferences separately from ephemeral UI state. Persist filters; do not persist search drafts, modal open state, or bulk-selection state unless a later requirement explicitly needs that.
 
 ## 2. Feature / Page Boundary
 - **Pages**: `frontend/src/pages/*` should be route wrappers, not long-lived business implementation files.
@@ -49,6 +54,12 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Logic**: CLIProxyAPI injects token via `auth_index` for target `chatgpt.com/backend-api/wham/usage`.
 - **Debugging**: Verify both Wails debug events and CLIProxyAPI token resolution.
 - **Time**: Relative reset countdown must use raw unix seconds (`resetAtUnix`). Do not re-parse `resetLabel` for countdown logic, because display labels lose seconds and drift into false `0s`.
+- **Filter Semantics**:
+  - “Only with longest quota” applies only to `auth-file + codex` assets.
+  - If a quota has one window, that window is the longest window.
+  - If a quota has multiple windows, prefer `weekly / *-weekly`; otherwise fall back to the last displayed window.
+  - Only keep the account when that chosen window has `remainingPercent > 0`.
+  - Treat `loading / error / empty / no window` as not satisfying this filter, not as a separate success case.
 - **Split Template**: When quota logic grows too large, prefer separating:
   - `types`
   - `auth parser`
