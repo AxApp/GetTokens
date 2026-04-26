@@ -344,12 +344,12 @@ export namespace main {
 		}
 	}
 	
-	export class UpdateCodexAPIKeyPriorityInput {
+	export class UpdateAccountPriorityInput {
 	    id: string;
 	    priority?: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new UpdateCodexAPIKeyPriorityInput(source);
+	        return new UpdateAccountPriorityInput(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -358,12 +358,12 @@ export namespace main {
 	        this.priority = source["priority"];
 	    }
 	}
-	export class UpdateAccountPriorityInput {
+	export class UpdateCodexAPIKeyPriorityInput {
 	    id: string;
 	    priority?: number;
 	
 	    static createFrom(source: any = {}) {
-	        return new UpdateAccountPriorityInput(source);
+	        return new UpdateCodexAPIKeyPriorityInput(source);
 	    }
 	
 	    constructor(source: any = {}) {
@@ -434,3 +434,4 @@ export namespace updater {
 	}
 
 }
+

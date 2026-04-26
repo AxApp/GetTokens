@@ -88,6 +88,7 @@ type AccountRecord struct {
 	CredentialSource string      `json:"credentialSource"`
 	DisplayName      string      `json:"displayName"`
 	Status           string      `json:"status"`
+	Priority         int         `json:"priority,omitempty"`
 	Disabled         bool        `json:"disabled,omitempty"`
 	Email            string      `json:"email,omitempty"`
 	PlanType         string      `json:"planType,omitempty"`
@@ -105,10 +106,21 @@ type AccountRecord struct {
 type CreateCodexAPIKeyInput struct {
 	APIKey         string            `json:"apiKey"`
 	BaseURL        string            `json:"baseUrl"`
+	Priority       int               `json:"priority,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
 	ProxyURL       string            `json:"proxyUrl,omitempty"`
 	Headers        map[string]string `json:"headers,omitempty"`
 	ExcludedModels []string          `json:"excludedModels,omitempty"`
+}
+
+type UpdateCodexAPIKeyPriorityInput struct {
+	ID       string `json:"id"`
+	Priority int    `json:"priority,omitempty"`
+}
+
+type UpdateAccountPriorityInput struct {
+	ID       string `json:"id"`
+	Priority int    `json:"priority,omitempty"`
 }
 
 type RelayServiceConfig struct {
@@ -217,6 +229,17 @@ func (a *App) SetAuthFileStatus(name string, disabled bool) error {
 
 func (a *App) DeleteAuthFiles(names []string) error {
 	return a.core.DeleteAuthFiles(names)
+}
+
+func (a *App) UpdateCodexAPIKeyPriority(input UpdateCodexAPIKeyPriorityInput) error {
+	return a.core.UpdateCodexAPIKeyPriority(input.ID, input.Priority)
+}
+
+func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
+	return a.core.UpdateAccountPriority(wailsapp.UpdateAccountPriorityInput{
+		ID:       input.ID,
+		Priority: input.Priority,
+	})
 }
 
 func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
@@ -365,6 +388,25 @@ func (a *App) GetRelayRoutingConfig() (*RelayRoutingConfig, error) {
 	}, nil
 }
 
+func (a *App) UpdateRelayRoutingConfig(config RelayRoutingConfig) (*RelayRoutingConfig, error) {
+	result, err := a.core.UpdateRelayRoutingConfig(wailsapp.RelayRoutingConfig(config))
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelayRoutingConfig{
+		Strategy:            result.Strategy,
+		SessionAffinity:     result.SessionAffinity,
+		SessionAffinityTTL:  result.SessionAffinityTTL,
+		RequestRetry:        result.RequestRetry,
+		MaxRetryCredentials: result.MaxRetryCredentials,
+		MaxRetryInterval:    result.MaxRetryInterval,
+		SwitchProject:       result.SwitchProject,
+		SwitchPreviewModel:  result.SwitchPreviewModel,
+		AntigravityCredits:  result.AntigravityCredits,
+	}, nil
+}
+
 func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string) (*RelayLocalApplyResult, error) {
 	result, err := a.core.ApplyRelayServiceConfigToLocal(apiKey, baseURL)
 	if err != nil {
@@ -382,6 +424,7 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 	return a.core.CreateCodexAPIKey(wailsapp.CreateCodexAPIKeyInput{
 		APIKey:         input.APIKey,
 		BaseURL:        input.BaseURL,
+		Priority:       input.Priority,
 		Prefix:         input.Prefix,
 		ProxyURL:       input.ProxyURL,
 		Headers:        input.Headers,
@@ -400,6 +443,7 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		CredentialSource: record.CredentialSource,
 		DisplayName:      record.DisplayName,
 		Status:           record.Status,
+		Priority:         record.Priority,
 		Disabled:         record.Disabled,
 		Email:            record.Email,
 		PlanType:         record.PlanType,
