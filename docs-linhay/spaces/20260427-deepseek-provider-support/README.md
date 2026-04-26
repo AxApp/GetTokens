@@ -26,9 +26,9 @@
 
 ## 非目标
 - 本轮不直接实现 DeepSeek 接入
-- 本轮不改账号池 UI 或 sidecar 配置协议
 - 本轮不承诺参考 `CLIProxyAPI` 中所有 provider 都会进入 GetTokens 首批产品范围
-- 本轮不设计完整的“多厂商 API Key 管理后台”
+- 本轮不照搬参考项目的完整 AI Providers 后台
+- 本轮不把 `openai-compatible` 降级为新的单条 `DeepSeek API Key` 特例
 
 ## 验收标准
 - 能明确回答“现在能不能添加 DeepSeek 账号”
@@ -48,6 +48,18 @@
 ## 当前状态
 - 状态：in-progress
 - 最近更新：2026-04-27
+
+## 完全体需求补充
+
+在账号池信息架构升级后，`openai-compatible` 不再只是一个“未来可讨论”的技术槽位，而是 `账号池` 父级下的正式子菜单之一：
+
+1. 左侧点击 `账号池`
+2. 在 `账号池` 下展开：
+   - `codex`
+   - `openai-compatible`
+3. `openai-compatible` 子菜单承接 provider 级对象管理
+
+这意味着本 space 的定位也从“能不能支持”升级为“如何在产品内以完整心智接入”。
 
 ## 当前结论
 
@@ -109,16 +121,23 @@
 - 其中 `openai-compatible` 还是一个扩展槽位，可以继续挂更多兼容 OpenAI 协议的厂商
 - `DeepSeek` 属于这个扩展槽位中的候选，而不是现在已经打通的产品功能
 
-## DeepSeek 接入的最小实现边界
+## OpenAI-Compatible 最小产品边界
 
-如果后续要把 DeepSeek 做成“可添加账号”的正式能力，最小实现边界至少包括：
+如果后续要把 DeepSeek 或其他 OpenAI 兼容厂商做成正式能力，最小实现边界至少包括：
 
-1. 后端把 `CodexAPIKey` 抽象成通用 provider API key 资产，或新增 `DeepSeekAPIKey` 平行链路
-2. Wails bindings 新增对应的创建、删除、更新接口
-3. 本地存储不再硬编码为 `codex-api-keys`
-4. 账号池前端从“添加 Codex API Key”升级为“添加 provider API Key”
-5. provider 配置片段生成、详情展示、筛选文案同步支持 `deepseek`
-6. 明确 DeepSeek 是走专用 provider 还是走 `openai-compatible` 抽象层
+1. 后端补齐 `openai-compatible` 的 Wails / management bridge，而不是只扩 `CodexAPIKey`
+2. 前端从“添加 Codex API Key”升级为“新增 openai-compatible provider”
+3. 顶层对象改为 provider 容器，而不是单个 API key 资产
+4. 第一阶段最少支持：
+   - `name`
+   - `baseUrl`
+   - `apiKeyEntries[0].apiKey`
+   - `prefix`
+5. 第二阶段再补：
+   - `headers`
+   - 多 `apiKeyEntries`
+   - `models`
+6. DeepSeek 作为 `openai-compatible` 下的 provider 候选，而不是先做专用 `DeepSeek API Key`
 
 ## BDD 场景
 
@@ -140,5 +159,14 @@
 
 - Given 决定把 DeepSeek 纳入账号池正式能力
 - When 开始实现
-- Then 需要同时补齐后端资产模型、Wails 接口、前端录入入口、持久化方案与测试
+- Then 需要同时补齐后端 provider bridge、Wails 接口、前端 provider 入口、持久化方案与测试
+- And DeepSeek 应优先以 `openai-compatible provider` 的形式进入产品
 - And 不能只改 UI 文案或只依赖参考 sidecar 配置示例
+
+### 场景 4：账号池子菜单中的 openai-compatible
+
+- Given 用户点击左侧 `账号池`
+- When 用户选择子菜单 `openai-compatible`
+- Then 页面主体进入 openai-compatible provider 视图
+- And 用户看到的对象应是 provider 容器
+- And 页面不应继续显示只适用于 codex 的新增入口文案
