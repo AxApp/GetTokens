@@ -17,9 +17,9 @@
 - 在状态页展示 sidecar 当前实际生效的账号轮动策略与重试配置
 
 ## 范围
-- `frontend/src/pages/accounts/ApiKeyDetailModal.tsx`
+- `frontend/src/features/accounts/components/ApiKeyDetailModal.tsx`
 - `frontend/src/components/biz/AccountDetailModal.tsx`
-- `frontend/src/pages/accounts/helpers.ts`
+- `frontend/src/features/accounts/model/accountConfig.ts`
 - `frontend/src/pages/StatusPage.tsx`
 - `internal/accounts/auth_file_normalize.go`
 - `internal/wailsapp/auth_file_normalize.go`
@@ -48,7 +48,7 @@
 
 ## 相关链接
 - [账号池 Space](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/account-pool/README.md)
-- [ApiKeyDetailModal](/Users/linhey/Desktop/linhay-open-sources/GetTokens/frontend/src/pages/accounts/ApiKeyDetailModal.tsx)
+- [ApiKeyDetailModal](/Users/linhey/Desktop/linhay-open-sources/GetTokens/frontend/src/features/accounts/components/ApiKeyDetailModal.tsx)
 
 ## 当前状态
 - 状态：in_progress

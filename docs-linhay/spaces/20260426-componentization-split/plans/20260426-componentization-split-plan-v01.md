@@ -4,8 +4,8 @@
 本计划基于 2026-04-26 的静态扫描结果制定，当前热点如下：
 
 - 前端热点：
-  - `frontend/src/pages/accounts/useAccountsPageState.ts` `621` 行
-  - `frontend/src/pages/accounts/helpers.ts` `475` 行
+  - `frontend/src/features/accounts/hooks/useAccountsPageState.ts` `621` 行
+  - `frontend/src/features/accounts/model/accountConfig.ts` `475` 行
   - `frontend/src/pages/StatusPage.tsx` `407` 行
   - `frontend/src/pages/SettingsPage.tsx` `306` 行
 - 后端热点：
@@ -17,7 +17,7 @@
 
 目录级聚合：
 
-- `frontend/src/pages/accounts/` 约 `2143` 行，是最明确的前端业务域
+- `frontend/src/features/accounts/` 约 `2143` 行，是最明确的前端业务域
 - `internal/accounts/` 约 `1518` 行，是核心领域逻辑区
 - `internal/wailsapp/` 约 `1699` 行，但当前混合了 bridge、存储、配额、auth file、relay 配置
 - `internal/sidecar/` 约 `565` 行，但大部分压在单一 `manager.go`
@@ -31,12 +31,11 @@
 frontend/src/
 ├── features/
 │   ├── accounts/
+│   │   ├── AccountsFeature.tsx
 │   │   ├── components/
 │   │   ├── hooks/
-│   │   ├── services/
 │   │   ├── model/
-│   │   ├── formatters/
-│   │   └── snippets/
+│   │   └── tests/
 │   ├── status/
 │   └── settings/
 ├── components/
@@ -50,6 +49,7 @@ frontend/src/
 - `pages/` 只保留路由装配职责
 - 业务状态、数据加载、副作用逻辑下沉到 feature hooks
 - 纯格式化、映射、片段生成、存储访问不得继续堆进单个 `helpers.ts`
+- feature 内部优先按 `components / hooks / model / tests` 分层，而不是继续平铺
 
 ### 2.2 Go 侧目标
 建议把 `wailsapp` 收口为应用入口与桥接层，领域逻辑继续下沉：
@@ -169,6 +169,20 @@ internal/
 - 发请求、解析 token、构造 quota response 已分离
 - 出现新额度规则时可在 builder 层局部修改
 
+实施结果（2026-04-26）：
+
+- `internal/accounts/codex_quota.go` 已拆为：
+  - `quota_types.go`
+  - `quota_auth_parser.go`
+  - `quota_client.go`
+  - `quota_builder.go`
+  - `quota_debug.go`
+- 请求发起、auth file 解析、JWT claim 提取、额度窗口组装、debug redaction 已完成职责分离，`wailsapp` 调用入口保持不变。
+- 本轮未额外扩展新测试文件，先保留并复用现有 `codex_quota_test.go` 作为行为护栏；后续如果 quota 规则继续膨胀，再补 builder / parser 的更细粒度表驱动测试。
+- 回归验证通过：
+  - `go test ./internal/accounts`
+  - `go test ./internal/accounts ./internal/wailsapp ./internal/sidecar`
+
 ### Phase 3：Go 侧拆 `sidecar` 与 `wailsapp`
 目标：
 
@@ -196,6 +210,20 @@ internal/
 - `manager.go` 不再同时管理进程、端口、配置、健康检查和 key 生成
 - `wailsapp` 单文件平均复杂度下降，bridge 层不再继续膨胀
 
+实施结果（2026-04-26）：
+
+- `internal/sidecar/manager.go` 已拆出：
+  - `config.go`
+  - `port.go`
+  - `process_support.go`
+- `internal/wailsapp/quota.go` 已拆出：
+  - `quota_support.go`
+  - `quota_debug.go`
+- 当前 `Manager` 对外方法与 `wailsapp` bridge 导出接口保持不变，本轮只做内部职责下沉，避免牵动前端绑定层。
+- 回归验证通过：
+  - `go test ./internal/sidecar ./internal/wailsapp ./internal/accounts`
+  - `go test ./internal/accounts ./internal/wailsapp ./internal/sidecar`
+
 ### Phase 4：第二梯队页面治理
 对象：
 
@@ -213,6 +241,17 @@ internal/
 - `typecheck`
 - `build`
 - 关键卡片交互的最小回归验证
+
+实施结果（2026-04-26）：
+
+- 新增 `frontend/src/features/status/StatusFeature.tsx`，原 `pages/StatusPage.tsx` 现在只保留路由包装职责。
+- 新增 `frontend/src/features/settings/SettingsFeature.tsx`，原 `pages/SettingsPage.tsx` 现在只保留路由包装职责。
+- `Settings` 页内的源码映射已同步到 `features/status` 与 `features/settings` 新路径。
+- 本轮先完成页面装配层迁移，尚未继续把 `Status` 页拆成更细的卡片组件；当前目标是先把 `pages/` 收口为入口层。
+- 回归验证通过：
+  - `npm run test:unit`
+  - `npm run typecheck`
+  - `npm run build`
 
 ## 5. 执行顺序建议
 建议严格按下面顺序推进，避免前后端同时大改：
@@ -258,15 +297,15 @@ internal/
 
 ### 第一批实施结果（2026-04-26）
 - 新增模块：
-  - `frontend/src/pages/accounts/accountConfig.ts`
-  - `frontend/src/pages/accounts/accountPresentation.ts`
-  - `frontend/src/pages/accounts/accountQuota.ts`
-  - `frontend/src/pages/accounts/accountSelectors.ts`
-- `frontend/src/pages/accounts/helpers.ts` 已收口为兼容 re-export 层，不再继续承载主实现。
+  - `frontend/src/features/accounts/model/accountConfig.ts`
+  - `frontend/src/features/accounts/model/accountPresentation.ts`
+  - `frontend/src/features/accounts/model/accountQuota.ts`
+  - `frontend/src/features/accounts/model/accountSelectors.ts`
+- 兼容层 `helpers.ts` 已删除，不再保留过时入口。
 - `useAccountsPageState.ts` 已改为消费 `buildAccountsView(...)` 派生视图，减少页面状态 hook 内的筛选/分组/选择拼装逻辑。
 - 新增测试：
-  - `frontend/src/pages/accounts/accountConfig.test.mjs`
-  - `frontend/src/pages/accounts/accountSelectors.test.mjs`
+  - `frontend/src/features/accounts/tests/accountConfig.test.mjs`
+  - `frontend/src/features/accounts/tests/accountSelectors.test.mjs`
 - 新增脚本：
   - `frontend/package.json` 增加 `npm run test:unit`
 - 本轮验证：
@@ -277,6 +316,100 @@ internal/
   - 还没有把 `useAccountsPageState.ts` 进一步拆成多个 hooks
   - 还没有把 `AccountsPage.tsx` 迁到 `features/accounts`
   - 还没有进入 Go 侧 `quota / sidecar / wailsapp` 拆分
+
+### 第二批实施结果（2026-04-26）
+- 新增模块：
+  - `frontend/src/features/accounts/model/accountSelection.ts`
+  - `frontend/src/features/accounts/hooks/useAccountsQuotaState.ts`
+  - `frontend/src/features/accounts/model/accountTransfer.ts`
+- `useAccountsPageState.ts` 已将以下职责外移：
+  - selection 状态切换、全选与失效选择清理
+  - codex quota 加载与刷新
+  - 导入上传文件解析、粘贴导入文件名决策、导出文件名生成
+- 新增测试：
+  - `frontend/src/features/accounts/tests/accountSelection.test.mjs`
+  - `frontend/src/features/accounts/tests/accountTransfer.test.mjs`
+- `frontend/package.json` 的 `npm run test:unit` 已纳入新测试入口。
+- 本轮验证：
+  - `npm run test:unit`
+  - `npm run typecheck`
+  - `npm run build`
+- 当前剩余热点：
+  - `useAccountsPageState.ts` 仍承载 delete / create api key / paste import / export / rename 等 mutation 编排
+  - `AccountsPage.tsx` 还未迁到 `features/accounts`
+
+### 第三批实施结果（2026-04-26）
+- 新增模块：
+  - `frontend/src/features/accounts/hooks/useAccountsActions.ts`
+- 共享类型：
+  - `frontend/src/features/accounts/model/types.ts` 新增 `TrackRequest`
+- `useAccountsPageState.ts` 已将 delete / upload / create api key / paste import / export / rename 等 mutation 编排外移到 `useAccountsActions.ts`
+- `useAccountsQuotaState.ts` 改为复用 `types.ts` 中的 `TrackRequest`，避免同类类型在多个 hook 内重复定义
+- 结果：
+  - `useAccountsPageState.ts` 从上一批的 `507` 行下降到 `237` 行，主 hook 现在主要负责状态装配和子 hook 组合
+- 本轮验证：
+  - `npm run test:unit`
+  - `npm run typecheck`
+  - `npm run build`
+- 当前剩余热点：
+  - `useAccountsActions.ts` 仍然偏大，后续若继续拆分，应优先按 `api key mutations / auth file transfer / export` 三组边界继续细化
+  - `AccountsPage.tsx` 还未迁到 `features/accounts`
+
+### 第四批实施结果（2026-04-26）
+- 新增目录与入口：
+  - `frontend/src/features/accounts/AccountsFeature.tsx`
+- 结构迁移：
+  - `frontend/src/pages/AccountsPage.tsx` 已收缩为路由包装层，只负责转发 `sidecarStatus`
+  - 原本位于 `pages/AccountsPage.tsx` 的装配逻辑已经迁到 `features/accounts/AccountsFeature.tsx`
+- 调试映射同步：
+  - `frontend/src/pages/SettingsPage.tsx` 中 `PAGE_ACCOUNTS` 的 source mapping 已改到 `src/features/accounts/AccountsFeature.tsx`
+- 结果：
+  - `pages/AccountsPage.tsx` 从装配大页收缩到 `10` 行
+  - `features/accounts` 正式成为账号域的装配入口
+- 本轮验证：
+  - `npm run test:unit`
+  - `npm run typecheck`
+  - `npm run build`
+- 当前剩余热点：
+  - `useAccountsActions.ts` 仍偏大
+  - `features/accounts` 下的组件与 hooks 还没有继续按 `components / hooks / model` 子目录细分
+
+### 第五批实施结果（2026-04-26）
+- 目录归并：
+  - 原 `frontend/src/pages/accounts/` 下的账号域组件、hooks、纯逻辑模块与测试文件已整体迁移到 `frontend/src/features/accounts/`
+  - 空目录 `frontend/src/pages/accounts/` 已删除
+- 入口与引用调整：
+  - `frontend/src/features/accounts/AccountsFeature.tsx` 已改为只依赖 feature 内本地文件
+  - `frontend/src/pages/StatusPage.tsx` 对账号域配置片段工具的引用已切到 `../features/accounts/model/accountConfig`
+  - `frontend/package.json` 中 `test:unit` 的账号域测试路径已全部切到 `src/features/accounts/tests/*`
+- 结果：
+  - `features/accounts` 下当前共有 `25` 个文件，账号域前端已基本完成目录级收口
+  - 代码与文档中的稳定 `pages/accounts` 路径引用已清空
+- 本轮验证：
+  - `npm run test:unit`
+  - `npm run typecheck`
+  - `npm run build`
+- 当前剩余热点：
+  - `useAccountsActions.ts` 仍偏大，但已不阻塞目录级组件化
+
+### 第六批实施结果（2026-04-26）
+- 最终分层：
+  - `frontend/src/features/accounts/components/`
+  - `frontend/src/features/accounts/hooks/`
+  - `frontend/src/features/accounts/model/`
+  - `frontend/src/features/accounts/tests/`
+- 收尾动作：
+  - 原平铺目录下的账号域文件已全部按上述层级归位
+  - 旧兼容层 `frontend/src/features/accounts/helpers.ts` 已删除
+  - 账号域单测路径已统一迁到 `src/features/accounts/tests/*`
+- 结果：
+  - `features/accounts` 从“单目录平铺”升级为“feature 内部分层”
+  - `pages/AccountsPage.tsx` 保持 10 行包装，`AccountsFeature.tsx` 作为唯一装配入口
+  - `Phase 1` 的前端组件化与业务拆分已完成
+- 本轮验证：
+  - `npm run test:unit`
+  - `npm run typecheck`
+  - `npm run build`
 
 ### 第二批
 - 拆 `internal/accounts/codex_quota.go`

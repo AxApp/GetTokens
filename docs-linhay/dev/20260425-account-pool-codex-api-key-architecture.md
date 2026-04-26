@@ -91,12 +91,17 @@ Codex 额度不再由 app 直接拼 bearer 请求外网，而是走：
 当前边界应保持为：
 
 1. `frontend/src/pages/AccountsPage.tsx`
-   - 只做页面装配
+   - 只做路由包装
+   - 转发 `sidecarStatus` 给 feature 入口
+2. `frontend/src/features/accounts/AccountsFeature.tsx`
+   - 只做 feature 装配
    - 组合 header / toolbar / group / modal
-2. `frontend/src/pages/accounts/*`
-   - 承载单卡、分组、弹窗、helper
-3. `frontend/src/pages/accounts/useAccountsPageState.ts`
-   - 承载数据加载、导入、删除、额度刷新、选择态
+3. `frontend/src/features/accounts/components/*`
+   - 承载单卡、分组、弹窗等 UI 组件
+4. `frontend/src/features/accounts/hooks/*`
+   - 承载数据加载、导入、删除、额度刷新、选择态与交互编排
+5. `frontend/src/features/accounts/model/*`
+   - 承载映射、分组、配额展示、导入导出规则、共享类型
 
 后续继续迭代账号池时，优先扩这套模块边界，不要把 UI、状态和 helper 再塞回单个页面文件。
 
