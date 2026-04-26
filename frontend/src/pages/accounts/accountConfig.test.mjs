@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   buildAPIKeyLabelStorageKey,
+  buildRelayCodexAuthJSONSnippet,
+  buildRelayCodexConfigTomlSnippet,
   buildManagedAuthJSONSnippet,
   buildManagedConfigTomlSnippet,
   normalizeBaseUrl,
@@ -55,4 +57,28 @@ test('buildManagedConfigTomlSnippet derives provider id from prefix when availab
   assert.match(snippet, /model_provider = "openai-compatible"/);
   assert.match(snippet, /\[model_providers\.openai-compatible\]/);
   assert.match(snippet, /base_url = "https:\/\/api\.example\.com\/v1"/);
+});
+
+test('buildRelayCodexAuthJSONSnippet only keeps the fields codex actually uses', () => {
+  assert.equal(
+    buildRelayCodexAuthJSONSnippet({
+      apiKey: ' sk-service-key ',
+    }),
+    JSON.stringify(
+      {
+        auth_mode: 'apikey',
+        OPENAI_API_KEY: 'sk-service-key',
+      },
+      null,
+      2
+    )
+  );
+});
+
+test('buildRelayCodexConfigTomlSnippet writes the codex base url config', () => {
+  const snippet = buildRelayCodexConfigTomlSnippet({
+    baseUrl: ' http://127.0.0.1:8317/v1/ ',
+  });
+
+  assert.equal(snippet, 'model = "gpt-5.4"\nopenai_base_url = "http://127.0.0.1:8317/v1"');
 });

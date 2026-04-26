@@ -117,6 +117,35 @@ export function buildManagedConfigTomlSnippet(
   return lines.join('\n');
 }
 
+export function buildRelayCodexAuthJSONSnippet(
+  draft: {
+    apiKey?: string;
+  }
+) {
+  const apiKey = String(draft.apiKey || '').trim() || '<YOUR_API_KEY>';
+
+  return JSON.stringify(
+    {
+      auth_mode: 'apikey',
+      OPENAI_API_KEY: apiKey,
+    },
+    null,
+    2
+  );
+}
+
+export function buildRelayCodexConfigTomlSnippet(
+  draft: {
+    baseUrl?: string;
+    model?: string;
+  }
+) {
+  const baseUrl = normalizeBaseUrl(String(draft.baseUrl || '')) || 'http://127.0.0.1:8317/v1';
+  const model = String(draft.model || '').trim() || 'gpt-5.4';
+
+  return [`model = ${quoteYAMLString(model)}`, `openai_base_url = ${quoteYAMLString(baseUrl)}`].join('\n');
+}
+
 export function parseMaybeJSON(value: string) {
   try {
     return JSON.parse(value);

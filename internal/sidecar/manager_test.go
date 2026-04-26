@@ -85,6 +85,48 @@ api-keys:
 	assertContains(t, content, "- relay-key-2")
 }
 
+func TestNormalizeLegacyAuthFilesAddsCodexCompatibilityFields(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "auth.json")
+	legacy := `{
+  "auth_mode": "chatgpt",
+  "nolon": {
+    "account": {
+      "kind": "chatgptAccount",
+      "email": "tester@example.com"
+    }
+  },
+  "tokens": {
+    "access_token": "access-token",
+    "id_token": "eyJhbGciOiJub25lIn0.eyJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdF8xMjMiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+    "refresh_token": "refresh-token",
+    "account_id": "acct_123"
+  }
+}`
+	if err := os.WriteFile(path, []byte(legacy), 0600); err != nil {
+		t.Fatalf("seed auth file: %v", err)
+	}
+
+	changed, err := normalizeLegacyAuthFiles(dir)
+	if err != nil {
+		t.Fatalf("normalizeLegacyAuthFiles returned error: %v", err)
+	}
+	if changed != 1 {
+		t.Fatalf("changed = %d, want 1", changed)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read auth file: %v", err)
+	}
+	content := string(data)
+	assertContains(t, content, `"type": "codex"`)
+	assertContains(t, content, `"access_token": "access-token"`)
+	assertContains(t, content, `"refresh_token": "refresh-token"`)
+	assertContains(t, content, `"account_id": "acct_123"`)
+	assertContains(t, content, `"plan_type": "plus"`)
+}
+
 func assertContains(t *testing.T, content string, expected string) {
 	t.Helper()
 	if !strings.Contains(content, expected) {

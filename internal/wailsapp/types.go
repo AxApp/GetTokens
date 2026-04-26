@@ -44,3 +44,9 @@ type CodexQuotaResponse struct {
 	PlanType string
 	Windows  []CodexQuotaWindow
 }
+
+type RelayLocalApplyResult struct {
+	CodexHomePath string `json:"codexHomePath"`
+	AuthFilePath  string `json:"authFilePath"`
+	ConfigPath    string `json:"configPath"`
+}

@@ -203,6 +203,22 @@ export namespace main {
 	        this.contentBase64 = source["contentBase64"];
 	    }
 	}
+	export class RelayLocalApplyResult {
+	    codexHomePath: string;
+	    authFilePath: string;
+	    configPath: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RelayLocalApplyResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.codexHomePath = source["codexHomePath"];
+	        this.authFilePath = source["authFilePath"];
+	        this.configPath = source["configPath"];
+	    }
+	}
 	export class RelayRoutingConfig {
 	    strategy: string;
 	    sessionAffinity: boolean;

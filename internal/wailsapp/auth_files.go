@@ -128,6 +128,9 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 		if err != nil {
 			return fmt.Errorf("文件 %s base64 解码失败: %w", f.Name, err)
 		}
+		if normalized, _, normalizeErr := accountsdomain.NormalizeAuthFileForSidecar(decoded); normalizeErr == nil {
+			decoded = normalized
+		}
 		resolvedName := uniqueAuthFileUploadName(f.Name, existingNames)
 		part, err := w.CreateFormFile("file", resolvedName)
 		if err != nil {

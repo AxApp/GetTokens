@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"gopkg.in/yaml.v3"
 )
 
@@ -87,6 +88,10 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 	configDir, err := ensureConfigDir()
 	if err != nil {
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("配置目录初始化失败: %v", err)}, notify)
+		return
+	}
+	if _, err := normalizeLegacyAuthFiles(configDir); err != nil {
+		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("兼容旧版 auth 文件失败: %v", err)}, notify)
 		return
 	}
 
@@ -469,4 +474,35 @@ func mustGenerateServiceAPIKey() string {
 		return "sk-gettokens-local"
 	}
 	return "sk-gettokens-" + hex.EncodeToString(buffer)
+}
+
+func normalizeLegacyAuthFiles(dir string) (int, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0, err
+	}
+
+	changedCount := 0
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(strings.ToLower(entry.Name()), ".json") {
+			continue
+		}
+
+		path := filepath.Join(dir, entry.Name())
+		body, readErr := os.ReadFile(path)
+		if readErr != nil || len(body) == 0 {
+			continue
+		}
+
+		normalized, changed, normalizeErr := accountsdomain.NormalizeAuthFileForSidecar(body)
+		if normalizeErr != nil || !changed {
+			continue
+		}
+		if writeErr := os.WriteFile(path, normalized, 0600); writeErr != nil {
+			return changedCount, writeErr
+		}
+		changedCount++
+	}
+
+	return changedCount, nil
 }

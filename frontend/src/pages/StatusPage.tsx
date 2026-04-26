@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GetRelayRoutingConfig, GetRelayServiceConfig, UpdateRelayServiceAPIKeys } from '../../wailsjs/go/main/App';
+import {
+  ApplyRelayServiceConfigToLocal,
+  GetRelayRoutingConfig,
+  GetRelayServiceConfig,
+  UpdateRelayServiceAPIKeys,
+} from '../../wailsjs/go/main/App';
 import type { main } from '../../wailsjs/go/models';
 import { useDebug } from '../context/DebugContext';
 import { useI18n } from '../context/I18nContext';
+import { buildRelayCodexAuthJSONSnippet, buildRelayCodexConfigTomlSnippet } from './accounts/accountConfig';
 import type { SidecarStatus } from '../types';
 import { toErrorMessage } from '../utils/error';
 
@@ -42,8 +48,10 @@ export default function StatusPage({
   const [selectedKeyIndex, setSelectedKeyIndex] = useState(0);
   const [selectedEndpointID, setSelectedEndpointID] = useState('localhost');
   const [serviceMessage, setServiceMessage] = useState('');
+  const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [routingMessage, setRoutingMessage] = useState('');
   const [isSavingServiceKeys, setIsSavingServiceKeys] = useState(false);
+  const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
 
   const selectedKey = relayKeys[selectedKeyIndex] || '';
   const selectedEndpoint =
@@ -55,18 +63,19 @@ export default function StatusPage({
       baseUrl: `http://127.0.0.1:${sidecarStatus.port || 8317}/v1`,
     };
 
-  const serviceConfig = useMemo(
+  const serviceAuthJSON = useMemo(
     () =>
-      JSON.stringify(
-        {
-          auth_mode: 'apikey',
-          OPENAI_API_KEY: selectedKey || '<YOUR_API_KEY>',
-          base_url: selectedEndpoint.baseUrl,
-        },
-        null,
-        2
-      ),
-    [selectedEndpoint.baseUrl, selectedKey]
+      buildRelayCodexAuthJSONSnippet({
+        apiKey: selectedKey,
+      }),
+    [selectedKey]
+  );
+  const serviceConfigToml = useMemo(
+    () =>
+      buildRelayCodexConfigTomlSnippet({
+        baseUrl: selectedEndpoint.baseUrl,
+      }),
+    [selectedEndpoint.baseUrl]
   );
 
   useEffect(() => {
@@ -101,6 +110,7 @@ export default function StatusPage({
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
         setServiceMessage('');
+        setLocalApplyMessage('');
         return;
       }
 
@@ -115,6 +125,7 @@ export default function StatusPage({
         setSelectedKeyIndex(0);
         setSelectedEndpointID(config.endpoints?.[0]?.id || 'localhost');
         setServiceMessage(t('status.service_key_loaded'));
+        setLocalApplyMessage('');
       } catch (error) {
         if (cancelled) {
           return;
@@ -125,6 +136,7 @@ export default function StatusPage({
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
         setServiceMessage(t('status.service_key_missing'));
+        setLocalApplyMessage('');
       }
     }
 
@@ -259,6 +271,29 @@ export default function StatusPage({
     }
   }
 
+  async function applyRelayConfigToLocal() {
+    const normalizedKey = selectedKey.trim();
+    if (!normalizedKey) {
+      setLocalApplyMessage(t('status.apply_local_missing_key'));
+      return;
+    }
+
+    setIsApplyingToLocal(true);
+    try {
+      const result = await trackRequest(
+        'ApplyRelayServiceConfigToLocal',
+        { apiKey: normalizedKey, baseURL: selectedEndpoint.baseUrl },
+        () => ApplyRelayServiceConfigToLocal(normalizedKey, selectedEndpoint.baseUrl)
+      );
+      setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}`);
+    } catch (error) {
+      console.error(error);
+      setLocalApplyMessage(`${t('status.apply_local_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setIsApplyingToLocal(false);
+    }
+  }
+
   function endpointLabel(endpoint: main.RelayServiceEndpoint) {
     if (endpoint.kind === 'hostname') {
       return t('status.endpoint_hostname');
@@ -351,8 +386,12 @@ export default function StatusPage({
             <div className="text-[10px] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
               {t('status.service_config')}
             </div>
-            <button onClick={() => void copyText(serviceConfig)} className="btn-swiss !px-3 !py-1 !text-[9px]">
-              复制
+            <button
+              onClick={() => void applyRelayConfigToLocal()}
+              disabled={isApplyingToLocal || sidecarStatus.code !== 'ready'}
+              className="btn-swiss !px-3 !py-1 !text-[9px] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local')}
             </button>
           </div>
 
@@ -448,11 +487,44 @@ export default function StatusPage({
             </div>
 
             <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">{serviceMessage}</div>
-          </div>
 
-          <pre className="overflow-auto p-6 font-mono text-xs font-bold leading-6 text-[var(--text-primary)]">
-            {serviceConfig}
-          </pre>
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <div className="overflow-hidden border-2 border-[var(--border-color)]">
+                <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+                  <div className="font-mono text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                    {t('status.codex_auth_json')}
+                  </div>
+                  <button onClick={() => void copyText(serviceAuthJSON)} className="btn-swiss !px-3 !py-1 !text-[9px]">
+                    复制
+                  </button>
+                </div>
+                <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
+                  {serviceAuthJSON}
+                </pre>
+              </div>
+
+              <div className="overflow-hidden border-2 border-[var(--border-color)]">
+                <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+                  <div className="font-mono text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                    {t('status.codex_config_toml')}
+                  </div>
+                  <button onClick={() => void copyText(serviceConfigToml)} className="btn-swiss !px-3 !py-1 !text-[9px]">
+                    复制
+                  </button>
+                </div>
+                <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
+                  {serviceConfigToml}
+                </pre>
+              </div>
+            </div>
+
+            <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              {t('status.codex_config_hint')}
+            </div>
+            <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              {localApplyMessage || t('status.apply_local_hint')}
+            </div>
+          </div>
         </div>
 
         <div className="card-swiss !p-0 overflow-hidden">

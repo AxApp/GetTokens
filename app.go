@@ -120,6 +120,12 @@ type RelayRoutingConfig struct {
 	AntigravityCredits  bool   `json:"antigravityCredits"`
 }
 
+type RelayLocalApplyResult struct {
+	CodexHomePath string `json:"codexHomePath"`
+	AuthFilePath  string `json:"authFilePath"`
+	ConfigPath    string `json:"configPath"`
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -312,6 +318,19 @@ func (a *App) GetRelayRoutingConfig() (*RelayRoutingConfig, error) {
 		SwitchProject:       result.SwitchProject,
 		SwitchPreviewModel:  result.SwitchPreviewModel,
 		AntigravityCredits:  result.AntigravityCredits,
+	}, nil
+}
+
+func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string) (*RelayLocalApplyResult, error) {
+	result, err := a.core.ApplyRelayServiceConfigToLocal(apiKey, baseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelayLocalApplyResult{
+		CodexHomePath: result.CodexHomePath,
+		AuthFilePath:  result.AuthFilePath,
+		ConfigPath:    result.ConfigPath,
 	}, nil
 }
 
