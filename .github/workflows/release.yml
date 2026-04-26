@@ -55,25 +55,6 @@ jobs:
             asset-name: GetTokens_darwin_universal.dmg
             updater-asset-name: GetTokens_darwin_universal.tar.gz
 
-          - runner: windows-latest
-            os-name: Windows
-            goos: windows
-            goarch: amd64
-            wails-platform: windows/amd64
-            wails-extra: -nsis
-            package-ext: exe
-            asset-name: GetTokens_windows_amd64_installer.exe
-            updater-asset-name: GetTokens_windows_amd64.tar.gz
-
-          - runner: ubuntu-latest
-            os-name: Linux
-            goos: linux
-            goarch: amd64
-            wails-platform: linux/amd64
-            package-ext: AppImage
-            asset-name: GetTokens_linux_amd64.AppImage
-            updater-asset-name: GetTokens_linux_amd64.tar.gz
-
     steps:
       - uses: actions/checkout@v4
 
@@ -108,18 +89,6 @@ jobs:
       - name: Install macOS packaging tools
         if: runner.os == 'macOS'
         run: brew install create-dmg
-
-      - name: Install Windows packaging tools
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          choco install nsis --no-progress -y
-          $nsisDir = "${env:ProgramFiles(x86)}\NSIS"
-          if (-not (Test-Path "$nsisDir\\makensis.exe")) {
-            throw "makensis not found at $nsisDir"
-          }
-          $nsisDir | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          & "$nsisDir\\makensis.exe" /VERSION
 
       - name: Prepare macOS signing materials
         if: runner.os == 'macOS'
@@ -157,25 +126,6 @@ jobs:
           echo "CI_KEYCHAIN_PASSWORD=$CI_KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
           echo "MACOS_NOTARY_KEY_PATH=$MACOS_NOTARY_KEY_PATH" >> "$GITHUB_ENV"
 
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libgtk-3-dev
-          if apt-cache show libwebkit2gtk-4.1-dev >/dev/null 2>&1; then
-            sudo apt-get install -y libwebkit2gtk-4.1-dev
-            MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
-            PC_DIR="/usr/lib/${MULTIARCH}/pkgconfig"
-            if [[ -f "${PC_DIR}/webkit2gtk-4.1.pc" && ! -f "${PC_DIR}/webkit2gtk-4.0.pc" ]]; then
-              sudo ln -s webkit2gtk-4.1.pc "${PC_DIR}/webkit2gtk-4.0.pc"
-            fi
-            if [[ -f "${PC_DIR}/javascriptcoregtk-4.1.pc" && ! -f "${PC_DIR}/javascriptcoregtk-4.0.pc" ]]; then
-              sudo ln -s javascriptcoregtk-4.1.pc "${PC_DIR}/javascriptcoregtk-4.0.pc"
-            fi
-          else
-            sudo apt-get install -y libwebkit2gtk-4.0-dev
-          fi
-
       - name: Compute release label
         shell: bash
         run: |
@@ -197,13 +147,6 @@ jobs:
           cp build/bin/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
           chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
           lipo -info build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
-
-      - name: Package updater asset
-        if: runner.os != 'macOS'
-        shell: bash
-        run: |
-          chmod +x scripts/package-updater-asset.sh
-          ./scripts/package-updater-asset.sh ${{ matrix.goos }} ${{ matrix.goarch }}
 
       # ── Package ───────────────────────────────────────────────────────────
       - name: Sign and notarize macOS app
@@ -229,20 +172,6 @@ jobs:
           chmod +x scripts/sign-notarize-macos-release.sh scripts/package-updater-asset.sh
           scripts/sign-notarize-macos-release.sh dmg "dist/release/${{ matrix.asset-name }}"
           scripts/package-updater-asset.sh ${{ matrix.goos }} ${{ matrix.goarch }}
-
-      - name: Copy Windows installer
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          mkdir -p dist/release
-          cp build/bin/GetTokens-*-installer.exe "dist/release/${{ matrix.asset-name }}"
-
-      - name: Package AppImage (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          mkdir -p dist/release
-          # Minimal AppImage packaging — replace with appimagetool for production
-          cp build/bin/GetTokens "dist/release/${{ matrix.asset-name }}"
 
       # ── Upload artifact ───────────────────────────────────────────────────
       - uses: actions/upload-artifact@v4
@@ -283,9 +212,5 @@ jobs:
           files: |
             dist/release/GetTokens_darwin_universal.dmg
             dist/release/GetTokens_darwin_universal.tar.gz
-            dist/release/GetTokens_windows_amd64_installer.exe
-            dist/release/GetTokens_windows_amd64.tar.gz
-            dist/release/GetTokens_linux_amd64.AppImage
-            dist/release/GetTokens_linux_amd64.tar.gz
             dist/release/checksums.txt
           generate_release_notes: true

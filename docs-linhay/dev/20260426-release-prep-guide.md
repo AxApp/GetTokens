@@ -8,19 +8,14 @@
 3. 当前功能集合更接近首个公开可用版本，而不是后续增量 patch。
 
 ## 发布资产分层
-后续 release 统一分成两类资产：
+当前阶段先只支持 macOS release，资产分成两类：
 
 1. 用户下载安装包
    - macOS: `GetTokens_darwin_universal.dmg`
-   - Windows: `GetTokens_windows_amd64_installer.exe`
-   - Linux: 保持现有下载包策略
 2. 自动升级资产
    - macOS: `GetTokens_darwin_universal.tar.gz`
-   - Windows: `GetTokens_windows_amd64.tar.gz`
-   - Linux: `GetTokens_linux_amd64.tar.gz`
 
 说明：
-- Windows / Linux 继续使用 `go-selfupdate` 做原地替换。
 - macOS 保留 `tar.gz` 资产用于检测最新版本和统一校验链，但签名发布包不做 bundle 内原地替换，设置页会跳转到 release 页面安装。
 - 原因是 Apple 对签名 bundle 的 seal 有要求；修改 `.app` 主可执行文件会破坏签名边界。参见 Apple Technical Note TN2206。
 
@@ -46,8 +41,6 @@
 
 ```bash
 ./scripts/build-sidecar.sh darwin universal build/bin
-./scripts/build-sidecar.sh windows amd64 build/bin
-./scripts/build-sidecar.sh linux amd64 build/bin
 ```
 
 ## macOS 签名与公证
@@ -93,16 +86,15 @@ CI release workflow 需要以下 secrets：
 1. 自动升级资产必须可直接解压出目标可执行文件，不能是安装器。
 2. 自动升级比较继续使用语义化版本 tag，例如 `v0.1.0`。
 3. UI 展示版本时间使用 `ReleaseLabel`，不和 `Version` 混用。
-4. Windows 安装包必须避开 `go-selfupdate` 的默认匹配规则，因此使用 `_installer.exe` 后缀。
-5. macOS universal updater 资产需要和 `UniversalArch=universal` 对齐。
-6. macOS release workflow 必须先把源码构建出来的 universal sidecar 回填进 `.app`，再 notarize `.app`，然后从已 stapled 的 `.app` 生成 DMG，最后再 notarize DMG。
-7. 已签名 macOS `.app` 在当前框架下只支持“检查更新 + 跳转 release 页面”，不支持 bundle 内 `ApplyUpdate`。
+4. macOS universal updater 资产需要和 `UniversalArch=universal` 对齐。
+5. macOS release workflow 必须先把源码构建出来的 universal sidecar 回填进 `.app`，再 notarize `.app`，然后从已 stapled 的 `.app` 生成 DMG，最后再 notarize DMG。
+6. 已签名 macOS `.app` 在当前框架下只支持“检查更新 + 跳转 release 页面”，不支持 bundle 内 `ApplyUpdate`。
 
 ## 建议发布步骤
 1. 确认工作区只包含本次准备发布的变更。
 2. 运行前端类型检查、Go 测试、文档校验。
 3. 从 fork 源码构建 sidecar，并确认 macOS 场景下 `build/bin/cli-proxy-api` 为 universal binary。
-4. 合并到干净提交后创建 tag：`v0.1.0`。
+4. 合并到干净提交后创建 tag，例如：`v0.1.3`。
 5. 推送 tag 触发 GitHub Actions release workflow。
 6. 在生成的 release 页面检查：
    - 安装包资产存在
@@ -111,5 +103,4 @@ CI release workflow 需要以下 secrets：
    - macOS DMG 已经 stapled，`xcrun stapler validate` 通过
 7. 使用非 dev 构建验证：
    - `CheckUpdate` 能发现新版本
-   - Windows / Linux: `ApplyUpdate` 能下载并替换二进制，应用退出后重启进入新版本
    - macOS: 设置页能打开对应 release 页面，下载安装后进入新版本

@@ -78,22 +78,15 @@ Releases are published on GitHub Releases:
 
 - `https://github.com/AxApp/GetTokens/releases`
 
-当前 release workflow 会生成以下资产类型：
+当前阶段只支持 macOS，release workflow 仅生成以下资产类型：
 
 The current release workflow produces the following asset types:
 
 - macOS：`GetTokens_darwin_universal.dmg`
 - macOS updater asset：`GetTokens_darwin_universal.tar.gz`
-- Windows：`GetTokens_windows_amd64_installer.exe`
-- Windows updater asset：`GetTokens_windows_amd64.tar.gz`
-- Linux：`GetTokens_linux_amd64.AppImage`
-- Linux updater asset：`GetTokens_linux_amd64.tar.gz`
 - Checksums：`checksums.txt`
 
 ## 自动更新说明 | Auto Update Notes
-
-- Windows / Linux 直接消费 release 中的 `.tar.gz` 原始资产进行应用内更新。
-- Windows / Linux consume the raw `.tar.gz` release assets for in-app updates.
 
 - macOS 出于已签名 `.app` bundle 完整性约束，只执行“检查更新 + 打开 release 页面下载 DMG”。
 - On macOS, due to signed `.app` bundle integrity constraints, the app uses “check update + open release page for DMG download” instead of in-place bundle replacement.
