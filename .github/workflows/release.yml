@@ -13,6 +13,7 @@ env:
   MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
   MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
   MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ── Build frontend once, share across platform jobs ──────────────────────
@@ -23,7 +24,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
@@ -70,12 +71,12 @@ jobs:
       # ── Go ────────────────────────────────────────────────────────────────
       - uses: actions/setup-go@v6
         with:
-          go-version: '1.23'
+          go-version: '1.26'
 
       # ── Node ──────────────────────────────────────────────────────────────
       - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '24'
 
       # ── Restore built frontend ────────────────────────────────────────────
       - uses: actions/download-artifact@v5
