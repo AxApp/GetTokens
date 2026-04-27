@@ -98,7 +98,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Workflow**: Prove handler -> bridge call -> backend response. Use `data-collaboration-id` for markers.
 
 ## 8. CLIProxyAPI Fork Maintenance
-- **Remotes**: `origin` (linhay), `upstream` (router-for-me).
+- **Remotes**: `origin` (AxApp), `linhay` (legacy fork backup), `upstream` (router-for-me).
 - **Workflow**: Sync upstream -> patch maintenance branch -> rebuild sidecar -> replace binary in `GetTokens.app`.
 - **Binary**: Sidecar binary lives at `build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api`.
 
