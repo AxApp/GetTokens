@@ -129,9 +129,11 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           <OpenAICompatibleComposeModal
             t={t}
             form={openAICompatibleState.form}
+            selectedPresetID={openAICompatibleState.selectedPresetID}
             error={openAICompatibleState.formError}
             onClose={() => openAICompatibleState.setIsCreateModalOpen(false)}
             onChange={openAICompatibleState.setForm}
+            onPresetChange={openAICompatibleState.applyCreatePreset}
             onSubmit={() => void openAICompatibleState.submitCreate()}
           />
         ) : null}

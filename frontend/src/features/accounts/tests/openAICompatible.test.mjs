@@ -2,15 +2,21 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  applyOpenAICompatibleProviderPreset,
   buildHeadersMap,
   buildHeaderRows,
   buildModelRows,
   buildOpenAICompatibleProviderDraft,
   emptyOpenAICompatibleProviderForm,
+  getOpenAICompatibleProviderPreset,
   maskProviderAPIKey,
   normalizeProviderAPIKeys,
   normalizeProviderModels,
+  openAICompatibleProviderPresets,
   renameProviderVerifyState,
+  resolveProviderDetailModelOptions,
+  resolveOpenAICompatibleProviderPreset,
+  resolveOpenAICompatibleProviderPresetID,
 } from '../model/openAICompatible.ts';
 
 test('maskProviderAPIKey keeps short keys and masks long keys', () => {
@@ -23,8 +29,84 @@ test('emptyOpenAICompatibleProviderForm starts with blank fields', () => {
   assert.deepEqual(emptyOpenAICompatibleProviderForm, {
     name: '',
     baseUrl: '',
-    prefix: '',
     apiKey: '',
+  });
+});
+
+test('openAICompatibleProviderPresets exposes cherry-studio vendor defaults adapted for this workspace', () => {
+  assert.deepEqual(openAICompatibleProviderPresets.slice(0, 3), [
+    {
+      id: 'deepseek',
+      label: 'DeepSeek',
+      baseUrl: 'https://api.deepseek.com/v1',
+      apiKeyPlaceholder: 'sk-...',
+      models: [
+        { name: 'deepseek-chat', alias: 'Chat' },
+        { name: 'deepseek-reasoner', alias: 'Reasoner' },
+      ],
+    },
+    {
+      id: 'siliconflow',
+      label: 'SiliconFlow',
+      baseUrl: 'https://api.siliconflow.cn/v1',
+      apiKeyPlaceholder: 'sk-...',
+      models: [
+        { name: 'deepseek-ai/DeepSeek-V3.2', alias: 'DeepSeek V3.2' },
+        { name: 'Qwen/Qwen3-8B', alias: 'Qwen3-8B' },
+      ],
+    },
+    {
+      id: 'zhipu',
+      label: 'Zhipu',
+      baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+      apiKeyPlaceholder: 'sk-...',
+      models: [
+        { name: 'glm-5', alias: 'GLM-5' },
+        { name: 'glm-4.7', alias: 'GLM-4.7' },
+        { name: 'glm-4.5-flash', alias: 'GLM-4.5-Flash' },
+      ],
+    },
+  ]);
+});
+
+test('applyOpenAICompatibleProviderPreset fills provider name and base url while keeping user secrets intact', () => {
+  assert.deepEqual(
+    applyOpenAICompatibleProviderPreset(
+      {
+        name: '',
+        baseUrl: '',
+        apiKey: 'sk-test',
+      },
+      'openrouter',
+    ),
+    {
+      name: 'openrouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      apiKey: 'sk-test',
+    },
+  );
+});
+
+test('getOpenAICompatibleProviderPreset returns null for unknown providers', () => {
+  assert.equal(getOpenAICompatibleProviderPreset('unknown-provider'), null);
+});
+
+test('resolveOpenAICompatibleProviderPresetID matches provider by name or base url', () => {
+  assert.equal(resolveOpenAICompatibleProviderPresetID({ name: 'DeepSeek' }), 'deepseek');
+  assert.equal(resolveOpenAICompatibleProviderPresetID({ baseUrl: 'https://openrouter.ai/api/v1/' }), 'openrouter');
+  assert.equal(resolveOpenAICompatibleProviderPresetID({ name: 'custom', baseUrl: 'https://relay.example.com/v1' }), '');
+});
+
+test('resolveOpenAICompatibleProviderPreset returns preset details for matching provider', () => {
+  assert.deepEqual(resolveOpenAICompatibleProviderPreset({ name: 'deepseek' }), {
+    id: 'deepseek',
+    label: 'DeepSeek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    apiKeyPlaceholder: 'sk-...',
+    models: [
+      { name: 'deepseek-chat', alias: 'Chat' },
+      { name: 'deepseek-reasoner', alias: 'Reasoner' },
+    ],
   });
 });
 
@@ -34,7 +116,6 @@ test('buildOpenAICompatibleProviderDraft keeps editable provider basics and veri
       {
         name: 'deepseek',
         baseUrl: 'https://api.deepseek.com/v1',
-        prefix: 'team-a',
         apiKey: 'sk-test',
         models: [{ name: 'deepseek-chat', alias: 'chat' }],
       },
@@ -43,7 +124,6 @@ test('buildOpenAICompatibleProviderDraft keeps editable provider basics and veri
       currentName: 'deepseek',
       name: 'deepseek',
       baseUrl: 'https://api.deepseek.com/v1',
-      prefix: 'team-a',
       apiKey: 'sk-test',
       apiKeys: ['sk-test'],
       headers: [{ key: '', value: '' }],
@@ -59,7 +139,6 @@ test('buildOpenAICompatibleProviderDraft prefers cached verify model when presen
       {
         name: 'deepseek',
         baseUrl: 'https://api.deepseek.com/v1',
-        prefix: 'team-a',
         apiKey: 'sk-test',
         models: [{ name: 'deepseek-chat', alias: 'chat' }],
       },
@@ -71,6 +150,75 @@ test('buildOpenAICompatibleProviderDraft prefers cached verify model when presen
       },
     ).verifyModel,
     'deepseek-reasoner',
+  );
+});
+
+test('buildOpenAICompatibleProviderDraft falls back to preset default verify model when provider models are empty', () => {
+  assert.equal(
+    buildOpenAICompatibleProviderDraft({
+      name: 'openrouter',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      apiKey: 'sk-test',
+      models: [],
+    }).verifyModel,
+    'deepseek/deepseek-chat',
+  );
+});
+
+test('resolveProviderDetailModelOptions prefers fetched remote models over local and preset models', () => {
+  assert.deepEqual(
+    resolveProviderDetailModelOptions({
+      draft: {
+        currentName: 'deepseek',
+        name: 'deepseek',
+        baseUrl: 'https://api.deepseek.com/v1',
+        apiKey: 'sk-test',
+        apiKeys: ['sk-test'],
+        headers: [{ key: '', value: '' }],
+        models: [{ name: 'local-model', alias: 'Local' }],
+        verifyModel: 'deepseek-chat',
+      },
+      remoteModelsState: {
+        status: 'success',
+        message: 'ok',
+        models: [
+          { name: 'deepseek-chat', alias: '' },
+          { name: 'deepseek-reasoner', alias: '' },
+        ],
+        lastFetchedAt: 123,
+      },
+    }),
+    {
+      source: 'remote',
+      models: [
+        { name: 'deepseek-chat', alias: '' },
+        { name: 'deepseek-reasoner', alias: '' },
+      ],
+    },
+  );
+});
+
+test('resolveProviderDetailModelOptions falls back to preset models when local and remote models are empty', () => {
+  assert.deepEqual(
+    resolveProviderDetailModelOptions({
+      draft: {
+        currentName: 'openrouter',
+        name: 'openrouter',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        apiKey: 'sk-test',
+        apiKeys: ['sk-test'],
+        headers: [{ key: '', value: '' }],
+        models: [{ name: '', alias: '' }],
+        verifyModel: '',
+      },
+      remoteModelsState: {
+        status: 'idle',
+        message: '',
+        models: [],
+        lastFetchedAt: null,
+      },
+    }).source,
+    'preset',
   );
 });
 

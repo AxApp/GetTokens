@@ -133,7 +133,6 @@
    - `name`
    - `baseUrl`
    - `apiKeyEntries[0].apiKey`
-   - `prefix`
    - `name` 唯一性校验
    - 空状态与默认 CTA
    - provider 配置验证

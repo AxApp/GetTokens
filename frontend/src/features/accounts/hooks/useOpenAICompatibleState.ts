@@ -10,6 +10,7 @@ import { main } from '../../../../wailsjs/go/models';
 import { toErrorMessage } from '../../../utils/error';
 import type { TrackRequest, Translator } from '../model/types';
 import {
+  applyOpenAICompatibleProviderPreset,
   buildHeadersMap,
   buildOpenAICompatibleProviderDraft,
   normalizeProviderModels,
@@ -32,6 +33,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
   const [providers, setProviders] = useState<OpenAICompatibleProvider[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [selectedPresetID, setSelectedPresetID] = useState('');
   const [form, setForm] = useState<OpenAICompatibleProviderFormState>(emptyOpenAICompatibleProviderForm);
   const [formError, setFormError] = useState('');
   const [verifyStateByName, setVerifyStateByName] = useState<Record<string, ProviderVerifyState>>({});
@@ -60,9 +62,15 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
   }, [loadProviders, ready]);
 
   const openCreateModal = useCallback(() => {
+    setSelectedPresetID('');
     setForm(emptyOpenAICompatibleProviderForm);
     setFormError('');
     setIsCreateModalOpen(true);
+  }, []);
+
+  const applyCreatePreset = useCallback((presetID: string) => {
+    setSelectedPresetID(presetID);
+    setForm((prev) => applyOpenAICompatibleProviderPreset(prev, presetID));
   }, []);
 
   const openDetailModal = useCallback((provider: OpenAICompatibleProvider) => {
@@ -82,11 +90,12 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
         CreateOpenAICompatibleProvider({
           name: form.name,
           baseUrl: form.baseUrl,
-          prefix: form.prefix,
+          prefix: '',
           apiKey: form.apiKey,
         }),
       );
       setIsCreateModalOpen(false);
+      setSelectedPresetID('');
       setForm(emptyOpenAICompatibleProviderForm);
       await loadProviders();
     } catch (error) {
@@ -126,7 +135,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
             currentName: detailDraft.currentName,
             name: detailDraft.name,
             baseUrl: detailDraft.baseUrl,
-            prefix: detailDraft.prefix,
+            prefix: '',
             apiKey: normalizeProviderAPIKeys(detailDraft.apiKeys)[0] || detailDraft.apiKey,
             apiKeys: normalizeProviderAPIKeys(detailDraft.apiKeys),
             headers: buildHeadersMap(detailDraft.headers),
@@ -223,6 +232,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     providers,
     loading,
     isCreateModalOpen,
+    selectedPresetID,
     form,
     formError,
     verifyStates,
@@ -234,6 +244,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     setIsCreateModalOpen,
     setDetailDraft,
     openCreateModal,
+    applyCreatePreset,
     openDetailModal,
     closeDetailModal,
     submitCreate,

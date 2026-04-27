@@ -82,7 +82,6 @@
   - `name`
   - `baseUrl`
   - `apiKeyEntries[0].apiKey`
-  - `prefix(可选)`
 - provider 标识规则：
   - 第一阶段以 `name` 作为产品层主标识
   - `name` 必须唯一
@@ -197,7 +196,6 @@
 - When 用户点击新增 provider
 - Then 页面展示 provider 级表单
 - And 表单至少要求填写 `name`、`baseUrl`、`apiKey`
-- And `prefix` 作为可选字段出现
 - When 用户保存成功
 - Then 页面出现新的 openai-compatible provider 容器
 - And 该容器不被错误地渲染成 `Codex API Key`
@@ -208,7 +206,7 @@
 - And 页面中已有一个 provider 容器
 - When 用户点击 `Manage Provider` 打开该 provider 的详情或编辑面板
 - Then 用户可以查看并修改基础字段
-- And 当前阶段至少支持修改 `name`、`baseUrl`、`prefix`
+- And 当前阶段至少支持修改 `name`、`baseUrl`
 - And 当前阶段至少支持编辑多个 `apiKey entries`
 - And 当前阶段至少支持编辑 `headers`
 - And 当前阶段至少支持编辑 `models / alias`

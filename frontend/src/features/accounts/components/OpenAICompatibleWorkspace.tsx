@@ -15,12 +15,6 @@ interface OpenAICompatibleWorkspaceProps {
   onDelete: (name: string) => void;
 }
 
-function formatVerifyTone(status: ProviderVerifyState['status']) {
-  if (status === 'success') return 'border-green-600 bg-green-600/10 text-green-700';
-  if (status === 'error') return 'border-red-500 bg-red-500/10 text-red-500';
-  return 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]';
-}
-
 export default function OpenAICompatibleWorkspace({
   t,
   ready,
@@ -84,76 +78,99 @@ export default function OpenAICompatibleWorkspace({
                 message: '',
                 lastVerifiedAt: null,
               };
+
+              const statusColor =
+                verifyState.status === 'success' ? 'bg-green-500' : verifyState.status === 'error' ? 'bg-red-500' : 'bg-yellow-500';
+
+              const messageTone =
+                verifyState.status === 'success' ? 'text-green-600' : verifyState.status === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]';
+
               return (
-                <section key={provider.name} className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-5 shadow-[8px_8px_0_var(--shadow-color)]">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-xs font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">
+                <div
+                  key={provider.name}
+                  className="card-swiss flex h-full flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                >
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="text-[8px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">
                         OPENAI-COMPATIBLE
                       </div>
-                      <h3 className="mt-2 text-2xl font-black uppercase italic tracking-tight text-[var(--text-primary)]">
-                        {provider.name}
+                      <h3 className="flex items-center gap-2 break-all text-[12px] font-black uppercase italic leading-snug tracking-[0.08em] text-[var(--text-primary)]">
+                        <div title={verifyState.status} className={`h-2 w-2 shrink-0 ${statusColor}`} />
+                        <span>{provider.name}</span>
                       </h3>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => onOpenDetail(provider)} className="btn-swiss-secondary">
-                        {t('accounts.openai_provider_manage')}
-                      </button>
-                      <button
-                        onClick={() => onDelete(provider.name)}
-                        className="btn-swiss-secondary !border-red-500 !text-red-500"
-                        disabled={pendingDeleteName === provider.name}
-                      >
-                        {pendingDeleteName === provider.name ? t('common.loading') : t('common.delete')}
-                      </button>
-                    </div>
                   </div>
 
-                  <dl className="mt-5 space-y-3 text-xs">
-                    <div>
-                      <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">BASE URL</dt>
-                      <dd className="mt-1 break-all font-mono text-[var(--text-primary)]">{provider.baseUrl}</dd>
-                    </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div>
-                        <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">API KEY</dt>
-                        <dd className="mt-1 font-mono text-[var(--text-primary)]">
+                  <div className="space-y-4 border-t border-dashed border-[var(--border-color)] pt-4">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                          BASE URL
+                        </div>
+                        <div className="break-all font-mono text-[10px] font-bold text-[var(--text-primary)]">
+                          {provider.baseUrl}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                          API KEY
+                        </div>
+                        <div className="font-mono text-[10px] font-bold text-[var(--text-primary)]">
                           {maskProviderAPIKey(provider.apiKey)} / {provider.keyCount || provider.apiKeys?.length || 0} KEYS
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">PREFIX</dt>
-                        <dd className="mt-1 font-mono text-[var(--text-primary)]">{provider.prefix || '—'}</dd>
+                        </div>
                       </div>
                     </div>
-                    <div className="grid gap-3 md:grid-cols-2">
-                      <div>
-                        <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                          {t('accounts.openai_provider_headers')}
-                        </dt>
-                        <dd className="mt-1 font-mono text-[var(--text-primary)]">{provider.hasHeaders ? 'CONFIGURED' : '—'}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">MODELS</dt>
-                        <dd className="mt-1 font-mono text-[var(--text-primary)]">{provider.modelCount || 0}</dd>
-                      </div>
-                    </div>
-                  </dl>
 
-                  <div className="mt-6 border-t-2 border-[var(--border-color)] pt-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                        {t('accounts.openai_provider_test_summary')}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                          {t('accounts.openai_provider_headers')}
+                        </div>
+                        <div className="font-mono text-[10px] font-bold text-[var(--text-primary)]">
+                          {provider.hasHeaders ? 'CONFIGURED' : '—'}
+                        </div>
                       </div>
-                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                        {verifyState.model || '—'}
+                      <div className="space-y-1">
+                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                          MODELS
+                        </div>
+                        <div className="font-mono text-[10px] font-bold text-[var(--text-primary)]">
+                          {provider.modelCount || 0}
+                        </div>
                       </div>
-                    </div>
-                    <div className={`mt-4 border px-4 py-3 text-[10px] font-black uppercase tracking-wide ${formatVerifyTone(verifyState.status)}`}>
-                      {verifyState.message || t('accounts.openai_provider_test_idle')}
                     </div>
                   </div>
-                </section>
+
+                  <div className="mt-6 border-t border-dashed border-[var(--border-color)] pt-4">
+                    <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                          {t('accounts.openai_provider_test_summary')}
+                        </div>
+                        <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                          {verifyState.model || '—'}
+                        </div>
+                      </div>
+                      <div className={`text-[10px] font-black uppercase tracking-tight ${messageTone}`}>
+                        {verifyState.message || t('accounts.openai_provider_test_idle')}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto grid grid-cols-2 gap-2 border-t border-dashed border-[var(--border-color)] pt-4">
+                    <button onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[9px]">
+                      {t('accounts.openai_provider_manage')}
+                    </button>
+                    <button
+                      onClick={() => onDelete(provider.name)}
+                      className="btn-swiss !py-1.5 !text-[9px] !text-red-500"
+                      disabled={pendingDeleteName === provider.name}
+                    >
+                      {pendingDeleteName === provider.name ? t('common.loading') : t('common.delete')}
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>

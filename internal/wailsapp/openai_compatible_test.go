@@ -95,6 +95,69 @@ func TestVerifyOpenAICompatibleProviderBuildsChatCompletionsRequest(t *testing.T
 	}
 }
 
+func TestFetchOpenAICompatibleProviderModelsBuildsModelsRequestAndParsesResponse(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != http.MethodPost {
+				t.Fatalf("expected POST, got %s", method)
+			}
+			if path != ManagementAPIPrefix+"/api-call" {
+				t.Fatalf("unexpected path: %s", path)
+			}
+			if contentType != "application/json" {
+				t.Fatalf("unexpected content type: %s", contentType)
+			}
+
+			payload, err := io.ReadAll(body)
+			if err != nil {
+				t.Fatalf("read body: %v", err)
+			}
+
+			var request managementAPICallRequest
+			if err := json.Unmarshal(payload, &request); err != nil {
+				t.Fatalf("unmarshal request: %v", err)
+			}
+			if request.Method != http.MethodGet {
+				t.Fatalf("unexpected request method: %s", request.Method)
+			}
+			if request.URL != "https://api.deepseek.com/v1/models" {
+				t.Fatalf("unexpected request url: %s", request.URL)
+			}
+			if request.Header["Authorization"] != "Bearer sk-test" {
+				t.Fatalf("unexpected authorization header: %#v", request.Header)
+			}
+			if request.Header["X-Test"] != "abc" {
+				t.Fatalf("unexpected custom header: %#v", request.Header)
+			}
+			if request.Data != "" {
+				t.Fatalf("expected empty request data, got %q", request.Data)
+			}
+
+			return []byte(`{"status_code":200,"body":"{\"data\":[{\"id\":\"deepseek-chat\"},{\"id\":\"deepseek-reasoner\"},{\"id\":\"deepseek-chat\"}]}"} `), 200, nil
+		},
+	}
+
+	result, err := app.FetchOpenAICompatibleProviderModels(FetchOpenAICompatibleProviderModelsInput{
+		BaseURL: "https://api.deepseek.com/v1",
+		APIKey:  "sk-test",
+		Headers: map[string]string{
+			"X-Test": "abc",
+		},
+	})
+	if err != nil {
+		t.Fatalf("FetchOpenAICompatibleProviderModels returned error: %v", err)
+	}
+	if result.StatusCode != 200 {
+		t.Fatalf("unexpected status code: %d", result.StatusCode)
+	}
+	if len(result.Models) != 2 {
+		t.Fatalf("unexpected model count: %d", len(result.Models))
+	}
+	if result.Models[0].Name != "deepseek-chat" || result.Models[1].Name != "deepseek-reasoner" {
+		t.Fatalf("unexpected models: %#v", result.Models)
+	}
+}
+
 func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *testing.T) {
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
