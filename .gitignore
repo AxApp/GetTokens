@@ -9,3 +9,4 @@ dist/
 frontend/dist
 frontend/node_modules
 .playwright-cli
+.local/

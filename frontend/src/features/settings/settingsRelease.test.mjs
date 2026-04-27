@@ -7,14 +7,14 @@ test('mapCheckedRelease keeps release page url for manual update flow', () => {
   const release = mapCheckedRelease({
     version: 'v0.1.4',
     releaseUrl: 'https://github.com/AxApp/GetTokens/releases/tag/v0.1.4',
-    assetName: 'GetTokens_darwin_arm64.dmg',
+    assetName: 'GetTokens_macOS_AppleSilicon.dmg',
     releaseNote: 'Bug fixes',
   });
 
   assert.deepEqual(release, {
     version: 'v0.1.4',
     releaseUrl: 'https://github.com/AxApp/GetTokens/releases/tag/v0.1.4',
-    assetName: 'GetTokens_darwin_arm64.dmg',
+    assetName: 'GetTokens_macOS_AppleSilicon.dmg',
     releaseNote: 'Bug fixes',
   });
 });

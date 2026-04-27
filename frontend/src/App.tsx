@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CanApplyUpdate, GetReleaseLabel, GetSidecarStatus, GetVersion } from '../wailsjs/go/main/App';
+import { CanApplyUpdate, GetReleaseLabel, GetSidecarStatus, GetVersion, UsesNativeUpdaterUI } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
 import AccountsPage from './pages/AccountsPage';
@@ -31,6 +31,7 @@ function AppShell() {
   const [releaseLabel, setReleaseLabel] = useState('');
   const [availableRelease, setAvailableRelease] = useState<ReleaseInfo | null>(null);
   const [canApplyUpdate, setCanApplyUpdate] = useState(true);
+  const [usesNativeUpdaterUI, setUsesNativeUpdaterUI] = useState(false);
 
   useEffect(() => {
     persistActivePage(typeof window === 'undefined' ? null : window.localStorage, activePage);
@@ -48,16 +49,18 @@ function AppShell() {
 
     async function loadInitialState() {
       try {
-        const [currentVersion, currentReleaseLabel, currentStatus, currentCanApplyUpdate] = await Promise.all([
+        const [currentVersion, currentReleaseLabel, currentStatus, currentCanApplyUpdate, currentUsesNativeUpdaterUI] = await Promise.all([
           trackRequest('GetVersion', { args: [] }, () => GetVersion()),
           trackRequest('GetReleaseLabel', { args: [] }, () => GetReleaseLabel()),
           trackRequest('GetSidecarStatus', { args: [] }, () => GetSidecarStatus()),
           trackRequest('CanApplyUpdate', { args: [] }, () => CanApplyUpdate()),
+          trackRequest('UsesNativeUpdaterUI', { args: [] }, () => UsesNativeUpdaterUI()),
         ]);
         if (!mounted) return;
         setVersion(currentVersion || 'dev');
         setReleaseLabel(currentReleaseLabel || '');
         setCanApplyUpdate(Boolean(currentCanApplyUpdate));
+        setUsesNativeUpdaterUI(Boolean(currentUsesNativeUpdaterUI));
         if (currentStatus) {
           setSidecarStatus(currentStatus);
         }
@@ -95,13 +98,14 @@ function AppShell() {
           version={version}
           releaseLabel={releaseLabel}
           canApplyUpdate={canApplyUpdate}
+          usesNativeUpdaterUI={usesNativeUpdaterUI}
           availableRelease={availableRelease}
           setAvailableRelease={setAvailableRelease}
         />
       );
     }
     return <AccountsPage sidecarStatus={sidecarStatus} />;
-  }, [activePage, availableRelease, canApplyUpdate, releaseLabel, sidecarStatus, version]);
+  }, [activePage, availableRelease, canApplyUpdate, releaseLabel, sidecarStatus, usesNativeUpdaterUI, version]);
 
   return (
     <div

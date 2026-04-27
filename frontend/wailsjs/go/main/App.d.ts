@@ -61,3 +61,5 @@ export function UpdateRelayServiceAPIKey(arg1:string):Promise<main.RelayServiceC
 export function UpdateRelayServiceAPIKeys(arg1:Array<string>):Promise<main.RelayServiceConfig>;
 
 export function UploadAuthFiles(arg1:Array<main.UploadFilePayload>):Promise<void>;
+
+export function UsesNativeUpdaterUI():Promise<boolean>;

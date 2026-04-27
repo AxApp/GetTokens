@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 
+	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/updater"
 )
@@ -27,4 +28,8 @@ func New(version string, releaseLabel string, repo string) *App {
 		version:      version,
 		releaseLabel: releaseLabel,
 	}
+}
+
+func usesNativeUpdaterUI() bool {
+	return sparkle.Available()
 }

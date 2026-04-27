@@ -13,6 +13,11 @@ env:
   MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
   MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
   MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+  SPARKLE_ENABLE: ${{ vars.SPARKLE_ENABLE }}
+  SPARKLE_APPCAST_BRANCH: ${{ vars.SPARKLE_APPCAST_BRANCH }}
+  SPARKLE_FEED_URL: ${{ secrets.SPARKLE_FEED_URL }}
+  SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+  SPARKLE_PUBLIC_ED_KEY: ${{ secrets.SPARKLE_PUBLIC_ED_KEY }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -53,8 +58,8 @@ jobs:
             goarch: arm64
             wails-platform: darwin/arm64
             package-ext: dmg
-            asset-name: GetTokens_darwin_arm64.dmg
-            updater-asset-name: GetTokens_darwin_arm64.tar.gz
+            asset-name: GetTokens_macOS_AppleSilicon.dmg
+            updater-asset-name: GetTokens_macOS_AppleSilicon.tar.gz
 
           - runner: macos-15-intel
             os-name: macOS amd64
@@ -62,8 +67,8 @@ jobs:
             goarch: amd64
             wails-platform: darwin/amd64
             package-ext: dmg
-            asset-name: GetTokens_darwin_amd64.dmg
-            updater-asset-name: GetTokens_darwin_amd64.tar.gz
+            asset-name: GetTokens_macOS_Intel.dmg
+            updater-asset-name: GetTokens_macOS_Intel.tar.gz
 
     steps:
       - uses: actions/checkout@v5
@@ -158,6 +163,20 @@ jobs:
           chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
           file build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
 
+      - name: Configure Sparkle metadata
+        if: runner.os == 'macOS' && env.SPARKLE_ENABLE == '1'
+        shell: bash
+        run: |
+          chmod +x scripts/configure-sparkle-macos.sh
+          scripts/configure-sparkle-macos.sh "build/bin/GetTokens.app"
+
+      - name: Embed Sparkle framework
+        if: runner.os == 'macOS' && env.SPARKLE_ENABLE == '1'
+        shell: bash
+        run: |
+          chmod +x scripts/prepare-sparkle-framework.sh scripts/embed-sparkle-framework.sh
+          scripts/embed-sparkle-framework.sh "build/bin/GetTokens.app"
+
       # ── Package ───────────────────────────────────────────────────────────
       - name: Sign and notarize macOS app
         if: runner.os == 'macOS'
@@ -198,10 +217,83 @@ jobs:
           fi
           rm -f "$RUNNER_TEMP/developer-id.p12" "${MACOS_NOTARY_KEY_PATH:-}"
 
+  sparkle-appcast:
+    name: Publish Sparkle appcast
+    if: vars.SPARKLE_ENABLE == '1'
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist/release/
+          merge-multiple: true
+
+      - name: Restore previous appcast
+        shell: bash
+        run: |
+          mkdir -p dist/sparkle-feed
+          APPCAST_BRANCH="${SPARKLE_APPCAST_BRANCH:-sparkle-appcast}"
+          if git ls-remote --exit-code origin "refs/heads/${APPCAST_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${APPCAST_BRANCH}:${APPCAST_BRANCH}"
+            if git cat-file -e "${APPCAST_BRANCH}:appcast.xml" 2>/dev/null; then
+              git show "${APPCAST_BRANCH}:appcast.xml" > dist/sparkle-feed/appcast.xml
+            fi
+          fi
+
+      - name: Generate Sparkle appcast
+        shell: bash
+        run: |
+          chmod +x scripts/prepare-sparkle-framework.sh scripts/generate-sparkle-appcast.sh
+          scripts/generate-sparkle-appcast.sh dist/release dist/sparkle-feed
+        env:
+          SPARKLE_RELEASE_BASE_URL: https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+          SPARKLE_FULL_RELEASE_NOTES_URL: https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}
+          SPARKLE_PRODUCT_URL: https://github.com/${{ github.repository }}
+
+      - name: Publish Sparkle appcast branch
+        shell: bash
+        run: |
+          APPCAST_BRANCH="${SPARKLE_APPCAST_BRANCH:-sparkle-appcast}"
+          PUBLISH_DIR="$RUNNER_TEMP/sparkle-appcast-publish"
+          REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          rm -rf "${PUBLISH_DIR}"
+          if git ls-remote --exit-code origin "refs/heads/${APPCAST_BRANCH}" >/dev/null 2>&1; then
+            git clone --branch "${APPCAST_BRANCH}" --single-branch "${REPO_URL}" "${PUBLISH_DIR}"
+          else
+            git clone --single-branch "${REPO_URL}" "${PUBLISH_DIR}"
+            (
+              cd "${PUBLISH_DIR}"
+              git checkout --orphan "${APPCAST_BRANCH}"
+            )
+          fi
+
+          (
+            cd "${PUBLISH_DIR}"
+            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+            cp "${GITHUB_WORKSPACE}/dist/sparkle-feed/appcast.xml" ./appcast.xml
+            git add appcast.xml
+            if git diff --cached --quiet; then
+              echo "Sparkle appcast unchanged; skipping commit."
+              exit 0
+            fi
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: update Sparkle appcast for ${GITHUB_REF_NAME}"
+            git push origin HEAD:"${APPCAST_BRANCH}"
+          )
+
   # ── Publish GitHub Release ────────────────────────────────────────────────
   release:
     name: Publish Release
-    needs: build
+    needs:
+      - build
+      - sparkle-appcast
+    if: ${{ always() && needs.build.result == 'success' && (needs.sparkle-appcast.result == 'success' || needs.sparkle-appcast.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -220,9 +312,9 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: |
-            dist/release/GetTokens_darwin_arm64.dmg
-            dist/release/GetTokens_darwin_arm64.tar.gz
-            dist/release/GetTokens_darwin_amd64.dmg
-            dist/release/GetTokens_darwin_amd64.tar.gz
+            dist/release/GetTokens_macOS_AppleSilicon.dmg
+            dist/release/GetTokens_macOS_AppleSilicon.tar.gz
+            dist/release/GetTokens_macOS_Intel.dmg
+            dist/release/GetTokens_macOS_Intel.tar.gz
             dist/release/checksums.txt
           generate_release_notes: true

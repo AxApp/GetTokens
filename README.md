@@ -82,16 +82,17 @@ Releases are published on GitHub Releases:
 
 The current release workflow produces the following asset types:
 
-- macOS Apple Silicon：`GetTokens_darwin_arm64.dmg`
-- macOS Apple Silicon updater asset：`GetTokens_darwin_arm64.tar.gz`
-- macOS Intel：`GetTokens_darwin_amd64.dmg`
-- macOS Intel updater asset：`GetTokens_darwin_amd64.tar.gz`
+- macOS Apple Silicon：`GetTokens_macOS_AppleSilicon.dmg`
+- macOS Apple Silicon updater asset：`GetTokens_macOS_AppleSilicon.tar.gz`
+- macOS Intel：`GetTokens_macOS_Intel.dmg`
+- macOS Intel updater asset：`GetTokens_macOS_Intel.tar.gz`
 - Checksums：`checksums.txt`
 
 ## 自动更新说明 | Auto Update Notes
 
 - macOS 出于已签名 `.app` bundle 完整性约束，只执行“检查更新 + 打开 release 页面下载 DMG”。
 - On macOS, due to signed `.app` bundle integrity constraints, the app uses “check update + open release page for DMG download” instead of in-place bundle replacement.
+- 实验链路：当 release workflow 启用 `SPARKLE_ENABLE=1` 且提供 Sparkle feed / public key 后，macOS 构建会预埋 Sparkle 所需 metadata 与 framework，为后续原生更新切换做准备。
 
 ## 项目结构 | Project Layout
 

@@ -117,3 +117,7 @@ export function UpdateRelayServiceAPIKeys(arg1) {
 export function UploadAuthFiles(arg1) {
   return window['go']['main']['App']['UploadAuthFiles'](arg1);
 }
+
+export function UsesNativeUpdaterUI() {
+  return window['go']['main']['App']['UsesNativeUpdaterUI']();
+}

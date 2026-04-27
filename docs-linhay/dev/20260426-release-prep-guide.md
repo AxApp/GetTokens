@@ -11,11 +11,11 @@
 当前阶段先只支持 macOS release，资产分成两类：
 
 1. 用户下载安装包
-   - macOS Apple Silicon: `GetTokens_darwin_arm64.dmg`
-   - macOS Intel: `GetTokens_darwin_amd64.dmg`
+   - macOS Apple Silicon: `GetTokens_macOS_AppleSilicon.dmg`
+   - macOS Intel: `GetTokens_macOS_Intel.dmg`
 2. 自动升级资产
-   - macOS Apple Silicon: `GetTokens_darwin_arm64.tar.gz`
-   - macOS Intel: `GetTokens_darwin_amd64.tar.gz`
+   - macOS Apple Silicon: `GetTokens_macOS_AppleSilicon.tar.gz`
+   - macOS Intel: `GetTokens_macOS_Intel.tar.gz`
 
 说明：
 - macOS 保留 `tar.gz` 资产用于检测最新版本和统一校验链，但签名发布包不做 bundle 内原地替换，设置页会跳转到 release 页面安装。
@@ -84,6 +84,17 @@ CI release workflow 需要以下 secrets：
    App Store Connect API Key 的 issuer id
 6. `MACOS_NOTARY_API_KEY_BASE64`
    `AuthKey_<KEY_ID>.p8` 文件内容做 base64 后存入
+7. `SPARKLE_FEED_URL`（可选，Sparkle 实验链路）
+   推荐固定为 `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast.xml`
+8. `SPARKLE_PUBLIC_ED_KEY`（可选，Sparkle 实验链路）
+9. `SPARKLE_PRIVATE_ED_KEY`（可选，Sparkle 实验链路）
+   用于 `generate_appcast` 在 CI 中对 `appcast.xml` 做 EdDSA 签名
+
+补充：
+
+1. 只有在 GitHub Actions variable `SPARKLE_ENABLE=1` 时，release workflow 才会尝试写入 Sparkle metadata、嵌入 `Sparkle.framework`、生成并发布 `appcast.xml`
+2. `SPARKLE_APPCAST_BRANCH` 默认为 `sparkle-appcast`，workflow 会把最新 `appcast.xml` 推到该分支，再由 `raw.githubusercontent.com` 提供稳定 feed URL
+3. 未启用时，现有 GitHub Release + DMG 发布链路保持不变
 
 ## 原则
 1. 自动升级资产必须可直接解压出目标可执行文件，不能是安装器。
@@ -91,7 +102,7 @@ CI release workflow 需要以下 secrets：
 3. UI 展示版本时间使用 `ReleaseLabel`，不和 `Version` 混用。
 4. macOS updater 资产名称必须按目标架构区分，避免 `arm64` / `amd64` 互相误命中。
 5. macOS release workflow 必须先把源码构建出来的目标架构 sidecar 回填进 `.app`，再 notarize `.app`，然后从已 stapled 的 `.app` 生成 DMG，最后再 notarize DMG。
-6. 已签名 macOS `.app` 在当前框架下只支持“检查更新 + 跳转 release 页面”，不支持 bundle 内 `ApplyUpdate`。
+6. 未启用 Sparkle 时，已签名 macOS `.app` 只支持“检查更新 + 跳转 release 页面”；启用 Sparkle 后，更新入口会切到原生更新 UI。
 
 ## 建议发布步骤
 1. 确认工作区只包含本次准备发布的变更。
@@ -103,6 +114,7 @@ CI release workflow 需要以下 secrets：
    - 安装包资产存在
    - updater 资产存在
    - `checksums.txt` 包含全部资产
+   - 若启用 Sparkle：`sparkle-appcast` 分支上的 `appcast.xml` 已更新，且 `SUFeedURL` 指向固定 raw URL
    - macOS DMG 已经 stapled，`xcrun stapler validate` 通过
 7. 使用非 dev 构建验证：
    - `CheckUpdate` 能发现新版本

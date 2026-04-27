@@ -230,6 +230,7 @@
     "update_asset": "Update Asset",
     "update_channel": "Update Channel",
     "update_channel_hint_auto": "Self-update reads raw release binaries, not installer packages.",
+    "update_channel_hint_native": "This macOS build uses a native updater UI. Sparkle handles checking, downloading, and installation.",
     "update_channel_hint_manual": "This platform can detect new releases, but installation is handed off to the release page.",
     "check_update": "Check Update",
     "checking_update": "Checking...",
@@ -239,10 +240,12 @@
     "open_release_page": "Open Release Page",
     "opening_release_page": "Opening...",
     "manual_update_hint": "Signed macOS releases avoid in-place bundle patching; install the update from the release page instead.",
+    "native_update_hint": "After clicking \"Check Update\", the macOS native update flow takes over. Sparkle decides whether an update is available and how it gets installed.",
     "update_available": "Update available.",
     "update_up_to_date": "Already up to date.",
     "update_applied": "Update applied. The app will quit now.",
     "update_redirected": "Opened the release page. Download and install the new version there.",
+    "native_update_invoked": "The macOS native update flow has been started.",
     "update_error": "Update Failed"
   },
   "debug": {

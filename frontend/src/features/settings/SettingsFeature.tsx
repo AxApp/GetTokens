@@ -24,6 +24,7 @@ interface SettingsFeatureProps {
   version: string;
   releaseLabel: string;
   canApplyUpdate: boolean;
+  usesNativeUpdaterUI: boolean;
   availableRelease: ReleaseInfo | null;
   setAvailableRelease: (release: ReleaseInfo | null) => void;
 }
@@ -32,6 +33,7 @@ export default function SettingsFeature({
   version,
   releaseLabel,
   canApplyUpdate,
+  usesNativeUpdaterUI,
   availableRelease,
   setAvailableRelease,
 }: SettingsFeatureProps) {
@@ -47,6 +49,11 @@ export default function SettingsFeature({
     setIsCheckingUpdate(true);
     setUpdateMessage('');
     try {
+      if (usesNativeUpdaterUI) {
+        await trackRequest('CheckUpdate', { args: [] }, () => CheckUpdate());
+        setUpdateMessage(t('settings.native_update_invoked'));
+        return;
+      }
       const release = await trackRequest(
         'CheckUpdate',
         { args: [] },
@@ -205,7 +212,13 @@ export default function SettingsFeature({
                       {t('settings.update_channel')}
                     </div>
                     <div className="mt-2 text-[10px] font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]">
-                      {t(canApplyUpdate ? 'settings.update_channel_hint_auto' : 'settings.update_channel_hint_manual')}
+                      {t(
+                        usesNativeUpdaterUI
+                          ? 'settings.update_channel_hint_native'
+                          : canApplyUpdate
+                            ? 'settings.update_channel_hint_auto'
+                            : 'settings.update_channel_hint_manual'
+                      )}
                     </div>
                     {updateMessage ? (
                       <div className="mt-3 border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[9px] font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]">
@@ -219,21 +232,29 @@ export default function SettingsFeature({
                   <button className="btn-swiss w-full" onClick={handleCheckUpdate} disabled={isCheckingUpdate}>
                     {isCheckingUpdate ? t('settings.checking_update') : t('settings.check_update')}
                   </button>
-                  <button
-                    className="btn-swiss w-full"
-                    onClick={canApplyUpdate ? handleApplyUpdate : handleOpenReleasePage}
-                    disabled={!availableRelease || isApplyingUpdate || isOpeningRelease}
-                  >
-                    {canApplyUpdate
-                      ? isApplyingUpdate
-                        ? t('settings.applying_update')
-                        : t('settings.apply_update')
-                      : isOpeningRelease
-                        ? t('settings.opening_release_page')
-                        : t('settings.open_release_page')}
-                  </button>
+                  {usesNativeUpdaterUI ? null : (
+                    <button
+                      className="btn-swiss w-full"
+                      onClick={canApplyUpdate ? handleApplyUpdate : handleOpenReleasePage}
+                      disabled={!availableRelease || isApplyingUpdate || isOpeningRelease}
+                    >
+                      {canApplyUpdate
+                        ? isApplyingUpdate
+                          ? t('settings.applying_update')
+                          : t('settings.apply_update')
+                        : isOpeningRelease
+                          ? t('settings.opening_release_page')
+                          : t('settings.open_release_page')}
+                    </button>
+                  )}
                   <div className="text-[8px] font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]">
-                    {t(canApplyUpdate ? 'settings.apply_update_hint' : 'settings.manual_update_hint')}
+                    {t(
+                      usesNativeUpdaterUI
+                        ? 'settings.native_update_hint'
+                        : canApplyUpdate
+                          ? 'settings.apply_update_hint'
+                          : 'settings.manual_update_hint'
+                    )}
                   </div>
                 </div>
               </div>

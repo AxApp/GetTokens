@@ -230,6 +230,7 @@
     "update_asset": "升级资产",
     "update_channel": "升级通道",
     "update_channel_hint_auto": "自动升级读取 release 原始二进制资产，而不是安装包。",
+    "update_channel_hint_native": "当前 macOS 构建已接入原生更新 UI，由 Sparkle 负责检查、下载与安装流程。",
     "update_channel_hint_manual": "当前平台会检测新版本，但会跳转到 release 页面完成安装。",
     "check_update": "检查更新",
     "checking_update": "检查中...",
@@ -239,10 +240,12 @@
     "open_release_page": "打开发布页安装",
     "opening_release_page": "打开中...",
     "manual_update_hint": "macOS 已签名发布包不做 bundle 内原地替换，改为跳转发布页安装。",
+    "native_update_hint": "点击“检查更新”后会进入 macOS 原生更新流程；是否发现新版本与安装步骤由 Sparkle 弹窗处理。",
     "update_available": "发现可用更新。",
     "update_up_to_date": "当前已是最新版本。",
     "update_applied": "更新已写入，程序即将退出。",
     "update_redirected": "已打开发布页，请下载并安装新版本。",
+    "native_update_invoked": "已交由 macOS 原生更新流程处理。",
     "update_error": "更新失败"
   },
   "debug": {

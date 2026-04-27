@@ -5,6 +5,7 @@ interface SettingsPageProps {
   version: string;
   releaseLabel: string;
   canApplyUpdate: boolean;
+  usesNativeUpdaterUI: boolean;
   availableRelease: ReleaseInfo | null;
   setAvailableRelease: (release: ReleaseInfo | null) => void;
 }

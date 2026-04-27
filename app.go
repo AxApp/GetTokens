@@ -188,6 +188,10 @@ func (a *App) CanApplyUpdate() bool {
 	return a.core.CanApplyUpdate()
 }
 
+func (a *App) UsesNativeUpdaterUI() bool {
+	return a.core.UsesNativeUpdaterUI()
+}
+
 func (a *App) CheckUpdate() (*updater.ReleaseInfo, error) {
 	return a.core.CheckUpdate()
 }
