@@ -34,10 +34,10 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 ## 5. Release Governance
 - **Scope**: Current release scope is macOS only.
 - **Assets**:
-  - `GetTokens_darwin_arm64.dmg`
-  - `GetTokens_darwin_arm64.tar.gz`
-  - `GetTokens_darwin_amd64.dmg`
-  - `GetTokens_darwin_amd64.tar.gz`
+  - `GetTokens_macOS_AppleSilicon.dmg`
+  - `GetTokens_macOS_AppleSilicon.tar.gz`
+  - `GetTokens_macOS_Intel.dmg`
+  - `GetTokens_macOS_Intel.tar.gz`
   - `checksums.txt`
 - **Versioning**:
   - If a release tag has already failed or been consumed, bump to the next patch tag instead of reusing it.
@@ -50,6 +50,10 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Build `arm64` and `amd64` as separate release jobs; do not collapse them back into a universal DMG workflow.
   - After `wails build`, explicitly copy the freshly built sidecar back into `GetTokens.app/Contents/MacOS/cli-proxy-api` before notarization.
   - Sign and notarize the `.app` first, then build/sign/notarize the `.dmg`.
+- **Sparkle Rule**:
+  - Sparkle feed must stay split by architecture; do not merge `arm64` and `amd64` DMGs into one appcast when bundle versions are equal.
+  - `SUFeedURL` must point to the matching per-arch feed: `appcast-arm64.xml` or `appcast-amd64.xml`.
+  - When `generate_appcast` is used in CI, write appcast output to an explicit staged file path instead of assuming it rewrites the staged seed file in place.
 - **CI Hygiene**:
   - Keep GitHub Actions dependencies on Node 24 compatible major versions to avoid Node 20 deprecation warnings.
   - When a release run fails, inspect the exact failed job logs before changing tag strategy or packaging assumptions.

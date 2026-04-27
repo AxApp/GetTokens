@@ -84,17 +84,19 @@ CI release workflow 需要以下 secrets：
    App Store Connect API Key 的 issuer id
 6. `MACOS_NOTARY_API_KEY_BASE64`
    `AuthKey_<KEY_ID>.p8` 文件内容做 base64 后存入
-7. `SPARKLE_FEED_URL`（可选，Sparkle 实验链路）
-   推荐固定为 `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast.xml`
-8. `SPARKLE_PUBLIC_ED_KEY`（可选，Sparkle 实验链路）
-9. `SPARKLE_PRIVATE_ED_KEY`（可选，Sparkle 实验链路）
+7. `SPARKLE_PUBLIC_ED_KEY`（可选，Sparkle 实验链路）
+8. `SPARKLE_PRIVATE_ED_KEY`（可选，Sparkle 实验链路）
    用于 `generate_appcast` 在 CI 中对 `appcast.xml` 做 EdDSA 签名
+9. `SPARKLE_APPCAST_BRANCH`（GitHub Actions variable，推荐固定为 `sparkle-appcast`）
 
 补充：
 
-1. 只有在 GitHub Actions variable `SPARKLE_ENABLE=1` 时，release workflow 才会尝试写入 Sparkle metadata、嵌入 `Sparkle.framework`、生成并发布 `appcast.xml`
-2. `SPARKLE_APPCAST_BRANCH` 默认为 `sparkle-appcast`，workflow 会把最新 `appcast.xml` 推到该分支，再由 `raw.githubusercontent.com` 提供稳定 feed URL
-3. 未启用时，现有 GitHub Release + DMG 发布链路保持不变
+1. 只有在 GitHub Actions variable `SPARKLE_ENABLE=1` 时，release workflow 才会尝试写入 Sparkle metadata、嵌入 `Sparkle.framework`、生成并发布 Sparkle feed
+2. `SPARKLE_APPCAST_BRANCH` 默认为 `sparkle-appcast`，workflow 会把最新 feed 推到该分支，再由 `raw.githubusercontent.com` 提供稳定 feed URL
+3. Sparkle feed 当前按架构拆分：
+   - arm64: `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-arm64.xml`
+   - amd64: `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-amd64.xml`
+4. 未启用时，现有 GitHub Release + DMG 发布链路保持不变
 
 ## 原则
 1. 自动升级资产必须可直接解压出目标可执行文件，不能是安装器。
@@ -114,7 +116,7 @@ CI release workflow 需要以下 secrets：
    - 安装包资产存在
    - updater 资产存在
    - `checksums.txt` 包含全部资产
-   - 若启用 Sparkle：`sparkle-appcast` 分支上的 `appcast.xml` 已更新，且 `SUFeedURL` 指向固定 raw URL
+   - 若启用 Sparkle：`sparkle-appcast` 分支上的 `appcast-arm64.xml` / `appcast-amd64.xml` 已更新，且 `SUFeedURL` 指向对应架构的 raw URL
    - macOS DMG 已经 stapled，`xcrun stapler validate` 通过
 7. 使用非 dev 构建验证：
    - `CheckUpdate` 能发现新版本

@@ -67,7 +67,7 @@ Sparkle 至少需要：
 2. bridge 现已改为动态加载 `Sparkle.framework`，不依赖编译期静态链接
 3. `wailsapp` 在检测到 Sparkle 可用时，会把 macOS 更新入口切到原生更新 UI 模式
 4. 前端设置页已能识别“原生更新 UI”模式，并在该模式下只保留单次“检查更新”入口
-5. release workflow 现已支持生成签名后的 `appcast.xml`，并推送到固定分支供 `raw.githubusercontent.com` 托管
+5. release workflow 现已支持生成签名后的 Sparkle appcast，并推送到固定分支供 `raw.githubusercontent.com` 托管
 
 当前仍未完成：
 
@@ -76,17 +76,21 @@ Sparkle 至少需要：
 
 ## Secrets / 环境变量建议
 
-1. `SPARKLE_FEED_URL`
-2. `SPARKLE_PUBLIC_ED_KEY`
-3. `SPARKLE_PRIVATE_ED_KEY`
-4. `SPARKLE_APPCAST_BRANCH`（推荐固定为 `sparkle-appcast`）
+1. `SPARKLE_PUBLIC_ED_KEY`
+2. `SPARKLE_PRIVATE_ED_KEY`
+3. `SPARKLE_APPCAST_BRANCH`（推荐固定为 `sparkle-appcast`）
 
 当前 appcast 发布策略：
 
 1. release 产物继续上传到 GitHub Release
 2. `generate_appcast` 只消费 notarized `.dmg`，不消费纯二进制 `.tar.gz`
-3. workflow 从既有 `appcast.xml` 增量生成新 feed，并把结果推送到 `sparkle-appcast` 分支
-4. `SUFeedURL` 固定指向 `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast.xml`
+3. workflow 从既有 feed 增量生成新内容，并把结果推送到 `sparkle-appcast` 分支
+4. Sparkle feed 按架构拆分：
+   - `appcast-arm64.xml`
+   - `appcast-amd64.xml`
+5. 构建时按目标架构写入对应 `SUFeedURL`：
+   - `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-arm64.xml`
+   - `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-amd64.xml`
 
 ## 官方要求摘要
 
@@ -105,6 +109,6 @@ Sparkle 至少需要：
 ## 当前未完成项
 
 1. Sparkle framework 已支持通过脚本下载并嵌入 app bundle，运行时也已通过动态 bridge 接入，但缺少升级事件回流
-2. `appcast.xml` 生成与分支发布链路已接入 workflow，但还没有在真实 release 上启用验证
+2. 分架构 appcast 生成与 `sparkle-appcast` 分支发布链路已在真实 release `v0.1.10` 上验证通过
 3. 前端设置页已切到“原生更新 UI”识别模式，但仍缺少 Sparkle 状态反馈
-4. 还没有真实的 Sparkle 升级回归
+4. 真实的 Sparkle 自动升级安装回归还没有做，只验证到了 release / appcast 发布闭环

@@ -81,4 +81,4 @@ Sparkle 是 macOS 上成熟的原生更新框架，更适合 GetTokens 当前的
 ## 当前状态
 - 状态：in-progress
 - 最近更新：2026-04-27
-- 最近变更：已完成 Sparkle space / 架构文档 / plist 注入脚本 / framework 下载与嵌入脚本 / darwin bridge / 设置页原生更新入口适配；release workflow 现已支持通过 `SPARKLE_ENABLE=1` 生成并发布签名后的 `appcast.xml` 到 `sparkle-appcast` 分支，但还没有做真实 release 回归。
+- 最近变更：已完成 Sparkle space / 架构文档 / plist 注入脚本 / framework 下载与嵌入脚本 / darwin bridge / 设置页原生更新入口适配；`v0.1.10` 已完成首轮真实 Sparkle release 回归，release workflow 可在 `SPARKLE_ENABLE=1` 时生成并发布分架构 feed `appcast-arm64.xml` / `appcast-amd64.xml` 到 `sparkle-appcast` 分支。
