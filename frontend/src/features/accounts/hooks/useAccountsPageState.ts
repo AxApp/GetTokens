@@ -5,11 +5,14 @@ import {
   ListAccounts,
   ListAuthFiles,
   StartCodexOAuth,
+  VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
+import { main } from '../../../../wailsjs/go/models';
 import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
 import type { AccountRecord } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
 import {
+  buildCodexAPIKeyVerifyInput,
   emptyApiKeyForm,
   loadAPIKeyLabels,
 } from '../model/accountConfig';
@@ -63,6 +66,15 @@ type OAuthDialogState =
     }
   | null;
 
+type APIKeyVerifyState = {
+  model: string;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  message: string;
+  lastVerifiedAt: number | null;
+};
+
+const DEFAULT_CODEX_API_KEY_VERIFY_MODEL = 'gpt-5.4-mini';
+
 interface UseAccountsPageStateArgs {
   ready: boolean;
   t: Translator;
@@ -98,6 +110,7 @@ export default function useAccountsPageState({
   const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
   const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
   const [oauthDialog, setOAuthDialog] = useState<OAuthDialogState>(null);
+  const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -322,6 +335,74 @@ export default function useAccountsPageState({
     setOAuthBanner(null);
   }, []);
 
+  const verifySelectedApiKey = useCallback(
+    async (input: { apiKey: string; baseUrl: string; model: string }) => {
+      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
+        return;
+      }
+
+      const nextInput = buildCodexAPIKeyVerifyInput(input);
+      if (!nextInput.model) {
+        setAPIKeyVerifyStateByID((prev) => ({
+          ...prev,
+          [selectedAccount.id]: {
+            model: '',
+            status: 'error',
+            message: t('accounts.api_key_verify_model_required'),
+            lastVerifiedAt: prev[selectedAccount.id]?.lastVerifiedAt ?? null,
+          },
+        }));
+        return;
+      }
+
+      setAPIKeyVerifyStateByID((prev) => ({
+        ...prev,
+        [selectedAccount.id]: {
+          model: nextInput.model,
+          status: 'loading',
+          message: '',
+          lastVerifiedAt: prev[selectedAccount.id]?.lastVerifiedAt ?? null,
+        },
+      }));
+
+      try {
+        const result = await trackRequest(
+          'VerifyOpenAICompatibleProvider',
+          { id: selectedAccount.id, baseUrl: nextInput.baseUrl, model: nextInput.model },
+          () =>
+            VerifyOpenAICompatibleProvider(
+              main.VerifyOpenAICompatibleProviderInput.createFrom({
+                apiKey: nextInput.apiKey,
+                baseUrl: nextInput.baseUrl,
+                model: nextInput.model,
+              }),
+            ),
+        );
+
+        setAPIKeyVerifyStateByID((prev) => ({
+          ...prev,
+          [selectedAccount.id]: {
+            model: nextInput.model,
+            status: result.success ? 'success' : 'error',
+            message: result.message || (result.success ? t('accounts.api_key_verify_success') : t('accounts.api_key_verify_failed')),
+            lastVerifiedAt: Date.now(),
+          },
+        }));
+      } catch (error) {
+        setAPIKeyVerifyStateByID((prev) => ({
+          ...prev,
+          [selectedAccount.id]: {
+            model: nextInput.model,
+            status: 'error',
+            message: toErrorMessage(error),
+            lastVerifiedAt: Date.now(),
+          },
+        }));
+      }
+    },
+    [selectedAccount, t, trackRequest],
+  );
+
   const {
     deleteAccount,
     uploadAccounts,
@@ -369,6 +450,15 @@ export default function useAccountsPageState({
     oauthDialog,
     oauthPendingAccountID: oauthFlow?.pendingAccountID || null,
     isOAuthPending: oauthFlow !== null,
+    apiKeyVerifyState:
+      selectedAccount?.id && apiKeyVerifyStateByID[selectedAccount.id]
+        ? apiKeyVerifyStateByID[selectedAccount.id]
+        : {
+            model: DEFAULT_CODEX_API_KEY_VERIFY_MODEL,
+            status: 'idle' as const,
+            message: '',
+            lastVerifiedAt: null,
+          },
     isApiKeyModalOpen,
     isRotationModalOpen,
     apiKeyForm,
@@ -388,6 +478,7 @@ export default function useAccountsPageState({
     loadAccounts,
     startCodexOAuth,
     cancelCodexOAuth,
+    verifySelectedApiKey,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,

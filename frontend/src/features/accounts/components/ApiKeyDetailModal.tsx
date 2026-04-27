@@ -12,32 +12,59 @@ import type { AccountRecord, ClickEventLike, TextInputEvent, Translator } from '
 import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountHealthBar from './AccountHealthBar';
 
+const DEFAULT_CODEX_API_KEY_VERIFY_MODEL = 'gpt-5.4-mini';
+
+interface APIKeyVerifyState {
+  model: string;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  message: string;
+  lastVerifiedAt: number | null;
+}
+
 interface ApiKeyDetailModalProps {
   account: AccountRecord;
   usageSummary?: AccountUsageSummary;
+  verifyState: APIKeyVerifyState;
   onClose: () => void;
   onRename: (nextName: string) => void;
   onSavePriority: (priority: string) => void;
+  onVerify: (input: { apiKey: string; baseUrl: string; model: string }) => void;
   t: Translator;
+}
+
+function formatVerifyTone(status: APIKeyVerifyState['status']) {
+  if (status === 'success') return 'border-green-600 bg-green-600/10 text-green-700';
+  if (status === 'error') return 'border-red-500 bg-red-500/10 text-red-500';
+  return 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]';
+}
+
+function formatLastVerifiedAt(timestamp: number | null) {
+  if (!timestamp) {
+    return '—';
+  }
+  return new Date(timestamp).toLocaleString();
 }
 
 export default function ApiKeyDetailModal({
   account,
   usageSummary,
+  verifyState,
   onClose,
   onRename,
   onSavePriority,
+  onVerify,
   t,
 }: ApiKeyDetailModalProps) {
   const [draftName, setDraftName] = useState(account.displayName);
   const [draftPriority, setDraftPriority] = useState(String(account.priority ?? 0));
+  const [verifyModel, setVerifyModel] = useState(verifyState.model || DEFAULT_CODEX_API_KEY_VERIFY_MODEL);
   const [configDraft, setConfigDraft] = useState({
     apiKey: account.apiKey || '',
     baseUrl: account.baseUrl || '',
     prefix: account.prefix || '',
   });
   const [copyState, setCopyState] = useState<{
-    target: 'apiKey' | 'baseUrl' | 'prefix' | 'authJson' | 'configToml' | null;
+    target: 'apiKey' | 'baseUrl' | 'authJson' | 'configToml' | null;
     status: 'idle' | 'success' | 'error';
   }>({
     target: null,
@@ -61,6 +88,10 @@ export default function ApiKeyDetailModal({
   }, [account.apiKey, account.baseUrl, account.prefix]);
 
   useEffect(() => {
+    setVerifyModel(verifyState.model || DEFAULT_CODEX_API_KEY_VERIFY_MODEL);
+  }, [verifyState.model, account.id]);
+
+  useEffect(() => {
     if (copyState.status === 'idle') {
       return;
     }
@@ -79,7 +110,6 @@ export default function ApiKeyDetailModal({
     [t('accounts.source_api_key'), sourceLabel(t, account.credentialSource)],
     [t('accounts.api_key_priority'), String(account.priority ?? 0)],
     ['FINGERPRINT', account.keyFingerprint || '--'],
-    ...(account.prefix ? [['PREFIX', account.prefix]] as Array<[string, string]> : []),
     [t('common.status'), account.localOnly ? t('accounts.status_local') : account.status],
   ];
   const managedAuthJSONSnippet = useMemo(() => buildManagedAuthJSONSnippet(configDraft), [configDraft]);
@@ -98,9 +128,15 @@ export default function ApiKeyDetailModal({
     }
     return fields;
   }, [configDraft.apiKey, configDraft.baseUrl]);
+  const missingFieldsMessage = useMemo(() => {
+    if (missingFields.length === 0) {
+      return t('accounts.configuration_ready');
+    }
+    return t('accounts.configuration_missing_with_location').replace('{fields}', missingFields.join(' / '));
+  }, [missingFields, t]);
 
   async function copyText(
-    target: 'apiKey' | 'baseUrl' | 'prefix' | 'authJson' | 'configToml',
+    target: 'apiKey' | 'baseUrl' | 'authJson' | 'configToml',
     value: string
   ) {
     if (!value.trim()) {
@@ -284,37 +320,59 @@ export default function ApiKeyDetailModal({
                 </div>
               </label>
 
-              <label className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  PREFIX
-                </span>
-                <div className="relative">
-                  <input
-                    value={configDraft.prefix}
-                    onChange={(event: TextInputEvent) =>
-                      setConfigDraft((prev) => ({ ...prev, prefix: event.target.value }))
-                    }
-                    className="input-swiss w-full pr-24"
-                    placeholder={t('accounts.prefix_optional')}
-                  />
-                  <button
-                    onClick={() => void copyText('prefix', configDraft.prefix)}
-                    className="btn-swiss absolute right-2 top-1/2 !px-3 !py-1 !text-[9px] -translate-y-1/2"
-                  >
-                    复制
-                  </button>
-                </div>
-              </label>
-
               <div className="space-y-3 border-t-2 border-dashed border-[var(--border-color)] pt-5">
+                <div className="space-y-3 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      {t('accounts.api_key_verify_summary')}
+                    </div>
+                    <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                      {verifyState.model || '—'}
+                    </div>
+                  </div>
+
+                  <label className="space-y-2">
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      {t('accounts.api_key_verify_model')}
+                    </span>
+                    <div className="flex items-end gap-3">
+                      <input
+                        value={verifyModel}
+                        onChange={(event: TextInputEvent) => setVerifyModel(event.target.value)}
+                        className="input-swiss w-full"
+                        placeholder={DEFAULT_CODEX_API_KEY_VERIFY_MODEL}
+                      />
+                      <button
+                        onClick={() =>
+                          onVerify({
+                            apiKey: configDraft.apiKey,
+                            baseUrl: configDraft.baseUrl,
+                            model: verifyModel,
+                          })
+                        }
+                        className="btn-swiss shrink-0"
+                        disabled={verifyState.status === 'loading'}
+                      >
+                        {verifyState.status === 'loading' ? t('accounts.api_key_verify_running') : t('accounts.api_key_verify')}
+                      </button>
+                    </div>
+                  </label>
+
+                  <div className={`border px-4 py-3 text-[10px] font-black uppercase tracking-wide ${formatVerifyTone(verifyState.status)}`}>
+                    {verifyState.message || t('accounts.api_key_verify_idle')}
+                  </div>
+
+                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    {t('accounts.api_key_verify_last_verified')} {formatLastVerifiedAt(verifyState.lastVerifiedAt)}
+                  </div>
+                </div>
+
                 <div>
                   <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.configuration_snippet')}
                   </div>
                   <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    {missingFields.length > 0
-                      ? `${t('accounts.configuration_missing')} ${missingFields.join(' / ')}`
-                      : t('accounts.configuration_ready')}
+                    {missingFieldsMessage}
                   </div>
                 </div>
 
@@ -361,7 +419,7 @@ export default function ApiKeyDetailModal({
 
         <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
-            {t('accounts.configuration_hint')}
+            {missingFieldsMessage}
           </div>
           <button onClick={onClose} className="btn-swiss self-end sm:self-auto">
             {t('common.close')}

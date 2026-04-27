@@ -172,6 +172,18 @@ export function buildAPIKeyLabelStorageKey(apiKey: string, baseUrl: string, pref
   });
 }
 
+export function buildCodexAPIKeyVerifyInput(input: {
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
+}) {
+  return {
+    apiKey: String(input.apiKey || '').trim(),
+    baseUrl: normalizeBaseUrl(String(input.baseUrl || '')),
+    model: String(input.model || '').trim(),
+  };
+}
+
 export function loadAPIKeyLabels() {
   if (typeof window === 'undefined') {
     return {};

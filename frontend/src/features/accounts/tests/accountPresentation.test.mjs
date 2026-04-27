@@ -9,7 +9,9 @@ import {
   resolveAccountAPIKeyPlainNotice,
   resolveAccountConfigurationWorkspaceHeading,
   resolveAccountFailureReason,
+  resolveAccountOperationalState,
   resolveAccountProviderConfigHeading,
+  resolveAccountStatusTone,
   resolveAccountSourceHeading,
 } from '../model/accountPresentation.ts';
 
@@ -208,4 +210,145 @@ test('account detail headings keep explicit provider scope', () => {
   assert.equal(resolveAccountProviderConfigHeading(account, t), 'CODEX Provider Config');
   assert.equal(resolveAccountConfigurationWorkspaceHeading(account, t), 'CODEX Config Workspace');
   assert.equal(resolveAccountAPIKeyPlainNotice(account, t), 'This panel shows the CODEX API key in plain text.');
+});
+
+test('resolveAccountStatusTone treats configured api keys as healthy', () => {
+  assert.equal(
+    resolveAccountStatusTone({
+      id: 'api-key:codex',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'CODEX API KEY',
+      status: 'CONFIGURED',
+    }),
+    'positive',
+  );
+
+  assert.equal(
+    resolveAccountStatusTone({
+      id: 'api-key:codex',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'CODEX API KEY',
+      status: 'DISABLED',
+    }),
+    'warning',
+  );
+
+  assert.equal(
+    resolveAccountStatusTone({
+      id: 'api-key:codex',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'CODEX API KEY',
+      status: 'ERROR',
+    }),
+    'danger',
+  );
+});
+
+test('resolveAccountOperationalState prefers recent usage and falls back to waiting-check', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'api-key:codex',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'CODEX API KEY',
+        status: 'CONFIGURED',
+      },
+      {
+        hasData: true,
+        success: 3,
+        failure: 0,
+        successRate: 100,
+        averageLatencyMs: 120,
+        lastActivityAt: Date.now(),
+        statusBar: { blocks: [], blockDetails: [], successRate: 100, totalSuccess: 3, totalFailure: 0 },
+      },
+      undefined,
+      t,
+    ),
+    { tone: 'positive', label: '可用' },
+  );
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'api-key:codex',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'CODEX API KEY',
+        status: 'CONFIGURED',
+      },
+      undefined,
+      undefined,
+      t,
+    ),
+    { tone: 'warning', label: '等待检测' },
+  );
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'api-key:codex',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'CODEX API KEY',
+        status: 'ERROR',
+      },
+      {
+        hasData: true,
+        success: 0,
+        failure: 2,
+        successRate: 0,
+        averageLatencyMs: null,
+        lastActivityAt: Date.now(),
+        statusBar: { blocks: [], blockDetails: [], successRate: 0, totalSuccess: 0, totalFailure: 2 },
+      },
+      undefined,
+      t,
+    ),
+    { tone: 'danger', label: '异常' },
+  );
+});
+
+test('resolveAccountOperationalState treats oauth accounts with quota data as available', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:codex',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'codex.json',
+        status: 'ACTIVE',
+      },
+      undefined,
+      {
+        status: 'success',
+        planType: 'PLUS',
+        windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+      },
+      t,
+    ),
+    { tone: 'positive', label: '可用' },
+  );
 });

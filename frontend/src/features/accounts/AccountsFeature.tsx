@@ -49,6 +49,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     oauthDialog,
     oauthPendingAccountID,
     isOAuthPending,
+    apiKeyVerifyState,
     apiKeyFormError,
     isApiKeyModalOpen,
     isRotationModalOpen,
@@ -69,6 +70,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     loadAccounts,
     startCodexOAuth,
     cancelCodexOAuth,
+    verifySelectedApiKey,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
@@ -306,9 +308,11 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
         <ApiKeyDetailModal
           account={selectedAccount}
           usageSummary={accountUsageByID[selectedAccount.id]}
+          verifyState={apiKeyVerifyState}
           onClose={() => setSelectedAccount(null)}
           onRename={renameSelectedApiKey}
           onSavePriority={(priority) => void updateSelectedApiKeyPriority(priority)}
+          onVerify={(input) => void verifySelectedApiKey(input)}
           t={t}
         />
       ) : null}

@@ -1,5 +1,6 @@
 import type { main } from '../../../../wailsjs/go/models';
 import type { AccountRecord, AuthFile, CredentialSource } from '../../../types';
+import type { AccountUsageSummary } from './accountUsage';
 import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
 import { buildAPIKeyLabelStorageKey } from './accountConfig.ts';
 
@@ -86,6 +87,78 @@ export function resolveAccountFailureReason(account: AccountRecord) {
   }
   return String(account.statusMessage || account.rawAuthFile?.statusMessage || '')
     .trim();
+}
+
+export function resolveAccountStatusTone(account: AccountRecord) {
+  const status = String(account.localOnly ? 'LOCAL' : account.status || '')
+    .trim()
+    .toUpperCase();
+
+  if (status === 'ACTIVE' || status === 'CONFIGURED' || status === 'LOCAL') {
+    return 'positive';
+  }
+  if (status === 'DISABLED') {
+    return 'warning';
+  }
+  return 'danger';
+}
+
+export function resolveAccountOperationalState(
+  account: AccountRecord,
+  usageSummary: AccountUsageSummary | undefined,
+  quotaDisplay: QuotaDisplay | undefined,
+  t: Translator,
+) {
+  if (usageSummary?.success && usageSummary.success > 0) {
+    return {
+      tone: 'positive' as const,
+      label: t('accounts.status_available'),
+    };
+  }
+
+  if (account.credentialSource === 'auth-file' && quotaDisplay?.status === 'success') {
+    return {
+      tone: 'positive' as const,
+      label: t('accounts.status_available'),
+    };
+  }
+
+  if (usageSummary?.hasData && usageSummary.failure > 0) {
+    return {
+      tone: 'danger' as const,
+      label: t('accounts.status_error_display'),
+    };
+  }
+
+  const status = String(account.localOnly ? 'LOCAL' : account.status || '')
+    .trim()
+    .toUpperCase();
+
+  if (status === 'DISABLED') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_disabled_display'),
+    };
+  }
+
+  if (status === 'LOCAL') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_local'),
+    };
+  }
+
+  if (status === 'ACTIVE' || status === 'CONFIGURED') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_waiting_check'),
+    };
+  }
+
+  return {
+    tone: 'danger' as const,
+    label: t('accounts.status_error_display'),
+  };
 }
 
 export function isAccountUnavailable(account: AccountRecord) {

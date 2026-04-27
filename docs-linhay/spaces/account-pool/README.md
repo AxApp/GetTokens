@@ -71,7 +71,7 @@
   - 可以复用统一 detail shell
   - 但标题、provider config 区块、配置工作台标题都必须显式带出当前 `provider`
   - 不得把该弹窗误实现成通用 provider 设置页
-- 当前 `Codex API Key` 资产没有正式“验证 provider 配置”链路；若后续补验证，只能视为过渡方案，不代表最终信息架构
+- 当前 `Codex API Key` 资产已补一个 `codex-only` 的过渡验证入口；该入口只服务单条资产，不代表最终统一的 provider 验证架构
 
 #### 子级 2：openai-compatible
 
@@ -235,8 +235,10 @@
 
 - Given 用户当前位于 `codex` 子菜单
 - And 页面中已有 `Codex API Key` 资产
-- When 产品选择先补一个过渡性的验证动作
-- Then 必须明确该动作只代表“单条 codex api key 的临时验证方案”
+- When 用户在 `ApiKeyDetailModal` 中输入测试模型并点击验证
+- Then 应用应使用当前弹窗里的 `apiKey + baseUrl + model` 发起一次 `codex-only` 验证
+- And 页面应展示最近一次验证结果状态：`idle / loading / success / error`
+- And 当测试模型为空时，页面应直接提示用户先补齐测试模型
 - And 不得把它定义成最终统一的 provider 验证架构
 - And 后续 `openai-compatible` provider 工作区上线后，应以 provider 级验证作为正式能力归属
 
@@ -265,6 +267,7 @@
 - 已明确定义“验证”归属为 provider 配置验证，而不是简单给现有 API key 卡片补按钮
 - 已明确定义 provider 验证最小入参与结果状态模型
 - 已明确定义 `ApiKeyDetailModal` 必须显式保留 `provider` 归属表达，但不承载正式验证主流程
+- `ApiKeyDetailModal` 当前已补一个 `codex-only` 过渡验证区，显式要求输入测试模型
 - 第一阶段实现已把 `openai-compatible` 收口到 `provider card -> detail modal -> save/verify` 的正式工作流，不再只停留在卡片级临时输入
 - 第二阶段实现已补齐 `headers` 与多 `apiKey entries` 编辑，provider 保存粒度保持为整包配置回写
 - 实现后至少覆盖后端 bridge 测试与前端账号动作测试
