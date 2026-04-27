@@ -207,6 +207,24 @@ export namespace main {
 	        this.excludedModels = source["excludedModels"];
 	    }
 	}
+	export class CreateOpenAICompatibleProviderInput {
+	    name: string;
+	    baseUrl: string;
+	    prefix?: string;
+	    apiKey: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateOpenAICompatibleProviderInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.apiKey = source["apiKey"];
+	    }
+	}
 	export class DownloadFileResponse {
 	    name: string;
 	    contentBase64: string;
@@ -247,6 +265,32 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.status = source["status"];
 	        this.error = source["error"];
+	    }
+	}
+	export class OpenAICompatibleProvider {
+	    name: string;
+	    baseUrl: string;
+	    prefix?: string;
+	    apiKey: string;
+	    headers?: Record<string, string>;
+	    keyCount?: number;
+	    modelCount?: number;
+	    hasHeaders?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenAICompatibleProvider(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.apiKey = source["apiKey"];
+	        this.headers = source["headers"];
+	        this.keyCount = source["keyCount"];
+	        this.modelCount = source["modelCount"];
+	        this.hasHeaders = source["hasHeaders"];
 	    }
 	}
 	export class RelayLocalApplyResult {
@@ -398,6 +442,42 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.usage = source["usage"];
 	        this.failedRequests = source["failedRequests"];
+	    }
+	}
+	export class VerifyOpenAICompatibleProviderInput {
+	    baseUrl: string;
+	    apiKey: string;
+	    model: string;
+	    headers?: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new VerifyOpenAICompatibleProviderInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.baseUrl = source["baseUrl"];
+	        this.apiKey = source["apiKey"];
+	        this.model = source["model"];
+	        this.headers = source["headers"];
+	    }
+	}
+	export class VerifyOpenAICompatibleProviderResult {
+	    success: boolean;
+	    statusCode?: number;
+	    message?: string;
+	    responseBody?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VerifyOpenAICompatibleProviderResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.statusCode = source["statusCode"];
+	        this.message = source["message"];
+	        this.responseBody = source["responseBody"];
 	    }
 	}
 

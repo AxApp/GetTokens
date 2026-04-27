@@ -1,5 +1,5 @@
 import { useI18n } from '../../context/I18nContext';
-import type { AppPage } from '../../types';
+import type { AccountWorkspace, AppPage } from '../../types';
 import { formatSidebarVersion } from '../../utils/version';
 
 const navItems = [
@@ -12,10 +12,23 @@ const navItems = [
 interface SidebarProps {
   activePage: AppPage;
   setActivePage: (page: AppPage) => void;
+  activeAccountWorkspace: AccountWorkspace;
+  setActiveAccountWorkspace: (workspace: AccountWorkspace) => void;
   releaseLabel: string;
 }
 
-export default function Sidebar({ activePage, setActivePage, releaseLabel }: SidebarProps) {
+const accountWorkspaceItems = [
+  { id: 'codex', label: 'nav.accounts_codex' },
+  { id: 'openai-compatible', label: 'nav.accounts_openai_compatible' },
+] as const satisfies ReadonlyArray<{ id: AccountWorkspace; label: string }>;
+
+export default function Sidebar({
+  activePage,
+  setActivePage,
+  activeAccountWorkspace,
+  setActiveAccountWorkspace,
+  releaseLabel,
+}: SidebarProps) {
   const { t } = useI18n();
   const sidebarVersion = formatSidebarVersion(releaseLabel);
 
@@ -43,20 +56,41 @@ export default function Sidebar({ activePage, setActivePage, releaseLabel }: Sid
 
       <nav className="flex-1 space-y-4 p-4">
         {navItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActivePage(item.id)}
-            className={`w-full flex items-center gap-3 px-3 py-3 font-bold text-xs uppercase tracking-widest border-2 transition-all active:scale-95 ${
-              activePage === item.id
-                ? 'bg-[var(--border-color)] text-[var(--bg-main)] border-[var(--border-color)] shadow-hard shadow-[var(--shadow-color)]'
-                : 'border-transparent text-[var(--text-primary)] hover:border-[var(--border-color)]'
-            }`}
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <path d={item.icon} />
-            </svg>
-            <span>{t(item.label)}</span>
-          </button>
+          <div key={item.id}>
+            <button
+              onClick={() => setActivePage(item.id)}
+              className={`w-full flex items-center gap-3 px-3 py-3 font-bold text-xs uppercase tracking-widest border-2 transition-all active:scale-95 ${
+                activePage === item.id
+                  ? 'bg-[var(--border-color)] text-[var(--bg-main)] border-[var(--border-color)] shadow-hard shadow-[var(--shadow-color)]'
+                  : 'border-transparent text-[var(--text-primary)] hover:border-[var(--border-color)]'
+              }`}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                <path d={item.icon} />
+              </svg>
+              <span>{t(item.label)}</span>
+            </button>
+            {item.id === 'accounts' && activePage === 'accounts' ? (
+              <div className="mt-2 space-y-2 pl-6">
+                {accountWorkspaceItems.map((workspace) => (
+                  <button
+                    key={workspace.id}
+                    onClick={() => {
+                      setActivePage('accounts');
+                      setActiveAccountWorkspace(workspace.id);
+                    }}
+                    className={`w-full border px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                      activeAccountWorkspace === workspace.id
+                        ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
+                        : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
+                    }`}
+                  >
+                    {t(workspace.label)}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         ))}
       </nav>
 

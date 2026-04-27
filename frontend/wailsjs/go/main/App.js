@@ -22,12 +22,20 @@ export function CreateCodexAPIKey(arg1) {
   return window['go']['main']['App']['CreateCodexAPIKey'](arg1);
 }
 
+export function CreateOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['CreateOpenAICompatibleProvider'](arg1);
+}
+
 export function DeleteAuthFiles(arg1) {
   return window['go']['main']['App']['DeleteAuthFiles'](arg1);
 }
 
 export function DeleteCodexAPIKey(arg1) {
   return window['go']['main']['App']['DeleteCodexAPIKey'](arg1);
+}
+
+export function DeleteOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['DeleteOpenAICompatibleProvider'](arg1);
 }
 
 export function DownloadAuthFile(arg1) {
@@ -82,6 +90,10 @@ export function ListAuthFiles() {
   return window['go']['main']['App']['ListAuthFiles']();
 }
 
+export function ListOpenAICompatibleProviders() {
+  return window['go']['main']['App']['ListOpenAICompatibleProviders']();
+}
+
 export function NormalizeAuthFileContent(arg1) {
   return window['go']['main']['App']['NormalizeAuthFileContent'](arg1);
 }
@@ -120,4 +132,8 @@ export function UploadAuthFiles(arg1) {
 
 export function UsesNativeUpdaterUI() {
   return window['go']['main']['App']['UsesNativeUpdaterUI']();
+}
+
+export function VerifyOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['VerifyOpenAICompatibleProvider'](arg1);
 }

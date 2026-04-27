@@ -14,9 +14,13 @@ export function CheckUpdate():Promise<updater.ReleaseInfo>;
 
 export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
 
+export function CreateOpenAICompatibleProvider(arg1:main.CreateOpenAICompatibleProviderInput):Promise<void>;
+
 export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
 
 export function DeleteCodexAPIKey(arg1:string):Promise<void>;
+
+export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
 
 export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>;
 
@@ -44,6 +48,8 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
+export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
+
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
@@ -63,3 +69,5 @@ export function UpdateRelayServiceAPIKeys(arg1:Array<string>):Promise<main.Relay
 export function UploadAuthFiles(arg1:Array<main.UploadFilePayload>):Promise<void>;
 
 export function UsesNativeUpdaterUI():Promise<boolean>;
+
+export function VerifyOpenAICompatibleProvider(arg1:main.VerifyOpenAICompatibleProviderInput):Promise<main.VerifyOpenAICompatibleProviderResult>;

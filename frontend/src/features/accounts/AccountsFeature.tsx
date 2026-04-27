@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import AccountDetailModal from '../../components/biz/AccountDetailModal';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
-import type { SidecarStatus } from '../../types';
+import type { AccountWorkspace, SidecarStatus } from '../../types';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountRotationModal from './components/AccountRotationModal';
 import AccountGroupSection from './components/AccountGroupSection';
@@ -11,16 +11,20 @@ import AccountsToolbar from './components/AccountsToolbar';
 import ApiKeyComposeModal from './components/ApiKeyComposeModal';
 import ApiKeyDetailModal from './components/ApiKeyDetailModal';
 import CodexOAuthModal from './components/CodexOAuthModal';
+import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeModal';
+import OpenAICompatibleWorkspace from './components/OpenAICompatibleWorkspace';
 import PasteAuthModal from './components/PasteAuthModal';
 import useAccountsPageState from './hooks/useAccountsPageState';
+import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
 import { isCodexAuthFile } from './model/accountPresentation';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
 
 interface AccountsFeatureProps {
   sidecarStatus: SidecarStatus;
+  workspace: AccountWorkspace;
 }
 
-export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps) {
+export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFeatureProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
   const pageRef = useRef<HTMLDivElement | null>(null);
@@ -28,6 +32,11 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
   const headerActionsMenuRef = useRef<HTMLDivElement | null>(null);
 
   const ready = sidecarStatus?.code === 'ready';
+  const openAICompatibleState = useOpenAICompatibleState({
+    ready,
+    t,
+    trackRequest,
+  });
   const {
     loading,
     searchTerm,
@@ -96,6 +105,37 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
   });
 
   const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs);
+
+  if (workspace === 'openai-compatible') {
+    return (
+      <>
+        <OpenAICompatibleWorkspace
+          t={t}
+          ready={ready}
+          loading={openAICompatibleState.loading}
+          providers={openAICompatibleState.providers}
+          verifyStates={openAICompatibleState.verifyStates}
+          pendingDeleteName={openAICompatibleState.pendingDeleteName}
+          onCreate={openAICompatibleState.openCreateModal}
+          onRefresh={() => void openAICompatibleState.loadProviders()}
+          onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
+          onVerifyModelChange={openAICompatibleState.setVerifyModel}
+          onVerify={(provider) => void openAICompatibleState.verifyProvider(provider)}
+        />
+
+        {openAICompatibleState.isCreateModalOpen ? (
+          <OpenAICompatibleComposeModal
+            t={t}
+            form={openAICompatibleState.form}
+            error={openAICompatibleState.formError}
+            onClose={() => openAICompatibleState.setIsCreateModalOpen(false)}
+            onChange={openAICompatibleState.setForm}
+            onSubmit={() => void openAICompatibleState.submitCreate()}
+          />
+        ) : null}
+      </>
+    );
+  }
 
   return (
     <>

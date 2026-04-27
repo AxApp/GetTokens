@@ -42,3 +42,27 @@ type CodexAPIKeyPatch struct {
 	Headers        *map[string]string `json:"headers,omitempty"`
 	ExcludedModels *[]string          `json:"excluded-models,omitempty"`
 }
+
+type OpenAICompatibleAPIKeyEntry struct {
+	APIKey   string `json:"api-key"`
+	ProxyURL string `json:"proxy-url,omitempty"`
+}
+
+type OpenAICompatibleModel struct {
+	Name  string `json:"name"`
+	Alias string `json:"alias"`
+}
+
+type OpenAICompatibleProvider struct {
+	Name          string                        `json:"name"`
+	Priority      int                           `json:"priority,omitempty"`
+	Prefix        string                        `json:"prefix,omitempty"`
+	BaseURL       string                        `json:"base-url"`
+	APIKeyEntries []OpenAICompatibleAPIKeyEntry `json:"api-key-entries,omitempty"`
+	Models        []OpenAICompatibleModel       `json:"models,omitempty"`
+	Headers       map[string]string             `json:"headers,omitempty"`
+}
+
+type OpenAICompatibleProvidersResponse struct {
+	Items []OpenAICompatibleProvider `json:"openai-compatibility"`
+}

@@ -9,8 +9,13 @@ import StatusPage from './pages/StatusPage';
 import { DebugProvider, useDebug } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
-import type { AppPage, ReleaseInfo, SidecarStatus } from './types';
-import { persistActivePage, readStoredActivePage } from './utils/pagePersistence';
+import type { AccountWorkspace, AppPage, ReleaseInfo, SidecarStatus } from './types';
+import {
+  persistAccountWorkspace,
+  persistActivePage,
+  readStoredAccountWorkspace,
+  readStoredActivePage,
+} from './utils/pagePersistence';
 
 const defaultSidecarStatus: SidecarStatus = {
   code: 'stopped',
@@ -26,6 +31,9 @@ function AppShell() {
   const [activePage, setActivePage] = useState<AppPage>(() =>
     readStoredActivePage(typeof window === 'undefined' ? null : window.localStorage),
   );
+  const [activeAccountWorkspace, setActiveAccountWorkspace] = useState<AccountWorkspace>(() =>
+    readStoredAccountWorkspace(typeof window === 'undefined' ? null : window.localStorage),
+  );
   const [sidecarStatus, setSidecarStatus] = useState<SidecarStatus>(defaultSidecarStatus);
   const [version, setVersion] = useState('dev');
   const [releaseLabel, setReleaseLabel] = useState('');
@@ -36,6 +44,10 @@ function AppShell() {
   useEffect(() => {
     persistActivePage(typeof window === 'undefined' ? null : window.localStorage, activePage);
   }, [activePage]);
+
+  useEffect(() => {
+    persistAccountWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeAccountWorkspace);
+  }, [activeAccountWorkspace]);
 
   useEffect(() => {
     const isDark =
@@ -104,15 +116,21 @@ function AppShell() {
         />
       );
     }
-    return <AccountsPage sidecarStatus={sidecarStatus} />;
-  }, [activePage, availableRelease, canApplyUpdate, releaseLabel, sidecarStatus, usesNativeUpdaterUI, version]);
+    return <AccountsPage sidecarStatus={sidecarStatus} workspace={activeAccountWorkspace} />;
+  }, [activeAccountWorkspace, activePage, availableRelease, canApplyUpdate, releaseLabel, sidecarStatus, usesNativeUpdaterUI, version]);
 
   return (
     <div
       className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]"
       data-collaboration-id="MAIN_FRAME"
     >
-      <Sidebar activePage={activePage} setActivePage={setActivePage} releaseLabel={releaseLabel} />
+      <Sidebar
+        activePage={activePage}
+        setActivePage={setActivePage}
+        activeAccountWorkspace={activeAccountWorkspace}
+        setActiveAccountWorkspace={setActiveAccountWorkspace}
+        releaseLabel={releaseLabel}
+      />
       <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">{page}</main>
     </div>
   );

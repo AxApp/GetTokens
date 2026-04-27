@@ -97,7 +97,7 @@
     - `baseUrl`
     - `apiKey`
     - `headers(可选)`
-    - `model(可选，但建议支持)`
+    - `model(第一阶段显式必填，避免默认模型导致验证结论漂移)`
   - 第一阶段验证结果状态至少覆盖：
     - `idle`
     - `loading`
@@ -202,7 +202,7 @@
 - And 页面中已有一个 provider 容器
 - When 用户在 provider 详情或编辑面板触发“验证”
 - Then 应用应以 provider 配置为输入发起验证，而不是复用 `codex quota` 链路
-- And 最小验证入参至少包括 `baseUrl`、`apiKey`、可选 `headers` 与 `model`
+- And 最小验证入参至少包括 `baseUrl`、`apiKey`、可选 `headers` 与显式必填的 `model`
 - And 页面应展示最近一次验证结果状态：`idle / loading / success / error`
 - And 当验证失败时，页面应保留失败原因，不能只显示一个无上下文的失败提示
 

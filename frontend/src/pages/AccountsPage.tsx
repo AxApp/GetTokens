@@ -1,10 +1,11 @@
 import AccountsFeature from '../features/accounts/AccountsFeature';
-import type { SidecarStatus } from '../types';
+import type { AccountWorkspace, SidecarStatus } from '../types';
 
 interface AccountsPageProps {
   sidecarStatus: SidecarStatus;
+  workspace: AccountWorkspace;
 }
 
-export default function AccountsPage({ sidecarStatus }: AccountsPageProps) {
-  return <AccountsFeature sidecarStatus={sidecarStatus} />;
+export default function AccountsPage({ sidecarStatus, workspace }: AccountsPageProps) {
+  return <AccountsFeature sidecarStatus={sidecarStatus} workspace={workspace} />;
 }

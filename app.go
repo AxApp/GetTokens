@@ -123,6 +123,38 @@ type UpdateAccountPriorityInput struct {
 	Priority int    `json:"priority,omitempty"`
 }
 
+type OpenAICompatibleProvider struct {
+	Name       string            `json:"name"`
+	BaseURL    string            `json:"baseUrl"`
+	Prefix     string            `json:"prefix,omitempty"`
+	APIKey     string            `json:"apiKey"`
+	Headers    map[string]string `json:"headers,omitempty"`
+	KeyCount   int               `json:"keyCount,omitempty"`
+	ModelCount int               `json:"modelCount,omitempty"`
+	HasHeaders bool              `json:"hasHeaders,omitempty"`
+}
+
+type CreateOpenAICompatibleProviderInput struct {
+	Name    string `json:"name"`
+	BaseURL string `json:"baseUrl"`
+	Prefix  string `json:"prefix,omitempty"`
+	APIKey  string `json:"apiKey"`
+}
+
+type VerifyOpenAICompatibleProviderInput struct {
+	BaseURL string            `json:"baseUrl"`
+	APIKey  string            `json:"apiKey"`
+	Model   string            `json:"model"`
+	Headers map[string]string `json:"headers,omitempty"`
+}
+
+type VerifyOpenAICompatibleProviderResult struct {
+	Success      bool   `json:"success"`
+	StatusCode   int    `json:"statusCode,omitempty"`
+	Message      string `json:"message,omitempty"`
+	ResponseBody string `json:"responseBody,omitempty"`
+}
+
 type RelayServiceConfig struct {
 	APIKeys   []string               `json:"apiKeys"`
 	Endpoints []RelayServiceEndpoint `json:"endpoints"`
@@ -354,6 +386,28 @@ func (a *App) ListAccounts() ([]AccountRecord, error) {
 	return records, nil
 }
 
+func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error) {
+	result, err := a.core.ListOpenAICompatibleProviders()
+	if err != nil {
+		return nil, err
+	}
+
+	providers := make([]OpenAICompatibleProvider, 0, len(result))
+	for _, item := range result {
+		providers = append(providers, OpenAICompatibleProvider{
+			Name:       item.Name,
+			BaseURL:    item.BaseURL,
+			Prefix:     item.Prefix,
+			APIKey:     item.APIKey,
+			Headers:    item.Headers,
+			KeyCount:   item.KeyCount,
+			ModelCount: item.ModelCount,
+			HasHeaders: item.HasHeaders,
+		})
+	}
+	return providers, nil
+}
+
 func (a *App) GetRelayServiceConfig() (*RelayServiceConfig, error) {
 	result, err := a.core.GetRelayServiceConfig()
 	if err != nil {
@@ -451,6 +505,37 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		Headers:        input.Headers,
 		ExcludedModels: input.ExcludedModels,
 	})
+}
+
+func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProviderInput) error {
+	return a.core.CreateOpenAICompatibleProvider(wailsapp.CreateOpenAICompatibleProviderInput{
+		Name:    input.Name,
+		BaseURL: input.BaseURL,
+		Prefix:  input.Prefix,
+		APIKey:  input.APIKey,
+	})
+}
+
+func (a *App) DeleteOpenAICompatibleProvider(name string) error {
+	return a.core.DeleteOpenAICompatibleProvider(name)
+}
+
+func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProviderInput) (*VerifyOpenAICompatibleProviderResult, error) {
+	result, err := a.core.VerifyOpenAICompatibleProvider(wailsapp.VerifyOpenAICompatibleProviderInput{
+		BaseURL: input.BaseURL,
+		APIKey:  input.APIKey,
+		Model:   input.Model,
+		Headers: input.Headers,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &VerifyOpenAICompatibleProviderResult{
+		Success:      result.Success,
+		StatusCode:   result.StatusCode,
+		Message:      result.Message,
+		ResponseBody: result.ResponseBody,
+	}, nil
 }
 
 func (a *App) DeleteCodexAPIKey(id string) error {

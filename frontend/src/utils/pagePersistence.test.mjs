@@ -3,9 +3,14 @@ import assert from 'node:assert/strict';
 
 import {
   ACTIVE_PAGE_STORAGE_KEY,
+  ACCOUNT_WORKSPACE_STORAGE_KEY,
+  isAccountWorkspace,
   isAppPage,
+  persistAccountWorkspace,
   persistActivePage,
+  readStoredAccountWorkspace,
   readStoredActivePage,
+  resolveInitialAccountWorkspace,
   resolveInitialActivePage,
 } from './pagePersistence.ts';
 
@@ -58,4 +63,41 @@ test('persistActivePage writes the selected page to storage', () => {
   persistActivePage(storage, 'status');
 
   assert.deepEqual(writes, [[ACTIVE_PAGE_STORAGE_KEY, 'status']]);
+});
+
+test('isAccountWorkspace only accepts known account subpages', () => {
+  assert.equal(isAccountWorkspace('codex'), true);
+  assert.equal(isAccountWorkspace('openai-compatible'), true);
+  assert.equal(isAccountWorkspace('unknown'), false);
+  assert.equal(isAccountWorkspace(null), false);
+});
+
+test('resolveInitialAccountWorkspace falls back to codex for invalid values', () => {
+  assert.equal(resolveInitialAccountWorkspace('openai-compatible'), 'openai-compatible');
+  assert.equal(resolveInitialAccountWorkspace('unknown'), 'codex');
+  assert.equal(resolveInitialAccountWorkspace(null), 'codex');
+});
+
+test('readStoredAccountWorkspace restores the last valid workspace from storage', () => {
+  const storage = {
+    getItem(key) {
+      assert.equal(key, ACCOUNT_WORKSPACE_STORAGE_KEY);
+      return 'openai-compatible';
+    },
+  };
+
+  assert.equal(readStoredAccountWorkspace(storage), 'openai-compatible');
+});
+
+test('persistAccountWorkspace writes the selected workspace to storage', () => {
+  const writes = [];
+  const storage = {
+    setItem(key, value) {
+      writes.push([key, value]);
+    },
+  };
+
+  persistAccountWorkspace(storage, 'codex');
+
+  assert.deepEqual(writes, [[ACCOUNT_WORKSPACE_STORAGE_KEY, 'codex']]);
 });
