@@ -22,6 +22,10 @@ if [[ "$GOOS" == "windows" ]]; then
   BINARY_NAME="${BINARY_NAME}.exe"
 fi
 
+if [[ "${OUTPUT_DIR}" != /* ]]; then
+  OUTPUT_DIR="${ROOT_DIR}/${OUTPUT_DIR}"
+fi
+
 ensure_source_dir() {
   if [[ -f "${SOURCE_DIR}/go.mod" ]]; then
     return 0
