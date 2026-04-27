@@ -70,7 +70,7 @@ cmd=(
   --download-url-prefix "${RELEASE_BASE_URL%/}/"
   --maximum-deltas 0
   --maximum-versions "${MAX_VERSIONS}"
-  -o "${APPCAST_NAME}"
+  -o "${STAGE_DIR}/${APPCAST_NAME}"
 )
 
 if [[ -n "${FULL_RELEASE_NOTES_URL}" ]]; then
@@ -84,6 +84,11 @@ fi
 cmd+=("${STAGE_DIR}")
 
 printf '%s' "${PRIVATE_ED_KEY}" | "${cmd[@]}"
+
+if [[ ! -f "${STAGE_DIR}/${APPCAST_NAME}" ]]; then
+  echo "generate_appcast did not produce ${STAGE_DIR}/${APPCAST_NAME}" >&2
+  exit 1
+fi
 
 cp "${STAGE_DIR}/${APPCAST_NAME}" "${OUTPUT_DIR}/${APPCAST_NAME}"
 echo "Generated Sparkle appcast at ${OUTPUT_DIR}/${APPCAST_NAME}"

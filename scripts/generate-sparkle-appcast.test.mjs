@@ -30,12 +30,22 @@ test('generate-sparkle-appcast stages dmg assets and preserves appcast output on
       'set -euo pipefail',
       `printf '%s\\n' "$@" > "${argsLog}"`,
       `cat > "${stdinLog}"`,
+      'output_path=""',
+      'for ((i=1; i<=$#; i++)); do',
+      '  if [[ "${!i}" == "-o" ]]; then',
+      '    j=$((i + 1))',
+      '    output_path="${!j}"',
+      '    break',
+      '  fi',
+      'done',
+      'test -n "${output_path}"',
       'archive_dir="${!#}"',
       'test -f "${archive_dir}/GetTokens_macOS_AppleSilicon.dmg"',
       'test -f "${archive_dir}/GetTokens_macOS_Intel.dmg"',
       'test ! -f "${archive_dir}/GetTokens_macOS_AppleSilicon.tar.gz"',
       'test -f "${archive_dir}/appcast.xml"',
-      'printf \'<rss>new</rss>\' > "${archive_dir}/appcast.xml"',
+      'mkdir -p "$(dirname "${output_path}")"',
+      'printf \'<rss>new</rss>\' > "${output_path}"',
       '',
     ].join('\n'),
     { mode: 0o755 },
@@ -60,5 +70,6 @@ test('generate-sparkle-appcast stages dmg assets and preserves appcast output on
   assert.match(args, /--download-url-prefix\nhttps:\/\/example.com\/releases\/download\/v0.1.7\//);
   assert.match(args, /--full-release-notes-url\nhttps:\/\/example.com\/releases\/tag\/v0.1.7/);
   assert.match(args, /--link\nhttps:\/\/example.com\/GetTokens/);
+  assert.match(args, /-o\n.+appcast\.xml/);
   assert.equal(fs.readFileSync(stdinLog, 'utf8'), 'test-private-key');
 });
