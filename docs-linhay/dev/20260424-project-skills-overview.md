@@ -15,6 +15,19 @@
    - 先抽模式，再判断是 skill、docs、memory，还是 AGENTS
    - 固定要求在收尾时执行 `qmd update` 与 `qmd embed`
 
+## 20260427 更新：收敛技能入口与描述预算
+
+本次针对 CLI 的 `Exceeded skills context budget` 告警继续做两项治理：
+
+1. `AGENTS.md` 不再引用不存在的 `gettokens-space-governance`、`gettokens-doc-writeback`、`gettokens-agents-governance-sync`，统一收敛到现有的 `gettokens-ops-governance` 与 `gettokens-session-skill-distill`。
+2. 项目级 3 个 skill 的 frontmatter `description` 改成短描述，优先保留触发边界，避免把细节塞进技能列表元数据。
+
+后续约束：
+
+1. 新增项目级 skill 前，先判断是否真的需要新增入口，而不是继续把已有 skill 拆细。
+2. skill 的 `description` 只写“触发场景 + 能力边界”，详细规则放正文，不再写成长句枚举。
+3. 若再次出现预算告警，优先检查项目级 skill 描述和悬空引用，再考虑继续整合。
+
 ## 20260520 更新：Skills 整合
 
 由于项目级 skills 数量过多（9个）导致 CLI 上下文预算超标，现将高频工程规则整合为少量核心技能，以保持高效响应并减少冗余。

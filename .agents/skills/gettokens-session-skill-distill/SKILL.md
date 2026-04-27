@@ -1,6 +1,6 @@
 ---
 name: gettokens-session-skill-distill
-description: Used when the user asks to "整理" or when a session has produced reusable workflows, failure modes, or durable decisions that should be distilled into project skills, docs, memory, and possibly AGENTS.
+description: GetTokens 会话沉淀入口：处理“整理”及可复用模式蒸馏。
 ---
 
 # GetTokens Session Skill Distillation

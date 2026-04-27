@@ -69,9 +69,10 @@
 4. 外部参考资料统一归档到 `docs-linhay/references/`。
 
 项目级 skills：
-1. 涉及 `space` 创建、命名、README 模板、截图或 debate 归档时，优先使用 `gettokens-space-governance`。
-2. 涉及文档写回、memory 写回、`qmd update` / `qmd embed` 同步时，优先使用 `gettokens-doc-writeback`。
-3. 涉及 AGENTS 级长期治理规则时，优先使用 `gettokens-agents-governance-sync`。
+1. 涉及 `space` 创建、命名、README 模板、截图或 debate 归档时，优先使用 `gettokens-ops-governance`。
+2. 涉及文档写回、memory 写回、`qmd update` / `qmd embed` 同步时，优先使用 `gettokens-ops-governance`。
+3. 涉及 AGENTS 级长期治理规则时，优先使用 `gettokens-ops-governance`；若用户明确说“整理”，同时使用 `gettokens-session-skill-distill`。
+4. 涉及账号池、quota、视觉系统、前端调试归因或 CLIProxyAPI fork 维护时，优先使用 `gettokens-domain-engineering`。
 
 ## 5. 记忆系统规则（必须）
 

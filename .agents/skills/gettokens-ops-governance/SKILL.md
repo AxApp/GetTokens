@@ -1,6 +1,6 @@
 ---
 name: gettokens-ops-governance
-description: Core operations and governance for GetTokens. Covers the Wails dev loop (restart rules, readiness), space management in docs-linhay/spaces/, documentation write-back/memory, AGENTS.md sync, and session skill distillation.
+description: GetTokens 流程治理：Wails 开发回路、spaces、文档记忆写回与 AGENTS 同步。
 ---
 
 # GetTokens Operations & Governance

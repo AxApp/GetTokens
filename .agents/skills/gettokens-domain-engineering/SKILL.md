@@ -1,6 +1,6 @@
 ---
 name: gettokens-domain-engineering
-description: Technical engineering for GetTokens. Covers the Accounts domain (auth files, API keys, quota rules), UI system (Swiss-industrial aesthetic, theme, l10n), frontend debugging (inspectors, logs), and CLIProxyAPI fork maintenance.
+description: GetTokens 领域工程：账号池、quota、UI 体系、调试与 CLIProxyAPI fork。
 ---
 
 # GetTokens Domain & Engineering
