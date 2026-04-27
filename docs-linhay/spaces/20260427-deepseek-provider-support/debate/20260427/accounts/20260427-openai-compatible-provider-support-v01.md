@@ -37,6 +37,17 @@
 - Gemini 视角补充前端交互风险：现有 modal、detail、snippet、action 都是单 key 心智，若不改信息架构，会把 provider 级对象错误压扁。
 - 本轮形成共识，无需继续展开对抗。
 
+### 第 2 轮
+
+- 用户要求先达成一致，再决定是否继续补需求。
+- Gemini 视角对“遗漏点”再次收敛，区分出“本轮必须先补”与“可以后置到实施计划/技术设计”的事项。
+- 主持归纳后，与 Gemini 达成以下优先级共识：
+  1. 先补导航状态恢复规则
+  2. 再补 `openai-compatible provider` 的稳定标识与唯一性
+  3. 再补 `openai-compatible` 是否独立列表模型
+  4. 最后补 `openai-compatible` 的空状态与默认 CTA
+- 其余事项如子路由形态、迁移策略、测试矩阵、共性/差异矩阵，可后置到实施计划或技术设计阶段继续细化。
+
 ## 结论与行动项
 
 ### 结论
@@ -44,6 +55,11 @@
 1. `openai-compatible` 不应被建模成“再新增一种单 API key 账号”。
 2. 最小正确心智应是“provider 容器 + key entries + models”。
 3. 第一阶段也不需要一次把全部能力做满，但顶层对象必须先是 provider。
+4. 在正式进入实现前，需求文档至少还要先补 4 个关键点：
+   - 导航状态恢复规则
+   - provider 标识/唯一性
+   - `openai-compatible` 是否独立列表模型
+   - `openai-compatible` 空状态与默认 CTA
 
 ### 推荐分阶段方案
 

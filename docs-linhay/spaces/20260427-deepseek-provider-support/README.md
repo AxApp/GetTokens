@@ -127,17 +127,53 @@
 
 1. 后端补齐 `openai-compatible` 的 Wails / management bridge，而不是只扩 `CodexAPIKey`
 2. 前端从“添加 Codex API Key”升级为“新增 openai-compatible provider”
-3. 顶层对象改为 provider 容器，而不是单个 API key 资产
+3. 顶层对象改为 provider 容器，而不是单个 API key 资产；第一阶段使用独立 provider 列表模型，不进入现有 `AccountRecord` 主列表
 4. 第一阶段最少支持：
    - `name`
    - `baseUrl`
    - `apiKeyEntries[0].apiKey`
    - `prefix`
+   - `name` 唯一性校验
+   - 空状态与默认 CTA
+   - provider 配置验证
 5. 第二阶段再补：
    - `headers`
    - 多 `apiKeyEntries`
    - `models`
 6. DeepSeek 作为 `openai-compatible` 下的 provider 候选，而不是先做专用 `DeepSeek API Key`
+
+## Provider 验证边界
+
+当前 GetTokens 里的 API Key 资产还没有被设计成“可验证 provider 配置”的正式链路：
+
+1. `Codex API Key` 现状只有创建、删除、改优先级，没有 verify / test 接口
+2. 现有外呼桥接主要服务 `codex auth-file quota`，依赖 `auth_index + chatgpt.com/backend-api/wham/usage`，不适合直接承担通用 API Key/provider 验证
+3. 当前前端状态模型也没有“最近一次验证结果/失败原因”的展示位
+
+因此，这个需求的正式归属应是：
+
+1. `account-pool -> openai-compatible` 子菜单负责人
+2. 验证对象是 provider 配置，而不是单条资产卡片
+
+如果产品决定先在 `codex api key` 上补一个最小验证版本，应明确它只是过渡方案，不是最终信息架构。
+
+### 最小验证入参与结果
+
+最小后端验证入参建议至少包括：
+
+1. `baseUrl`
+2. `apiKey`
+3. `headers(可选)`
+4. `model(可选，但建议支持)`
+
+最小前端结果状态建议至少包括：
+
+1. `idle`
+2. `loading`
+3. `success`
+4. `error`
+
+并且 `error` 需要保留最近一次失败原因，作为用户可见状态，而不是仅写调试日志。
 
 ## BDD 场景
 
@@ -170,3 +206,18 @@
 - Then 页面主体进入 openai-compatible provider 视图
 - And 用户看到的对象应是 provider 容器
 - And 页面不应继续显示只适用于 codex 的新增入口文案
+
+### 场景 5：验证 provider 配置
+
+- Given 用户已进入 `openai-compatible` 子菜单
+- And 页面中已有 provider 容器
+- When 用户触发验证
+- Then 验证请求应基于 provider 配置发起，而不是复用 `codex quota` 请求
+- And 页面应能展示最近一次验证状态与失败原因
+
+### 场景 6：codex api key 的过渡验证边界
+
+- Given 产品决定先在 `codex api key` 上补最小验证功能
+- When 进入实现
+- Then 必须把该功能标记为过渡方案
+- And 后续正式的统一验证归属仍应回到 `openai-compatible provider` 工作区

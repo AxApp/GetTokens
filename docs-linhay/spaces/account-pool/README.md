@@ -51,6 +51,11 @@
 - 子菜单顺序：
   1. `codex`
   2. `openai-compatible`
+- 子菜单恢复规则优先级：
+  1. 若存在明确子菜单路由或显式导航目标，优先使用该目标
+  2. 否则读取本地持久化的上次子菜单选择
+  3. 若以上都不存在，默认回到 `codex`
+- 父级 `账号池` 折叠后再次展开时，保留上一次子菜单选中态，不重置到默认值
 
 #### 子级 1：codex
 
@@ -62,20 +67,43 @@
   - `重新登录`
   - `额度观察`
   - `轮动设置`
+- 当前 `Codex API Key` 资产没有正式“验证 provider 配置”链路；若后续补验证，只能视为过渡方案，不代表最终信息架构
 
 #### 子级 2：openai-compatible
 
 - 新增一个面向 provider 的子工作区
 - 其核心对象不是“单个 key”，而是“provider”
+- 第一阶段使用独立的 provider 列表模型，不强行进入现有 `AccountRecord` 主列表，也不伪装成 `Codex API Key` 卡片
 - provider 最小字段：
   - `name`
   - `baseUrl`
   - `apiKeyEntries[0].apiKey`
   - `prefix(可选)`
+- provider 标识规则：
+  - 第一阶段以 `name` 作为产品层主标识
+  - `name` 必须唯一
+  - 新增或编辑时若与现有 provider 重名，必须阻止保存并给出冲突提示
 - 后续增强字段：
   - `headers`
   - `apiKeyEntries[]`
   - `models[]`
+- 空状态规则：
+  - 当列表中没有任何 openai-compatible provider 时，页面必须展示明确空状态
+  - 空状态需要解释“这里管理的是 provider，而不是单个 API key 账号”
+  - 空状态主 CTA 为“新增 openai-compatible provider”
+- provider 验证规则：
+  - “验证”针对的是 provider 配置可用性，不是单个资产卡片是否存在
+  - 第一阶段验证对象至少覆盖：
+    - `baseUrl`
+    - `apiKey`
+    - `headers(可选)`
+    - `model(可选，但建议支持)`
+  - 第一阶段验证结果状态至少覆盖：
+    - `idle`
+    - `loading`
+    - `success`
+    - `error`
+  - `error` 状态需要保留最近一次失败原因，便于用户在第一跳看到验证失败信息
 
 ### BDD 场景
 
@@ -168,7 +196,17 @@
 - And 第一阶段至少支持修改 `name`、`baseUrl`、首个 `apiKey entry` 与 `prefix`
 - And 后续阶段可继续扩展 `headers`、多 `apiKey entries` 与 `models`
 
-#### 场景 11：删除 openai-compatible provider
+#### 场景 11：验证 openai-compatible provider 配置
+
+- Given 用户已进入 `openai-compatible` 子菜单
+- And 页面中已有一个 provider 容器
+- When 用户在 provider 详情或编辑面板触发“验证”
+- Then 应用应以 provider 配置为输入发起验证，而不是复用 `codex quota` 链路
+- And 最小验证入参至少包括 `baseUrl`、`apiKey`、可选 `headers` 与 `model`
+- And 页面应展示最近一次验证结果状态：`idle / loading / success / error`
+- And 当验证失败时，页面应保留失败原因，不能只显示一个无上下文的失败提示
+
+#### 场景 12：删除 openai-compatible provider
 
 - Given 用户已进入 `openai-compatible` 子菜单
 - And 页面中已有一个 provider 容器
@@ -176,12 +214,22 @@
 - Then 删除粒度应是整个 provider
 - And 不应误实现为“只删除 provider 里的某一个 key 但保留残缺容器”
 
-#### 场景 12：子菜单状态保持
+#### 场景 13：codex API Key 的过渡性验证
+
+- Given 用户当前位于 `codex` 子菜单
+- And 页面中已有 `Codex API Key` 资产
+- When 产品选择先补一个过渡性的验证动作
+- Then 必须明确该动作只代表“单条 codex api key 的临时验证方案”
+- And 不得把它定义成最终统一的 provider 验证架构
+- And 后续 `openai-compatible` provider 工作区上线后，应以 provider 级验证作为正式能力归属
+
+#### 场景 14：子菜单状态保持
 
 - Given 用户已进入 `账号池` 下的任意子菜单
 - When 用户刷新页面或切换到其他主导航后再返回
-- Then 应用应能恢复上一次使用的子菜单，或按约定回到默认子菜单
+- Then 应用应按优先级恢复子菜单：显式导航目标 > 本地持久化 > 默认 `codex`
 - And 不应出现父级高亮、子级选中、主体内容三者不一致
+- And 父级折叠后再展开时，应保留上次子菜单选中态
 
 ## 验收标准
 - 已存在 `docs-linhay/spaces/account-pool/README.md`
@@ -192,6 +240,12 @@
 - 已定义 `账号池` 父级与 `codex / openai-compatible` 子菜单的信息架构
 - 已定义 `codex` OAuth 登录与过期恢复的验收场景
 - 已定义 `openai-compatible` provider 的最小闭环场景
+- 已明确定义子菜单恢复规则：显式目标 > 本地持久化 > 默认 `codex`
+- 已明确定义 `openai-compatible provider` 的唯一性与主标识规则
+- 已明确定义 `openai-compatible` 第一阶段采用独立 provider 列表模型
+- 已明确定义 `openai-compatible` 的空状态与默认主 CTA
+- 已明确定义“验证”归属为 provider 配置验证，而不是简单给现有 API key 卡片补按钮
+- 已明确定义 provider 验证最小入参与结果状态模型
 - 实现后至少覆盖后端 bridge 测试与前端账号动作测试
 - 过期 `codex` 账号不再只是显示失败原因，而是可直接触发重新登录
 - 成功重登后默认回填原账号资产，不新增重复账号
