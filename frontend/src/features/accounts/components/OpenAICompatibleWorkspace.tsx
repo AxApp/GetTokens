@@ -117,11 +117,25 @@ export default function OpenAICompatibleWorkspace({
                     <div className="grid gap-3 md:grid-cols-2">
                       <div>
                         <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">API KEY</dt>
-                        <dd className="mt-1 font-mono text-[var(--text-primary)]">{maskProviderAPIKey(provider.apiKey)}</dd>
+                        <dd className="mt-1 font-mono text-[var(--text-primary)]">
+                          {maskProviderAPIKey(provider.apiKey)} / {provider.keyCount || provider.apiKeys?.length || 0} KEYS
+                        </dd>
                       </div>
                       <div>
                         <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">PREFIX</dt>
                         <dd className="mt-1 font-mono text-[var(--text-primary)]">{provider.prefix || '—'}</dd>
+                      </div>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <div>
+                        <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                          {t('accounts.openai_provider_headers')}
+                        </dt>
+                        <dd className="mt-1 font-mono text-[var(--text-primary)]">{provider.hasHeaders ? 'CONFIGURED' : '—'}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">MODELS</dt>
+                        <dd className="mt-1 font-mono text-[var(--text-primary)]">{provider.modelCount || 0}</dd>
                       </div>
                     </div>
                   </dl>

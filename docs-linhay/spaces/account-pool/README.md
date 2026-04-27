@@ -208,8 +208,10 @@
 - And 页面中已有一个 provider 容器
 - When 用户点击 `Manage Provider` 打开该 provider 的详情或编辑面板
 - Then 用户可以查看并修改基础字段
-- And 第一阶段至少支持修改 `name`、`baseUrl`、首个 `apiKey entry` 与 `prefix`
-- And 后续阶段可继续扩展 `headers`、多 `apiKey entries` 与 `models`
+- And 当前阶段至少支持修改 `name`、`baseUrl`、`prefix`
+- And 当前阶段至少支持编辑多个 `apiKey entries`
+- And 当前阶段至少支持编辑 `headers`
+- And 当前阶段至少支持编辑 `models / alias`
 
 #### 场景 11：验证 openai-compatible provider 配置
 
@@ -217,7 +219,7 @@
 - And 页面中已有一个 provider 容器
 - When 用户在 provider 详情或编辑面板触发“验证”
 - Then 应用应以 provider 配置为输入发起验证，而不是复用 `codex quota` 链路
-- And 最小验证入参至少包括 `baseUrl`、`apiKey`、可选 `headers` 与显式必填的 `model`
+- And 最小验证入参至少包括 `baseUrl`、首个可用 `apiKey entry`、可选 `headers` 与显式必填的 `model`
 - And 页面应展示最近一次验证结果状态：`idle / loading / success / error`
 - And 当验证失败时，页面应保留失败原因，不能只显示一个无上下文的失败提示
 
@@ -256,6 +258,7 @@
 - 已定义 `codex` OAuth 登录与过期恢复的验收场景
 - 已定义 `openai-compatible` provider 的最小闭环场景
 - 已明确定义子菜单恢复规则：显式目标 > 本地持久化 > 默认 `codex`
+- `openai-compatible` detail modal 已覆盖基础字段、多 `apiKey entries`、`headers`、`models / alias` 与 provider 级验证
 - 已明确定义 `openai-compatible provider` 的唯一性与主标识规则
 - 已明确定义 `openai-compatible` 第一阶段采用独立 provider 列表模型
 - 已明确定义 `openai-compatible` 的空状态与默认主 CTA
@@ -263,6 +266,7 @@
 - 已明确定义 provider 验证最小入参与结果状态模型
 - 已明确定义 `ApiKeyDetailModal` 必须显式保留 `provider` 归属表达，但不承载正式验证主流程
 - 第一阶段实现已把 `openai-compatible` 收口到 `provider card -> detail modal -> save/verify` 的正式工作流，不再只停留在卡片级临时输入
+- 第二阶段实现已补齐 `headers` 与多 `apiKey entries` 编辑，provider 保存粒度保持为整包配置回写
 - 实现后至少覆盖后端 bridge 测试与前端账号动作测试
 - 过期 `codex` 账号不再只是显示失败原因，而是可直接触发重新登录
 - 成功重登后默认回填原账号资产，不新增重复账号

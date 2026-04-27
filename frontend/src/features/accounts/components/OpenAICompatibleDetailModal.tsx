@@ -93,12 +93,142 @@ export default function OpenAICompatibleDetailModal({
               </label>
               <label className="space-y-2 md:col-span-2">
                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">API KEY</div>
-                <input
-                  value={draft.apiKey}
-                  onChange={(event) => onChange({ ...draft, apiKey: event.target.value })}
-                  className="input-swiss"
-                  placeholder="sk-..."
-                />
+                <div className="space-y-3">
+                  {draft.apiKeys.map((apiKey, index) => (
+                    <div key={`api-key-${index}`} className="flex items-center gap-3">
+                      <input
+                        value={apiKey}
+                        onChange={(event) => {
+                          const nextAPIKeys = [...draft.apiKeys];
+                          nextAPIKeys[index] = event.target.value;
+                          onChange({ ...draft, apiKey: nextAPIKeys[0] || '', apiKeys: nextAPIKeys });
+                        }}
+                        className="input-swiss flex-1"
+                        placeholder="sk-..."
+                      />
+                      <button
+                        onClick={() => {
+                          const nextAPIKeys = draft.apiKeys.filter((_, itemIndex) => itemIndex !== index);
+                          onChange({
+                            ...draft,
+                            apiKey: nextAPIKeys[0] || '',
+                            apiKeys: nextAPIKeys.length > 0 ? nextAPIKeys : [''],
+                          });
+                        }}
+                        className="btn-swiss-secondary !border-red-500 !text-red-500"
+                        disabled={draft.apiKeys.length === 1}
+                      >
+                        {t('common.delete')}
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => onChange({ ...draft, apiKeys: [...draft.apiKeys, ''] })}
+                    className="btn-swiss-secondary"
+                  >
+                    {t('accounts.openai_provider_add_api_key')}
+                  </button>
+                </div>
+              </label>
+              <label className="space-y-2 md:col-span-2">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  {t('accounts.openai_provider_headers')}
+                </div>
+                <div className="space-y-3">
+                  {draft.headers.map((row, index) => (
+                    <div key={`header-${index}`} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                      <input
+                        value={row.key}
+                        onChange={(event) => {
+                          const nextHeaders = [...draft.headers];
+                          nextHeaders[index] = { ...nextHeaders[index], key: event.target.value };
+                          onChange({ ...draft, headers: nextHeaders });
+                        }}
+                        className="input-swiss"
+                        placeholder="Authorization"
+                      />
+                      <input
+                        value={row.value}
+                        onChange={(event) => {
+                          const nextHeaders = [...draft.headers];
+                          nextHeaders[index] = { ...nextHeaders[index], value: event.target.value };
+                          onChange({ ...draft, headers: nextHeaders });
+                        }}
+                        className="input-swiss"
+                        placeholder="Bearer sk-..."
+                      />
+                      <button
+                        onClick={() => {
+                          const nextHeaders = draft.headers.filter((_, itemIndex) => itemIndex !== index);
+                          onChange({ ...draft, headers: nextHeaders.length > 0 ? nextHeaders : [{ key: '', value: '' }] });
+                        }}
+                        className="btn-swiss-secondary !border-red-500 !text-red-500"
+                        disabled={draft.headers.length === 1}
+                      >
+                        {t('common.delete')}
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => onChange({ ...draft, headers: [...draft.headers, { key: '', value: '' }] })}
+                    className="btn-swiss-secondary"
+                  >
+                    {t('accounts.openai_provider_add_header')}
+                  </button>
+                </div>
+              </label>
+              <label className="space-y-2 md:col-span-2">
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  {t('accounts.openai_provider_models')}
+                </div>
+                <div className="space-y-3">
+                  {draft.models.map((row, index) => (
+                    <div key={`model-${index}`} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                      <input
+                        value={row.name}
+                        onChange={(event) => {
+                          const nextModels = [...draft.models];
+                          nextModels[index] = { ...nextModels[index], name: event.target.value };
+                          onChange({ ...draft, models: nextModels });
+                        }}
+                        className="input-swiss"
+                        placeholder="deepseek-chat"
+                      />
+                      <input
+                        value={row.alias}
+                        onChange={(event) => {
+                          const nextModels = [...draft.models];
+                          nextModels[index] = { ...nextModels[index], alias: event.target.value };
+                          onChange({ ...draft, models: nextModels });
+                        }}
+                        className="input-swiss"
+                        placeholder="chat"
+                      />
+                      <button
+                        onClick={() => {
+                          const nextModels = draft.models.filter((_, itemIndex) => itemIndex !== index);
+                          const nextVerifyModel =
+                            draft.verifyModel === row.name ? nextModels[0]?.name || '' : draft.verifyModel;
+                          onChange({
+                            ...draft,
+                            models: nextModels.length > 0 ? nextModels : [{ name: '', alias: '' }],
+                            verifyModel: nextVerifyModel,
+                          });
+                        }}
+                        className="btn-swiss-secondary !border-red-500 !text-red-500"
+                        disabled={draft.models.length === 1}
+                      >
+                        {t('common.delete')}
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => onChange({ ...draft, models: [...draft.models, { name: '', alias: '' }] })}
+                    className="btn-swiss-secondary"
+                  >
+                    {t('accounts.openai_provider_add_model')}
+                  </button>
+                </div>
               </label>
             </div>
 
@@ -123,6 +253,28 @@ export default function OpenAICompatibleDetailModal({
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_test_model')}
               </div>
+              {draft.models.some((item) => item.name.trim()) ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {draft.models
+                    .filter((item) => item.name.trim())
+                    .map((item) => {
+                      const modelName = item.name.trim();
+                      return (
+                        <button
+                          key={`${item.name}:${item.alias}`}
+                          onClick={() => onChange({ ...draft, verifyModel: modelName })}
+                          className={`border px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] ${
+                            draft.verifyModel === modelName
+                              ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                              : 'border-[var(--border-color)] text-[var(--text-muted)]'
+                          }`}
+                        >
+                          {item.alias ? `${item.alias} / ${modelName}` : modelName}
+                        </button>
+                      );
+                    })}
+                </div>
+              ) : null}
               <div className="mt-3 flex items-end gap-3">
                 <label className="min-w-0 flex-1 space-y-2">
                   <input

@@ -15,10 +15,17 @@ type OpenAICompatibleProvider struct {
 	BaseURL    string            `json:"baseUrl"`
 	Prefix     string            `json:"prefix,omitempty"`
 	APIKey     string            `json:"apiKey"`
+	APIKeys    []string          `json:"apiKeys,omitempty"`
+	Models     []OpenAICompatibleModel `json:"models,omitempty"`
 	Headers    map[string]string `json:"headers,omitempty"`
 	KeyCount   int               `json:"keyCount,omitempty"`
 	ModelCount int               `json:"modelCount,omitempty"`
 	HasHeaders bool              `json:"hasHeaders,omitempty"`
+}
+
+type OpenAICompatibleModel struct {
+	Name  string `json:"name"`
+	Alias string `json:"alias,omitempty"`
 }
 
 type CreateOpenAICompatibleProviderInput struct {
@@ -34,6 +41,9 @@ type UpdateOpenAICompatibleProviderInput struct {
 	BaseURL     string `json:"baseUrl"`
 	Prefix      string `json:"prefix,omitempty"`
 	APIKey      string `json:"apiKey"`
+	APIKeys     []string          `json:"apiKeys,omitempty"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	Models      []OpenAICompatibleModel `json:"models,omitempty"`
 }
 
 type VerifyOpenAICompatibleProviderInput struct {
@@ -59,14 +69,35 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 	providers := make([]OpenAICompatibleProvider, 0, len(items))
 	for _, item := range items {
 		apiKey := ""
+		apiKeys := make([]string, 0, len(item.APIKeyEntries))
+		models := make([]OpenAICompatibleModel, 0, len(item.Models))
 		if len(item.APIKeyEntries) > 0 {
 			apiKey = strings.TrimSpace(item.APIKeyEntries[0].APIKey)
+		}
+		for _, entry := range item.APIKeyEntries {
+			trimmedAPIKey := strings.TrimSpace(entry.APIKey)
+			if trimmedAPIKey == "" {
+				continue
+			}
+			apiKeys = append(apiKeys, trimmedAPIKey)
+		}
+		for _, model := range item.Models {
+			trimmedName := strings.TrimSpace(model.Name)
+			if trimmedName == "" {
+				continue
+			}
+			models = append(models, OpenAICompatibleModel{
+				Name:  trimmedName,
+				Alias: strings.TrimSpace(model.Alias),
+			})
 		}
 		providers = append(providers, OpenAICompatibleProvider{
 			Name:       strings.TrimSpace(item.Name),
 			BaseURL:    strings.TrimSpace(item.BaseURL),
 			Prefix:     strings.TrimSpace(item.Prefix),
 			APIKey:     apiKey,
+			APIKeys:    apiKeys,
+			Models:     models,
 			Headers:    cloneHeaders(item.Headers),
 			KeyCount:   len(item.APIKeyEntries),
 			ModelCount: len(item.Models),
@@ -128,6 +159,8 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 	baseURL := strings.TrimSpace(input.BaseURL)
 	apiKey := strings.TrimSpace(input.APIKey)
 	prefix := strings.TrimSpace(input.Prefix)
+	apiKeys := normalizeProviderAPIKeys(append([]string{apiKey}, input.APIKeys...))
+	models := normalizeProviderModels(input.Models)
 
 	switch {
 	case currentName == "":
@@ -136,7 +169,7 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		return errors.New("name 不能为空")
 	case baseURL == "":
 		return errors.New("base url 不能为空")
-	case apiKey == "":
+	case len(apiKeys) == 0:
 		return errors.New("api key 不能为空")
 	}
 
@@ -165,10 +198,21 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 	target.Name = name
 	target.BaseURL = baseURL
 	target.Prefix = prefix
-	if len(target.APIKeyEntries) == 0 {
-		target.APIKeyEntries = []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: apiKey}}
-	} else {
-		target.APIKeyEntries[0].APIKey = apiKey
+	target.Headers = normalizeVerifyHeaders(input.Headers)
+	target.Models = make([]cliproxyapi.OpenAICompatibleModel, 0, len(models))
+	for _, model := range models {
+		target.Models = append(target.Models, cliproxyapi.OpenAICompatibleModel{
+			Name:  model.Name,
+			Alias: model.Alias,
+		})
+	}
+	target.APIKeyEntries = make([]cliproxyapi.OpenAICompatibleAPIKeyEntry, 0, len(apiKeys))
+	for index, item := range apiKeys {
+		entry := cliproxyapi.OpenAICompatibleAPIKeyEntry{APIKey: item}
+		if index < len(current[targetIndex].APIKeyEntries) {
+			entry.ProxyURL = strings.TrimSpace(current[targetIndex].APIKeyEntries[index].ProxyURL)
+		}
+		target.APIKeyEntries = append(target.APIKeyEntries, entry)
 	}
 	current[targetIndex] = target
 
@@ -295,4 +339,41 @@ func cloneHeaders(headers map[string]string) map[string]string {
 		cloned[key] = value
 	}
 	return cloned
+}
+
+func normalizeProviderAPIKeys(items []string) []string {
+	normalized := make([]string, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		trimmed := strings.TrimSpace(item)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		normalized = append(normalized, trimmed)
+	}
+	return normalized
+}
+
+func normalizeProviderModels(items []OpenAICompatibleModel) []OpenAICompatibleModel {
+	normalized := make([]OpenAICompatibleModel, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		name := strings.TrimSpace(item.Name)
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		normalized = append(normalized, OpenAICompatibleModel{
+			Name:  name,
+			Alias: strings.TrimSpace(item.Alias),
+		})
+	}
+	return normalized
 }

@@ -124,7 +124,7 @@ func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *t
 					if got.Prefix != "prod" {
 						t.Fatalf("unexpected prefix: %s", got.Prefix)
 					}
-					if len(got.APIKeyEntries) != 2 {
+					if len(got.APIKeyEntries) != 3 {
 						t.Fatalf("unexpected key entry count: %d", len(got.APIKeyEntries))
 					}
 					if got.APIKeyEntries[0].APIKey != "sk-new" {
@@ -136,8 +136,20 @@ func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *t
 					if got.APIKeyEntries[1].APIKey != "sk-backup" {
 						t.Fatalf("unexpected backup api key: %s", got.APIKeyEntries[1].APIKey)
 					}
-					if got.Headers["X-Test"] != "1" {
+					if got.APIKeyEntries[2].APIKey != "sk-third" {
+						t.Fatalf("unexpected third api key: %s", got.APIKeyEntries[2].APIKey)
+					}
+					if got.Headers["X-Test"] != "2" || got.Headers["X-Env"] != "prod" {
 						t.Fatalf("unexpected headers: %#v", got.Headers)
+					}
+					if len(got.Models) != 2 {
+						t.Fatalf("unexpected model count: %d", len(got.Models))
+					}
+					if got.Models[0].Name != "deepseek-chat" || got.Models[0].Alias != "chat" {
+						t.Fatalf("unexpected first model: %#v", got.Models[0])
+					}
+					if got.Models[1].Name != "deepseek-reasoner" || got.Models[1].Alias != "" {
+						t.Fatalf("unexpected second model: %#v", got.Models[1])
 					}
 					return nil, 200, nil
 				}
@@ -153,6 +165,15 @@ func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *t
 		BaseURL:     "https://relay.example.com/v1",
 		Prefix:      "prod",
 		APIKey:      "sk-new",
+		APIKeys:     []string{"sk-new", "sk-backup", "sk-third"},
+		Headers: map[string]string{
+			"X-Test": "2",
+			"X-Env":  "prod",
+		},
+		Models: []OpenAICompatibleModel{
+			{Name: "deepseek-chat", Alias: "chat"},
+			{Name: "deepseek-reasoner"},
+		},
 	})
 	if err != nil {
 		t.Fatalf("UpdateOpenAICompatibleProvider returned error: %v", err)

@@ -128,10 +128,17 @@ type OpenAICompatibleProvider struct {
 	BaseURL    string            `json:"baseUrl"`
 	Prefix     string            `json:"prefix,omitempty"`
 	APIKey     string            `json:"apiKey"`
+	APIKeys    []string          `json:"apiKeys,omitempty"`
+	Models     []OpenAICompatibleModel `json:"models,omitempty"`
 	Headers    map[string]string `json:"headers,omitempty"`
 	KeyCount   int               `json:"keyCount,omitempty"`
 	ModelCount int               `json:"modelCount,omitempty"`
 	HasHeaders bool              `json:"hasHeaders,omitempty"`
+}
+
+type OpenAICompatibleModel struct {
+	Name  string `json:"name"`
+	Alias string `json:"alias,omitempty"`
 }
 
 type CreateOpenAICompatibleProviderInput struct {
@@ -147,6 +154,9 @@ type UpdateOpenAICompatibleProviderInput struct {
 	BaseURL     string `json:"baseUrl"`
 	Prefix      string `json:"prefix,omitempty"`
 	APIKey      string `json:"apiKey"`
+	APIKeys     []string          `json:"apiKeys,omitempty"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	Models      []OpenAICompatibleModel `json:"models,omitempty"`
 }
 
 type VerifyOpenAICompatibleProviderInput struct {
@@ -407,6 +417,8 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 			BaseURL:    item.BaseURL,
 			Prefix:     item.Prefix,
 			APIKey:     item.APIKey,
+			APIKeys:    append([]string(nil), item.APIKeys...),
+			Models:     mapOpenAICompatibleModels(item.Models),
 			Headers:    item.Headers,
 			KeyCount:   item.KeyCount,
 			ModelCount: item.ModelCount,
@@ -535,6 +547,9 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		BaseURL:     input.BaseURL,
 		Prefix:      input.Prefix,
 		APIKey:      input.APIKey,
+		APIKeys:     append([]string(nil), input.APIKeys...),
+		Headers:     input.Headers,
+		Models:      mapOpenAICompatibleModelsToWails(input.Models),
 	})
 }
 
@@ -581,6 +596,28 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		QuotaKey:         record.QuotaKey,
 		LocalOnly:        record.LocalOnly,
 	}
+}
+
+func mapOpenAICompatibleModels(items []wailsapp.OpenAICompatibleModel) []OpenAICompatibleModel {
+	models := make([]OpenAICompatibleModel, 0, len(items))
+	for _, item := range items {
+		models = append(models, OpenAICompatibleModel{
+			Name:  item.Name,
+			Alias: item.Alias,
+		})
+	}
+	return models
+}
+
+func mapOpenAICompatibleModelsToWails(items []OpenAICompatibleModel) []wailsapp.OpenAICompatibleModel {
+	models := make([]wailsapp.OpenAICompatibleModel, 0, len(items))
+	for _, item := range items {
+		models = append(models, wailsapp.OpenAICompatibleModel{
+			Name:  item.Name,
+			Alias: item.Alias,
+		})
+	}
+	return models
 }
 
 func mapRelayServiceEndpoints(items []wailsapp.RelayServiceEndpoint) []RelayServiceEndpoint {

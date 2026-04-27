@@ -267,11 +267,27 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
+	export class OpenAICompatibleModel {
+	    name: string;
+	    alias?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenAICompatibleModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.alias = source["alias"];
+	    }
+	}
 	export class OpenAICompatibleProvider {
 	    name: string;
 	    baseUrl: string;
 	    prefix?: string;
 	    apiKey: string;
+	    apiKeys?: string[];
+	    models?: OpenAICompatibleModel[];
 	    headers?: Record<string, string>;
 	    keyCount?: number;
 	    modelCount?: number;
@@ -287,11 +303,31 @@ export namespace main {
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
 	        this.apiKey = source["apiKey"];
+	        this.apiKeys = source["apiKeys"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
 	        this.headers = source["headers"];
 	        this.keyCount = source["keyCount"];
 	        this.modelCount = source["modelCount"];
 	        this.hasHeaders = source["hasHeaders"];
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class RelayLocalApplyResult {
 	    codexHomePath: string;
@@ -422,6 +458,9 @@ export namespace main {
 	    baseUrl: string;
 	    prefix?: string;
 	    apiKey: string;
+	    apiKeys?: string[];
+	    headers?: Record<string, string>;
+	    models?: OpenAICompatibleModel[];
 	
 	    static createFrom(source: any = {}) {
 	        return new UpdateOpenAICompatibleProviderInput(source);
@@ -434,7 +473,28 @@ export namespace main {
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
 	        this.apiKey = source["apiKey"];
+	        this.apiKeys = source["apiKeys"];
+	        this.headers = source["headers"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
 	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class UploadFilePayload {
 	    name: string;

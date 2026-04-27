@@ -6,11 +6,15 @@ import {
   UpdateOpenAICompatibleProvider,
   VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
+import { main } from '../../../../wailsjs/go/models';
 import { toErrorMessage } from '../../../utils/error';
 import type { TrackRequest, Translator } from '../model/types';
 import {
+  buildHeadersMap,
   buildOpenAICompatibleProviderDraft,
+  normalizeProviderModels,
   emptyOpenAICompatibleProviderForm,
+  normalizeProviderAPIKeys,
   type OpenAICompatibleProvider,
   type OpenAICompatibleProviderDraft,
   type OpenAICompatibleProviderFormState,
@@ -117,13 +121,18 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
       setDetailSaving(true);
       setDetailError('');
       await trackRequest('UpdateOpenAICompatibleProvider', { ...detailDraft }, () =>
-        UpdateOpenAICompatibleProvider({
-          currentName: detailDraft.currentName,
-          name: detailDraft.name,
-          baseUrl: detailDraft.baseUrl,
-          prefix: detailDraft.prefix,
-          apiKey: detailDraft.apiKey,
-        }),
+        UpdateOpenAICompatibleProvider(
+          main.UpdateOpenAICompatibleProviderInput.createFrom({
+            currentName: detailDraft.currentName,
+            name: detailDraft.name,
+            baseUrl: detailDraft.baseUrl,
+            prefix: detailDraft.prefix,
+            apiKey: normalizeProviderAPIKeys(detailDraft.apiKeys)[0] || detailDraft.apiKey,
+            apiKeys: normalizeProviderAPIKeys(detailDraft.apiKeys),
+            headers: buildHeadersMap(detailDraft.headers),
+            models: normalizeProviderModels(detailDraft.models),
+          }),
+        ),
       );
 
       setVerifyStateByName((prev) => renameProviderVerifyState(prev, detailDraft.currentName, detailDraft.name));
@@ -180,8 +189,9 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
         () =>
           VerifyOpenAICompatibleProvider({
             baseUrl: detailDraft.baseUrl,
-            apiKey: detailDraft.apiKey,
+            apiKey: normalizeProviderAPIKeys(detailDraft.apiKeys)[0] || detailDraft.apiKey,
             model,
+            headers: buildHeadersMap(detailDraft.headers),
           }),
       );
 
