@@ -67,6 +67,10 @@
   - `重新登录`
   - `额度观察`
   - `轮动设置`
+- `Codex API Key` 详情弹窗继续承接“单条 API key 资产详情 / 配置分发工作台”职责：
+  - 可以复用统一 detail shell
+  - 但标题、provider config 区块、配置工作台标题都必须显式带出当前 `provider`
+  - 不得把该弹窗误实现成通用 provider 设置页
 - 当前 `Codex API Key` 资产没有正式“验证 provider 配置”链路；若后续补验证，只能视为过渡方案，不代表最终信息架构
 
 #### 子级 2：openai-compatible
@@ -122,6 +126,17 @@
 - Then 页面进入 `codex` 账号池视图
 - And 用户可以看到 `ChatGPT 登录`、`导入 Auth File`、`粘贴 Auth 内容`、`添加 Codex API Key`
 - And 现有 quota、reauth、rotation 等 codex 专属能力仍保留在该子菜单内
+
+#### 场景 2A：打开 Codex API Key 详情时保留明确 provider 归属
+
+- Given 当前位于 `codex` 子菜单
+- And 页面中已有一条 `Codex API Key` 资产
+- When 用户打开该资产详情弹窗
+- Then 页面标题应显式带出当前 `provider`
+- And `provider config` 区块应显式带出当前 `provider`
+- And `configuration workspace` 标题应显式带出当前 `provider`
+- And 该弹窗仍只承担单条 API key 资产详情与配置复制职责
+- And 不得把它误实现成正式 provider 验证入口
 
 #### 场景 3：切换到 openai-compatible 子菜单
 
@@ -246,6 +261,7 @@
 - 已明确定义 `openai-compatible` 的空状态与默认主 CTA
 - 已明确定义“验证”归属为 provider 配置验证，而不是简单给现有 API key 卡片补按钮
 - 已明确定义 provider 验证最小入参与结果状态模型
+- 已明确定义 `ApiKeyDetailModal` 必须显式保留 `provider` 归属表达，但不承载正式验证主流程
 - 实现后至少覆盖后端 bridge 测试与前端账号动作测试
 - 过期 `codex` 账号不再只是显示失败原因，而是可直接触发重新登录
 - 成功重登后默认回填原账号资产，不新增重复账号

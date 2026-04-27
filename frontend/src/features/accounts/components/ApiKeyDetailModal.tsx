@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { buildManagedAuthJSONSnippet, buildManagedConfigTomlSnippet } from '../model/accountConfig';
-import { providerLabel, sourceLabel } from '../model/accountPresentation';
+import {
+  providerLabel,
+  resolveAccountAPIKeyPlainNotice,
+  resolveAccountConfigurationWorkspaceHeading,
+  resolveAccountProviderConfigHeading,
+  resolveAccountSourceHeading,
+  sourceLabel,
+} from '../model/accountPresentation';
 import type { AccountRecord, ClickEventLike, TextInputEvent, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountHealthBar from './AccountHealthBar';
@@ -77,6 +84,10 @@ export default function ApiKeyDetailModal({
   ];
   const managedAuthJSONSnippet = useMemo(() => buildManagedAuthJSONSnippet(configDraft), [configDraft]);
   const managedConfigTomlSnippet = useMemo(() => buildManagedConfigTomlSnippet(configDraft), [configDraft]);
+  const sourceHeading = useMemo(() => resolveAccountSourceHeading(account, t), [account, t]);
+  const providerConfigHeading = useMemo(() => resolveAccountProviderConfigHeading(account, t), [account, t]);
+  const workspaceHeading = useMemo(() => resolveAccountConfigurationWorkspaceHeading(account, t), [account, t]);
+  const apiKeyPlainNotice = useMemo(() => resolveAccountAPIKeyPlainNotice(account, t), [account, t]);
   const missingFields = useMemo(() => {
     const fields: string[] = [];
     if (!configDraft.apiKey.trim()) {
@@ -118,7 +129,7 @@ export default function ApiKeyDetailModal({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.source_api_key')}
+                {sourceHeading}
               </div>
               <div className="mt-3 space-y-2">
                 <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -157,7 +168,7 @@ export default function ApiKeyDetailModal({
 
             <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
               <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.provider_config')}
+                {providerConfigHeading}
               </div>
               <div className="mt-1 text-lg font-black italic uppercase tracking-tight text-[var(--text-primary)]">
                 {providerLabel(account)}
@@ -217,14 +228,14 @@ export default function ApiKeyDetailModal({
             </div>
 
             <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {t('accounts.api_key_plain_notice')}
+              {apiKeyPlainNotice}
             </div>
           </section>
 
           <section className="card-swiss !p-0 overflow-hidden">
             <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-3">
               <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.configuration_workspace')}
+                {workspaceHeading}
               </div>
             </div>
 

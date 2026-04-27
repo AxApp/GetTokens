@@ -22,6 +22,26 @@ export function providerLabel(account: AccountRecord) {
   return String(account.provider || 'unknown').trim().toUpperCase();
 }
 
+function replaceProviderPlaceholder(template: string, provider: string) {
+  return template.replace('{provider}', provider);
+}
+
+export function resolveAccountSourceHeading(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.source_api_key_with_provider'), providerLabel(account));
+}
+
+export function resolveAccountProviderConfigHeading(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.provider_config_with_provider'), providerLabel(account));
+}
+
+export function resolveAccountConfigurationWorkspaceHeading(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.configuration_workspace_with_provider'), providerLabel(account));
+}
+
+export function resolveAccountAPIKeyPlainNotice(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.api_key_plain_notice_with_provider'), providerLabel(account));
+}
+
 export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
   const provider = String(account.provider || account.type || 'unknown').trim().toLowerCase() || 'unknown';
   return {

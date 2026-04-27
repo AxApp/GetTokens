@@ -6,7 +6,11 @@ import {
   isCodexAuthFile,
   isCodexReauthEligible,
   mapAuthFileToRecord,
+  resolveAccountAPIKeyPlainNotice,
+  resolveAccountConfigurationWorkspaceHeading,
   resolveAccountFailureReason,
+  resolveAccountProviderConfigHeading,
+  resolveAccountSourceHeading,
 } from '../model/accountPresentation.ts';
 
 test('mapAuthFileToRecord keeps auth file status message', () => {
@@ -181,4 +185,27 @@ test('buildAccountStabilitySummary prefers failure reason and falls back to plac
       tone: 'neutral',
     }
   );
+});
+
+test('account detail headings keep explicit provider scope', () => {
+  const t = (key) =>
+    ({
+      'accounts.source_api_key_with_provider': '{provider} API KEY',
+      'accounts.provider_config_with_provider': '{provider} Provider Config',
+      'accounts.configuration_workspace_with_provider': '{provider} Config Workspace',
+      'accounts.api_key_plain_notice_with_provider': 'This panel shows the {provider} API key in plain text.',
+    })[key] || key;
+
+  const account = {
+    id: 'api-key:codex',
+    provider: 'codex',
+    credentialSource: 'api-key',
+    displayName: 'CODEX API KEY',
+    status: 'ACTIVE',
+  };
+
+  assert.equal(resolveAccountSourceHeading(account, t), 'CODEX API KEY');
+  assert.equal(resolveAccountProviderConfigHeading(account, t), 'CODEX Provider Config');
+  assert.equal(resolveAccountConfigurationWorkspaceHeading(account, t), 'CODEX Config Workspace');
+  assert.equal(resolveAccountAPIKeyPlainNotice(account, t), 'This panel shows the CODEX API key in plain text.');
 });
