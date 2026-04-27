@@ -3,15 +3,19 @@ import {
   CreateOpenAICompatibleProvider,
   DeleteOpenAICompatibleProvider,
   ListOpenAICompatibleProviders,
+  UpdateOpenAICompatibleProvider,
   VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
 import { toErrorMessage } from '../../../utils/error';
 import type { TrackRequest, Translator } from '../model/types';
 import {
+  buildOpenAICompatibleProviderDraft,
   emptyOpenAICompatibleProviderForm,
   type OpenAICompatibleProvider,
+  type OpenAICompatibleProviderDraft,
   type OpenAICompatibleProviderFormState,
   type ProviderVerifyState,
+  renameProviderVerifyState,
 } from '../model/openAICompatible';
 
 interface UseOpenAICompatibleStateArgs {
@@ -28,6 +32,9 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
   const [formError, setFormError] = useState('');
   const [verifyStateByName, setVerifyStateByName] = useState<Record<string, ProviderVerifyState>>({});
   const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(null);
+  const [detailDraft, setDetailDraft] = useState<OpenAICompatibleProviderDraft | null>(null);
+  const [detailError, setDetailError] = useState('');
+  const [detailSaving, setDetailSaving] = useState(false);
 
   const loadProviders = useCallback(async () => {
     if (!ready) {
@@ -52,6 +59,16 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     setForm(emptyOpenAICompatibleProviderForm);
     setFormError('');
     setIsCreateModalOpen(true);
+  }, []);
+
+  const openDetailModal = useCallback((provider: OpenAICompatibleProvider) => {
+    setDetailDraft(buildOpenAICompatibleProviderDraft(provider, verifyStateByName[provider.name]));
+    setDetailError('');
+  }, [verifyStateByName]);
+
+  const closeDetailModal = useCallback(() => {
+    setDetailDraft(null);
+    setDetailError('');
   }, []);
 
   const submitCreate = useCallback(async () => {
@@ -91,81 +108,104 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     [loadProviders, trackRequest],
   );
 
-  const setVerifyModel = useCallback((name: string, model: string) => {
+  const saveDetail = useCallback(async () => {
+    if (!detailDraft) {
+      return;
+    }
+
+    try {
+      setDetailSaving(true);
+      setDetailError('');
+      await trackRequest('UpdateOpenAICompatibleProvider', { ...detailDraft }, () =>
+        UpdateOpenAICompatibleProvider({
+          currentName: detailDraft.currentName,
+          name: detailDraft.name,
+          baseUrl: detailDraft.baseUrl,
+          prefix: detailDraft.prefix,
+          apiKey: detailDraft.apiKey,
+        }),
+      );
+
+      setVerifyStateByName((prev) => renameProviderVerifyState(prev, detailDraft.currentName, detailDraft.name));
+      await loadProviders();
+      setDetailDraft((prev) =>
+        prev
+          ? {
+              ...prev,
+              currentName: prev.name,
+            }
+          : prev,
+      );
+    } catch (error) {
+      setDetailError(toErrorMessage(error));
+    } finally {
+      setDetailSaving(false);
+    }
+  }, [detailDraft, loadProviders, trackRequest]);
+
+  const verifyDetail = useCallback(async () => {
+    if (!detailDraft) {
+      return;
+    }
+
+    const providerName = detailDraft.currentName || detailDraft.name;
+    const model = String(detailDraft.verifyModel || '').trim();
+    if (!model) {
+      setVerifyStateByName((prev) => ({
+        ...prev,
+        [providerName]: {
+          model: '',
+          status: 'error',
+          message: t('accounts.openai_provider_test_model_required'),
+          lastVerifiedAt: prev[providerName]?.lastVerifiedAt ?? null,
+        },
+      }));
+      return;
+    }
+
     setVerifyStateByName((prev) => ({
       ...prev,
-      [name]: {
+      [providerName]: {
         model,
-        status: prev[name]?.status ?? 'idle',
-        message: prev[name]?.message ?? '',
-        lastVerifiedAt: prev[name]?.lastVerifiedAt ?? null,
+        status: 'loading',
+        message: '',
+        lastVerifiedAt: prev[providerName]?.lastVerifiedAt ?? null,
       },
     }));
-  }, []);
 
-  const verifyProvider = useCallback(
-    async (provider: OpenAICompatibleProvider) => {
-      const current = verifyStateByName[provider.name];
-      const model = String(current?.model || '').trim();
-      if (!model) {
-        setVerifyStateByName((prev) => ({
-          ...prev,
-          [provider.name]: {
-            model: '',
-            status: 'error',
-            message: t('accounts.openai_provider_test_model_required'),
-            lastVerifiedAt: prev[provider.name]?.lastVerifiedAt ?? null,
-          },
-        }));
-        return;
-      }
+    try {
+      const result = await trackRequest(
+        'VerifyOpenAICompatibleProvider',
+        { name: providerName, baseUrl: detailDraft.baseUrl, model },
+        () =>
+          VerifyOpenAICompatibleProvider({
+            baseUrl: detailDraft.baseUrl,
+            apiKey: detailDraft.apiKey,
+            model,
+          }),
+      );
 
       setVerifyStateByName((prev) => ({
         ...prev,
-        [provider.name]: {
+        [providerName]: {
           model,
-          status: 'loading',
-          message: '',
-          lastVerifiedAt: prev[provider.name]?.lastVerifiedAt ?? null,
+          status: result.success ? 'success' : 'error',
+          message: result.message || (result.success ? t('accounts.openai_provider_test_success') : t('accounts.openai_provider_test_failed')),
+          lastVerifiedAt: Date.now(),
         },
       }));
-
-      try {
-        const result = await trackRequest(
-          'VerifyOpenAICompatibleProvider',
-          { name: provider.name, baseUrl: provider.baseUrl, model },
-          () =>
-            VerifyOpenAICompatibleProvider({
-              baseUrl: provider.baseUrl,
-              apiKey: provider.apiKey,
-              model,
-              headers: provider.headers,
-            }),
-        );
-
-        setVerifyStateByName((prev) => ({
-          ...prev,
-          [provider.name]: {
-            model,
-            status: result.success ? 'success' : 'error',
-            message: result.message || (result.success ? t('accounts.openai_provider_test_success') : t('accounts.openai_provider_test_failed')),
-            lastVerifiedAt: Date.now(),
-          },
-        }));
-      } catch (error) {
-        setVerifyStateByName((prev) => ({
-          ...prev,
-          [provider.name]: {
-            model,
-            status: 'error',
-            message: toErrorMessage(error),
-            lastVerifiedAt: Date.now(),
-          },
-        }));
-      }
-    },
-    [t, trackRequest, verifyStateByName],
-  );
+    } catch (error) {
+      setVerifyStateByName((prev) => ({
+        ...prev,
+        [providerName]: {
+          model,
+          status: 'error',
+          message: toErrorMessage(error),
+          lastVerifiedAt: Date.now(),
+        },
+      }));
+    }
+  }, [detailDraft, t, trackRequest]);
 
   const verifyStates = useMemo(() => verifyStateByName, [verifyStateByName]);
 
@@ -177,13 +217,19 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     formError,
     verifyStates,
     pendingDeleteName,
+    detailDraft,
+    detailError,
+    detailSaving,
     setForm,
     setIsCreateModalOpen,
+    setDetailDraft,
     openCreateModal,
+    openDetailModal,
+    closeDetailModal,
     submitCreate,
+    saveDetail,
     deleteProvider,
-    setVerifyModel,
-    verifyProvider,
+    verifyDetail,
     loadProviders,
   };
 }

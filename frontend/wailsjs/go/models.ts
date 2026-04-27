@@ -416,6 +416,26 @@ export namespace main {
 	        this.priority = source["priority"];
 	    }
 	}
+	export class UpdateOpenAICompatibleProviderInput {
+	    currentName: string;
+	    name: string;
+	    baseUrl: string;
+	    prefix?: string;
+	    apiKey: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateOpenAICompatibleProviderInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentName = source["currentName"];
+	        this.name = source["name"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.apiKey = source["apiKey"];
+	    }
+	}
 	export class UploadFilePayload {
 	    name: string;
 	    contentBase64: string;

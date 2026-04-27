@@ -60,6 +60,8 @@ export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Prom
 
 export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInput):Promise<void>;
 
+export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<void>;
+
 export function UpdateRelayRoutingConfig(arg1:main.RelayRoutingConfig):Promise<main.RelayRoutingConfig>;
 
 export function UpdateRelayServiceAPIKey(arg1:string):Promise<main.RelayServiceConfig>;

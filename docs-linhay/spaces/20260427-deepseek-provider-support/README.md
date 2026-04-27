@@ -128,6 +128,7 @@
 1. 后端补齐 `openai-compatible` 的 Wails / management bridge，而不是只扩 `CodexAPIKey`
 2. 前端从“添加 Codex API Key”升级为“新增 openai-compatible provider”
 3. 顶层对象改为 provider 容器，而不是单个 API key 资产；第一阶段使用独立 provider 列表模型，不进入现有 `AccountRecord` 主列表
+4. 当前第一阶段正式工作流已收口为：`provider 卡片摘要 -> Manage Provider detail modal -> 编辑基础字段 -> provider 级验证`
 4. 第一阶段最少支持：
    - `name`
    - `baseUrl`

@@ -9,6 +9,9 @@ import (
 )
 
 func (a *App) managementClient() *cliproxyapi.Client {
+	if a.managementAPI != nil {
+		return a.managementAPI()
+	}
 	return cliproxyapi.New(a.SidecarRequest)
 }
 

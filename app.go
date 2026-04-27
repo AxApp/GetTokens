@@ -141,6 +141,14 @@ type CreateOpenAICompatibleProviderInput struct {
 	APIKey  string `json:"apiKey"`
 }
 
+type UpdateOpenAICompatibleProviderInput struct {
+	CurrentName string `json:"currentName"`
+	Name        string `json:"name"`
+	BaseURL     string `json:"baseUrl"`
+	Prefix      string `json:"prefix,omitempty"`
+	APIKey      string `json:"apiKey"`
+}
+
 type VerifyOpenAICompatibleProviderInput struct {
 	BaseURL string            `json:"baseUrl"`
 	APIKey  string            `json:"apiKey"`
@@ -518,6 +526,16 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 
 func (a *App) DeleteOpenAICompatibleProvider(name string) error {
 	return a.core.DeleteOpenAICompatibleProvider(name)
+}
+
+func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) error {
+	return a.core.UpdateOpenAICompatibleProvider(wailsapp.UpdateOpenAICompatibleProviderInput{
+		CurrentName: input.CurrentName,
+		Name:        input.Name,
+		BaseURL:     input.BaseURL,
+		Prefix:      input.Prefix,
+		APIKey:      input.APIKey,
+	})
 }
 
 func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProviderInput) (*VerifyOpenAICompatibleProviderResult, error) {

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/url"
 
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/updater"
@@ -17,6 +18,7 @@ type App struct {
 	version        string
 	releaseLabel   string
 	sidecarRequest sidecarRequestFunc
+	managementAPI  func() *cliproxyapi.Client
 }
 
 type sidecarRequestFunc func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error)

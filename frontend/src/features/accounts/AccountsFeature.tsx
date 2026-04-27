@@ -12,6 +12,7 @@ import ApiKeyComposeModal from './components/ApiKeyComposeModal';
 import ApiKeyDetailModal from './components/ApiKeyDetailModal';
 import CodexOAuthModal from './components/CodexOAuthModal';
 import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeModal';
+import OpenAICompatibleDetailModal from './components/OpenAICompatibleDetailModal';
 import OpenAICompatibleWorkspace from './components/OpenAICompatibleWorkspace';
 import PasteAuthModal from './components/PasteAuthModal';
 import useAccountsPageState from './hooks/useAccountsPageState';
@@ -118,9 +119,8 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           pendingDeleteName={openAICompatibleState.pendingDeleteName}
           onCreate={openAICompatibleState.openCreateModal}
           onRefresh={() => void openAICompatibleState.loadProviders()}
+          onOpenDetail={openAICompatibleState.openDetailModal}
           onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
-          onVerifyModelChange={openAICompatibleState.setVerifyModel}
-          onVerify={(provider) => void openAICompatibleState.verifyProvider(provider)}
         />
 
         {openAICompatibleState.isCreateModalOpen ? (
@@ -131,6 +131,27 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
             onClose={() => openAICompatibleState.setIsCreateModalOpen(false)}
             onChange={openAICompatibleState.setForm}
             onSubmit={() => void openAICompatibleState.submitCreate()}
+          />
+        ) : null}
+
+        {openAICompatibleState.detailDraft ? (
+          <OpenAICompatibleDetailModal
+            t={t}
+            draft={openAICompatibleState.detailDraft}
+            verifyState={
+              openAICompatibleState.verifyStates[openAICompatibleState.detailDraft.currentName] ?? {
+                model: openAICompatibleState.detailDraft.verifyModel,
+                status: 'idle',
+                message: '',
+                lastVerifiedAt: null,
+              }
+            }
+            error={openAICompatibleState.detailError}
+            saving={openAICompatibleState.detailSaving}
+            onClose={openAICompatibleState.closeDetailModal}
+            onChange={openAICompatibleState.setDetailDraft}
+            onSave={() => void openAICompatibleState.saveDetail()}
+            onVerify={() => void openAICompatibleState.verifyDetail()}
           />
         ) : null}
       </>

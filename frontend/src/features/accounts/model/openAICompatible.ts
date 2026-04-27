@@ -18,12 +18,46 @@ export interface OpenAICompatibleProviderFormState {
   apiKey: string;
 }
 
+export interface OpenAICompatibleProviderDraft extends OpenAICompatibleProviderFormState {
+  currentName: string;
+  verifyModel: string;
+}
+
 export const emptyOpenAICompatibleProviderForm: OpenAICompatibleProviderFormState = {
   name: '',
   baseUrl: '',
   prefix: '',
   apiKey: '',
 };
+
+export function buildOpenAICompatibleProviderDraft(
+  provider: OpenAICompatibleProvider,
+  verifyState?: ProviderVerifyState,
+): OpenAICompatibleProviderDraft {
+  return {
+    currentName: provider.name,
+    name: provider.name,
+    baseUrl: provider.baseUrl,
+    prefix: provider.prefix || '',
+    apiKey: provider.apiKey || '',
+    verifyModel: verifyState?.model || '',
+  };
+}
+
+export function renameProviderVerifyState(
+  states: Record<string, ProviderVerifyState>,
+  previousName: string,
+  nextName: string,
+): Record<string, ProviderVerifyState> {
+  if (!previousName || !nextName || previousName === nextName || !states[previousName]) {
+    return states;
+  }
+
+  const nextStates = { ...states };
+  nextStates[nextName] = nextStates[previousName];
+  delete nextStates[previousName];
+  return nextStates;
+}
 
 export function maskProviderAPIKey(apiKey: string | undefined): string {
   const trimmed = String(apiKey || '').trim();

@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
 func TestVerifyOpenAICompatibleProviderRequiresModel(t *testing.T) {
@@ -90,5 +92,96 @@ func TestVerifyOpenAICompatibleProviderBuildsChatCompletionsRequest(t *testing.T
 	}
 	if result.Message == "" {
 		t.Fatalf("expected success message, got %#v", result)
+	}
+}
+
+func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/openai-compatibility" {
+					return []byte(`{"openai-compatibility":[{"name":"deepseek","base-url":"https://api.deepseek.com/v1","prefix":"team-a","api-key-entries":[{"api-key":"sk-old","proxy-url":"http://proxy.local"},{"api-key":"sk-backup"}],"headers":{"X-Test":"1"}}]}`), 200, nil
+				}
+				if method == http.MethodPut && path == "/v0/management/openai-compatibility" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					var items []cliproxyapi.OpenAICompatibleProvider
+					if err := json.Unmarshal(payload, &items); err != nil {
+						t.Fatalf("unmarshal payload: %v", err)
+					}
+					if len(items) != 1 {
+						t.Fatalf("unexpected provider count: %d", len(items))
+					}
+					got := items[0]
+					if got.Name != "deepseek-prod" {
+						t.Fatalf("unexpected provider name: %s", got.Name)
+					}
+					if got.BaseURL != "https://relay.example.com/v1" {
+						t.Fatalf("unexpected base url: %s", got.BaseURL)
+					}
+					if got.Prefix != "prod" {
+						t.Fatalf("unexpected prefix: %s", got.Prefix)
+					}
+					if len(got.APIKeyEntries) != 2 {
+						t.Fatalf("unexpected key entry count: %d", len(got.APIKeyEntries))
+					}
+					if got.APIKeyEntries[0].APIKey != "sk-new" {
+						t.Fatalf("unexpected first api key: %s", got.APIKeyEntries[0].APIKey)
+					}
+					if got.APIKeyEntries[0].ProxyURL != "http://proxy.local" {
+						t.Fatalf("unexpected proxy url: %s", got.APIKeyEntries[0].ProxyURL)
+					}
+					if got.APIKeyEntries[1].APIKey != "sk-backup" {
+						t.Fatalf("unexpected backup api key: %s", got.APIKeyEntries[1].APIKey)
+					}
+					if got.Headers["X-Test"] != "1" {
+						t.Fatalf("unexpected headers: %#v", got.Headers)
+					}
+					return nil, 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+		CurrentName: "deepseek",
+		Name:        "deepseek-prod",
+		BaseURL:     "https://relay.example.com/v1",
+		Prefix:      "prod",
+		APIKey:      "sk-new",
+	})
+	if err != nil {
+		t.Fatalf("UpdateOpenAICompatibleProvider returned error: %v", err)
+	}
+}
+
+func TestUpdateOpenAICompatibleProviderRejectsDuplicateName(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/openai-compatibility" {
+					return []byte(`{"openai-compatibility":[{"name":"deepseek","base-url":"https://api.deepseek.com/v1"},{"name":"moonshot","base-url":"https://api.moonshot.cn/v1"}]}`), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+		CurrentName: "deepseek",
+		Name:        "moonshot",
+		BaseURL:     "https://relay.example.com/v1",
+		APIKey:      "sk-new",
+	})
+	if err == nil {
+		t.Fatal("expected duplicate name error")
+	}
+	if !strings.Contains(err.Error(), "已存在") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

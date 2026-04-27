@@ -11,9 +11,8 @@ interface OpenAICompatibleWorkspaceProps {
   pendingDeleteName: string | null;
   onCreate: () => void;
   onRefresh: () => void;
+  onOpenDetail: (provider: OpenAICompatibleProvider) => void;
   onDelete: (name: string) => void;
-  onVerifyModelChange: (name: string, model: string) => void;
-  onVerify: (provider: OpenAICompatibleProvider) => void;
 }
 
 function formatVerifyTone(status: ProviderVerifyState['status']) {
@@ -31,9 +30,8 @@ export default function OpenAICompatibleWorkspace({
   pendingDeleteName,
   onCreate,
   onRefresh,
+  onOpenDetail,
   onDelete,
-  onVerifyModelChange,
-  onVerify,
 }: OpenAICompatibleWorkspaceProps) {
   return (
     <div className="h-full w-full overflow-auto bg-[var(--bg-surface)] p-12" data-collaboration-id="PAGE_ACCOUNTS_OPENAI_COMPATIBLE">
@@ -97,13 +95,18 @@ export default function OpenAICompatibleWorkspace({
                         {provider.name}
                       </h3>
                     </div>
-                    <button
-                      onClick={() => onDelete(provider.name)}
-                      className="btn-swiss-secondary !border-red-500 !text-red-500"
-                      disabled={pendingDeleteName === provider.name}
-                    >
-                      {pendingDeleteName === provider.name ? t('common.loading') : t('common.delete')}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => onOpenDetail(provider)} className="btn-swiss-secondary">
+                        {t('accounts.openai_provider_manage')}
+                      </button>
+                      <button
+                        onClick={() => onDelete(provider.name)}
+                        className="btn-swiss-secondary !border-red-500 !text-red-500"
+                        disabled={pendingDeleteName === provider.name}
+                      >
+                        {pendingDeleteName === provider.name ? t('common.loading') : t('common.delete')}
+                      </button>
+                    </div>
                   </div>
 
                   <dl className="mt-5 space-y-3 text-xs">
@@ -124,25 +127,13 @@ export default function OpenAICompatibleWorkspace({
                   </dl>
 
                   <div className="mt-6 border-t-2 border-[var(--border-color)] pt-4">
-                    <div className="flex items-end gap-3">
-                      <label className="min-w-0 flex-1 space-y-2">
-                        <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                          {t('accounts.openai_provider_test_model')}
-                        </div>
-                        <input
-                          value={verifyState.model}
-                          onChange={(event) => onVerifyModelChange(provider.name, event.target.value)}
-                          className="input-swiss"
-                          placeholder="deepseek-chat"
-                        />
-                      </label>
-                      <button
-                        onClick={() => onVerify(provider)}
-                        className="btn-swiss whitespace-nowrap"
-                        disabled={verifyState.status === 'loading'}
-                      >
-                        {verifyState.status === 'loading' ? t('accounts.openai_provider_test_running') : t('accounts.openai_provider_test')}
-                      </button>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                        {t('accounts.openai_provider_test_summary')}
+                      </div>
+                      <div className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                        {verifyState.model || '—'}
+                      </div>
                     </div>
                     <div className={`mt-4 border px-4 py-3 text-[10px] font-black uppercase tracking-wide ${formatVerifyTone(verifyState.status)}`}>
                       {verifyState.message || t('accounts.openai_provider_test_idle')}

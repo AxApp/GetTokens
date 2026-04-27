@@ -206,7 +206,7 @@
 
 - Given 用户已进入 `openai-compatible` 子菜单
 - And 页面中已有一个 provider 容器
-- When 用户打开该 provider 的详情或编辑面板
+- When 用户点击 `Manage Provider` 打开该 provider 的详情或编辑面板
 - Then 用户可以查看并修改基础字段
 - And 第一阶段至少支持修改 `name`、`baseUrl`、首个 `apiKey entry` 与 `prefix`
 - And 后续阶段可继续扩展 `headers`、多 `apiKey entries` 与 `models`
@@ -262,6 +262,7 @@
 - 已明确定义“验证”归属为 provider 配置验证，而不是简单给现有 API key 卡片补按钮
 - 已明确定义 provider 验证最小入参与结果状态模型
 - 已明确定义 `ApiKeyDetailModal` 必须显式保留 `provider` 归属表达，但不承载正式验证主流程
+- 第一阶段实现已把 `openai-compatible` 收口到 `provider card -> detail modal -> save/verify` 的正式工作流，不再只停留在卡片级临时输入
 - 实现后至少覆盖后端 bridge 测试与前端账号动作测试
 - 过期 `codex` 账号不再只是显示失败原因，而是可直接触发重新登录
 - 成功重登后默认回填原账号资产，不新增重复账号

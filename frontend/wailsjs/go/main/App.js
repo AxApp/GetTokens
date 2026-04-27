@@ -114,6 +114,10 @@ export function UpdateCodexAPIKeyPriority(arg1) {
   return window['go']['main']['App']['UpdateCodexAPIKeyPriority'](arg1);
 }
 
+export function UpdateOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['UpdateOpenAICompatibleProvider'](arg1);
+}
+
 export function UpdateRelayRoutingConfig(arg1) {
   return window['go']['main']['App']['UpdateRelayRoutingConfig'](arg1);
 }

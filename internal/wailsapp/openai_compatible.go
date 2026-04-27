@@ -28,6 +28,14 @@ type CreateOpenAICompatibleProviderInput struct {
 	APIKey  string `json:"apiKey"`
 }
 
+type UpdateOpenAICompatibleProviderInput struct {
+	CurrentName string `json:"currentName"`
+	Name        string `json:"name"`
+	BaseURL     string `json:"baseUrl"`
+	Prefix      string `json:"prefix,omitempty"`
+	APIKey      string `json:"apiKey"`
+}
+
 type VerifyOpenAICompatibleProviderInput struct {
 	BaseURL string            `json:"baseUrl"`
 	APIKey  string            `json:"apiKey"`
@@ -112,6 +120,59 @@ func (a *App) DeleteOpenAICompatibleProvider(name string) error {
 		return errors.New("name 不能为空")
 	}
 	return a.managementClient().DeleteOpenAICompatibleProvider(trimmed)
+}
+
+func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) error {
+	currentName := strings.TrimSpace(input.CurrentName)
+	name := strings.TrimSpace(input.Name)
+	baseURL := strings.TrimSpace(input.BaseURL)
+	apiKey := strings.TrimSpace(input.APIKey)
+	prefix := strings.TrimSpace(input.Prefix)
+
+	switch {
+	case currentName == "":
+		return errors.New("current name 不能为空")
+	case name == "":
+		return errors.New("name 不能为空")
+	case baseURL == "":
+		return errors.New("base url 不能为空")
+	case apiKey == "":
+		return errors.New("api key 不能为空")
+	}
+
+	current, err := a.managementClient().ListOpenAICompatibleProviders()
+	if err != nil {
+		return err
+	}
+
+	targetIndex := -1
+	for index, item := range current {
+		trimmedName := strings.TrimSpace(item.Name)
+		if strings.EqualFold(trimmedName, currentName) {
+			targetIndex = index
+			continue
+		}
+		if strings.EqualFold(trimmedName, name) {
+			return errors.New("provider name 已存在")
+		}
+	}
+
+	if targetIndex < 0 {
+		return errors.New("provider 不存在")
+	}
+
+	target := current[targetIndex]
+	target.Name = name
+	target.BaseURL = baseURL
+	target.Prefix = prefix
+	if len(target.APIKeyEntries) == 0 {
+		target.APIKeyEntries = []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: apiKey}}
+	} else {
+		target.APIKeyEntries[0].APIKey = apiKey
+	}
+	current[targetIndex] = target
+
+	return a.managementClient().PutOpenAICompatibleProviders(current)
 }
 
 func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProviderInput) (*VerifyOpenAICompatibleProviderResult, error) {
