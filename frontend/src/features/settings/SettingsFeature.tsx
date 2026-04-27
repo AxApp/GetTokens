@@ -7,6 +7,7 @@ import { useI18n } from '../../context/I18nContext';
 import { useTheme } from '../../context/ThemeContext';
 import { mapCheckedRelease } from './settingsRelease';
 import { toErrorMessage } from '../../utils/error';
+import { formatAppVersion } from '../../utils/version';
 import type { LocaleCode, ReleaseInfo, SegmentedOption, ThemeMode } from '../../types';
 
 const themes: ReadonlyArray<SegmentedOption<ThemeMode>> = [
@@ -44,6 +45,8 @@ export default function SettingsFeature({
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
   const [isOpeningRelease, setIsOpeningRelease] = useState(false);
+  const currentVersionLabel = formatAppVersion(version);
+  const latestReleaseLabel = availableRelease ? formatAppVersion(availableRelease.version) : '—';
 
   async function handleCheckUpdate() {
     setIsCheckingUpdate(true);
@@ -175,7 +178,7 @@ export default function SettingsFeature({
                         {t('settings.current_version')}
                       </div>
                       <div className="text-[10px] font-black uppercase italic text-[var(--text-primary)]">
-                        {version}
+                        {currentVersionLabel}
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -194,7 +197,7 @@ export default function SettingsFeature({
                         {t('settings.latest_release')}
                       </div>
                       <div className="text-[10px] font-black uppercase italic text-[var(--text-primary)]">
-                        {availableRelease?.version || '—'}
+                        {latestReleaseLabel}
                       </div>
                     </div>
                     <div className="space-y-1">

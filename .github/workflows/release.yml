@@ -158,6 +158,13 @@ jobs:
             ${{ matrix.wails-extra || '' }} \
             -ldflags "-X main.Version=${{ github.ref_name }} -X main.ReleaseLabel=${RELEASE_LABEL}"
 
+      - name: Sync macOS bundle version metadata
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          chmod +x scripts/sync-macos-bundle-version.sh
+          scripts/sync-macos-bundle-version.sh "build/bin/GetTokens.app" "${{ github.ref_name }}"
+
       - name: Reinstall sidecar into macOS app bundle
         if: runner.os == 'macOS'
         shell: bash

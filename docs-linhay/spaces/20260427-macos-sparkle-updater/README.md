@@ -72,6 +72,14 @@ Sparkle 是 macOS 上成熟的原生更新框架，更适合 GetTokens 当前的
   - Wails / macOS 原生桥接应落在哪一层
   - 当前阶段完成了什么、未完成什么
 
+### 场景 4：原生更新弹框版本号与应用版本一致
+
+- Given release 构建通过 `-ldflags` 注入了真实 tag，如 `v0.1.10`
+- And Sparkle 原生弹框读取的是 app bundle 的 `CFBundleShortVersionString` / `CFBundleVersion`
+- When macOS release workflow 完成 `wails build`
+- Then workflow 会把 app bundle 的版本元数据同步成与 release tag 对齐的语义版本，如 `0.1.10`
+- And Sparkle 不会再回退展示 Wails 默认的 `1.0.0`
+
 ## 相关链接
 
 - [Sparkle Programmatic Setup](https://sparkle-project.org/documentation/programmatic-setup/)
@@ -81,4 +89,4 @@ Sparkle 是 macOS 上成熟的原生更新框架，更适合 GetTokens 当前的
 ## 当前状态
 - 状态：in-progress
 - 最近更新：2026-04-27
-- 最近变更：已完成 Sparkle space / 架构文档 / plist 注入脚本 / framework 下载与嵌入脚本 / darwin bridge / 设置页原生更新入口适配；`v0.1.10` 已完成首轮真实 Sparkle release 回归，release workflow 可在 `SPARKLE_ENABLE=1` 时生成并发布分架构 feed `appcast-arm64.xml` / `appcast-amd64.xml` 到 `sparkle-appcast` 分支。
+- 最近变更：已完成 Sparkle space / 架构文档 / plist 注入脚本 / framework 下载与嵌入脚本 / darwin bridge / 设置页原生更新入口适配；`v0.1.10` 已完成首轮真实 Sparkle release 回归，release workflow 可在 `SPARKLE_ENABLE=1` 时生成并发布分架构 feed `appcast-arm64.xml` / `appcast-amd64.xml` 到 `sparkle-appcast` 分支。随后补上 `scripts/sync-macos-bundle-version.sh`，在 macOS release workflow 中把 `CFBundleShortVersionString` / `CFBundleVersion` 同步到真实 release tag，修复 Sparkle “当前最新版是 GetTokens 1.0.0” 的版本错位问题。

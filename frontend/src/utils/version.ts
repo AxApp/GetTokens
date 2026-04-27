@@ -1,5 +1,6 @@
 const dateHourPattern =
   /^(?<year>\d{4})[./-]?(?<month>\d{2})[./-]?(?<day>\d{2})(?:[T\s_.:+/-]?(?<hour>\d{2}))(?:[:]\d{2}(?::\d{2})?)?/;
+const semanticVersionPattern = /^v(?=\d+\.\d+\.\d+(?:$|[-+]))/i;
 
 function pad(value: number): string {
   return String(value).padStart(2, '0');
@@ -25,4 +26,14 @@ export function formatSidebarVersion(version: string, now: Date = new Date()): s
   }
 
   return normalized;
+}
+
+export function formatAppVersion(version: string): string {
+  const normalized = version.trim();
+
+  if (!normalized) {
+    return normalized;
+  }
+
+  return normalized.replace(semanticVersionPattern, '');
 }

@@ -68,6 +68,22 @@ Sparkle 至少需要：
 3. `wailsapp` 在检测到 Sparkle 可用时，会把 macOS 更新入口切到原生更新 UI 模式
 4. 前端设置页已能识别“原生更新 UI”模式，并在该模式下只保留单次“检查更新”入口
 5. release workflow 现已支持生成签名后的 Sparkle appcast，并推送到固定分支供 `raw.githubusercontent.com` 托管
+6. release workflow 新增 `scripts/sync-macos-bundle-version.sh`，在 `wails build` 后显式把 `Info.plist` 中的 `CFBundleShortVersionString` 与 `CFBundleVersion` 改写为 release tag 对应的语义版本
+
+## 新增边界：Sparkle 弹框版本号来源
+
+这次回归额外确认了一条实现边界：
+
+1. GetTokens 前端设置页读取的是 `main.Version`
+2. Sparkle 原生“当前已是最新版本”弹框读取的是 app bundle 的 `CFBundleShortVersionString` / `CFBundleVersion`
+3. Wails 默认生成的 `Info.plist` 若不在发布后显式改写，可能继续保留默认 `1.0.0`
+
+因此发布链必须把这两套元数据对齐：
+
+1. release tag 继续作为 `main.Version` 注入来源
+2. macOS release workflow 在签名、公证前追加一次 bundle 版本同步
+3. `scripts/sync-macos-bundle-version.sh` 负责把 `v0.1.10` 这类 tag 规范化为 `0.1.10`，再写入 `CFBundleShortVersionString` 与 `CFBundleVersion`
+4. 设置页中的“当前版本 / 最新版本”显示也统一去掉 `v` 前缀，避免和 Sparkle 原生弹框肉眼不一致
 
 当前仍未完成：
 
