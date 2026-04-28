@@ -2,7 +2,6 @@ import type { main } from '../../../../wailsjs/go/models';
 import type { AccountRecord, AuthFile, CredentialSource } from '../../../types';
 import type { AccountUsageSummary } from './accountUsage';
 import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
-import { buildAPIKeyLabelStorageKey } from './accountConfig.ts';
 
 export function compareAccountRecords(left: AccountRecord, right: AccountRecord) {
   if (left.credentialSource === 'api-key' && right.credentialSource === 'api-key') {
@@ -63,17 +62,11 @@ export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
   };
 }
 
-export function mapBackendAccountRecord(account: main.AccountRecord, apiKeyLabels: Record<string, string>): AccountRecord {
+export function mapBackendAccountRecord(account: main.AccountRecord): AccountRecord {
   const credentialSource = account.credentialSource === 'api-key' ? 'api-key' : 'auth-file';
-  const storageKey =
-    credentialSource === 'api-key'
-      ? buildAPIKeyLabelStorageKey(account.apiKey || '', account.baseUrl || '', account.prefix || '')
-      : '';
-  const localDisplayName = storageKey ? apiKeyLabels[storageKey] : '';
 
   return {
     ...account,
-    displayName: localDisplayName || account.displayName,
     credentialSource,
   };
 }

@@ -5,6 +5,7 @@ import {
   buildAccountStabilitySummary,
   isCodexAuthFile,
   isCodexReauthEligible,
+  mapBackendAccountRecord,
   mapAuthFileToRecord,
   resolveAccountAPIKeyPlainNotice,
   resolveAccountConfigurationWorkspaceHeading,
@@ -25,6 +26,21 @@ test('mapAuthFileToRecord keeps auth file status message', () => {
 
   assert.equal(record.status, 'ERROR');
   assert.equal(record.statusMessage, 'refresh token expired');
+});
+
+test('mapBackendAccountRecord keeps backend display name for api keys', () => {
+  const record = mapBackendAccountRecord({
+    id: 'codex-api-key:test',
+    provider: 'codex',
+    credentialSource: 'api-key',
+    displayName: 'PRIMARY PROD KEY',
+    status: 'ACTIVE',
+    apiKey: 'sk-test',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: '',
+  });
+
+  assert.equal(record.displayName, 'PRIMARY PROD KEY');
 });
 
 test('resolveAccountFailureReason only returns message for failed statuses', () => {

@@ -211,6 +211,13 @@ export function persistAPIKeyLabels(labels: Record<string, string>) {
   window.localStorage.setItem(API_KEY_LABELS_STORAGE_KEY, JSON.stringify(labels));
 }
 
+export function clearAPIKeyLabels() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.localStorage.removeItem(API_KEY_LABELS_STORAGE_KEY);
+}
+
 export function downloadTextFile(filename: string, content: string) {
   const blob = new Blob([content], { type: 'application/json;charset=utf-8' });
   const href = URL.createObjectURL(blob);

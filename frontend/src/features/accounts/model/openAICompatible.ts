@@ -10,6 +10,17 @@ export interface ProviderVerifyState {
   status: ProviderVerifyStatus;
   message: string;
   lastVerifiedAt: number | null;
+  configSignature?: string;
+}
+
+export type ProviderRemoteModelsStatus = 'idle' | 'loading' | 'success' | 'error';
+
+export interface ProviderRemoteModelsState {
+  status: ProviderRemoteModelsStatus;
+  message: string;
+  models: OpenAICompatibleModelRow[];
+  lastFetchedAt: number | null;
+  configSignature?: string;
 }
 
 export interface OpenAICompatibleProviderFormState {
@@ -26,11 +37,6 @@ export interface OpenAICompatibleProviderPreset {
   models: OpenAICompatibleModelRow[];
 }
 
-export interface OpenAICompatibleHeaderRow {
-  key: string;
-  value: string;
-}
-
 export interface OpenAICompatibleModelRow {
   name: string;
   alias: string;
@@ -38,10 +44,14 @@ export interface OpenAICompatibleModelRow {
 
 export interface OpenAICompatibleProviderDraft extends OpenAICompatibleProviderFormState {
   currentName: string;
-  apiKeys: string[];
-  headers: OpenAICompatibleHeaderRow[];
+  headersText: string;
   models: OpenAICompatibleModelRow[];
   verifyModel: string;
+}
+
+export interface ProviderDetailModelOptions {
+  source: 'remote' | 'local' | 'preset' | 'empty';
+  models: OpenAICompatibleModelRow[];
 }
 
 export const emptyOpenAICompatibleProviderForm: OpenAICompatibleProviderFormState = {
@@ -223,8 +233,7 @@ export function buildOpenAICompatibleProviderDraft(
     name: provider.name,
     baseUrl: provider.baseUrl,
     apiKey: provider.apiKey || '',
-    apiKeys: provider.apiKeys && provider.apiKeys.length > 0 ? [...provider.apiKeys] : provider.apiKey ? [provider.apiKey] : [''],
-    headers: buildHeaderRows(provider.headers),
+    headersText: buildHeadersText(provider.headers),
     models,
     verifyModel: verifyState?.model || models[0]?.name || preset?.models[0]?.name || '',
   };
@@ -235,6 +244,21 @@ export function renameProviderVerifyState(
   previousName: string,
   nextName: string,
 ): Record<string, ProviderVerifyState> {
+  if (!previousName || !nextName || previousName === nextName || !states[previousName]) {
+    return states;
+  }
+
+  const nextStates = { ...states };
+  nextStates[nextName] = nextStates[previousName];
+  delete nextStates[previousName];
+  return nextStates;
+}
+
+export function renameProviderRemoteModelsState(
+  states: Record<string, ProviderRemoteModelsState>,
+  previousName: string,
+  nextName: string,
+): Record<string, ProviderRemoteModelsState> {
   if (!previousName || !nextName || previousName === nextName || !states[previousName]) {
     return states;
   }
@@ -256,39 +280,52 @@ export function maskProviderAPIKey(apiKey: string | undefined): string {
   return `${trimmed.slice(0, 4)}...${trimmed.slice(-4)}`;
 }
 
-export function buildHeaderRows(headers: Record<string, string> | undefined): OpenAICompatibleHeaderRow[] {
-  const entries = Object.entries(headers || {});
-  if (entries.length === 0) {
-    return [{ key: '', value: '' }];
-  }
-  return entries.map(([key, value]) => ({ key, value }));
+export function buildHeadersText(headers: Record<string, string> | undefined): string {
+  return Object.entries(headers || {})
+    .filter(([key, value]) => key.trim() && String(value || '').trim())
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n');
 }
 
-export function normalizeProviderAPIKeys(apiKeys: string[]): string[] {
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-  for (const item of apiKeys) {
-    const trimmed = String(item || '').trim();
-    if (!trimmed || seen.has(trimmed)) {
+export function parseHeadersText(text: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const lines = String(text || '').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
       continue;
     }
-    seen.add(trimmed);
-    normalized.push(trimmed);
-  }
-  return normalized;
-}
-
-export function buildHeadersMap(rows: OpenAICompatibleHeaderRow[]): Record<string, string> {
-  const headers: Record<string, string> = {};
-  for (const row of rows) {
-    const key = String(row.key || '').trim();
-    const value = String(row.value || '').trim();
+    const separatorIndex = trimmed.indexOf(':');
+    if (separatorIndex <= 0) {
+      continue;
+    }
+    const key = trimmed.slice(0, separatorIndex).trim();
+    const value = trimmed.slice(separatorIndex + 1).trim();
     if (!key || !value) {
       continue;
     }
     headers[key] = value;
   }
   return headers;
+}
+
+export function buildProviderConfigSignature(input: {
+  baseUrl?: string;
+  apiKey?: string;
+  headers?: Record<string, string>;
+  headersText?: string;
+}): string {
+  const normalizedBaseURL = normalizeBaseUrl(String(input.baseUrl || ''));
+  const apiKey = String(input.apiKey || '').trim();
+  const headers = input.headers ?? parseHeadersText(String(input.headersText || ''));
+  const normalizedHeaders = Object.entries(headers)
+    .map(([key, value]) => [String(key || '').trim(), String(value || '').trim()] as const)
+    .filter(([key, value]) => key && value)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}:${value}`)
+    .join('|');
+
+  return `${normalizedBaseURL}::${apiKey}::${normalizedHeaders}`;
 }
 
 export function buildModelRows(models: Array<{ name: string; alias?: string }> | undefined): OpenAICompatibleModelRow[] {
@@ -314,4 +351,51 @@ export function normalizeProviderModels(rows: OpenAICompatibleModelRow[]): OpenA
     normalized.push({ name, alias });
   }
   return normalized;
+}
+
+export function resolveProviderDetailModelOptions(input: {
+  draft: OpenAICompatibleProviderDraft;
+  remoteModelsState?: ProviderRemoteModelsState | null;
+}): ProviderDetailModelOptions {
+  const remoteModels =
+    input.remoteModelsState?.status === 'success' ? normalizeProviderModels(input.remoteModelsState.models || []) : [];
+  if (remoteModels.length > 0) {
+    return {
+      source: 'remote',
+      models: remoteModels,
+    };
+  }
+
+  const localModels = normalizeProviderModels(input.draft.models || []);
+  if (localModels.length > 0) {
+    return {
+      source: 'local',
+      models: localModels,
+    };
+  }
+
+  const presetModels = normalizeProviderModels(
+    resolveOpenAICompatibleProviderPreset({
+      name: input.draft.name,
+      baseUrl: input.draft.baseUrl,
+    })?.models || [],
+  );
+  if (presetModels.length > 0) {
+    return {
+      source: 'preset',
+      models: presetModels,
+    };
+  }
+
+  return {
+    source: 'empty',
+    models: [],
+  };
+}
+
+export function shouldRefreshRemoteModels(lastFetchedAt: number | null, now = Date.now()): boolean {
+  if (!lastFetchedAt) {
+    return true;
+  }
+  return now - lastFetchedAt >= 24 * 60 * 60 * 1000;
 }

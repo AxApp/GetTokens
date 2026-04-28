@@ -56,6 +56,7 @@
   2. 否则读取本地持久化的上次子菜单选择
   3. 若以上都不存在，默认回到 `codex`
 - 父级 `账号池` 折叠后再次展开时，保留上一次子菜单选中态，不重置到默认值
+- 父级主视图允许作为聚合页存在；当设计稿需要展示跨子菜单汇总信息时，父级页可以承接统一入口、统一轮动入口与跨子域摘要，但不能抹平子菜单各自的业务边界
 
 #### 子级 1：codex
 
@@ -71,24 +72,25 @@
   - 可以复用统一 detail shell
   - 但标题、provider config 区块、配置工作台标题都必须显式带出当前 `provider`
   - 不得把该弹窗误实现成通用 provider 设置页
+  - API Key 名称属于资产元数据，修改后必须写入后端本地存储并在应用重启后仍可恢复；不得只存在前端 `localStorage`
 - 当前 `Codex API Key` 资产已补一个 `codex-only` 的过渡验证入口；该入口只服务单条资产，不代表最终统一的 provider 验证架构
 
 #### 子级 2：openai-compatible
 
 - 新增一个面向 provider 的子工作区
 - 其核心对象不是“单个 key”，而是“provider”
+- 当前产品口径进一步收紧为：`1 张 openai-compatible 卡片 = 1 个兼容 OpenAI 账号 = 1 个 provider + 1 个 apiKey`
 - 第一阶段使用独立的 provider 列表模型，不强行进入现有 `AccountRecord` 主列表，也不伪装成 `Codex API Key` 卡片
 - provider 最小字段：
   - `name`
   - `baseUrl`
-  - `apiKeyEntries[0].apiKey`
+  - `apiKey`
 - provider 标识规则：
   - 第一阶段以 `name` 作为产品层主标识
   - `name` 必须唯一
   - 新增或编辑时若与现有 provider 重名，必须阻止保存并给出冲突提示
-- 后续增强字段：
+- 当前阶段增强字段：
   - `headers`
-  - `apiKeyEntries[]`
   - `models[]`
 - 空状态规则：
   - 当列表中没有任何 openai-compatible provider 时，页面必须展示明确空状态
@@ -107,6 +109,21 @@
     - `success`
     - `error`
   - `error` 状态需要保留最近一次失败原因，便于用户在第一跳看到验证失败信息
+
+### 设计稿与文案口径
+
+1. 设计稿默认使用中文；产品说明、按钮、空状态、提示文案优先中文表达。
+2. `Codex`、`ChatGPT`、`OpenAI` 这类必要产品名可以保留英文技术标识，但不应让界面主文案退化成英文堆叠。
+3. `openai-compatible` 在界面中的默认呈现口径应为“兼容 OpenAI 账号”或等价中文表达；只有在需要强调协议/字段名时才保留技术词。
+4. 轮动弹窗、聚合页、详情弹窗中的标签文本应避免出现裸露的 `PROVIDER / BASE URL / API KEY / MODELS / DRAG / CONFIGURED` 这类英文 UI 标签，除非设计稿明确要求保留。
+5. 若本轮实现需要调整设计稿口径，必须先回写本 space，再改代码与文案资源。
+- provider 远端模型规则：
+  - provider detail 打开后可以主动拉取远端 `/models`
+  - 每个 provider 的远端模型结果需要按 provider 配置缓存；配置未变时按天刷新，也允许用户手动刷新
+  - 未保存草稿触发的拉取结果不得污染 workspace 卡片上已保存 provider 的模型数或验证状态
+  - 若远端模型拉取成功，验证模型候选应优先显示远端模型，而不是只看本地手填 `models`
+  - 用户可以将远端模型列表直接回写为本地 `models / alias` 草稿
+  - 若远端模型拉取失败，页面应保留错误信息，并回退到本地模型或 preset 模型，不清空现有配置
 
 ### BDD 场景
 
@@ -136,6 +153,17 @@
 - And `configuration workspace` 标题应显式带出当前 `provider`
 - And 该弹窗仍只承担单条 API key 资产详情与配置复制职责
 - And 不得把它误实现成正式 provider 验证入口
+
+#### 场景 2B：修改 Codex API Key 名称后可跨重启保留
+
+- Given 当前位于 `codex` 子菜单
+- And 页面中已有一条 `Codex API Key` 资产
+- When 用户在详情弹窗中修改该资产名称并点击保存
+- Then 新名称必须写入后端本地存储
+- And 当前列表与详情视图立即显示新名称
+- When 用户关闭应用并重新打开
+- Then 该资产仍显示用户保存的新名称
+- And 不依赖前端 `localStorage` 才能恢复名称
 
 #### 场景 3：切换到 openai-compatible 子菜单
 
@@ -206,8 +234,7 @@
 - And 页面中已有一个 provider 容器
 - When 用户点击 `Manage Provider` 打开该 provider 的详情或编辑面板
 - Then 用户可以查看并修改基础字段
-- And 当前阶段至少支持修改 `name`、`baseUrl`
-- And 当前阶段至少支持编辑多个 `apiKey entries`
+- And 当前阶段至少支持修改 `name`、`baseUrl`、`apiKey`
 - And 当前阶段至少支持编辑 `headers`
 - And 当前阶段至少支持编辑 `models / alias`
 
@@ -217,9 +244,20 @@
 - And 页面中已有一个 provider 容器
 - When 用户在 provider 详情或编辑面板触发“验证”
 - Then 应用应以 provider 配置为输入发起验证，而不是复用 `codex quota` 链路
-- And 最小验证入参至少包括 `baseUrl`、首个可用 `apiKey entry`、可选 `headers` 与显式必填的 `model`
+- And 最小验证入参至少包括 `baseUrl`、`apiKey`、可选 `headers` 与显式必填的 `model`
 - And 页面应展示最近一次验证结果状态：`idle / loading / success / error`
 - And 当验证失败时，页面应保留失败原因，不能只显示一个无上下文的失败提示
+
+#### 场景 11A：拉取 openai-compatible provider 的远端模型
+
+- Given 用户已进入 `openai-compatible` 子菜单
+- And 页面中已有 provider 容器
+- When 用户打开 provider detail 或手动触发“拉取远端模型”
+- Then 应用应基于当前 draft 的 `baseUrl`、`apiKey` 与可选 `headers` 请求远端 `/models`
+- And 若请求成功，页面应直接列出远端模型，并将它们作为验证候选的优先来源
+- And 用户可以选择把远端模型覆盖到本地 `models / alias` 草稿
+- And 已保存 provider 的远端模型列表需要按天缓存，并在手动刷新时强制更新
+- But 若请求失败，页面只能回退到本地或 preset 模型，不能清空已有模型配置
 
 #### 场景 12：删除 openai-compatible provider
 
@@ -258,16 +296,18 @@
 - 已定义 `codex` OAuth 登录与过期恢复的验收场景
 - 已定义 `openai-compatible` provider 的最小闭环场景
 - 已明确定义子菜单恢复规则：显式目标 > 本地持久化 > 默认 `codex`
-- `openai-compatible` detail modal 已覆盖基础字段、多 `apiKey entries`、`headers`、`models / alias` 与 provider 级验证
+- `openai-compatible` detail modal 已覆盖基础字段、单 `apiKey`、`headers` 文本编辑、`models / alias` 与 provider 级验证
 - 已明确定义 `openai-compatible provider` 的唯一性与主标识规则
 - 已明确定义 `openai-compatible` 第一阶段采用独立 provider 列表模型
 - 已明确定义 `openai-compatible` 的空状态与默认主 CTA
 - 已明确定义“验证”归属为 provider 配置验证，而不是简单给现有 API key 卡片补按钮
 - 已明确定义 provider 验证最小入参与结果状态模型
+- 已明确定义 `openai-compatible` provider detail 可拉取远端 `/models`，并以远端模型作为验证候选优先来源
+- 已明确定义远端模型和 provider 验证状态要按 provider 配置签名缓存，避免未保存草稿污染 workspace 卡片
 - 已明确定义 `ApiKeyDetailModal` 必须显式保留 `provider` 归属表达，但不承载正式验证主流程
 - `ApiKeyDetailModal` 当前已补一个 `codex-only` 过渡验证区，显式要求输入测试模型
 - 第一阶段实现已把 `openai-compatible` 收口到 `provider card -> detail modal -> save/verify` 的正式工作流，不再只停留在卡片级临时输入
-- 第二阶段实现已补齐 `headers` 与多 `apiKey entries` 编辑，provider 保存粒度保持为整包配置回写
+- 第二阶段实现已补齐 `headers` 文本编辑、`models / alias` 编辑、远端模型按天缓存与单 `apiKey` provider 保存
 - 实现后至少覆盖后端 bridge 测试与前端账号动作测试
 - 过期 `codex` 账号不再只是显示失败原因，而是可直接触发重新登录
 - 成功重登后默认回填原账号资产，不新增重复账号

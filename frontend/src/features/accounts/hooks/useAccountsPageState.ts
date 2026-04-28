@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
   FinalizeCodexOAuth,
   GetOAuthStatus,
   ListAccounts,
   ListAuthFiles,
   StartCodexOAuth,
+  UpdateCodexAPIKeyLabel,
   VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
 import { main } from '../../../../wailsjs/go/models';
@@ -12,7 +13,9 @@ import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
 import type { AccountRecord } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
 import {
+  buildAPIKeyLabelStorageKey,
   buildCodexAPIKeyVerifyInput,
+  clearAPIKeyLabels,
   emptyApiKeyForm,
   loadAPIKeyLabels,
 } from '../model/accountConfig';
@@ -105,12 +108,12 @@ export default function useAccountsPageState({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pasteContent, setPasteContent] = useState('');
   const [pasteError, setPasteError] = useState('');
-  const [apiKeyLabels, setAPIKeyLabels] = useState<Record<string, string>>(() => loadAPIKeyLabels());
   const [isHeaderActionsMenuOpen, setIsHeaderActionsMenuOpen] = useState(false);
   const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
   const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
   const [oauthDialog, setOAuthDialog] = useState<OAuthDialogState>(null);
   const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
+  const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -155,6 +158,46 @@ export default function useAccountsPageState({
     persistAccountsFilterState(window.localStorage, filters);
   }, [filters]);
 
+  const migrateLegacyAPIKeyLabels = useCallback(
+    async (accounts: main.AccountRecord[]) => {
+      const legacyLabels = legacyAPIKeyLabelsRef.current;
+      const legacyKeys = Object.keys(legacyLabels);
+      if (legacyKeys.length === 0) {
+        return accounts;
+      }
+
+      const updates = accounts
+        .filter((account) => account.credentialSource === 'api-key')
+        .map((account) => {
+          const storageKey = buildAPIKeyLabelStorageKey(account.apiKey || '', account.baseUrl || '', account.prefix || '');
+          const nextLabel = String(legacyLabels[storageKey] || '').trim();
+          if (!nextLabel || nextLabel === String(account.displayName || '').trim()) {
+            return null;
+          }
+          return {
+            id: account.id,
+            label: nextLabel,
+          };
+        })
+        .filter((item): item is { id: string; label: string } => item !== null);
+
+      if (updates.length === 0) {
+        clearAPIKeyLabels();
+        legacyAPIKeyLabelsRef.current = {};
+        return accounts;
+      }
+
+      for (const update of updates) {
+        await trackRequest('UpdateCodexAPIKeyLabel', update, () => UpdateCodexAPIKeyLabel(update));
+      }
+
+      clearAPIKeyLabels();
+      legacyAPIKeyLabelsRef.current = {};
+      return trackRequest('ListAccounts', { migratedLegacyLabels: true }, () => ListAccounts());
+    },
+    [trackRequest]
+  );
+
   const loadAccounts = useCallback(async () => {
     if (!ready) {
       return;
@@ -162,13 +205,14 @@ export default function useAccountsPageState({
 
     setLoading(true);
     try {
-      const [authFileResponse, accountResponse] = await Promise.all([
+      const [authFileResponse, rawAccountResponse] = await Promise.all([
         trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles()),
         trackRequest('ListAccounts', { args: [] }, () => ListAccounts()),
       ]);
+      const accountResponse = await migrateLegacyAPIKeyLabels(rawAccountResponse || []);
       const files = authFileResponse.files || [];
       const apiKeyAccounts = (accountResponse || [])
-        .map((account) => mapBackendAccountRecord(account, apiKeyLabels))
+        .map((account) => mapBackendAccountRecord(account))
         .filter((account) => account.credentialSource === 'api-key');
       const nextAuthFileRecords = files.map((account) => mapAuthFileToRecord(account));
       setAuthFiles(files);
@@ -187,7 +231,7 @@ export default function useAccountsPageState({
     } finally {
       setLoading(false);
     }
-  }, [apiKeyLabels, loadAccountUsage, loadCodexQuotas, ready, trackRequest]);
+  }, [loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
 
   useEffect(() => {
     if (ready) {
@@ -430,7 +474,6 @@ export default function useAccountsPageState({
     setPasteError,
     setSearchTerm,
     setSelectedAccountIDs,
-    setAPIKeyLabels,
     loadAccounts,
   });
 

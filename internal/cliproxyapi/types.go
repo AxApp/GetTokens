@@ -7,6 +7,7 @@ type CodexModel struct {
 
 type CodexAPIKey struct {
 	APIKey         string            `json:"api-key"`
+	Label          string            `json:"label,omitempty"`
 	Priority       int               `json:"priority,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
 	BaseURL        string            `json:"base-url"`
@@ -24,6 +25,7 @@ type CodexAPIKeysResponse struct {
 
 type CodexAPIKeyInput struct {
 	APIKey         string            `json:"api-key"`
+	Label          string            `json:"label,omitempty"`
 	Priority       int               `json:"priority,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
 	BaseURL        string            `json:"base-url"`

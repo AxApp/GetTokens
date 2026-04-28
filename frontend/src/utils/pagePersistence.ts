@@ -4,7 +4,7 @@ export const ACTIVE_PAGE_STORAGE_KEY = 'gettokens.activePage';
 export const ACCOUNT_WORKSPACE_STORAGE_KEY = 'gettokens.accounts.workspace';
 
 const appPages: ReadonlySet<AppPage> = new Set(['status', 'accounts', 'settings', 'debug']);
-const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['codex', 'openai-compatible']);
+const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all', 'codex', 'openai-compatible']);
 
 export function isAppPage(value: string | null | undefined): value is AppPage {
   return typeof value === 'string' && appPages.has(value as AppPage);
@@ -27,7 +27,7 @@ export function readStoredActivePage(storage: Pick<Storage, 'getItem'> | null | 
 
 export function resolveInitialAccountWorkspace(
   storageValue: string | null | undefined,
-  fallback: AccountWorkspace = 'codex',
+  fallback: AccountWorkspace = 'all',
 ): AccountWorkspace {
   return isAccountWorkspace(storageValue) ? storageValue : fallback;
 }

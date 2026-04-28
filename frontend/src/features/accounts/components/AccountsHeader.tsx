@@ -13,7 +13,7 @@ interface AccountsHeaderProps {
   onToggleMenu: () => void;
   onOpenPasteModal: () => void;
   onOpenApiKeyModal: () => void;
-  onOpenRotationModal: () => void;
+  onOpenRotationModal?: () => void;
   onStartCodexOAuth: () => void;
   onRefresh: () => void;
 }
@@ -54,9 +54,11 @@ export default function AccountsHeader({
       <button onClick={onOpenApiKeyModal} className="btn-swiss whitespace-nowrap">
         {t('accounts.add_codex_api_key')}
       </button>
-      <button onClick={onOpenRotationModal} className="btn-swiss whitespace-nowrap" disabled={!ready || loading}>
-        {t('accounts.rotation_settings')}
-      </button>
+      {onOpenRotationModal ? (
+        <button onClick={onOpenRotationModal} className="btn-swiss whitespace-nowrap" disabled={!ready || loading}>
+          {t('accounts.rotation_settings')}
+        </button>
+      ) : null}
     </>
   );
 

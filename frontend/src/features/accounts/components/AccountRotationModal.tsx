@@ -10,11 +10,13 @@ import { useI18n } from '../../../context/I18nContext';
 import { toErrorMessage } from '../../../utils/error';
 import type { ClickEventLike } from '../model/types';
 import type { AccountRecord } from '../../../types';
-import { buildPriorityUpdates, buildRoutingDefaultLabel, reorderPriorityAccounts } from '../model/accountRotation';
+import { buildPriorityUpdates, buildRotationQuotaSummary, buildRoutingDefaultLabel, reorderPriorityAccounts } from '../model/accountRotation';
+import type { CodexQuotaState } from '../model/types';
 import { compareAccountRecords, resolveAccountPrimaryLabel } from '../model/accountPresentation';
 
 interface AccountRotationModalProps {
   accounts: AccountRecord[];
+  codexQuotaByName: Record<string, CodexQuotaState>;
   ready: boolean;
   onClose: () => void;
   onReloadAccounts: () => Promise<void>;
@@ -35,6 +37,7 @@ function buildOrderedAccounts(accounts: AccountRecord[]) {
 
 export default function AccountRotationModal({
   accounts,
+  codexQuotaByName,
   ready,
   onClose,
   onReloadAccounts,
@@ -216,9 +219,14 @@ export default function AccountRotationModal({
                         <div className="mt-1 font-mono text-[10px] font-bold uppercase text-[var(--text-muted)]">
                           {account.credentialSource} · P{account.priority ?? 0} · {account.baseUrl || account.name || '--'}
                         </div>
+                        <div className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]/75">
+                          {buildRotationQuotaSummary(account, codexQuotaByName[account.quotaKey || ''], t)}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">DRAG</div>
+                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                      {t('accounts.rotation_drag_badge')}
+                    </div>
                   </button>
                 ))}
               </div>
@@ -247,16 +255,21 @@ export default function AccountRotationModal({
                     <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
                       {buildRoutingDefaultLabel(t, 'strategy')}
                     </span>
-                    <select
-                      value={routingDraft.strategy}
-                      onChange={(event) =>
-                        setRoutingDraft((prev) => (prev ? { ...prev, strategy: event.target.value } : prev))
-                      }
-                      className="input-swiss w-full"
-                    >
-                      <option value="round-robin">round-robin</option>
-                      <option value="fill-first">fill-first</option>
-                    </select>
+                    <div className="relative">
+                      <select
+                        value={routingDraft.strategy}
+                        onChange={(event) =>
+                          setRoutingDraft((prev) => (prev ? { ...prev, strategy: event.target.value } : prev))
+                        }
+                        className="select-swiss"
+                      >
+                        <option value="round-robin">{t('status.routing_strategy_round_robin')}</option>
+                        <option value="fill-first">{t('status.routing_strategy_fill_first')}</option>
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
+                        ▼
+                      </span>
+                    </div>
                   </label>
 
                   <label className="space-y-2">

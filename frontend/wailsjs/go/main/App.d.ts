@@ -24,6 +24,8 @@ export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
 
 export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>;
 
+export function FetchOpenAICompatibleProviderModels(arg1:main.FetchOpenAICompatibleProviderModelsInput):Promise<main.FetchOpenAICompatibleProviderModelsResult>;
+
 export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
@@ -57,6 +59,8 @@ export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 
 export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<void>;
+
+export function UpdateCodexAPIKeyLabel(arg1:main.UpdateCodexAPIKeyLabelInput):Promise<void>;
 
 export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInput):Promise<void>;
 

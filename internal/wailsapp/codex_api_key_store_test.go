@@ -15,6 +15,7 @@ func TestStoredCodexAPIKeysRoundTrip(t *testing.T) {
 		APIKey:  "sk-test-1111",
 		BaseURL: "https://api.openai.com/v1",
 		Prefix:  "team-a",
+		Label:   "PRIMARY",
 	}
 	second := cliproxyapi.CodexAPIKeyInput{
 		APIKey:  "sk-test-2222",
@@ -31,6 +32,16 @@ func TestStoredCodexAPIKeysRoundTrip(t *testing.T) {
 	}
 	if len(items) != 2 {
 		t.Fatalf("expected 2 items, got %d", len(items))
+	}
+	var persistedFirst cliproxyapi.CodexAPIKeyInput
+	for _, item := range items {
+		if item.APIKey == first.APIKey {
+			persistedFirst = item
+			break
+		}
+	}
+	if persistedFirst.Label != "PRIMARY" {
+		t.Fatalf("expected persisted label PRIMARY, got %q", persistedFirst.Label)
 	}
 
 	if err := deleteStoredCodexAPIKey(codexAPIKeyAssetIDFromInput(first)); err != nil {
@@ -51,7 +62,7 @@ func TestStoredCodexAPIKeysRoundTrip(t *testing.T) {
 
 func TestMergeCodexAPIKeyInputsMigratesSidecarOnlyItems(t *testing.T) {
 	stored := []cliproxyapi.CodexAPIKeyInput{
-		{APIKey: "sk-test-1111", BaseURL: "https://api.openai.com/v1", Prefix: "team-a"},
+		{APIKey: "sk-test-1111", BaseURL: "https://api.openai.com/v1", Prefix: "team-a", Label: "PRIMARY"},
 	}
 	sidecarItems := []cliproxyapi.CodexAPIKey{
 		{APIKey: "sk-test-1111", BaseURL: "https://api.openai.com/v1/", Prefix: "/team-a/"},
@@ -64,6 +75,16 @@ func TestMergeCodexAPIKeyInputsMigratesSidecarOnlyItems(t *testing.T) {
 	}
 	if len(merged) != 2 {
 		t.Fatalf("expected 2 merged items, got %d", len(merged))
+	}
+	var mergedFirst cliproxyapi.CodexAPIKeyInput
+	for _, item := range merged {
+		if item.APIKey == "sk-test-1111" {
+			mergedFirst = item
+			break
+		}
+	}
+	if mergedFirst.Label != "PRIMARY" {
+		t.Fatalf("expected merged item to keep stored label, got %q", mergedFirst.Label)
 	}
 }
 

@@ -185,6 +185,7 @@ export namespace main {
 	}
 	export class CreateCodexAPIKeyInput {
 	    apiKey: string;
+	    label?: string;
 	    baseUrl: string;
 	    priority?: number;
 	    prefix?: string;
@@ -199,6 +200,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
+	        this.label = source["label"];
 	        this.baseUrl = source["baseUrl"];
 	        this.priority = source["priority"];
 	        this.prefix = source["prefix"];
@@ -239,6 +241,72 @@ export namespace main {
 	        this.contentBase64 = source["contentBase64"];
 	    }
 	}
+	export class FetchOpenAICompatibleProviderModelsInput {
+	    baseUrl: string;
+	    apiKey: string;
+	    headers?: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchOpenAICompatibleProviderModelsInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.baseUrl = source["baseUrl"];
+	        this.apiKey = source["apiKey"];
+	        this.headers = source["headers"];
+	    }
+	}
+	export class OpenAICompatibleModel {
+	    name: string;
+	    alias?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenAICompatibleModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.alias = source["alias"];
+	    }
+	}
+	export class FetchOpenAICompatibleProviderModelsResult {
+	    models?: OpenAICompatibleModel[];
+	    statusCode?: number;
+	    message?: string;
+	    responseBody?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchOpenAICompatibleProviderModelsResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	        this.statusCode = source["statusCode"];
+	        this.message = source["message"];
+	        this.responseBody = source["responseBody"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class OAuthStartResult {
 	    url: string;
 	    state?: string;
@@ -267,22 +335,10 @@ export namespace main {
 	        this.error = source["error"];
 	    }
 	}
-	export class OpenAICompatibleModel {
-	    name: string;
-	    alias?: string;
 	
-	    static createFrom(source: any = {}) {
-	        return new OpenAICompatibleModel(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.name = source["name"];
-	        this.alias = source["alias"];
-	    }
-	}
 	export class OpenAICompatibleProvider {
 	    name: string;
+	    priority?: number;
 	    baseUrl: string;
 	    prefix?: string;
 	    apiKey: string;
@@ -300,6 +356,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
+	        this.priority = source["priority"];
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
 	        this.apiKey = source["apiKey"];
@@ -436,6 +493,20 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.priority = source["priority"];
+	    }
+	}
+	export class UpdateCodexAPIKeyLabelInput {
+	    id: string;
+	    label?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateCodexAPIKeyLabelInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
 	    }
 	}
 	export class UpdateCodexAPIKeyPriorityInput {

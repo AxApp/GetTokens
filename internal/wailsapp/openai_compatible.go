@@ -11,16 +11,17 @@ import (
 )
 
 type OpenAICompatibleProvider struct {
-	Name       string            `json:"name"`
-	BaseURL    string            `json:"baseUrl"`
-	Prefix     string            `json:"prefix,omitempty"`
-	APIKey     string            `json:"apiKey"`
-	APIKeys    []string          `json:"apiKeys,omitempty"`
+	Name       string                  `json:"name"`
+	Priority   int                     `json:"priority,omitempty"`
+	BaseURL    string                  `json:"baseUrl"`
+	Prefix     string                  `json:"prefix,omitempty"`
+	APIKey     string                  `json:"apiKey"`
+	APIKeys    []string                `json:"apiKeys,omitempty"`
 	Models     []OpenAICompatibleModel `json:"models,omitempty"`
-	Headers    map[string]string `json:"headers,omitempty"`
-	KeyCount   int               `json:"keyCount,omitempty"`
-	ModelCount int               `json:"modelCount,omitempty"`
-	HasHeaders bool              `json:"hasHeaders,omitempty"`
+	Headers    map[string]string       `json:"headers,omitempty"`
+	KeyCount   int                     `json:"keyCount,omitempty"`
+	ModelCount int                     `json:"modelCount,omitempty"`
+	HasHeaders bool                    `json:"hasHeaders,omitempty"`
 }
 
 type OpenAICompatibleModel struct {
@@ -36,13 +37,13 @@ type CreateOpenAICompatibleProviderInput struct {
 }
 
 type UpdateOpenAICompatibleProviderInput struct {
-	CurrentName string `json:"currentName"`
-	Name        string `json:"name"`
-	BaseURL     string `json:"baseUrl"`
-	Prefix      string `json:"prefix,omitempty"`
-	APIKey      string `json:"apiKey"`
-	APIKeys     []string          `json:"apiKeys,omitempty"`
-	Headers     map[string]string `json:"headers,omitempty"`
+	CurrentName string                  `json:"currentName"`
+	Name        string                  `json:"name"`
+	BaseURL     string                  `json:"baseUrl"`
+	Prefix      string                  `json:"prefix,omitempty"`
+	APIKey      string                  `json:"apiKey"`
+	APIKeys     []string                `json:"apiKeys,omitempty"`
+	Headers     map[string]string       `json:"headers,omitempty"`
 	Models      []OpenAICompatibleModel `json:"models,omitempty"`
 }
 
@@ -53,11 +54,24 @@ type VerifyOpenAICompatibleProviderInput struct {
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
+type FetchOpenAICompatibleProviderModelsInput struct {
+	BaseURL string            `json:"baseUrl"`
+	APIKey  string            `json:"apiKey"`
+	Headers map[string]string `json:"headers,omitempty"`
+}
+
 type VerifyOpenAICompatibleProviderResult struct {
 	Success      bool   `json:"success"`
 	StatusCode   int    `json:"statusCode,omitempty"`
 	Message      string `json:"message,omitempty"`
 	ResponseBody string `json:"responseBody,omitempty"`
+}
+
+type FetchOpenAICompatibleProviderModelsResult struct {
+	Models       []OpenAICompatibleModel `json:"models,omitempty"`
+	StatusCode   int                     `json:"statusCode,omitempty"`
+	Message      string                  `json:"message,omitempty"`
+	ResponseBody string                  `json:"responseBody,omitempty"`
 }
 
 func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error) {
@@ -93,6 +107,7 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 		}
 		providers = append(providers, OpenAICompatibleProvider{
 			Name:       strings.TrimSpace(item.Name),
+			Priority:   item.Priority,
 			BaseURL:    strings.TrimSpace(item.BaseURL),
 			Prefix:     strings.TrimSpace(item.Prefix),
 			APIKey:     apiKey,
@@ -134,9 +149,10 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 	}
 
 	current = append(current, cliproxyapi.OpenAICompatibleProvider{
-		Name:    name,
-		BaseURL: baseURL,
-		Prefix:  prefix,
+		Name:     name,
+		BaseURL:  baseURL,
+		Prefix:   prefix,
+		Priority: 0,
 		APIKeyEntries: []cliproxyapi.OpenAICompatibleAPIKeyEntry{
 			{APIKey: apiKey},
 		},
@@ -219,6 +235,34 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 	return a.managementClient().PutOpenAICompatibleProviders(current)
 }
 
+func (a *App) UpdateOpenAICompatibleProviderPriority(name string, priority int) error {
+	trimmedName := strings.TrimSpace(name)
+	if trimmedName == "" {
+		return errors.New("provider name 不能为空")
+	}
+
+	current, err := a.managementClient().ListOpenAICompatibleProviders()
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for index := range current {
+		if !strings.EqualFold(strings.TrimSpace(current[index].Name), trimmedName) {
+			continue
+		}
+		current[index].Priority = priority
+		found = true
+		break
+	}
+
+	if !found {
+		return errors.New("provider 不存在")
+	}
+
+	return a.managementClient().PutOpenAICompatibleProviders(current)
+}
+
 func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProviderInput) (*VerifyOpenAICompatibleProviderResult, error) {
 	baseURL := strings.TrimSpace(input.BaseURL)
 	apiKey := strings.TrimSpace(input.APIKey)
@@ -297,12 +341,123 @@ func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProvide
 	}, nil
 }
 
+func (a *App) FetchOpenAICompatibleProviderModels(input FetchOpenAICompatibleProviderModelsInput) (*FetchOpenAICompatibleProviderModelsResult, error) {
+	baseURL := strings.TrimSpace(input.BaseURL)
+	apiKey := strings.TrimSpace(input.APIKey)
+
+	switch {
+	case baseURL == "":
+		return nil, errors.New("base url 不能为空")
+	case apiKey == "":
+		return nil, errors.New("api key 不能为空")
+	}
+
+	requestHeaders := normalizeVerifyHeaders(input.Headers)
+	if _, ok := requestHeaders["Authorization"]; !ok {
+		requestHeaders["Authorization"] = "Bearer " + apiKey
+	}
+
+	requestPayload, err := json.Marshal(managementAPICallRequest{
+		Method: http.MethodGet,
+		URL:    buildOpenAICompatibleModelsURL(baseURL),
+		Header: requestHeaders,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	apiResponseBody, statusCode, err := a.SidecarRequest(
+		http.MethodPost,
+		ManagementAPIPrefix+"/api-call",
+		nil,
+		bytes.NewReader(requestPayload),
+		"application/json",
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	var apiResponse managementAPICallResponse
+	if len(apiResponseBody) > 0 {
+		if err := json.Unmarshal(apiResponseBody, &apiResponse); err != nil {
+			return nil, err
+		}
+	}
+
+	finalStatusCode := apiResponse.statusCode()
+	if finalStatusCode == 0 {
+		finalStatusCode = statusCode
+	}
+	models, parseErr := parseOpenAICompatibleModelsResponse(apiResponse.Body)
+	if parseErr != nil && finalStatusCode >= 200 && finalStatusCode < 300 {
+		return nil, parseErr
+	}
+	message := "模型拉取失败"
+	if finalStatusCode >= 200 && finalStatusCode < 300 {
+		message = "已拉取模型列表"
+	}
+
+	return &FetchOpenAICompatibleProviderModelsResult{
+		Models:       models,
+		StatusCode:   finalStatusCode,
+		Message:      message,
+		ResponseBody: strings.TrimSpace(apiResponse.Body),
+	}, nil
+}
+
 func buildOpenAICompatibleChatCompletionsURL(baseURL string) string {
 	trimmed := strings.TrimRight(strings.TrimSpace(baseURL), "/")
 	if strings.HasSuffix(trimmed, "/chat/completions") {
 		return trimmed
 	}
 	return trimmed + "/chat/completions"
+}
+
+func buildOpenAICompatibleModelsURL(baseURL string) string {
+	trimmed := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	if strings.HasSuffix(trimmed, "/models") {
+		return trimmed
+	}
+	return trimmed + "/models"
+}
+
+func parseOpenAICompatibleModelsResponse(body string) ([]OpenAICompatibleModel, error) {
+	type remoteModelItem struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+	var payload struct {
+		Data   []remoteModelItem `json:"data"`
+		Models []remoteModelItem `json:"models"`
+	}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(body)), &payload); err != nil {
+		return nil, err
+	}
+
+	items := payload.Data
+	if len(items) == 0 {
+		items = payload.Models
+	}
+	models := make([]OpenAICompatibleModel, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		name := strings.TrimSpace(item.ID)
+		if name == "" {
+			name = strings.TrimSpace(item.Name)
+		}
+		if name == "" {
+			continue
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		models = append(models, OpenAICompatibleModel{Name: name})
+	}
+	if len(models) == 0 {
+		return nil, errors.New("未解析到任何模型")
+	}
+	return models, nil
 }
 
 func normalizeVerifyHeaders(headers map[string]string) map[string]string {

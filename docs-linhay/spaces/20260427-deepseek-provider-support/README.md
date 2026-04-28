@@ -128,19 +128,22 @@
 1. 后端补齐 `openai-compatible` 的 Wails / management bridge，而不是只扩 `CodexAPIKey`
 2. 前端从“添加 Codex API Key”升级为“新增 openai-compatible provider”
 3. 顶层对象改为 provider 容器，而不是单个 API key 资产；第一阶段使用独立 provider 列表模型，不进入现有 `AccountRecord` 主列表
-4. 当前正式工作流已收口为：`provider 卡片摘要 -> Manage Provider detail modal -> 编辑基础字段 / 多 apiKey entries / headers / models-alias -> provider 级验证`
-4. 第一阶段最少支持：
+4. 当前正式工作流已收口为：`provider 卡片摘要 -> Manage Provider detail modal -> 编辑基础字段 / 单 apiKey / headers 文本 / models-alias -> 拉取远端 /models -> provider 级验证`
+5. 第一阶段最少支持：
    - `name`
    - `baseUrl`
-   - `apiKeyEntries[0].apiKey`
+   - `apiKey`
    - `name` 唯一性校验
    - 空状态与默认 CTA
    - provider 配置验证
-5. 第二阶段已补齐：
+6. 第二阶段已补齐：
    - `headers`
-   - 多 `apiKeyEntries`
+   - 单 `apiKey` provider 编辑闭环
    - `models / alias`
-6. DeepSeek 作为 `openai-compatible` 下的 provider 候选，而不是先做专用 `DeepSeek API Key`
+   - 远端 `/models` 拉取与“使用远端模型”回写草稿
+   - 远端模型按天缓存与手动刷新
+   - provider 配置签名缓存，避免未保存草稿污染列表卡片
+7. DeepSeek 作为 `openai-compatible` 下的 provider 候选，而不是先做专用 `DeepSeek API Key`
 
 ## Provider 验证边界
 

@@ -68,7 +68,7 @@ export default function AccountDetailModal({
       [t('accounts.provider'), account.provider || '—'],
       [t('accounts.size'), account.size ? `${account.size} B` : '—'],
       [t('common.status'), account.status || '—'],
-      [t('common.enable'), account.disabled ? 'NO' : 'YES'],
+      [t('common.enable'), account.disabled ? t('common.no') : t('common.yes')],
       [t('accounts.last_refresh'), formatRefreshValue(account.lastRefresh)],
     ],
     [account, t]
@@ -290,9 +290,9 @@ export default function AccountDetailModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                 <span className="h-2 w-2 bg-[var(--border-color)]"></span>
-                COMPATIBLE_MODELS
+                {t('accounts.ui_compatible_models')}
               </div>
-              {loadingModels ? <span className="animate-pulse text-[9px] font-black">LOADING...</span> : null}
+              {loadingModels ? <span className="animate-pulse text-[9px] font-black">{t('accounts.ui_loading_short')}</span> : null}
             </div>
             <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto pr-2">
               {models.length > 0 ? (
@@ -305,7 +305,7 @@ export default function AccountDetailModal({
                   </span>
                 ))
               ) : !loadingModels ? (
-                <div className="text-[10px] font-bold italic text-[var(--text-muted)]">NO_DATA_AVAILABLE</div>
+                <div className="text-[10px] font-bold italic text-[var(--text-muted)]">{t('accounts.ui_no_data_available')}</div>
               ) : null}
             </div>
           </section>
@@ -314,7 +314,7 @@ export default function AccountDetailModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
                 <span className="h-2 w-2 bg-[var(--border-color)]"></span>
-                {viewMode === 'sanitized' ? 'SANITIZED_SOURCE_DATA' : 'RAW_SOURCE_DATA'}
+                {viewMode === 'sanitized' ? t('accounts.ui_sanitized_source_data') : t('accounts.ui_raw_source_data')}
               </div>
 	              <div className="flex items-center gap-3">
 	                {copyState !== 'idle' || sanitizeState !== 'idle' ? (
@@ -325,7 +325,7 @@ export default function AccountDetailModal({
 	                  </span>
                 ) : null}
                 {loadingRaw ? (
-                  <span className="animate-pulse text-[9px] font-black text-[var(--text-muted)]">FETCHING_FS...</span>
+                  <span className="animate-pulse text-[9px] font-black text-[var(--text-muted)]">{t('accounts.ui_fetching_fs')}</span>
                 ) : (
                   <>
                     <button

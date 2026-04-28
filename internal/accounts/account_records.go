@@ -79,6 +79,35 @@ func BuildAccountRecords(authFiles []AuthFileRecord, codexKeys []cliproxyapi.Cod
 	return records
 }
 
+func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompatibleProvider) AccountRecord {
+	name := strings.TrimSpace(provider.Name)
+	baseURL := NormalizeBaseURL(provider.BaseURL)
+	prefix := NormalizePrefix(provider.Prefix)
+
+	apiKey := ""
+	for _, entry := range provider.APIKeyEntries {
+		trimmed := strings.TrimSpace(entry.APIKey)
+		if trimmed != "" {
+			apiKey = trimmed
+			break
+		}
+	}
+
+	return AccountRecord{
+		ID:               OpenAICompatibleProviderAssetID(name),
+		Provider:         name,
+		CredentialSource: CredentialSourceAPIKey,
+		DisplayName:      "OPENAI-COMPATIBLE · " + strings.ToUpper(name),
+		Status:           "configured",
+		Priority:         provider.Priority,
+		APIKey:           apiKey,
+		KeyFingerprint:   APIKeyFingerprint(apiKey),
+		KeySuffix:        APIKeySuffix(apiKey),
+		BaseURL:          baseURL,
+		Prefix:           prefix,
+	}
+}
+
 func BuildAuthFileAccountRecord(file AuthFileRecord) AccountRecord {
 	provider := strings.TrimSpace(file.Provider)
 	if provider == "" {
@@ -132,7 +161,9 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 	}
 
 	displayName := "CODEX API KEY"
-	if suffix != "" {
+	if trimmedLabel := strings.TrimSpace(key.Label); trimmedLabel != "" {
+		displayName = trimmedLabel
+	} else if suffix != "" {
 		displayName = "CODEX API KEY · " + suffix
 	}
 
@@ -154,6 +185,10 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 
 func CodexAPIKeyAssetID(apiKey string, baseURL string, prefix string) string {
 	return "codex-api-key:" + APIKeyFingerprint(apiKey) + "@" + NormalizeBaseURL(baseURL) + "#" + NormalizePrefix(prefix)
+}
+
+func OpenAICompatibleProviderAssetID(name string) string {
+	return "openai-compatible:" + strings.TrimSpace(name)
 }
 
 func APIKeyFingerprint(apiKey string) string {

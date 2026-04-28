@@ -55,6 +55,7 @@ func (a *App) ListAccounts() ([]accountsdomain.AccountRecord, error) {
 
 type CreateCodexAPIKeyInput struct {
 	APIKey         string            `json:"apiKey"`
+	Label          string            `json:"label,omitempty"`
 	BaseURL        string            `json:"baseUrl"`
 	Priority       int               `json:"priority,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
@@ -66,6 +67,11 @@ type CreateCodexAPIKeyInput struct {
 type UpdateAccountPriorityInput struct {
 	ID       string `json:"id"`
 	Priority int    `json:"priority,omitempty"`
+}
+
+type UpdateCodexAPIKeyLabelInput struct {
+	ID    string `json:"id"`
+	Label string `json:"label,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -92,6 +98,7 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 
 	items = append(items, cliproxyapi.CodexAPIKeyInput{
 		APIKey:         strings.TrimSpace(input.APIKey),
+		Label:          strings.TrimSpace(input.Label),
 		BaseURL:        strings.TrimSpace(input.BaseURL),
 		Priority:       input.Priority,
 		Prefix:         strings.TrimSpace(input.Prefix),
@@ -104,6 +111,30 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		return err
 	}
 	return a.syncStoredCodexAPIKeysToSidecar()
+}
+
+func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
+	current, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		return err
+	}
+
+	targetID := strings.TrimSpace(input.ID)
+	found := false
+	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
+	for _, existing := range current {
+		if codexAPIKeyAssetIDFromInput(existing) == targetID {
+			existing.Label = strings.TrimSpace(input.Label)
+			found = true
+		}
+		next = append(next, existing)
+	}
+
+	if !found {
+		return errors.New("账号不存在")
+	}
+
+	return persistCodexAPIKeySet(next)
 }
 
 func (a *App) DeleteCodexAPIKey(id string) error {
@@ -160,6 +191,8 @@ func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
 		return a.updateAuthFilePriority(strings.TrimPrefix(targetID, "auth-file:"), input.Priority)
 	case strings.HasPrefix(targetID, "codex-api-key:"):
 		return a.UpdateCodexAPIKeyPriority(targetID, input.Priority)
+	case strings.HasPrefix(targetID, "openai-compatible:"):
+		return a.UpdateOpenAICompatibleProviderPriority(strings.TrimPrefix(targetID, "openai-compatible:"), input.Priority)
 	default:
 		return errors.New("不支持的账号类型")
 	}
@@ -201,6 +234,7 @@ func codexAPIKeysFromInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyapi.
 	for _, item := range items {
 		keys = append(keys, cliproxyapi.CodexAPIKey{
 			APIKey:         item.APIKey,
+			Label:          item.Label,
 			Priority:       item.Priority,
 			Prefix:         item.Prefix,
 			BaseURL:        item.BaseURL,

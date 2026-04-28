@@ -58,7 +58,12 @@ export default function Sidebar({
         {navItems.map((item) => (
           <div key={item.id}>
             <button
-              onClick={() => setActivePage(item.id)}
+              onClick={() => {
+                setActivePage(item.id);
+                if (item.id === 'accounts') {
+                  setActiveAccountWorkspace('all');
+                }
+              }}
               className={`w-full flex items-center gap-3 px-3 py-3 font-bold text-xs uppercase tracking-widest border-2 transition-all active:scale-95 ${
                 activePage === item.id
                   ? 'bg-[var(--border-color)] text-[var(--bg-main)] border-[var(--border-color)] shadow-hard shadow-[var(--shadow-color)]'

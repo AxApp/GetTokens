@@ -81,7 +81,7 @@ export default function OpenAICompatibleComposeModal({
 
               <label className="space-y-2">
                 <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                  BASE URL
+                  {t('accounts.ui_base_url')}
                 </div>
                 <input
                   value={form.baseUrl}
@@ -94,7 +94,7 @@ export default function OpenAICompatibleComposeModal({
 
             <label className="space-y-2">
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                API KEY
+                {t('accounts.ui_api_key')}
               </div>
               <input
                 value={form.apiKey}

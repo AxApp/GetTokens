@@ -1,3 +1,8 @@
+import type { AccountRecord } from '../../../types';
+import { buildQuotaDisplay, formatQuotaResetRelative, selectLongestQuotaWindow } from './accountQuota.ts';
+import type { OpenAICompatibleProvider } from './openAICompatible';
+import type { CodexQuotaState, Translator } from './types';
+
 interface PriorityAccountLike {
   id: string;
   priority?: number;
@@ -45,6 +50,21 @@ export function buildPriorityUpdates<T extends PriorityAccountLike>(accounts: T[
     .map(({ id, priority }) => ({ id, priority }));
 }
 
+export function mapOpenAICompatibleProviderToRotationAccount(provider: OpenAICompatibleProvider): AccountRecord {
+  return {
+    id: `openai-compatible:${String(provider.name || '').trim()}`,
+    provider: String(provider.name || '').trim().toLowerCase() || 'openai-compatible',
+    credentialSource: 'api-key',
+    displayName: `兼容 OpenAI · ${String(provider.name || '账号').trim()}`,
+    status: 'CONFIGURED',
+    priority: Number(provider.priority || 0),
+    name: String(provider.name || '').trim(),
+    apiKey: String(provider.apiKey || '').trim(),
+    baseUrl: String(provider.baseUrl || '').trim(),
+    prefix: String(provider.prefix || '').trim(),
+  };
+}
+
 export function buildRoutingDefaultLabel(
   t: (key: string) => string,
   field: RoutingDefaultField,
@@ -53,7 +73,7 @@ export function buildRoutingDefaultLabel(
 
   switch (field) {
     case 'strategy':
-      return `${prefix}: round-robin`;
+      return `${prefix}: ${t('status.routing_strategy_round_robin')}`;
     case 'sessionAffinityTTL':
       return `${prefix}: 1h`;
     case 'requestRetry':
@@ -68,4 +88,32 @@ export function buildRoutingDefaultLabel(
     default:
       return prefix;
   }
+}
+
+export function buildRotationQuotaSummary(
+  account: AccountRecord,
+  quotaState: CodexQuotaState | undefined,
+  t: Translator,
+): string {
+  const quotaDisplay = buildQuotaDisplay(account, quotaState);
+
+  if (quotaDisplay.status === 'unsupported') {
+    return t('accounts.rotation_quota_not_tracked');
+  }
+
+  if (quotaDisplay.status === 'loading') {
+    return t('accounts.quota_syncing');
+  }
+
+  if (quotaDisplay.status === 'error' || quotaDisplay.status === 'empty') {
+    return t('accounts.quota_unavailable');
+  }
+
+  const longestWindow = selectLongestQuotaWindow(quotaDisplay.windows);
+  if (!longestWindow) {
+    return t('accounts.quota_unavailable');
+  }
+
+  const remaining = longestWindow.remainingPercent === null ? '--' : `${longestWindow.remainingPercent}%`;
+  return `${longestWindow.label} · ${t('accounts.quota_remaining')} ${remaining} · ${t('accounts.quota_reset')} ${formatQuotaResetRelative(longestWindow.resetLabel, longestWindow.resetAtUnix)}`;
 }

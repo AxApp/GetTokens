@@ -269,3 +269,41 @@ func TestUpdateOpenAICompatibleProviderRejectsDuplicateName(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestUpdateOpenAICompatibleProviderPriorityPersistsToManagementConfig(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/openai-compatibility" {
+					return []byte(`{"openai-compatibility":[{"name":"deepseek","priority":2,"base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-old"}]}]}`), 200, nil
+				}
+				if method == http.MethodPut && path == "/v0/management/openai-compatibility" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					var items []cliproxyapi.OpenAICompatibleProvider
+					if err := json.Unmarshal(payload, &items); err != nil {
+						t.Fatalf("unmarshal payload: %v", err)
+					}
+					if len(items) != 1 {
+						t.Fatalf("unexpected provider count: %d", len(items))
+					}
+					if items[0].Name != "deepseek" {
+						t.Fatalf("unexpected provider name: %s", items[0].Name)
+					}
+					if items[0].Priority != 7 {
+						t.Fatalf("unexpected priority: %d", items[0].Priority)
+					}
+					return nil, 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	if err := app.UpdateOpenAICompatibleProviderPriority("deepseek", 7); err != nil {
+		t.Fatalf("UpdateOpenAICompatibleProviderPriority returned error: %v", err)
+	}
+}

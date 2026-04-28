@@ -186,6 +186,7 @@ func normalizeCodexAPIKeyInput(item *cliproxyapi.CodexAPIKeyInput) {
 		return
 	}
 	item.APIKey = strings.TrimSpace(item.APIKey)
+	item.Label = strings.TrimSpace(item.Label)
 	item.BaseURL = accountsdomain.NormalizeBaseURL(item.BaseURL)
 	item.Prefix = accountsdomain.NormalizePrefix(item.Prefix)
 	item.ProxyURL = strings.TrimSpace(item.ProxyURL)
@@ -198,6 +199,7 @@ func codexAPIKeyAssetIDFromInput(item cliproxyapi.CodexAPIKeyInput) string {
 func codexAPIKeyInputFromKey(item cliproxyapi.CodexAPIKey) cliproxyapi.CodexAPIKeyInput {
 	input := cliproxyapi.CodexAPIKeyInput{
 		APIKey:         item.APIKey,
+		Label:          item.Label,
 		Priority:       item.Priority,
 		Prefix:         item.Prefix,
 		BaseURL:        item.BaseURL,

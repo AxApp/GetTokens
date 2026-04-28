@@ -105,6 +105,7 @@ type AccountRecord struct {
 
 type CreateCodexAPIKeyInput struct {
 	APIKey         string            `json:"apiKey"`
+	Label          string            `json:"label,omitempty"`
 	BaseURL        string            `json:"baseUrl"`
 	Priority       int               `json:"priority,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
@@ -118,22 +119,28 @@ type UpdateCodexAPIKeyPriorityInput struct {
 	Priority int    `json:"priority,omitempty"`
 }
 
+type UpdateCodexAPIKeyLabelInput struct {
+	ID    string `json:"id"`
+	Label string `json:"label,omitempty"`
+}
+
 type UpdateAccountPriorityInput struct {
 	ID       string `json:"id"`
 	Priority int    `json:"priority,omitempty"`
 }
 
 type OpenAICompatibleProvider struct {
-	Name       string            `json:"name"`
-	BaseURL    string            `json:"baseUrl"`
-	Prefix     string            `json:"prefix,omitempty"`
-	APIKey     string            `json:"apiKey"`
-	APIKeys    []string          `json:"apiKeys,omitempty"`
+	Name       string                  `json:"name"`
+	Priority   int                     `json:"priority,omitempty"`
+	BaseURL    string                  `json:"baseUrl"`
+	Prefix     string                  `json:"prefix,omitempty"`
+	APIKey     string                  `json:"apiKey"`
+	APIKeys    []string                `json:"apiKeys,omitempty"`
 	Models     []OpenAICompatibleModel `json:"models,omitempty"`
-	Headers    map[string]string `json:"headers,omitempty"`
-	KeyCount   int               `json:"keyCount,omitempty"`
-	ModelCount int               `json:"modelCount,omitempty"`
-	HasHeaders bool              `json:"hasHeaders,omitempty"`
+	Headers    map[string]string       `json:"headers,omitempty"`
+	KeyCount   int                     `json:"keyCount,omitempty"`
+	ModelCount int                     `json:"modelCount,omitempty"`
+	HasHeaders bool                    `json:"hasHeaders,omitempty"`
 }
 
 type OpenAICompatibleModel struct {
@@ -149,13 +156,13 @@ type CreateOpenAICompatibleProviderInput struct {
 }
 
 type UpdateOpenAICompatibleProviderInput struct {
-	CurrentName string `json:"currentName"`
-	Name        string `json:"name"`
-	BaseURL     string `json:"baseUrl"`
-	Prefix      string `json:"prefix,omitempty"`
-	APIKey      string `json:"apiKey"`
-	APIKeys     []string          `json:"apiKeys,omitempty"`
-	Headers     map[string]string `json:"headers,omitempty"`
+	CurrentName string                  `json:"currentName"`
+	Name        string                  `json:"name"`
+	BaseURL     string                  `json:"baseUrl"`
+	Prefix      string                  `json:"prefix,omitempty"`
+	APIKey      string                  `json:"apiKey"`
+	APIKeys     []string                `json:"apiKeys,omitempty"`
+	Headers     map[string]string       `json:"headers,omitempty"`
 	Models      []OpenAICompatibleModel `json:"models,omitempty"`
 }
 
@@ -166,11 +173,24 @@ type VerifyOpenAICompatibleProviderInput struct {
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
+type FetchOpenAICompatibleProviderModelsInput struct {
+	BaseURL string            `json:"baseUrl"`
+	APIKey  string            `json:"apiKey"`
+	Headers map[string]string `json:"headers,omitempty"`
+}
+
 type VerifyOpenAICompatibleProviderResult struct {
 	Success      bool   `json:"success"`
 	StatusCode   int    `json:"statusCode,omitempty"`
 	Message      string `json:"message,omitempty"`
 	ResponseBody string `json:"responseBody,omitempty"`
+}
+
+type FetchOpenAICompatibleProviderModelsResult struct {
+	Models       []OpenAICompatibleModel `json:"models,omitempty"`
+	StatusCode   int                     `json:"statusCode,omitempty"`
+	Message      string                  `json:"message,omitempty"`
+	ResponseBody string                  `json:"responseBody,omitempty"`
 }
 
 type RelayServiceConfig struct {
@@ -414,6 +434,7 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 	for _, item := range result {
 		providers = append(providers, OpenAICompatibleProvider{
 			Name:       item.Name,
+			Priority:   item.Priority,
 			BaseURL:    item.BaseURL,
 			Prefix:     item.Prefix,
 			APIKey:     item.APIKey,
@@ -518,12 +539,20 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string) (*Re
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 	return a.core.CreateCodexAPIKey(wailsapp.CreateCodexAPIKeyInput{
 		APIKey:         input.APIKey,
+		Label:          input.Label,
 		BaseURL:        input.BaseURL,
 		Priority:       input.Priority,
 		Prefix:         input.Prefix,
 		ProxyURL:       input.ProxyURL,
 		Headers:        input.Headers,
 		ExcludedModels: input.ExcludedModels,
+	})
+}
+
+func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
+	return a.core.UpdateCodexAPIKeyLabel(wailsapp.UpdateCodexAPIKeyLabelInput{
+		ID:    input.ID,
+		Label: input.Label,
 	})
 }
 
@@ -565,6 +594,23 @@ func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProvide
 	}
 	return &VerifyOpenAICompatibleProviderResult{
 		Success:      result.Success,
+		StatusCode:   result.StatusCode,
+		Message:      result.Message,
+		ResponseBody: result.ResponseBody,
+	}, nil
+}
+
+func (a *App) FetchOpenAICompatibleProviderModels(input FetchOpenAICompatibleProviderModelsInput) (*FetchOpenAICompatibleProviderModelsResult, error) {
+	result, err := a.core.FetchOpenAICompatibleProviderModels(wailsapp.FetchOpenAICompatibleProviderModelsInput{
+		BaseURL: input.BaseURL,
+		APIKey:  input.APIKey,
+		Headers: input.Headers,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &FetchOpenAICompatibleProviderModelsResult{
+		Models:       mapOpenAICompatibleModels(result.Models),
 		StatusCode:   result.StatusCode,
 		Message:      result.Message,
 		ResponseBody: result.ResponseBody,

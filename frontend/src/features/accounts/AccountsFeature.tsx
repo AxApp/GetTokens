@@ -17,6 +17,7 @@ import OpenAICompatibleWorkspace from './components/OpenAICompatibleWorkspace';
 import PasteAuthModal from './components/PasteAuthModal';
 import useAccountsPageState from './hooks/useAccountsPageState';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
+import { mapOpenAICompatibleProviderToRotationAccount } from './model/accountRotation';
 import { isCodexAuthFile } from './model/accountPresentation';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
 
@@ -108,6 +109,11 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
   });
 
   const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs);
+  const isAggregateWorkspace = workspace === 'all';
+  const rotationAccounts = [
+    ...accounts,
+    ...openAICompatibleState.providers.map((provider) => mapOpenAICompatibleProviderToRotationAccount(provider)),
+  ];
 
   if (workspace === 'openai-compatible') {
     return (
@@ -118,6 +124,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           loading={openAICompatibleState.loading}
           providers={openAICompatibleState.providers}
           verifyStates={openAICompatibleState.verifyStates}
+          remoteModelsStates={openAICompatibleState.remoteModelsStates}
           pendingDeleteName={openAICompatibleState.pendingDeleteName}
           onCreate={openAICompatibleState.openCreateModal}
           onRefresh={() => void openAICompatibleState.loadProviders()}
@@ -150,12 +157,15 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
                 lastVerifiedAt: null,
               }
             }
+            remoteModelsState={openAICompatibleState.remoteModelsStates[openAICompatibleState.detailDraft.currentName]}
             error={openAICompatibleState.detailError}
             saving={openAICompatibleState.detailSaving}
             onClose={openAICompatibleState.closeDetailModal}
             onChange={openAICompatibleState.setDetailDraft}
             onSave={() => void openAICompatibleState.saveDetail()}
             onVerify={() => void openAICompatibleState.verifyDetail()}
+            onFetchModels={() => void openAICompatibleState.fetchDetailModels()}
+            onApplyFetchedModels={openAICompatibleState.applyFetchedModelsToDetailDraft}
           />
         ) : null}
       </>
@@ -172,7 +182,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
         <div className="mx-auto max-w-6xl space-y-8 pb-32">
           <AccountsHeader
             t={t}
-            accountCount={accounts.length}
+            accountCount={isAggregateWorkspace ? accounts.length + openAICompatibleState.providers.length : accounts.length}
             ready={ready}
             loading={loading}
             isHeaderActionsMenuOpen={isHeaderActionsMenuOpen}
@@ -190,10 +200,12 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
               openApiKeyModal();
               setIsHeaderActionsMenuOpen(false);
             }}
-            onOpenRotationModal={() => {
-              setIsRotationModalOpen(true);
-              setIsHeaderActionsMenuOpen(false);
-            }}
+            onOpenRotationModal={isAggregateWorkspace
+              ? () => {
+                  setIsRotationModalOpen(true);
+                  setIsHeaderActionsMenuOpen(false);
+                }
+              : undefined}
             onStartCodexOAuth={() => {
               void startCodexOAuth();
               setIsHeaderActionsMenuOpen(false);
@@ -288,6 +300,23 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
               ))}
             </div>
           )}
+
+          {isAggregateWorkspace ? (
+            <OpenAICompatibleWorkspace
+              t={t}
+              ready={ready}
+              loading={openAICompatibleState.loading}
+              providers={openAICompatibleState.providers}
+              verifyStates={openAICompatibleState.verifyStates}
+              remoteModelsStates={openAICompatibleState.remoteModelsStates}
+              pendingDeleteName={openAICompatibleState.pendingDeleteName}
+              onCreate={openAICompatibleState.openCreateModal}
+              onRefresh={() => void openAICompatibleState.loadProviders()}
+              onOpenDetail={openAICompatibleState.openDetailModal}
+              onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
+              embedded
+            />
+          ) : null}
         </div>
       </div>
 
@@ -313,7 +342,6 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           verifyState={apiKeyVerifyState}
           onClose={() => setSelectedAccount(null)}
           onRename={renameSelectedApiKey}
-          onSavePriority={(priority) => void updateSelectedApiKeyPriority(priority)}
           onVerify={(input) => void verifySelectedApiKey(input)}
           t={t}
         />
@@ -338,7 +366,8 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
 
       {isRotationModalOpen ? (
         <AccountRotationModal
-          accounts={accounts}
+          accounts={rotationAccounts}
+          codexQuotaByName={codexQuotaByName}
           ready={ready}
           onClose={() => setIsRotationModalOpen(false)}
           onReloadAccounts={loadAccounts}

@@ -66,16 +66,18 @@ test('persistActivePage writes the selected page to storage', () => {
 });
 
 test('isAccountWorkspace only accepts known account subpages', () => {
+  assert.equal(isAccountWorkspace('all'), true);
   assert.equal(isAccountWorkspace('codex'), true);
   assert.equal(isAccountWorkspace('openai-compatible'), true);
   assert.equal(isAccountWorkspace('unknown'), false);
   assert.equal(isAccountWorkspace(null), false);
 });
 
-test('resolveInitialAccountWorkspace falls back to codex for invalid values', () => {
+test('resolveInitialAccountWorkspace falls back to all for invalid values', () => {
+  assert.equal(resolveInitialAccountWorkspace('all'), 'all');
   assert.equal(resolveInitialAccountWorkspace('openai-compatible'), 'openai-compatible');
-  assert.equal(resolveInitialAccountWorkspace('unknown'), 'codex');
-  assert.equal(resolveInitialAccountWorkspace(null), 'codex');
+  assert.equal(resolveInitialAccountWorkspace('unknown'), 'all');
+  assert.equal(resolveInitialAccountWorkspace(null), 'all');
 });
 
 test('readStoredAccountWorkspace restores the last valid workspace from storage', () => {

@@ -3,20 +3,21 @@ import assert from 'node:assert/strict';
 
 import {
   applyOpenAICompatibleProviderPreset,
-  buildHeadersMap,
-  buildHeaderRows,
+  buildProviderConfigSignature,
+  buildHeadersText,
   buildModelRows,
   buildOpenAICompatibleProviderDraft,
   emptyOpenAICompatibleProviderForm,
   getOpenAICompatibleProviderPreset,
   maskProviderAPIKey,
-  normalizeProviderAPIKeys,
   normalizeProviderModels,
   openAICompatibleProviderPresets,
+  parseHeadersText,
   renameProviderVerifyState,
   resolveProviderDetailModelOptions,
   resolveOpenAICompatibleProviderPreset,
   resolveOpenAICompatibleProviderPresetID,
+  shouldRefreshRemoteModels,
 } from '../model/openAICompatible.ts';
 
 test('maskProviderAPIKey keeps short keys and masks long keys', () => {
@@ -125,8 +126,7 @@ test('buildOpenAICompatibleProviderDraft keeps editable provider basics and veri
       name: 'deepseek',
       baseUrl: 'https://api.deepseek.com/v1',
       apiKey: 'sk-test',
-      apiKeys: ['sk-test'],
-      headers: [{ key: '', value: '' }],
+      headersText: '',
       models: [{ name: 'deepseek-chat', alias: 'chat' }],
       verifyModel: 'deepseek-chat',
     },
@@ -173,8 +173,7 @@ test('resolveProviderDetailModelOptions prefers fetched remote models over local
         name: 'deepseek',
         baseUrl: 'https://api.deepseek.com/v1',
         apiKey: 'sk-test',
-        apiKeys: ['sk-test'],
-        headers: [{ key: '', value: '' }],
+        headersText: '',
         models: [{ name: 'local-model', alias: 'Local' }],
         verifyModel: 'deepseek-chat',
       },
@@ -206,8 +205,7 @@ test('resolveProviderDetailModelOptions falls back to preset models when local a
         name: 'openrouter',
         baseUrl: 'https://openrouter.ai/api/v1',
         apiKey: 'sk-test',
-        apiKeys: ['sk-test'],
-        headers: [{ key: '', value: '' }],
+        headersText: '',
         models: [{ name: '', alias: '' }],
         verifyModel: '',
       },
@@ -242,27 +240,38 @@ test('renameProviderVerifyState moves cached state to the new provider name', ()
   });
 });
 
-test('normalizeProviderAPIKeys trims blanks and removes duplicates', () => {
-  assert.deepEqual(normalizeProviderAPIKeys([' sk-a ', '', 'sk-b', 'sk-a', '   ']), ['sk-a', 'sk-b']);
-});
-
-test('buildHeaderRows and buildHeadersMap convert between map and editable rows', () => {
-  assert.deepEqual(buildHeaderRows({ Authorization: 'Bearer sk-test', 'X-Team': 'team-a' }), [
-    { key: 'Authorization', value: 'Bearer sk-test' },
-    { key: 'X-Team', value: 'team-a' },
-  ]);
+test('buildHeadersText and parseHeadersText convert between map and textarea text', () => {
+  assert.equal(
+    buildHeadersText({ Authorization: 'Bearer sk-test', 'X-Team': 'team-a' }),
+    'Authorization: Bearer sk-test\nX-Team: team-a',
+  );
 
   assert.deepEqual(
-    buildHeadersMap([
-      { key: ' Authorization ', value: ' Bearer sk-test ' },
-      { key: '', value: 'ignored' },
-      { key: 'X-Team', value: 'team-a' },
-    ]),
+    parseHeadersText('Authorization: Bearer sk-test\nX-Team: team-a\ninvalid-line'),
     {
       Authorization: 'Bearer sk-test',
       'X-Team': 'team-a',
     },
   );
+});
+
+test('buildProviderConfigSignature normalizes base url and headers ordering', () => {
+  const left = buildProviderConfigSignature({
+    baseUrl: 'https://api.deepseek.com/v1/',
+    apiKey: ' sk-test ',
+    headersText: 'X-Title: GetTokens\nAuthorization: Bearer sk-test',
+  });
+
+  const right = buildProviderConfigSignature({
+    baseUrl: 'https://api.deepseek.com/v1',
+    apiKey: 'sk-test',
+    headers: {
+      Authorization: 'Bearer sk-test',
+      'X-Title': 'GetTokens',
+    },
+  });
+
+  assert.equal(left, right);
 });
 
 test('buildModelRows and normalizeProviderModels keep editable model aliases', () => {
@@ -282,4 +291,10 @@ test('buildModelRows and normalizeProviderModels keep editable model aliases', (
       { name: 'deepseek-reasoner', alias: '' },
     ],
   );
+});
+
+test('shouldRefreshRemoteModels returns true only when cache is empty or stale for one day', () => {
+  assert.equal(shouldRefreshRemoteModels(null, 1000), true);
+  assert.equal(shouldRefreshRemoteModels(1000, 1000 + 60 * 60 * 1000), false);
+  assert.equal(shouldRefreshRemoteModels(1000, 1000 + 24 * 60 * 60 * 1000), true);
 });

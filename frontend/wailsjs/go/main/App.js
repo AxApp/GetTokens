@@ -42,6 +42,10 @@ export function DownloadAuthFile(arg1) {
   return window['go']['main']['App']['DownloadAuthFile'](arg1);
 }
 
+export function FetchOpenAICompatibleProviderModels(arg1) {
+  return window['go']['main']['App']['FetchOpenAICompatibleProviderModels'](arg1);
+}
+
 export function FinalizeCodexOAuth(arg1) {
   return window['go']['main']['App']['FinalizeCodexOAuth'](arg1);
 }
@@ -108,6 +112,10 @@ export function StartCodexOAuth() {
 
 export function UpdateAccountPriority(arg1) {
   return window['go']['main']['App']['UpdateAccountPriority'](arg1);
+}
+
+export function UpdateCodexAPIKeyLabel(arg1) {
+  return window['go']['main']['App']['UpdateCodexAPIKeyLabel'](arg1);
 }
 
 export function UpdateCodexAPIKeyPriority(arg1) {

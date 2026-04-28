@@ -4,18 +4,17 @@ import {
   DeleteAuthFiles,
   DeleteCodexAPIKey,
   DownloadAuthFile,
+  UpdateCodexAPIKeyLabel,
   UpdateCodexAPIKeyPriority,
   UploadAuthFiles,
 } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
 import {
-  buildAPIKeyLabelStorageKey,
   decodeBase64Utf8,
   downloadTextFile,
   emptyApiKeyForm,
   parseMaybeJSON,
-  persistAPIKeyLabels,
 } from '../model/accountConfig';
 import { fallbackAPIKeyDisplayName } from '../model/accountPresentation';
 import {
@@ -44,7 +43,6 @@ interface UseAccountsActionsArgs {
   setPasteError: Dispatch<SetStateAction<string>>;
   setSearchTerm: Dispatch<SetStateAction<string>>;
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
-  setAPIKeyLabels: Dispatch<SetStateAction<Record<string, string>>>;
   loadAccounts: () => Promise<void>;
 }
 
@@ -66,7 +64,6 @@ export default function useAccountsActions({
   setPasteError,
   setSearchTerm,
   setSelectedAccountIDs,
-  setAPIKeyLabels,
   loadAccounts,
 }: UseAccountsActionsArgs) {
   const deleteAccount = useCallback(
@@ -76,18 +73,6 @@ export default function useAccountsActions({
       if (account.credentialSource === 'api-key') {
         try {
           await trackRequest('DeleteCodexAPIKey', { id: account.id }, () => DeleteCodexAPIKey(account.id));
-          if (account.apiKey) {
-            const storageKey = buildAPIKeyLabelStorageKey(account.apiKey, account.baseUrl || '', account.prefix || '');
-            setAPIKeyLabels((prev) => {
-              if (!(storageKey in prev)) {
-                return prev;
-              }
-              const next = { ...prev };
-              delete next[storageKey];
-              persistAPIKeyLabels(next);
-              return next;
-            });
-          }
           setPendingDeleteID(null);
           if (selectedAccount?.id === account.id) {
             setSelectedAccount(null);
@@ -117,7 +102,6 @@ export default function useAccountsActions({
     [
       loadAccounts,
       selectedAccount,
-      setAPIKeyLabels,
       setDeleteError,
       setPendingDeleteID,
       setSelectedAccount,
@@ -171,21 +155,12 @@ export default function useAccountsActions({
         () =>
           CreateCodexAPIKey({
             apiKey,
+            label: trimmedLabel,
             baseUrl: trimmedBaseURL,
             priority: Number.isFinite(parsedPriority) ? parsedPriority : 0,
             prefix: trimmedPrefix,
           })
       );
-      if (trimmedLabel) {
-        setAPIKeyLabels((prev) => {
-          const next = {
-            ...prev,
-            [buildAPIKeyLabelStorageKey(apiKey, trimmedBaseURL, trimmedPrefix)]: trimmedLabel,
-          };
-          persistAPIKeyLabels(next);
-          return next;
-        });
-      }
       setIsApiKeyModalOpen(false);
       setApiKeyForm(emptyApiKeyForm);
       setApiKeyFormError('');
@@ -198,7 +173,6 @@ export default function useAccountsActions({
   }, [
     apiKeyForm,
     loadAccounts,
-    setAPIKeyLabels,
     setApiKeyForm,
     setApiKeyFormError,
     setIsApiKeyModalOpen,
@@ -307,35 +281,36 @@ export default function useAccountsActions({
 
   const renameSelectedApiKey = useCallback(
     (nextName: string) => {
-      if (!selectedAccount?.apiKey) {
+      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
         return;
       }
-      const storageKey = buildAPIKeyLabelStorageKey(
-        selectedAccount.apiKey,
-        selectedAccount.baseUrl || '',
-        selectedAccount.prefix || ''
-      );
       const trimmedName = nextName.trim();
-      setAPIKeyLabels((prev) => {
-        const next = { ...prev };
-        if (trimmedName) {
-          next[storageKey] = trimmedName;
-        } else {
-          delete next[storageKey];
+      void (async () => {
+        try {
+          await trackRequest(
+            'UpdateCodexAPIKeyLabel',
+            { id: selectedAccount.id, label: trimmedName },
+            () =>
+              UpdateCodexAPIKeyLabel({
+                id: selectedAccount.id,
+                label: trimmedName,
+              })
+          );
+          setSelectedAccount((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  displayName: trimmedName || fallbackAPIKeyDisplayName(prev.apiKey || ''),
+                }
+              : prev
+          );
+          await loadAccounts();
+        } catch (error) {
+          console.error(error);
         }
-        persistAPIKeyLabels(next);
-        return next;
-      });
-      setSelectedAccount((prev) =>
-        prev
-          ? {
-              ...prev,
-              displayName: trimmedName || fallbackAPIKeyDisplayName(prev.apiKey || ''),
-            }
-          : prev
-      );
+      })();
     },
-    [selectedAccount, setAPIKeyLabels, setSelectedAccount]
+    [loadAccounts, selectedAccount, setSelectedAccount, trackRequest]
   );
 
   const updateSelectedApiKeyPriority = useCallback(

@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GetTokens 账号用量工作台设计稿 v01</title>
+    <style>
+      :root {
+        --bg-main: #f2efe8;
+        --bg-surface: #fbf9f4;
+        --bg-panel: #ffffff;
+        --ink: #121212;
+        --muted: #6c665f;
+        --line: rgba(18, 18, 18, 0.18);
+        --line-strong: rgba(18, 18, 18, 0.82);
+        --accent-red: #d9482f;
+        --accent-green: #13835e;
+        --accent-blue: #1457d8;
+        --accent-yellow: #b98316;
+        --shadow: 8px 8px 0 rgba(18, 18, 18, 0.9);
+        --radius: 20px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "Helvetica Neue", sans-serif;
+        background:
+          linear-gradient(180deg, rgba(20, 87, 216, 0.05), transparent 30%),
+          linear-gradient(135deg, #ece7db 0%, #f7f3ea 45%, #efe8dc 100%);
+        color: var(--ink);
+      }
+
+      .frame {
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 20px;
+        min-height: calc(100vh - 48px);
+      }
+
+      .sidebar,
+      .content,
+      .annotation {
+        border: 2px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.78);
+        backdrop-filter: blur(8px);
+        box-shadow: var(--shadow);
+      }
+
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        gap: 20px;
+      }
+
+      .brand {
+        padding-bottom: 16px;
+        border-bottom: 2px dashed var(--line-strong);
+      }
+
+      .eyebrow,
+      .label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .brand h1 {
+        margin: 10px 0 0;
+        font-size: 28px;
+        line-height: 0.95;
+        text-transform: uppercase;
+        letter-spacing: -0.05em;
+      }
+
+      .nav-group,
+      .rail-card {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .nav-item,
+      .chip,
+      .segment button,
+      .metric-card,
+      .panel,
+      .list-row,
+      .legend {
+        border: 2px solid var(--line-strong);
+        background: var(--bg-panel);
+      }
+
+      .nav-item {
+        padding: 14px;
+      }
+
+      .nav-item.active {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .nav-item strong,
+      .metric-card strong,
+      .section-title strong {
+        display: block;
+        text-transform: uppercase;
+        font-size: 14px;
+        letter-spacing: 0.05em;
+      }
+
+      .nav-item span,
+      .metric-card span,
+      .panel p,
+      .note,
+      .list-row span,
+      .legend span {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .rail-card {
+        padding: 14px;
+        background: repeating-linear-gradient(
+          -45deg,
+          rgba(20, 87, 216, 0.05),
+          rgba(20, 87, 216, 0.05) 10px,
+          rgba(20, 87, 216, 0.01) 10px,
+          rgba(20, 87, 216, 0.01) 20px
+        );
+      }
+
+      .content-wrap {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        gap: 20px;
+      }
+
+      .content {
+        padding: 22px;
+      }
+
+      .annotation {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+
+      .hero-card {
+        padding: 20px;
+        border: 2px solid var(--line-strong);
+        background: var(--bg-panel);
+      }
+
+      .hero h2 {
+        margin: 12px 0;
+        font-size: 42px;
+        line-height: 0.95;
+        letter-spacing: -0.06em;
+        text-transform: uppercase;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 62ch;
+        line-height: 1.6;
+        color: #322f2b;
+      }
+
+      .warning-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .warning {
+        padding: 16px;
+        border: 2px solid var(--line-strong);
+        background: #fff9ef;
+      }
+
+      .warning strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .toolbar {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .toolbar-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .segment {
+        display: inline-flex;
+        padding: 4px;
+        gap: 4px;
+        background: rgba(18, 18, 18, 0.06);
+        border: 2px solid var(--line-strong);
+      }
+
+      .segment button {
+        padding: 10px 14px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--ink);
+      }
+
+      .segment button.active-dark {
+        background: var(--ink);
+        color: #fff;
+      }
+
+      .segment button.active-blue {
+        background: var(--accent-blue);
+        color: #fff;
+      }
+
+      .segment button.active-red {
+        background: var(--accent-red);
+        color: #fff;
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .chip {
+        padding: 9px 12px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+      }
+
+      .chip.active {
+        background: #121212;
+        color: #fff;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .metric-card {
+        padding: 16px;
+        min-height: 118px;
+      }
+
+      .metric-card .value {
+        margin-top: 14px;
+        font-size: 34px;
+        font-weight: 900;
+        letter-spacing: -0.06em;
+        line-height: 1;
+      }
+
+      .metric-card.blue {
+        background: #eff4ff;
+      }
+
+      .metric-card.red {
+        background: #fff0ec;
+      }
+
+      .metric-card.green {
+        background: #ebf8f1;
+      }
+
+      .metric-card.yellow {
+        background: #fff7e5;
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 16px;
+      }
+
+      .panel {
+        padding: 16px;
+      }
+
+      .panel-header,
+      .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .section-title {
+        margin-top: 22px;
+      }
+
+      .chart {
+        height: 260px;
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(18, 18, 18, 0.05), transparent),
+          repeating-linear-gradient(
+            to right,
+            transparent 0 48px,
+            rgba(18, 18, 18, 0.08) 48px 49px
+          ),
+          repeating-linear-gradient(
+            to top,
+            transparent 0 52px,
+            rgba(18, 18, 18, 0.08) 52px 53px
+          );
+      }
+
+      .chart svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .legend-row,
+      .mini-grid,
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .legend-row {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .legend {
+        padding: 12px;
+      }
+
+      .mini-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .list-row {
+        padding: 14px;
+        display: grid;
+        grid-template-columns: 1.4fr 1fr auto;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .bar {
+        height: 10px;
+        border: 2px solid var(--line-strong);
+        background:
+          linear-gradient(to right, rgba(18, 18, 18, 0.16), rgba(18, 18, 18, 0.04));
+        overflow: hidden;
+      }
+
+      .bar > div {
+        height: 100%;
+        background:
+          repeating-linear-gradient(
+            to right,
+            var(--accent-green),
+            var(--accent-green) 14px,
+            rgba(19, 131, 94, 0.08) 14px,
+            rgba(19, 131, 94, 0.08) 18px
+          );
+      }
+
+      .drawer {
+        margin-top: 22px;
+        padding: 18px;
+        border: 2px solid var(--line-strong);
+        background: linear-gradient(180deg, rgba(20, 87, 216, 0.05), rgba(20, 87, 216, 0.01));
+      }
+
+      .drawer-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 16px;
+        margin-top: 14px;
+      }
+
+      .callout {
+        padding: 14px;
+        border: 2px dashed var(--line-strong);
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .rule-list {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .rule-list li {
+        line-height: 1.55;
+        color: #2f2b27;
+      }
+
+      .footer-note {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 2px dashed var(--line-strong);
+      }
+
+      @media (max-width: 1180px) {
+        .shell,
+        .content-wrap,
+        .hero,
+        .main-grid,
+        .drawer-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .frame {
+          padding: 12px;
+        }
+
+        .shell {
+          gap: 12px;
+        }
+
+        .sidebar,
+        .content,
+        .annotation {
+          box-shadow: 4px 4px 0 rgba(18, 18, 18, 0.9);
+        }
+
+        .hero h2 {
+          font-size: 30px;
+        }
+
+        .metrics,
+        .legend-row,
+        .mini-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .list-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="shell">
+        <aside class="sidebar">
+          <div class="brand">
+            <div class="eyebrow">GetTokens / 空间草图</div>
+            <h1>账号用量工作台</h1>
+          </div>
+
+          <div class="nav-group">
+            <div class="label">工作区规划</div>
+            <div class="nav-item">
+              <strong>账号池</strong>
+              <span>保留账号资产、Quota 刷新、稳定性信号，是 usage 分析区的上层入口。</span>
+            </div>
+            <div class="nav-item active">
+              <strong>用量工作台</strong>
+              <span>作为 `账号池` 下的新分析子工作区，承接双轨用量、provider 过滤、时间趋势和详情钻取。</span>
+            </div>
+            <div class="nav-item">
+              <strong>状态页</strong>
+              <span>继续承担 relay/service 侧配置，不与 usage 域耦合。</span>
+            </div>
+          </div>
+
+          <div class="rail-card">
+            <div class="label">页面主张</div>
+            <span>不是“把更多指标塞回账号卡片”，而是在 `账号池` 内把 usage 从资产视图里抽出来，做成独立分析面。</span>
+          </div>
+
+          <div class="rail-card">
+            <div class="label">V1 范围</div>
+            <span>`ObservedRequestUsage` + `LocalProjectedUsage(Codex)` + `QuotaSnapshot` 分域展示。Local 只做 provider/global，不做 auth-file 归因。</span>
+          </div>
+        </aside>
+
+        <div class="content-wrap">
+          <main class="content">
+            <section class="hero">
+              <div class="hero-card">
+                <div class="eyebrow">前端规划 / HTML 草稿</div>
+                <h2>一个工作台，三种语义，不做伪总量。</h2>
+                <p>
+                  这个分析面不是给用户“看一个总用量数”，而是帮助用户快速判断：
+                  当前代理观测是否稳定、本地 provider 的消耗趋势如何、哪些信息只是 quota window 而不是 usage fact。
+                </p>
+              </div>
+              <div class="warning-stack">
+                <div class="warning">
+                  <strong>不要混算</strong>
+                  <span>Local usage 不回写到账号卡片，也不与 quota 聚成一个 summary。</span>
+                </div>
+                <div class="warning">
+                  <strong>Provider 优先</strong>
+                  <span>本地 usage 的最小单位是 provider，`Codex / Claude / Gemini` 不允许混桶。</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="toolbar">
+              <div class="toolbar-row">
+                <div class="label">数据来源</div>
+                <div class="segment">
+                  <button class="active-dark">真实请求观测</button>
+                  <button>本地用量投影</button>
+                  <button>额度快照</button>
+                </div>
+              </div>
+              <div class="toolbar-row">
+                <div class="label">Provider</div>
+                <div class="chip-row">
+                  <div class="chip active">Codex</div>
+                  <div class="chip">兼容 OpenAI</div>
+                  <div class="chip">Claude</div>
+                  <div class="chip">Gemini</div>
+                </div>
+              </div>
+              <div class="toolbar-row">
+                <div class="label">时间范围</div>
+                <div class="segment">
+                  <button>24小时</button>
+                  <button class="active-blue">7天</button>
+                  <button>30天</button>
+                  <button>90天</button>
+                </div>
+                <div class="label">视图模式</div>
+                <div class="segment">
+                  <button class="active-red">Provider 总览</button>
+                  <button disabled>账号下钻</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="metrics">
+              <div class="metric-card blue">
+                <strong>真实请求数</strong>
+                <div class="value">1,284</div>
+                <span>仅统计经过 GetTokens sidecar 的真实请求。</span>
+              </div>
+              <div class="metric-card green">
+                <strong>成功率</strong>
+                <div class="value">97.4%</div>
+                <span>稳定性指标继续保留，不与本地 token 消耗混算。</span>
+              </div>
+              <div class="metric-card red">
+                <strong>失败请求数</strong>
+                <div class="value">33</div>
+                <span>突出错误量，方便用户先判断代理链路问题。</span>
+              </div>
+              <div class="metric-card yellow">
+                <strong>平均延迟</strong>
+                <div class="value">842ms</div>
+                <span>请求体验指标，依旧属于 observed 域。</span>
+              </div>
+            </section>
+
+            <section class="main-grid">
+              <div class="panel">
+                <div class="panel-header">
+                  <div class="section-title">
+                    <strong>趋势时间线</strong>
+                  </div>
+                  <span class="note">切换 `Observed / Local / Quota` 时，同一位置切换不同语义图，不堆三张图。</span>
+                </div>
+                <div class="chart">
+                  <svg viewBox="0 0 700 260" preserveAspectRatio="none" aria-hidden="true">
+                    <polyline
+                      fill="none"
+                      stroke="#1457d8"
+                      stroke-width="4"
+                      points="0,190 60,180 120,162 180,150 240,134 300,120 360,108 420,116 480,92 540,88 600,74 700,56"
+                    />
+                    <polyline
+                      fill="none"
+                      stroke="#d9482f"
+                      stroke-width="3"
+                      stroke-dasharray="10 10"
+                      points="0,210 60,206 120,202 180,190 240,194 300,174 360,188 420,168 480,178 540,150 600,144 700,132"
+                    />
+                  </svg>
+                </div>
+                <div class="legend-row" style="margin-top: 12px;">
+                  <div class="legend">
+                    <strong>蓝色主线</strong>
+                    <span>主轨图层，当前选中源的核心趋势。</span>
+                  </div>
+                  <div class="legend">
+                    <strong>红色虚线</strong>
+                    <span>异常或失败请求量，不与 Local usage 的 requestCount 复用样式。</span>
+                  </div>
+                  <div class="legend">
+                    <strong>单图槽位</strong>
+                    <span>避免一页三图把三种语义视觉上误导成可直接相加。</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-header">
+                  <div class="section-title">
+                    <strong>来源摘要</strong>
+                  </div>
+                  <span class="note">右侧摘要是当前 source kind 的解释器，不是总览拼盘。</span>
+                </div>
+                <div class="mini-grid">
+                  <div class="legend">
+                    <strong>真实请求观测</strong>
+                    <span>账号近似归因可用，重点是成功率、失败率、延迟。</span>
+                  </div>
+                  <div class="legend">
+                    <strong>本地用量投影</strong>
+                    <span>只做 provider/global，重点是 token、requestCount、时间桶。</span>
+                  </div>
+                  <div class="legend">
+                    <strong>额度快照</strong>
+                    <span>展示剩余额度窗口，不进入 usage fact 聚合。</span>
+                  </div>
+                  <div class="legend">
+                    <strong>Provider 维度</strong>
+                    <span>页面状态必须把 provider 当一等维度保存。</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="section-title">
+              <strong>Provider 拆解</strong>
+              <span class="note">本地 usage 先做 provider 级分桶，再决定是否支持 provider 内部更细钻取。</span>
+            </div>
+            <section class="main-grid">
+              <div class="panel">
+                <div class="panel-header">
+                  <strong>本地用量 Provider 列表</strong>
+                  <span class="note">当前示意：`Codex` 已启用，其他 provider 占位但保留结构。</span>
+                </div>
+                <div class="list">
+                  <div class="list-row">
+                    <div>
+                      <strong>Codex</strong>
+                      <span>来源：本地用量投影 / 仅支持 provider 总览</span>
+                    </div>
+                    <div class="bar"><div style="width: 84%;"></div></div>
+                    <strong>84%</strong>
+                  </div>
+                  <div class="list-row">
+                    <div>
+                      <strong>Claude</strong>
+                      <span>预留 provider 槽位 / 暂无解析器</span>
+                    </div>
+                    <div class="bar"><div style="width: 0%; background: none;"></div></div>
+                    <strong>—</strong>
+                  </div>
+                  <div class="list-row">
+                    <div>
+                      <strong>Gemini</strong>
+                      <span>预留 provider 槽位 / 暂无解析器</span>
+                    </div>
+                    <div class="bar"><div style="width: 0%; background: none;"></div></div>
+                    <strong>—</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <div class="panel-header">
+                  <strong>真实请求健康度</strong>
+                  <span class="note">真实请求观测侧可以给 provider 过滤，但不需要伪装成 provider 全量消耗。</span>
+                </div>
+                <div class="list">
+                  <div class="list-row">
+                    <div>
+                      <strong>Codex / Auth Files</strong>
+                      <span>最近成功 912 / 失败 19 / 平均 768ms</span>
+                    </div>
+                    <div class="bar"><div style="width: 92%;"></div></div>
+                    <strong>稳定</strong>
+                  </div>
+                  <div class="list-row">
+                    <div>
+                      <strong>兼容 OpenAI</strong>
+                      <span>最近成功 372 / 失败 14 / 平均 1028ms</span>
+                    </div>
+                    <div class="bar"><div style="width: 78%;"></div></div>
+                    <strong>关注</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="drawer">
+              <div class="section-title">
+                <strong>下钻抽屉</strong>
+                <span class="note">详情抽屉属于 usage workspace，不再复用账号详情模态。</span>
+              </div>
+              <div class="drawer-grid">
+                <div class="callout">
+                  <div class="label">当数据来源 = 本地用量投影</div>
+                  <p>
+                    详情区展示：provider、time bucket、requestCount、input/output/cache tokens、session count、refresh state。
+                    不展示账号名，不暗示能够关联到 `auth-file`。
+                  </p>
+                </div>
+                <div class="callout">
+                  <div class="label">当数据来源 = 真实请求观测</div>
+                  <p>
+                    详情区展示：provider filter 下的请求细分、失败趋势、可选账号近似归因。
+                    账号卡片本身只保留轻量稳定性信号。
+                  </p>
+                </div>
+              </div>
+            </section>
+          </main>
+
+          <aside class="annotation">
+            <div>
+              <div class="eyebrow">设计备注</div>
+              <h3 style="margin: 8px 0 0; font-size: 24px; text-transform: uppercase; letter-spacing: -0.04em;">
+                前端规划规则
+              </h3>
+            </div>
+
+            <ol class="rule-list">
+              <li>v1 入口仍在 `Accounts`，但新增独立的 `Usage Desk` 子工作区，而不是继续扩张卡片和模态。</li>
+              <li>页首只有三组控制：`source kind`、`provider`、`time range`。避免再叠一套账号过滤器把语义混掉。</li>
+              <li>`provider` 必须是持久状态，不是临时 UI 装饰；即使 v1 只有 `Codex`，结构也不能写死。</li>
+              <li>`ObservedRequestUsage` 与 `LocalProjectedUsage` 共用页面骨架，但不能共用文案语义和摘要口径。</li>
+              <li>账号卡片继续展示 `quota + recent health`，但不展示本地 token、session 或 local requestCount。</li>
+              <li>详情钻取从“账号详情模态”中剥离出来，改为 usage workspace 自己的右侧详情区或底部抽屉。</li>
+            </ol>
+
+            <div class="callout">
+              <div class="label">明确非目标</div>
+              <p>
+                v1 不做本地 usage 到 `auth-file` 的归因，不做 local usage 写回账号卡片，不做跨 provider 本地 usage 总计。
+              </p>
+            </div>
+
+            <div class="footer-note">
+              <div class="label">建议路由</div>
+              <span>`/accounts` 保持一级入口，并新增 `usage desk` 子工作区；`/status` 继续是 relay/service 入口。</span>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

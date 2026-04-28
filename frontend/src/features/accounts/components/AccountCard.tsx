@@ -112,17 +112,6 @@ export default function AccountCard({
             <span className={account.credentialSource === 'auth-file' && account.email ? 'normal-case tracking-normal' : ''}>
               {primaryLabel}
             </span>
-            <span
-              className={`border px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.14em] ${
-                operationalState.tone === 'positive'
-                  ? 'border-green-600 text-green-700'
-                  : operationalState.tone === 'warning'
-                    ? 'border-yellow-500 text-yellow-700'
-                    : 'border-red-500 text-red-500'
-              }`}
-            >
-              {operationalState.label}
-            </span>
           </h3>
           {failureReason ? (
             <div className="break-words text-[10px] font-bold leading-relaxed text-red-500" title={failureReason}>
