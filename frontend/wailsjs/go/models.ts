@@ -307,6 +307,76 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class LocalProjectedUsageDetail {
+	    timestamp: string;
+	    provider: string;
+	    sourceKind: string;
+	    model?: string;
+	    inputTokens: number;
+	    cachedInputTokens: number;
+	    outputTokens: number;
+	    requestCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalProjectedUsageDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.timestamp = source["timestamp"];
+	        this.provider = source["provider"];
+	        this.sourceKind = source["sourceKind"];
+	        this.model = source["model"];
+	        this.inputTokens = source["inputTokens"];
+	        this.cachedInputTokens = source["cachedInputTokens"];
+	        this.outputTokens = source["outputTokens"];
+	        this.requestCount = source["requestCount"];
+	    }
+	}
+	export class LocalProjectedUsageResponse {
+	    provider: string;
+	    sourceKind: string;
+	    scannedFiles: number;
+	    cacheHitFiles?: number;
+	    deltaAppendFiles?: number;
+	    fullRebuildFiles?: number;
+	    fileMissingFiles?: number;
+	    details: LocalProjectedUsageDetail[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalProjectedUsageResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.provider = source["provider"];
+	        this.sourceKind = source["sourceKind"];
+	        this.scannedFiles = source["scannedFiles"];
+	        this.cacheHitFiles = source["cacheHitFiles"];
+	        this.deltaAppendFiles = source["deltaAppendFiles"];
+	        this.fullRebuildFiles = source["fullRebuildFiles"];
+	        this.fileMissingFiles = source["fileMissingFiles"];
+	        this.details = this.convertValues(source["details"], LocalProjectedUsageDetail);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class OAuthStartResult {
 	    url: string;
 	    state?: string;
@@ -339,6 +409,7 @@ export namespace main {
 	export class OpenAICompatibleProvider {
 	    name: string;
 	    priority?: number;
+	    disabled?: boolean;
 	    baseUrl: string;
 	    prefix?: string;
 	    apiKey: string;
@@ -357,6 +428,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.priority = source["priority"];
+	        this.disabled = source["disabled"];
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
 	        this.apiKey = source["apiKey"];
@@ -493,6 +565,24 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.priority = source["priority"];
+	    }
+	}
+	export class UpdateCodexAPIKeyConfigInput {
+	    id: string;
+	    apiKey: string;
+	    baseUrl: string;
+	    prefix?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateCodexAPIKeyConfigInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.apiKey = source["apiKey"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
 	    }
 	}
 	export class UpdateCodexAPIKeyLabelInput {

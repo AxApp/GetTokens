@@ -66,3 +66,25 @@ type RelayLocalApplyResult struct {
 	AuthFilePath  string `json:"authFilePath"`
 	ConfigPath    string `json:"configPath"`
 }
+
+type LocalProjectedUsageDetail struct {
+	Timestamp         string `json:"timestamp"`
+	Provider          string `json:"provider"`
+	SourceKind        string `json:"sourceKind"`
+	Model             string `json:"model,omitempty"`
+	InputTokens       int64  `json:"inputTokens"`
+	CachedInputTokens int64  `json:"cachedInputTokens"`
+	OutputTokens      int64  `json:"outputTokens"`
+	RequestCount      int64  `json:"requestCount"`
+}
+
+type LocalProjectedUsageResponse struct {
+	Provider         string                      `json:"provider"`
+	SourceKind       string                      `json:"sourceKind"`
+	ScannedFiles     int                         `json:"scannedFiles"`
+	CacheHitFiles    int                         `json:"cacheHitFiles,omitempty"`
+	DeltaAppendFiles int                         `json:"deltaAppendFiles,omitempty"`
+	FullRebuildFiles int                         `json:"fullRebuildFiles,omitempty"`
+	FileMissingFiles int                         `json:"fileMissingFiles,omitempty"`
+	Details          []LocalProjectedUsageDetail `json:"details"`
+}

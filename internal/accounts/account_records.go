@@ -98,8 +98,9 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 		Provider:         name,
 		CredentialSource: CredentialSourceAPIKey,
 		DisplayName:      "OPENAI-COMPATIBLE · " + strings.ToUpper(name),
-		Status:           "configured",
+		Status:           providerStatus(provider.Disabled),
 		Priority:         provider.Priority,
+		Disabled:         provider.Disabled,
 		APIKey:           apiKey,
 		KeyFingerprint:   APIKeyFingerprint(apiKey),
 		KeySuffix:        APIKeySuffix(apiKey),
@@ -156,7 +157,9 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 	suffix := APIKeySuffix(key.APIKey)
 
 	status := "active"
-	if strings.TrimSpace(key.AuthIndex) == "" {
+	if key.Disabled {
+		status = "disabled"
+	} else if strings.TrimSpace(key.AuthIndex) == "" {
 		status = "configured"
 	}
 
@@ -168,12 +171,13 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 	}
 
 	return AccountRecord{
-		ID:               CodexAPIKeyAssetID(key.APIKey, key.BaseURL, key.Prefix),
+		ID:               codexAPIKeyRecordID(key),
 		Provider:         "codex",
 		CredentialSource: CredentialSourceAPIKey,
 		DisplayName:      displayName,
 		Status:           status,
 		Priority:         key.Priority,
+		Disabled:         key.Disabled,
 		APIKey:           strings.TrimSpace(key.APIKey),
 		KeyFingerprint:   fingerprint,
 		KeySuffix:        suffix,
@@ -183,12 +187,26 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 	}
 }
 
+func codexAPIKeyRecordID(key cliproxyapi.CodexAPIKey) string {
+	if trimmed := strings.TrimSpace(key.LocalID); trimmed != "" {
+		return trimmed
+	}
+	return CodexAPIKeyAssetID(key.APIKey, key.BaseURL, key.Prefix)
+}
+
 func CodexAPIKeyAssetID(apiKey string, baseURL string, prefix string) string {
 	return "codex-api-key:" + APIKeyFingerprint(apiKey) + "@" + NormalizeBaseURL(baseURL) + "#" + NormalizePrefix(prefix)
 }
 
 func OpenAICompatibleProviderAssetID(name string) string {
 	return "openai-compatible:" + strings.TrimSpace(name)
+}
+
+func providerStatus(disabled bool) string {
+	if disabled {
+		return "disabled"
+	}
+	return "configured"
 }
 
 func APIKeyFingerprint(apiKey string) string {

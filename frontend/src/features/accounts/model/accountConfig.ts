@@ -4,7 +4,6 @@ export const emptyApiKeyForm = {
   label: '',
   apiKey: '',
   baseUrl: '',
-  priority: '0',
   prefix: '',
 };
 

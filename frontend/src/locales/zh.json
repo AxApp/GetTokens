@@ -20,6 +20,7 @@
   "nav": {
     "status": "运行状态",
     "accounts": "账号池",
+    "usage_desk": "用量分析",
     "accounts_codex": "codex",
     "accounts_openai_compatible": "openai-compatible",
     "settings": "应用设置",
@@ -174,6 +175,8 @@
     "rotation_unsaved": "存在未保存改动",
     "rotation_synced": "当前顺序已同步",
     "rotation_quota_not_tracked": "当前资产不跟踪额度",
+    "rotation_disabled_badge": "已禁用",
+    "rotation_disabled_hint": "已禁用，保留当前位置但不参与轮动",
     "paste_auth_file": "粘贴 Auth 内容",
     "paste_auth_file_title": "粘贴 Auth 内容导入",
     "paste_auth_file_placeholder": "请粘贴 JSON 格式的 Auth File 内容...",

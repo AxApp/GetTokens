@@ -156,6 +156,11 @@ func (a *App) updateAuthFilePriority(name string, priority int) error {
 		return errors.New("auth file name 不能为空")
 	}
 
+	wasDisabled, err := a.authFileDisabledStatus(trimmedName)
+	if err != nil {
+		return err
+	}
+
 	body, err := a.downloadAuthFileBody(trimmedName)
 	if err != nil {
 		return err
@@ -166,7 +171,38 @@ func (a *App) updateAuthFilePriority(name string, priority int) error {
 		return err
 	}
 
-	return a.replaceAuthFile(trimmedName, updated)
+	if err := a.replaceAuthFile(trimmedName, updated); err != nil {
+		return err
+	}
+	if wasDisabled {
+		return a.SetAuthFileStatus(trimmedName, true)
+	}
+	return nil
+}
+
+func (a *App) authFileDisabledStatus(name string) (bool, error) {
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
+	if err != nil {
+		return false, err
+	}
+
+	var result struct {
+		Files []struct {
+			Name     string `json:"name"`
+			Disabled bool   `json:"disabled"`
+		} `json:"files"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return false, err
+	}
+
+	for _, file := range result.Files {
+		if strings.TrimSpace(file.Name) == name {
+			return file.Disabled, nil
+		}
+	}
+
+	return false, fmt.Errorf("auth file 不存在: %s", name)
 }
 
 func (a *App) replaceAuthFile(name string, content []byte) error {

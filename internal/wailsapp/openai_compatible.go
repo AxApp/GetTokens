@@ -13,6 +13,7 @@ import (
 type OpenAICompatibleProvider struct {
 	Name       string                  `json:"name"`
 	Priority   int                     `json:"priority,omitempty"`
+	Disabled   bool                    `json:"disabled,omitempty"`
 	BaseURL    string                  `json:"baseUrl"`
 	Prefix     string                  `json:"prefix,omitempty"`
 	APIKey     string                  `json:"apiKey"`
@@ -105,10 +106,11 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 				Alias: strings.TrimSpace(model.Alias),
 			})
 		}
-		providers = append(providers, OpenAICompatibleProvider{
-			Name:       strings.TrimSpace(item.Name),
-			Priority:   item.Priority,
-			BaseURL:    strings.TrimSpace(item.BaseURL),
+			providers = append(providers, OpenAICompatibleProvider{
+				Name:       strings.TrimSpace(item.Name),
+				Priority:   item.Priority,
+				Disabled:   item.Disabled,
+				BaseURL:    strings.TrimSpace(item.BaseURL),
 			Prefix:     strings.TrimSpace(item.Prefix),
 			APIKey:     apiKey,
 			APIKeys:    apiKeys,
@@ -148,14 +150,15 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 		}
 	}
 
-	current = append(current, cliproxyapi.OpenAICompatibleProvider{
-		Name:     name,
-		BaseURL:  baseURL,
-		Prefix:   prefix,
-		Priority: 0,
-		APIKeyEntries: []cliproxyapi.OpenAICompatibleAPIKeyEntry{
-			{APIKey: apiKey},
-		},
+		current = append(current, cliproxyapi.OpenAICompatibleProvider{
+			Name:     name,
+			BaseURL:  baseURL,
+			Prefix:   prefix,
+			Priority: 0,
+			Disabled: false,
+			APIKeyEntries: []cliproxyapi.OpenAICompatibleAPIKeyEntry{
+				{APIKey: apiKey},
+			},
 	})
 
 	return a.managementClient().PutOpenAICompatibleProviders(current)
@@ -252,6 +255,34 @@ func (a *App) UpdateOpenAICompatibleProviderPriority(name string, priority int) 
 			continue
 		}
 		current[index].Priority = priority
+		found = true
+		break
+	}
+
+	if !found {
+		return errors.New("provider 不存在")
+	}
+
+	return a.managementClient().PutOpenAICompatibleProviders(current)
+}
+
+func (a *App) SetOpenAICompatibleProviderStatus(name string, disabled bool) error {
+	trimmedName := strings.TrimSpace(name)
+	if trimmedName == "" {
+		return errors.New("provider name 不能为空")
+	}
+
+	current, err := a.managementClient().ListOpenAICompatibleProviders()
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for index := range current {
+		if !strings.EqualFold(strings.TrimSpace(current[index].Name), trimmedName) {
+			continue
+		}
+		current[index].Disabled = disabled
 		found = true
 		break
 	}

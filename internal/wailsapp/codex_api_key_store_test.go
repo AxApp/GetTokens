@@ -44,7 +44,7 @@ func TestStoredCodexAPIKeysRoundTrip(t *testing.T) {
 		t.Fatalf("expected persisted label PRIMARY, got %q", persistedFirst.Label)
 	}
 
-	if err := deleteStoredCodexAPIKey(codexAPIKeyAssetIDFromInput(first)); err != nil {
+	if err := deleteStoredCodexAPIKey(codexAPIKeyAssetIDFromInput(persistedFirst)); err != nil {
 		t.Fatalf("deleteStoredCodexAPIKey: %v", err)
 	}
 

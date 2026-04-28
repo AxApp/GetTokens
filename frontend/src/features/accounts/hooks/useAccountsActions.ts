@@ -4,10 +4,12 @@ import {
   DeleteAuthFiles,
   DeleteCodexAPIKey,
   DownloadAuthFile,
+  UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
   UpdateCodexAPIKeyPriority,
   UploadAuthFiles,
 } from '../../../../wailsjs/go/main/App';
+import { main } from '../../../../wailsjs/go/models';
 import type { AccountRecord } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
 import {
@@ -29,6 +31,7 @@ interface UseAccountsActionsArgs {
   t: Translator;
   trackRequest: TrackRequest;
   apiKeyForm: ApiKeyFormState;
+  accounts: AccountRecord[];
   pasteContent: string;
   selectedAccount: AccountRecord | null;
   selectedAccounts: AccountRecord[];
@@ -50,6 +53,7 @@ export default function useAccountsActions({
   t,
   trackRequest,
   apiKeyForm,
+  accounts,
   pasteContent,
   selectedAccount,
   selectedAccounts,
@@ -148,7 +152,7 @@ export default function useAccountsActions({
       const trimmedBaseURL = apiKeyForm.baseUrl.trim();
       const trimmedPrefix = apiKeyForm.prefix.trim();
       const trimmedLabel = apiKeyForm.label.trim();
-      const parsedPriority = Number.parseInt(apiKeyForm.priority.trim() || '0', 10);
+      const lowestPriority = accounts.reduce((min, account) => Math.min(min, Number(account.priority || 0)), 0);
       await trackRequest(
         'CreateCodexAPIKey',
         { baseUrl: trimmedBaseURL },
@@ -157,7 +161,7 @@ export default function useAccountsActions({
             apiKey,
             label: trimmedLabel,
             baseUrl: trimmedBaseURL,
-            priority: Number.isFinite(parsedPriority) ? parsedPriority : 0,
+            priority: lowestPriority - 1,
             prefix: trimmedPrefix,
           })
       );
@@ -172,6 +176,7 @@ export default function useAccountsActions({
     }
   }, [
     apiKeyForm,
+    accounts,
     loadAccounts,
     setApiKeyForm,
     setApiKeyFormError,
@@ -343,6 +348,55 @@ export default function useAccountsActions({
     [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, trackRequest]
   );
 
+  const updateSelectedApiKeyConfig = useCallback(
+    async (draft: { apiKey: string; baseUrl: string; prefix: string }) => {
+      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
+        return;
+      }
+
+      const nextAPIKey = draft.apiKey.trim();
+      const nextBaseURL = draft.baseUrl.trim();
+      const nextPrefix = draft.prefix.trim();
+      if (!nextAPIKey) {
+        setDeleteError(`SAVE ERROR: ${t('accounts.api_key_required')}`);
+        return;
+      }
+
+      try {
+        await trackRequest(
+          'UpdateCodexAPIKeyConfig',
+          { id: selectedAccount.id, baseUrl: nextBaseURL },
+          () =>
+            UpdateCodexAPIKeyConfig(
+              main.UpdateCodexAPIKeyConfigInput.createFrom({
+                id: selectedAccount.id,
+                apiKey: nextAPIKey,
+                baseUrl: nextBaseURL,
+                prefix: nextPrefix,
+              })
+            )
+        );
+
+        setSelectedAccount((prev) =>
+          prev
+            ? {
+                ...prev,
+                apiKey: nextAPIKey,
+                baseUrl: nextBaseURL,
+                prefix: nextPrefix,
+              }
+            : prev
+        );
+        await loadAccounts();
+      } catch (error) {
+        console.error(error);
+        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
+        throw error;
+      }
+    },
+    [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, t, trackRequest]
+  );
+
   return {
     deleteAccount,
     uploadAccounts,
@@ -352,5 +406,6 @@ export default function useAccountsActions({
     exportSelectedAccounts,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
+    updateSelectedApiKeyConfig,
   };
 }

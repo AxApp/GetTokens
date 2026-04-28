@@ -69,9 +69,30 @@ type UpdateAccountPriorityInput struct {
 	Priority int    `json:"priority,omitempty"`
 }
 
+func (a *App) SetAccountDisabled(id string, disabled bool) error {
+	targetID := strings.TrimSpace(id)
+	switch {
+	case strings.HasPrefix(targetID, "auth-file:"):
+		return a.SetAuthFileStatus(strings.TrimPrefix(targetID, "auth-file:"), disabled)
+	case strings.HasPrefix(targetID, "codex-api-key:"):
+		return a.SetCodexAPIKeyStatus(targetID, disabled)
+	case strings.HasPrefix(targetID, "openai-compatible:"):
+		return a.SetOpenAICompatibleProviderStatus(strings.TrimPrefix(targetID, "openai-compatible:"), disabled)
+	default:
+		return errors.New("不支持的账号类型")
+	}
+}
+
 type UpdateCodexAPIKeyLabelInput struct {
 	ID    string `json:"id"`
 	Label string `json:"label,omitempty"`
+}
+
+type UpdateCodexAPIKeyConfigInput struct {
+	ID      string `json:"id"`
+	APIKey  string `json:"apiKey"`
+	BaseURL string `json:"baseUrl"`
+	Prefix  string `json:"prefix,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -137,6 +158,48 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 	return persistCodexAPIKeySet(next)
 }
 
+func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
+	current, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		return err
+	}
+
+	targetID := strings.TrimSpace(input.ID)
+	nextAPIKey := strings.TrimSpace(input.APIKey)
+	nextBaseURL := accountsdomain.NormalizeBaseURL(input.BaseURL)
+	nextPrefix := accountsdomain.NormalizePrefix(input.Prefix)
+	if nextAPIKey == "" {
+		return errors.New("api key 不能为空")
+	}
+	if nextBaseURL == "" {
+		return errors.New("base url 不能为空")
+	}
+
+	found := false
+	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
+	nextIdentity := accountsdomain.CodexAPIKeyAssetID(nextAPIKey, nextBaseURL, nextPrefix)
+	for _, existing := range current {
+		if codexAPIKeyAssetIDFromInput(existing) == targetID {
+			existing.APIKey = nextAPIKey
+			existing.BaseURL = nextBaseURL
+			existing.Prefix = nextPrefix
+			found = true
+		} else if codexAPIKeyConfigIdentityFromInput(existing) == nextIdentity {
+			return errors.New("账号已存在")
+		}
+		next = append(next, existing)
+	}
+
+	if !found {
+		return errors.New("账号不存在")
+	}
+
+	if err := persistCodexAPIKeySet(next); err != nil {
+		return err
+	}
+	return a.syncStoredCodexAPIKeysToSidecar()
+}
+
 func (a *App) DeleteCodexAPIKey(id string) error {
 	current, err := loadStoredCodexAPIKeys()
 	if err != nil {
@@ -169,6 +232,33 @@ func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
 	for _, existing := range current {
 		if codexAPIKeyAssetIDFromInput(existing) == targetID {
 			existing.Priority = priority
+			found = true
+		}
+		next = append(next, existing)
+	}
+
+	if !found {
+		return errors.New("账号不存在")
+	}
+
+	if err := persistCodexAPIKeySet(next); err != nil {
+		return err
+	}
+	return a.syncStoredCodexAPIKeysToSidecar()
+}
+
+func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
+	current, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		return err
+	}
+
+	targetID := strings.TrimSpace(id)
+	found := false
+	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
+	for _, existing := range current {
+		if codexAPIKeyAssetIDFromInput(existing) == targetID {
+			existing.Disabled = disabled
 			found = true
 		}
 		next = append(next, existing)
@@ -233,9 +323,11 @@ func codexAPIKeysFromInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyapi.
 	keys := make([]cliproxyapi.CodexAPIKey, 0, len(items))
 	for _, item := range items {
 		keys = append(keys, cliproxyapi.CodexAPIKey{
+			LocalID:        item.LocalID,
 			APIKey:         item.APIKey,
 			Label:          item.Label,
 			Priority:       item.Priority,
+			Disabled:       item.Disabled,
 			Prefix:         item.Prefix,
 			BaseURL:        item.BaseURL,
 			ProxyURL:       item.ProxyURL,

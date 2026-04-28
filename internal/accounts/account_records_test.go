@@ -34,6 +34,33 @@ func TestBuildCodexAPIKeyAccountRecordPrefersPersistedLabel(t *testing.T) {
 	}
 }
 
+func TestBuildCodexAPIKeyAccountRecordKeepsDisabledState(t *testing.T) {
+	record := BuildCodexAPIKeyAccountRecord(cliproxyapi.CodexAPIKey{
+		APIKey:   "sk-test-123456",
+		BaseURL:  "https://api.openai.com/v1",
+		Disabled: true,
+	})
+
+	if !record.Disabled {
+		t.Fatal("expected record to keep disabled state")
+	}
+	if got := record.Status; got != "disabled" {
+		t.Fatalf("Status = %q, want disabled", got)
+	}
+}
+
+func TestBuildCodexAPIKeyAccountRecordPrefersStableLocalID(t *testing.T) {
+	record := BuildCodexAPIKeyAccountRecord(cliproxyapi.CodexAPIKey{
+		LocalID: "codex-api-key:stable-001",
+		APIKey:  "sk-test-123456",
+		BaseURL: "https://api.openai.com/v1",
+	})
+
+	if got := record.ID; got != "codex-api-key:stable-001" {
+		t.Fatalf("ID = %q, want codex-api-key:stable-001", got)
+	}
+}
+
 func TestBuildOpenAICompatibleProviderAccountRecordUsesProviderPriority(t *testing.T) {
 	record := BuildOpenAICompatibleProviderAccountRecord(cliproxyapi.OpenAICompatibleProvider{
 		Name:     "deepseek",
@@ -56,5 +83,20 @@ func TestBuildOpenAICompatibleProviderAccountRecordUsesProviderPriority(t *testi
 	}
 	if got := record.DisplayName; got != "OPENAI-COMPATIBLE · DEEPSEEK" {
 		t.Fatalf("DisplayName = %q, want OPENAI-COMPATIBLE · DEEPSEEK", got)
+	}
+}
+
+func TestBuildOpenAICompatibleProviderAccountRecordKeepsDisabledState(t *testing.T) {
+	record := BuildOpenAICompatibleProviderAccountRecord(cliproxyapi.OpenAICompatibleProvider{
+		Name:     "deepseek",
+		BaseURL:  "https://api.deepseek.com/v1",
+		Disabled: true,
+	})
+
+	if !record.Disabled {
+		t.Fatal("expected record to keep disabled state")
+	}
+	if got := record.Status; got != "disabled" {
+		t.Fatalf("Status = %q, want disabled", got)
 	}
 }

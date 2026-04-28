@@ -11,10 +11,12 @@ interface OpenAICompatibleWorkspaceProps {
   verifyStates: Record<string, ProviderVerifyState>;
   remoteModelsStates: Record<string, ProviderRemoteModelsState>;
   pendingDeleteName: string | null;
+  pendingStatusName: string | null;
   onCreate: () => void;
   onRefresh: () => void;
   onOpenDetail: (provider: OpenAICompatibleProvider) => void;
   onDelete: (name: string) => void;
+  onToggleDisabled: (provider: OpenAICompatibleProvider) => void;
   embedded?: boolean;
 }
 
@@ -26,10 +28,12 @@ export default function OpenAICompatibleWorkspace({
   verifyStates,
   remoteModelsStates,
   pendingDeleteName,
+  pendingStatusName,
   onCreate,
   onRefresh,
   onOpenDetail,
   onDelete,
+  onToggleDisabled,
   embedded = false,
 }: OpenAICompatibleWorkspaceProps) {
   const content = (
@@ -44,8 +48,23 @@ export default function OpenAICompatibleWorkspace({
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={onRefresh} className="btn-swiss" disabled={!ready || loading}>
-              {t('common.refresh')}
+            <button
+              onClick={onRefresh}
+              className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
+              disabled={!ready || loading}
+              title={t('common.refresh')}
+            >
+              <svg
+                className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="square"
+              >
+                <path d="M23 4v6h-6M1 20v-6h6" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
             </button>
             <button onClick={onCreate} className="btn-swiss" disabled={!ready}>
               {t('accounts.openai_provider_add')}
@@ -69,9 +88,6 @@ export default function OpenAICompatibleWorkspace({
             <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t('accounts.openai_provider_empty_hint')}
             </p>
-            <button onClick={onCreate} className="btn-swiss mt-6">
-              {t('accounts.openai_provider_add')}
-            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -103,7 +119,9 @@ export default function OpenAICompatibleWorkspace({
                 <div
                   data-account-card
                   key={provider.name}
-                  className="card-swiss flex h-full cursor-pointer flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px]"
+                  className={`card-swiss flex h-full cursor-pointer flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] ${
+                    provider.disabled ? 'opacity-80' : ''
+                  }`}
                   onClick={(event) => {
                     if (!shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
                       return;
@@ -131,7 +149,17 @@ export default function OpenAICompatibleWorkspace({
                       <h3 className="flex items-center gap-2 break-all text-[12px] font-black uppercase italic leading-snug tracking-[0.08em] text-[var(--text-primary)]">
                         <div title={verifyState.status} className={`h-2 w-2 shrink-0 ${statusColor}`} />
                         <span>{provider.name}</span>
+                        {provider.disabled ? (
+                          <span className="border border-amber-600 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] text-amber-700">
+                            {t('accounts.rotation_disabled_badge')}
+                          </span>
+                        ) : null}
                       </h3>
+                      {provider.disabled ? (
+                        <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700">
+                          {t('accounts.rotation_disabled_hint')}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
 
@@ -191,9 +219,20 @@ export default function OpenAICompatibleWorkspace({
                     </div>
                   </div>
 
-                  <div className="mt-auto grid grid-cols-2 gap-2 border-t border-dashed border-[var(--border-color)] pt-4">
+                  <div className="mt-auto grid grid-cols-3 gap-2 border-t border-dashed border-[var(--border-color)] pt-4">
                     <button onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[9px]">
                       {t('accounts.openai_provider_manage')}
+                    </button>
+                    <button
+                      onClick={() => onToggleDisabled(provider)}
+                      className="btn-swiss !py-1.5 !text-[9px]"
+                      disabled={pendingStatusName === provider.name}
+                    >
+                      {pendingStatusName === provider.name
+                        ? t('common.loading')
+                        : provider.disabled
+                          ? t('common.enable')
+                          : t('common.disable')}
                     </button>
                     <button
                       onClick={() => onDelete(provider.name)}

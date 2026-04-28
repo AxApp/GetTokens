@@ -42,7 +42,6 @@ export interface ApiKeyFormState {
   label: string;
   apiKey: string;
   baseUrl: string;
-  priority: string;
   prefix: string;
 }
 

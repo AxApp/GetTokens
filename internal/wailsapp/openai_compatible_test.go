@@ -307,3 +307,25 @@ func TestUpdateOpenAICompatibleProviderPriorityPersistsToManagementConfig(t *tes
 		t.Fatalf("UpdateOpenAICompatibleProviderPriority returned error: %v", err)
 	}
 }
+
+func TestListOpenAICompatibleProvidersKeepsDisabledState(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/openai-compatibility" {
+					return []byte(`{"openai-compatibility":[{"name":"deepseek","disabled":true,"base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-old"}]}]}`), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	items, err := app.ListOpenAICompatibleProviders()
+	if err != nil {
+		t.Fatalf("ListOpenAICompatibleProviders returned error: %v", err)
+	}
+	if len(items) != 1 || !items[0].Disabled {
+		t.Fatalf("expected provider to keep disabled state, got %#v", items)
+	}
+}

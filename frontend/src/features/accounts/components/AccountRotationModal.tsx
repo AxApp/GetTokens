@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState, type DragEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import {
   GetRelayRoutingConfig,
+  SetAccountDisabled,
   UpdateAccountPriority,
   UpdateRelayRoutingConfig,
 } from '../../../../wailsjs/go/main/App';
@@ -10,9 +11,14 @@ import { useI18n } from '../../../context/I18nContext';
 import { toErrorMessage } from '../../../utils/error';
 import type { ClickEventLike } from '../model/types';
 import type { AccountRecord } from '../../../types';
-import { buildPriorityUpdates, buildRotationQuotaSummary, buildRoutingDefaultLabel, reorderPriorityAccounts } from '../model/accountRotation';
+import {
+  buildPriorityUpdates,
+  canToggleRotationAccountDisabled,
+  buildRotationParticipationSummary,
+  reorderPriorityAccounts,
+} from '../model/accountRotation';
 import type { CodexQuotaState } from '../model/types';
-import { compareAccountRecords, resolveAccountPrimaryLabel } from '../model/accountPresentation';
+import { compareAccountRecords, resolveAccountPrimaryLabel, resolveAccountStatusTone } from '../model/accountPresentation';
 
 interface AccountRotationModalProps {
   accounts: AccountRecord[];
@@ -51,6 +57,9 @@ export default function AccountRotationModal({
   const [routingMessage, setRoutingMessage] = useState('');
   const [saveMessage, setSaveMessage] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [pendingStatusAccountID, setPendingStatusAccountID] = useState<string | null>(null);
+  const [isStrategyMenuOpen, setIsStrategyMenuOpen] = useState(false);
+  const strategyMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setOrderedAccounts(buildOrderedAccounts(accounts));
@@ -92,6 +101,23 @@ export default function AccountRotationModal({
     };
   }, [ready, t, trackRequest]);
 
+  useEffect(() => {
+    if (!isStrategyMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!strategyMenuRef.current?.contains(event.target as Node)) {
+        setIsStrategyMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [isStrategyMenuOpen]);
+
   const orderChanged = useMemo(() => buildPriorityUpdates(orderedAccounts).length > 0, [orderedAccounts]);
   const routingChanged = useMemo(
     () => JSON.stringify(routingDraft) !== JSON.stringify(routingConfig),
@@ -107,6 +133,13 @@ export default function AccountRotationModal({
       ] as const,
     [t]
   );
+  const routingStrategyOptions = useMemo(
+    () => [
+      { value: 'round-robin', label: t('status.routing_strategy_round_robin') },
+      { value: 'fill-first', label: t('status.routing_strategy_fill_first') },
+    ],
+    [t]
+  );
 
   function handleDrop(targetID: string) {
     if (!draggedAccountID || draggedAccountID === targetID) {
@@ -114,6 +147,29 @@ export default function AccountRotationModal({
     }
     setOrderedAccounts((prev) => reorderPriorityAccounts(prev, draggedAccountID, targetID));
     setDraggedAccountID(null);
+  }
+
+  async function handleToggleAccountDisabled(account: AccountRecord) {
+    if (!ready || !canToggleRotationAccountDisabled(account)) {
+      return;
+    }
+
+    setPendingStatusAccountID(account.id);
+    setSaveMessage('');
+    try {
+      await trackRequest('SetAccountDisabled', { id: account.id, disabled: !account.disabled }, () =>
+        SetAccountDisabled(account.id, !account.disabled)
+      );
+      setOrderedAccounts((prev) =>
+        prev.map((item) => (item.id === account.id ? { ...item, disabled: !account.disabled } : item))
+      );
+      await onReloadAccounts();
+    } catch (error) {
+      console.error(error);
+      setSaveMessage(toErrorMessage(error));
+    } finally {
+      setPendingStatusAccountID(null);
+    }
   }
 
   async function saveChanges() {
@@ -194,40 +250,131 @@ export default function AccountRotationModal({
             {orderedAccounts.length > 0 ? (
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                 {orderedAccounts.map((account, index) => (
-                  <button
+                  <div
                     key={account.id}
-                    type="button"
                     draggable
                     onDragStart={() => setDraggedAccountID(account.id)}
                     onDragEnd={() => setDraggedAccountID(null)}
-                    onDragOver={(event: DragEvent<HTMLButtonElement>) => event.preventDefault()}
+                    onDragOver={(event: DragEvent<HTMLDivElement>) => event.preventDefault()}
                     onDrop={() => handleDrop(account.id)}
-                    className={`flex items-center justify-between gap-4 border-2 px-4 py-4 text-left ${
+                    className={`card-swiss flex min-h-[188px] cursor-grab flex-col overflow-hidden bg-[var(--bg-main)] text-left transition-transform active:cursor-grabbing ${
                       draggedAccountID === account.id
-                        ? 'border-[var(--text-primary)] bg-[var(--bg-surface)] opacity-60'
-                        : 'border-[var(--border-color)] bg-[var(--bg-main)]'
+                        ? 'translate-x-[-2px] translate-y-[-2px] border-[var(--text-primary)] bg-[var(--bg-surface)] opacity-60'
+                        : 'hover:translate-x-[-2px] hover:translate-y-[-2px]'
                     }`}
                   >
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] font-mono text-sm font-black text-[var(--text-primary)]">
-                        {index + 1}
+                    <div className="flex min-h-[150px] flex-1">
+                      <div className="flex w-16 shrink-0 flex-col justify-between border-r-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+                        <div className="px-2 py-3 text-center">
+                          <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">#{index + 1}</div>
+                          <div className="mt-2 font-mono text-3xl font-black leading-none text-[var(--text-primary)]">{index + 1}</div>
+                        </div>
+                        <div className="border-t border-dashed border-[var(--border-color)] px-2 py-2 text-center text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                          {t('accounts.rotation_drag_badge')}
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <div className="truncate text-[11px] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
-                          {resolveAccountPrimaryLabel(account)}
+
+                      <div className="flex min-w-0 flex-1 flex-col p-5">
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                          <div className="min-w-0 space-y-3">
+                            <h3 className="flex items-center gap-2 break-all text-[12px] font-black uppercase leading-snug tracking-[0.08em] text-[var(--text-primary)]">
+                              <div
+                                className={`h-2 w-2 shrink-0 ${
+                                  resolveAccountStatusTone(account) === 'positive'
+                                    ? 'bg-green-500'
+                                    : resolveAccountStatusTone(account) === 'warning'
+                                      ? 'bg-yellow-500'
+                                      : 'bg-red-500'
+                                }`}
+                              />
+                              <span className={account.credentialSource === 'auth-file' && account.email ? 'normal-case tracking-normal' : ''}>
+                                {resolveAccountPrimaryLabel(account)}
+                              </span>
+                            </h3>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                                {account.credentialSource}
+                              </span>
+                              <span className="border border-[var(--border-color)] px-2 py-1 font-mono text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+                                P{account.priority ?? 0}
+                              </span>
+                              {account.disabled ? (
+                                <span className="border border-amber-600 bg-amber-500/10 px-2 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-amber-700">
+                                  {t('accounts.rotation_disabled_badge')}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <div className="flex shrink-0 flex-col items-end gap-2">
+                            <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                              {t('accounts.rotation_drag_badge')}
+                            </div>
+                          </div>
                         </div>
-                        <div className="mt-1 font-mono text-[10px] font-bold uppercase text-[var(--text-muted)]">
-                          {account.credentialSource} · P{account.priority ?? 0} · {account.baseUrl || account.name || '--'}
+
+                        <div className="mb-4 space-y-3 border-t border-dashed border-[var(--border-color)] pt-4">
+                          <div className="truncate font-mono text-[10px] font-bold text-[var(--text-muted)]">
+                            {account.baseUrl || account.name || '--'}
+                          </div>
+                          <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                                {t('common.status')}
+                              </div>
+                              <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                                {t('accounts.rotation_settings')}
+                              </div>
+                            </div>
+                            <div
+                              className={`text-[10px] font-black uppercase leading-relaxed tracking-[0.12em] ${
+                                account.disabled ? 'text-amber-700' : 'text-[var(--text-primary)]'
+                              }`}
+                            >
+                              {buildRotationParticipationSummary(account, codexQuotaByName[account.quotaKey || ''], t)}
+                            </div>
+                          </div>
                         </div>
-                        <div className="mt-1 truncate text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]/75">
-                          {buildRotationQuotaSummary(account, codexQuotaByName[account.quotaKey || ''], t)}
+
+                        <div className="mt-auto grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3">
+                          {canToggleRotationAccountDisabled(account) ? (
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                              <div className="min-w-0">
+                                <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                                  {t('accounts.ui_base_url')}
+                                </div>
+                                <div className="truncate font-mono text-[9px] font-bold text-[var(--text-primary)]">
+                                  {account.baseUrl || account.name || '--'}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => void handleToggleAccountDisabled(account)}
+                                disabled={!ready || pendingStatusAccountID === account.id}
+                                className="btn-swiss shrink-0 !px-3 !py-1.5 !text-[8px] disabled:cursor-not-allowed disabled:opacity-50"
+                              >
+                                {pendingStatusAccountID === account.id
+                                  ? t('common.loading')
+                                  : account.disabled
+                                    ? t('common.enable')
+                                    : t('common.disable')}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="min-w-0">
+                              <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                                {t('accounts.ui_base_url')}
+                              </div>
+                              <div className="truncate font-mono text-[9px] font-bold text-[var(--text-primary)]">
+                                {account.baseUrl || account.name || '--'}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                      {t('accounts.rotation_drag_badge')}
-                    </div>
-                  </button>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -248,107 +395,146 @@ export default function AccountRotationModal({
             {routingDraft ? (
               <div className="space-y-5">
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  <label className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       {t('status.routing_strategy')}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
-                      {buildRoutingDefaultLabel(t, 'strategy')}
-                    </span>
-                    <div className="relative">
-                      <select
-                        value={routingDraft.strategy}
-                        onChange={(event) =>
-                          setRoutingDraft((prev) => (prev ? { ...prev, strategy: event.target.value } : prev))
-                        }
-                        className="select-swiss"
+                    <div ref={strategyMenuRef} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setIsStrategyMenuOpen((prev) => !prev)}
+                        className="select-swiss flex items-center justify-between gap-3 text-left"
+                        aria-haspopup="listbox"
+                        aria-expanded={isStrategyMenuOpen}
                       >
-                        <option value="round-robin">{t('status.routing_strategy_round_robin')}</option>
-                        <option value="fill-first">{t('status.routing_strategy_fill_first')}</option>
-                      </select>
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
-                        ▼
+                        <span>
+                          {routingStrategyOptions.find((option) => option.value === routingDraft.strategy)?.label ||
+                            routingDraft.strategy}
+                        </span>
+                        <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
+                          ▼
+                        </span>
+                      </button>
+                      {isStrategyMenuOpen ? (
+                        <div
+                          className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-2 shadow-[6px_6px_0_var(--shadow-color)]"
+                          role="listbox"
+                        >
+                          <div className="space-y-2">
+                            {routingStrategyOptions.map((option) => {
+                              const isSelected = routingDraft.strategy === option.value;
+                              return (
+                                <button
+                                  key={option.value}
+                                  type="button"
+                                  onClick={() => {
+                                    setRoutingDraft((prev) => (prev ? { ...prev, strategy: option.value } : prev));
+                                    setIsStrategyMenuOpen(false);
+                                  }}
+                                  className={`flex w-full items-center justify-between border-2 px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.12em] transition-transform ${
+                                    isSelected
+                                      ? 'border-[var(--text-primary)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
+                                      : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)] hover:translate-x-[-1px] hover:translate-y-[-1px]'
+                                  }`}
+                                  role="option"
+                                  aria-selected={isSelected}
+                                >
+                                  <span>{option.label}</span>
+                                  {isSelected ? <span className="text-[8px] tracking-[0.18em]">ACTIVE</span> : null}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </label>
+
+                  <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      {t('status.routing_session_affinity_ttl')}
+                    </span>
+                    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
+                      <input
+                        value={routingDraft.sessionAffinityTTL}
+                        onChange={(event) =>
+                          setRoutingDraft((prev) => (prev ? { ...prev, sessionAffinityTTL: event.target.value } : prev))
+                        }
+                        className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[12px] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+                        placeholder="1h"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      {t('status.routing_request_retry')}
+                    </span>
+                    <div className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
+                      <input
+                        value={String(routingDraft.requestRetry)}
+                        onChange={(event) =>
+                          setRoutingDraft((prev) =>
+                            prev ? { ...prev, requestRetry: Number.parseInt(event.target.value || '0', 10) || 0 } : prev
+                          )
+                        }
+                        className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[12px] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+                        inputMode="numeric"
+                        placeholder="2"
+                      />
+                      <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        req
                       </span>
                     </div>
                   </label>
 
-                  <label className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                      {t('status.routing_session_affinity_ttl')}
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
-                      {buildRoutingDefaultLabel(t, 'sessionAffinityTTL')}
-                    </span>
-                    <input
-                      value={routingDraft.sessionAffinityTTL}
-                      onChange={(event) =>
-                        setRoutingDraft((prev) => (prev ? { ...prev, sessionAffinityTTL: event.target.value } : prev))
-                      }
-                      className="input-swiss w-full"
-                      placeholder="1h"
-                    />
-                  </label>
-
-                  <label className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                      {t('status.routing_request_retry')}
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
-                      {buildRoutingDefaultLabel(t, 'requestRetry')}
-                    </span>
-                    <input
-                      value={String(routingDraft.requestRetry)}
-                      onChange={(event) =>
-                        setRoutingDraft((prev) =>
-                          prev ? { ...prev, requestRetry: Number.parseInt(event.target.value || '0', 10) || 0 } : prev
-                        )
-                      }
-                      className="input-swiss w-full"
-                      inputMode="numeric"
-                    />
-                  </label>
-
-                  <label className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       {t('status.routing_max_retry_credentials')}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
-                      {buildRoutingDefaultLabel(t, 'maxRetryCredentials')}
-                    </span>
-                    <input
-                      value={String(routingDraft.maxRetryCredentials)}
-                      onChange={(event) =>
-                        setRoutingDraft((prev) =>
-                          prev
-                            ? {
-                                ...prev,
-                                maxRetryCredentials: Number.parseInt(event.target.value || '0', 10) || 0,
-                              }
-                            : prev
-                        )
-                      }
-                      className="input-swiss w-full"
-                      inputMode="numeric"
-                    />
+                    <div className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
+                      <input
+                        value={String(routingDraft.maxRetryCredentials)}
+                        onChange={(event) =>
+                          setRoutingDraft((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  maxRetryCredentials: Number.parseInt(event.target.value || '0', 10) || 0,
+                                }
+                              : prev
+                          )
+                        }
+                        className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[12px] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+                        inputMode="numeric"
+                        placeholder="3"
+                      />
+                      <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        keys
+                      </span>
+                    </div>
                   </label>
 
-                  <label className="space-y-2">
-                    <span className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 md:col-span-2 xl:col-span-1">
+                    <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       {t('status.routing_max_retry_interval')}
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
-                      {buildRoutingDefaultLabel(t, 'maxRetryInterval')}
-                    </span>
-                    <input
-                      value={String(routingDraft.maxRetryInterval)}
-                      onChange={(event) =>
-                        setRoutingDraft((prev) =>
-                          prev ? { ...prev, maxRetryInterval: Number.parseInt(event.target.value || '0', 10) || 0 } : prev
-                        )
-                      }
-                      className="input-swiss w-full"
-                      inputMode="numeric"
-                    />
+                    <div className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
+                      <input
+                        value={String(routingDraft.maxRetryInterval)}
+                        onChange={(event) =>
+                          setRoutingDraft((prev) =>
+                            prev ? { ...prev, maxRetryInterval: Number.parseInt(event.target.value || '0', 10) || 0 } : prev
+                          )
+                        }
+                        className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[12px] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+                        inputMode="numeric"
+                        placeholder="30"
+                      />
+                      <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        sec
+                      </span>
+                    </div>
                   </label>
                 </div>
 
@@ -356,8 +542,16 @@ export default function AccountRotationModal({
                   {routingToggleFields.map(([field, label]) => (
                     <label
                       key={field}
-                      className="flex items-center gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4"
+                      className="flex min-h-[76px] items-center justify-between gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4"
                     >
+                      <div className="space-y-1">
+                        <span className="block text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                          {t('common.status')}
+                        </span>
+                        <span className="block text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                          {label}
+                        </span>
+                      </div>
                       <input
                         type="checkbox"
                         checked={Boolean(routingDraft[field as keyof main.RelayRoutingConfig])}
@@ -366,15 +560,8 @@ export default function AccountRotationModal({
                             prev ? { ...prev, [field]: event.target.checked } : prev
                           )
                         }
+                        className="h-4 w-4 shrink-0 accent-[var(--text-primary)]"
                       />
-                      <div className="space-y-1">
-                        <span className="block text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                          {label}
-                        </span>
-                        <span className="block text-[9px] font-bold uppercase tracking-wide text-[var(--text-primary)]/70">
-                          {buildRoutingDefaultLabel(t, field)}
-                        </span>
-                      </div>
                     </label>
                   ))}
                 </div>

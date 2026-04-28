@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   buildPriorityUpdates,
+  canToggleRotationAccountDisabled,
+  buildRotationParticipationSummary,
   buildRotationQuotaSummary,
   buildRoutingDefaultLabel,
   mapOpenAICompatibleProviderToRotationAccount,
@@ -67,6 +69,7 @@ test('mapOpenAICompatibleProviderToRotationAccount preserves provider priority',
     displayName: '兼容 OpenAI · deepseek',
     status: 'CONFIGURED',
     priority: 7,
+    disabled: false,
     name: 'deepseek',
     apiKey: 'sk-test',
     baseUrl: 'https://api.deepseek.com/v1',
@@ -164,5 +167,70 @@ test('buildRotationQuotaSummary returns fallback labels for loading and unsuppor
       t
     ),
     '当前资产不跟踪额度'
+  );
+});
+
+test('buildRotationParticipationSummary marks disabled accounts as kept-but-skipped', () => {
+  const t = (key) =>
+    ({
+      'accounts.rotation_disabled_hint': '已禁用，保留当前位置但不参与轮动',
+      'accounts.quota_remaining': '剩余',
+      'accounts.quota_reset': '重置时间',
+      'accounts.quota_syncing': '额度同步中...',
+      'accounts.quota_unavailable': '额度暂不可用',
+      'accounts.rotation_quota_not_tracked': '当前资产不跟踪额度',
+    })[key] || key;
+
+  assert.equal(
+    buildRotationParticipationSummary(
+      {
+        id: 'auth-file:disabled.json',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'disabled.json',
+        disabled: true,
+      },
+      undefined,
+      t
+    ),
+    '已禁用，保留当前位置但不参与轮动'
+  );
+});
+
+test('canToggleRotationAccountDisabled covers auth-file, codex api key, and openai-compatible assets', () => {
+  assert.equal(
+    canToggleRotationAccountDisabled({
+      id: 'auth-file:demo.json',
+      credentialSource: 'auth-file',
+      name: 'demo.json',
+    }),
+    true
+  );
+
+  assert.equal(
+    canToggleRotationAccountDisabled({
+      id: 'codex-api-key:1',
+      credentialSource: 'api-key',
+      name: 'demo',
+    }),
+    true
+  );
+
+  assert.equal(
+    canToggleRotationAccountDisabled({
+      id: 'openai-compatible:deepseek',
+      credentialSource: 'api-key',
+      name: 'deepseek',
+    }),
+    true
+  );
+
+  assert.equal(
+    canToggleRotationAccountDisabled({
+      id: 'auth-file:missing',
+      credentialSource: 'auth-file',
+      name: '',
+    }),
+    false
   );
 });

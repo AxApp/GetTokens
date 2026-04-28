@@ -30,6 +30,8 @@ export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<vo
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
 
+export function GetCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
+
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 
 export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;
@@ -54,11 +56,17 @@ export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompati
 
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
+export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
+
+export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
+
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 
 export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<void>;
+
+export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):Promise<void>;
 
 export function UpdateCodexAPIKeyLabel(arg1:main.UpdateCodexAPIKeyLabelInput):Promise<void>;
 

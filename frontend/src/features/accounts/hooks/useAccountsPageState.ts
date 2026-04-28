@@ -456,10 +456,12 @@ export default function useAccountsPageState({
     exportSelectedAccounts,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
+    updateSelectedApiKeyConfig,
   } = useAccountsActions({
     t,
     trackRequest,
     apiKeyForm,
+    accounts,
     pasteContent,
     selectedAccount,
     selectedAccounts,
@@ -551,6 +553,7 @@ export default function useAccountsPageState({
     deleteAccount,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
+    updateSelectedApiKeyConfig,
     closeHeaderActionsMenu,
   };
 }

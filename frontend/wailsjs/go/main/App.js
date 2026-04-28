@@ -54,6 +54,10 @@ export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
 }
 
+export function GetCodexLocalUsage() {
+  return window['go']['main']['App']['GetCodexLocalUsage']();
+}
+
 export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
 }
@@ -102,6 +106,14 @@ export function NormalizeAuthFileContent(arg1) {
   return window['go']['main']['App']['NormalizeAuthFileContent'](arg1);
 }
 
+export function RebuildCodexLocalUsage() {
+  return window['go']['main']['App']['RebuildCodexLocalUsage']();
+}
+
+export function SetAccountDisabled(arg1, arg2) {
+  return window['go']['main']['App']['SetAccountDisabled'](arg1, arg2);
+}
+
 export function SetAuthFileStatus(arg1, arg2) {
   return window['go']['main']['App']['SetAuthFileStatus'](arg1, arg2);
 }
@@ -112,6 +124,10 @@ export function StartCodexOAuth() {
 
 export function UpdateAccountPriority(arg1) {
   return window['go']['main']['App']['UpdateAccountPriority'](arg1);
+}
+
+export function UpdateCodexAPIKeyConfig(arg1) {
+  return window['go']['main']['App']['UpdateCodexAPIKeyConfig'](arg1);
 }
 
 export function UpdateCodexAPIKeyLabel(arg1) {

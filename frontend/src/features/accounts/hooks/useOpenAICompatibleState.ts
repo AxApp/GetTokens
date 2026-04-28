@@ -4,6 +4,7 @@ import {
   DeleteOpenAICompatibleProvider,
   FetchOpenAICompatibleProviderModels,
   ListOpenAICompatibleProviders,
+  SetAccountDisabled,
   UpdateOpenAICompatibleProvider,
   VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
@@ -44,6 +45,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
   const [verifyStateByName, setVerifyStateByName] = useState<Record<string, ProviderVerifyState>>({});
   const [remoteModelsStateByName, setRemoteModelsStateByName] = useState<Record<string, ProviderRemoteModelsState>>({});
   const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(null);
+  const [pendingStatusName, setPendingStatusName] = useState<string | null>(null);
   const [detailDraft, setDetailDraft] = useState<OpenAICompatibleProviderDraft | null>(null);
   const [detailError, setDetailError] = useState('');
   const [detailSaving, setDetailSaving] = useState(false);
@@ -189,6 +191,21 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
         });
       } finally {
         setPendingDeleteName(null);
+      }
+    },
+    [loadProviders, trackRequest],
+  );
+
+  const toggleProviderDisabled = useCallback(
+    async (provider: OpenAICompatibleProvider) => {
+      try {
+        setPendingStatusName(provider.name);
+        await trackRequest('SetAccountDisabled', { id: `openai-compatible:${provider.name}`, disabled: !provider.disabled }, () =>
+          SetAccountDisabled(`openai-compatible:${provider.name}`, !provider.disabled),
+        );
+        await loadProviders();
+      } finally {
+        setPendingStatusName(null);
       }
     },
     [loadProviders, trackRequest],
@@ -347,6 +364,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     verifyStates,
     remoteModelsStates,
     pendingDeleteName,
+    pendingStatusName,
     detailDraft,
     detailError,
     detailSaving,
@@ -360,6 +378,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     submitCreate,
     saveDetail,
     deleteProvider,
+    toggleProviderDisabled,
     verifyDetail,
     fetchDetailModels,
     applyFetchedModelsToDetailDraft,

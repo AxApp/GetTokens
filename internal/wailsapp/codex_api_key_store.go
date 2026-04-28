@@ -1,7 +1,9 @@
 package wailsapp
 
 import (
+	"crypto/rand"
 	"encoding/json"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -185,6 +187,7 @@ func normalizeCodexAPIKeyInput(item *cliproxyapi.CodexAPIKeyInput) {
 	if item == nil {
 		return
 	}
+	item.LocalID = strings.TrimSpace(item.LocalID)
 	item.APIKey = strings.TrimSpace(item.APIKey)
 	item.Label = strings.TrimSpace(item.Label)
 	item.BaseURL = accountsdomain.NormalizeBaseURL(item.BaseURL)
@@ -193,14 +196,23 @@ func normalizeCodexAPIKeyInput(item *cliproxyapi.CodexAPIKeyInput) {
 }
 
 func codexAPIKeyAssetIDFromInput(item cliproxyapi.CodexAPIKeyInput) string {
+	if trimmed := strings.TrimSpace(item.LocalID); trimmed != "" {
+		return trimmed
+	}
+	return accountsdomain.CodexAPIKeyAssetID(item.APIKey, item.BaseURL, item.Prefix)
+}
+
+func codexAPIKeyConfigIdentityFromInput(item cliproxyapi.CodexAPIKeyInput) string {
 	return accountsdomain.CodexAPIKeyAssetID(item.APIKey, item.BaseURL, item.Prefix)
 }
 
 func codexAPIKeyInputFromKey(item cliproxyapi.CodexAPIKey) cliproxyapi.CodexAPIKeyInput {
 	input := cliproxyapi.CodexAPIKeyInput{
+		LocalID:        item.LocalID,
 		APIKey:         item.APIKey,
 		Label:          item.Label,
 		Priority:       item.Priority,
+		Disabled:       item.Disabled,
 		Prefix:         item.Prefix,
 		BaseURL:        item.BaseURL,
 		ProxyURL:       item.ProxyURL,
@@ -210,6 +222,21 @@ func codexAPIKeyInputFromKey(item cliproxyapi.CodexAPIKey) cliproxyapi.CodexAPIK
 	}
 	normalizeCodexAPIKeyInput(&input)
 	return input
+}
+
+func ensureCodexAPIKeyLocalID(item *cliproxyapi.CodexAPIKeyInput) error {
+	if item == nil {
+		return nil
+	}
+	if strings.TrimSpace(item.LocalID) != "" {
+		return nil
+	}
+	buf := make([]byte, 6)
+	if _, err := rand.Read(buf); err != nil {
+		return err
+	}
+	item.LocalID = "codex-api-key:" + hex.EncodeToString(buf)
+	return nil
 }
 
 func mergeCodexAPIKeyInputs(stored []cliproxyapi.CodexAPIKeyInput, sidecarItems []cliproxyapi.CodexAPIKey) ([]cliproxyapi.CodexAPIKeyInput, bool) {
@@ -256,6 +283,9 @@ func persistCodexAPIKeySet(items []cliproxyapi.CodexAPIKeyInput) error {
 	}
 	expected := make(map[string]struct{}, len(items))
 	for _, item := range items {
+		if err := ensureCodexAPIKeyLocalID(&item); err != nil {
+			return err
+		}
 		fileName := codexAPIKeyFileName(item.APIKey, item.BaseURL, item.Prefix)
 		expected[fileName] = struct{}{}
 		if err := saveStoredCodexAPIKey(item); err != nil {

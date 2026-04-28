@@ -124,6 +124,13 @@ type UpdateCodexAPIKeyLabelInput struct {
 	Label string `json:"label,omitempty"`
 }
 
+type UpdateCodexAPIKeyConfigInput struct {
+	ID      string `json:"id"`
+	APIKey  string `json:"apiKey"`
+	BaseURL string `json:"baseUrl"`
+	Prefix  string `json:"prefix,omitempty"`
+}
+
 type UpdateAccountPriorityInput struct {
 	ID       string `json:"id"`
 	Priority int    `json:"priority,omitempty"`
@@ -132,6 +139,7 @@ type UpdateAccountPriorityInput struct {
 type OpenAICompatibleProvider struct {
 	Name       string                  `json:"name"`
 	Priority   int                     `json:"priority,omitempty"`
+	Disabled   bool                    `json:"disabled,omitempty"`
 	BaseURL    string                  `json:"baseUrl"`
 	Prefix     string                  `json:"prefix,omitempty"`
 	APIKey     string                  `json:"apiKey"`
@@ -228,6 +236,28 @@ type UsageStatisticsResponse struct {
 	FailedRequests int64                  `json:"failedRequests,omitempty"`
 }
 
+type LocalProjectedUsageDetail struct {
+	Timestamp         string `json:"timestamp"`
+	Provider          string `json:"provider"`
+	SourceKind        string `json:"sourceKind"`
+	Model             string `json:"model,omitempty"`
+	InputTokens       int64  `json:"inputTokens"`
+	CachedInputTokens int64  `json:"cachedInputTokens"`
+	OutputTokens      int64  `json:"outputTokens"`
+	RequestCount      int64  `json:"requestCount"`
+}
+
+type LocalProjectedUsageResponse struct {
+	Provider         string                      `json:"provider"`
+	SourceKind       string                      `json:"sourceKind"`
+	ScannedFiles     int                         `json:"scannedFiles"`
+	CacheHitFiles    int                         `json:"cacheHitFiles,omitempty"`
+	DeltaAppendFiles int                         `json:"deltaAppendFiles,omitempty"`
+	FullRebuildFiles int                         `json:"fullRebuildFiles,omitempty"`
+	FileMissingFiles int                         `json:"fileMissingFiles,omitempty"`
+	Details          []LocalProjectedUsageDetail `json:"details"`
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -306,6 +336,10 @@ func (a *App) SetAuthFileStatus(name string, disabled bool) error {
 	return a.core.SetAuthFileStatus(name, disabled)
 }
 
+func (a *App) SetAccountDisabled(id string, disabled bool) error {
+	return a.core.SetAccountDisabled(id, disabled)
+}
+
 func (a *App) DeleteAuthFiles(names []string) error {
 	return a.core.DeleteAuthFiles(names)
 }
@@ -357,6 +391,22 @@ func (a *App) GetUsageStatistics() (*UsageStatisticsResponse, error) {
 		Usage:          result.Usage,
 		FailedRequests: result.FailedRequests,
 	}, nil
+}
+
+func (a *App) GetCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.GetCodexLocalUsage()
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
+}
+
+func (a *App) RebuildCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.RebuildCodexLocalUsage()
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
 }
 
 func (a *App) StartCodexOAuth() (*OAuthStartResult, error) {
@@ -435,6 +485,7 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 		providers = append(providers, OpenAICompatibleProvider{
 			Name:       item.Name,
 			Priority:   item.Priority,
+			Disabled:   item.Disabled,
 			BaseURL:    item.BaseURL,
 			Prefix:     item.Prefix,
 			APIKey:     item.APIKey,
@@ -556,6 +607,15 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 	})
 }
 
+func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
+	return a.core.UpdateCodexAPIKeyConfig(wailsapp.UpdateCodexAPIKeyConfigInput{
+		ID:      input.ID,
+		APIKey:  input.APIKey,
+		BaseURL: input.BaseURL,
+		Prefix:  input.Prefix,
+	})
+}
+
 func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProviderInput) error {
 	return a.core.CreateOpenAICompatibleProvider(wailsapp.CreateOpenAICompatibleProviderInput{
 		Name:    input.Name,
@@ -641,6 +701,37 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		AuthIndex:        record.AuthIndex,
 		QuotaKey:         record.QuotaKey,
 		LocalOnly:        record.LocalOnly,
+	}
+}
+
+func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse) *LocalProjectedUsageResponse {
+	if result == nil {
+		return &LocalProjectedUsageResponse{}
+	}
+
+	details := make([]LocalProjectedUsageDetail, 0, len(result.Details))
+	for _, detail := range result.Details {
+		details = append(details, LocalProjectedUsageDetail{
+			Timestamp:         detail.Timestamp,
+			Provider:          detail.Provider,
+			SourceKind:        detail.SourceKind,
+			Model:             detail.Model,
+			InputTokens:       detail.InputTokens,
+			CachedInputTokens: detail.CachedInputTokens,
+			OutputTokens:      detail.OutputTokens,
+			RequestCount:      detail.RequestCount,
+		})
+	}
+
+	return &LocalProjectedUsageResponse{
+		Provider:         result.Provider,
+		SourceKind:       result.SourceKind,
+		ScannedFiles:     result.ScannedFiles,
+		CacheHitFiles:    result.CacheHitFiles,
+		DeltaAppendFiles: result.DeltaAppendFiles,
+		FullRebuildFiles: result.FullRebuildFiles,
+		FileMissingFiles: result.FileMissingFiles,
+		Details:          details,
 	}
 }
 

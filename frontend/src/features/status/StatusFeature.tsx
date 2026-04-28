@@ -640,8 +640,8 @@ export default function StatusFeature({
             {t('status.title')}
           </h2>
           <div
-            className={`border-2 border-[var(--border-color)] px-4 py-1 text-xs font-black uppercase tracking-widest text-white ${
-              sidecarStatus.code === 'ready' ? 'bg-green-600' : 'bg-red-600'
+            className={`border-2 bg-white px-4 py-1 text-xs font-black uppercase tracking-widest text-black ${
+              sidecarStatus.code === 'ready' ? 'border-black' : 'border-red-600 text-red-600'
             }`}
           >
             {sidecarStatus.code === 'ready' ? t('status.online') : t('status.offline')}
@@ -699,7 +699,7 @@ export default function StatusFeature({
             <button
               onClick={() => void applyRelayConfigToLocal()}
               disabled={isApplyingToLocal || sidecarStatus.code !== 'ready'}
-              className="btn-swiss !px-3 !py-1 !text-[9px] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[9px] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local')}
             </button>

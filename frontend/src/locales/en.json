@@ -20,6 +20,7 @@
   "nav": {
     "status": "STATUS",
     "accounts": "ACCOUNTS",
+    "usage_desk": "USAGE DESK",
     "accounts_codex": "CODEX",
     "accounts_openai_compatible": "OPENAI-COMPATIBLE",
     "settings": "SETTINGS",
@@ -174,6 +175,8 @@
     "rotation_unsaved": "Unsaved changes",
     "rotation_synced": "Order is synced",
     "rotation_quota_not_tracked": "No quota tracking for this asset",
+    "rotation_disabled_badge": "Disabled",
+    "rotation_disabled_hint": "Disabled: keeps its position but is skipped by rotation",
     "paste_auth_file": "Paste Auth Content",
     "paste_auth_file_title": "Import from Paste",
     "paste_auth_file_placeholder": "Paste your JSON auth content here...",

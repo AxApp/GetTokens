@@ -1,7 +1,8 @@
 import type { main, sidecar, updater } from '../wailsjs/go/models';
 
-export type AppPage = 'status' | 'accounts' | 'settings' | 'debug';
+export type AppPage = 'status' | 'accounts' | 'usage-desk' | 'settings' | 'debug';
 export type AccountWorkspace = 'all' | 'codex' | 'openai-compatible';
+export type UsageDeskWorkspace = 'codex' | 'gemini';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 

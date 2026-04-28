@@ -26,6 +26,7 @@ interface ApiKeyDetailModalProps {
   verifyState: APIKeyVerifyState;
   onClose: () => void;
   onRename: (nextName: string) => void;
+  onSaveConfig: (draft: { apiKey: string; baseUrl: string; prefix: string }) => Promise<void>;
   onVerify: (input: { apiKey: string; baseUrl: string; model: string }) => void;
   t: Translator;
 }
@@ -49,6 +50,7 @@ export default function ApiKeyDetailModal({
   verifyState,
   onClose,
   onRename,
+  onSaveConfig,
   onVerify,
   t,
 }: ApiKeyDetailModalProps) {
@@ -67,6 +69,7 @@ export default function ApiKeyDetailModal({
     target: null,
     status: 'idle',
   });
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
 
   useEffect(() => {
     setDraftName(account.displayName);
@@ -117,6 +120,13 @@ export default function ApiKeyDetailModal({
     }
     return t('accounts.configuration_missing_with_location').replace('{fields}', missingFields.join(' / '));
   }, [missingFields, t]);
+  const configDirty = useMemo(
+    () =>
+      configDraft.apiKey.trim() !== String(account.apiKey || '').trim() ||
+      configDraft.baseUrl.trim() !== String(account.baseUrl || '').trim() ||
+      configDraft.prefix.trim() !== String(account.prefix || '').trim(),
+    [account.apiKey, account.baseUrl, account.prefix, configDraft.apiKey, configDraft.baseUrl, configDraft.prefix]
+  );
   const healthMetaItems = useMemo(() => buildAccountHealthMetaItems(usageSummary, t), [usageSummary, t]);
 
   const messageTone =
@@ -156,6 +166,19 @@ export default function ApiKeyDetailModal({
   function saveName() {
     onRename(draftName);
     setIsEditingName(false);
+  }
+
+  async function saveConfig() {
+    setIsSavingConfig(true);
+    try {
+      await onSaveConfig({
+        apiKey: configDraft.apiKey,
+        baseUrl: configDraft.baseUrl,
+        prefix: configDraft.prefix,
+      });
+    } finally {
+      setIsSavingConfig(false);
+    }
   }
 
   return (
@@ -258,7 +281,7 @@ export default function ApiKeyDetailModal({
                             setConfigDraft((prev) => ({ ...prev, apiKey: event.target.value }))
                           }
                           className="input-swiss w-full pr-16 !py-1.5 !text-[11px]"
-                          type="password"
+                          type="text"
                           placeholder="sk-..."
                         />
                         <button
@@ -290,6 +313,20 @@ export default function ApiKeyDetailModal({
                           复制
                         </button>
                       </div>
+                    </label>
+
+                    <label className="space-y-1.5">
+                      <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        PREFIX
+                      </span>
+                      <input
+                        value={configDraft.prefix}
+                        onChange={(event: TextInputEvent) =>
+                          setConfigDraft((prev) => ({ ...prev, prefix: event.target.value }))
+                        }
+                        className="input-swiss w-full !py-1.5 !text-[11px]"
+                        placeholder="/v1"
+                      />
                     </label>
                 </div>
               </div>
@@ -361,9 +398,18 @@ export default function ApiKeyDetailModal({
           <div className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
             {missingFieldsMessage}
           </div>
-          <button onClick={onClose} className="btn-swiss">
-            {t('common.close')}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => void saveConfig()}
+              className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
+              disabled={!configDirty || missingFields.length > 0 || isSavingConfig}
+            >
+              {isSavingConfig ? t('common.loading') : t('common.save')}
+            </button>
+            <button onClick={onClose} className="btn-swiss">
+              {t('common.close')}
+            </button>
+          </div>
         </footer>
       </div>
     </div>

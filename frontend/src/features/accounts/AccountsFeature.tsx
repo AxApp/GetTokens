@@ -34,6 +34,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
   const headerActionsMenuRef = useRef<HTMLDivElement | null>(null);
 
   const ready = sidecarStatus?.code === 'ready';
+
   const openAICompatibleState = useOpenAICompatibleState({
     ready,
     t,
@@ -101,6 +102,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     deleteAccount,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
+    updateSelectedApiKeyConfig,
   } = useAccountsPageState({
     ready,
     t,
@@ -115,6 +117,11 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     ...openAICompatibleState.providers.map((provider) => mapOpenAICompatibleProviderToRotationAccount(provider)),
   ];
 
+  async function reloadRotationAccounts() {
+    await loadAccounts();
+    await openAICompatibleState.loadProviders();
+  }
+
   if (workspace === 'openai-compatible') {
     return (
       <>
@@ -126,10 +133,12 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           verifyStates={openAICompatibleState.verifyStates}
           remoteModelsStates={openAICompatibleState.remoteModelsStates}
           pendingDeleteName={openAICompatibleState.pendingDeleteName}
+          pendingStatusName={openAICompatibleState.pendingStatusName}
           onCreate={openAICompatibleState.openCreateModal}
           onRefresh={() => void openAICompatibleState.loadProviders()}
           onOpenDetail={openAICompatibleState.openDetailModal}
           onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
+          onToggleDisabled={(provider) => void openAICompatibleState.toggleProviderDisabled(provider)}
         />
 
         {openAICompatibleState.isCreateModalOpen ? (
@@ -310,10 +319,12 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
               verifyStates={openAICompatibleState.verifyStates}
               remoteModelsStates={openAICompatibleState.remoteModelsStates}
               pendingDeleteName={openAICompatibleState.pendingDeleteName}
+              pendingStatusName={openAICompatibleState.pendingStatusName}
               onCreate={openAICompatibleState.openCreateModal}
               onRefresh={() => void openAICompatibleState.loadProviders()}
               onOpenDetail={openAICompatibleState.openDetailModal}
               onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
+              onToggleDisabled={(provider) => void openAICompatibleState.toggleProviderDisabled(provider)}
               embedded
             />
           ) : null}
@@ -342,6 +353,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           verifyState={apiKeyVerifyState}
           onClose={() => setSelectedAccount(null)}
           onRename={renameSelectedApiKey}
+          onSaveConfig={(draft) => updateSelectedApiKeyConfig(draft)}
           onVerify={(input) => void verifySelectedApiKey(input)}
           t={t}
         />
@@ -370,7 +382,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           codexQuotaByName={codexQuotaByName}
           ready={ready}
           onClose={() => setIsRotationModalOpen(false)}
-          onReloadAccounts={loadAccounts}
+          onReloadAccounts={reloadRotationAccounts}
         />
       ) : null}
 

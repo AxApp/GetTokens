@@ -56,8 +56,9 @@ export function mapOpenAICompatibleProviderToRotationAccount(provider: OpenAICom
     provider: String(provider.name || '').trim().toLowerCase() || 'openai-compatible',
     credentialSource: 'api-key',
     displayName: `兼容 OpenAI · ${String(provider.name || '账号').trim()}`,
-    status: 'CONFIGURED',
+    status: provider.disabled ? 'DISABLED' : 'CONFIGURED',
     priority: Number(provider.priority || 0),
+    disabled: Boolean(provider.disabled),
     name: String(provider.name || '').trim(),
     apiKey: String(provider.apiKey || '').trim(),
     baseUrl: String(provider.baseUrl || '').trim(),
@@ -116,4 +117,23 @@ export function buildRotationQuotaSummary(
 
   const remaining = longestWindow.remainingPercent === null ? '--' : `${longestWindow.remainingPercent}%`;
   return `${longestWindow.label} · ${t('accounts.quota_remaining')} ${remaining} · ${t('accounts.quota_reset')} ${formatQuotaResetRelative(longestWindow.resetLabel, longestWindow.resetAtUnix)}`;
+}
+
+export function buildRotationParticipationSummary(
+  account: AccountRecord,
+  quotaState: CodexQuotaState | undefined,
+  t: Translator,
+): string {
+  if (account.disabled) {
+    return t('accounts.rotation_disabled_hint');
+  }
+  return buildRotationQuotaSummary(account, quotaState, t);
+}
+
+export function canToggleRotationAccountDisabled(account: AccountRecord): boolean {
+  const id = String(account.id || '').trim();
+  if (id.startsWith('auth-file:')) {
+    return String(account.name || '').trim().length > 0;
+  }
+  return id.startsWith('codex-api-key:') || id.startsWith('openai-compatible:');
 }
