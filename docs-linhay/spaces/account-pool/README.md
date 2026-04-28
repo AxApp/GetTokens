@@ -323,5 +323,5 @@
 
 ## 当前状态
 - 状态：in-progress
-- 最近更新：2026-04-27
-- 最近变更：账号池需求已升级为完全体信息架构，父级 `账号池` 下明确收敛两个子菜单 `codex / openai-compatible`；`codex` 继续承接 OAuth 与 quota 闭环，`openai-compatible` 改为 provider 级心智，不复用单条 `Codex API Key` 交互。
+- 最近更新：2026-04-28
+- 最近变更：`openai-compatible` provider detail 已收口为单 `apiKey` provider 工作流；`codex` 继续承接 OAuth 与 quota 闭环，`openai-compatible` 改为 provider 级心智，但不暴露多 `apiKey entries` 编辑。
