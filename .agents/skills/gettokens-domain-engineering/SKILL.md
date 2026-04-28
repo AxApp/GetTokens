@@ -12,6 +12,8 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Rules**:
   - Keep `provider` and `credentialSource` separate.
   - Uniqueness is by asset (e.g., `auth-file:<name>`).
+  - `codex api key` records must prefer a persisted stable local id over a derived config fingerprint. Editing `apiKey / baseUrl / prefix` must not change the record id used by frontend selection, modal state, disable state, or rotation ordering.
+  - Duplicate detection for `codex api key` still uses the normalized config identity (`apiKey + baseUrl + prefix`), even when the persisted record id is stable.
   - Do not fetch accounts until sidecar is `ready`.
   - Reload from Wails after create/delete instead of hand-merging state.
   - `codex api key` lives in local storage under `~/.config/gettokens-data/codex-api-keys/`, not in `auth-dir`.
@@ -91,6 +93,11 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **l10n**: Add new copy to both `zh.json` and `en.json`. Default is Chinese.
 - **Controls**: Use segmented controls for discrete settings.
 - **Account Cards**: Account cards should support whole-card detail entry, but clicks originating from nested interactive controls (`button`, `input`, etc.) must not trigger the card-level detail action.
+- **Rotation Cards**: `AccountRotationModal` is a variant of the account card, not a second visual system. Reuse the account-card content hierarchy and only replace the bottom action strip plus rotation-only affordances such as rank rail and drag marker.
+- **Rotation Disable Semantics**:
+  - Disabled accounts stay in the saved rotation order.
+  - Disabled accounts do not participate in runtime rotation.
+  - The unified disable entrypoint is `SetAccountDisabled`, which must cover `auth-file`, `codex-api-key`, and `openai-compatible` assets consistently across cards, modal, and workspace views.
 
 ## 7. Frontend Debugging & Inspection
 - **Tools**: Use `@linhey/react-debug-inspector` in `main.tsx` (dev-only).
