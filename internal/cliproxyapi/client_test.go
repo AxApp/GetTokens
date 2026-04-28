@@ -62,7 +62,7 @@ func TestListOpenAICompatibleProviders(t *testing.T) {
 		if path != "/v0/management/openai-compatibility" {
 			t.Fatalf("unexpected path: %s", path)
 		}
-		return []byte(`{"openai-compatibility":[{"name":"deepseek","base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-test"}]}]}`), 200, nil
+			return []byte(`{"openai-compatibility":[{"name":"deepseek","disabled":true,"base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-test"}]}]}`), 200, nil
 	})
 
 	items, err := client.ListOpenAICompatibleProviders()
@@ -75,12 +75,15 @@ func TestListOpenAICompatibleProviders(t *testing.T) {
 	if items[0].Name != "deepseek" {
 		t.Fatalf("unexpected provider name: %s", items[0].Name)
 	}
-	if items[0].BaseURL != "https://api.deepseek.com/v1" {
-		t.Fatalf("unexpected provider base url: %s", items[0].BaseURL)
-	}
-	if len(items[0].APIKeyEntries) != 1 || items[0].APIKeyEntries[0].APIKey != "sk-test" {
-		t.Fatalf("unexpected api key entries: %#v", items[0].APIKeyEntries)
-	}
+		if items[0].BaseURL != "https://api.deepseek.com/v1" {
+			t.Fatalf("unexpected provider base url: %s", items[0].BaseURL)
+		}
+		if !items[0].Disabled {
+			t.Fatal("expected provider to keep disabled state")
+		}
+		if len(items[0].APIKeyEntries) != 1 || items[0].APIKeyEntries[0].APIKey != "sk-test" {
+			t.Fatalf("unexpected api key entries: %#v", items[0].APIKeyEntries)
+		}
 }
 
 func TestPutOpenAICompatibleProviders(t *testing.T) {
@@ -100,7 +103,7 @@ func TestPutOpenAICompatibleProviders(t *testing.T) {
 			t.Fatalf("read body: %v", err)
 		}
 		got := strings.TrimSpace(string(payload))
-		want := `[{"name":"deepseek","base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-test"}]}]`
+			want := `[{"name":"deepseek","disabled":true,"base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-test"}]}]`
 		if got != want {
 			t.Fatalf("unexpected payload: %s", got)
 		}
@@ -108,12 +111,13 @@ func TestPutOpenAICompatibleProviders(t *testing.T) {
 	})
 
 	err := client.PutOpenAICompatibleProviders([]OpenAICompatibleProvider{
-		{
-			Name:    "deepseek",
-			BaseURL: "https://api.deepseek.com/v1",
-			APIKeyEntries: []OpenAICompatibleAPIKeyEntry{
-				{APIKey: "sk-test"},
-			},
+			{
+				Name:     "deepseek",
+				Disabled: true,
+				BaseURL:  "https://api.deepseek.com/v1",
+				APIKeyEntries: []OpenAICompatibleAPIKeyEntry{
+					{APIKey: "sk-test"},
+				},
 		},
 	})
 	if err != nil {

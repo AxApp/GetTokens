@@ -20,15 +20,12 @@ func (m *Manager) resolveBinaryPath() (string, error) {
 	if runtime.GOOS == "windows" {
 		binaryName += ".exe"
 	}
+	profile := resolveSidecarProfile()
 
 	// 1. Next to the main executable (dev mode / extracted .app).
 	exe, err := os.Executable()
 	if err == nil {
-		candidates := []string{
-			filepath.Join(filepath.Dir(exe), binaryName),
-			// macOS .app bundle: Contents/MacOS/cli-proxy-api
-			filepath.Join(filepath.Dir(exe), "..", "Resources", binaryName),
-		}
+		candidates := resolveBinaryCandidates(filepath.Dir(exe), binaryName, profile)
 		for _, path := range candidates {
 			if _, statErr := os.Stat(path); statErr == nil {
 				return path, nil
@@ -42,6 +39,20 @@ func (m *Manager) resolveBinaryPath() (string, error) {
 	}
 
 	return "", fmt.Errorf("binary %q not found", binaryName)
+}
+
+func resolveBinaryCandidates(exeDir string, binaryName string, profile string) []string {
+	if strings.EqualFold(profile, "dev") {
+		return []string{
+			filepath.Join(exeDir, "..", "..", "..", binaryName),
+			filepath.Join(exeDir, binaryName),
+			filepath.Join(exeDir, "..", "Resources", binaryName),
+		}
+	}
+	return []string{
+		filepath.Join(exeDir, binaryName),
+		filepath.Join(exeDir, "..", "Resources", binaryName),
+	}
 }
 
 // waitHealthy polls the health endpoint until it returns 200 or ctx/timeout expires.
@@ -70,13 +81,13 @@ func (m *Manager) waitHealthy(ctx context.Context, url string) error {
 	return fmt.Errorf("timed out after %s", startupTimeout)
 }
 
-// ensureConfigDir creates and returns ~/.config/gettokens.
-func ensureConfigDir() (string, error) {
+// ensureConfigDir creates and returns the profile-specific config dir under ~/.config.
+func ensureConfigDir(profile string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(home, ".config", "gettokens")
+	dir := filepath.Join(home, ".config", configDirNameForProfile(profile))
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return "", err
 	}

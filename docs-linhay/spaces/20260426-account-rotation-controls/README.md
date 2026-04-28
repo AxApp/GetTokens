@@ -29,6 +29,7 @@
 2. 账号池中的轮动设置 modal 可保存轮动配置，保存后重新读取并显示最新生效值。
 3. `strategy` 至少支持 `round-robin` 与 `fill-first`。
 4. 自动化测试覆盖排序与 routing config 的真实写回链路。
+5. 已禁用的 auth-file 账号仍保留在轮动顺序中；调整优先级后禁用状态不丢失，且 sidecar 仍将其排除在实际轮动候选之外。
 
 ## 相关链接
 
@@ -40,6 +41,6 @@
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-04-27
-- 结果：账号池已支持 `codex api key priority`、轮动设置 modal、modal 内 OAuth 账号与 API key 统一拖动排序；状态页轮动区已退回只读展示。
-- 验证：`npm run test:unit`、`npm run typecheck`、`npm run build`
+- 最近更新：2026-04-28
+- 结果：账号池已支持 `codex api key priority`、轮动设置 modal、modal 内 OAuth 账号、Codex API Key 与 OpenAI-Compatible Provider 统一拖动排序；状态页轮动区已退回只读展示。额外修复了 `auth-file` 调整优先级时会因“删后重传”丢失 `disabled` 状态的问题，确保禁用账号可以保留排序位置但不重新参与轮动；轮动弹窗现也会直接给禁用资产打上 `disabled` 标记，并显示“保留当前位置但不参与轮动”。同时，轮动卡片右侧现已统一接到 `SetAccountDisabled`：`auth-file / codex-api-key / openai-compatible` 三类账号都可直接在 modal 内启用或禁用。`openai-compatible` 独立工作区卡片也已补齐相同的 `disabled` badge、说明文案和启用/禁用按钮，避免“聚合轮动弹窗能切状态，但 provider 自己的工作区看不见也不能改”的分叉体验。
+- 验证：`go test ./...`、`npm run test:unit`、`npm run typecheck`、`docs-linhay/scripts/check-docs.sh`

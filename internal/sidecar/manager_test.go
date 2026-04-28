@@ -31,6 +31,44 @@ func TestSetStatusPreservesStartedAtUnixUntilStopped(t *testing.T) {
 	}
 }
 
+func TestResolveSidecarProfileFromPrefersEnvAndDevExecutable(t *testing.T) {
+	if got := resolveSidecarProfileFrom("GetTokens", "dev"); got != "dev" {
+		t.Fatalf("profile from env = %q, want dev", got)
+	}
+	if got := resolveSidecarProfileFrom("GetTokens-dev-darwin-arm64", ""); got != "dev" {
+		t.Fatalf("profile from exe = %q, want dev", got)
+	}
+	if got := resolveSidecarProfileFrom("GetTokens", ""); got != "prod" {
+		t.Fatalf("default profile = %q, want prod", got)
+	}
+}
+
+func TestProfileSpecificPortAndConfigDir(t *testing.T) {
+	if got := preferredPortForProfile("dev"); got != devPort {
+		t.Fatalf("dev port = %d, want %d", got, devPort)
+	}
+	if got := preferredPortForProfile("prod"); got != defaultPort {
+		t.Fatalf("prod port = %d, want %d", got, defaultPort)
+	}
+	if got := configDirNameForProfile("dev"); got != "gettokens-dev" {
+		t.Fatalf("dev config dir = %q, want gettokens-dev", got)
+	}
+	if got := configDirNameForProfile("prod"); got != "gettokens" {
+		t.Fatalf("prod config dir = %q, want gettokens", got)
+	}
+}
+
+func TestNewManagerUsesDevProfileFromEnv(t *testing.T) {
+	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
+	manager := NewManager()
+	if manager.profile != "dev" {
+		t.Fatalf("manager profile = %q, want dev", manager.profile)
+	}
+	if manager.port != devPort {
+		t.Fatalf("manager port = %d, want %d", manager.port, devPort)
+	}
+}
+
 func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "config.yaml")
@@ -151,6 +189,34 @@ func TestNormalizeLegacyAuthFilesAddsCodexCompatibilityFields(t *testing.T) {
 	assertContains(t, content, `"refresh_token": "refresh-token"`)
 	assertContains(t, content, `"account_id": "acct_123"`)
 	assertContains(t, content, `"plan_type": "plus"`)
+}
+
+func TestEnsureConfigDirUsesProfileSpecificDirectory(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	dir, err := ensureConfigDir("dev")
+	if err != nil {
+		t.Fatalf("ensureConfigDir returned error: %v", err)
+	}
+	expected := filepath.Join(home, ".config", "gettokens-dev")
+	if dir != expected {
+		t.Fatalf("config dir = %q, want %q", dir, expected)
+	}
+}
+
+func TestResolveBinaryCandidatesPrefersFreshBuildBinInDev(t *testing.T) {
+	candidates := resolveBinaryCandidates(
+		"/repo/build/bin/GetTokens.app/Contents/MacOS",
+		"cli-proxy-api",
+		"dev",
+	)
+	if got, want := candidates[0], "/repo/build/bin/cli-proxy-api"; got != want {
+		t.Fatalf("first dev candidate = %q, want %q", got, want)
+	}
+	if got, want := candidates[1], "/repo/build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api"; got != want {
+		t.Fatalf("second dev candidate = %q, want %q", got, want)
+	}
 }
 
 func assertContains(t *testing.T, content string, expected string) {

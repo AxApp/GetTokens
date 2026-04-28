@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	defaultPort    = 8317
 	healthzPath    = "/healthz"
 	startupTimeout = 30 * time.Second
 	pollInterval   = 500 * time.Millisecond
@@ -47,13 +46,16 @@ type Manager struct {
 	port          int
 	status        Status
 	serviceAPIKey string
+	profile       string
 }
 
 // NewManager creates a Manager with default configuration.
 func NewManager() *Manager {
+	profile := resolveSidecarProfile()
 	return &Manager{
-		port:   defaultPort,
-		status: Status{Code: StatusStopped},
+		port:    preferredPortForProfile(profile),
+		status:  Status{Code: StatusStopped},
+		profile: profile,
 	}
 }
 
@@ -77,7 +79,7 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 	m.port = port
 	m.mu.Unlock()
 
-	configDir, err := ensureConfigDir()
+	configDir, err := ensureConfigDir(m.profile)
 	if err != nil {
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("配置目录初始化失败: %v", err)}, notify)
 		return

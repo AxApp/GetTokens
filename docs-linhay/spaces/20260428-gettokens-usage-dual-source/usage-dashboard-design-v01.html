@@ -3,22 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GetTokens 账号用量工作台设计稿 v01</title>
+    <title>GetTokens 用量工作台模块稿 v01</title>
     <style>
       :root {
-        --bg-main: #f2efe8;
-        --bg-surface: #fbf9f4;
-        --bg-panel: #ffffff;
-        --ink: #121212;
-        --muted: #6c665f;
-        --line: rgba(18, 18, 18, 0.18);
-        --line-strong: rgba(18, 18, 18, 0.82);
-        --accent-red: #d9482f;
-        --accent-green: #13835e;
+        --bg-main: #ffffff;
+        --bg-surface: #f9f9f9;
+        --border-color: #000000;
+        --text-primary: #000000;
+        --text-muted: #666666;
+        --bg-muted: #f0f0f0;
+        --accent-red: #ff0000;
         --accent-blue: #1457d8;
-        --accent-yellow: #b98316;
-        --shadow: 8px 8px 0 rgba(18, 18, 18, 0.9);
-        --radius: 20px;
+        --accent-green: #0d9f4f;
+        --accent-amber: #a66b00;
+        --shadow-color: #e5e5e5;
       }
 
       * {
@@ -27,766 +25,934 @@
 
       body {
         margin: 0;
-        font-family: "IBM Plex Sans", "Helvetica Neue", sans-serif;
-        background:
-          linear-gradient(180deg, rgba(20, 87, 216, 0.05), transparent 30%),
-          linear-gradient(135deg, #ece7db 0%, #f7f3ea 45%, #efe8dc 100%);
-        color: var(--ink);
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
       }
 
-      .frame {
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      .page {
         min-height: 100vh;
-        padding: 24px;
+        padding: 32px 24px 80px;
       }
 
-      .shell {
-        display: grid;
-        grid-template-columns: 260px minmax(0, 1fr);
-        gap: 20px;
-        min-height: calc(100vh - 48px);
+      .workspace {
+        max-width: 1180px;
+        margin: 0 auto;
       }
 
-      .sidebar,
-      .content,
-      .annotation {
-        border: 2px solid var(--line-strong);
-        background: rgba(255, 255, 255, 0.78);
-        backdrop-filter: blur(8px);
-        box-shadow: var(--shadow);
-      }
-
-      .sidebar {
-        display: flex;
-        flex-direction: column;
-        padding: 20px;
-        gap: 20px;
-      }
-
-      .brand {
-        padding-bottom: 16px;
-        border-bottom: 2px dashed var(--line-strong);
-      }
-
-      .eyebrow,
-      .label {
-        font-size: 11px;
+      .eyebrow {
+        font-size: 10px;
         font-weight: 800;
-        letter-spacing: 0.22em;
+        letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: var(--muted);
+        color: var(--text-muted);
       }
 
-      .brand h1 {
-        margin: 10px 0 0;
-        font-size: 28px;
-        line-height: 0.95;
-        text-transform: uppercase;
-        letter-spacing: -0.05em;
-      }
-
-      .nav-group,
-      .rail-card {
+      .page-header {
         display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .nav-item,
-      .chip,
-      .segment button,
-      .metric-card,
-      .panel,
-      .list-row,
-      .legend {
-        border: 2px solid var(--line-strong);
-        background: var(--bg-panel);
-      }
-
-      .nav-item {
-        padding: 14px;
-      }
-
-      .nav-item.active {
-        background: var(--ink);
-        color: #fff;
-      }
-
-      .nav-item strong,
-      .metric-card strong,
-      .section-title strong {
-        display: block;
-        text-transform: uppercase;
-        font-size: 14px;
-        letter-spacing: 0.05em;
-      }
-
-      .nav-item span,
-      .metric-card span,
-      .panel p,
-      .note,
-      .list-row span,
-      .legend span {
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .rail-card {
-        padding: 14px;
-        background: repeating-linear-gradient(
-          -45deg,
-          rgba(20, 87, 216, 0.05),
-          rgba(20, 87, 216, 0.05) 10px,
-          rgba(20, 87, 216, 0.01) 10px,
-          rgba(20, 87, 216, 0.01) 20px
-        );
-      }
-
-      .content-wrap {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 320px;
+        align-items: end;
+        justify-content: space-between;
         gap: 20px;
+        padding-bottom: 18px;
+        border-bottom: 4px solid var(--border-color);
       }
 
-      .content {
-        padding: 22px;
-      }
-
-      .annotation {
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-      }
-
-      .hero {
-        display: grid;
-        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-        gap: 16px;
-        margin-bottom: 20px;
-      }
-
-      .hero-card {
-        padding: 20px;
-        border: 2px solid var(--line-strong);
-        background: var(--bg-panel);
-      }
-
-      .hero h2 {
-        margin: 12px 0;
+      .page-header h1 {
+        margin: 8px 0 0;
         font-size: 42px;
+        font-weight: 900;
         line-height: 0.95;
         letter-spacing: -0.06em;
         text-transform: uppercase;
+        font-style: italic;
       }
 
-      .hero p {
-        margin: 0;
-        max-width: 62ch;
-        line-height: 1.6;
-        color: #322f2b;
+      .page-header p {
+        margin: 10px 0 0;
+        font-size: 11px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        max-width: 64ch;
       }
 
-      .warning-stack {
-        display: grid;
-        gap: 12px;
+      .header-actions,
+      .toolbar-row,
+      .chip-row,
+      .stat-row,
+      .signal-row,
+      .legend-row,
+      .module-footer {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
       }
 
-      .warning {
-        padding: 16px;
-        border: 2px solid var(--line-strong);
-        background: #fff9ef;
+      .btn-swiss,
+      .chip,
+      .module,
+      .metric,
+      .mini-panel,
+      .table-shell,
+      .note-card {
+        border: 2px solid var(--border-color);
+        background: var(--bg-main);
+        box-shadow: 4px 4px 0 0 var(--shadow-color);
       }
 
-      .warning strong {
-        display: block;
-        margin-bottom: 6px;
-        font-size: 13px;
+      .btn-swiss,
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 8px 14px;
+        font-size: 11px;
+        font-weight: 800;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
-      .toolbar {
-        display: grid;
-        gap: 14px;
-        margin-bottom: 20px;
-      }
-
-      .toolbar-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .segment {
-        display: inline-flex;
-        padding: 4px;
-        gap: 4px;
-        background: rgba(18, 18, 18, 0.06);
-        border: 2px solid var(--line-strong);
-      }
-
-      .segment button {
-        padding: 10px 14px;
-        font: inherit;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--ink);
-      }
-
-      .segment button.active-dark {
-        background: var(--ink);
-        color: #fff;
-      }
-
-      .segment button.active-blue {
-        background: var(--accent-blue);
-        color: #fff;
-      }
-
-      .segment button.active-red {
-        background: var(--accent-red);
-        color: #fff;
-      }
-
-      .chip-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
-      .chip {
-        padding: 9px 12px;
-        font-size: 11px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-      }
-
+      .btn-swiss.active,
       .chip.active {
-        background: #121212;
-        color: #fff;
+        background: var(--text-primary);
+        color: var(--bg-main);
       }
 
-      .metrics {
+      .stack {
+        display: grid;
+        gap: 22px;
+        margin-top: 26px;
+      }
+
+      .toolbar {
+        padding: 18px;
+      }
+
+      .toolbar-grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .toolbar-label {
+        min-width: 112px;
+        padding-top: 10px;
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .module {
+        padding: 20px;
+      }
+
+      .module-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 14px;
+        border-bottom: 2px dashed var(--border-color);
+      }
+
+      .module-head h2 {
+        margin: 6px 0 0;
+        font-size: 26px;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+        font-style: italic;
+      }
+
+      .module-head p,
+      .module-copy,
+      .mini-panel p,
+      .note-card p,
+      li,
+      td,
+      th {
+        font-size: 11px;
+        line-height: 1.7;
+      }
+
+      .module-head p,
+      .module-copy,
+      .mini-panel p,
+      .note-card p,
+      li {
+        color: var(--text-muted);
+      }
+
+      .module-body {
+        padding-top: 18px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .metric-grid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 14px;
-        margin-bottom: 20px;
       }
 
-      .metric-card {
-        padding: 16px;
-        min-height: 118px;
+      .metric {
+        padding: 14px;
       }
 
-      .metric-card .value {
-        margin-top: 14px;
-        font-size: 34px;
+      .metric .label {
+        font-size: 9px;
         font-weight: 900;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .metric .value {
+        margin-top: 10px;
+        font-size: 30px;
+        font-weight: 900;
+        line-height: 0.95;
         letter-spacing: -0.06em;
-        line-height: 1;
+        text-transform: uppercase;
       }
 
-      .metric-card.blue {
-        background: #eff4ff;
+      .metric .subvalue {
+        margin-top: 8px;
+        font-size: 10px;
+        line-height: 1.6;
+        color: var(--text-muted);
       }
 
-      .metric-card.red {
-        background: #fff0ec;
+      .accent-observed {
+        color: var(--accent-green);
       }
 
-      .metric-card.green {
-        background: #ebf8f1;
+      .accent-local {
+        color: var(--accent-blue);
       }
 
-      .metric-card.yellow {
-        background: #fff7e5;
+      .accent-quota {
+        color: var(--accent-amber);
       }
 
-      .main-grid {
+      .dual-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
-        gap: 16px;
+        grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+        gap: 18px;
       }
 
-      .panel {
-        padding: 16px;
+      .chart-box,
+      .timeline-box {
+        border: 2px solid var(--border-color);
+        background: var(--bg-surface);
       }
 
-      .panel-header,
-      .section-title {
+      .chart-box {
+        padding: 18px;
+      }
+
+      .chart-meta {
         display: flex;
+        flex-wrap: wrap;
         justify-content: space-between;
-        align-items: baseline;
-        gap: 16px;
+        gap: 10px;
         margin-bottom: 14px;
       }
 
-      .section-title {
-        margin-top: 22px;
-      }
-
-      .chart {
-        height: 260px;
+      .chart-canvas {
         position: relative;
+        height: 268px;
         overflow: hidden;
         background:
-          linear-gradient(180deg, rgba(18, 18, 18, 0.05), transparent),
-          repeating-linear-gradient(
-            to right,
-            transparent 0 48px,
-            rgba(18, 18, 18, 0.08) 48px 49px
-          ),
-          repeating-linear-gradient(
-            to top,
-            transparent 0 52px,
-            rgba(18, 18, 18, 0.08) 52px 53px
-          );
+          linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--border-color) calc(25% - 1px), var(--border-color) 25%, transparent 25%),
+          linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--border-color) calc(50% - 1px), var(--border-color) 50%, transparent 50%),
+          linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--border-color) calc(75% - 1px), var(--border-color) 75%, transparent 75%),
+          repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(0, 0, 0, 0.12) 55px, rgba(0, 0, 0, 0.12) 56px);
       }
 
-      .chart svg {
-        position: absolute;
-        inset: 0;
+      .chart-canvas svg {
         width: 100%;
         height: 100%;
       }
 
-      .legend-row,
-      .mini-grid,
-      .list {
+      .chart-point-label {
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .chart-point-dot {
+        stroke: var(--bg-main);
+        stroke-width: 2;
+      }
+
+      .mini-stack {
         display: grid;
-        gap: 10px;
-      }
-
-      .legend-row {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
-      .legend {
-        padding: 12px;
-      }
-
-      .mini-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .list-row {
-        padding: 14px;
-        display: grid;
-        grid-template-columns: 1.4fr 1fr auto;
         gap: 12px;
-        align-items: center;
       }
 
-      .bar {
-        height: 10px;
-        border: 2px solid var(--line-strong);
-        background:
-          linear-gradient(to right, rgba(18, 18, 18, 0.16), rgba(18, 18, 18, 0.04));
+      .analysis-shell {
+        border: 2px solid var(--border-color);
+        background: var(--bg-main);
+      }
+
+      .analysis-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 2px dashed var(--border-color);
+        background: var(--bg-surface);
+      }
+
+      .analysis-head h3 {
+        margin: 4px 0 0;
+        font-size: 16px;
+        font-weight: 900;
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        text-transform: uppercase;
+        font-style: italic;
+      }
+
+      .analysis-body {
+        padding: 16px;
+        display: grid;
+        gap: 14px;
+      }
+
+      .view-switch {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .path-note {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .mini-panel {
+        padding: 14px;
+      }
+
+      .mini-panel h3 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .mini-panel strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 22px;
+        line-height: 1;
+      }
+
+      .table-shell {
         overflow: hidden;
       }
 
-      .bar > div {
-        height: 100%;
-        background:
-          repeating-linear-gradient(
-            to right,
-            var(--accent-green),
-            var(--accent-green) 14px,
-            rgba(19, 131, 94, 0.08) 14px,
-            rgba(19, 131, 94, 0.08) 18px
-          );
+      table {
+        width: 100%;
+        border-collapse: collapse;
       }
 
-      .drawer {
-        margin-top: 22px;
-        padding: 18px;
-        border: 2px solid var(--line-strong);
-        background: linear-gradient(180deg, rgba(20, 87, 216, 0.05), rgba(20, 87, 216, 0.01));
+      th {
+        padding: 12px 14px;
+        text-align: left;
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        background: var(--bg-surface);
+        border-bottom: 2px solid var(--border-color);
       }
 
-      .drawer-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 280px;
-        gap: 16px;
-        margin-top: 14px;
-      }
-
-      .callout {
+      td {
         padding: 14px;
-        border: 2px dashed var(--line-strong);
-        background: rgba(255, 255, 255, 0.72);
+        border-top: 1px dashed rgba(0, 0, 0, 0.28);
       }
 
-      .rule-list {
-        margin: 0;
-        padding-left: 18px;
+      tbody tr:first-child td {
+        border-top: none;
+      }
+
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        background: currentColor;
+      }
+
+      .notes-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .note-card {
+        padding: 16px;
+      }
+
+      .note-card h3 {
+        margin: 0 0 10px;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .experience-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .experience-step {
+        border: 2px solid var(--border-color);
+        background: var(--bg-main);
+        box-shadow: 4px 4px 0 0 var(--shadow-color);
+        padding: 16px;
+      }
+
+      .experience-step h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .experience-step strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 22px;
+        line-height: 1;
+      }
+
+      .app-demo-shell {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        gap: 18px;
+      }
+
+      .app-rail,
+      .app-stage,
+      .stage-card,
+      .state-card {
+        border: 2px solid var(--border-color);
+        background: var(--bg-main);
+        box-shadow: 4px 4px 0 0 var(--shadow-color);
+      }
+
+      .app-rail {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+
+      .rail-group {
+        display: grid;
+        gap: 8px;
+        padding-top: 12px;
+        border-top: 2px dashed var(--border-color);
+      }
+
+      .rail-item {
+        padding: 10px 12px;
+        border: 2px solid var(--border-color);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        background: var(--bg-surface);
+      }
+
+      .rail-item.active {
+        background: var(--text-primary);
+        color: var(--bg-main);
+      }
+
+      .app-stage {
+        padding: 18px;
+        display: grid;
+        gap: 16px;
+      }
+
+      .stage-topbar {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        border-bottom: 2px dashed var(--border-color);
+      }
+
+      .stage-breadcrumb {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+
+      .stage-title {
+        margin: 6px 0 0;
+        font-size: 28px;
+        line-height: 1;
+        font-weight: 900;
+        font-style: italic;
+        letter-spacing: -0.05em;
+        text-transform: uppercase;
+      }
+
+      .stage-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+        gap: 16px;
+      }
+
+      .stage-card,
+      .state-card {
+        padding: 16px;
+      }
+
+      .stage-card h3,
+      .state-card h3 {
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .flow-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .flow-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 34px;
+        padding: 8px 12px;
+        border: 2px solid var(--border-color);
+        background: var(--bg-surface);
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .flow-pill.active {
+        background: var(--text-primary);
+        color: var(--bg-main);
+      }
+
+      .scenario-list {
         display: grid;
         gap: 10px;
       }
 
-      .rule-list li {
-        line-height: 1.55;
-        color: #2f2b27;
+      .scenario-item {
+        padding: 12px;
+        border: 2px solid var(--border-color);
+        background: var(--bg-surface);
       }
 
-      .footer-note {
-        margin-top: auto;
-        padding-top: 12px;
-        border-top: 2px dashed var(--line-strong);
+      .scenario-item strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+        text-transform: uppercase;
       }
 
-      @media (max-width: 1180px) {
-        .shell,
-        .content-wrap,
-        .hero,
-        .main-grid,
-        .drawer-grid {
+      ul {
+        margin: 0;
+        padding-left: 16px;
+      }
+
+      .module-footer {
+        justify-content: space-between;
+        padding-top: 14px;
+        border-top: 2px dashed var(--border-color);
+      }
+
+      .muted {
+        color: var(--text-muted);
+      }
+
+      @media (max-width: 960px) {
+        .page-header,
+        .module-head,
+        .toolbar-row,
+        .chart-meta,
+        .module-footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .metric-grid,
+        .dual-grid,
+        .notes-grid {
           grid-template-columns: 1fr;
         }
 
-        .metrics {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+        .experience-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .app-demo-shell,
+        .stage-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar-label {
+          min-width: 0;
+          padding-top: 0;
         }
       }
 
-      @media (max-width: 720px) {
-        .frame {
-          padding: 12px;
+      @media (max-width: 640px) {
+        .page {
+          padding: 20px 14px 56px;
         }
 
-        .shell {
-          gap: 12px;
+        .page-header h1 {
+          font-size: 34px;
         }
 
-        .sidebar,
-        .content,
-        .annotation {
-          box-shadow: 4px 4px 0 rgba(18, 18, 18, 0.9);
+        .module-head h2 {
+          font-size: 22px;
         }
 
-        .hero h2 {
-          font-size: 30px;
+        .metric .value {
+          font-size: 24px;
         }
 
-        .metrics,
-        .legend-row,
-        .mini-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .list-row {
-          grid-template-columns: 1fr;
+        th,
+        td {
+          padding-left: 10px;
+          padding-right: 10px;
         }
       }
     </style>
   </head>
   <body>
-    <div class="frame">
-      <div class="shell">
-        <aside class="sidebar">
-          <div class="brand">
-            <div class="eyebrow">GetTokens / 空间草图</div>
-            <h1>账号用量工作台</h1>
+    <div class="page">
+      <div class="workspace">
+        <header class="page-header">
+          <div>
+            <div class="eyebrow">Accounts / Usage Desk / 模块排布</div>
+            <h1>用量工作台模块稿</h1>
+            <p>
+              这版不把信息塞进一个综合舞台，而是拆成一块一块独立模块。用户顺着页面往下看，就能分别理解
+              `ObservedRequestUsage`、`LocalProjectedUsage`、趋势、下钻和风险边界。
+            </p>
           </div>
-
-          <div class="nav-group">
-            <div class="label">工作区规划</div>
-            <div class="nav-item">
-              <strong>账号池</strong>
-              <span>保留账号资产、Quota 刷新、稳定性信号，是 usage 分析区的上层入口。</span>
-            </div>
-            <div class="nav-item active">
-              <strong>用量工作台</strong>
-              <span>作为 `账号池` 下的新分析子工作区，承接双轨用量、provider 过滤、时间趋势和详情钻取。</span>
-            </div>
-            <div class="nav-item">
-              <strong>状态页</strong>
-              <span>继续承担 relay/service 侧配置，不与 usage 域耦合。</span>
-            </div>
+          <div class="header-actions">
+            <div class="chip active">账户页入口</div>
+            <div class="chip">按 Provider 分域</div>
+            <div class="chip">按事实源拆分</div>
           </div>
+        </header>
 
-          <div class="rail-card">
-            <div class="label">页面主张</div>
-            <span>不是“把更多指标塞回账号卡片”，而是在 `账号池` 内把 usage 从资产视图里抽出来，做成独立分析面。</span>
-          </div>
-
-          <div class="rail-card">
-            <div class="label">V1 范围</div>
-            <span>`ObservedRequestUsage` + `LocalProjectedUsage(Codex)` + `QuotaSnapshot` 分域展示。Local 只做 provider/global，不做 auth-file 归因。</span>
-          </div>
-        </aside>
-
-        <div class="content-wrap">
-          <main class="content">
-            <section class="hero">
-              <div class="hero-card">
-                <div class="eyebrow">前端规划 / HTML 草稿</div>
-                <h2>一个工作台，三种语义，不做伪总量。</h2>
-                <p>
-                  这个分析面不是给用户“看一个总用量数”，而是帮助用户快速判断：
-                  当前代理观测是否稳定、本地 provider 的消耗趋势如何、哪些信息只是 quota window 而不是 usage fact。
-                </p>
+        <div class="stack">
+          <div class="app-demo-shell">
+            <aside class="app-rail">
+              <div>
+                <div class="eyebrow">账号池子</div>
+                <div class="stage-title" style="font-size: 22px; margin-top: 8px;">Pool Scope</div>
               </div>
-              <div class="warning-stack">
-                <div class="warning">
-                  <strong>不要混算</strong>
-                  <span>Local usage 不回写到账号卡片，也不与 quota 聚成一个 summary。</span>
-                </div>
-                <div class="warning">
-                  <strong>Provider 优先</strong>
-                  <span>本地 usage 的最小单位是 provider，`Codex / Claude / Gemini` 不允许混桶。</span>
-                </div>
+              <div class="rail-group">
+                <div class="rail-item active">默认池子</div>
+                <div class="rail-item">Codex 主池</div>
+                <div class="rail-item">Gemini 备用池</div>
+                <div class="rail-item">混合池视图</div>
               </div>
-            </section>
+            </aside>
 
-            <section class="toolbar">
-              <div class="toolbar-row">
-                <div class="label">数据来源</div>
-                <div class="segment">
-                  <button class="active-dark">真实请求观测</button>
-                  <button>本地用量投影</button>
-                  <button>额度快照</button>
+            <div class="app-stage" style="padding: 0; border: 0; background: transparent; box-shadow: none;">
+              <section class="toolbar">
+                <div class="toolbar-grid">
+                  <div class="toolbar-row">
+                    <div class="toolbar-label">数据来源</div>
+                    <div class="chip-row">
+                      <div class="chip active">全部来源</div>
+                      <div class="chip">仅真实请求</div>
+                      <div class="chip">仅本地投影</div>
+                    </div>
+                  </div>
                 </div>
+              </section>
+
+              <section class="module">
+            <div class="module-head">
+              <div>
+                <div class="eyebrow">模块 01</div>
+                <h2>用量分析</h2>
               </div>
-              <div class="toolbar-row">
-                <div class="label">Provider</div>
+              <p>把 `真实请求量` 和 `本地投影用量` 融成同一个分析工作区。用户先选来源，再用同一套图表完成时间范围切换、多日统计与单日分钟级切换。</p>
+            </div>
+            <div class="module-body">
+              <div class="view-switch">
                 <div class="chip-row">
-                  <div class="chip active">Codex</div>
-                  <div class="chip">兼容 OpenAI</div>
-                  <div class="chip">Claude</div>
-                  <div class="chip">Gemini</div>
+                  <div class="chip active">真实请求量</div>
+                  <div class="chip">本地投影用量</div>
                 </div>
-              </div>
-              <div class="toolbar-row">
-                <div class="label">时间范围</div>
-                <div class="segment">
-                  <button>24小时</button>
-                  <button class="active-blue">7天</button>
-                  <button>30天</button>
-                  <button>90天</button>
-                </div>
-                <div class="label">视图模式</div>
-                <div class="segment">
-                  <button class="active-red">Provider 总览</button>
-                  <button disabled>账号下钻</button>
-                </div>
-              </div>
-            </section>
-
-            <section class="metrics">
-              <div class="metric-card blue">
-                <strong>真实请求数</strong>
-                <div class="value">1,284</div>
-                <span>仅统计经过 GetTokens sidecar 的真实请求。</span>
-              </div>
-              <div class="metric-card green">
-                <strong>成功率</strong>
-                <div class="value">97.4%</div>
-                <span>稳定性指标继续保留，不与本地 token 消耗混算。</span>
-              </div>
-              <div class="metric-card red">
-                <strong>失败请求数</strong>
-                <div class="value">33</div>
-                <span>突出错误量，方便用户先判断代理链路问题。</span>
-              </div>
-              <div class="metric-card yellow">
-                <strong>平均延迟</strong>
-                <div class="value">842ms</div>
-                <span>请求体验指标，依旧属于 observed 域。</span>
-              </div>
-            </section>
-
-            <section class="main-grid">
-              <div class="panel">
-                <div class="panel-header">
-                  <div class="section-title">
-                    <strong>趋势时间线</strong>
-                  </div>
-                  <span class="note">切换 `Observed / Local / Quota` 时，同一位置切换不同语义图，不堆三张图。</span>
-                </div>
-                <div class="chart">
-                  <svg viewBox="0 0 700 260" preserveAspectRatio="none" aria-hidden="true">
-                    <polyline
-                      fill="none"
-                      stroke="#1457d8"
-                      stroke-width="4"
-                      points="0,190 60,180 120,162 180,150 240,134 300,120 360,108 420,116 480,92 540,88 600,74 700,56"
-                    />
-                    <polyline
-                      fill="none"
-                      stroke="#d9482f"
-                      stroke-width="3"
-                      stroke-dasharray="10 10"
-                      points="0,210 60,206 120,202 180,190 240,194 300,174 360,188 420,168 480,178 540,150 600,144 700,132"
-                    />
-                  </svg>
-                </div>
-                <div class="legend-row" style="margin-top: 12px;">
-                  <div class="legend">
-                    <strong>蓝色主线</strong>
-                    <span>主轨图层，当前选中源的核心趋势。</span>
-                  </div>
-                  <div class="legend">
-                    <strong>红色虚线</strong>
-                    <span>异常或失败请求量，不与 Local usage 的 requestCount 复用样式。</span>
-                  </div>
-                  <div class="legend">
-                    <strong>单图槽位</strong>
-                    <span>避免一页三图把三种语义视觉上误导成可直接相加。</span>
-                  </div>
-                </div>
+                <div class="path-note">同一套 UI，按来源切换；Provider 不单独切换，沿用账号池子选项模式</div>
               </div>
 
-              <div class="panel">
-                <div class="panel-header">
-                  <div class="section-title">
-                    <strong>来源摘要</strong>
+              <div class="analysis-shell">
+                <div class="analysis-head">
+                  <div>
+                    <div class="eyebrow">分析模块 02A</div>
+                    <h3>来源切换 + 多日统计 + 单日分钟级</h3>
                   </div>
-                  <span class="note">右侧摘要是当前 source kind 的解释器，不是总览拼盘。</span>
+                  <div class="legend-row">
+                    <div class="status-pill accent-observed">
+                      <span class="status-dot"></span>
+                      真实请求
+                    </div>
+                    <div class="status-pill accent-local">
+                      <span class="status-dot"></span>
+                      本地投影
+                    </div>
+                  </div>
                 </div>
-                <div class="mini-grid">
-                  <div class="legend">
-                    <strong>真实请求观测</strong>
-                    <span>账号近似归因可用，重点是成功率、失败率、延迟。</span>
+                <div class="analysis-body">
+                  <div class="view-switch">
+                    <div class="chip-row">
+                      <div class="chip active">多日统计</div>
+                      <div class="chip active">7D</div>
+                      <div class="chip">30D</div>
+                      <div class="chip">自定义窗口</div>
+                      <div class="chip">点击 2026-04-28</div>
+                      <div class="chip">展开单日分钟级</div>
+                    </div>
+                    <div class="path-note">时间范围切换放在图表模块内部；切来源时沿用同一套图表骨架与交互路径</div>
                   </div>
-                  <div class="legend">
-                    <strong>本地用量投影</strong>
-                    <span>只做 provider/global，重点是 token、requestCount、时间桶。</span>
+
+                  <div class="chart-box">
+                    <div class="chart-meta">
+                      <div>
+                        <div class="eyebrow">默认视图 / 真实请求量</div>
+                        <strong>真实请求量 / 天</strong>
+                      </div>
+                      <div class="muted">池子：默认池子 / 范围：7D</div>
+                    </div>
+                    <div class="chart-canvas">
+                      <svg viewBox="0 0 760 268" preserveAspectRatio="none" aria-hidden="true">
+                        <defs>
+                          <linearGradient id="observedArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#0d9f4f" stop-opacity="0.26" />
+                            <stop offset="100%" stop-color="#0d9f4f" stop-opacity="0.03" />
+                          </linearGradient>
+                          <linearGradient id="observedFailArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ff0000" stop-opacity="0.18" />
+                            <stop offset="100%" stop-color="#ff0000" stop-opacity="0.02" />
+                          </linearGradient>
+                        </defs>
+                        <polygon
+                          fill="url(#observedArea)"
+                          points="0,196 108,178 216,186 324,142 432,135 540,112 648,98 760,90 760,268 0,268"
+                        />
+                        <polygon
+                          fill="url(#observedFailArea)"
+                          points="0,228 108,220 216,224 324,210 432,216 540,205 648,194 760,188 760,268 0,268"
+                        />
+                        <polyline
+                          fill="none"
+                          stroke="var(--accent-green)"
+                          stroke-width="4"
+                          points="0,196 108,178 216,186 324,142 432,135 540,112 648,98 760,90"
+                        />
+                        <polyline
+                          fill="none"
+                          stroke="var(--accent-red)"
+                          stroke-width="3"
+                          stroke-dasharray="10 8"
+                          points="0,228 108,220 216,224 324,210 432,216 540,205 648,194 760,188"
+                        />
+                        <circle class="chart-point-dot" cx="108" cy="178" r="5" fill="var(--accent-green)" />
+                        <text class="chart-point-label" x="108" y="164" text-anchor="middle" fill="var(--accent-green)">168</text>
+                        <circle class="chart-point-dot" cx="324" cy="142" r="5" fill="var(--accent-green)" />
+                        <text class="chart-point-label" x="324" y="128" text-anchor="middle" fill="var(--accent-green)">214</text>
+                        <circle class="chart-point-dot" cx="648" cy="98" r="5" fill="var(--accent-green)" />
+                        <text class="chart-point-label" x="648" y="84" text-anchor="middle" fill="var(--accent-green)">263</text>
+                        <circle class="chart-point-dot" cx="324" cy="210" r="4.5" fill="var(--accent-red)" />
+                        <text class="chart-point-label" x="324" y="230" text-anchor="middle" fill="var(--accent-red)">13</text>
+                        <circle class="chart-point-dot" cx="648" cy="194" r="4.5" fill="var(--accent-red)" />
+                        <text class="chart-point-label" x="648" y="214" text-anchor="middle" fill="var(--accent-red)">7</text>
+                      </svg>
+                    </div>
                   </div>
-                  <div class="legend">
-                    <strong>额度快照</strong>
-                    <span>展示剩余额度窗口，不进入 usage fact 聚合。</span>
+
+                  <div class="chart-box">
+                    <div class="chart-meta">
+                      <div>
+                        <div class="eyebrow">切换来源后 / 本地投影用量</div>
+                        <strong>投影 Token 量 / 天</strong>
+                      </div>
+                      <div class="muted">池子：默认池子 / 同一张图，换成本地投影口径</div>
+                    </div>
+                    <div class="chart-canvas">
+                      <svg viewBox="0 0 760 268" preserveAspectRatio="none" aria-hidden="true">
+                        <defs>
+                          <linearGradient id="projectedArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#1457d8" stop-opacity="0.24" />
+                            <stop offset="100%" stop-color="#1457d8" stop-opacity="0.03" />
+                          </linearGradient>
+                        </defs>
+                        <polygon
+                          fill="url(#projectedArea)"
+                          points="0,214 108,204 216,174 324,152 432,138 540,130 648,92 760,112 760,268 0,268"
+                        />
+                        <polyline
+                          fill="none"
+                          stroke="var(--accent-blue)"
+                          stroke-width="4"
+                          points="0,214 108,204 216,174 324,152 432,138 540,130 648,92 760,112"
+                        />
+                        <circle class="chart-point-dot" cx="216" cy="174" r="5" fill="var(--accent-blue)" />
+                        <text class="chart-point-label" x="216" y="160" text-anchor="middle" fill="var(--accent-blue)">5.8M</text>
+                        <circle class="chart-point-dot" cx="432" cy="138" r="5" fill="var(--accent-blue)" />
+                        <text class="chart-point-label" x="432" y="124" text-anchor="middle" fill="var(--accent-blue)">7.2M</text>
+                        <circle class="chart-point-dot" cx="648" cy="92" r="5" fill="var(--accent-blue)" />
+                        <text class="chart-point-label" x="648" y="78" text-anchor="middle" fill="var(--accent-blue)">10.4M</text>
+                      </svg>
+                    </div>
                   </div>
-                  <div class="legend">
-                    <strong>Provider 维度</strong>
-                    <span>页面状态必须把 provider 当一等维度保存。</span>
+
+                  <div class="chart-box">
+                    <div class="chart-meta">
+                      <div>
+                        <div class="eyebrow">点击日期后</div>
+                        <strong>2026-04-28 / 单日分钟级</strong>
+                      </div>
+                      <div class="muted">当前选中来源 + 当前账号池子决定分钟图和明细表口径</div>
+                    </div>
+                    <div class="chart-canvas">
+                      <svg viewBox="0 0 760 268" preserveAspectRatio="none" aria-hidden="true">
+                        <defs>
+                          <linearGradient id="intradayArea" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#0d9f4f" stop-opacity="0.24" />
+                            <stop offset="100%" stop-color="#0d9f4f" stop-opacity="0.03" />
+                          </linearGradient>
+                        </defs>
+                        <polygon
+                          fill="url(#intradayArea)"
+                          points="0,210 62,204 126,184 190,172 254,188 318,130 382,144 446,118 510,158 574,102 638,126 702,92 760,116 760,268 0,268"
+                        />
+                        <polyline
+                          fill="none"
+                          stroke="var(--accent-green)"
+                          stroke-width="4"
+                          points="0,210 62,204 126,184 190,172 254,188 318,130 382,144 446,118 510,158 574,102 638,126 702,92 760,116"
+                        />
+                        <circle class="chart-point-dot" cx="318" cy="130" r="5" fill="var(--accent-green)" />
+                        <text class="chart-point-label" x="318" y="116" text-anchor="middle" fill="var(--accent-green)">22</text>
+                        <circle class="chart-point-dot" cx="574" cy="102" r="5" fill="var(--accent-green)" />
+                        <text class="chart-point-label" x="574" y="88" text-anchor="middle" fill="var(--accent-green)">29</text>
+                        <circle class="chart-point-dot" cx="702" cy="92" r="5" fill="var(--accent-green)" />
+                        <text class="chart-point-label" x="702" y="78" text-anchor="middle" fill="var(--accent-green)">31</text>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="table-shell">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>时间</th>
+                          <th>当前来源</th>
+                          <th>Provider</th>
+                          <th>指标</th>
+                          <th>数值</th>
+                          <th>备注</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>14:20</td>
+                          <td>真实请求量</td>
+                          <td>Codex</td>
+                          <td>请求成功</td>
+                          <td>1</td>
+                          <td>relay 链路正常</td>
+                        </tr>
+                        <tr>
+                          <td>14:18</td>
+                          <td>真实请求量</td>
+                          <td>Gemini</td>
+                          <td>请求失败 429</td>
+                          <td>1</td>
+                          <td>检测到突增</td>
+                        </tr>
+                        <tr>
+                          <td>13:52</td>
+                          <td>本地投影用量</td>
+                          <td>Codex</td>
+                          <td>Token 增量</td>
+                          <td>366</td>
+                          <td>切换来源后替换口径</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div class="mini-stack">
+                    <div class="mini-panel">
+                      <h3>切换逻辑</h3>
+                      <p>先在同一模块里切 `真实请求量 / 本地投影用量`，时间范围只在图表区内部切换；Provider 不单独切，跟随账号池子选项归属。</p>
+                    </div>
+                    <div class="mini-panel">
+                      <h3>真实请求量边界</h3>
+                      <strong>请求健康度</strong>
+                      <p>适合看成功率、失败率、延迟与链路可用性，不代表 provider 全量 token 消耗。</p>
+                    </div>
+                    <div class="mini-panel">
+                      <h3>本地投影边界</h3>
+                      <strong>Provider 级投影</strong>
+                      <p>服务于本地 usage analysis，首版只做 provider/global，不做 auth-file 精确归因。</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </section>
-
-            <div class="section-title">
-              <strong>Provider 拆解</strong>
-              <span class="note">本地 usage 先做 provider 级分桶，再决定是否支持 provider 内部更细钻取。</span>
             </div>
-            <section class="main-grid">
-              <div class="panel">
-                <div class="panel-header">
-                  <strong>本地用量 Provider 列表</strong>
-                  <span class="note">当前示意：`Codex` 已启用，其他 provider 占位但保留结构。</span>
-                </div>
-                <div class="list">
-                  <div class="list-row">
-                    <div>
-                      <strong>Codex</strong>
-                      <span>来源：本地用量投影 / 仅支持 provider 总览</span>
-                    </div>
-                    <div class="bar"><div style="width: 84%;"></div></div>
-                    <strong>84%</strong>
-                  </div>
-                  <div class="list-row">
-                    <div>
-                      <strong>Claude</strong>
-                      <span>预留 provider 槽位 / 暂无解析器</span>
-                    </div>
-                    <div class="bar"><div style="width: 0%; background: none;"></div></div>
-                    <strong>—</strong>
-                  </div>
-                  <div class="list-row">
-                    <div>
-                      <strong>Gemini</strong>
-                      <span>预留 provider 槽位 / 暂无解析器</span>
-                    </div>
-                    <div class="bar"><div style="width: 0%; background: none;"></div></div>
-                    <strong>—</strong>
-                  </div>
-                </div>
-              </div>
-
-              <div class="panel">
-                <div class="panel-header">
-                  <strong>真实请求健康度</strong>
-                  <span class="note">真实请求观测侧可以给 provider 过滤，但不需要伪装成 provider 全量消耗。</span>
-                </div>
-                <div class="list">
-                  <div class="list-row">
-                    <div>
-                      <strong>Codex / Auth Files</strong>
-                      <span>最近成功 912 / 失败 19 / 平均 768ms</span>
-                    </div>
-                    <div class="bar"><div style="width: 92%;"></div></div>
-                    <strong>稳定</strong>
-                  </div>
-                  <div class="list-row">
-                    <div>
-                      <strong>兼容 OpenAI</strong>
-                      <span>最近成功 372 / 失败 14 / 平均 1028ms</span>
-                    </div>
-                    <div class="bar"><div style="width: 78%;"></div></div>
-                    <strong>关注</strong>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="drawer">
-              <div class="section-title">
-                <strong>下钻抽屉</strong>
-                <span class="note">详情抽屉属于 usage workspace，不再复用账号详情模态。</span>
-              </div>
-              <div class="drawer-grid">
-                <div class="callout">
-                  <div class="label">当数据来源 = 本地用量投影</div>
-                  <p>
-                    详情区展示：provider、time bucket、requestCount、input/output/cache tokens、session count、refresh state。
-                    不展示账号名，不暗示能够关联到 `auth-file`。
-                  </p>
-                </div>
-                <div class="callout">
-                  <div class="label">当数据来源 = 真实请求观测</div>
-                  <p>
-                    详情区展示：provider filter 下的请求细分、失败趋势、可选账号近似归因。
-                    账号卡片本身只保留轻量稳定性信号。
-                  </p>
-                </div>
-              </div>
-            </section>
-          </main>
-
-          <aside class="annotation">
-            <div>
-              <div class="eyebrow">设计备注</div>
-              <h3 style="margin: 8px 0 0; font-size: 24px; text-transform: uppercase; letter-spacing: -0.04em;">
-                前端规划规则
-              </h3>
+          </section>
             </div>
+          </div>
 
-            <ol class="rule-list">
-              <li>v1 入口仍在 `Accounts`，但新增独立的 `Usage Desk` 子工作区，而不是继续扩张卡片和模态。</li>
-              <li>页首只有三组控制：`source kind`、`provider`、`time range`。避免再叠一套账号过滤器把语义混掉。</li>
-              <li>`provider` 必须是持久状态，不是临时 UI 装饰；即使 v1 只有 `Codex`，结构也不能写死。</li>
-              <li>`ObservedRequestUsage` 与 `LocalProjectedUsage` 共用页面骨架，但不能共用文案语义和摘要口径。</li>
-              <li>账号卡片继续展示 `quota + recent health`，但不展示本地 token、session 或 local requestCount。</li>
-              <li>详情钻取从“账号详情模态”中剥离出来，改为 usage workspace 自己的右侧详情区或底部抽屉。</li>
-            </ol>
-
-            <div class="callout">
-              <div class="label">明确非目标</div>
-              <p>
-                v1 不做本地 usage 到 `auth-file` 的归因，不做 local usage 写回账号卡片，不做跨 provider 本地 usage 总计。
-              </p>
-            </div>
-
-            <div class="footer-note">
-              <div class="label">建议路由</div>
-              <span>`/accounts` 保持一级入口，并新增 `usage desk` 子工作区；`/status` 继续是 relay/service 入口。</span>
-            </div>
-          </aside>
         </div>
       </div>
     </div>
