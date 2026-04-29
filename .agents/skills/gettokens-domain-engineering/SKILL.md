@@ -103,6 +103,8 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Tools**: Use `@linhey/react-debug-inspector` in `main.tsx` (dev-only).
 - **Config**: Use `createViteDebugInspectorPlugin()` in `vite.config.js` for stable JSX metadata.
 - **Workflow**: Prove handler -> bridge call -> backend response. Use `data-collaboration-id` for markers.
+- **Chart Layering Rule**: For charts that mix `svg` paths/areas with HTML point labels or hit targets, all layers must share the same width coordinate system. Do not let `svg` scale to container width while HTML points still use the original logical width.
+- **Chart Verification Rule**: For visual fixes in `UsageDesk` or similar chart-heavy surfaces, static code reasoning is not sufficient. Re-open the real page, switch the relevant time ranges, and keep traceable screenshots under the owning `space/screenshots/` directory before claiming the fix is live.
 
 ## 8. CLIProxyAPI Fork Maintenance
 - **Remotes**: `origin` (AxApp), `linhay` (legacy fork backup), `upstream` (router-for-me).

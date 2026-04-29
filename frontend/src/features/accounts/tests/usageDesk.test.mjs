@@ -9,11 +9,9 @@ import {
   collectUsageDeskProjectedDetails,
   formatUsageDeskChartValue,
   readUsageDeskProjectedStats,
-  resolveUsageDeskChartRenderWidth,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
   resolveUsageDeskRangeDrilldownDayKey,
-  shouldUseStraightUsageDeskChartSegments,
 } from '../model/usageDesk.ts';
 
 test('buildUsageDeskChartPointStyle keeps hit area centered on the plotted coordinate', () => {
@@ -22,17 +20,6 @@ test('buildUsageDeskChartPointStyle keeps hit area centered on the plotted coord
     top: '96px',
     transform: 'translate(-50%, -50%)',
   });
-});
-
-test('shouldUseStraightUsageDeskChartSegments uses straight segments for short daily ranges', () => {
-  assert.equal(shouldUseStraightUsageDeskChartSegments(7), true);
-  assert.equal(shouldUseStraightUsageDeskChartSegments(14), true);
-  assert.equal(shouldUseStraightUsageDeskChartSegments(30), false);
-});
-
-test('resolveUsageDeskChartRenderWidth keeps chart coordinates in the same width space as the rendered surface', () => {
-  assert.equal(resolveUsageDeskChartRenderWidth(1014, 1968), 1968);
-  assert.equal(resolveUsageDeskChartRenderWidth(2340, 1968), 2340);
 });
 
 test('collectUsageDeskObservedDetails keeps provider and model from nested usage payload', () => {

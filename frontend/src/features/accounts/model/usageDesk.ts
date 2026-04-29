@@ -211,16 +211,6 @@ export function buildUsageDeskChartPointStyle(x: number, y: number) {
   };
 }
 
-export function shouldUseStraightUsageDeskChartSegments(pointCount: number) {
-  return pointCount > 0 && pointCount <= 14;
-}
-
-export function resolveUsageDeskChartRenderWidth(chartWidth: number, containerWidth: number) {
-  const safeChartWidth = Number.isFinite(chartWidth) ? chartWidth : 0;
-  const safeContainerWidth = Number.isFinite(containerWidth) ? containerWidth : 0;
-  return Math.max(safeChartWidth, safeContainerWidth, 0);
-}
-
 function formatUsageDeskCompactNumber(value: number): string {
   const normalized = Math.round(value * 10) / 10;
   if (Number.isInteger(normalized)) {
