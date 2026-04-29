@@ -325,7 +325,14 @@
     "update_applied": "更新已写入，程序即将退出。",
     "update_redirected": "已打开发布页，请下载并安装新版本。",
     "native_update_invoked": "已交由 macOS 原生更新流程处理。",
-    "update_error": "更新失败"
+    "update_error": "更新失败",
+    "local_usage_refresh": "本地投影刷新",
+    "local_usage_refresh_interval": "后台增量刷新间隔",
+    "local_usage_refresh_hint": "APP 层会按这个间隔做分钟级增量刷新；H5 默认直接读取 APP 内存快照。",
+    "local_usage_refresh_loading": "正在读取当前刷新策略…",
+    "local_usage_refresh_saving": "正在保存刷新策略…",
+    "local_usage_refresh_saved": "后台刷新间隔已更新",
+    "local_usage_refresh_failed": "后台刷新间隔保存失败"
   },
   "debug": {
     "title": "调试面板",

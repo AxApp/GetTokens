@@ -4,10 +4,12 @@ import (
 	"context"
 	"io"
 	"net/url"
+	"sync"
+	"time"
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
-	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/sidecar"
+	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/updater"
 )
 
@@ -19,6 +21,15 @@ type App struct {
 	releaseLabel   string
 	sidecarRequest sidecarRequestFunc
 	managementAPI  func() *cliproxyapi.Client
+	localUsageMu   sync.RWMutex
+	localUsage     localUsageRuntimeState
+}
+
+type localUsageRuntimeState struct {
+	cachedResponse *LocalProjectedUsageResponse
+	cachedAt       time.Time
+	lastRefreshAt  time.Time
+	refreshRunning bool
 }
 
 type sidecarRequestFunc func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error)

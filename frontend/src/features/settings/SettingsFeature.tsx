@@ -1,11 +1,22 @@
-import { useState } from 'react';
-import { ApplyUpdate, CheckUpdate } from '../../../wailsjs/go/main/App';
+import { useEffect, useState } from 'react';
+import {
+  ApplyUpdate,
+  CheckUpdate,
+  GetLocalProjectedUsageSettings,
+  UpdateLocalProjectedUsageSettings,
+} from '../../../wailsjs/go/main/App';
 import { BrowserOpenURL, Quit } from '../../../wailsjs/runtime/runtime';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import { useTheme } from '../../context/ThemeContext';
 import { mapCheckedRelease } from './settingsRelease';
+import {
+  localProjectedUsageRefreshIntervalOptions,
+  parseLocalProjectedUsageRefreshIntervalMinutes,
+  resolveLocalProjectedUsageRefreshIntervalID,
+  type LocalProjectedUsageRefreshIntervalID,
+} from './settingsLocalUsage';
 import { toErrorMessage } from '../../utils/error';
 import { formatAppVersion } from '../../utils/version';
 import type { LocaleCode, ReleaseInfo, SegmentedOption, ThemeMode } from '../../types';
@@ -45,8 +56,43 @@ export default function SettingsFeature({
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false);
   const [isOpeningRelease, setIsOpeningRelease] = useState(false);
+  const [localUsageInterval, setLocalUsageInterval] = useState<LocalProjectedUsageRefreshIntervalID>('15');
+  const [localUsageMessage, setLocalUsageMessage] = useState('');
+  const [isLoadingLocalUsageSettings, setIsLoadingLocalUsageSettings] = useState(true);
+  const [isSavingLocalUsageSettings, setIsSavingLocalUsageSettings] = useState(false);
   const currentVersionLabel = formatAppVersion(version);
   const latestReleaseLabel = availableRelease ? formatAppVersion(availableRelease.version) : '—';
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadLocalUsageSettings() {
+      setIsLoadingLocalUsageSettings(true);
+      setLocalUsageMessage('');
+      try {
+        const settings = await trackRequest<any>(
+          'GetLocalProjectedUsageSettings',
+          { args: [] },
+          () => GetLocalProjectedUsageSettings(),
+        );
+        if (!mounted) return;
+        setLocalUsageInterval(resolveLocalProjectedUsageRefreshIntervalID(settings?.refreshIntervalMinutes ?? 15));
+      } catch (error) {
+        if (!mounted) return;
+        setLocalUsageMessage(`${t('settings.local_usage_refresh_failed')}: ${toErrorMessage(error)}`);
+      } finally {
+        if (mounted) {
+          setIsLoadingLocalUsageSettings(false);
+        }
+      }
+    }
+
+    void loadLocalUsageSettings();
+
+    return () => {
+      mounted = false;
+    };
+  }, [t, trackRequest]);
 
   async function handleCheckUpdate() {
     setIsCheckingUpdate(true);
@@ -107,6 +153,28 @@ export default function SettingsFeature({
       return;
     }
     setIsOpeningRelease(false);
+  }
+
+  async function handleLocalUsageIntervalChange(value: LocalProjectedUsageRefreshIntervalID) {
+    setLocalUsageInterval(value);
+    setIsSavingLocalUsageSettings(true);
+    setLocalUsageMessage('');
+    try {
+      const settings = await trackRequest<any>(
+        'UpdateLocalProjectedUsageSettings',
+        { refreshIntervalMinutes: parseLocalProjectedUsageRefreshIntervalMinutes(value) },
+        () =>
+          UpdateLocalProjectedUsageSettings({
+            refreshIntervalMinutes: parseLocalProjectedUsageRefreshIntervalMinutes(value),
+          }),
+      );
+      setLocalUsageInterval(resolveLocalProjectedUsageRefreshIntervalID(settings?.refreshIntervalMinutes ?? 15));
+      setLocalUsageMessage(t('settings.local_usage_refresh_saved'));
+    } catch (error) {
+      setLocalUsageMessage(`${t('settings.local_usage_refresh_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setIsSavingLocalUsageSettings(false);
+    }
   }
 
   return (
@@ -260,6 +328,47 @@ export default function SettingsFeature({
                     )}
                   </div>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono text-[8px] font-black uppercase text-[var(--bg-main)]">
+                03
+              </span>
+              <h3 className="text-xs font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+                {t('settings.local_usage_refresh')}
+              </h3>
+            </div>
+
+            <div className="card-swiss !p-0 divide-y-2 divide-[var(--border-color)]">
+              <div className="space-y-3 p-5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[9px] font-black uppercase italic tracking-widest text-[var(--text-muted)]">
+                    {t('settings.local_usage_refresh_interval')}
+                  </label>
+                  <span className="font-mono text-[8px] font-bold italic opacity-30 text-[var(--text-muted)]">
+                    LOCAL_PROJECTED_USAGE
+                  </span>
+                </div>
+                <SegmentedControl
+                  options={localProjectedUsageRefreshIntervalOptions}
+                  value={localUsageInterval}
+                  onChange={(value) => void handleLocalUsageIntervalChange(value)}
+                />
+                <div className="text-[9px] font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]">
+                  {isLoadingLocalUsageSettings
+                    ? t('settings.local_usage_refresh_loading')
+                    : isSavingLocalUsageSettings
+                      ? t('settings.local_usage_refresh_saving')
+                      : t('settings.local_usage_refresh_hint')}
+                </div>
+                {localUsageMessage ? (
+                  <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[9px] font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]">
+                    {localUsageMessage}
+                  </div>
+                ) : null}
               </div>
             </div>
           </section>

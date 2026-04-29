@@ -123,7 +123,7 @@ func TestGetCodexLocalUsageIncludesArchivedSessions(t *testing.T) {
 	}
 }
 
-func TestGetCodexLocalUsageUsesCacheHitAndDeltaAppend(t *testing.T) {
+func TestGetCodexLocalUsageUsesAppMemoryCacheUntilExplicitRefresh(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	codexHome := filepath.Join(home, ".codex")
@@ -155,8 +155,8 @@ func TestGetCodexLocalUsageUsesCacheHitAndDeltaAppend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("second GetCodexLocalUsage returned error: %v", err)
 	}
-	if second.CacheHitFiles != 1 {
-		t.Fatalf("second cache hit files = %d, want 1", second.CacheHitFiles)
+	if second.FullRebuildFiles != 1 {
+		t.Fatalf("second full rebuild files = %d, want cached response to keep initial stats", second.FullRebuildFiles)
 	}
 	if len(second.Details) != 1 {
 		t.Fatalf("second details len = %d, want 1", len(second.Details))
@@ -180,13 +180,24 @@ func TestGetCodexLocalUsageUsesCacheHitAndDeltaAppend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("third GetCodexLocalUsage returned error: %v", err)
 	}
-	if third.DeltaAppendFiles != 1 {
-		t.Fatalf("third delta append files = %d, want 1", third.DeltaAppendFiles)
+	if third.DeltaAppendFiles != 0 {
+		t.Fatalf("third delta append files = %d, want cached response before explicit refresh", third.DeltaAppendFiles)
 	}
-	if len(third.Details) != 2 {
-		t.Fatalf("third details len = %d, want 2", len(third.Details))
+	if len(third.Details) != 1 {
+		t.Fatalf("third details len = %d, want 1 before explicit refresh", len(third.Details))
 	}
-	last := third.Details[1]
+
+	fourth, err := app.RefreshCodexLocalUsage()
+	if err != nil {
+		t.Fatalf("RefreshCodexLocalUsage returned error: %v", err)
+	}
+	if fourth.DeltaAppendFiles != 1 {
+		t.Fatalf("fourth delta append files = %d, want 1", fourth.DeltaAppendFiles)
+	}
+	if len(fourth.Details) != 2 {
+		t.Fatalf("fourth details len = %d, want 2", len(fourth.Details))
+	}
+	last := fourth.Details[1]
 	if last.InputTokens != 80 || last.CachedInputTokens != 20 || last.OutputTokens != 15 {
 		t.Fatalf("unexpected appended detail: %#v", last)
 	}

@@ -62,6 +62,10 @@ export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
 }
 
+export function GetLocalProjectedUsageSettings() {
+  return window['go']['main']['App']['GetLocalProjectedUsageSettings']();
+}
+
 export function GetOAuthStatus(arg1) {
   return window['go']['main']['App']['GetOAuthStatus'](arg1);
 }
@@ -110,6 +114,10 @@ export function RebuildCodexLocalUsage() {
   return window['go']['main']['App']['RebuildCodexLocalUsage']();
 }
 
+export function RefreshCodexLocalUsage() {
+  return window['go']['main']['App']['RefreshCodexLocalUsage']();
+}
+
 export function SetAccountDisabled(arg1, arg2) {
   return window['go']['main']['App']['SetAccountDisabled'](arg1, arg2);
 }
@@ -136,6 +144,10 @@ export function UpdateCodexAPIKeyLabel(arg1) {
 
 export function UpdateCodexAPIKeyPriority(arg1) {
   return window['go']['main']['App']['UpdateCodexAPIKeyPriority'](arg1);
+}
+
+export function UpdateLocalProjectedUsageSettings(arg1) {
+  return window['go']['main']['App']['UpdateLocalProjectedUsageSettings'](arg1);
 }
 
 export function UpdateOpenAICompatibleProvider(arg1) {

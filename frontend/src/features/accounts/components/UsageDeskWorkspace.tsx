@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { GetCodexLocalUsage, GetUsageStatistics, RebuildCodexLocalUsage } from '../../../../wailsjs/go/main/App';
+import {
+  GetCodexLocalUsage,
+  GetUsageStatistics,
+  RebuildCodexLocalUsage,
+  RefreshCodexLocalUsage,
+} from '../../../../wailsjs/go/main/App';
 import { EventsOn } from '../../../../wailsjs/runtime/runtime';
 import { useDebug } from '../../../context/DebugContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../../types';
@@ -24,7 +29,9 @@ import {
   resolveUsageDeskRangeDrilldownDayKey,
 } from '../model/usageDesk';
 
-const rangeOptions: UsageDeskRangeOption[] = ['TODAY', '7D', '14D', '30D', '全部'];
+const rangeOptions: UsageDeskRangeOption[] = ['7D', '14D', '30D', '全部'];
+const resolutionOptions = ['1M', '5M', '15M', '30M', '60M'] as const;
+type UsageDeskResolution = (typeof resolutionOptions)[number];
 
 type UsageDetailTableRow = UsageDeskMinuteRow & {
   drilldownDayKey?: string;
@@ -53,9 +60,12 @@ export default function UsageDeskWorkspace({
   const [source, setSource] = useState<UsageDeskSource>(() =>
     readStoredUsageDeskSource(typeof window === 'undefined' ? null : window.localStorage),
   );
-  const [range, setRange] = useState<UsageDeskRangeOption>(() =>
-    readStoredUsageDeskRange(typeof window === 'undefined' ? null : window.localStorage),
-  );
+  const [range, setRange] = useState<UsageDeskRangeOption>(() => {
+    const stored = readStoredUsageDeskRange(typeof window === 'undefined' ? null : window.localStorage);
+    return (stored as any) === 'TODAY' ? '7D' : stored;
+  });
+  const [viewScale, setViewScale] = useState<'daily' | 'minute'>('daily');
+  const [resolution, setResolution] = useState<UsageDeskResolution>('5M');
   const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
   const [observedUsageData, setObservedUsageData] = useState<unknown>(null);
   const [projectedUsageData, setProjectedUsageData] = useState<unknown>(null);
@@ -84,9 +94,16 @@ export default function UsageDeskWorkspace({
     const offProgress = EventsOn('usage-local:progress', (payload: LocalUsageProgressEvent) => {
       setProjectedProgress(payload ?? null);
     });
+    const offUpdated = EventsOn('usage-local:updated', (payload: unknown) => {
+      setProjectedUsageData(payload ?? null);
+      setProjectedProgress(null);
+      setProjectedActionMessage('');
+      setProjectedLoading(false);
+    });
 
     return () => {
       offProgress?.();
+      offUpdated?.();
     };
   }, []);
 
@@ -174,7 +191,7 @@ export default function UsageDeskWorkspace({
     setProjectedProgress(null);
     setProjectedActionMessage('正在刷新索引…');
     try {
-      const response = await trackRequest<any>('GetCodexLocalUsage', { args: [] }, () => GetCodexLocalUsage());
+      const response = await trackRequest<any>('RefreshCodexLocalUsage', { args: [] }, () => RefreshCodexLocalUsage());
       setProjectedUsageData(response ?? null);
       setProjectedProgress(null);
       setProjectedActionMessage('索引已刷新');
@@ -209,12 +226,12 @@ export default function UsageDeskWorkspace({
   }
 
   const observedSnapshot = useMemo(
-    () => buildUsageDeskObservedSnapshot(observedUsageData, selectedDayKey),
-    [observedUsageData, selectedDayKey],
+    () => buildUsageDeskObservedSnapshot(observedUsageData, selectedDayKey, resolution),
+    [observedUsageData, selectedDayKey, resolution],
   );
   const projectedSnapshot = useMemo(
-    () => buildUsageDeskProjectedSnapshot(projectedUsageData, selectedDayKey),
-    [projectedUsageData, selectedDayKey],
+    () => buildUsageDeskProjectedSnapshot(projectedUsageData, selectedDayKey, resolution),
+    [projectedUsageData, selectedDayKey, resolution],
   );
   const visibleDailyPoints = useMemo(
     () => applyRange(observedSnapshot.dailyPoints, range),
@@ -226,11 +243,9 @@ export default function UsageDeskWorkspace({
   );
 
   const activeObservedDayKey = visibleDailyPoints[visibleDailyPoints.length - 1]?.dayKey ?? observedSnapshot.selectedDayKey;
-  const observedDrilldownDayKey =
-    selectedDayKey && visibleDailyPoints.some((point) => point.dayKey === selectedDayKey) ? selectedDayKey : null;
+  const observedDrilldownDayKey = viewScale === 'minute' ? (selectedDayKey ?? observedSnapshot.selectedDayKey) : null;
   const activeProjectedDayKey = visibleProjectedDailyPoints[visibleProjectedDailyPoints.length - 1]?.dayKey ?? projectedSnapshot.selectedDayKey;
-  const projectedDrilldownDayKey =
-    selectedDayKey && visibleProjectedDailyPoints.some((point) => point.dayKey === selectedDayKey) ? selectedDayKey : null;
+  const projectedDrilldownDayKey = viewScale === 'minute' ? (selectedDayKey ?? projectedSnapshot.selectedDayKey) : null;
   const observedSummaryItems = useMemo(() => {
     if (observedDrilldownDayKey) {
       const dayPoint = observedSnapshot.dailyPoints.find((point) => point.dayKey === observedDrilldownDayKey);
@@ -426,24 +441,16 @@ export default function UsageDeskWorkspace({
     setSelectedDayKey((current) => (current === nextDayKey ? current : nextDayKey));
   }, [activeObservedDayKey, activeProjectedDayKey, range, source]);
 
-  function handleDetailRowSelect(rowKey: string, chartPointKey: string, drilldownDayKey?: string) {
+  function handleDetailRowSelect(rowKey: string, chartPointKey: string) {
     setSelectedDetailRowKey(rowKey);
     setSelectedChartPointKey(chartPointKey);
-    if (drilldownDayKey) {
-      setDetailTransitionActive(true);
-      setSelectedDayKey(drilldownDayKey);
-    }
   }
 
-  function handleChartPointSelect(chartSelectionKey: string, drilldownDayKey?: string) {
+  function handleChartPointSelect(chartSelectionKey: string) {
     setSelectedChartPointKey(chartSelectionKey);
     const nextRowKey = resolveUsageDeskLinkedRowKey(activeDetailRows, chartSelectionKey);
     if (nextRowKey) {
       setSelectedDetailRowKey(nextRowKey);
-    }
-    if (drilldownDayKey) {
-      setDetailTransitionActive(true);
-      setSelectedDayKey(drilldownDayKey);
     }
   }
 
@@ -527,31 +534,11 @@ export default function UsageDeskWorkspace({
               {source === 'observed' ? (
                 <section className="space-y-5">
                     <div className="space-y-5">
-                      <div className="sticky top-0 z-20 -mx-12 space-y-3 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
-                      <div data-usage-sticky-controls className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="flex flex-wrap gap-2">
-                          {rangeOptions.map((option) => (
-                            <button
-                              key={option}
-                              onClick={() => handleRangeSelect(option)}
-                              className={`btn-swiss ${shouldHighlightRangeSelection && range === option ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-                            >
-                              {option === 'TODAY' ? '今日' : option === '7D' ? '7天' : option === '14D' ? '14天' : option === '30D' ? '30天' : option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
+                      <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
                       {loading ? (
                         <StatePanel title="加载中" body="正在拉取 sidecar /usage 真实请求样本。" />
                       ) : loadError ? (
                         <StatePanel title="加载失败" body={loadError} tone="error" />
-                      ) : !observedSnapshot.hasData ? (
-                        <EmptyChartPlaceholder
-                          compactProgress={stickyProgress}
-                          title="暂无真实请求量"
-                          body="当前 sidecar /usage 还没有可用于图表的真实请求明细。"
-                        />
                       ) : (
                         <div className={`transition-all duration-300 ease-out ${detailTransitionActive ? 'scale-[0.995] opacity-85' : 'scale-100 opacity-100'}`}>
                           <UsageChartCard
@@ -560,24 +547,97 @@ export default function UsageDeskWorkspace({
                             summaryItems={observedSummaryItems}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
+                            status={
+                              <>
+                                <div className="flex items-center gap-2.5">
+                                  <div className="border border-[var(--border-color)] px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                    数据源: Sidecar Usage {observedDrilldownDayKey ? `(${observedDrilldownDayKey})` : ''}
+                                  </div>
+                                </div>
+                                <div className="text-[10px] font-black text-[var(--text-primary)] uppercase italic opacity-60">
+                                  {observedDrilldownDayKey ? 'Detailed View' : 'Overview View'}
+                                </div>
+                              </>
+                            }
+                            controls={
+                              <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 border-b border-[var(--shadow-color)] px-6 py-4 w-full bg-[var(--bg-main)]">
+                                {/* 左翼：时间维度 (根据维度互斥显示) */}
+                                <div className="flex items-center gap-8">
+                                  {viewScale === 'daily' ? (
+                                    /* 1. 时间范围 */
+                                    <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
+                                      {rangeOptions.map((option) => (
+                                        <button
+                                          key={option}
+                                          onClick={() => handleRangeSelect(option)}
+                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                            range === option ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                          }`}
+                                        >
+                                          {option === 'TODAY' ? '今日' : option === '7D' ? '7天' : option === '14D' ? '14天' : option === '30D' ? '30天' : option}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    /* 2. 采样精度 */
+                                    <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
+                                      {resolutionOptions.map((opt) => (
+                                        <button
+                                          key={opt}
+                                          onClick={() => setResolution(opt)}
+                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                            resolution === opt ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                          }`}
+                                        >
+                                          {opt === '1M' ? '1m' : opt === '5M' ? '5m' : opt === '15M' ? '15m' : opt === '30M' ? '30m' : '60m'}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* 右翼：查看选项 */}
+                                <div className="flex items-center gap-8">
+                                  {/* 3. 查看维度开关 */}
+                                  <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
+                                    <button
+                                      onClick={() => setViewScale('daily')}
+                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                        viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                      }`}
+                                    >
+                                      天级趋势
+                                    </button>
+                                    <button
+                                      onClick={() => setViewScale('minute')}
+                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                        viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                      }`}
+                                    >
+                                      分钟明细
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            }
                             primary={
                               observedDrilldownDayKey
                                 ? observedSnapshot.minutePoints.map((point) => ({
                                     label: point.label,
                                     value: point.success + point.failure,
-                                    color: '#0d9f4f',
+                                    color: '#111111',
                                   }))
                                 : visibleDailyPoints.map((point) => ({
                                     label: point.label,
                                     value: point.success,
-                                    color: '#0d9f4f',
+                                    color: '#111111',
                                     drilldownDayKey: point.dayKey,
                                   }))
                             }
                             secondary={
                               observedDrilldownDayKey
                                 ? undefined
-                                : visibleDailyPoints.map((point) => ({ label: point.label, value: point.failure, color: '#ff0000' }))
+                                : visibleDailyPoints.map((point) => ({ label: point.label, value: point.failure, color: '#7a7a7a' }))
                             }
                           />
                         </div>
@@ -598,66 +658,122 @@ export default function UsageDeskWorkspace({
               ) : (
                 <section className="space-y-5">
                     <div className="space-y-5">
-                      {projectedActionMessage ? <StatePanel title="索引动作" body={projectedActionMessage} /> : null}
-                      <div className="sticky top-0 z-20 -mx-12 space-y-3 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
-                      <div data-usage-sticky-controls className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                          <div className="flex flex-wrap items-start gap-3">
-                          <div className="flex flex-wrap gap-2">
-                            {rangeOptions.map((option) => (
-                              <button
-                                key={option}
-                                onClick={() => handleRangeSelect(option)}
-                                className={`btn-swiss ${shouldHighlightRangeSelection && range === option ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-                              >
-                                {option === 'TODAY' ? '今日' : option === '7D' ? '7天' : option === '14D' ? '14天' : option === '30D' ? '30天' : option}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="flex flex-wrap gap-2 lg:justify-end">
-                          <button onClick={() => void refreshProjectedUsage()} className="btn-swiss" disabled={projectedLoading}>
-                            刷新索引
-                          </button>
-                          <button onClick={() => void rebuildProjectedUsage()} className="btn-swiss" disabled={projectedLoading}>
-                            重建索引
-                          </button>
-                        </div>
-                      </div>
-
+                      <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
                       {projectedLoading ? (
                         <StatePanel title="加载中" body={projectedLoadingBody} />
                       ) : projectedLoadError ? (
                         <StatePanel title="加载失败" body={projectedLoadError} tone="error" />
-                      ) : !projectedSnapshot.hasData ? (
-                        <EmptyChartPlaceholder
-                          compactProgress={stickyProgress}
-                          title="暂无本地投影用量"
-                          body="当前本机还没有可用于图表的 Codex 本地投影样本。"
-                        />
                       ) : (
                         <div className={`transition-all duration-300 ease-out ${detailTransitionActive ? 'scale-[0.995] opacity-85' : 'scale-100 opacity-100'}`}>
                           <UsageChartCard
                             compactProgress={stickyProgress}
                             unit={projectedChartUnit}
                             summaryItems={projectedSummaryItems}
-                            controls={
-                              <>
-                                <button
-                                  onClick={() => setProjectedChartMetric('tokens')}
-                                  className={`btn-swiss h-full ${projectedChartMetric === 'tokens' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-                                >
-                                  Tokens
-                                </button>
-                                <button
-                                  onClick={() => setProjectedChartMetric('requests')}
-                                  className={`btn-swiss h-full ${projectedChartMetric === 'requests' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-                                >
-                                  请求数
-                                </button>
-                              </>
-                            }
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
+                            status={
+                              <>
+                                <div className="flex items-center gap-6">
+                                  <div className="border border-[var(--border-color)] px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                    本地投影索引 {projectedDrilldownDayKey ? `(${projectedDrilldownDayKey})` : ''}
+                                  </div>
+                                  {projectedActionMessage && (
+                                    <div className="text-[11px] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
+                                      {projectedActionMessage}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[11px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                    刷新索引
+                                  </button>
+                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[11px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                    重建索引
+                                  </button>
+                                </div>
+                              </>
+                            }
+                            controls={
+                              <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 border-b border-[var(--shadow-color)] px-6 py-4 w-full bg-[var(--bg-main)]">
+                                {/* 左翼：时间维度 (根据维度互斥显示) */}
+                                <div className="flex items-center gap-8">
+                                  {viewScale === 'daily' ? (
+                                    /* 1. 时间范围 */
+                                    <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
+                                      {rangeOptions.map((option) => (
+                                        <button
+                                          key={option}
+                                          onClick={() => handleRangeSelect(option)}
+                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                            range === option ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                          }`}
+                                        >
+                                          {option === 'TODAY' ? '今日' : option === '7D' ? '7天' : option === '14D' ? '14天' : option === '30D' ? '30天' : option}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    /* 2. 采样精度 */
+                                    <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
+                                      {resolutionOptions.map((opt) => (
+                                        <button
+                                          key={opt}
+                                          onClick={() => setResolution(opt)}
+                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                            resolution === opt ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                          }`}
+                                        >
+                                          {opt === '1M' ? '1m' : opt === '5M' ? '5m' : opt === '15M' ? '15m' : opt === '30M' ? '30m' : '60m'}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* 右翼：查看选项 */}
+                                <div className="flex items-center gap-8">
+                                  {/* 3. 查看维度开关 */}
+                                  <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
+                                    <button
+                                      onClick={() => setViewScale('daily')}
+                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                        viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                      }`}
+                                    >
+                                      天级趋势
+                                    </button>
+                                    <button
+                                      onClick={() => setViewScale('minute')}
+                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                        viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                      }`}
+                                    >
+                                      分钟明细
+                                    </button>
+                                  </div>
+
+                                  {/* 4. 度量指标 */}
+                                  <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
+                                    <button
+                                      onClick={() => setProjectedChartMetric('tokens')}
+                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                        projectedChartMetric === 'tokens' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                      }`}
+                                    >
+                                      Tokens
+                                    </button>
+                                    <button
+                                      onClick={() => setProjectedChartMetric('requests')}
+                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                        projectedChartMetric === 'requests' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                      }`}
+                                    >
+                                      请求数
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            }
                             primary={projectedPrimaryChartPoints}
                           />
                         </div>
@@ -686,7 +802,7 @@ export default function UsageDeskWorkspace({
 
 function applyRange<T extends UsageDeskDailyPoint | UsageDeskProjectedDailyPoint>(points: T[], range: UsageDeskRangeOption) {
   if (range === '全部') return points;
-  const limit = range === 'TODAY' ? 1 : range === '7D' ? 7 : range === '14D' ? 14 : 30;
+  const limit = range === '7D' ? 7 : range === '14D' ? 14 : range === '30D' ? 30 : 7;
   return points.slice(-limit);
 }
 
@@ -714,6 +830,8 @@ function UsageChartCard({
   secondary,
   selectedPointKey,
   onSelectPoint,
+  status,
+  footerExtra,
 }: {
   compactProgress?: number;
   unit: UsageDeskChartUnit;
@@ -723,18 +841,51 @@ function UsageChartCard({
   secondary?: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
   selectedPointKey: string;
   onSelectPoint: (chartSelectionKey: string, drilldownDayKey?: string) => void;
+  status?: ReactNode;
+  footerExtra?: ReactNode;
 }) {
   return (
-    <ChartSurface
-      primary={primary}
-      secondary={secondary}
-      unit={unit}
-      summaryItems={summaryItems}
-      controls={controls}
-      compactProgress={compactProgress}
-      selectedPointKey={selectedPointKey}
-      onSelectPoint={onSelectPoint}
-    />
+    <div className="flex flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
+      {status || controls ? (
+        <div className="flex flex-col border-b-2 border-[var(--border-color)]">
+          {status && (
+            <div className="flex items-center justify-between bg-[var(--bg-surface)] px-4 py-2 border-b-2 border-[var(--border-color)]">
+               {status}
+            </div>
+          )}
+          {controls && (
+             <div className="flex w-full items-center bg-[var(--bg-main)]">
+                {controls}
+             </div>
+          )}
+        </div>
+      ) : null}
+
+      <div className="relative">
+        <ChartSurface
+          primary={primary}
+          secondary={secondary}
+          unit={unit}
+          summaryItems={[]} // 不再在 ChartSurface 内部渲染 summaryItems
+          compactProgress={compactProgress}
+          selectedPointKey={selectedPointKey}
+          onSelectPoint={onSelectPoint}
+        />
+        {/* 凹陷感内阴影叠加层 */}
+        <div className="pointer-events-none absolute inset-0 shadow-[inset_0_12px_16px_-8px_rgba(0,0,0,0.1),inset_0_-12px_16px_-8px_rgba(0,0,0,0.1)]" />
+      </div>
+
+      {(summaryItems.length > 0 || footerExtra) && (
+        <footer className="flex flex-wrap items-center gap-x-8 gap-y-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+          {summaryItems.map((item, idx) => (
+            <div key={idx} className="flex flex-col gap-1">
+               <span className="text-[11px] font-black uppercase tracking-tight text-[var(--text-primary)]">{item}</span>
+            </div>
+          ))}
+          {footerExtra && <div className="ml-auto">{footerExtra}</div>}
+        </footer>
+      )}
+    </div>
   );
 }
 
@@ -787,12 +938,12 @@ function ChartSurface({
   onSelectPoint: (chartSelectionKey: string, drilldownDayKey?: string) => void;
 }) {
   const progress = Math.max(0, Math.min(compactProgress, 1));
-  const chartHeight = 232;
-  const chartTopInset = 24;
-  const chartBottomInset = 34;
+  const chartHeight = 280;
+  const chartTopInset = 42;
+  const chartBottomInset = 48;
   const chartInnerHeight = chartHeight - chartTopInset - chartBottomInset;
   const chartBaseY = chartTopInset + chartInnerHeight;
-  const labelBaseY = chartHeight - 10;
+  const labelBaseY = chartHeight - 12;
   const pointCount = Math.max(primary.length, secondary?.length ?? 0, 1);
   const chartWidth = Math.max(760, pointCount * 78);
   const allValues = [...primary, ...(secondary ?? [])].map((point) => point.value);
@@ -875,122 +1026,98 @@ function ChartSurface({
   }, [selectedPrimaryX]);
 
   return (
-    <div ref={chartScrollRef} className="overflow-x-auto overflow-y-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        {summaryItems.length > 0 || controls ? (
-          <div className="sticky left-0 top-0 z-10 flex min-w-full items-stretch justify-between gap-4 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-            <div
-              className={`min-h-[64px] flex-1 text-[10px] font-black tracking-[0.08em] text-[var(--text-primary)] ${
-                tokenSummaryItems.length > 0 ? 'grid grid-rows-2' : 'flex items-center'
-              }`}
-            >
-              {tokenSummaryItems.length > 0 ? (
-                <>
-                  <div className="flex items-center gap-x-4 gap-y-1 border-b border-dashed border-[var(--border-color)]/60 pr-4">
-                    {requestSummaryItems.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-x-4 gap-y-1 pr-4">
-                    {tokenSummaryItems.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-x-4 gap-y-1 pr-4">
-                  {requestSummaryItems.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-            {controls ? <div className="flex shrink-0 items-stretch justify-end gap-2 self-stretch">{controls}</div> : null}
-          </div>
-        ) : null}
+    <div ref={chartScrollRef} className="overflow-x-auto overflow-y-hidden bg-[var(--bg-main)]">
         <div
           className="relative min-w-full transition-all duration-300 ease-out"
           style={{
             height: `${chartHeight}px`,
             width: `${chartWidth}px`,
             backgroundImage:
-              'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(0,0,0,0.2) calc(25% - 1px), rgba(0,0,0,0.2) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(0,0,0,0.2) calc(50% - 1px), rgba(0,0,0,0.2) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(0,0,0,0.2) calc(75% - 1px), rgba(0,0,0,0.2) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(0,0,0,0.12) 55px, rgba(0,0,0,0.12) 56px)',
+              'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(0,0,0,0.12) calc(25% - 1px), rgba(0,0,0,0.12) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(0,0,0,0.12) calc(50% - 1px), rgba(0,0,0,0.12) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(0,0,0,0.12) calc(75% - 1px), rgba(0,0,0,0.12) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(0,0,0,0.08) 55px, rgba(0,0,0,0.08) 56px)',
           }}
         >
-          <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
-        <defs>
-          <linearGradient id="usage-primary-area-live" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={primaryAreaTone} stopOpacity="0.24" />
-            <stop offset="100%" stopColor={primaryAreaTone} stopOpacity="0.03" />
-          </linearGradient>
-          {secondary?.length ? (
-            <linearGradient id="usage-secondary-area-live" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={secondaryAreaTone} stopOpacity="0.18" />
-              <stop offset="100%" stopColor={secondaryAreaTone} stopOpacity="0.02" />
-            </linearGradient>
-          ) : null}
-        </defs>
-        <path d={buildSmoothAreaPath(primaryCoords)} fill="url(#usage-primary-area-live)" />
-        {secondary?.length ? <path d={buildSmoothAreaPath(secondaryCoords)} fill="url(#usage-secondary-area-live)" /> : null}
-        {selectedPrimaryX !== null ? (
-          <line
-            x1={selectedPrimaryX}
-            y1={12}
-            x2={selectedPrimaryX}
-            y2={chartHeight - 8}
-            stroke="#111111"
-            strokeOpacity="0.35"
-            strokeWidth="1.5"
-            strokeDasharray="6 6"
-          />
-        ) : null}
-        <path d={buildSmoothLinePath(primaryCoords)} fill="none" stroke={primaryTone} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-        {secondary?.length ? (
-          <path
-            d={buildSmoothLinePath(secondaryCoords)}
-            fill="none"
-            stroke={secondaryTone}
-            strokeWidth="3"
-            strokeDasharray="10 8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ) : null}
-        {primary.map((point, index) => {
-          const x = primary.length <= 1 ? 0 : (index / (primary.length - 1)) * chartWidth;
-          const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
-          return (
-            <ChartPoint
-              key={`primary-${point.label}`}
-              x={x}
-              y={y}
-              label={formatUsageDeskChartValue(point.value, unit)}
-              color={primaryTone}
-              helper={point.label}
-              helperY={labelBaseY}
-              selected={selectedPointKey === point.label}
-              onSelect={() => onSelectPoint(point.label, point.drilldownDayKey)}
-            />
-          );
-        })}
-        {secondary?.map((point, index) => {
-          const x = secondary.length <= 1 ? 0 : (index / (secondary.length - 1)) * chartWidth;
-          const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
-          return (
-            <ChartPoint
-              key={`secondary-${point.label}`}
-              x={x}
-              y={y}
-              label={formatUsageDeskChartValue(point.value, unit)}
-              color={secondaryTone}
-              helper={point.label}
-              helperY={labelBaseY}
-              labelPosition="bottom"
-              small
-              selected={selectedPointKey === point.label}
-            />
-          );
-        })}
+          {/* 背景与曲线层 */}
+          <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
+            <defs>
+              <linearGradient id="usage-primary-area-live" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={primaryAreaTone} stopOpacity="0.24" />
+                <stop offset="100%" stopColor={primaryAreaTone} stopOpacity="0.03" />
+              </linearGradient>
+              {secondary?.length ? (
+                <linearGradient id="usage-secondary-area-live" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={secondaryAreaTone} stopOpacity="0.18" />
+                  <stop offset="100%" stopColor={secondaryAreaTone} stopOpacity="0.02" />
+                </linearGradient>
+              ) : null}
+            </defs>
+            <path d={buildSmoothAreaPath(primaryCoords)} fill="url(#usage-primary-area-live)" />
+            {secondary?.length ? <path d={buildSmoothAreaPath(secondaryCoords)} fill="url(#usage-secondary-area-live)" /> : null}
+            {selectedPrimaryX !== null ? (
+              <line
+                x1={selectedPrimaryX}
+                y1={12}
+                x2={selectedPrimaryX}
+                y2={chartHeight - 8}
+                stroke="#111111"
+                strokeOpacity="0.35"
+                strokeWidth="1.5"
+                strokeDasharray="6 6"
+              />
+            ) : null}
+            <path d={buildSmoothLinePath(primaryCoords)} fill="none" stroke={primaryTone} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            {secondary?.length ? (
+              <path
+                d={buildSmoothLinePath(secondaryCoords)}
+                fill="none"
+                stroke={secondaryTone}
+                strokeWidth="3"
+                strokeDasharray="10 8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ) : null}
           </svg>
+
+          {/* HTML 点位与标签层 (防止缩放变形) */}
+          <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none">
+            <div className="relative h-full w-full pointer-events-auto">
+              {primary.map((point, index) => {
+                const x = primary.length <= 1 ? 0 : (index / (primary.length - 1)) * chartWidth;
+                const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
+                return (
+                  <ChartPoint
+                    key={`primary-${point.label}`}
+                    x={x}
+                    y={y}
+                    label={formatUsageDeskChartValue(point.value, unit)}
+                    color={primaryTone}
+                    helper={point.label}
+                    helperY={labelBaseY}
+                    selected={selectedPointKey === point.label}
+                    onSelect={() => onSelectPoint(point.label, point.drilldownDayKey)}
+                  />
+                );
+              })}
+              {secondary?.map((point, index) => {
+                const x = secondary.length <= 1 ? 0 : (index / (secondary.length - 1)) * chartWidth;
+                const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
+                return (
+                  <ChartPoint
+                    key={`secondary-${point.label}`}
+                    x={x}
+                    y={y}
+                    label={formatUsageDeskChartValue(point.value, unit)}
+                    color={secondaryTone}
+                    helper={point.label}
+                    helperY={labelBaseY}
+                    labelPosition="bottom"
+                    small
+                    selected={selectedPointKey === point.label}
+                  />
+                );
+              })}
+            </div>
+          </div>
         </div>
     </div>
   );
@@ -1020,37 +1147,43 @@ function ChartPoint({
   onSelect?: () => void;
 }) {
   return (
-    <g
-      className={onSelect ? 'cursor-pointer' : undefined}
+    <div
+      style={{ left: `${x}px`, top: `${y}px` }}
+      className={`absolute flex items-center justify-center ${onSelect ? 'cursor-pointer' : ''}`}
       onClick={onSelect}
-      role={onSelect ? 'button' : undefined}
-      tabIndex={onSelect ? 0 : undefined}
-      onKeyDown={
-        onSelect
-          ? (event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onSelect();
-              }
-            }
-          : undefined
-      }
     >
-      {selected ? <circle cx={x} cy={y} r={small ? 9 : 10} fill="rgba(17,17,17,0.12)" /> : null}
-      <circle cx={x} cy={y} r={selected ? (small ? 5.5 : 6.5) : small ? 4.5 : 5} fill={color} stroke="white" strokeWidth={selected ? '3' : '2'} />
-      <text
-        x={x}
-        y={labelPosition === 'top' ? y - 14 : y + 20}
-        textAnchor="middle"
-        fill={color}
-        style={{ fontSize: selected ? 12 : 11, fontWeight: selected ? 900 : 800, letterSpacing: '0.02em' }}
+      {/* 1. 数值标签 (不占用空间) */}
+      <div 
+        className={`absolute whitespace-nowrap text-center transition-all pointer-events-none ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
+        style={{ color, fontSize: selected ? '12px' : '11px', fontWeight: selected ? 900 : 800 }}
       >
         {label}
-      </text>
-      <text x={x} y={helperY} textAnchor="middle" fill={selected ? '#111111' : '#666666'} style={{ fontSize: 10, fontWeight: selected ? 900 : 800 }}>
+      </div>
+
+      {/* 2. 中心圆点 */}
+      <div className="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
+        {selected && (
+          <div className="absolute h-8 w-8 rounded-full bg-[var(--text-primary)] opacity-10 animate-pulse" />
+        )}
+        <div 
+          className={`rounded-full border-2 border-white shadow-sm transition-transform ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
+          style={{ backgroundColor: color }}
+        />
+      </div>
+
+      {/* 3. 辅助轴向标签 (日期/时间) - 绝对定位到 chart 底部 */}
+      <div 
+        className="absolute whitespace-nowrap font-black transition-all -translate-x-1/2 pointer-events-none"
+        style={{ 
+          top: `${helperY - y}px`, 
+          fontSize: '10px', 
+          color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
+          opacity: selected ? 1 : 0.6
+        }}
+      >
         {helper}
-      </text>
-    </g>
+      </div>
+    </div>
   );
 }
 

@@ -325,7 +325,14 @@
     "update_applied": "Update applied. The app will quit now.",
     "update_redirected": "Opened the release page. Download and install the new version there.",
     "native_update_invoked": "The macOS native update flow has been started.",
-    "update_error": "Update Failed"
+    "update_error": "Update Failed",
+    "local_usage_refresh": "Local Projected Refresh",
+    "local_usage_refresh_interval": "Background Incremental Refresh Interval",
+    "local_usage_refresh_hint": "The APP layer runs minute-level incremental refresh on this cadence. H5 reads the APP memory snapshot by default.",
+    "local_usage_refresh_loading": "Loading the current refresh policy…",
+    "local_usage_refresh_saving": "Saving the refresh policy…",
+    "local_usage_refresh_saved": "Background refresh interval updated",
+    "local_usage_refresh_failed": "Failed to update background refresh interval"
   },
   "debug": {
     "title": "Debug",
