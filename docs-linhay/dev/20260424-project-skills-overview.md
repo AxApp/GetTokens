@@ -35,13 +35,16 @@
 ## 当前 Skills
 
 1. `.agents/skills/gettokens-ops-governance`
-   **项目运营与治理**。整合了 Wails 开发回路（重启规则、就绪模型）、`spaces` 工作空间治理、文档与记忆写回流程、AGENTS 同步，以及会话技能蒸馏。它定义了“如何在 GetTokens 仓库里正确地工作”。
+   **项目运营与治理**。整合了 Wails 开发回路（重启规则、就绪模型）、`spaces` 工作空间治理、文档与记忆写回流程、AGENTS 同步、subagent 监督交付闭环，以及会话技能蒸馏。它定义了“如何在 GetTokens 仓库里正确地工作”。
 
 2. `.agents/skills/gettokens-domain-engineering`
    **领域工程与技术**。整合了账号池（unified inventory）、配额规则（quota rules）、UI 视觉系统（Swiss-industrial）、前端调试归因，以及 CLIProxyAPI fork 维护。它定义了“GetTokens 的技术实现与工程约束”。
 
 3. `.agents/skills/gettokens-session-skill-distill`
    **会话沉淀入口**。专门处理“整理”场景：提炼会话里真正稳定的模式，决定是否补 skill、写 docs/memory，或升级到 AGENTS。
+
+4. `.agents/skills/gettokens-subagent-supervision`
+   **监督交付触发入口**。当用户明确要求“用 subagent 做、主控 agent 监督到完成”时，用这个 skill 直接把会话切到监督交付模式；具体执行细节继续复用 `gettokens-ops-governance`。
 
 ## 为什么进行整合
 

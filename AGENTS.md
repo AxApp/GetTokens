@@ -40,6 +40,7 @@
 9. 当一次会话中出现“有用且重复出现”的行为模式、排障路径或交付动作时，必须先识别复用边界，再优先新增或更新项目级 `skills`；只有当规则已经上升为 repo-wide、长期稳定的约束时，才同步更新 `AGENTS.md`。
 10. 当用户明确说“整理”且语境指向刚完成的一轮工作会话时，默认触发一次会话沉淀流程：先按 `gettokens-session-skill-distill` 提炼可复用模式，再按是否 repo-wide 决定是否同步更新 `AGENTS.md`、`docs-linhay/dev/`、`docs-linhay/memory/`，并执行 `qmd update` 与 `qmd embed`。
 11. 多份独立需求稿并行推进时，默认按“一个需求单元一个 `space`，必要时再配一个同 key 的 branch 与 `worktree`”组织，不按个人姓名或临时阶段单独命名工作目录。
+12. 当用户明确要求“由 subagent 去做、主控 agent 负责监督”时，主控 agent 必须承担需求边界、任务拆分、集成、验收、文档与最终完成判断，不得在“代码已改完”但截图、实机验证、文档写回等验收环节仍未完成时提前停止。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
@@ -50,6 +51,7 @@
 6. 若本次任务提炼出可复用的项目动作、流程或知识边界，新增或更新对应 `skills`；若同时形成长期稳定规则，再更新 `AGENTS.md`。
 7. 若用户以“整理”作为收尾指令，且本轮存在稳定可复用模式，不需要额外追问是否沉淀，直接进入 `skills` / `AGENTS` / docs / memory 的整理流程。
 8. 若某个需求将进入并行开发、多日实现或与其他需求同时切换，先补齐对应 `space`，再创建同 key 的 branch / `worktree`。
+9. 若需求采用 `subagent` 交付，标准完成顺序必须覆盖：需求边界确认、subagent 分工、主控集成、自动化验证、Wails/桌面验收（如适用）、截图或其他验收产物、文档与记忆写回；未跑完这一整链，不得宣称需求完成。
 
 ## 3. 测试门禁（必须）
 1. 任何功能改动都要有对应测试（新增或更新）。
@@ -96,6 +98,8 @@ Git `worktree` 治理：
 2. 涉及文档写回、memory 写回、`qmd update` / `qmd embed` 同步时，优先使用 `gettokens-ops-governance`。
 3. 涉及 AGENTS 级长期治理规则时，优先使用 `gettokens-ops-governance`；若用户明确说“整理”，同时使用 `gettokens-session-skill-distill`。
 4. 涉及账号池、quota、视觉系统、前端调试归因或 CLIProxyAPI fork 维护时，优先使用 `gettokens-domain-engineering`。
+5. 涉及“主控 agent 监督、subagent 实做、直到完整需求闭环才停止”的执行模式时，优先使用 `gettokens-ops-governance` 中的 `Subagent Delivery Loop`。
+6. 若用户希望用显式 skill 名称触发该模式，使用 `gettokens-subagent-supervision`；它是监督交付模式的轻量触发入口。
 
 ## 5. 记忆系统规则（必须）
 
@@ -122,6 +126,7 @@ Git `worktree` 治理：
 1. 新建 `space` 时优先使用 `docs-linhay/scripts/create-space.sh <space-key>`。
 2. 提交前或调整治理规则后，运行 `docs-linhay/scripts/check-docs.sh` 做结构校验。
 3. 新建 feature `worktree` 时，默认使用 `git worktree add ../GetTokens-worktrees/<space-key> -b feat/<space-key> master`；若当前集成分支不是 `master`，以当轮基线分支替换末尾参数。
+4. 采用 `subagent` 交付的需求，主控 agent 收尾前默认补做一次 DoD 自检：测试、桌面验收、截图、文档、memory、`qmd`、必要时 `check-docs.sh`。
 
 ## 7. 完成定义（DoD）
 1. 验收场景满足。

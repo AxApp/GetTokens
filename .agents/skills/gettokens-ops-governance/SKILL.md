@@ -26,12 +26,38 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Memory**: Keep entries concise and decision-oriented. Run `qmd update` and `qmd embed` after any write-back.
 - **Governance**: Read `AGENTS.md` first. Update it only for repo-wide, durable rules. Ensure `docs-linhay` is not ignored in `.gitignore`.
 
-## 4. Session Skill Distillation
+## 4. Subagent Delivery Loop
+- **Trigger**: Use this loop when a requirement will be implemented by delegated agents or when the user explicitly asks for `subagent` delivery.
+- **Controller Role**:
+  - The main agent is the controller, not the primary implementer.
+  - The controller owns requirement boundaries, acceptance criteria, task decomposition, integration, verification, docs, memory, and final completion judgment.
+  - The controller must not stop at “code landed” if screenshots, desktop verification, docs, or other stated acceptance steps are still open.
+- **Execution Order**:
+  1. Normalize the requirement into a `space` README with scope and acceptance.
+  2. Split work into bounded subtasks with disjoint ownership and assign them to subagents.
+  3. Keep critical-path integration local; do not delegate the controller’s immediate acceptance judgment.
+  4. Review and integrate subagent output continuously instead of waiting until the end to reconcile everything.
+  5. Run the full closure loop before stopping:
+     - code integration
+     - automated validation
+     - Wails/desktop verification when applicable
+     - screenshots or other acceptance artifacts
+     - docs + memory write-back
+     - `qmd update` + `qmd embed`
+  6. If something remains blocked, report the exact blocker and why the requirement cannot yet be considered done.
+- **Stop Rule**:
+  - “Implemented first pass” is not completion.
+  - The controller only stops when the user’s requirement is fully closed, the user explicitly pauses, or there is a concrete blocker that cannot be resolved within the current environment.
+- **Acceptance Boundaries**:
+  - Browser-only verification is not enough for Wails features that depend on runtime bindings.
+  - “Remaining screenshots / real-window validation / docs cleanup” are part of the same requirement when they are in the agreed acceptance path, not optional tail work.
+
+## 5. Session Skill Distillation
 - **Trigger**: When asked to "整理" or after a pattern-heavy session.
 - **Goal**: Extract durable workflows and failure modes into skills. Avoid copying transient guesses or chat fluff.
 - **Output**: Create/update skills in `.agents/skills/` and record the decision in project memory.
 
-## 5. Release Governance
+## 6. Release Governance
 - **Scope**: Current release scope is macOS only.
 - **Assets**:
   - `GetTokens_macOS_AppleSilicon.dmg`
