@@ -1,0 +1,13 @@
+# environment: cpu=10 ram=16384MB disk=54275MB python=3.14.3 node=v25.9.0 go=1.25.0 network=available
+# metric_direction: lower
+# mode: loop
+# run_tag: nolon-session-management-20260429
+# parallel: serial
+# web_search: disabled
+iteration	commit	metric	delta	guard	status	description
+0	b5c1768	6	0	-	baseline	README missing 6 final analysis anchors for nolon session management deep dive
+1	b5c1768	4	-2	pass	keep	Document snapshotStream delta semantics and final-batch removedSessionIDs behavior in the nolon session management README
+2	b5c1768	2	-2	pass	keep	Document logicalUsageKey grouping and provider-side post-fork usage dedupe semantics in the nolon session management README
+3	b5c1768	0	-2	pass	keep	Add the layer boundary matrix and final closure summary to complete the nolon session management analysis README
+4	b5c1768	0	0	-	refine	Strengthen the completed analysis with an evidence matrix and implementation timeline while retaining the zero-missing-anchor metric
+5	b5c1768	0	0	-	refine	Add a reuse guide that maps nolon session-management patterns onto GetTokens boundaries and current local usage indexing

@@ -51,10 +51,26 @@
 - [CodexSessionsTabView.swift](/Users/linhey/Desktop/FlowUp-Libs/nolon/nolon/Skills/Domain/Providers/Views/CodexSessionsTabView.swift)
 - [codex-session-cli-and-scanner-alignment-2026-04-11.md](/Users/linhey/Desktop/FlowUp-Libs/nolon/docs-linhay/dev/codex-session-cli-and-scanner-alignment-2026-04-11.md)
 - [codex-sessions-detail-panel-file-split-and-ui-refine-2026-04-19.md](/Users/linhey/Desktop/FlowUp-Libs/nolon/docs-linhay/dev/codex-sessions-detail-panel-file-split-and-ui-refine-2026-04-19.md)
+- [debate v01](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/debate/20260429/nolon-session-management/20260429-nolon-session-management-v01.md)
+- [autoresearch results](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/plans/20260429-nolon-session-management-autoresearch-results-v01.tsv)
+- [autoresearch state](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/plans/20260429-nolon-session-management-autoresearch-state-v01.json)
 
 ## 当前状态
 - 状态：in-progress
 - 最近更新：2026-04-29
+
+## Space Inventory
+
+- `README.md`
+  - 当前研究主文档，已收口到完整分析 + 复用指南
+- `debate/20260429/nolon-session-management/20260429-nolon-session-management-v01.md`
+  - 多参与者补证纪要
+- `plans/20260429-nolon-session-management-autoresearch-results-v01.tsv`
+  - 前台 `codex-autoresearch` 迭代日志，记录 `6 -> 4 -> 2 -> 0` 的主指标收敛过程
+- `plans/20260429-nolon-session-management-autoresearch-state-v01.json`
+  - 同一轮 autoresearch 的状态快照与运行配置
+- `screenshots/`
+  - 当前无截图产物，目录预留
 
 ## 深挖发现
 
@@ -117,3 +133,178 @@
    - 这个预热只在“同 logical usage group 没有共享成员”时直接写入，避免重复灌同一 thread/rollout 的 totals。
    - 预热没命中时，后续由 `primeVisibleSessionUsages() -> drainUsageQueueIfNeeded()` 异步补齐真实 usage；若当前排序模式是 `usage`，补齐后会 debounce 一次 `rebuildSectionStates()`。
    - timeline 则完全独立，只在选中 session 后通过 `primeSelectedSessionTimelineIfNeeded()` 按需加载，不参与首屏列表成形。
+
+## Snapshot Stream Delta
+
+- `CodexSessionStore.snapshotStream(...)` 并不会像 `loadSnapshot(...)` 那样每次都发完整快照；它按 `batchSize` 扫描 rollout 文件，把每个 batch 组装成 `CodexSessionSnapshotDelta.sessions` 后立即 yield。
+- Provider 侧每个 batch 会先局部排序，再把所有已发出的 session 累积到 `accumulatedSessions`；只有整条 stream 结束后，才把“全量累计结果”重新排序并落到 projection cache。
+- 对外语义因此是：
+  - stream 中间事件：只代表“新增送达的一批 session 行”
+  - stream 结束后的磁盘缓存：才代表新的完整 `session_snapshot`
+- 这也解释了为什么 stream 路径既能更快让 UI 有内容，又不会放弃 projection cache 这条首屏真恢复链。
+
+## Removed Session IDs
+
+- `removedSessionIDs` 不是 Provider 在 delta 里直接给出的字段，而是 ViewModel 在消费 stream 时自己算出来的。
+- 计算规则是：
+  - 非最终 batch：`removedSessionIDs = []`
+  - `isComplete == true` 的最终 batch：`rowsByID.keys - streamedSessionIDs`
+- 含义很关键：只有当本轮 stream 全部结束，ViewModel 才有资格判定“哪些旧 row 这次再也没出现”，从而把它们从当前列表删掉。
+- 这样做避免了两类错误：
+  - 中途 batch 尚未送达时，误删本应在后续 batch 才出现的 session
+  - 复用旧 ViewModel / 命中旧缓存后，刚开始 reconcile 就把缓存里的旧行清空，导致列表抖动
+- 所以 stream 路径本质上是“增量补齐 + 末尾一次性收敛删除”，而不是“每个 batch 都试图维护完整真相”。
+
+## Logical Usage Key
+
+- ViewModel 不直接把“一个 row = 一份独立 usage”当成事实，而是先给每条 row 算一个 `logicalUsageKey`。
+- 规则很简单但很关键：
+  - 有 `threadID`：key 是 `thread:<normalizedThreadID>`
+  - 没有 `threadID`：才退回 `rollout:<rolloutPath>`
+- 这意味着只要多条 row 实际属于同一个 thread，它们在 UI usage 语义上就会被视为同一逻辑会话：
+  - 预热时共用一份 cached usage state
+  - 异步真实加载时只排一次队
+  - section 聚合 usage 时只取一个 representative
+- 因此 `logicalUsageKey` 不是为了列表分组，而是为了防止同一逻辑会话在 usage 展示、usage 排序、组头 usage 聚合里被重复计算。
+
+## Forked Usage Dedupe
+
+- `logicalUsageKey` 解决的是“同一逻辑 thread 在 UI 投影层不要重复算”，但 fork 场景还多一层：派生 rollout 本身可能继承了父会话的 cumulative totals。
+- 这层去重发生在 Provider/usage index 侧，不在 ViewModel：
+  - `CodexSessionStoreTests` 明确覆盖了 `forked rollout inherits parent cumulative totals` 的场景。
+  - 断言结果是：派生 rollout 只统计 fork 之后新增的 usage，而不是把父会话累计 totals 再算一遍。
+- 进一步地，若 forked rollout 后续又 append 了新的 cumulative totals，store 会强制 `fullRebuild`，继续保持“只保留 post-fork 增量”的语义，而不是盲目走 tail append。
+- 所以这套系统实际上有两层去重：
+  - Provider 层：解决 forked rollout 继承父 totals 的问题
+  - ViewModel 层：解决同一 logical thread 在多个 row/section 中重复展示 usage 的问题
+
+## Layer Boundary Matrix
+
+| 层 | 真正负责什么 | 不负责什么 |
+|---|---|---|
+| rollout jsonl | 会话真源；`session_meta`、event 流、usage 原始累计线索 | 不直接提供 UI-ready section/row 投影 |
+| state sqlite (`threads`) | 标题、`updatedAt`、`model_provider`、state row count 等补充元数据 | 不保存完整 rollout 事件流，也不是 usage 真源 |
+| `CodexSessionStore` | 扫描、聚合、snapshot/stream、rewrite、usage/timeline 索引接线 | 不持有长期 UI 交互态 |
+| projection cache | 跨重启恢复 `projects / sections / rows` 首屏投影 | 不缓存 `selectedSessionID`、搜索词、展开态 |
+| usage index | usage totals、usage 排序预热、projected usage summary、timeline 复用 | 不承担列表主快照职责 |
+| `CodexSessionsTabViewModel` | 分组、排序、搜索、选中修复、usage/timeline 按需加载 | 不回写真源文件，也不自己解析 rollout |
+| CLI (`nolon codex session ...`) | 文本/JSON 输出、rewrite 命令面、provider migration 审计 | 不拥有独立 rewrite 引擎；核心逻辑复用 Provider 层 |
+
+- 这张表也是理解 `nolon` 会话管理的最短路径：
+  - 真源不止一个介质，但“最终对外的会话对象”由 `CodexSessionStore` 统一投影。
+  - cache/index 都是可丢弃加速层，不是 source of truth。
+  - UI/CLI 是两套入口，但底层会话扫描、rewrite、usage 聚合并没有分叉成两套实现。
+
+## Final Closure
+
+- 到这一步，可以把 `nolon` 的会话管理总结为一句话：
+  - 它不是聊天式“conversation CRUD”，而是一套围绕本地 Codex rollout / state / usage 索引建立的 session 投影与治理系统。
+- 对用户可见的能力已经相当完整：
+  - 浏览 live / archived session
+  - project / provider 分组
+  - recent / usage 排序
+  - 行内详情、Resume、Copy Command、Show in Finder、share
+  - 单 session / 分组 rewrite
+  - CLI 等价命令面
+- 真正容易被误解的边界有四个：
+  - `summary` 现在并不是首屏稳定数据
+  - 搜索不是全文检索
+  - usage index 不是列表主快照
+  - rewrite 不是事务性迁移
+- 剩余的“复杂度来源”主要不在 UI，而在多介质一致性：
+  - rollout / state sqlite / projection cache / usage index 各自承担不同职责
+  - 系统通过 staged rewrite、verify、cache invalidation、runtime repair 来维持整体可用，而不是依赖单次原子提交
+- 结合代码、测试、设计文档和时间线来看，这轮研究已经足够支撑“完整分析完成”的判断，不再存在必须继续追的核心实现黑箱。
+
+## Evidence Matrix
+
+| 结论 | 主要代码证据 | 主要测试证据 |
+|---|---|---|
+| 首屏 `summary` 不来自 rollout 正文 | `CodexSessionStore.makeSessionRecord(...)` 固定写 `summary: nil` | `CodexSessionStoreTests.loadSnapshotDoesNotReadSummaryFromRolloutBody()` |
+| `snapshotStream` 发的是 delta，不是完整快照 | `CodexSessionStore.snapshotStream(...)` 每批只 yield `sortedBatch` | `CodexSessionStoreTests.snapshotStreamYieldsDeltaEvents()` |
+| cached snapshot 可以 clean/fresh 直接短路 reconcile | `shouldUseCachedSnapshotWithoutReconcile(...)` + `loadCachedPresentationIfAvailable(...)` | `CodexSessionsTabViewModelTests.testBDD_GivenCleanFreshCachedSnapshot_WhenLoading_ThenInitialReconcileIsSkipped()` |
+| dirty cached snapshot 仍会走稳定 snapshot reload | `reload(.initial)` 命中缓存后仍可能进入 `loadSnapshotPresentation(...)` | `CodexSessionsTabViewModelTests.testBDD_GivenDirtyCachedSnapshot_WhenLoading_ThenStableSnapshotReloadStillRuns()` |
+| 空 stream 完成事件不会把 cached rows 清空 | ViewModel 只在 `isComplete` 时按 `streamedSessionIDs` 计算删除集 | `CodexSessionsTabViewModelTests.testBDD_GivenCachedSnapshotAndEmptyStreamDelta_WhenLoading_ThenCachedRowsAreNotClearedByReconcile()` |
+| usage 首屏排序会先用 cached usage index 预热 | `prewarmUsageStateFromIndexIfNeeded(...)` | `CodexSessionsTabViewModelTests` 中 cached snapshot + usage sort 场景会断言 `loadCachedSessionUsageCallCount` 和首屏顺序 |
+| forked rollout 只计 post-fork usage | usage record / projected summary 侧对 fork 做去重 | `CodexSessionStoreTests.loadProjectedUsageSummaryCountsOnlyPostForkUsageForDerivedRollout()` 与 `loadSessionUsageRecordRebuildsForkedRolloutToPreserveDerivedTotals()` |
+| rewrite 是 rollout + sqlite 双写，且允许部分成功 | `rewriteProviders(...)` 分阶段执行并在结尾 verify | `rewriteProvidersUpdatesMatchingRolloutsAndSQLiteRows()`、`rewriteProvidersReportsConsistencyFailuresWhenSQLiteUpdateFails()` |
+
+- 也就是说，这份研究结论不是只靠“看实现推断”，而是基本都能在对应测试里找到行为护栏。
+
+## Evolution Timeline
+
+| 日期 / 提交 | 演进点 | 说明 |
+|---|---|---|
+| 2026-04-11 / `cedfd3b` | CLI 命令面补齐 | 增加 `nolon codex session list / preview-rewrite / rewrite`，并把早期 UI 分组语义带到 CLI |
+| 2026-04-15 / `aa24aa0` | project-first UI 重构 | SwiftUI 会话页从早期 `time-project` 思路收缩到 `project/provider`，形成后续 CLI/UI 漂移 |
+| 2026-04-16 ~ 2026-04-17 | 搜索、usage、inline detail 逐步落地 | 会话页从“可看列表”扩展到“可搜索、可按 usage 看、可展开详情” |
+| 2026-04-17 / `ad82270` | usage index 落地 | 把 usage 解析从反复读 rollout 升级成独立 SQLite 可丢弃索引 |
+| 2026-04-18 | projection cache 设计成形 | 目标转向“跨重启秒开”，把 `session_snapshot / skeleton` 变成可落盘投影 |
+| 2026-04-19 / `864c4b7` 及相关设计 | cached snapshot 首屏排序、startup acceleration、sort pipeline 优化 | 解决“首屏先出现再跳序”和“命中缓存还立刻重扫”的体验问题 |
+| 2026-04-20 ~ 2026-04-21 / `d9f3946`、`0614b10` 等 | 详情面板收口、memory control、fork usage 去重与 minute cache 演进 | 会话页从“能用”进入“性能/信息架构/一致性”优化期 |
+
+- 这条时间线也解释了为什么当前代码会同时存在：
+  - 早期文档中的 `time-project`
+  - 现在 UI 的 `project/provider`
+  - 仍未同步收口的 CLI `time-project`
+- 它们不是互相矛盾的随机残留，而是 4 月中旬连续重构后的自然沉积。
+
+## Reuse Guide
+
+如果把这轮研究转成“GetTokens 能不能借 `nolon` 的会话管理模式”，结论不是“整套抄过来”，而是分层复用。
+
+### 可以直接借的模式
+
+1. 真源与投影分离
+   - `nolon` 最稳的一点不是 UI，而是把 `rollout/state sqlite` 和 `session snapshot` 分开。
+   - 对 GetTokens 来说，可借的是：
+     - 真源继续是本地 Codex rollout
+     - UI / Wails API 不直接绑定扫描细节
+     - 中间先产出稳定 projection，再给前端消费
+
+2. usage / session 共用索引链路
+   - `nolon` 没把“会话列表 usage”和“全局 usage 图表”做成两套统计系统。
+   - GetTokens 当前 [usage_local.go](/Users/linhey/Desktop/linhay-open-sources/GetTokens/internal/wailsapp/usage_local.go:1) 已经在本地实现了 `usage-index-v1.sqlite` 和 `cacheHit / deltaAppend / fullRebuild / fileMissing` 四分支，这和 `nolon` 的 usage index 思路已经很接近。
+   - 真正可复用的方向是：让后续 session 视图复用同一条 usage 投影链，而不是重新发明另一套按会话统计逻辑。
+
+3. cached snapshot 先出内容，再 reconcile
+   - 对本地 JSONL 扫描类功能，`projection cache -> background reconcile` 的体感收益非常实在。
+   - 如果 GetTokens 后续要做 Codex session 浏览页，这个首屏策略值得直接照搬。
+
+4. 分阶段 rewrite + verify
+   - 就算 GetTokens 将来不做 provider rewrite，也可以借用它的工程心智：
+     - 明确 preview
+     - 明确执行阶段
+     - 明确 verify
+     - 明确失败是“部分成功 + 暴露不一致”，而不是假装事务性
+
+### 不能直接照搬的边界
+
+1. 不要把 `nolon` 的 session UI 心智直接套到 GetTokens 的 usage desk
+   - `nolon` 的 session 管理目标是“浏览与治理本地 Codex 会话”。
+   - GetTokens 当前的核心目标仍然是“账号池 / quota / 本地投影 usage / Provider 控制面”。
+   - 所以 session 页如果做，也应该是 usage desk 的旁路能力，不该反过来重定义 GetTokens 主界面。
+
+2. 不要把 `summary`、全文搜索、原子 rewrite 当成现成能力
+   - `summary` 现在并不稳定。
+   - 搜索只是展示字段过滤。
+   - rewrite 不是事务。
+   - 这些如果在 GetTokens 里做产品承诺，会比 `nolon` 当前真实实现口径更大。
+
+3. 不要把全局文档/治理噪音混进功能结论
+   - 这轮 autoresearch 已经验证：repo 级治理脚本可能被无关 space 的历史文件影响。
+   - 对 GetTokens 落地时，应该优先确认“功能本身的 source/projection/index 语义”，而不是让治理脚本状态左右方案判断。
+
+### 对 GetTokens 最实际的迁移建议
+
+1. 短期
+   - 保持当前 `usage_local.go` 的本地 usage index 路线，不回退到每次全量扫 JSONL。
+   - 如果继续对齐 `nolon`，优先补的是“projection 语义”和“受影响日期/会话的增量刷新口径”。
+
+2. 中期
+   - 若要增加 Codex session 浏览能力，先单独做 session projection API，不要把会话扫描逻辑塞回现有 usage desk API。
+   - usage 与 session 可以共用底层索引，但前端入口、筛选和交互语义应分开。
+
+3. 长期
+   - 如果 GetTokens 真的要支持 session 级治理动作，先决定是否接受 `nolon` 这种“多介质 staged rewrite + verify”的一致性模型。
+   - 若不能接受，就不能只抄 UI 或命令面，必须连底层一致性策略一起重设计。
