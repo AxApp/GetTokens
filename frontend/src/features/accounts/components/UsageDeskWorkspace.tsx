@@ -6,6 +6,7 @@ import {
   RefreshCodexLocalUsage,
 } from '../../../../wailsjs/go/main/App';
 import { EventsOn } from '../../../../wailsjs/runtime/runtime';
+import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../../context/DebugContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../../types';
 import {
@@ -485,30 +486,27 @@ export default function UsageDeskWorkspace({
   return (
     <div ref={scrollContainerRef} className="h-full w-full overflow-auto bg-[var(--bg-surface)]" data-collaboration-id="PAGE_USAGE_DESK">
       <div className="mx-auto max-w-7xl space-y-8 px-12 pb-32 pt-12">
-        <header className="flex items-end justify-between gap-6 border-b-4 border-[var(--border-color)] pb-4">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
-              {pageTitle}
-            </h2>
-            <p className="mt-1 max-w-3xl text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-              {pageDescription}
-            </p>
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            <button
-              onClick={() => setSource('observed')}
-              className={`btn-swiss ${source === 'observed' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-            >
-              真实请求量
-            </button>
-            <button
-              onClick={() => setSource('projected')}
-              className={`btn-swiss ${source === 'projected' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-            >
-              本地投影用量
-            </button>
-          </div>
-        </header>
+        <WorkspacePageHeader
+          title={pageTitle}
+          subtitle={pageDescription}
+          subtitleClassName="mt-1 max-w-3xl text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]"
+          actions={
+            <>
+              <button
+                onClick={() => setSource('observed')}
+                className={`btn-swiss ${source === 'observed' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+              >
+                真实请求量
+              </button>
+              <button
+                onClick={() => setSource('projected')}
+                className={`btn-swiss ${source === 'projected' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+              >
+                本地投影用量
+              </button>
+            </>
+          }
+        />
 
         <div className="space-y-6">
           {workspace === 'gemini' ? (

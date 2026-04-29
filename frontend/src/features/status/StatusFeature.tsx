@@ -5,6 +5,7 @@ import {
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
 import type { main } from '../../../wailsjs/go/models';
+import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import { buildRelayCodexAuthJSONSnippet, buildRelayCodexConfigTomlSnippet } from '../accounts/model/accountConfig';
@@ -635,18 +636,19 @@ export default function StatusFeature({
   return (
     <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_STATUS">
       <div className="mx-auto max-w-6xl space-y-10">
-        <header className="flex items-center justify-between border-b-4 border-[var(--border-color)] pb-4">
-          <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
-            {t('status.title')}
-          </h2>
-          <div
-            className={`border-2 bg-white px-4 py-1 text-xs font-black uppercase tracking-widest text-black ${
-              sidecarStatus.code === 'ready' ? 'border-black' : 'border-red-600 text-red-600'
-            }`}
-          >
-            {sidecarStatus.code === 'ready' ? t('status.online') : t('status.offline')}
-          </div>
-        </header>
+        <WorkspacePageHeader
+          title={t('status.title')}
+          align="center"
+          actions={
+            <div
+              className={`border-2 bg-white px-4 py-1 text-xs font-black uppercase tracking-widest text-black ${
+                sidecarStatus.code === 'ready' ? 'border-black' : 'border-red-600 text-red-600'
+              }`}
+            >
+              {sidecarStatus.code === 'ready' ? t('status.online') : t('status.offline')}
+            </div>
+          }
+        />
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="card-swiss !p-6">

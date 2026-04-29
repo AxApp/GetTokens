@@ -1,3 +1,4 @@
+import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { Translator } from '../model/types';
 import type { OpenAICompatibleProvider, ProviderRemoteModelsState, ProviderVerifyState } from '../model/openAICompatible';
 import { buildProviderConfigSignature, maskProviderAPIKey } from '../model/openAICompatible';
@@ -38,16 +39,15 @@ export default function OpenAICompatibleWorkspace({
 }: OpenAICompatibleWorkspaceProps) {
   const content = (
     <>
-        <header className="flex items-end justify-between gap-6 border-b-4 border-[var(--border-color)] pb-4">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
-              {t('accounts.openai_provider_title')}
-            </h2>
-            <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-              {t('accounts.openai_provider_subtitle')} / {providers.length} {t('accounts.ui_provider_count_unit')}
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
+      <WorkspacePageHeader
+        title={t('accounts.openai_provider_title')}
+        subtitle={
+          <>
+            {t('accounts.openai_provider_subtitle')} / {providers.length} {t('accounts.ui_provider_count_unit')}
+          </>
+        }
+        actions={
+          <>
             <button
               onClick={onRefresh}
               className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
@@ -69,29 +69,30 @@ export default function OpenAICompatibleWorkspace({
             <button onClick={onCreate} className="btn-swiss" disabled={!ready}>
               {t('accounts.openai_provider_add')}
             </button>
-          </div>
-        </header>
+          </>
+        }
+      />
 
-        {!ready ? (
-          <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
-            {t('common.loading')}
+      {!ready ? (
+        <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
+          {t('common.loading')}
+        </div>
+      ) : loading ? (
+        <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
+          {t('common.loading')}
+        </div>
+      ) : providers.length === 0 ? (
+        <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center">
+          <div className="text-lg font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+            {t('accounts.openai_provider_empty')}
           </div>
-        ) : loading ? (
-          <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
-            {t('common.loading')}
-          </div>
-        ) : providers.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center">
-            <div className="text-lg font-black uppercase italic tracking-tight text-[var(--text-primary)]">
-              {t('accounts.openai_provider_empty')}
-            </div>
-            <p className="mt-3 text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-              {t('accounts.openai_provider_empty_hint')}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            {providers.map((provider) => {
+          <p className="mt-3 text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            {t('accounts.openai_provider_empty_hint')}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          {providers.map((provider) => {
               const providerConfigSignature = buildProviderConfigSignature(provider);
               const cachedVerifyState = verifyStates[provider.name];
               const cachedRemoteModelsState = remoteModelsStates[provider.name];
@@ -244,9 +245,9 @@ export default function OpenAICompatibleWorkspace({
                   </div>
                 </div>
               );
-            })}
-          </div>
-        )}
+          })}
+        </div>
+      )}
     </>
   );
 
