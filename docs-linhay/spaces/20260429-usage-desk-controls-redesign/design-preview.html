@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UsageDesk 整体视觉预览 - GetTokens</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --bg-surface: #f9f9f9;
+            --border-color: #000000;
+            --text-primary: #000000;
+            --text-muted: #666666;
+            --bg-muted: #f0f0f0;
+            --accent-red: #ff0000;
+            --shadow-color: #e5e5e5;
+            --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-main: #000000;
+                --bg-surface: #111111;
+                --border-color: #ffffff;
+                --text-primary: #ffffff;
+                --text-muted: #888888;
+                --bg-muted: #222222;
+                --accent-red: #ff3333;
+                --shadow-color: #222222;
+            }
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .shadow-hard {
+            box-shadow: 4px 4px 0px 0px var(--shadow-color);
+        }
+
+        .shadow-hard-sm {
+            box-shadow: 2px 2px 0px 0px var(--shadow-color);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            border-bottom: 4px solid var(--border-color);
+            margin-bottom: 2rem;
+            padding-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .preview-group {
+            margin-bottom: 6rem;
+        }
+
+        .preview-label {
+            display: inline-block;
+            background: var(--text-primary);
+            color: var(--bg-main);
+            padding: 2px 10px;
+            font-weight: 900;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        /* 模拟图表卡片样式 */
+        .chart-mock {
+            border: 2px solid var(--border-color);
+            background-color: var(--bg-main);
+            overflow: hidden;
+        }
+
+        .chart-header {
+            border-bottom: 2px solid var(--border-color);
+            background-color: var(--bg-surface);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-body {
+            height: 232px;
+            position: relative;
+            background-image: 
+                linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(128,128,128,0.2) calc(25% - 1px), rgba(128,128,128,0.2) 25%, transparent 25%), 
+                linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(128,128,128,0.2) calc(50% - 1px), rgba(128,128,128,0.2) 50%, transparent 50%), 
+                linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(128,128,128,0.2) calc(75% - 1px), rgba(128,128,128,0.2) 75%, transparent 75%), 
+                repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(128,128,128,0.12) 55px, rgba(128,128,128,0.12) 56px);
+        }
+
+        .summary-item {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="section-title">Usage Analytics Visual System</h1>
+
+    <!-- Option A Group -->
+    <div class="preview-group">
+        <span class="preview-label">Concept A: The Modular Console</span>
+        
+        <!-- Controls A -->
+        <div class="mb-4 flex flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard lg:flex-row">
+            <div class="flex border-b-2 border-[var(--border-color)] lg:border-b-0 lg:border-r-2">
+                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-main)]">TODAY</button>
+                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider border-l-2 border-[var(--border-color)] hover:bg-[var(--bg-surface)]">7D</button>
+                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider border-l-2 border-[var(--border-color)] hover:bg-[var(--bg-surface)]">14D</button>
+                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider border-l-2 border-[var(--border-color)] hover:bg-[var(--bg-surface)]">30D</button>
+            </div>
+            <div class="hidden flex-1 lg:block"></div>
+            <div class="flex border-t-2 border-[var(--border-color)] lg:border-t-0 lg:border-l-2">
+                <button class="flex-1 px-8 py-2 text-[10px] font-bold uppercase hover:bg-[var(--bg-surface)]">REFRESH INDEX</button>
+                <button class="flex-1 border-l-2 border-[var(--border-color)] px-8 py-2 text-[10px] font-bold uppercase hover:bg-[var(--accent-red)] hover:text-white transition-colors">REBUILD INDEX</button>
+            </div>
+        </div>
+
+        <!-- Chart Mock A -->
+        <div class="chart-mock shadow-hard">
+            <div class="chart-header">
+                <div class="flex gap-4">
+                    <span class="summary-item">Total Requests: 1.2k</span>
+                    <span class="summary-item">Success Rate: 99.2%</span>
+                </div>
+            </div>
+            <div class="chart-body">
+                <svg viewBox="0 0 1000 232" preserveAspectRatio="none" class="h-full w-full">
+                    <path d="M0,180 C150,160 250,200 400,120 C550,40 700,100 850,60 L1000,80 L1000,232 L0,232 Z" fill="rgba(0,0,0,0.1)" />
+                    <path d="M0,180 C150,160 250,200 400,120 C550,40 700,100 850,60 L1000,80" fill="none" stroke="var(--border-color)" stroke-width="4" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option B Group -->
+    <div class="preview-group">
+        <span class="preview-label">Concept B: Tiered Header</span>
+        
+        <!-- Controls B -->
+        <div class="mb-6 flex items-end justify-between border-b-4 border-[var(--border-color)] pb-3 px-2">
+            <div class="space-y-2">
+                <span class="text-[10px] font-black uppercase leading-none opacity-40 block">Select Viewport Range</span>
+                <div class="flex gap-2">
+                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)] -translate-y-1 shadow-hard-sm">TODAY</button>
+                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] hover:-translate-y-0.5 hover:shadow-hard-sm transition-all">7D</button>
+                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] hover:-translate-y-0.5 hover:shadow-hard-sm transition-all">14D</button>
+                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] hover:-translate-y-0.5 hover:shadow-hard-sm transition-all">30D</button>
+                </div>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="flex flex-col items-end">
+                    <span class="text-[9px] font-bold opacity-30 mb-1 uppercase tracking-tighter">Maintenance</span>
+                    <div class="flex gap-4">
+                        <button class="text-xs font-black underline decoration-2 underline-offset-4 hover:text-[var(--accent-red)] transition-colors italic">REFRESH</button>
+                        <button class="text-xs font-black underline decoration-2 underline-offset-4 hover:text-[var(--accent-red)] transition-colors italic">REBUILD</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart Mock B -->
+        <div class="chart-mock shadow-hard">
+            <div class="chart-header">
+                <div class="flex gap-4">
+                    <span class="summary-item">Total Tokens: 4.5M</span>
+                    <span class="summary-item">In/Out Ratio: 1:3.2</span>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-3 py-1 text-[10px] font-bold border-2 border-black bg-black text-white uppercase">Tokens</button>
+                    <button class="px-3 py-1 text-[10px] font-bold border-2 border-black uppercase">Requests</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <svg viewBox="0 0 1000 232" preserveAspectRatio="none" class="h-full w-full">
+                    <path d="M0,200 L100,180 L200,190 L300,140 L400,150 L500,80 L600,100 L700,40 L800,60 L900,20 L1000,30 L1000,232 L0,232 Z" fill="rgba(0,0,0,0.05)" />
+                    <path d="M0,200 L100,180 L200,190 L300,140 L400,150 L500,80 L600,100 L700,40 L800,60 L900,20 L1000,30" fill="none" stroke="var(--border-color)" stroke-width="2" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option C Group -->
+    <div class="preview-group">
+        <span class="preview-label">Concept C: Integrated Dark Bar</span>
+        
+        <div class="chart-mock shadow-hard">
+            <!-- Controls C Integrated into Header -->
+            <div class="chart-header !bg-[var(--text-primary)] !text-[var(--bg-main)]">
+                <div class="flex gap-1 pr-4 border-r border-white/20">
+                    <button class="px-3 py-1 text-[10px] font-bold bg-[var(--bg-main)] text-[var(--text-primary)] rounded-sm">TODAY</button>
+                    <button class="px-3 py-1 text-[10px] font-bold hover:bg-white/10 rounded-sm">7D</button>
+                    <button class="px-3 py-1 text-[10px] font-bold hover:bg-white/10 rounded-sm">14D</button>
+                    <button class="px-3 py-1 text-[10px] font-bold hover:bg-white/10 rounded-sm">30D</button>
+                </div>
+                <div class="flex-1 px-4">
+                    <span class="summary-item opacity-60">Live Projection indexing...</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button class="text-[10px] font-bold opacity-70 hover:opacity-100">REFRESH</button>
+                    <button class="text-[10px] font-bold text-[var(--accent-red)] opacity-90 hover:opacity-100">REBUILD</button>
+                </div>
+            </div>
+            <div class="chart-body">
+                <svg viewBox="0 0 1000 232" preserveAspectRatio="none" class="h-full w-full">
+                    <path d="M0,150 Q150,100 300,150 T600,150 T1000,100 L1000,232 L0,232 Z" fill="rgba(0,0,0,0.1)" />
+                    <path d="M0,150 Q150,100 300,150 T600,150 T1000,100" fill="none" stroke="var(--border-color)" stroke-width="4" />
+                </svg>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

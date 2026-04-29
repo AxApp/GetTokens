@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { GetCodexLocalUsage, GetUsageStatistics, RebuildCodexLocalUsage } from '../../../../wailsjs/go/main/App';
+import { EventsOn } from '../../../../wailsjs/runtime/runtime';
 import { useDebug } from '../../../context/DebugContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../../types';
 import {
@@ -31,6 +32,14 @@ type UsageDetailTableRow = UsageDeskMinuteRow & {
 
 type UsageDetailColumnKey = 'timeLabel' | 'value' | 'note' | 'requests' | 'inputTokens' | 'cachedInputTokens' | 'outputTokens';
 type UsageDetailColumn = { key: UsageDetailColumnKey; header: string };
+type LocalUsageProgressEvent = {
+  phase?: string;
+  currentFile?: string;
+  processedFiles?: number;
+  totalFiles?: number;
+  source?: string;
+};
+type ProjectedChartMetric = 'tokens' | 'requests';
 
 export default function UsageDeskWorkspace({
   sidecarStatus,
@@ -55,6 +64,8 @@ export default function UsageDeskWorkspace({
   const [loadError, setLoadError] = useState('');
   const [projectedLoadError, setProjectedLoadError] = useState('');
   const [projectedActionMessage, setProjectedActionMessage] = useState('');
+  const [projectedProgress, setProjectedProgress] = useState<LocalUsageProgressEvent | null>(null);
+  const [projectedChartMetric, setProjectedChartMetric] = useState<ProjectedChartMetric>('tokens');
   const [selectedDetailRowKey, setSelectedDetailRowKey] = useState('');
   const [selectedChartPointKey, setSelectedChartPointKey] = useState('');
   const [detailTransitionActive, setDetailTransitionActive] = useState(false);
@@ -68,6 +79,16 @@ export default function UsageDeskWorkspace({
   useEffect(() => {
     persistUsageDeskRange(typeof window === 'undefined' ? null : window.localStorage, range);
   }, [range]);
+
+  useEffect(() => {
+    const offProgress = EventsOn('usage-local:progress', (payload: LocalUsageProgressEvent) => {
+      setProjectedProgress(payload ?? null);
+    });
+
+    return () => {
+      offProgress?.();
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -114,6 +135,7 @@ export default function UsageDeskWorkspace({
     async function refreshProjectedUsage(mode: 'initial' | 'refresh') {
       setProjectedLoading(true);
       setProjectedLoadError('');
+      setProjectedProgress(null);
       if (mode !== 'initial') {
         setProjectedActionMessage(mode === 'refresh' ? '正在刷新索引…' : '');
       }
@@ -121,6 +143,7 @@ export default function UsageDeskWorkspace({
         const response = await trackRequest<any>('GetCodexLocalUsage', { args: [] }, () => GetCodexLocalUsage());
         if (!mounted) return;
         setProjectedUsageData(response ?? null);
+        setProjectedProgress(null);
         if (mode === 'refresh') {
           setProjectedActionMessage('索引已刷新');
         }
@@ -129,6 +152,7 @@ export default function UsageDeskWorkspace({
         if (!mounted) return;
         setProjectedUsageData(null);
         setProjectedLoadError('本地投影用量暂时不可用');
+        setProjectedProgress(null);
         setProjectedActionMessage('');
       } finally {
         if (mounted) {
@@ -147,14 +171,17 @@ export default function UsageDeskWorkspace({
   async function refreshProjectedUsage() {
     setProjectedLoading(true);
     setProjectedLoadError('');
+    setProjectedProgress(null);
     setProjectedActionMessage('正在刷新索引…');
     try {
       const response = await trackRequest<any>('GetCodexLocalUsage', { args: [] }, () => GetCodexLocalUsage());
       setProjectedUsageData(response ?? null);
+      setProjectedProgress(null);
       setProjectedActionMessage('索引已刷新');
     } catch (error) {
       console.error(error);
       setProjectedLoadError('本地投影用量暂时不可用');
+      setProjectedProgress(null);
       setProjectedActionMessage('');
     } finally {
       setProjectedLoading(false);
@@ -164,14 +191,17 @@ export default function UsageDeskWorkspace({
   async function rebuildProjectedUsage() {
     setProjectedLoading(true);
     setProjectedLoadError('');
+    setProjectedProgress(null);
     setProjectedActionMessage('正在重建索引…');
     try {
       const response = await trackRequest<any>('RebuildCodexLocalUsage', { args: [] }, () => RebuildCodexLocalUsage());
       setProjectedUsageData(response ?? null);
+      setProjectedProgress(null);
       setProjectedActionMessage('索引已重建');
     } catch (error) {
       console.error(error);
       setProjectedLoadError('本地投影用量重建失败');
+      setProjectedProgress(null);
       setProjectedActionMessage('');
     } finally {
       setProjectedLoading(false);
@@ -248,6 +278,19 @@ export default function UsageDeskWorkspace({
       `输出 ${formatUsageDeskChartValue(outputTokens, 'tokens')}`,
     ];
   }, [projectedDrilldownDayKey, projectedSnapshot.dailyPoints, visibleProjectedDailyPoints]);
+  const projectedChartUnit: UsageDeskChartUnit = projectedChartMetric === 'requests' ? 'count' : 'tokens';
+  const projectedPrimaryChartPoints = projectedDrilldownDayKey
+    ? projectedSnapshot.minutePoints.map((point) => ({
+        label: point.label,
+        value: projectedChartMetric === 'requests' ? point.requests : point.totalTokens,
+        color: '#1f6feb',
+      }))
+    : visibleProjectedDailyPoints.map((point) => ({
+        label: point.label,
+        value: projectedChartMetric === 'requests' ? point.requests : point.totalTokens,
+        color: '#1f6feb',
+        drilldownDayKey: point.dayKey,
+      }));
 
   const activeDayLabel = activeObservedDayKey ? activeObservedDayKey.slice(5) : '--';
   const activeProjectedDayLabel = activeProjectedDayKey ? activeProjectedDayKey.slice(5) : '--';
@@ -291,6 +334,36 @@ export default function UsageDeskWorkspace({
       : projectedDailyRows;
   const activeDetailColumns = useMemo(() => resolveUsageDetailColumns(activeDetailRows), [activeDetailRows]);
   const shouldHighlightRangeSelection = selectedDayKey === null;
+  const projectedLoadingBody = useMemo<ReactNode>(() => {
+    const processedFiles = projectedProgress?.processedFiles ?? 0;
+    const totalFiles = projectedProgress?.totalFiles ?? 0;
+    const currentFile = projectedProgress?.currentFile?.trim();
+    const sourceLabel =
+      projectedProgress?.source === 'cacheHit'
+        ? '缓存命中'
+        : projectedProgress?.source === 'deltaAppend'
+          ? '增量追加'
+          : projectedProgress?.source === 'fullRebuild'
+            ? '全量重建'
+            : projectedProgress?.source === 'fileMissing'
+              ? '文件移除'
+              : '';
+
+    return (
+      <div className="space-y-2">
+        <div>正在扫描本地 Codex rollout 样本。</div>
+        <div className="font-black text-[var(--text-primary)]">
+          进度 {processedFiles}/{totalFiles || '?'}
+        </div>
+        {currentFile ? (
+          <div className="break-all">
+            当前文件 {currentFile}
+            {sourceLabel ? ` · ${sourceLabel}` : ''}
+          </div>
+        ) : null}
+      </div>
+    );
+  }, [projectedProgress]);
 
   useEffect(() => {
     const firstRow = activeDetailRows[0] ?? null;
@@ -528,16 +601,18 @@ export default function UsageDeskWorkspace({
                       {projectedActionMessage ? <StatePanel title="索引动作" body={projectedActionMessage} /> : null}
                       <div className="sticky top-0 z-20 -mx-12 space-y-3 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
                       <div data-usage-sticky-controls className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="flex flex-wrap gap-2">
-                          {rangeOptions.map((option) => (
-                            <button
-                              key={option}
-                              onClick={() => handleRangeSelect(option)}
-                              className={`btn-swiss ${shouldHighlightRangeSelection && range === option ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-                            >
-                              {option === 'TODAY' ? '今日' : option === '7D' ? '7天' : option === '14D' ? '14天' : option === '30D' ? '30天' : option}
-                            </button>
-                          ))}
+                          <div className="flex flex-wrap items-start gap-3">
+                          <div className="flex flex-wrap gap-2">
+                            {rangeOptions.map((option) => (
+                              <button
+                                key={option}
+                                onClick={() => handleRangeSelect(option)}
+                                className={`btn-swiss ${shouldHighlightRangeSelection && range === option ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+                              >
+                                {option === 'TODAY' ? '今日' : option === '7D' ? '7天' : option === '14D' ? '14天' : option === '30D' ? '30天' : option}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <div className="flex flex-wrap gap-2 lg:justify-end">
                           <button onClick={() => void refreshProjectedUsage()} className="btn-swiss" disabled={projectedLoading}>
@@ -550,7 +625,7 @@ export default function UsageDeskWorkspace({
                       </div>
 
                       {projectedLoading ? (
-                        <StatePanel title="加载中" body="正在扫描 ~/.codex/sessions 本地 rollout 样本。" />
+                        <StatePanel title="加载中" body={projectedLoadingBody} />
                       ) : projectedLoadError ? (
                         <StatePanel title="加载失败" body={projectedLoadError} tone="error" />
                       ) : !projectedSnapshot.hasData ? (
@@ -563,24 +638,27 @@ export default function UsageDeskWorkspace({
                         <div className={`transition-all duration-300 ease-out ${detailTransitionActive ? 'scale-[0.995] opacity-85' : 'scale-100 opacity-100'}`}>
                           <UsageChartCard
                             compactProgress={stickyProgress}
-                            unit="tokens"
+                            unit={projectedChartUnit}
                             summaryItems={projectedSummaryItems}
+                            controls={
+                              <>
+                                <button
+                                  onClick={() => setProjectedChartMetric('tokens')}
+                                  className={`btn-swiss h-full ${projectedChartMetric === 'tokens' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+                                >
+                                  Tokens
+                                </button>
+                                <button
+                                  onClick={() => setProjectedChartMetric('requests')}
+                                  className={`btn-swiss h-full ${projectedChartMetric === 'requests' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+                                >
+                                  请求数
+                                </button>
+                              </>
+                            }
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
-                            primary={
-                              projectedDrilldownDayKey
-                                ? projectedSnapshot.minutePoints.map((point) => ({
-                                    label: point.label,
-                                    value: point.totalTokens,
-                                    color: '#1f6feb',
-                                  }))
-                                : visibleProjectedDailyPoints.map((point) => ({
-                                    label: point.label,
-                                    value: point.totalTokens,
-                                    color: '#1f6feb',
-                                    drilldownDayKey: point.dayKey,
-                                  }))
-                            }
+                            primary={projectedPrimaryChartPoints}
                           />
                         </div>
                       )}
@@ -612,7 +690,7 @@ function applyRange<T extends UsageDeskDailyPoint | UsageDeskProjectedDailyPoint
   return points.slice(-limit);
 }
 
-function StatePanel({ title, body, tone = 'default' }: { title: string; body: string; tone?: 'default' | 'error' }) {
+function StatePanel({ title, body, tone = 'default' }: { title: string; body: ReactNode; tone?: 'default' | 'error' }) {
   return (
     <div
       className={`border-2 px-4 py-4 ${
@@ -622,7 +700,7 @@ function StatePanel({ title, body, tone = 'default' }: { title: string; body: st
       }`}
     >
       <div className="text-[10px] font-black uppercase tracking-[0.18em]">{title}</div>
-      <p className={`mt-2 text-[11px] leading-6 ${tone === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>{body}</p>
+      <div className={`mt-2 text-[11px] leading-6 ${tone === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>{body}</div>
     </div>
   );
 }
@@ -631,6 +709,7 @@ function UsageChartCard({
   compactProgress = 0,
   unit,
   summaryItems,
+  controls,
   primary,
   secondary,
   selectedPointKey,
@@ -639,6 +718,7 @@ function UsageChartCard({
   compactProgress?: number;
   unit: UsageDeskChartUnit;
   summaryItems: string[];
+  controls?: ReactNode;
   primary: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
   secondary?: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
   selectedPointKey: string;
@@ -650,6 +730,7 @@ function UsageChartCard({
       secondary={secondary}
       unit={unit}
       summaryItems={summaryItems}
+      controls={controls}
       compactProgress={compactProgress}
       selectedPointKey={selectedPointKey}
       onSelectPoint={onSelectPoint}
@@ -691,6 +772,7 @@ function ChartSurface({
   secondary,
   unit,
   summaryItems,
+  controls,
   compactProgress = 0,
   selectedPointKey,
   onSelectPoint,
@@ -699,6 +781,7 @@ function ChartSurface({
   secondary?: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
   unit: UsageDeskChartUnit;
   summaryItems: string[];
+  controls?: ReactNode;
   compactProgress?: number;
   selectedPointKey: string;
   onSelectPoint: (chartSelectionKey: string, drilldownDayKey?: string) => void;
@@ -756,6 +839,12 @@ function ChartSurface({
 
   const primaryCoords = buildChartCoords(primary);
   const secondaryCoords = buildChartCoords(secondary ?? []);
+  const requestSummaryItems = summaryItems.filter(
+    (item) => !/^Token\b/.test(item) && !/^(输入|缓存|输出)\b/.test(item),
+  );
+  const tokenSummaryItems = summaryItems.filter(
+    (item) => /^Token\b/.test(item) || /^(输入|缓存|输出)\b/.test(item),
+  );
   const selectedPrimaryIndex = primary.findIndex((point) => point.label === selectedPointKey);
   const selectedPrimaryX =
     selectedPrimaryIndex >= 0 && primaryCoords[selectedPrimaryIndex] ? primaryCoords[selectedPrimaryIndex].x : null;
@@ -787,6 +876,37 @@ function ChartSurface({
 
   return (
     <div ref={chartScrollRef} className="overflow-x-auto overflow-y-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+        {summaryItems.length > 0 || controls ? (
+          <div className="sticky left-0 top-0 z-10 flex min-w-full items-stretch justify-between gap-4 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
+            <div
+              className={`min-h-[64px] flex-1 text-[10px] font-black tracking-[0.08em] text-[var(--text-primary)] ${
+                tokenSummaryItems.length > 0 ? 'grid grid-rows-2' : 'flex items-center'
+              }`}
+            >
+              {tokenSummaryItems.length > 0 ? (
+                <>
+                  <div className="flex items-center gap-x-4 gap-y-1 border-b border-dashed border-[var(--border-color)]/60 pr-4">
+                    {requestSummaryItems.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-x-4 gap-y-1 pr-4">
+                    {tokenSummaryItems.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-x-4 gap-y-1 pr-4">
+                  {requestSummaryItems.map((item) => (
+                    <span key={item}>{item}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+            {controls ? <div className="flex shrink-0 items-stretch justify-end gap-2 self-stretch">{controls}</div> : null}
+          </div>
+        ) : null}
         <div
           className="relative min-w-full transition-all duration-300 ease-out"
           style={{
@@ -796,13 +916,6 @@ function ChartSurface({
               'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(0,0,0,0.2) calc(25% - 1px), rgba(0,0,0,0.2) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(0,0,0,0.2) calc(50% - 1px), rgba(0,0,0,0.2) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(0,0,0,0.2) calc(75% - 1px), rgba(0,0,0,0.2) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(0,0,0,0.12) 55px, rgba(0,0,0,0.12) 56px)',
           }}
         >
-          {summaryItems.length > 0 ? (
-            <div className="pointer-events-none absolute left-4 top-4 z-10 flex flex-wrap gap-x-4 gap-y-1 bg-[rgba(255,255,255,0.78)] px-3 py-2 text-[10px] font-black tracking-[0.08em] text-[var(--text-primary)] backdrop-blur-[2px]">
-              {summaryItems.map((item) => (
-                <span key={item}>{item}</span>
-              ))}
-            </div>
-          ) : null}
           <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="h-full w-full" aria-hidden="true">
         <defs>
           <linearGradient id="usage-primary-area-live" x1="0" y1="0" x2="0" y2="1">

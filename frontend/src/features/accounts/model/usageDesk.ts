@@ -129,6 +129,15 @@ function buildMinuteLabel(date: Date) {
 export function formatUsageDeskChartValue(value: number, unit: UsageDeskChartUnit): string {
   const normalized = Number.isFinite(value) ? value : 0;
   if (unit === 'count') {
+    if (normalized >= 100000000) {
+      return `${formatUsageDeskCompactNumber(normalized / 100000000)} 亿次`;
+    }
+    if (normalized >= 1000000) {
+      return `${formatUsageDeskCompactNumber(normalized / 1000000)} 百万次`;
+    }
+    if (normalized >= 10000) {
+      return `${formatUsageDeskCompactNumber(normalized / 10000)} 万次`;
+    }
     return `${new Intl.NumberFormat('zh-CN').format(normalized)} 次`;
   }
 

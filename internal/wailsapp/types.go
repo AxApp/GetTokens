@@ -88,3 +88,11 @@ type LocalProjectedUsageResponse struct {
 	FileMissingFiles int                         `json:"fileMissingFiles,omitempty"`
 	Details          []LocalProjectedUsageDetail `json:"details"`
 }
+
+type LocalProjectedUsageProgress struct {
+	Phase          string `json:"phase"`
+	CurrentFile    string `json:"currentFile,omitempty"`
+	ProcessedFiles int    `json:"processedFiles"`
+	TotalFiles     int    `json:"totalFiles"`
+	Source         string `json:"source,omitempty"`
+}

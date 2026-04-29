@@ -13,6 +13,7 @@ import (
 	"time"
 
 	_ "modernc.org/sqlite"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 const (
@@ -72,6 +73,23 @@ type localUsageIndexEntry struct {
 	PreviousOutputTokens int64
 }
 
+func (a *App) emitLocalUsageProgress(progress LocalProjectedUsageProgress) {
+	if a.ctx == nil {
+		return
+	}
+	wailsRuntime.EventsEmit(a.ctx, "usage-local:progress", progress)
+}
+
+func relativeLocalUsageProgressPath(codexHome string, absolutePath string) string {
+	if absolutePath == "" {
+		return ""
+	}
+	if relativePath, err := filepath.Rel(codexHome, absolutePath); err == nil {
+		return filepath.ToSlash(relativePath)
+	}
+	return filepath.Base(absolutePath)
+}
+
 func (a *App) GetCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 	return a.loadCodexLocalUsage(false)
 }
@@ -86,7 +104,7 @@ func (a *App) loadCodexLocalUsage(forceRebuild bool) (*LocalProjectedUsageRespon
 		return nil, err
 	}
 
-	snapshot, err := collectCodexLocalUsageSnapshotFromHome(codexHome, forceRebuild)
+	snapshot, err := a.collectCodexLocalUsageSnapshotFromHome(codexHome, forceRebuild)
 	if err != nil {
 		return nil, err
 	}
@@ -104,39 +122,54 @@ func (a *App) loadCodexLocalUsage(forceRebuild bool) (*LocalProjectedUsageRespon
 }
 
 func collectCodexLocalUsageDetailsFromHome(codexHome string) ([]LocalProjectedUsageDetail, int, error) {
-	snapshot, err := collectCodexLocalUsageSnapshotFromHome(codexHome, false)
+	snapshot, err := (&App{}).collectCodexLocalUsageSnapshotFromHome(codexHome, false)
 	if err != nil {
 		return nil, 0, err
 	}
 	return snapshot.Details, snapshot.ScannedFiles, nil
 }
 
-func collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebuild bool) (*localUsageSnapshot, error) {
-	sessionsDir := filepath.Join(codexHome, "sessions")
-	if _, err := os.Stat(sessionsDir); err != nil {
-		if os.IsNotExist(err) {
-			return &localUsageSnapshot{}, nil
-		}
-		return nil, err
-	}
-
+func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebuild bool) (*localUsageSnapshot, error) {
 	rolloutPaths := make([]string, 0, 64)
-	if err := filepath.WalkDir(sessionsDir, func(path string, d os.DirEntry, err error) error {
-		if err != nil {
-			return err
+	rolloutRoots := []string{
+		filepath.Join(codexHome, "sessions"),
+		filepath.Join(codexHome, "archived_sessions"),
+	}
+	foundAnyRoot := false
+	for _, rolloutRoot := range rolloutRoots {
+		if _, err := os.Stat(rolloutRoot); err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return nil, err
 		}
-		if d.IsDir() {
+		foundAnyRoot = true
+		if err := filepath.WalkDir(rolloutRoot, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			if strings.HasSuffix(d.Name(), ".jsonl") {
+				rolloutPaths = append(rolloutPaths, path)
+			}
 			return nil
+		}); err != nil {
+			return nil, err
 		}
-		if strings.HasSuffix(d.Name(), ".jsonl") {
-			rolloutPaths = append(rolloutPaths, path)
-		}
-		return nil
-	}); err != nil {
-		return nil, err
+	}
+	if !foundAnyRoot {
+		return &localUsageSnapshot{}, nil
 	}
 
 	sort.Strings(rolloutPaths)
+
+	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+		Phase:          "scan_inventory",
+		ProcessedFiles: 0,
+		TotalFiles:     len(rolloutPaths),
+	})
 
 	db, err := openLocalUsageIndexDB()
 	if err != nil {
@@ -159,7 +192,7 @@ func collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebuild bool)
 	}
 	currentRolloutPaths := make(map[string]struct{}, len(rolloutPaths))
 
-	for _, absolutePath := range rolloutPaths {
+	for index, absolutePath := range rolloutPaths {
 		relativePath, err := filepath.Rel(codexHome, absolutePath)
 		if err != nil {
 			return nil, err
@@ -181,6 +214,14 @@ func collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebuild bool)
 		case localUsageSourceFullRebuild:
 			snapshot.FullRebuildFiles++
 		}
+
+		a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+			Phase:          "reconcile_rollouts",
+			CurrentFile:    relativeLocalUsageProgressPath(codexHome, absolutePath),
+			ProcessedFiles: index + 1,
+			TotalFiles:     len(rolloutPaths),
+			Source:         source,
+		})
 	}
 
 	missingCount, err := purgeMissingLocalUsageEntries(db, currentRolloutPaths)
@@ -194,6 +235,12 @@ func collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebuild bool)
 			return snapshot.Details[i].InputTokens+snapshot.Details[i].OutputTokens < snapshot.Details[j].InputTokens+snapshot.Details[j].OutputTokens
 		}
 		return snapshot.Details[i].Timestamp < snapshot.Details[j].Timestamp
+	})
+
+	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+		Phase:          "finished",
+		ProcessedFiles: len(rolloutPaths),
+		TotalFiles:     len(rolloutPaths),
 	})
 
 	return snapshot, nil

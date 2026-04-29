@@ -266,6 +266,9 @@ test('readUsageDeskProjectedStats reads sqlite index refresh counters', () => {
 
 test('formatUsageDeskChartValue appends the expected unit label', () => {
   assert.equal(formatUsageDeskChartValue(1284, 'count'), '1,284 次');
+  assert.equal(formatUsageDeskChartValue(25800, 'count'), '2.6 万次');
+  assert.equal(formatUsageDeskChartValue(5800000, 'count'), '5.8 百万次');
+  assert.equal(formatUsageDeskChartValue(126000000, 'count'), '1.3 亿次');
   assert.equal(formatUsageDeskChartValue(5800, 'tokens'), '5,800');
   assert.equal(formatUsageDeskChartValue(25800, 'tokens'), '2.6 万');
   assert.equal(formatUsageDeskChartValue(5800000, 'tokens'), '5.8 百万');

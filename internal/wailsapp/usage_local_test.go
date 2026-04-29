@@ -75,6 +75,54 @@ func TestGetCodexLocalUsageAggregatesTokenCountDeltas(t *testing.T) {
 	}
 }
 
+func TestGetCodexLocalUsageIncludesArchivedSessions(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	liveDir := filepath.Join(codexHome, "sessions", "2026", "04", "28")
+	if err := os.MkdirAll(liveDir, 0755); err != nil {
+		t.Fatalf("mkdir live dir: %v", err)
+	}
+	archivedDir := filepath.Join(codexHome, "archived_sessions")
+	if err := os.MkdirAll(archivedDir, 0755); err != nil {
+		t.Fatalf("mkdir archived dir: %v", err)
+	}
+
+	liveRolloutPath := filepath.Join(liveDir, "rollout-2026-04-28T10-00-00.jsonl")
+	livePayload := "" +
+		"{\"timestamp\":\"2026-04-28T10:01:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":20,\"output_tokens\":10}}}}\n"
+	if err := os.WriteFile(liveRolloutPath, []byte(livePayload), 0600); err != nil {
+		t.Fatalf("write live rollout: %v", err)
+	}
+
+	archivedRolloutPath := filepath.Join(archivedDir, "rollout-2026-04-20T10-00-00.jsonl")
+	archivedPayload := "" +
+		"{\"timestamp\":\"2026-04-20T10:01:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":40,\"cached_input_tokens\":8,\"output_tokens\":5}}}}\n"
+	if err := os.WriteFile(archivedRolloutPath, []byte(archivedPayload), 0600); err != nil {
+		t.Fatalf("write archived rollout: %v", err)
+	}
+
+	t.Setenv("CODEX_HOME", codexHome)
+
+	app := &App{}
+	result, err := app.GetCodexLocalUsage()
+	if err != nil {
+		t.Fatalf("GetCodexLocalUsage returned error: %v", err)
+	}
+	if result.ScannedFiles != 2 {
+		t.Fatalf("scanned files = %d, want 2", result.ScannedFiles)
+	}
+	if len(result.Details) != 2 {
+		t.Fatalf("details len = %d, want 2", len(result.Details))
+	}
+	if result.Details[0].Timestamp != "2026-04-20T10:01:00Z" {
+		t.Fatalf("first timestamp = %q, want archived minute first", result.Details[0].Timestamp)
+	}
+	if result.Details[1].Timestamp != "2026-04-28T10:01:00Z" {
+		t.Fatalf("second timestamp = %q, want live minute second", result.Details[1].Timestamp)
+	}
+}
+
 func TestGetCodexLocalUsageUsesCacheHitAndDeltaAppend(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -234,5 +282,16 @@ func TestGetCodexLocalUsageSupportsOversizedJSONLLine(t *testing.T) {
 	detail := result.Details[0]
 	if detail.InputTokens != 120 || detail.CachedInputTokens != 32 || detail.OutputTokens != 18 {
 		t.Fatalf("unexpected oversized detail: %#v", detail)
+	}
+}
+
+func TestRelativeLocalUsageProgressPathPrefersCodexRelativePath(t *testing.T) {
+	codexHome := filepath.Join("/tmp", "codex-home")
+	absolutePath := filepath.Join(codexHome, "archived_sessions", "rollout-2026-04-20.jsonl")
+
+	got := relativeLocalUsageProgressPath(codexHome, absolutePath)
+	want := "archived_sessions/rollout-2026-04-20.jsonl"
+	if got != want {
+		t.Fatalf("relativeLocalUsageProgressPath() = %q, want %q", got, want)
 	}
 }
