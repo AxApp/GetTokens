@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   GetCodexLocalUsage,
   GetUsageStatistics,
@@ -15,9 +15,11 @@ import {
   readStoredUsageDeskSource,
 } from '../../../utils/pagePersistence';
 import {
+  buildUsageDeskChartPointStyle,
   buildUsageDeskObservedSnapshot,
   buildUsageDeskProjectedSnapshot,
   formatUsageDeskChartValue,
+  resolveUsageDeskChartRenderWidth,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
   type UsageDeskDailyPoint,
@@ -27,6 +29,7 @@ import {
   type UsageDeskRangeOption,
   type UsageDeskSource,
   resolveUsageDeskRangeDrilldownDayKey,
+  shouldUseStraightUsageDeskChartSegments,
 } from '../model/usageDesk';
 
 const rangeOptions: UsageDeskRangeOption[] = ['7D', '14D', '30D', '全部'];
@@ -454,6 +457,14 @@ export default function UsageDeskWorkspace({
     }
   }
 
+  function handleViewScaleChange(nextScale: 'daily' | 'minute') {
+    if (viewScale === nextScale) return;
+    if (nextScale === 'daily' && selectedDayKey) {
+      setSelectedChartPointKey(selectedDayKey);
+    }
+    setViewScale(nextScale);
+  }
+
   function handleRangeSelect(option: UsageDeskRangeOption) {
     setRange(option);
     const nextDayKey = resolveUsageDeskRangeDrilldownDayKey(
@@ -548,23 +559,26 @@ export default function UsageDeskWorkspace({
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             status={
-                              <>
-                                <div className="flex items-center gap-2.5">
-                                  <div className="border border-[var(--border-color)] px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-[var(--text-primary)]">
-                                    数据源: Sidecar Usage {observedDrilldownDayKey ? `(${observedDrilldownDayKey})` : ''}
-                                  </div>
-                                </div>
-                                <div className="text-[10px] font-black text-[var(--text-primary)] uppercase italic opacity-60">
-                                  {observedDrilldownDayKey ? 'Detailed View' : 'Overview View'}
-                                </div>
-                              </>
+                              <div className="flex items-center gap-3 text-[15px] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                <div className="h-3 w-3 bg-[var(--text-primary)]" />
+                                <span>数据源: Sidecar Usage</span>
+                                <span className="opacity-40">/</span>
+                                <span>{observedDrilldownDayKey || '全部'}</span>
+                                {selectedChartPointKey && (
+                                  <>
+                                    <span className="opacity-40">/</span>
+                                    <span>{selectedChartPointKey}</span>
+                                  </>
+                                )}
+                              </div>
                             }
                             controls={
-                              <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 border-b border-[var(--shadow-color)] px-6 py-4 w-full bg-[var(--bg-main)]">
-                                {/* 左翼：时间维度 (根据维度互斥显示) */}
-                                <div className="flex items-center gap-8">
-                                  {viewScale === 'daily' ? (
-                                    /* 1. 时间范围 */
+                              <div className="flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-4 border-b border-[var(--shadow-color)] px-6 py-4 bg-[var(--bg-main)]">
+                                {/* 左翼：时间维度 (带平滑切换动画) */}
+                                <div className="relative flex items-center min-w-[300px] h-[36px]">
+                                  <div 
+                                    className={`flex items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${viewScale === 'daily' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8 pointer-events-none absolute'}`}
+                                  >
                                     <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                       {rangeOptions.map((option) => (
                                         <button
@@ -578,8 +592,11 @@ export default function UsageDeskWorkspace({
                                         </button>
                                       ))}
                                     </div>
-                                  ) : (
-                                    /* 2. 采样精度 */
+                                  </div>
+
+                                  <div 
+                                    className={`flex items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${viewScale === 'minute' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none absolute'}`}
+                                  >
                                     <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                       {resolutionOptions.map((opt) => (
                                         <button
@@ -593,15 +610,15 @@ export default function UsageDeskWorkspace({
                                         </button>
                                       ))}
                                     </div>
-                                  )}
+                                  </div>
                                 </div>
 
                                 {/* 右翼：查看选项 */}
-                                <div className="flex items-center gap-8">
+                                <div className="flex items-center gap-6 ml-auto">
                                   {/* 3. 查看维度开关 */}
                                   <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     <button
-                                      onClick={() => setViewScale('daily')}
+                                      onClick={() => handleViewScaleChange('daily')}
                                       className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
                                         viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
@@ -609,7 +626,7 @@ export default function UsageDeskWorkspace({
                                       天级趋势
                                     </button>
                                     <button
-                                      onClick={() => setViewScale('minute')}
+                                      onClick={() => handleViewScaleChange('minute')}
                                       className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
                                         viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
@@ -674,31 +691,41 @@ export default function UsageDeskWorkspace({
                             status={
                               <>
                                 <div className="flex items-center gap-6">
-                                  <div className="border border-[var(--border-color)] px-2 py-0.5 text-[11px] font-black uppercase tracking-wider text-[var(--text-primary)]">
-                                    本地投影索引 {projectedDrilldownDayKey ? `(${projectedDrilldownDayKey})` : ''}
+                                  <div className="flex items-center gap-3 text-[15px] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                    <div className="h-3 w-3 bg-[var(--text-primary)]" />
+                                    <span>本地投影索引</span>
+                                    <span className="opacity-40">/</span>
+                                    <span>{projectedDrilldownDayKey || '概览'}</span>
+                                    {selectedChartPointKey && (
+                                      <>
+                                        <span className="opacity-40">/</span>
+                                        <span>{selectedChartPointKey}</span>
+                                      </>
+                                    )}
                                   </div>
                                   {projectedActionMessage && (
-                                    <div className="text-[11px] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
+                                    <div className="text-[13px] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
                                       {projectedActionMessage}
                                     </div>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[11px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[13px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     刷新索引
                                   </button>
-                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[11px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[13px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     重建索引
                                   </button>
                                 </div>
                               </>
                             }
                             controls={
-                              <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 border-b border-[var(--shadow-color)] px-6 py-4 w-full bg-[var(--bg-main)]">
-                                {/* 左翼：时间维度 (根据维度互斥显示) */}
-                                <div className="flex items-center gap-8">
-                                  {viewScale === 'daily' ? (
-                                    /* 1. 时间范围 */
+                              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-b border-[var(--shadow-color)] px-6 py-4 w-full bg-[var(--bg-main)]">
+                                {/* 左翼：时间维度 (带平滑切换动画) */}
+                                <div className="relative flex items-center min-w-[300px] h-[36px]">
+                                  <div 
+                                    className={`flex items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${viewScale === 'daily' ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8 pointer-events-none absolute'}`}
+                                  >
                                     <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                       {rangeOptions.map((option) => (
                                         <button
@@ -712,8 +739,11 @@ export default function UsageDeskWorkspace({
                                         </button>
                                       ))}
                                     </div>
-                                  ) : (
-                                    /* 2. 采样精度 */
+                                  </div>
+
+                                  <div 
+                                    className={`flex items-center transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${viewScale === 'minute' ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none absolute'}`}
+                                  >
                                     <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                       {resolutionOptions.map((opt) => (
                                         <button
@@ -727,15 +757,15 @@ export default function UsageDeskWorkspace({
                                         </button>
                                       ))}
                                     </div>
-                                  )}
+                                  </div>
                                 </div>
 
                                 {/* 右翼：查看选项 */}
-                                <div className="flex items-center gap-8">
+                                <div className="flex items-center gap-6 ml-auto">
                                   {/* 3. 查看维度开关 */}
                                   <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     <button
-                                      onClick={() => setViewScale('daily')}
+                                      onClick={() => handleViewScaleChange('daily')}
                                       className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
                                         viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
@@ -743,7 +773,7 @@ export default function UsageDeskWorkspace({
                                       天级趋势
                                     </button>
                                     <button
-                                      onClick={() => setViewScale('minute')}
+                                      onClick={() => handleViewScaleChange('minute')}
                                       className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
                                         viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
@@ -946,6 +976,9 @@ function ChartSurface({
   const labelBaseY = chartHeight - 12;
   const pointCount = Math.max(primary.length, secondary?.length ?? 0, 1);
   const chartWidth = Math.max(760, pointCount * 78);
+  const surfaceRef = useRef<HTMLDivElement | null>(null);
+  const [surfaceWidth, setSurfaceWidth] = useState(chartWidth);
+  const renderWidth = resolveUsageDeskChartRenderWidth(chartWidth, surfaceWidth);
   const allValues = [...primary, ...(secondary ?? [])].map((point) => point.value);
   const maxValue = Math.max(...allValues, 1);
   const primaryTone = '#111111';
@@ -953,9 +986,37 @@ function ChartSurface({
   const secondaryTone = '#7a7a7a';
   const secondaryAreaTone = '#9a9a9a';
 
+  useLayoutEffect(() => {
+    const node = surfaceRef.current;
+    if (!node) {
+      setSurfaceWidth(chartWidth);
+      return;
+    }
+
+    const syncWidth = () => {
+      setSurfaceWidth((current) => {
+        const next = node.clientWidth;
+        return current === next ? current : next;
+      });
+    };
+
+    syncWidth();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncWidth);
+      return () => window.removeEventListener('resize', syncWidth);
+    }
+
+    const observer = new ResizeObserver(() => {
+      syncWidth();
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [chartWidth]);
+
   const buildChartCoords = (points: Array<{ value: number }>) =>
     points.map((point, index) => ({
-      x: points.length <= 1 ? 0 : (index / (points.length - 1)) * chartWidth,
+      x: points.length <= 1 ? 0 : (index / (points.length - 1)) * renderWidth,
       y: chartBaseY - (point.value / maxValue) * chartInnerHeight,
     }));
 
@@ -963,6 +1024,9 @@ function ChartSurface({
     if (points.length === 0) return '';
     if (points.length === 1) {
       return `M${points[0].x},${points[0].y}`;
+    }
+    if (shouldUseStraightUsageDeskChartSegments(points.length)) {
+      return points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x},${point.y}`).join(' ');
     }
 
     const commands = [`M${points[0].x},${points[0].y}`];
@@ -1028,16 +1092,17 @@ function ChartSurface({
   return (
     <div ref={chartScrollRef} className="overflow-x-auto overflow-y-hidden bg-[var(--bg-main)]">
         <div
+          ref={surfaceRef}
           className="relative min-w-full transition-all duration-300 ease-out"
           style={{
             height: `${chartHeight}px`,
-            width: `${chartWidth}px`,
+            width: `${renderWidth}px`,
             backgroundImage:
               'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(0,0,0,0.12) calc(25% - 1px), rgba(0,0,0,0.12) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(0,0,0,0.12) calc(50% - 1px), rgba(0,0,0,0.12) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(0,0,0,0.12) calc(75% - 1px), rgba(0,0,0,0.12) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(0,0,0,0.08) 55px, rgba(0,0,0,0.08) 56px)',
           }}
         >
           {/* 背景与曲线层 */}
-          <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
+          <svg viewBox={`0 0 ${renderWidth} ${chartHeight}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
             <defs>
               <linearGradient id="usage-primary-area-live" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={primaryAreaTone} stopOpacity="0.24" />
@@ -1082,7 +1147,7 @@ function ChartSurface({
           <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none">
             <div className="relative h-full w-full pointer-events-auto">
               {primary.map((point, index) => {
-                const x = primary.length <= 1 ? 0 : (index / (primary.length - 1)) * chartWidth;
+                const x = primary.length <= 1 ? 0 : (index / (primary.length - 1)) * renderWidth;
                 const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
                 return (
                   <ChartPoint
@@ -1099,7 +1164,7 @@ function ChartSurface({
                 );
               })}
               {secondary?.map((point, index) => {
-                const x = secondary.length <= 1 ? 0 : (index / (secondary.length - 1)) * chartWidth;
+                const x = secondary.length <= 1 ? 0 : (index / (secondary.length - 1)) * renderWidth;
                 const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
                 return (
                   <ChartPoint
@@ -1148,7 +1213,7 @@ function ChartPoint({
 }) {
   return (
     <div
-      style={{ left: `${x}px`, top: `${y}px` }}
+      style={buildUsageDeskChartPointStyle(x, y)}
       className={`absolute flex items-center justify-center ${onSelect ? 'cursor-pointer' : ''}`}
       onClick={onSelect}
     >
@@ -1161,7 +1226,7 @@ function ChartPoint({
       </div>
 
       {/* 2. 中心圆点 */}
-      <div className="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
+      <div className="relative flex items-center justify-center">
         {selected && (
           <div className="absolute h-8 w-8 rounded-full bg-[var(--text-primary)] opacity-10 animate-pulse" />
         )}
