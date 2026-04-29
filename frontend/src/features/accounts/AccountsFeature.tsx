@@ -241,13 +241,13 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           />
 
           {deleteError ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
               {deleteError}
             </div>
           ) : null}
           {oauthBanner ? (
             <div
-              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[10px] font-black uppercase tracking-wide ${
+              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide ${
                 oauthBanner.tone === 'error'
                   ? 'border-red-500 bg-red-500/10 text-red-500'
                   : oauthBanner.tone === 'success'
@@ -257,7 +257,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
             >
               <span>{oauthBanner.message}</span>
               {!isOAuthPending ? (
-                <button onClick={() => setOAuthBanner(null)} className="btn-swiss !px-2 !py-1 !text-[8px]">
+                <button onClick={() => setOAuthBanner(null)} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
                   {t('common.close')}
                 </button>
               ) : null}

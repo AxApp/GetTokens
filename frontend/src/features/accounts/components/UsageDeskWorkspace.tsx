@@ -490,7 +490,7 @@ export default function UsageDeskWorkspace({
             <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
               {pageTitle}
             </h2>
-            <p className="mt-1 max-w-3xl text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+            <p className="mt-1 max-w-3xl text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
               {pageDescription}
             </p>
           </div>
@@ -515,10 +515,10 @@ export default function UsageDeskWorkspace({
               <section className="card-swiss !p-5">
                 <div className="flex flex-col gap-4 border-b-2 border-dashed border-[var(--border-color)] pb-4 xl:flex-row xl:items-end xl:justify-between">
                   <div>
-                    <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">模块 01</div>
+                    <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">模块 01</div>
                     <h3 className="mt-2 text-2xl font-black uppercase italic tracking-tight text-[var(--text-primary)]">gemini 用量分析</h3>
                   </div>
-                  <p className="max-w-2xl text-[11px] leading-6 text-[var(--text-muted)]">
+                  <p className="max-w-2xl text-[0.6875rem] leading-6 text-[var(--text-muted)]">
                     `gemini` 保留为独立页面，不和 `codex` 混在同一块里。当前这页先只承接页面边界，后续再接入 gemini 自己的 usage 真源。
                   </p>
                 </div>
@@ -563,7 +563,7 @@ export default function UsageDeskWorkspace({
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             status={
-                              <div className="flex items-center gap-3 text-[15px] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                              <div className="flex items-center gap-3 text-[0.9375rem] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                 <div className="h-3 w-3 bg-[var(--text-primary)]" />
                                 <span>数据源: Sidecar Usage</span>
                                 <span className="opacity-40">/</span>
@@ -588,7 +588,7 @@ export default function UsageDeskWorkspace({
                                         <button
                                           key={option}
                                           onClick={() => handleRangeSelect(option)}
-                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                             range === option ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -606,7 +606,7 @@ export default function UsageDeskWorkspace({
                                         <button
                                           key={opt}
                                           onClick={() => setResolution(opt)}
-                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                             resolution === opt ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -623,7 +623,7 @@ export default function UsageDeskWorkspace({
                                   <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     <button
                                       onClick={() => handleViewScaleChange('daily')}
-                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                         viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -631,7 +631,7 @@ export default function UsageDeskWorkspace({
                                     </button>
                                     <button
                                       onClick={() => handleViewScaleChange('minute')}
-                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                         viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -696,7 +696,7 @@ export default function UsageDeskWorkspace({
                             status={
                               <>
                                 <div className="flex items-center gap-6">
-                                  <div className="flex items-center gap-3 text-[15px] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                  <div className="flex items-center gap-3 text-[0.9375rem] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                     <div className="h-3 w-3 bg-[var(--text-primary)]" />
                                     <span>本地投影索引</span>
                                     <span className="opacity-40">/</span>
@@ -709,16 +709,16 @@ export default function UsageDeskWorkspace({
                                     )}
                                   </div>
                                   {projectedActionMessage && (
-                                    <div className="text-[13px] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
+                                    <div className="text-[0.8125rem] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
                                       {projectedActionMessage}
                                     </div>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[13px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     刷新索引
                                   </button>
-                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[13px] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     重建索引
                                   </button>
                                 </div>
@@ -736,7 +736,7 @@ export default function UsageDeskWorkspace({
                                         <button
                                           key={option}
                                           onClick={() => handleRangeSelect(option)}
-                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                             range === option ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -754,7 +754,7 @@ export default function UsageDeskWorkspace({
                                         <button
                                           key={opt}
                                           onClick={() => setResolution(opt)}
-                                          className={`px-5 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                             resolution === opt ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -771,7 +771,7 @@ export default function UsageDeskWorkspace({
                                   <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     <button
                                       onClick={() => handleViewScaleChange('daily')}
-                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                         viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -779,7 +779,7 @@ export default function UsageDeskWorkspace({
                                     </button>
                                     <button
                                       onClick={() => handleViewScaleChange('minute')}
-                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                         viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -791,7 +791,7 @@ export default function UsageDeskWorkspace({
                                   <div className="flex items-center border border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     <button
                                       onClick={() => setProjectedChartMetric('tokens')}
-                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                         projectedChartMetric === 'tokens' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -799,7 +799,7 @@ export default function UsageDeskWorkspace({
                                     </button>
                                     <button
                                       onClick={() => setProjectedChartMetric('requests')}
-                                      className={`px-4 py-1.5 text-[11px] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
                                         projectedChartMetric === 'requests' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -850,8 +850,8 @@ function StatePanel({ title, body, tone = 'default' }: { title: string; body: Re
           : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
       }`}
     >
-      <div className="text-[10px] font-black uppercase tracking-[0.18em]">{title}</div>
-      <div className={`mt-2 text-[11px] leading-6 ${tone === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>{body}</div>
+      <div className="text-[0.625rem] font-black uppercase tracking-[0.18em]">{title}</div>
+      <div className={`mt-2 text-[0.6875rem] leading-6 ${tone === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>{body}</div>
     </div>
   );
 }
@@ -917,7 +917,7 @@ function UsageChartCard({
         <footer className="flex flex-wrap items-center gap-x-8 gap-y-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
           {summaryItems.map((item, idx) => (
             <div key={idx} className="flex flex-col gap-1">
-               <span className="text-[11px] font-black uppercase tracking-tight text-[var(--text-primary)]">{item}</span>
+               <span className="text-[0.6875rem] font-black uppercase tracking-tight text-[var(--text-primary)]">{item}</span>
             </div>
           ))}
           {footerExtra && <div className="ml-auto">{footerExtra}</div>}
@@ -949,8 +949,8 @@ function EmptyChartPlaceholder({
       }}
     >
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0.88))] px-6 text-center">
-        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">{title}</div>
-        <p className="max-w-md text-[11px] font-bold leading-6 text-[var(--text-muted)]">{body}</p>
+        <div className="text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">{title}</div>
+        <p className="max-w-md text-[0.6875rem] font-bold leading-6 text-[var(--text-muted)]">{body}</p>
       </div>
     </div>
   );
@@ -1335,7 +1335,7 @@ function UsageDetailTable({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="border-b-2 border-[var(--border-color)] px-3 py-3 text-left text-[10px] font-black tracking-[0.12em] text-[var(--text-primary)]"
+                className="border-b-2 border-[var(--border-color)] px-3 py-3 text-left text-[0.625rem] font-black tracking-[0.12em] text-[var(--text-primary)]"
               >
                 {column.header}
               </th>
@@ -1387,7 +1387,7 @@ function UsageDetailRow({
       {cells.map((cell, index) => (
         <td
           key={`${row.timeLabel}-${index}`}
-          className={`px-3 py-3 text-[11px] font-bold leading-6 ${selected ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}
+          className={`px-3 py-3 text-[0.6875rem] font-bold leading-6 ${selected ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}
         >
           {cell}
         </td>
@@ -1399,9 +1399,9 @@ function UsageDetailRow({
 function InfoCard({ title, highlight, body }: { title: string; highlight: string; body: string }) {
   return (
     <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-4 shadow-[4px_4px_0_var(--shadow-color)]">
-      <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{title}</div>
-      <div className="mt-3 text-[22px] font-black uppercase italic tracking-tight text-[var(--text-primary)]">{highlight}</div>
-      <p className="mt-3 text-[11px] leading-6 text-[var(--text-muted)]">{body}</p>
+      <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{title}</div>
+      <div className="mt-3 text-[1.375rem] font-black uppercase italic tracking-tight text-[var(--text-primary)]">{highlight}</div>
+      <p className="mt-3 text-[0.6875rem] leading-6 text-[var(--text-muted)]">{body}</p>
     </div>
   );
 }

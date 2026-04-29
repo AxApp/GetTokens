@@ -24,7 +24,7 @@ export default function ApiKeyComposeModal({
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('accounts.source_api_key')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -34,7 +34,7 @@ export default function ApiKeyComposeModal({
         <div className="space-y-4 p-6">
           <div className="grid gap-4">
             <label className="space-y-2">
-              <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.api_key_label')}
               </span>
               <input
@@ -45,7 +45,7 @@ export default function ApiKeyComposeModal({
               />
             </label>
             <label className="space-y-2">
-              <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.api_key_value')}
               </span>
               <input
@@ -57,7 +57,7 @@ export default function ApiKeyComposeModal({
               />
             </label>
             <label className="space-y-2">
-              <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Base URL
               </span>
               <input
@@ -70,7 +70,7 @@ export default function ApiKeyComposeModal({
           </div>
 
           {error ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
               {error}
             </div>
           ) : null}

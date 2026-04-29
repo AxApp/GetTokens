@@ -9,7 +9,10 @@ import SettingsPage from './pages/SettingsPage';
 import StatusPage from './pages/StatusPage';
 import { DebugProvider, useDebug } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
+import { TextScaleProvider, useTextScale } from './context/TextScaleContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { getTextScaleAttributeValue } from './context/textScale';
+import { applyTextScaleVariables } from './features/settings/settingsTextScale';
 import type { AccountWorkspace, AppPage, ReleaseInfo, SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from './types';
 import {
   buildFrameHash,
@@ -32,6 +35,7 @@ const defaultSidecarStatus: SidecarStatus = {
 
 function AppShell() {
   const { themeMode } = useTheme();
+  const { textScale } = useTextScale();
   const { trackRequest } = useDebug();
   const [activePage, setActivePage] = useState<AppPage>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
@@ -120,6 +124,11 @@ function AppShell() {
   }, [themeMode]);
 
   useEffect(() => {
+    document.documentElement.dataset.textScale = getTextScaleAttributeValue(textScale);
+    applyTextScaleVariables(document.documentElement.style, textScale);
+  }, [textScale]);
+
+  useEffect(() => {
     let mounted = true;
 
     async function loadInitialState() {
@@ -189,6 +198,7 @@ function AppShell() {
     <div
       className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]"
       data-collaboration-id="MAIN_FRAME"
+      data-text-scale={getTextScaleAttributeValue(textScale)}
     >
       <Sidebar
         activePage={activePage}
@@ -207,11 +217,13 @@ function AppShell() {
 export default function App() {
   return (
     <ThemeProvider>
-      <I18nProvider>
-        <DebugProvider>
-          <AppShell />
-        </DebugProvider>
-      </I18nProvider>
+      <TextScaleProvider>
+        <I18nProvider>
+          <DebugProvider>
+            <AppShell />
+          </DebugProvider>
+        </I18nProvider>
+      </TextScaleProvider>
     </ThemeProvider>
   );
 }

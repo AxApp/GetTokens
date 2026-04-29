@@ -650,13 +650,13 @@ export default function StatusFeature({
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
+            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.core_state')}
             </div>
             <div className="text-xl font-black italic text-[var(--text-primary)]">{sidecarStatus.code.toUpperCase()}</div>
           </div>
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
+            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.port')}
             </div>
             <div className="text-xl font-black italic text-[var(--text-primary)]">
@@ -664,13 +664,13 @@ export default function StatusFeature({
             </div>
           </div>
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
+            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.uptime')}
             </div>
             <div className="text-xl font-black italic text-[var(--text-primary)]">{uptime}</div>
           </div>
           <div className="card-swiss !p-6">
-            <div className="mb-2 text-[10px] font-black uppercase text-[var(--text-primary)]">
+            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.build')}
             </div>
             <div className="text-xl font-black italic text-[var(--text-primary)]">{version}</div>
@@ -678,7 +678,7 @@ export default function StatusFeature({
         </div>
 
         <div className="card-swiss !p-0 overflow-hidden">
-          <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-3 text-[10px] font-black italic uppercase tracking-widest">
+          <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-3 text-[0.625rem] font-black italic uppercase tracking-widest">
             {t('status.diagnostic')}
           </div>
           <div className="flex items-center gap-4 p-6">
@@ -693,13 +693,13 @@ export default function StatusFeature({
 
         <div className="card-swiss !p-0 overflow-hidden">
           <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-3">
-            <div className="text-[10px] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
+            <div className="text-[0.625rem] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
               {t('status.service_config')}
             </div>
             <button
               onClick={() => void applyRelayConfigToLocal()}
               disabled={isApplyingToLocal || sidecarStatus.code !== 'ready'}
-              className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[9px] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local')}
             </button>
@@ -708,13 +708,13 @@ export default function StatusFeature({
           <div className="space-y-6 border-b-2 border-[var(--border-color)] p-6">
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
                   {t('status.service_api_keys')}
                 </div>
                 <button
                   onClick={openCreateRelayKeyEditor}
                   disabled={isSavingServiceKeys || sidecarStatus.code !== 'ready'}
-                  className="btn-swiss !px-3 !py-1 !text-[10px] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-swiss !px-3 !py-1 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   +
                 </button>
@@ -732,10 +732,10 @@ export default function StatusFeature({
                     }`}
                   >
                     <button onClick={() => setSelectedKeyIndex(index)} className="min-w-0 flex-1 text-left">
-                      <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                      <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
                         {relayKeyDisplayName(item, index)}
                       </div>
-                      <div className="mt-1 font-mono text-[10px] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                      <div className="mt-1 font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
                         {maskRelayKey(item)}
                       </div>
                     </button>
@@ -750,13 +750,13 @@ export default function StatusFeature({
                         <div className="absolute right-full top-1/2 z-10 mr-2 flex -translate-y-1/2 items-center gap-2">
                           <button
                             onClick={() => openRenameRelayKeyEditor(index)}
-                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[9px]"
+                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
                           >
                             {t('status.service_key_rename')}
                           </button>
                           <button
                             onClick={() => void deleteRelayServiceAPIKey(index)}
-                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[9px]"
+                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
                           >
                             {t('status.service_key_delete')}
                           </button>
@@ -766,19 +766,19 @@ export default function StatusFeature({
                   </div>
                 ))}
               </div>
-              <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
                 {t('status.service_keys_hint')}
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
                   {t('status.endpoint_title')}
                 </div>
                 <button
                   onClick={() => setIsLANAccessEnabled((prev) => !prev)}
-                  className={`btn-swiss !px-3 !py-1 !text-[9px] ${
+                  className={`btn-swiss !px-3 !py-1 !text-[0.5625rem] ${
                     isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
                   }`}
                 >
@@ -809,7 +809,7 @@ export default function StatusFeature({
                     </button>
                     <button
                       onClick={() => void copyText(endpoint.baseUrl, t('status.endpoint_copied'))}
-                      className={`shrink-0 text-[10px] font-black uppercase tracking-wide ${
+                      className={`shrink-0 text-[0.625rem] font-black uppercase tracking-wide ${
                         selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'
                       }`}
                     >
@@ -822,10 +822,10 @@ export default function StatusFeature({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
                   {t('status.model_name_title')}
                 </div>
-                <button onClick={openCreateRelayModelEditor} className="btn-swiss !px-3 !py-1 !text-[10px]">
+                <button onClick={openCreateRelayModelEditor} className="btn-swiss !px-3 !py-1 !text-[0.625rem]">
                   +
                 </button>
               </div>
@@ -833,7 +833,7 @@ export default function StatusFeature({
                 {relayModelOptions.map((model) => (
                   <div
                     key={model}
-                    className={`border-2 px-3 py-2 font-mono text-[10px] font-black uppercase tracking-wide ${
+                    className={`border-2 px-3 py-2 font-mono text-[0.625rem] font-black uppercase tracking-wide ${
                       selectedRelayModel === model
                         ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                         : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
@@ -855,17 +855,17 @@ export default function StatusFeature({
               </div>
             </div>
 
-            <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">{serviceMessage}</div>
+            <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">{serviceMessage}</div>
 
             <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
               <div className="overflow-hidden border-2 border-[var(--border-color)]">
                 <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
-                  <div className="font-mono text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
                     {t('status.codex_auth_json')}
                   </div>
                   <button
                     onClick={() => void copyText(serviceAuthJSON, t('status.auth_json_copied'))}
-                    className="btn-swiss !px-3 !py-1 !text-[9px]"
+                    className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
                   >
                     复制
                   </button>
@@ -877,12 +877,12 @@ export default function StatusFeature({
 
               <div className="overflow-hidden border-2 border-[var(--border-color)]">
                 <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
-                  <div className="font-mono text-[10px] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
                     {t('status.codex_config_toml')}
                   </div>
                   <button
                     onClick={() => void copyText(serviceConfigToml, t('status.config_toml_copied'))}
-                    className="btn-swiss !px-3 !py-1 !text-[9px]"
+                    className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
                   >
                     复制
                   </button>
@@ -893,7 +893,7 @@ export default function StatusFeature({
               </div>
             </div>
 
-            <div className="text-[10px] font-black uppercase tracking-wide text-[var(--text-muted)]">{localApplyMessage}</div>
+            <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">{localApplyMessage}</div>
           </div>
         </div>
       </div>
@@ -908,7 +908,7 @@ export default function StatusFeature({
             onClick={(event) => event.stopPropagation()}
           >
             <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('status.service_api_keys')}
               </div>
               <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -917,7 +917,7 @@ export default function StatusFeature({
             </header>
             <div className="space-y-4 p-6">
               <label className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   {t('status.service_key_name_label')}
                 </span>
                 <input
@@ -930,7 +930,7 @@ export default function StatusFeature({
                 />
               </label>
               <label className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   {t('status.service_key_value_label')}
                 </span>
                 <input
@@ -945,7 +945,7 @@ export default function StatusFeature({
                 />
               </label>
               {relayKeyEditor.error ? (
-                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
                   {relayKeyEditor.error}
                 </div>
               ) : null}
@@ -975,7 +975,7 @@ export default function StatusFeature({
             onClick={(event) => event.stopPropagation()}
           >
             <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('status.model_name_title')}
               </div>
               <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -984,7 +984,7 @@ export default function StatusFeature({
             </header>
             <div className="space-y-4 p-6">
               <label className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   {t('status.model_name_label')}
                 </span>
                 <input
@@ -997,7 +997,7 @@ export default function StatusFeature({
                 />
               </label>
               {relayModelEditor.error ? (
-                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
                   {relayModelEditor.error}
                 </div>
               ) : null}

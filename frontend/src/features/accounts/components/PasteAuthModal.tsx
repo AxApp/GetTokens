@@ -24,7 +24,7 @@ export default function PasteAuthModal({
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('accounts.import_auth_file')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -40,7 +40,7 @@ export default function PasteAuthModal({
             placeholder={t('accounts.paste_auth_file_placeholder')}
           />
           {pasteError ? (
-            <div className="text-[10px] font-black uppercase tracking-wide text-red-500">{pasteError}</div>
+            <div className="text-[0.625rem] font-black uppercase tracking-wide text-red-500">{pasteError}</div>
           ) : null}
         </div>
         <footer className="flex items-center justify-end gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">

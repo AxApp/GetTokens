@@ -145,7 +145,7 @@ export default function Sidebar({
                           setExpandedSection('accounts');
                           setActiveAccountWorkspace(workspace.id);
                         }}
-                        className={`w-full border px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                        className={`w-full border px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.2em] transition-all ${
                           activeAccountWorkspace === workspace.id
                             ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                             : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
@@ -179,7 +179,7 @@ export default function Sidebar({
                           setExpandedSection('usage-desk');
                           setActiveUsageDeskWorkspace(workspace.id);
                         }}
-                        className={`w-full border px-3 py-2 text-left text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
+                        className={`w-full border px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.2em] transition-all ${
                           activeUsageDeskWorkspace === workspace.id
                             ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                             : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
@@ -197,7 +197,7 @@ export default function Sidebar({
       </nav>
 
       <div className="border-t-2 border-[var(--border-color)] p-6">
-        <div className="text-[9px] font-bold uppercase tracking-tighter text-[var(--text-muted)]">
+        <div className="text-[0.5625rem] font-bold uppercase tracking-tighter text-[var(--text-muted)]">
           VERSION {sidebarVersion}
         </div>
       </div>

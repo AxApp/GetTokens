@@ -227,7 +227,7 @@ export default function AccountDetailModal({
       >
         <header className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-4">
           <div className="flex flex-col">
-            <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               Object_Inspection
             </div>
             <h3 className="max-w-[450px] truncate text-sm font-black italic uppercase tracking-tighter text-[var(--text-primary)]">
@@ -238,7 +238,7 @@ export default function AccountDetailModal({
             {canStartReauth ? (
               <button
                 onClick={isReauthing ? onCancelReauth : onStartReauth}
-                className="btn-swiss !px-3 !py-1 !text-[9px]"
+                className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
               >
                 {isReauthing ? t('common.cancel') : t('accounts.reauth')}
               </button>
@@ -255,18 +255,18 @@ export default function AccountDetailModal({
           <div className="grid grid-cols-3 gap-y-6 border-b-2 border-dashed border-[var(--border-color)] pb-8">
             {detailFields.map(([label, value]) => (
               <div key={label} className="space-y-1">
-                <div className="text-[9px] font-black uppercase italic text-[var(--text-muted)]">{label}</div>
-                <div className="truncate text-[11px] font-black uppercase text-[var(--text-primary)]">{value}</div>
+                <div className="text-[0.5625rem] font-black uppercase italic text-[var(--text-muted)]">{label}</div>
+                <div className="truncate text-[0.6875rem] font-black uppercase text-[var(--text-primary)]">{value}</div>
               </div>
             ))}
           </div>
 
           <section className="space-y-4 border-b-2 border-dashed border-[var(--border-color)] pb-8">
             <div className="flex items-center justify-between gap-4">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.recent_health')}
               </div>
-              <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
                 {usageSummary?.hasData ? t('accounts.stability_signal_synced') : t('accounts.no_recent_activity')}
               </div>
             </div>
@@ -279,8 +279,8 @@ export default function AccountDetailModal({
                   key={label}
                   className="space-y-1 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3"
                 >
-                  <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{label}</div>
-                  <div className="text-[12px] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{value}</div>
+                  <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{label}</div>
+                  <div className="text-[0.75rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{value}</div>
                 </div>
               ))}
             </div>
@@ -288,50 +288,50 @@ export default function AccountDetailModal({
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <div className="flex items-center gap-2 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
                 <span className="h-2 w-2 bg-[var(--border-color)]"></span>
                 {t('accounts.ui_compatible_models')}
               </div>
-              {loadingModels ? <span className="animate-pulse text-[9px] font-black">{t('accounts.ui_loading_short')}</span> : null}
+              {loadingModels ? <span className="animate-pulse text-[0.5625rem] font-black">{t('accounts.ui_loading_short')}</span> : null}
             </div>
             <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto pr-2">
               {models.length > 0 ? (
                 models.map((model, index) => (
                   <span
                     key={`${getModelLabel(model)}-${index}`}
-                    className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[10px] font-black italic uppercase"
+                    className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[0.625rem] font-black italic uppercase"
                   >
                     {getModelLabel(model)}
                   </span>
                 ))
               ) : !loadingModels ? (
-                <div className="text-[10px] font-bold italic text-[var(--text-muted)]">{t('accounts.ui_no_data_available')}</div>
+                <div className="text-[0.625rem] font-bold italic text-[var(--text-muted)]">{t('accounts.ui_no_data_available')}</div>
               ) : null}
             </div>
           </section>
 
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <div className="flex items-center gap-2 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
                 <span className="h-2 w-2 bg-[var(--border-color)]"></span>
                 {viewMode === 'sanitized' ? t('accounts.ui_sanitized_source_data') : t('accounts.ui_raw_source_data')}
               </div>
 	              <div className="flex items-center gap-3">
 	                {copyState !== 'idle' || sanitizeState !== 'idle' ? (
-	                  <span className="text-[9px] font-black uppercase tracking-[0.14em] text-[var(--border-color)]">
+	                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--border-color)]">
 	                    {copyState === 'success' || sanitizeState === 'success'
 	                      ? t('accounts.copy_done')
 	                      : t('accounts.copy_failed')}
 	                  </span>
                 ) : null}
                 {loadingRaw ? (
-                  <span className="animate-pulse text-[9px] font-black text-[var(--text-muted)]">{t('accounts.ui_fetching_fs')}</span>
+                  <span className="animate-pulse text-[0.5625rem] font-black text-[var(--text-muted)]">{t('accounts.ui_fetching_fs')}</span>
                 ) : (
                   <>
                     <button
                       onClick={() => void handleSanitizeContent()}
                       disabled={!canCopyRawContent(rawContent, loadingRaw) || sanitizing}
-                      className="btn-swiss !px-3 !py-1 !text-[9px]"
+                      className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
                     >
                       {sanitizing
                         ? t('accounts.sanitizing_source')
@@ -342,7 +342,7 @@ export default function AccountDetailModal({
                     <button
                       onClick={() => void handleCopyDisplayedContent()}
                       disabled={!displayedContentCopyable}
-                      className="btn-swiss !px-3 !py-1 !text-[9px]"
+                      className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
                     >
                       {viewMode === 'sanitized' ? t('accounts.copy_sanitized_source') : t('accounts.copy_raw_source')}
                     </button>
@@ -361,7 +361,7 @@ export default function AccountDetailModal({
                 void handleCopyDisplayedContent();
               }}
               onKeyDown={handleRawContentKeyDown}
-              className={`max-h-[300px] overflow-auto whitespace-pre border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 font-mono text-[10px] leading-relaxed text-[var(--text-primary)] shadow-inner ${
+              className={`max-h-[300px] overflow-auto whitespace-pre border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)] shadow-inner ${
                 displayedContentCopyable
                   ? 'cursor-copy transition-colors hover:bg-[var(--bg-surface)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]'
                   : ''

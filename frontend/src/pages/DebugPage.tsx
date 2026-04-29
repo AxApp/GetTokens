@@ -83,7 +83,7 @@ export default function DebugPage() {
             <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
               {t('debug.title')}
             </h2>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+            <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
               {t('debug.subtitle')} / {sortedEntries.length} UNITS
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function DebugPage() {
                       />
                     </label>
                     <div className="space-y-1">
-                      <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                      <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                         {entry.transport} / {entry.startedAt}
                       </div>
                       <div className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
@@ -137,7 +137,7 @@ export default function DebugPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right text-[9px] font-black uppercase tracking-widest">
+                  <div className="text-right text-[0.5625rem] font-black uppercase tracking-widest">
                     <div
                       className={
                         entry.status === 'success'
@@ -155,18 +155,18 @@ export default function DebugPage() {
 
                 <div className="grid flex-grow grid-cols-1 overflow-y-auto gap-0 md:grid-cols-2">
                   <div className="border-b-2 border-[var(--border-color)] p-5 md:border-b-0 md:border-r-2">
-                    <div className="mb-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                    <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
                       {t('debug.request')}
                     </div>
-                    <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-[var(--text-primary)]">
+                    <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
                       {formatPayload(entry.request)}
                     </pre>
                   </div>
                   <div className="p-5">
-                    <div className="mb-3 text-[9px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                    <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
                       {entry.status === 'error' ? t('debug.response_error') : t('debug.response')}
                     </div>
-                    <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-[var(--text-primary)]">
+                    <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
                       {entry.status === 'error' ? formatPayload(entry.error) : formatPayload(entry.response)}
                     </pre>
                   </div>

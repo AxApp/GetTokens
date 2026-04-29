@@ -35,7 +35,7 @@ export default function OpenAICompatibleComposeModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('accounts.openai_provider_title')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -46,7 +46,7 @@ export default function OpenAICompatibleComposeModal({
         <div className="space-y-6 p-6">
           <div className="grid gap-5">
             <label className="space-y-2">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_preset')}
               </div>
               <select
@@ -61,14 +61,14 @@ export default function OpenAICompatibleComposeModal({
                   </option>
                 ))}
               </select>
-              <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <p className="text-[0.5rem] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_preset_hint')}
               </p>
             </label>
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                   {t('accounts.openai_provider_name')}
                 </div>
                 <input
@@ -80,7 +80,7 @@ export default function OpenAICompatibleComposeModal({
               </label>
 
               <label className="space-y-2">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                   {t('accounts.ui_base_url')}
                 </div>
                 <input
@@ -93,7 +93,7 @@ export default function OpenAICompatibleComposeModal({
             </div>
 
             <label className="space-y-2">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.ui_api_key')}
               </div>
               <input
@@ -107,7 +107,7 @@ export default function OpenAICompatibleComposeModal({
           </div>
 
           {error ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
               {error}
             </div>
           ) : null}

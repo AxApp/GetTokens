@@ -102,7 +102,7 @@ export default function AccountCard({
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-3">
-          <h3 className="flex items-center gap-2 break-all text-[12px] font-black uppercase leading-snug tracking-[0.08em] text-[var(--text-primary)]">
+          <h3 className="flex items-center gap-2 break-all text-[0.75rem] font-black uppercase leading-snug tracking-[0.08em] text-[var(--text-primary)]">
             <div
               title={operationalState.label}
               className={`h-2 w-2 shrink-0 ${
@@ -114,14 +114,14 @@ export default function AccountCard({
             </span>
           </h3>
           {failureReason ? (
-            <div className="break-words text-[10px] font-bold leading-relaxed text-red-500" title={failureReason}>
+            <div className="break-words text-[0.625rem] font-bold leading-relaxed text-red-500" title={failureReason}>
               {failureReason}
             </div>
           ) : null}
         </div>
         <div className="flex shrink-0 flex-col items-end gap-2">
           {isSelectionMode ? (
-            <label className="flex cursor-pointer items-center gap-2 text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
+            <label className="flex cursor-pointer items-center gap-2 text-[0.5625rem] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
               <input
                 type="checkbox"
                 checked={isSelected}
@@ -137,7 +137,7 @@ export default function AccountCard({
       {usageSummary?.hasData ? (
         <div className="mb-4 border-t border-dashed border-[var(--border-color)] pt-4">
           <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-            <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+            <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
               {t('accounts.recent_health')}
             </div>
             <AccountHealthBar summary={usageSummary} />
@@ -150,14 +150,14 @@ export default function AccountCard({
       <div className="mt-auto">
         {isPendingDelete ? (
           <div className="flex items-center justify-between gap-3 border-t border-dashed border-[var(--border-color)] pt-3">
-            <div className="shrink-0 text-[9px] font-black uppercase tracking-wide text-red-500">
+            <div className="shrink-0 text-[0.5625rem] font-black uppercase tracking-wide text-red-500">
               {t('common.confirm_delete')}
             </div>
             <div className="flex gap-2">
-              <button onClick={onCancelDelete} className="btn-swiss !px-3 !py-1 !text-[9px]">
+              <button onClick={onCancelDelete} className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
                 {t('common.cancel')}
               </button>
-              <button onClick={() => onConfirmDelete(account)} className="btn-swiss !px-3 !py-1 !text-[9px] !text-red-500">
+              <button onClick={() => onConfirmDelete(account)} className="btn-swiss !px-3 !py-1 !text-[0.5625rem] !text-red-500">
                 {t('common.delete')}
               </button>
             </div>
@@ -168,13 +168,13 @@ export default function AccountCard({
               supportsQuota(account) ? (canReauth ? 'grid-cols-4' : 'grid-cols-3') : canReauth ? 'grid-cols-3' : 'grid-cols-2'
             }`}
           >
-            <button onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[9px]">
+            <button onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
               {t('common.details')}
             </button>
             {supportsQuota(account) ? (
               <button
                 onClick={() => onRefreshQuota(account)}
-                className="btn-swiss !py-1.5 !text-[9px]"
+                className="btn-swiss !py-1.5 !text-[0.5625rem]"
                 disabled={!ready || quotaState?.status === 'loading'}
               >
                 {t('accounts.refresh_quota')}
@@ -183,13 +183,13 @@ export default function AccountCard({
             {canReauth ? (
               <button
                 onClick={() => onStartReauth(account)}
-                className="btn-swiss !py-1.5 !text-[9px]"
+                className="btn-swiss !py-1.5 !text-[0.5625rem]"
                 disabled={isOAuthPending}
               >
                 {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
               </button>
             ) : null}
-            <button onClick={() => onRequestDelete(account.id)} className="btn-swiss !py-1.5 !text-[9px] !text-red-500">
+            <button onClick={() => onRequestDelete(account.id)} className="btn-swiss !py-1.5 !text-[0.5625rem] !text-red-500">
               {t('common.delete')}
             </button>
           </div>
@@ -207,7 +207,7 @@ function QuotaWindows({ t, quotaDisplay }: { t: Translator; quotaDisplay: QuotaD
           key={window.id}
           className="space-y-2.5 border-b border-dashed border-[var(--border-color)] pb-3 last:border-b-0 last:pb-0"
         >
-          <div className="flex items-end justify-between gap-3 text-[8px] font-black uppercase">
+          <div className="flex items-end justify-between gap-3 text-[0.5rem] font-black uppercase">
             <span className="tracking-[0.2em] text-[var(--text-muted)]">{window.label}</span>
             <span className="text-green-600">
               {t('accounts.quota_remaining')} {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
@@ -234,7 +234,7 @@ function QuotaWindows({ t, quotaDisplay }: { t: Translator; quotaDisplay: QuotaD
               }}
             />
           </div>
-          <div className="flex items-center justify-between gap-3 text-[8px] font-black uppercase tracking-[0.12em]">
+          <div className="flex items-center justify-between gap-3 text-[0.5rem] font-black uppercase tracking-[0.12em]">
             <span className="text-[var(--text-muted)]">{t('accounts.quota_reset')}</span>
             <div
               className="cursor-help text-right text-[var(--text-primary)]"

@@ -12,6 +12,25 @@
     --bg-muted: #f0f0f0;
     --accent-red: #ff0000;
     --shadow-color: #e5e5e5;
+    --gt-text-scale-factor: 1;
+    --font-size-ui-2xs: 0.5rem;
+    --font-size-ui-xs: 0.5625rem;
+    --font-size-ui-sm: 0.625rem;
+    --font-size-ui-md: 0.75rem;
+    --font-size-ui-lg: 0.875rem;
+    --line-height-ui-tight: 1.2;
+    --line-height-ui-normal: 1.4;
+    --line-height-ui-relaxed: 1.6;
+    --gt-control-segmented-font-size: 0.5625rem;
+    --gt-control-segmented-min-height: 2.125rem;
+    --gt-control-segmented-padding-inline: 0.625rem;
+    --gt-control-segmented-indicator-height: 0.1875rem;
+    --gt-settings-section-badge-size: 0.5rem;
+    --gt-settings-section-title-size: 0.75rem;
+    --gt-settings-label-size: 0.5625rem;
+    --gt-settings-meta-size: 0.5rem;
+    --gt-settings-body-size: 0.5625rem;
+    --gt-settings-value-size: 0.625rem;
   }
 
   .dark {
@@ -25,9 +44,15 @@
     --shadow-color: #222222;
   }
 
+  html {
+    font-size: calc(16px * var(--gt-text-scale-factor));
+  }
+
   body {
     @apply bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-200;
     font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: var(--font-size-ui-lg);
+    line-height: var(--line-height-ui-normal);
   }
 }
 

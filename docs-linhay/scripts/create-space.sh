@@ -52,6 +52,16 @@ if [[ ! -f "$README_PATH" ]]; then
 
 ## 验收标准
 
+## 设计稿入口
+
+- 本期设计稿：\`（未产出）\`
+- 约束：单期只保留一个 HTML 文件；若存在多稿对比，也必须收敛在同一个 HTML 文件内。
+
+## Worktree 映射
+
+- branch：\`feat/$SPACE_KEY\`
+- worktree：\`../GetTokens-worktrees/$SPACE_KEY/\`
+
 ## 相关链接
 
 ## 当前状态

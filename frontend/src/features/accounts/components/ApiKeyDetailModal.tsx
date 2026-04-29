@@ -193,7 +193,7 @@ export default function ApiKeyDetailModal({
         <header className="shrink-0 border-b-2 border-[var(--border-color)] px-6 py-5">
           <div className="flex flex-col gap-3">
             <div>
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {sourceHeading}
               </div>
               {isEditingName ? (
@@ -201,13 +201,13 @@ export default function ApiKeyDetailModal({
                   <input
                     value={draftName}
                     onChange={(event: TextInputEvent) => setDraftName(event.target.value)}
-                    className="input-swiss min-w-[16rem] flex-1 !py-1.5 !text-[12px] !font-black !uppercase !italic tracking-tight"
+                    className="input-swiss min-w-[16rem] flex-1 !py-1.5 !text-[0.75rem] !font-black !uppercase !italic tracking-tight"
                     placeholder={t('accounts.api_key_label_placeholder')}
                   />
-                  <button onClick={saveName} className="btn-swiss shrink-0 !py-1.5 !text-[9px]">
+                  <button onClick={saveName} className="btn-swiss shrink-0 !py-1.5 !text-[0.5625rem]">
                     {t('common.save')}
                   </button>
-                  <button onClick={cancelEditingName} className="btn-swiss shrink-0 !py-1.5 !text-[9px]">
+                  <button onClick={cancelEditingName} className="btn-swiss shrink-0 !py-1.5 !text-[0.5625rem]">
                     {t('common.cancel')}
                   </button>
                 </div>
@@ -225,7 +225,7 @@ export default function ApiKeyDetailModal({
                   </button>
                 </div>
               )}
-              <div className="mt-2 flex items-center justify-between gap-4 text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="mt-2 flex items-center justify-between gap-4 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 <div className="flex min-w-0 items-center gap-2">
                   <span>{providerConfigHeading}</span>
                   <span className="text-[var(--border-color)]">/</span>
@@ -261,17 +261,17 @@ export default function ApiKeyDetailModal({
             <section className="border-b-2 border-[var(--border-color)] px-6 py-5">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-dashed border-[var(--border-color)] pb-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                     MANAGEMENT
                   </div>
-                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     {missingFieldsMessage}
                   </div>
                 </div>
 
                 <div className="space-y-3">
                     <label className="space-y-1.5">
-                      <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         API KEY
                       </span>
                       <div className="relative">
@@ -280,13 +280,13 @@ export default function ApiKeyDetailModal({
                           onChange={(event: TextInputEvent) =>
                             setConfigDraft((prev) => ({ ...prev, apiKey: event.target.value }))
                           }
-                          className="input-swiss w-full pr-16 !py-1.5 !text-[11px]"
+                          className="input-swiss w-full pr-16 !py-1.5 !text-[0.6875rem]"
                           type="text"
                           placeholder="sk-..."
                         />
                         <button
                           onClick={() => void copyText('apiKey', configDraft.apiKey)}
-                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[8px] -translate-y-1/2"
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2"
                         >
                           复制
                         </button>
@@ -294,7 +294,7 @@ export default function ApiKeyDetailModal({
                     </label>
 
                     <label className="space-y-1.5">
-                      <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         BASE URL
                       </span>
                       <div className="relative">
@@ -303,12 +303,12 @@ export default function ApiKeyDetailModal({
                           onChange={(event: TextInputEvent) =>
                             setConfigDraft((prev) => ({ ...prev, baseUrl: event.target.value }))
                           }
-                          className="input-swiss w-full pr-16 !py-1.5 !text-[11px]"
+                          className="input-swiss w-full pr-16 !py-1.5 !text-[0.6875rem]"
                           placeholder="https://api.openai.com/v1"
                         />
                         <button
                           onClick={() => void copyText('baseUrl', configDraft.baseUrl)}
-                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[8px] -translate-y-1/2"
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2"
                         >
                           复制
                         </button>
@@ -316,7 +316,7 @@ export default function ApiKeyDetailModal({
                     </label>
 
                     <label className="space-y-1.5">
-                      <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         PREFIX
                       </span>
                       <input
@@ -324,7 +324,7 @@ export default function ApiKeyDetailModal({
                         onChange={(event: TextInputEvent) =>
                           setConfigDraft((prev) => ({ ...prev, prefix: event.target.value }))
                         }
-                        className="input-swiss w-full !py-1.5 !text-[11px]"
+                        className="input-swiss w-full !py-1.5 !text-[0.6875rem]"
                         placeholder="/v1"
                       />
                     </label>
@@ -335,33 +335,33 @@ export default function ApiKeyDetailModal({
             <section className="bg-[var(--bg-surface)]/30 px-6 py-5">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-dashed border-[var(--border-color)] pb-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                     {workspaceHeading}
                   </div>
-                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     {providerLabel(account)}
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                    <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                    <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                       {t('accounts.api_key_verify_summary')}
                     </div>
-                    <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {t('accounts.api_key_verify_last_verified')} {formatLastVerifiedAt(verifyState.lastVerifiedAt)}
                     </div>
                   </div>
 
                   <label className="space-y-1.5">
-                    <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       {t('accounts.api_key_verify_model')}
                     </span>
                     <div className="relative">
                       <input
                         value={verifyModel}
                         onChange={(event: TextInputEvent) => setVerifyModel(event.target.value)}
-                        className="input-swiss w-full pr-24 !py-1.5 !text-[11px]"
+                        className="input-swiss w-full pr-24 !py-1.5 !text-[0.6875rem]"
                         placeholder={DEFAULT_CODEX_API_KEY_VERIFY_MODEL}
                       />
                       <button
@@ -372,7 +372,7 @@ export default function ApiKeyDetailModal({
                             model: verifyModel,
                           })
                         }
-                        className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[8px] -translate-y-1/2"
+                        className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2"
                         disabled={verifyState.status === 'loading'}
                       >
                         {t('accounts.api_key_verify')}
@@ -381,10 +381,10 @@ export default function ApiKeyDetailModal({
                   </label>
 
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                    <div className={`text-[10px] font-black uppercase tracking-tight ${messageTone}`}>
+                    <div className={`text-[0.625rem] font-black uppercase tracking-tight ${messageTone}`}>
                       {verifyState.message || t('accounts.api_key_verify_idle')}
                     </div>
-                    <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {verifyState.model || '—'}
                     </div>
                   </div>
@@ -395,7 +395,7 @@ export default function ApiKeyDetailModal({
         </div>
 
         <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
+          <div className="text-[0.5625rem] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
             {missingFieldsMessage}
           </div>
           <div className="flex items-center gap-2">

@@ -79,11 +79,11 @@ export default function OpenAICompatibleDetailModal({
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1 space-y-2">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.ui_openai_account_badge')}
               </div>
               <div className="space-y-3">
-                <h3 className="text-[12px] font-black uppercase italic tracking-[0.08em] text-[var(--text-primary)]">
+                <h3 className="text-[0.75rem] font-black uppercase italic tracking-[0.08em] text-[var(--text-primary)]">
                   {t('accounts.openai_provider_name')}
                 </h3>
                 <input
@@ -97,21 +97,21 @@ export default function OpenAICompatibleDetailModal({
 
             <div className="w-full max-w-sm space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                   {t('accounts.openai_provider_test_summary')}
                 </div>
-                <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                   {verifyState.model || '—'}
                 </div>
               </div>
-              <div className={`text-[10px] font-black uppercase tracking-tight ${messageTone}`}>
+              <div className={`text-[0.625rem] font-black uppercase tracking-tight ${messageTone}`}>
                 {verifyState.message || t('accounts.openai_provider_test_idle')}
               </div>
-              <div className="flex items-center justify-between gap-4 text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <div className="flex items-center justify-between gap-4 text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 <span>{t('accounts.openai_provider_current_name')}</span>
                 <span className="break-all text-right text-[var(--text-primary)]">{draft.currentName}</span>
               </div>
-              <div className="flex items-center justify-between gap-4 text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <div className="flex items-center justify-between gap-4 text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 <span>{t('accounts.openai_provider_last_verified')}</span>
                 <span className="break-all text-right text-[var(--text-primary)]">{formatLastVerifiedAt(verifyState.lastVerifiedAt)}</span>
               </div>
@@ -123,7 +123,7 @@ export default function OpenAICompatibleDetailModal({
           <section className="min-h-[500px] overflow-auto px-6 py-6 xl:border-r-2 xl:border-[var(--border-color)]">
             <div className="space-y-6">
               <label className="space-y-2">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                   {t('accounts.ui_base_url')}
                 </div>
                 <input
@@ -135,7 +135,7 @@ export default function OpenAICompatibleDetailModal({
               </label>
 
               <label className="space-y-2">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                   {t('accounts.ui_api_key')}
                 </div>
                 <input
@@ -148,34 +148,34 @@ export default function OpenAICompatibleDetailModal({
               </label>
 
               <div className="space-y-2">
-                <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                   {t('accounts.openai_provider_headers')}
                 </div>
                 <textarea
                   value={draft.headersText}
                   onChange={(event) => onChange({ ...draft, headersText: event.target.value })}
-                  className="input-swiss min-h-32 w-full resize-y font-mono !text-[11px] leading-6"
+                  className="input-swiss min-h-32 w-full resize-y font-mono !text-[0.6875rem] leading-6"
                   placeholder={'Authorization: Bearer sk-...\nHTTP-Referer: https://example.com\nX-Title: GetTokens'}
                 />
-                <div className="text-[8px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                <div className="text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
                   {t('accounts.openai_provider_headers_hint')}
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                     {t('accounts.openai_provider_models')}
                   </div>
                   <div className="flex items-center gap-2">
                     {remoteModelsState?.status === 'success' && remoteModelsState.models.length > 0 ? (
-                      <button onClick={onApplyFetchedModels} className="btn-swiss !py-1.5 !text-[9px]">
+                      <button onClick={onApplyFetchedModels} className="btn-swiss !py-1.5 !text-[0.5625rem]">
                         {t('accounts.openai_provider_models_apply_remote')}
                       </button>
                     ) : null}
                     <button
                       onClick={onFetchModels}
-                      className="btn-swiss !py-1.5 !text-[9px]"
+                      className="btn-swiss !py-1.5 !text-[0.5625rem]"
                       disabled={remoteModelsState?.status === 'loading'}
                     >
                       {remoteModelsState?.status === 'loading'
@@ -186,14 +186,14 @@ export default function OpenAICompatibleDetailModal({
                 </div>
                 <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                    <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                       {t('accounts.openai_provider_models_source')}
                     </div>
-                    <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {modelSourceLabel}
                     </div>
                   </div>
-                  <div className="text-[10px] font-black uppercase tracking-tight text-[var(--text-primary)]">
+                  <div className="text-[0.625rem] font-black uppercase tracking-tight text-[var(--text-primary)]">
                     {remoteModelsState?.message ||
                       (suggestedModelOptions.source === 'remote'
                         ? t('accounts.openai_provider_models_fetch_success')
@@ -245,7 +245,7 @@ export default function OpenAICompatibleDetailModal({
                             verifyModel: nextVerifyModel,
                           });
                         }}
-                        className="btn-swiss !px-3 !py-1.5 !text-[9px] !text-red-500"
+                        className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem] !text-red-500"
                         disabled={draft.models.length === 1}
                       >
                         {t('common.delete')}
@@ -254,7 +254,7 @@ export default function OpenAICompatibleDetailModal({
                   ))}
                   <button
                     onClick={() => onChange({ ...draft, models: [...draft.models, { name: '', alias: '' }] })}
-                    className="btn-swiss !py-1.5 !text-[9px]"
+                    className="btn-swiss !py-1.5 !text-[0.5625rem]"
                   >
                     {t('accounts.openai_provider_add_model')}
                   </button>
@@ -265,7 +265,7 @@ export default function OpenAICompatibleDetailModal({
 
           <section className="min-h-[500px] overflow-auto space-y-6 bg-[var(--bg-surface)]/30 px-6 py-6">
             <div className="space-y-4">
-              <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_test_model')}
               </div>
               {suggestedModels.some((item) => item.name.trim()) ? (
@@ -278,7 +278,7 @@ export default function OpenAICompatibleDetailModal({
                         <button
                           key={`${item.name}:${item.alias}`}
                           onClick={() => onChange({ ...draft, verifyModel: modelName })}
-                          className={`border-2 px-2 py-1 text-[9px] font-black uppercase tracking-[0.12em] transition-colors ${
+                          className={`border-2 px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.12em] transition-colors ${
                             effectiveVerifyModel === modelName
                               ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                               : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-primary)]'
@@ -300,7 +300,7 @@ export default function OpenAICompatibleDetailModal({
                 />
                 <button
                   onClick={onVerify}
-                  className="btn-swiss !py-2 !text-[9px] whitespace-nowrap"
+                  className="btn-swiss !py-2 !text-[0.5625rem] whitespace-nowrap"
                   disabled={verifyState.status === 'loading'}
                 >
                   {verifyState.status === 'loading'
@@ -308,7 +308,7 @@ export default function OpenAICompatibleDetailModal({
                     : t('accounts.openai_provider_test')}
                 </button>
               </div>
-              <div className="text-[8px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <div className="text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_test_model_hint')}
               </div>
             </div>
@@ -316,7 +316,7 @@ export default function OpenAICompatibleDetailModal({
         </div>
 
         {error ? (
-          <div className="mx-6 mb-6 border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[10px] font-black uppercase tracking-wide text-red-500">
+          <div className="mx-6 mb-6 border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
             {error}
           </div>
         ) : null}

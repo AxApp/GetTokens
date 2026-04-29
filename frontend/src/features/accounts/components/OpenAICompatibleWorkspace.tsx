@@ -43,7 +43,7 @@ export default function OpenAICompatibleWorkspace({
             <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
               {t('accounts.openai_provider_title')}
             </h2>
-            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+            <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
               {t('accounts.openai_provider_subtitle')} / {providers.length} {t('accounts.ui_provider_count_unit')}
             </p>
           </div>
@@ -85,7 +85,7 @@ export default function OpenAICompatibleWorkspace({
             <div className="text-lg font-black uppercase italic tracking-tight text-[var(--text-primary)]">
               {t('accounts.openai_provider_empty')}
             </div>
-            <p className="mt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <p className="mt-3 text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t('accounts.openai_provider_empty_hint')}
             </p>
           </div>
@@ -143,20 +143,20 @@ export default function OpenAICompatibleWorkspace({
                 >
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="min-w-0 space-y-1.5">
-                      <div className="text-[8px] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">
+                      <div className="text-[0.5rem] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">
                         {t('accounts.ui_openai_compatible_badge')}
                       </div>
-                      <h3 className="flex items-center gap-2 break-all text-[12px] font-black uppercase italic leading-snug tracking-[0.08em] text-[var(--text-primary)]">
+                      <h3 className="flex items-center gap-2 break-all text-[0.75rem] font-black uppercase italic leading-snug tracking-[0.08em] text-[var(--text-primary)]">
                         <div title={verifyState.status} className={`h-2 w-2 shrink-0 ${statusColor}`} />
                         <span>{provider.name}</span>
                         {provider.disabled ? (
-                          <span className="border border-amber-600 bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] text-amber-700">
+                          <span className="border border-amber-600 bg-amber-100 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-[0.2em] text-amber-700">
                             {t('accounts.rotation_disabled_badge')}
                           </span>
                         ) : null}
                       </h3>
                       {provider.disabled ? (
-                        <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-amber-700">
+                        <p className="text-[0.5625rem] font-bold uppercase tracking-[0.12em] text-amber-700">
                           {t('accounts.rotation_disabled_hint')}
                         </p>
                       ) : null}
@@ -166,18 +166,18 @@ export default function OpenAICompatibleWorkspace({
                   <div className="space-y-4 border-t border-dashed border-[var(--border-color)] pt-4">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-1">
-                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                           {t('accounts.ui_base_url')}
                         </div>
-                        <div className="break-all font-mono text-[10px] font-bold text-[var(--text-primary)]">
+                        <div className="break-all font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
                           {provider.baseUrl}
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                           {t('accounts.ui_api_key')}
                         </div>
-                        <div className="font-mono text-[10px] font-bold text-[var(--text-primary)]">
+                        <div className="font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
                           {maskProviderAPIKey(provider.apiKey)}
                         </div>
                       </div>
@@ -185,18 +185,18 @@ export default function OpenAICompatibleWorkspace({
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-1">
-                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                           {t('accounts.openai_provider_headers')}
                         </div>
-                        <div className="font-mono text-[10px] font-bold text-[var(--text-primary)]">
+                        <div className="font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
                           {provider.hasHeaders ? t('accounts.ui_headers_configured') : '—'}
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                           {t('accounts.ui_models')}
                         </div>
-                        <div className="font-mono text-[10px] font-bold text-[var(--text-primary)]">
+                        <div className="font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
                           {effectiveModelCount}
                         </div>
                       </div>
@@ -206,26 +206,26 @@ export default function OpenAICompatibleWorkspace({
                   <div className="mt-6 border-t border-dashed border-[var(--border-color)] pt-4">
                     <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                        <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                           {t('accounts.openai_provider_test_summary')}
                         </div>
-                        <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                        <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                           {verifyState.model || '—'}
                         </div>
                       </div>
-                      <div className={`text-[10px] font-black uppercase tracking-tight ${messageTone}`}>
+                      <div className={`text-[0.625rem] font-black uppercase tracking-tight ${messageTone}`}>
                         {verifyState.message || t('accounts.openai_provider_test_idle')}
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-auto grid grid-cols-3 gap-2 border-t border-dashed border-[var(--border-color)] pt-4">
-                    <button onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[9px]">
+                    <button onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
                       {t('accounts.openai_provider_manage')}
                     </button>
                     <button
                       onClick={() => onToggleDisabled(provider)}
-                      className="btn-swiss !py-1.5 !text-[9px]"
+                      className="btn-swiss !py-1.5 !text-[0.5625rem]"
                       disabled={pendingStatusName === provider.name}
                     >
                       {pendingStatusName === provider.name
@@ -236,7 +236,7 @@ export default function OpenAICompatibleWorkspace({
                     </button>
                     <button
                       onClick={() => onDelete(provider.name)}
-                      className="btn-swiss !py-1.5 !text-[9px] !text-red-500"
+                      className="btn-swiss !py-1.5 !text-[0.5625rem] !text-red-500"
                       disabled={pendingDeleteName === provider.name}
                     >
                       {pendingDeleteName === provider.name ? t('common.loading') : t('common.delete')}

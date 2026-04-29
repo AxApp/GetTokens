@@ -78,20 +78,20 @@ export default function AccountsToolbar({
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div ref={menuRef} className="relative">
-            <button onClick={() => setIsMenuOpen((prev) => !prev)} className="btn-swiss !px-3 !py-2 !text-[9px]">
+            <button onClick={() => setIsMenuOpen((prev) => !prev)} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
               {buildToolbarFilterLabel(t, filters)}
             </button>
             {isMenuOpen ? (
               <div className="absolute left-0 top-full z-20 mt-3 flex min-w-[260px] flex-col gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[8px_8px_0_var(--shadow-color)]">
                 <div className="space-y-2">
-                  <p className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <p className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_source')}
                   </p>
                   <div className="flex flex-col gap-2">
                     {(['all', 'auth-file', 'api-key'] as const).map((source) => (
                       <label
                         key={source}
-                        className="flex cursor-pointer items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                        className="flex cursor-pointer items-center gap-2 text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
                       >
                         <input
                           type="radio"
@@ -110,10 +110,10 @@ export default function AccountsToolbar({
                   </div>
                 </div>
                 <div className="space-y-2 border-t border-dashed border-[var(--border-color)] pt-4">
-                  <p className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <p className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_status')}
                   </p>
-                  <label className="flex cursor-pointer items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                  <label className="flex cursor-pointer items-center gap-2 text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
                     <input
                       type="checkbox"
                       checked={filters.hasLongestQuota}
@@ -122,7 +122,7 @@ export default function AccountsToolbar({
                     />
                     {t('accounts.filter_longest_quota')}
                   </label>
-                  <label className="flex cursor-pointer items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                  <label className="flex cursor-pointer items-center gap-2 text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
                     <input
                       type="checkbox"
                       checked={filters.errorsOnly}
@@ -136,23 +136,23 @@ export default function AccountsToolbar({
             ) : null}
           </div>
           <div className="flex items-center justify-end">
-            <button onClick={onToggleSelectionMode} className="btn-swiss !px-3 !py-2 !text-[9px]">
+            <button onClick={onToggleSelectionMode} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
               {isSelectionMode ? t('accounts.unselect_all') : t('accounts.selection_mode')}
             </button>
           </div>
         </div>
         {isSelectionMode ? (
           <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-color)] pt-4">
-            <button onClick={onToggleSelectAllFiltered} className="btn-swiss !px-3 !py-2 !text-[9px]">
+            <button onClick={onToggleSelectAllFiltered} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
               {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
             </button>
-            <button onClick={onClearSelection} className="btn-swiss !px-3 !py-2 !text-[9px]" disabled={selectedAccountCount === 0}>
+            <button onClick={onClearSelection} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]" disabled={selectedAccountCount === 0}>
               {t('accounts.clear_selection')}
             </button>
-            <button onClick={onExportSelected} className="btn-swiss !px-3 !py-2 !text-[9px]" disabled={selectedAccountCount === 0}>
+            <button onClick={onExportSelected} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]" disabled={selectedAccountCount === 0}>
               {t('accounts.export_selected')}
             </button>
-            <span className="ml-auto text-[9px] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="ml-auto text-[0.5625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {selectedAccountCount} {t('accounts.selected_count')}
             </span>
           </div>

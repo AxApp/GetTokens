@@ -3,18 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UsageDesk 整体视觉预览 - GetTokens</title>
+    <title>GetTokens - Interactive Precision Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
             --bg-main: #ffffff;
-            --bg-surface: #f9f9f9;
+            --bg-surface: #f3f3f3;
             --border-color: #000000;
             --text-primary: #000000;
             --text-muted: #666666;
-            --bg-muted: #f0f0f0;
-            --accent-red: #ff0000;
-            --shadow-color: #e5e5e5;
+            --shadow-color: #dddddd;
             --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
         }
 
@@ -25,8 +23,6 @@
                 --border-color: #ffffff;
                 --text-primary: #ffffff;
                 --text-muted: #888888;
-                --bg-muted: #222222;
-                --accent-red: #ff3333;
                 --shadow-color: #222222;
             }
         }
@@ -35,194 +31,319 @@
             background-color: var(--bg-main);
             color: var(--text-primary);
             font-family: var(--font-mono);
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+            padding: 4rem;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .shadow-hard {
-            box-shadow: 4px 4px 0px 0px var(--shadow-color);
-        }
-
-        .shadow-hard-sm {
-            box-shadow: 2px 2px 0px 0px var(--shadow-color);
-        }
-
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            border-bottom: 4px solid var(--border-color);
-            margin-bottom: 2rem;
-            padding-bottom: 0.5rem;
-            display: inline-block;
-        }
-
-        .preview-group {
-            margin-bottom: 6rem;
-        }
-
-        .preview-label {
-            display: inline-block;
-            background: var(--text-primary);
-            color: var(--bg-main);
-            padding: 2px 10px;
-            font-weight: 900;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            margin-bottom: 1rem;
-        }
-
-        /* 模拟图表卡片样式 */
-        .chart-mock {
+        .console-panel {
             border: 2px solid var(--border-color);
-            background-color: var(--bg-main);
+            background: var(--bg-main);
+            box-shadow: 8px 8px 0px 0px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
+            margin-bottom: 5rem;
         }
 
-        .chart-header {
-            border-bottom: 2px solid var(--border-color);
-            background-color: var(--bg-surface);
-            padding: 0.75rem 1rem;
+        .console-header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 0.6rem 1rem;
+            background: var(--bg-surface);
+            border-bottom: 2px solid var(--border-color);
         }
 
-        .chart-body {
-            height: 232px;
-            position: relative;
-            background-image: 
-                linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(128,128,128,0.2) calc(25% - 1px), rgba(128,128,128,0.2) 25%, transparent 25%), 
-                linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(128,128,128,0.2) calc(50% - 1px), rgba(128,128,128,0.2) 50%, transparent 50%), 
-                linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(128,128,128,0.2) calc(75% - 1px), rgba(128,128,128,0.2) 75%, transparent 75%), 
-                repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(128,128,128,0.12) 55px, rgba(128,128,128,0.12) 56px);
+        .status-badge {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
         }
 
-        .summary-item {
+        .status-dot { width: 6px; height: 6px; background: var(--text-primary); border-radius: 0; }
+
+        .console-controls-bar {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-main);
+        }
+
+        .layer-primary {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            gap: 2rem;
+            border-bottom: 1px solid var(--shadow-color);
+        }
+
+        /* 二级控制层动画 */
+        .layer-secondary {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            gap: 1.5rem;
+            background: var(--bg-surface);
+            border-bottom: 2px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .layer-secondary.hidden {
+            padding: 0 1rem;
+            height: 0;
+            border-bottom-width: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .track-group {
+            display: flex;
+            align-items: center;
+            background: var(--bg-main);
+            padding: 2px;
+            border: 1px solid var(--border-color);
+        }
+
+        .opt {
+            padding: 0.35rem 1.25rem;
             font-size: 10px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 100ms;
+            color: var(--text-muted);
+        }
+
+        .opt.active {
+            background: var(--text-primary);
+            color: var(--bg-main);
+        }
+
+        .metric-group {
+            margin-left: auto;
+            display: flex;
+            border: 2px solid var(--border-color);
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .metric-tab {
+            padding: 0.25rem 0.75rem;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .metric-tab.active {
+            background: var(--text-primary);
+            color: var(--bg-main);
+        }
+
+        /* 凹陷图表区 */
+        .console-body { 
+            height: 240px; 
+            position: relative; 
+            background-color: var(--bg-main);
+            background-image: 
+                linear-gradient(var(--shadow-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--shadow-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            box-shadow: 
+                inset 0 12px 16px -8px rgba(0,0,0,0.1),
+                inset 0 -12px 16px -8px rgba(0,0,0,0.1);
+        }
+
+        .shadow-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.05) 100%);
+        }
+
+        .console-footer {
+            border-top: 2px solid var(--border-color);
+            background: var(--bg-surface);
+            padding: 1.25rem 1rem;
+            display: flex;
+            gap: 4rem;
+        }
+
+        .stat-box { display: flex; flex-direction: column; gap: 4px; transition: opacity 0.2s; }
+        .stat-head { font-size: 8px; font-weight: 900; opacity: 0.5; text-transform: uppercase; }
+        .stat-val { font-size: 12px; font-weight: 900; text-transform: uppercase; }
+
+        .label-sm { font-size: 8px; font-weight: 900; opacity: 0.4; text-transform: uppercase; letter-spacing: 0.1em; }
+
+        /* 图表线条动画 */
+        #chart-path {
+            transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #chart-area {
+            transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
 </head>
 <body>
 
-    <h1 class="section-title">Usage Analytics Visual System</h1>
+    <h1 class="text-3xl font-black uppercase mb-12 italic tracking-tighter border-l-8 border-black pl-4">Precision Analytics Console</h1>
 
-    <!-- Option A Group -->
-    <div class="preview-group">
-        <span class="preview-label">Concept A: The Modular Console</span>
-        
-        <!-- Controls A -->
-        <div class="mb-4 flex flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard lg:flex-row">
-            <div class="flex border-b-2 border-[var(--border-color)] lg:border-b-0 lg:border-r-2">
-                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider bg-[var(--text-primary)] text-[var(--bg-main)]">TODAY</button>
-                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider border-l-2 border-[var(--border-color)] hover:bg-[var(--bg-surface)]">7D</button>
-                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider border-l-2 border-[var(--border-color)] hover:bg-[var(--bg-surface)]">14D</button>
-                <button class="px-6 py-2 text-[10px] font-bold uppercase tracking-wider border-l-2 border-[var(--border-color)] hover:bg-[var(--bg-surface)]">30D</button>
-            </div>
-            <div class="hidden flex-1 lg:block"></div>
-            <div class="flex border-t-2 border-[var(--border-color)] lg:border-t-0 lg:border-l-2">
-                <button class="flex-1 px-8 py-2 text-[10px] font-bold uppercase hover:bg-[var(--bg-surface)]">REFRESH INDEX</button>
-                <button class="flex-1 border-l-2 border-[var(--border-color)] px-8 py-2 text-[10px] font-bold uppercase hover:bg-[var(--accent-red)] hover:text-white transition-colors">REBUILD INDEX</button>
+    <div class="console-panel">
+        <div class="console-header-top">
+            <div class="status-badge"><div class="status-dot"></div>System: <span id="status-text">Precision View</span></div>
+            <div class="flex gap-4">
+                <button class="text-[10px] font-bold uppercase underline underline-offset-4 hover:opacity-50 transition-opacity">Refresh</button>
+                <button class="text-[10px] font-bold uppercase underline underline-offset-4 hover:opacity-50 transition-opacity">Rebuild</button>
             </div>
         </div>
 
-        <!-- Chart Mock A -->
-        <div class="chart-mock shadow-hard">
-            <div class="chart-header">
-                <div class="flex gap-4">
-                    <span class="summary-item">Total Requests: 1.2k</span>
-                    <span class="summary-item">Success Rate: 99.2%</span>
+        <div class="console-controls-bar">
+            <!-- 层级 1：Range -->
+            <div class="layer-primary">
+                <div class="label-sm">Range</div>
+                <div class="track-group" id="range-selector">
+                    <div class="opt active" data-range="today">Today</div>
+                    <div class="opt" data-range="7d">7D</div>
+                    <div class="opt" data-range="14d">14D</div>
+                    <div class="opt" data-range="30d">30D</div>
+                </div>
+
+                <div class="metric-group" id="metric-selector">
+                    <div class="metric-tab active" data-metric="tokens">Tokens</div>
+                    <div class="metric-tab" data-metric="requests">Requests</div>
                 </div>
             </div>
-            <div class="chart-body">
-                <svg viewBox="0 0 1000 232" preserveAspectRatio="none" class="h-full w-full">
-                    <path d="M0,180 C150,160 250,200 400,120 C550,40 700,100 850,60 L1000,80 L1000,232 L0,232 Z" fill="rgba(0,0,0,0.1)" />
-                    <path d="M0,180 C150,160 250,200 400,120 C550,40 700,100 850,60 L1000,80" fill="none" stroke="var(--border-color)" stroke-width="4" />
-                </svg>
+
+            <!-- 层级 2：Precision (仅在今日激活) -->
+            <div class="layer-secondary" id="precision-layer">
+                <div class="label-sm">Precision</div>
+                <div class="track-group" id="precision-selector">
+                    <div class="opt" data-prec="1m">1m</div>
+                    <div class="opt active" data-prec="5m">5m</div>
+                    <div class="opt" data-prec="15m">15m</div>
+                    <div class="opt" data-prec="30m">30m</div>
+                    <div class="opt" data-prec="60m">60m</div>
+                </div>
+                <div class="ml-auto text-[9px] font-black italic opacity-30 uppercase tracking-tighter">Real-time Sample Engine</div>
             </div>
         </div>
+
+        <!-- 凹陷效果图表区 -->
+        <div class="console-body">
+            <div class="shadow-overlay"></div>
+            <svg viewBox="0 0 1000 240" preserveAspectRatio="none" class="w-full h-full opacity-10">
+                <path id="chart-area" d="" fill="black" opacity="0.5" />
+                <path id="chart-path" d="" fill="none" stroke="black" stroke-width="2" />
+            </svg>
+        </div>
+
+        <footer class="console-footer">
+            <div class="stat-box"><div class="stat-head">Aggregated Flux</div><div class="stat-val" id="stat-total">1.25M</div></div>
+            <div class="stat-box"><div class="stat-head">Peak / interval</div><div class="stat-val" id="stat-peak">42k</div></div>
+            <div class="stat-box ml-auto text-right"><div class="stat-head">Node Status</div><div class="stat-val italic" id="stat-node">Synced</div></div>
+        </footer>
     </div>
 
-    <!-- Option B Group -->
-    <div class="preview-group">
-        <span class="preview-label">Concept B: Tiered Header</span>
-        
-        <!-- Controls B -->
-        <div class="mb-6 flex items-end justify-between border-b-4 border-[var(--border-color)] pb-3 px-2">
-            <div class="space-y-2">
-                <span class="text-[10px] font-black uppercase leading-none opacity-40 block">Select Viewport Range</span>
-                <div class="flex gap-2">
-                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)] -translate-y-1 shadow-hard-sm">TODAY</button>
-                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] hover:-translate-y-0.5 hover:shadow-hard-sm transition-all">7D</button>
-                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] hover:-translate-y-0.5 hover:shadow-hard-sm transition-all">14D</button>
-                    <button class="px-4 py-1 text-xs font-bold ring-2 ring-[var(--border-color)] hover:-translate-y-0.5 hover:shadow-hard-sm transition-all">30D</button>
-                </div>
-            </div>
-            <div class="flex items-center gap-6">
-                <div class="flex flex-col items-end">
-                    <span class="text-[9px] font-bold opacity-30 mb-1 uppercase tracking-tighter">Maintenance</span>
-                    <div class="flex gap-4">
-                        <button class="text-xs font-black underline decoration-2 underline-offset-4 hover:text-[var(--accent-red)] transition-colors italic">REFRESH</button>
-                        <button class="text-xs font-black underline decoration-2 underline-offset-4 hover:text-[var(--accent-red)] transition-colors italic">REBUILD</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <script>
+        // 模拟数据生成器
+        const generateData = (count, variance) => {
+            const points = [];
+            let current = 120;
+            for (let i = 0; i <= count; i++) {
+                current += (Math.random() - 0.5) * variance;
+                current = Math.max(20, Math.min(200, current));
+                points.push({ x: (i / count) * 1000, y: 240 - current });
+            }
+            return points;
+        };
 
-        <!-- Chart Mock B -->
-        <div class="chart-mock shadow-hard">
-            <div class="chart-header">
-                <div class="flex gap-4">
-                    <span class="summary-item">Total Tokens: 4.5M</span>
-                    <span class="summary-item">In/Out Ratio: 1:3.2</span>
-                </div>
-                <div class="flex gap-2">
-                    <button class="px-3 py-1 text-[10px] font-bold border-2 border-black bg-black text-white uppercase">Tokens</button>
-                    <button class="px-3 py-1 text-[10px] font-bold border-2 border-black uppercase">Requests</button>
-                </div>
-            </div>
-            <div class="chart-body">
-                <svg viewBox="0 0 1000 232" preserveAspectRatio="none" class="h-full w-full">
-                    <path d="M0,200 L100,180 L200,190 L300,140 L400,150 L500,80 L600,100 L700,40 L800,60 L900,20 L1000,30 L1000,232 L0,232 Z" fill="rgba(0,0,0,0.05)" />
-                    <path d="M0,200 L100,180 L200,190 L300,140 L400,150 L500,80 L600,100 L700,40 L800,60 L900,20 L1000,30" fill="none" stroke="var(--border-color)" stroke-width="2" />
-                </svg>
-            </div>
-        </div>
-    </div>
+        const pointsToPath = (points) => {
+            let d = `M ${points[0].x} ${points[0].y}`;
+            for (let i = 1; i < points.length; i++) {
+                const prev = points[i-1];
+                const curr = points[i];
+                const cp1x = prev.x + (curr.x - prev.x) / 2;
+                d += ` C ${cp1x} ${prev.y} ${cp1x} ${curr.y} ${curr.x} ${curr.y}`;
+            }
+            return d;
+        };
 
-    <!-- Option C Group -->
-    <div class="preview-group">
-        <span class="preview-label">Concept C: Integrated Dark Bar</span>
-        
-        <div class="chart-mock shadow-hard">
-            <!-- Controls C Integrated into Header -->
-            <div class="chart-header !bg-[var(--text-primary)] !text-[var(--bg-main)]">
-                <div class="flex gap-1 pr-4 border-r border-white/20">
-                    <button class="px-3 py-1 text-[10px] font-bold bg-[var(--bg-main)] text-[var(--text-primary)] rounded-sm">TODAY</button>
-                    <button class="px-3 py-1 text-[10px] font-bold hover:bg-white/10 rounded-sm">7D</button>
-                    <button class="px-3 py-1 text-[10px] font-bold hover:bg-white/10 rounded-sm">14D</button>
-                    <button class="px-3 py-1 text-[10px] font-bold hover:bg-white/10 rounded-sm">30D</button>
-                </div>
-                <div class="flex-1 px-4">
-                    <span class="summary-item opacity-60">Live Projection indexing...</span>
-                </div>
-                <div class="flex items-center gap-4">
-                    <button class="text-[10px] font-bold opacity-70 hover:opacity-100">REFRESH</button>
-                    <button class="text-[10px] font-bold text-[var(--accent-red)] opacity-90 hover:opacity-100">REBUILD</button>
-                </div>
-            </div>
-            <div class="chart-body">
-                <svg viewBox="0 0 1000 232" preserveAspectRatio="none" class="h-full w-full">
-                    <path d="M0,150 Q150,100 300,150 T600,150 T1000,100 L1000,232 L0,232 Z" fill="rgba(0,0,0,0.1)" />
-                    <path d="M0,150 Q150,100 300,150 T600,150 T1000,100" fill="none" stroke="var(--border-color)" stroke-width="4" />
-                </svg>
-            </div>
-        </div>
-    </div>
+        const state = {
+            range: 'today',
+            metric: 'tokens',
+            precision: '5m'
+        };
 
+        const updateUI = () => {
+            // 更新控制层可见性
+            const precLayer = document.getElementById('precision-layer');
+            if (state.range === 'today') {
+                precLayer.classList.remove('hidden');
+                document.getElementById('status-text').innerText = 'Precision View';
+            } else {
+                precLayer.classList.add('hidden');
+                document.getElementById('status-text').innerText = 'Aggregate View';
+            }
+
+            // 生成模拟数据
+            let pointCount = 20;
+            let variance = 40;
+            if (state.range === 'today') {
+                const precMap = { '1m': 60, '5m': 30, '15m': 15, '30m': 10, '60m': 6 };
+                pointCount = precMap[state.precision];
+                variance = state.precision === '1m' ? 80 : 40;
+            }
+
+            const points = generateData(pointCount, variance);
+            const pathD = pointsToPath(points);
+            
+            document.getElementById('chart-path').setAttribute('d', pathD);
+            document.getElementById('chart-area').setAttribute('d', pathD + ` L 1000 240 L 0 240 Z`);
+
+            // 更新汇总数据
+            const multiplier = state.metric === 'tokens' ? 1000 : 1;
+            const unit = state.metric === 'tokens' ? 'M' : 'k';
+            
+            document.getElementById('stat-total').innerText = (Math.random() * 5 + 1).toFixed(2) + unit;
+            document.getElementById('stat-peak').innerText = (Math.random() * 50 + 10).toFixed(1) + (state.metric === 'tokens' ? 'k' : '');
+            document.getElementById('stat-node').innerText = state.range === 'today' ? 'Live' : 'Cached';
+        };
+
+        // 事件监听
+        document.getElementById('range-selector').addEventListener('click', (e) => {
+            if (e.target.dataset.range) {
+                document.querySelectorAll('#range-selector .opt').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+                state.range = e.target.dataset.range;
+                updateUI();
+            }
+        });
+
+        document.getElementById('precision-selector').addEventListener('click', (e) => {
+            if (e.target.dataset.prec) {
+                document.querySelectorAll('#precision-selector .opt').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+                state.precision = e.target.dataset.prec;
+                updateUI();
+            }
+        });
+
+        document.getElementById('metric-selector').addEventListener('click', (e) => {
+            if (e.target.dataset.metric) {
+                document.querySelectorAll('#metric-selector .metric-tab').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+                state.metric = e.target.dataset.metric;
+                updateUI();
+            }
+        });
+
+        // 初始化
+        updateUI();
+    </script>
 </body>
 </html>

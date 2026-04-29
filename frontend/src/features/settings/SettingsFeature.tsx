@@ -9,6 +9,7 @@ import { BrowserOpenURL, Quit } from '../../../wailsjs/runtime/runtime';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
+import { useTextScale } from '../../context/TextScaleContext';
 import { useTheme } from '../../context/ThemeContext';
 import { mapCheckedRelease } from './settingsRelease';
 import {
@@ -17,6 +18,9 @@ import {
   resolveLocalProjectedUsageRefreshIntervalID,
   type LocalProjectedUsageRefreshIntervalID,
 } from './settingsLocalUsage';
+import {
+  textScaleOptionIDs,
+} from './settingsTextScale';
 import { toErrorMessage } from '../../utils/error';
 import { formatAppVersion } from '../../utils/version';
 import type { LocaleCode, ReleaseInfo, SegmentedOption, ThemeMode } from '../../types';
@@ -31,6 +35,13 @@ const languages: ReadonlyArray<SegmentedOption<LocaleCode>> = [
   { id: 'zh', label: '简体中文' },
   { id: 'en', label: 'ENGLISH' },
 ];
+
+const sectionBadgeStyle = { fontSize: 'var(--gt-settings-section-badge-size, 8px)' } as const;
+const sectionTitleStyle = { fontSize: 'var(--gt-settings-section-title-size, 12px)' } as const;
+const fieldLabelStyle = { fontSize: 'var(--gt-settings-label-size, 9px)' } as const;
+const fieldMetaStyle = { fontSize: 'var(--gt-settings-meta-size, 8px)' } as const;
+const bodyTextStyle = { fontSize: 'var(--gt-settings-body-size, 9px)' } as const;
+const valueTextStyle = { fontSize: 'var(--gt-settings-value-size, 10px)' } as const;
 
 interface SettingsFeatureProps {
   version: string;
@@ -50,6 +61,7 @@ export default function SettingsFeature({
   setAvailableRelease,
 }: SettingsFeatureProps) {
   const { themeMode, setThemeMode } = useTheme();
+  const { textScale, setTextScale } = useTextScale();
   const { locale, setLocale, t } = useI18n();
   const { trackRequest } = useDebug();
   const [updateMessage, setUpdateMessage] = useState('');
@@ -62,6 +74,11 @@ export default function SettingsFeature({
   const [isSavingLocalUsageSettings, setIsSavingLocalUsageSettings] = useState(false);
   const currentVersionLabel = formatAppVersion(version);
   const latestReleaseLabel = availableRelease ? formatAppVersion(availableRelease.version) : '—';
+  const textScaleOptions: ReadonlyArray<SegmentedOption<typeof textScale>> = [
+    { id: 'default', label: t('settings.text_scale_default') },
+    { id: 'large', label: t('settings.text_scale_large') },
+    { id: 'x-large', label: t('settings.text_scale_x_large') },
+  ];
 
   useEffect(() => {
     let mounted = true;
@@ -184,7 +201,7 @@ export default function SettingsFeature({
           <h2 className="text-xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
             {t('settings.title')}
           </h2>
-          <p className="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <p className="mt-0.5 font-bold uppercase tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
             {t('settings.subtitle')}
           </p>
         </header>
@@ -192,10 +209,13 @@ export default function SettingsFeature({
         <div className="space-y-6">
           <section className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono text-[8px] font-black uppercase text-[var(--bg-main)]">
+              <span
+                className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono font-black uppercase text-[var(--bg-main)]"
+                style={sectionBadgeStyle}
+              >
                 01
               </span>
-              <h3 className="text-xs font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+              <h3 className="font-black uppercase italic tracking-tighter text-[var(--text-primary)]" style={sectionTitleStyle}>
                 {t('settings.appearance')}
               </h3>
             </div>
@@ -203,10 +223,10 @@ export default function SettingsFeature({
             <div className="card-swiss !p-0 divide-y-2 divide-[var(--border-color)]">
               <div className="space-y-3 p-5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[9px] font-black uppercase italic tracking-widest text-[var(--text-muted)]">
+                  <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
                     {t('settings.theme_mode')}
                   </label>
-                  <span className="font-mono text-[8px] font-bold italic opacity-30 text-[var(--text-muted)]">
+                  <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
                     CONFIG_X_THEME
                   </span>
                 </div>
@@ -215,24 +235,42 @@ export default function SettingsFeature({
 
               <div className="space-y-3 p-5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[9px] font-black uppercase italic tracking-widest text-[var(--text-muted)]">
+                  <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
                     {t('settings.language')}
                   </label>
-                  <span className="font-mono text-[8px] font-bold italic opacity-30 text-[var(--text-muted)]">
+                  <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
                     CONFIG_X_LANG
                   </span>
                 </div>
                 <SegmentedControl options={languages} value={locale} onChange={setLocale} />
+              </div>
+
+              <div className="space-y-3 p-5">
+                <div className="flex items-center justify-between">
+                  <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
+                    {t('settings.text_scale')}
+                  </label>
+                  <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
+                    CONFIG_X_TEXT_SCALE
+                  </span>
+                </div>
+                <SegmentedControl options={textScaleOptions} value={textScale} onChange={setTextScale} />
+                <div className="font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
+                  {t('settings.text_scale_hint')}
+                </div>
               </div>
             </div>
           </section>
 
           <section className="space-y-3 opacity-80">
             <div className="flex items-center gap-2">
-              <span className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono text-[8px] font-black uppercase text-[var(--bg-main)]">
+              <span
+                className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono font-black uppercase text-[var(--bg-main)]"
+                style={sectionBadgeStyle}
+              >
                 02
               </span>
-              <h3 className="text-xs font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+              <h3 className="font-black uppercase italic tracking-tighter text-[var(--text-primary)]" style={sectionTitleStyle}>
                 {t('settings.updates')}
               </h3>
             </div>
@@ -242,18 +280,18 @@ export default function SettingsFeature({
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <div className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
                         {t('settings.current_version')}
                       </div>
-                      <div className="text-[10px] font-black uppercase italic text-[var(--text-primary)]">
+                      <div className="font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
                         {currentVersionLabel}
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
                         {t('settings.release_label')}
                       </div>
-                      <div className="text-[10px] font-black uppercase italic text-[var(--text-primary)]">
+                      <div className="font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
                         {releaseLabel || 'DEV'}
                       </div>
                     </div>
@@ -261,28 +299,28 @@ export default function SettingsFeature({
 
                   <div className="grid grid-cols-2 gap-4 border-t border-dashed border-[var(--border-color)] pt-4">
                     <div className="space-y-1">
-                      <div className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
                         {t('settings.latest_release')}
                       </div>
-                      <div className="text-[10px] font-black uppercase italic text-[var(--text-primary)]">
+                      <div className="font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
                         {latestReleaseLabel}
                       </div>
                     </div>
                     <div className="space-y-1">
-                      <div className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
                         {t('settings.update_asset')}
                       </div>
-                      <div className="font-mono text-[9px] font-bold text-[var(--text-primary)]">
+                      <div className="font-mono font-bold text-[var(--text-primary)]" style={bodyTextStyle}>
                         {availableRelease?.assetName || '—'}
                       </div>
                     </div>
                   </div>
 
                   <div className="border-t border-dashed border-[var(--border-color)] pt-4">
-                    <div className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+                    <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
                       {t('settings.update_channel')}
                     </div>
-                    <div className="mt-2 text-[10px] font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]">
+                    <div className="mt-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]" style={valueTextStyle}>
                       {t(
                         usesNativeUpdaterUI
                           ? 'settings.update_channel_hint_native'
@@ -292,7 +330,10 @@ export default function SettingsFeature({
                       )}
                     </div>
                     {updateMessage ? (
-                      <div className="mt-3 border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[9px] font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]">
+                      <div
+                        className="mt-3 border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]"
+                        style={bodyTextStyle}
+                      >
                         {updateMessage}
                       </div>
                     ) : null}
@@ -318,7 +359,7 @@ export default function SettingsFeature({
                           : t('settings.open_release_page')}
                     </button>
                   )}
-                  <div className="text-[8px] font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]">
+                  <div className="font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
                     {t(
                       usesNativeUpdaterUI
                         ? 'settings.native_update_hint'
@@ -334,10 +375,13 @@ export default function SettingsFeature({
 
           <section className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono text-[8px] font-black uppercase text-[var(--bg-main)]">
+              <span
+                className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono font-black uppercase text-[var(--bg-main)]"
+                style={sectionBadgeStyle}
+              >
                 03
               </span>
-              <h3 className="text-xs font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+              <h3 className="font-black uppercase italic tracking-tighter text-[var(--text-primary)]" style={sectionTitleStyle}>
                 {t('settings.local_usage_refresh')}
               </h3>
             </div>
@@ -345,10 +389,10 @@ export default function SettingsFeature({
             <div className="card-swiss !p-0 divide-y-2 divide-[var(--border-color)]">
               <div className="space-y-3 p-5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[9px] font-black uppercase italic tracking-widest text-[var(--text-muted)]">
+                  <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
                     {t('settings.local_usage_refresh_interval')}
                   </label>
-                  <span className="font-mono text-[8px] font-bold italic opacity-30 text-[var(--text-muted)]">
+                  <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
                     LOCAL_PROJECTED_USAGE
                   </span>
                 </div>
@@ -357,7 +401,7 @@ export default function SettingsFeature({
                   value={localUsageInterval}
                   onChange={(value) => void handleLocalUsageIntervalChange(value)}
                 />
-                <div className="text-[9px] font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]">
+                <div className="font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
                   {isLoadingLocalUsageSettings
                     ? t('settings.local_usage_refresh_loading')
                     : isSavingLocalUsageSettings
@@ -365,7 +409,10 @@ export default function SettingsFeature({
                       : t('settings.local_usage_refresh_hint')}
                 </div>
                 {localUsageMessage ? (
-                  <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[9px] font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]">
+                  <div
+                    className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]"
+                    style={bodyTextStyle}
+                  >
                     {localUsageMessage}
                   </div>
                 ) : null}

@@ -68,7 +68,7 @@ export default function AccountsHeader({
         <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
           {t('accounts.title')}
         </h2>
-        <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+        <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
           {t('accounts.subtitle')} / {accountCount} UNITS
         </p>
       </div>

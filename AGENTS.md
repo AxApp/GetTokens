@@ -23,6 +23,10 @@
 1. `spaces` 为正式目录名，后续所有文档落位和引用都以该路径为准。
 2. `<space-key>` 采用可追踪的英文 slug，优先使用 `<YYYYMMDD>-<topic>` 或稳定功能名，禁止空格、中文、`latest`、`final`。
 3. 每个 `space` 的入口文档固定为 `README.md`。
+4. feature 开发用的 Git `worktree` 不放在仓库目录内，统一放在主仓库同级目录 `../GetTokens-worktrees/`。
+5. 单个 feature `worktree` 的推荐路径为 `../GetTokens-worktrees/<space-key>/`；默认与对应 `space` 共享同一个 `<space-key>`。
+6. `worktree` 是临时执行环境，`space` 是长期文档资产；需求完成后可删除 `worktree`，不得删除对应 `space` 历史。
+7. 单个 `space` 的单期设计稿默认只保留一个 HTML 文件；若存在多稿对比，也必须收敛在同一个 HTML 文件内，不再为同一期拆分多个 `option-*.html`。
 
 ## 1. 全局原则
 1. BDD + TDD 必须先行：先场景与验收标准，再失败测试，再实现。
@@ -35,6 +39,7 @@
 8. 前端改动若影响后端接口、领域模型或关键交互闭环，必须先由 Codex 明确边界，再交给 Gemini 落地，避免只改视觉不改业务完成度。
 9. 当一次会话中出现“有用且重复出现”的行为模式、排障路径或交付动作时，必须先识别复用边界，再优先新增或更新项目级 `skills`；只有当规则已经上升为 repo-wide、长期稳定的约束时，才同步更新 `AGENTS.md`。
 10. 当用户明确说“整理”且语境指向刚完成的一轮工作会话时，默认触发一次会话沉淀流程：先按 `gettokens-session-skill-distill` 提炼可复用模式，再按是否 repo-wide 决定是否同步更新 `AGENTS.md`、`docs-linhay/dev/`、`docs-linhay/memory/`，并执行 `qmd update` 与 `qmd embed`。
+11. 多份独立需求稿并行推进时，默认按“一个需求单元一个 `space`，必要时再配一个同 key 的 branch 与 `worktree`”组织，不按个人姓名或临时阶段单独命名工作目录。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
@@ -44,6 +49,7 @@
 5. 更新相关文档与记忆。
 6. 若本次任务提炼出可复用的项目动作、流程或知识边界，新增或更新对应 `skills`；若同时形成长期稳定规则，再更新 `AGENTS.md`。
 7. 若用户以“整理”作为收尾指令，且本轮存在稳定可复用模式，不需要额外追问是否沉淀，直接进入 `skills` / `AGENTS` / docs / memory 的整理流程。
+8. 若某个需求将进入并行开发、多日实现或与其他需求同时切换，先补齐对应 `space`，再创建同 key 的 branch / `worktree`。
 
 ## 3. 测试门禁（必须）
 1. 任何功能改动都要有对应测试（新增或更新）。
@@ -61,6 +67,23 @@
 6. `docs-linhay/memory/`：记忆系统（`MEMORY.md` + 每日日志 `YYYY-MM-DD.md`）。
 7. `docs-linhay/references/`：参考项目、外部资料归档。
 8. `docs-linhay/scripts/`：自动化脚本及其说明文档。
+
+Git `worktree` 治理：
+1. `space` 负责需求背景、计划、截图、辩论和验收；`worktree` 只负责该需求的代码执行上下文。
+2. 默认映射为：`space = docs-linhay/spaces/<space-key>/`、`branch = feat/<space-key>`、`worktree = ../GetTokens-worktrees/<space-key>/`。
+3. 只讨论、不落代码的需求稿只建 `space`，不建 `worktree`。
+4. 一次性小修或当天即可完成的短改动，可直接在主工作区开短分支，不强制建 `worktree`。
+5. 会并行推进、会持续多天、会频繁切换上下文的需求，必须使用独立 `worktree`。
+6. release、打包、一次性验证类短命工作区可继续放在 `/private/tmp/`，但常规 feature `worktree` 不得放在 `/tmp`。
+7. 禁止在主仓库目录内嵌套创建 feature `worktree`，避免污染搜索、索引和脚本扫描范围。
+8. 合并完成后删除对应 `worktree`，保留 `space` 文档、截图、计划和 debate 历史。
+
+设计稿治理：
+1. 设计稿 HTML 默认落在对应 `space` 根目录，作为该期视觉/交互方案的唯一入口。
+2. 单个 `space` 的单期设计稿只保留一个 HTML 文件，文件名应语义化且可追踪，例如 `design-preview.html`、`usage-dashboard-design-v01.html`。
+3. 同一期内若需要展示多方案对比、多个状态或多个区域稿，统一放在同一个 HTML 文件中，用分节、锚点或标签页组织，不再拆成多个平行 HTML 文件。
+4. 只有跨期迭代时才允许新增下一版 HTML，例如从 `*-v01.html` 演进到 `*-v02.html`；同一期内禁止出现 `option-a/b/c` 平行文件。
+5. 既有多 HTML 设计稿视为历史遗留；后续新增或重构时按本规则收敛，不要求本次治理整理顺手迁移所有旧稿。
 
 文档落位硬约束：
 1. 需求变更先写对应 `space`，再改代码。
@@ -98,6 +121,7 @@
 ## 6. 文档工具（推荐）
 1. 新建 `space` 时优先使用 `docs-linhay/scripts/create-space.sh <space-key>`。
 2. 提交前或调整治理规则后，运行 `docs-linhay/scripts/check-docs.sh` 做结构校验。
+3. 新建 feature `worktree` 时，默认使用 `git worktree add ../GetTokens-worktrees/<space-key> -b feat/<space-key> master`；若当前集成分支不是 `master`，以当轮基线分支替换末尾参数。
 
 ## 7. 完成定义（DoD）
 1. 验收场景满足。

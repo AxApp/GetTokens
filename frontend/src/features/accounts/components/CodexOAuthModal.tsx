@@ -35,7 +35,7 @@ export default function CodexOAuthModal({
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('accounts.login_chatgpt')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -43,19 +43,19 @@ export default function CodexOAuthModal({
           </h3>
         </header>
         <div className="space-y-4 p-6">
-          <p className="text-[11px] font-bold leading-relaxed text-[var(--text-secondary)]">
+          <p className="text-[0.6875rem] font-bold leading-relaxed text-[var(--text-secondary)]">
             {buildCodexOAuthDialogHint(t, existingName)}
           </p>
           <div className="space-y-2">
-            <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('accounts.oauth_dialog_url_label')}
             </div>
-            <div className="break-all border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 font-mono text-[11px] leading-relaxed text-[var(--text-primary)]">
+            <div className="break-all border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 font-mono text-[0.6875rem] leading-relaxed text-[var(--text-primary)]">
               {url}
             </div>
             {copyState !== 'idle' ? (
               <div
-                className={`text-[10px] font-black uppercase tracking-wide ${
+                className={`text-[0.625rem] font-black uppercase tracking-wide ${
                   copyState === 'success' ? 'text-green-700' : 'text-red-500'
                 }`}
               >
