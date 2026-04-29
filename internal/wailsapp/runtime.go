@@ -4,14 +4,15 @@ import (
 	"context"
 	"log"
 
-	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/sidecar"
+	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/updater"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
+	a.startLocalUsageRefreshLoop(ctx)
 
 	if usesNativeUpdaterUI() {
 		if err := sparkle.Start(); err != nil {

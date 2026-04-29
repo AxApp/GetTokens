@@ -94,6 +94,7 @@ export interface UsageDeskProjectedStats {
 
 export type UsageDeskChartUnit = 'count' | 'tokens';
 export type UsageDeskRangeOption = 'TODAY' | '7D' | '14D' | '30D' | '全部';
+export type UsageDeskResolution = '1M' | '5M' | '15M' | '30M' | '60M';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -114,16 +115,22 @@ function buildDayKey(date: Date) {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
-function buildMinuteKey(date: Date) {
-  return `${buildDayKey(date)} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+function buildMinuteKey(date: Date, resolution: UsageDeskResolution = '1M') {
+  const mins = date.getMinutes();
+  const resValue = parseInt(resolution);
+  const roundedMins = Math.floor(mins / resValue) * resValue;
+  return `${buildDayKey(date)} ${pad2(date.getHours())}:${pad2(roundedMins)}`;
 }
 
 function buildDayLabel(dayKey: string) {
   return dayKey.slice(5);
 }
 
-function buildMinuteLabel(date: Date) {
-  return `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+function buildMinuteLabel(date: Date, resolution: UsageDeskResolution = '1M') {
+  const mins = date.getMinutes();
+  const resValue = parseInt(resolution);
+  const roundedMins = Math.floor(mins / resValue) * resValue;
+  return `${pad2(date.getHours())}:${pad2(roundedMins)}`;
 }
 
 export function formatUsageDeskChartValue(value: number, unit: UsageDeskChartUnit): string {
@@ -196,6 +203,14 @@ export function resolveUsageDeskLinkedRowKey(
   ].join('|');
 }
 
+export function buildUsageDeskChartPointStyle(x: number, y: number) {
+  return {
+    left: `${x}px`,
+    top: `${y}px`,
+    transform: 'translate(-50%, -50%)',
+  };
+}
+
 function formatUsageDeskCompactNumber(value: number): string {
   const normalized = Math.round(value * 10) / 10;
   if (Number.isInteger(normalized)) {
@@ -242,6 +257,7 @@ export function collectUsageDeskObservedDetails(usageData: unknown): UsageDeskOb
 export function buildUsageDeskObservedSnapshot(
   usageData: unknown,
   selectedDayKey?: string | null,
+  resolution: UsageDeskResolution = '1M',
 ): UsageDeskObservedSnapshot {
   const details = collectUsageDeskObservedDetails(usageData);
   if (details.length === 0) {
@@ -304,10 +320,10 @@ export function buildUsageDeskObservedSnapshot(
     const date = parseTimestamp(detail.timestamp);
     if (!date || buildDayKey(date) !== resolvedDayKey) return;
 
-    const minuteKey = buildMinuteKey(date);
+    const minuteKey = buildMinuteKey(date, resolution);
     const minutePoint = minuteMap.get(minuteKey) ?? {
       minuteKey,
-      label: buildMinuteLabel(date),
+      label: buildMinuteLabel(date, resolution),
       success: 0,
       failure: 0,
     };
@@ -320,7 +336,7 @@ export function buildUsageDeskObservedSnapshot(
     minuteMap.set(minuteKey, minutePoint);
 
     const minuteRow = minuteRowMap.get(minuteKey) ?? {
-      timeLabel: buildMinuteLabel(date),
+      timeLabel: buildMinuteLabel(date, resolution),
       provider: detail.provider,
       success: 0,
       failure: 0,
@@ -343,7 +359,7 @@ export function buildUsageDeskObservedSnapshot(
   const minuteRows = Array.from(minuteRowMap.entries())
     .sort((a, b) => b[0].localeCompare(a[0]))
     .map(([, row]) => {
-      if (row.requests === 1) {
+      if (row.requests === 1 && resolution === '1M') {
         return {
           timeLabel: row.timeLabel,
           provider: row.provider,
@@ -406,6 +422,7 @@ export function collectUsageDeskProjectedDetails(payload: unknown): UsageDeskPro
 export function buildUsageDeskProjectedSnapshot(
   payload: unknown,
   selectedDayKey?: string | null,
+  resolution: UsageDeskResolution = '1M',
 ): UsageDeskProjectedSnapshot {
   const details = collectUsageDeskProjectedDetails(payload);
   if (details.length === 0) {
@@ -473,10 +490,10 @@ export function buildUsageDeskProjectedSnapshot(
     const date = parseTimestamp(detail.timestamp);
     if (!date || buildDayKey(date) !== resolvedDayKey) return;
 
-    const minuteKey = buildMinuteKey(date);
+    const minuteKey = buildMinuteKey(date, resolution);
     const point = minuteMap.get(minuteKey) ?? {
       minuteKey,
-      label: buildMinuteLabel(date),
+      label: buildMinuteLabel(date, resolution),
       requests: 0,
       totalTokens: 0,
     };
@@ -486,7 +503,7 @@ export function buildUsageDeskProjectedSnapshot(
     minuteMap.set(minuteKey, point);
 
     const minuteRow = minuteRowMap.get(minuteKey) ?? {
-      timeLabel: buildMinuteLabel(date),
+      timeLabel: buildMinuteLabel(date, resolution),
       provider: detail.provider,
       totalTokens: 0,
       requests: 0,

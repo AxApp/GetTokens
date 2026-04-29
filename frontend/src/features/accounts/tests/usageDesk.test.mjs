@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildUsageDeskChartPointStyle,
   buildUsageDeskObservedSnapshot,
   buildUsageDeskProjectedSnapshot,
   collectUsageDeskObservedDetails,
@@ -12,6 +13,14 @@ import {
   resolveUsageDeskLinkedRowKey,
   resolveUsageDeskRangeDrilldownDayKey,
 } from '../model/usageDesk.ts';
+
+test('buildUsageDeskChartPointStyle keeps hit area centered on the plotted coordinate', () => {
+  assert.deepEqual(buildUsageDeskChartPointStyle(128, 96), {
+    left: '128px',
+    top: '96px',
+    transform: 'translate(-50%, -50%)',
+  });
+});
 
 test('collectUsageDeskObservedDetails keeps provider and model from nested usage payload', () => {
   const details = collectUsageDeskObservedDetails({

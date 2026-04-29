@@ -258,6 +258,10 @@ type LocalProjectedUsageResponse struct {
 	Details          []LocalProjectedUsageDetail `json:"details"`
 }
 
+type LocalProjectedUsageSettings struct {
+	RefreshIntervalMinutes int `json:"refreshIntervalMinutes"`
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -401,12 +405,42 @@ func (a *App) GetCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 	return mapLocalProjectedUsageResponse(result), nil
 }
 
+func (a *App) RefreshCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.RefreshCodexLocalUsage()
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
+}
+
 func (a *App) RebuildCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 	result, err := a.core.RebuildCodexLocalUsage()
 	if err != nil {
 		return nil, err
 	}
 	return mapLocalProjectedUsageResponse(result), nil
+}
+
+func (a *App) GetLocalProjectedUsageSettings() (*LocalProjectedUsageSettings, error) {
+	result, err := a.core.GetLocalProjectedUsageSettings()
+	if err != nil {
+		return nil, err
+	}
+	return &LocalProjectedUsageSettings{
+		RefreshIntervalMinutes: result.RefreshIntervalMinutes,
+	}, nil
+}
+
+func (a *App) UpdateLocalProjectedUsageSettings(input LocalProjectedUsageSettings) (*LocalProjectedUsageSettings, error) {
+	result, err := a.core.UpdateLocalProjectedUsageSettings(wailsapp.LocalProjectedUsageSettings{
+		RefreshIntervalMinutes: input.RefreshIntervalMinutes,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &LocalProjectedUsageSettings{
+		RefreshIntervalMinutes: result.RefreshIntervalMinutes,
+	}, nil
 }
 
 func (a *App) StartCodexOAuth() (*OAuthStartResult, error) {

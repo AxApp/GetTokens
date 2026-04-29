@@ -34,6 +34,8 @@ export function GetCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 
+export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsageSettings>;
+
 export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;
 
 export function GetRelayRoutingConfig():Promise<main.RelayRoutingConfig>;
@@ -58,6 +60,8 @@ export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
 export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
+export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
+
 export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
 
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
@@ -71,6 +75,8 @@ export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):
 export function UpdateCodexAPIKeyLabel(arg1:main.UpdateCodexAPIKeyLabelInput):Promise<void>;
 
 export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInput):Promise<void>;
+
+export function UpdateLocalProjectedUsageSettings(arg1:main.LocalProjectedUsageSettings):Promise<main.LocalProjectedUsageSettings>;
 
 export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<void>;
 

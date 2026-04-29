@@ -96,3 +96,7 @@ type LocalProjectedUsageProgress struct {
 	TotalFiles     int    `json:"totalFiles"`
 	Source         string `json:"source,omitempty"`
 }
+
+type LocalProjectedUsageSettings struct {
+	RefreshIntervalMinutes int `json:"refreshIntervalMinutes"`
+}

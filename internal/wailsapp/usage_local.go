@@ -3,17 +3,19 @@ package wailsapp
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
-	_ "modernc.org/sqlite"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
+	_ "modernc.org/sqlite"
 )
 
 const (
@@ -80,6 +82,13 @@ func (a *App) emitLocalUsageProgress(progress LocalProjectedUsageProgress) {
 	wailsRuntime.EventsEmit(a.ctx, "usage-local:progress", progress)
 }
 
+func (a *App) emitLocalUsageUpdated(response *LocalProjectedUsageResponse) {
+	if a.ctx == nil || response == nil {
+		return
+	}
+	wailsRuntime.EventsEmit(a.ctx, "usage-local:updated", cloneLocalProjectedUsageResponse(response))
+}
+
 func relativeLocalUsageProgressPath(codexHome string, absolutePath string) string {
 	if absolutePath == "" {
 		return ""
@@ -91,11 +100,18 @@ func relativeLocalUsageProgressPath(codexHome string, absolutePath string) strin
 }
 
 func (a *App) GetCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
-	return a.loadCodexLocalUsage(false)
+	if cached := a.readCachedLocalUsageResponse(); cached != nil {
+		return cached, nil
+	}
+	return a.refreshCodexLocalUsage(false, false)
+}
+
+func (a *App) RefreshCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
+	return a.refreshCodexLocalUsage(false, true)
 }
 
 func (a *App) RebuildCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
-	return a.loadCodexLocalUsage(true)
+	return a.refreshCodexLocalUsage(true, true)
 }
 
 func (a *App) loadCodexLocalUsage(forceRebuild bool) (*LocalProjectedUsageResponse, error) {
@@ -119,6 +135,114 @@ func (a *App) loadCodexLocalUsage(forceRebuild bool) (*LocalProjectedUsageRespon
 		FileMissingFiles: snapshot.FileMissingFiles,
 		Details:          snapshot.Details,
 	}, nil
+}
+
+func (a *App) refreshCodexLocalUsage(forceRebuild bool, emitUpdated bool) (*LocalProjectedUsageResponse, error) {
+	a.localUsageMu.Lock()
+	if a.localUsage.refreshRunning {
+		a.localUsageMu.Unlock()
+		return a.waitForLocalUsageRefresh(forceRebuild, emitUpdated)
+	}
+	a.localUsage.refreshRunning = true
+	a.localUsageMu.Unlock()
+
+	response, err := a.loadCodexLocalUsage(forceRebuild)
+
+	a.localUsageMu.Lock()
+	a.localUsage.refreshRunning = false
+	if err != nil {
+		a.localUsageMu.Unlock()
+		return nil, err
+	}
+	a.localUsage.cachedResponse = cloneLocalProjectedUsageResponse(response)
+	a.localUsage.cachedAt = time.Now()
+	a.localUsage.lastRefreshAt = a.localUsage.cachedAt
+	cached := cloneLocalProjectedUsageResponse(a.localUsage.cachedResponse)
+	a.localUsageMu.Unlock()
+	if emitUpdated {
+		a.emitLocalUsageUpdated(cached)
+	}
+	return cached, nil
+}
+
+func (a *App) waitForLocalUsageRefresh(forceRebuild bool, emitUpdated bool) (*LocalProjectedUsageResponse, error) {
+	for {
+		time.Sleep(20 * time.Millisecond)
+		a.localUsageMu.RLock()
+		refreshRunning := a.localUsage.refreshRunning
+		cached := cloneLocalProjectedUsageResponse(a.localUsage.cachedResponse)
+		a.localUsageMu.RUnlock()
+		if refreshRunning {
+			continue
+		}
+		if cached != nil {
+			return cached, nil
+		}
+		return a.refreshCodexLocalUsage(forceRebuild, emitUpdated)
+	}
+}
+
+func (a *App) readCachedLocalUsageResponse() *LocalProjectedUsageResponse {
+	a.localUsageMu.RLock()
+	defer a.localUsageMu.RUnlock()
+	return cloneLocalProjectedUsageResponse(a.localUsage.cachedResponse)
+}
+
+func cloneLocalProjectedUsageResponse(response *LocalProjectedUsageResponse) *LocalProjectedUsageResponse {
+	if response == nil {
+		return nil
+	}
+	details := make([]LocalProjectedUsageDetail, len(response.Details))
+	copy(details, response.Details)
+	return &LocalProjectedUsageResponse{
+		Provider:         response.Provider,
+		SourceKind:       response.SourceKind,
+		ScannedFiles:     response.ScannedFiles,
+		CacheHitFiles:    response.CacheHitFiles,
+		DeltaAppendFiles: response.DeltaAppendFiles,
+		FullRebuildFiles: response.FullRebuildFiles,
+		FileMissingFiles: response.FileMissingFiles,
+		Details:          details,
+	}
+}
+
+func (a *App) startLocalUsageRefreshLoop(ctx context.Context) {
+	go func() {
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				if !a.shouldRunScheduledLocalUsageRefresh(time.Now()) {
+					continue
+				}
+				if _, err := a.refreshCodexLocalUsage(false, true); err != nil {
+					log.Printf("scheduled local usage refresh failed: %v", err)
+				}
+			}
+		}
+	}()
+}
+
+func (a *App) shouldRunScheduledLocalUsageRefresh(now time.Time) bool {
+	a.localUsageMu.RLock()
+	cachedResponse := a.localUsage.cachedResponse
+	lastRefreshAt := a.localUsage.lastRefreshAt
+	refreshRunning := a.localUsage.refreshRunning
+	a.localUsageMu.RUnlock()
+
+	if refreshRunning || cachedResponse == nil || lastRefreshAt.IsZero() {
+		return false
+	}
+	settings, err := loadLocalProjectedUsageSettings()
+	if err != nil {
+		log.Printf("load local projected usage settings failed: %v", err)
+		settings = defaultLocalProjectedUsageSettings()
+	}
+	interval := time.Duration(settings.RefreshIntervalMinutes) * time.Minute
+	return now.Sub(lastRefreshAt) >= interval
 }
 
 func collectCodexLocalUsageDetailsFromHome(codexHome string) ([]LocalProjectedUsageDetail, int, error) {

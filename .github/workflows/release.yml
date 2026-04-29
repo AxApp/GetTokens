@@ -200,12 +200,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir -p dist/release
-          create-dmg \
-            --volname "GetTokens" \
-            --window-size 660 400 \
-            --icon-size 100 \
-            "dist/release/${{ matrix.asset-name }}" \
-            "build/bin/GetTokens.app"
+          chmod +x scripts/package-macos-dmg.sh
+          scripts/package-macos-dmg.sh "dist/release/${{ matrix.asset-name }}" "build/bin/GetTokens.app"
 
       - name: Sign and notarize macOS DMG
         if: runner.os == 'macOS'

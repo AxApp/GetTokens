@@ -377,6 +377,18 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class LocalProjectedUsageSettings {
+	    refreshIntervalMinutes: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalProjectedUsageSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.refreshIntervalMinutes = source["refreshIntervalMinutes"];
+	    }
+	}
 	export class OAuthStartResult {
 	    url: string;
 	    state?: string;
