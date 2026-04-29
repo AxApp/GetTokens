@@ -30,6 +30,25 @@ func TestSyncMacOSBundleVersionScript(t *testing.T) {
 		}
 	})
 
+	t.Run("syncs binary plist bundle metadata", func(t *testing.T) {
+		appPath := createTempAppBundle(t)
+		convertPlistToBinary(t, filepath.Join(appPath, "Contents", "Info.plist"))
+
+		cmd := exec.Command("bash", "scripts/sync-macos-bundle-version.sh", appPath, "v0.1.11")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("sync-macos-bundle-version.sh error = %v, output = %s", err, output)
+		}
+
+		plist := readPlistAsJSON(t, filepath.Join(appPath, "Contents", "Info.plist"))
+		if got := plist["CFBundleShortVersionString"]; got != "0.1.11" {
+			t.Fatalf("CFBundleShortVersionString = %#v, want %q", got, "0.1.11")
+		}
+		if got := plist["CFBundleVersion"]; got != "0.1.11" {
+			t.Fatalf("CFBundleVersion = %#v, want %q", got, "0.1.11")
+		}
+	})
+
 	t.Run("rejects non release version", func(t *testing.T) {
 		appPath := createTempAppBundle(t)
 
@@ -90,4 +109,14 @@ func readPlistAsJSON(t *testing.T, plistPath string) map[string]any {
 	}
 
 	return data
+}
+
+func convertPlistToBinary(t *testing.T, plistPath string) {
+	t.Helper()
+
+	cmd := exec.Command("plutil", "-convert", "binary1", plistPath)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("plutil binary convert error = %v, output = %s", err, output)
+	}
 }

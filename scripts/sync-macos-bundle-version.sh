@@ -41,22 +41,7 @@ print(match.group(1))
 PY
 )"
 
-python3 - "${PLIST_PATH}" "${BUNDLE_VERSION}" <<'PY'
-import plistlib
-import sys
-from pathlib import Path
-
-plist_path = Path(sys.argv[1])
-bundle_version = sys.argv[2]
-
-with plist_path.open("rb") as handle:
-    data = plistlib.load(handle)
-
-data["CFBundleShortVersionString"] = bundle_version
-data["CFBundleVersion"] = bundle_version
-
-with plist_path.open("wb") as handle:
-    plistlib.dump(data, handle, sort_keys=False)
-PY
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${BUNDLE_VERSION}" "${PLIST_PATH}"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUNDLE_VERSION}" "${PLIST_PATH}"
 
 echo "Synced macOS bundle version to ${BUNDLE_VERSION} in ${PLIST_PATH}"
