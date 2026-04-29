@@ -23,6 +23,12 @@ export interface DebugEntry {
   durationMs?: number;
 }
 
+declare global {
+  interface WindowEventMap {
+    'debug:inject-entries': CustomEvent<DebugEntry[]>;
+  }
+}
+
 interface TrackRequestOptions<T> {
   transport?: 'wails' | 'http';
   mapSuccess?: (result: T) => unknown;
@@ -107,6 +113,24 @@ export function DebugProvider({ children }: { children?: ReactNode }) {
       offDebugEntry?.();
     };
   }, [appendExternalEntry]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || typeof window === 'undefined') {
+      return;
+    }
+
+    const onInjectEntries = (event: WindowEventMap['debug:inject-entries']) => {
+      if (!Array.isArray(event.detail)) {
+        return;
+      }
+      setEntries(event.detail);
+    };
+
+    window.addEventListener('debug:inject-entries', onInjectEntries);
+    return () => {
+      window.removeEventListener('debug:inject-entries', onInjectEntries);
+    };
+  }, []);
 
   const trackRequest = useCallback(
     async <T,>(

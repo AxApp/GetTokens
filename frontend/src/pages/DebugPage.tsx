@@ -1,25 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDebug } from '../context/DebugContext';
 import { useI18n } from '../context/I18nContext';
-
-function formatPayload(value: unknown) {
-  if (value === undefined) {
-    return '—';
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-}
+import { buildDebugEntryViewModels } from './debugPageModel';
 
 export default function DebugPage() {
   const { t } = useI18n();
   const { entries, clearEntries } = useDebug();
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
+  const [expandedIDs, setExpandedIDs] = useState<string[]>([]);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
 
   const sortedEntries = useMemo(() => entries, [entries]);
@@ -27,10 +15,17 @@ export default function DebugPage() {
     () => sortedEntries.filter((entry) => selectedIDs.includes(entry.id)),
     [selectedIDs, sortedEntries]
   );
+  const entryViewModels = useMemo(
+    () => buildDebugEntryViewModels(sortedEntries, { expandedIDs }),
+    [expandedIDs, sortedEntries]
+  );
   const allSelected = sortedEntries.length > 0 && selectedIDs.length === sortedEntries.length;
 
   useEffect(() => {
     setSelectedIDs((prev) => prev.filter((id) => sortedEntries.some((entry) => entry.id === id)));
+  }, [sortedEntries]);
+  useEffect(() => {
+    setExpandedIDs((prev) => prev.filter((id) => sortedEntries.some((entry) => entry.id === id)));
   }, [sortedEntries]);
 
   useEffect(() => {
@@ -47,6 +42,10 @@ export default function DebugPage() {
 
   function toggleSelectAll() {
     setSelectedIDs(allSelected ? [] : sortedEntries.map((entry) => entry.id));
+  }
+
+  function toggleExpanded(id: string) {
+    setExpandedIDs((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
   }
 
   async function copySelectedEntries() {
@@ -113,7 +112,7 @@ export default function DebugPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            {sortedEntries.map((entry) => (
+            {entryViewModels.map((entry) => (
               <section
                 key={entry.id}
                 className={`card-swiss flex max-h-[600px] flex-col !p-0 overflow-hidden ${selectedIDs.includes(entry.id) ? 'ring-2 ring-[var(--accent-red)]' : ''}`}
@@ -137,40 +136,51 @@ export default function DebugPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right text-[0.5625rem] font-black uppercase tracking-widest">
-                    <div
-                      className={
-                        entry.status === 'success'
-                          ? 'text-green-600'
-                          : entry.status === 'error'
-                            ? 'text-red-500'
-                            : 'text-[var(--text-muted)]'
-                      }
-                    >
-                      {entry.status}
+                  <div className="flex items-center gap-4">
+                    <div className="text-right text-[0.5625rem] font-black uppercase tracking-widest">
+                      <div
+                        className={
+                          entry.status === 'success'
+                            ? 'text-green-600'
+                            : entry.status === 'error'
+                              ? 'text-red-500'
+                              : 'text-[var(--text-muted)]'
+                        }
+                      >
+                        {entry.status}
+                      </div>
+                      <div className="mt-1 text-[var(--text-muted)]">{entry.durationMs ?? 0} MS</div>
                     </div>
-                    <div className="mt-1 text-[var(--text-muted)]">{entry.durationMs ?? 0} MS</div>
+                    <button onClick={() => toggleExpanded(entry.id)} className="btn-swiss">
+                      {entry.isExpanded ? t('debug.collapse') : t('debug.expand')}
+                    </button>
                   </div>
                 </div>
 
-                <div className="grid flex-grow grid-cols-1 overflow-y-auto gap-0 md:grid-cols-2">
-                  <div className="border-b-2 border-[var(--border-color)] p-5 md:border-b-0 md:border-r-2">
-                    <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                      {t('debug.request')}
+                {entry.isExpanded ? (
+                  <div className="grid flex-grow grid-cols-1 overflow-y-auto gap-0 md:grid-cols-2">
+                    <div className="border-b-2 border-[var(--border-color)] p-5 md:border-b-0 md:border-r-2">
+                      <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                        {t('debug.request')}
+                      </div>
+                      <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
+                        {entry.requestText}
+                      </pre>
                     </div>
-                    <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
-                      {formatPayload(entry.request)}
-                    </pre>
-                  </div>
-                  <div className="p-5">
-                    <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
-                      {entry.status === 'error' ? t('debug.response_error') : t('debug.response')}
+                    <div className="p-5">
+                      <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                        {entry.status === 'error' ? t('debug.response_error') : t('debug.response')}
+                      </div>
+                      <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
+                        {entry.responseText}
+                      </pre>
                     </div>
-                    <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
-                      {entry.status === 'error' ? formatPayload(entry.error) : formatPayload(entry.response)}
-                    </pre>
                   </div>
-                </div>
+                ) : (
+                  <div className="px-6 py-4 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                    {t('debug.collapsed_hint')}
+                  </div>
+                )}
               </section>
             ))}
           </div>

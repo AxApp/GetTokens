@@ -20,163 +20,12 @@
   "nav": {
     "status": "运行状态",
     "accounts": "账号池",
-    "session_management": "会话管理",
-    "session_management_codex_sessions": "codex sessions",
-    "session_management_provider_groups": "provider groups",
+    "proxy_pool": "代理池",
     "usage_desk": "用量分析",
     "accounts_codex": "codex",
     "accounts_openai_compatible": "openai-compatible",
     "settings": "应用设置",
     "debug": "调试面板"
-  },
-  "session_management": {
-    "kicker": "session control",
-    "title": "会话管理",
-    "subtitle": "当前先收口会话导航与 workspace，后续再接入真实列表、详情和 rewrite。",
-    "actions": {
-      "all_sessions": "全部会话",
-      "archived_only": "仅 archived",
-      "copy_thread_ids": "copy thread ids",
-      "preview_rewrite": "preview rewrite"
-    },
-    "status": {
-      "codex_sessions": "group: project / sort: usage / search: gettokens",
-      "provider_groups": "group: provider / sort: recent / search: codex"
-    },
-    "summary": {
-      "visible_48": "visible 48",
-      "eligible_groups_12": "eligible groups 12",
-      "provider_drift_7": "provider drift 7"
-    },
-    "sort": {
-      "project": "project",
-      "provider": "provider",
-      "usage": "usage",
-      "recent": "recent"
-    },
-    "panels": {
-      "session_list": "Session List",
-      "selected_detail": "Selected Detail"
-    },
-    "detail_tags": {
-      "store_snapshot": "store snapshot",
-      "timeline_ready": "timeline ready"
-    },
-    "list_tags": {
-      "project_gettokens": "project / gettokens",
-      "group_rewrite_enabled": "group rewrite enabled",
-      "mixed_provider_watch": "mixed provider watch",
-      "thread_61ab": "thread 61ab",
-      "usage_142": "usage 14.2m",
-      "live": "live",
-      "selected": "selected",
-      "resume": "resume",
-      "thread_5c20": "thread 5c20",
-      "archived": "archived",
-      "usage_86": "usage 8.6m",
-      "copy_cmd": "copy cmd",
-      "thread_91de": "thread 91de",
-      "timeline_ready": "timeline ready",
-      "usage_54": "usage 5.4m",
-      "finder": "finder",
-      "thread_8f2a": "thread 8f2a",
-      "mixed_provider": "mixed provider",
-      "row_rewrite": "row rewrite"
-    },
-    "list_items": {
-      "usage_desk_boundary": {
-        "title": "Usage Desk loading discrepancy vs archived sessions scan boundary",
-        "note": "updated 11:42 / cwd /GetTokens / state rows 18"
-      },
-      "cache_boundary": {
-        "title": "Projection cache and usage index boundary clarification",
-        "note": "cached snapshot first / stable reconcile after"
-      },
-      "logical_usage": {
-        "title": "Logical usage key and forked rollout dedupe semantics",
-        "note": "usage-backed drilldown / thread-level dedupe"
-      },
-      "grouping_divergence": {
-        "title": "Time-project grouping divergence after project-first refactor",
-        "note": "group rewrite blocked / row rewrite only"
-      }
-    },
-    "detail": {
-      "selected_session": "selected session",
-      "selected_note": "当前详情面板把字段和时间线并列处理，既保住“这个 session 是什么”，也保住“这条记录接下来可以做什么”。",
-      "identity": {
-        "meta": "identity",
-        "title": "thread:61ab / provider codex",
-        "note": "logical usage key 走 thread 级别，不把同一逻辑会话重复统计。"
-      },
-      "snapshot_source": {
-        "meta": "snapshot source",
-        "title": "projection cache hit",
-        "note": "clean + fresh 时可直接短路 reconcile。"
-      },
-      "summary": {
-        "meta": "summary",
-        "title": "reserved but not stable",
-        "note": "UI 可留位，但不能假设首屏一定有稳定 summary。"
-      },
-      "actions": {
-        "meta": "actions",
-        "title": "resume / finder / copy cmd",
-        "note": "动作语言保持和现有页面一致，不再引入新的命令体系。"
-      }
-    },
-    "timeline": {
-      "kicker": "timeline / rewrite chain",
-      "preview": {
-        "title": "preview",
-        "note": "先统计 session / live / archived / state rows 命中范围。"
-      },
-      "live_rollout": {
-        "title": "live rollout",
-        "note": "只改首个 `session_meta.model_provider`。"
-      },
-      "archived_rollout": {
-        "title": "archived rollout",
-        "note": "同 thread 命中 archived 时继续改。"
-      },
-      "state_db": {
-        "title": "state db",
-        "note": "更新 `threads.model_provider`。"
-      },
-      "verify": {
-        "title": "verify",
-        "note": "invalidate cache 后做一致性检查。"
-      }
-    },
-    "footer": {
-      "why": {
-        "title": "Why This Cut",
-        "note": "这版不再像模块册，而是直接拼成一张真实页面稿，方便判断整体主次和实际工作台气质。"
-      },
-      "strength": {
-        "title": "Current Strength",
-        "note": "最接近现有 `Usage Desk` 的页骨架，同时把 `rewrite` 的多介质边界保留为页面语义的一部分。"
-      },
-      "next": {
-        "title": "Next Step",
-        "note": "如果这张整体页方向对，下一步就不是再做模块比较，而是继续精修这一个页面的真实排版和信息密度。"
-      }
-    },
-    "next_steps": {
-      "search": "search / group / sort",
-      "sort": "detail / timeline / risk",
-      "rewrite": "rewrite preview / commit"
-    },
-    "workspaces": {
-      "codex_sessions": {
-        "title": "Codex Sessions",
-        "description": "当前页承接 project/provider 分组、recent/usage 排序、搜索、行内详情、group/row rewrite，以及 preview before commit 的 staged rewrite 风险说明。"
-      },
-      "provider_groups": {
-        "title": "Provider Groups",
-        "description": "当前页承接 provider 维度聚合、mixed provider 风险扫描、group rewrite 资格判断，以及 staged rewrite 的预演结果对照。"
-      }
-    }
   },
   "status": {
     "title": "系统运行状态",
@@ -502,6 +351,9 @@
     "copy_error": "复制失败",
     "clear": "清空记录",
     "empty": "当前还没有接口调用记录",
+    "expand": "展开详情",
+    "collapse": "收起详情",
+    "collapsed_hint": "当前为折叠态，展开后再加载请求与响应正文",
     "request": "发送数据",
     "response": "响应数据",
     "response_error": "错误响应"
