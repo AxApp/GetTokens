@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetTokens Session Management - Design Preview</title>
+  <style>
+    :root {
+      --bg: #f3efe7;
+      --panel: #fbf8f2;
+      --surface: #fffdf8;
+      --surface-2: #f4eee2;
+      --ink: #171410;
+      --muted: #70685e;
+      --accent: #b22018;
+      --accent-soft: rgba(178, 32, 24, 0.06);
+      --green: #285f37;
+      --green-soft: rgba(40, 95, 55, 0.06);
+      --shadow: rgba(23, 20, 16, 0.11);
+      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+
+    body {
+      font-family: var(--mono);
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(178, 32, 24, 0.04), transparent 18%),
+        linear-gradient(90deg, rgba(23, 20, 16, 0.03) 1px, transparent 1px),
+        linear-gradient(rgba(23, 20, 16, 0.03) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 28px 28px, 28px 28px, auto;
+    }
+
+    .page {
+      width: min(1560px, calc(100vw - 24px));
+      margin: 12px auto;
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: 10px 10px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .top-note {
+      padding: 12px 18px;
+      border-bottom: 2px solid var(--ink);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.82), rgba(255,255,255,0.24));
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      min-height: 1040px;
+    }
+
+    .sidebar {
+      border-right: 2px solid var(--ink);
+      background: linear-gradient(180deg, #fbf7f0 0%, #f3ebde 100%);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand {
+      min-height: 124px;
+      padding: 22px 18px;
+      border-bottom: 2px solid var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+    }
+
+    .logo span { background: var(--accent); }
+    .logo span:nth-child(2),
+    .logo span:nth-child(3),
+    .logo span:nth-child(6),
+    .logo span:nth-child(9) { opacity: 0; }
+
+    .brand-type {
+      font-size: 22px;
+      line-height: 0.92;
+      font-weight: 900;
+      letter-spacing: -0.08em;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .brand-type em {
+      display: block;
+      color: rgba(23, 20, 16, 0.42);
+      font-style: italic;
+    }
+
+    .nav {
+      padding: 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .nav-item,
+    .nav-subitem {
+      border: 2px solid transparent;
+      min-height: 56px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: transparent;
+      text-transform: uppercase;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .nav-item.soft {
+      border-color: var(--ink);
+      background: rgba(255,255,255,0.55);
+    }
+
+    .nav-item.active {
+      border-color: var(--ink);
+      background: var(--ink);
+      color: var(--panel);
+      box-shadow: 5px 5px 0 var(--shadow);
+    }
+
+    .nav-substack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 8px 0 2px 28px;
+    }
+
+    .nav-subitem {
+      min-height: 38px;
+      justify-content: flex-start;
+      border-color: var(--ink);
+      background: var(--surface);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .nav-subitem.active {
+      background: var(--ink);
+      color: var(--panel);
+    }
+
+    .foot {
+      min-height: 76px;
+      padding: 14px 18px;
+      border-top: 2px solid var(--ink);
+      display: flex;
+      align-items: end;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+    }
+
+    .main {
+      padding: 18px 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+      background: linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0));
+    }
+
+    .hero {
+      border-bottom: 4px solid var(--ink);
+      padding-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 18px;
+    }
+
+    h1, h2, h3, h4, p { margin: 0; }
+
+    .hero h1 {
+      font-size: 42px;
+      line-height: 0.92;
+      letter-spacing: -0.08em;
+      text-transform: uppercase;
+      font-weight: 900;
+      font-style: italic;
+    }
+
+    .hero p,
+    .meta,
+    .note,
+    .footer-note {
+      color: var(--muted);
+    }
+
+    .hero p {
+      margin-top: 8px;
+      max-width: 760px;
+      font-size: 11px;
+      line-height: 1.7;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .meta {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .header-actions,
+    .toolbar-tabs,
+    .tag-row,
+    .summary-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .tab,
+    .tag,
+    .action,
+    .summary-chip {
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 12px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .tab.active,
+    .action.primary {
+      background: var(--ink);
+      color: var(--panel);
+    }
+
+    .tag {
+      min-height: 28px;
+      padding: 0 8px;
+      border-width: 1px;
+      box-shadow: none;
+      background: rgba(255,255,255,0.76);
+    }
+
+    .tag.accent {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .tag.green {
+      border-color: var(--green);
+      color: var(--green);
+      background: var(--green-soft);
+    }
+
+    .status {
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      box-shadow: 5px 5px 0 var(--shadow);
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .status-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .square {
+      width: 22px;
+      height: 22px;
+      background: var(--ink);
+      flex: 0 0 auto;
+    }
+
+    .status-title {
+      font-size: 21px;
+      font-weight: 900;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+    }
+
+    .summary-row {
+      gap: 8px;
+    }
+
+    .summary-chip {
+      min-height: 30px;
+      padding: 0 10px;
+      box-shadow: none;
+      background: var(--surface-2);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .panel {
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      box-shadow: 5px 5px 0 var(--shadow);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .panel-head h2,
+    .panel-head h3 {
+      font-size: 19px;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .item {
+      border: 2px solid var(--ink);
+      background: rgba(255,255,255,0.58);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .item.active {
+      background: var(--accent-soft);
+      transform: translate(-2px, -2px);
+      box-shadow: 8px 8px 0 rgba(178, 32, 24, 0.1);
+    }
+
+    .item-title {
+      margin-top: 8px;
+      font-size: 15px;
+      line-height: 1.5;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .side-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .detail-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card,
+    .slot,
+    .timeline {
+      border: 2px solid var(--ink);
+      background: rgba(255,255,255,0.58);
+      padding: 12px;
+    }
+
+    .slot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .slot strong,
+    .card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 14px;
+      line-height: 1.4;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .step {
+      min-height: 120px;
+      padding: 12px;
+      border-right: 1px solid var(--ink);
+      background: var(--surface);
+    }
+
+    .step:last-child { border-right: 0; }
+
+    .step strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .note,
+    .footer-note {
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .bottom {
+      border-top: 2px solid var(--ink);
+      padding: 12px 16px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      background: var(--surface-2);
+    }
+
+    .bottom strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 1260px) {
+      .app,
+      .workspace,
+      .slot-grid,
+      .timeline-grid,
+      .bottom,
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .page {
+        width: calc(100vw - 16px);
+        margin: 8px auto;
+      }
+
+      .top-note,
+      .main {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .hero h1 { font-size: 34px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="top-note">
+      <span>GetTokens / Session Management / Real Page Draft</span>
+      <span>chosen: 导航 A + 头部 A + 列表 B + 详情 C + rewrite A</span>
+    </div>
+
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="logo">
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+            <span></span><span></span><span></span>
+          </div>
+          <div class="brand-type"><em>GET</em>TOKENS</div>
+        </div>
+
+        <nav class="nav">
+          <div class="nav-item soft"><span>运行状态</span></div>
+          <div class="nav-item soft"><span>账号池</span></div>
+          <div class="nav-item active"><span>会话管理</span><span>48</span></div>
+          <div class="nav-substack">
+            <div class="nav-subitem active">codex sessions</div>
+            <div class="nav-subitem">provider groups</div>
+          </div>
+          <div class="nav-item soft"><span>用量分析</span></div>
+          <div class="nav-item soft"><span>应用设置</span></div>
+          <div class="nav-item soft"><span>调试面板</span></div>
+        </nav>
+
+        <div class="foot">version 2026.04.29.13</div>
+      </aside>
+
+      <main class="main">
+        <header class="hero">
+          <div>
+            <div class="meta">session management / codex</div>
+            <h1>Codex Sessions</h1>
+            <p>当前页承接 project/provider 分组、recent/usage 排序、搜索、行内详情、group/row rewrite，以及 preview before commit 的 staged rewrite 风险说明。</p>
+          </div>
+          <div class="header-actions">
+            <div class="tab active">全部会话</div>
+            <div class="tab">仅 archived</div>
+            <div class="action">copy thread ids</div>
+            <div class="action primary">preview rewrite</div>
+          </div>
+        </header>
+
+        <section class="status">
+          <div class="status-main">
+            <div class="square"></div>
+            <div class="status-title">group: project / sort: usage / search: gettokens</div>
+            <div class="summary-row">
+              <div class="summary-chip">visible 48</div>
+              <div class="summary-chip">eligible groups 12</div>
+              <div class="summary-chip">provider drift 7</div>
+            </div>
+          </div>
+          <div class="toolbar-tabs">
+            <div class="tab active">project</div>
+            <div class="tab">provider</div>
+            <div class="tab active">usage</div>
+            <div class="tab">recent</div>
+          </div>
+        </section>
+
+        <section class="workspace">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Session List</h2>
+              <div class="tag-row">
+                <span class="tag">project / gettokens</span>
+                <span class="tag green">group rewrite enabled</span>
+              </div>
+            </div>
+
+            <div class="list">
+              <article class="item active">
+                <div>
+                  <div class="tag-row">
+                    <span class="tag">thread 61ab</span>
+                    <span class="tag">usage 14.2m</span>
+                    <span class="tag green">live</span>
+                  </div>
+                  <div class="item-title">Usage Desk loading discrepancy vs archived sessions scan boundary</div>
+                  <p class="note">updated 11:42 / cwd /GetTokens / state rows 18</p>
+                </div>
+                <div class="side-actions">
+                  <span class="tag accent">selected</span>
+                  <span class="tag">resume</span>
+                </div>
+              </article>
+
+              <article class="item">
+                <div>
+                  <div class="tag-row">
+                    <span class="tag">thread 5c20</span>
+                    <span class="tag">archived</span>
+                    <span class="tag">usage 8.6m</span>
+                  </div>
+                  <div class="item-title">Projection cache and usage index boundary clarification</div>
+                  <p class="note">cached snapshot first / stable reconcile after</p>
+                </div>
+                <div class="side-actions">
+                  <span class="tag">copy cmd</span>
+                </div>
+              </article>
+
+              <article class="item">
+                <div>
+                  <div class="tag-row">
+                    <span class="tag">thread 91de</span>
+                    <span class="tag">timeline ready</span>
+                    <span class="tag">usage 5.4m</span>
+                  </div>
+                  <div class="item-title">Logical usage key and forked rollout dedupe semantics</div>
+                  <p class="note">usage-backed drilldown / thread-level dedupe</p>
+                </div>
+                <div class="side-actions">
+                  <span class="tag">finder</span>
+                </div>
+              </article>
+
+              <article class="item">
+                <div>
+                  <div class="tag-row">
+                    <span class="tag">thread 8f2a</span>
+                    <span class="tag accent">mixed provider</span>
+                  </div>
+                  <div class="item-title">Time-project grouping divergence after project-first refactor</div>
+                  <p class="note">group rewrite blocked / row rewrite only</p>
+                </div>
+                <div class="side-actions">
+                  <span class="tag accent">row rewrite</span>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Selected Detail</h3>
+              <div class="tag-row">
+                <span class="tag">store snapshot</span>
+                <span class="tag">timeline ready</span>
+              </div>
+            </div>
+
+            <div class="detail-stack">
+              <div class="card">
+                <div class="meta">selected session</div>
+                <strong>Usage Desk loading discrepancy vs archived sessions scan boundary</strong>
+                <p class="note">当前详情面板把字段和时间线并列处理，既保住“这个 session 是什么”，也保住“这条记录接下来可以做什么”。</p>
+              </div>
+
+              <div class="slot-grid">
+                <div class="slot">
+                  <div class="meta">identity</div>
+                  <strong>thread:61ab / provider codex</strong>
+                  <p class="note">logical usage key 走 thread 级别，不把同一逻辑会话重复统计。</p>
+                </div>
+                <div class="slot">
+                  <div class="meta">snapshot source</div>
+                  <strong>projection cache hit</strong>
+                  <p class="note">clean + fresh 时可直接短路 reconcile。</p>
+                </div>
+                <div class="slot">
+                  <div class="meta">summary</div>
+                  <strong>reserved but not stable</strong>
+                  <p class="note">UI 可留位，但不能假设首屏一定有稳定 summary。</p>
+                </div>
+                <div class="slot">
+                  <div class="meta">actions</div>
+                  <strong>resume / finder / copy cmd</strong>
+                  <p class="note">动作语言保持和现有页面一致，不再引入新的命令体系。</p>
+                </div>
+              </div>
+
+              <div class="timeline">
+                <div class="meta">timeline / rewrite chain</div>
+                <div class="timeline-grid">
+                  <div class="step">
+                    <div class="meta">01</div>
+                    <strong>preview</strong>
+                    <p class="note">先统计 session / live / archived / state rows 命中范围。</p>
+                  </div>
+                  <div class="step">
+                    <div class="meta">02</div>
+                    <strong>live rollout</strong>
+                    <p class="note">只改首个 `session_meta.model_provider`。</p>
+                  </div>
+                  <div class="step">
+                    <div class="meta">03</div>
+                    <strong>archived rollout</strong>
+                    <p class="note">同 thread 命中 archived 时继续改。</p>
+                  </div>
+                  <div class="step">
+                    <div class="meta">04</div>
+                    <strong>state db</strong>
+                    <p class="note">更新 `threads.model_provider`。</p>
+                  </div>
+                  <div class="step">
+                    <div class="meta">05</div>
+                    <strong>verify</strong>
+                    <p class="note">invalidate cache 后做一致性检查。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="bottom">
+          <div>
+            <strong>Why This Cut</strong>
+            <p class="footer-note">这版不再像模块册，而是直接拼成一张真实页面稿，方便判断整体主次和实际工作台气质。</p>
+          </div>
+          <div>
+            <strong>Current Strength</strong>
+            <p class="footer-note">最接近现有 `Usage Desk` 的页骨架，同时把 `rewrite` 的多介质边界保留为页面语义的一部分。</p>
+          </div>
+          <div>
+            <strong>Next Step</strong>
+            <p class="footer-note">如果这张整体页方向对，下一步就不是再做模块比较，而是继续精修这一个页面的真实排版和信息密度。</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

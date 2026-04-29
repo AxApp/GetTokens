@@ -20,11 +20,158 @@
   "nav": {
     "status": "STATUS",
     "accounts": "ACCOUNTS",
+    "session_management": "SESSION MANAGEMENT",
+    "session_management_codex_sessions": "CODEX SESSIONS",
+    "session_management_provider_groups": "PROVIDER GROUPS",
     "usage_desk": "USAGE DESK",
     "accounts_codex": "CODEX",
     "accounts_openai_compatible": "OPENAI-COMPATIBLE",
     "settings": "SETTINGS",
     "debug": "DEBUG"
+  },
+  "session_management": {
+    "kicker": "SESSION CONTROL",
+    "title": "SESSION MANAGEMENT",
+    "subtitle": "This pass locks the session nav and workspace shell. Real list, detail, and rewrite flow come next.",
+    "actions": {
+      "all_sessions": "ALL SESSIONS",
+      "archived_only": "ARCHIVED ONLY",
+      "copy_thread_ids": "COPY THREAD IDS",
+      "preview_rewrite": "PREVIEW REWRITE"
+    },
+    "status": {
+      "codex_sessions": "GROUP: PROJECT / SORT: USAGE / SEARCH: GETTOKENS",
+      "provider_groups": "GROUP: PROVIDER / SORT: RECENT / SEARCH: CODEX"
+    },
+    "summary": {
+      "visible_48": "VISIBLE 48",
+      "eligible_groups_12": "ELIGIBLE GROUPS 12",
+      "provider_drift_7": "PROVIDER DRIFT 7"
+    },
+    "sort": {
+      "project": "PROJECT",
+      "provider": "PROVIDER",
+      "usage": "USAGE",
+      "recent": "RECENT"
+    },
+    "panels": {
+      "session_list": "SESSION LIST",
+      "selected_detail": "SELECTED DETAIL"
+    },
+    "detail_tags": {
+      "store_snapshot": "STORE SNAPSHOT",
+      "timeline_ready": "TIMELINE READY"
+    },
+    "list_tags": {
+      "project_gettokens": "PROJECT / GETTOKENS",
+      "group_rewrite_enabled": "GROUP REWRITE ENABLED",
+      "mixed_provider_watch": "MIXED PROVIDER WATCH",
+      "thread_61ab": "THREAD 61AB",
+      "usage_142": "USAGE 14.2M",
+      "live": "LIVE",
+      "selected": "SELECTED",
+      "resume": "RESUME",
+      "thread_5c20": "THREAD 5C20",
+      "archived": "ARCHIVED",
+      "usage_86": "USAGE 8.6M",
+      "copy_cmd": "COPY CMD",
+      "thread_91de": "THREAD 91DE",
+      "timeline_ready": "TIMELINE READY",
+      "usage_54": "USAGE 5.4M",
+      "finder": "FINDER",
+      "thread_8f2a": "THREAD 8F2A",
+      "mixed_provider": "MIXED PROVIDER",
+      "row_rewrite": "ROW REWRITE"
+    },
+    "list_items": {
+      "usage_desk_boundary": {
+        "title": "Usage Desk loading discrepancy vs archived sessions scan boundary",
+        "note": "updated 11:42 / cwd /GetTokens / state rows 18"
+      },
+      "cache_boundary": {
+        "title": "Projection cache and usage index boundary clarification",
+        "note": "cached snapshot first / stable reconcile after"
+      },
+      "logical_usage": {
+        "title": "Logical usage key and forked rollout dedupe semantics",
+        "note": "usage-backed drilldown / thread-level dedupe"
+      },
+      "grouping_divergence": {
+        "title": "Time-project grouping divergence after project-first refactor",
+        "note": "group rewrite blocked / row rewrite only"
+      }
+    },
+    "detail": {
+      "selected_session": "SELECTED SESSION",
+      "selected_note": "The detail panel keeps identity fields and timeline semantics side by side so the operator can understand both what this session is and what can happen next.",
+      "identity": {
+        "meta": "IDENTITY",
+        "title": "THREAD:61AB / PROVIDER CODEX",
+        "note": "The logical usage key stays at thread scope so the same logical session is not counted twice."
+      },
+      "snapshot_source": {
+        "meta": "SNAPSHOT SOURCE",
+        "title": "PROJECTION CACHE HIT",
+        "note": "When the cache is clean and fresh, reconcile can short-circuit."
+      },
+      "summary": {
+        "meta": "SUMMARY",
+        "title": "RESERVED BUT NOT STABLE",
+        "note": "The UI may reserve space, but it cannot assume a stable first-screen summary exists."
+      },
+      "actions": {
+        "meta": "ACTIONS",
+        "title": "RESUME / FINDER / COPY CMD",
+        "note": "Action language stays aligned with the existing product instead of inventing a new command vocabulary."
+      }
+    },
+    "timeline": {
+      "kicker": "TIMELINE / REWRITE CHAIN",
+      "preview": {
+        "title": "PREVIEW",
+        "note": "Count hits across session, live, archived, and state rows first."
+      },
+      "live_rollout": {
+        "title": "LIVE ROLLOUT",
+        "note": "Only the first `session_meta.model_provider` is rewritten."
+      },
+      "archived_rollout": {
+        "title": "ARCHIVED ROLLOUT",
+        "note": "Continue rewriting if the same thread also hits archived data."
+      },
+      "state_db": {
+        "title": "STATE DB",
+        "note": "Update `threads.model_provider`."
+      },
+      "verify": {
+        "title": "VERIFY",
+        "note": "Invalidate cache and run a consistency check."
+      }
+    },
+    "footer": {
+      "why": {
+        "title": "WHY THIS CUT",
+        "note": "This is no longer a module catalog. It is a single assembled page so hierarchy and working-surface tension can be judged directly."
+      },
+      "strength": {
+        "title": "CURRENT STRENGTH",
+        "note": "It is the closest to the current Usage Desk page skeleton while preserving rewrite's multi-medium boundary as page semantics."
+      },
+      "next": {
+        "title": "NEXT STEP",
+        "note": "If this overall page direction holds, the next move is not more module comparison but tightening the real layout and information density of this one page."
+      }
+    },
+    "workspaces": {
+      "codex_sessions": {
+        "title": "CODEX SESSIONS",
+        "description": "This page carries project/provider grouping, recent/usage sorting, search, inline detail, group/row rewrite, and the staged rewrite risk explanation before commit."
+      },
+      "provider_groups": {
+        "title": "PROVIDER GROUPS",
+        "description": "This page carries provider-oriented aggregation, mixed-provider risk scanning, group rewrite eligibility, and staged rewrite preview comparison."
+      }
+    }
   },
   "status": {
     "title": "System Status",

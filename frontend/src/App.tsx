@@ -5,6 +5,7 @@ import Sidebar from './components/biz/Sidebar';
 import UsageDeskWorkspace from './features/accounts/components/UsageDeskWorkspace';
 import AccountsPage from './pages/AccountsPage';
 import DebugPage from './pages/DebugPage';
+import SessionManagementPage from './pages/SessionManagementPage';
 import SettingsPage from './pages/SettingsPage';
 import StatusPage from './pages/StatusPage';
 import { DebugProvider, useDebug } from './context/DebugContext';
@@ -13,15 +14,24 @@ import { TextScaleProvider, useTextScale } from './context/TextScaleContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { getTextScaleAttributeValue } from './context/textScale';
 import { applyTextScaleVariables } from './features/settings/settingsTextScale';
-import type { AccountWorkspace, AppPage, ReleaseInfo, SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from './types';
+import type {
+  AccountWorkspace,
+  AppPage,
+  ReleaseInfo,
+  SessionManagementWorkspace,
+  SidecarStatus,
+  UsageDeskWorkspace as UsageDeskWorkspaceID,
+} from './types';
 import {
   buildFrameHash,
   persistAccountWorkspace,
   persistActivePage,
+  persistSessionManagementWorkspace,
   persistUsageDeskWorkspace,
   readFrameHashState,
   readStoredAccountWorkspace,
   readStoredActivePage,
+  readStoredSessionManagementWorkspace,
   readStoredUsageDeskWorkspace,
 } from './utils/pagePersistence';
 
@@ -51,6 +61,15 @@ function AppShell() {
     }
     return storedWorkspace;
   });
+  const [activeSessionManagementWorkspace, setActiveSessionManagementWorkspace] = useState<SessionManagementWorkspace>(() => {
+    const storage = typeof window === 'undefined' ? null : window.localStorage;
+    const storedWorkspace = readStoredSessionManagementWorkspace(storage);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    if (hashState?.page === 'session-management') {
+      return hashState.sessionManagementWorkspace ?? 'codex-sessions';
+    }
+    return storedWorkspace;
+  });
   const [activeUsageDeskWorkspace, setActiveUsageDeskWorkspace] = useState<UsageDeskWorkspaceID>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const storedWorkspace = readStoredUsageDeskWorkspace(storage);
@@ -76,6 +95,13 @@ function AppShell() {
   }, [activeAccountWorkspace]);
 
   useEffect(() => {
+    persistSessionManagementWorkspace(
+      typeof window === 'undefined' ? null : window.localStorage,
+      activeSessionManagementWorkspace,
+    );
+  }, [activeSessionManagementWorkspace]);
+
+  useEffect(() => {
     persistUsageDeskWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeUsageDeskWorkspace);
   }, [activeUsageDeskWorkspace]);
 
@@ -84,11 +110,16 @@ function AppShell() {
       return;
     }
 
-    const nextHash = buildFrameHash(activePage, activeAccountWorkspace, activeUsageDeskWorkspace);
+    const nextHash = buildFrameHash(
+      activePage,
+      activeAccountWorkspace,
+      activeSessionManagementWorkspace,
+      activeUsageDeskWorkspace,
+    );
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
     }
-  }, [activeAccountWorkspace, activePage, activeUsageDeskWorkspace]);
+  }, [activeAccountWorkspace, activePage, activeSessionManagementWorkspace, activeUsageDeskWorkspace]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -104,6 +135,9 @@ function AppShell() {
       setActivePage(hashState.page);
       if (hashState.page === 'accounts') {
         setActiveAccountWorkspace(hashState.workspace ?? 'all');
+      }
+      if (hashState.page === 'session-management') {
+        setActiveSessionManagementWorkspace(hashState.sessionManagementWorkspace ?? 'codex-sessions');
       }
       if (hashState.page === 'usage-desk') {
         setActiveUsageDeskWorkspace(hashState.usageDeskWorkspace ?? 'codex');
@@ -188,11 +222,25 @@ function AppShell() {
         />
       );
     }
+    if (activePage === 'session-management') {
+      return <SessionManagementPage workspace={activeSessionManagementWorkspace} />;
+    }
     if (activePage === 'usage-desk') {
       return <UsageDeskWorkspace sidecarStatus={sidecarStatus} workspace={activeUsageDeskWorkspace} />;
     }
     return <AccountsPage sidecarStatus={sidecarStatus} workspace={activeAccountWorkspace} />;
-  }, [activeAccountWorkspace, activePage, activeUsageDeskWorkspace, availableRelease, canApplyUpdate, releaseLabel, sidecarStatus, usesNativeUpdaterUI, version]);
+  }, [
+    activeAccountWorkspace,
+    activePage,
+    activeSessionManagementWorkspace,
+    activeUsageDeskWorkspace,
+    availableRelease,
+    canApplyUpdate,
+    releaseLabel,
+    sidecarStatus,
+    usesNativeUpdaterUI,
+    version,
+  ]);
 
   return (
     <div
@@ -205,6 +253,8 @@ function AppShell() {
         setActivePage={setActivePage}
         activeAccountWorkspace={activeAccountWorkspace}
         setActiveAccountWorkspace={setActiveAccountWorkspace}
+        activeSessionManagementWorkspace={activeSessionManagementWorkspace}
+        setActiveSessionManagementWorkspace={setActiveSessionManagementWorkspace}
         activeUsageDeskWorkspace={activeUsageDeskWorkspace}
         setActiveUsageDeskWorkspace={setActiveUsageDeskWorkspace}
         releaseLabel={releaseLabel}

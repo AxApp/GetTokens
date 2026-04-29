@@ -28,11 +28,11 @@
 5. 相关设计文档、测试与 autoresearch 归档
 6. 基于上述事实产出的 GetTokens 视角设计稿与结论整理
 
-## 非目标
+## 当前非目标
 
-1. 本轮不修改 GetTokens 现有实现。
-2. 本轮不直接复刻 `nolon` 的整套会话页 UI。
-3. 本轮不把 `Codex Sessions` 与 `Codex Usage` 完全混成一个问题，只在必要处讨论它们共享的数据链路。
+1. 当前这一步不接真实 session 数据流、扫描链路或 rewrite 执行。
+2. 当前这一步不直接复刻 `nolon` 的整套会话页 UI。
+3. 当前这一步不把 `Codex Sessions` 与 `Codex Usage` 完全混成一个问题，只先建立导航入口与页面骨架。
 
 ## 验收标准
 
@@ -40,6 +40,7 @@
 2. 能列出当前已实现的核心会话管理功能，而不是泛泛而谈。
 3. 能说明 `rewrite` 为什么是文件与数据库双写的一条完整链路。
 4. 已在本 space 下产出研究纪要、autoresearch 归档和单一设计稿入口。
+5. GetTokens 已先落第一步前端接入：侧边栏入口、workspace hash 与占位页骨架可用。
 
 ## 当前裁定
 
@@ -60,10 +61,18 @@
 2. 更长的代码证据、delta 语义、去重语义、层级矩阵和演进时间线，统一下沉到 `plans/20260429-nolon-session-management-autoresearch-summary-v01.md`。
 3. 当前视觉交接只保留一个 HTML 主入口，不再拆分 `option-a/b/c` 平行文件。
 
+### 当前实现进度
+1. 已把设计稿里的侧边栏层级先接入 GetTokens：
+   - 顶层 `会话管理`
+   - 子项 `codex sessions`
+   - 子项 `provider groups`
+2. 已接通 `session-management` 页面 hash、workspace fallback 与本地持久化，不是纯视觉假入口。
+3. 当前正文仍是第一阶段占位页，只用于承接导航结构和后续真实页面实现。
+
 ## 设计稿入口
 
 - 本期设计稿：`design-preview.html`
-- 约束：本期只保留这一个 HTML 主入口；同一文件内通过 `TM 01 / TM 02 / TM 03` 分节承接不同方向，不再拆多份平行 HTML。
+- 约束：本期只保留这一个 HTML 主入口；当前已经从模块比较稿收口成单页真实页面稿，用于判断整体主次、信息密度和工作台气质。
 
 ## Worktree 映射
 
@@ -86,5 +95,5 @@
 
 ## 当前状态
 
-- 状态：research-complete-design-ready
+- 状态：research-complete-first-shell-landed
 - 最近更新：2026-04-29

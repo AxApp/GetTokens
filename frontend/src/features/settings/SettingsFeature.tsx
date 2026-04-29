@@ -251,8 +251,6 @@ export default function SettingsFeature({
         <WorkspacePageHeader
           title={t('settings.title')}
           subtitle={t('settings.subtitle')}
-          titleClassName="text-xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]"
-          subtitleClassName="mt-0.5 font-bold uppercase tracking-widest text-[var(--text-muted)]"
         />
 
         <div className="space-y-6">

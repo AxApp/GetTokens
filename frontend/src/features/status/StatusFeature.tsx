@@ -633,19 +633,43 @@ export default function StatusFeature({
     }
   }
 
+  const healthzHasError = healthz.startsWith('ERROR:') || healthz.startsWith('FAIL:');
+  const trimmedStatusMessage = sidecarStatus.message.trim();
+  const statusHeadline =
+    sidecarStatus.code === 'ready' && !healthzHasError
+      ? t('status.online')
+      : healthzHasError
+        ? healthz.replace(/^(ERROR:|FAIL:)\s*/, '')
+        : trimmedStatusMessage
+          ? trimmedStatusMessage
+          : t('status.offline');
+
   return (
     <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_STATUS">
       <div className="mx-auto max-w-6xl space-y-10">
         <WorkspacePageHeader
           title={t('status.title')}
+          subtitle={
+            <span className="flex items-center gap-2">
+              <span
+                className={`h-2.5 w-2.5 shrink-0 border border-[var(--border-color)] ${
+                  sidecarStatus.code === 'ready' ? 'bg-green-600' : 'bg-red-600'
+                }`}
+              ></span>
+              <span className="font-mono tracking-[0.04em] text-[var(--text-primary)]">{healthz}</span>
+            </span>
+          }
           align="center"
+          actionsClassName="shrink-0"
           actions={
             <div
-              className={`border-2 bg-white px-4 py-1 text-xs font-black uppercase tracking-widest text-black ${
-                sidecarStatus.code === 'ready' ? 'border-black' : 'border-red-600 text-red-600'
+              className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black uppercase tracking-widest ${
+                sidecarStatus.code === 'ready' && !healthzHasError
+                  ? 'border-black bg-white text-black'
+                  : 'border-red-600 bg-white text-red-600'
               }`}
             >
-              {sidecarStatus.code === 'ready' ? t('status.online') : t('status.offline')}
+              {statusHeadline}
             </div>
           }
         />
@@ -676,20 +700,6 @@ export default function StatusFeature({
               {t('status.build')}
             </div>
             <div className="text-xl font-black italic text-[var(--text-primary)]">{version}</div>
-          </div>
-        </div>
-
-        <div className="card-swiss !p-0 overflow-hidden">
-          <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-3 text-[0.625rem] font-black italic uppercase tracking-widest">
-            {t('status.diagnostic')}
-          </div>
-          <div className="flex items-center gap-4 p-6">
-            <div
-              className={`h-3 w-3 border-2 border-[var(--border-color)] ${
-                sidecarStatus.code === 'ready' ? 'bg-green-600' : 'bg-red-600'
-              }`}
-            ></div>
-            <div className="font-mono text-xs font-bold uppercase text-[var(--text-primary)]">{healthz}</div>
           </div>
         </div>
 

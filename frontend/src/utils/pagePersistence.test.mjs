@@ -4,28 +4,33 @@ import assert from 'node:assert/strict';
 import {
   ACTIVE_PAGE_STORAGE_KEY,
   ACCOUNT_WORKSPACE_STORAGE_KEY,
+  SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_SOURCE_STORAGE_KEY,
   USAGE_DESK_RANGE_STORAGE_KEY,
   buildFrameHash,
   isAccountWorkspace,
   isAppPage,
+  isSessionManagementWorkspace,
   isUsageDeskRangeStorageValue,
   isUsageDeskSourceStorageValue,
   isUsageDeskWorkspace,
   persistAccountWorkspace,
   persistActivePage,
+  persistSessionManagementWorkspace,
   persistUsageDeskRange,
   persistUsageDeskSource,
   persistUsageDeskWorkspace,
   readFrameHashState,
   readStoredAccountWorkspace,
   readStoredActivePage,
+  readStoredSessionManagementWorkspace,
   readStoredUsageDeskRange,
   readStoredUsageDeskSource,
   readStoredUsageDeskWorkspace,
   resolveInitialAccountWorkspace,
   resolveInitialActivePage,
+  resolveInitialSessionManagementWorkspace,
   resolveInitialUsageDeskRange,
   resolveInitialUsageDeskSource,
   resolveInitialUsageDeskWorkspace,
@@ -34,6 +39,7 @@ import {
 test('isAppPage only accepts known sidebar pages', () => {
   assert.equal(isAppPage('status'), true);
   assert.equal(isAppPage('accounts'), true);
+  assert.equal(isAppPage('session-management'), true);
   assert.equal(isAppPage('usage-desk'), true);
   assert.equal(isAppPage('settings'), true);
   assert.equal(isAppPage('debug'), true);
@@ -120,6 +126,44 @@ test('persistAccountWorkspace writes the selected workspace to storage', () => {
   persistAccountWorkspace(storage, 'codex');
 
   assert.deepEqual(writes, [[ACCOUNT_WORKSPACE_STORAGE_KEY, 'codex']]);
+});
+
+test('isSessionManagementWorkspace only accepts known session management subpages', () => {
+  assert.equal(isSessionManagementWorkspace('codex-sessions'), true);
+  assert.equal(isSessionManagementWorkspace('provider-groups'), true);
+  assert.equal(isSessionManagementWorkspace('unknown'), false);
+  assert.equal(isSessionManagementWorkspace(null), false);
+});
+
+test('resolveInitialSessionManagementWorkspace falls back to codex-sessions for invalid values', () => {
+  assert.equal(resolveInitialSessionManagementWorkspace('codex-sessions'), 'codex-sessions');
+  assert.equal(resolveInitialSessionManagementWorkspace('provider-groups'), 'provider-groups');
+  assert.equal(resolveInitialSessionManagementWorkspace('unknown'), 'codex-sessions');
+  assert.equal(resolveInitialSessionManagementWorkspace(null), 'codex-sessions');
+});
+
+test('readStoredSessionManagementWorkspace restores the last valid workspace from storage', () => {
+  const storage = {
+    getItem(key) {
+      assert.equal(key, SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY);
+      return 'provider-groups';
+    },
+  };
+
+  assert.equal(readStoredSessionManagementWorkspace(storage), 'provider-groups');
+});
+
+test('persistSessionManagementWorkspace writes the selected workspace to storage', () => {
+  const writes = [];
+  const storage = {
+    setItem(key, value) {
+      writes.push([key, value]);
+    },
+  };
+
+  persistSessionManagementWorkspace(storage, 'provider-groups');
+
+  assert.deepEqual(writes, [[SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY, 'provider-groups']]);
 });
 
 test('isUsageDeskWorkspace only accepts known usage desk subpages', () => {
@@ -241,6 +285,10 @@ test('persistUsageDeskRange writes the selected range to storage', () => {
 
 test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=status'), { page: 'status' });
+  assert.deepEqual(readFrameHashState('#frame=session-management'), {
+    page: 'session-management',
+    sessionManagementWorkspace: 'codex-sessions',
+  });
   assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'usage-desk', usageDeskWorkspace: 'codex' });
   assert.deepEqual(readFrameHashState('#frame=settings'), { page: 'settings' });
 });
@@ -271,6 +319,17 @@ test('readFrameHashState parses usage desk workspace and falls back to codex', (
   });
 });
 
+test('readFrameHashState parses session management workspace and falls back to codex-sessions', () => {
+  assert.deepEqual(readFrameHashState('#frame=session-management&workspace=provider-groups'), {
+    page: 'session-management',
+    sessionManagementWorkspace: 'provider-groups',
+  });
+  assert.deepEqual(readFrameHashState('#frame=session-management&workspace=unknown'), {
+    page: 'session-management',
+    sessionManagementWorkspace: 'codex-sessions',
+  });
+});
+
 test('readFrameHashState returns null for invalid hashes', () => {
   assert.equal(readFrameHashState(''), null);
   assert.equal(readFrameHashState('#workspace=codex'), null);
@@ -279,9 +338,17 @@ test('readFrameHashState returns null for invalid hashes', () => {
 });
 
 test('buildFrameHash serializes page and optional accounts workspace', () => {
-  assert.equal(buildFrameHash('status', 'all', 'codex'), '#frame=status');
-  assert.equal(buildFrameHash('usage-desk', 'all', 'codex'), '#frame=usage-desk');
-  assert.equal(buildFrameHash('usage-desk', 'all', 'gemini'), '#frame=usage-desk&workspace=gemini');
-  assert.equal(buildFrameHash('accounts', 'all', 'codex'), '#frame=accounts');
-  assert.equal(buildFrameHash('accounts', 'openai-compatible', 'codex'), '#frame=accounts&workspace=openai-compatible');
+  assert.equal(buildFrameHash('status', 'all', 'codex-sessions', 'codex'), '#frame=status');
+  assert.equal(buildFrameHash('session-management', 'all', 'codex-sessions', 'codex'), '#frame=session-management');
+  assert.equal(
+    buildFrameHash('session-management', 'all', 'provider-groups', 'codex'),
+    '#frame=session-management&workspace=provider-groups',
+  );
+  assert.equal(buildFrameHash('usage-desk', 'all', 'codex-sessions', 'codex'), '#frame=usage-desk');
+  assert.equal(buildFrameHash('usage-desk', 'all', 'codex-sessions', 'gemini'), '#frame=usage-desk&workspace=gemini');
+  assert.equal(buildFrameHash('accounts', 'all', 'codex-sessions', 'codex'), '#frame=accounts');
+  assert.equal(
+    buildFrameHash('accounts', 'openai-compatible', 'codex-sessions', 'codex'),
+    '#frame=accounts&workspace=openai-compatible',
+  );
 });
