@@ -4,7 +4,6 @@ export const emptyApiKeyForm = {
   label: '',
   apiKey: '',
   baseUrl: '',
-  priority: '0',
   prefix: '',
 };
 
@@ -172,6 +171,18 @@ export function buildAPIKeyLabelStorageKey(apiKey: string, baseUrl: string, pref
   });
 }
 
+export function buildCodexAPIKeyVerifyInput(input: {
+  apiKey?: string;
+  baseUrl?: string;
+  model?: string;
+}) {
+  return {
+    apiKey: String(input.apiKey || '').trim(),
+    baseUrl: normalizeBaseUrl(String(input.baseUrl || '')),
+    model: String(input.model || '').trim(),
+  };
+}
+
 export function loadAPIKeyLabels() {
   if (typeof window === 'undefined') {
     return {};
@@ -197,6 +208,13 @@ export function persistAPIKeyLabels(labels: Record<string, string>) {
     return;
   }
   window.localStorage.setItem(API_KEY_LABELS_STORAGE_KEY, JSON.stringify(labels));
+}
+
+export function clearAPIKeyLabels() {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  window.localStorage.removeItem(API_KEY_LABELS_STORAGE_KEY);
 }
 
 export function downloadTextFile(filename: string, content: string) {

@@ -2,6 +2,8 @@ import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRel
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
 import {
   isCodexReauthEligible,
+  resolveAccountOperationalState,
+  resolveAccountStatusTone,
   resolveAccountFailureReason,
   resolveAccountPrimaryLabel,
 } from '../model/accountPresentation';
@@ -53,6 +55,13 @@ export default function AccountCard({
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account);
   const canReauth = isCodexReauthEligible(account);
+  const operationalState = resolveAccountOperationalState(account, usageSummary, quotaDisplay, t);
+  const statusTone =
+    operationalState.tone === 'positive'
+      ? 'positive'
+      : operationalState.tone === 'warning'
+        ? 'warning'
+        : resolveAccountStatusTone(account);
 
   function openDetails() {
     if (isSelectionMode || isPendingDelete) {
@@ -95,13 +104,9 @@ export default function AccountCard({
         <div className="min-w-0 space-y-3">
           <h3 className="flex items-center gap-2 break-all text-[12px] font-black uppercase leading-snug tracking-[0.08em] text-[var(--text-primary)]">
             <div
-              title={account.localOnly ? t('accounts.status_local') : account.status}
+              title={operationalState.label}
               className={`h-2 w-2 shrink-0 ${
-                (account.localOnly ? 'LOCAL' : account.status).toUpperCase() === 'ACTIVE'
-                  ? 'bg-green-500'
-                  : (account.localOnly ? 'LOCAL' : account.status).toUpperCase() === 'DISABLED'
-                    ? 'bg-yellow-500'
-                    : 'bg-red-500'
+                statusTone === 'positive' ? 'bg-green-500' : statusTone === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
               }`}
             />
             <span className={account.credentialSource === 'auth-file' && account.email ? 'normal-case tracking-normal' : ''}>

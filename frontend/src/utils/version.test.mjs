@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildDateHourLabel, formatSidebarVersion } from './version.ts';
+import { buildDateHourLabel, formatAppVersion, formatSidebarVersion } from './version.ts';
 
 test('buildDateHourLabel formats local date as YYYY.MM.DD.HH', () => {
   const date = new Date(2026, 3, 26, 8, 15, 0);
@@ -23,4 +23,10 @@ test('formatSidebarVersion falls back to current date-hour for dev builds', () =
 
 test('formatSidebarVersion keeps opaque versions unchanged', () => {
   assert.equal(formatSidebarVersion('v0.1.0'), 'v0.1.0');
+});
+
+test('formatAppVersion strips semantic version prefix for UI consistency', () => {
+  assert.equal(formatAppVersion('v0.1.10'), '0.1.10');
+  assert.equal(formatAppVersion('  v1.2.3-beta.1  '), '1.2.3-beta.1');
+  assert.equal(formatAppVersion('dev'), 'dev');
 });

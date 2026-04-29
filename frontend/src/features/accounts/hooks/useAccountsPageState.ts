@@ -1,15 +1,21 @@
-import { useCallback, useEffect, useMemo, useState, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import {
   FinalizeCodexOAuth,
   GetOAuthStatus,
   ListAccounts,
   ListAuthFiles,
   StartCodexOAuth,
+  UpdateCodexAPIKeyLabel,
+  VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
+import { main } from '../../../../wailsjs/go/models';
 import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
 import type { AccountRecord } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
 import {
+  buildAPIKeyLabelStorageKey,
+  buildCodexAPIKeyVerifyInput,
+  clearAPIKeyLabels,
   emptyApiKeyForm,
   loadAPIKeyLabels,
 } from '../model/accountConfig';
@@ -63,6 +69,15 @@ type OAuthDialogState =
     }
   | null;
 
+type APIKeyVerifyState = {
+  model: string;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  message: string;
+  lastVerifiedAt: number | null;
+};
+
+const DEFAULT_CODEX_API_KEY_VERIFY_MODEL = 'gpt-5.4-mini';
+
 interface UseAccountsPageStateArgs {
   ready: boolean;
   t: Translator;
@@ -93,11 +108,12 @@ export default function useAccountsPageState({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pasteContent, setPasteContent] = useState('');
   const [pasteError, setPasteError] = useState('');
-  const [apiKeyLabels, setAPIKeyLabels] = useState<Record<string, string>>(() => loadAPIKeyLabels());
   const [isHeaderActionsMenuOpen, setIsHeaderActionsMenuOpen] = useState(false);
   const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
   const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
   const [oauthDialog, setOAuthDialog] = useState<OAuthDialogState>(null);
+  const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
+  const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
   const {
     isSelectionMode,
     selectedAccountIDs,
@@ -142,6 +158,46 @@ export default function useAccountsPageState({
     persistAccountsFilterState(window.localStorage, filters);
   }, [filters]);
 
+  const migrateLegacyAPIKeyLabels = useCallback(
+    async (accounts: main.AccountRecord[]) => {
+      const legacyLabels = legacyAPIKeyLabelsRef.current;
+      const legacyKeys = Object.keys(legacyLabels);
+      if (legacyKeys.length === 0) {
+        return accounts;
+      }
+
+      const updates = accounts
+        .filter((account) => account.credentialSource === 'api-key')
+        .map((account) => {
+          const storageKey = buildAPIKeyLabelStorageKey(account.apiKey || '', account.baseUrl || '', account.prefix || '');
+          const nextLabel = String(legacyLabels[storageKey] || '').trim();
+          if (!nextLabel || nextLabel === String(account.displayName || '').trim()) {
+            return null;
+          }
+          return {
+            id: account.id,
+            label: nextLabel,
+          };
+        })
+        .filter((item): item is { id: string; label: string } => item !== null);
+
+      if (updates.length === 0) {
+        clearAPIKeyLabels();
+        legacyAPIKeyLabelsRef.current = {};
+        return accounts;
+      }
+
+      for (const update of updates) {
+        await trackRequest('UpdateCodexAPIKeyLabel', update, () => UpdateCodexAPIKeyLabel(update));
+      }
+
+      clearAPIKeyLabels();
+      legacyAPIKeyLabelsRef.current = {};
+      return trackRequest('ListAccounts', { migratedLegacyLabels: true }, () => ListAccounts());
+    },
+    [trackRequest]
+  );
+
   const loadAccounts = useCallback(async () => {
     if (!ready) {
       return;
@@ -149,13 +205,14 @@ export default function useAccountsPageState({
 
     setLoading(true);
     try {
-      const [authFileResponse, accountResponse] = await Promise.all([
+      const [authFileResponse, rawAccountResponse] = await Promise.all([
         trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles()),
         trackRequest('ListAccounts', { args: [] }, () => ListAccounts()),
       ]);
+      const accountResponse = await migrateLegacyAPIKeyLabels(rawAccountResponse || []);
       const files = authFileResponse.files || [];
       const apiKeyAccounts = (accountResponse || [])
-        .map((account) => mapBackendAccountRecord(account, apiKeyLabels))
+        .map((account) => mapBackendAccountRecord(account))
         .filter((account) => account.credentialSource === 'api-key');
       const nextAuthFileRecords = files.map((account) => mapAuthFileToRecord(account));
       setAuthFiles(files);
@@ -174,7 +231,7 @@ export default function useAccountsPageState({
     } finally {
       setLoading(false);
     }
-  }, [apiKeyLabels, loadAccountUsage, loadCodexQuotas, ready, trackRequest]);
+  }, [loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
 
   useEffect(() => {
     if (ready) {
@@ -322,6 +379,74 @@ export default function useAccountsPageState({
     setOAuthBanner(null);
   }, []);
 
+  const verifySelectedApiKey = useCallback(
+    async (input: { apiKey: string; baseUrl: string; model: string }) => {
+      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
+        return;
+      }
+
+      const nextInput = buildCodexAPIKeyVerifyInput(input);
+      if (!nextInput.model) {
+        setAPIKeyVerifyStateByID((prev) => ({
+          ...prev,
+          [selectedAccount.id]: {
+            model: '',
+            status: 'error',
+            message: t('accounts.api_key_verify_model_required'),
+            lastVerifiedAt: prev[selectedAccount.id]?.lastVerifiedAt ?? null,
+          },
+        }));
+        return;
+      }
+
+      setAPIKeyVerifyStateByID((prev) => ({
+        ...prev,
+        [selectedAccount.id]: {
+          model: nextInput.model,
+          status: 'loading',
+          message: '',
+          lastVerifiedAt: prev[selectedAccount.id]?.lastVerifiedAt ?? null,
+        },
+      }));
+
+      try {
+        const result = await trackRequest(
+          'VerifyOpenAICompatibleProvider',
+          { id: selectedAccount.id, baseUrl: nextInput.baseUrl, model: nextInput.model },
+          () =>
+            VerifyOpenAICompatibleProvider(
+              main.VerifyOpenAICompatibleProviderInput.createFrom({
+                apiKey: nextInput.apiKey,
+                baseUrl: nextInput.baseUrl,
+                model: nextInput.model,
+              }),
+            ),
+        );
+
+        setAPIKeyVerifyStateByID((prev) => ({
+          ...prev,
+          [selectedAccount.id]: {
+            model: nextInput.model,
+            status: result.success ? 'success' : 'error',
+            message: result.message || (result.success ? t('accounts.api_key_verify_success') : t('accounts.api_key_verify_failed')),
+            lastVerifiedAt: Date.now(),
+          },
+        }));
+      } catch (error) {
+        setAPIKeyVerifyStateByID((prev) => ({
+          ...prev,
+          [selectedAccount.id]: {
+            model: nextInput.model,
+            status: 'error',
+            message: toErrorMessage(error),
+            lastVerifiedAt: Date.now(),
+          },
+        }));
+      }
+    },
+    [selectedAccount, t, trackRequest],
+  );
+
   const {
     deleteAccount,
     uploadAccounts,
@@ -331,10 +456,12 @@ export default function useAccountsPageState({
     exportSelectedAccounts,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
+    updateSelectedApiKeyConfig,
   } = useAccountsActions({
     t,
     trackRequest,
     apiKeyForm,
+    accounts,
     pasteContent,
     selectedAccount,
     selectedAccounts,
@@ -349,7 +476,6 @@ export default function useAccountsPageState({
     setPasteError,
     setSearchTerm,
     setSelectedAccountIDs,
-    setAPIKeyLabels,
     loadAccounts,
   });
 
@@ -369,6 +495,15 @@ export default function useAccountsPageState({
     oauthDialog,
     oauthPendingAccountID: oauthFlow?.pendingAccountID || null,
     isOAuthPending: oauthFlow !== null,
+    apiKeyVerifyState:
+      selectedAccount?.id && apiKeyVerifyStateByID[selectedAccount.id]
+        ? apiKeyVerifyStateByID[selectedAccount.id]
+        : {
+            model: DEFAULT_CODEX_API_KEY_VERIFY_MODEL,
+            status: 'idle' as const,
+            message: '',
+            lastVerifiedAt: null,
+          },
     isApiKeyModalOpen,
     isRotationModalOpen,
     apiKeyForm,
@@ -388,6 +523,7 @@ export default function useAccountsPageState({
     loadAccounts,
     startCodexOAuth,
     cancelCodexOAuth,
+    verifySelectedApiKey,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
@@ -417,6 +553,7 @@ export default function useAccountsPageState({
     deleteAccount,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
+    updateSelectedApiKeyConfig,
     closeHeaderActionsMenu,
   };
 }

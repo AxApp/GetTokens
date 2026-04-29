@@ -185,6 +185,7 @@ export namespace main {
 	}
 	export class CreateCodexAPIKeyInput {
 	    apiKey: string;
+	    label?: string;
 	    baseUrl: string;
 	    priority?: number;
 	    prefix?: string;
@@ -199,12 +200,31 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
+	        this.label = source["label"];
 	        this.baseUrl = source["baseUrl"];
 	        this.priority = source["priority"];
 	        this.prefix = source["prefix"];
 	        this.proxyUrl = source["proxyUrl"];
 	        this.headers = source["headers"];
 	        this.excludedModels = source["excludedModels"];
+	    }
+	}
+	export class CreateOpenAICompatibleProviderInput {
+	    name: string;
+	    baseUrl: string;
+	    prefix?: string;
+	    apiKey: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CreateOpenAICompatibleProviderInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.apiKey = source["apiKey"];
 	    }
 	}
 	export class DownloadFileResponse {
@@ -220,6 +240,142 @@ export namespace main {
 	        this.name = source["name"];
 	        this.contentBase64 = source["contentBase64"];
 	    }
+	}
+	export class FetchOpenAICompatibleProviderModelsInput {
+	    baseUrl: string;
+	    apiKey: string;
+	    headers?: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchOpenAICompatibleProviderModelsInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.baseUrl = source["baseUrl"];
+	        this.apiKey = source["apiKey"];
+	        this.headers = source["headers"];
+	    }
+	}
+	export class OpenAICompatibleModel {
+	    name: string;
+	    alias?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenAICompatibleModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.alias = source["alias"];
+	    }
+	}
+	export class FetchOpenAICompatibleProviderModelsResult {
+	    models?: OpenAICompatibleModel[];
+	    statusCode?: number;
+	    message?: string;
+	    responseBody?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchOpenAICompatibleProviderModelsResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	        this.statusCode = source["statusCode"];
+	        this.message = source["message"];
+	        this.responseBody = source["responseBody"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class LocalProjectedUsageDetail {
+	    timestamp: string;
+	    provider: string;
+	    sourceKind: string;
+	    model?: string;
+	    inputTokens: number;
+	    cachedInputTokens: number;
+	    outputTokens: number;
+	    requestCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalProjectedUsageDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.timestamp = source["timestamp"];
+	        this.provider = source["provider"];
+	        this.sourceKind = source["sourceKind"];
+	        this.model = source["model"];
+	        this.inputTokens = source["inputTokens"];
+	        this.cachedInputTokens = source["cachedInputTokens"];
+	        this.outputTokens = source["outputTokens"];
+	        this.requestCount = source["requestCount"];
+	    }
+	}
+	export class LocalProjectedUsageResponse {
+	    provider: string;
+	    sourceKind: string;
+	    scannedFiles: number;
+	    cacheHitFiles?: number;
+	    deltaAppendFiles?: number;
+	    fullRebuildFiles?: number;
+	    fileMissingFiles?: number;
+	    details: LocalProjectedUsageDetail[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalProjectedUsageResponse(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.provider = source["provider"];
+	        this.sourceKind = source["sourceKind"];
+	        this.scannedFiles = source["scannedFiles"];
+	        this.cacheHitFiles = source["cacheHitFiles"];
+	        this.deltaAppendFiles = source["deltaAppendFiles"];
+	        this.fullRebuildFiles = source["fullRebuildFiles"];
+	        this.fileMissingFiles = source["fileMissingFiles"];
+	        this.details = this.convertValues(source["details"], LocalProjectedUsageDetail);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class OAuthStartResult {
 	    url: string;
@@ -248,6 +404,59 @@ export namespace main {
 	        this.status = source["status"];
 	        this.error = source["error"];
 	    }
+	}
+	
+	export class OpenAICompatibleProvider {
+	    name: string;
+	    priority?: number;
+	    disabled?: boolean;
+	    baseUrl: string;
+	    prefix?: string;
+	    apiKey: string;
+	    apiKeys?: string[];
+	    models?: OpenAICompatibleModel[];
+	    headers?: Record<string, string>;
+	    keyCount?: number;
+	    modelCount?: number;
+	    hasHeaders?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new OpenAICompatibleProvider(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.priority = source["priority"];
+	        this.disabled = source["disabled"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.apiKey = source["apiKey"];
+	        this.apiKeys = source["apiKeys"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	        this.headers = source["headers"];
+	        this.keyCount = source["keyCount"];
+	        this.modelCount = source["modelCount"];
+	        this.hasHeaders = source["hasHeaders"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class RelayLocalApplyResult {
 	    codexHomePath: string;
@@ -358,6 +567,38 @@ export namespace main {
 	        this.priority = source["priority"];
 	    }
 	}
+	export class UpdateCodexAPIKeyConfigInput {
+	    id: string;
+	    apiKey: string;
+	    baseUrl: string;
+	    prefix?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateCodexAPIKeyConfigInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.apiKey = source["apiKey"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	    }
+	}
+	export class UpdateCodexAPIKeyLabelInput {
+	    id: string;
+	    label?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateCodexAPIKeyLabelInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	    }
+	}
 	export class UpdateCodexAPIKeyPriorityInput {
 	    id: string;
 	    priority?: number;
@@ -371,6 +612,50 @@ export namespace main {
 	        this.id = source["id"];
 	        this.priority = source["priority"];
 	    }
+	}
+	export class UpdateOpenAICompatibleProviderInput {
+	    currentName: string;
+	    name: string;
+	    baseUrl: string;
+	    prefix?: string;
+	    apiKey: string;
+	    apiKeys?: string[];
+	    headers?: Record<string, string>;
+	    models?: OpenAICompatibleModel[];
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateOpenAICompatibleProviderInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentName = source["currentName"];
+	        this.name = source["name"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.apiKey = source["apiKey"];
+	        this.apiKeys = source["apiKeys"];
+	        this.headers = source["headers"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class UploadFilePayload {
 	    name: string;
@@ -398,6 +683,42 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.usage = source["usage"];
 	        this.failedRequests = source["failedRequests"];
+	    }
+	}
+	export class VerifyOpenAICompatibleProviderInput {
+	    baseUrl: string;
+	    apiKey: string;
+	    model: string;
+	    headers?: Record<string, string>;
+	
+	    static createFrom(source: any = {}) {
+	        return new VerifyOpenAICompatibleProviderInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.baseUrl = source["baseUrl"];
+	        this.apiKey = source["apiKey"];
+	        this.model = source["model"];
+	        this.headers = source["headers"];
+	    }
+	}
+	export class VerifyOpenAICompatibleProviderResult {
+	    success: boolean;
+	    statusCode?: number;
+	    message?: string;
+	    responseBody?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new VerifyOpenAICompatibleProviderResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.statusCode = source["statusCode"];
+	        this.message = source["message"];
+	        this.responseBody = source["responseBody"];
 	    }
 	}
 

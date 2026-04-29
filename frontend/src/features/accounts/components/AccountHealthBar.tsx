@@ -19,7 +19,7 @@ function blockClass(block: AccountUsageSummary['statusBar']['blocks'][number]) {
 
 export default function AccountHealthBar({ summary }: AccountHealthBarProps) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex min-w-0 items-center gap-1.5">
       {summary.statusBar.blocks.map((block, index) => {
         const detail = summary.statusBar.blockDetails[index];
         const title =

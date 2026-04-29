@@ -45,6 +45,10 @@ if [[ -x "${ROOT_DIR}/scripts/ensure-sidecar.sh" ]]; then
   "${ROOT_DIR}/scripts/ensure-sidecar.sh" "${GOOS}" "${GOARCH}"
 fi
 
+if [[ "${COMMAND}" == "dev" ]]; then
+  export GETTOKENS_APP_PROFILE=dev
+fi
+
 if command -v wails >/dev/null 2>&1; then
   echo "→ Using global wails CLI from PATH"
   exec wails "$COMMAND" "$@"

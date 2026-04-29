@@ -1,49 +1,80 @@
 import { useEffect, useMemo, useState } from 'react';
-import { buildManagedAuthJSONSnippet, buildManagedConfigTomlSnippet } from '../model/accountConfig';
-import { providerLabel, sourceLabel } from '../model/accountPresentation';
-import type { AccountRecord, ClickEventLike, TextInputEvent, Translator } from '../model/types';
+import { Pencil } from 'lucide-react';
+import {
+  providerLabel,
+  resolveAccountConfigurationWorkspaceHeading,
+  resolveAccountProviderConfigHeading,
+  resolveAccountSourceHeading,
+} from '../model/accountPresentation';
+import { buildAccountHealthMetaItems } from '../model/accountHealthMeta';
+import type { AccountRecord, TextInputEvent, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountHealthBar from './AccountHealthBar';
+
+const DEFAULT_CODEX_API_KEY_VERIFY_MODEL = 'gpt-5.4-mini';
+
+interface APIKeyVerifyState {
+  model: string;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  message: string;
+  lastVerifiedAt: number | null;
+}
 
 interface ApiKeyDetailModalProps {
   account: AccountRecord;
   usageSummary?: AccountUsageSummary;
+  verifyState: APIKeyVerifyState;
   onClose: () => void;
   onRename: (nextName: string) => void;
-  onSavePriority: (priority: string) => void;
+  onSaveConfig: (draft: { apiKey: string; baseUrl: string; prefix: string }) => Promise<void>;
+  onVerify: (input: { apiKey: string; baseUrl: string; model: string }) => void;
   t: Translator;
+}
+
+function formatVerifyTone(status: APIKeyVerifyState['status']) {
+  if (status === 'success') return 'border-green-600 bg-green-600/10 text-green-700';
+  if (status === 'error') return 'border-red-500 bg-red-500/10 text-red-500';
+  return 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]';
+}
+
+function formatLastVerifiedAt(timestamp: number | null) {
+  if (!timestamp) {
+    return '—';
+  }
+  return new Date(timestamp).toLocaleString();
 }
 
 export default function ApiKeyDetailModal({
   account,
   usageSummary,
+  verifyState,
   onClose,
   onRename,
-  onSavePriority,
+  onSaveConfig,
+  onVerify,
   t,
 }: ApiKeyDetailModalProps) {
   const [draftName, setDraftName] = useState(account.displayName);
-  const [draftPriority, setDraftPriority] = useState(String(account.priority ?? 0));
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [verifyModel, setVerifyModel] = useState(verifyState.model || DEFAULT_CODEX_API_KEY_VERIFY_MODEL);
   const [configDraft, setConfigDraft] = useState({
     apiKey: account.apiKey || '',
     baseUrl: account.baseUrl || '',
     prefix: account.prefix || '',
   });
   const [copyState, setCopyState] = useState<{
-    target: 'apiKey' | 'baseUrl' | 'prefix' | 'authJson' | 'configToml' | null;
+    target: 'apiKey' | 'baseUrl' | null;
     status: 'idle' | 'success' | 'error';
   }>({
     target: null,
     status: 'idle',
   });
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
 
   useEffect(() => {
     setDraftName(account.displayName);
+    setIsEditingName(false);
   }, [account.displayName]);
-
-  useEffect(() => {
-    setDraftPriority(String(account.priority ?? 0));
-  }, [account.priority]);
 
   useEffect(() => {
     setConfigDraft({
@@ -52,6 +83,10 @@ export default function ApiKeyDetailModal({
       prefix: account.prefix || '',
     });
   }, [account.apiKey, account.baseUrl, account.prefix]);
+
+  useEffect(() => {
+    setVerifyModel(verifyState.model || DEFAULT_CODEX_API_KEY_VERIFY_MODEL);
+  }, [verifyState.model, account.id]);
 
   useEffect(() => {
     if (copyState.status === 'idle') {
@@ -66,17 +101,9 @@ export default function ApiKeyDetailModal({
       window.clearTimeout(timer);
     };
   }, [copyState]);
-
-  const detailRows: Array<[string, string]> = [
-    [t('accounts.provider'), providerLabel(account)],
-    [t('accounts.source_api_key'), sourceLabel(t, account.credentialSource)],
-    [t('accounts.api_key_priority'), String(account.priority ?? 0)],
-    ['FINGERPRINT', account.keyFingerprint || '--'],
-    ...(account.prefix ? [['PREFIX', account.prefix]] as Array<[string, string]> : []),
-    [t('common.status'), account.localOnly ? t('accounts.status_local') : account.status],
-  ];
-  const managedAuthJSONSnippet = useMemo(() => buildManagedAuthJSONSnippet(configDraft), [configDraft]);
-  const managedConfigTomlSnippet = useMemo(() => buildManagedConfigTomlSnippet(configDraft), [configDraft]);
+  const sourceHeading = useMemo(() => resolveAccountSourceHeading(account, t), [account, t]);
+  const providerConfigHeading = useMemo(() => resolveAccountProviderConfigHeading(account, t), [account, t]);
+  const workspaceHeading = useMemo(() => resolveAccountConfigurationWorkspaceHeading(account, t), [account, t]);
   const missingFields = useMemo(() => {
     const fields: string[] = [];
     if (!configDraft.apiKey.trim()) {
@@ -87,9 +114,30 @@ export default function ApiKeyDetailModal({
     }
     return fields;
   }, [configDraft.apiKey, configDraft.baseUrl]);
+  const missingFieldsMessage = useMemo(() => {
+    if (missingFields.length === 0) {
+      return t('accounts.configuration_ready');
+    }
+    return t('accounts.configuration_missing_with_location').replace('{fields}', missingFields.join(' / '));
+  }, [missingFields, t]);
+  const configDirty = useMemo(
+    () =>
+      configDraft.apiKey.trim() !== String(account.apiKey || '').trim() ||
+      configDraft.baseUrl.trim() !== String(account.baseUrl || '').trim() ||
+      configDraft.prefix.trim() !== String(account.prefix || '').trim(),
+    [account.apiKey, account.baseUrl, account.prefix, configDraft.apiKey, configDraft.baseUrl, configDraft.prefix]
+  );
+  const healthMetaItems = useMemo(() => buildAccountHealthMetaItems(usageSummary, t), [usageSummary, t]);
+
+  const messageTone =
+    verifyState.status === 'success'
+      ? 'text-green-600'
+      : verifyState.status === 'error'
+        ? 'text-red-500'
+        : 'text-[var(--text-muted)]';
 
   async function copyText(
-    target: 'apiKey' | 'baseUrl' | 'prefix' | 'authJson' | 'configToml',
+    target: 'apiKey' | 'baseUrl',
     value: string
   ) {
     if (!value.trim()) {
@@ -105,256 +153,263 @@ export default function ApiKeyDetailModal({
     }
   }
 
+  function startEditingName() {
+    setDraftName(account.displayName);
+    setIsEditingName(true);
+  }
+
+  function cancelEditingName() {
+    setDraftName(account.displayName);
+    setIsEditingName(false);
+  }
+
+  function saveName() {
+    onRename(draftName);
+    setIsEditingName(false);
+  }
+
+  async function saveConfig() {
+    setIsSavingConfig(true);
+    try {
+      await onSaveConfig({
+        apiKey: configDraft.apiKey,
+        baseUrl: configDraft.baseUrl,
+        prefix: configDraft.prefix,
+      });
+    } finally {
+      setIsSavingConfig(false);
+    }
+  }
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-5xl flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)]"
-        onClick={(event: ClickEventLike) => event.stopPropagation()}
+        className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)]"
+        onClick={(event) => event.stopPropagation()}
       >
-        <header className="shrink-0 border-b-2 border-[var(--border-color)] px-4 py-4 sm:px-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <header className="shrink-0 border-b-2 border-[var(--border-color)] px-6 py-5">
+          <div className="flex flex-col gap-3">
             <div>
               <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.source_api_key')}
+                {sourceHeading}
               </div>
-              <div className="mt-3 space-y-2">
-                <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {t('accounts.api_key_label')}
-                </div>
-                <div className="flex items-center gap-3">
+              {isEditingName ? (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
                   <input
                     value={draftName}
                     onChange={(event: TextInputEvent) => setDraftName(event.target.value)}
-                    className="input-swiss w-full"
+                    className="input-swiss min-w-[16rem] flex-1 !py-1.5 !text-[12px] !font-black !uppercase !italic tracking-tight"
                     placeholder={t('accounts.api_key_label_placeholder')}
                   />
-                  <button onClick={() => onRename(draftName)} className="btn-swiss shrink-0">
+                  <button onClick={saveName} className="btn-swiss shrink-0 !py-1.5 !text-[9px]">
                     {t('common.save')}
                   </button>
-                </div>
-              </div>
-              <div className="mt-3 space-y-2">
-                <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {t('accounts.api_key_priority')}
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    value={draftPriority}
-                    onChange={(event: TextInputEvent) => setDraftPriority(event.target.value)}
-                    className="input-swiss w-full"
-                    inputMode="numeric"
-                    placeholder={t('accounts.api_key_priority_placeholder')}
-                  />
-                  <button onClick={() => onSavePriority(draftPriority)} className="btn-swiss shrink-0">
-                    {t('common.save')}
+                  <button onClick={cancelEditingName} className="btn-swiss shrink-0 !py-1.5 !text-[9px]">
+                    {t('common.cancel')}
                   </button>
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center gap-2">
+                  <h3 className="text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+                    {account.displayName}
+                  </h3>
+                  <button
+                    onClick={startEditingName}
+                    className="btn-swiss flex h-7 w-7 items-center justify-center !p-0"
+                    aria-label={t('accounts.api_key_label')}
+                  >
+                    <Pencil className="h-3.5 w-3.5" strokeWidth={2.25} />
+                  </button>
+                </div>
+              )}
+              <div className="mt-2 flex items-center justify-between gap-4 text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="flex min-w-0 items-center gap-2">
+                  <span>{providerConfigHeading}</span>
+                  <span className="text-[var(--border-color)]">/</span>
+                  <span className="truncate text-[var(--text-primary)]">{providerLabel(account)}</span>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span>{t('accounts.recent_health')}</span>
+                  <span className="text-[var(--text-primary)]">
+                    {usageSummary?.successRate !== null && usageSummary?.successRate !== undefined
+                      ? `${Math.round(usageSummary.successRate)}%`
+                      : t('accounts.no_recent_activity')}
+                  </span>
+                  {healthMetaItems.map((item) => (
+                    <span key={item.label} className="flex items-center gap-1">
+                      <span>{item.label}</span>
+                      <span className="text-[var(--text-primary)]">{item.value}</span>
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
 
-            <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-              <div className="text-[8px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.provider_config')}
+            {usageSummary ? (
+              <div className="pt-2">
+                <AccountHealthBar summary={usageSummary} />
               </div>
-              <div className="mt-1 text-lg font-black italic uppercase tracking-tight text-[var(--text-primary)]">
-                {providerLabel(account)}
-              </div>
-            </div>
+            ) : null}
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="grid gap-6 p-4 sm:p-6 xl:grid-cols-[0.8fr_1.2fr]">
-          <section className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-              {detailRows.map(([label, value]) => (
-                <div key={label} className="space-y-1 border-b border-dashed border-[var(--border-color)] pb-3">
-                  <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
-                  <div className="break-all text-[11px] font-black uppercase text-[var(--text-primary)]">{value}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {t('accounts.recent_health')}
-                </div>
-                <div className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
-                  {usageSummary?.successRate !== null && usageSummary?.successRate !== undefined
-                    ? `${Math.round(usageSummary.successRate)}%`
-                    : t('accounts.no_recent_activity')}
-                </div>
-              </div>
-
-              {usageSummary?.hasData ? <AccountHealthBar summary={usageSummary} /> : null}
-
-              <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
-                <div className="space-y-1">
-                  <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('accounts.recent_success')}
+        <div className="min-h-0 flex-1 overflow-auto">
+          <div className="flex flex-col">
+            <section className="border-b-2 border-[var(--border-color)] px-6 py-5">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-dashed border-[var(--border-color)] pb-3">
+                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                    MANAGEMENT
                   </div>
-                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">{usageSummary?.success ?? 0}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('accounts.recent_failure')}
-                  </div>
-                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">{usageSummary?.failure ?? 0}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('accounts.average_latency')}
-                  </div>
-                  <div className="text-[11px] font-black uppercase text-[var(--text-primary)]">
-                    {usageSummary?.averageLatencyMs ? `${usageSummary.averageLatencyMs} ms` : '—'}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-[9px] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {t('accounts.api_key_plain_notice')}
-            </div>
-          </section>
-
-          <section className="card-swiss !p-0 overflow-hidden">
-            <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-3">
-              <div className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.configuration_workspace')}
-              </div>
-            </div>
-
-            <div className="space-y-5 p-6">
-              <label className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  API KEY
-                </span>
-                <div className="relative">
-                  <input
-                    value={configDraft.apiKey}
-                    onChange={(event: TextInputEvent) =>
-                      setConfigDraft((prev) => ({ ...prev, apiKey: event.target.value }))
-                    }
-                    className="input-swiss w-full pr-36"
-                    placeholder="sk-..."
-                  />
-                  <button
-                    onClick={() => void copyText('apiKey', configDraft.apiKey)}
-                    className="btn-swiss absolute right-2 top-1/2 !px-3 !py-1 !text-[9px] -translate-y-1/2"
-                  >
-                    复制
-                  </button>
-                </div>
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  BASE URL
-                </span>
-                <div className="relative">
-                  <input
-                    value={configDraft.baseUrl}
-                    onChange={(event: TextInputEvent) =>
-                      setConfigDraft((prev) => ({ ...prev, baseUrl: event.target.value }))
-                    }
-                    className="input-swiss w-full pr-24"
-                    placeholder="https://api.openai.com/v1"
-                  />
-                  <button
-                    onClick={() => void copyText('baseUrl', configDraft.baseUrl)}
-                    className="btn-swiss absolute right-2 top-1/2 !px-3 !py-1 !text-[9px] -translate-y-1/2"
-                  >
-                    复制
-                  </button>
-                </div>
-              </label>
-
-              <label className="space-y-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  PREFIX
-                </span>
-                <div className="relative">
-                  <input
-                    value={configDraft.prefix}
-                    onChange={(event: TextInputEvent) =>
-                      setConfigDraft((prev) => ({ ...prev, prefix: event.target.value }))
-                    }
-                    className="input-swiss w-full pr-24"
-                    placeholder={t('accounts.prefix_optional')}
-                  />
-                  <button
-                    onClick={() => void copyText('prefix', configDraft.prefix)}
-                    className="btn-swiss absolute right-2 top-1/2 !px-3 !py-1 !text-[9px] -translate-y-1/2"
-                  >
-                    复制
-                  </button>
-                </div>
-              </label>
-
-              <div className="space-y-3 border-t-2 border-dashed border-[var(--border-color)] pt-5">
-                <div>
-                  <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('accounts.configuration_snippet')}
-                  </div>
-                  <div className="mt-1 text-[9px] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    {missingFields.length > 0
-                      ? `${t('accounts.configuration_missing')} ${missingFields.join(' / ')}`
-                      : t('accounts.configuration_ready')}
+                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    {missingFieldsMessage}
                   </div>
                 </div>
 
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <div className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-                    <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] px-4 py-3">
-                      <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                        auth.json
+                <div className="space-y-3">
+                    <label className="space-y-1.5">
+                      <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        API KEY
+                      </span>
+                      <div className="relative">
+                        <input
+                          value={configDraft.apiKey}
+                          onChange={(event: TextInputEvent) =>
+                            setConfigDraft((prev) => ({ ...prev, apiKey: event.target.value }))
+                          }
+                          className="input-swiss w-full pr-16 !py-1.5 !text-[11px]"
+                          type="text"
+                          placeholder="sk-..."
+                        />
+                        <button
+                          onClick={() => void copyText('apiKey', configDraft.apiKey)}
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[8px] -translate-y-1/2"
+                        >
+                          复制
+                        </button>
                       </div>
+                    </label>
+
+                    <label className="space-y-1.5">
+                      <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        BASE URL
+                      </span>
+                      <div className="relative">
+                        <input
+                          value={configDraft.baseUrl}
+                          onChange={(event: TextInputEvent) =>
+                            setConfigDraft((prev) => ({ ...prev, baseUrl: event.target.value }))
+                          }
+                          className="input-swiss w-full pr-16 !py-1.5 !text-[11px]"
+                          placeholder="https://api.openai.com/v1"
+                        />
+                        <button
+                          onClick={() => void copyText('baseUrl', configDraft.baseUrl)}
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[8px] -translate-y-1/2"
+                        >
+                          复制
+                        </button>
+                      </div>
+                    </label>
+
+                    <label className="space-y-1.5">
+                      <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        PREFIX
+                      </span>
+                      <input
+                        value={configDraft.prefix}
+                        onChange={(event: TextInputEvent) =>
+                          setConfigDraft((prev) => ({ ...prev, prefix: event.target.value }))
+                        }
+                        className="input-swiss w-full !py-1.5 !text-[11px]"
+                        placeholder="/v1"
+                      />
+                    </label>
+                </div>
+              </div>
+            </section>
+
+            <section className="bg-[var(--bg-surface)]/30 px-6 py-5">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-dashed border-[var(--border-color)] pb-3">
+                  <div className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                    {workspaceHeading}
+                  </div>
+                  <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    {providerLabel(account)}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <div className="text-[8px] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                      {t('accounts.api_key_verify_summary')}
+                    </div>
+                    <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                      {t('accounts.api_key_verify_last_verified')} {formatLastVerifiedAt(verifyState.lastVerifiedAt)}
+                    </div>
+                  </div>
+
+                  <label className="space-y-1.5">
+                    <span className="text-[8px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      {t('accounts.api_key_verify_model')}
+                    </span>
+                    <div className="relative">
+                      <input
+                        value={verifyModel}
+                        onChange={(event: TextInputEvent) => setVerifyModel(event.target.value)}
+                        className="input-swiss w-full pr-24 !py-1.5 !text-[11px]"
+                        placeholder={DEFAULT_CODEX_API_KEY_VERIFY_MODEL}
+                      />
                       <button
-                        onClick={() => void copyText('authJson', managedAuthJSONSnippet)}
-                        className="btn-swiss !px-3 !py-1 !text-[9px]"
+                        onClick={() =>
+                          onVerify({
+                            apiKey: configDraft.apiKey,
+                            baseUrl: configDraft.baseUrl,
+                            model: verifyModel,
+                          })
+                        }
+                        className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[8px] -translate-y-1/2"
+                        disabled={verifyState.status === 'loading'}
                       >
-                        复制
+                        {t('accounts.api_key_verify')}
                       </button>
                     </div>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all p-4 font-mono text-[11px] font-bold leading-6 text-[var(--text-primary)]">
-                      {managedAuthJSONSnippet}
-                    </pre>
-                  </div>
+                  </label>
 
-                  <div className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-                    <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] px-4 py-3">
-                      <div className="text-[9px] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                        config.toml
-                      </div>
-                      <button
-                        onClick={() => void copyText('configToml', managedConfigTomlSnippet)}
-                        className="btn-swiss !px-3 !py-1 !text-[9px]"
-                      >
-                        复制
-                      </button>
+                  <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <div className={`text-[10px] font-black uppercase tracking-tight ${messageTone}`}>
+                      {verifyState.message || t('accounts.api_key_verify_idle')}
                     </div>
-                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all p-4 font-mono text-[11px] font-bold leading-6 text-[var(--text-primary)]">
-                      {managedConfigTomlSnippet}
-                    </pre>
+                    <div className="text-[8px] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                      {verifyState.model || '—'}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </section>
-        </div>
-        </div>
-
-        <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <div className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
-            {t('accounts.configuration_hint')}
+            </section>
           </div>
-          <button onClick={onClose} className="btn-swiss self-end sm:self-auto">
-            {t('common.close')}
-          </button>
+        </div>
+
+        <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-[9px] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
+            {missingFieldsMessage}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => void saveConfig()}
+              className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
+              disabled={!configDirty || missingFields.length > 0 || isSavingConfig}
+            >
+              {isSavingConfig ? t('common.loading') : t('common.save')}
+            </button>
+            <button onClick={onClose} className="btn-swiss">
+              {t('common.close')}
+            </button>
+          </div>
         </footer>
       </div>
     </div>

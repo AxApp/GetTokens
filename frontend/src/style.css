@@ -77,6 +77,34 @@
     color: var(--text-primary);
     font-size: 0.875rem;
   }
+
+  .select-swiss {
+    appearance: none;
+    width: 100%;
+    padding: 0.5rem 2.75rem 0.5rem 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 2px;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background-color 75ms, transform 75ms, box-shadow 75ms;
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+  }
+
+  .select-swiss:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 6px 6px 0px 0px var(--shadow-color);
+    background-color: var(--bg-surface);
+  }
+
+  .select-swiss:focus {
+    outline: none;
+    background-color: var(--bg-surface);
+  }
 }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }

@@ -7,8 +7,9 @@ import (
 
 // pickPort tries defaultPort; if occupied, finds a free ephemeral port.
 func (m *Manager) pickPort() (int, error) {
-	if isPortFree(defaultPort) {
-		return defaultPort, nil
+	preferredPort := preferredPortForProfile(m.profile)
+	if isPortFree(preferredPort) {
+		return preferredPort, nil
 	}
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

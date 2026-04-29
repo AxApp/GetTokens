@@ -22,6 +22,10 @@ export function CreateCodexAPIKey(arg1) {
   return window['go']['main']['App']['CreateCodexAPIKey'](arg1);
 }
 
+export function CreateOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['CreateOpenAICompatibleProvider'](arg1);
+}
+
 export function DeleteAuthFiles(arg1) {
   return window['go']['main']['App']['DeleteAuthFiles'](arg1);
 }
@@ -30,8 +34,16 @@ export function DeleteCodexAPIKey(arg1) {
   return window['go']['main']['App']['DeleteCodexAPIKey'](arg1);
 }
 
+export function DeleteOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['DeleteOpenAICompatibleProvider'](arg1);
+}
+
 export function DownloadAuthFile(arg1) {
   return window['go']['main']['App']['DownloadAuthFile'](arg1);
+}
+
+export function FetchOpenAICompatibleProviderModels(arg1) {
+  return window['go']['main']['App']['FetchOpenAICompatibleProviderModels'](arg1);
 }
 
 export function FinalizeCodexOAuth(arg1) {
@@ -40,6 +52,10 @@ export function FinalizeCodexOAuth(arg1) {
 
 export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
+}
+
+export function GetCodexLocalUsage() {
+  return window['go']['main']['App']['GetCodexLocalUsage']();
 }
 
 export function GetCodexQuota(arg1) {
@@ -82,8 +98,20 @@ export function ListAuthFiles() {
   return window['go']['main']['App']['ListAuthFiles']();
 }
 
+export function ListOpenAICompatibleProviders() {
+  return window['go']['main']['App']['ListOpenAICompatibleProviders']();
+}
+
 export function NormalizeAuthFileContent(arg1) {
   return window['go']['main']['App']['NormalizeAuthFileContent'](arg1);
+}
+
+export function RebuildCodexLocalUsage() {
+  return window['go']['main']['App']['RebuildCodexLocalUsage']();
+}
+
+export function SetAccountDisabled(arg1, arg2) {
+  return window['go']['main']['App']['SetAccountDisabled'](arg1, arg2);
 }
 
 export function SetAuthFileStatus(arg1, arg2) {
@@ -98,8 +126,20 @@ export function UpdateAccountPriority(arg1) {
   return window['go']['main']['App']['UpdateAccountPriority'](arg1);
 }
 
+export function UpdateCodexAPIKeyConfig(arg1) {
+  return window['go']['main']['App']['UpdateCodexAPIKeyConfig'](arg1);
+}
+
+export function UpdateCodexAPIKeyLabel(arg1) {
+  return window['go']['main']['App']['UpdateCodexAPIKeyLabel'](arg1);
+}
+
 export function UpdateCodexAPIKeyPriority(arg1) {
   return window['go']['main']['App']['UpdateCodexAPIKeyPriority'](arg1);
+}
+
+export function UpdateOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['UpdateOpenAICompatibleProvider'](arg1);
 }
 
 export function UpdateRelayRoutingConfig(arg1) {
@@ -120,4 +160,8 @@ export function UploadAuthFiles(arg1) {
 
 export function UsesNativeUpdaterUI() {
   return window['go']['main']['App']['UsesNativeUpdaterUI']();
+}
+
+export function VerifyOpenAICompatibleProvider(arg1) {
+  return window['go']['main']['App']['VerifyOpenAICompatibleProvider'](arg1);
 }

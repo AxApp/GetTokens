@@ -90,6 +90,36 @@ func (c *Client) PutCodexAPIKeys(items []CodexAPIKeyInput) error {
 	return err
 }
 
+func (c *Client) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error) {
+	body, _, err := c.request("GET", "/v0/management/openai-compatibility", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var response OpenAICompatibleProvidersResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []OpenAICompatibleProvider{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) PutOpenAICompatibleProviders(items []OpenAICompatibleProvider) error {
+	if items == nil {
+		items = []OpenAICompatibleProvider{}
+	}
+
+	payload, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = c.request("PUT", "/v0/management/openai-compatibility", nil, bytes.NewReader(payload), "application/json")
+	return err
+}
+
 func (c *Client) PatchCodexAPIKey(index int, value CodexAPIKeyPatch) error {
 	payload, err := json.Marshal(struct {
 		Index int              `json:"index"`
@@ -114,6 +144,14 @@ func (c *Client) DeleteCodexAPIKey(apiKey string, baseURL string) error {
 	}
 
 	_, _, err := c.request("DELETE", "/v0/management/codex-api-key", query, nil, "")
+	return err
+}
+
+func (c *Client) DeleteOpenAICompatibleProvider(name string) error {
+	query := url.Values{}
+	query.Set("name", name)
+
+	_, _, err := c.request("DELETE", "/v0/management/openai-compatibility", query, nil, "")
 	return err
 }
 

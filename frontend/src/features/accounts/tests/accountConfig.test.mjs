@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   buildAPIKeyLabelStorageKey,
+  buildCodexAPIKeyVerifyInput,
   buildRelayCodexAuthJSONSnippet,
   buildRelayCodexConfigTomlSnippet,
   buildManagedAuthJSONSnippet,
@@ -83,4 +84,19 @@ test('buildRelayCodexConfigTomlSnippet writes the codex base url config', () => 
   });
 
   assert.equal(snippet, 'model = "GT"\nopenai_base_url = "http://127.0.0.1:8317/v1"');
+});
+
+test('buildCodexAPIKeyVerifyInput trims values and normalizes base url', () => {
+  assert.deepEqual(
+    buildCodexAPIKeyVerifyInput({
+      apiKey: ' sk-test ',
+      baseUrl: ' https://api.openai.com/v1/ ',
+      model: ' gpt-4.1-mini ',
+    }),
+    {
+      apiKey: 'sk-test',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-4.1-mini',
+    },
+  );
 });

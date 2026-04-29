@@ -1,7 +1,7 @@
 import type { main } from '../../../../wailsjs/go/models';
 import type { AccountRecord, AuthFile, CredentialSource } from '../../../types';
+import type { AccountUsageSummary } from './accountUsage';
 import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
-import { buildAPIKeyLabelStorageKey } from './accountConfig.ts';
 
 export function compareAccountRecords(left: AccountRecord, right: AccountRecord) {
   if (left.credentialSource === 'api-key' && right.credentialSource === 'api-key') {
@@ -20,6 +20,26 @@ export function sourceLabel(t: Translator, source: CredentialSource) {
 
 export function providerLabel(account: AccountRecord) {
   return String(account.provider || 'unknown').trim().toUpperCase();
+}
+
+function replaceProviderPlaceholder(template: string, provider: string) {
+  return template.replace('{provider}', provider);
+}
+
+export function resolveAccountSourceHeading(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.source_api_key_with_provider'), providerLabel(account));
+}
+
+export function resolveAccountProviderConfigHeading(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.provider_config_with_provider'), providerLabel(account));
+}
+
+export function resolveAccountConfigurationWorkspaceHeading(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.configuration_workspace_with_provider'), providerLabel(account));
+}
+
+export function resolveAccountAPIKeyPlainNotice(account: AccountRecord, t: Translator) {
+  return replaceProviderPlaceholder(t('accounts.api_key_plain_notice_with_provider'), providerLabel(account));
 }
 
 export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
@@ -42,17 +62,11 @@ export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
   };
 }
 
-export function mapBackendAccountRecord(account: main.AccountRecord, apiKeyLabels: Record<string, string>): AccountRecord {
+export function mapBackendAccountRecord(account: main.AccountRecord): AccountRecord {
   const credentialSource = account.credentialSource === 'api-key' ? 'api-key' : 'auth-file';
-  const storageKey =
-    credentialSource === 'api-key'
-      ? buildAPIKeyLabelStorageKey(account.apiKey || '', account.baseUrl || '', account.prefix || '')
-      : '';
-  const localDisplayName = storageKey ? apiKeyLabels[storageKey] : '';
 
   return {
     ...account,
-    displayName: localDisplayName || account.displayName,
     credentialSource,
   };
 }
@@ -66,6 +80,78 @@ export function resolveAccountFailureReason(account: AccountRecord) {
   }
   return String(account.statusMessage || account.rawAuthFile?.statusMessage || '')
     .trim();
+}
+
+export function resolveAccountStatusTone(account: AccountRecord) {
+  const status = String(account.localOnly ? 'LOCAL' : account.status || '')
+    .trim()
+    .toUpperCase();
+
+  if (status === 'ACTIVE' || status === 'CONFIGURED' || status === 'LOCAL') {
+    return 'positive';
+  }
+  if (status === 'DISABLED') {
+    return 'warning';
+  }
+  return 'danger';
+}
+
+export function resolveAccountOperationalState(
+  account: AccountRecord,
+  usageSummary: AccountUsageSummary | undefined,
+  quotaDisplay: QuotaDisplay | undefined,
+  t: Translator,
+) {
+  if (usageSummary?.success && usageSummary.success > 0) {
+    return {
+      tone: 'positive' as const,
+      label: t('accounts.status_available'),
+    };
+  }
+
+  if (account.credentialSource === 'auth-file' && quotaDisplay?.status === 'success') {
+    return {
+      tone: 'positive' as const,
+      label: t('accounts.status_available'),
+    };
+  }
+
+  if (usageSummary?.hasData && usageSummary.failure > 0) {
+    return {
+      tone: 'danger' as const,
+      label: t('accounts.status_error_display'),
+    };
+  }
+
+  const status = String(account.localOnly ? 'LOCAL' : account.status || '')
+    .trim()
+    .toUpperCase();
+
+  if (status === 'DISABLED') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_disabled_display'),
+    };
+  }
+
+  if (status === 'LOCAL') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_local'),
+    };
+  }
+
+  if (status === 'ACTIVE' || status === 'CONFIGURED') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_waiting_check'),
+    };
+  }
+
+  return {
+    tone: 'danger' as const,
+    label: t('accounts.status_error_display'),
+  };
 }
 
 export function isAccountUnavailable(account: AccountRecord) {
