@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetTokens Text Scale Settings - Option B / Raw Terminal Control Room</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --panel: #0f0f0f;
+      --panel-2: #151515;
+      --ink: #f2f2f2;
+      --muted: #8b8b8b;
+      --grid: rgba(255,255,255,0.06);
+      --accent: #ff3b30;
+      --accent-soft: rgba(255,59,48,0.12);
+      --ok: #69ff9d;
+      --amber: #f8ca52;
+      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--mono);
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        radial-gradient(circle at top, rgba(255,59,48,0.09), transparent 24%),
+        var(--bg);
+      background-size: 24px 24px, 24px 24px, auto, auto;
+    }
+
+    .shell {
+      width: min(1520px, calc(100vw - 28px));
+      margin: 14px auto;
+      min-height: calc(100vh - 28px);
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 12px 12px 0 rgba(255,255,255,0.06);
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .rail {
+      border-right: 2px solid var(--ink);
+      padding: 16px;
+      background: linear-gradient(180deg, #101010 0%, #080808 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .eyebrow, .micro, .tag {
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .eyebrow, .micro { color: var(--muted); }
+    .brand {
+      border: 2px solid var(--ink);
+      background: linear-gradient(180deg, rgba(255,59,48,0.12), rgba(255,59,48,0.03));
+      padding: 14px;
+    }
+
+    .brand h1, .hero h2, .subhead h3 {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: -0.08em;
+      font-weight: 900;
+    }
+
+    .brand h1 {
+      margin-top: 10px;
+      font-size: 30px;
+      line-height: 0.92;
+    }
+
+    .rail-card, .stack, .preview-wrap, .stage {
+      border: 2px solid var(--ink);
+      background: var(--panel-2);
+    }
+
+    .rail-card {
+      padding: 12px;
+    }
+
+    .line {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .line:last-child { border-bottom: 0; }
+    .line strong { color: var(--ink); }
+    .line .warn { color: var(--amber); }
+    .line .ok { color: var(--ok); }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      min-width: 0;
+    }
+
+    .hero {
+      padding: 20px 24px;
+      border-bottom: 2px solid var(--ink);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    }
+
+    .hero h2 {
+      margin-top: 8px;
+      font-size: 44px;
+      line-height: 0.9;
+      max-width: 760px;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      color: #bbbbbb;
+      font-size: 13px;
+      line-height: 1.8;
+      max-width: 720px;
+    }
+
+    .hero-side {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .hero-side .metric {
+      border: 2px solid var(--ink);
+      padding: 12px;
+      min-height: 108px;
+      background: linear-gradient(180deg, rgba(255,59,48,0.05), rgba(255,255,255,0.02));
+    }
+
+    .hero-side strong {
+      display: block;
+      margin-top: 18px;
+      font-size: 22px;
+      letter-spacing: -0.06em;
+    }
+
+    .workspace {
+      padding: 18px 24px 24px;
+      display: grid;
+      grid-template-columns: 420px minmax(0, 1fr);
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .stack-head, .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--ink);
+      background: #101010;
+    }
+
+    .stack-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .control {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .label {
+      padding-top: 10px;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .switch {
+      display: inline-flex;
+      gap: 2px;
+      padding: 2px;
+      border: 2px solid var(--ink);
+      background: #090909;
+      width: fit-content;
+    }
+
+    .switch button {
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 10px 12px;
+      min-width: 88px;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    .switch button:active { transform: scale(0.95); }
+    .switch button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .trace {
+      border: 2px solid var(--ink);
+      background: #090909;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.75;
+      color: #b8b8b8;
+    }
+
+    .trace strong { color: var(--ok); }
+    .trace .risk { color: var(--amber); }
+
+    .preview-wrap {
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      min-height: 0;
+    }
+
+    .stage {
+      border-right: 2px solid var(--ink);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .stage:last-child { border-right: 0; }
+    .stage-top {
+      padding: 10px 12px;
+      border-bottom: 2px solid var(--ink);
+      background: #111;
+    }
+
+    .stage-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        #0c0c0c;
+      background-size: 18px 18px, 18px 18px, auto;
+      height: 100%;
+    }
+
+    .widget {
+      border: 2px solid var(--ink);
+      background: rgba(255,255,255,0.02);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .x-small .title { font-size: 16px; }
+    .x-small .copy { font-size: 10px; line-height: 1.55; }
+    .x-small .meta { font-size: 8px; }
+
+    .large .title { font-size: 22px; }
+    .large .copy { font-size: 13px; line-height: 1.7; }
+    .large .meta { font-size: 10px; }
+
+    .xlarge .title { font-size: 26px; }
+    .xlarge .copy { font-size: 15px; line-height: 1.75; }
+    .xlarge .meta { font-size: 11px; }
+
+    .title {
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.05em;
+    }
+
+    .meta {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .copy { color: #cacaca; }
+
+    .pulse {
+      height: 10px;
+      border: 2px solid var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .pulse::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: 58%;
+      background: linear-gradient(90deg, var(--accent), #ff837d, var(--accent));
+    }
+
+    @media (max-width: 1180px) {
+      .shell,
+      .hero,
+      .workspace,
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .shell { width: min(100vw, calc(100vw - 12px)); margin: 6px; }
+      .stage { border-right: 0; border-bottom: 2px solid var(--ink); }
+      .stage:last-child { border-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="rail">
+      <div class="brand">
+        <div class="eyebrow">Option B</div>
+        <h1>Raw Terminal<br>Control Room</h1>
+      </div>
+
+      <div class="rail-card">
+        <div class="eyebrow">Monitor</div>
+        <div class="line"><span>Signal</span><strong class="ok">Stable</strong></div>
+        <div class="line"><span>Risk</span><strong class="warn">Dense labels</strong></div>
+        <div class="line"><span>Scope</span><strong>Global</strong></div>
+        <div class="line"><span>Mode</span><strong>Instant apply</strong></div>
+      </div>
+
+      <div class="rail-card">
+        <div class="eyebrow">Concept</div>
+        <div style="font-size:12px; line-height:1.7; color:#b9b9b9;">这版把“字号设置”处理成一个像调参台的监控面。重点不是温和，而是把每一档的空间占用和风险直接暴露出来，适合偏工程、偏运维的产品气质。</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Visual Thesis</div>
+          <h2>Scale Is an Operational Switch, Not a Cosmetic Preference.</h2>
+          <p>这个方向更像控制室。用户看到的不是“美术化的设置页”，而是一套可观测、可比较、可预判布局风险的阅读密度控制台。三个档位直接并排，让“更大”档位可能造成的拥挤和收益同时可见。</p>
+        </div>
+        <div class="hero-side">
+          <div class="metric"><div class="eyebrow">Preview Lanes</div><strong>3</strong></div>
+          <div class="metric"><div class="eyebrow">Risk Markers</div><strong>Visible</strong></div>
+          <div class="metric"><div class="eyebrow">Accent</div><strong>Red</strong></div>
+          <div class="metric"><div class="eyebrow">Mode</div><strong>Control Room</strong></div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="stack">
+          <div class="stack-head">
+            <div class="eyebrow">Text Scale Controls</div>
+            <div class="micro">global preview matrix</div>
+          </div>
+          <div class="stack-body">
+            <div class="control">
+              <div class="label">Scale</div>
+              <div class="switch">
+                <button>默认</button>
+                <button class="active">较大</button>
+                <button>更大</button>
+              </div>
+            </div>
+            <div class="control">
+              <div class="label">Surface</div>
+              <div class="switch">
+                <button class="active">Accounts</button>
+                <button>Settings</button>
+                <button>Usage Desk</button>
+              </div>
+            </div>
+            <div class="control">
+              <div class="label">Signal</div>
+              <div class="trace">
+                <strong>[OK]</strong> 标题、按钮、辅助说明同步放大。<br>
+                <span class="risk">[RISK]</span> segmented control 与窄 toolbar 容易首先溢出。<br>
+                <strong>[NEXT]</strong> 先收口 typography token，再逐模块替换硬编码字号。
+              </div>
+            </div>
+            <div class="control">
+              <div class="label">Impact</div>
+              <div class="pulse"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview-wrap">
+          <div class="preview-head">
+            <div class="eyebrow">Live Simulation</div>
+            <div class="micro">default / large / x-large</div>
+          </div>
+          <div class="preview-grid">
+            <div class="stage x-small">
+              <div class="stage-top"><div class="tag">Default</div></div>
+              <div class="stage-body">
+                <div class="widget">
+                  <div class="row"><div class="title">Claude Main</div><div class="meta">91%</div></div>
+                  <div class="copy">请求配额正常，过去 7 天内没有检测到 provider fallback。</div>
+                </div>
+                <div class="widget">
+                  <div class="row"><div class="title">Usage Desk</div><div class="meta">14D</div></div>
+                  <div class="copy">日均请求量稳定，局部标签与图例阅读压力偏高。</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stage large">
+              <div class="stage-top"><div class="tag" style="color:var(--accent);">Large</div></div>
+              <div class="stage-body">
+                <div class="widget">
+                  <div class="row"><div class="title">Claude Main</div><div class="meta">91%</div></div>
+                  <div class="copy">请求配额正常，过去 7 天内没有检测到 provider fallback，主信息已经更容易被快速扫描。</div>
+                </div>
+                <div class="widget">
+                  <div class="row"><div class="title">Usage Desk</div><div class="meta">14D</div></div>
+                  <div class="copy">日均请求量稳定，图例和说明文字可读性提升，但宽度紧张组件开始接近阈值。</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stage xlarge">
+              <div class="stage-top"><div class="tag">XL</div></div>
+              <div class="stage-body">
+                <div class="widget">
+                  <div class="row"><div class="title">Claude Main</div><div class="meta">91%</div></div>
+                  <div class="copy">阅读最轻松，但横向空间消耗明显，适合作为可选增强档而不是默认值。</div>
+                </div>
+                <div class="widget">
+                  <div class="row"><div class="title">Usage Desk</div><div class="meta">14D</div></div>
+                  <div class="copy">需要同步调整按钮间距、图例布局与部分卡片 min-height，否则容易形成拥挤感。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

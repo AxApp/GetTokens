@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetTokens Text Scale Settings - Option A / Editorial Utility</title>
+  <style>
+    :root {
+      --bg: #f4f0e8;
+      --panel: #fffdf8;
+      --ink: #121212;
+      --muted: #6e685d;
+      --soft: #e8e1d4;
+      --accent: #b3261e;
+      --accent-soft: rgba(179, 38, 30, 0.12);
+      --shadow: rgba(18, 18, 18, 0.12);
+      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--mono);
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(179, 38, 30, 0.03), transparent 20%),
+        linear-gradient(90deg, rgba(18,18,18,0.03) 1px, transparent 1px),
+        linear-gradient(rgba(18,18,18,0.03) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 30px 30px, 30px 30px, auto;
+    }
+
+    .frame {
+      width: min(1500px, calc(100vw - 32px));
+      margin: 16px auto;
+      min-height: calc(100vh - 32px);
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: 10px 10px 0 var(--shadow);
+      display: grid;
+      grid-template-columns: 248px minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    .side {
+      border-right: 2px solid var(--ink);
+      background: linear-gradient(180deg, #f8f3eb 0%, #efe7da 100%);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .eyebrow, .micro {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .brand {
+      border: 2px solid var(--ink);
+      background: var(--ink);
+      color: #faf6ef;
+      padding: 14px;
+      box-shadow: 5px 5px 0 rgba(18,18,18,0.2);
+    }
+
+    .brand h1, .hero h2, .section-title h3 {
+      margin: 0;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.08em;
+    }
+
+    .brand h1 {
+      margin-top: 10px;
+      font-size: 28px;
+      line-height: 0.92;
+    }
+
+    .rail-card {
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      padding: 12px;
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .nav-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(18,18,18,0.1);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .nav-item:last-child { border-bottom: 0; }
+    .nav-item.active { color: var(--accent); }
+
+    .note {
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      min-width: 0;
+    }
+
+    .hero {
+      padding: 22px 26px 20px;
+      border-bottom: 2px solid var(--ink);
+      background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.35));
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+      gap: 18px;
+    }
+
+    .hero h2 {
+      margin-top: 10px;
+      font-size: 46px;
+      line-height: 0.9;
+      max-width: 760px;
+    }
+
+    .hero p {
+      margin: 14px 0 0;
+      max-width: 720px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-content: start;
+    }
+
+    .metric {
+      border: 2px solid var(--ink);
+      background: linear-gradient(180deg, #fffdf9, #f5edde);
+      padding: 12px;
+      box-shadow: 4px 4px 0 var(--shadow);
+      min-height: 110px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 16px;
+      font-size: 24px;
+      letter-spacing: -0.06em;
+    }
+
+    .workspace {
+      padding: 18px 26px 26px;
+      display: grid;
+      grid-template-columns: minmax(360px, 0.86fr) minmax(420px, 1.14fr);
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .column {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .section-title h3 {
+      font-size: 28px;
+      line-height: 0.94;
+    }
+
+    .stack {
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: 5px 5px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .stack-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--ink);
+      background: #f7f0e5;
+    }
+
+    .stack-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .label {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .segmented {
+      display: inline-flex;
+      border: 2px solid var(--ink);
+      background: var(--soft);
+      padding: 2px;
+      gap: 2px;
+      width: fit-content;
+    }
+
+    .segmented button {
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      font: inherit;
+      padding: 10px 14px;
+      min-width: 86px;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .segmented button:active { transform: scale(0.95); }
+    .segmented button.active {
+      background: var(--ink);
+      color: #fffaf4;
+    }
+
+    .meter {
+      height: 10px;
+      border: 2px solid var(--ink);
+      background: #fff;
+      position: relative;
+    }
+
+    .meter::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: var(--fill, 55%);
+      background: repeating-linear-gradient(90deg, var(--accent) 0 10px, #dbd3c8 10px 20px);
+    }
+
+    .callout {
+      border: 2px solid var(--ink);
+      background: var(--accent-soft);
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #4b4037;
+    }
+
+    .preview-shell {
+      border: 2px solid var(--ink);
+      background: #f7f4ed;
+      box-shadow: 6px 6px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .preview-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--ink);
+      background: #fffdf8;
+    }
+
+    .compare {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .panel {
+      min-width: 0;
+      padding: 14px;
+      border-right: 2px solid var(--ink);
+    }
+
+    .panel:last-child { border-right: 0; }
+    .panel.after { background: #fffdf8; }
+
+    .preview-card {
+      border: 2px solid var(--ink);
+      background: #fff;
+      padding: 14px;
+      box-shadow: 4px 4px 0 rgba(18,18,18,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .kpi {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .small .kpi strong { font-size: 18px; }
+    .large .kpi strong { font-size: 24px; }
+
+    .caption {
+      font-size: 8px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .small .body-copy { font-size: 11px; line-height: 1.55; }
+    .large .body-copy { font-size: 14px; line-height: 1.7; }
+
+    .small .meta { font-size: 9px; }
+    .large .meta { font-size: 11px; }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .ghost, .primary {
+      border: 2px solid var(--ink);
+      font: inherit;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 12px;
+      box-shadow: 3px 3px 0 rgba(18,18,18,0.1);
+    }
+
+    .primary {
+      background: var(--accent);
+      color: #fff7f5;
+    }
+
+    .ghost {
+      background: #fff;
+      color: var(--ink);
+    }
+
+    @media (max-width: 1100px) {
+      .frame,
+      .workspace,
+      .hero,
+      .compare {
+        grid-template-columns: 1fr;
+      }
+
+      .frame { width: min(100vw, calc(100vw - 16px)); margin: 8px; }
+      .panel { border-right: 0; border-bottom: 2px solid var(--ink); }
+      .panel:last-child { border-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <aside class="side">
+      <div class="brand">
+        <div class="eyebrow">Option A</div>
+        <h1>Text Scale<br>Editorial Utility</h1>
+      </div>
+      <div class="rail-card">
+        <div class="eyebrow">Space Boundaries</div>
+        <div class="nav-item active"><span>Settings / Appearance</span><span>Live</span></div>
+        <div class="nav-item"><span>Sidebar Density</span><span>Guard</span></div>
+        <div class="nav-item"><span>Usage Desk Labels</span><span>Risk</span></div>
+        <div class="nav-item"><span>Modal Readability</span><span>Review</span></div>
+      </div>
+      <div class="rail-card">
+        <div class="eyebrow">Design Thesis</div>
+        <p class="note">左侧是控制与验收说明，右侧不是静态海报，而是接近真实 app shell 的 before / after 预览。重点记忆点是字号变化带来的层级重排，而不是单纯放大一个数字。</p>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero">
+        <div>
+          <div class="eyebrow">Visual Thesis</div>
+          <h2>Keep the Swiss Shell. Make Reading Feel Intentionally Larger.</h2>
+          <p>这版稿子保留 GetTokens 现有的黑白红 mono 基因，但把设置面板做成偏 editorial 的控制页。用户一边切换文字大小，一边看到相同内容在默认和放大后的真实排版差异，避免“设置改了但不知道影响哪里”。</p>
+        </div>
+        <div class="hero-metrics">
+          <div class="metric">
+            <div class="eyebrow">Scale Modes</div>
+            <strong>Default / Large / XL</strong>
+          </div>
+          <div class="metric">
+            <div class="eyebrow">Preview Strategy</div>
+            <strong>Before / After</strong>
+          </div>
+          <div class="metric">
+            <div class="eyebrow">Primary Risk</div>
+            <strong>Dense Labels</strong>
+          </div>
+          <div class="metric">
+            <div class="eyebrow">Interaction</div>
+            <strong>Instant Reflow</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <div class="column">
+          <div class="section-title">
+            <h3>Controls</h3>
+            <div class="micro">orient / choose / verify</div>
+          </div>
+
+          <div class="stack">
+            <div class="stack-head">
+              <div class="eyebrow">Settings / Appearance</div>
+              <div class="micro">config_x_text_scale</div>
+            </div>
+            <div class="stack-body">
+              <div class="control-row">
+                <div class="label">文字大小</div>
+                <div class="segmented">
+                  <button>默认</button>
+                  <button class="active">较大</button>
+                  <button>更大</button>
+                </div>
+              </div>
+              <div class="control-row">
+                <div class="label">生效范围</div>
+                <div>
+                  <div class="meter" style="--fill: 86%"></div>
+                  <div class="micro" style="margin-top:8px;">sidebar / settings / status / accounts / usage desk / modal</div>
+                </div>
+              </div>
+              <div class="control-row">
+                <div class="label">预览方式</div>
+                <div class="segmented">
+                  <button class="active">并排对比</button>
+                  <button>仅当前档位</button>
+                </div>
+              </div>
+              <div class="callout">建议默认展示“较大”档位的实时效果，并保留默认档位作为对照。这样用户不是盲调，而是直接理解“我会多出多少可读性，代价是多占多少空间”。</div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="stack-head">
+              <div class="eyebrow">Implementation Notes</div>
+              <div class="micro">token first</div>
+            </div>
+            <div class="stack-body">
+              <div class="note">1. 设置项只负责选档，不直接讲技术。<br>2. 预览页强调标题、正文、标签、按钮的联动变化。<br>3. “更大”档位建议只在预览中先验风险，再决定是否进首版实现。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="column">
+          <div class="section-title">
+            <h3>Live Preview</h3>
+            <div class="micro">same content / different scale</div>
+          </div>
+
+          <div class="preview-shell">
+            <div class="preview-top">
+              <div class="eyebrow">Preview Surface / Account Workspace</div>
+              <div class="micro">before vs after</div>
+            </div>
+
+            <div class="compare">
+              <div class="panel small">
+                <div class="micro" style="margin-bottom:10px;">默认</div>
+                <div class="preview-card">
+                  <div class="caption">status snapshot</div>
+                  <div class="kpi">
+                    <strong>Ready</strong>
+                    <div class="meta">port 8718</div>
+                  </div>
+                  <div class="body-copy">Sidecar 已启动。当前同步窗口将在下一次请求前自动刷新本地用量快照。</div>
+                  <div class="button-row">
+                    <button class="ghost">刷新索引</button>
+                    <button class="primary">打开设置</button>
+                  </div>
+                </div>
+                <div class="preview-card">
+                  <div class="caption">account card</div>
+                  <div class="kpi">
+                    <strong>Claude Main</strong>
+                    <div class="meta">proxy direct</div>
+                  </div>
+                  <div class="body-copy">可用额度 91%，过去 7 天请求量平稳，当前路由未发现异常回退。</div>
+                </div>
+              </div>
+
+              <div class="panel after large">
+                <div class="micro" style="margin-bottom:10px; color:var(--accent);">较大</div>
+                <div class="preview-card">
+                  <div class="caption">status snapshot</div>
+                  <div class="kpi">
+                    <strong>Ready</strong>
+                    <div class="meta">port 8718</div>
+                  </div>
+                  <div class="body-copy">Sidecar 已启动。当前同步窗口将在下一次请求前自动刷新本地用量快照，信息密度略降，但主叙事更容易扫读。</div>
+                  <div class="button-row">
+                    <button class="ghost">刷新索引</button>
+                    <button class="primary">打开设置</button>
+                  </div>
+                </div>
+                <div class="preview-card">
+                  <div class="caption">account card</div>
+                  <div class="kpi">
+                    <strong>Claude Main</strong>
+                    <div class="meta">proxy direct</div>
+                  </div>
+                  <div class="body-copy">可用额度 91%，过去 7 天请求量平稳。标签、指标、说明文字之间的层级边界更清晰。</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
