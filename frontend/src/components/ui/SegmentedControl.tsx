@@ -12,7 +12,7 @@ export default function SegmentedControl<T extends string>({
   onChange,
 }: SegmentedControlProps<T>) {
   return (
-    <div className="flex w-full max-w-sm border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+    <div className="flex w-full max-w-sm">
       {options.map((option, index) => (
         <button
           type="button"

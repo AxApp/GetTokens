@@ -39,7 +39,15 @@ type UsageDetailTableRow = UsageDeskMinuteRow & {
   drilldownDayKey?: string;
 };
 
-type UsageDetailColumnKey = 'timeLabel' | 'value' | 'note' | 'requests' | 'inputTokens' | 'cachedInputTokens' | 'outputTokens';
+type UsageDetailColumnKey =
+  | 'timeLabel'
+  | 'model'
+  | 'value'
+  | 'note'
+  | 'requests'
+  | 'inputTokens'
+  | 'cachedInputTokens'
+  | 'outputTokens';
 type UsageDetailColumn = { key: UsageDetailColumnKey; header: string };
 type LocalUsageProgressEvent = {
   phase?: string;
@@ -335,6 +343,7 @@ export default function UsageDeskWorkspace({
     .map((point) => ({
       timeLabel: point.label,
       provider: 'codex',
+      model: point.model ?? '--',
       metric: '总 tokens',
       value: formatUsageDeskChartValue(point.totalTokens, 'tokens'),
       requests: formatUsageDeskChartValue(point.requests, 'count'),
@@ -1282,6 +1291,7 @@ function buildUsageDetailRowKey(row: UsageDetailTableRow) {
     row.timeLabel,
     row.value,
     row.note ?? '',
+    row.model ?? '',
     row.requests ?? '',
     row.inputTokens ?? '',
     row.cachedInputTokens ?? '',
@@ -1301,6 +1311,7 @@ function resolveUsageDetailColumns(rows: UsageDetailTableRow[]): UsageDetailColu
   return hasProjectedBreakdown
     ? [
         { key: 'timeLabel', header: '时间' },
+        { key: 'model', header: '模型' },
         { key: 'requests', header: '请求数' },
         { key: 'value', header: 'Token' },
         { key: 'inputTokens', header: '输入' },

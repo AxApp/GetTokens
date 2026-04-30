@@ -25,6 +25,7 @@ export interface UsageDeskMinutePoint {
 export interface UsageDeskMinuteRow {
   timeLabel: string;
   provider: string;
+  model?: string;
   metric: string;
   value: string;
   note?: string;
@@ -59,6 +60,7 @@ export interface UsageDeskProjectedDetail {
 export interface UsageDeskProjectedDailyPoint {
   dayKey: string;
   label: string;
+  model?: string;
   requests: number;
   totalTokens: number;
   inputTokens: number;
@@ -71,6 +73,49 @@ export interface UsageDeskProjectedMinutePoint {
   label: string;
   requests: number;
   totalTokens: number;
+}
+
+type UsageDeskDominantModelState = {
+  modelTokens: Map<string, number>;
+  dominantModel: string;
+  dominantModelTokens: number;
+  modelCount: number;
+};
+
+function createDominantModelState(initialModel: string = ''): UsageDeskDominantModelState {
+  return {
+    modelTokens: new Map<string, number>(),
+    dominantModel: initialModel,
+    dominantModelTokens: 0,
+    modelCount: 0,
+  };
+}
+
+function pushDominantModel(state: UsageDeskDominantModelState, model: string, tokens: number) {
+  const normalizedModel = String(model || '').trim();
+  if (!normalizedModel) {
+    return;
+  }
+  const hadModel = state.modelTokens.has(normalizedModel);
+  const nextTokens = (state.modelTokens.get(normalizedModel) ?? 0) + tokens;
+  state.modelTokens.set(normalizedModel, nextTokens);
+  if (!hadModel) {
+    state.modelCount += 1;
+  }
+  if (
+    nextTokens > state.dominantModelTokens ||
+    (nextTokens === state.dominantModelTokens && normalizedModel < state.dominantModel)
+  ) {
+    state.dominantModel = normalizedModel;
+    state.dominantModelTokens = nextTokens;
+  }
+}
+
+function formatDominantModel(state: Pick<UsageDeskDominantModelState, 'dominantModel' | 'modelCount'>): string {
+  if (!state.dominantModel) {
+    return '';
+  }
+  return state.modelCount > 1 ? `${state.dominantModel},*` : state.dominantModel;
 }
 
 export interface UsageDeskProjectedSnapshot {
@@ -438,7 +483,12 @@ export function buildUsageDeskProjectedSnapshot(
     };
   }
 
-  const dailyMap = new Map<string, UsageDeskProjectedDailyPoint>();
+  const dailyMap = new Map<
+    string,
+    UsageDeskProjectedDailyPoint & {
+      dominantModelState: UsageDeskDominantModelState;
+    }
+  >();
   let totalRequests = 0;
   let totalTokens = 0;
 
@@ -449,13 +499,17 @@ export function buildUsageDeskProjectedSnapshot(
     const point = dailyMap.get(dayKey) ?? {
       dayKey,
       label: buildDayLabel(dayKey),
+      model: '',
       requests: 0,
       totalTokens: 0,
       inputTokens: 0,
       cachedInputTokens: 0,
       outputTokens: 0,
+      dominantModelState: createDominantModelState(detail.model),
     };
     const tokens = detail.inputTokens + detail.outputTokens;
+    pushDominantModel(point.dominantModelState, detail.model, tokens);
+    point.model = formatDominantModel(point.dominantModelState);
     point.requests += detail.requestCount;
     point.totalTokens += tokens;
     point.inputTokens += detail.inputTokens;
@@ -478,6 +532,8 @@ export function buildUsageDeskProjectedSnapshot(
     {
       timeLabel: string;
       provider: string;
+      model: string;
+      dominantModelState: UsageDeskDominantModelState;
       totalTokens: number;
       requests: number;
       inputTokens: number;
@@ -505,6 +561,8 @@ export function buildUsageDeskProjectedSnapshot(
     const minuteRow = minuteRowMap.get(minuteKey) ?? {
       timeLabel: buildMinuteLabel(date, resolution),
       provider: detail.provider,
+      model: detail.model,
+      dominantModelState: createDominantModelState(detail.model),
       totalTokens: 0,
       requests: 0,
       inputTokens: 0,
@@ -512,11 +570,13 @@ export function buildUsageDeskProjectedSnapshot(
       outputTokens: 0,
     };
     minuteRow.provider = minuteRow.provider === detail.provider ? detail.provider : 'mixed';
+    pushDominantModel(minuteRow.dominantModelState, detail.model, tokens);
     minuteRow.totalTokens += tokens;
     minuteRow.requests += detail.requestCount;
     minuteRow.inputTokens += detail.inputTokens;
     minuteRow.cachedInputTokens += detail.cachedInputTokens;
     minuteRow.outputTokens += detail.outputTokens;
+    minuteRow.model = formatDominantModel(minuteRow.dominantModelState);
     minuteRowMap.set(minuteKey, minuteRow);
   });
 
@@ -525,6 +585,7 @@ export function buildUsageDeskProjectedSnapshot(
     .map(([, row]) => ({
       timeLabel: row.timeLabel,
       provider: row.provider,
+      model: row.model,
       metric: '总 tokens',
       value: formatUsageDeskChartValue(row.totalTokens, 'tokens'),
       requests: formatUsageDeskChartValue(row.requests, 'count'),

@@ -26,6 +26,10 @@ export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>
 
 export function FetchOpenAICompatibleProviderModels(arg1:main.FetchOpenAICompatibleProviderModelsInput):Promise<main.FetchOpenAICompatibleProviderModelsResult>;
 
+export function FetchProxySubscription(arg1:main.FetchProxySubscriptionInput):Promise<main.FetchProxySubscriptionResult>;
+
+export function FetchVendorStatusRSS(arg1:string):Promise<string>;
+
 export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
@@ -33,6 +37,10 @@ export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>
 export function GetCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
+
+export function GetCodexSessionDetail(arg1:string):Promise<main.SessionManagementSessionDetail>;
+
+export function GetCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
 
 export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsageSettings>;
 
@@ -54,13 +62,19 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
+export function ListEnvironmentProxyEntries():Promise<Array<main.EnvironmentProxyEntry>>;
+
 export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
 
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
+export function ProbeProxyNode(arg1:main.ProbeProxyNodeInput):Promise<main.ProbeProxyNodeResult>;
+
 export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
+
+export function RefreshCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
 
 export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
 

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
+import { hasPreviewMode, hasWailsRuntime } from '../utils/previewMode';
 
 export interface DebugEntry {
   id: string;
@@ -105,6 +106,10 @@ export function DebugProvider({ children }: { children?: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (hasPreviewMode() || !hasWailsRuntime()) {
+      return;
+    }
+
     const offDebugEntry = EventsOn('debug:entry', (payload: DebugEventPayload) => {
       appendExternalEntry(payload);
     });

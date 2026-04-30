@@ -65,6 +65,9 @@ func TestGetCodexLocalUsageAggregatesTokenCountDeltas(t *testing.T) {
 	if third.InputTokens != 40 || third.CachedInputTokens != 12 || third.OutputTokens != 8 {
 		t.Fatalf("unexpected third detail: %#v", third)
 	}
+	if first.Model != "gpt-5-codex" || second.Model != "gpt-5-codex" || third.Model != "gpt-5-codex" {
+		t.Fatalf("expected model to be carried into local usage details: %#v", result.Details)
+	}
 
 	indexPath, err := codexLocalUsageIndexPath()
 	if err != nil {
@@ -72,6 +75,44 @@ func TestGetCodexLocalUsageAggregatesTokenCountDeltas(t *testing.T) {
 	}
 	if _, err := os.Stat(indexPath); err != nil {
 		t.Fatalf("expected index file to exist: %v", err)
+	}
+}
+
+func TestGetCodexLocalUsageSplitsSameMinuteByModel(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	sessionsDir := filepath.Join(codexHome, "sessions", "2026", "04", "28")
+	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
+		t.Fatalf("mkdir sessions dir: %v", err)
+	}
+
+	rolloutPath := filepath.Join(sessionsDir, "rollout-2026-04-28T10-00-00.jsonl")
+	payload := "" +
+		"{\"timestamp\":\"2026-04-28T10:00:00.000Z\",\"type\":\"turn_context\",\"payload\":{\"model\":\"gpt-5-codex\"}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:01:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":20,\"output_tokens\":10}}}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:01:30.000Z\",\"type\":\"turn_context\",\"payload\":{\"model\":\"o3\"}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:01:45.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":180,\"cached_input_tokens\":30,\"output_tokens\":25}}}}\n"
+	if err := os.WriteFile(rolloutPath, []byte(payload), 0600); err != nil {
+		t.Fatalf("write rollout: %v", err)
+	}
+
+	t.Setenv("CODEX_HOME", codexHome)
+
+	app := &App{}
+	result, err := app.GetCodexLocalUsage()
+	if err != nil {
+		t.Fatalf("GetCodexLocalUsage returned error: %v", err)
+	}
+
+	if len(result.Details) != 2 {
+		t.Fatalf("details len = %d, want 2", len(result.Details))
+	}
+	if result.Details[0].Timestamp != "2026-04-28T10:01:00Z" || result.Details[0].Model != "gpt-5-codex" {
+		t.Fatalf("unexpected first model detail: %#v", result.Details[0])
+	}
+	if result.Details[1].Timestamp != "2026-04-28T10:01:00Z" || result.Details[1].Model != "o3" {
+		t.Fatalf("unexpected second model detail: %#v", result.Details[1])
 	}
 }
 

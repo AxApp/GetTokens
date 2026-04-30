@@ -6,8 +6,10 @@ import UsageDeskWorkspace from './features/accounts/components/UsageDeskWorkspac
 import AccountsPage from './pages/AccountsPage';
 import DebugPage from './pages/DebugPage';
 import ProxyPoolPage from './pages/ProxyPoolPage';
+import SessionManagementPage from './pages/SessionManagementPage';
 import SettingsPage from './pages/SettingsPage';
 import StatusPage from './pages/StatusPage';
+import VendorStatusPage from './pages/VendorStatusPage';
 import { DebugProvider, useDebug } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { TextScaleProvider, useTextScale } from './context/TextScaleContext';
@@ -18,17 +20,21 @@ import type {
   AccountWorkspace,
   AppPage,
   ReleaseInfo,
+  SessionManagementWorkspace,
   SidecarStatus,
   UsageDeskWorkspace as UsageDeskWorkspaceID,
 } from './types';
+import { hasPreviewMode } from './utils/previewMode';
 import {
   buildFrameHash,
   persistAccountWorkspace,
   persistActivePage,
+  persistSessionManagementWorkspace,
   persistUsageDeskWorkspace,
   readFrameHashState,
   readStoredAccountWorkspace,
   readStoredActivePage,
+  readStoredSessionManagementWorkspace,
   readStoredUsageDeskWorkspace,
 } from './utils/pagePersistence';
 
@@ -58,6 +64,15 @@ function AppShell() {
     }
     return storedWorkspace;
   });
+  const [activeSessionManagementWorkspace, setActiveSessionManagementWorkspace] = useState<SessionManagementWorkspace>(() => {
+    const storage = typeof window === 'undefined' ? null : window.localStorage;
+    const storedWorkspace = readStoredSessionManagementWorkspace(storage);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    if (hashState?.page === 'session-management') {
+      return hashState.sessionManagementWorkspace ?? 'codex';
+    }
+    return storedWorkspace;
+  });
   const [activeUsageDeskWorkspace, setActiveUsageDeskWorkspace] = useState<UsageDeskWorkspaceID>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const storedWorkspace = readStoredUsageDeskWorkspace(storage);
@@ -83,6 +98,13 @@ function AppShell() {
   }, [activeAccountWorkspace]);
 
   useEffect(() => {
+    persistSessionManagementWorkspace(
+      typeof window === 'undefined' ? null : window.localStorage,
+      activeSessionManagementWorkspace,
+    );
+  }, [activeSessionManagementWorkspace]);
+
+  useEffect(() => {
     persistUsageDeskWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeUsageDeskWorkspace);
   }, [activeUsageDeskWorkspace]);
 
@@ -91,11 +113,16 @@ function AppShell() {
       return;
     }
 
-    const nextHash = buildFrameHash(activePage, activeAccountWorkspace, activeUsageDeskWorkspace);
+    const nextHash = buildFrameHash(
+      activePage,
+      activeAccountWorkspace,
+      activeSessionManagementWorkspace,
+      activeUsageDeskWorkspace,
+    );
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
     }
-  }, [activeAccountWorkspace, activePage, activeUsageDeskWorkspace]);
+  }, [activeAccountWorkspace, activePage, activeSessionManagementWorkspace, activeUsageDeskWorkspace]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -111,6 +138,9 @@ function AppShell() {
       setActivePage(hashState.page);
       if (hashState.page === 'accounts') {
         setActiveAccountWorkspace(hashState.workspace ?? 'all');
+      }
+      if (hashState.page === 'session-management') {
+        setActiveSessionManagementWorkspace(hashState.sessionManagementWorkspace ?? 'codex');
       }
       if (hashState.page === 'usage-desk') {
         setActiveUsageDeskWorkspace(hashState.usageDeskWorkspace ?? 'codex');
@@ -139,6 +169,22 @@ function AppShell() {
     let mounted = true;
 
     async function loadInitialState() {
+      if (hasPreviewMode()) {
+        if (!mounted) return;
+        setVersion('preview');
+        setReleaseLabel('preview');
+        setCanApplyUpdate(false);
+        setUsesNativeUpdaterUI(false);
+        setSidecarStatus({
+          code: 'running',
+          port: 18317,
+          message: 'preview runtime',
+          version: 'preview',
+          startedAtUnix: Math.floor(Date.now() / 1000),
+        });
+        return;
+      }
+
       try {
         const [currentVersion, currentReleaseLabel, currentStatus, currentCanApplyUpdate, currentUsesNativeUpdaterUI] = await Promise.all([
           trackRequest('GetVersion', { args: [] }, () => GetVersion()),
@@ -162,6 +208,12 @@ function AppShell() {
 
     loadInitialState();
 
+    if (hasPreviewMode()) {
+      return () => {
+        mounted = false;
+      };
+    }
+
     const offStatus = EventsOn('sidecar:status', (status: SidecarStatus) => {
       setSidecarStatus(status);
     });
@@ -182,6 +234,12 @@ function AppShell() {
     }
     if (activePage === 'debug') {
       return <DebugPage />;
+    }
+    if (activePage === 'session-management') {
+      return <SessionManagementPage workspace={activeSessionManagementWorkspace} />;
+    }
+    if (activePage === 'vendor-status') {
+      return <VendorStatusPage />;
     }
     if (activePage === 'proxy-pool') {
       return <ProxyPoolPage />;
@@ -205,6 +263,7 @@ function AppShell() {
   }, [
     activeAccountWorkspace,
     activePage,
+    activeSessionManagementWorkspace,
     activeUsageDeskWorkspace,
     availableRelease,
     canApplyUpdate,
@@ -225,6 +284,8 @@ function AppShell() {
         setActivePage={setActivePage}
         activeAccountWorkspace={activeAccountWorkspace}
         setActiveAccountWorkspace={setActiveAccountWorkspace}
+        activeSessionManagementWorkspace={activeSessionManagementWorkspace}
+        setActiveSessionManagementWorkspace={setActiveSessionManagementWorkspace}
         activeUsageDeskWorkspace={activeUsageDeskWorkspace}
         setActiveUsageDeskWorkspace={setActiveUsageDeskWorkspace}
         releaseLabel={releaseLabel}

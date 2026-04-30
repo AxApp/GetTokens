@@ -182,6 +182,7 @@ test('buildUsageDeskProjectedSnapshot aggregates total tokens and minute rows an
   assert.equal(snapshot.selectedDayKey, '2026-04-28');
   assert.equal(snapshot.dailyPoints[1].requests, 2);
   assert.equal(snapshot.dailyPoints[1].totalTokens, 600);
+  assert.equal(snapshot.dailyPoints[1].model, 'gpt-5-codex');
   assert.equal(snapshot.dailyPoints[1].inputTokens, 500);
   assert.equal(snapshot.dailyPoints[1].cachedInputTokens, 170);
   assert.equal(snapshot.dailyPoints[1].outputTokens, 100);
@@ -225,6 +226,74 @@ test('buildUsageDeskProjectedSnapshot merges multiple details from the same minu
 
   assert.equal(snapshot.minuteRows.length, 1);
   assert.equal(snapshot.minuteRows[0].timeLabel, '14:20');
+  assert.equal(snapshot.minuteRows[0].value, '420');
+  assert.equal(snapshot.minuteRows[0].requests, '2 次');
+  assert.equal(snapshot.minuteRows[0].inputTokens, '350');
+  assert.equal(snapshot.minuteRows[0].cachedInputTokens, '140');
+  assert.equal(snapshot.minuteRows[0].outputTokens, '70');
+});
+
+test('buildUsageDeskProjectedSnapshot marks additional day-level models behind the dominant model', () => {
+  const snapshot = buildUsageDeskProjectedSnapshot({
+    details: [
+      {
+        timestamp: '2026-04-28T06:20:00.000Z',
+        provider: 'codex',
+        sourceKind: 'local_projected',
+        model: 'gpt-5-codex',
+        inputTokens: 300,
+        cachedInputTokens: 120,
+        outputTokens: 60,
+        requestCount: 1,
+      },
+      {
+        timestamp: '2026-04-28T07:20:20.000Z',
+        provider: 'codex',
+        sourceKind: 'local_projected',
+        model: 'o3',
+        inputTokens: 50,
+        cachedInputTokens: 20,
+        outputTokens: 10,
+        requestCount: 1,
+      },
+    ],
+  });
+
+  assert.equal(snapshot.dailyPoints.length, 1);
+  assert.equal(snapshot.dailyPoints[0].model, 'gpt-5-codex,*');
+});
+
+test('buildUsageDeskProjectedSnapshot shows the dominant model and marks additional models in the same minute', () => {
+  const snapshot = buildUsageDeskProjectedSnapshot({
+    details: [
+      {
+        timestamp: '2026-04-28T06:20:00.000Z',
+        provider: 'codex',
+        sourceKind: 'local_projected',
+        model: 'gpt-5-codex',
+        inputTokens: 300,
+        cachedInputTokens: 120,
+        outputTokens: 60,
+        requestCount: 1,
+      },
+      {
+        timestamp: '2026-04-28T06:20:20.000Z',
+        provider: 'codex',
+        sourceKind: 'local_projected',
+        model: 'o3',
+        inputTokens: 50,
+        cachedInputTokens: 20,
+        outputTokens: 10,
+        requestCount: 1,
+      },
+    ],
+  });
+
+  assert.equal(snapshot.minutePoints.length, 1);
+  assert.equal(snapshot.minutePoints[0].totalTokens, 420);
+  assert.equal(snapshot.minuteRows.length, 1);
+  assert.equal(snapshot.minuteRows[0].timeLabel, '14:20');
+  assert.equal(snapshot.minuteRows[0].model, 'gpt-5-codex,*');
   assert.equal(snapshot.minuteRows[0].value, '420');
   assert.equal(snapshot.minuteRows[0].requests, '2 次');
   assert.equal(snapshot.minuteRows[0].inputTokens, '350');

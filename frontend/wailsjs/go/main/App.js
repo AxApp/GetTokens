@@ -46,6 +46,14 @@ export function FetchOpenAICompatibleProviderModels(arg1) {
   return window['go']['main']['App']['FetchOpenAICompatibleProviderModels'](arg1);
 }
 
+export function FetchProxySubscription(arg1) {
+  return window['go']['main']['App']['FetchProxySubscription'](arg1);
+}
+
+export function FetchVendorStatusRSS(arg1) {
+  return window['go']['main']['App']['FetchVendorStatusRSS'](arg1);
+}
+
 export function FinalizeCodexOAuth(arg1) {
   return window['go']['main']['App']['FinalizeCodexOAuth'](arg1);
 }
@@ -60,6 +68,14 @@ export function GetCodexLocalUsage() {
 
 export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
+}
+
+export function GetCodexSessionDetail(arg1) {
+  return window['go']['main']['App']['GetCodexSessionDetail'](arg1);
+}
+
+export function GetCodexSessionManagementSnapshot() {
+  return window['go']['main']['App']['GetCodexSessionManagementSnapshot']();
 }
 
 export function GetLocalProjectedUsageSettings() {
@@ -102,6 +118,10 @@ export function ListAuthFiles() {
   return window['go']['main']['App']['ListAuthFiles']();
 }
 
+export function ListEnvironmentProxyEntries() {
+  return window['go']['main']['App']['ListEnvironmentProxyEntries']();
+}
+
 export function ListOpenAICompatibleProviders() {
   return window['go']['main']['App']['ListOpenAICompatibleProviders']();
 }
@@ -110,12 +130,20 @@ export function NormalizeAuthFileContent(arg1) {
   return window['go']['main']['App']['NormalizeAuthFileContent'](arg1);
 }
 
+export function ProbeProxyNode(arg1) {
+  return window['go']['main']['App']['ProbeProxyNode'](arg1);
+}
+
 export function RebuildCodexLocalUsage() {
   return window['go']['main']['App']['RebuildCodexLocalUsage']();
 }
 
 export function RefreshCodexLocalUsage() {
   return window['go']['main']['App']['RefreshCodexLocalUsage']();
+}
+
+export function RefreshCodexSessionManagementSnapshot() {
+  return window['go']['main']['App']['RefreshCodexSessionManagementSnapshot']();
 }
 
 export function SetAccountDisabled(arg1, arg2) {

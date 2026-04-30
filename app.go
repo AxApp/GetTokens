@@ -2,6 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/sidecar"
@@ -269,6 +273,86 @@ type LocalProjectedUsageSettings struct {
 	RefreshIntervalMinutes int `json:"refreshIntervalMinutes"`
 }
 
+type SessionManagementSnapshot struct {
+	ProjectCount         int                              `json:"projectCount"`
+	SessionCount         int                              `json:"sessionCount"`
+	ActiveSessionCount   int                              `json:"activeSessionCount"`
+	ArchivedSessionCount int                              `json:"archivedSessionCount"`
+	LastScanAt           string                           `json:"lastScanAt"`
+	ProviderCounts       map[string]int                   `json:"providerCounts"`
+	Projects             []SessionManagementProjectRecord `json:"projects"`
+}
+
+type SessionManagementProviderCount struct {
+	Provider     string `json:"provider"`
+	SessionCount int    `json:"sessionCount"`
+}
+
+type SessionManagementProjectRecord struct {
+	ID                   string                           `json:"id"`
+	Name                 string                           `json:"name"`
+	ProviderCounts       map[string]int                   `json:"providerCounts,omitempty"`
+	SessionCount         int                              `json:"sessionCount"`
+	ActiveSessionCount   int                              `json:"activeSessionCount"`
+	ArchivedSessionCount int                              `json:"archivedSessionCount"`
+	LastActiveAt         string                           `json:"lastActiveAt"`
+	ProviderSummary      string                           `json:"providerSummary"`
+	Sessions             []SessionManagementSessionRecord `json:"sessions"`
+}
+
+type SessionManagementSessionRecord struct {
+	ID                  string `json:"id"`
+	SessionID           string `json:"sessionID"`
+	ProjectID           string `json:"projectID"`
+	ProjectName         string `json:"projectName"`
+	Title               string `json:"title"`
+	Status              string `json:"status"`
+	Archived            bool   `json:"archived"`
+	MessageCount        int    `json:"messageCount"`
+	RoleSummary         string `json:"roleSummary"`
+	StartedAt           string `json:"startedAt"`
+	UpdatedAt           string `json:"updatedAt"`
+	FileLabel           string `json:"fileLabel"`
+	Summary             string `json:"summary"`
+	Preview             string `json:"preview"`
+	Topic               string `json:"topic"`
+	CurrentMessageLabel string `json:"currentMessageLabel"`
+	Provider            string `json:"provider"`
+	Model               string `json:"model,omitempty"`
+}
+
+type SessionManagementSessionDetail struct {
+	SessionID           string                           `json:"sessionID"`
+	ProjectID           string                           `json:"projectID"`
+	ProjectName         string                           `json:"projectName"`
+	Title               string                           `json:"title"`
+	Status              string                           `json:"status"`
+	Archived            bool                             `json:"archived"`
+	FileLabel           string                           `json:"fileLabel"`
+	MessageCount        int                              `json:"messageCount"`
+	Masked              bool                             `json:"masked"`
+	CurrentMessageLabel string                           `json:"currentMessageLabel"`
+	RoleSummary         string                           `json:"roleSummary"`
+	Topic               string                           `json:"topic"`
+	Preview             string                           `json:"preview"`
+	Provider            string                           `json:"provider"`
+	Model               string                           `json:"model,omitempty"`
+	StartedAt           string                           `json:"startedAt"`
+	UpdatedAt           string                           `json:"updatedAt"`
+	Messages            []SessionManagementMessageRecord `json:"messages"`
+}
+
+type SessionManagementMessageRecord struct {
+	ID        string `json:"id"`
+	Role      string `json:"role"`
+	TimeLabel string `json:"timeLabel"`
+	Timestamp string `json:"timestamp,omitempty"`
+	Title     string `json:"title"`
+	Summary   string `json:"summary"`
+	Content   string `json:"content"`
+	Truncated bool   `json:"truncated,omitempty"`
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -309,6 +393,34 @@ func (a *App) CheckUpdate() (*updater.ReleaseInfo, error) {
 
 func (a *App) ApplyUpdate() error {
 	return a.core.ApplyUpdate()
+}
+
+func (a *App) FetchVendorStatusRSS(url string) (string, error) {
+	client := &http.Client{Timeout: 15 * time.Second}
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Accept", "application/rss+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.5")
+	req.Header.Set("User-Agent", "GetTokens Vendor Status/1.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return "", fmt.Errorf("vendor status rss returned %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }
 
 func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
@@ -426,6 +538,30 @@ func (a *App) RebuildCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 		return nil, err
 	}
 	return mapLocalProjectedUsageResponse(result), nil
+}
+
+func (a *App) GetCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	result, err := a.core.GetCodexSessionManagementSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementSnapshot(result), nil
+}
+
+func (a *App) RefreshCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	result, err := a.core.RefreshCodexSessionManagementSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementSnapshot(result), nil
+}
+
+func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSessionDetail, error) {
+	result, err := a.core.GetCodexSessionDetail(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementSessionDetail(result), nil
 }
 
 func (a *App) GetLocalProjectedUsageSettings() (*LocalProjectedUsageSettings, error) {
@@ -793,6 +929,117 @@ func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse
 		FileMissingFiles: result.FileMissingFiles,
 		Details:          details,
 	}
+}
+
+func mapSessionManagementSnapshot(result *wailsapp.SessionManagementSnapshot) *SessionManagementSnapshot {
+	if result == nil {
+		return &SessionManagementSnapshot{
+			ProviderCounts: map[string]int{},
+			Projects:       []SessionManagementProjectRecord{},
+		}
+	}
+
+	projects := make([]SessionManagementProjectRecord, 0, len(result.Projects))
+	for _, project := range result.Projects {
+		sessions := make([]SessionManagementSessionRecord, 0, len(project.Sessions))
+		for _, session := range project.Sessions {
+			sessions = append(sessions, SessionManagementSessionRecord{
+				ID:                  session.ID,
+				SessionID:           session.SessionID,
+				ProjectID:           session.ProjectID,
+				ProjectName:         session.ProjectName,
+				Title:               session.Title,
+				Status:              session.Status,
+				Archived:            session.Archived,
+				MessageCount:        session.MessageCount,
+				RoleSummary:         session.RoleSummary,
+				StartedAt:           session.StartedAt,
+				UpdatedAt:           session.UpdatedAt,
+				FileLabel:           session.FileLabel,
+				Summary:             session.Summary,
+				Preview:             session.Preview,
+				Topic:               session.Topic,
+				CurrentMessageLabel: session.CurrentMessageLabel,
+				Provider:            session.Provider,
+				Model:               session.Model,
+			})
+		}
+		projects = append(projects, SessionManagementProjectRecord{
+			ID:                   project.ID,
+			Name:                 project.Name,
+			ProviderCounts:       cloneProviderCountMap(project.ProviderCounts),
+			SessionCount:         project.SessionCount,
+			ActiveSessionCount:   project.ActiveSessionCount,
+			ArchivedSessionCount: project.ArchivedSessionCount,
+			LastActiveAt:         project.LastActiveAt,
+			ProviderSummary:      project.ProviderSummary,
+			Sessions:             sessions,
+		})
+	}
+
+	return &SessionManagementSnapshot{
+		ProjectCount:         result.ProjectCount,
+		SessionCount:         result.SessionCount,
+		ActiveSessionCount:   result.ActiveSessionCount,
+		ArchivedSessionCount: result.ArchivedSessionCount,
+		LastScanAt:           result.LastScanAt,
+		ProviderCounts:       cloneProviderCountMap(result.ProviderCounts),
+		Projects:             projects,
+	}
+}
+
+func mapSessionManagementSessionDetail(result *wailsapp.SessionManagementSessionDetail) *SessionManagementSessionDetail {
+	if result == nil {
+		return &SessionManagementSessionDetail{
+			Messages: []SessionManagementMessageRecord{},
+		}
+	}
+
+	messages := make([]SessionManagementMessageRecord, 0, len(result.Messages))
+	for _, message := range result.Messages {
+		messages = append(messages, SessionManagementMessageRecord{
+			ID:        message.ID,
+			Role:      message.Role,
+			TimeLabel: message.TimeLabel,
+			Timestamp: message.Timestamp,
+			Title:     message.Title,
+			Summary:   message.Summary,
+			Content:   message.Content,
+			Truncated: message.Truncated,
+		})
+	}
+
+	return &SessionManagementSessionDetail{
+		SessionID:           result.SessionID,
+		ProjectID:           result.ProjectID,
+		ProjectName:         result.ProjectName,
+		Title:               result.Title,
+		Status:              result.Status,
+		Archived:            result.Archived,
+		FileLabel:           result.FileLabel,
+		MessageCount:        result.MessageCount,
+		Masked:              result.Masked,
+		CurrentMessageLabel: result.CurrentMessageLabel,
+		RoleSummary:         result.RoleSummary,
+		Topic:               result.Topic,
+		Preview:             result.Preview,
+		Provider:            result.Provider,
+		Model:               result.Model,
+		StartedAt:           result.StartedAt,
+		UpdatedAt:           result.UpdatedAt,
+		Messages:            messages,
+	}
+}
+
+func cloneProviderCountMap(source map[string]int) map[string]int {
+	if len(source) == 0 {
+		return map[string]int{}
+	}
+	cloned := make(map[string]int, len(source))
+	for provider, count := range source {
+		cloned[provider] = count
+	}
+	return cloned
 }
 
 func mapOpenAICompatibleModels(items []wailsapp.OpenAICompatibleModel) []OpenAICompatibleModel {

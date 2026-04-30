@@ -5,27 +5,32 @@ import {
   ACTIVE_PAGE_STORAGE_KEY,
   ACCOUNT_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_WORKSPACE_STORAGE_KEY,
+  SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_SOURCE_STORAGE_KEY,
   USAGE_DESK_RANGE_STORAGE_KEY,
   buildFrameHash,
   isAccountWorkspace,
   isAppPage,
+  isSessionManagementWorkspace,
   isUsageDeskRangeStorageValue,
   isUsageDeskSourceStorageValue,
   isUsageDeskWorkspace,
   persistAccountWorkspace,
   persistActivePage,
+  persistSessionManagementWorkspace,
   persistUsageDeskRange,
   persistUsageDeskSource,
   persistUsageDeskWorkspace,
   readFrameHashState,
   readStoredAccountWorkspace,
   readStoredActivePage,
+  readStoredSessionManagementWorkspace,
   readStoredUsageDeskRange,
   readStoredUsageDeskSource,
   readStoredUsageDeskWorkspace,
   resolveInitialAccountWorkspace,
   resolveInitialActivePage,
+  resolveInitialSessionManagementWorkspace,
   resolveInitialUsageDeskRange,
   resolveInitialUsageDeskSource,
   resolveInitialUsageDeskWorkspace,
@@ -34,6 +39,8 @@ import {
 test('isAppPage only accepts known sidebar pages', () => {
   assert.equal(isAppPage('status'), true);
   assert.equal(isAppPage('accounts'), true);
+  assert.equal(isAppPage('session-management'), true);
+  assert.equal(isAppPage('vendor-status'), true);
   assert.equal(isAppPage('proxy-pool'), true);
   assert.equal(isAppPage('usage-desk'), true);
   assert.equal(isAppPage('settings'), true);
@@ -44,6 +51,8 @@ test('isAppPage only accepts known sidebar pages', () => {
 
 test('resolveInitialActivePage falls back to accounts for invalid values', () => {
   assert.equal(resolveInitialActivePage('settings'), 'settings');
+  assert.equal(resolveInitialActivePage('session-management'), 'session-management');
+  assert.equal(resolveInitialActivePage('vendor-status'), 'vendor-status');
   assert.equal(resolveInitialActivePage('proxy-pool'), 'proxy-pool');
   assert.equal(resolveInitialActivePage('unknown'), 'accounts');
   assert.equal(resolveInitialActivePage(null), 'accounts');
@@ -53,11 +62,11 @@ test('readStoredActivePage restores the last valid page from storage', () => {
   const storage = {
     getItem(key) {
       assert.equal(key, ACTIVE_PAGE_STORAGE_KEY);
-      return 'proxy-pool';
+      return 'session-management';
     },
   };
 
-  assert.equal(readStoredActivePage(storage), 'proxy-pool');
+  assert.equal(readStoredActivePage(storage), 'session-management');
 });
 
 test('readStoredActivePage falls back when storage is unavailable or invalid', () => {
@@ -80,9 +89,9 @@ test('persistActivePage writes the selected page to storage', () => {
     },
   };
 
-  persistActivePage(storage, 'proxy-pool');
+  persistActivePage(storage, 'session-management');
 
-  assert.deepEqual(writes, [[ACTIVE_PAGE_STORAGE_KEY, 'proxy-pool']]);
+  assert.deepEqual(writes, [[ACTIVE_PAGE_STORAGE_KEY, 'session-management']]);
 });
 
 test('isAccountWorkspace only accepts known account subpages', () => {
@@ -122,6 +131,42 @@ test('persistAccountWorkspace writes the selected workspace to storage', () => {
   persistAccountWorkspace(storage, 'codex');
 
   assert.deepEqual(writes, [[ACCOUNT_WORKSPACE_STORAGE_KEY, 'codex']]);
+});
+
+test('isSessionManagementWorkspace only accepts known session management subpages', () => {
+  assert.equal(isSessionManagementWorkspace('codex'), true);
+  assert.equal(isSessionManagementWorkspace('unknown'), false);
+  assert.equal(isSessionManagementWorkspace(null), false);
+});
+
+test('resolveInitialSessionManagementWorkspace falls back to codex for invalid values', () => {
+  assert.equal(resolveInitialSessionManagementWorkspace('codex'), 'codex');
+  assert.equal(resolveInitialSessionManagementWorkspace('unknown'), 'codex');
+  assert.equal(resolveInitialSessionManagementWorkspace(null), 'codex');
+});
+
+test('readStoredSessionManagementWorkspace restores the last valid workspace from storage', () => {
+  const storage = {
+    getItem(key) {
+      assert.equal(key, SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY);
+      return 'codex';
+    },
+  };
+
+  assert.equal(readStoredSessionManagementWorkspace(storage), 'codex');
+});
+
+test('persistSessionManagementWorkspace writes the selected workspace to storage', () => {
+  const writes = [];
+  const storage = {
+    setItem(key, value) {
+      writes.push([key, value]);
+    },
+  };
+
+  persistSessionManagementWorkspace(storage, 'codex');
+
+  assert.deepEqual(writes, [[SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY, 'codex']]);
 });
 
 test('isUsageDeskWorkspace only accepts known usage desk subpages', () => {
@@ -243,6 +288,8 @@ test('persistUsageDeskRange writes the selected range to storage', () => {
 
 test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=status'), { page: 'status' });
+  assert.deepEqual(readFrameHashState('#frame=session-management'), { page: 'session-management', sessionManagementWorkspace: 'codex' });
+  assert.deepEqual(readFrameHashState('#frame=vendor-status'), { page: 'vendor-status' });
   assert.deepEqual(readFrameHashState('#frame=proxy-pool'), { page: 'proxy-pool' });
   assert.deepEqual(readFrameHashState('#frame=proxy-pool&workspace=codex'), { page: 'proxy-pool' });
   assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'usage-desk', usageDeskWorkspace: 'codex' });
@@ -275,6 +322,17 @@ test('readFrameHashState parses usage desk workspace and falls back to codex', (
   });
 });
 
+test('readFrameHashState parses session management workspace and falls back to codex', () => {
+  assert.deepEqual(readFrameHashState('#frame=session-management&workspace=codex'), {
+    page: 'session-management',
+    sessionManagementWorkspace: 'codex',
+  });
+  assert.deepEqual(readFrameHashState('#frame=session-management&workspace=unknown'), {
+    page: 'session-management',
+    sessionManagementWorkspace: 'codex',
+  });
+});
+
 test('readFrameHashState returns null for invalid hashes', () => {
   assert.equal(readFrameHashState(''), null);
   assert.equal(readFrameHashState('#workspace=codex'), null);
@@ -283,13 +341,15 @@ test('readFrameHashState returns null for invalid hashes', () => {
 });
 
 test('buildFrameHash serializes page and optional accounts workspace', () => {
-  assert.equal(buildFrameHash('status', 'all', 'codex'), '#frame=status');
-  assert.equal(buildFrameHash('proxy-pool', 'all', 'codex'), '#frame=proxy-pool');
-  assert.equal(buildFrameHash('usage-desk', 'all', 'codex'), '#frame=usage-desk');
-  assert.equal(buildFrameHash('usage-desk', 'all', 'gemini'), '#frame=usage-desk&workspace=gemini');
-  assert.equal(buildFrameHash('accounts', 'all', 'codex'), '#frame=accounts');
+  assert.equal(buildFrameHash('status', 'all', 'codex', 'codex'), '#frame=status');
+  assert.equal(buildFrameHash('session-management', 'all', 'codex', 'codex'), '#frame=session-management');
+  assert.equal(buildFrameHash('vendor-status', 'all', 'codex', 'codex'), '#frame=vendor-status');
+  assert.equal(buildFrameHash('proxy-pool', 'all', 'codex', 'codex'), '#frame=proxy-pool');
+  assert.equal(buildFrameHash('usage-desk', 'all', 'codex', 'codex'), '#frame=usage-desk');
+  assert.equal(buildFrameHash('usage-desk', 'all', 'codex', 'gemini'), '#frame=usage-desk&workspace=gemini');
+  assert.equal(buildFrameHash('accounts', 'all', 'codex', 'codex'), '#frame=accounts');
   assert.equal(
-    buildFrameHash('accounts', 'openai-compatible', 'codex'),
+    buildFrameHash('accounts', 'openai-compatible', 'codex', 'codex'),
     '#frame=accounts&workspace=openai-compatible',
   );
 });

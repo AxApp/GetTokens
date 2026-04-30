@@ -1,5 +1,5 @@
-import SessionManagementFeature from '../features/session-management/SessionManagementFeature';
 import type { SessionManagementWorkspace } from '../types';
+import SessionManagementFeature from '../features/session-management/SessionManagementFeature';
 
 interface SessionManagementPageProps {
   workspace: SessionManagementWorkspace;

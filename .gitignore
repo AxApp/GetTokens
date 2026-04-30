@@ -1,6 +1,7 @@
 docs-*/
 !docs-linhay/
 !docs-linhay/**
+docs-linhay/spaces/*/screenshots/
 build/*
 !build/appicon.png
 !build/appicon.svg

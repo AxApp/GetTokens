@@ -241,6 +241,20 @@ export namespace main {
 	        this.contentBase64 = source["contentBase64"];
 	    }
 	}
+	export class EnvironmentProxyEntry {
+	    source: string;
+	    proxyUrl: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EnvironmentProxyEntry(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.source = source["source"];
+	        this.proxyUrl = source["proxyUrl"];
+	    }
+	}
 	export class FetchOpenAICompatibleProviderModelsInput {
 	    baseUrl: string;
 	    apiKey: string;
@@ -306,6 +320,36 @@ export namespace main {
 		    }
 		    return a;
 		}
+	}
+	export class FetchProxySubscriptionInput {
+	    url: string;
+	    sourceLabel?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchProxySubscriptionInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.sourceLabel = source["sourceLabel"];
+	    }
+	}
+	export class FetchProxySubscriptionResult {
+	    url: string;
+	    sourceLabel: string;
+	    content: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FetchProxySubscriptionResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.url = source["url"];
+	        this.sourceLabel = source["sourceLabel"];
+	        this.content = source["content"];
+	    }
 	}
 	export class LocalProjectedUsageDetail {
 	    timestamp: string;
@@ -470,6 +514,44 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class ProbeProxyNodeInput {
+	    proxyUrl: string;
+	    targetUrl?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProbeProxyNodeInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.proxyUrl = source["proxyUrl"];
+	        this.targetUrl = source["targetUrl"];
+	    }
+	}
+	export class ProbeProxyNodeResult {
+	    proxyUrl: string;
+	    targetUrl: string;
+	    success: boolean;
+	    statusCode?: number;
+	    latencyMs: number;
+	    checkedAt: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ProbeProxyNodeResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.proxyUrl = source["proxyUrl"];
+	        this.targetUrl = source["targetUrl"];
+	        this.success = source["success"];
+	        this.statusCode = source["statusCode"];
+	        this.latencyMs = source["latencyMs"];
+	        this.checkedAt = source["checkedAt"];
+	        this.message = source["message"];
+	    }
+	}
 	export class RelayLocalApplyResult {
 	    codexHomePath: string;
 	    authFilePath: string;
@@ -583,6 +665,231 @@ export namespace main {
 		}
 	}
 	
+	export class SessionManagementMessageRecord {
+	    id: string;
+	    role: string;
+	    timeLabel: string;
+	    timestamp?: string;
+	    title: string;
+	    summary: string;
+	    content: string;
+	    truncated?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementMessageRecord(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.role = source["role"];
+	        this.timeLabel = source["timeLabel"];
+	        this.timestamp = source["timestamp"];
+	        this.title = source["title"];
+	        this.summary = source["summary"];
+	        this.content = source["content"];
+	        this.truncated = source["truncated"];
+	    }
+	}
+	export class SessionManagementSessionRecord {
+	    id: string;
+	    sessionID: string;
+	    projectID: string;
+	    projectName: string;
+	    title: string;
+	    status: string;
+	    archived: boolean;
+	    messageCount: number;
+	    roleSummary: string;
+	    startedAt: string;
+	    updatedAt: string;
+	    fileLabel: string;
+	    summary: string;
+	    preview: string;
+	    topic: string;
+	    currentMessageLabel: string;
+	    provider: string;
+	    model?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementSessionRecord(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.sessionID = source["sessionID"];
+	        this.projectID = source["projectID"];
+	        this.projectName = source["projectName"];
+	        this.title = source["title"];
+	        this.status = source["status"];
+	        this.archived = source["archived"];
+	        this.messageCount = source["messageCount"];
+	        this.roleSummary = source["roleSummary"];
+	        this.startedAt = source["startedAt"];
+	        this.updatedAt = source["updatedAt"];
+	        this.fileLabel = source["fileLabel"];
+	        this.summary = source["summary"];
+	        this.preview = source["preview"];
+	        this.topic = source["topic"];
+	        this.currentMessageLabel = source["currentMessageLabel"];
+	        this.provider = source["provider"];
+	        this.model = source["model"];
+	    }
+	}
+	export class SessionManagementProjectRecord {
+	    id: string;
+	    name: string;
+	    providerCounts?: Record<string, number>;
+	    sessionCount: number;
+	    activeSessionCount: number;
+	    archivedSessionCount: number;
+	    lastActiveAt: string;
+	    providerSummary: string;
+	    sessions: SessionManagementSessionRecord[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementProjectRecord(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.providerCounts = source["providerCounts"];
+	        this.sessionCount = source["sessionCount"];
+	        this.activeSessionCount = source["activeSessionCount"];
+	        this.archivedSessionCount = source["archivedSessionCount"];
+	        this.lastActiveAt = source["lastActiveAt"];
+	        this.providerSummary = source["providerSummary"];
+	        this.sessions = this.convertValues(source["sessions"], SessionManagementSessionRecord);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SessionManagementSessionDetail {
+	    sessionID: string;
+	    projectID: string;
+	    projectName: string;
+	    title: string;
+	    status: string;
+	    archived: boolean;
+	    fileLabel: string;
+	    messageCount: number;
+	    masked: boolean;
+	    currentMessageLabel: string;
+	    roleSummary: string;
+	    topic: string;
+	    preview: string;
+	    provider: string;
+	    model?: string;
+	    startedAt: string;
+	    updatedAt: string;
+	    messages: SessionManagementMessageRecord[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementSessionDetail(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionID = source["sessionID"];
+	        this.projectID = source["projectID"];
+	        this.projectName = source["projectName"];
+	        this.title = source["title"];
+	        this.status = source["status"];
+	        this.archived = source["archived"];
+	        this.fileLabel = source["fileLabel"];
+	        this.messageCount = source["messageCount"];
+	        this.masked = source["masked"];
+	        this.currentMessageLabel = source["currentMessageLabel"];
+	        this.roleSummary = source["roleSummary"];
+	        this.topic = source["topic"];
+	        this.preview = source["preview"];
+	        this.provider = source["provider"];
+	        this.model = source["model"];
+	        this.startedAt = source["startedAt"];
+	        this.updatedAt = source["updatedAt"];
+	        this.messages = this.convertValues(source["messages"], SessionManagementMessageRecord);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class SessionManagementSnapshot {
+	    projectCount: number;
+	    sessionCount: number;
+	    activeSessionCount: number;
+	    archivedSessionCount: number;
+	    lastScanAt: string;
+	    providerCounts: Record<string, number>;
+	    projects: SessionManagementProjectRecord[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.projectCount = source["projectCount"];
+	        this.sessionCount = source["sessionCount"];
+	        this.activeSessionCount = source["activeSessionCount"];
+	        this.archivedSessionCount = source["archivedSessionCount"];
+	        this.lastScanAt = source["lastScanAt"];
+	        this.providerCounts = source["providerCounts"];
+	        this.projects = this.convertValues(source["projects"], SessionManagementProjectRecord);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class UpdateAccountPriorityInput {
 	    id: string;
 	    priority?: number;

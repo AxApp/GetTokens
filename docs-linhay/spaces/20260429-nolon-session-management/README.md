@@ -28,11 +28,11 @@
 5. 相关设计文档、测试与 autoresearch 归档
 6. 基于上述事实产出的 GetTokens 视角设计稿与结论整理
 
-## 当前非目标
+## 非目标
 
-1. 当前这一步不接真实 session 数据流、扫描链路或 rewrite 执行。
-2. 当前这一步不直接复刻 `nolon` 的整套会话页 UI。
-3. 当前这一步不把 `Codex Sessions` 与 `Codex Usage` 完全混成一个问题，只先建立导航入口与页面骨架。
+1. 本轮不接真实 rewrite 执行链或 provider groups 第二页。
+2. 本轮不直接复刻 `nolon` 的整套会话页 UI。
+3. 本轮不把 `Codex Sessions` 与 `Codex Usage` 完全混成一个问题，只在必要处讨论它们共享的数据链路。
 
 ## 验收标准
 
@@ -40,7 +40,6 @@
 2. 能列出当前已实现的核心会话管理功能，而不是泛泛而谈。
 3. 能说明 `rewrite` 为什么是文件与数据库双写的一条完整链路。
 4. 已在本 space 下产出研究纪要、autoresearch 归档和单一设计稿入口。
-5. GetTokens 已先落第一步前端接入：侧边栏入口、workspace hash 与占位页骨架可用。
 
 ## 当前裁定
 
@@ -60,19 +59,30 @@
 1. 这轮研究已经足够支撑“完整分析完成”的判断。
 2. 更长的代码证据、delta 语义、去重语义、层级矩阵和演进时间线，统一下沉到 `plans/20260429-nolon-session-management-autoresearch-summary-v01.md`。
 3. 当前视觉交接只保留一个 HTML 主入口，不再拆分 `option-a/b/c` 平行文件。
+4. 当前设计稿已经收口成可交接状态，信息架构与弹层边界以执行交接文档为准。
+5. 当前工程第一页已接入真实 rollout 数据：项目列表、项目会话列表、会话详情弹层都已由 Wails bridge 读取本机 session 文件，不再停留在静态 mock。
+6. 当前真实第一页仍明确收口：只做 `Codex Sessions`，不进入 `provider groups` 第二页，也不提前接入真实 rewrite 执行。
+7. 当前已补浏览器预览模式：非 Wails 环境下可通过 `?preview=session-management` 进入稳定预览态，并可用 `detail=<session-id>` 直接打开详情弹层做截图验收。
 
-### 当前实现进度
-1. 已把设计稿里的侧边栏层级先接入 GetTokens：
-   - 顶层 `会话管理`
-   - 子项 `codex sessions`
-   - 子项 `provider groups`
-2. 已接通 `session-management` 页面 hash、workspace fallback 与本地持久化，不是纯视觉假入口。
-3. 当前正文仍是第一阶段占位页，只用于承接导航结构和后续真实页面实现。
+### 当前页面结构裁定
+1. 左栏是 `项目列表`，不是会话列表。
+2. 右栏是当前项目下的 `项目会话` 列表，仍是标准纵向列表。
+3. `项目会话` 列表头右侧保留 `全部 / 活跃 / 已归档` 三个筛选项。
+4. 会话本身按“一个会话文件”理解，不在主页面右侧常驻展开详情。
+5. 点击某条会话后，通过弹层查看该会话文件内的 `消息列表`。
+6. 弹层主体是“一条消息一行”的消息列表，其余说明信息全部压缩到弹层顶部摘要区。
+7. 弹层里展示的消息样本来自本机真实 rollout 文件，并已做脱敏处理；不展示绝对路径、会话 id、源码定位和环境细节。
 
 ## 设计稿入口
 
 - 本期设计稿：`design-preview.html`
 - 约束：本期只保留这一个 HTML 主入口；当前已经从模块比较稿收口成单页真实页面稿，用于判断整体主次、信息密度和工作台气质。
+- 执行交接：`plans/20260430-nolon-session-management-design-handoff-v01.md`
+
+## 验收截图
+
+- [项目会话页截图](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/screenshots/20260430/session-management/20260430-session-management-project-sessions-page-baseline-v01.png)
+- [会话详情弹层截图](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/screenshots/20260430/session-management/20260430-session-management-session-detail-modal-baseline-v01.png)
 
 ## Worktree 映射
 
@@ -82,6 +92,7 @@
 ## 相关链接
 
 - [design-preview.html](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/design-preview.html)
+- [design handoff v01](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/plans/20260430-nolon-session-management-design-handoff-v01.md)
 - [debate v01](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/debate/20260429/nolon-session-management/20260429-nolon-session-management-v01.md)
 - [autoresearch summary v01](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/plans/20260429-nolon-session-management-autoresearch-summary-v01.md)
 - [autoresearch results](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260429-nolon-session-management/plans/20260429-nolon-session-management-autoresearch-results-v01.tsv)
@@ -95,5 +106,5 @@
 
 ## 当前状态
 
-- 状态：research-complete-first-shell-landed
-- 最近更新：2026-04-29
+- 状态：implementation-complete-first-page-real-data-previewable
+- 最近更新：2026-04-30

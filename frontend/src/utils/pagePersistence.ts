@@ -1,13 +1,24 @@
-import type { AccountWorkspace, AppPage, UsageDeskWorkspace } from '../types';
+import type { AccountWorkspace, AppPage, SessionManagementWorkspace, UsageDeskWorkspace } from '../types';
 
 export const ACTIVE_PAGE_STORAGE_KEY = 'gettokens.activePage';
 export const ACCOUNT_WORKSPACE_STORAGE_KEY = 'gettokens.accounts.workspace';
+export const SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY = 'gettokens.sessionManagement.workspace';
 export const USAGE_DESK_WORKSPACE_STORAGE_KEY = 'gettokens.usageDesk.workspace';
 export const USAGE_DESK_SOURCE_STORAGE_KEY = 'gettokens.usageDesk.source';
 export const USAGE_DESK_RANGE_STORAGE_KEY = 'gettokens.usageDesk.range';
 
-const appPages: ReadonlySet<AppPage> = new Set(['status', 'accounts', 'proxy-pool', 'usage-desk', 'settings', 'debug']);
+const appPages: ReadonlySet<AppPage> = new Set([
+  'status',
+  'accounts',
+  'session-management',
+  'vendor-status',
+  'proxy-pool',
+  'usage-desk',
+  'settings',
+  'debug',
+]);
 const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all', 'codex', 'openai-compatible']);
+const sessionManagementWorkspaces: ReadonlySet<SessionManagementWorkspace> = new Set(['codex']);
 const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', 'gemini']);
 const usageDeskSources = new Set(['observed', 'projected'] as const);
 const usageDeskRanges = new Set(['TODAY', '7D', '14D', '30D', '全部'] as const);
@@ -18,6 +29,7 @@ export type UsageDeskRangeStorageValue = 'TODAY' | '7D' | '14D' | '30D' | '全�
 export interface FrameHashState {
   page: AppPage;
   workspace?: AccountWorkspace;
+  sessionManagementWorkspace?: SessionManagementWorkspace;
   usageDeskWorkspace?: UsageDeskWorkspace;
 }
 
@@ -27,6 +39,10 @@ export function isAppPage(value: string | null | undefined): value is AppPage {
 
 export function isAccountWorkspace(value: string | null | undefined): value is AccountWorkspace {
   return typeof value === 'string' && accountWorkspaces.has(value as AccountWorkspace);
+}
+
+export function isSessionManagementWorkspace(value: string | null | undefined): value is SessionManagementWorkspace {
+  return typeof value === 'string' && sessionManagementWorkspaces.has(value as SessionManagementWorkspace);
 }
 
 export function isUsageDeskWorkspace(value: string | null | undefined): value is UsageDeskWorkspace {
@@ -63,6 +79,19 @@ export function readStoredAccountWorkspace(
   storage: Pick<Storage, 'getItem'> | null | undefined,
 ): AccountWorkspace {
   return resolveInitialAccountWorkspace(storage?.getItem(ACCOUNT_WORKSPACE_STORAGE_KEY));
+}
+
+export function resolveInitialSessionManagementWorkspace(
+  storageValue: string | null | undefined,
+  fallback: SessionManagementWorkspace = 'codex',
+): SessionManagementWorkspace {
+  return isSessionManagementWorkspace(storageValue) ? storageValue : fallback;
+}
+
+export function readStoredSessionManagementWorkspace(
+  storage: Pick<Storage, 'getItem'> | null | undefined,
+): SessionManagementWorkspace {
+  return resolveInitialSessionManagementWorkspace(storage?.getItem(SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY));
 }
 
 export function resolveInitialUsageDeskWorkspace(
@@ -118,6 +147,13 @@ export function persistAccountWorkspace(
   storage?.setItem(ACCOUNT_WORKSPACE_STORAGE_KEY, workspace);
 }
 
+export function persistSessionManagementWorkspace(
+  storage: Pick<Storage, 'setItem'> | null | undefined,
+  workspace: SessionManagementWorkspace,
+): void {
+  storage?.setItem(SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY, workspace);
+}
+
 export function persistUsageDeskWorkspace(
   storage: Pick<Storage, 'setItem'> | null | undefined,
   workspace: UsageDeskWorkspace,
@@ -159,6 +195,14 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
     };
   }
 
+  if (page === 'session-management') {
+    const workspace = params.get('workspace');
+    return {
+      page,
+      sessionManagementWorkspace: isSessionManagementWorkspace(workspace) ? workspace : 'codex',
+    };
+  }
+
   if (page === 'usage-desk') {
     const workspace = params.get('workspace');
     return {
@@ -173,12 +217,16 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
 export function buildFrameHash(
   page: AppPage,
   accountWorkspace: AccountWorkspace,
+  sessionManagementWorkspace: SessionManagementWorkspace,
   usageDeskWorkspace: UsageDeskWorkspace,
 ): string {
   const params = new URLSearchParams();
   params.set('frame', page);
   if (page === 'accounts' && accountWorkspace !== 'all') {
     params.set('workspace', accountWorkspace);
+  }
+  if (page === 'session-management' && sessionManagementWorkspace !== 'codex') {
+    params.set('workspace', sessionManagementWorkspace);
   }
   if (page === 'usage-desk' && usageDeskWorkspace !== 'codex') {
     params.set('workspace', usageDeskWorkspace);

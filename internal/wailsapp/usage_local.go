@@ -23,6 +23,7 @@ const (
 	localProjectedSourceKind    = "local_projected"
 	localUsageIndexDirName      = "codex-local-usage"
 	localUsageIndexFileName     = "usage-index-v1.sqlite"
+	localUsageMinutesTableName  = "session_usage_minutes_v2"
 	localUsageSourceCacheHit    = "cacheHit"
 	localUsageSourceDeltaAppend = "deltaAppend"
 	localUsageSourceFullRebuild = "fullRebuild"
@@ -41,10 +42,16 @@ type codexSessionTokenInfo struct {
 }
 
 type codexTokenUsageMinute struct {
+	Model             string
 	InputTokens       int64
 	CachedInputTokens int64
 	OutputTokens      int64
 	RequestCount      int64
+}
+
+type localUsageMinuteBucketKey struct {
+	MinuteStartTimestamp string
+	Model                string
 }
 
 type localUsageSnapshot struct {
@@ -57,7 +64,7 @@ type localUsageSnapshot struct {
 }
 
 type localUsageParseResult struct {
-	MinuteBuckets  map[string]codexTokenUsageMinute
+	MinuteBuckets  map[localUsageMinuteBucketKey]codexTokenUsageMinute
 	LastModel      string
 	PreviousTotals *codexTokenUsage
 	ParsedBytes    int64
@@ -356,7 +363,10 @@ func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebu
 
 	sort.Slice(snapshot.Details, func(i, j int) bool {
 		if snapshot.Details[i].Timestamp == snapshot.Details[j].Timestamp {
-			return snapshot.Details[i].InputTokens+snapshot.Details[i].OutputTokens < snapshot.Details[j].InputTokens+snapshot.Details[j].OutputTokens
+			if snapshot.Details[i].Model == snapshot.Details[j].Model {
+				return snapshot.Details[i].InputTokens+snapshot.Details[i].OutputTokens < snapshot.Details[j].InputTokens+snapshot.Details[j].OutputTokens
+			}
+			return snapshot.Details[i].Model < snapshot.Details[j].Model
 		}
 		return snapshot.Details[i].Timestamp < snapshot.Details[j].Timestamp
 	})
@@ -471,7 +481,7 @@ func parseCodexLocalUsageFile(path string, offset int64, currentModel string, pr
 }
 
 func parseCodexLocalUsageStream(reader io.Reader, currentModel string, previousTotals *codexTokenUsage) (*localUsageParseResult, error) {
-	minuteBuckets := make(map[string]codexTokenUsageMinute)
+	minuteBuckets := make(map[localUsageMinuteBucketKey]codexTokenUsageMinute)
 	activeModel := currentModel
 	activeTotals := cloneCodexTokenUsage(previousTotals)
 
@@ -496,12 +506,17 @@ func parseCodexLocalUsageStream(reader io.Reader, currentModel string, previousT
 			activeModel = nextModel
 			activeTotals = nextTotals
 			if delta != nil {
-				bucket := minuteBuckets[minuteKey]
+				bucketKey := localUsageMinuteBucketKey{
+					MinuteStartTimestamp: minuteKey,
+					Model:                activeModel,
+				}
+				bucket := minuteBuckets[bucketKey]
+				bucket.Model = activeModel
 				bucket.InputTokens += delta.InputTokens
 				bucket.CachedInputTokens += delta.CachedInputTokens
 				bucket.OutputTokens += delta.OutputTokens
 				bucket.RequestCount += 1
-				minuteBuckets[minuteKey] = bucket
+				minuteBuckets[bucketKey] = bucket
 			}
 		}
 		if err != nil {
@@ -605,18 +620,19 @@ CREATE TABLE IF NOT EXISTS usage_entries (
   previous_output_tokens INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS session_usage_minutes (
+CREATE TABLE IF NOT EXISTS ` + localUsageMinutesTableName + ` (
   rollout_path TEXT NOT NULL,
   minute_start_timestamp TEXT NOT NULL,
+  model TEXT NOT NULL DEFAULT '',
   input_tokens INTEGER NOT NULL,
   cached_input_tokens INTEGER NOT NULL,
   output_tokens INTEGER NOT NULL,
   request_count INTEGER NOT NULL,
-  PRIMARY KEY (rollout_path, minute_start_timestamp)
+  PRIMARY KEY (rollout_path, minute_start_timestamp, model)
 );
 
 CREATE INDEX IF NOT EXISTS idx_session_usage_minutes_rollout_timestamp
-ON session_usage_minutes (rollout_path, minute_start_timestamp);
+ON ` + localUsageMinutesTableName + ` (rollout_path, minute_start_timestamp);
 `)
 	return err
 }
@@ -653,10 +669,10 @@ WHERE rollout_path = ?`,
 
 func loadLocalUsageDetails(db *sql.DB, rolloutPath string) ([]LocalProjectedUsageDetail, error) {
 	rows, err := db.Query(`
-SELECT minute_start_timestamp, input_tokens, cached_input_tokens, output_tokens, request_count
-FROM session_usage_minutes
+SELECT minute_start_timestamp, model, input_tokens, cached_input_tokens, output_tokens, request_count
+FROM `+localUsageMinutesTableName+`
 WHERE rollout_path = ?
-ORDER BY minute_start_timestamp ASC`,
+ORDER BY minute_start_timestamp ASC, model ASC`,
 		rolloutPath,
 	)
 	if err != nil {
@@ -669,6 +685,7 @@ ORDER BY minute_start_timestamp ASC`,
 		var detail LocalProjectedUsageDetail
 		if err := rows.Scan(
 			&detail.Timestamp,
+			&detail.Model,
 			&detail.InputTokens,
 			&detail.CachedInputTokens,
 			&detail.OutputTokens,
@@ -754,39 +771,45 @@ WHERE rollout_path = ?`,
 	return tx.Commit()
 }
 
-func replaceLocalUsageMinutes(tx *sql.Tx, rolloutPath string, minuteBuckets map[string]codexTokenUsageMinute) error {
-	if _, err := tx.Exec(`DELETE FROM session_usage_minutes WHERE rollout_path = ?`, rolloutPath); err != nil {
+func replaceLocalUsageMinutes(tx *sql.Tx, rolloutPath string, minuteBuckets map[localUsageMinuteBucketKey]codexTokenUsageMinute) error {
+	if _, err := tx.Exec(`DELETE FROM `+localUsageMinutesTableName+` WHERE rollout_path = ?`, rolloutPath); err != nil {
 		return err
 	}
 	return appendLocalUsageMinutes(tx, rolloutPath, minuteBuckets)
 }
 
-func appendLocalUsageMinutes(tx *sql.Tx, rolloutPath string, minuteBuckets map[string]codexTokenUsageMinute) error {
+func appendLocalUsageMinutes(tx *sql.Tx, rolloutPath string, minuteBuckets map[localUsageMinuteBucketKey]codexTokenUsageMinute) error {
 	stmt, err := tx.Prepare(`
-INSERT INTO session_usage_minutes (
-  rollout_path, minute_start_timestamp, input_tokens, cached_input_tokens, output_tokens, request_count
-) VALUES (?, ?, ?, ?, ?, ?)
-ON CONFLICT(rollout_path, minute_start_timestamp) DO UPDATE SET
-  input_tokens = session_usage_minutes.input_tokens + excluded.input_tokens,
-  cached_input_tokens = session_usage_minutes.cached_input_tokens + excluded.cached_input_tokens,
-  output_tokens = session_usage_minutes.output_tokens + excluded.output_tokens,
-  request_count = session_usage_minutes.request_count + excluded.request_count`)
+INSERT INTO ` + localUsageMinutesTableName + ` (
+  rollout_path, minute_start_timestamp, model, input_tokens, cached_input_tokens, output_tokens, request_count
+) VALUES (?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(rollout_path, minute_start_timestamp, model) DO UPDATE SET
+  input_tokens = ` + localUsageMinutesTableName + `.input_tokens + excluded.input_tokens,
+  cached_input_tokens = ` + localUsageMinutesTableName + `.cached_input_tokens + excluded.cached_input_tokens,
+  output_tokens = ` + localUsageMinutesTableName + `.output_tokens + excluded.output_tokens,
+  request_count = ` + localUsageMinutesTableName + `.request_count + excluded.request_count`)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	minuteKeys := make([]string, 0, len(minuteBuckets))
+	minuteKeys := make([]localUsageMinuteBucketKey, 0, len(minuteBuckets))
 	for minuteKey := range minuteBuckets {
 		minuteKeys = append(minuteKeys, minuteKey)
 	}
-	sort.Strings(minuteKeys)
+	sort.Slice(minuteKeys, func(i, j int) bool {
+		if minuteKeys[i].MinuteStartTimestamp == minuteKeys[j].MinuteStartTimestamp {
+			return minuteKeys[i].Model < minuteKeys[j].Model
+		}
+		return minuteKeys[i].MinuteStartTimestamp < minuteKeys[j].MinuteStartTimestamp
+	})
 
 	for _, minuteKey := range minuteKeys {
 		bucket := minuteBuckets[minuteKey]
 		if _, err := stmt.Exec(
 			rolloutPath,
-			minuteKey,
+			minuteKey.MinuteStartTimestamp,
+			bucket.Model,
 			bucket.InputTokens,
 			bucket.CachedInputTokens,
 			bucket.OutputTokens,
@@ -805,7 +828,7 @@ func deleteLocalUsageEntry(db *sql.DB, rolloutPath string) error {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if _, err := tx.Exec(`DELETE FROM session_usage_minutes WHERE rollout_path = ?`, rolloutPath); err != nil {
+	if _, err := tx.Exec(`DELETE FROM `+localUsageMinutesTableName+` WHERE rollout_path = ?`, rolloutPath); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM usage_entries WHERE rollout_path = ?`, rolloutPath); err != nil {
@@ -821,7 +844,7 @@ func clearLocalUsageIndex(db *sql.DB) error {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if _, err := tx.Exec(`DELETE FROM session_usage_minutes`); err != nil {
+	if _, err := tx.Exec(`DELETE FROM ` + localUsageMinutesTableName); err != nil {
 		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM usage_entries`); err != nil {
