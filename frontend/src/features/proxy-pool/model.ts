@@ -50,11 +50,6 @@ export interface ProxyPoolPaginationResult<T> {
   items: T[];
 }
 
-export interface EnvironmentProxyEntry {
-  source: string;
-  proxyUrl: string;
-}
-
 export interface ProxyImportOptions {
   sourceLabel?: string;
   sourceURL?: string;
@@ -465,17 +460,6 @@ export function rememberProxyProbeTargetURL(history: readonly string[], raw: str
   }
 
   return nextHistory;
-}
-
-export function buildProxyNodesFromEnvironment(entries: readonly EnvironmentProxyEntry[], now = new Date()): ProxyNodeRecord[] {
-  return entries
-    .filter((entry) => entry && typeof entry.source === 'string' && typeof entry.proxyUrl === 'string')
-    .map((entry, index) => parseProxyNodeURL(entry.proxyUrl, now, {
-      name: `环境代理 ${entry.source.toUpperCase()}`,
-      note: `从环境变量 ${entry.source} 导入。`,
-      sourceLabel: '环境变量',
-      idSeed: `${entry.source}-${index + 1}`,
-    }));
 }
 
 export function applyProxyProbeResult(

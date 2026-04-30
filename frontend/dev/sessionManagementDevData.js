@@ -2,10 +2,15 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+const SNAPSHOT_CACHE_TTL_MS = 60_000;
 const SESSION_PATH_PATTERN = /\/Users\/[^/\s]+(?:\/[^\s"'<>]+)*/g;
 const SESSION_CALL_ID_PATTERN = /\bcall[_-]?[A-Za-z0-9_-]+\b/g;
 const SESSION_HEX_ID_PATTERN = /\b[0-9a-f]{8,}\b/gi;
 const SESSION_WHITESPACE_PATTERN = /\s+/g;
+
+let snapshotCache = null;
+let snapshotCacheUpdatedAt = 0;
+let snapshotRefreshPromise = null;
 
 function resolveCodexHome() {
   return process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
@@ -306,7 +311,7 @@ async function parseSessionFile(codexHome, absolutePath) {
   };
 }
 
-export async function loadSessionManagementSnapshot() {
+async function buildSessionManagementSnapshot() {
   const codexHome = resolveCodexHome();
   const rolloutPaths = await listCodexRolloutPaths(codexHome);
   const parsedSessions = await mapWithConcurrency(rolloutPaths, 24, (rolloutPath) =>
@@ -376,6 +381,40 @@ export async function loadSessionManagementSnapshot() {
   };
 }
 
+async function refreshSnapshotCache() {
+  if (snapshotRefreshPromise) {
+    return snapshotRefreshPromise;
+  }
+
+  snapshotRefreshPromise = buildSessionManagementSnapshot()
+    .then((snapshot) => {
+      snapshotCache = snapshot;
+      snapshotCacheUpdatedAt = Date.now();
+      return snapshot;
+    })
+    .finally(() => {
+      snapshotRefreshPromise = null;
+    });
+
+  return snapshotRefreshPromise;
+}
+
+export async function loadSessionManagementSnapshot(options = {}) {
+  const { forceRefresh = false } = options;
+  const cacheFresh = snapshotCache && Date.now() - snapshotCacheUpdatedAt < SNAPSHOT_CACHE_TTL_MS;
+
+  if (!forceRefresh && cacheFresh) {
+    return snapshotCache;
+  }
+
+  if (!forceRefresh && snapshotCache) {
+    void refreshSnapshotCache();
+    return snapshotCache;
+  }
+
+  return refreshSnapshotCache();
+}
+
 export async function loadSessionManagementDetail(sessionID) {
   const codexHome = resolveCodexHome();
   const relativePath = String(sessionID || '').trim();
@@ -385,3 +424,7 @@ export async function loadSessionManagementDetail(sessionID) {
   const absolutePath = path.join(codexHome, relativePath);
   return (await parseSessionFile(codexHome, absolutePath)).detail;
 }
+
+void refreshSnapshotCache().catch(() => {
+  // Warm cache in the background for browser dev sessions.
+});
