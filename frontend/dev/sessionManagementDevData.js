@@ -12,6 +12,31 @@ let snapshotCache = null;
 let snapshotCacheUpdatedAt = 0;
 let snapshotRefreshPromise = null;
 
+function resolveSnapshotCachePath() {
+  return path.join(resolveCodexHome(), '.gettokens-session-management-snapshot-cache.json');
+}
+
+async function hydrateSnapshotCacheFromDisk() {
+  try {
+    const raw = await fs.readFile(resolveSnapshotCachePath(), 'utf8');
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.projects)) {
+      snapshotCache = parsed;
+      snapshotCacheUpdatedAt = Date.now();
+    }
+  } catch {
+    // Ignore cache hydration failures.
+  }
+}
+
+async function persistSnapshotCacheToDisk(snapshot) {
+  try {
+    await fs.writeFile(resolveSnapshotCachePath(), JSON.stringify(snapshot), 'utf8');
+  } catch {
+    // Ignore disk cache failures.
+  }
+}
+
 function resolveCodexHome() {
   return process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
 }
@@ -390,6 +415,7 @@ async function refreshSnapshotCache() {
     .then((snapshot) => {
       snapshotCache = snapshot;
       snapshotCacheUpdatedAt = Date.now();
+      void persistSnapshotCacheToDisk(snapshot);
       return snapshot;
     })
     .finally(() => {
@@ -425,6 +451,8 @@ export async function loadSessionManagementDetail(sessionID) {
   return (await parseSessionFile(codexHome, absolutePath)).detail;
 }
 
-void refreshSnapshotCache().catch(() => {
-  // Warm cache in the background for browser dev sessions.
-});
+void hydrateSnapshotCacheFromDisk()
+  .finally(() => refreshSnapshotCache())
+  .catch(() => {
+    // Warm cache in the background for browser dev sessions.
+  });
