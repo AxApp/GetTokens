@@ -514,6 +514,22 @@ export namespace main {
 	        this.antigravityCredits = source["antigravityCredits"];
 	    }
 	}
+	export class RelayServiceAPIKeyItem {
+	    value: string;
+	    createdAt?: string;
+	    lastUsedAt?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RelayServiceAPIKeyItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.value = source["value"];
+	        this.createdAt = source["createdAt"];
+	        this.lastUsedAt = source["lastUsedAt"];
+	    }
+	}
 	export class RelayServiceEndpoint {
 	    id: string;
 	    kind: string;
@@ -534,6 +550,7 @@ export namespace main {
 	}
 	export class RelayServiceConfig {
 	    apiKeys: string[];
+	    apiKeyItems: RelayServiceAPIKeyItem[];
 	    endpoints: RelayServiceEndpoint[];
 	
 	    static createFrom(source: any = {}) {
@@ -543,6 +560,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKeys = source["apiKeys"];
+	        this.apiKeyItems = this.convertValues(source["apiKeyItems"], RelayServiceAPIKeyItem);
 	        this.endpoints = this.convertValues(source["endpoints"], RelayServiceEndpoint);
 	    }
 	

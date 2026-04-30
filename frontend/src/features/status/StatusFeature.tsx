@@ -52,6 +52,24 @@ function maskRelayKey(value: string) {
   return `${trimmed.slice(0, 8)}...${trimmed.slice(-4)}`;
 }
 
+function generateRandomRelayKey() {
+  const prefix = 'sk-gettokens-';
+  const hexLength = 32;
+
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = crypto.getRandomValues(new Uint8Array(hexLength / 2));
+    return `${prefix}${Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  let suffix = '';
+  while (suffix.length < hexLength) {
+    suffix += Math.floor(Math.random() * 0xffffffff)
+      .toString(16)
+      .padStart(8, '0');
+  }
+  return `${prefix}${suffix.slice(0, hexLength)}`;
+}
+
 function loadRelayKeyAliases() {
   if (typeof window === 'undefined') {
     return {} as Record<string, string>;
@@ -174,11 +192,11 @@ export default function StatusFeature({
   sidecarStatus = defaultSidecarStatus,
   version = 'dev',
 }: StatusFeatureProps) {
-  const { t } = useI18n();
+  const { locale, t } = useI18n();
   const { trackRequest } = useDebug();
   const [healthz, setHealthz] = useState('CHECKING...');
   const [uptime, setUptime] = useState('0s');
-  const [relayKeys, setRelayKeys] = useState<string[]>([]);
+  const [relayKeyItems, setRelayKeyItems] = useState<main.RelayServiceAPIKeyItem[]>([]);
   const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
   const [relayModelOptions, setRelayModelOptions] = useState<string[]>(() => loadRelayModelOptions());
   const [relayKeyAliases, setRelayKeyAliases] = useState<Record<string, string>>(() => loadRelayKeyAliases());
@@ -196,6 +214,7 @@ export default function StatusFeature({
   const [isSavingServiceKeys, setIsSavingServiceKeys] = useState(false);
   const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
 
+  const relayKeys = relayKeyItems.map((item) => item.value);
   const selectedKey = relayKeys[selectedKeyIndex] || '';
   const selectedEndpoint =
     relayEndpoints.find((endpoint) => endpoint.id === selectedEndpointID) ||
@@ -261,7 +280,7 @@ export default function StatusFeature({
 
     async function loadRelayServiceConfig() {
       if (sidecarStatus.code !== 'ready') {
-        setRelayKeys([]);
+        setRelayKeyItems([]);
         setRelayEndpoints([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
@@ -275,7 +294,7 @@ export default function StatusFeature({
         if (cancelled) {
           return;
         }
-        setRelayKeys(config.apiKeys || []);
+        setRelayKeyItems(config.apiKeyItems || (config.apiKeys || []).map((value) => ({ value })));
         setRelayEndpoints(config.endpoints || []);
         setSelectedKeyIndex(0);
         setSelectedEndpointID(config.endpoints?.[0]?.id || 'localhost');
@@ -285,7 +304,7 @@ export default function StatusFeature({
         if (cancelled) {
           return;
         }
-        setRelayKeys([]);
+        setRelayKeyItems([]);
         setRelayEndpoints([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
@@ -449,8 +468,8 @@ export default function StatusFeature({
         UpdateRelayServiceAPIKeys(normalized)
       );
       const nextKeys = config.apiKeys || [];
+      setRelayKeyItems(config.apiKeyItems || nextKeys.map((value) => ({ value })));
       const nextEndpoints = config.endpoints || [];
-      setRelayKeys(nextKeys);
       setRelayEndpoints(nextEndpoints);
       setSelectedKeyIndex(Math.min(nextSelectedIndex, Math.max(nextKeys.length - 1, 0)));
       setSelectedEndpointID((prev) =>
@@ -625,6 +644,12 @@ export default function StatusFeature({
         () => ApplyRelayServiceConfigToLocal(normalizedKey, selectedEndpoint.baseUrl)
       );
       setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}`);
+      try {
+        const refreshed = await trackRequest('GetRelayServiceConfig', { args: [] }, () => GetRelayServiceConfig());
+        setRelayKeyItems(refreshed.apiKeyItems || (refreshed.apiKeys || []).map((value) => ({ value })));
+      } catch (refreshError) {
+        console.error(refreshError);
+      }
     } catch (error) {
       console.error(error);
       setLocalApplyMessage(`${t('status.apply_local_failed')}: ${toErrorMessage(error)}`);
@@ -643,6 +668,26 @@ export default function StatusFeature({
         : trimmedStatusMessage
           ? trimmedStatusMessage
           : t('status.offline');
+
+  function formatRelayKeyTimestamp(value?: string) {
+    const trimmed = String(value || '').trim();
+    if (!trimmed) {
+      return '—';
+    }
+
+    const date = new Date(trimmed);
+    if (Number.isNaN(date.getTime())) {
+      return trimmed;
+    }
+
+    return date.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
 
   return (
     <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_STATUS">
@@ -675,13 +720,13 @@ export default function StatusFeature({
         />
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <div className="card-swiss !p-6">
+          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
             <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.core_state')}
             </div>
             <div className="text-xl font-black italic text-[var(--text-primary)]">{sidecarStatus.code.toUpperCase()}</div>
           </div>
-          <div className="card-swiss !p-6">
+          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
             <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.port')}
             </div>
@@ -689,13 +734,13 @@ export default function StatusFeature({
               {sidecarStatus.port ? `:${sidecarStatus.port}` : '—'}
             </div>
           </div>
-          <div className="card-swiss !p-6">
+          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
             <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.uptime')}
             </div>
             <div className="text-xl font-black italic text-[var(--text-primary)]">{uptime}</div>
           </div>
-          <div className="card-swiss !p-6">
+          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
             <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
               {t('status.build')}
             </div>
@@ -703,25 +748,17 @@ export default function StatusFeature({
           </div>
         </div>
 
-        <div className="card-swiss !p-0 overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-6 py-3">
-            <div className="text-[0.625rem] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
-              {t('status.service_config')}
-            </div>
-            <button
-              onClick={() => void applyRelayConfigToLocal()}
-              disabled={isApplyingToLocal || sidecarStatus.code !== 'ready'}
-              className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local')}
-            </button>
-          </div>
-
-          <div className="space-y-6 border-b-2 border-[var(--border-color)] p-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                  {t('status.service_api_keys')}
+        <section className="space-y-6">
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+            <section className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+              <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3">
+                <div>
+                  <div className="text-[0.625rem] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
+                    {t('status.service_config')}
+                  </div>
+                  <div className="mt-1 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                    {relayKeys.length} {t('status.service_api_keys')}
+                  </div>
                 </div>
                 <button
                   onClick={openCreateRelayKeyEditor}
@@ -731,183 +768,217 @@ export default function StatusFeature({
                   +
                 </button>
               </div>
-              <div className="overflow-hidden border-2 border-[var(--border-color)]">
-                {relayKeys.map((item, index) => (
-                  <div
-                    key={`${item}-${index}`}
-                    className={`flex items-center gap-3 px-4 py-3 ${
-                      index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
-                    } ${
-                      selectedKeyIndex === index
-                        ? 'bg-[var(--bg-main)]'
-                        : 'bg-[var(--bg-surface)]'
-                    }`}
-                  >
-                    <button onClick={() => setSelectedKeyIndex(index)} className="min-w-0 flex-1 text-left">
-                      <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                        {relayKeyDisplayName(item, index)}
-                      </div>
-                      <div className="mt-1 font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                        {maskRelayKey(item)}
-                      </div>
-                    </button>
-                    <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
-                      <button
-                        onClick={() => setOpenKeyMenuIndex((prev) => (prev === index ? null : index))}
-                        className="flex h-7 w-7 items-center justify-center text-base font-black text-[var(--text-muted)]"
-                      >
-                        ⋮
-                      </button>
-                      {openKeyMenuIndex === index ? (
-                        <div className="absolute right-full top-1/2 z-10 mr-2 flex -translate-y-1/2 items-center gap-2">
-                          <button
-                            onClick={() => openRenameRelayKeyEditor(index)}
-                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
-                          >
-                            {t('status.service_key_rename')}
-                          </button>
-                          <button
-                            onClick={() => void deleteRelayServiceAPIKey(index)}
-                            className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
-                          >
-                            {t('status.service_key_delete')}
-                          </button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                {t('status.service_keys_hint')}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                  {t('status.endpoint_title')}
-                </div>
-                <button
-                  onClick={() => setIsLANAccessEnabled((prev) => !prev)}
-                  className={`btn-swiss !px-3 !py-1 !text-[0.5625rem] ${
-                    isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
-                  }`}
-                >
-                  {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
-                </button>
-              </div>
-              <div className="overflow-hidden border-2 border-[var(--border-color)]">
-                {visibleRelayEndpoints.map((endpoint, index) => (
-                  <div
-                    key={endpoint.id}
-                    className={`flex items-center gap-3 px-4 py-3 ${
-                      index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
-                    } ${
-                      selectedEndpointID === endpoint.id ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'bg-[var(--bg-surface)]'
-                    }`}
-                  >
-                    <button
-                      onClick={() => setSelectedEndpointID(endpoint.id)}
-                      className="min-w-0 flex-1 text-left"
-                    >
-                      <div
-                        className={`font-mono text-xs font-bold break-all ${
-                          selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'
-                        }`}
-                      >
-                        {endpoint.baseUrl}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => void copyText(endpoint.baseUrl, t('status.endpoint_copied'))}
-                      className={`shrink-0 text-[0.625rem] font-black uppercase tracking-wide ${
-                        selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'
+              <div className="space-y-4 p-5">
+                <div className="overflow-hidden border-2 border-[var(--border-color)]">
+                  {relayKeyItems.map((item, index) => (
+                    <div
+                      key={`${item.value}-${index}`}
+                      className={`flex items-center gap-3 px-4 py-3 ${
+                        index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
+                      } ${
+                        selectedKeyIndex === index
+                          ? 'bg-[var(--bg-main)]'
+                          : 'bg-[var(--bg-surface)]'
                       }`}
                     >
-                      复制
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                  {t('status.model_name_title')}
+                      <button onClick={() => setSelectedKeyIndex(index)} className="min-w-0 flex-1 text-left">
+                        <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                          {relayKeyDisplayName(item.value, index)}
+                        </div>
+                        <div className="mt-1 font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                          {maskRelayKey(item.value)}
+                        </div>
+                        <div className="mt-2 grid gap-1 text-[0.5625rem] font-bold uppercase tracking-wide text-[var(--text-muted)] md:grid-cols-2">
+                          <div>{t('status.service_key_created_at')}: {formatRelayKeyTimestamp(item.createdAt)}</div>
+                          <div>{t('status.service_key_last_used_at')}: {formatRelayKeyTimestamp(item.lastUsedAt)}</div>
+                        </div>
+                      </button>
+                      <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
+                        <button
+                          onClick={() => setOpenKeyMenuIndex((prev) => (prev === index ? null : index))}
+                          className="flex h-7 w-7 items-center justify-center text-base font-black text-[var(--text-muted)]"
+                        >
+                          ⋮
+                        </button>
+                        {openKeyMenuIndex === index ? (
+                          <div className="absolute right-full top-1/2 z-10 mr-2 flex -translate-y-1/2 items-center gap-2">
+                            <button
+                              onClick={() => openRenameRelayKeyEditor(index)}
+                              className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
+                            >
+                              {t('status.service_key_rename')}
+                            </button>
+                            <button
+                              onClick={() => void deleteRelayServiceAPIKey(index)}
+                              className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
+                            >
+                              {t('status.service_key_delete')}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <button onClick={openCreateRelayModelEditor} className="btn-swiss !px-3 !py-1 !text-[0.625rem]">
-                  +
+                <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  {t('status.service_keys_hint')}
+                </div>
+                {serviceMessage ? (
+                  <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                    {serviceMessage}
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+              <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3">
+                <div>
+                  <div className="text-[0.625rem] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
+                    {t('status.apply_local')}
+                  </div>
+                  <div className="mt-1 text-[0.6875rem] font-mono font-black uppercase tracking-wide text-[var(--text-muted)]">
+                    {selectedRelayModel}
+                  </div>
+                </div>
+                <button
+                  onClick={() => void applyRelayConfigToLocal()}
+                  disabled={isApplyingToLocal || sidecarStatus.code !== 'ready'}
+                  className="btn-swiss bg-[var(--border-color)] !px-4 !py-2 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local')}
                 </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {relayModelOptions.map((model) => (
-                  <div
-                    key={model}
-                    className={`border-2 px-3 py-2 font-mono text-[0.625rem] font-black uppercase tracking-wide ${
-                      selectedRelayModel === model
-                        ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                        : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setSelectedRelayModel(model)} className="text-left">
-                        {model}
-                      </button>
-                      <button
-                        onClick={() => deleteRelayModelOption(model)}
-                        className={selectedRelayModel === model ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'}
-                      >
-                        ×
-                      </button>
+              <div className="divide-y-2 divide-[var(--border-color)]">
+                <div className="space-y-3 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                      {t('status.endpoint_title')}
                     </div>
+                    <button
+                      onClick={() => setIsLANAccessEnabled((prev) => !prev)}
+                      className={`btn-swiss !px-3 !py-1 !text-[0.5625rem] ${
+                        isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
+                      }`}
+                    >
+                      {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
+                    </button>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">{serviceMessage}</div>
-
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-              <div className="overflow-hidden border-2 border-[var(--border-color)]">
-                <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
-                  <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                    {t('status.codex_auth_json')}
+                  <div className="overflow-hidden border-2 border-[var(--border-color)]">
+                    {visibleRelayEndpoints.map((endpoint, index) => (
+                      <div
+                        key={endpoint.id}
+                        className={`flex items-center gap-3 px-4 py-3 ${
+                          index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
+                        } ${
+                          selectedEndpointID === endpoint.id ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'bg-[var(--bg-surface)]'
+                        }`}
+                      >
+                        <button
+                          onClick={() => setSelectedEndpointID(endpoint.id)}
+                          className="min-w-0 flex-1 text-left"
+                        >
+                          <div
+                            className={`font-mono text-xs font-bold break-all ${
+                              selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'
+                            }`}
+                          >
+                            {endpoint.baseUrl}
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => void copyText(endpoint.baseUrl, t('status.endpoint_copied'))}
+                          className={`shrink-0 text-[0.625rem] font-black uppercase tracking-wide ${
+                            selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'
+                          }`}
+                        >
+                          复制
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                  <button
-                    onClick={() => void copyText(serviceAuthJSON, t('status.auth_json_copied'))}
-                    className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
-                  >
-                    复制
-                  </button>
                 </div>
-                <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
-                  {serviceAuthJSON}
-                </pre>
-              </div>
 
-              <div className="overflow-hidden border-2 border-[var(--border-color)]">
-                <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
-                  <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                    {t('status.codex_config_toml')}
+                <div className="space-y-3 p-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                      {t('status.model_name_title')}
+                    </div>
+                    <button onClick={openCreateRelayModelEditor} className="btn-swiss !px-3 !py-1 !text-[0.625rem]">
+                      +
+                    </button>
                   </div>
-                  <button
-                    onClick={() => void copyText(serviceConfigToml, t('status.config_toml_copied'))}
-                    className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
-                  >
-                    复制
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    {relayModelOptions.map((model) => (
+                      <div
+                        key={model}
+                        className={`border-2 px-3 py-2 font-mono text-[0.625rem] font-black uppercase tracking-wide ${
+                          selectedRelayModel === model
+                            ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                            : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setSelectedRelayModel(model)} className="text-left">
+                            {model}
+                          </button>
+                          <button
+                            onClick={() => deleteRelayModelOption(model)}
+                            className={selectedRelayModel === model ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
-                  {serviceConfigToml}
-                </pre>
-              </div>
-            </div>
 
-            <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">{localApplyMessage}</div>
+                {localApplyMessage ? (
+                  <div className="bg-[var(--bg-main)] px-5 py-4 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                    {localApplyMessage}
+                  </div>
+                ) : null}
+              </div>
+            </section>
           </div>
-        </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+            <div className="overflow-hidden border-2 border-[var(--border-color)]">
+              <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+                <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  {t('status.codex_auth_json')}
+                </div>
+                <button
+                  onClick={() => void copyText(serviceAuthJSON, t('status.auth_json_copied'))}
+                  className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
+                >
+                  复制
+                </button>
+              </div>
+              <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
+                {serviceAuthJSON}
+              </pre>
+            </div>
+
+            <div className="overflow-hidden border-2 border-[var(--border-color)]">
+              <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+                <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
+                  {t('status.codex_config_toml')}
+                </div>
+                <button
+                  onClick={() => void copyText(serviceConfigToml, t('status.config_toml_copied'))}
+                  className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
+                >
+                  复制
+                </button>
+              </div>
+              <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
+                {serviceConfigToml}
+              </pre>
+            </div>
+          </div>
+        </section>
       </div>
 
       {relayKeyEditor ? (
@@ -945,16 +1016,31 @@ export default function StatusFeature({
                 <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   {t('status.service_key_value_label')}
                 </span>
-                <input
-                  value={relayKeyEditor.apiKey}
-                  onChange={(event) =>
-                    setRelayKeyEditor((prev) => (prev ? { ...prev, apiKey: event.target.value, error: '' } : prev))
-                  }
-                  className="input-swiss w-full"
-                  placeholder={t('status.service_key_value_placeholder')}
-                  type="password"
-                  disabled={relayKeyEditor.mode === 'rename'}
-                />
+                <div className="relative">
+                  <input
+                    value={relayKeyEditor.apiKey}
+                    onChange={(event) =>
+                      setRelayKeyEditor((prev) => (prev ? { ...prev, apiKey: event.target.value, error: '' } : prev))
+                    }
+                    className="input-swiss w-full pr-24"
+                    placeholder={t('status.service_key_value_placeholder')}
+                    type="text"
+                    disabled={relayKeyEditor.mode === 'rename'}
+                  />
+                  {relayKeyEditor.mode === 'create' ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setRelayKeyEditor((prev) =>
+                          prev ? { ...prev, apiKey: generateRandomRelayKey(), error: '' } : prev
+                        )
+                      }
+                      className="absolute right-2 top-1/2 -translate-y-1/2 border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-primary)] active:scale-95"
+                    >
+                      {t('status.service_key_value_generate')}
+                    </button>
+                  ) : null}
+                </div>
               </label>
               {relayKeyEditor.error ? (
                 <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">

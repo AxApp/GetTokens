@@ -23,6 +23,7 @@ func TestResolveCodexHomePathUsesCODEXHOMEOverride(t *testing.T) {
 func TestApplyRelayServiceConfigToLocalWritesProviderFacingFiles(t *testing.T) {
 	codexHome := filepath.Join(t.TempDir(), ".codex")
 	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
 
 	result, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1")
 	if err != nil {
@@ -58,5 +59,28 @@ func TestApplyRelayServiceConfigToLocalWritesProviderFacingFiles(t *testing.T) {
 	}
 	if !strings.Contains(configContent, `openai_base_url = "http://127.0.0.1:8317/v1"`) {
 		t.Fatalf("config.toml missing openai_base_url: %s", configContent)
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalMarksLastUsedMetadata(t *testing.T) {
+	t.Setenv("CODEX_HOME", filepath.Join(t.TempDir(), ".codex"))
+	t.Setenv("HOME", t.TempDir())
+
+	app := &App{}
+	if _, err := app.ApplyRelayServiceConfigToLocal("sk-gettokens-test", "http://127.0.0.1:8317/v1"); err != nil {
+		t.Fatalf("ApplyRelayServiceConfigToLocal returned error: %v", err)
+	}
+
+	metadata, err := loadRelayServiceAPIKeyMetadata()
+	if err != nil {
+		t.Fatalf("loadRelayServiceAPIKeyMetadata: %v", err)
+	}
+
+	item := metadata[relayServiceAPIKeyMetadataID("sk-gettokens-test")]
+	if item.CreatedAt == "" {
+		t.Fatalf("expected createdAt to be recorded")
+	}
+	if item.LastUsedAt == "" {
+		t.Fatalf("expected lastUsedAt to be recorded")
 	}
 }

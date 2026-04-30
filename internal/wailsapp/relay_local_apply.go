@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string) (*RelayLocalApplyResult, error) {
@@ -20,7 +21,23 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string) (*Re
 		return nil, errors.New("缺少 BASE URL")
 	}
 
-	return applyRelayServiceConfigToLocal(normalizedAPIKey, normalizedBaseURL)
+	result, err := applyRelayServiceConfigToLocal(normalizedAPIKey, normalizedBaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	metadata, err := loadRelayServiceAPIKeyMetadata()
+	if err != nil {
+		return nil, err
+	}
+	metadata, changed := markRelayServiceAPIKeyLastUsed(metadata, normalizedAPIKey, time.Now())
+	if changed {
+		if err := saveRelayServiceAPIKeyMetadata(metadata); err != nil {
+			return nil, err
+		}
+	}
+
+	return result, nil
 }
 
 func applyRelayServiceConfigToLocal(apiKey string, baseURL string) (*RelayLocalApplyResult, error) {

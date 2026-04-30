@@ -202,8 +202,9 @@ type FetchOpenAICompatibleProviderModelsResult struct {
 }
 
 type RelayServiceConfig struct {
-	APIKeys   []string               `json:"apiKeys"`
-	Endpoints []RelayServiceEndpoint `json:"endpoints"`
+	APIKeys     []string                 `json:"apiKeys"`
+	APIKeyItems []RelayServiceAPIKeyItem `json:"apiKeyItems"`
+	Endpoints   []RelayServiceEndpoint   `json:"endpoints"`
 }
 
 type RelayServiceEndpoint struct {
@@ -211,6 +212,12 @@ type RelayServiceEndpoint struct {
 	Kind    string `json:"kind"`
 	Host    string `json:"host"`
 	BaseURL string `json:"baseUrl"`
+}
+
+type RelayServiceAPIKeyItem struct {
+	Value      string `json:"value"`
+	CreatedAt  string `json:"createdAt,omitempty"`
+	LastUsedAt string `json:"lastUsedAt,omitempty"`
 }
 
 type RelayRoutingConfig struct {
@@ -541,8 +548,9 @@ func (a *App) GetRelayServiceConfig() (*RelayServiceConfig, error) {
 	}
 
 	return &RelayServiceConfig{
-		APIKeys:   append([]string(nil), result.APIKeys...),
-		Endpoints: mapRelayServiceEndpoints(result.Endpoints),
+		APIKeys:     append([]string(nil), result.APIKeys...),
+		APIKeyItems: mapRelayServiceAPIKeyItems(result.APIKeyItems),
+		Endpoints:   mapRelayServiceEndpoints(result.Endpoints),
 	}, nil
 }
 
@@ -553,8 +561,9 @@ func (a *App) UpdateRelayServiceAPIKey(apiKey string) (*RelayServiceConfig, erro
 	}
 
 	return &RelayServiceConfig{
-		APIKeys:   append([]string(nil), result.APIKeys...),
-		Endpoints: mapRelayServiceEndpoints(result.Endpoints),
+		APIKeys:     append([]string(nil), result.APIKeys...),
+		APIKeyItems: mapRelayServiceAPIKeyItems(result.APIKeyItems),
+		Endpoints:   mapRelayServiceEndpoints(result.Endpoints),
 	}, nil
 }
 
@@ -565,9 +574,26 @@ func (a *App) UpdateRelayServiceAPIKeys(apiKeys []string) (*RelayServiceConfig, 
 	}
 
 	return &RelayServiceConfig{
-		APIKeys:   append([]string(nil), result.APIKeys...),
-		Endpoints: mapRelayServiceEndpoints(result.Endpoints),
+		APIKeys:     append([]string(nil), result.APIKeys...),
+		APIKeyItems: mapRelayServiceAPIKeyItems(result.APIKeyItems),
+		Endpoints:   mapRelayServiceEndpoints(result.Endpoints),
 	}, nil
+}
+
+func mapRelayServiceAPIKeyItems(items []wailsapp.RelayServiceAPIKeyItem) []RelayServiceAPIKeyItem {
+	if len(items) == 0 {
+		return nil
+	}
+
+	result := make([]RelayServiceAPIKeyItem, 0, len(items))
+	for _, item := range items {
+		result = append(result, RelayServiceAPIKeyItem{
+			Value:      item.Value,
+			CreatedAt:  item.CreatedAt,
+			LastUsedAt: item.LastUsedAt,
+		})
+	}
+	return result
 }
 
 func (a *App) GetRelayRoutingConfig() (*RelayRoutingConfig, error) {

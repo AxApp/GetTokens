@@ -7,6 +7,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/linhay/gettokens/internal/sidecar"
 )
@@ -19,8 +20,9 @@ type RelayServiceEndpoint struct {
 }
 
 type RelayServiceConfig struct {
-	APIKeys   []string               `json:"apiKeys"`
-	Endpoints []RelayServiceEndpoint `json:"endpoints"`
+	APIKeys     []string                 `json:"apiKeys"`
+	APIKeyItems []RelayServiceAPIKeyItem `json:"apiKeyItems"`
+	Endpoints   []RelayServiceEndpoint   `json:"endpoints"`
 }
 
 func (a *App) GetRelayServiceConfig() (*RelayServiceConfig, error) {
@@ -43,11 +45,23 @@ func (a *App) GetRelayServiceConfig() (*RelayServiceConfig, error) {
 		return nil, errors.New("中转服务 API KEY 未配置")
 	}
 
+	metadata, err := loadRelayServiceAPIKeyMetadata()
+	if err != nil {
+		return nil, err
+	}
+	metadata, changed := mergeRelayServiceAPIKeyMetadata(apiKeys, metadata, time.Now())
+	if changed {
+		if err := saveRelayServiceAPIKeyMetadata(metadata); err != nil {
+			return nil, err
+		}
+	}
+
 	a.sidecar.SetCurrentServiceAPIKey(apiKeys[0])
 
 	return &RelayServiceConfig{
-		APIKeys:   apiKeys,
-		Endpoints: buildRelayServiceEndpoints(status.Port, relayServiceHostname(), relayServiceLANHosts()),
+		APIKeys:     apiKeys,
+		APIKeyItems: buildRelayServiceAPIKeyItems(apiKeys, metadata),
+		Endpoints:   buildRelayServiceEndpoints(status.Port, relayServiceHostname(), relayServiceLANHosts()),
 	}, nil
 }
 
@@ -69,11 +83,24 @@ func (a *App) UpdateRelayServiceAPIKeys(apiKeys []string) (*RelayServiceConfig, 
 	if err := a.managementClient().PutAPIKeys(normalized); err != nil {
 		return nil, err
 	}
+
+	metadata, err := loadRelayServiceAPIKeyMetadata()
+	if err != nil {
+		return nil, err
+	}
+	metadata, changed := mergeRelayServiceAPIKeyMetadata(normalized, metadata, time.Now())
+	if changed {
+		if err := saveRelayServiceAPIKeyMetadata(metadata); err != nil {
+			return nil, err
+		}
+	}
+
 	a.sidecar.SetCurrentServiceAPIKey(normalized[0])
 
 	return &RelayServiceConfig{
-		APIKeys:   normalized,
-		Endpoints: buildRelayServiceEndpoints(status.Port, relayServiceHostname(), relayServiceLANHosts()),
+		APIKeys:     normalized,
+		APIKeyItems: buildRelayServiceAPIKeyItems(normalized, metadata),
+		Endpoints:   buildRelayServiceEndpoints(status.Port, relayServiceHostname(), relayServiceLANHosts()),
 	}, nil
 }
 
