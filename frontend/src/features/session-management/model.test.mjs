@@ -129,7 +129,7 @@ test('localhost dev mode falls back to http bridge when Wails runtime is missing
     if (String(url) === 'http://127.0.0.1:34115/__dev/session-management/detail?sessionID=sessions%2F2026%2F04%2F30%2Frollout.jsonl') {
       throw new Error('bridge missing on current origin');
     }
-    if (String(url).includes('127.0.0.1:4173/__dev/session-management/snapshot')) {
+    if (String(url).includes('127.0.0.1:5173/__dev/session-management/snapshot')) {
       return {
         ok: true,
         async json() {
@@ -156,7 +156,7 @@ test('localhost dev mode falls back to http bridge when Wails runtime is missing
         },
       };
     }
-    if (String(url).includes('127.0.0.1:4173/__dev/session-management/detail')) {
+    if (String(url).includes('127.0.0.1:5173/__dev/session-management/detail')) {
       return {
         ok: true,
         async json() {
@@ -185,7 +185,7 @@ test('localhost dev mode falls back to http bridge when Wails runtime is missing
   assert.equal(detail.title, '真实开发态详情');
   assert.deepEqual(fetchCalls.slice(0, 2), [
     'http://127.0.0.1:34115/__dev/session-management/snapshot',
-    'http://127.0.0.1:4173/__dev/session-management/snapshot',
+    'http://127.0.0.1:5173/__dev/session-management/snapshot',
   ]);
 
   globalThis.fetch = originalFetch;

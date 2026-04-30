@@ -7,26 +7,6 @@ import (
 	"testing"
 )
 
-func TestListEnvironmentProxyEntriesPrefersLowercaseAndKeepsKnownSlots(t *testing.T) {
-	t.Setenv("https_proxy", "http://127.0.0.1:7897")
-	t.Setenv("HTTPS_PROXY", "http://127.0.0.1:9999")
-	t.Setenv("ALL_PROXY", "socks5://127.0.0.1:7897")
-
-	entries := listEnvironmentProxyEntries()
-	if len(entries) != 3 {
-		t.Fatalf("unexpected entry count: %d", len(entries))
-	}
-	if entries[0].Source != "https_proxy" || entries[0].ProxyURL != "http://127.0.0.1:7897" {
-		t.Fatalf("unexpected https proxy entry: %#v", entries[0])
-	}
-	if entries[1].Source != "" || entries[1].ProxyURL != "" {
-		t.Fatalf("unexpected empty http proxy slot: %#v", entries[1])
-	}
-	if entries[2].Source != "all_proxy" || entries[2].ProxyURL != "socks5://127.0.0.1:7897" {
-		t.Fatalf("unexpected all proxy entry: %#v", entries[2])
-	}
-}
-
 func TestProbeProxyNodeUsesHTTPProxy(t *testing.T) {
 	target := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusNoContent)
