@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
-import { FetchProxySubscription, ListEnvironmentProxyEntries, ProbeProxyNode } from '../../../wailsjs/go/main/App';
+import { FetchProxySubscription, ProbeProxyNode } from '../../../wailsjs/go/main/App';
 
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
@@ -8,7 +8,6 @@ import { toErrorMessage } from '../../utils/error';
 import {
   applyProxyProbeResult,
   buildProxyPoolExportFilename,
-  buildProxyNodesFromEnvironment,
   buildProxyURLFromNode,
   createEmptyProxyNodeDraft,
   createProxyNodeDraftFromRecord,
@@ -41,7 +40,6 @@ import {
   sortProxyNodes,
   summarizeProxyNodes,
   toggleProxyPoolSort,
-  type EnvironmentProxyEntry,
   type ProxyImportOptions,
   type ProxyNodeDraft,
   type ProxyNodeRecord,
@@ -58,7 +56,6 @@ export default function ProxyPoolFeature() {
   const { trackRequest } = useDebug();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
-  const hasBootstrappedRealDataRef = useRef(false);
   const [nodes, setNodes] = useState<ProxyNodeRecord[]>(() => {
     if (typeof window === 'undefined') {
       return [];
@@ -164,15 +161,6 @@ export default function ProxyPoolFeature() {
   }, [isHeaderMenuOpen]);
 
   useEffect(() => {
-    if (hasBootstrappedRealDataRef.current || nodes.length > 0) {
-      return;
-    }
-
-    hasBootstrappedRealDataRef.current = true;
-    void importEnvironmentProxies(true);
-  }, [nodes.length]);
-
-  useEffect(() => {
     setPage(1);
   }, [filter, query, pageSize]);
 
@@ -273,30 +261,6 @@ export default function ProxyPoolFeature() {
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : '测速网址不合法。');
       return null;
-    }
-  }
-
-  async function importEnvironmentProxies(silentWhenEmpty = false) {
-    try {
-      const entries = await trackRequest<EnvironmentProxyEntry[]>(
-        'ListEnvironmentProxyEntries',
-        { args: [] },
-        () => ListEnvironmentProxyEntries(),
-      );
-      const importedNodes = buildProxyNodesFromEnvironment(
-        (entries || []).filter((item) => item?.source && item?.proxyUrl),
-      );
-      if (importedNodes.length === 0) {
-        if (!silentWhenEmpty) {
-          setFeedback('当前环境变量中没有可导入的代理配置。');
-        }
-        return;
-      }
-
-      setNodes((current) => mergeImportedProxyNodes(current, importedNodes));
-      setFeedback(`已从环境变量导入 ${importedNodes.length} 条代理节点。`);
-    } catch (error) {
-      setFeedback(formatProxyPoolRuntimeError('导入环境代理', error));
     }
   }
 
@@ -598,14 +562,6 @@ export default function ProxyPoolFeature() {
                       label="订阅源"
                       description="查看、刷新和删除订阅源"
                       onClick={openSubscriptionManager}
-                    />
-                    <MenuActionButton
-                      label="导入环境代理"
-                      description="读取当前进程环境变量"
-                      onClick={() => {
-                        setIsHeaderMenuOpen(false);
-                        void importEnvironmentProxies();
-                      }}
                     />
                     <MenuActionButton
                       label="导出全部"
