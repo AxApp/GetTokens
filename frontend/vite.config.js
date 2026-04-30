@@ -10,9 +10,11 @@ function sessionManagementDevBridgePlugin() {
   return {
     name: 'session-management-dev-bridge',
     configureServer(server) {
-      server.middlewares.use('/__dev/session-management/snapshot', async (_req, res) => {
+      server.middlewares.use('/__dev/session-management/snapshot', async (req, res) => {
         try {
-          const payload = await loadSessionManagementSnapshot()
+          const url = new URL(req.url || '', 'http://127.0.0.1')
+          const forceRefresh = url.searchParams.get('refresh') === '1'
+          const payload = await loadSessionManagementSnapshot({ forceRefresh })
           res.setHeader('Content-Type', 'application/json; charset=utf-8')
           res.end(JSON.stringify(payload))
         } catch (error) {

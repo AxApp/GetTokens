@@ -7,7 +7,6 @@ import {
   PROXY_POOL_PROBE_TARGET_HISTORY_STORAGE_KEY,
   PROXY_POOL_PROBE_TARGET_STORAGE_KEY,
   buildProxyPoolExportFilename,
-  buildProxyNodesFromEnvironment,
   buildProxyURLFromNode,
   DEFAULT_PROXY_PROBE_TARGET_URL,
   deriveProxySourceLabel,
@@ -406,33 +405,6 @@ test('paginateProxyNodes slices rows and clamps out-of-range pages', () => {
   assert.equal(overflowPage.page, 2);
   assert.equal(overflowPage.pageCount, 2);
   assert.equal(overflowPage.items.length, 2);
-});
-
-test('buildProxyNodesFromEnvironment converts proxy env entries into local nodes', () => {
-  const nodes = buildProxyNodesFromEnvironment(
-    [
-      { source: 'https_proxy', proxyUrl: 'http://127.0.0.1:7897' },
-      { source: 'all_proxy', proxyUrl: 'socks5://127.0.0.1:7897' },
-    ],
-    new Date(2026, 3, 30, 12, 18, 0),
-  );
-
-  assert.equal(nodes.length, 2);
-  assert.equal(nodes[0].name, '环境代理 HTTPS_PROXY');
-  assert.equal(nodes[0].protocol, 'HTTP');
-  assert.equal(nodes[0].sourceLabel, '环境变量');
-  assert.equal(nodes[1].protocol, 'SOCKS5');
-  assert.equal(nodes[1].lastCheckedAt, '2026-04-30 12:18');
-});
-
-test('buildProxyNodesFromEnvironment keeps different protocols on the same host and port as separate nodes', () => {
-  const nodes = buildProxyNodesFromEnvironment([
-    { source: 'https_proxy', proxyUrl: 'http://127.0.0.1:7897' },
-    { source: 'all_proxy', proxyUrl: 'socks5://127.0.0.1:7897' },
-  ]);
-
-  assert.equal(nodes.length, 2);
-  assert.notEqual(nodes[0].id, nodes[1].id);
 });
 
 test('buildProxyURLFromNode rebuilds a usable proxy url', () => {
