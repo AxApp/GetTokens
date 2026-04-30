@@ -89,8 +89,11 @@ async function fetchDevPayload(path: string) {
   throw lastError ?? new Error('session management dev bridge unavailable');
 }
 
-async function loadDevSnapshot() {
-  return fetchDevPayload('/__dev/session-management/snapshot');
+async function loadDevSnapshot(forceRefresh = false) {
+  const path = forceRefresh
+    ? '/__dev/session-management/snapshot?refresh=1'
+    : '/__dev/session-management/snapshot';
+  return fetchDevPayload(path);
 }
 
 async function loadDevDetail(sessionID: string) {
@@ -102,7 +105,7 @@ export async function getCodexSessionManagementSnapshot(): Promise<SessionManage
     return getSessionManagementPreviewSnapshot();
   }
   if (canUseSessionManagementDevHTTP()) {
-    return mapSessionManagementSnapshotResponse(await loadDevSnapshot());
+    return mapSessionManagementSnapshotResponse(await loadDevSnapshot(false));
   }
 
   const getSnapshot = resolveRuntimeMethod('GetCodexSessionManagementSnapshot');
@@ -115,7 +118,7 @@ export async function refreshCodexSessionManagementSnapshot(): Promise<SessionMa
     return getSessionManagementPreviewSnapshot();
   }
   if (canUseSessionManagementDevHTTP()) {
-    return mapSessionManagementSnapshotResponse(await loadDevSnapshot());
+    return mapSessionManagementSnapshotResponse(await loadDevSnapshot(true));
   }
 
   const refreshSnapshot = resolveRuntimeMethod('RefreshCodexSessionManagementSnapshot');

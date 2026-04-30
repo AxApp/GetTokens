@@ -2,11 +2,6 @@ package main
 
 import wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 
-type EnvironmentProxyEntry struct {
-	Source   string `json:"source"`
-	ProxyURL string `json:"proxyUrl"`
-}
-
 type ProbeProxyNodeInput struct {
 	ProxyURL  string `json:"proxyUrl"`
 	TargetURL string `json:"targetUrl,omitempty"`
@@ -31,21 +26,6 @@ type FetchProxySubscriptionResult struct {
 	URL         string `json:"url"`
 	SourceLabel string `json:"sourceLabel"`
 	Content     string `json:"content"`
-}
-
-func (a *App) ListEnvironmentProxyEntries() []EnvironmentProxyEntry {
-	items := a.core.ListEnvironmentProxyEntries()
-	result := make([]EnvironmentProxyEntry, 0, len(items))
-	for _, item := range items {
-		if item.Source == "" || item.ProxyURL == "" {
-			continue
-		}
-		result = append(result, EnvironmentProxyEntry{
-			Source:   item.Source,
-			ProxyURL: item.ProxyURL,
-		})
-	}
-	return result
 }
 
 func (a *App) ProbeProxyNode(input ProbeProxyNodeInput) (*ProbeProxyNodeResult, error) {

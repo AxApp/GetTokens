@@ -8,7 +8,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -16,11 +15,6 @@ import (
 )
 
 const defaultProxyProbeTargetURL = "https://example.com"
-
-type EnvironmentProxyEntry struct {
-	Source   string `json:"source"`
-	ProxyURL string `json:"proxyUrl"`
-}
 
 type ProbeProxyNodeInput struct {
 	ProxyURL  string `json:"proxyUrl"`
@@ -46,10 +40,6 @@ type FetchProxySubscriptionResult struct {
 	URL         string `json:"url"`
 	SourceLabel string `json:"sourceLabel"`
 	Content     string `json:"content"`
-}
-
-func (a *App) ListEnvironmentProxyEntries() []EnvironmentProxyEntry {
-	return listEnvironmentProxyEntries()
 }
 
 func (a *App) ProbeProxyNode(input ProbeProxyNodeInput) (*ProbeProxyNodeResult, error) {
@@ -161,28 +151,6 @@ func (a *App) FetchProxySubscription(input FetchProxySubscriptionInput) (*FetchP
 		SourceLabel: strings.TrimSpace(input.SourceLabel),
 		Content:     string(body),
 	}, nil
-}
-
-func listEnvironmentProxyEntries() []EnvironmentProxyEntry {
-	return []EnvironmentProxyEntry{
-		resolveEnvironmentProxyEntry("https_proxy", "HTTPS_PROXY"),
-		resolveEnvironmentProxyEntry("http_proxy", "HTTP_PROXY"),
-		resolveEnvironmentProxyEntry("all_proxy", "ALL_PROXY"),
-	}
-}
-
-func resolveEnvironmentProxyEntry(primary string, fallback string) EnvironmentProxyEntry {
-	value := strings.TrimSpace(os.Getenv(primary))
-	if value == "" {
-		value = strings.TrimSpace(os.Getenv(fallback))
-	}
-	if value == "" {
-		return EnvironmentProxyEntry{}
-	}
-	return EnvironmentProxyEntry{
-		Source:   primary,
-		ProxyURL: value,
-	}
 }
 
 func buildProxyProbeTransport(raw string) (*http.Transport, error) {
