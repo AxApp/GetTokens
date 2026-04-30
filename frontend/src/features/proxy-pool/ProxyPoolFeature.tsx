@@ -1145,60 +1145,83 @@ function ProxyPoolSubscriptionManagerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="flex w-full max-w-5xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
+        className="flex w-full max-w-4xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="flex items-center justify-between gap-4 border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div>
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-[var(--border-color)] px-6 py-4">
+          <div className="min-w-0">
             <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Subscriptions</div>
             <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">订阅源管理</h3>
+            <p className="mt-2 text-[0.625rem] font-bold leading-5 text-[var(--text-muted)]">
+              管理本地订阅源，集中查看同步状态，并执行刷新或删除。
+            </p>
           </div>
-          <button onClick={onRefreshAll} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
-            刷新全部
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{sources.length} 个订阅源</span>
+            <button onClick={onRefreshAll} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
+              刷新全部
+            </button>
+          </div>
         </header>
-        <div className="max-h-[70vh] overflow-auto">
+        <div className="max-h-[70vh] overflow-auto p-4 md:p-6">
           {sources.length === 0 ? (
-            <div className="px-6 py-16 text-center text-[0.6875rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="py-16 text-center text-[0.6875rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               当前没有已保存的订阅源
             </div>
           ) : (
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-[var(--bg-surface)]">
-                  <TableHead>标签</TableHead>
-                  <TableHead>链接</TableHead>
-                  <TableHead>最近同步</TableHead>
-                  <TableHead>上次导入</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>操作</TableHead>
-                </tr>
-              </thead>
-              <tbody>
-                {sources.map((source) => (
-                  <tr key={source.id} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
-                    <td className="px-4 py-4 align-top text-[0.6875rem] font-bold text-[var(--text-primary)]">{source.label}</td>
-                    <td className="px-4 py-4 align-top font-mono text-[0.625rem] text-[var(--text-primary)]">{source.url}</td>
-                    <td className="px-4 py-4 align-top text-[0.6875rem] font-bold text-[var(--text-primary)]">{formatTableTime(source.lastSyncedAt)}</td>
-                    <td className="px-4 py-4 align-top text-[0.6875rem] font-bold text-[var(--text-primary)]">{source.lastImportCount} 条</td>
-                    <td className="px-4 py-4 align-top text-[0.625rem] font-bold text-[var(--text-primary)]">
-                      {source.lastError ? <span className="text-red-500">{source.lastError}</span> : '正常'}
-                    </td>
-                    <td className="px-4 py-4 align-top">
-                      <div className="flex flex-wrap gap-2">
-                        <ActionButton onClick={() => onRefresh(source)}>刷新</ActionButton>
-                        <ActionButton onClick={() => onDeleteSource(source, false)} tone="danger">
-                          删源
-                        </ActionButton>
-                        <ActionButton onClick={() => onDeleteSource(source, true)} tone="danger">
-                          删源并清节点
-                        </ActionButton>
+            <div className="space-y-3">
+              {sources.map((source) => {
+                const isHealthy = !source.lastError;
+                return (
+                  <section key={source.id} className="border border-[var(--border-color)] bg-[var(--bg-main)]">
+                    <div className="flex flex-col gap-4 p-4 md:p-5">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-[0.75rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{source.label}</h4>
+                            <span
+                              className={`border px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.14em] ${
+                                isHealthy
+                                  ? 'border-[var(--border-color)] text-[var(--text-primary)]'
+                                  : 'border-red-500 text-red-500'
+                              }`}
+                            >
+                              {isHealthy ? '正常' : '异常'}
+                            </span>
+                          </div>
+                          <p className="mt-2 break-all font-mono text-[0.625rem] leading-5 text-[var(--text-muted)]">{source.url}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 md:justify-end">
+                          <ActionButton onClick={() => onRefresh(source)}>刷新</ActionButton>
+                          <ActionButton onClick={() => onDeleteSource(source, false)} tone="danger">
+                            删源
+                          </ActionButton>
+                          <ActionButton onClick={() => onDeleteSource(source, true)} tone="danger">
+                            删源并清节点
+                          </ActionButton>
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <div className="grid gap-2 text-[0.625rem] font-bold text-[var(--text-muted)] md:grid-cols-3">
+                        <div className="border-t border-dashed border-[var(--border-color)] pt-3">
+                          <div className="text-[0.5625rem] font-black uppercase tracking-[0.14em]">最近同步</div>
+                          <div className="mt-1 text-[0.6875rem] text-[var(--text-primary)]">{formatTableTime(source.lastSyncedAt)}</div>
+                        </div>
+                        <div className="border-t border-dashed border-[var(--border-color)] pt-3">
+                          <div className="text-[0.5625rem] font-black uppercase tracking-[0.14em]">上次导入</div>
+                          <div className="mt-1 text-[0.6875rem] text-[var(--text-primary)]">{source.lastImportCount} 条</div>
+                        </div>
+                        <div className="border-t border-dashed border-[var(--border-color)] pt-3">
+                          <div className="text-[0.5625rem] font-black uppercase tracking-[0.14em]">状态详情</div>
+                          <div className={`mt-1 text-[0.6875rem] ${isHealthy ? 'text-[var(--text-primary)]' : 'text-red-500'}`}>
+                            {isHealthy ? '最近一次同步正常' : source.lastError}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
           )}
         </div>
         <footer className="flex items-center justify-end border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
