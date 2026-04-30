@@ -241,20 +241,6 @@ export namespace main {
 	        this.contentBase64 = source["contentBase64"];
 	    }
 	}
-	export class EnvironmentProxyEntry {
-	    source: string;
-	    proxyUrl: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new EnvironmentProxyEntry(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.source = source["source"];
-	        this.proxyUrl = source["proxyUrl"];
-	    }
-	}
 	export class FetchOpenAICompatibleProviderModelsInput {
 	    baseUrl: string;
 	    apiKey: string;

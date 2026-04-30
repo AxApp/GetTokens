@@ -62,8 +62,6 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
-export function ListEnvironmentProxyEntries():Promise<Array<main.EnvironmentProxyEntry>>;
-
 export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
 
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;

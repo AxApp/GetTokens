@@ -118,10 +118,6 @@ export function ListAuthFiles() {
   return window['go']['main']['App']['ListAuthFiles']();
 }
 
-export function ListEnvironmentProxyEntries() {
-  return window['go']['main']['App']['ListEnvironmentProxyEntries']();
-}
-
 export function ListOpenAICompatibleProviders() {
   return window['go']['main']['App']['ListOpenAICompatibleProviders']();
 }

@@ -61,9 +61,12 @@ function resolveDevBridgeURLs(path: string) {
   const urls = new Set<string>();
   urls.add(new URL(path, url.origin).toString());
 
-  if (url.port !== '4173') {
-    urls.add(new URL(path, `${url.protocol}//127.0.0.1:4173`).toString());
-    urls.add(new URL(path, `${url.protocol}//localhost:4173`).toString());
+  for (const port of ['5173', '4173', '5174', '4174']) {
+    if (url.port === port) {
+      continue;
+    }
+    urls.add(new URL(path, `${url.protocol}//127.0.0.1:${port}`).toString());
+    urls.add(new URL(path, `${url.protocol}//localhost:${port}`).toString());
   }
 
   return Array.from(urls);
