@@ -77,8 +77,10 @@ async function fetchDevPayload(path: string) {
   let lastError: Error | null = null;
 
   for (const candidate of candidates) {
+    const controller = new AbortController();
+    const timeoutID = globalThis.setTimeout(() => controller.abort(), 800);
     try {
-      const response = await fetch(candidate);
+      const response = await fetch(candidate, { signal: controller.signal });
       const payload = await response.json();
       if (!response.ok) {
         throw new Error(payload?.error || `session management dev bridge failed: ${response.status}`);
@@ -86,6 +88,8 @@ async function fetchDevPayload(path: string) {
       return payload;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+    } finally {
+      globalThis.clearTimeout(timeoutID);
     }
   }
 
