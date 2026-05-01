@@ -12,6 +12,24 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Readiness**: Sidecar `ready` status is required for account data flow. UI mount success does not guarantee data flow.
 - **Verification**: Only claim a fix is live after verifying it in the actual desktop app window, not just the browser.
 
+### 1.1 Browser Preview & Screenshot Loop
+- **When to use**:
+  - The page is a Wails surface, but most layout or interaction acceptance can be checked in a browser.
+  - The page depends on runtime bindings, yet you still need stable screenshots or quick iteration without a live desktop shell.
+- **Default pattern**:
+  1. Add an explicit preview entry such as `?preview=<page-key>` or a dedicated frame hash.
+  2. In preview mode, avoid hard dependency on `window.go.main.App`; provide stable preview data instead of crashing.
+  3. If the page still needs “real-ish” local data in browser dev, add a dev-only HTTP bridge in `vite.config.js` rather than faking Wails runtime globally.
+  4. Add a focused browser check script under `docs-linhay/scripts/` that opens the preview URL and writes deterministic screenshots into the matching `space`.
+- **Acceptance rule**:
+  - Browser screenshots are valid for layout/density review only after preview mode and fallback data are explicit and reproducible.
+  - If runtime bindings, sidecar readiness, or desktop-only capabilities are part of the requirement, browser acceptance does not replace the real Wails check.
+- **Cache rule**:
+  - For external status/data pages, prefer a small local cache plus a visible “live / cache / preview” source label, so repeated page entry does not look like a full refetch every time.
+- **Screenshot hygiene**:
+  - Keep the screenshot script near docs, not inside ad-hoc shell history.
+  - Reuse one stable output path per acceptance baseline instead of scattering `final/latest/temp` files.
+
 ## 2. Space Governance (`docs-linhay/spaces/`)
 - **Structure**: Each space must have `README.md`, `plans/`, `screenshots/`, and `debate/`.
 - **Naming**: Use English slugs. Prefer `YYYYMMDD-<topic>` for short tasks or stable feature names for milestones.
@@ -25,6 +43,14 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Rules -> `AGENTS.md`
 - **Memory**: Keep entries concise and decision-oriented. Run `qmd update` and `qmd embed` after any write-back.
 - **Governance**: Read `AGENTS.md` first. Update it only for repo-wide, durable rules. Ensure `docs-linhay` is not ignored in `.gitignore`.
+
+### 3.1 Cleanup Before Claiming Done
+- If a long implementation session leaves tracked files still drifting after the “main” commit, do not stop at the first commit.
+- Keep reconciling residual tracked diffs that belong to the same rollout until the remaining worktree noise is clearly limited to:
+  - external reference submodules
+  - local research scratch files
+  - user-owned temporary artifacts that are intentionally not versioned
+- If generated screenshots or browser artifacts should not enter git, add or refine ignore rules before claiming cleanup is complete.
 
 ## 4. Subagent Delivery Loop
 - **Trigger**: Use this loop when a requirement will be implemented by delegated agents or when the user explicitly asks for `subagent` delivery.
