@@ -1,15 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { CanApplyUpdate, GetReleaseLabel, GetSidecarStatus, GetVersion, UsesNativeUpdaterUI } from '../wailsjs/go/main/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
-import UsageDeskWorkspace from './features/accounts/components/UsageDeskWorkspace';
-import AccountsPage from './pages/AccountsPage';
-import DebugPage from './pages/DebugPage';
-import ProxyPoolPage from './pages/ProxyPoolPage';
-import SessionManagementPage from './pages/SessionManagementPage';
-import SettingsPage from './pages/SettingsPage';
-import StatusPage from './pages/StatusPage';
-import VendorStatusPage from './pages/VendorStatusPage';
 import { DebugProvider, useDebug } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { TextScaleProvider, useTextScale } from './context/TextScaleContext';
@@ -24,7 +16,7 @@ import type {
   SidecarStatus,
   UsageDeskWorkspace as UsageDeskWorkspaceID,
 } from './types';
-import { hasPreviewMode } from './utils/previewMode';
+import { hasPreviewMode, hasWailsAppBindings } from './utils/previewMode';
 import {
   buildFrameHash,
   persistAccountWorkspace,
@@ -38,6 +30,15 @@ import {
   readStoredUsageDeskWorkspace,
 } from './utils/pagePersistence';
 
+const AccountsPage = lazy(() => import('./pages/AccountsPage'));
+const DebugPage = lazy(() => import('./pages/DebugPage'));
+const ProxyPoolPage = lazy(() => import('./pages/ProxyPoolPage'));
+const SessionManagementPage = lazy(() => import('./pages/SessionManagementPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const StatusPage = lazy(() => import('./pages/StatusPage'));
+const VendorStatusPage = lazy(() => import('./pages/VendorStatusPage'));
+const UsageDeskWorkspace = lazy(() => import('./features/accounts/components/UsageDeskWorkspace'));
+
 const defaultSidecarStatus: SidecarStatus = {
   code: 'stopped',
   port: 0,
@@ -45,6 +46,16 @@ const defaultSidecarStatus: SidecarStatus = {
   version: '',
   startedAtUnix: 0,
 };
+
+function PageLoadingFallback() {
+  return (
+    <div className="flex h-full min-h-0 items-center justify-center bg-[var(--bg-surface)]">
+      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3 text-[0.625rem] font-black uppercase tracking-[0.24em] text-[var(--text-primary)] shadow-[6px_6px_0_var(--shadow-color)]">
+        Loading
+      </div>
+    </div>
+  );
+}
 
 function AppShell() {
   const { themeMode } = useTheme();
@@ -167,19 +178,21 @@ function AppShell() {
 
   useEffect(() => {
     let mounted = true;
+    const previewMode = hasPreviewMode();
+    const wailsRuntime = hasWailsAppBindings();
 
     async function loadInitialState() {
-      if (hasPreviewMode()) {
+      if (previewMode || !wailsRuntime) {
         if (!mounted) return;
-        setVersion('preview');
-        setReleaseLabel('preview');
+        setVersion(previewMode ? 'preview' : 'browser');
+        setReleaseLabel(previewMode ? 'preview' : 'browser');
         setCanApplyUpdate(false);
         setUsesNativeUpdaterUI(false);
         setSidecarStatus({
           code: 'running',
           port: 18317,
-          message: 'preview runtime',
-          version: 'preview',
+          message: previewMode ? 'preview runtime' : 'browser runtime',
+          version: previewMode ? 'preview' : 'browser',
           startedAtUnix: Math.floor(Date.now() / 1000),
         });
         return;
@@ -208,7 +221,7 @@ function AppShell() {
 
     loadInitialState();
 
-    if (hasPreviewMode()) {
+    if (previewMode || !wailsRuntime) {
       return () => {
         mounted = false;
       };
@@ -290,7 +303,9 @@ function AppShell() {
         setActiveUsageDeskWorkspace={setActiveUsageDeskWorkspace}
         releaseLabel={releaseLabel}
       />
-      <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">{page}</main>
+      <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">
+        <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>
+      </main>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
   getCodexSessionDetail,
   getCodexSessionManagementSnapshot,
   refreshCodexSessionManagementSnapshot,
+  updateCodexSessionProviders,
 } from './api.ts';
 
 test('mapSessionManagementSnapshotResponse builds provider summary and does not invent rewrite metrics', () => {
@@ -38,6 +39,7 @@ test('mapSessionManagementSnapshotResponse builds provider summary and does not 
             title: 'session-1',
             status: 'active',
             messageCount: 4,
+            provider: 'openai',
             roleSummary: {
               user: 1,
               assistant: 2,
@@ -56,6 +58,7 @@ test('mapSessionManagementSnapshotResponse builds provider summary and does not 
   assert.equal(snapshot.projects[0].providerSummary, '');
   assert.equal(Object.hasOwn(snapshot.projects[0], 'rewriteSummary'), false);
   assert.equal(snapshot.projects[0].sessions[0].roleSummary, 'user 1 / assistant 2 / system 1');
+  assert.equal(snapshot.projects[0].sessions[0].provider, 'openai');
 });
 
 test('mapSessionDetailResponse keeps message ordering and fallback labels stable', () => {
@@ -66,6 +69,7 @@ test('mapSessionDetailResponse keeps message ordering and fallback labels stable
     status: 'archived',
     fileLabel: 'session-a.jsonl',
     messageCount: 2,
+    provider: 'gemini',
     roleSummary: {
       user: 1,
       assistant: 1,
@@ -81,7 +85,29 @@ test('mapSessionDetailResponse keeps message ordering and fallback labels stable
   assert.equal(detail.id, 'session-1');
   assert.equal(detail.status, 'archived');
   assert.equal(detail.roleSummary, 'user 1 / assistant 1');
+  assert.equal(detail.provider, 'gemini');
   assert.equal(detail.messages[1].summary, 'world');
+});
+
+test('mapSessionDetailResponse accepts extended message roles', () => {
+  const detail = mapSessionDetailResponse({
+    sessionID: 'session-2',
+    projectID: 'project-b',
+    title: 'Session B',
+    status: 'active',
+    fileLabel: 'session-b.jsonl',
+    messageCount: 3,
+    roleSummary: '用户 1 / 工具调用 1 / 工具结果 1',
+    currentMessageLabel: '03 / 工具结果',
+    messages: [
+      { id: 'm-1', role: 'user', timeLabel: '11:00', title: 'ask', summary: 'show all' },
+      { id: 'm-2', role: 'tool_call', timeLabel: '11:01', title: 'call', summary: 'exec_command / pwd' },
+      { id: 'm-3', role: 'tool_result', timeLabel: '11:02', title: 'result', summary: '/tmp/workspace' },
+    ],
+  });
+
+  assert.equal(detail.messages[1].role, 'tool_call');
+  assert.equal(detail.messages[2].role, 'tool_result');
 });
 
 test('getCodexSessionManagementSnapshot throws a clear error when bridge is missing', async () => {
@@ -123,12 +149,6 @@ test('localhost dev mode falls back to http bridge when Wails runtime is missing
   };
   globalThis.fetch = async (url) => {
     fetchCalls.push(String(url));
-    if (String(url) === 'http://127.0.0.1:34115/__dev/session-management/snapshot') {
-      throw new Error('bridge missing on current origin');
-    }
-    if (String(url) === 'http://127.0.0.1:34115/__dev/session-management/detail?sessionID=sessions%2F2026%2F04%2F30%2Frollout.jsonl') {
-      throw new Error('bridge missing on current origin');
-    }
     if (String(url).includes('127.0.0.1:5173/__dev/session-management/snapshot')) {
       return {
         ok: true,
@@ -167,6 +187,7 @@ test('localhost dev mode falls back to http bridge when Wails runtime is missing
             status: 'active',
             fileLabel: 'sessions/2026/04/30/rollout.jsonl',
             messageCount: 1,
+            provider: 'openai',
             roleSummary: '用户 1 / 助手 0 / 系统 0',
             topic: '开发态直连',
             currentMessageLabel: '01 / 用户',
@@ -183,10 +204,124 @@ test('localhost dev mode falls back to http bridge when Wails runtime is missing
 
   const detail = await getCodexSessionDetail('sessions/2026/04/30/rollout.jsonl');
   assert.equal(detail.title, '真实开发态详情');
-  assert.deepEqual(fetchCalls.slice(0, 2), [
-    'http://127.0.0.1:34115/__dev/session-management/snapshot',
-    'http://127.0.0.1:5173/__dev/session-management/snapshot',
+  assert.equal(detail.provider, 'openai');
+  assert.equal(fetchCalls[0], 'http://127.0.0.1:5173/__dev/session-management/snapshot');
+
+  globalThis.fetch = originalFetch;
+});
+
+test('localhost dev mode posts provider merge to http bridge', async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchCalls = [];
+  globalThis.window = {
+    location: {
+      href: 'http://127.0.0.1:34115/#frame=session-management',
+    },
+  };
+  globalThis.fetch = async (url, options = {}) => {
+    fetchCalls.push({ url: String(url), options });
+    if (String(url).includes('127.0.0.1:5173/__dev/session-management/provider-merge')) {
+      return {
+        ok: true,
+        async json() {
+          return {
+            projectCount: 1,
+            sessionCount: 1,
+            activeSessionCount: 1,
+            archivedSessionCount: 0,
+            lastScanAt: '2026-04-30 23:41',
+            providerCounts: { openai: 1 },
+            projects: [
+              {
+                id: 'gettokens',
+                name: 'GetTokens',
+                sessionCount: 1,
+                activeSessionCount: 1,
+                archivedSessionCount: 0,
+                lastActiveAt: '2026-04-30 23:41',
+                providerCounts: { openai: 1 },
+                providerSummary: 'openai 1',
+                sessions: [],
+              },
+            ],
+          };
+        },
+      };
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+
+  const snapshot = await updateCodexSessionProviders('gettokens', [
+    { sourceProvider: 'gemini', targetProvider: 'openai' },
   ]);
+
+  assert.equal(snapshot.projects[0].providerSummary, 'openai 1');
+  assert.equal(fetchCalls[0].url, 'http://127.0.0.1:5173/__dev/session-management/provider-merge');
+  assert.equal(fetchCalls[0].options.method, 'POST');
+  assert.equal(fetchCalls[0].options.headers['Content-Type'], 'application/json');
+  assert.equal(
+    fetchCalls[0].options.body,
+    JSON.stringify({
+      projectID: 'gettokens',
+      mappings: [{ sourceProvider: 'gemini', targetProvider: 'openai' }],
+    }),
+  );
+
+  globalThis.fetch = originalFetch;
+});
+
+test('localhost dev mode prefers http bridge even when Wails runtime bindings exist', async () => {
+  const originalFetch = globalThis.fetch;
+  let runtimeCalled = false;
+  globalThis.window = {
+    location: {
+      href: 'http://127.0.0.1:34115/#frame=session-management',
+    },
+    go: {
+      main: {
+        App: {
+          async GetCodexSessionManagementSnapshot() {
+            runtimeCalled = true;
+            return { projects: [] };
+          },
+        },
+      },
+    },
+  };
+  globalThis.fetch = async (url) => {
+    if (String(url).includes('/__dev/session-management/snapshot')) {
+      return {
+        ok: true,
+        async json() {
+          return {
+            projectCount: 1,
+            sessionCount: 1,
+            activeSessionCount: 1,
+            archivedSessionCount: 0,
+            lastScanAt: '2026-04-30 23:41',
+            providerCounts: { openai: 1 },
+            projects: [
+              {
+                id: 'gettokens',
+                name: 'GetTokens',
+                sessionCount: 1,
+                activeSessionCount: 1,
+                archivedSessionCount: 0,
+                lastActiveAt: '2026-04-30 23:41',
+                providerCounts: { openai: 1 },
+                sessions: [],
+              },
+            ],
+          };
+        },
+      };
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+
+  const snapshot = await getCodexSessionManagementSnapshot();
+  assert.equal(snapshot.projects[0].name, 'GetTokens');
+  assert.equal(runtimeCalled, false);
 
   globalThis.fetch = originalFetch;
 });
@@ -216,6 +351,7 @@ test('getCodexSessionDetail maps runtime bridge payloads', async () => {
               status: 'active',
               fileLabel: 'session-a.jsonl',
               messageCount: 1,
+              provider: 'openai',
               roleSummary: 'user 1',
               topic: 'topic-a',
               currentMessageLabel: '01 / user',
@@ -230,6 +366,7 @@ test('getCodexSessionDetail maps runtime bridge payloads', async () => {
   const detail = await getCodexSessionDetail('session-a');
 
   assert.equal(detail.id, 'session-a');
+  assert.equal(detail.provider, 'openai');
   assert.equal(detail.messages.length, 1);
 
   const refreshed = await refreshCodexSessionManagementSnapshot();

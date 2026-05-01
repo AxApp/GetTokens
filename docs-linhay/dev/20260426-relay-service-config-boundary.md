@@ -170,17 +170,36 @@ sidecar 顶层 `api-keys` 原生支持列表，因此状态页不能再只建模
 但这里的 `model` 仍然只是：
 
 1. 生成 `auth.json` / `config.toml` 预览片段时的本地辅助输入
-2. 供当前桌面端反复复制使用的工作台偏好
+2. 供“应用到本地 Codex 配置”时写入 `~/.codex/config.toml` 的目标 model
+3. 搭配 `model_reasoning_effort` 一起决定本次本地默认推理强度
+4. 供当前桌面端反复复制使用的工作台偏好
 
 它不是：
 
 1. sidecar 运行时模型注册表
 2. provider 能力探测结果
-3. 一个已经同步到后端的正式领域配置
+3. 一个会反向改变 relay 服务端能力的正式领域配置
 
 因此这类状态当前应该持久化到本地，而不是反向发明新的 sidecar 管理接口。
 
-### 4. 局域网开关当前是“暴露控制”，不是 sidecar bind 开关
+### 4. provider 选择也是状态页本地工作台配置，不是 sidecar / Codex 历史迁移器
+
+状态页里用于“应用到本地 Codex”的 provider 选项，当前也应该按本地工作台偏好理解：
+
+1. 决定这次写入 `~/.codex/config.toml` 时是保持 `openai` 连续性，还是显式落成 custom provider
+2. 允许用户新增自己的 provider id / display name 组合，避免桌面端替用户写死身份
+3. 启动时还应补读本地 `~/.codex/config.toml` 中现有的 `[model_providers.<id>]`，把这些 provider id / name 合并进状态页选项，避免用户已有本地 provider 在 UI 里“消失”
+4. 仅影响本地 Codex 之后新会话的默认 provider 身份，不反向修改 relay 服务端
+
+它当前不是：
+
+1. sidecar 已注册 provider 列表
+2. 对既有 Codex rollout / sqlite state 的 provider 迁移工具
+3. 一个会自动重写历史会话 `model_provider` 的治理入口
+
+因此默认策略应优先保留用户原有 provider 连续性；像 `openai` 这类已有大批历史会话的身份，不应被“一键配置”静默改成新的 custom provider id。
+
+### 5. 局域网开关当前是“暴露控制”，不是 sidecar bind 开关
 
 状态页上的“局域网已开启 / 已关闭”按钮，当前语义是：
 
@@ -197,6 +216,76 @@ sidecar 顶层 `api-keys` 原生支持列表，因此状态页不能再只建模
 
 1. 这个开关允许本地持久化
 2. 但交付说明必须明确“只是 UI 暴露层开关，不是服务监听层开关”
+
+### 6. 状态页本地 Codex `model` / `model_reasoning_effort` 优先来自账号池聚合目录
+
+`StatusFeature` 里的本地 Codex 工作台配置，后续不再把 `model` 纯粹当成静态本地字符串列表维护。
+
+当前固定策略：
+
+1. 状态页优先通过后端聚合接口读取账号池支持的模型目录：
+   - openai-compatible provider 本地已配置模型
+   - openai-compatible provider 远端 `/models`
+   - codex api key 本地已配置模型
+2. `model_reasoning_effort` 只信远端 `/models` 明确返回的模型级能力：
+   - `supportedReasoningEfforts`
+   - `defaultReasoningEffort`
+3. 如果账号池目录里某个模型没有 reasoning 元数据，前端再回退到 Codex 通用枚举：
+   - `none`
+   - `minimal`
+   - `low`
+   - `medium`
+   - `high`
+   - `xhigh`
+4. 用户仍可在状态页本地补充自定义 model 名称；这些自定义项只作为账号池目录之外的补充，不反向写回 sidecar provider 配置。
+
+### 7. “应用到本地 Codex” 必须做保留式写入，不能整文件覆盖
+
+`StatusFeature` 的“一键应用到本地”当前已经明确不能继续把 `~/.codex/auth.json` 和 `~/.codex/config.toml` 整体重写。
+
+当前规则：
+
+1. `config.toml` 必须按文本最小补丁更新：
+   - 只更新 GetTokens 负责的键
+   - 尽量保留用户原有键顺序
+   - 尽量保留无关 section、注释与额外配置
+2. `auth.json` 必须按字段合并：
+   - 更新 `auth_mode`
+   - 更新 `OPENAI_API_KEY`
+   - 保留其他未知字段
+3. 若现有 `auth.json` 不是有效 JSON，应停止写入并报错，避免破坏用户已有本地状态。
+
+因此：
+
+1. “一键应用”是 relay 相关配置的 merge，不是整份本地 Codex 配置的 replace
+
+### 8. 状态页的 provider / model 目录要尽量贴近用户本地 Codex 现实
+
+状态页里用于“应用到本地 Codex”的 provider 与 model 选项，后续不能只靠页面本地默认值硬撑。
+
+当前补充规则：
+
+1. provider 选项除了内置默认值，还应补读本地 `~/.codex/config.toml` 中已有的 `[model_providers.<id>]`
+2. model 目录优先来自账号池聚合结果
+3. 若账号池聚合目录为空，再回退 `~/.codex/models_cache.json` 作为本地工作台兜底
+4. 这条 `models_cache` fallback 只用于状态页工作台可用性，不反向声明 sidecar 真实支持这些模型
+
+### 9. 状态页配置面板里的弹层验收不能只靠代码推断
+
+这轮 `model` 下拉就踩到了典型问题：DOM 已经挂出来，但因为卡片层 `overflow-hidden` 被父层裁掉，肉眼看起来像“菜单没开”。
+
+当前补充规则：
+
+1. 遇到卡片内 dropdown / listbox 不可见时，先查 ancestor `overflow`，再查 `z-index`
+2. 对 `#frame=status` 这类浏览器可直接打开的 Wails surface，优先用真实浏览器验收
+3. 若修复涉及视觉/交互结果，应保留截图到 `docs-linhay/screenshots/`
+2. 任何新实现都不能再以 `os.WriteFile(config.toml, fullPayload)` 这种方式直接覆盖用户原文件
+
+因此：
+
+1. `model` 不再是完全脱离账号池的纯本地自由文本目录
+2. `model_reasoning_effort` 不再是固定全量枚举选择，而是优先跟随当前模型能力动态收窄
+3. 本地手工补模型仍然允许存在，但它没有模型级 reasoning 元数据时，必须按通用枚举兜底
 
 ## 后续建议
 

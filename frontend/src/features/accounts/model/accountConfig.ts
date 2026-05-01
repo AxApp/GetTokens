@@ -1,4 +1,10 @@
 export const API_KEY_LABELS_STORAGE_KEY = 'gettokens.apiKeyLabels';
+export const RELAY_CODEX_PROVIDER_ID = 'gettokens';
+export const RELAY_CODEX_PROVIDER_NAME = 'GetTokens';
+export const RELAY_CODEX_DEFAULT_MODEL = 'gpt-5.4';
+export const RELAY_CODEX_DEFAULT_REASONING_EFFORT = 'high';
+export const RELAY_CODEX_OPENAI_PROVIDER_ID = 'openai';
+export const RELAY_CODEX_REASONING_EFFORT_OPTIONS = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const;
 
 export const emptyApiKeyForm = {
   label: '',
@@ -48,7 +54,7 @@ function quoteYAMLString(value: string) {
   return JSON.stringify(value);
 }
 
-function normalizeManagedProviderID(value: string) {
+export function normalizeProviderID(value: string) {
   return value
     .trim()
     .toLowerCase()
@@ -72,7 +78,30 @@ function resolveManagedProviderID(
       return '';
     }
   })();
-  return normalizeManagedProviderID(prefix || host || 'provider-relay') || 'provider-relay';
+  return normalizeProviderID(prefix || host || 'provider-relay') || 'provider-relay';
+}
+
+export function normalizeRelayProviderOption(input: {
+  providerID?: string;
+  providerName?: string;
+}) {
+  const normalizedID = normalizeProviderID(String(input.providerID || ''));
+  const providerID = normalizedID || RELAY_CODEX_OPENAI_PROVIDER_ID;
+  const trimmedName = String(input.providerName || '').trim();
+  const providerName =
+    trimmedName || (providerID === RELAY_CODEX_OPENAI_PROVIDER_ID ? 'OpenAI' : providerID);
+
+  return {
+    providerID,
+    providerName,
+  };
+}
+
+export function normalizeRelayReasoningEffort(value?: string) {
+  const trimmed = String(value || '').trim().toLowerCase();
+  return (RELAY_CODEX_REASONING_EFFORT_OPTIONS as readonly string[]).includes(trimmed)
+    ? trimmed
+    : RELAY_CODEX_DEFAULT_REASONING_EFFORT;
 }
 
 export function buildManagedAuthJSONSnippet(
@@ -124,7 +153,7 @@ export function buildRelayCodexAuthJSONSnippet(
   }
 ) {
   const apiKey = String(draft.apiKey || '').trim() || '<YOUR_API_KEY>';
-  const model = String(draft.model || '').trim() || 'GT';
+  const model = String(draft.model || '').trim() || RELAY_CODEX_DEFAULT_MODEL;
 
   return JSON.stringify(
     {
@@ -141,12 +170,38 @@ export function buildRelayCodexConfigTomlSnippet(
   draft: {
     baseUrl?: string;
     model?: string;
+    reasoningEffort?: string;
+    providerID?: string;
+    providerName?: string;
   }
 ) {
   const baseUrl = normalizeBaseUrl(String(draft.baseUrl || '')) || 'http://127.0.0.1:8317/v1';
-  const model = String(draft.model || '').trim() || 'GT';
+  const model = String(draft.model || '').trim() || RELAY_CODEX_DEFAULT_MODEL;
+  const reasoningEffort = normalizeRelayReasoningEffort(draft.reasoningEffort);
+  const provider = normalizeRelayProviderOption({
+    providerID: draft.providerID,
+    providerName: draft.providerName,
+  });
 
-  return [`model = ${quoteYAMLString(model)}`, `openai_base_url = ${quoteYAMLString(baseUrl)}`].join('\n');
+  if (provider.providerID === RELAY_CODEX_OPENAI_PROVIDER_ID) {
+    return [
+      `model = ${quoteYAMLString(model)}`,
+      `model_reasoning_effort = ${quoteYAMLString(reasoningEffort)}`,
+      `openai_base_url = ${quoteYAMLString(baseUrl)}`,
+    ].join('\n');
+  }
+
+  return [
+    `model = ${quoteYAMLString(model)}`,
+    `model_reasoning_effort = ${quoteYAMLString(reasoningEffort)}`,
+    `model_provider = ${quoteYAMLString(provider.providerID)}`,
+    '',
+    `[model_providers.${provider.providerID}]`,
+    `name = ${quoteYAMLString(provider.providerName)}`,
+    `base_url = ${quoteYAMLString(baseUrl)}`,
+    'requires_openai_auth = true',
+    `wire_api = ${quoteYAMLString('responses')}`,
+  ].join('\n');
 }
 
 export function parseMaybeJSON(value: string) {

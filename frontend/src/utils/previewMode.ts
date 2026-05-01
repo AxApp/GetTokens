@@ -27,3 +27,16 @@ export function hasWailsRuntime() {
 
   return typeof (window as Window & { runtime?: { EventsOnMultiple?: unknown } }).runtime?.EventsOnMultiple === 'function';
 }
+
+export function hasWailsAppBindings() {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const runtimeReady =
+    typeof (window as Window & { runtime?: { EventsOnMultiple?: unknown } }).runtime?.EventsOnMultiple === 'function';
+  const appReady =
+    typeof (window as Window & { go?: { main?: { App?: unknown } } }).go?.main?.App === 'object';
+
+  return runtimeReady && appReady;
+}

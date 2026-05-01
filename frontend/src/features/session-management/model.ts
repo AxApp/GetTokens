@@ -1,6 +1,13 @@
 export type SessionFilter = 'all' | 'active' | 'archived';
 export type SessionStatus = Exclude<SessionFilter, 'all'>;
-export type MessageRole = 'system' | 'user' | 'assistant';
+export type MessageRole =
+  | 'system'
+  | 'user'
+  | 'assistant'
+  | 'reasoning'
+  | 'tool_call'
+  | 'tool_result'
+  | 'event';
 
 export interface SessionMessage {
   id: string;
@@ -19,6 +26,7 @@ export interface SessionSummary {
   updatedAt: string;
   fileLabel: string;
   summary: string;
+  provider: string;
 }
 
 export interface ProjectSummary {
@@ -56,11 +64,11 @@ export interface SessionDetail {
   roleSummary: string;
   topic: string;
   currentMessageLabel: string;
+  provider: string;
   messages: SessionMessage[];
 }
 
 const EMPTY_VALUE = '—';
-
 type UnknownRecord = Record<string, unknown>;
 
 function isRecord(value: unknown): value is UnknownRecord {
@@ -100,7 +108,15 @@ function getStatus(value: unknown): SessionStatus {
 }
 
 function getMessageRole(value: unknown): MessageRole {
-  if (value === 'system' || value === 'assistant' || value === 'user') {
+  if (
+    value === 'system' ||
+    value === 'assistant' ||
+    value === 'user' ||
+    value === 'reasoning' ||
+    value === 'tool_call' ||
+    value === 'tool_result' ||
+    value === 'event'
+  ) {
     return value;
   }
 
@@ -187,13 +203,14 @@ function mapSessionSummary(raw: unknown): SessionSummary {
 
   return {
     id,
-    title: getText(source.title),
+    title: getOptionalText(source.title),
     status: getStatus(source.status),
     messageCount: getCount(source.messageCount),
     roleSummary: getRoleSummaryLabel(source.roleSummary),
     updatedAt: getText(source.updatedAt ?? source.lastActiveAt),
     fileLabel,
     summary,
+    provider: getText(source.provider),
   };
 }
 
@@ -270,6 +287,7 @@ export function mapSessionDetailResponse(raw: unknown): SessionDetail {
     roleSummary: getRoleSummaryLabel(source.roleSummary),
     topic: getText(source.topic),
     currentMessageLabel: getText(source.currentMessageLabel),
+    provider: getText(source.provider),
     messages,
   };
 }

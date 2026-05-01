@@ -26,8 +26,10 @@ type OpenAICompatibleProvider struct {
 }
 
 type OpenAICompatibleModel struct {
-	Name  string `json:"name"`
-	Alias string `json:"alias,omitempty"`
+	Name                      string   `json:"name"`
+	Alias                     string   `json:"alias,omitempty"`
+	SupportedReasoningEfforts []string `json:"supportedReasoningEfforts,omitempty"`
+	DefaultReasoningEffort    string   `json:"defaultReasoningEffort,omitempty"`
 }
 
 type CreateOpenAICompatibleProviderInput struct {
@@ -106,11 +108,11 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 				Alias: strings.TrimSpace(model.Alias),
 			})
 		}
-			providers = append(providers, OpenAICompatibleProvider{
-				Name:       strings.TrimSpace(item.Name),
-				Priority:   item.Priority,
-				Disabled:   item.Disabled,
-				BaseURL:    strings.TrimSpace(item.BaseURL),
+		providers = append(providers, OpenAICompatibleProvider{
+			Name:       strings.TrimSpace(item.Name),
+			Priority:   item.Priority,
+			Disabled:   item.Disabled,
+			BaseURL:    strings.TrimSpace(item.BaseURL),
 			Prefix:     strings.TrimSpace(item.Prefix),
 			APIKey:     apiKey,
 			APIKeys:    apiKeys,
@@ -150,15 +152,15 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 		}
 	}
 
-		current = append(current, cliproxyapi.OpenAICompatibleProvider{
-			Name:     name,
-			BaseURL:  baseURL,
-			Prefix:   prefix,
-			Priority: 0,
-			Disabled: false,
-			APIKeyEntries: []cliproxyapi.OpenAICompatibleAPIKeyEntry{
-				{APIKey: apiKey},
-			},
+	current = append(current, cliproxyapi.OpenAICompatibleProvider{
+		Name:     name,
+		BaseURL:  baseURL,
+		Prefix:   prefix,
+		Priority: 0,
+		Disabled: false,
+		APIKeyEntries: []cliproxyapi.OpenAICompatibleAPIKeyEntry{
+			{APIKey: apiKey},
+		},
 	})
 
 	return a.managementClient().PutOpenAICompatibleProviders(current)
@@ -454,8 +456,11 @@ func buildOpenAICompatibleModelsURL(baseURL string) string {
 
 func parseOpenAICompatibleModelsResponse(body string) ([]OpenAICompatibleModel, error) {
 	type remoteModelItem struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
+		ID                       string   `json:"id"`
+		Name                     string   `json:"name"`
+		Slug                     string   `json:"slug"`
+		SupportedReasoningLevels []string `json:"supported_reasoning_levels"`
+		DefaultReasoningLevel    string   `json:"default_reasoning_level"`
 	}
 	var payload struct {
 		Data   []remoteModelItem `json:"data"`
@@ -474,6 +479,9 @@ func parseOpenAICompatibleModelsResponse(body string) ([]OpenAICompatibleModel, 
 	for _, item := range items {
 		name := strings.TrimSpace(item.ID)
 		if name == "" {
+			name = strings.TrimSpace(item.Slug)
+		}
+		if name == "" {
 			name = strings.TrimSpace(item.Name)
 		}
 		if name == "" {
@@ -483,7 +491,11 @@ func parseOpenAICompatibleModelsResponse(body string) ([]OpenAICompatibleModel, 
 			continue
 		}
 		seen[name] = struct{}{}
-		models = append(models, OpenAICompatibleModel{Name: name})
+		models = append(models, OpenAICompatibleModel{
+			Name:                      name,
+			SupportedReasoningEfforts: normalizeReasoningEfforts(item.SupportedReasoningLevels),
+			DefaultReasoningEffort:    normalizeReasoningEffort(item.DefaultReasoningLevel),
+		})
 	}
 	if len(models) == 0 {
 		return nil, errors.New("未解析到任何模型")
@@ -557,9 +569,37 @@ func normalizeProviderModels(items []OpenAICompatibleModel) []OpenAICompatibleMo
 		}
 		seen[name] = struct{}{}
 		normalized = append(normalized, OpenAICompatibleModel{
-			Name:  name,
-			Alias: strings.TrimSpace(item.Alias),
+			Name:                      name,
+			Alias:                     strings.TrimSpace(item.Alias),
+			SupportedReasoningEfforts: normalizeReasoningEfforts(item.SupportedReasoningEfforts),
+			DefaultReasoningEffort:    normalizeReasoningEffort(item.DefaultReasoningEffort),
 		})
 	}
 	return normalized
+}
+
+func normalizeReasoningEfforts(items []string) []string {
+	normalized := make([]string, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		effort := normalizeReasoningEffort(item)
+		if effort == "" {
+			continue
+		}
+		if _, ok := seen[effort]; ok {
+			continue
+		}
+		seen[effort] = struct{}{}
+		normalized = append(normalized, effort)
+	}
+	return normalized
+}
+
+func normalizeReasoningEffort(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "none", "minimal", "low", "medium", "high", "xhigh":
+		return strings.ToLower(strings.TrimSpace(value))
+	default:
+		return ""
+	}
 }

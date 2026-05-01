@@ -9,12 +9,12 @@ import {
   getSessionManagementPreviewSnapshot,
   hasSessionManagementPreviewMode,
 } from './previewData.ts';
-import { hasWailsRuntime } from '../../utils/previewMode.ts';
 
 interface SessionManagementRuntimeApp {
   GetCodexSessionManagementSnapshot?: () => Promise<unknown>;
   RefreshCodexSessionManagementSnapshot?: () => Promise<unknown>;
   GetCodexSessionDetail?: (sessionID: string) => Promise<unknown>;
+  UpdateCodexSessionProviders?: (input: { projectID: string; mappings: Array<{ sourceProvider: string; targetProvider: string }> }) => Promise<unknown>;
 }
 
 declare global {
@@ -39,7 +39,7 @@ function resolveRuntimeMethod<T extends keyof SessionManagementRuntimeApp>(metho
 }
 
 function canUseSessionManagementDevHTTP() {
-  if (typeof window === 'undefined' || hasWailsRuntime()) {
+  if (typeof window === 'undefined') {
     return false;
   }
 
@@ -58,10 +58,13 @@ function resolveDevBridgeURLs(path: string) {
   }
 
   const url = new URL(window.location.href);
+  const devPorts = ['5173', '4173', '5174', '4174'];
   const urls = new Set<string>();
-  urls.add(new URL(path, url.origin).toString());
+  if (devPorts.includes(url.port)) {
+    urls.add(new URL(path, url.origin).toString());
+  }
 
-  for (const port of ['5173', '4173', '5174', '4174']) {
+  for (const port of devPorts) {
     if (url.port === port) {
       continue;
     }
@@ -78,7 +81,7 @@ async function fetchDevPayload(path: string) {
 
   for (const candidate of candidates) {
     const controller = new AbortController();
-    const timeoutID = globalThis.setTimeout(() => controller.abort(), 800);
+    const timeoutID = globalThis.setTimeout(() => controller.abort(), 5000);
     try {
       const response = await fetch(candidate, { signal: controller.signal });
       const payload = await response.json();
@@ -105,6 +108,37 @@ async function loadDevSnapshot(forceRefresh = false) {
 
 async function loadDevDetail(sessionID: string) {
   return fetchDevPayload(`/__dev/session-management/detail?sessionID=${encodeURIComponent(sessionID)}`);
+}
+
+async function updateDevProviders(projectID: string, mappings: Array<{ sourceProvider: string; targetProvider: string }>) {
+  const candidates = resolveDevBridgeURLs('/__dev/session-management/provider-merge');
+  let lastError: Error | null = null;
+
+  for (const candidate of candidates) {
+    const controller = new AbortController();
+    const timeoutID = globalThis.setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(candidate, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ projectID, mappings }),
+        signal: controller.signal,
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error || `session management provider merge failed: ${response.status}`);
+      }
+      return payload;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    } finally {
+      globalThis.clearTimeout(timeoutID);
+    }
+  }
+
+  throw lastError ?? new Error('session management provider merge unavailable');
 }
 
 export async function getCodexSessionManagementSnapshot(): Promise<SessionManagementSnapshot> {
@@ -144,4 +178,20 @@ export async function getCodexSessionDetail(sessionID: string): Promise<SessionD
   const getDetail = resolveRuntimeMethod('GetCodexSessionDetail');
   const raw = await getDetail(sessionID);
   return mapSessionDetailResponse(raw);
+}
+
+export async function updateCodexSessionProviders(
+  projectID: string,
+  mappings: Array<{ sourceProvider: string; targetProvider: string }>,
+): Promise<SessionManagementSnapshot> {
+  if (hasSessionManagementPreviewMode()) {
+    throw new Error('preview 模式不支持修改 provider');
+  }
+  if (canUseSessionManagementDevHTTP()) {
+    return mapSessionManagementSnapshotResponse(await updateDevProviders(projectID, mappings));
+  }
+
+  const updateProviders = resolveRuntimeMethod('UpdateCodexSessionProviders');
+  const raw = await updateProviders({ projectID, mappings });
+  return mapSessionManagementSnapshotResponse(raw);
 }

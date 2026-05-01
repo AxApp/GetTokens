@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/updater"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
@@ -24,333 +23,6 @@ const GitHubRepo = "AxApp/GetTokens"
 
 type App struct {
 	core *wailsapp.App
-}
-
-type AuthFileItem struct {
-	Name          string      `json:"name"`
-	Type          string      `json:"type,omitempty"`
-	Provider      string      `json:"provider,omitempty"`
-	Email         string      `json:"email,omitempty"`
-	PlanType      string      `json:"planType,omitempty"`
-	Size          int64       `json:"size,omitempty"`
-	AuthIndex     interface{} `json:"authIndex,omitempty"`
-	RuntimeOnly   bool        `json:"runtimeOnly,omitempty"`
-	Disabled      bool        `json:"disabled,omitempty"`
-	Unavailable   bool        `json:"unavailable,omitempty"`
-	Status        string      `json:"status,omitempty"`
-	StatusMessage string      `json:"statusMessage,omitempty"`
-	LastRefresh   interface{} `json:"lastRefresh,omitempty"`
-	Modified      int64       `json:"modified,omitempty"`
-}
-
-type AuthFilesResponse struct {
-	Files []AuthFileItem `json:"files"`
-	Total int            `json:"total,omitempty"`
-}
-
-type UploadFilePayload struct {
-	Name          string `json:"name"`
-	ContentBase64 string `json:"contentBase64"`
-}
-
-type DownloadFileResponse struct {
-	Name          string `json:"name"`
-	ContentBase64 string `json:"contentBase64"`
-}
-
-type OAuthStartResult struct {
-	URL   string `json:"url"`
-	State string `json:"state,omitempty"`
-}
-
-type OAuthStatusResult struct {
-	Status string `json:"status"`
-	Error  string `json:"error,omitempty"`
-}
-
-type CompleteCodexOAuthInput struct {
-	ExistingName  string   `json:"existingName"`
-	PreviousNames []string `json:"previousNames"`
-}
-
-type CodexQuotaWindow struct {
-	ID               string `json:"id"`
-	Label            string `json:"label"`
-	RemainingPercent *int   `json:"remainingPercent,omitempty"`
-	ResetLabel       string `json:"resetLabel"`
-	ResetAtUnix      int64  `json:"resetAtUnix,omitempty"`
-}
-
-type CodexQuotaResponse struct {
-	PlanType string             `json:"planType,omitempty"`
-	Windows  []CodexQuotaWindow `json:"windows"`
-}
-
-type AccountRecord struct {
-	ID               string      `json:"id"`
-	Provider         string      `json:"provider"`
-	CredentialSource string      `json:"credentialSource"`
-	DisplayName      string      `json:"displayName"`
-	Status           string      `json:"status"`
-	Priority         int         `json:"priority,omitempty"`
-	Disabled         bool        `json:"disabled,omitempty"`
-	Email            string      `json:"email,omitempty"`
-	PlanType         string      `json:"planType,omitempty"`
-	Name             string      `json:"name,omitempty"`
-	APIKey           string      `json:"apiKey,omitempty"`
-	KeyFingerprint   string      `json:"keyFingerprint,omitempty"`
-	KeySuffix        string      `json:"keySuffix,omitempty"`
-	BaseURL          string      `json:"baseUrl,omitempty"`
-	Prefix           string      `json:"prefix,omitempty"`
-	AuthIndex        interface{} `json:"authIndex,omitempty"`
-	QuotaKey         string      `json:"quotaKey,omitempty"`
-	LocalOnly        bool        `json:"localOnly,omitempty"`
-}
-
-type CreateCodexAPIKeyInput struct {
-	APIKey         string            `json:"apiKey"`
-	Label          string            `json:"label,omitempty"`
-	BaseURL        string            `json:"baseUrl"`
-	Priority       int               `json:"priority,omitempty"`
-	Prefix         string            `json:"prefix,omitempty"`
-	ProxyURL       string            `json:"proxyUrl,omitempty"`
-	Headers        map[string]string `json:"headers,omitempty"`
-	ExcludedModels []string          `json:"excludedModels,omitempty"`
-}
-
-type UpdateCodexAPIKeyPriorityInput struct {
-	ID       string `json:"id"`
-	Priority int    `json:"priority,omitempty"`
-}
-
-type UpdateCodexAPIKeyLabelInput struct {
-	ID    string `json:"id"`
-	Label string `json:"label,omitempty"`
-}
-
-type UpdateCodexAPIKeyConfigInput struct {
-	ID      string `json:"id"`
-	APIKey  string `json:"apiKey"`
-	BaseURL string `json:"baseUrl"`
-	Prefix  string `json:"prefix,omitempty"`
-}
-
-type UpdateAccountPriorityInput struct {
-	ID       string `json:"id"`
-	Priority int    `json:"priority,omitempty"`
-}
-
-type OpenAICompatibleProvider struct {
-	Name       string                  `json:"name"`
-	Priority   int                     `json:"priority,omitempty"`
-	Disabled   bool                    `json:"disabled,omitempty"`
-	BaseURL    string                  `json:"baseUrl"`
-	Prefix     string                  `json:"prefix,omitempty"`
-	APIKey     string                  `json:"apiKey"`
-	APIKeys    []string                `json:"apiKeys,omitempty"`
-	Models     []OpenAICompatibleModel `json:"models,omitempty"`
-	Headers    map[string]string       `json:"headers,omitempty"`
-	KeyCount   int                     `json:"keyCount,omitempty"`
-	ModelCount int                     `json:"modelCount,omitempty"`
-	HasHeaders bool                    `json:"hasHeaders,omitempty"`
-}
-
-type OpenAICompatibleModel struct {
-	Name  string `json:"name"`
-	Alias string `json:"alias,omitempty"`
-}
-
-type CreateOpenAICompatibleProviderInput struct {
-	Name    string `json:"name"`
-	BaseURL string `json:"baseUrl"`
-	Prefix  string `json:"prefix,omitempty"`
-	APIKey  string `json:"apiKey"`
-}
-
-type UpdateOpenAICompatibleProviderInput struct {
-	CurrentName string                  `json:"currentName"`
-	Name        string                  `json:"name"`
-	BaseURL     string                  `json:"baseUrl"`
-	Prefix      string                  `json:"prefix,omitempty"`
-	APIKey      string                  `json:"apiKey"`
-	APIKeys     []string                `json:"apiKeys,omitempty"`
-	Headers     map[string]string       `json:"headers,omitempty"`
-	Models      []OpenAICompatibleModel `json:"models,omitempty"`
-}
-
-type VerifyOpenAICompatibleProviderInput struct {
-	BaseURL string            `json:"baseUrl"`
-	APIKey  string            `json:"apiKey"`
-	Model   string            `json:"model"`
-	Headers map[string]string `json:"headers,omitempty"`
-}
-
-type FetchOpenAICompatibleProviderModelsInput struct {
-	BaseURL string            `json:"baseUrl"`
-	APIKey  string            `json:"apiKey"`
-	Headers map[string]string `json:"headers,omitempty"`
-}
-
-type VerifyOpenAICompatibleProviderResult struct {
-	Success      bool   `json:"success"`
-	StatusCode   int    `json:"statusCode,omitempty"`
-	Message      string `json:"message,omitempty"`
-	ResponseBody string `json:"responseBody,omitempty"`
-}
-
-type FetchOpenAICompatibleProviderModelsResult struct {
-	Models       []OpenAICompatibleModel `json:"models,omitempty"`
-	StatusCode   int                     `json:"statusCode,omitempty"`
-	Message      string                  `json:"message,omitempty"`
-	ResponseBody string                  `json:"responseBody,omitempty"`
-}
-
-type RelayServiceConfig struct {
-	APIKeys     []string                 `json:"apiKeys"`
-	APIKeyItems []RelayServiceAPIKeyItem `json:"apiKeyItems"`
-	Endpoints   []RelayServiceEndpoint   `json:"endpoints"`
-}
-
-type RelayServiceEndpoint struct {
-	ID      string `json:"id"`
-	Kind    string `json:"kind"`
-	Host    string `json:"host"`
-	BaseURL string `json:"baseUrl"`
-}
-
-type RelayServiceAPIKeyItem struct {
-	Value      string `json:"value"`
-	CreatedAt  string `json:"createdAt,omitempty"`
-	LastUsedAt string `json:"lastUsedAt,omitempty"`
-}
-
-type RelayRoutingConfig struct {
-	Strategy            string `json:"strategy"`
-	SessionAffinity     bool   `json:"sessionAffinity"`
-	SessionAffinityTTL  string `json:"sessionAffinityTTL"`
-	RequestRetry        int    `json:"requestRetry"`
-	MaxRetryCredentials int    `json:"maxRetryCredentials"`
-	MaxRetryInterval    int    `json:"maxRetryInterval"`
-	SwitchProject       bool   `json:"switchProject"`
-	SwitchPreviewModel  bool   `json:"switchPreviewModel"`
-	AntigravityCredits  bool   `json:"antigravityCredits"`
-}
-
-type RelayLocalApplyResult struct {
-	CodexHomePath string `json:"codexHomePath"`
-	AuthFilePath  string `json:"authFilePath"`
-	ConfigPath    string `json:"configPath"`
-}
-
-type UsageStatisticsResponse struct {
-	Usage          map[string]interface{} `json:"usage"`
-	FailedRequests int64                  `json:"failedRequests,omitempty"`
-}
-
-type LocalProjectedUsageDetail struct {
-	Timestamp         string `json:"timestamp"`
-	Provider          string `json:"provider"`
-	SourceKind        string `json:"sourceKind"`
-	Model             string `json:"model,omitempty"`
-	InputTokens       int64  `json:"inputTokens"`
-	CachedInputTokens int64  `json:"cachedInputTokens"`
-	OutputTokens      int64  `json:"outputTokens"`
-	RequestCount      int64  `json:"requestCount"`
-}
-
-type LocalProjectedUsageResponse struct {
-	Provider         string                      `json:"provider"`
-	SourceKind       string                      `json:"sourceKind"`
-	ScannedFiles     int                         `json:"scannedFiles"`
-	CacheHitFiles    int                         `json:"cacheHitFiles,omitempty"`
-	DeltaAppendFiles int                         `json:"deltaAppendFiles,omitempty"`
-	FullRebuildFiles int                         `json:"fullRebuildFiles,omitempty"`
-	FileMissingFiles int                         `json:"fileMissingFiles,omitempty"`
-	Details          []LocalProjectedUsageDetail `json:"details"`
-}
-
-type LocalProjectedUsageSettings struct {
-	RefreshIntervalMinutes int `json:"refreshIntervalMinutes"`
-}
-
-type SessionManagementSnapshot struct {
-	ProjectCount         int                              `json:"projectCount"`
-	SessionCount         int                              `json:"sessionCount"`
-	ActiveSessionCount   int                              `json:"activeSessionCount"`
-	ArchivedSessionCount int                              `json:"archivedSessionCount"`
-	LastScanAt           string                           `json:"lastScanAt"`
-	ProviderCounts       map[string]int                   `json:"providerCounts"`
-	Projects             []SessionManagementProjectRecord `json:"projects"`
-}
-
-type SessionManagementProviderCount struct {
-	Provider     string `json:"provider"`
-	SessionCount int    `json:"sessionCount"`
-}
-
-type SessionManagementProjectRecord struct {
-	ID                   string                           `json:"id"`
-	Name                 string                           `json:"name"`
-	ProviderCounts       map[string]int                   `json:"providerCounts,omitempty"`
-	SessionCount         int                              `json:"sessionCount"`
-	ActiveSessionCount   int                              `json:"activeSessionCount"`
-	ArchivedSessionCount int                              `json:"archivedSessionCount"`
-	LastActiveAt         string                           `json:"lastActiveAt"`
-	ProviderSummary      string                           `json:"providerSummary"`
-	Sessions             []SessionManagementSessionRecord `json:"sessions"`
-}
-
-type SessionManagementSessionRecord struct {
-	ID                  string `json:"id"`
-	SessionID           string `json:"sessionID"`
-	ProjectID           string `json:"projectID"`
-	ProjectName         string `json:"projectName"`
-	Title               string `json:"title"`
-	Status              string `json:"status"`
-	Archived            bool   `json:"archived"`
-	MessageCount        int    `json:"messageCount"`
-	RoleSummary         string `json:"roleSummary"`
-	StartedAt           string `json:"startedAt"`
-	UpdatedAt           string `json:"updatedAt"`
-	FileLabel           string `json:"fileLabel"`
-	Summary             string `json:"summary"`
-	Preview             string `json:"preview"`
-	Topic               string `json:"topic"`
-	CurrentMessageLabel string `json:"currentMessageLabel"`
-	Provider            string `json:"provider"`
-	Model               string `json:"model,omitempty"`
-}
-
-type SessionManagementSessionDetail struct {
-	SessionID           string                           `json:"sessionID"`
-	ProjectID           string                           `json:"projectID"`
-	ProjectName         string                           `json:"projectName"`
-	Title               string                           `json:"title"`
-	Status              string                           `json:"status"`
-	Archived            bool                             `json:"archived"`
-	FileLabel           string                           `json:"fileLabel"`
-	MessageCount        int                              `json:"messageCount"`
-	Masked              bool                             `json:"masked"`
-	CurrentMessageLabel string                           `json:"currentMessageLabel"`
-	RoleSummary         string                           `json:"roleSummary"`
-	Topic               string                           `json:"topic"`
-	Preview             string                           `json:"preview"`
-	Provider            string                           `json:"provider"`
-	Model               string                           `json:"model,omitempty"`
-	StartedAt           string                           `json:"startedAt"`
-	UpdatedAt           string                           `json:"updatedAt"`
-	Messages            []SessionManagementMessageRecord `json:"messages"`
-}
-
-type SessionManagementMessageRecord struct {
-	ID        string `json:"id"`
-	Role      string `json:"role"`
-	TimeLabel string `json:"timeLabel"`
-	Timestamp string `json:"timestamp,omitempty"`
-	Title     string `json:"title"`
-	Summary   string `json:"summary"`
-	Content   string `json:"content"`
-	Truncated bool   `json:"truncated,omitempty"`
 }
 
 func NewApp() *App {
@@ -564,6 +236,26 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 	return mapSessionManagementSessionDetail(result), nil
 }
 
+func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*SessionManagementSnapshot, error) {
+	result, err := a.core.UpdateCodexSessionProviders(wailsapp.UpdateSessionProvidersInput{
+		ProjectID: input.ProjectID,
+		Mappings: func() []wailsapp.UpdateSessionProviderMapping {
+			items := make([]wailsapp.UpdateSessionProviderMapping, 0, len(input.Mappings))
+			for _, item := range input.Mappings {
+				items = append(items, wailsapp.UpdateSessionProviderMapping{
+					SourceProvider: item.SourceProvider,
+					TargetProvider: item.TargetProvider,
+				})
+			}
+			return items
+		}(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementSnapshot(result), nil
+}
+
 func (a *App) GetLocalProjectedUsageSettings() (*LocalProjectedUsageSettings, error) {
 	result, err := a.core.GetLocalProjectedUsageSettings()
 	if err != nil {
@@ -690,6 +382,33 @@ func (a *App) GetRelayServiceConfig() (*RelayServiceConfig, error) {
 	}, nil
 }
 
+func (a *App) ListRelaySupportedModels() (*RelaySupportedModelsResult, error) {
+	result, err := a.core.ListRelaySupportedModels()
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelaySupportedModelsResult{
+		Models: mapOpenAICompatibleModels(result),
+	}, nil
+}
+
+func (a *App) ListLocalCodexProviderViews() ([]LocalCodexModelProviderView, error) {
+	result, err := a.core.ListLocalCodexModelProviders()
+	if err != nil {
+		return nil, err
+	}
+
+	providers := make([]LocalCodexModelProviderView, 0, len(result))
+	for _, item := range result {
+		providers = append(providers, LocalCodexModelProviderView{
+			ProviderID:   item.ProviderID,
+			ProviderName: item.ProviderName,
+		})
+	}
+	return providers, nil
+}
+
 func (a *App) UpdateRelayServiceAPIKey(apiKey string) (*RelayServiceConfig, error) {
 	result, err := a.core.UpdateRelayServiceAPIKey(apiKey)
 	if err != nil {
@@ -714,22 +433,6 @@ func (a *App) UpdateRelayServiceAPIKeys(apiKeys []string) (*RelayServiceConfig, 
 		APIKeyItems: mapRelayServiceAPIKeyItems(result.APIKeyItems),
 		Endpoints:   mapRelayServiceEndpoints(result.Endpoints),
 	}, nil
-}
-
-func mapRelayServiceAPIKeyItems(items []wailsapp.RelayServiceAPIKeyItem) []RelayServiceAPIKeyItem {
-	if len(items) == 0 {
-		return nil
-	}
-
-	result := make([]RelayServiceAPIKeyItem, 0, len(items))
-	for _, item := range items {
-		result = append(result, RelayServiceAPIKeyItem{
-			Value:      item.Value,
-			CreatedAt:  item.CreatedAt,
-			LastUsedAt: item.LastUsedAt,
-		})
-	}
-	return result
 }
 
 func (a *App) GetRelayRoutingConfig() (*RelayRoutingConfig, error) {
@@ -770,8 +473,8 @@ func (a *App) UpdateRelayRoutingConfig(config RelayRoutingConfig) (*RelayRouting
 	}, nil
 }
 
-func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string) (*RelayLocalApplyResult, error) {
-	result, err := a.core.ApplyRelayServiceConfigToLocal(apiKey, baseURL)
+func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string) (*RelayLocalApplyResult, error) {
+	result, err := a.core.ApplyRelayServiceConfigToLocal(apiKey, baseURL, model, reasoningEffort, providerID, providerName)
 	if err != nil {
 		return nil, err
 	}
@@ -875,204 +578,4 @@ func (a *App) FetchOpenAICompatibleProviderModels(input FetchOpenAICompatiblePro
 
 func (a *App) DeleteCodexAPIKey(id string) error {
 	return a.core.DeleteCodexAPIKey(id)
-}
-
-func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
-	return AccountRecord{
-		ID:               record.ID,
-		Provider:         record.Provider,
-		CredentialSource: record.CredentialSource,
-		DisplayName:      record.DisplayName,
-		Status:           record.Status,
-		Priority:         record.Priority,
-		Disabled:         record.Disabled,
-		Email:            record.Email,
-		PlanType:         record.PlanType,
-		Name:             record.Name,
-		APIKey:           record.APIKey,
-		KeyFingerprint:   record.KeyFingerprint,
-		KeySuffix:        record.KeySuffix,
-		BaseURL:          record.BaseURL,
-		Prefix:           record.Prefix,
-		AuthIndex:        record.AuthIndex,
-		QuotaKey:         record.QuotaKey,
-		LocalOnly:        record.LocalOnly,
-	}
-}
-
-func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse) *LocalProjectedUsageResponse {
-	if result == nil {
-		return &LocalProjectedUsageResponse{}
-	}
-
-	details := make([]LocalProjectedUsageDetail, 0, len(result.Details))
-	for _, detail := range result.Details {
-		details = append(details, LocalProjectedUsageDetail{
-			Timestamp:         detail.Timestamp,
-			Provider:          detail.Provider,
-			SourceKind:        detail.SourceKind,
-			Model:             detail.Model,
-			InputTokens:       detail.InputTokens,
-			CachedInputTokens: detail.CachedInputTokens,
-			OutputTokens:      detail.OutputTokens,
-			RequestCount:      detail.RequestCount,
-		})
-	}
-
-	return &LocalProjectedUsageResponse{
-		Provider:         result.Provider,
-		SourceKind:       result.SourceKind,
-		ScannedFiles:     result.ScannedFiles,
-		CacheHitFiles:    result.CacheHitFiles,
-		DeltaAppendFiles: result.DeltaAppendFiles,
-		FullRebuildFiles: result.FullRebuildFiles,
-		FileMissingFiles: result.FileMissingFiles,
-		Details:          details,
-	}
-}
-
-func mapSessionManagementSnapshot(result *wailsapp.SessionManagementSnapshot) *SessionManagementSnapshot {
-	if result == nil {
-		return &SessionManagementSnapshot{
-			ProviderCounts: map[string]int{},
-			Projects:       []SessionManagementProjectRecord{},
-		}
-	}
-
-	projects := make([]SessionManagementProjectRecord, 0, len(result.Projects))
-	for _, project := range result.Projects {
-		sessions := make([]SessionManagementSessionRecord, 0, len(project.Sessions))
-		for _, session := range project.Sessions {
-			sessions = append(sessions, SessionManagementSessionRecord{
-				ID:                  session.ID,
-				SessionID:           session.SessionID,
-				ProjectID:           session.ProjectID,
-				ProjectName:         session.ProjectName,
-				Title:               session.Title,
-				Status:              session.Status,
-				Archived:            session.Archived,
-				MessageCount:        session.MessageCount,
-				RoleSummary:         session.RoleSummary,
-				StartedAt:           session.StartedAt,
-				UpdatedAt:           session.UpdatedAt,
-				FileLabel:           session.FileLabel,
-				Summary:             session.Summary,
-				Preview:             session.Preview,
-				Topic:               session.Topic,
-				CurrentMessageLabel: session.CurrentMessageLabel,
-				Provider:            session.Provider,
-				Model:               session.Model,
-			})
-		}
-		projects = append(projects, SessionManagementProjectRecord{
-			ID:                   project.ID,
-			Name:                 project.Name,
-			ProviderCounts:       cloneProviderCountMap(project.ProviderCounts),
-			SessionCount:         project.SessionCount,
-			ActiveSessionCount:   project.ActiveSessionCount,
-			ArchivedSessionCount: project.ArchivedSessionCount,
-			LastActiveAt:         project.LastActiveAt,
-			ProviderSummary:      project.ProviderSummary,
-			Sessions:             sessions,
-		})
-	}
-
-	return &SessionManagementSnapshot{
-		ProjectCount:         result.ProjectCount,
-		SessionCount:         result.SessionCount,
-		ActiveSessionCount:   result.ActiveSessionCount,
-		ArchivedSessionCount: result.ArchivedSessionCount,
-		LastScanAt:           result.LastScanAt,
-		ProviderCounts:       cloneProviderCountMap(result.ProviderCounts),
-		Projects:             projects,
-	}
-}
-
-func mapSessionManagementSessionDetail(result *wailsapp.SessionManagementSessionDetail) *SessionManagementSessionDetail {
-	if result == nil {
-		return &SessionManagementSessionDetail{
-			Messages: []SessionManagementMessageRecord{},
-		}
-	}
-
-	messages := make([]SessionManagementMessageRecord, 0, len(result.Messages))
-	for _, message := range result.Messages {
-		messages = append(messages, SessionManagementMessageRecord{
-			ID:        message.ID,
-			Role:      message.Role,
-			TimeLabel: message.TimeLabel,
-			Timestamp: message.Timestamp,
-			Title:     message.Title,
-			Summary:   message.Summary,
-			Content:   message.Content,
-			Truncated: message.Truncated,
-		})
-	}
-
-	return &SessionManagementSessionDetail{
-		SessionID:           result.SessionID,
-		ProjectID:           result.ProjectID,
-		ProjectName:         result.ProjectName,
-		Title:               result.Title,
-		Status:              result.Status,
-		Archived:            result.Archived,
-		FileLabel:           result.FileLabel,
-		MessageCount:        result.MessageCount,
-		Masked:              result.Masked,
-		CurrentMessageLabel: result.CurrentMessageLabel,
-		RoleSummary:         result.RoleSummary,
-		Topic:               result.Topic,
-		Preview:             result.Preview,
-		Provider:            result.Provider,
-		Model:               result.Model,
-		StartedAt:           result.StartedAt,
-		UpdatedAt:           result.UpdatedAt,
-		Messages:            messages,
-	}
-}
-
-func cloneProviderCountMap(source map[string]int) map[string]int {
-	if len(source) == 0 {
-		return map[string]int{}
-	}
-	cloned := make(map[string]int, len(source))
-	for provider, count := range source {
-		cloned[provider] = count
-	}
-	return cloned
-}
-
-func mapOpenAICompatibleModels(items []wailsapp.OpenAICompatibleModel) []OpenAICompatibleModel {
-	models := make([]OpenAICompatibleModel, 0, len(items))
-	for _, item := range items {
-		models = append(models, OpenAICompatibleModel{
-			Name:  item.Name,
-			Alias: item.Alias,
-		})
-	}
-	return models
-}
-
-func mapOpenAICompatibleModelsToWails(items []OpenAICompatibleModel) []wailsapp.OpenAICompatibleModel {
-	models := make([]wailsapp.OpenAICompatibleModel, 0, len(items))
-	for _, item := range items {
-		models = append(models, wailsapp.OpenAICompatibleModel{
-			Name:  item.Name,
-			Alias: item.Alias,
-		})
-	}
-	return models
-}
-
-func mapRelayServiceEndpoints(items []wailsapp.RelayServiceEndpoint) []RelayServiceEndpoint {
-	endpoints := make([]RelayServiceEndpoint, 0, len(items))
-	for _, item := range items {
-		endpoints = append(endpoints, RelayServiceEndpoint{
-			ID:      item.ID,
-			Kind:    item.Kind,
-			Host:    item.Host,
-			BaseURL: item.BaseURL,
-		})
-	}
-	return endpoints
 }

@@ -2,32 +2,61 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ApplyRelayServiceConfigToLocal,
   GetRelayServiceConfig,
+  ListLocalCodexProviderViews,
+  ListRelaySupportedModels,
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
 import type { main } from '../../../wailsjs/go/models';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
-import { buildRelayCodexAuthJSONSnippet, buildRelayCodexConfigTomlSnippet } from '../accounts/model/accountConfig';
+import {
+  RelayKeyEditorModal,
+  RelayProviderEditorModal,
+} from './components/RelayEditors';
+import {
+  StatusApplyLocalSection,
+  StatusServiceConfigSection,
+  StatusSnippetPanel,
+} from './components/StatusPanels';
+import {
+  buildRelayCodexAuthJSONSnippet,
+  buildRelayCodexConfigTomlSnippet,
+  RELAY_CODEX_OPENAI_PROVIDER_ID,
+} from '../accounts/model/accountConfig';
+import {
+  defaultRelayProviderOptions,
+  defaultRelayReasoningEffortOptions,
+  loadLANAccessEnabled,
+  loadRelayKeyAliases,
+  loadRelayModelOptions,
+  loadRelayProviderOptions,
+  loadSelectedRelayModel,
+  loadSelectedRelayProvider,
+  loadSelectedRelayReasoningEffort,
+  maskRelayKey,
+  saveLANAccessEnabled,
+  saveRelayKeyAliases,
+  saveRelayModelOptions,
+  saveRelayProviderOptions,
+  saveSelectedRelayModel,
+  saveSelectedRelayProvider,
+  saveSelectedRelayReasoningEffort,
+  toRelayProviderOption,
+  type RelayKeyEditorState,
+  type RelayProviderEditorState,
+} from './model/relayLocalState';
+import { mergeRelayModelCatalog, resolveRelayModelReasoningProfile } from './model/relayModelCatalog';
+import {
+  mergeRelayProviderCatalog,
+  type RelayProviderOption,
+} from './model/relayProviderCatalog';
 import type { SidecarStatus } from '../../types';
 import { toErrorMessage } from '../../utils/error';
 
 interface StatusFeatureProps {
   sidecarStatus?: SidecarStatus;
   version?: string;
-}
-
-interface RelayKeyEditorState {
-  mode: 'create' | 'rename';
-  index: number | null;
-  name: string;
-  apiKey: string;
-  error: string;
-}
-
-interface RelayModelEditorState {
-  value: string;
-  error: string;
 }
 
 const defaultSidecarStatus: SidecarStatus = {
@@ -37,156 +66,6 @@ const defaultSidecarStatus: SidecarStatus = {
   version: '',
   startedAtUnix: 0,
 };
-
-const relayKeyAliasStorageKey = 'gettokens.status.relay-key-aliases';
-const relayLANAccessStorageKey = 'gettokens.status.lan-access-enabled';
-const relayModelOptionsStorageKey = 'gettokens.status.relay-model-options';
-const relaySelectedModelStorageKey = 'gettokens.status.selected-relay-model';
-const defaultRelayModelOptions = ['GT', 'gpt-5.4'];
-
-function maskRelayKey(value: string) {
-  const trimmed = value.trim();
-  if (trimmed.length <= 12) {
-    return trimmed || 'KEY';
-  }
-  return `${trimmed.slice(0, 8)}...${trimmed.slice(-4)}`;
-}
-
-function generateRandomRelayKey() {
-  const prefix = 'sk-gettokens-';
-  const hexLength = 32;
-
-  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-    const bytes = crypto.getRandomValues(new Uint8Array(hexLength / 2));
-    return `${prefix}${Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('')}`;
-  }
-
-  let suffix = '';
-  while (suffix.length < hexLength) {
-    suffix += Math.floor(Math.random() * 0xffffffff)
-      .toString(16)
-      .padStart(8, '0');
-  }
-  return `${prefix}${suffix.slice(0, hexLength)}`;
-}
-
-function loadRelayKeyAliases() {
-  if (typeof window === 'undefined') {
-    return {} as Record<string, string>;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(relayKeyAliasStorageKey);
-    if (!raw) {
-      return {} as Record<string, string>;
-    }
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : ({} as Record<string, string>);
-  } catch (error) {
-    console.error(error);
-    return {} as Record<string, string>;
-  }
-}
-
-function saveRelayKeyAliases(aliases: Record<string, string>) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(relayKeyAliasStorageKey, JSON.stringify(aliases));
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-function loadLANAccessEnabled() {
-  if (typeof window === 'undefined') {
-    return true;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(relayLANAccessStorageKey);
-    return raw === null ? true : raw === 'true';
-  } catch (error) {
-    console.error(error);
-    return true;
-  }
-}
-
-function saveLANAccessEnabled(value: boolean) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(relayLANAccessStorageKey, String(value));
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-function loadRelayModelOptions() {
-  if (typeof window === 'undefined') {
-    return defaultRelayModelOptions;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(relayModelOptionsStorageKey);
-    if (!raw) {
-      return defaultRelayModelOptions;
-    }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return defaultRelayModelOptions;
-    }
-    const normalized = parsed
-      .map((item) => String(item || '').trim())
-      .filter(Boolean);
-    return normalized.length > 0 ? Array.from(new Set(normalized)) : defaultRelayModelOptions;
-  } catch (error) {
-    console.error(error);
-    return defaultRelayModelOptions;
-  }
-}
-
-function saveRelayModelOptions(values: string[]) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(relayModelOptionsStorageKey, JSON.stringify(values));
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-function loadSelectedRelayModel(modelOptions: string[]) {
-  if (typeof window === 'undefined') {
-    return modelOptions[0] || 'GT';
-  }
-
-  try {
-    const raw = String(window.localStorage.getItem(relaySelectedModelStorageKey) || '').trim();
-    return raw && modelOptions.includes(raw) ? raw : (modelOptions[0] || 'GT');
-  } catch (error) {
-    console.error(error);
-    return modelOptions[0] || 'GT';
-  }
-}
-
-function saveSelectedRelayModel(value: string) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    window.localStorage.setItem(relaySelectedModelStorageKey, value);
-  } catch (error) {
-    console.error(error);
-  }
-}
 
 export default function StatusFeature({
   sidecarStatus = defaultSidecarStatus,
@@ -199,6 +78,8 @@ export default function StatusFeature({
   const [relayKeyItems, setRelayKeyItems] = useState<main.RelayServiceAPIKeyItem[]>([]);
   const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
   const [relayModelOptions, setRelayModelOptions] = useState<string[]>(() => loadRelayModelOptions());
+  const [relayAccountPoolModels, setRelayAccountPoolModels] = useState<main.OpenAICompatibleModel[]>([]);
+  const [relayProviderOptions, setRelayProviderOptions] = useState<RelayProviderOption[]>(() => loadRelayProviderOptions());
   const [relayKeyAliases, setRelayKeyAliases] = useState<Record<string, string>>(() => loadRelayKeyAliases());
   const [selectedKeyIndex, setSelectedKeyIndex] = useState(0);
   const [selectedEndpointID, setSelectedEndpointID] = useState('localhost');
@@ -206,9 +87,18 @@ export default function StatusFeature({
   const [selectedRelayModel, setSelectedRelayModel] = useState<string>(() =>
     loadSelectedRelayModel(loadRelayModelOptions())
   );
+  const [relayModelDraft, setRelayModelDraft] = useState<string>(() =>
+    loadSelectedRelayModel(loadRelayModelOptions())
+  );
+  const [selectedRelayReasoningEffort, setSelectedRelayReasoningEffort] = useState<string>(() =>
+    loadSelectedRelayReasoningEffort()
+  );
+  const [selectedRelayProviderID, setSelectedRelayProviderID] = useState<string>(() =>
+    loadSelectedRelayProvider(loadRelayProviderOptions())
+  );
   const [openKeyMenuIndex, setOpenKeyMenuIndex] = useState<number | null>(null);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
-  const [relayModelEditor, setRelayModelEditor] = useState<RelayModelEditorState | null>(null);
+  const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
   const [serviceMessage, setServiceMessage] = useState('');
   const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [isSavingServiceKeys, setIsSavingServiceKeys] = useState(false);
@@ -216,6 +106,10 @@ export default function StatusFeature({
 
   const relayKeys = relayKeyItems.map((item) => item.value);
   const selectedKey = relayKeys[selectedKeyIndex] || '';
+  const selectedRelayProvider =
+    relayProviderOptions.find((option) => option.id === selectedRelayProviderID) ||
+    relayProviderOptions[0] ||
+    defaultRelayProviderOptions[0];
   const selectedEndpoint =
     relayEndpoints.find((endpoint) => endpoint.id === selectedEndpointID) ||
     relayEndpoints.find((endpoint) => isLANAccessEnabled || endpoint.kind !== 'lan') ||
@@ -228,6 +122,18 @@ export default function StatusFeature({
   const visibleRelayEndpoints = relayEndpoints
     .filter((endpoint) => isLANAccessEnabled || endpoint.kind !== 'lan')
     .slice(0, 3);
+  const resolvedRelayModels = useMemo(
+    () => mergeRelayModelCatalog(relayAccountPoolModels, relayModelOptions),
+    [relayAccountPoolModels, relayModelOptions]
+  );
+  const resolvedRelayModelNames = useMemo(
+    () => resolvedRelayModels.map((item) => item.name),
+    [resolvedRelayModels]
+  );
+  const relayReasoningProfile = useMemo(
+    () => resolveRelayModelReasoningProfile(selectedRelayModel, resolvedRelayModels),
+    [resolvedRelayModels, selectedRelayModel]
+  );
 
   const serviceAuthJSON = useMemo(
     () =>
@@ -242,8 +148,17 @@ export default function StatusFeature({
       buildRelayCodexConfigTomlSnippet({
         baseUrl: selectedEndpoint.baseUrl,
         model: selectedRelayModel,
+        reasoningEffort: selectedRelayReasoningEffort,
+        providerID: selectedRelayProvider.id,
+        providerName: selectedRelayProvider.name,
       }),
-    [selectedEndpoint.baseUrl, selectedRelayModel]
+    [
+      selectedEndpoint.baseUrl,
+      selectedRelayModel,
+      selectedRelayReasoningEffort,
+      selectedRelayProvider.id,
+      selectedRelayProvider.name,
+    ]
   );
 
   useEffect(() => {
@@ -282,6 +197,7 @@ export default function StatusFeature({
       if (sidecarStatus.code !== 'ready') {
         setRelayKeyItems([]);
         setRelayEndpoints([]);
+        setRelayAccountPoolModels([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
         setServiceMessage('');
@@ -306,6 +222,7 @@ export default function StatusFeature({
         }
         setRelayKeyItems([]);
         setRelayEndpoints([]);
+        setRelayAccountPoolModels([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
         setServiceMessage(t('status.service_key_missing'));
@@ -319,6 +236,62 @@ export default function StatusFeature({
       cancelled = true;
     };
   }, [sidecarStatus.code, t, trackRequest]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLocalCodexModelProviders() {
+      try {
+        const localProviders = await trackRequest('ListLocalCodexProviderViews', { args: [] }, () =>
+          ListLocalCodexProviderViews()
+        );
+        if (cancelled) {
+          return;
+        }
+        setRelayProviderOptions((prev) =>
+          mergeRelayProviderCatalog(defaultRelayProviderOptions, prev, localProviders || [])
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    void loadLocalCodexModelProviders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [trackRequest]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRelaySupportedModels() {
+      if (sidecarStatus.code !== 'ready') {
+        setRelayAccountPoolModels([]);
+        return;
+      }
+
+      try {
+        const result = await trackRequest('ListRelaySupportedModels', { args: [] }, () => ListRelaySupportedModels());
+        if (cancelled) {
+          return;
+        }
+        setRelayAccountPoolModels(result.models || []);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setRelayAccountPoolModels([]);
+        }
+      }
+    }
+
+    void loadRelaySupportedModels();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sidecarStatus.code, trackRequest]);
 
   useEffect(() => {
     setRelayKeyAliases((prev) => {
@@ -355,19 +328,53 @@ export default function StatusFeature({
     const normalized = Array.from(
       new Set(relayModelOptions.map((item) => item.trim()).filter(Boolean))
     );
-    if (normalized.length === 0) {
-      return;
-    }
     saveRelayModelOptions(normalized);
   }, [relayModelOptions]);
 
   useEffect(() => {
-    if (!relayModelOptions.includes(selectedRelayModel)) {
-      setSelectedRelayModel(relayModelOptions[0] || 'GT');
+    const normalized = mergeRelayProviderCatalog(defaultRelayProviderOptions, relayProviderOptions);
+    const changed =
+      normalized.length !== relayProviderOptions.length ||
+      normalized.some((item, index) => item.id !== relayProviderOptions[index]?.id || item.name !== relayProviderOptions[index]?.name);
+    if (changed) {
+      setRelayProviderOptions(normalized);
       return;
     }
-    saveSelectedRelayModel(selectedRelayModel);
-  }, [relayModelOptions, selectedRelayModel]);
+    saveRelayProviderOptions(normalized);
+  }, [relayProviderOptions]);
+
+  useEffect(() => {
+    const trimmedSelectedRelayModel = selectedRelayModel.trim();
+    if (!trimmedSelectedRelayModel) {
+      setSelectedRelayModel(resolvedRelayModelNames[0] || 'GT');
+      return;
+    }
+    if (trimmedSelectedRelayModel !== selectedRelayModel) {
+      setSelectedRelayModel(trimmedSelectedRelayModel);
+      return;
+    }
+    saveSelectedRelayModel(trimmedSelectedRelayModel);
+  }, [resolvedRelayModelNames, selectedRelayModel]);
+
+  useEffect(() => {
+    setRelayModelDraft(selectedRelayModel);
+  }, [selectedRelayModel]);
+
+  useEffect(() => {
+    if (!relayReasoningProfile.options.includes(selectedRelayReasoningEffort)) {
+      setSelectedRelayReasoningEffort(relayReasoningProfile.defaultValue);
+      return;
+    }
+    saveSelectedRelayReasoningEffort(selectedRelayReasoningEffort);
+  }, [relayReasoningProfile.defaultValue, relayReasoningProfile.options, selectedRelayReasoningEffort]);
+
+  useEffect(() => {
+    if (!relayProviderOptions.some((option) => option.id === selectedRelayProviderID)) {
+      setSelectedRelayProviderID(relayProviderOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID);
+      return;
+    }
+    saveSelectedRelayProvider(selectedRelayProviderID);
+  }, [relayProviderOptions, selectedRelayProviderID]);
 
   useEffect(() => {
     if (isLANAccessEnabled) {
@@ -586,47 +593,68 @@ export default function StatusFeature({
     setServiceMessage(t('status.service_key_name_saved'));
   }
 
-  function openCreateRelayModelEditor() {
-    setRelayModelEditor({
-      value: '',
+  function openCreateRelayProviderEditor() {
+    setRelayProviderEditor({
+      providerID: '',
+      providerName: '',
       error: '',
     });
   }
 
-  function addRelayModelOption() {
-    if (!relayModelEditor) {
-      return;
-    }
-
-    const nextValue = relayModelEditor.value.trim();
+  function commitRelayModelSelection(rawValue: string) {
+    const nextValue = rawValue.trim();
     if (!nextValue) {
-      setRelayModelEditor((prev) => (prev ? { ...prev, error: t('status.model_name_required') } : prev));
-      return;
-    }
-    if (relayModelOptions.includes(nextValue)) {
-      setRelayModelEditor((prev) => (prev ? { ...prev, error: t('status.model_name_exists') } : prev));
+      const fallback = selectedRelayModel.trim() || resolvedRelayModelNames[0] || 'GT';
+      setRelayModelDraft(fallback);
+      setSelectedRelayModel(fallback);
       return;
     }
 
-    const nextOptions = [...relayModelOptions, nextValue];
-    setRelayModelOptions(nextOptions);
+    if (!resolvedRelayModelNames.includes(nextValue) && !relayModelOptions.includes(nextValue)) {
+      setRelayModelOptions((prev) => [...prev, nextValue]);
+      setServiceMessage(t('status.model_name_saved'));
+    }
+
+    setRelayModelDraft(nextValue);
     setSelectedRelayModel(nextValue);
-    setRelayModelEditor(null);
-    setServiceMessage(t('status.model_name_saved'));
   }
 
-  function deleteRelayModelOption(value: string) {
-    const nextOptions = relayModelOptions.filter((item) => item !== value);
-    if (nextOptions.length === 0) {
-      setServiceMessage(t('status.model_name_required'));
+  function addRelayProviderOption() {
+    if (!relayProviderEditor) {
       return;
     }
 
-    setRelayModelOptions(nextOptions);
-    if (selectedRelayModel === value) {
-      setSelectedRelayModel(nextOptions[0]);
+    const nextProvider = toRelayProviderOption({
+      providerID: relayProviderEditor.providerID,
+      providerName: relayProviderEditor.providerName,
+    });
+    if (!nextProvider.id) {
+      setRelayProviderEditor((prev) => (prev ? { ...prev, error: t('status.provider_id_required') } : prev));
+      return;
     }
-    setServiceMessage(t('status.model_name_deleted'));
+    if (relayProviderOptions.some((item) => item.id === nextProvider.id)) {
+      setRelayProviderEditor((prev) => (prev ? { ...prev, error: t('status.provider_id_exists') } : prev));
+      return;
+    }
+
+    setRelayProviderOptions([...relayProviderOptions, nextProvider]);
+    setSelectedRelayProviderID(nextProvider.id);
+    setRelayProviderEditor(null);
+    setServiceMessage(t('status.provider_saved'));
+  }
+
+  function deleteRelayProviderOption(providerID: string) {
+    const nextOptions = relayProviderOptions.filter((item) => item.id !== providerID);
+    if (nextOptions.length === 0) {
+      setServiceMessage(t('status.provider_id_required'));
+      return;
+    }
+
+    setRelayProviderOptions(nextOptions);
+    if (selectedRelayProviderID === providerID) {
+      setSelectedRelayProviderID(nextOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID);
+    }
+    setServiceMessage(t('status.provider_deleted'));
   }
 
   async function applyRelayConfigToLocal() {
@@ -640,13 +668,34 @@ export default function StatusFeature({
     try {
       const result = await trackRequest(
         'ApplyRelayServiceConfigToLocal',
-        { apiKey: normalizedKey, baseURL: selectedEndpoint.baseUrl },
-        () => ApplyRelayServiceConfigToLocal(normalizedKey, selectedEndpoint.baseUrl)
+        {
+          apiKey: normalizedKey,
+          baseURL: selectedEndpoint.baseUrl,
+          model: selectedRelayModel,
+          reasoningEffort: selectedRelayReasoningEffort,
+          providerID: selectedRelayProvider.id,
+          providerName: selectedRelayProvider.name,
+        },
+        () =>
+          ApplyRelayServiceConfigToLocal(
+            normalizedKey,
+            selectedEndpoint.baseUrl,
+            selectedRelayModel,
+            selectedRelayReasoningEffort,
+            selectedRelayProvider.id,
+            selectedRelayProvider.name
+          )
       );
       setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}`);
       try {
         const refreshed = await trackRequest('GetRelayServiceConfig', { args: [] }, () => GetRelayServiceConfig());
         setRelayKeyItems(refreshed.apiKeyItems || (refreshed.apiKeys || []).map((value) => ({ value })));
+        const localProviders = await trackRequest('ListLocalCodexProviderViews', { args: [] }, () =>
+          ListLocalCodexProviderViews()
+        );
+        setRelayProviderOptions((prev) =>
+          mergeRelayProviderCatalog(defaultRelayProviderOptions, prev, localProviders || [])
+        );
       } catch (refreshError) {
         console.error(refreshError);
       }
@@ -750,366 +799,88 @@ export default function StatusFeature({
 
         <section className="space-y-6">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-            <section className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-              <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3">
-                <div>
-                  <div className="text-[0.625rem] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
-                    {t('status.service_config')}
-                  </div>
-                  <div className="mt-1 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                    {relayKeys.length} {t('status.service_api_keys')}
-                  </div>
-                </div>
-                <button
-                  onClick={openCreateRelayKeyEditor}
-                  disabled={isSavingServiceKeys || sidecarStatus.code !== 'ready'}
-                  className="btn-swiss !px-3 !py-1 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  +
-                </button>
-              </div>
-              <div className="space-y-4 p-5">
-                <div className="overflow-hidden border-2 border-[var(--border-color)]">
-                  {relayKeyItems.map((item, index) => (
-                    <div
-                      key={`${item.value}-${index}`}
-                      className={`flex items-center gap-3 px-4 py-3 ${
-                        index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
-                      } ${
-                        selectedKeyIndex === index
-                          ? 'bg-[var(--bg-main)]'
-                          : 'bg-[var(--bg-surface)]'
-                      }`}
-                    >
-                      <button onClick={() => setSelectedKeyIndex(index)} className="min-w-0 flex-1 text-left">
-                        <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                          {relayKeyDisplayName(item.value, index)}
-                        </div>
-                        <div className="mt-1 font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                          {maskRelayKey(item.value)}
-                        </div>
-                        <div className="mt-2 grid gap-1 text-[0.5625rem] font-bold uppercase tracking-wide text-[var(--text-muted)] md:grid-cols-2">
-                          <div>{t('status.service_key_created_at')}: {formatRelayKeyTimestamp(item.createdAt)}</div>
-                          <div>{t('status.service_key_last_used_at')}: {formatRelayKeyTimestamp(item.lastUsedAt)}</div>
-                        </div>
-                      </button>
-                      <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
-                        <button
-                          onClick={() => setOpenKeyMenuIndex((prev) => (prev === index ? null : index))}
-                          className="flex h-7 w-7 items-center justify-center text-base font-black text-[var(--text-muted)]"
-                        >
-                          ⋮
-                        </button>
-                        {openKeyMenuIndex === index ? (
-                          <div className="absolute right-full top-1/2 z-10 mr-2 flex -translate-y-1/2 items-center gap-2">
-                            <button
-                              onClick={() => openRenameRelayKeyEditor(index)}
-                              className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
-                            >
-                              {t('status.service_key_rename')}
-                            </button>
-                            <button
-                              onClick={() => void deleteRelayServiceAPIKey(index)}
-                              className="btn-swiss whitespace-nowrap !px-3 !py-1 !text-[0.5625rem]"
-                            >
-                              {t('status.service_key_delete')}
-                            </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                  {t('status.service_keys_hint')}
-                </div>
-                {serviceMessage ? (
-                  <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                    {serviceMessage}
-                  </div>
-                ) : null}
-              </div>
-            </section>
+            <StatusServiceConfigSection
+              t={t}
+              relayKeyItems={relayKeyItems}
+              relayKeysLength={relayKeys.length}
+              selectedKeyIndex={selectedKeyIndex}
+              openKeyMenuIndex={openKeyMenuIndex}
+              serviceMessage={serviceMessage}
+              isSavingServiceKeys={isSavingServiceKeys}
+              isReady={sidecarStatus.code === 'ready'}
+              onOpenCreateRelayKeyEditor={openCreateRelayKeyEditor}
+              onSelectKeyIndex={setSelectedKeyIndex}
+              onToggleKeyMenuIndex={(index) => setOpenKeyMenuIndex((prev) => (prev === index ? null : index))}
+              onOpenRenameRelayKeyEditor={openRenameRelayKeyEditor}
+              onDeleteRelayServiceAPIKey={(index) => void deleteRelayServiceAPIKey(index)}
+              relayKeyDisplayName={relayKeyDisplayName}
+              maskRelayKey={maskRelayKey}
+              formatRelayKeyTimestamp={formatRelayKeyTimestamp}
+            />
 
-            <section className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-              <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3">
-                <div>
-                  <div className="text-[0.625rem] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
-                    {t('status.apply_local')}
-                  </div>
-                  <div className="mt-1 text-[0.6875rem] font-mono font-black uppercase tracking-wide text-[var(--text-muted)]">
-                    {selectedRelayModel}
-                  </div>
-                </div>
-                <button
-                  onClick={() => void applyRelayConfigToLocal()}
-                  disabled={isApplyingToLocal || sidecarStatus.code !== 'ready'}
-                  className="btn-swiss bg-[var(--border-color)] !px-4 !py-2 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local')}
-                </button>
-              </div>
-              <div className="divide-y-2 divide-[var(--border-color)]">
-                <div className="space-y-3 p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                      {t('status.endpoint_title')}
-                    </div>
-                    <button
-                      onClick={() => setIsLANAccessEnabled((prev) => !prev)}
-                      className={`btn-swiss !px-3 !py-1 !text-[0.5625rem] ${
-                        isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
-                      }`}
-                    >
-                      {isLANAccessEnabled ? t('status.lan_access_on') : t('status.lan_access_off')}
-                    </button>
-                  </div>
-                  <div className="overflow-hidden border-2 border-[var(--border-color)]">
-                    {visibleRelayEndpoints.map((endpoint, index) => (
-                      <div
-                        key={endpoint.id}
-                        className={`flex items-center gap-3 px-4 py-3 ${
-                          index > 0 ? 'border-t-2 border-[var(--border-color)]' : ''
-                        } ${
-                          selectedEndpointID === endpoint.id ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'bg-[var(--bg-surface)]'
-                        }`}
-                      >
-                        <button
-                          onClick={() => setSelectedEndpointID(endpoint.id)}
-                          className="min-w-0 flex-1 text-left"
-                        >
-                          <div
-                            className={`font-mono text-xs font-bold break-all ${
-                              selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'
-                            }`}
-                          >
-                            {endpoint.baseUrl}
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => void copyText(endpoint.baseUrl, t('status.endpoint_copied'))}
-                          className={`shrink-0 text-[0.625rem] font-black uppercase tracking-wide ${
-                            selectedEndpointID === endpoint.id ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'
-                          }`}
-                        >
-                          复制
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-3 p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                      {t('status.model_name_title')}
-                    </div>
-                    <button onClick={openCreateRelayModelEditor} className="btn-swiss !px-3 !py-1 !text-[0.625rem]">
-                      +
-                    </button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {relayModelOptions.map((model) => (
-                      <div
-                        key={model}
-                        className={`border-2 px-3 py-2 font-mono text-[0.625rem] font-black uppercase tracking-wide ${
-                          selectedRelayModel === model
-                            ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                            : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setSelectedRelayModel(model)} className="text-left">
-                            {model}
-                          </button>
-                          <button
-                            onClick={() => deleteRelayModelOption(model)}
-                            className={selectedRelayModel === model ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {localApplyMessage ? (
-                  <div className="bg-[var(--bg-main)] px-5 py-4 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                    {localApplyMessage}
-                  </div>
-                ) : null}
-              </div>
-            </section>
+            <StatusApplyLocalSection
+              t={t}
+              localApplyMessage={localApplyMessage}
+              isLANAccessEnabled={isLANAccessEnabled}
+              isApplyingToLocal={isApplyingToLocal}
+              isReady={sidecarStatus.code === 'ready'}
+              visibleRelayEndpoints={visibleRelayEndpoints}
+              selectedEndpointID={selectedEndpointID}
+              selectedEndpointBaseUrl={selectedEndpoint.baseUrl}
+              relayProviderOptions={relayProviderOptions}
+              selectedRelayProviderID={selectedRelayProviderID}
+              relayReasoningEffortOptions={relayReasoningProfile.options}
+              selectedRelayReasoningEffort={selectedRelayReasoningEffort}
+              selectedRelayModel={selectedRelayModel}
+              relayModelDraft={relayModelDraft}
+              resolvedRelayModels={resolvedRelayModels}
+              onToggleLANAccess={() => setIsLANAccessEnabled((prev) => !prev)}
+              onApplyRelayConfigToLocal={() => void applyRelayConfigToLocal()}
+              onSelectEndpointID={setSelectedEndpointID}
+              onCopyEndpointBaseUrl={() => void copyText(selectedEndpoint.baseUrl, t('status.endpoint_copied'))}
+              onOpenCreateRelayProviderEditor={openCreateRelayProviderEditor}
+              onSelectRelayProviderID={setSelectedRelayProviderID}
+              onDeleteRelayProviderOption={deleteRelayProviderOption}
+              onSelectRelayReasoningEffort={setSelectedRelayReasoningEffort}
+              onChangeRelayModelDraft={setRelayModelDraft}
+              onCommitRelayModelSelection={commitRelayModelSelection}
+            />
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-            <div className="overflow-hidden border-2 border-[var(--border-color)]">
-              <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
-                <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                  {t('status.codex_auth_json')}
-                </div>
-                <button
-                  onClick={() => void copyText(serviceAuthJSON, t('status.auth_json_copied'))}
-                  className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
-                >
-                  复制
-                </button>
-              </div>
-              <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
-                {serviceAuthJSON}
-              </pre>
-            </div>
+            <StatusSnippetPanel
+              title={t('status.codex_auth_json')}
+              content={serviceAuthJSON}
+              onCopy={() => void copyText(serviceAuthJSON, t('status.auth_json_copied'))}
+            />
 
-            <div className="overflow-hidden border-2 border-[var(--border-color)]">
-              <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
-                <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
-                  {t('status.codex_config_toml')}
-                </div>
-                <button
-                  onClick={() => void copyText(serviceConfigToml, t('status.config_toml_copied'))}
-                  className="btn-swiss !px-3 !py-1 !text-[0.5625rem]"
-                >
-                  复制
-                </button>
-              </div>
-              <pre className="overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 text-[var(--text-primary)]">
-                {serviceConfigToml}
-              </pre>
-            </div>
+            <StatusSnippetPanel
+              title={t('status.codex_config_toml')}
+              content={serviceConfigToml}
+              onCopy={() => void copyText(serviceConfigToml, t('status.config_toml_copied'))}
+            />
           </div>
         </section>
       </div>
 
       {relayKeyEditor ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
-          onClick={() => setRelayKeyEditor(null)}
-        >
-          <div
-            className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('status.service_api_keys')}
-              </div>
-              <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
-                {relayKeyEditor.mode === 'create' ? t('status.service_key_create_title') : t('status.service_key_rename')}
-              </h3>
-            </header>
-            <div className="space-y-4 p-6">
-              <label className="space-y-2">
-                <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {t('status.service_key_name_label')}
-                </span>
-                <input
-                  value={relayKeyEditor.name}
-                  onChange={(event) =>
-                    setRelayKeyEditor((prev) => (prev ? { ...prev, name: event.target.value, error: '' } : prev))
-                  }
-                  className="input-swiss w-full"
-                  placeholder={t('status.service_key_name_placeholder')}
-                />
-              </label>
-              <label className="space-y-2">
-                <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {t('status.service_key_value_label')}
-                </span>
-                <div className="relative">
-                  <input
-                    value={relayKeyEditor.apiKey}
-                    onChange={(event) =>
-                      setRelayKeyEditor((prev) => (prev ? { ...prev, apiKey: event.target.value, error: '' } : prev))
-                    }
-                    className="input-swiss w-full pr-24"
-                    placeholder={t('status.service_key_value_placeholder')}
-                    type="text"
-                    disabled={relayKeyEditor.mode === 'rename'}
-                  />
-                  {relayKeyEditor.mode === 'create' ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setRelayKeyEditor((prev) =>
-                          prev ? { ...prev, apiKey: generateRandomRelayKey(), error: '' } : prev
-                        )
-                      }
-                      className="absolute right-2 top-1/2 -translate-y-1/2 border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-primary)] active:scale-95"
-                    >
-                      {t('status.service_key_value_generate')}
-                    </button>
-                  ) : null}
-                </div>
-              </label>
-              {relayKeyEditor.error ? (
-                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
-                  {relayKeyEditor.error}
-                </div>
-              ) : null}
-            </div>
-            <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-              <button onClick={() => setRelayKeyEditor(null)} className="btn-swiss">
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={() => void submitRelayKeyEditor()}
-                className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
-              >
-                {relayKeyEditor.mode === 'create' ? t('status.service_key_create_submit') : t('common.save')}
-              </button>
-            </footer>
-          </div>
-        </div>
+        <RelayKeyEditorModal
+          editor={relayKeyEditor}
+          t={t}
+          onClose={() => setRelayKeyEditor(null)}
+          onChange={(next) => setRelayKeyEditor(next)}
+          onSubmit={() => void submitRelayKeyEditor()}
+        />
       ) : null}
 
-      {relayModelEditor ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
-          onClick={() => setRelayModelEditor(null)}
-        >
-          <div
-            className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('status.model_name_title')}
-              </div>
-              <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
-                {t('status.model_name_create_title')}
-              </h3>
-            </header>
-            <div className="space-y-4 p-6">
-              <label className="space-y-2">
-                <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  {t('status.model_name_label')}
-                </span>
-                <input
-                  value={relayModelEditor.value}
-                  onChange={(event) =>
-                    setRelayModelEditor((prev) => (prev ? { ...prev, value: event.target.value, error: '' } : prev))
-                  }
-                  className="input-swiss w-full"
-                  placeholder={t('status.model_name_placeholder')}
-                />
-              </label>
-              {relayModelEditor.error ? (
-                <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
-                  {relayModelEditor.error}
-                </div>
-              ) : null}
-            </div>
-            <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-              <button onClick={() => setRelayModelEditor(null)} className="btn-swiss">
-                {t('common.cancel')}
-              </button>
-              <button onClick={addRelayModelOption} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]">
-                {t('status.model_name_create_submit')}
-              </button>
-            </footer>
-          </div>
-        </div>
+      {relayProviderEditor ? (
+        <RelayProviderEditorModal
+          editor={relayProviderEditor}
+          t={t}
+          onClose={() => setRelayProviderEditor(null)}
+          onChange={(next) => setRelayProviderEditor(next)}
+          onSubmit={addRelayProviderOption}
+        />
       ) : null}
     </div>
   );

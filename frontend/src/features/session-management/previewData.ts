@@ -28,6 +28,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-30 23:41',
           fileLabel: '2026/04/30/session-management-01.jsonl',
           summary: '补项目列表、会话列表和详情弹层，改成真实 rollout 读取。',
+          provider: 'codex',
         },
         {
           id: 'session-gettokens-02',
@@ -38,6 +39,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-30 21:08',
           fileLabel: '2026/04/30/session-management-02.jsonl',
           summary: '把全部 / 活跃 / 已归档 固定在列表头右侧。',
+          provider: 'codex',
         },
         {
           id: 'session-gettokens-03',
@@ -48,6 +50,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-29 19:16',
           fileLabel: '2026/04/29/session-management-03.jsonl',
           summary: '把绝对路径、会话 id 和源码定位压缩到安全边界内。',
+          provider: 'gemini',
         },
         {
           id: 'session-gettokens-04',
@@ -58,6 +61,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-29 17:54',
           fileLabel: '2026/04/29/session-management-04.jsonl',
           summary: '弹层主体只保留消息列表，其他内容压缩到顶部摘要区。',
+          provider: 'codex',
         },
       ],
     },
@@ -79,6 +83,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-30 20:12',
           fileLabel: '2026/04/30/nolon-rewrite-01.jsonl',
           summary: '确认 rewrite 是 preview -> rollout -> state db -> verify 的多阶段链路。',
+          provider: 'codex',
         },
         {
           id: 'session-nolon-02',
@@ -89,6 +94,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-30 18:42',
           fileLabel: '2026/04/30/nolon-grouping-02.jsonl',
           summary: '对齐 UI grouping 和 CLI rewrite 之间的语义差异。',
+          provider: 'codex',
         },
         {
           id: 'session-nolon-03',
@@ -99,6 +105,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-29 22:08',
           fileLabel: '2026/04/29/nolon-cache-03.jsonl',
           summary: '确认 usage index 与 projection cache 都只是可丢弃加速层。',
+          provider: 'gemini',
         },
       ],
     },
@@ -120,6 +127,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-30 15:27',
           fileLabel: '2026/04/30/relay-key-01.jsonl',
           summary: '把 createdAt / lastUsedAt 放在本地 metadata 文件而不是上游协议。',
+          provider: 'codex',
         },
         {
           id: 'session-cli-02',
@@ -130,6 +138,7 @@ const PREVIEW_SNAPSHOT: SessionManagementSnapshot = {
           updatedAt: '2026-04-29 16:03',
           fileLabel: '2026/04/29/relay-fields-02.jsonl',
           summary: '梳理 relay service 配置和管理页展示字段的边界。',
+          provider: 'gemini',
         },
       ],
     },
@@ -147,6 +156,7 @@ const PREVIEW_DETAILS: Record<string, SessionDetail> = {
     roleSummary: 'system 1 / user 5 / assistant 6',
     topic: '项目列表 / 项目会话 / 详情弹层',
     currentMessageLabel: '当前消息 12',
+    provider: 'codex',
     messages: [
       { id: 'm-01', role: 'system', timeLabel: '23:12', title: '系统提示', summary: '保持 GetTokens 当前页面语言，左侧项目列表，右侧项目会话列表。' },
       { id: 'm-02', role: 'user', timeLabel: '23:14', title: '需求确认', summary: '先实现项目列表 + 项目会话列表 + 会话详情弹层。' },

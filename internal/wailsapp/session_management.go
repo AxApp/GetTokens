@@ -116,12 +116,39 @@ type turnContextEnvelope struct {
 }
 
 type responseItemEnvelope struct {
-	Type    string `json:"type"`
-	Role    string `json:"role"`
-	Content []struct {
+	Type      string `json:"type"`
+	Role      string `json:"role"`
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
+	CallID    string `json:"call_id"`
+	Output    string `json:"output"`
+	Input     string `json:"input"`
+	Status    string `json:"status"`
+	Content   []struct {
+		Type    string `json:"type"`
+		Text    string `json:"text"`
+		Content string `json:"content"`
+	} `json:"content"`
+	Summary []struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
-	} `json:"content"`
+	} `json:"summary"`
+	Action struct {
+		Type    string   `json:"type"`
+		Query   string   `json:"query"`
+		Queries []string `json:"queries"`
+	} `json:"action"`
+}
+
+type eventMessageEnvelope struct {
+	Type                  string `json:"type"`
+	Message               string `json:"message"`
+	Text                  string `json:"text"`
+	Phase                 string `json:"phase"`
+	TurnID                string `json:"turn_id"`
+	CollaborationModeKind string `json:"collaboration_mode_kind"`
+	ModelContextWindow    int    `json:"model_context_window"`
+	LastAgentMessage      string `json:"last_agent_message"`
 }
 
 type sessionParseResult struct {
@@ -133,6 +160,11 @@ type sessionParseResult struct {
 	updatedAtRaw time.Time
 }
 
+type sessionIndexRecord struct {
+	ID         string `json:"id"`
+	ThreadName string `json:"thread_name"`
+}
+
 type projectAggregate struct {
 	ID             string
 	Name           string
@@ -142,15 +174,22 @@ type projectAggregate struct {
 }
 
 func (a *App) GetCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
-	return a.loadCodexSessionManagementSnapshot()
+	if cached := a.readCachedSessionManagementSnapshot(); cached != nil {
+		return cached, nil
+	}
+	return a.refreshCodexSessionManagementSnapshot()
 }
 
 func (a *App) RefreshCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
-	return a.loadCodexSessionManagementSnapshot()
+	return a.refreshCodexSessionManagementSnapshot()
 }
 
 func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSessionDetail, error) {
 	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil, err
+	}
+	threadNames, err := loadSessionThreadNames(codexHome)
 	if err != nil {
 		return nil, err
 	}
@@ -162,11 +201,164 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 	if err != nil {
 		return nil, err
 	}
-	result, err := parseSessionFile(codexHome, absolutePath, filepath.ToSlash(relativePath))
+	result, err := parseSessionFile(codexHome, absolutePath, filepath.ToSlash(relativePath), threadNames)
 	if err != nil {
 		return nil, err
 	}
 	return &result.detail, nil
+}
+
+func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*SessionManagementSnapshot, error) {
+	projectID := strings.TrimSpace(input.ProjectID)
+	if projectID == "" {
+		return nil, errors.New("缺少 project id")
+	}
+	if len(input.Mappings) == 0 {
+		return nil, errors.New("缺少 provider 归并规则")
+	}
+
+	mappings := map[string]string{}
+	for _, item := range input.Mappings {
+		sourceProvider := strings.TrimSpace(item.SourceProvider)
+		targetProvider := strings.TrimSpace(item.TargetProvider)
+		if sourceProvider == "" || targetProvider == "" {
+			continue
+		}
+		mappings[sourceProvider] = targetProvider
+	}
+	if len(mappings) == 0 {
+		return nil, errors.New("缺少有效的 provider 归并规则")
+	}
+
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil, err
+	}
+
+	snapshot, err := a.loadCodexSessionManagementSnapshot()
+	if err != nil {
+		return nil, err
+	}
+
+	var project *SessionManagementProjectRecord
+	for index := range snapshot.Projects {
+		if snapshot.Projects[index].ID == projectID {
+			project = &snapshot.Projects[index]
+			break
+		}
+	}
+	if project == nil {
+		return nil, errors.New("未找到对应项目")
+	}
+
+	updatedCount := 0
+	for _, session := range project.Sessions {
+		targetProvider, ok := mappings[strings.TrimSpace(session.Provider)]
+		if !ok || strings.TrimSpace(targetProvider) == strings.TrimSpace(session.Provider) {
+			continue
+		}
+
+		absolutePath, err := resolveSessionAbsolutePath(codexHome, session.SessionID)
+		if err != nil {
+			return nil, err
+		}
+		if err := rewriteSessionMetaProvider(absolutePath, targetProvider); err != nil {
+			return nil, err
+		}
+		updatedCount++
+	}
+
+	if updatedCount == 0 {
+		return a.GetCodexSessionManagementSnapshot()
+	}
+
+	a.sessionMgmtMu.Lock()
+	a.sessionMgmt.cachedSnapshot = nil
+	a.sessionMgmt.cachedAt = time.Time{}
+	a.sessionMgmtMu.Unlock()
+
+	return a.refreshCodexSessionManagementSnapshot()
+}
+
+func (a *App) refreshCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	a.sessionMgmtMu.Lock()
+	if a.sessionMgmt.refreshRunning {
+		a.sessionMgmtMu.Unlock()
+		return a.waitForSessionManagementRefresh()
+	}
+	a.sessionMgmt.refreshRunning = true
+	a.sessionMgmtMu.Unlock()
+
+	snapshot, err := a.loadCodexSessionManagementSnapshot()
+
+	a.sessionMgmtMu.Lock()
+	a.sessionMgmt.refreshRunning = false
+	if err != nil {
+		a.sessionMgmtMu.Unlock()
+		return nil, err
+	}
+	a.sessionMgmt.cachedSnapshot = cloneSessionManagementSnapshot(snapshot)
+	a.sessionMgmt.cachedAt = time.Now()
+	cached := cloneSessionManagementSnapshot(a.sessionMgmt.cachedSnapshot)
+	a.sessionMgmtMu.Unlock()
+	return cached, nil
+}
+
+func (a *App) waitForSessionManagementRefresh() (*SessionManagementSnapshot, error) {
+	for {
+		time.Sleep(20 * time.Millisecond)
+		a.sessionMgmtMu.RLock()
+		refreshRunning := a.sessionMgmt.refreshRunning
+		cached := cloneSessionManagementSnapshot(a.sessionMgmt.cachedSnapshot)
+		a.sessionMgmtMu.RUnlock()
+		if refreshRunning {
+			continue
+		}
+		if cached != nil {
+			return cached, nil
+		}
+		return a.refreshCodexSessionManagementSnapshot()
+	}
+}
+
+func (a *App) readCachedSessionManagementSnapshot() *SessionManagementSnapshot {
+	a.sessionMgmtMu.RLock()
+	defer a.sessionMgmtMu.RUnlock()
+	return cloneSessionManagementSnapshot(a.sessionMgmt.cachedSnapshot)
+}
+
+func cloneSessionManagementSnapshot(snapshot *SessionManagementSnapshot) *SessionManagementSnapshot {
+	if snapshot == nil {
+		return nil
+	}
+
+	providerCounts := make(map[string]int, len(snapshot.ProviderCounts))
+	for provider, count := range snapshot.ProviderCounts {
+		providerCounts[provider] = count
+	}
+
+	projects := make([]SessionManagementProjectRecord, len(snapshot.Projects))
+	for index, project := range snapshot.Projects {
+		projectProviderCounts := make(map[string]int, len(project.ProviderCounts))
+		for provider, count := range project.ProviderCounts {
+			projectProviderCounts[provider] = count
+		}
+		sessions := make([]SessionManagementSessionRecord, len(project.Sessions))
+		copy(sessions, project.Sessions)
+		project.ProviderCounts = projectProviderCounts
+		project.Sessions = sessions
+		projects[index] = project
+	}
+
+	return &SessionManagementSnapshot{
+		ProjectCount:         snapshot.ProjectCount,
+		SessionCount:         snapshot.SessionCount,
+		ActiveSessionCount:   snapshot.ActiveSessionCount,
+		ArchivedSessionCount: snapshot.ArchivedSessionCount,
+		LastScanAt:           snapshot.LastScanAt,
+		ProviderCounts:       providerCounts,
+		Projects:             projects,
+	}
 }
 
 func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
@@ -176,6 +368,10 @@ func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, 
 	}
 
 	rolloutPaths, err := listCodexRolloutPaths(codexHome)
+	if err != nil {
+		return nil, err
+	}
+	threadNames, err := loadSessionThreadNames(codexHome)
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +390,7 @@ func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, 
 		}
 		relativePath = filepath.ToSlash(relativePath)
 
-		result, err := parseSessionFile(codexHome, absolutePath, relativePath)
+		result, err := parseSessionFile(codexHome, absolutePath, relativePath, threadNames)
 		if err != nil {
 			return nil, err
 		}
@@ -327,7 +523,97 @@ func resolveSessionAbsolutePath(codexHome string, sessionID string) (string, err
 	return absolutePath, nil
 }
 
-func parseSessionFile(codexHome string, absolutePath string, relativePath string) (*sessionParseResult, error) {
+func loadSessionThreadNames(codexHome string) (map[string]string, error) {
+	indexPath := filepath.Join(codexHome, "session_index.jsonl")
+	file, err := os.Open(indexPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return map[string]string{}, nil
+		}
+		return nil, err
+	}
+	defer file.Close()
+
+	threadNames := map[string]string{}
+	scanner := bufio.NewScanner(file)
+	buffer := make([]byte, 0, 64*1024)
+	scanner.Buffer(buffer, 1024*1024)
+	for scanner.Scan() {
+		var record sessionIndexRecord
+		if err := json.Unmarshal(scanner.Bytes(), &record); err != nil {
+			continue
+		}
+		id := strings.TrimSpace(record.ID)
+		name := strings.TrimSpace(record.ThreadName)
+		if id == "" || name == "" {
+			continue
+		}
+		threadNames[id] = name
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return threadNames, nil
+}
+
+func rewriteSessionMetaProvider(absolutePath string, targetProvider string) error {
+	content, err := os.ReadFile(absolutePath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	updated := false
+	for index, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+
+		var envelope struct {
+			Type    string                 `json:"type"`
+			Payload map[string]interface{} `json:"payload"`
+		}
+		if err := json.Unmarshal([]byte(line), &envelope); err != nil {
+			continue
+		}
+		if envelope.Type != "session_meta" || envelope.Payload == nil {
+			continue
+		}
+
+		envelope.Payload["model_provider"] = targetProvider
+		rewritten, err := json.Marshal(envelope)
+		if err != nil {
+			return err
+		}
+
+		var generic map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &generic); err != nil {
+			return err
+		}
+		generic["payload"] = envelope.Payload
+		rewritten, err = json.Marshal(generic)
+		if err != nil {
+			return err
+		}
+
+		lines[index] = string(rewritten)
+		updated = true
+		break
+	}
+
+	if !updated {
+		return errors.New("会话文件缺少 session_meta")
+	}
+
+	output := strings.Join(lines, "\n")
+	if strings.HasSuffix(string(content), "\n") && !strings.HasSuffix(output, "\n") {
+		output += "\n"
+	}
+	return os.WriteFile(absolutePath, []byte(output), 0600)
+}
+
+func parseSessionFile(codexHome string, absolutePath string, relativePath string, threadNames map[string]string) (*sessionParseResult, error) {
 	file, err := os.Open(absolutePath)
 	if err != nil {
 		return nil, err
@@ -341,14 +627,47 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	currentCWD := ""
 	messageRecords := make([]SessionManagementMessageRecord, 0, 32)
 	roleCounts := map[string]int{
-		"user":      0,
-		"assistant": 0,
-		"system":    0,
+		"user":        0,
+		"assistant":   0,
+		"system":      0,
+		"reasoning":   0,
+		"tool_call":   0,
+		"tool_result": 0,
+		"event":       0,
 	}
 	firstUserText := ""
 	lastSummary := ""
+	lastPrimarySummary := ""
 	firstTimestamp := time.Time{}
 	lastTimestamp := time.Time{}
+
+	appendRecord := func(timestamp time.Time, role string, title string, raw string) {
+		title, summary, content, truncated := buildSessionMessageContent(role, title, raw)
+		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
+			return
+		}
+		record := SessionManagementMessageRecord{
+			ID:        fmt.Sprintf("%s:%d", filepath.Base(relativePath), len(messageRecords)+1),
+			Role:      role,
+			TimeLabel: formatSessionManagementTime(timestamp),
+			Timestamp: formatSessionManagementTimestamp(timestamp),
+			Title:     title,
+			Summary:   summary,
+			Content:   content,
+			Truncated: truncated,
+		}
+		messageRecords = append(messageRecords, record)
+		roleCounts[role]++
+		if role == "user" && firstUserText == "" {
+			firstUserText = content
+		}
+		if role != "event" && role != "system" && strings.TrimSpace(summary) != "" {
+			lastPrimarySummary = summary
+		}
+		if strings.TrimSpace(summary) != "" {
+			lastSummary = summary
+		}
+	}
 
 	reader := bufio.NewReaderSize(file, 1024*128)
 	for {
@@ -376,6 +695,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 					if unmarshalErr := json.Unmarshal(envelope.Payload, &meta); unmarshalErr == nil {
 						projectName = deriveProjectName(meta, currentCWD, relativePath)
 						provider = normalizeSessionProvider(meta.ModelProvider, model)
+						appendRecord(messageTimestamp, "system", "会话元数据", formatSessionMetaSummary(meta))
 					}
 				case "turn_context":
 					var turnContext turnContextEnvelope
@@ -388,32 +708,23 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 							model = strings.TrimSpace(turnContext.Model)
 							provider = normalizeSessionProvider(meta.ModelProvider, model)
 						}
+						appendRecord(messageTimestamp, "system", "上下文更新", formatTurnContextSummary(turnContext))
 					}
 				case "response_item":
 					var item responseItemEnvelope
-					if unmarshalErr := json.Unmarshal(envelope.Payload, &item); unmarshalErr == nil && item.Type == "message" {
-						text := extractMessageText(item)
-						if strings.TrimSpace(text) == "" {
-							break
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &item); unmarshalErr == nil {
+						role, title, text, ok := extractResponseItemRecord(item)
+						if ok {
+							appendRecord(messageTimestamp, role, title, text)
 						}
-						normalizedRole := normalizeSessionRole(item.Role)
-						title, summary, content, truncated := buildSessionMessageContent(normalizedRole, text)
-						record := SessionManagementMessageRecord{
-							ID:        fmt.Sprintf("%s:%d", filepath.Base(relativePath), len(messageRecords)+1),
-							Role:      normalizedRole,
-							TimeLabel: formatSessionManagementTime(messageTimestamp),
-							Timestamp: formatSessionManagementTimestamp(messageTimestamp),
-							Title:     title,
-							Summary:   summary,
-							Content:   content,
-							Truncated: truncated,
+					}
+				case "event_msg":
+					var eventPayload eventMessageEnvelope
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &eventPayload); unmarshalErr == nil {
+						role, title, text, ok := extractEventRecord(eventPayload)
+						if ok {
+							appendRecord(messageTimestamp, role, title, text)
 						}
-						messageRecords = append(messageRecords, record)
-						roleCounts[normalizedRole]++
-						if normalizedRole == "user" && firstUserText == "" {
-							firstUserText = content
-						}
-						lastSummary = summary
 					}
 				}
 			}
@@ -424,7 +735,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	}
 
 	fileLabel := filepath.Base(relativePath)
-	sessionTitle := deriveSessionTitle(firstUserText, lastSummary, fileLabel)
+	sessionTitle := strings.TrimSpace(threadNames[meta.ID])
 	roleSummary := formatSessionRoleSummary(roleCounts)
 	status := resolveSessionStatus(relativePath)
 	archived := status == "archived"
@@ -441,7 +752,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 			}
 		}
 	}
-	preview := chooseNonEmpty(lastSummary, sessionTitle)
+	preview := chooseNonEmpty(lastPrimarySummary, lastSummary, fileLabel)
 
 	sessionRecord := SessionManagementSessionRecord{
 		ID:                  relativePath,
@@ -498,12 +809,74 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 func extractMessageText(item responseItemEnvelope) string {
 	parts := make([]string, 0, len(item.Content))
 	for _, part := range item.Content {
-		if part.Text == "" {
+		text := strings.TrimSpace(part.Text)
+		if text == "" {
+			text = strings.TrimSpace(part.Content)
+		}
+		if text == "" {
 			continue
 		}
-		parts = append(parts, part.Text)
+		parts = append(parts, text)
 	}
 	return strings.Join(parts, "\n")
+}
+
+func extractReasoningText(item responseItemEnvelope) string {
+	parts := make([]string, 0, len(item.Summary))
+	for _, part := range item.Summary {
+		text := strings.TrimSpace(part.Text)
+		if text == "" {
+			continue
+		}
+		parts = append(parts, text)
+	}
+	return strings.Join(parts, "\n")
+}
+
+func extractResponseItemRecord(item responseItemEnvelope) (string, string, string, bool) {
+	switch item.Type {
+	case "message":
+		return normalizeSessionRole(item.Role), fallbackSessionMessageTitle(normalizeSessionRole(item.Role)), extractMessageText(item), true
+	case "reasoning":
+		return "reasoning", "推理", extractReasoningText(item), true
+	case "function_call", "custom_tool_call":
+		return "tool_call", "工具调用", formatToolCallSummary(item), true
+	case "function_call_output", "custom_tool_call_output":
+		return "tool_result", "工具结果", formatToolResultSummary(item), true
+	case "web_search_call":
+		return "tool_call", "网络搜索", formatWebSearchSummary(item), true
+	default:
+		return "event", "响应项", marshalSessionJSON(item), true
+	}
+}
+
+func extractEventRecord(eventPayload eventMessageEnvelope) (string, string, string, bool) {
+	switch eventPayload.Type {
+	case "user_message":
+		return "user", "用户输入", eventPayload.Message, true
+	case "agent_message":
+		return "assistant", "助手说明", eventPayload.Message, true
+	case "agent_reasoning":
+		return "reasoning", "推理", eventPayload.Text, true
+	case "task_started":
+		return "event", "任务开始", formatTaskStartedSummary(eventPayload), true
+	case "task_complete":
+		return "event", "任务完成", chooseNonEmpty(eventPayload.LastAgentMessage, "任务已完成"), true
+	case "context_compacted":
+		return "event", "上下文压缩", "上下文已压缩", true
+	case "turn_aborted":
+		return "event", "中断", "当前轮次已中断", true
+	case "thread_rolled_back":
+		return "event", "回滚", "线程已回滚到较早状态", true
+	case "entered_review_mode":
+		return "event", "进入 Review", "已进入 review 模式", true
+	case "exited_review_mode":
+		return "event", "退出 Review", "已退出 review 模式", true
+	case "item_completed":
+		return "event", "步骤完成", "一个处理步骤已完成", true
+	default:
+		return "event", "事件", marshalSessionJSON(eventPayload), true
+	}
 }
 
 func normalizeSessionRole(role string) string {
@@ -512,12 +885,14 @@ func normalizeSessionRole(role string) string {
 		return "assistant"
 	case "user":
 		return "user"
+	case "system", "developer":
+		return "system"
 	default:
 		return "system"
 	}
 }
 
-func buildSessionMessageContent(role string, raw string) (string, string, string, bool) {
+func buildSessionMessageContent(role string, fallbackTitle string, raw string) (string, string, string, bool) {
 	sanitized := sanitizeSessionText(raw)
 	if role == "system" && looksLikeSensitiveSystemPrompt(raw) {
 		content := "系统与环境约束已载入（已脱敏）"
@@ -525,14 +900,26 @@ func buildSessionMessageContent(role string, raw string) (string, string, string
 	}
 	if sanitized == "" {
 		content := "内容已脱敏"
-		return fallbackSessionMessageTitle(role), content, content, true
+		title := strings.TrimSpace(sanitizeSessionText(fallbackTitle))
+		if title == "" {
+			title = fallbackSessionMessageTitle(role)
+		}
+		return title, content, content, true
 	}
 	limit := 1200
-	if role == "system" {
+	switch role {
+	case "system", "event":
 		limit = 240
+	case "reasoning", "tool_call":
+		limit = 480
+	case "tool_result":
+		limit = 800
 	}
 	content, truncated := truncateSessionText(sanitized, limit)
-	title := firstRunes(sanitized, 24)
+	title := strings.TrimSpace(sanitizeSessionText(fallbackTitle))
+	if title == "" {
+		title = firstRunes(sanitized, 24)
+	}
 	return title, firstRunes(content, 180), content, truncated
 }
 
@@ -563,6 +950,14 @@ func fallbackSessionMessageTitle(role string) string {
 		return "助手消息"
 	case "user":
 		return "用户消息"
+	case "reasoning":
+		return "推理"
+	case "tool_call":
+		return "工具调用"
+	case "tool_result":
+		return "工具结果"
+	case "event":
+		return "事件"
 	default:
 		return "系统上下文"
 	}
@@ -645,7 +1040,23 @@ func resolveSessionStatus(relativePath string) string {
 }
 
 func formatSessionRoleSummary(roleCounts map[string]int) string {
-	return fmt.Sprintf("用户 %d / 助手 %d / 系统 %d", roleCounts["user"], roleCounts["assistant"], roleCounts["system"])
+	parts := make([]string, 0, 7)
+	appendPart := func(label string, key string) {
+		if count := roleCounts[key]; count > 0 {
+			parts = append(parts, fmt.Sprintf("%s %d", label, count))
+		}
+	}
+	appendPart("用户", "user")
+	appendPart("助手", "assistant")
+	appendPart("系统", "system")
+	appendPart("推理", "reasoning")
+	appendPart("工具调用", "tool_call")
+	appendPart("工具结果", "tool_result")
+	appendPart("事件", "event")
+	if len(parts) == 0 {
+		return "系统 0"
+	}
+	return strings.Join(parts, " / ")
 }
 
 func formatCurrentMessageLabel(messages []SessionManagementMessageRecord) string {
@@ -654,11 +1065,109 @@ func formatCurrentMessageLabel(messages []SessionManagementMessageRecord) string
 	}
 	last := messages[len(messages)-1]
 	roleLabel := map[string]string{
-		"user":      "用户",
-		"assistant": "助手",
-		"system":    "系统",
+		"user":        "用户",
+		"assistant":   "助手",
+		"system":      "系统",
+		"reasoning":   "推理",
+		"tool_call":   "工具调用",
+		"tool_result": "工具结果",
+		"event":       "事件",
 	}[last.Role]
+	if roleLabel == "" {
+		roleLabel = "系统"
+	}
 	return fmt.Sprintf("%02d / %s", len(messages), roleLabel)
+}
+
+func formatSessionMetaSummary(meta sessionMetaEnvelope) string {
+	parts := make([]string, 0, 3)
+	if repository := repoNameFromURL(meta.Git.RepositoryURL); repository != "" {
+		parts = append(parts, fmt.Sprintf("仓库 %s", repository))
+	}
+	if provider := strings.TrimSpace(meta.ModelProvider); provider != "" {
+		parts = append(parts, fmt.Sprintf("Provider %s", provider))
+	}
+	if cwd := strings.TrimSpace(meta.Cwd); cwd != "" {
+		parts = append(parts, fmt.Sprintf("目录 %s", cwd))
+	}
+	return strings.Join(parts, " / ")
+}
+
+func formatTurnContextSummary(turnContext turnContextEnvelope) string {
+	parts := make([]string, 0, 2)
+	if cwd := strings.TrimSpace(turnContext.Cwd); cwd != "" {
+		parts = append(parts, fmt.Sprintf("目录 %s", cwd))
+	}
+	if model := strings.TrimSpace(turnContext.Model); model != "" {
+		parts = append(parts, fmt.Sprintf("模型 %s", model))
+	}
+	return strings.Join(parts, " / ")
+}
+
+func formatToolCallSummary(item responseItemEnvelope) string {
+	parts := make([]string, 0, 3)
+	if name := strings.TrimSpace(item.Name); name != "" {
+		parts = append(parts, name)
+	}
+	if status := strings.TrimSpace(item.Status); status != "" {
+		parts = append(parts, fmt.Sprintf("状态 %s", status))
+	}
+	input := chooseNonEmpty(item.Input, item.Arguments)
+	if strings.TrimSpace(input) != "" {
+		parts = append(parts, input)
+	}
+	return strings.Join(parts, " / ")
+}
+
+func formatToolResultSummary(item responseItemEnvelope) string {
+	parts := make([]string, 0, 2)
+	if callID := strings.TrimSpace(item.CallID); callID != "" {
+		parts = append(parts, fmt.Sprintf("调用 %s", callID))
+	}
+	if output := strings.TrimSpace(item.Output); output != "" {
+		parts = append(parts, output)
+	}
+	return strings.Join(parts, " / ")
+}
+
+func formatWebSearchSummary(item responseItemEnvelope) string {
+	queries := make([]string, 0, 2)
+	if query := strings.TrimSpace(item.Action.Query); query != "" {
+		queries = append(queries, query)
+	}
+	for _, query := range item.Action.Queries {
+		trimmed := strings.TrimSpace(query)
+		if trimmed == "" {
+			continue
+		}
+		queries = append(queries, trimmed)
+		if len(queries) >= 2 {
+			break
+		}
+	}
+	if len(queries) == 0 {
+		return "网络搜索"
+	}
+	return strings.Join(queries, " / ")
+}
+
+func formatTaskStartedSummary(eventPayload eventMessageEnvelope) string {
+	parts := []string{"任务已开始"}
+	if mode := strings.TrimSpace(eventPayload.CollaborationModeKind); mode != "" {
+		parts = append(parts, fmt.Sprintf("模式 %s", mode))
+	}
+	if eventPayload.ModelContextWindow > 0 {
+		parts = append(parts, fmt.Sprintf("上下文窗口 %d", eventPayload.ModelContextWindow))
+	}
+	return strings.Join(parts, " / ")
+}
+
+func marshalSessionJSON(value any) string {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return ""
+	}
+	return string(data)
 }
 
 func mapProviderCounts(counts map[string]int) []SessionManagementProviderCount {

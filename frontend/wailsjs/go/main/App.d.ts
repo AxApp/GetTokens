@@ -4,7 +4,7 @@ import {main} from '../models';
 import {updater} from '../models';
 import {sidecar} from '../models';
 
-export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string):Promise<main.RelayLocalApplyResult>;
+export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string):Promise<main.RelayLocalApplyResult>;
 
 export function ApplyUpdate():Promise<void>;
 
@@ -62,7 +62,11 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
+export function ListLocalCodexProviderViews():Promise<Array<main.LocalCodexModelProviderView>>;
+
 export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
+
+export function ListRelaySupportedModels():Promise<main.RelaySupportedModelsResult>;
 
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
@@ -87,6 +91,8 @@ export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):
 export function UpdateCodexAPIKeyLabel(arg1:main.UpdateCodexAPIKeyLabelInput):Promise<void>;
 
 export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInput):Promise<void>;
+
+export function UpdateCodexSessionProviders(arg1:main.UpdateSessionProvidersInput):Promise<main.SessionManagementSnapshot>;
 
 export function UpdateLocalProjectedUsageSettings(arg1:main.LocalProjectedUsageSettings):Promise<main.LocalProjectedUsageSettings>;
 

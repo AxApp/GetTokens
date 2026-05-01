@@ -23,12 +23,20 @@ type App struct {
 	managementAPI  func() *cliproxyapi.Client
 	localUsageMu   sync.RWMutex
 	localUsage     localUsageRuntimeState
+	sessionMgmtMu  sync.RWMutex
+	sessionMgmt    sessionManagementRuntimeState
 }
 
 type localUsageRuntimeState struct {
 	cachedResponse *LocalProjectedUsageResponse
 	cachedAt       time.Time
 	lastRefreshAt  time.Time
+	refreshRunning bool
+}
+
+type sessionManagementRuntimeState struct {
+	cachedSnapshot *SessionManagementSnapshot
+	cachedAt       time.Time
 	refreshRunning bool
 }
 

@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 import {
   loadSessionManagementDetail,
   loadSessionManagementSnapshot,
+  updateSessionManagementProviders,
 } from './dev/sessionManagementDevData.js'
 
 function sessionManagementDevBridgePlugin() {
@@ -17,6 +18,34 @@ function sessionManagementDevBridgePlugin() {
   return {
     name: 'session-management-dev-bridge',
     configureServer(server) {
+      server.middlewares.use('/__dev/session-management/provider-merge', async (req, res) => {
+        if (req.method === 'OPTIONS') {
+          res.statusCode = 204
+          res.setHeader('Access-Control-Allow-Origin', '*')
+          res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+          res.end()
+          return
+        }
+        if (req.method !== 'POST') {
+          writeJSON(res, 405, { error: 'method not allowed' })
+          return
+        }
+
+        try {
+          const chunks = []
+          for await (const chunk of req) {
+            chunks.push(chunk)
+          }
+          const body = Buffer.concat(chunks).toString('utf8')
+          const payload = body ? JSON.parse(body) : {}
+          const snapshot = await updateSessionManagementProviders(payload)
+          writeJSON(res, 200, snapshot)
+        } catch (error) {
+          writeJSON(res, 500, { error: error instanceof Error ? error.message : 'provider merge failed' })
+        }
+      })
+
       server.middlewares.use('/__dev/session-management/snapshot', async (req, res) => {
         try {
           const url = new URL(req.url || '', 'http://127.0.0.1')

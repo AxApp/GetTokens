@@ -9,6 +9,7 @@ import { EventsOn } from '../../../../wailsjs/runtime/runtime';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../../context/DebugContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../../types';
+import { hasWailsAppBindings } from '../../../utils/previewMode';
 import {
   persistUsageDeskRange,
   persistUsageDeskSource,
@@ -102,6 +103,10 @@ export default function UsageDeskWorkspace({
   }, [range]);
 
   useEffect(() => {
+    if (!hasWailsAppBindings()) {
+      return;
+    }
+
     const offProgress = EventsOn('usage-local:progress', (payload: LocalUsageProgressEvent) => {
       setProjectedProgress(payload ?? null);
     });

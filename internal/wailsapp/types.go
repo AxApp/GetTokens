@@ -100,3 +100,13 @@ type LocalProjectedUsageProgress struct {
 type LocalProjectedUsageSettings struct {
 	RefreshIntervalMinutes int `json:"refreshIntervalMinutes"`
 }
+
+type UpdateSessionProviderMapping struct {
+	SourceProvider string `json:"sourceProvider"`
+	TargetProvider string `json:"targetProvider"`
+}
+
+type UpdateSessionProvidersInput struct {
+	ProjectID string                         `json:"projectID"`
+	Mappings  []UpdateSessionProviderMapping `json:"mappings"`
+}

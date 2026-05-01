@@ -260,6 +260,8 @@ export namespace main {
 	export class OpenAICompatibleModel {
 	    name: string;
 	    alias?: string;
+	    supportedReasoningEfforts?: string[];
+	    defaultReasoningEffort?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new OpenAICompatibleModel(source);
@@ -269,6 +271,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
 	        this.alias = source["alias"];
+	        this.supportedReasoningEfforts = source["supportedReasoningEfforts"];
+	        this.defaultReasoningEffort = source["defaultReasoningEffort"];
 	    }
 	}
 	export class FetchOpenAICompatibleProviderModelsResult {
@@ -335,6 +339,20 @@ export namespace main {
 	        this.url = source["url"];
 	        this.sourceLabel = source["sourceLabel"];
 	        this.content = source["content"];
+	    }
+	}
+	export class LocalCodexModelProviderView {
+	    providerID: string;
+	    providerName: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalCodexModelProviderView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.providerID = source["providerID"];
+	        this.providerName = source["providerName"];
 	    }
 	}
 	export class LocalProjectedUsageDetail {
@@ -651,6 +669,36 @@ export namespace main {
 		}
 	}
 	
+	export class RelaySupportedModelsResult {
+	    models: OpenAICompatibleModel[];
+	
+	    static createFrom(source: any = {}) {
+	        return new RelaySupportedModelsResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class SessionManagementMessageRecord {
 	    id: string;
 	    role: string;
@@ -960,6 +1008,52 @@ export namespace main {
 	        this.apiKeys = source["apiKeys"];
 	        this.headers = source["headers"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class UpdateSessionProviderMapping {
+	    sourceProvider: string;
+	    targetProvider: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateSessionProviderMapping(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sourceProvider = source["sourceProvider"];
+	        this.targetProvider = source["targetProvider"];
+	    }
+	}
+	export class UpdateSessionProvidersInput {
+	    projectID: string;
+	    mappings: UpdateSessionProviderMapping[];
+	
+	    static createFrom(source: any = {}) {
+	        return new UpdateSessionProvidersInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.projectID = source["projectID"];
+	        this.mappings = this.convertValues(source["mappings"], UpdateSessionProviderMapping);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

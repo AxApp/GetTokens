@@ -78,12 +78,44 @@ test('buildRelayCodexAuthJSONSnippet only keeps the fields codex actually uses',
   );
 });
 
-test('buildRelayCodexConfigTomlSnippet writes the codex base url config', () => {
+test('buildRelayCodexConfigTomlSnippet writes a custom codex provider config', () => {
   const snippet = buildRelayCodexConfigTomlSnippet({
     baseUrl: ' http://127.0.0.1:8317/v1/ ',
+    model: ' gpt-5.5 ',
+    reasoningEffort: ' xhigh ',
+    providerID: ' gettokens ',
+    providerName: ' GetTokens ',
   });
 
-  assert.equal(snippet, 'model = "GT"\nopenai_base_url = "http://127.0.0.1:8317/v1"');
+  assert.equal(
+    snippet,
+    [
+      'model = "gpt-5.5"',
+      'model_reasoning_effort = "xhigh"',
+      'model_provider = "gettokens"',
+      '',
+      '[model_providers.gettokens]',
+      'name = "GetTokens"',
+      'base_url = "http://127.0.0.1:8317/v1"',
+      'requires_openai_auth = true',
+      'wire_api = "responses"',
+    ].join('\n')
+  );
+});
+
+test('buildRelayCodexConfigTomlSnippet keeps openai provider continuity when selected', () => {
+  const snippet = buildRelayCodexConfigTomlSnippet({
+    baseUrl: ' http://127.0.0.1:8317/v1/ ',
+    model: ' gpt-5.4 ',
+    reasoningEffort: ' low ',
+    providerID: ' openai ',
+    providerName: ' OpenAI Relay ',
+  });
+
+  assert.equal(
+    snippet,
+    'model = "gpt-5.4"\nmodel_reasoning_effort = "low"\nopenai_base_url = "http://127.0.0.1:8317/v1"'
+  );
 });
 
 test('buildCodexAPIKeyVerifyInput trims values and normalizes base url', () => {

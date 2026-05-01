@@ -37,6 +37,24 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - First move the page body into `features/<domain>/<Domain>Feature.tsx`
   - Then shrink the page file to a thin prop-forwarding wrapper
   - Then split feature internals into `components / hooks / model / tests`
+- **Refactor Cadence for Large Features**:
+  - When a feature is already live and the file is too large, do not jump straight into many tiny components.
+  - Preferred reduction order is:
+    1. keep the page working and stabilize the page shell + bridge/data loop first
+    2. extract heavy view blocks into a dedicated view file
+    3. extract copy/text factories and pure constants/helpers
+    4. extract focused mutation hooks such as modal/editor flows
+    5. extract data-loading hooks such as `snapshot` / `detail`
+    6. only then consider a final view-state hook for selectors and derived UI state
+  - The goal is to turn the main `*Feature.tsx` into a page controller instead of a second catch-all file.
+- **Session Management Baseline**:
+  - For Wails-backed workbench pages like `session-management`, the stable split target is:
+    - `*Feature.tsx` -> page controller
+    - `*View.tsx` -> business presentation blocks
+    - `*Copy.ts` -> copy factory
+    - `*Utils.ts` -> pure constants/helpers
+    - `use*Snapshot` / `use*Detail` / `use*Mutation` -> focused async hooks
+  - If the page also has browser-dev fallback data or dev bridge logic, keep that outside the controller and do not mix it back into JSX-heavy files.
 - **Current Baseline**:
   - `AccountsPage` -> `features/accounts/AccountsFeature.tsx`
   - `StatusPage` -> `features/status/StatusFeature.tsx`
@@ -50,6 +68,14 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Relay key editing may be multi-value; preserve order, trim blanks, and deduplicate exact duplicates.
   - Relay endpoint previews should expose `localhost`, hostname, and LAN IP forms when available.
   - If relay config is meant for LAN clients, sidecar bind host must not be restricted to `127.0.0.1`.
+  - “Apply to local Codex” is a local workbench flow, not a sidecar truth editor:
+    - `provider / model / reasoning effort` are local Codex defaults for future sessions
+    - provider options should merge the page-local options with existing `[model_providers.*]` read from `~/.codex/config.toml`
+    - model options should prefer aggregated account-pool catalogs, and only fall back to `~/.codex/models_cache.json` when the aggregated result is empty
+  - Writing local Codex config must be preservative:
+    - `config.toml` uses minimal text patch updates for owned keys
+    - `auth.json` uses field-level merge
+    - do not rewrite the whole file and destroy user ordering, comments, or unknown fields
 
 ## 4. Quota Rules
 - **Path**: `AccountsPage` -> `GetCodexQuota` -> Wails -> `POST /v0/management/api-call`.
@@ -103,8 +129,10 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Tools**: Use `@linhey/react-debug-inspector` in `main.tsx` (dev-only).
 - **Config**: Use `createViteDebugInspectorPlugin()` in `vite.config.js` for stable JSX metadata.
 - **Workflow**: Prove handler -> bridge call -> backend response. Use `data-collaboration-id` for markers.
+- **Overlay Rule**: When a dropdown, listbox, or popover inside a card “has DOM but is not visible”, inspect the full ancestor `overflow` chain before touching `z-index`. In Status/Settings style panels, `overflow-hidden` on the owning card is the first suspect.
 - **Chart Layering Rule**: For charts that mix `svg` paths/areas with HTML point labels or hit targets, all layers must share the same width coordinate system. Do not let `svg` scale to container width while HTML points still use the original logical width.
 - **Chart Verification Rule**: For visual fixes in `UsageDesk` or similar chart-heavy surfaces, static code reasoning is not sufficient. Re-open the real page, switch the relevant time ranges, and keep traceable screenshots under the owning `space/screenshots/` directory before claiming the fix is live.
+- **Status Surface Verification Rule**: For browser-checkable Wails surfaces such as `#frame=status` or `#frame=session-management`, use `bb-browser` to verify the real rendered interaction and keep acceptance screenshots under `docs-linhay/screenshots/<date>/<module>/` when the fix is visual or interaction-sensitive.
 
 ## 8. CLIProxyAPI Fork Maintenance
 - **Remotes**: `origin` (AxApp), `linhay` (legacy fork backup), `upstream` (router-for-me).

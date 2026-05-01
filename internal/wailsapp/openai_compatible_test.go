@@ -133,7 +133,7 @@ func TestFetchOpenAICompatibleProviderModelsBuildsModelsRequestAndParsesResponse
 				t.Fatalf("expected empty request data, got %q", request.Data)
 			}
 
-			return []byte(`{"status_code":200,"body":"{\"data\":[{\"id\":\"deepseek-chat\"},{\"id\":\"deepseek-reasoner\"},{\"id\":\"deepseek-chat\"}]}"} `), 200, nil
+			return []byte(`{"status_code":200,"body":"{\"data\":[{\"id\":\"deepseek-chat\",\"supported_reasoning_levels\":[\"minimal\",\"high\"],\"default_reasoning_level\":\"high\"},{\"id\":\"deepseek-reasoner\"},{\"id\":\"deepseek-chat\"}]}"} `), 200, nil
 		},
 	}
 
@@ -155,6 +155,42 @@ func TestFetchOpenAICompatibleProviderModelsBuildsModelsRequestAndParsesResponse
 	}
 	if result.Models[0].Name != "deepseek-chat" || result.Models[1].Name != "deepseek-reasoner" {
 		t.Fatalf("unexpected models: %#v", result.Models)
+	}
+	if result.Models[0].DefaultReasoningEffort != "high" {
+		t.Fatalf("unexpected default reasoning effort: %#v", result.Models[0])
+	}
+	if len(result.Models[0].SupportedReasoningEfforts) != 2 || result.Models[0].SupportedReasoningEfforts[0] != "minimal" || result.Models[0].SupportedReasoningEfforts[1] != "high" {
+		t.Fatalf("unexpected supported reasoning efforts: %#v", result.Models[0])
+	}
+}
+
+func TestParseOpenAICompatibleModelsResponseSupportsCodexModelCatalogShape(t *testing.T) {
+	models, err := parseOpenAICompatibleModelsResponse(`{
+		"models": [
+			{
+				"slug": "gpt-5.5",
+				"supported_reasoning_levels": ["low", "high", "xhigh"],
+				"default_reasoning_level": "high"
+			},
+			{
+				"slug": "gpt-5.4-mini"
+			}
+		]
+	}`)
+	if err != nil {
+		t.Fatalf("parseOpenAICompatibleModelsResponse returned error: %v", err)
+	}
+	if len(models) != 2 {
+		t.Fatalf("unexpected models: %#v", models)
+	}
+	if models[0].Name != "gpt-5.5" || models[0].DefaultReasoningEffort != "high" {
+		t.Fatalf("unexpected first model: %#v", models[0])
+	}
+	if len(models[0].SupportedReasoningEfforts) != 3 || models[0].SupportedReasoningEfforts[2] != "xhigh" {
+		t.Fatalf("unexpected reasoning efforts: %#v", models[0])
+	}
+	if models[1].Name != "gpt-5.4-mini" {
+		t.Fatalf("unexpected second model: %#v", models[1])
 	}
 }
 
