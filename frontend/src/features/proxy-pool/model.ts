@@ -462,6 +462,38 @@ export function rememberProxyProbeTargetURL(history: readonly string[], raw: str
   return nextHistory;
 }
 
+export function formatRelativeProxyCheckedTime(value: string, now = new Date()): string {
+  const normalized = value.trim();
+  if (!normalized) {
+    return '未检测';
+  }
+
+  const parsed = new Date(normalized.includes('T') ? normalized : normalized.replace(' ', 'T'));
+  if (Number.isNaN(parsed.getTime())) {
+    return normalized;
+  }
+
+  const diffMs = Math.max(0, now.getTime() - parsed.getTime());
+  const diffSeconds = Math.floor(diffMs / 1000);
+  if (diffSeconds < 60) {
+    return `${diffSeconds}s 前`;
+  }
+
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m 前`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) {
+    const remainingMinutes = diffMinutes % 60;
+    return remainingMinutes > 0 ? `${diffHours}h ${remainingMinutes}m 前` : `${diffHours}h 前`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}天前`;
+}
+
 export function applyProxyProbeResult(
   node: ProxyNodeRecord,
   result: Pick<ProxyProbeResult, 'success' | 'latencyMs' | 'checkedAt' | 'message'>,

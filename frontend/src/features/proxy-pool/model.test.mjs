@@ -14,6 +14,7 @@ import {
   createProxyNodeDraftFromRecord,
   cycleProxyNodeGroup,
   filterProxyNodes,
+  formatRelativeProxyCheckedTime,
   filterProxyNodesByGroup,
   getDefaultSortDirection,
   mergeImportedProxyNodes,
@@ -417,6 +418,15 @@ test('normalizeProxyProbeTargetURL fills default, normalizes host-only input, an
   assert.equal(normalizeProxyProbeTargetURL('example.com/ping'), 'https://example.com/ping');
   assert.equal(normalizeProxyProbeTargetURL('https://example.com/health'), 'https://example.com/health');
   assert.throws(() => normalizeProxyProbeTargetURL('ftp://example.com/file'), /仅支持/);
+});
+
+test('formatRelativeProxyCheckedTime renders relative durations for recent checks', () => {
+  const now = new Date('2026-05-01T12:00:00');
+
+  assert.equal(formatRelativeProxyCheckedTime('2026-05-01 11:59:42', now), '18s 前');
+  assert.equal(formatRelativeProxyCheckedTime('2026-05-01 10:37:00', now), '1h 23m 前');
+  assert.equal(formatRelativeProxyCheckedTime('2026-04-28 12:00:00', now), '3天前');
+  assert.equal(formatRelativeProxyCheckedTime('', now), '未检测');
 });
 
 test('deriveProxySourceLabel derives readable source names from subscription urls', () => {

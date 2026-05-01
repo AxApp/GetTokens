@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { FetchProxySubscription, ProbeProxyNode } from '../../../wailsjs/go/main/App';
 
-import SegmentedControl from '../../components/ui/SegmentedControl';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/DebugContext';
 import { toErrorMessage } from '../../utils/error';
@@ -15,6 +14,7 @@ import {
   deriveProxySourceLabel,
   downloadProxyPool,
   filterProxyNodes,
+  formatRelativeProxyCheckedTime,
   getDefaultSortDirection,
   mergeImportedProxyNodes,
   normalizeProxyProbeTargetURL,
@@ -26,9 +26,7 @@ import {
   persistProxySubscriptions,
   proxyNodeGroups,
   proxyPoolPageSizeOptions,
-  proxyPoolSortOptions,
   proxyNodeProtocols,
-  proxyPoolFilterOptions,
   readStoredProxySubscriptions,
   readStoredProxyNodes,
   readStoredProxyProbeTargetHistory,
@@ -106,6 +104,8 @@ export default function ProxyPoolFeature() {
   const [isSubscriptionManagerOpen, setIsSubscriptionManagerOpen] = useState(false);
   const [selectedIDs, setSelectedIDs] = useState<string[]>([]);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [probingIDs, setProbingIDs] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -212,6 +212,11 @@ export default function ProxyPoolFeature() {
     setSelectedIDs([]);
   }
 
+  function disableSelectionMode() {
+    setSelectedIDs([]);
+    setIsSelectionMode(false);
+  }
+
   function handleRetest(id: string) {
     void probeNodesByIDs([id], '已完成 1 条节点测速。');
   }
@@ -278,28 +283,33 @@ export default function ProxyPoolFeature() {
     }
 
     setFeedback(`正在测速 ${nodesToProbe.length} 条代理节点...`);
+    setProbingIDs(nodesToProbe.map((node) => node.id));
 
     const nextByID = new Map<string, ProxyNodeRecord>();
-    for (const node of nodesToProbe) {
-      const proxyUrl = buildProxyURLFromNode(node);
-      try {
-        const result = await trackRequest<ProxyProbeResult>(
-          'ProbeProxyNode',
-          { proxyUrl, targetUrl },
-          () => ProbeProxyNode({ proxyUrl, targetUrl }),
-        );
-        nextByID.set(node.id, applyProxyProbeResult(node, result));
-      } catch (error) {
-        nextByID.set(
-          node.id,
-          applyProxyProbeResult(node, {
-            success: false,
-            latencyMs: node.latencyMs,
-            checkedAt: new Date().toISOString(),
-            message: formatProxyPoolRuntimeError('代理检测', error),
-          }),
-        );
+    try {
+      for (const node of nodesToProbe) {
+        const proxyUrl = buildProxyURLFromNode(node);
+        try {
+          const result = await trackRequest<ProxyProbeResult>(
+            'ProbeProxyNode',
+            { proxyUrl, targetUrl },
+            () => ProbeProxyNode({ proxyUrl, targetUrl }),
+          );
+          nextByID.set(node.id, applyProxyProbeResult(node, result));
+        } catch (error) {
+          nextByID.set(
+            node.id,
+            applyProxyProbeResult(node, {
+              success: false,
+              latencyMs: node.latencyMs,
+              checkedAt: new Date().toISOString(),
+              message: formatProxyPoolRuntimeError('代理检测', error),
+            }),
+          );
+        }
       }
+    } finally {
+      setProbingIDs([]);
     }
 
     setNodes((current) => current.map((node) => nextByID.get(node.id) ?? node));
@@ -529,7 +539,7 @@ export default function ProxyPoolFeature() {
       <div className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-5 p-7">
         <WorkspacePageHeader
           title="代理池"
-          subtitle={`网络代理池 / 本地维护 / ${filteredNodes.length} / ${summary.totalCount} / 可用 ${summary.availableCount} / 待复查 ${summary.reviewCount} / 平均延时 ${summary.averageLatencyMs} ms`}
+          subtitle={`网络代理池 / 本地维护 / ${filteredNodes.length} / ${summary.totalCount} / 可用 ${summary.availableCount} / 待复查 ${summary.reviewCount} / 平均延时 ${summary.averageLatencyMs} ms / ${feedback}`}
           actions={
             <>
               <input
@@ -569,6 +579,18 @@ export default function ProxyPoolFeature() {
                       onClick={() => {
                         setIsHeaderMenuOpen(false);
                         exportNodes();
+                      }}
+                    />
+                    <MenuActionButton
+                      label={isSelectionMode ? '结束选择' : '批量选择'}
+                      description={isSelectionMode ? '退出当前批量选择模式' : '显示选择列并启用批量操作'}
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        if (isSelectionMode) {
+                          disableSelectionMode();
+                          return;
+                        }
+                        setIsSelectionMode(true);
                       }}
                     />
                     <MenuActionButton
@@ -637,26 +659,33 @@ export default function ProxyPoolFeature() {
                   </div>
                 ) : null}
               </div>
-              {selectedCount > 0 ? (
+              {isSelectionMode ? (
                 <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-color)] pt-4 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  <span className="mr-2">已选 {selectedCount}</span>
+                  <span className="mr-2">{selectedCount > 0 ? `已选 ${selectedCount}` : '选择模式'}</span>
                   <button type="button" onClick={toggleSelectCurrentPage} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
                     {allCurrentPageSelected ? '取消当前页' : '全选当前页'}
                   </button>
                   <button type="button" onClick={toggleSelectAllFiltered} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
                     {allFilteredSelected ? '取消当前筛选' : '全选当前筛选'}
                   </button>
-                  <button type="button" onClick={handleSelectedRetest} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
-                    测速
-                  </button>
-                  <button type="button" onClick={exportSelectedNodes} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
-                    导出
-                  </button>
-                  <button type="button" onClick={clearSelection} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
-                    清空
-                  </button>
-                  <button type="button" onClick={handleBatchDelete} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem] !text-red-500">
-                    删除
+                  {selectedCount > 0 ? (
+                    <>
+                      <button type="button" onClick={handleSelectedRetest} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                        测速
+                      </button>
+                      <button type="button" onClick={exportSelectedNodes} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                        导出
+                      </button>
+                      <button type="button" onClick={clearSelection} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                        清空
+                      </button>
+                      <button type="button" onClick={handleBatchDelete} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem] !text-red-500">
+                        删除
+                      </button>
+                    </>
+                  ) : null}
+                  <button type="button" onClick={disableSelectionMode} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                    结束选择
                   </button>
                 </div>
               ) : null}
@@ -667,33 +696,33 @@ export default function ProxyPoolFeature() {
 
         <section className="border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] border-collapse">
+            <table className="w-full table-auto border-collapse">
               <thead>
                 <tr className="bg-[var(--bg-surface)]">
-                  <TableHead compact>
-                    <span className="sr-only">选择</span>
-                  </TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>协议</TableHead>
-                  <TableHead>IP</TableHead>
-                  <TableHead>端口</TableHead>
-                  <SortableTableHead sortKey="latency" activeKey={sortKey} direction={sortDirection} onSort={handleSort}>
+                  {isSelectionMode ? (
+                    <TableHead compact>
+                      <span className="sr-only">选择</span>
+                    </TableHead>
+                  ) : null}
+                  <SortableTableHead className="w-[88px] whitespace-nowrap" sortKey="availability" activeKey={sortKey} direction={sortDirection} onSort={handleSort}>
+                    状态
+                  </SortableTableHead>
+                  <TableHead className="w-[88px] whitespace-nowrap">协议</TableHead>
+                  <TableHead className="w-[180px] max-w-[180px]">地址</TableHead>
+                  <SortableTableHead className="w-[96px] whitespace-nowrap" sortKey="latency" activeKey={sortKey} direction={sortDirection} onSort={handleSort}>
                     延时
                   </SortableTableHead>
-                  <SortableTableHead sortKey="availability" activeKey={sortKey} direction={sortDirection} onSort={handleSort}>
-                    可用率
+                  <SortableTableHead className="w-[112px] whitespace-nowrap" sortKey="lastCheckedAt" activeKey={sortKey} direction={sortDirection} onSort={handleSort}>
+                    检测
                   </SortableTableHead>
-                  <SortableTableHead sortKey="lastCheckedAt" activeKey={sortKey} direction={sortDirection} onSort={handleSort}>
-                    最近检测
-                  </SortableTableHead>
-                  <TableHead>来源</TableHead>
-                  <TableHead>操作</TableHead>
+                  <TableHead className="min-w-[180px]">来源</TableHead>
+                  <TableHead className="w-[112px] whitespace-nowrap">操作</TableHead>
                 </tr>
               </thead>
               <tbody>
                 {filteredNodes.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-5 py-16 text-center text-[0.6875rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <td colSpan={isSelectionMode ? 8 : 7} className="px-4 py-16 text-center text-[0.6875rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       当前筛选结果为空
                     </td>
                   </tr>
@@ -703,6 +732,8 @@ export default function ProxyPoolFeature() {
                       key={node.id}
                       node={node}
                       selected={selectedIDs.includes(node.id)}
+                      selectionEnabled={isSelectionMode}
+                      probing={probingIDs.includes(node.id)}
                       onToggleSelect={toggleSelect}
                       onRetest={handleRetest}
                       onDelete={handleDelete}
@@ -834,9 +865,30 @@ function formatTableTime(value: string) {
   return `${year}-${month}-${day} ${hour}:${minute}`;
 }
 
+function StatusAvailabilityPill({
+  status,
+  availabilityRate,
+}: {
+  status: ProxyNodeRecord['status'];
+  availabilityRate: number;
+}) {
+  const isAvailable = status === 'available';
+  return (
+    <div
+      className={`inline-flex min-w-[64px] items-center justify-center border px-2.5 py-1.5 text-center ${
+        isAvailable ? 'border-[var(--border-color)] text-[var(--text-primary)]' : 'border-red-500 text-red-500'
+      }`}
+    >
+      <span className="text-[0.6875rem] font-black">{availabilityRate}%</span>
+    </div>
+  );
+}
+
 function ProxyNodeRow({
   node,
   selected,
+  selectionEnabled,
+  probing,
   onToggleSelect,
   onRetest,
   onEdit,
@@ -844,6 +896,8 @@ function ProxyNodeRow({
 }: {
   node: ProxyNodeRecord;
   selected: boolean;
+  selectionEnabled: boolean;
+  probing: boolean;
   onToggleSelect: (id: string) => void;
   onRetest: (id: string) => void;
   onEdit: () => void;
@@ -851,34 +905,104 @@ function ProxyNodeRow({
 }) {
   return (
     <tr className="border-t border-dashed border-[var(--border-color)] first:border-t-0 hover:bg-[var(--bg-main)]/50">
-      <td className="px-4 py-5 align-middle">
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={() => onToggleSelect(node.id)}
-          className="h-4 w-4 accent-[var(--accent-red)]"
-        />
+      {selectionEnabled ? (
+        <td className="w-10 px-2 py-4 align-middle">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelect(node.id)}
+            className="h-4 w-4 accent-[var(--accent-red)]"
+          />
+        </td>
+      ) : null}
+        <td className="w-[88px] px-3 py-5 align-middle">
+          <StatusAvailabilityPill status={node.status} availabilityRate={node.availabilityRate} />
+        </td>
+      <td className="w-[88px] px-3 py-5 align-middle font-mono text-[0.6875rem] font-black uppercase text-[var(--text-primary)] whitespace-nowrap">{node.protocol}</td>
+      <td
+        className="w-[180px] max-w-[180px] px-3 py-5 align-middle font-mono text-[0.6875rem] font-bold text-[var(--text-primary)] break-words"
+        title={`${node.host}:${node.port}`}
+      >
+        {node.host}:{node.port}
       </td>
-      <td className="px-4 py-5 align-middle">
-        <StatusPill status={node.status} />
+      <td className="w-[96px] px-3 py-5 align-middle text-[0.6875rem] font-bold text-[var(--text-primary)] whitespace-nowrap">{node.latencyMs} ms</td>
+      <td className="w-[112px] px-3 py-5 align-middle text-[0.625rem] font-bold text-[var(--text-primary)] whitespace-nowrap">{formatRelativeProxyCheckedTime(node.lastCheckedAt)}</td>
+      <td className="min-w-[180px] px-3 py-5 align-middle">
+        <div className="truncate text-[0.6875rem] font-bold text-[var(--text-primary)]" title={node.sourceLabel || '未标记'}>
+          {node.sourceLabel || '未标记'}
+        </div>
       </td>
-      <td className="px-4 py-5 align-middle font-mono text-[0.6875rem] font-black uppercase text-[var(--text-primary)]">{node.protocol}</td>
-      <td className="px-4 py-5 align-middle font-mono text-[0.6875rem] font-bold text-[var(--text-primary)]">{node.host}</td>
-      <td className="px-4 py-5 align-middle font-mono text-[0.6875rem] font-bold text-[var(--text-primary)]">{node.port}</td>
-      <td className="px-4 py-5 align-middle text-[0.6875rem] font-bold text-[var(--text-primary)]">{node.latencyMs} ms</td>
-      <td className="px-4 py-5 align-middle text-[0.6875rem] font-bold text-[var(--text-primary)]">{node.availabilityRate}%</td>
-      <td className="px-4 py-5 align-middle text-[0.625rem] font-bold text-[var(--text-primary)]">{node.lastCheckedAt}</td>
-      <td className="px-4 py-5 align-middle text-[0.6875rem] font-bold text-[var(--text-primary)]">{node.sourceLabel || '未标记'}</td>
-      <td className="px-4 py-5 align-middle">
-        <div className="flex flex-wrap gap-2">
-          <ActionButton onClick={() => onRetest(node.id)}>测速</ActionButton>
-          <ActionButton onClick={onEdit}>编辑</ActionButton>
-          <ActionButton onClick={() => onDelete(node.id)} tone="danger">
-            删除
+      <td className="w-[112px] px-3 py-5 align-middle">
+        <div className="flex items-center gap-1.5">
+          <ActionButton onClick={() => onRetest(node.id)} disabled={probing}>
+            {probing ? '测速中' : '测速'}
           </ActionButton>
+          <ProxyNodeActionsMenu onEdit={onEdit} onDelete={() => onDelete(node.id)} />
         </div>
       </td>
     </tr>
+  );
+}
+
+function ProxyNodeActionsMenu({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        aria-label="更多操作"
+        onClick={() => setOpen((current) => !current)}
+        className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[0.875rem] font-black text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)] active:scale-95"
+      >
+        ⋮
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 flex min-w-[132px] flex-col gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-2 shadow-[4px_4px_0_var(--shadow-color)]">
+          <ActionButton
+            onClick={() => {
+              setOpen(false);
+              onEdit();
+            }}
+          >
+            编辑
+          </ActionButton>
+          <ActionButton
+            onClick={() => {
+              setOpen(false);
+              onDelete();
+            }}
+            tone="danger"
+          >
+            删除
+          </ActionButton>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -1234,12 +1358,10 @@ function ProxyPoolSubscriptionManagerModal({
   );
 }
 
-function TableHead({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
+function TableHead({ children, compact = false, className = '' }: { children: ReactNode; compact?: boolean; className?: string }) {
   return (
     <th
-      className={`border-b-2 border-[var(--border-color)] px-4 py-3 text-left text-[0.625rem] font-black tracking-[0.12em] text-[var(--text-primary)] ${
-        compact ? 'w-16' : ''
-      }`}
+      className={`${compact ? 'w-10 px-2' : 'px-3'} ${className} border-b-2 border-[var(--border-color)] py-3 text-left text-[0.625rem] font-black tracking-[0.12em] text-[var(--text-primary)]`}
     >
       {children}
     </th>
@@ -1252,18 +1374,20 @@ function SortableTableHead({
   activeKey,
   direction,
   onSort,
+  className = '',
 }: {
   children: ReactNode;
   sortKey: ProxyPoolSortKey;
   activeKey: ProxyPoolSortKey;
   direction: ProxyPoolSortDirection;
   onSort: (key: ProxyPoolSortKey) => void;
+  className?: string;
 }) {
   const isActive = activeKey === sortKey;
   const arrow = !isActive ? '↕' : direction === 'asc' ? '↑' : '↓';
 
   return (
-    <TableHead>
+    <TableHead className={className}>
       <button
         type="button"
         onClick={() => onSort(sortKey)}
@@ -1276,33 +1400,25 @@ function SortableTableHead({
   );
 }
 
-function StatusPill({ status }: { status: ProxyNodeRecord['status'] }) {
-  const tone =
-    status === 'available'
-      ? 'border-emerald-700 bg-emerald-50 text-emerald-700'
-      : 'border-amber-700 bg-amber-50 text-amber-700';
-
-  return (
-    <span className={`inline-flex border px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.14em] ${tone}`}>
-      {status === 'available' ? '可用' : '待复查'}
-    </span>
-  );
-}
-
 function ActionButton({
   children,
   onClick,
   tone = 'default',
+  className = '',
+  disabled = false,
 }: {
   children: ReactNode;
   onClick: () => void;
   tone?: 'default' | 'danger';
+  className?: string;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem] ${tone === 'danger' ? '!text-red-500' : ''}`}
+      disabled={disabled}
+      className={`btn-swiss inline-flex h-8 items-center justify-start text-left !px-2.5 !py-1.5 !text-[0.5625rem] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-red-500' : ''} ${className}`}
     >
       {children}
     </button>
