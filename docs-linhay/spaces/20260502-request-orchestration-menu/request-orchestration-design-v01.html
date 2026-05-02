@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GetTokens / Request Orchestration Design V01</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-main: #101113;
+        --bg-panel: #17191d;
+        --bg-panel-strong: #1f2328;
+        --bg-panel-soft: #14161a;
+        --bg-active: #f5f0e8;
+        --text-primary: #f3f1eb;
+        --text-secondary: #a7adb6;
+        --text-dark: #0e1012;
+        --line: rgba(255, 255, 255, 0.12);
+        --line-strong: rgba(255, 255, 255, 0.28);
+        --shadow: rgba(0, 0, 0, 0.34);
+        --accent: #f3572d;
+        --accent-soft: rgba(243, 87, 45, 0.16);
+        --success: #65d27b;
+        --success-soft: rgba(101, 210, 123, 0.16);
+        --warning: #f5c95c;
+        --warning-soft: rgba(245, 201, 92, 0.16);
+        --danger: #ff6c6c;
+        --danger-soft: rgba(255, 108, 108, 0.16);
+        --radius: 8px;
+        --radius-tight: 6px;
+        --mono: "IBM Plex Mono", "SFMono-Regular", "SF Mono", ui-monospace, monospace;
+        --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg-main);
+        color: var(--text-primary);
+        font-family: var(--sans);
+      }
+
+      body {
+        min-height: 100vh;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: 240px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        border-right: 2px solid var(--line-strong);
+        background: linear-gradient(180deg, #111316 0%, #0d0f11 100%);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .brand {
+        padding: 28px 24px 22px;
+        border-bottom: 2px solid var(--line-strong);
+      }
+
+      .brand-mark {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .brand-icon {
+        width: 36px;
+        height: 36px;
+        background: var(--accent);
+        color: var(--text-dark);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 700;
+        border: 2px solid rgba(0, 0, 0, 0.28);
+        box-shadow: 4px 4px 0 var(--shadow);
+      }
+
+      .brand-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .brand-copy strong {
+        font-size: 22px;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .brand-copy span {
+        font-size: 11px;
+        color: var(--text-secondary);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .nav {
+        padding: 20px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .nav-button {
+        min-height: 48px;
+        border: 2px solid transparent;
+        background: transparent;
+        color: var(--text-secondary);
+        display: grid;
+        grid-template-columns: 18px minmax(0, 1fr) 12px;
+        align-items: center;
+        gap: 12px;
+        padding: 0 14px;
+        text-align: left;
+        text-transform: uppercase;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease;
+      }
+
+      .nav-button:active,
+      .ghost-button:active,
+      .solid-button:active,
+      .segmented button:active,
+      .group-card button:active,
+      .proxy-pills button:active,
+      .lane-toggle:active,
+      .token:active {
+        transform: scale(0.95);
+      }
+
+      .nav-button.active {
+        border-color: var(--bg-active);
+        background: var(--bg-active);
+        color: var(--text-dark);
+        box-shadow: 4px 4px 0 var(--shadow);
+      }
+
+      .nav-button .tail {
+        opacity: 0.56;
+        text-align: right;
+      }
+
+      .sidebar-footer {
+        margin-top: auto;
+        padding: 20px 24px 28px;
+        border-top: 2px solid var(--line-strong);
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-secondary);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .workspace {
+        min-width: 0;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 18%),
+          var(--bg-panel-soft);
+      }
+
+      .workspace-header {
+        padding: 28px 32px 20px;
+        border-bottom: 2px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .workspace-top {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 20px;
+        align-items: end;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+      }
+
+      .eyebrow::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        background: var(--accent);
+        box-shadow: 2px 2px 0 var(--shadow);
+      }
+
+      h1 {
+        margin: 14px 0 8px;
+        font-size: clamp(30px, 3vw, 44px);
+        line-height: 0.98;
+        letter-spacing: 0;
+      }
+
+      .headline-sub {
+        max-width: 760px;
+        color: var(--text-secondary);
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .ghost-button,
+      .solid-button {
+        min-height: 42px;
+        border: 2px solid var(--line-strong);
+        padding: 0 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        background: transparent;
+        color: var(--text-primary);
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      }
+
+      .solid-button {
+        background: var(--bg-active);
+        color: var(--text-dark);
+        border-color: var(--bg-active);
+        box-shadow: 4px 4px 0 var(--shadow);
+      }
+
+      .workspace-meta {
+        margin-top: 22px;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .meta-block {
+        min-height: 92px;
+        border: 2px solid var(--line);
+        background: var(--bg-panel);
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 4px 4px 0 var(--shadow);
+      }
+
+      .meta-label {
+        color: var(--text-secondary);
+        font-size: 10px;
+        font-family: var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .meta-value {
+        font-size: 24px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .meta-note {
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .chain-bar {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        padding: 18px 32px 0;
+      }
+
+      .chain-node {
+        min-height: 72px;
+        border: 2px solid var(--line);
+        background: var(--bg-panel);
+        box-shadow: 4px 4px 0 var(--shadow);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 0 16px;
+        position: relative;
+      }
+
+      .chain-node.active {
+        border-color: var(--accent);
+        background: linear-gradient(180deg, rgba(243, 87, 45, 0.18), rgba(243, 87, 45, 0.03));
+      }
+
+      .chain-index {
+        width: 32px;
+        height: 32px;
+        border: 2px solid var(--line-strong);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+      }
+
+      .chain-node.active .chain-index {
+        border-color: var(--accent);
+        color: var(--text-primary);
+      }
+
+      .chain-copy strong {
+        display: block;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .chain-copy span {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.45;
+        margin-top: 4px;
+      }
+
+      .content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 312px;
+        gap: 18px;
+        padding: 18px 32px 32px;
+      }
+
+      .lane-board {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(280px, 1fr));
+        gap: 14px;
+        min-width: 0;
+        align-items: start;
+      }
+
+      .lane {
+        border: 2px solid var(--line);
+        background: var(--bg-panel);
+        box-shadow: 6px 6px 0 var(--shadow);
+        display: flex;
+        flex-direction: column;
+        min-height: 720px;
+        transition: border-color 140ms ease, transform 140ms ease;
+      }
+
+      .lane.active {
+        border-color: var(--accent);
+      }
+
+      .lane-head {
+        padding: 16px 16px 14px;
+        border-bottom: 2px solid var(--line);
+        display: grid;
+        gap: 8px;
+      }
+
+      .lane-head-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .lane-number {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text-secondary);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .lane-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      .lane-toggle {
+        border: 2px solid var(--line);
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        color: var(--text-secondary);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .lane-copy {
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .lane-section {
+        padding: 14px 16px;
+        display: grid;
+        gap: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .lane-section:last-child {
+        border-bottom: 0;
+      }
+
+      .section-kicker {
+        font-size: 10px;
+        font-family: var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .segmented {
+        display: inline-grid;
+        grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+        gap: 6px;
+      }
+
+      .segmented button,
+      .token {
+        min-height: 38px;
+        border: 2px solid var(--line);
+        background: var(--bg-panel-strong);
+        color: var(--text-secondary);
+        padding: 0 10px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        transition: transform 120ms ease, border-color 120ms ease, color 120ms ease, background 120ms ease;
+      }
+
+      .segmented button.active,
+      .token.active {
+        border-color: var(--bg-active);
+        background: var(--bg-active);
+        color: var(--text-dark);
+      }
+
+      .model-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .metric-pair {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 12px;
+      }
+
+      .metric-pair:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .metric-pair .key {
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 11px;
+      }
+
+      .metric-pair .value {
+        text-align: right;
+      }
+
+      .group-card,
+      .account-row,
+      .outlet-block,
+      .inspector-block {
+        border: 2px solid var(--line);
+        background: var(--bg-panel-strong);
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .group-card.active,
+      .account-row.compatible,
+      .outlet-block.primary {
+        border-color: rgba(255, 255, 255, 0.34);
+      }
+
+      .group-card.unique {
+        border-color: var(--accent);
+        background: linear-gradient(180deg, rgba(243, 87, 45, 0.18), rgba(243, 87, 45, 0.05));
+      }
+
+      .row-top,
+      .group-top,
+      .outlet-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .row-name,
+      .group-name,
+      .outlet-name {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .row-sub,
+      .group-sub,
+      .outlet-sub {
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.45;
+        margin-top: 4px;
+      }
+
+      .badge {
+        min-height: 26px;
+        border: 2px solid var(--line);
+        padding: 0 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+      }
+
+      .badge.success {
+        border-color: var(--success);
+        color: var(--success);
+        background: var(--success-soft);
+      }
+
+      .badge.warning {
+        border-color: var(--warning);
+        color: var(--warning);
+        background: var(--warning-soft);
+      }
+
+      .badge.danger {
+        border-color: var(--danger);
+        color: var(--danger);
+        background: var(--danger-soft);
+      }
+
+      .badge.accent {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .token-row,
+      .proxy-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .mini-token {
+        min-height: 24px;
+        border: 1px solid var(--line);
+        padding: 0 7px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: var(--mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-secondary);
+      }
+
+      .proxy-pills button {
+        min-height: 30px;
+        border: 2px solid var(--line);
+        background: transparent;
+        color: var(--text-secondary);
+        padding: 0 10px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .proxy-pills button.active {
+        border-color: var(--bg-active);
+        background: var(--bg-active);
+        color: var(--text-dark);
+      }
+
+      .mapping-list,
+      .reason-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .mapping-line,
+      .reason-line {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: start;
+        font-size: 12px;
+      }
+
+      .mapping-line span:first-child,
+      .reason-line span:first-child {
+        color: var(--text-secondary);
+      }
+
+      .mapping-line strong,
+      .reason-line strong {
+        color: var(--text-primary);
+      }
+
+      .group-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .group-card button {
+        min-height: 34px;
+        border: 2px solid var(--line);
+        background: transparent;
+        color: var(--text-primary);
+        padding: 0 12px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .group-card button.active {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: var(--text-dark);
+      }
+
+      .inspector {
+        display: grid;
+        gap: 14px;
+        align-content: start;
+      }
+
+      .inspector-panel {
+        border: 2px solid var(--line);
+        background: var(--bg-panel);
+        box-shadow: 6px 6px 0 var(--shadow);
+        overflow: hidden;
+      }
+
+      .inspector-head {
+        padding: 16px 16px 14px;
+        border-bottom: 2px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .inspector-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .inspector-body {
+        padding: 16px;
+        display: grid;
+        gap: 12px;
+      }
+
+      .focus-copy {
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .focus-highlight {
+        min-height: 112px;
+        border: 2px solid var(--line);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent);
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .focus-highlight strong {
+        font-size: 15px;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+      }
+
+      .timeline-entry {
+        display: grid;
+        grid-template-columns: 68px minmax(0, 1fr);
+        gap: 12px;
+        padding: 10px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .timeline-entry:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .timeline-entry time {
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .timeline-entry div {
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .legend {
+        display: grid;
+        gap: 8px;
+      }
+
+      .legend-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12px;
+        color: var(--text-secondary);
+      }
+
+      .legend-item strong {
+        color: var(--text-primary);
+      }
+
+      .inspector-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .inspector-actions .ghost-button,
+      .inspector-actions .solid-button {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .footer-note {
+        padding: 0 32px 30px;
+        color: var(--text-secondary);
+        font-size: 11px;
+        font-family: var(--mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      @media (max-width: 1440px) {
+        .content-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        .inspector {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 1200px) {
+        .workspace-meta,
+        .chain-bar,
+        .inspector {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .lane-board {
+          overflow-x: auto;
+          padding-bottom: 6px;
+        }
+      }
+
+      @media (max-width: 980px) {
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          border-right: 0;
+          border-bottom: 2px solid var(--line-strong);
+        }
+
+        .nav {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .nav-button {
+          min-height: 42px;
+          grid-template-columns: 18px minmax(0, 1fr);
+        }
+
+        .nav-button .tail {
+          display: none;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .workspace-header,
+        .chain-bar,
+        .content-grid,
+        .footer-note {
+          padding-left: 18px;
+          padding-right: 18px;
+        }
+
+        .workspace-top {
+          grid-template-columns: 1fr;
+        }
+
+        .header-actions {
+          justify-content: flex-start;
+        }
+
+        .workspace-meta,
+        .chain-bar,
+        .inspector,
+        .model-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .lane-board {
+          grid-template-columns: 1fr;
+          overflow: visible;
+        }
+
+        .lane {
+          min-height: auto;
+        }
+
+        .nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">
+            <div class="brand-icon">GT</div>
+            <div class="brand-copy">
+              <strong>GETTOKENS</strong>
+              <span>Swiss-industrial workbench</span>
+            </div>
+          </div>
+        </div>
+        <nav class="nav">
+          <button class="nav-button">
+            <span>◷</span>
+            <span>状态</span>
+            <span class="tail">ready</span>
+          </button>
+          <button class="nav-button">
+            <span>◎</span>
+            <span>账号池</span>
+            <span class="tail">146</span>
+          </button>
+          <button class="nav-button active">
+            <span>→</span>
+            <span>请求编排</span>
+            <span class="tail">active</span>
+          </button>
+          <button class="nav-button">
+            <span>◫</span>
+            <span>代理池</span>
+            <span class="tail">28</span>
+          </button>
+          <button class="nav-button">
+            <span>⌘</span>
+            <span>Codex</span>
+            <span class="tail">4</span>
+          </button>
+          <button class="nav-button">
+            <span>⚙</span>
+            <span>设置</span>
+            <span class="tail">v</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">build 2026.05.03.01</div>
+      </aside>
+
+      <main class="workspace">
+        <header class="workspace-header">
+          <div class="workspace-top">
+            <div>
+              <div class="eyebrow">Request orchestration / app-owned control plane</div>
+              <h1>请求如何进入, 如何被筛掉, 最后如何发出</h1>
+              <div class="headline-sub">
+                这不是路由表单, 也不是账号资产页。它是一个以链路为中心的工作台, 把入口上下文、账号组参与、账号级代理语义和最终出口压在同一条可读路径里。
+              </div>
+            </div>
+            <div class="header-actions">
+              <button class="ghost-button" type="button">
+                <span>◎</span>
+                <span>预览来源</span>
+              </button>
+              <button class="ghost-button" type="button" id="reset-flow">
+                <span>↺</span>
+                <span>恢复默认编排</span>
+              </button>
+              <button class="solid-button" type="button" id="apply-flow">
+                <span>→</span>
+                <span>应用编排</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="workspace-meta">
+            <div class="meta-block">
+              <div class="meta-label">当前入口</div>
+              <div class="meta-value" id="meta-cli">codex</div>
+              <div class="meta-note" id="meta-entry-note">本地 Codex / gpt-5.5 / round-robin</div>
+            </div>
+            <div class="meta-block">
+              <div class="meta-label">活跃账号组</div>
+              <div class="meta-value" id="meta-group">全部参与</div>
+              <div class="meta-note" id="meta-group-note">2 个组仍在出站候选集合中</div>
+            </div>
+            <div class="meta-block">
+              <div class="meta-label">可用出口对象</div>
+              <div class="meta-value" id="meta-available">03</div>
+              <div class="meta-note" id="meta-available-note">1 个因 CLI 不兼容, 1 个因模型缺映射被排除</div>
+            </div>
+            <div class="meta-block">
+              <div class="meta-label">最后一次动作</div>
+              <div class="meta-value" id="meta-last-action">未应用</div>
+              <div class="meta-note" id="meta-last-note">当前设计稿演示 APP overlay 与 sidecar apply 的边界</div>
+            </div>
+          </div>
+        </header>
+
+        <div class="chain-bar" id="chain-bar"></div>
+
+        <div class="content-grid">
+          <section class="lane-board">
+            <article class="lane active" data-lane="entry">
+              <div class="lane-head">
+                <div class="lane-head-top">
+                  <div class="lane-number">lane 01</div>
+                  <button class="lane-toggle" type="button" data-focus="entry">+</button>
+                </div>
+                <div class="lane-title">请求入口</div>
+                <div class="lane-copy">
+                  决定链路从哪个客户端语义进入, 用什么模型名看待后续账号兼容性, 以及当前是普通参与还是锁定意图。
+                </div>
+              </div>
+
+              <div class="lane-section">
+                <div class="section-kicker">入口类型</div>
+                <div class="segmented">
+                  <button class="entry-type active" data-entry-type="local-codex" type="button">本地 Codex</button>
+                  <button class="entry-type" data-entry-type="relay" type="button">Relay API</button>
+                </div>
+              </div>
+
+              <div class="lane-section">
+                <div class="section-kicker">CLI 上下文</div>
+                <div class="segmented">
+                  <button class="cli-token active" data-cli="codex" type="button">codex</button>
+                  <button class="cli-token" data-cli="claude" type="button">claude</button>
+                  <button class="cli-token" data-cli="openai-compatible" type="button">openai-compatible</button>
+                </div>
+              </div>
+
+              <div class="lane-section">
+                <div class="section-kicker">入口模型</div>
+                <div class="model-grid">
+                  <button class="token active model-token" data-model="gpt-5.5" type="button">gpt-5.5</button>
+                  <button class="token model-token" data-model="gpt-5.4-mini" type="button">gpt-5.4-mini</button>
+                  <button class="token model-token" data-model="claude-sonnet-4-5" type="button">claude-sonnet-4-5</button>
+                  <button class="token model-token" data-model="gpt-5.4" type="button">gpt-5.4</button>
+                </div>
+              </div>
+
+              <div class="lane-section">
+                <div class="section-kicker">基础路由参数</div>
+                <div class="metric-pair">
+                  <span class="key">strategy</span>
+                  <span class="value" id="entry-strategy">round-robin</span>
+                </div>
+                <div class="metric-pair">
+                  <span class="key">session affinity</span>
+                  <span class="value">enabled / 1h</span>
+                </div>
+                <div class="metric-pair">
+                  <span class="key">request retry</span>
+                  <span class="value">2 / max credentials 4</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="lane" data-lane="groups">
+              <div class="lane-head">
+                <div class="lane-head-top">
+                  <div class="lane-number">lane 02</div>
+                  <button class="lane-toggle" type="button" data-focus="groups">+</button>
+                </div>
+                <div class="lane-title">账号组</div>
+                <div class="lane-copy">
+                  这层只表达“哪一组参与这条链路”。唯一组模式不是 sidecar 新策略, 而是 APP 把其他组从当前参与集合里剔除。
+                </div>
+              </div>
+
+              <div class="lane-section" id="group-list"></div>
+            </article>
+
+            <article class="lane" data-lane="accounts">
+              <div class="lane-head">
+                <div class="lane-head-top">
+                  <div class="lane-number">lane 03</div>
+                  <button class="lane-toggle" type="button" data-focus="accounts">+</button>
+                </div>
+                <div class="lane-title">账号代理</div>
+                <div class="lane-copy">
+                  这里不直接管理代理池, 只管理账号级语义: 走不走代理、支持哪些 CLI、入口模型会如何映射到真实模型。
+                </div>
+              </div>
+
+              <div class="lane-section" id="account-list"></div>
+            </article>
+
+            <article class="lane" data-lane="outlet">
+              <div class="lane-head">
+                <div class="lane-head-top">
+                  <div class="lane-number">lane 04</div>
+                  <button class="lane-toggle" type="button" data-focus="outlet">+</button>
+                </div>
+                <div class="lane-title">出口</div>
+                <div class="lane-copy">
+                  最终出口只做结果确认: 哪些对象真的还在候选里, 会从哪个 baseUrl 发出, 当前排除理由都是什么。
+                </div>
+              </div>
+
+              <div class="lane-section" id="outlet-list"></div>
+            </article>
+          </section>
+
+          <aside class="inspector">
+            <section class="inspector-panel">
+              <div class="inspector-head">
+                <div class="inspector-title">当前影响</div>
+                <span class="badge accent" id="focus-badge">entry</span>
+              </div>
+              <div class="inspector-body">
+                <div class="focus-copy" id="focus-copy">
+                  当前正在查看入口上下文。这里定义的 CLI 与模型名会直接决定后面哪些账号可参与, 哪些账号只剩下“有配置但不可出站”的灰态。
+                </div>
+                <div class="focus-highlight">
+                  <div class="section-kicker">焦点摘要</div>
+                  <strong id="focus-title">入口模型先裁兼容性, 再决定可用出口集合</strong>
+                  <div class="focus-copy" id="focus-detail">
+                    当入口是 `codex / gpt-5.5` 时, 只有同时满足 `支持 codex` 且存在 `gpt-5.5 -> targetModel` 映射的账号才会进入最终出口。
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="inspector-panel">
+              <div class="inspector-head">
+                <div class="inspector-title">最近变更</div>
+                <span class="badge warning">app overlay</span>
+              </div>
+              <div class="inspector-body">
+                <div class="timeline">
+                  <div class="timeline-entry">
+                    <time>09:42</time>
+                    <div>将入口 CLI 从 <strong>claude</strong> 切回 <strong>codex</strong>。</div>
+                  </div>
+                  <div class="timeline-entry">
+                    <time>09:39</time>
+                    <div>对 `codex-lab-02` 写入 `gpt-5.5 -> gpt-5.4-mini` 映射。</div>
+                  </div>
+                  <div class="timeline-entry">
+                    <time>09:31</time>
+                    <div>将 `OpenAI-Compatible 组` 激活为唯一组, 其余对象转入排除集合。</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="inspector-panel">
+              <div class="inspector-head">
+                <div class="inspector-title">边界图例</div>
+                <span class="badge success">v1</span>
+              </div>
+              <div class="inspector-body">
+                <div class="legend">
+                  <div class="legend-item"><span>APP-only</span><strong>CLI 支持 / 模型映射 / 代理语义</strong></div>
+                  <div class="legend-item"><span>apply-to-sidecar</span><strong>routing / disabled 状态</strong></div>
+                  <div class="legend-item"><span>不在本期</span><strong>请求级动态编排</strong></div>
+                </div>
+                <div class="inspector-actions">
+                  <button class="ghost-button" type="button">
+                    <span>⌁</span>
+                    <span>查看快照</span>
+                  </button>
+                  <button class="solid-button" type="button">
+                    <span>⇄</span>
+                    <span>比较应用前后</span>
+                  </button>
+                </div>
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        <div class="footer-note">
+          DESIGN PREVIEW / GETTOKENS REQUEST ORCHESTRATION / SINGLE HTML / V01
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const stageMeta = {
+        entry: {
+          label: "请求入口",
+          hint: "入口先定义 CLI 和模型语义, 后面所有兼容性都从这里分叉。",
+          focusCopy:
+            "当前正在查看入口上下文。这里定义的 CLI 与模型名会直接决定后面哪些账号可参与, 哪些账号只剩下“有配置但不可出站”的灰态。",
+          focusTitle: "入口模型先裁兼容性, 再决定可用出口集合",
+          focusDetail:
+            "当入口是 `codex / gpt-5.5` 时, 只有同时满足 `支持 codex` 且存在 `gpt-5.5 -> targetModel` 映射的账号才会进入最终出口。",
+        },
+        groups: {
+          label: "账号组",
+          hint: "唯一组模式改变的是参与集合, 不是 sidecar 原生轮动枚举。",
+          focusCopy:
+            "这里决定的是哪一组还能参与当前链路。切成唯一组后, 你会立刻看到可用出口数量变化, 但底层仍然沿用现有 routing strategy。",
+          focusTitle: "唯一组是 APP 翻译动作, 不是新策略",
+          focusDetail:
+            "V1 下, GetTokens 会保存快照, 然后仅保留目标组启用。恢复默认编排时再把原始 disabled 状态和 routing 一并回滚。",
+        },
+        accounts: {
+          label: "账号代理",
+          hint: "账号行里同时承载 proxy 语义、CLI 支持、模型映射和兼容性结果。",
+          focusCopy:
+            "这条泳道不直接新增代理池节点。它只负责账号级语义, 让你一眼看清每个账号为什么能出站, 或者为什么虽然存在但现在不能用。",
+          focusTitle: "兼容性不是抽象标签, 而是账号行上的即时结果",
+          focusDetail:
+            "一个账号想进入候选集合, 至少要满足三件事: 在活跃组内、支持当前 CLI、存在当前入口模型的映射。缺任何一项都应该被明确标红。",
+        },
+        outlet: {
+          label: "出口",
+          hint: "出口只关心最后还能发出的对象与排除原因。",
+          focusCopy:
+            "出口是确认区, 不是编辑区。所有上游动作都应该在这里留下结果: baseUrl、proxy mode、真实 target model, 以及剩余可用对象数量。",
+          focusTitle: "出口负责收口, 不负责重新解释上游规则",
+          focusDetail:
+            "如果一个账号在这里消失, 原因必须可追踪回账号组、CLI 支持或模型映射, 而不是只剩一个模糊的“不可用”。",
+        },
+      };
+
+      const state = {
+        entryType: "local-codex",
+        cli: "codex",
+        model: "gpt-5.5",
+        strategy: "round-robin",
+        activeGroupMode: "all",
+        focus: "entry",
+        lastAction: "未应用",
+        groups: [
+          {
+            id: "codex",
+            label: "Codex 组",
+            note: "auth-file / codex api key",
+            members: ["codex-prod-01", "codex-lab-02"],
+          },
+          {
+            id: "openai-compatible",
+            label: "OpenAI-Compatible 组",
+            note: "provider / key entry",
+            members: ["or-router-01", "deepseek-team"],
+          },
+        ],
+        accounts: [
+          {
+            id: "codex-prod-01",
+            name: "codex-prod-01",
+            group: "codex",
+            proxyMode: "inherit",
+            proxySource: "继承默认出口",
+            supportedCli: ["codex"],
+            mappings: {
+              "gpt-5.5": { target: "gpt-5.5", alias: "GPT 5.5" },
+              "gpt-5.4-mini": { target: "gpt-5.4-mini", alias: "GPT 5.4 Mini" },
+            },
+            baseUrl: "https://relay.local/v1",
+          },
+          {
+            id: "codex-lab-02",
+            name: "codex-lab-02",
+            group: "codex",
+            proxyMode: "custom",
+            proxySource: "proxy-pool / hk-resi-03",
+            supportedCli: ["codex", "claude"],
+            mappings: {
+              "gpt-5.5": { target: "gpt-5.4-mini", alias: "GPT 5.4 Mini" },
+              "claude-sonnet-4-5": { target: "claude-sonnet-4-5", alias: "Sonnet 4.5" },
+            },
+            baseUrl: "https://relay.local/v1",
+          },
+          {
+            id: "or-router-01",
+            name: "openrouter-core",
+            group: "openai-compatible",
+            proxyMode: "direct",
+            proxySource: "显式直连",
+            supportedCli: ["openai-compatible", "codex"],
+            mappings: {
+              "gpt-5.5": { target: "openai/gpt-5.5", alias: "OpenAI GPT 5.5" },
+              "gpt-5.4": { target: "openai/gpt-5.4", alias: "OpenAI GPT 5.4" },
+            },
+            baseUrl: "https://openrouter.ai/api/v1",
+          },
+          {
+            id: "deepseek-team",
+            name: "deepseek-team",
+            group: "openai-compatible",
+            proxyMode: "custom",
+            proxySource: "proxy-pool / sg-biz-01",
+            supportedCli: ["openai-compatible"],
+            mappings: {
+              "gpt-5.4-mini": { target: "deepseek-chat", alias: "DeepSeek Chat" },
+            },
+            baseUrl: "https://api.deepseek.com/v1",
+          },
+        ],
+      };
+
+      const chainBar = document.getElementById("chain-bar");
+      const groupList = document.getElementById("group-list");
+      const accountList = document.getElementById("account-list");
+      const outletList = document.getElementById("outlet-list");
+
+      function computeAccounts() {
+        return state.accounts.map((account) => {
+          const groupAllowed =
+            state.activeGroupMode === "all" || account.group === state.activeGroupMode;
+          const cliAllowed = account.supportedCli.includes(state.cli);
+          const mapping = account.mappings[state.model] || null;
+          const compatible = groupAllowed && cliAllowed && Boolean(mapping);
+
+          const reasons = [];
+          if (!groupAllowed) reasons.push("唯一组排除");
+          if (!cliAllowed) reasons.push("CLI 不兼容");
+          if (!mapping) reasons.push("缺少模型映射");
+
+          return {
+            ...account,
+            compatible,
+            groupAllowed,
+            cliAllowed,
+            mapping,
+            reasons,
+          };
+        });
+      }
+
+      function renderChainBar() {
+        const stages = ["entry", "groups", "accounts", "outlet"];
+        chainBar.innerHTML = stages
+          .map((key, index) => {
+            const meta = stageMeta[key];
+            const active = state.focus === key ? "active" : "";
+            return `
+              <button class="chain-node ${active}" type="button" data-focus="${key}">
+                <span class="chain-index">0${index + 1}</span>
+                <span class="chain-copy">
+                  <strong>${meta.label}</strong>
+                  <span>${meta.hint}</span>
+                </span>
+              </button>
+            `;
+          })
+          .join("");
+      }
+
+      function renderGroups(computed) {
+        groupList.innerHTML = state.groups
+          .map((group) => {
+            const members = computed.filter((item) => item.group === group.id);
+            const compatibleCount = members.filter((item) => item.compatible).length;
+            const isUnique = state.activeGroupMode === group.id;
+            const modeLabel = isUnique ? "唯一活跃组" : state.activeGroupMode === "all" ? "普通参与" : "已排除";
+            const cardClasses = ["group-card"];
+            if (isUnique) cardClasses.push("unique");
+            if (state.activeGroupMode === "all") cardClasses.push("active");
+            return `
+              <div class="${cardClasses.join(" ")}">
+                <div class="group-top">
+                  <div>
+                    <div class="group-name">${group.label}</div>
+                    <div class="group-sub">${group.note}</div>
+                  </div>
+                  <span class="badge ${isUnique ? "accent" : compatibleCount > 0 ? "success" : "warning"}">${modeLabel}</span>
+                </div>
+                <div class="metric-pair">
+                  <span class="key">组内对象</span>
+                  <span class="value">${members.length}</span>
+                </div>
+                <div class="metric-pair">
+                  <span class="key">当前可出站</span>
+                  <span class="value">${compatibleCount}</span>
+                </div>
+                <div class="group-actions">
+                  <button
+                    class="${isUnique ? "active" : ""}"
+                    type="button"
+                    data-group-action="${isUnique ? "all" : group.id}"
+                  >
+                    ${isUnique ? "恢复普通参与" : "激活为唯一组"}
+                  </button>
+                  <button type="button">查看组内对象</button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderAccounts(computed) {
+        accountList.innerHTML = computed
+          .map((account) => {
+            const rowClass = account.compatible ? "account-row compatible" : "account-row";
+            const statusBadge = account.compatible
+              ? '<span class="badge success">可出站</span>'
+              : `<span class="badge ${account.groupAllowed ? "danger" : "warning"}">${account.reasons[0]}</span>`;
+            const mappingEntries = Object.entries(account.mappings)
+              .map(
+                ([entryModel, mapping]) => `
+                  <div class="mapping-line">
+                    <span>${entryModel}</span>
+                    <strong>${mapping.target}${mapping.alias ? ` / ${mapping.alias}` : ""}</strong>
+                  </div>
+                `
+              )
+              .join("");
+            return `
+              <div class="${rowClass}">
+                <div class="row-top">
+                  <div>
+                    <div class="row-name">${account.name}</div>
+                    <div class="row-sub">${account.group} / ${account.baseUrl}</div>
+                  </div>
+                  ${statusBadge}
+                </div>
+
+                <div class="proxy-pills" data-account="${account.id}">
+                  <button type="button" data-proxy="inherit" class="${account.proxyMode === "inherit" ? "active" : ""}">inherit</button>
+                  <button type="button" data-proxy="direct" class="${account.proxyMode === "direct" ? "active" : ""}">direct</button>
+                  <button type="button" data-proxy="custom" class="${account.proxyMode === "custom" ? "active" : ""}">custom</button>
+                </div>
+
+                <div class="metric-pair">
+                  <span class="key">代理来源</span>
+                  <span class="value">${account.proxySource}</span>
+                </div>
+
+                <div>
+                  <div class="section-kicker">支持的 CLI</div>
+                  <div class="token-row">
+                    ${account.supportedCli
+                      .map((item) => `<span class="mini-token">${item}</span>`)
+                      .join("")}
+                  </div>
+                </div>
+
+                <div>
+                  <div class="section-kicker">模型映射</div>
+                  <div class="mapping-list">${mappingEntries}</div>
+                </div>
+
+                <div class="reason-list">
+                  ${account.compatible
+                    ? `
+                      <div class="reason-line">
+                        <span>当前入口命中</span>
+                        <strong>${state.model} -> ${account.mapping.target}</strong>
+                      </div>
+                    `
+                    : account.reasons
+                        .map(
+                          (reason) => `
+                            <div class="reason-line">
+                              <span>排除原因</span>
+                              <strong>${reason}</strong>
+                            </div>
+                          `
+                        )
+                        .join("")}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderOutlet(computed) {
+        const compatible = computed.filter((item) => item.compatible);
+        const blocked = computed.filter((item) => !item.compatible);
+        outletList.innerHTML = `
+          <div class="outlet-block primary">
+            <div class="outlet-top">
+              <div>
+                <div class="outlet-name">当前有效出口</div>
+                <div class="outlet-sub">只有经过组筛选、CLI 校验和模型映射命中的对象才会进入这块。</div>
+              </div>
+              <span class="badge success">${compatible.length} 可用</span>
+            </div>
+            <div class="metric-pair">
+              <span class="key">出口类型</span>
+              <span class="value">${compatible.some((item) => item.proxyMode === "custom") ? "代理出口" : "混合出口"}</span>
+            </div>
+            <div class="metric-pair">
+              <span class="key">最终模型语义</span>
+              <span class="value">${state.model}</span>
+            </div>
+            <div class="mapping-list">
+              ${compatible
+                .map(
+                  (item) => `
+                    <div class="mapping-line">
+                      <span>${item.name}</span>
+                      <strong>${item.mapping.target}${item.mapping.alias ? ` / ${item.mapping.alias}` : ""}</strong>
+                    </div>
+                  `
+                )
+                .join("")}
+            </div>
+          </div>
+
+          <div class="outlet-block">
+            <div class="outlet-top">
+              <div>
+                <div class="outlet-name">被排除对象</div>
+                <div class="outlet-sub">排除原因必须能回链到上游泳道。</div>
+              </div>
+              <span class="badge warning">${blocked.length} 排除</span>
+            </div>
+            <div class="mapping-list">
+              ${blocked
+                .map(
+                  (item) => `
+                    <div class="mapping-line">
+                      <span>${item.name}</span>
+                      <strong>${item.reasons.join(" / ")}</strong>
+                    </div>
+                  `
+                )
+                .join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderInspector() {
+        const meta = stageMeta[state.focus];
+        document.getElementById("focus-badge").textContent = state.focus;
+        document.getElementById("focus-copy").textContent = meta.focusCopy;
+        document.getElementById("focus-title").textContent = meta.focusTitle;
+        document.getElementById("focus-detail").textContent = meta.focusDetail;
+      }
+
+      function renderMeta(computed) {
+        const compatible = computed.filter((item) => item.compatible);
+        const cliBlocked = computed.filter((item) => !item.cliAllowed).length;
+        const mappingBlocked = computed.filter((item) => item.cliAllowed && !item.mapping && item.groupAllowed).length;
+        document.getElementById("meta-cli").textContent = state.cli;
+        document.getElementById("meta-entry-note").textContent =
+          `${state.entryType === "local-codex" ? "本地 Codex" : "Relay API"} / ${state.model} / ${state.strategy}`;
+        document.getElementById("meta-group").textContent =
+          state.activeGroupMode === "all"
+            ? "全部参与"
+            : `${state.groups.find((item) => item.id === state.activeGroupMode).label}`;
+        document.getElementById("meta-group-note").textContent =
+          state.activeGroupMode === "all"
+            ? `${state.groups.length} 个组仍在出站候选集合中`
+            : "当前仅保留一个组参与 sidecar 出站集合";
+        document.getElementById("meta-available").textContent = String(compatible.length).padStart(2, "0");
+        document.getElementById("meta-available-note").textContent =
+          `${cliBlocked} 个因 CLI 不兼容, ${mappingBlocked} 个因模型缺映射被排除`;
+        document.getElementById("meta-last-action").textContent = state.lastAction;
+        document.getElementById("meta-last-note").textContent =
+          state.lastAction === "已应用"
+            ? "已生成快照, 现有 disabled 状态可回滚"
+            : "当前设计稿演示 APP overlay 与 sidecar apply 的边界";
+      }
+
+      function renderLaneFocus() {
+        document.querySelectorAll(".lane").forEach((lane) => {
+          lane.classList.toggle("active", lane.dataset.lane === state.focus);
+        });
+      }
+
+      function renderButtons() {
+        document.querySelectorAll(".cli-token").forEach((button) => {
+          button.classList.toggle("active", button.dataset.cli === state.cli);
+        });
+        document.querySelectorAll(".model-token").forEach((button) => {
+          button.classList.toggle("active", button.dataset.model === state.model);
+        });
+        document.querySelectorAll(".entry-type").forEach((button) => {
+          button.classList.toggle("active", button.dataset.entryType === state.entryType);
+        });
+      }
+
+      function render() {
+        const computed = computeAccounts();
+        renderButtons();
+        renderMeta(computed);
+        renderChainBar();
+        renderGroups(computed);
+        renderAccounts(computed);
+        renderOutlet(computed);
+        renderInspector();
+        renderLaneFocus();
+      }
+
+      document.addEventListener("click", (event) => {
+        const target = event.target.closest("button");
+        if (!target) return;
+
+        if (target.dataset.cli) {
+          state.cli = target.dataset.cli;
+          state.focus = "entry";
+          render();
+          return;
+        }
+
+        if (target.dataset.model) {
+          state.model = target.dataset.model;
+          state.focus = "entry";
+          render();
+          return;
+        }
+
+        if (target.dataset.entryType) {
+          state.entryType = target.dataset.entryType;
+          state.focus = "entry";
+          render();
+          return;
+        }
+
+        if (target.dataset.groupAction) {
+          state.activeGroupMode = target.dataset.groupAction;
+          state.focus = "groups";
+          render();
+          return;
+        }
+
+        if (target.dataset.proxy) {
+          const accountID = target.parentElement.dataset.account;
+          const account = state.accounts.find((item) => item.id === accountID);
+          if (!account) return;
+          account.proxyMode = target.dataset.proxy;
+          if (account.proxyMode === "inherit") account.proxySource = "继承默认出口";
+          if (account.proxyMode === "direct") account.proxySource = "显式直连";
+          if (account.proxyMode === "custom") account.proxySource = "proxy-pool / custom-linked";
+          state.focus = "accounts";
+          render();
+          return;
+        }
+
+        if (target.dataset.focus) {
+          state.focus = target.dataset.focus;
+          render();
+          return;
+        }
+
+        if (target.id === "apply-flow") {
+          state.lastAction = "已应用";
+          state.focus = "outlet";
+          render();
+          return;
+        }
+
+        if (target.id === "reset-flow") {
+          state.activeGroupMode = "all";
+          state.lastAction = "已恢复";
+          state.focus = "groups";
+          render();
+        }
+      });
+
+      render();
+    </script>
+  </body>
+</html>

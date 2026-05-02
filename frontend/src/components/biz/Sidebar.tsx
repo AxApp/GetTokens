@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '../../context/I18nContext';
-import type { AccountWorkspace, AppPage, SessionManagementWorkspace, UsageDeskWorkspace } from '../../types';
+import type { AccountWorkspace, AppPage, CodexWorkspace } from '../../types';
 import { formatSidebarVersion } from '../../utils/version';
 
 const navItems = [
   { id: 'status', label: 'nav.status', icon: 'M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 8v4l3 3' },
   { id: 'accounts', label: 'nav.accounts', icon: 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0' },
-  { id: 'session-management', label: 'nav.session_management', icon: 'M4 6h16 M4 12h16 M4 18h10 M18 17l2 2 3-4' },
-  { id: 'vendor-status', label: 'nav.vendor_status', icon: 'M3 5h18v14H3z M7 9h10 M7 13h6 M16 13h1' },
   { id: 'proxy-pool', label: 'nav.proxy_pool', icon: 'M3 4h18v6H3z M3 14h8v6H3z M13 14h8v6h-8z' },
-  { id: 'usage-desk', label: 'nav.usage_desk', icon: 'M3 3h18v18H3z M7 15l3-3 2 2 5-5' },
+  { id: 'codex', label: 'nav.codex', icon: 'M5 4h14v16H5z M8 8h8 M8 12h8 M8 16h5' },
   { id: 'settings', label: 'nav.settings', icon: 'M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2' },
   { id: 'debug', label: 'nav.debug', icon: 'M9.75 3.25h4.5 M12 3.25v3.5 M5.5 9.5l-2 2 2 2 M18.5 9.5l2 2-2 2 M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7 M7.5 20.75h9' },
 ] as const satisfies ReadonlyArray<{ id: AppPage; label: string; icon: string }>;
@@ -19,10 +17,8 @@ interface SidebarProps {
   setActivePage: (page: AppPage) => void;
   activeAccountWorkspace: AccountWorkspace;
   setActiveAccountWorkspace: (workspace: AccountWorkspace) => void;
-  activeSessionManagementWorkspace: SessionManagementWorkspace;
-  setActiveSessionManagementWorkspace: (workspace: SessionManagementWorkspace) => void;
-  activeUsageDeskWorkspace: UsageDeskWorkspace;
-  setActiveUsageDeskWorkspace: (workspace: UsageDeskWorkspace) => void;
+  activeCodexWorkspace: CodexWorkspace;
+  setActiveCodexWorkspace: (workspace: CodexWorkspace) => void;
   releaseLabel: string;
 }
 
@@ -31,41 +27,42 @@ const accountWorkspaceItems = [
   { id: 'openai-compatible', label: 'nav.accounts_openai_compatible' },
 ] as const satisfies ReadonlyArray<{ id: AccountWorkspace; label: string }>;
 
-const usageDeskWorkspaceItems = [
-  { id: 'codex', label: 'codex' },
-  { id: 'gemini', label: 'gemini' },
-] as const satisfies ReadonlyArray<{ id: UsageDeskWorkspace; label: string }>;
-
-const sessionManagementWorkspaceItems = [
-  { id: 'codex', label: 'nav.accounts_codex' },
-] as const;
+const codexWorkspaceItems = [
+  { id: 'feature-config', label: 'nav.codex_feature_config' },
+  { id: 'session-management', label: 'nav.session_management' },
+  { id: 'vendor-status', label: 'nav.openai_status' },
+  { id: 'usage-codex', label: 'nav.usage_desk_codex' },
+] as const satisfies ReadonlyArray<{ id: CodexWorkspace; label: string }>;
 
 export default function Sidebar({
   activePage,
   setActivePage,
   activeAccountWorkspace,
   setActiveAccountWorkspace,
-  activeSessionManagementWorkspace,
-  setActiveSessionManagementWorkspace,
-  activeUsageDeskWorkspace,
-  setActiveUsageDeskWorkspace,
+  activeCodexWorkspace,
+  setActiveCodexWorkspace,
   releaseLabel,
 }: SidebarProps) {
   const { t } = useI18n();
   const sidebarVersion = formatSidebarVersion(releaseLabel);
-  const [expandedSection, setExpandedSection] = useState<'accounts' | 'session-management' | 'usage-desk' | null>(
-    activePage === 'accounts' || activePage === 'session-management' || activePage === 'usage-desk' ? activePage : null
+  const [expandedSection, setExpandedSection] = useState<'accounts' | 'codex' | null>(
+    activePage === 'accounts' ||
+      activePage === 'codex'
+      ? activePage
+      : null
   );
 
   useEffect(() => {
-    if (activePage !== 'accounts' && activePage !== 'session-management' && activePage !== 'usage-desk') {
+    if (
+      activePage !== 'accounts' &&
+      activePage !== 'codex'
+    ) {
       setExpandedSection(null);
     }
   }, [activePage]);
 
   const accountsExpanded = expandedSection === 'accounts';
-  const sessionManagementExpanded = expandedSection === 'session-management';
-  const usageDeskExpanded = expandedSection === 'usage-desk';
+  const codexExpanded = expandedSection === 'codex';
 
   return (
     <aside
@@ -99,21 +96,16 @@ export default function Sidebar({
                   setExpandedSection((prev) => (activePage === 'accounts' && prev === 'accounts' ? null : 'accounts'));
                   return;
                 }
-                if (item.id === 'usage-desk') {
-                  setActivePage('usage-desk');
-                  setExpandedSection((prev) => (activePage === 'usage-desk' && prev === 'usage-desk' ? null : 'usage-desk'));
-                  return;
-                }
-                if (item.id === 'session-management') {
-                  setActivePage('session-management');
-                  setExpandedSection((prev) => (prev === 'session-management' ? null : 'session-management'));
+                if (item.id === 'codex') {
+                  setActivePage('codex');
+                  setExpandedSection((prev) => (activePage === 'codex' && prev === 'codex' ? null : 'codex'));
                   return;
                 }
                 setActivePage(item.id);
                 setExpandedSection(null);
               }}
               className={`w-full flex items-center gap-3 px-3 py-3 font-bold text-xs uppercase tracking-widest border-2 transition-all active:scale-95 ${
-                activePage === item.id || (item.id === 'session-management' && sessionManagementExpanded)
+                activePage === item.id
                   ? 'bg-[var(--border-color)] text-[var(--bg-main)] border-[var(--border-color)] shadow-[4px_4px_0_var(--shadow-color)]'
                   : 'border-transparent text-[var(--text-primary)] hover:border-[var(--border-color)]'
               }`}
@@ -122,11 +114,10 @@ export default function Sidebar({
                 <path d={item.icon} />
               </svg>
               <span className="flex-1 text-left">{t(item.label)}</span>
-              {item.id === 'accounts' || item.id === 'session-management' || item.id === 'usage-desk' ? (
+              {item.id === 'accounts' || item.id === 'codex' ? (
                 <svg
                   className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ease-out ${
-                    (item.id === 'accounts' && accountsExpanded) || (item.id === 'usage-desk' && usageDeskExpanded)
-                      || (item.id === 'session-management' && sessionManagementExpanded)
+                    (item.id === 'accounts' && accountsExpanded) || (item.id === 'codex' && codexExpanded)
                       ? 'rotate-90'
                       : 'rotate-0'
                   }`}
@@ -173,68 +164,34 @@ export default function Sidebar({
                 </div>
               </div>
             ) : null}
-            {item.id === 'session-management' ? (
+            {item.id === 'codex' ? (
               <div
                 className={`grid transition-all duration-300 ease-out ${
-                  sessionManagementExpanded ? 'mt-2 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'
+                  codexExpanded ? 'mt-2 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'
                 }`}
-                aria-hidden={!sessionManagementExpanded}
+                aria-hidden={!codexExpanded}
               >
                 <div className="overflow-hidden">
                   <div
                     className={`space-y-2 pl-6 transition-all duration-300 ease-out ${
-                      sessionManagementExpanded ? 'translate-y-0' : '-translate-y-2'
+                      codexExpanded ? 'translate-y-0' : '-translate-y-2'
                     }`}
                   >
-                    {sessionManagementWorkspaceItems.map((workspace) => (
+                    {codexWorkspaceItems.map((workspace) => (
                       <button
                         key={workspace.id}
                         onClick={() => {
-                          setActivePage('session-management');
-                          setExpandedSection('session-management');
-                          setActiveSessionManagementWorkspace(workspace.id);
+                          setActivePage('codex');
+                          setExpandedSection('codex');
+                          setActiveCodexWorkspace(workspace.id);
                         }}
-                        className={`w-full border px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.2em] transition-all ${
-                          activePage === 'session-management' && activeSessionManagementWorkspace === workspace.id
+                        className={`w-full border px-3 py-2 text-left text-[0.6875rem] font-black tracking-[0.08em] transition-all ${
+                          activePage === 'codex' && activeCodexWorkspace === workspace.id
                             ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                             : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
                         }`}
                       >
                         {t(workspace.label)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-            {item.id === 'usage-desk' ? (
-              <div
-                className={`grid transition-all duration-300 ease-out ${
-                  usageDeskExpanded ? 'mt-1.5 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'
-                }`}
-                aria-hidden={!usageDeskExpanded}
-              >
-                <div className="overflow-hidden">
-                  <div
-                    className={`space-y-2 pl-6 transition-all duration-300 ease-out ${
-                      usageDeskExpanded ? 'translate-y-0' : '-translate-y-2'
-                    }`}
-                  >
-                    {usageDeskWorkspaceItems.map((workspace) => (
-                      <button
-                        key={workspace.id}
-                        onClick={() => {
-                          setActivePage('usage-desk');
-                          setExpandedSection('usage-desk');
-                          setActiveUsageDeskWorkspace(workspace.id);
-                        }}
-                        className={`w-full border px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.2em] transition-all ${
-                          activeUsageDeskWorkspace === workspace.id
-                            ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
-                            : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
-                        }`}
-                      >
-                        {workspace.label}
                       </button>
                     ))}
                   </div>

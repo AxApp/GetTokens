@@ -6,10 +6,12 @@ export type AppPage =
   | 'session-management'
   | 'vendor-status'
   | 'proxy-pool'
+  | 'codex'
   | 'usage-desk'
   | 'settings'
   | 'debug';
 export type AccountWorkspace = 'all' | 'codex' | 'openai-compatible';
+export type CodexWorkspace = 'feature-config' | 'session-management' | 'vendor-status' | 'usage-codex';
 export type SessionManagementWorkspace = 'codex';
 export type UsageDeskWorkspace = 'codex' | 'gemini';
 

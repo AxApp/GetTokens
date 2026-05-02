@@ -5,11 +5,11 @@ import {
   RELAY_CODEX_PROVIDER_ID,
   RELAY_CODEX_PROVIDER_NAME,
   RELAY_CODEX_REASONING_EFFORT_OPTIONS,
-} from '../../accounts/model/accountConfig';
+} from '../../accounts/model/accountConfig.ts';
 import {
   mergeRelayProviderCatalog,
   type RelayProviderOption,
-} from './relayProviderCatalog';
+} from './relayProviderCatalog.ts';
 
 export interface RelayKeyEditorState {
   mode: 'create' | 'rename';
@@ -29,6 +29,46 @@ export interface RelayProviderEditorState {
   providerName: string;
   error: string;
 }
+
+export type LocalCliTargetID = 'codex' | 'claude';
+
+export interface CodexLocalTargetDraft {
+  relayKeyIndex: number;
+  endpointID: string;
+  model: string;
+  providerID: string;
+}
+
+export interface ClaudeCodeLocalApplyDraft {
+  relayKeyIndex: number;
+  baseUrl: string;
+  model: string;
+  authField: 'ANTHROPIC_API_KEY';
+}
+
+export interface LocalCliTargetDrafts {
+  codex: CodexLocalTargetDraft;
+  claude: ClaudeCodeLocalApplyDraft;
+}
+
+export interface CodexLocalApplyDiffInput {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  reasoningEffort: string;
+  providerID: string;
+  providerName: string;
+}
+
+export interface ClaudeCodeSettingsDiffInput {
+  apiKey: string;
+  baseUrl: string;
+  model: string;
+  targetPath?: string;
+  authField?: 'ANTHROPIC_API_KEY';
+}
+
+export type UnifiedDiffLineTone = 'add' | 'remove' | 'hunk' | 'file' | 'meta' | 'context';
 
 const relayKeyAliasStorageKey = 'gettokens.status.relay-key-aliases';
 const relayLANAccessStorageKey = 'gettokens.status.lan-access-enabled';
@@ -69,6 +109,133 @@ export function maskRelayKey(value: string) {
     return trimmed || 'KEY';
   }
   return `${trimmed.slice(0, 8)}...${trimmed.slice(-4)}`;
+}
+
+function quoteConfigString(value: string) {
+  return JSON.stringify(String(value || '').trim());
+}
+
+export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
+  const providerID = input.providerID.trim() || RELAY_CODEX_OPENAI_PROVIDER_ID;
+  const providerName = input.providerName.trim() || providerID;
+  const baseUrl = input.baseUrl.trim();
+  const model = input.model.trim();
+  const reasoningEffort = input.reasoningEffort.trim();
+  const maskedKey = maskRelayKey(input.apiKey);
+  const providerLines =
+    providerID === RELAY_CODEX_OPENAI_PROVIDER_ID
+      ? [
+          `+openai_base_url = ${quoteConfigString(baseUrl)}`,
+          '# openai provider identity preserved; model_provider is not forced unless already present',
+        ]
+      : [
+          `+model_provider = ${quoteConfigString(providerID)}`,
+          '',
+          `+[model_providers.${providerID}]`,
+          `+name = ${quoteConfigString(providerName)}`,
+          `+base_url = ${quoteConfigString(baseUrl)}`,
+          '+requires_openai_auth = true',
+          '+wire_api = "responses"',
+        ];
+
+  return [
+    '--- CODEX_HOME/auth.json',
+    '+++ CODEX_HOME/auth.json',
+    '@@ auth fields @@',
+    ' {',
+    '   "auth_mode": "apikey",',
+    `+"OPENAI_API_KEY": ${quoteConfigString(maskedKey)}`,
+    ' }',
+    '',
+    '--- CODEX_HOME/config.toml',
+    '+++ CODEX_HOME/config.toml',
+    '@@ root keys @@',
+    '# existing comments stay where they are',
+    `+model = ${quoteConfigString(model)}`,
+    `+model_reasoning_effort = ${quoteConfigString(reasoningEffort)}`,
+    ...providerLines,
+    '',
+    '# preserved: [mcp_servers.*] / [profiles.*] / unknown provider keys',
+    '# preserved: user comments and unmanaged sections are not part of this patch',
+  ].join('\n');
+}
+
+export function buildClaudeCodeSettingsDiff(input: ClaudeCodeSettingsDiffInput) {
+  const targetPath = input.targetPath?.trim() || '~/.claude/settings.json';
+  const authField = input.authField || 'ANTHROPIC_API_KEY';
+  const maskedKey = maskRelayKey(input.apiKey);
+  const baseUrl = input.baseUrl.trim();
+  const model = input.model.trim();
+  const envLines = [
+    `+    "${authField}": ${quoteConfigString(maskedKey)},`,
+    `+    "ANTHROPIC_BASE_URL": ${quoteConfigString(baseUrl)}${model ? ',' : ''}`,
+  ];
+
+  if (model) {
+    envLines.push(`+    "ANTHROPIC_MODEL": ${quoteConfigString(model)}`);
+  }
+
+  return [
+    `--- ${targetPath}`,
+    `+++ ${targetPath}`,
+    '@@ env @@',
+    ' {',
+    '   "env": {',
+    '     "HTTP_PROXY": "http://127.0.0.1:7890",',
+    '     "ANTHROPIC_AUTH_TOKEN": "existing-user-token",',
+    ...envLines,
+    '   },',
+    '   "permissions": { /* unchanged */ },',
+    '   "hooks": { /* unchanged */ },',
+    '   "statusLine": { /* unchanged */ }',
+    ' }',
+    '',
+    '# preserved: ANTHROPIC_AUTH_TOKEN exists and is not removed automatically',
+    '# preserved: permissions / hooks / statusLine are not part of this patch',
+  ].join('\n');
+}
+
+export function resolveUnifiedDiffLineTone(line: string): UnifiedDiffLineTone {
+  if (line.startsWith('+++ ') || line.startsWith('--- ')) {
+    return 'file';
+  }
+  if (line.startsWith('@@')) {
+    return 'hunk';
+  }
+  if (line.startsWith('+')) {
+    return 'add';
+  }
+  if (line.startsWith('-')) {
+    return 'remove';
+  }
+  if (line.startsWith('#')) {
+    return 'meta';
+  }
+  return 'context';
+}
+
+export function updateLocalCliTargetDraft(
+  drafts: LocalCliTargetDrafts,
+  target: 'codex',
+  patch: Partial<CodexLocalTargetDraft>
+): LocalCliTargetDrafts;
+export function updateLocalCliTargetDraft(
+  drafts: LocalCliTargetDrafts,
+  target: 'claude',
+  patch: Partial<ClaudeCodeLocalApplyDraft>
+): LocalCliTargetDrafts;
+export function updateLocalCliTargetDraft(
+  drafts: LocalCliTargetDrafts,
+  target: LocalCliTargetID,
+  patch: Partial<CodexLocalTargetDraft> | Partial<ClaudeCodeLocalApplyDraft>
+): LocalCliTargetDrafts {
+  return {
+    ...drafts,
+    [target]: {
+      ...drafts[target],
+      ...patch,
+    },
+  };
 }
 
 export function generateRandomRelayKey() {

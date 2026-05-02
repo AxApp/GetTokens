@@ -11,13 +11,11 @@ import { useAppBootstrap } from './hooks/useAppBootstrap';
 import { useAppNavigation } from './hooks/useAppNavigation';
 
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
+const CodexPage = lazy(() => import('./pages/CodexPage'));
 const DebugPage = lazy(() => import('./pages/DebugPage'));
 const ProxyPoolPage = lazy(() => import('./pages/ProxyPoolPage'));
-const SessionManagementPage = lazy(() => import('./pages/SessionManagementPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
-const VendorStatusPage = lazy(() => import('./pages/VendorStatusPage'));
-const UsageDeskWorkspace = lazy(() => import('./features/accounts/UsageDeskFeature'));
 
 function AppShell() {
   const { themeMode } = useTheme();
@@ -27,10 +25,8 @@ function AppShell() {
     setActivePage,
     activeAccountWorkspace,
     setActiveAccountWorkspace,
-    activeSessionManagementWorkspace,
-    setActiveSessionManagementWorkspace,
-    activeUsageDeskWorkspace,
-    setActiveUsageDeskWorkspace,
+    activeCodexWorkspace,
+    setActiveCodexWorkspace,
   } = useAppNavigation();
 
   const {
@@ -62,14 +58,11 @@ function AppShell() {
     if (activePage === 'debug') {
       return <DebugPage />;
     }
-    if (activePage === 'session-management') {
-      return <SessionManagementPage workspace={activeSessionManagementWorkspace} />;
-    }
-    if (activePage === 'vendor-status') {
-      return <VendorStatusPage />;
-    }
     if (activePage === 'proxy-pool') {
       return <ProxyPoolPage />;
+    }
+    if (activePage === 'codex') {
+      return <CodexPage workspace={activeCodexWorkspace} sidecarStatus={sidecarStatus} />;
     }
     if (activePage === 'settings') {
       return (
@@ -83,15 +76,11 @@ function AppShell() {
         />
       );
     }
-    if (activePage === 'usage-desk') {
-      return <UsageDeskWorkspace sidecarStatus={sidecarStatus} workspace={activeUsageDeskWorkspace} />;
-    }
     return <AccountsPage sidecarStatus={sidecarStatus} workspace={activeAccountWorkspace} />;
   }, [
     activeAccountWorkspace,
+    activeCodexWorkspace,
     activePage,
-    activeSessionManagementWorkspace,
-    activeUsageDeskWorkspace,
     availableRelease,
     canApplyUpdate,
     releaseLabel,
@@ -111,10 +100,8 @@ function AppShell() {
         setActivePage={setActivePage}
         activeAccountWorkspace={activeAccountWorkspace}
         setActiveAccountWorkspace={setActiveAccountWorkspace}
-        activeSessionManagementWorkspace={activeSessionManagementWorkspace}
-        setActiveSessionManagementWorkspace={setActiveSessionManagementWorkspace}
-        activeUsageDeskWorkspace={activeUsageDeskWorkspace}
-        setActiveUsageDeskWorkspace={setActiveUsageDeskWorkspace}
+        activeCodexWorkspace={activeCodexWorkspace}
+        setActiveCodexWorkspace={setActiveCodexWorkspace}
         releaseLabel={releaseLabel}
       />
       <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">

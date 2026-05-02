@@ -1,7 +1,8 @@
-import type { AccountWorkspace, AppPage, SessionManagementWorkspace, UsageDeskWorkspace } from '../types';
+import type { AccountWorkspace, AppPage, CodexWorkspace, SessionManagementWorkspace, UsageDeskWorkspace } from '../types';
 
 export const ACTIVE_PAGE_STORAGE_KEY = 'gettokens.activePage';
 export const ACCOUNT_WORKSPACE_STORAGE_KEY = 'gettokens.accounts.workspace';
+export const CODEX_WORKSPACE_STORAGE_KEY = 'gettokens.codex.workspace';
 export const SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY = 'gettokens.sessionManagement.workspace';
 export const USAGE_DESK_WORKSPACE_STORAGE_KEY = 'gettokens.usageDesk.workspace';
 export const USAGE_DESK_SOURCE_STORAGE_KEY = 'gettokens.usageDesk.source';
@@ -13,11 +14,18 @@ const appPages: ReadonlySet<AppPage> = new Set([
   'session-management',
   'vendor-status',
   'proxy-pool',
+  'codex',
   'usage-desk',
   'settings',
   'debug',
 ]);
 const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all', 'codex', 'openai-compatible']);
+const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
+  'feature-config',
+  'session-management',
+  'vendor-status',
+  'usage-codex',
+]);
 const sessionManagementWorkspaces: ReadonlySet<SessionManagementWorkspace> = new Set(['codex']);
 const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', 'gemini']);
 const usageDeskSources = new Set(['observed', 'projected'] as const);
@@ -29,6 +37,7 @@ export type UsageDeskRangeStorageValue = 'TODAY' | '7D' | '14D' | '30D' | 'å…¨éƒ
 export interface FrameHashState {
   page: AppPage;
   workspace?: AccountWorkspace;
+  codexWorkspace?: CodexWorkspace;
   sessionManagementWorkspace?: SessionManagementWorkspace;
   usageDeskWorkspace?: UsageDeskWorkspace;
 }
@@ -39,6 +48,10 @@ export function isAppPage(value: string | null | undefined): value is AppPage {
 
 export function isAccountWorkspace(value: string | null | undefined): value is AccountWorkspace {
   return typeof value === 'string' && accountWorkspaces.has(value as AccountWorkspace);
+}
+
+export function isCodexWorkspace(value: string | null | undefined): value is CodexWorkspace {
+  return typeof value === 'string' && codexWorkspaces.has(value as CodexWorkspace);
 }
 
 export function isSessionManagementWorkspace(value: string | null | undefined): value is SessionManagementWorkspace {
@@ -61,6 +74,9 @@ export function resolveInitialActivePage(
   storageValue: string | null | undefined,
   fallback: AppPage = 'accounts',
 ): AppPage {
+  if (storageValue === 'session-management' || storageValue === 'vendor-status' || storageValue === 'usage-desk') {
+    return 'codex';
+  }
   return isAppPage(storageValue) ? storageValue : fallback;
 }
 
@@ -79,6 +95,19 @@ export function readStoredAccountWorkspace(
   storage: Pick<Storage, 'getItem'> | null | undefined,
 ): AccountWorkspace {
   return resolveInitialAccountWorkspace(storage?.getItem(ACCOUNT_WORKSPACE_STORAGE_KEY));
+}
+
+export function resolveInitialCodexWorkspace(
+  storageValue: string | null | undefined,
+  fallback: CodexWorkspace = 'feature-config',
+): CodexWorkspace {
+  return isCodexWorkspace(storageValue) ? storageValue : fallback;
+}
+
+export function readStoredCodexWorkspace(
+  storage: Pick<Storage, 'getItem'> | null | undefined,
+): CodexWorkspace {
+  return resolveInitialCodexWorkspace(storage?.getItem(CODEX_WORKSPACE_STORAGE_KEY));
 }
 
 export function resolveInitialSessionManagementWorkspace(
@@ -105,6 +134,10 @@ export function readStoredUsageDeskWorkspace(
   storage: Pick<Storage, 'getItem'> | null | undefined,
 ): UsageDeskWorkspace {
   return resolveInitialUsageDeskWorkspace(storage?.getItem(USAGE_DESK_WORKSPACE_STORAGE_KEY));
+}
+
+export function codexWorkspaceFromUsageDeskWorkspace(_workspace: string | null | undefined): CodexWorkspace {
+  return 'usage-codex';
 }
 
 export function resolveInitialUsageDeskSource(
@@ -147,6 +180,13 @@ export function persistAccountWorkspace(
   storage?.setItem(ACCOUNT_WORKSPACE_STORAGE_KEY, workspace);
 }
 
+export function persistCodexWorkspace(
+  storage: Pick<Storage, 'setItem'> | null | undefined,
+  workspace: CodexWorkspace,
+): void {
+  storage?.setItem(CODEX_WORKSPACE_STORAGE_KEY, workspace);
+}
+
 export function persistSessionManagementWorkspace(
   storage: Pick<Storage, 'setItem'> | null | undefined,
   workspace: SessionManagementWorkspace,
@@ -187,6 +227,20 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
     return null;
   }
 
+  if (page === 'session-management') {
+    return {
+      page: 'codex',
+      codexWorkspace: 'session-management',
+    };
+  }
+
+  if (page === 'vendor-status') {
+    return {
+      page: 'codex',
+      codexWorkspace: 'vendor-status',
+    };
+  }
+
   if (page === 'accounts') {
     const workspace = params.get('workspace');
     return {
@@ -195,19 +249,19 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
     };
   }
 
-  if (page === 'session-management') {
+  if (page === 'codex') {
     const workspace = params.get('workspace');
     return {
       page,
-      sessionManagementWorkspace: isSessionManagementWorkspace(workspace) ? workspace : 'codex',
+      codexWorkspace: isCodexWorkspace(workspace) ? workspace : 'feature-config',
     };
   }
 
   if (page === 'usage-desk') {
     const workspace = params.get('workspace');
     return {
-      page,
-      usageDeskWorkspace: isUsageDeskWorkspace(workspace) ? workspace : 'codex',
+      page: 'codex',
+      codexWorkspace: codexWorkspaceFromUsageDeskWorkspace(workspace),
     };
   }
 
@@ -217,6 +271,7 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
 export function buildFrameHash(
   page: AppPage,
   accountWorkspace: AccountWorkspace,
+  codexWorkspace: CodexWorkspace,
   sessionManagementWorkspace: SessionManagementWorkspace,
   usageDeskWorkspace: UsageDeskWorkspace,
 ): string {
@@ -224,6 +279,9 @@ export function buildFrameHash(
   params.set('frame', page);
   if (page === 'accounts' && accountWorkspace !== 'all') {
     params.set('workspace', accountWorkspace);
+  }
+  if (page === 'codex' && codexWorkspace !== 'feature-config') {
+    params.set('workspace', codexWorkspace);
   }
   if (page === 'session-management' && sessionManagementWorkspace !== 'codex') {
     params.set('workspace', sessionManagementWorkspace);

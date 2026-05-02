@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   ACTIVE_PAGE_STORAGE_KEY,
   ACCOUNT_WORKSPACE_STORAGE_KEY,
+  CODEX_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_WORKSPACE_STORAGE_KEY,
   SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_SOURCE_STORAGE_KEY,
@@ -11,12 +12,14 @@ import {
   buildFrameHash,
   isAccountWorkspace,
   isAppPage,
+  isCodexWorkspace,
   isSessionManagementWorkspace,
   isUsageDeskRangeStorageValue,
   isUsageDeskSourceStorageValue,
   isUsageDeskWorkspace,
   persistAccountWorkspace,
   persistActivePage,
+  persistCodexWorkspace,
   persistSessionManagementWorkspace,
   persistUsageDeskRange,
   persistUsageDeskSource,
@@ -24,12 +27,14 @@ import {
   readFrameHashState,
   readStoredAccountWorkspace,
   readStoredActivePage,
+  readStoredCodexWorkspace,
   readStoredSessionManagementWorkspace,
   readStoredUsageDeskRange,
   readStoredUsageDeskSource,
   readStoredUsageDeskWorkspace,
   resolveInitialAccountWorkspace,
   resolveInitialActivePage,
+  resolveInitialCodexWorkspace,
   resolveInitialSessionManagementWorkspace,
   resolveInitialUsageDeskRange,
   resolveInitialUsageDeskSource,
@@ -42,6 +47,7 @@ test('isAppPage only accepts known sidebar pages', () => {
   assert.equal(isAppPage('session-management'), true);
   assert.equal(isAppPage('vendor-status'), true);
   assert.equal(isAppPage('proxy-pool'), true);
+  assert.equal(isAppPage('codex'), true);
   assert.equal(isAppPage('usage-desk'), true);
   assert.equal(isAppPage('settings'), true);
   assert.equal(isAppPage('debug'), true);
@@ -51,9 +57,10 @@ test('isAppPage only accepts known sidebar pages', () => {
 
 test('resolveInitialActivePage falls back to accounts for invalid values', () => {
   assert.equal(resolveInitialActivePage('settings'), 'settings');
-  assert.equal(resolveInitialActivePage('session-management'), 'session-management');
-  assert.equal(resolveInitialActivePage('vendor-status'), 'vendor-status');
+  assert.equal(resolveInitialActivePage('session-management'), 'codex');
+  assert.equal(resolveInitialActivePage('vendor-status'), 'codex');
   assert.equal(resolveInitialActivePage('proxy-pool'), 'proxy-pool');
+  assert.equal(resolveInitialActivePage('codex'), 'codex');
   assert.equal(resolveInitialActivePage('unknown'), 'accounts');
   assert.equal(resolveInitialActivePage(null), 'accounts');
 });
@@ -66,7 +73,7 @@ test('readStoredActivePage restores the last valid page from storage', () => {
     },
   };
 
-  assert.equal(readStoredActivePage(storage), 'session-management');
+  assert.equal(readStoredActivePage(storage), 'codex');
 });
 
 test('readStoredActivePage falls back when storage is unavailable or invalid', () => {
@@ -131,6 +138,50 @@ test('persistAccountWorkspace writes the selected workspace to storage', () => {
   persistAccountWorkspace(storage, 'codex');
 
   assert.deepEqual(writes, [[ACCOUNT_WORKSPACE_STORAGE_KEY, 'codex']]);
+});
+
+test('isCodexWorkspace only accepts known codex subpages', () => {
+  assert.equal(isCodexWorkspace('feature-config'), true);
+  assert.equal(isCodexWorkspace('session-management'), true);
+  assert.equal(isCodexWorkspace('vendor-status'), true);
+  assert.equal(isCodexWorkspace('usage-codex'), true);
+  assert.equal(isCodexWorkspace('usage-gemini'), false);
+  assert.equal(isCodexWorkspace('unknown'), false);
+  assert.equal(isCodexWorkspace(null), false);
+});
+
+test('resolveInitialCodexWorkspace falls back to feature config for invalid values', () => {
+  assert.equal(resolveInitialCodexWorkspace('feature-config'), 'feature-config');
+  assert.equal(resolveInitialCodexWorkspace('session-management'), 'session-management');
+  assert.equal(resolveInitialCodexWorkspace('vendor-status'), 'vendor-status');
+  assert.equal(resolveInitialCodexWorkspace('usage-codex'), 'usage-codex');
+  assert.equal(resolveInitialCodexWorkspace('usage-gemini'), 'feature-config');
+  assert.equal(resolveInitialCodexWorkspace('unknown'), 'feature-config');
+  assert.equal(resolveInitialCodexWorkspace(null), 'feature-config');
+});
+
+test('readStoredCodexWorkspace restores the last valid workspace from storage', () => {
+  const storage = {
+    getItem(key) {
+      assert.equal(key, CODEX_WORKSPACE_STORAGE_KEY);
+      return 'feature-config';
+    },
+  };
+
+  assert.equal(readStoredCodexWorkspace(storage), 'feature-config');
+});
+
+test('persistCodexWorkspace writes the selected workspace to storage', () => {
+  const writes = [];
+  const storage = {
+    setItem(key, value) {
+      writes.push([key, value]);
+    },
+  };
+
+  persistCodexWorkspace(storage, 'feature-config');
+
+  assert.deepEqual(writes, [[CODEX_WORKSPACE_STORAGE_KEY, 'feature-config']]);
 });
 
 test('isSessionManagementWorkspace only accepts known session management subpages', () => {
@@ -288,11 +339,12 @@ test('persistUsageDeskRange writes the selected range to storage', () => {
 
 test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=status'), { page: 'status' });
-  assert.deepEqual(readFrameHashState('#frame=session-management'), { page: 'session-management', sessionManagementWorkspace: 'codex' });
-  assert.deepEqual(readFrameHashState('#frame=vendor-status'), { page: 'vendor-status' });
+  assert.deepEqual(readFrameHashState('#frame=session-management'), { page: 'codex', codexWorkspace: 'session-management' });
+  assert.deepEqual(readFrameHashState('#frame=vendor-status'), { page: 'codex', codexWorkspace: 'vendor-status' });
   assert.deepEqual(readFrameHashState('#frame=proxy-pool'), { page: 'proxy-pool' });
   assert.deepEqual(readFrameHashState('#frame=proxy-pool&workspace=codex'), { page: 'proxy-pool' });
-  assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'usage-desk', usageDeskWorkspace: 'codex' });
+  assert.deepEqual(readFrameHashState('#frame=codex'), { page: 'codex', codexWorkspace: 'feature-config' });
+  assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'codex', codexWorkspace: 'usage-codex' });
   assert.deepEqual(readFrameHashState('#frame=settings'), { page: 'settings' });
 });
 
@@ -311,25 +363,52 @@ test('readFrameHashState parses accounts workspace and falls back to all', () =>
   });
 });
 
-test('readFrameHashState parses usage desk workspace and falls back to codex', () => {
+test('readFrameHashState parses codex workspace and falls back to feature config', () => {
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=feature-config'), {
+    page: 'codex',
+    codexWorkspace: 'feature-config',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=session-management'), {
+    page: 'codex',
+    codexWorkspace: 'session-management',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=vendor-status'), {
+    page: 'codex',
+    codexWorkspace: 'vendor-status',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=usage-codex'), {
+    page: 'codex',
+    codexWorkspace: 'usage-codex',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=usage-gemini'), {
+    page: 'codex',
+    codexWorkspace: 'feature-config',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=unknown'), {
+    page: 'codex',
+    codexWorkspace: 'feature-config',
+  });
+});
+
+test('readFrameHashState migrates legacy usage desk routes to codex usage', () => {
   assert.deepEqual(readFrameHashState('#frame=usage-desk&workspace=gemini'), {
-    page: 'usage-desk',
-    usageDeskWorkspace: 'gemini',
+    page: 'codex',
+    codexWorkspace: 'usage-codex',
   });
   assert.deepEqual(readFrameHashState('#frame=usage-desk&workspace=unknown'), {
-    page: 'usage-desk',
-    usageDeskWorkspace: 'codex',
+    page: 'codex',
+    codexWorkspace: 'usage-codex',
   });
 });
 
 test('readFrameHashState parses session management workspace and falls back to codex', () => {
   assert.deepEqual(readFrameHashState('#frame=session-management&workspace=codex'), {
-    page: 'session-management',
-    sessionManagementWorkspace: 'codex',
+    page: 'codex',
+    codexWorkspace: 'session-management',
   });
   assert.deepEqual(readFrameHashState('#frame=session-management&workspace=unknown'), {
-    page: 'session-management',
-    sessionManagementWorkspace: 'codex',
+    page: 'codex',
+    codexWorkspace: 'session-management',
   });
 });
 
@@ -341,15 +420,25 @@ test('readFrameHashState returns null for invalid hashes', () => {
 });
 
 test('buildFrameHash serializes page and optional accounts workspace', () => {
-  assert.equal(buildFrameHash('status', 'all', 'codex', 'codex'), '#frame=status');
-  assert.equal(buildFrameHash('session-management', 'all', 'codex', 'codex'), '#frame=session-management');
-  assert.equal(buildFrameHash('vendor-status', 'all', 'codex', 'codex'), '#frame=vendor-status');
-  assert.equal(buildFrameHash('proxy-pool', 'all', 'codex', 'codex'), '#frame=proxy-pool');
-  assert.equal(buildFrameHash('usage-desk', 'all', 'codex', 'codex'), '#frame=usage-desk');
-  assert.equal(buildFrameHash('usage-desk', 'all', 'codex', 'gemini'), '#frame=usage-desk&workspace=gemini');
-  assert.equal(buildFrameHash('accounts', 'all', 'codex', 'codex'), '#frame=accounts');
+  assert.equal(buildFrameHash('status', 'all', 'feature-config', 'codex', 'codex'), '#frame=status');
   assert.equal(
-    buildFrameHash('accounts', 'openai-compatible', 'codex', 'codex'),
+    buildFrameHash('codex', 'all', 'session-management', 'codex', 'codex'),
+    '#frame=codex&workspace=session-management',
+  );
+  assert.equal(
+    buildFrameHash('codex', 'all', 'vendor-status', 'codex', 'codex'),
+    '#frame=codex&workspace=vendor-status',
+  );
+  assert.equal(buildFrameHash('vendor-status', 'all', 'feature-config', 'codex', 'codex'), '#frame=vendor-status');
+  assert.equal(buildFrameHash('proxy-pool', 'all', 'feature-config', 'codex', 'codex'), '#frame=proxy-pool');
+  assert.equal(buildFrameHash('codex', 'all', 'feature-config', 'codex', 'codex'), '#frame=codex');
+  assert.equal(
+    buildFrameHash('codex', 'all', 'usage-codex', 'codex', 'codex'),
+    '#frame=codex&workspace=usage-codex',
+  );
+  assert.equal(buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex'), '#frame=accounts');
+  assert.equal(
+    buildFrameHash('accounts', 'openai-compatible', 'feature-config', 'codex', 'codex'),
     '#frame=accounts&workspace=openai-compatible',
   );
 });

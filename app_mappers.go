@@ -75,6 +75,78 @@ func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse
 	}
 }
 
+func mapCodexFeatureConfigSnapshot(result *wailsapp.CodexFeatureConfigSnapshot) *CodexFeatureConfigSnapshot {
+	if result == nil {
+		return &CodexFeatureConfigSnapshot{
+			Definitions:   []CodexFeatureDefinition{},
+			Values:        map[string]bool{},
+			UnknownValues: map[string]bool{},
+			Warnings:      []string{},
+		}
+	}
+
+	definitions := make([]CodexFeatureDefinition, 0, len(result.Definitions))
+	for _, definition := range result.Definitions {
+		definitions = append(definitions, CodexFeatureDefinition{
+			Key:            definition.Key,
+			Description:    definition.Description,
+			Stage:          definition.Stage,
+			DefaultEnabled: definition.DefaultEnabled,
+			CanonicalKey:   definition.CanonicalKey,
+			LegacyAlias:    definition.LegacyAlias,
+		})
+	}
+
+	return &CodexFeatureConfigSnapshot{
+		CodexHomePath: result.CodexHomePath,
+		ConfigPath:    result.ConfigPath,
+		Exists:        result.Exists,
+		Definitions:   definitions,
+		Values:        cloneBoolMap(result.Values),
+		UnknownValues: cloneBoolMap(result.UnknownValues),
+		Raw:           result.Raw,
+		Warnings:      append([]string(nil), result.Warnings...),
+	}
+}
+
+func mapCodexFeatureConfigPreview(result *wailsapp.CodexFeatureConfigPreview) *CodexFeatureConfigPreview {
+	if result == nil {
+		return &CodexFeatureConfigPreview{
+			Changes:  []CodexFeatureConfigChange{},
+			Warnings: []string{},
+		}
+	}
+
+	changes := make([]CodexFeatureConfigChange, 0, len(result.Changes))
+	for _, change := range result.Changes {
+		changes = append(changes, CodexFeatureConfigChange{
+			Key:             change.Key,
+			Type:            change.Type,
+			PreviousEnabled: change.PreviousEnabled,
+			NextEnabled:     change.NextEnabled,
+		})
+	}
+
+	return &CodexFeatureConfigPreview{
+		ConfigPath: result.ConfigPath,
+		WillCreate: result.WillCreate,
+		Changes:    changes,
+		Preview:    result.Preview,
+		Warnings:   append([]string(nil), result.Warnings...),
+	}
+}
+
+func cloneBoolMap(source map[string]bool) map[string]bool {
+	if len(source) == 0 {
+		return map[string]bool{}
+	}
+	cloned := make(map[string]bool, len(source))
+	for key, value := range source {
+		cloned[key] = value
+	}
+	return cloned
+}
+
 func mapSessionManagementSnapshot(result *wailsapp.SessionManagementSnapshot) *SessionManagementSnapshot {
 	if result == nil {
 		return &SessionManagementSnapshot{

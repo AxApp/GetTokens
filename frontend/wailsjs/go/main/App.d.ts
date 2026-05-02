@@ -4,6 +4,8 @@ import {main} from '../models';
 import {updater} from '../models';
 import {sidecar} from '../models';
 
+export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:string):Promise<main.ClaudeCodeLocalApplyResult>;
+
 export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string):Promise<main.RelayLocalApplyResult>;
 
 export function ApplyUpdate():Promise<void>;
@@ -33,6 +35,8 @@ export function FetchVendorStatusRSS(arg1:string):Promise<string>;
 export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
+
+export function GetCodexFeatureConfig():Promise<main.CodexFeatureConfigSnapshot>;
 
 export function GetCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
@@ -70,6 +74,8 @@ export function ListRelaySupportedModels():Promise<main.RelaySupportedModelsResu
 
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
+export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
+
 export function ProbeProxyNode(arg1:main.ProbeProxyNodeInput):Promise<main.ProbeProxyNodeResult>;
 
 export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
@@ -77,6 +83,8 @@ export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageRespons
 export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function RefreshCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
+export function SaveCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
 
 export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
 

@@ -278,6 +278,34 @@ func (a *App) UpdateLocalProjectedUsageSettings(input LocalProjectedUsageSetting
 	}, nil
 }
 
+func (a *App) GetCodexFeatureConfig() (*CodexFeatureConfigSnapshot, error) {
+	result, err := a.core.GetCodexFeatureConfig()
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexFeatureConfigSnapshot(result), nil
+}
+
+func (a *App) PreviewCodexFeatureConfig(input SaveCodexFeatureConfigInput) (*CodexFeatureConfigPreview, error) {
+	result, err := a.core.PreviewCodexFeatureConfig(wailsapp.SaveCodexFeatureConfigInput{
+		Values: input.Values,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexFeatureConfigPreview(result), nil
+}
+
+func (a *App) SaveCodexFeatureConfig(input SaveCodexFeatureConfigInput) (*CodexFeatureConfigPreview, error) {
+	result, err := a.core.SaveCodexFeatureConfig(wailsapp.SaveCodexFeatureConfigInput{
+		Values: input.Values,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexFeatureConfigPreview(result), nil
+}
+
 func (a *App) StartCodexOAuth() (*OAuthStartResult, error) {
 	result, err := a.core.StartCodexOAuth()
 	if err != nil {
@@ -483,6 +511,20 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, mode
 		CodexHomePath: result.CodexHomePath,
 		AuthFilePath:  result.AuthFilePath,
 		ConfigPath:    result.ConfigPath,
+	}, nil
+}
+
+func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, model string) (*ClaudeCodeLocalApplyResult, error) {
+	result, err := a.core.ApplyClaudeCodeAPIKeyConfigToLocal(apiKey, baseURL, model)
+	if err != nil {
+		return nil, err
+	}
+
+	return &ClaudeCodeLocalApplyResult{
+		ClaudeConfigDirPath: result.ClaudeConfigDirPath,
+		SettingsPath:        result.SettingsPath,
+		Warnings:            append([]string(nil), result.Warnings...),
+		Conflicts:           append([]string(nil), result.Conflicts...),
 	}, nil
 }
 

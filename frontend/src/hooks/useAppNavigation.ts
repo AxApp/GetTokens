@@ -2,18 +2,23 @@ import { useEffect, useState } from 'react';
 import type {
   AccountWorkspace,
   AppPage,
+  CodexWorkspace,
   SessionManagementWorkspace,
   UsageDeskWorkspace as UsageDeskWorkspaceID,
 } from '../types';
 import {
+  ACTIVE_PAGE_STORAGE_KEY,
   buildFrameHash,
+  codexWorkspaceFromUsageDeskWorkspace,
   persistAccountWorkspace,
   persistActivePage,
+  persistCodexWorkspace,
   persistSessionManagementWorkspace,
   persistUsageDeskWorkspace,
   readFrameHashState,
   readStoredAccountWorkspace,
   readStoredActivePage,
+  readStoredCodexWorkspace,
   readStoredSessionManagementWorkspace,
   readStoredUsageDeskWorkspace,
 } from '../utils/pagePersistence';
@@ -30,6 +35,24 @@ export function useAppNavigation() {
     const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
     if (hashState?.page === 'accounts') {
       return hashState.workspace ?? 'all';
+    }
+    return storedWorkspace;
+  });
+  const [activeCodexWorkspace, setActiveCodexWorkspace] = useState<CodexWorkspace>(() => {
+    const storage = typeof window === 'undefined' ? null : window.localStorage;
+    const storedWorkspace = readStoredCodexWorkspace(storage);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    if (hashState?.page === 'codex') {
+      return hashState.codexWorkspace ?? 'feature-config';
+    }
+    if (storage?.getItem(ACTIVE_PAGE_STORAGE_KEY) === 'session-management') {
+      return 'session-management';
+    }
+    if (storage?.getItem(ACTIVE_PAGE_STORAGE_KEY) === 'vendor-status') {
+      return 'vendor-status';
+    }
+    if (storage?.getItem(ACTIVE_PAGE_STORAGE_KEY) === 'usage-desk') {
+      return codexWorkspaceFromUsageDeskWorkspace(readStoredUsageDeskWorkspace(storage));
     }
     return storedWorkspace;
   });
@@ -61,6 +84,10 @@ export function useAppNavigation() {
   }, [activeAccountWorkspace]);
 
   useEffect(() => {
+    persistCodexWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeCodexWorkspace);
+  }, [activeCodexWorkspace]);
+
+  useEffect(() => {
     persistSessionManagementWorkspace(
       typeof window === 'undefined' ? null : window.localStorage,
       activeSessionManagementWorkspace,
@@ -79,13 +106,20 @@ export function useAppNavigation() {
     const nextHash = buildFrameHash(
       activePage,
       activeAccountWorkspace,
+      activeCodexWorkspace,
       activeSessionManagementWorkspace,
       activeUsageDeskWorkspace,
     );
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
     }
-  }, [activeAccountWorkspace, activePage, activeSessionManagementWorkspace, activeUsageDeskWorkspace]);
+  }, [
+    activeAccountWorkspace,
+    activeCodexWorkspace,
+    activePage,
+    activeSessionManagementWorkspace,
+    activeUsageDeskWorkspace,
+  ]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -101,6 +135,9 @@ export function useAppNavigation() {
       setActivePage(hashState.page);
       if (hashState.page === 'accounts') {
         setActiveAccountWorkspace(hashState.workspace ?? 'all');
+      }
+      if (hashState.page === 'codex') {
+        setActiveCodexWorkspace(hashState.codexWorkspace ?? 'feature-config');
       }
       if (hashState.page === 'session-management') {
         setActiveSessionManagementWorkspace(hashState.sessionManagementWorkspace ?? 'codex');
@@ -121,6 +158,8 @@ export function useAppNavigation() {
     setActivePage,
     activeAccountWorkspace,
     setActiveAccountWorkspace,
+    activeCodexWorkspace,
+    setActiveCodexWorkspace,
     activeSessionManagementWorkspace,
     setActiveSessionManagementWorkspace,
     activeUsageDeskWorkspace,

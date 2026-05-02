@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
+  <title>GetTokens / Local CLI Apply / Design Preview</title>
+  <style>
+    :root {
+      --bg-main: #ffffff;
+      --bg-surface: #f9f9f9;
+      --border-color: #000000;
+      --text-primary: #000000;
+      --text-muted: #666666;
+      --bg-muted: #f0f0f0;
+      --accent-red: #ff0000;
+      --shadow-color: #e5e5e5;
+      --surface: var(--bg-main);
+      --surface-step: var(--bg-muted);
+      --surface-soft: var(--bg-surface);
+      --ink: var(--text-primary);
+      --muted: var(--text-muted);
+      --faint: var(--text-muted);
+      --line: var(--border-color);
+      --line-soft: var(--border-color);
+      --accent: var(--border-color);
+      --accent-strong: var(--text-primary);
+      --green: #15803d;
+      --amber: #a16207;
+      --blue: #1d4ed8;
+      --red: #d63c30;
+      --shadow: var(--shadow-color);
+      --mono: "JetBrains Mono", "SFMono-Regular", Consolas, ui-monospace, monospace;
+      --sans: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg-surface);
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      min-height: 40px;
+      touch-action: manipulation;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .workspace {
+      padding: 40px;
+      min-width: 0;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .frame {
+      background: var(--surface);
+      border: 2px solid var(--line);
+      box-shadow: 8px 8px 0 var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
+      border-bottom: 2px solid var(--line);
+      background: var(--surface-soft);
+      padding: 28px 30px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .title-kicker {
+      color: var(--text-primary);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .title-row {
+      margin-top: 8px;
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .title-row h1 {
+      font-family: var(--sans);
+      font-size: 32px;
+      line-height: 1.08;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      min-height: 28px;
+      align-items: center;
+      gap: 8px;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .status-chip::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border: 1px solid var(--line);
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .button {
+      border: 2px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 8px 12px;
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      box-shadow: 3px 3px 0 var(--shadow);
+      transition: transform 90ms ease, box-shadow 90ms ease;
+    }
+
+    .button:active {
+      transform: translate(2px, 2px) scale(0.98);
+      box-shadow: 1px 1px 0 var(--shadow);
+    }
+
+    .button.primary {
+      background: var(--ink);
+      color: var(--surface);
+      box-shadow: 3px 3px 0 var(--shadow);
+    }
+
+    .body {
+      padding: 28px 30px 32px;
+      display: grid;
+      gap: 24px;
+    }
+
+    .service-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      border: 2px solid var(--line);
+      background: var(--surface-step);
+      padding: 14px 16px;
+      min-width: 0;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      margin-top: 7px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .section {
+      border: 2px solid var(--line);
+      background: var(--surface);
+    }
+
+    .section-head {
+      border-bottom: 2px solid var(--line);
+      background: var(--surface-soft);
+      padding: 18px 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+    }
+
+    .section-title {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .section-title h2 {
+      font-family: var(--sans);
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .section-title p {
+      color: var(--muted);
+      max-width: 760px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tabs {
+      display: inline-grid;
+      grid-template-columns: repeat(2, minmax(130px, 1fr));
+      border: 2px solid var(--line);
+      background: var(--surface);
+      min-height: 44px;
+    }
+
+    .tab {
+      position: relative;
+      border: 0;
+      border-right: 2px solid var(--line);
+      background: var(--surface);
+      color: var(--muted);
+      min-height: 40px;
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .tab:last-child {
+      border-right: 0;
+    }
+
+    .tab.active {
+      background: var(--border-color);
+      color: var(--bg-main);
+    }
+
+    .tab.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .config-grid {
+      padding: 24px 26px 28px;
+      display: grid;
+      grid-template-columns: minmax(300px, 0.9fr) minmax(380px, 1.1fr);
+      gap: 34px;
+      align-items: start;
+    }
+
+    .column-head {
+      border-bottom: 2px solid var(--line);
+      padding: 0 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .column-head h3 {
+      font-family: var(--sans);
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .tag {
+      border: 2px solid var(--line);
+      background: var(--surface);
+      padding: 4px 8px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .tag.warning {
+      background: var(--bg-main);
+      color: var(--text-primary);
+    }
+
+    .form {
+      display: grid;
+      gap: 20px;
+    }
+
+    .field {
+      display: grid;
+      gap: 9px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .combo-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 46px;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .label {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    .input,
+    .select {
+      width: 100%;
+      min-height: 46px;
+      border: 2px solid var(--line);
+      background: var(--surface-soft);
+      color: var(--ink);
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 800;
+      outline: none;
+    }
+
+    .select[disabled],
+    .input[readonly] {
+      color: var(--text-muted);
+      cursor: default;
+    }
+
+    .input:focus,
+    .select:focus {
+      box-shadow: 4px 4px 0 var(--shadow-color);
+    }
+
+    .warning-box {
+      border: 2px solid var(--line);
+      background: var(--bg-main);
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+      border-style: dashed;
+    }
+
+    .warning-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-primary);
+    }
+
+    .warning-box p {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .field-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field-item {
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--line);
+      background: var(--border-color);
+      box-shadow: inset 0 0 0 4px var(--surface);
+    }
+
+    .field-name {
+      min-width: 0;
+    }
+
+    .field-name strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .field-name span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .preview-stack {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .code {
+      margin: 0;
+      overflow: auto;
+      min-height: 470px;
+      max-height: 420px;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 2px solid var(--line);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      white-space: pre;
+    }
+
+    .diff-line {
+      display: block;
+      padding: 0 18px;
+    }
+
+    .diff-line:first-child {
+      padding-top: 16px;
+    }
+
+    .diff-line:last-child {
+      padding-bottom: 16px;
+    }
+
+    .diff-line.meta {
+      color: var(--text-muted);
+      font-weight: 900;
+    }
+
+    .diff-line.ctx {
+      color: var(--text-primary);
+    }
+
+    .diff-line.add {
+      background: rgba(21, 128, 61, 0.12);
+      color: var(--text-primary);
+      font-weight: 900;
+    }
+
+    .diff-line.warn {
+      background: var(--bg-main);
+      color: var(--text-muted);
+      font-weight: 900;
+    }
+
+    .action-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      padding-top: 6px;
+      background: transparent;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.22);
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal {
+      width: min(520px, 100%);
+      border: 2px solid var(--line);
+      background: var(--bg-main);
+      box-shadow: 8px 8px 0 var(--shadow-color);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 2px solid var(--line);
+      background: var(--bg-surface);
+      padding: 16px 18px;
+    }
+
+    .modal-head h3 {
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-top: 2px solid var(--line);
+      background: var(--bg-surface);
+      padding: 14px 18px;
+    }
+
+    .codex-ghost {
+      margin: 0 26px 0;
+      border: 2px dashed var(--line-soft);
+      background: var(--surface-soft);
+      padding: 14px 16px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .readable-note {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      padding: 0 26px;
+    }
+
+    .note-item {
+      border-left: 4px solid var(--line);
+      background: var(--surface-soft);
+      padding: 12px 14px;
+    }
+
+    .note-item strong {
+      display: block;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .note-item span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .target-panel {
+      display: grid;
+      gap: 24px;
+    }
+
+    .target-panel[hidden] {
+      display: none;
+    }
+
+    .diff-output {
+      min-height: 520px;
+      max-height: 620px;
+    }
+
+    @media (max-width: 1100px) {
+      .workspace {
+        padding: 20px;
+      }
+
+      .service-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .config-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .readable-note {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        font-size: 13px;
+      }
+
+      .workspace {
+        padding: 12px;
+      }
+
+      .toolbar,
+      .section-head {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+      }
+
+      .toolbar-actions,
+      .action-row {
+        justify-content: stretch;
+      }
+
+      .button {
+        width: 100%;
+      }
+
+      .title-row h1 {
+        font-size: 28px;
+      }
+
+      .service-strip,
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+
+      .combo-row {
+        grid-template-columns: minmax(0, 1fr) 42px;
+      }
+
+      .tabs {
+        width: 100%;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .tab {
+        min-width: 0;
+        padding-inline: 8px;
+        font-size: 10px;
+      }
+
+      .config-grid,
+      .body {
+        padding: 16px;
+      }
+
+      .codex-ghost,
+      .readable-note {
+        margin-inline: 16px;
+        padding-inline: 0;
+      }
+
+      .diff-row,
+      .field-item {
+        grid-template-columns: 1fr;
+      }
+
+      .checkbox {
+        display: none;
+      }
+
+      .diff-value {
+        white-space: normal;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="workspace">
+    <section class="frame" aria-label="Status page design preview">
+      <header class="toolbar">
+        <div>
+          <div class="title-kicker">Status / Local CLI apply</div>
+          <div class="title-row">
+            <h1>Relay service</h1>
+            <span class="status-chip">ready</span>
+          </div>
+        </div>
+        <div class="toolbar-actions">
+          <button class="button">Refresh</button>
+          <button class="button primary">Save routing</button>
+        </div>
+      </header>
+
+      <div class="body">
+        <div class="service-strip" aria-label="Relay service summary">
+          <div class="metric">
+            <div class="metric-label">Endpoint</div>
+            <div class="metric-value">http://127.0.0.1:8317/v1</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Service key</div>
+            <div class="metric-value">sk-gettokens-••••-9F2A</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Model</div>
+            <div class="metric-value">claude-sonnet-4-5</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Source</div>
+            <div class="metric-value">account pool / relay</div>
+          </div>
+        </div>
+
+        <section class="section" aria-label="Local CLI configuration">
+          <div class="section-head">
+            <div class="section-title">
+              <h2>Local CLI configuration</h2>
+              <p id="target-summary">Codex 写入 auth.json 与 config.toml；Claude Code 写入 settings.json。两边都先展示文件 diff，再执行保存。</p>
+            </div>
+            <div class="tabs" role="tablist" aria-label="CLI target">
+              <button class="tab active" type="button" role="tab" aria-selected="true" data-target-tab="codex">Codex</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-target-tab="claude">Claude Code</button>
+            </div>
+          </div>
+
+          <div class="target-panel" data-target-panel="codex">
+            <div class="config-grid">
+              <section class="form" aria-label="Codex local apply form">
+                <div class="column-head">
+                  <h3>Codex local apply</h3>
+                  <button class="button" type="button" id="openRelayKeyModal" aria-label="Add relay API key">+</button>
+                </div>
+
+                <div class="field">
+                  <label class="label" for="codexTargetPath">
+                    <span>Target path</span>
+                    <span>read only</span>
+                  </label>
+                  <input class="input" id="codexTargetPath" value="CODEX_HOME/auth.json + CODEX_HOME/config.toml" readonly />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="label" for="codexKey">
+                      <span>Relay API key</span>
+                      <span>auth.json</span>
+                    </label>
+                    <select class="select" id="codexKey" data-codex-field="apiKey">
+                      <option selected>sk-gettokens-••••-9F2A</option>
+                      <option>sk-gettokens-••••-7C10</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="label" for="codexBaseUrl">
+                      <span>Base URL</span>
+                      <span>config.toml</span>
+                    </label>
+                    <input class="input" id="codexBaseUrl" data-codex-field="baseUrl" value="http://127.0.0.1:8317/v1" />
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="label" for="codexModel">
+                      <span>Model</span>
+                      <span>config.toml</span>
+                    </label>
+                    <select class="select" id="codexModel" data-codex-field="model">
+                      <option>gpt-5.5</option>
+                      <option selected>gpt-5.4</option>
+                      <option>gpt-5.4-mini</option>
+                      <option>gpt-5.3-codex</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="label" for="codexReasoning">
+                      <span>Reasoning</span>
+                      <span>config.toml</span>
+                    </label>
+                    <select class="select" id="codexReasoning" data-codex-field="reasoning">
+                      <option>none</option>
+                      <option>low</option>
+                      <option>medium</option>
+                      <option selected>high</option>
+                      <option>xhigh</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="label" for="codexProvider">
+                      <span>Provider</span>
+                      <span>identity</span>
+                    </label>
+                    <select class="select" id="codexProvider" data-codex-field="provider">
+                      <option selected>openai</option>
+                      <option>gettokens</option>
+                      <option>custom</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="label" for="codexWire">
+                      <span>Wire API</span>
+                      <span>fixed</span>
+                    </label>
+                    <input class="input" id="codexWire" data-codex-field="wire" value="responses" readonly />
+                  </div>
+                </div>
+
+                <div class="field">
+                  <div class="label">
+                    <span>Controlled fields</span>
+                    <span>Codex only</span>
+                  </div>
+                  <div class="field-list">
+                    <div class="field-item">
+                      <span class="checkbox"></span>
+                      <div class="field-name">
+                        <strong>auth.json / OPENAI_API_KEY</strong>
+                        <span>field-level merge; unknown auth fields preserved</span>
+                      </div>
+                      <span class="tag">required</span>
+                    </div>
+                    <div class="field-item">
+                      <span class="checkbox"></span>
+                      <div class="field-name">
+                        <strong>config.toml / model + provider</strong>
+                        <span>minimal text patch; comments and sections preserved</span>
+                      </div>
+                      <span class="tag">required</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="preview-stack" aria-label="Codex file diff">
+                <div class="column-head">
+                  <h3>Codex file diff</h3>
+                  <span class="tag">auth + toml</span>
+                </div>
+                <pre class="code diff-output" id="codexDiff"></pre>
+                <div class="action-row">
+                  <button class="button" type="button" data-refresh-target="codex">Preview again</button>
+                  <button class="button primary" type="button">Apply to Codex</button>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="target-panel" data-target-panel="claude" hidden>
+            <div class="codex-ghost">
+              Claude Code tab 只预览 ~/.claude/settings.json 的 env patch；不碰 ~/.claude.json、MCP、permissions、hooks、statusLine。
+            </div>
+
+            <div class="readable-note" aria-label="Claude Code configuration boundaries">
+              <div class="note-item">
+                <strong>Target</strong>
+                <span>只写 ~/.claude/settings.json，不碰 ~/.claude.json。</span>
+              </div>
+              <div class="note-item">
+                <strong>Patch</strong>
+                <span>只更新 env 里的受控字段，不格式化整份 JSON。</span>
+              </div>
+              <div class="note-item">
+                <strong>Conflict</strong>
+                <span>检测 auth token，但默认保留并提示用户确认。</span>
+              </div>
+            </div>
+
+            <div class="config-grid">
+              <section class="form" aria-label="Claude Code API key form">
+                <div class="column-head">
+                  <h3>Claude Code API key</h3>
+                  <span class="tag warning">settings.json</span>
+                </div>
+
+                <div class="field">
+                  <label class="label" for="claudeTargetPath">
+                    <span>Target path</span>
+                    <span>read only</span>
+                  </label>
+                  <input class="input" id="claudeTargetPath" value="~/.claude/settings.json" readonly />
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="label" for="claudeKey">
+                      <span>API key source</span>
+                      <span>relay key</span>
+                    </label>
+                    <input class="input" id="claudeKey" data-claude-field="apiKey" value="sk-gettokens-••••-9F2A" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="claudeBaseUrl">
+                      <span>Base URL</span>
+                      <span>env</span>
+                    </label>
+                    <input class="input" id="claudeBaseUrl" data-claude-field="baseUrl" value="http://127.0.0.1:8317/v1" />
+                  </div>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label class="label" for="claudeModel">
+                      <span>Model</span>
+                      <span>optional</span>
+                    </label>
+                    <input class="input" id="claudeModel" data-claude-field="model" value="claude-sonnet-4-5" />
+                  </div>
+                  <div class="field">
+                    <label class="label" for="claudeMode">
+                      <span>Auth field</span>
+                      <span>api key</span>
+                    </label>
+                    <select class="select" id="claudeMode" data-claude-field="authField">
+                      <option selected>ANTHROPIC_API_KEY</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="warning-box" role="status">
+                  <div class="warning-title">
+                    <span>Conflict detected</span>
+                    <span>not auto removed</span>
+                  </div>
+                  <p>现有 env.ANTHROPIC_AUTH_TOKEN 会被保留。保存前必须确认它是否会优先生效，GetTokens 不会静默删除用户 token。</p>
+                </div>
+
+                <div class="field">
+                  <div class="label">
+                    <span>Controlled fields</span>
+                    <span>Claude Code only</span>
+                  </div>
+                  <div class="field-list">
+                    <div class="field-item">
+                      <span class="checkbox"></span>
+                      <div class="field-name">
+                        <strong>env.ANTHROPIC_API_KEY</strong>
+                        <span>masked in preview / write exact value only on save</span>
+                      </div>
+                      <span class="tag">required</span>
+                    </div>
+                    <div class="field-item">
+                      <span class="checkbox"></span>
+                      <div class="field-name">
+                        <strong>env.ANTHROPIC_BASE_URL</strong>
+                        <span>relay endpoint or custom Anthropic-compatible endpoint</span>
+                      </div>
+                      <span class="tag">required</span>
+                    </div>
+                    <div class="field-item">
+                      <span class="checkbox"></span>
+                      <div class="field-name">
+                        <strong>env.ANTHROPIC_MODEL</strong>
+                        <span>optional default model, kept per Claude Code tab draft</span>
+                      </div>
+                      <span class="tag">optional</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="preview-stack" aria-label="Claude Code file diff">
+                <div class="column-head">
+                  <h3>settings.json diff</h3>
+                  <span class="tag">no full rewrite</span>
+                </div>
+                <pre class="code diff-output" id="claudeDiff"></pre>
+                <div class="action-row">
+                  <button class="button" type="button" data-refresh-target="claude">Preview again</button>
+                  <button class="button primary" type="button">Apply to Claude Code</button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <div class="modal-backdrop" id="relayKeyModal" role="dialog" aria-modal="true" aria-labelledby="relayKeyModalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="relayKeyModalTitle">Add relay API key</h3>
+        <button class="button" type="button" id="closeRelayKeyModal">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="label" for="newRelayKeyName">
+            <span>Display name</span>
+            <span>optional</span>
+          </label>
+          <input class="input" id="newRelayKeyName" value="local desktop" />
+        </div>
+        <div class="field">
+          <label class="label" for="newRelayKeyValue">
+            <span>Relay API key</span>
+            <span>required</span>
+          </label>
+          <input class="input" id="newRelayKeyValue" value="sk-gettokens-new-demo" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="button" type="button" id="cancelRelayKeyModal">Cancel</button>
+        <button class="button primary" type="button" id="addRelayKeyButton">Add key</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const state = {
+      codex: {
+        apiKey: 'sk-gettokens-••••-9F2A',
+        baseUrl: 'http://127.0.0.1:8317/v1',
+        model: 'gpt-5.4',
+        reasoning: 'high',
+        provider: 'openai',
+        wire: 'responses',
+      },
+      claude: {
+        apiKey: 'sk-gettokens-••••-9F2A',
+        baseUrl: 'http://127.0.0.1:8317/v1',
+        model: 'claude-sonnet-4-5',
+        authField: 'ANTHROPIC_API_KEY',
+      },
+    };
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function line(kind, content) {
+      return `<span class="diff-line ${kind}">${escapeHTML(content)}</span>`;
+    }
+
+    function renderDiff(target, lines) {
+      const output = document.getElementById(`${target}Diff`);
+      if (!output) return;
+      output.innerHTML = lines.map(([kind, content]) => line(kind, content)).join('\n');
+    }
+
+    function renderCodexDiff() {
+      const data = state.codex;
+      const providerLines = data.provider === 'openai'
+        ? [
+            ['add', `+openai_base_url = "${data.baseUrl}"`],
+            ['meta', '# openai provider identity preserved; model_provider is not forced unless already present'],
+          ]
+        : [
+            ['add', `+model_provider = "${data.provider}"`],
+            ['meta', ''],
+            ['add', `+[model_providers.${data.provider}]`],
+            ['add', `+name = "GetTokens"`],
+            ['add', `+base_url = "${data.baseUrl}"`],
+            ['add', '+requires_openai_auth = true'],
+        ['add', '+wire_api = "responses"'],
+          ];
+
+      renderDiff('codex', [
+        ['meta', '--- CODEX_HOME/auth.json'],
+        ['meta', '+++ CODEX_HOME/auth.json'],
+        ['meta', '@@ auth fields @@'],
+        ['ctx', ' {'],
+        ['ctx', '   "auth_mode": "apikey",'],
+        ['add', `+  "OPENAI_API_KEY": "${data.apiKey}"`],
+        ['ctx', ' }'],
+        ['meta', ''],
+        ['meta', '--- CODEX_HOME/config.toml'],
+        ['meta', '+++ CODEX_HOME/config.toml'],
+        ['meta', '@@ root keys @@'],
+        ['ctx', '# existing comments stay where they are'],
+        ['add', `+model = "${data.model}"`],
+        ['add', `+model_reasoning_effort = "${data.reasoning}"`],
+        ...providerLines,
+        ['meta', ''],
+        ['meta', '# 保留：[mcp_servers.*] / [profiles.*] / unknown provider keys'],
+        ['meta', '# 保留：用户注释与非受控 section 不参与本次 patch'],
+      ]);
+    }
+
+    function renderClaudeDiff() {
+      const data = state.claude;
+      renderDiff('claude', [
+        ['meta', '--- ~/.claude/settings.json'],
+        ['meta', '+++ ~/.claude/settings.json'],
+        ['meta', '@@ env @@'],
+        ['ctx', ' {'],
+        ['ctx', '   "env": {'],
+        ['ctx', '     "HTTP_PROXY": "http://127.0.0.1:7890",'],
+        ['warn', '     "ANTHROPIC_AUTH_TOKEN": "existing-user-token",'],
+        ['add', `+    "${data.authField}": "${data.apiKey}",`],
+        ['add', `+    "ANTHROPIC_BASE_URL": "${data.baseUrl}",`],
+        ['add', `+    "ANTHROPIC_MODEL": "${data.model}"`],
+        ['ctx', '   },'],
+        ['ctx', '   "permissions": { /* unchanged */ },'],
+        ['ctx', '   "hooks": { /* unchanged */ },'],
+        ['ctx', '   "statusLine": { /* unchanged */ }'],
+        ['ctx', ' }'],
+        ['meta', ''],
+        ['meta', '# 保留：ANTHROPIC_AUTH_TOKEN 存在但不自动删除'],
+        ['meta', '# 保留：permissions / hooks / statusLine 不参与本次 patch'],
+      ]);
+    }
+
+    function activateTarget(target) {
+      document.querySelectorAll('[data-target-tab]').forEach((button) => {
+        const isActive = button.dataset.targetTab === target;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+      });
+
+      document.querySelectorAll('[data-target-panel]').forEach((panel) => {
+        panel.hidden = panel.dataset.targetPanel !== target;
+      });
+
+      const summary = document.getElementById('target-summary');
+      if (summary) {
+        summary.textContent = target === 'codex'
+          ? 'Codex tab 预览 CODEX_HOME/auth.json 与 config.toml 的文件 diff；保存时只 patch 受控字段。'
+          : 'Claude Code tab 预览 ~/.claude/settings.json 的 env 文件 diff；保存时不触碰 ~/.claude.json。';
+      }
+    }
+
+    function bindInputs(target) {
+      document.querySelectorAll(`[data-${target}-field]`).forEach((input) => {
+        input.addEventListener('input', () => {
+          state[target][input.dataset[`${target}Field`]] = input.value;
+          target === 'codex' ? renderCodexDiff() : renderClaudeDiff();
+        });
+        input.addEventListener('change', () => {
+          state[target][input.dataset[`${target}Field`]] = input.value;
+          target === 'codex' ? renderCodexDiff() : renderClaudeDiff();
+        });
+      });
+    }
+
+    document.querySelectorAll('[data-target-tab]').forEach((button) => {
+      button.addEventListener('click', () => activateTarget(button.dataset.targetTab));
+    });
+
+    document.querySelectorAll('[data-refresh-target]').forEach((button) => {
+      button.addEventListener('click', () => {
+        button.dataset.refreshTarget === 'codex' ? renderCodexDiff() : renderClaudeDiff();
+      });
+    });
+
+    const relayKeyModal = document.getElementById('relayKeyModal');
+    const codexKeySelect = document.getElementById('codexKey');
+    const newRelayKeyValue = document.getElementById('newRelayKeyValue');
+
+    function setRelayKeyModalOpen(isOpen) {
+      relayKeyModal?.classList.toggle('open', isOpen);
+    }
+
+    document.getElementById('openRelayKeyModal')?.addEventListener('click', () => setRelayKeyModalOpen(true));
+    document.getElementById('closeRelayKeyModal')?.addEventListener('click', () => setRelayKeyModalOpen(false));
+    document.getElementById('cancelRelayKeyModal')?.addEventListener('click', () => setRelayKeyModalOpen(false));
+    relayKeyModal?.addEventListener('click', (event) => {
+      if (event.target === relayKeyModal) setRelayKeyModalOpen(false);
+    });
+    document.getElementById('addRelayKeyButton')?.addEventListener('click', () => {
+      const value = newRelayKeyValue?.value.trim();
+      if (!value || !codexKeySelect) return;
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      option.selected = true;
+      codexKeySelect.appendChild(option);
+      state.codex.apiKey = value;
+      renderCodexDiff();
+      setRelayKeyModalOpen(false);
+    });
+
+    bindInputs('codex');
+    bindInputs('claude');
+    renderCodexDiff();
+    renderClaudeDiff();
+  </script>
+</body>
+</html>

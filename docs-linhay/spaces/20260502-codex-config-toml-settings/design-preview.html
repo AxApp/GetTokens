@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
+  <title>GetTokens / Codex Features / Design Preview</title>
+  <style>
+    :root {
+      --bg-main: #ffffff;
+      --bg-surface: #f9f9f9;
+      --bg-muted: #f0f0f0;
+      --border-color: #000000;
+      --text-primary: #000000;
+      --text-muted: #666666;
+      --text-faint: #8c8c8c;
+      --accent-red: #ff0000;
+      --shadow-color: #e5e5e5;
+      --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      min-height: 100%;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    .page {
+      min-height: 100vh;
+      overflow: auto;
+      padding: 40px 48px 0;
+      background: var(--bg-surface);
+    }
+
+    .workspace {
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      display: grid;
+      gap: 24px;
+      padding-bottom: 32px;
+      min-width: 0;
+    }
+
+    .page-header {
+      display: grid;
+      gap: 10px;
+      justify-items: start;
+      text-align: left;
+    }
+
+    .page-header h1 {
+      font-size: 38px;
+      line-height: 1;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      letter-spacing: -0.012em;
+      overflow-wrap: anywhere;
+    }
+
+    .subtitle {
+      max-width: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 100%;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      padding: 7px 11px;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      overflow-wrap: anywhere;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border: 1px solid var(--border-color);
+      background: var(--text-primary);
+    }
+
+    .card-swiss {
+      border: 2px solid var(--border-color);
+      border-radius: 0;
+      background: var(--bg-main);
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      min-width: 0;
+      display: flex;
+      min-height: calc(100vh - 206px);
+      flex-direction: column;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 24px;
+      align-items: stretch;
+      min-width: 0;
+    }
+
+    .section-head {
+      min-height: 54px;
+      border-bottom: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .section-title {
+      font-size: 10px;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .section-meta {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    .panel-body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .control-dock {
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      display: grid;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+    }
+
+    .control-line {
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 44px;
+      padding: 8px 12px;
+    }
+
+    .control-line + .control-line {
+      border-top: 1px solid var(--shadow-color);
+      background: var(--bg-surface);
+    }
+
+    .field-label {
+      font-size: 9px;
+      font-weight: 900;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .path-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-primary);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .control-stat {
+      color: var(--text-muted);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      white-space: nowrap;
+    }
+
+    .search-box svg {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 auto;
+    }
+
+    .search-box input {
+      border: 0;
+      outline: 0;
+      min-width: 0;
+      width: 100%;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .btn-row,
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .btn-swiss,
+    .seg-button {
+      min-height: 36px;
+      border: 2px solid var(--border-color);
+      border-radius: 2px;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      padding: 0 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: transform 75ms ease, box-shadow 75ms ease, background-color 75ms ease;
+    }
+
+    .seg-button {
+      min-height: 28px;
+      padding: 0 11px;
+      box-shadow: none;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+    }
+
+    .btn-swiss svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn-swiss.primary,
+    .seg-button.active {
+      background: var(--text-primary);
+      color: var(--bg-main);
+    }
+
+    .btn-swiss.danger {
+      color: var(--accent-red);
+    }
+
+    .btn-swiss:active,
+    .seg-button:active,
+    .toggle:active {
+      transform: translate(2px, 2px) scale(0.96);
+      box-shadow: none;
+    }
+
+    @media (hover: hover) {
+      .btn-swiss:hover,
+      .seg-button:hover,
+      .toggle:hover {
+        transform: translate(-1px, -1px);
+        box-shadow: 6px 6px 0 var(--shadow-color);
+      }
+    }
+
+    .feature-groups {
+      display: grid;
+      gap: 10px;
+    }
+
+    .group-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 30px;
+      color: var(--text-primary);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .group-title span:last-child {
+      color: var(--text-muted);
+      font-size: 9px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .feature-table-shell {
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      overflow-x: auto;
+      overflow-y: visible;
+    }
+
+    .feature-table {
+      width: 100%;
+      min-width: 820px;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 10px;
+    }
+
+    .feature-table th,
+    .feature-table td {
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    .feature-table th {
+      border-bottom: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 10px 14px;
+      color: var(--text-muted);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+
+    .feature-table td {
+      min-height: 64px;
+      border-top: 1px solid var(--shadow-color);
+      padding: 12px 14px;
+      font-weight: 800;
+    }
+
+    .feature-table tbody tr:first-child td {
+      border-top: 0;
+    }
+
+    .feature-table tbody tr:nth-child(even) td {
+      background: #fcfcfc;
+    }
+
+    .feature-table tbody tr.warning td {
+      background: #fff8f8;
+    }
+
+    .feature-table tbody tr:hover td {
+      background: #f3f3f3;
+    }
+
+    .feature-table tbody tr.warning:hover td {
+      background: #fff0f0;
+    }
+
+    .feature-col-key {
+      width: auto;
+    }
+
+    .feature-col-stage {
+      width: 132px;
+    }
+
+    .feature-col-local {
+      width: 132px;
+    }
+
+    .feature-col-switch {
+      width: 126px;
+    }
+
+    .feature-main {
+      min-width: 0;
+    }
+
+    .feature-toggle-cell {
+      text-align: center;
+    }
+
+    .feature-key {
+      font-size: 13px;
+      font-weight: 900;
+      overflow-wrap: anywhere;
+    }
+
+    .feature-help {
+      margin-top: 5px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.5;
+    }
+
+    .tag {
+      min-height: 23px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 3px 7px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--text-primary);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .tag.black {
+      background: var(--text-primary);
+      color: var(--bg-main);
+    }
+
+    .tag.red {
+      color: var(--accent-red);
+      background: var(--bg-main);
+    }
+
+    .tiny {
+      display: block;
+      margin-top: 5px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toggle {
+      position: relative;
+      width: 88px;
+      height: 46px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 0;
+      display: block;
+      overflow: hidden;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      color: var(--text-muted);
+      font: inherit;
+      transition: transform 75ms ease, box-shadow 75ms ease, background-color 75ms ease;
+    }
+
+    .toggle::before {
+      content: "";
+      position: absolute;
+      z-index: 1;
+      top: 5px;
+      left: 5px;
+      width: 24px;
+      height: 21px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: inset -6px 0 0 #d7d7d7;
+      transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 75ms ease;
+    }
+
+    .toggle-state,
+    .toggle-default {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      color: currentColor;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .toggle-state {
+      top: 0;
+      right: 9px;
+      height: 32px;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+    }
+
+    .toggle-default {
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 14px;
+      border-top: 2px solid var(--border-color);
+      justify-content: center;
+      background: var(--bg-main);
+      color: var(--text-muted);
+      font-size: 7px;
+      letter-spacing: 0.06em;
+    }
+
+    .toggle:focus-visible {
+      outline: 3px solid var(--accent-red);
+      outline-offset: 3px;
+    }
+
+    .toggle.on {
+      background: var(--text-primary);
+      color: var(--bg-main);
+    }
+
+    .toggle.on::before {
+      transform: translateX(50px);
+      background: var(--bg-main);
+      box-shadow: inset 6px 0 0 #d7d7d7;
+    }
+
+    .toggle.on .toggle-state {
+      right: auto;
+      left: 9px;
+    }
+
+    .toggle.on .toggle-default {
+      border-top-color: var(--bg-main);
+    }
+
+    .toggle.changed .toggle-default {
+      color: var(--accent-red);
+    }
+
+    .notice {
+      border: 2px dashed var(--border-color);
+      background: var(--bg-surface);
+      padding: 13px;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      line-height: 1.7;
+    }
+
+    .save-strip {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      margin-top: auto;
+      border-top: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 14px 18px;
+    }
+
+    @media (max-width: 980px) {
+      .page {
+        padding: 24px;
+      }
+
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 14px;
+      }
+
+      .workspace {
+        gap: 18px;
+      }
+
+      .page-header {
+        justify-items: start;
+        text-align: left;
+      }
+
+      .page-header h1 {
+        font-size: 24px;
+        line-height: 1.08;
+      }
+
+      .status-line {
+        align-self: stretch;
+        justify-content: flex-start;
+        letter-spacing: 0.08em;
+        line-height: 1.5;
+      }
+
+      .section-head {
+        flex-wrap: wrap;
+      }
+
+      .section-meta {
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .control-line,
+      .save-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .control-stat {
+        white-space: normal;
+      }
+
+      .feature-table-shell {
+        border: 0;
+        background: transparent;
+        overflow: visible;
+      }
+
+      .feature-table {
+        min-width: 0;
+      }
+
+      .feature-table,
+      .feature-table thead,
+      .feature-table tbody,
+      .feature-table tr,
+      .feature-table th,
+      .feature-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .feature-table thead {
+        display: none;
+      }
+
+      .feature-table tr {
+        border: 2px solid var(--border-color);
+        background: var(--bg-main);
+      }
+
+      .feature-table tr + tr {
+        margin-top: 0;
+        border-top: 0;
+      }
+
+      .feature-table td {
+        min-height: 0;
+        border-top: 2px solid var(--border-color);
+        padding: 10px 12px 12px;
+      }
+
+      .feature-table tbody tr:first-child td {
+        border-top: 2px solid var(--border-color);
+      }
+
+      .feature-table td:first-child {
+        border-top: 0;
+      }
+
+      .feature-table th + th,
+      .feature-table td + td {
+        border-left: 0;
+      }
+
+      .feature-table td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 8px;
+        color: var(--text-muted);
+        font-size: 8px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+      }
+
+      .feature-toggle-cell {
+        text-align: left;
+      }
+
+      .btn-row,
+      .filter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .btn-swiss,
+      .seg-button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="workspace">
+      <header class="page-header">
+        <div class="status-line">
+          <span class="status-dot"></span>
+          CODEX CONFIG.TOML / FEATURES ONLY / SCHEMA 35AAA5D9FC
+        </div>
+        <h1>Codex Feature Settings</h1>
+        <p class="subtitle">只修改 [features] 下用户明确切换的 bool key；其余 config.toml 内容保持原样。</p>
+      </header>
+
+      <section class="main-grid">
+        <div class="card-swiss">
+          <div class="section-head">
+            <div>
+              <div class="section-title">Feature Switchboard</div>
+              <div class="section-meta">stable + experimental first</div>
+            </div>
+            <button class="btn-swiss">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6v6h-6"/><path d="M4 18v-6h6"/><path d="M19 12a7 7 0 0 0-12-5"/><path d="M5 12a7 7 0 0 0 12 5"/></svg>
+              Refresh
+            </button>
+          </div>
+
+          <div class="panel-body">
+            <div class="control-dock">
+              <div class="control-line">
+                <div class="field-label">Config</div>
+                <div class="path-text">/Users/linhey/.codex/config.toml</div>
+                <div class="control-stat">4 visible / 3 changed</div>
+              </div>
+              <div class="control-line">
+                <div class="field-label">Filter</div>
+                <div class="filter-row">
+                  <button class="seg-button active">Recommended</button>
+                  <button class="seg-button">Advanced</button>
+                  <button class="seg-button">Compat</button>
+                  <button class="seg-button">Unknown</button>
+                </div>
+                <label class="search-box">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                  <input id="feature-search" name="feature-search" value="tool / goal / agent" aria-label="搜索 feature key" />
+                </label>
+              </div>
+            </div>
+
+            <div class="feature-groups">
+              <div class="group-title">
+                <span>Feature records</span>
+                <span>22 stable / 5 experimental / legacy shown in file</span>
+              </div>
+
+              <div class="feature-table-shell">
+                <table class="feature-table" aria-label="Codex feature settings">
+                  <thead>
+                    <tr>
+                      <th class="feature-col-key">Feature key</th>
+                      <th class="feature-col-stage">Stage</th>
+                      <th class="feature-col-local">Local value</th>
+                      <th class="feature-col-switch">Switch</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td data-label="Feature key">
+                        <div class="feature-main">
+                          <div class="feature-key">multi_agent</div>
+                          <div class="feature-help">canonical feature；检测到 legacy alias：collab</div>
+                        </div>
+                      </td>
+                      <td data-label="Stage">
+                        <span class="tag black">Stable</span>
+                        <span class="tiny">schema default</span>
+                      </td>
+                      <td data-label="Local value">
+                        <span class="tag">Local</span>
+                        <span class="tiny">collab = true</span>
+                      </td>
+                      <td class="feature-toggle-cell" data-label="Switch">
+                        <button class="toggle on" aria-label="multi_agent enabled, default true">
+                          <span class="toggle-state">ON</span>
+                          <span class="toggle-default">DEF TRUE</span>
+                        </button>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td data-label="Feature key">
+                        <div class="feature-main">
+                          <div class="feature-key">tool_search</div>
+                          <div class="feature-help">app tool discovery gate；保留行尾注释</div>
+                        </div>
+                      </td>
+                      <td data-label="Stage">
+                        <span class="tag black">Stable</span>
+                        <span class="tiny">schema default</span>
+                      </td>
+                      <td data-label="Local value">
+                        <span class="tag red">Modified</span>
+                        <span class="tiny">true -> false</span>
+                      </td>
+                      <td class="feature-toggle-cell" data-label="Switch">
+                        <button class="toggle changed" aria-label="tool_search disabled, default true">
+                          <span class="toggle-state">OFF</span>
+                          <span class="toggle-default">DEF TRUE</span>
+                        </button>
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td data-label="Feature key">
+                        <div class="feature-main">
+                          <div class="feature-key">goals</div>
+                          <div class="feature-help">persistent goals and continuation</div>
+                        </div>
+                      </td>
+                      <td data-label="Stage">
+                        <span class="tag">Experimental</span>
+                        <span class="tiny">schema default</span>
+                      </td>
+                      <td data-label="Local value">
+                        <span class="tag red">Added</span>
+                        <span class="tiny">true</span>
+                      </td>
+                      <td class="feature-toggle-cell" data-label="Switch">
+                        <button class="toggle on changed" aria-label="goals enabled, default false">
+                          <span class="toggle-state">ON</span>
+                          <span class="toggle-default">DEF FALSE</span>
+                        </button>
+                      </td>
+                    </tr>
+
+                    <tr class="warning">
+                      <td data-label="Feature key">
+                        <div class="feature-main">
+                          <div class="feature-key">web_search</div>
+                          <div class="feature-help">legacy alias；canonical target 是 web_search_request；默认不迁移</div>
+                        </div>
+                      </td>
+                      <td data-label="Stage">
+                        <span class="tag red">Legacy</span>
+                        <span class="tiny">read-only hint</span>
+                      </td>
+                      <td data-label="Local value">
+                        <span class="tag">Local</span>
+                        <span class="tiny">true</span>
+                      </td>
+                      <td class="feature-toggle-cell" data-label="Switch">
+                        <button class="toggle on" aria-label="web_search legacy enabled, default true">
+                          <span class="toggle-state">ON</span>
+                          <span class="toggle-default">DEF TRUE</span>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <div class="notice">
+              保存前会重新读取磁盘并执行最小 patch；不写 model/provider；不重排 config；不删除 unknown feature；复合 feature table 保持原样。
+            </div>
+          </div>
+
+          <div class="save-strip">
+            <div class="section-meta">3 pending changes / atomic write / comments preserved</div>
+            <div class="btn-row">
+              <button class="btn-swiss">Reset</button>
+              <button class="btn-swiss primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

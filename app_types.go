@@ -227,6 +227,13 @@ type RelayLocalApplyResult struct {
 	ConfigPath    string `json:"configPath"`
 }
 
+type ClaudeCodeLocalApplyResult struct {
+	ClaudeConfigDirPath string   `json:"claudeConfigDirPath"`
+	SettingsPath        string   `json:"settingsPath"`
+	Warnings            []string `json:"warnings,omitempty"`
+	Conflicts           []string `json:"conflicts,omitempty"`
+}
+
 type UsageStatisticsResponse struct {
 	Usage          map[string]interface{} `json:"usage"`
 	FailedRequests int64                  `json:"failedRequests,omitempty"`
@@ -256,6 +263,45 @@ type LocalProjectedUsageResponse struct {
 
 type LocalProjectedUsageSettings struct {
 	RefreshIntervalMinutes int `json:"refreshIntervalMinutes"`
+}
+
+type CodexFeatureDefinition struct {
+	Key            string `json:"key"`
+	Description    string `json:"description,omitempty"`
+	Stage          string `json:"stage"`
+	DefaultEnabled bool   `json:"defaultEnabled"`
+	CanonicalKey   string `json:"canonicalKey,omitempty"`
+	LegacyAlias    bool   `json:"legacyAlias,omitempty"`
+}
+
+type CodexFeatureConfigSnapshot struct {
+	CodexHomePath string                   `json:"codexHomePath"`
+	ConfigPath    string                   `json:"configPath"`
+	Exists        bool                     `json:"exists"`
+	Definitions   []CodexFeatureDefinition `json:"definitions"`
+	Values        map[string]bool          `json:"values"`
+	UnknownValues map[string]bool          `json:"unknownValues,omitempty"`
+	Raw           string                   `json:"raw"`
+	Warnings      []string                 `json:"warnings"`
+}
+
+type SaveCodexFeatureConfigInput struct {
+	Values map[string]bool `json:"values"`
+}
+
+type CodexFeatureConfigChange struct {
+	Key             string `json:"key"`
+	Type            string `json:"type"`
+	PreviousEnabled *bool  `json:"previousEnabled,omitempty"`
+	NextEnabled     bool   `json:"nextEnabled"`
+}
+
+type CodexFeatureConfigPreview struct {
+	ConfigPath string                     `json:"configPath"`
+	WillCreate bool                       `json:"willCreate"`
+	Changes    []CodexFeatureConfigChange `json:"changes"`
+	Preview    string                     `json:"preview"`
+	Warnings   []string                   `json:"warnings"`
 }
 
 type UpdateSessionProviderMapping struct {

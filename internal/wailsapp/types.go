@@ -67,6 +67,13 @@ type RelayLocalApplyResult struct {
 	ConfigPath    string `json:"configPath"`
 }
 
+type ClaudeCodeLocalApplyResult struct {
+	ClaudeConfigDirPath string   `json:"claudeConfigDirPath"`
+	SettingsPath        string   `json:"settingsPath"`
+	Warnings            []string `json:"warnings,omitempty"`
+	Conflicts           []string `json:"conflicts,omitempty"`
+}
+
 type LocalProjectedUsageDetail struct {
 	Timestamp         string `json:"timestamp"`
 	Provider          string `json:"provider"`

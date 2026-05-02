@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
+  ApplyClaudeCodeAPIKeyConfigToLocal,
   ApplyRelayServiceConfigToLocal,
   GetRelayServiceConfig,
   ListLocalCodexProviderViews,
@@ -16,14 +17,8 @@ import {
 } from './components/RelayEditors';
 import {
   StatusApplyLocalSection,
-  StatusServiceConfigSection,
-  StatusSnippetPanel,
 } from './components/StatusPanels';
-import {
-  buildRelayCodexAuthJSONSnippet,
-  buildRelayCodexConfigTomlSnippet,
-  RELAY_CODEX_OPENAI_PROVIDER_ID,
-} from '../accounts/model/accountConfig';
+import { RELAY_CODEX_OPENAI_PROVIDER_ID } from '../accounts/model/accountConfig';
 import {
   defaultRelayProviderOptions,
   defaultRelayReasoningEffortOptions,
@@ -34,7 +29,6 @@ import {
   loadSelectedRelayModel,
   loadSelectedRelayProvider,
   loadSelectedRelayReasoningEffort,
-  maskRelayKey,
   saveLANAccessEnabled,
   saveRelayKeyAliases,
   saveRelayModelOptions,
@@ -43,6 +37,7 @@ import {
   saveSelectedRelayProvider,
   saveSelectedRelayReasoningEffort,
   toRelayProviderOption,
+  type ClaudeCodeLocalApplyDraft,
   type RelayKeyEditorState,
   type RelayProviderEditorState,
 } from './model/relayLocalState';
@@ -71,10 +66,9 @@ export default function StatusFeature({
   sidecarStatus = defaultSidecarStatus,
   version = 'dev',
 }: StatusFeatureProps) {
-  const { locale, t } = useI18n();
+  const { t } = useI18n();
   const { trackRequest } = useDebug();
   const [healthz, setHealthz] = useState('CHECKING...');
-  const [uptime, setUptime] = useState('0s');
   const [relayKeyItems, setRelayKeyItems] = useState<main.RelayServiceAPIKeyItem[]>([]);
   const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
   const [relayModelOptions, setRelayModelOptions] = useState<string[]>(() => loadRelayModelOptions());
@@ -87,22 +81,18 @@ export default function StatusFeature({
   const [selectedRelayModel, setSelectedRelayModel] = useState<string>(() =>
     loadSelectedRelayModel(loadRelayModelOptions())
   );
-  const [relayModelDraft, setRelayModelDraft] = useState<string>(() =>
-    loadSelectedRelayModel(loadRelayModelOptions())
-  );
   const [selectedRelayReasoningEffort, setSelectedRelayReasoningEffort] = useState<string>(() =>
     loadSelectedRelayReasoningEffort()
   );
   const [selectedRelayProviderID, setSelectedRelayProviderID] = useState<string>(() =>
     loadSelectedRelayProvider(loadRelayProviderOptions())
   );
-  const [openKeyMenuIndex, setOpenKeyMenuIndex] = useState<number | null>(null);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
-  const [serviceMessage, setServiceMessage] = useState('');
   const [localApplyMessage, setLocalApplyMessage] = useState('');
-  const [isSavingServiceKeys, setIsSavingServiceKeys] = useState(false);
+  const [claudeApplyMessage, setClaudeApplyMessage] = useState('');
   const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
+  const [isApplyingClaude, setIsApplyingClaude] = useState(false);
 
   const relayKeys = relayKeyItems.map((item) => item.value);
   const selectedKey = relayKeys[selectedKeyIndex] || '';
@@ -135,61 +125,6 @@ export default function StatusFeature({
     [resolvedRelayModels, selectedRelayModel]
   );
 
-  const serviceAuthJSON = useMemo(
-    () =>
-      buildRelayCodexAuthJSONSnippet({
-        apiKey: selectedKey,
-        model: selectedRelayModel,
-      }),
-    [selectedKey, selectedRelayModel]
-  );
-  const serviceConfigToml = useMemo(
-    () =>
-      buildRelayCodexConfigTomlSnippet({
-        baseUrl: selectedEndpoint.baseUrl,
-        model: selectedRelayModel,
-        reasoningEffort: selectedRelayReasoningEffort,
-        providerID: selectedRelayProvider.id,
-        providerName: selectedRelayProvider.name,
-      }),
-    [
-      selectedEndpoint.baseUrl,
-      selectedRelayModel,
-      selectedRelayReasoningEffort,
-      selectedRelayProvider.id,
-      selectedRelayProvider.name,
-    ]
-  );
-
-  useEffect(() => {
-    function syncUptime() {
-      if (!sidecarStatus.startedAtUnix || sidecarStatus.code !== 'ready') {
-        setUptime('0s');
-        return;
-      }
-
-      const seconds = Math.max(0, Math.floor((Date.now() - sidecarStatus.startedAtUnix) / 1000));
-      const hours = Math.floor(seconds / 3600);
-      const minutes = Math.floor((seconds % 3600) / 60);
-      const remainingSeconds = seconds % 60;
-
-      if (hours > 0) {
-        setUptime(`${hours}H ${minutes}M ${remainingSeconds}S`);
-      } else if (minutes > 0) {
-        setUptime(`${minutes}M ${remainingSeconds}S`);
-      } else {
-        setUptime(`${remainingSeconds}S`);
-      }
-    }
-
-    syncUptime();
-    const timer = window.setInterval(syncUptime, 1000);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [sidecarStatus.code, sidecarStatus.startedAtUnix]);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -200,8 +135,8 @@ export default function StatusFeature({
         setRelayAccountPoolModels([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
-        setServiceMessage('');
         setLocalApplyMessage('');
+        setClaudeApplyMessage('');
         return;
       }
 
@@ -214,8 +149,8 @@ export default function StatusFeature({
         setRelayEndpoints(config.endpoints || []);
         setSelectedKeyIndex(0);
         setSelectedEndpointID(config.endpoints?.[0]?.id || 'localhost');
-        setServiceMessage(t('status.service_key_loaded'));
         setLocalApplyMessage('');
+        setClaudeApplyMessage('');
       } catch (error) {
         if (cancelled) {
           return;
@@ -225,8 +160,8 @@ export default function StatusFeature({
         setRelayAccountPoolModels([]);
         setSelectedKeyIndex(0);
         setSelectedEndpointID('localhost');
-        setServiceMessage(t('status.service_key_missing'));
         setLocalApplyMessage('');
+        setClaudeApplyMessage('');
       }
     }
 
@@ -357,10 +292,6 @@ export default function StatusFeature({
   }, [resolvedRelayModelNames, selectedRelayModel]);
 
   useEffect(() => {
-    setRelayModelDraft(selectedRelayModel);
-  }, [selectedRelayModel]);
-
-  useEffect(() => {
     if (!relayReasoningProfile.options.includes(selectedRelayReasoningEffort)) {
       setSelectedRelayReasoningEffort(relayReasoningProfile.defaultValue);
       return;
@@ -442,12 +373,12 @@ export default function StatusFeature({
     try {
       await navigator.clipboard.writeText(value);
       if (successMessage) {
-        setServiceMessage(successMessage);
+        setLocalApplyMessage(successMessage);
       }
       return true;
     } catch (error) {
       console.error(error);
-      setServiceMessage(t('status.copy_failed'));
+      setLocalApplyMessage(t('status.copy_failed'));
       return false;
     }
   }
@@ -465,11 +396,10 @@ export default function StatusFeature({
     const normalized = nextKeys.map((item) => item.trim()).filter(Boolean);
 
     if (normalized.length === 0) {
-      setServiceMessage(t('status.service_keys_required'));
+      setLocalApplyMessage(t('status.service_keys_required'));
       return false;
     }
 
-    setIsSavingServiceKeys(true);
     try {
       const config = await trackRequest('UpdateRelayServiceAPIKeys', { apiKeys: normalized }, () =>
         UpdateRelayServiceAPIKeys(normalized)
@@ -482,19 +412,16 @@ export default function StatusFeature({
       setSelectedEndpointID((prev) =>
         nextEndpoints.some((endpoint) => endpoint.id === prev) ? prev : (nextEndpoints[0]?.id || 'localhost')
       );
-      setServiceMessage(t('status.service_keys_saved'));
+      setLocalApplyMessage(t('status.service_keys_saved'));
       return true;
     } catch (error) {
       console.error(error);
-      setServiceMessage(`${t('status.service_keys_save_failed')}: ${toErrorMessage(error)}`);
+      setLocalApplyMessage(`${t('status.service_keys_save_failed')}: ${toErrorMessage(error)}`);
       return false;
-    } finally {
-      setIsSavingServiceKeys(false);
     }
   }
 
   function openCreateRelayKeyEditor() {
-    setOpenKeyMenuIndex(null);
     setRelayKeyEditor({
       mode: 'create',
       index: null,
@@ -502,44 +429,6 @@ export default function StatusFeature({
       apiKey: '',
       error: '',
     });
-  }
-
-  function openRenameRelayKeyEditor(index: number) {
-    const currentKey = relayKeys[index];
-    if (!currentKey) {
-      return;
-    }
-
-    setOpenKeyMenuIndex(null);
-    setRelayKeyEditor({
-      mode: 'rename',
-      index,
-      name: relayKeyAliases[currentKey] || '',
-      apiKey: currentKey,
-      error: '',
-    });
-  }
-
-  async function deleteRelayServiceAPIKey(index: number) {
-    const currentKey = relayKeys[index];
-    if (!currentKey) {
-      return;
-    }
-
-    const nextKeys = relayKeys.filter((_, itemIndex) => itemIndex !== index);
-    if (nextKeys.length === 0) {
-      setServiceMessage(t('status.service_keys_required'));
-      return;
-    }
-
-    const saved = await saveRelayServiceAPIKeys(nextKeys, Math.max(0, Math.min(selectedKeyIndex, nextKeys.length - 1)));
-    if (!saved) {
-      return;
-    }
-
-    const nextAliases = { ...relayKeyAliases };
-    delete nextAliases[currentKey];
-    setRelayKeyAliasesWithPersist(nextAliases);
   }
 
   async function submitRelayKeyEditor() {
@@ -590,7 +479,7 @@ export default function StatusFeature({
     }
     setRelayKeyAliasesWithPersist(nextAliases);
     setRelayKeyEditor(null);
-    setServiceMessage(t('status.service_key_name_saved'));
+    setLocalApplyMessage(t('status.service_key_name_saved'));
   }
 
   function openCreateRelayProviderEditor() {
@@ -605,17 +494,15 @@ export default function StatusFeature({
     const nextValue = rawValue.trim();
     if (!nextValue) {
       const fallback = selectedRelayModel.trim() || resolvedRelayModelNames[0] || 'GT';
-      setRelayModelDraft(fallback);
       setSelectedRelayModel(fallback);
       return;
     }
 
     if (!resolvedRelayModelNames.includes(nextValue) && !relayModelOptions.includes(nextValue)) {
       setRelayModelOptions((prev) => [...prev, nextValue]);
-      setServiceMessage(t('status.model_name_saved'));
+      setLocalApplyMessage(t('status.model_name_saved'));
     }
 
-    setRelayModelDraft(nextValue);
     setSelectedRelayModel(nextValue);
   }
 
@@ -640,13 +527,13 @@ export default function StatusFeature({
     setRelayProviderOptions([...relayProviderOptions, nextProvider]);
     setSelectedRelayProviderID(nextProvider.id);
     setRelayProviderEditor(null);
-    setServiceMessage(t('status.provider_saved'));
+    setLocalApplyMessage(t('status.provider_saved'));
   }
 
   function deleteRelayProviderOption(providerID: string) {
     const nextOptions = relayProviderOptions.filter((item) => item.id !== providerID);
     if (nextOptions.length === 0) {
-      setServiceMessage(t('status.provider_id_required'));
+      setLocalApplyMessage(t('status.provider_id_required'));
       return;
     }
 
@@ -654,7 +541,7 @@ export default function StatusFeature({
     if (selectedRelayProviderID === providerID) {
       setSelectedRelayProviderID(nextOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID);
     }
-    setServiceMessage(t('status.provider_deleted'));
+    setLocalApplyMessage(t('status.provider_deleted'));
   }
 
   async function applyRelayConfigToLocal() {
@@ -707,6 +594,34 @@ export default function StatusFeature({
     }
   }
 
+  async function applyClaudeConfigToLocal(draft: ClaudeCodeLocalApplyDraft) {
+    const normalizedKey = (relayKeys[draft.relayKeyIndex] || '').trim();
+    if (!normalizedKey) {
+      setClaudeApplyMessage(t('status.apply_local_missing_key'));
+      return;
+    }
+
+    setIsApplyingClaude(true);
+    try {
+      const result = await trackRequest(
+        'ApplyClaudeCodeAPIKeyConfigToLocal',
+        {
+          apiKey: normalizedKey,
+          baseURL: draft.baseUrl,
+          model: draft.model,
+        },
+        () => ApplyClaudeCodeAPIKeyConfigToLocal(normalizedKey, draft.baseUrl, draft.model)
+      );
+      const warningSuffix = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
+      setClaudeApplyMessage(`${t('status.apply_local_claude_done')}: ${result.settingsPath}${warningSuffix}`);
+    } catch (error) {
+      console.error(error);
+      setClaudeApplyMessage(`${t('status.apply_local_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setIsApplyingClaude(false);
+    }
+  }
+
   const healthzHasError = healthz.startsWith('ERROR:') || healthz.startsWith('FAIL:');
   const trimmedStatusMessage = sidecarStatus.message.trim();
   const statusHeadline =
@@ -718,29 +633,9 @@ export default function StatusFeature({
           ? trimmedStatusMessage
           : t('status.offline');
 
-  function formatRelayKeyTimestamp(value?: string) {
-    const trimmed = String(value || '').trim();
-    if (!trimmed) {
-      return '—';
-    }
-
-    const date = new Date(trimmed);
-    if (Number.isNaN(date.getTime())) {
-      return trimmed;
-    }
-
-    return date.toLocaleString(locale === 'zh' ? 'zh-CN' : 'en-US', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
   return (
-    <div className="h-full w-full overflow-auto p-12" data-collaboration-id="PAGE_STATUS">
-      <div className="mx-auto max-w-6xl space-y-10">
+    <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_STATUS">
+      <div className="w-full space-y-8">
         <WorkspacePageHeader
           title={t('status.title')}
           subtitle={
@@ -768,98 +663,41 @@ export default function StatusFeature({
           }
         />
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
-            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
-              {t('status.core_state')}
-            </div>
-            <div className="text-xl font-black italic text-[var(--text-primary)]">{sidecarStatus.code.toUpperCase()}</div>
-          </div>
-          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
-            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
-              {t('status.port')}
-            </div>
-            <div className="text-xl font-black italic text-[var(--text-primary)]">
-              {sidecarStatus.port ? `:${sidecarStatus.port}` : '—'}
-            </div>
-          </div>
-          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
-            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
-              {t('status.uptime')}
-            </div>
-            <div className="text-xl font-black italic text-[var(--text-primary)]">{uptime}</div>
-          </div>
-          <div className="card-swiss flex min-h-[8.5rem] flex-col justify-between !p-6">
-            <div className="mb-2 text-[0.625rem] font-black uppercase text-[var(--text-primary)]">
-              {t('status.build')}
-            </div>
-            <div className="text-xl font-black italic text-[var(--text-primary)]">{version}</div>
-          </div>
-        </div>
-
         <section className="space-y-6">
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-            <StatusServiceConfigSection
-              t={t}
-              relayKeyItems={relayKeyItems}
-              relayKeysLength={relayKeys.length}
-              selectedKeyIndex={selectedKeyIndex}
-              openKeyMenuIndex={openKeyMenuIndex}
-              serviceMessage={serviceMessage}
-              isSavingServiceKeys={isSavingServiceKeys}
-              isReady={sidecarStatus.code === 'ready'}
-              onOpenCreateRelayKeyEditor={openCreateRelayKeyEditor}
-              onSelectKeyIndex={setSelectedKeyIndex}
-              onToggleKeyMenuIndex={(index) => setOpenKeyMenuIndex((prev) => (prev === index ? null : index))}
-              onOpenRenameRelayKeyEditor={openRenameRelayKeyEditor}
-              onDeleteRelayServiceAPIKey={(index) => void deleteRelayServiceAPIKey(index)}
-              relayKeyDisplayName={relayKeyDisplayName}
-              maskRelayKey={maskRelayKey}
-              formatRelayKeyTimestamp={formatRelayKeyTimestamp}
-            />
-
-            <StatusApplyLocalSection
-              t={t}
-              localApplyMessage={localApplyMessage}
-              isLANAccessEnabled={isLANAccessEnabled}
-              isApplyingToLocal={isApplyingToLocal}
-              isReady={sidecarStatus.code === 'ready'}
-              visibleRelayEndpoints={visibleRelayEndpoints}
-              selectedEndpointID={selectedEndpointID}
-              selectedEndpointBaseUrl={selectedEndpoint.baseUrl}
-              relayProviderOptions={relayProviderOptions}
-              selectedRelayProviderID={selectedRelayProviderID}
-              relayReasoningEffortOptions={relayReasoningProfile.options}
-              selectedRelayReasoningEffort={selectedRelayReasoningEffort}
-              selectedRelayModel={selectedRelayModel}
-              relayModelDraft={relayModelDraft}
-              resolvedRelayModels={resolvedRelayModels}
-              onToggleLANAccess={() => setIsLANAccessEnabled((prev) => !prev)}
-              onApplyRelayConfigToLocal={() => void applyRelayConfigToLocal()}
-              onSelectEndpointID={setSelectedEndpointID}
-              onCopyEndpointBaseUrl={() => void copyText(selectedEndpoint.baseUrl, t('status.endpoint_copied'))}
-              onOpenCreateRelayProviderEditor={openCreateRelayProviderEditor}
-              onSelectRelayProviderID={setSelectedRelayProviderID}
-              onDeleteRelayProviderOption={deleteRelayProviderOption}
-              onSelectRelayReasoningEffort={setSelectedRelayReasoningEffort}
-              onChangeRelayModelDraft={setRelayModelDraft}
-              onCommitRelayModelSelection={commitRelayModelSelection}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
-            <StatusSnippetPanel
-              title={t('status.codex_auth_json')}
-              content={serviceAuthJSON}
-              onCopy={() => void copyText(serviceAuthJSON, t('status.auth_json_copied'))}
-            />
-
-            <StatusSnippetPanel
-              title={t('status.codex_config_toml')}
-              content={serviceConfigToml}
-              onCopy={() => void copyText(serviceConfigToml, t('status.config_toml_copied'))}
-            />
-          </div>
+          <StatusApplyLocalSection
+            t={t}
+            localApplyMessage={localApplyMessage}
+            claudeApplyMessage={claudeApplyMessage}
+            isLANAccessEnabled={isLANAccessEnabled}
+            isApplyingToLocal={isApplyingToLocal}
+            isApplyingClaude={isApplyingClaude}
+            isReady={sidecarStatus.code === 'ready'}
+            relayKeyItems={relayKeyItems}
+            selectedKeyIndex={selectedKeyIndex}
+            visibleRelayEndpoints={visibleRelayEndpoints}
+            selectedEndpointID={selectedEndpointID}
+            selectedEndpointBaseUrl={selectedEndpoint.baseUrl}
+            relayProviderOptions={relayProviderOptions}
+            selectedRelayProviderID={selectedRelayProviderID}
+            relayReasoningEffortOptions={relayReasoningProfile.options}
+            selectedRelayReasoningEffort={selectedRelayReasoningEffort}
+            selectedRelayModel={selectedRelayModel}
+            resolvedRelayModels={resolvedRelayModels}
+            onOpenCreateRelayKeyEditor={openCreateRelayKeyEditor}
+            onToggleLANAccess={() => setIsLANAccessEnabled((prev) => !prev)}
+            onApplyRelayConfigToLocal={() => void applyRelayConfigToLocal()}
+            onApplyClaude={(draft) => void applyClaudeConfigToLocal(draft)}
+            onSelectKeyIndex={setSelectedKeyIndex}
+            onSelectEndpointID={setSelectedEndpointID}
+            onCopyEndpointBaseUrl={() => void copyText(selectedEndpoint.baseUrl, t('status.endpoint_copied'))}
+            onOpenCreateRelayProviderEditor={openCreateRelayProviderEditor}
+            onSelectRelayProviderID={setSelectedRelayProviderID}
+            onDeleteRelayProviderOption={deleteRelayProviderOption}
+            onSelectRelayReasoningEffort={setSelectedRelayReasoningEffort}
+            onCommitRelayModelSelection={commitRelayModelSelection}
+            onCopyText={(value, successMessage) => void copyText(value, successMessage)}
+            relayKeyDisplayName={relayKeyDisplayName}
+          />
         </section>
       </div>
 
