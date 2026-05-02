@@ -351,61 +351,6 @@
         box-shadow: 4px 4px 0 var(--shadow);
       }
 
-      .chain-bar {
-        display: none;
-      }
-
-      .chain-node {
-        min-height: 72px;
-        border: 2px solid var(--line);
-        background: var(--bg-panel);
-        box-shadow: 4px 4px 0 var(--shadow);
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 0 16px;
-        position: relative;
-      }
-
-      .chain-node.active {
-        border-color: var(--accent);
-        background: linear-gradient(180deg, rgba(243, 87, 45, 0.18), rgba(243, 87, 45, 0.03));
-      }
-
-      .chain-index {
-        width: 32px;
-        height: 32px;
-        border: 2px solid var(--line-strong);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--mono);
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--text-secondary);
-        flex-shrink: 0;
-      }
-
-      .chain-node.active .chain-index {
-        border-color: var(--accent);
-        color: var(--text-primary);
-      }
-
-      .chain-copy strong {
-        display: block;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .chain-copy span {
-        display: block;
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.45;
-        margin-top: 4px;
-      }
-
       .content-grid {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -416,6 +361,10 @@
       .graph-stage {
         position: relative;
         min-width: 0;
+        border: 2px solid var(--line);
+        background: rgba(14, 16, 18, 0.72);
+        box-shadow: 8px 8px 0 var(--shadow);
+        padding: 18px;
       }
 
       .connection-layer {
@@ -466,7 +415,10 @@
       }
 
       .lane-head {
-        padding: 8px 2px 10px;
+        padding: 14px;
+        border: 2px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
         display: grid;
         gap: 8px;
       }
@@ -502,8 +454,8 @@
 
       .lane-copy {
         color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.55;
+        font-size: 11px;
+        line-height: 1.45;
       }
 
       .lane-section {
@@ -511,6 +463,12 @@
         display: grid;
         gap: 14px;
         border-bottom: 0;
+      }
+
+      .lane[data-lane="entry"] .lane-section {
+        border: 2px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 14px;
       }
 
       .section-kicker {
@@ -1149,106 +1107,96 @@
           </div>
         </header>
 
-        <div class="chain-bar" id="chain-bar" data-collaboration-id="RO.CHAIN"></div>
-
         <div class="content-grid">
           <div class="graph-stage" id="graph-stage">
             <svg class="connection-layer" id="connection-layer" aria-hidden="true"></svg>
             <section class="lane-board">
-            <article class="lane active" data-lane="entry" data-collaboration-id="RO.LANE.ENTRY">
-              <div class="lane-head">
-                <div class="lane-head-top">
-                  <div class="lane-number">node 01</div>
-                  <button class="lane-toggle" type="button" data-focus="entry">+</button>
+              <article class="lane active" data-lane="entry" data-collaboration-id="RO.LANE.ENTRY">
+                <div class="lane-head">
+                  <div class="lane-head-top">
+                    <div class="lane-number">node 01</div>
+                    <button class="lane-toggle" type="button" data-focus="entry">+</button>
+                  </div>
+                  <div class="lane-title">
+                    <span>请求入口</span>
+                    <span class="locator">RO.LANE.ENTRY</span>
+                  </div>
+                  <div class="lane-copy">只保留 `codex` 与 `claude code` 两种入口。</div>
                 </div>
-                <div class="lane-title">
-                  <span>请求入口</span>
-                  <span class="locator">RO.LANE.ENTRY</span>
-                </div>
-                <div class="lane-copy">
-                  节点只保留两个入口: `codex` 与 `claude code`。
-                </div>
-              </div>
 
-              <div class="lane-section" data-graph-anchor="entry">
-                <span class="graph-anchor-dot right" aria-hidden="true"></span>
-                <div class="section-kicker">请求入口</div>
-                <div class="segmented">
-                  <button class="cli-token active" data-cli="codex" type="button">codex</button>
-                  <button class="cli-token" data-cli="claude-code" type="button">claude code</button>
+                <div class="lane-section" data-graph-anchor="entry">
+                  <span class="graph-anchor-dot right" aria-hidden="true"></span>
+                  <div class="section-kicker">请求入口</div>
+                  <div class="segmented">
+                    <button class="cli-token active" data-cli="codex" type="button">codex</button>
+                    <button class="cli-token" data-cli="claude-code" type="button">claude code</button>
+                  </div>
                 </div>
-              </div>
 
-              <div class="lane-section">
-                <div class="section-kicker">入口说明</div>
-                <div class="metric-pair">
-                  <span class="key">current client</span>
-                  <span class="value" id="entry-strategy">codex</span>
+                <div class="lane-section">
+                  <div class="section-kicker">节点说明</div>
+                  <div class="metric-pair">
+                    <span class="key">current client</span>
+                    <span class="value" id="entry-strategy">codex</span>
+                  </div>
+                  <div class="metric-pair">
+                    <span class="key">scope</span>
+                    <span class="value">仅允许两种 CLI</span>
+                  </div>
+                  <div class="metric-pair">
+                    <span class="key">next</span>
+                    <span class="value">进入账号组节点</span>
+                  </div>
                 </div>
-                <div class="metric-pair">
-                  <span class="key">scope</span>
-                  <span class="value">仅允许 codex / claude code</span>
-                </div>
-                <div class="metric-pair">
-                  <span class="key">dispatch</span>
-                  <span class="value">从入口进入账号组选择</span>
-                </div>
-              </div>
-            </article>
+              </article>
 
-            <article class="lane" data-lane="groups" data-collaboration-id="RO.LANE.GROUPS">
-              <div class="lane-head">
-                <div class="lane-head-top">
-                  <div class="lane-number">node 02</div>
-                  <button class="lane-toggle" type="button" data-focus="groups">+</button>
+              <article class="lane" data-lane="groups" data-collaboration-id="RO.LANE.GROUPS">
+                <div class="lane-head">
+                  <div class="lane-head-top">
+                    <div class="lane-number">node 02</div>
+                    <button class="lane-toggle" type="button" data-focus="groups">+</button>
+                  </div>
+                  <div class="lane-title">
+                    <span>账号组</span>
+                    <span class="locator">RO.LANE.GROUPS</span>
+                  </div>
+                  <div class="lane-copy">从账号池中选当前请求要经过的账号组。</div>
                 </div>
-                <div class="lane-title">
-                  <span>账号组</span>
-                  <span class="locator">RO.LANE.GROUPS</span>
-                </div>
-                <div class="lane-copy">
-                  这里展示的是账号池里已经存在的账号组。当前链路只会从其中选一组继续向右推进。
-                </div>
-              </div>
 
-              <div class="lane-section" id="group-list" data-collaboration-id="RO.LANE.GROUPS.LIST"></div>
-            </article>
+                <div class="lane-section" id="group-list" data-collaboration-id="RO.LANE.GROUPS.LIST"></div>
+              </article>
 
-            <article class="lane" data-lane="proxies" data-collaboration-id="RO.LANE.PROXIES">
-              <div class="lane-head">
-                <div class="lane-head-top">
-                  <div class="lane-number">node 03</div>
-                  <button class="lane-toggle" type="button" data-focus="proxies">+</button>
+              <article class="lane" data-lane="proxies" data-collaboration-id="RO.LANE.PROXIES">
+                <div class="lane-head">
+                  <div class="lane-head-top">
+                    <div class="lane-number">node 03</div>
+                    <button class="lane-toggle" type="button" data-focus="proxies">+</button>
+                  </div>
+                  <div class="lane-title">
+                    <span>代理池</span>
+                    <span class="locator">RO.LANE.PROXIES</span>
+                  </div>
+                  <div class="lane-copy">账号可直连，也可挂到具体代理节点。</div>
                 </div>
-                <div class="lane-title">
-                  <span>代理池</span>
-                  <span class="locator">RO.LANE.PROXIES</span>
-                </div>
-                <div class="lane-copy">
-                  账号在这里决定是否挂到代理池。连到某个代理节点表示走代理, 未挂接则保持直连。
-                </div>
-              </div>
 
-              <div class="lane-section" id="proxy-list" data-collaboration-id="RO.LANE.PROXIES.LIST"></div>
-            </article>
+                <div class="lane-section" id="proxy-list" data-collaboration-id="RO.LANE.PROXIES.LIST"></div>
+              </article>
 
-            <article class="lane" data-lane="end" data-collaboration-id="RO.LANE.END">
-              <div class="lane-head">
-                <div class="lane-head-top">
-                  <div class="lane-number">node 04</div>
-                  <button class="lane-toggle" type="button" data-focus="end">+</button>
+              <article class="lane" data-lane="end" data-collaboration-id="RO.LANE.END">
+                <div class="lane-head">
+                  <div class="lane-head-top">
+                    <div class="lane-number">node 04</div>
+                    <button class="lane-toggle" type="button" data-focus="end">+</button>
+                  </div>
+                  <div class="lane-title">
+                    <span>结束</span>
+                    <span class="locator">RO.LANE.END</span>
+                  </div>
+                  <div class="lane-copy">收口当前链路，并直接发起测试。</div>
                 </div>
-                <div class="lane-title">
-                  <span>结束</span>
-                  <span class="locator">RO.LANE.END</span>
-                </div>
-              <div class="lane-copy">
-                  这里是链路收口区。确认当前请求会落到哪些账号, 走不走代理, 并允许直接发起测试。
-                </div>
-              </div>
 
-              <div class="lane-section" id="end-list" data-collaboration-id="RO.LANE.END.LIST"></div>
-            </article>
+                <div class="lane-section" id="end-list" data-collaboration-id="RO.LANE.END.LIST"></div>
+              </article>
             </section>
           </div>
 
@@ -1263,45 +1211,6 @@
     <div class="copy-toast" id="copy-toast" aria-live="polite"></div>
 
     <script>
-      const stageMeta = {
-        entry: {
-          label: "请求入口",
-          hint: "只允许 codex 或 claude code 两种来源进入编排。",
-          focusCopy:
-            "入口只定义这次请求来自哪种 CLI 语义。后续账号组里哪些账号能继续参与, 会直接受这里的客户端类型影响。",
-          focusTitle: "入口先定客户端, 再进入账号组",
-          focusDetail:
-            "这期设计里不再展开模型映射。入口只保留 `codex` 和 `claude code` 两个选项, 让编排画布先聚焦在链路结构本身。",
-        },
-        groups: {
-          label: "账号组",
-          hint: "账号组来自账号池, 当前链路只选择其中一组继续执行。",
-          focusCopy:
-            "这里看到的不是新建分组, 而是账号池里已经存在的账号集合。请求从入口进来后, 会先选中一组账号作为候选执行面。",
-          focusTitle: "账号组是账号池的投影, 不是孤立配置",
-          focusDetail:
-            "每个组都会展示组内账号和它们支持的入口类型。切换组时, 右侧代理池和结束区会立刻跟着刷新。",
-        },
-        proxies: {
-          label: "代理池",
-          hint: "账号连到代理节点表示走代理, 不连则保持直连。",
-          focusCopy:
-            "这里是代理编排面。你不再改账号属性本身, 而是把当前组里的账号挂接到代理池节点上, 形成这条请求链路的出站方式。",
-          focusTitle: "代理池负责挂接关系, 不是账号详情页",
-          focusDetail:
-            "一个账号在这里有两种状态: 保持直连, 或挂到某个代理节点。页面会同时展示路由编辑区和代理池摘要区。",
-        },
-        end: {
-          label: "结束",
-          hint: "链路在这里收口, 并允许发起测试。",
-          focusCopy:
-            "结束区只做收口和验证。它把当前入口、选中的账号组和代理挂接结果汇总起来, 并提供一个直接的测试动作。",
-          focusTitle: "结束区负责确认与测试",
-          focusDetail:
-            "你应该能在这里明确看到: 哪些账号会执行、哪些走代理、哪些保持直连, 然后直接点测试按钮验证整条链路。",
-        },
-      };
-
       const state = {
         cli: "codex",
         activeGroupId: "codex",
@@ -1382,7 +1291,6 @@
 
       const defaultProxyBindings = Object.fromEntries(state.accounts.map((account) => [account.id, account.proxyId]));
 
-      const chainBar = document.getElementById("chain-bar");
       const graphStage = document.getElementById("graph-stage");
       const connectionLayer = document.getElementById("connection-layer");
       const groupList = document.getElementById("group-list");
@@ -1495,26 +1403,6 @@
             reasons,
           };
         });
-      }
-
-      function renderChainBar() {
-        const stages = ["entry", "groups", "proxies", "end"];
-        chainBar.innerHTML = stages
-          .map((key, index) => {
-            const meta = stageMeta[key];
-            const active = state.focus === key ? "active" : "";
-            return `
-              <button class="chain-node ${active}" type="button" data-focus="${key}" data-collaboration-id="RO.CHAIN.${toLocatorSegment(key)}">
-                <span class="chain-index">0${index + 1}</span>
-                <span class="chain-copy">
-                  <strong>${meta.label}</strong>
-                  <span class="locator">RO.CHAIN.${toLocatorSegment(key)}</span>
-                  <span>${meta.hint}</span>
-                </span>
-              </button>
-            `;
-          })
-          .join("");
       }
 
       function renderGroups(computed) {
@@ -1789,7 +1677,6 @@
         const computed = computeAccounts();
         renderButtons();
         renderMeta(computed);
-        renderChainBar();
         renderGroups(computed);
         renderProxies(computed);
         renderEnd(computed);
