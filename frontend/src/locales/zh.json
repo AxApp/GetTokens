@@ -246,9 +246,6 @@
     "codex_features_loaded": "已加载本地 Codex features 配置",
     "codex_features_load_failed": "Codex features 加载失败",
     "codex_features_search_placeholder": "搜索 feature key / 描述 / legacy alias",
-    "codex_features_key": "Feature Key",
-    "codex_features_stage": "Stage",
-    "codex_features_switch": "Switch",
     "codex_features_no_description": "暂无描述",
     "codex_feature_descriptions": {
       "shell_tool": "启用默认 shell 工具。",

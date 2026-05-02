@@ -660,100 +660,78 @@ export function StatusCodexFeaturesSection({
         </div>
       ) : null}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[44rem] border-collapse text-left">
-          <thead>
-            <tr className="bg-[var(--bg-main)]">
-              <th className="border-b-2 border-[var(--border-color)] px-4 py-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {t('status.codex_features_key')}
-              </th>
-              <th className="w-32 border-b-2 border-l-2 border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {t('status.codex_features_stage')}
-              </th>
-              <th className="w-36 border-b-2 border-l-2 border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {t('status.codex_features_switch')}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.key}
-                className={`${row.stage === 'unknown' || row.stage === 'unsupported' ? 'bg-[var(--bg-main)]' : ''}`}
-              >
-                <td className="border-b-2 border-[var(--border-color)] px-4 py-3 align-top">
-                  <div className="break-all font-mono text-[0.75rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                    {row.key}
-                  </div>
-                  <div className="mt-1 text-[0.625rem] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-                    {resolveCodexFeatureDescription(t, row)}
-                  </div>
-                  {row.legacyAliases.length > 0 ? (
-                    <div className="mt-2 inline-flex max-w-full border-2 border-dashed border-[var(--border-color)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
-                      <span className="truncate">
-                        {t('status.codex_features_legacy_alias')}: {row.legacyAliases.join(', ')}
-                      </span>
-                    </div>
-                  ) : null}
-                  {row.unsupported ? (
-                    <div className="mt-2 text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                      {t('status.codex_features_unsupported_hint')}
-                    </div>
-                  ) : null}
-                </td>
-                <td className="border-b-2 border-l-2 border-[var(--border-color)] px-3 py-3 align-top">
-                  <span
-                    className={`inline-flex border-2 px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.16em] ${
-                      row.stage === 'unknown' || row.stage === 'unsupported' || row.stage === 'removed'
-                        ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-red-600'
-                        : 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                    }`}
-                  >
-                    {t(`status.codex_features_stage_${row.stage}`)}
-                  </span>
-                  {row.hiddenByDefault ? (
-                    <div className="mt-2 text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                      {t('status.codex_features_hidden_default')}
-                    </div>
-                  ) : null}
-                </td>
-                <td className="w-24 border-b-2 border-l-2 border-[var(--border-color)] px-3 py-3 text-center align-middle">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-label={row.key}
-                    aria-checked={row.draftValue}
-                    onClick={() => onToggleFeature(row.key, !row.draftValue)}
-                    disabled={row.readOnly || isBusy}
-                    className="mx-auto flex h-9 w-16 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <span
-                      className={`relative h-7 w-14 shrink-0 overflow-hidden border-2 border-[var(--border-color)] transition-colors duration-200 ease-out ${
-                        row.draftValue ? 'bg-green-600' : 'bg-[var(--bg-surface)]'
-                      }`}
-                    >
-                      <span
-                        className={`absolute left-0.5 top-0.5 h-5 w-5 border-2 border-[var(--border-color)] transition-transform duration-200 ease-out ${
-                          row.draftValue ? 'translate-x-7 bg-[var(--bg-main)]' : 'translate-x-0 bg-[var(--text-primary)]'
-                        }`}
-                      ></span>
-                    </span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={3}
-                  className="border-b-2 border-[var(--border-color)] px-4 py-8 text-center text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
+      <div className="divide-y-2 divide-[var(--border-color)]">
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_5rem] md:items-center ${
+              row.stage === 'unknown' || row.stage === 'unsupported' ? 'bg-[var(--bg-main)]' : ''
+            }`}
+          >
+            <div className="min-w-0">
+              <div className="break-all font-mono text-[0.75rem] font-black tracking-wide text-[var(--text-primary)]">
+                {row.key}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[0.625rem] font-bold tracking-wide text-[var(--text-muted)]">
+                <span
+                  className={`inline-flex shrink-0 border-2 px-2 py-0.5 text-[0.5625rem] font-black tracking-[0.14em] ${
+                    row.stage === 'unknown' || row.stage === 'unsupported' || row.stage === 'removed'
+                      ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-red-600'
+                      : 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                  }`}
                 >
-                  {isLoading ? t('status.codex_features_loading') : t('status.codex_features_empty')}
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
+                  {t(`status.codex_features_stage_${row.stage}`)}
+                </span>
+                {row.hiddenByDefault ? (
+                  <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[0.5625rem] font-black tracking-[0.14em] text-[var(--text-muted)]">
+                    {t('status.codex_features_hidden_default')}
+                  </span>
+                ) : null}
+                <span className="min-w-0">{resolveCodexFeatureDescription(t, row)}</span>
+              </div>
+              {row.legacyAliases.length > 0 ? (
+                <div className="mt-2 inline-flex max-w-full border-2 border-dashed border-[var(--border-color)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+                  <span className="truncate">
+                    {t('status.codex_features_legacy_alias')}: {row.legacyAliases.join(', ')}
+                  </span>
+                </div>
+              ) : null}
+              {row.unsupported ? (
+                <div className="mt-2 text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  {t('status.codex_features_unsupported_hint')}
+                </div>
+              ) : null}
+            </div>
+            <div className="flex justify-start md:justify-center">
+              <button
+                type="button"
+                role="switch"
+                aria-label={row.key}
+                aria-checked={row.draftValue}
+                onClick={() => onToggleFeature(row.key, !row.draftValue)}
+                disabled={row.readOnly || isBusy}
+                className="mx-auto flex h-9 w-16 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <span
+                  className={`relative h-7 w-14 shrink-0 overflow-hidden border-2 border-[var(--border-color)] transition-colors duration-200 ease-out ${
+                    row.draftValue ? 'bg-green-600' : 'bg-[var(--bg-surface)]'
+                  }`}
+                >
+                  <span
+                    className={`absolute left-0.5 top-0.5 h-5 w-5 border-2 border-[var(--border-color)] transition-transform duration-200 ease-out ${
+                      row.draftValue ? 'translate-x-7 bg-[var(--bg-main)]' : 'translate-x-0 bg-[var(--text-primary)]'
+                    }`}
+                  ></span>
+                </span>
+              </button>
+            </div>
+          </div>
+        ))}
+        {rows.length === 0 ? (
+          <div className="px-4 py-8 text-center text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            {isLoading ? t('status.codex_features_loading') : t('status.codex_features_empty')}
+          </div>
+        ) : null}
       </div>
 
       {preview ? (

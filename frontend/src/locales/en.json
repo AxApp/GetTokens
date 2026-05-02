@@ -246,9 +246,6 @@
     "codex_features_loaded": "Loaded local Codex features config",
     "codex_features_load_failed": "Failed to load Codex features",
     "codex_features_search_placeholder": "Search feature key / description / legacy alias",
-    "codex_features_key": "Feature Key",
-    "codex_features_stage": "Stage",
-    "codex_features_switch": "Switch",
     "codex_features_no_description": "No description",
     "codex_feature_descriptions": {
       "shell_tool": "Enable the default shell tool.",
