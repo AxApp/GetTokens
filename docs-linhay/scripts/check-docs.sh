@@ -31,7 +31,7 @@ check_screenshot_files() {
     base="$(basename "$file")"
     [[ "$rel" =~ ^[0-9]{8}/[a-z0-9-]+/[^/]+$ ]] || report_error "Invalid screenshot path: $file"
     [[ "$base" =~ ^[0-9]{8}-[a-z0-9-]+-[a-z0-9-]+-(before|after|baseline|failed)-v[0-9]{2}\.png$ ]] || report_error "Invalid screenshot filename: $file"
-  done < <(find "$space_dir/screenshots" -type f -print0)
+  done < <(find "$space_dir/screenshots" -type f ! -name '.gitkeep' -print0)
 }
 
 check_debate_files() {
@@ -42,7 +42,7 @@ check_debate_files() {
     base="$(basename "$file")"
     [[ "$rel" =~ ^[0-9]{8}/[a-z0-9-]+/[^/]+$ ]] || report_error "Invalid debate path: $file"
     [[ "$base" =~ ^[0-9]{8}-[a-z0-9-]+-v[0-9]{2}\.md$ ]] || report_error "Invalid debate filename: $file"
-  done < <(find "$space_dir/debate" -type f -print0)
+  done < <(find "$space_dir/debate" -type f ! -name '.gitkeep' -print0)
 }
 
 if [[ ! -d "$SPACES_DIR" ]]; then

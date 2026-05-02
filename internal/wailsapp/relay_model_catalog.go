@@ -2,6 +2,7 @@ package wailsapp
 
 import (
 	"encoding/json"
+	"net/http"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -27,13 +28,84 @@ func (a *App) ListRelaySupportedModels() ([]OpenAICompatibleModel, error) {
 		localCodexModels = nil
 	}
 
+	sidecarModels, err := a.fetchSidecarStaticModelDefinitions()
+	if err != nil {
+		sidecarModels = nil
+	}
+
 	return listRelaySupportedModels(providers, codexKeys, func(input FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error) {
 		result, err := a.FetchOpenAICompatibleProviderModels(input)
 		if err != nil {
 			return nil, err
 		}
 		return result.Models, nil
-	}, localCodexModels), nil
+	}, localCodexModels, sidecarModels), nil
+}
+
+// fetchSidecarStaticModelDefinitions fetches the static model definitions from the
+// sidecar's management API (/v0/management/model-definitions/codex) and maps them to
+// OpenAICompatibleModel. These definitions represent the known models the relay can route.
+// If the sidecar is unavailable or the request fails, returns nil without error (graceful degradation).
+func (a *App) fetchSidecarStaticModelDefinitions() ([]OpenAICompatibleModel, error) {
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/model-definitions/codex", nil, nil, "")
+	if err != nil {
+		// Sidecar not ready, request failed (network, timeout, etc), or other error
+		// Gracefully degrade — just return empty without error so other sources can be used
+		return nil, nil
+	}
+
+	models, parseErr := parseSidecarModelDefinitions(string(body))
+	if parseErr != nil {
+		// JSON parse failed — gracefully degrade
+		return nil, nil
+	}
+
+	return models, nil
+}
+
+// parseSidecarModelDefinitions parses the JSON response from /v0/management/model-definitions/:channel.
+// Expected shape: { "channel": "codex", "models": [{ "id": "...", "display_name": "...", "thinking": { "levels": [...] } }] }
+func parseSidecarModelDefinitions(body string) ([]OpenAICompatibleModel, error) {
+	type thinkingBlock struct {
+		Levels []string `json:"levels"`
+	}
+	type modelEntry struct {
+		ID          string        `json:"id"`
+		DisplayName string        `json:"display_name"`
+		Thinking    thinkingBlock `json:"thinking"`
+	}
+	var payload struct {
+		Models []modelEntry `json:"models"`
+	}
+
+	trimmed := strings.TrimSpace(body)
+	if trimmed == "" {
+		return nil, nil
+	}
+	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
+		return nil, err
+	}
+
+	models := make([]OpenAICompatibleModel, 0, len(payload.Models))
+	for _, item := range payload.Models {
+		name := strings.TrimSpace(item.ID)
+		if name == "" {
+			continue
+		}
+
+		alias := strings.TrimSpace(item.DisplayName)
+		if alias == name {
+			alias = ""
+		}
+
+		models = append(models, OpenAICompatibleModel{
+			Name:                      name,
+			Alias:                     alias,
+			SupportedReasoningEfforts: normalizeReasoningEfforts(item.Thinking.Levels),
+		})
+	}
+
+	return normalizeProviderModels(models), nil
 }
 
 func listRelaySupportedModels(
@@ -41,6 +113,7 @@ func listRelaySupportedModels(
 	codexKeys []cliproxyapi.CodexAPIKey,
 	fetcher relayModelFetcher,
 	localCodexModels []OpenAICompatibleModel,
+	sidecarModels []OpenAICompatibleModel,
 ) []OpenAICompatibleModel {
 	merged := make(map[string]OpenAICompatibleModel)
 
@@ -83,6 +156,11 @@ func listRelaySupportedModels(
 		}
 		appendRelaySupportedModels(merged, models)
 	}
+
+	// Sidecar static definitions provide the known model roster from the relay's registry.
+	// They are merged after provider/key models so that user-configured aliases and reasoning
+	// efforts take precedence; the sidecar definitions only fill in what is missing.
+	appendRelaySupportedModels(merged, sidecarModels)
 
 	if len(merged) == 0 {
 		appendRelaySupportedModels(merged, localCodexModels)

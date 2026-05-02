@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Pencil } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2, Pencil } from 'lucide-react';
 import {
   providerLabel,
   resolveAccountConfigurationWorkspaceHeading,
@@ -10,6 +10,7 @@ import { buildAccountHealthMetaItems } from '../model/accountHealthMeta';
 import type { AccountRecord, TextInputEvent, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountHealthBar from './AccountHealthBar';
+import { resolveAPIKeyModelMenuNames, type APIKeyModelMenuMode } from '../model/apiKeyModelCatalog';
 
 const DEFAULT_CODEX_API_KEY_VERIFY_MODEL = 'gpt-5.4-mini';
 
@@ -24,6 +25,7 @@ interface ApiKeyDetailModalProps {
   account: AccountRecord;
   usageSummary?: AccountUsageSummary;
   verifyState: APIKeyVerifyState;
+  modelNames?: string[];
   onClose: () => void;
   onRename: (nextName: string) => void;
   onSaveConfig: (draft: { apiKey: string; baseUrl: string; prefix: string }) => Promise<void>;
@@ -48,6 +50,7 @@ export default function ApiKeyDetailModal({
   account,
   usageSummary,
   verifyState,
+  modelNames,
   onClose,
   onRename,
   onSaveConfig,
@@ -70,6 +73,26 @@ export default function ApiKeyDetailModal({
     status: 'idle',
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const [modelMenuMode, setModelMenuMode] = useState<APIKeyModelMenuMode>('browse');
+  const modelMenuRef = useRef<HTMLDivElement | null>(null);
+
+  const displayedModelNames = useMemo(
+    () => resolveAPIKeyModelMenuNames(modelNames, verifyModel, modelMenuMode),
+    [modelMenuMode, modelNames, verifyModel],
+  );
+  const hasModelNames = Boolean(modelNames?.length);
+
+  useEffect(() => {
+    if (!isModelMenuOpen) return;
+    function handlePointerDown(event: MouseEvent) {
+      if (!modelMenuRef.current?.contains(event.target as Node)) {
+        setIsModelMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [isModelMenuOpen]);
 
   useEffect(() => {
     setDraftName(account.displayName);
@@ -286,7 +309,7 @@ export default function ApiKeyDetailModal({
                         />
                         <button
                           onClick={() => void copyText('apiKey', configDraft.apiKey)}
-                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2"
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
                         >
                           复制
                         </button>
@@ -308,7 +331,7 @@ export default function ApiKeyDetailModal({
                         />
                         <button
                           onClick={() => void copyText('baseUrl', configDraft.baseUrl)}
-                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2"
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
                         >
                           复制
                         </button>
@@ -357,26 +380,86 @@ export default function ApiKeyDetailModal({
                     <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       {t('accounts.api_key_verify_model')}
                     </span>
-                    <div className="relative">
-                      <input
-                        value={verifyModel}
-                        onChange={(event: TextInputEvent) => setVerifyModel(event.target.value)}
-                        className="input-swiss w-full pr-24 !py-1.5 !text-[0.6875rem]"
-                        placeholder={DEFAULT_CODEX_API_KEY_VERIFY_MODEL}
-                      />
-                      <button
-                        onClick={() =>
-                          onVerify({
-                            apiKey: configDraft.apiKey,
-                            baseUrl: configDraft.baseUrl,
-                            model: verifyModel,
-                          })
-                        }
-                        className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2"
-                        disabled={verifyState.status === 'loading'}
-                      >
-                        {t('accounts.api_key_verify')}
-                      </button>
+                    <div ref={modelMenuRef} className="relative">
+                      <div className="relative flex items-center">
+                        {hasModelNames ? (
+                          <button
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => {
+                              setModelMenuMode('browse');
+                              setIsModelMenuOpen((prev) => !prev);
+                            }}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 text-[0.5rem] font-black tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            aria-label="Select model"
+                          >
+                            ▼
+                          </button>
+                        ) : null}
+                        <input
+                          value={verifyModel}
+                          onChange={(event: TextInputEvent) => {
+                            setVerifyModel(event.target.value);
+                            setModelMenuMode('filter');
+                            setIsModelMenuOpen(true);
+                          }}
+                          onFocus={() => {
+                            if (hasModelNames) {
+                              setModelMenuMode('browse');
+                              setIsModelMenuOpen(true);
+                            }
+                          }}
+                          className={`input-swiss w-full pr-24 !py-1.5 !text-[0.6875rem] ${hasModelNames ? 'pl-7' : ''}`}
+                          placeholder={DEFAULT_CODEX_API_KEY_VERIFY_MODEL}
+                        />
+                        <button
+                          onClick={() =>
+                            onVerify({
+                              apiKey: configDraft.apiKey,
+                              baseUrl: configDraft.baseUrl,
+                              model: verifyModel,
+                            })
+                          }
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
+                          disabled={verifyState.status === 'loading'}
+                        >
+                          {verifyState.status === 'loading' ? (
+                            <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                          ) : (
+                            t('accounts.api_key_verify')
+                          )}
+                        </button>
+                      </div>
+                      {isModelMenuOpen && displayedModelNames.length > 0 ? (
+                        <div
+                          className="absolute left-0 right-0 top-[calc(100%+0.25rem)] z-20 max-h-48 overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5 shadow-[4px_4px_0_var(--shadow-color)]"
+                          role="listbox"
+                        >
+                          <div className="space-y-1">
+                            {displayedModelNames.map((name) => (
+                              <button
+                                key={name}
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={() => {
+                                  setVerifyModel(name);
+                                  setModelMenuMode('browse');
+                                  setIsModelMenuOpen(false);
+                                }}
+                                className={`flex w-full items-center border-2 px-2.5 py-1.5 text-left text-[0.5625rem] font-black uppercase tracking-[0.12em] transition-transform ${
+                                  verifyModel === name
+                                    ? 'border-[var(--text-primary)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
+                                    : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)] hover:translate-x-[-1px] hover:translate-y-[-1px]'
+                                }`}
+                                role="option"
+                                aria-selected={verifyModel === name}
+                              >
+                                {name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   </label>
 

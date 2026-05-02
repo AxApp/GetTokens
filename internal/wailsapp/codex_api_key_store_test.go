@@ -88,6 +88,44 @@ func TestMergeCodexAPIKeyInputsMigratesSidecarOnlyItems(t *testing.T) {
 	}
 }
 
+func TestMergeCodexAPIKeyInputsDeduplicatesStoredStableIDAndSidecarMirror(t *testing.T) {
+	stored := []cliproxyapi.CodexAPIKeyInput{
+		{
+			LocalID:  "codex-api-key:stable-001",
+			APIKey:   "sk-test-1111",
+			BaseURL:  "https://api.openai.com/v1",
+			Prefix:   "team-a",
+			Label:    "PRIMARY",
+			Priority: 7,
+		},
+	}
+	sidecarItems := []cliproxyapi.CodexAPIKey{
+		{
+			APIKey:   "sk-test-1111",
+			BaseURL:  "https://api.openai.com/v1/",
+			Prefix:   "/team-a/",
+			Priority: 1,
+		},
+	}
+
+	merged, migrated := mergeCodexAPIKeyInputs(stored, sidecarItems)
+	if migrated {
+		t.Fatal("expected sidecar mirror to be treated as already migrated")
+	}
+	if len(merged) != 1 {
+		t.Fatalf("expected 1 merged item, got %d: %#v", len(merged), merged)
+	}
+	if got := merged[0].LocalID; got != "codex-api-key:stable-001" {
+		t.Fatalf("LocalID = %q, want codex-api-key:stable-001", got)
+	}
+	if got := merged[0].Label; got != "PRIMARY" {
+		t.Fatalf("Label = %q, want PRIMARY", got)
+	}
+	if got := merged[0].Priority; got != 7 {
+		t.Fatalf("Priority = %d, want 7", got)
+	}
+}
+
 func TestPersistCodexAPIKeySetRemovesStaleFiles(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

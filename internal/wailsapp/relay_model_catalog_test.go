@@ -53,7 +53,7 @@ func TestListRelaySupportedModelsAggregatesRemoteLocalAndCodexKeyModels(t *testi
 			},
 			{Name: "remote-only"},
 		}, nil
-	}, nil)
+	}, nil, nil)
 
 	if len(models) != 4 {
 		t.Fatalf("unexpected model count: %#v", models)
@@ -76,7 +76,7 @@ func TestListRelaySupportedModelsFallsBackToLocalCodexModelsCacheWhenAggregatedE
 	models := listRelaySupportedModels(nil, nil, nil, []OpenAICompatibleModel{
 		{Name: "gpt-5.4", SupportedReasoningEfforts: []string{"low", "medium", "high", "xhigh"}, DefaultReasoningEffort: "medium"},
 		{Name: "gpt-5.4-mini", SupportedReasoningEfforts: []string{"low", "medium", "high", "xhigh"}, DefaultReasoningEffort: "medium"},
-	})
+	}, nil)
 
 	if len(models) != 2 {
 		t.Fatalf("unexpected fallback model count: %#v", models)
@@ -147,5 +147,109 @@ func TestLoadLocalCodexModelsCacheReadsModelsCacheJSON(t *testing.T) {
 	}
 	if models[1].Name != "gpt-5.4-mini" || models[1].Alias != "GPT 5.4 Mini" || models[1].DefaultReasoningEffort != "high" {
 		t.Fatalf("unexpected second local codex model: %#v", models[1])
+	}
+}
+
+func TestParseSidecarModelDefinitions(t *testing.T) {
+	body := `{
+		"channel": "codex",
+		"models": [
+			{
+				"id": "gpt-5.4",
+				"display_name": "GPT 5.4",
+				"thinking": {"levels": ["low", "medium", "high", "xhigh"]}
+			},
+			{
+				"id": "gpt-5.4-mini",
+				"display_name": "GPT 5.4 Mini",
+				"thinking": {"levels": ["low", "medium", "high"]}
+			},
+			{
+				"id": "skip-empty",
+				"display_name": ""
+			}
+		]
+	}`
+
+	models, err := parseSidecarModelDefinitions(body)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(models) != 3 {
+		t.Fatalf("expected 3 models, got %d: %#v", len(models), models)
+	}
+
+	gpt54 := models[0]
+	if gpt54.Name != "gpt-5.4" {
+		t.Fatalf("unexpected name: %#v", gpt54)
+	}
+	if gpt54.Alias != "GPT 5.4" {
+		t.Fatalf("expected alias 'GPT 5.4', got %#v", gpt54.Alias)
+	}
+	if len(gpt54.SupportedReasoningEfforts) != 4 {
+		t.Fatalf("expected 4 reasoning efforts, got %d: %#v", len(gpt54.SupportedReasoningEfforts), gpt54.SupportedReasoningEfforts)
+	}
+}
+
+func TestParseSidecarModelDefinitionsEmpty(t *testing.T) {
+	models, err := parseSidecarModelDefinitions("")
+	if err != nil {
+		t.Fatalf("unexpected error for empty body: %v", err)
+	}
+	if models != nil {
+		t.Fatalf("expected nil for empty body, got %#v", models)
+	}
+}
+
+func TestListRelaySupportedModelsMergesSidecarModels(t *testing.T) {
+	sidecarModels := []OpenAICompatibleModel{
+		{Name: "gpt-5.4", Alias: "GPT 5.4", SupportedReasoningEfforts: []string{"low", "medium", "high"}},
+		{Name: "gpt-5.4-mini", Alias: "GPT 5.4 Mini"},
+	}
+
+	models := listRelaySupportedModels(nil, nil, nil, nil, sidecarModels)
+	if len(models) != 2 {
+		t.Fatalf("expected 2 sidecar models, got %d: %#v", len(models), models)
+	}
+	if models[0].Name != "gpt-5.4" || models[1].Name != "gpt-5.4-mini" {
+		t.Fatalf("unexpected sidecar model names: %#v", models)
+	}
+}
+
+func TestListRelaySupportedModelsProviderAliasOverridesSidecarAlias(t *testing.T) {
+	providers := []OpenAICompatibleProvider{
+		{
+			Name:    "custom",
+			BaseURL: "https://custom.example.com/v1",
+			APIKey:  "sk-custom",
+			Models: []OpenAICompatibleModel{
+				{Name: "gpt-5.4", Alias: "Custom Alias"},
+			},
+		},
+	}
+	sidecarModels := []OpenAICompatibleModel{
+		{Name: "gpt-5.4", Alias: "Sidecar Alias", SupportedReasoningEfforts: []string{"low", "medium", "high"}},
+		{Name: "sidecar-only"},
+	}
+
+	models := listRelaySupportedModels(providers, nil, nil, nil, sidecarModels)
+	if len(models) != 2 {
+		t.Fatalf("expected 2 models, got %d: %#v", len(models), models)
+	}
+
+	var gpt54 *OpenAICompatibleModel
+	for i := range models {
+		if models[i].Name == "gpt-5.4" {
+			gpt54 = &models[i]
+		}
+	}
+	if gpt54 == nil {
+		t.Fatalf("gpt-5.4 not found in models: %#v", models)
+	}
+	if gpt54.Alias != "Custom Alias" {
+		t.Fatalf("expected provider alias 'Custom Alias' to win over sidecar alias, got %#v", gpt54.Alias)
+	}
+	if len(gpt54.SupportedReasoningEfforts) != 3 {
+		t.Fatalf("expected sidecar reasoning efforts to be merged in: %#v", gpt54)
 	}
 }

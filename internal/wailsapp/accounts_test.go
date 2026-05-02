@@ -220,3 +220,48 @@ func TestUpdateCodexAPIKeyConfigPreservesStableID(t *testing.T) {
 		t.Fatalf("Prefix = %q, want team-b", got)
 	}
 }
+
+func TestDeleteCodexAPIKeyAcceptsDerivedConfigIDForStableLocalRecord(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	item := cliproxyapi.CodexAPIKeyInput{
+		LocalID: "codex-api-key:stable-001",
+		APIKey:  "sk-test-1111",
+		BaseURL: "https://api.openai.com/v1",
+		Prefix:  "team-a",
+	}
+	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
+		t.Fatalf("persistCodexAPIKeySet: %v", err)
+	}
+
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method != "PUT" || path != "/v0/management/codex-api-key" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read body: %v", err)
+				}
+				if got := strings.TrimSpace(string(payload)); got != "[]" {
+					t.Fatalf("expected empty sidecar sync payload, got %s", got)
+				}
+				return nil, 200, nil
+			})
+		},
+	}
+
+	derivedID := codexAPIKeyConfigIdentityFromInput(item)
+	if err := app.DeleteCodexAPIKey(derivedID); err != nil {
+		t.Fatalf("DeleteCodexAPIKey: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if len(items) != 0 {
+		t.Fatalf("expected store to be empty, got %#v", items)
+	}
+}

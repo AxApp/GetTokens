@@ -1,4 +1,4 @@
-import type { DebugEntry } from '../context/DebugContext';
+import type { DebugEntry } from '../../../context/DebugContext';
 
 export interface DebugEntryViewModel {
   id: string;

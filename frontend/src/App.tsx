@@ -1,34 +1,14 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
-import { CanApplyUpdate, GetReleaseLabel, GetSidecarStatus, GetVersion, UsesNativeUpdaterUI } from '../wailsjs/go/main/App';
-import { EventsOn } from '../wailsjs/runtime/runtime';
+import { Suspense, lazy, useEffect, useMemo } from 'react';
 import Sidebar from './components/biz/Sidebar';
-import { DebugProvider, useDebug } from './context/DebugContext';
+import PageLoadingFallback from './components/ui/PageLoadingFallback';
+import { DebugProvider } from './context/DebugContext';
 import { I18nProvider } from './context/I18nContext';
 import { TextScaleProvider, useTextScale } from './context/TextScaleContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { getTextScaleAttributeValue } from './context/textScale';
 import { applyTextScaleVariables } from './features/settings/settingsTextScale';
-import type {
-  AccountWorkspace,
-  AppPage,
-  ReleaseInfo,
-  SessionManagementWorkspace,
-  SidecarStatus,
-  UsageDeskWorkspace as UsageDeskWorkspaceID,
-} from './types';
-import { hasPreviewMode, hasWailsAppBindings } from './utils/previewMode';
-import {
-  buildFrameHash,
-  persistAccountWorkspace,
-  persistActivePage,
-  persistSessionManagementWorkspace,
-  persistUsageDeskWorkspace,
-  readFrameHashState,
-  readStoredAccountWorkspace,
-  readStoredActivePage,
-  readStoredSessionManagementWorkspace,
-  readStoredUsageDeskWorkspace,
-} from './utils/pagePersistence';
+import { useAppBootstrap } from './hooks/useAppBootstrap';
+import { useAppNavigation } from './hooks/useAppNavigation';
 
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 const DebugPage = lazy(() => import('./pages/DebugPage'));
@@ -37,132 +17,31 @@ const SessionManagementPage = lazy(() => import('./pages/SessionManagementPage')
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 const VendorStatusPage = lazy(() => import('./pages/VendorStatusPage'));
-const UsageDeskWorkspace = lazy(() => import('./features/accounts/components/UsageDeskWorkspace'));
-
-const defaultSidecarStatus: SidecarStatus = {
-  code: 'stopped',
-  port: 0,
-  message: '',
-  version: '',
-  startedAtUnix: 0,
-};
-
-function PageLoadingFallback() {
-  return (
-    <div className="flex h-full min-h-0 items-center justify-center bg-[var(--bg-surface)]">
-      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3 text-[0.625rem] font-black uppercase tracking-[0.24em] text-[var(--text-primary)] shadow-[6px_6px_0_var(--shadow-color)]">
-        Loading
-      </div>
-    </div>
-  );
-}
+const UsageDeskWorkspace = lazy(() => import('./features/accounts/UsageDeskFeature'));
 
 function AppShell() {
   const { themeMode } = useTheme();
   const { textScale } = useTextScale();
-  const { trackRequest } = useDebug();
-  const [activePage, setActivePage] = useState<AppPage>(() => {
-    const storage = typeof window === 'undefined' ? null : window.localStorage;
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
-    return hashState?.page ?? readStoredActivePage(storage);
-  });
-  const [activeAccountWorkspace, setActiveAccountWorkspace] = useState<AccountWorkspace>(() => {
-    const storage = typeof window === 'undefined' ? null : window.localStorage;
-    const storedWorkspace = readStoredAccountWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
-    if (hashState?.page === 'accounts') {
-      return hashState.workspace ?? 'all';
-    }
-    return storedWorkspace;
-  });
-  const [activeSessionManagementWorkspace, setActiveSessionManagementWorkspace] = useState<SessionManagementWorkspace>(() => {
-    const storage = typeof window === 'undefined' ? null : window.localStorage;
-    const storedWorkspace = readStoredSessionManagementWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
-    if (hashState?.page === 'session-management') {
-      return hashState.sessionManagementWorkspace ?? 'codex';
-    }
-    return storedWorkspace;
-  });
-  const [activeUsageDeskWorkspace, setActiveUsageDeskWorkspace] = useState<UsageDeskWorkspaceID>(() => {
-    const storage = typeof window === 'undefined' ? null : window.localStorage;
-    const storedWorkspace = readStoredUsageDeskWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
-    if (hashState?.page === 'usage-desk') {
-      return hashState.usageDeskWorkspace ?? 'codex';
-    }
-    return storedWorkspace;
-  });
-  const [sidecarStatus, setSidecarStatus] = useState<SidecarStatus>(defaultSidecarStatus);
-  const [version, setVersion] = useState('dev');
-  const [releaseLabel, setReleaseLabel] = useState('');
-  const [availableRelease, setAvailableRelease] = useState<ReleaseInfo | null>(null);
-  const [canApplyUpdate, setCanApplyUpdate] = useState(true);
-  const [usesNativeUpdaterUI, setUsesNativeUpdaterUI] = useState(false);
+  const {
+    activePage,
+    setActivePage,
+    activeAccountWorkspace,
+    setActiveAccountWorkspace,
+    activeSessionManagementWorkspace,
+    setActiveSessionManagementWorkspace,
+    activeUsageDeskWorkspace,
+    setActiveUsageDeskWorkspace,
+  } = useAppNavigation();
 
-  useEffect(() => {
-    persistActivePage(typeof window === 'undefined' ? null : window.localStorage, activePage);
-  }, [activePage]);
-
-  useEffect(() => {
-    persistAccountWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeAccountWorkspace);
-  }, [activeAccountWorkspace]);
-
-  useEffect(() => {
-    persistSessionManagementWorkspace(
-      typeof window === 'undefined' ? null : window.localStorage,
-      activeSessionManagementWorkspace,
-    );
-  }, [activeSessionManagementWorkspace]);
-
-  useEffect(() => {
-    persistUsageDeskWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeUsageDeskWorkspace);
-  }, [activeUsageDeskWorkspace]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const nextHash = buildFrameHash(
-      activePage,
-      activeAccountWorkspace,
-      activeSessionManagementWorkspace,
-      activeUsageDeskWorkspace,
-    );
-    if (window.location.hash !== nextHash) {
-      window.location.hash = nextHash;
-    }
-  }, [activeAccountWorkspace, activePage, activeSessionManagementWorkspace, activeUsageDeskWorkspace]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const onHashChange = () => {
-      const hashState = readFrameHashState(window.location.hash);
-      if (!hashState) {
-        return;
-      }
-
-      setActivePage(hashState.page);
-      if (hashState.page === 'accounts') {
-        setActiveAccountWorkspace(hashState.workspace ?? 'all');
-      }
-      if (hashState.page === 'session-management') {
-        setActiveSessionManagementWorkspace(hashState.sessionManagementWorkspace ?? 'codex');
-      }
-      if (hashState.page === 'usage-desk') {
-        setActiveUsageDeskWorkspace(hashState.usageDeskWorkspace ?? 'codex');
-      }
-    };
-
-    window.addEventListener('hashchange', onHashChange);
-    return () => {
-      window.removeEventListener('hashchange', onHashChange);
-    };
-  }, []);
+  const {
+    sidecarStatus,
+    version,
+    releaseLabel,
+    availableRelease,
+    setAvailableRelease,
+    canApplyUpdate,
+    usesNativeUpdaterUI,
+  } = useAppBootstrap();
 
   useEffect(() => {
     const isDark =
@@ -175,71 +54,6 @@ function AppShell() {
     document.documentElement.dataset.textScale = getTextScaleAttributeValue(textScale);
     applyTextScaleVariables(document.documentElement.style, textScale);
   }, [textScale]);
-
-  useEffect(() => {
-    let mounted = true;
-    const previewMode = hasPreviewMode();
-    const wailsRuntime = hasWailsAppBindings();
-
-    async function loadInitialState() {
-      if (previewMode || !wailsRuntime) {
-        if (!mounted) return;
-        setVersion(previewMode ? 'preview' : 'browser');
-        setReleaseLabel(previewMode ? 'preview' : 'browser');
-        setCanApplyUpdate(false);
-        setUsesNativeUpdaterUI(false);
-        setSidecarStatus({
-          code: 'running',
-          port: 18317,
-          message: previewMode ? 'preview runtime' : 'browser runtime',
-          version: previewMode ? 'preview' : 'browser',
-          startedAtUnix: Math.floor(Date.now() / 1000),
-        });
-        return;
-      }
-
-      try {
-        const [currentVersion, currentReleaseLabel, currentStatus, currentCanApplyUpdate, currentUsesNativeUpdaterUI] = await Promise.all([
-          trackRequest('GetVersion', { args: [] }, () => GetVersion()),
-          trackRequest('GetReleaseLabel', { args: [] }, () => GetReleaseLabel()),
-          trackRequest('GetSidecarStatus', { args: [] }, () => GetSidecarStatus()),
-          trackRequest('CanApplyUpdate', { args: [] }, () => CanApplyUpdate()),
-          trackRequest('UsesNativeUpdaterUI', { args: [] }, () => UsesNativeUpdaterUI()),
-        ]);
-        if (!mounted) return;
-        setVersion(currentVersion || 'dev');
-        setReleaseLabel(currentReleaseLabel || '');
-        setCanApplyUpdate(Boolean(currentCanApplyUpdate));
-        setUsesNativeUpdaterUI(Boolean(currentUsesNativeUpdaterUI));
-        if (currentStatus) {
-          setSidecarStatus(currentStatus);
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    loadInitialState();
-
-    if (previewMode || !wailsRuntime) {
-      return () => {
-        mounted = false;
-      };
-    }
-
-    const offStatus = EventsOn('sidecar:status', (status: SidecarStatus) => {
-      setSidecarStatus(status);
-    });
-    const offRelease = EventsOn('updater:available', (release: ReleaseInfo) => {
-      setAvailableRelease(release);
-    });
-
-    return () => {
-      mounted = false;
-      offStatus?.();
-      offRelease?.();
-    };
-  }, []);
 
   const page = useMemo(() => {
     if (activePage === 'status') {

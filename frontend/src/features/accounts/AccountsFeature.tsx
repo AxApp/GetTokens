@@ -1,4 +1,5 @@
-import { useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ListRelaySupportedModels } from '../../../wailsjs/go/main/App';
 import AccountDetailModal from '../../components/biz/AccountDetailModal';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
@@ -19,6 +20,7 @@ import useAccountsPageState from './hooks/useAccountsPageState';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
 import { mapOpenAICompatibleProviderToRotationAccount } from './model/accountRotation';
 import { isCodexAuthFile } from './model/accountPresentation';
+import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
 
 interface AccountsFeatureProps {
@@ -35,11 +37,38 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
 
   const ready = sidecarStatus?.code === 'ready';
 
+  const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
+  const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
+    if (!ready) {
+      setRelayModelNames([]);
+      return;
+    }
+    try {
+      const result = await ListRelaySupportedModels();
+      if (isCancelled()) return;
+      const models = result?.models || [];
+      setRelayModelNames(models.map((m) => m.name).filter(Boolean));
+    } catch {
+      if (!isCancelled()) setRelayModelNames([]);
+    }
+  }, [ready]);
+
   const openAICompatibleState = useOpenAICompatibleState({
     ready,
     t,
     trackRequest,
   });
+  const relayModelProviderSignature = useMemo(
+    () => buildRelayModelProviderSignature(openAICompatibleState.providers),
+    [openAICompatibleState.providers],
+  );
+  useEffect(() => {
+    let cancelled = false;
+    void loadRelayModelNames(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadRelayModelNames, relayModelProviderSignature]);
   const {
     loading,
     searchTerm,
@@ -109,6 +138,16 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     trackRequest,
     headerActionsMenuRef,
   });
+  useEffect(() => {
+    if (selectedAccount?.credentialSource !== 'api-key') {
+      return;
+    }
+    let cancelled = false;
+    void loadRelayModelNames(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadRelayModelNames, selectedAccount?.credentialSource, selectedAccount?.id]);
 
   const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs);
   const isAggregateWorkspace = workspace === 'all';
@@ -351,6 +390,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           account={selectedAccount}
           usageSummary={accountUsageByID[selectedAccount.id]}
           verifyState={apiKeyVerifyState}
+          modelNames={relayModelNames}
           onClose={() => setSelectedAccount(null)}
           onRename={renameSelectedApiKey}
           onSaveConfig={(draft) => updateSelectedApiKeyConfig(draft)}

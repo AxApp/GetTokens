@@ -229,7 +229,7 @@ export function StatusApplyLocalSection({
         <div className="flex items-center gap-2">
           <button
             onClick={onToggleLANAccess}
-            className={`btn-swiss h-fit !px-2.5 !py-1 !text-[0.5625rem] ${
+            className={`btn-swiss !px-2.5 !py-1.5 !text-[0.625rem] ${
               isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
             }`}
           >

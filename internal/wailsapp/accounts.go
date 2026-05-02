@@ -111,7 +111,7 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 	newID := accountsdomain.CodexAPIKeyAssetID(input.APIKey, input.BaseURL, input.Prefix)
 	items := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current)+1)
 	for _, existing := range current {
-		if codexAPIKeyAssetIDFromInput(existing) == newID {
+		if codexAPIKeyConfigIdentityFromInput(existing) == newID {
 			return errors.New("账号已存在")
 		}
 		items = append(items, existing)
@@ -144,7 +144,7 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 	found := false
 	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
 	for _, existing := range current {
-		if codexAPIKeyAssetIDFromInput(existing) == targetID {
+		if codexAPIKeyInputMatchesID(existing, targetID) {
 			existing.Label = strings.TrimSpace(input.Label)
 			found = true
 		}
@@ -179,7 +179,7 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
 	nextIdentity := accountsdomain.CodexAPIKeyAssetID(nextAPIKey, nextBaseURL, nextPrefix)
 	for _, existing := range current {
-		if codexAPIKeyAssetIDFromInput(existing) == targetID {
+		if codexAPIKeyInputMatchesID(existing, targetID) {
 			existing.APIKey = nextAPIKey
 			existing.BaseURL = nextBaseURL
 			existing.Prefix = nextPrefix
@@ -208,7 +208,7 @@ func (a *App) DeleteCodexAPIKey(id string) error {
 
 	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
 	for _, existing := range current {
-		if codexAPIKeyAssetIDFromInput(existing) == strings.TrimSpace(id) {
+		if codexAPIKeyInputMatchesID(existing, id) {
 			continue
 		}
 		next = append(next, existing)
@@ -230,7 +230,7 @@ func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
 	found := false
 	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
 	for _, existing := range current {
-		if codexAPIKeyAssetIDFromInput(existing) == targetID {
+		if codexAPIKeyInputMatchesID(existing, targetID) {
 			existing.Priority = priority
 			found = true
 		}
@@ -257,7 +257,7 @@ func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
 	found := false
 	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
 	for _, existing := range current {
-		if codexAPIKeyAssetIDFromInput(existing) == targetID {
+		if codexAPIKeyInputMatchesID(existing, targetID) {
 			existing.Disabled = disabled
 			found = true
 		}

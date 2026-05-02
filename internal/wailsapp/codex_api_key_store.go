@@ -2,8 +2,8 @@ package wailsapp
 
 import (
 	"crypto/rand"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -206,6 +206,14 @@ func codexAPIKeyConfigIdentityFromInput(item cliproxyapi.CodexAPIKeyInput) strin
 	return accountsdomain.CodexAPIKeyAssetID(item.APIKey, item.BaseURL, item.Prefix)
 }
 
+func codexAPIKeyInputMatchesID(item cliproxyapi.CodexAPIKeyInput, id string) bool {
+	targetID := strings.TrimSpace(id)
+	if targetID == "" {
+		return false
+	}
+	return codexAPIKeyAssetIDFromInput(item) == targetID || codexAPIKeyConfigIdentityFromInput(item) == targetID
+}
+
 func codexAPIKeyInputFromKey(item cliproxyapi.CodexAPIKey) cliproxyapi.CodexAPIKeyInput {
 	input := cliproxyapi.CodexAPIKeyInput{
 		LocalID:        item.LocalID,
@@ -241,15 +249,21 @@ func ensureCodexAPIKeyLocalID(item *cliproxyapi.CodexAPIKeyInput) error {
 
 func mergeCodexAPIKeyInputs(stored []cliproxyapi.CodexAPIKeyInput, sidecarItems []cliproxyapi.CodexAPIKey) ([]cliproxyapi.CodexAPIKeyInput, bool) {
 	merged := make([]cliproxyapi.CodexAPIKeyInput, 0, len(stored)+len(sidecarItems))
-	seen := make(map[string]struct{}, len(stored)+len(sidecarItems))
+	seenIDs := make(map[string]struct{}, len(stored)+len(sidecarItems))
+	seenConfigIdentities := make(map[string]struct{}, len(stored)+len(sidecarItems))
 
 	for _, item := range stored {
 		normalizeCodexAPIKeyInput(&item)
 		id := codexAPIKeyAssetIDFromInput(item)
-		if _, ok := seen[id]; ok {
+		configIdentity := codexAPIKeyConfigIdentityFromInput(item)
+		if _, ok := seenIDs[id]; ok {
 			continue
 		}
-		seen[id] = struct{}{}
+		if _, ok := seenConfigIdentities[configIdentity]; ok {
+			continue
+		}
+		seenIDs[id] = struct{}{}
+		seenConfigIdentities[configIdentity] = struct{}{}
 		merged = append(merged, item)
 	}
 
@@ -257,10 +271,15 @@ func mergeCodexAPIKeyInputs(stored []cliproxyapi.CodexAPIKeyInput, sidecarItems 
 	for _, item := range sidecarItems {
 		input := codexAPIKeyInputFromKey(item)
 		id := codexAPIKeyAssetIDFromInput(input)
-		if _, ok := seen[id]; ok {
+		configIdentity := codexAPIKeyConfigIdentityFromInput(input)
+		if _, ok := seenIDs[id]; ok {
 			continue
 		}
-		seen[id] = struct{}{}
+		if _, ok := seenConfigIdentities[configIdentity]; ok {
+			continue
+		}
+		seenIDs[id] = struct{}{}
+		seenConfigIdentities[configIdentity] = struct{}{}
 		migrated = true
 		merged = append(merged, input)
 	}

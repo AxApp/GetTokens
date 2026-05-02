@@ -113,6 +113,11 @@ export default function AccountCard({
               {primaryLabel}
             </span>
           </h3>
+          {account.baseUrl ? (
+            <div className="break-all font-mono text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              {account.baseUrl}
+            </div>
+          ) : null}
           {failureReason ? (
             <div className="break-words text-[0.625rem] font-bold leading-relaxed text-red-500" title={failureReason}>
               {failureReason}
