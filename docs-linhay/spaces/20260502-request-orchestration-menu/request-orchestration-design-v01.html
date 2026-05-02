@@ -178,47 +178,79 @@
       .workspace {
         min-width: 0;
         background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 18%),
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
           var(--bg-panel-soft);
+        background-size: 24px 24px, 24px 24px, auto;
       }
 
       .workspace-header {
-        padding: 28px 32px 20px;
-        border-bottom: 2px solid var(--line-strong);
-        background: rgba(255, 255, 255, 0.02);
+        padding: 16px 32px 0;
+        border-bottom: 0;
+        background: transparent;
       }
 
-      .workspace-top {
+      .canvas-toolbar {
+        min-height: 54px;
+        border: 2px solid var(--line);
+        background: rgba(17, 19, 22, 0.9);
+        box-shadow: 6px 6px 0 var(--shadow);
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 20px;
-        align-items: end;
+        gap: 16px;
+        align-items: center;
+        padding: 12px 14px;
       }
 
-      .eyebrow {
-        display: inline-flex;
+      .canvas-toolbar-copy {
+        display: grid;
+        gap: 10px;
+        min-width: 0;
+      }
+
+      .canvas-title-row {
+        display: flex;
         align-items: center;
         gap: 10px;
-        color: var(--text-secondary);
+        flex-wrap: wrap;
+      }
+
+      .canvas-title {
+        font-size: 13px;
+        font-weight: 700;
         text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .canvas-note {
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .canvas-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .canvas-pill {
+        min-height: 28px;
+        border: 2px solid var(--line);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
         font-family: var(--mono);
         font-size: 11px;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.06em;
       }
 
-      .eyebrow::before {
-        content: "";
-        width: 10px;
-        height: 10px;
-        background: var(--accent);
-        box-shadow: 2px 2px 0 var(--shadow);
-      }
-
-      h1 {
-        margin: 14px 0 8px;
-        font-size: clamp(30px, 3vw, 44px);
-        line-height: 0.98;
-        letter-spacing: 0;
+      .canvas-pill strong {
+        color: var(--text-primary);
+        font-weight: 700;
       }
 
       .locator {
@@ -287,13 +319,6 @@
         transform: translateY(0);
       }
 
-      .headline-sub {
-        max-width: 760px;
-        color: var(--text-secondary);
-        font-size: 14px;
-        line-height: 1.6;
-      }
-
       .header-actions {
         display: flex;
         align-items: center;
@@ -326,50 +351,8 @@
         box-shadow: 4px 4px 0 var(--shadow);
       }
 
-      .workspace-meta {
-        margin-top: 22px;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .meta-block {
-        min-height: 92px;
-        border: 2px solid var(--line);
-        background: var(--bg-panel);
-        padding: 14px 16px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        box-shadow: 4px 4px 0 var(--shadow);
-      }
-
-      .meta-label {
-        color: var(--text-secondary);
-        font-size: 10px;
-        font-family: var(--mono);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .meta-value {
-        font-size: 24px;
-        font-weight: 700;
-        line-height: 1;
-        letter-spacing: 0;
-      }
-
-      .meta-note {
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
       .chain-bar {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-        padding: 18px 32px 0;
+        display: none;
       }
 
       .chain-node {
@@ -425,36 +408,32 @@
 
       .content-grid {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 312px;
+        grid-template-columns: minmax(0, 1fr);
         gap: 18px;
-        padding: 18px 32px 32px;
+        padding: 16px 32px 32px;
       }
 
       .lane-board {
         display: grid;
         grid-template-columns: repeat(4, minmax(280px, 1fr));
-        gap: 14px;
+        gap: 20px;
         min-width: 0;
         align-items: start;
       }
 
       .lane {
-        border: 2px solid var(--line);
-        background: var(--bg-panel);
-        box-shadow: 6px 6px 0 var(--shadow);
         display: flex;
         flex-direction: column;
-        min-height: 720px;
-        transition: border-color 140ms ease, transform 140ms ease;
+        min-height: auto;
+        transition: transform 140ms ease;
       }
 
       .lane.active {
-        border-color: var(--accent);
+        transform: translateY(-2px);
       }
 
       .lane-head {
-        padding: 16px 16px 14px;
-        border-bottom: 2px solid var(--line);
+        padding: 8px 2px 10px;
         display: grid;
         gap: 8px;
       }
@@ -485,14 +464,7 @@
       }
 
       .lane-toggle {
-        border: 2px solid var(--line);
-        width: 32px;
-        height: 32px;
-        background: transparent;
-        color: var(--text-secondary);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+        display: none;
       }
 
       .lane-copy {
@@ -502,13 +474,9 @@
       }
 
       .lane-section {
-        padding: 14px 16px;
+        padding: 0;
         display: grid;
-        gap: 12px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .lane-section:last-child {
+        gap: 14px;
         border-bottom: 0;
       }
 
@@ -713,6 +681,95 @@
         gap: 8px;
       }
 
+      .member-cloud,
+      .route-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .member-chip,
+      .route-chip {
+        min-height: 24px;
+        border: 1px solid var(--line);
+        padding: 0 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-secondary);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .member-chip strong,
+      .route-chip strong {
+        color: var(--text-primary);
+      }
+
+      .route-block {
+        border: 2px dashed rgba(255, 255, 255, 0.12);
+        padding: 12px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .route-row {
+        display: grid;
+        gap: 10px;
+      }
+
+      .route-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 10px;
+      }
+
+      .route-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .route-buttons button,
+      .test-button {
+        min-height: 32px;
+        border: 2px solid var(--line);
+        background: transparent;
+        color: var(--text-primary);
+        padding: 0 10px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .route-buttons button.active,
+      .test-button {
+        border-color: var(--accent);
+      }
+
+      .route-buttons button.active {
+        background: rgba(243, 87, 45, 0.12);
+      }
+
+      .test-button {
+        background: var(--accent);
+        color: var(--text-dark);
+      }
+
+      .test-console {
+        min-height: 96px;
+        border: 2px solid var(--line);
+        background: rgba(0, 0, 0, 0.16);
+        padding: 12px;
+        font-family: var(--mono);
+        font-size: 11px;
+        line-height: 1.6;
+        color: var(--text-secondary);
+      }
+
       .mapping-line,
       .reason-line {
         display: grid;
@@ -890,8 +947,6 @@
       }
 
       @media (max-width: 1200px) {
-        .workspace-meta,
-        .chain-bar,
         .inspector {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
@@ -929,14 +984,13 @@
 
       @media (max-width: 720px) {
         .workspace-header,
-        .chain-bar,
         .content-grid,
         .footer-note {
           padding-left: 18px;
           padding-right: 18px;
         }
 
-        .workspace-top {
+        .canvas-toolbar {
           grid-template-columns: 1fr;
         }
 
@@ -944,8 +998,6 @@
           justify-content: flex-start;
         }
 
-        .workspace-meta,
-        .chain-bar,
         .inspector,
         .model-grid {
           grid-template-columns: 1fr;
@@ -1015,58 +1067,30 @@
 
       <main class="workspace" data-collaboration-id="RO.WORKSPACE">
         <header class="workspace-header" data-collaboration-id="RO.HEADER">
-          <div class="workspace-top">
-            <div>
-              <div class="eyebrow">Request orchestration / app-owned control plane</div>
-              <h1>请求如何进入, 如何被筛掉, 最后如何发出</h1>
-              <div class="locator-row">
+          <div class="canvas-toolbar">
+            <div class="canvas-toolbar-copy">
+              <div class="canvas-title-row">
+                <span class="canvas-title">请求编排画布</span>
                 <span class="locator">RO.HEADER</span>
                 <span class="locator">RO.WORKSPACE</span>
               </div>
-              <div class="headline-sub">
-                这不是路由表单, 也不是账号资产页。它是一个以链路为中心的工作台, 把入口上下文、账号组参与、账号级代理语义和最终出口压在同一条可读路径里。
+              <div class="canvas-stats" data-collaboration-id="RO.SUMMARY">
+                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.ENTRY"><span>入口</span><strong id="meta-cli">codex</strong></div>
+                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.GROUP"><span>账号组</span><strong id="meta-group">Codex 生产组</strong></div>
+                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.OUTLET"><span>连线结果</span><strong id="meta-available">2 节点</strong></div>
+                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.ACTION"><span>状态</span><strong id="meta-last-action">未应用</strong></div>
               </div>
+              <div class="canvas-note">主视图改为节点连线制: 左侧选入口, 中间选账号组和代理节点, 最右侧结束并测试。</div>
             </div>
             <div class="header-actions">
-              <button class="ghost-button" type="button">
-                <span>◎</span>
-                <span>预览来源</span>
-              </button>
               <button class="ghost-button" type="button" id="reset-flow">
                 <span>↺</span>
-                <span>恢复默认编排</span>
+                <span>恢复默认</span>
               </button>
               <button class="solid-button" type="button" id="apply-flow">
                 <span>→</span>
-                <span>应用编排</span>
+                <span>应用</span>
               </button>
-            </div>
-          </div>
-
-          <div class="workspace-meta" data-collaboration-id="RO.SUMMARY">
-            <div class="meta-block" data-collaboration-id="RO.SUMMARY.ENTRY">
-              <div class="locator-row"><span class="locator">RO.SUMMARY.ENTRY</span></div>
-              <div class="meta-label">当前入口</div>
-              <div class="meta-value" id="meta-cli">codex</div>
-              <div class="meta-note" id="meta-entry-note">本地 Codex / gpt-5.5 / round-robin</div>
-            </div>
-            <div class="meta-block" data-collaboration-id="RO.SUMMARY.GROUP">
-              <div class="locator-row"><span class="locator">RO.SUMMARY.GROUP</span></div>
-              <div class="meta-label">活跃账号组</div>
-              <div class="meta-value" id="meta-group">全部参与</div>
-              <div class="meta-note" id="meta-group-note">2 个组仍在出站候选集合中</div>
-            </div>
-            <div class="meta-block" data-collaboration-id="RO.SUMMARY.OUTLET">
-              <div class="locator-row"><span class="locator">RO.SUMMARY.OUTLET</span></div>
-              <div class="meta-label">可用出口对象</div>
-              <div class="meta-value" id="meta-available">03</div>
-              <div class="meta-note" id="meta-available-note">1 个因 CLI 不兼容, 1 个因模型缺映射被排除</div>
-            </div>
-            <div class="meta-block" data-collaboration-id="RO.SUMMARY.ACTION">
-              <div class="locator-row"><span class="locator">RO.SUMMARY.ACTION</span></div>
-              <div class="meta-label">最后一次动作</div>
-              <div class="meta-value" id="meta-last-action">未应用</div>
-              <div class="meta-note" id="meta-last-note">当前设计稿演示 APP overlay 与 sidecar apply 的边界</div>
             </div>
           </div>
         </header>
@@ -1078,7 +1102,7 @@
             <article class="lane active" data-lane="entry" data-collaboration-id="RO.LANE.ENTRY">
               <div class="lane-head">
                 <div class="lane-head-top">
-                  <div class="lane-number">lane 01</div>
+                  <div class="lane-number">node 01</div>
                   <button class="lane-toggle" type="button" data-focus="entry">+</button>
                 </div>
                 <div class="lane-title">
@@ -1086,50 +1110,31 @@
                   <span class="locator">RO.LANE.ENTRY</span>
                 </div>
                 <div class="lane-copy">
-                  决定链路从哪个客户端语义进入, 用什么模型名看待后续账号兼容性, 以及当前是普通参与还是锁定意图。
+                  节点只保留两个入口: `codex` 与 `claude code`。
                 </div>
               </div>
 
               <div class="lane-section">
-                <div class="section-kicker">入口类型</div>
-                <div class="segmented">
-                  <button class="entry-type active" data-entry-type="local-codex" type="button">本地 Codex</button>
-                  <button class="entry-type" data-entry-type="relay" type="button">Relay API</button>
-                </div>
-              </div>
-
-              <div class="lane-section">
-                <div class="section-kicker">CLI 上下文</div>
+                <div class="section-kicker">请求入口</div>
                 <div class="segmented">
                   <button class="cli-token active" data-cli="codex" type="button">codex</button>
-                  <button class="cli-token" data-cli="claude" type="button">claude</button>
-                  <button class="cli-token" data-cli="openai-compatible" type="button">openai-compatible</button>
+                  <button class="cli-token" data-cli="claude-code" type="button">claude code</button>
                 </div>
               </div>
 
               <div class="lane-section">
-                <div class="section-kicker">入口模型</div>
-                <div class="model-grid">
-                  <button class="token active model-token" data-model="gpt-5.5" type="button">gpt-5.5</button>
-                  <button class="token model-token" data-model="gpt-5.4-mini" type="button">gpt-5.4-mini</button>
-                  <button class="token model-token" data-model="claude-sonnet-4-5" type="button">claude-sonnet-4-5</button>
-                  <button class="token model-token" data-model="gpt-5.4" type="button">gpt-5.4</button>
-                </div>
-              </div>
-
-              <div class="lane-section">
-                <div class="section-kicker">基础路由参数</div>
+                <div class="section-kicker">入口说明</div>
                 <div class="metric-pair">
-                  <span class="key">strategy</span>
-                  <span class="value" id="entry-strategy">round-robin</span>
+                  <span class="key">current client</span>
+                  <span class="value" id="entry-strategy">codex</span>
                 </div>
                 <div class="metric-pair">
-                  <span class="key">session affinity</span>
-                  <span class="value">enabled / 1h</span>
+                  <span class="key">scope</span>
+                  <span class="value">仅允许 codex / claude code</span>
                 </div>
                 <div class="metric-pair">
-                  <span class="key">request retry</span>
-                  <span class="value">2 / max credentials 4</span>
+                  <span class="key">dispatch</span>
+                  <span class="value">从入口进入账号组选择</span>
                 </div>
               </div>
             </article>
@@ -1137,7 +1142,7 @@
             <article class="lane" data-lane="groups" data-collaboration-id="RO.LANE.GROUPS">
               <div class="lane-head">
                 <div class="lane-head-top">
-                  <div class="lane-number">lane 02</div>
+                  <div class="lane-number">node 02</div>
                   <button class="lane-toggle" type="button" data-focus="groups">+</button>
                 </div>
                 <div class="lane-title">
@@ -1145,126 +1150,50 @@
                   <span class="locator">RO.LANE.GROUPS</span>
                 </div>
                 <div class="lane-copy">
-                  这层只表达“哪一组参与这条链路”。唯一组模式不是 sidecar 新策略, 而是 APP 把其他组从当前参与集合里剔除。
+                  这里展示的是账号池里已经存在的账号组。当前链路只会从其中选一组继续向右推进。
                 </div>
               </div>
 
               <div class="lane-section" id="group-list" data-collaboration-id="RO.LANE.GROUPS.LIST"></div>
             </article>
 
-            <article class="lane" data-lane="accounts" data-collaboration-id="RO.LANE.ACCOUNTS">
+            <article class="lane" data-lane="proxies" data-collaboration-id="RO.LANE.PROXIES">
               <div class="lane-head">
                 <div class="lane-head-top">
-                  <div class="lane-number">lane 03</div>
-                  <button class="lane-toggle" type="button" data-focus="accounts">+</button>
+                  <div class="lane-number">node 03</div>
+                  <button class="lane-toggle" type="button" data-focus="proxies">+</button>
                 </div>
                 <div class="lane-title">
-                  <span>账号代理</span>
-                  <span class="locator">RO.LANE.ACCOUNTS</span>
+                  <span>代理池</span>
+                  <span class="locator">RO.LANE.PROXIES</span>
                 </div>
                 <div class="lane-copy">
-                  这里不直接管理代理池, 只管理账号级语义: 走不走代理、支持哪些 CLI、入口模型会如何映射到真实模型。
+                  账号在这里决定是否挂到代理池。连到某个代理节点表示走代理, 未挂接则保持直连。
                 </div>
               </div>
 
-              <div class="lane-section" id="account-list" data-collaboration-id="RO.LANE.ACCOUNTS.LIST"></div>
+              <div class="lane-section" id="proxy-list" data-collaboration-id="RO.LANE.PROXIES.LIST"></div>
             </article>
 
-            <article class="lane" data-lane="outlet" data-collaboration-id="RO.LANE.OUTLET">
+            <article class="lane" data-lane="end" data-collaboration-id="RO.LANE.END">
               <div class="lane-head">
                 <div class="lane-head-top">
-                  <div class="lane-number">lane 04</div>
-                  <button class="lane-toggle" type="button" data-focus="outlet">+</button>
+                  <div class="lane-number">node 04</div>
+                  <button class="lane-toggle" type="button" data-focus="end">+</button>
                 </div>
                 <div class="lane-title">
-                  <span>出口</span>
-                  <span class="locator">RO.LANE.OUTLET</span>
+                  <span>结束</span>
+                  <span class="locator">RO.LANE.END</span>
                 </div>
                 <div class="lane-copy">
-                  最终出口只做结果确认: 哪些对象真的还在候选里, 会从哪个 baseUrl 发出, 当前排除理由都是什么。
+                  这里是链路收口区。确认当前请求会落到哪些账号, 走不走代理, 并允许直接发起测试。
                 </div>
               </div>
 
-              <div class="lane-section" id="outlet-list" data-collaboration-id="RO.LANE.OUTLET.LIST"></div>
+              <div class="lane-section" id="end-list" data-collaboration-id="RO.LANE.END.LIST"></div>
             </article>
           </section>
 
-          <aside class="inspector" data-collaboration-id="RO.INSPECTOR">
-            <section class="inspector-panel" data-collaboration-id="RO.INSPECTOR.IMPACT">
-              <div class="inspector-head">
-                <div class="inspector-title">
-                  当前影响
-                  <span class="locator">RO.INSPECTOR.IMPACT</span>
-                </div>
-                <span class="badge accent" id="focus-badge">entry</span>
-              </div>
-              <div class="inspector-body">
-                <div class="focus-copy" id="focus-copy">
-                  当前正在查看入口上下文。这里定义的 CLI 与模型名会直接决定后面哪些账号可参与, 哪些账号只剩下“有配置但不可出站”的灰态。
-                </div>
-                <div class="focus-highlight">
-                  <div class="section-kicker">焦点摘要</div>
-                  <strong id="focus-title">入口模型先裁兼容性, 再决定可用出口集合</strong>
-                  <div class="focus-copy" id="focus-detail">
-                    当入口是 `codex / gpt-5.5` 时, 只有同时满足 `支持 codex` 且存在 `gpt-5.5 -> targetModel` 映射的账号才会进入最终出口。
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="inspector-panel" data-collaboration-id="RO.INSPECTOR.TIMELINE">
-              <div class="inspector-head">
-                <div class="inspector-title">
-                  最近变更
-                  <span class="locator">RO.INSPECTOR.TIMELINE</span>
-                </div>
-                <span class="badge warning">app overlay</span>
-              </div>
-              <div class="inspector-body">
-                <div class="timeline">
-                  <div class="timeline-entry">
-                    <time>09:42</time>
-                    <div>将入口 CLI 从 <strong>claude</strong> 切回 <strong>codex</strong>。</div>
-                  </div>
-                  <div class="timeline-entry">
-                    <time>09:39</time>
-                    <div>对 `codex-lab-02` 写入 `gpt-5.5 -> gpt-5.4-mini` 映射。</div>
-                  </div>
-                  <div class="timeline-entry">
-                    <time>09:31</time>
-                    <div>将 `OpenAI-Compatible 组` 激活为唯一组, 其余对象转入排除集合。</div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section class="inspector-panel" data-collaboration-id="RO.INSPECTOR.LEGEND">
-              <div class="inspector-head">
-                <div class="inspector-title">
-                  边界图例
-                  <span class="locator">RO.INSPECTOR.LEGEND</span>
-                </div>
-                <span class="badge success">v1</span>
-              </div>
-              <div class="inspector-body">
-                <div class="legend">
-                  <div class="legend-item"><span>APP-only</span><strong>CLI 支持 / 模型映射 / 代理语义</strong></div>
-                  <div class="legend-item"><span>apply-to-sidecar</span><strong>routing / disabled 状态</strong></div>
-                  <div class="legend-item"><span>不在本期</span><strong>请求级动态编排</strong></div>
-                </div>
-                <div class="inspector-actions">
-                  <button class="ghost-button" type="button">
-                    <span>⌁</span>
-                    <span>查看快照</span>
-                  </button>
-                  <button class="solid-button" type="button">
-                    <span>⇄</span>
-                    <span>比较应用前后</span>
-                  </button>
-                </div>
-              </div>
-            </section>
-          </aside>
         </div>
 
         <div class="footer-note">
@@ -1279,62 +1208,61 @@
       const stageMeta = {
         entry: {
           label: "请求入口",
-          hint: "入口先定义 CLI 和模型语义, 后面所有兼容性都从这里分叉。",
+          hint: "只允许 codex 或 claude code 两种来源进入编排。",
           focusCopy:
-            "当前正在查看入口上下文。这里定义的 CLI 与模型名会直接决定后面哪些账号可参与, 哪些账号只剩下“有配置但不可出站”的灰态。",
-          focusTitle: "入口模型先裁兼容性, 再决定可用出口集合",
+            "入口只定义这次请求来自哪种 CLI 语义。后续账号组里哪些账号能继续参与, 会直接受这里的客户端类型影响。",
+          focusTitle: "入口先定客户端, 再进入账号组",
           focusDetail:
-            "当入口是 `codex / gpt-5.5` 时, 只有同时满足 `支持 codex` 且存在 `gpt-5.5 -> targetModel` 映射的账号才会进入最终出口。",
+            "这期设计里不再展开模型映射。入口只保留 `codex` 和 `claude code` 两个选项, 让编排画布先聚焦在链路结构本身。",
         },
         groups: {
           label: "账号组",
-          hint: "唯一组模式改变的是参与集合, 不是 sidecar 原生轮动枚举。",
+          hint: "账号组来自账号池, 当前链路只选择其中一组继续执行。",
           focusCopy:
-            "这里决定的是哪一组还能参与当前链路。切成唯一组后, 你会立刻看到可用出口数量变化, 但底层仍然沿用现有 routing strategy。",
-          focusTitle: "唯一组是 APP 翻译动作, 不是新策略",
+            "这里看到的不是新建分组, 而是账号池里已经存在的账号集合。请求从入口进来后, 会先选中一组账号作为候选执行面。",
+          focusTitle: "账号组是账号池的投影, 不是孤立配置",
           focusDetail:
-            "V1 下, GetTokens 会保存快照, 然后仅保留目标组启用。恢复默认编排时再把原始 disabled 状态和 routing 一并回滚。",
+            "每个组都会展示组内账号和它们支持的入口类型。切换组时, 右侧代理池和结束区会立刻跟着刷新。",
         },
-        accounts: {
-          label: "账号代理",
-          hint: "账号行里同时承载 proxy 语义、CLI 支持、模型映射和兼容性结果。",
+        proxies: {
+          label: "代理池",
+          hint: "账号连到代理节点表示走代理, 不连则保持直连。",
           focusCopy:
-            "这条泳道不直接新增代理池节点。它只负责账号级语义, 让你一眼看清每个账号为什么能出站, 或者为什么虽然存在但现在不能用。",
-          focusTitle: "兼容性不是抽象标签, 而是账号行上的即时结果",
+            "这里是代理编排面。你不再改账号属性本身, 而是把当前组里的账号挂接到代理池节点上, 形成这条请求链路的出站方式。",
+          focusTitle: "代理池负责挂接关系, 不是账号详情页",
           focusDetail:
-            "一个账号想进入候选集合, 至少要满足三件事: 在活跃组内、支持当前 CLI、存在当前入口模型的映射。缺任何一项都应该被明确标红。",
+            "一个账号在这里有两种状态: 保持直连, 或挂到某个代理节点。页面会同时展示路由编辑区和代理池摘要区。",
         },
-        outlet: {
-          label: "出口",
-          hint: "出口只关心最后还能发出的对象与排除原因。",
+        end: {
+          label: "结束",
+          hint: "链路在这里收口, 并允许发起测试。",
           focusCopy:
-            "出口是确认区, 不是编辑区。所有上游动作都应该在这里留下结果: baseUrl、proxy mode、真实 target model, 以及剩余可用对象数量。",
-          focusTitle: "出口负责收口, 不负责重新解释上游规则",
+            "结束区只做收口和验证。它把当前入口、选中的账号组和代理挂接结果汇总起来, 并提供一个直接的测试动作。",
+          focusTitle: "结束区负责确认与测试",
           focusDetail:
-            "如果一个账号在这里消失, 原因必须可追踪回账号组、CLI 支持或模型映射, 而不是只剩一个模糊的“不可用”。",
+            "你应该能在这里明确看到: 哪些账号会执行、哪些走代理、哪些保持直连, 然后直接点测试按钮验证整条链路。",
         },
       };
 
       const state = {
-        entryType: "local-codex",
         cli: "codex",
-        model: "gpt-5.5",
-        strategy: "round-robin",
-        activeGroupMode: "all",
+        activeGroupId: "codex",
         focus: "entry",
         lastAction: "未应用",
+        testStatus: "未测试",
+        testLog: "等待从结束节点发起测试。",
         groups: [
           {
             id: "codex",
-            label: "Codex 组",
-            note: "auth-file / codex api key",
+            label: "Codex 生产组",
+            note: "来自账号池 / 2 个账号",
             members: ["codex-prod-01", "codex-lab-02"],
           },
           {
-            id: "openai-compatible",
-            label: "OpenAI-Compatible 组",
-            note: "provider / key entry",
-            members: ["or-router-01", "deepseek-team"],
+            id: "claude",
+            label: "Claude 灰度组",
+            note: "来自账号池 / 2 个账号",
+            members: ["claude-prod-01", "bridge-01"],
           },
         ],
         accounts: [
@@ -1342,60 +1270,64 @@
             id: "codex-prod-01",
             name: "codex-prod-01",
             group: "codex",
-            proxyMode: "inherit",
-            proxySource: "继承默认出口",
-            supportedCli: ["codex"],
-            mappings: {
-              "gpt-5.5": { target: "gpt-5.5", alias: "GPT 5.5" },
-              "gpt-5.4-mini": { target: "gpt-5.4-mini", alias: "GPT 5.4 Mini" },
-            },
+            entrySupport: ["codex"],
+            provider: "OpenAI",
+            proxyId: null,
             baseUrl: "https://relay.local/v1",
           },
           {
             id: "codex-lab-02",
             name: "codex-lab-02",
             group: "codex",
-            proxyMode: "custom",
-            proxySource: "proxy-pool / hk-resi-03",
-            supportedCli: ["codex", "claude"],
-            mappings: {
-              "gpt-5.5": { target: "gpt-5.4-mini", alias: "GPT 5.4 Mini" },
-              "claude-sonnet-4-5": { target: "claude-sonnet-4-5", alias: "Sonnet 4.5" },
-            },
+            entrySupport: ["codex", "claude-code"],
+            provider: "OpenAI",
+            proxyId: "hk-resi-03",
             baseUrl: "https://relay.local/v1",
           },
           {
-            id: "or-router-01",
-            name: "openrouter-core",
-            group: "openai-compatible",
-            proxyMode: "direct",
-            proxySource: "显式直连",
-            supportedCli: ["openai-compatible", "codex"],
-            mappings: {
-              "gpt-5.5": { target: "openai/gpt-5.5", alias: "OpenAI GPT 5.5" },
-              "gpt-5.4": { target: "openai/gpt-5.4", alias: "OpenAI GPT 5.4" },
-            },
-            baseUrl: "https://openrouter.ai/api/v1",
+            id: "claude-prod-01",
+            name: "claude-prod-01",
+            group: "claude",
+            entrySupport: ["claude-code"],
+            provider: "Anthropic",
+            proxyId: "sg-biz-01",
+            baseUrl: "https://relay.local/claude",
           },
           {
-            id: "deepseek-team",
-            name: "deepseek-team",
-            group: "openai-compatible",
-            proxyMode: "custom",
-            proxySource: "proxy-pool / sg-biz-01",
-            supportedCli: ["openai-compatible"],
-            mappings: {
-              "gpt-5.4-mini": { target: "deepseek-chat", alias: "DeepSeek Chat" },
-            },
-            baseUrl: "https://api.deepseek.com/v1",
+            id: "bridge-01",
+            name: "bridge-01",
+            group: "claude",
+            entrySupport: ["codex", "claude-code"],
+            provider: "Bridge",
+            proxyId: null,
+            baseUrl: "https://relay.local/bridge",
+          },
+        ],
+        proxies: [
+          {
+            id: "hk-resi-03",
+            label: "hk-resi-03",
+            note: "住宅出口 / Hong Kong",
+          },
+          {
+            id: "sg-biz-01",
+            label: "sg-biz-01",
+            note: "商务出口 / Singapore",
+          },
+          {
+            id: "us-static-02",
+            label: "us-static-02",
+            note: "静态出口 / US West",
           },
         ],
       };
 
+      const defaultProxyBindings = Object.fromEntries(state.accounts.map((account) => [account.id, account.proxyId]));
+
       const chainBar = document.getElementById("chain-bar");
       const groupList = document.getElementById("group-list");
-      const accountList = document.getElementById("account-list");
-      const outletList = document.getElementById("outlet-list");
+      const proxyList = document.getElementById("proxy-list");
+      const endList = document.getElementById("end-list");
       const copyToast = document.getElementById("copy-toast");
       let copyToastTimer = null;
 
@@ -1437,30 +1369,28 @@
 
       function computeAccounts() {
         return state.accounts.map((account) => {
-          const groupAllowed =
-            state.activeGroupMode === "all" || account.group === state.activeGroupMode;
-          const cliAllowed = account.supportedCli.includes(state.cli);
-          const mapping = account.mappings[state.model] || null;
-          const compatible = groupAllowed && cliAllowed && Boolean(mapping);
+          const groupSelected = account.group === state.activeGroupId;
+          const entryAllowed = account.entrySupport.includes(state.cli);
+          const active = groupSelected && entryAllowed;
+          const proxy = state.proxies.find((item) => item.id === account.proxyId) || null;
 
           const reasons = [];
-          if (!groupAllowed) reasons.push("唯一组排除");
-          if (!cliAllowed) reasons.push("CLI 不兼容");
-          if (!mapping) reasons.push("缺少模型映射");
+          if (!groupSelected) reasons.push("不在当前账号组");
+          if (!entryAllowed) reasons.push("入口不兼容");
 
           return {
             ...account,
-            compatible,
-            groupAllowed,
-            cliAllowed,
-            mapping,
+            groupSelected,
+            entryAllowed,
+            active,
+            proxy,
             reasons,
           };
         });
       }
 
       function renderChainBar() {
-        const stages = ["entry", "groups", "accounts", "outlet"];
+        const stages = ["entry", "groups", "proxies", "end"];
         chainBar.innerHTML = stages
           .map((key, index) => {
             const meta = stageMeta[key];
@@ -1483,13 +1413,11 @@
         groupList.innerHTML = state.groups
           .map((group) => {
             const members = computed.filter((item) => item.group === group.id);
-            const compatibleCount = members.filter((item) => item.compatible).length;
-            const isUnique = state.activeGroupMode === group.id;
-            const modeLabel = isUnique ? "唯一活跃组" : state.activeGroupMode === "all" ? "普通参与" : "已排除";
+            const compatibleCount = members.filter((item) => item.entryAllowed).length;
+            const selected = state.activeGroupId === group.id;
             const cardClasses = ["group-card"];
             const locatorId = `RO.GROUP.${toLocatorSegment(group.id)}`;
-            if (isUnique) cardClasses.push("unique");
-            if (state.activeGroupMode === "all") cardClasses.push("active");
+            if (selected) cardClasses.push("unique");
             return `
               <div class="${cardClasses.join(" ")}" data-collaboration-id="${locatorId}">
                 <div class="group-top">
@@ -1498,104 +1426,40 @@
                     <div class="locator-row"><span class="locator">${locatorId}</span></div>
                     <div class="group-sub">${group.note}</div>
                   </div>
-                  <span class="badge ${isUnique ? "accent" : compatibleCount > 0 ? "success" : "warning"}">${modeLabel}</span>
+                  <span class="badge ${selected ? "accent" : compatibleCount > 0 ? "success" : "warning"}">${selected ? "当前链路" : "待选"}</span>
                 </div>
                 <div class="metric-pair">
-                  <span class="key">组内对象</span>
+                  <span class="key">账号池成员</span>
                   <span class="value">${members.length}</span>
                 </div>
                 <div class="metric-pair">
-                  <span class="key">当前可出站</span>
+                  <span class="key">兼容当前入口</span>
                   <span class="value">${compatibleCount}</span>
                 </div>
-                <div class="group-actions">
-                  <button
-                    class="${isUnique ? "active" : ""}"
-                    type="button"
-                    data-group-action="${isUnique ? "all" : group.id}"
-                  >
-                    ${isUnique ? "恢复普通参与" : "激活为唯一组"}
-                  </button>
-                  <button type="button">查看组内对象</button>
-                </div>
-              </div>
-            `;
-          })
-          .join("");
-      }
-
-      function renderAccounts(computed) {
-        accountList.innerHTML = computed
-          .map((account) => {
-            const rowClass = account.compatible ? "account-row compatible" : "account-row";
-            const locatorId = `RO.ACCOUNT.${toLocatorSegment(account.id)}`;
-            const statusBadge = account.compatible
-              ? '<span class="badge success">可出站</span>'
-              : `<span class="badge ${account.groupAllowed ? "danger" : "warning"}">${account.reasons[0]}</span>`;
-            const mappingEntries = Object.entries(account.mappings)
-              .map(
-                ([entryModel, mapping]) => `
-                  <div class="mapping-line">
-                    <span>${entryModel}</span>
-                    <strong>${mapping.target}${mapping.alias ? ` / ${mapping.alias}` : ""}</strong>
-                  </div>
-                `
-              )
-              .join("");
-            return `
-              <div class="${rowClass}" data-collaboration-id="${locatorId}">
-                <div class="row-top">
-                  <div>
-                    <div class="row-name">${account.name}</div>
-                    <div class="locator-row"><span class="locator">${locatorId}</span></div>
-                    <div class="row-sub">${account.group} / ${account.baseUrl}</div>
-                  </div>
-                  ${statusBadge}
-                </div>
-
-                <div class="proxy-pills" data-account="${account.id}">
-                  <button type="button" data-proxy="inherit" class="${account.proxyMode === "inherit" ? "active" : ""}">inherit</button>
-                  <button type="button" data-proxy="direct" class="${account.proxyMode === "direct" ? "active" : ""}">direct</button>
-                  <button type="button" data-proxy="custom" class="${account.proxyMode === "custom" ? "active" : ""}">custom</button>
-                </div>
-
-                <div class="metric-pair">
-                  <span class="key">代理来源</span>
-                  <span class="value">${account.proxySource}</span>
-                </div>
-
                 <div>
-                  <div class="section-kicker">支持的 CLI</div>
-                  <div class="token-row">
-                    ${account.supportedCli
-                      .map((item) => `<span class="mini-token">${item}</span>`)
+                  <div class="section-kicker">组内账号</div>
+                  <div class="member-cloud">
+                    ${members
+                      .map(
+                        (member) => `
+                          <div class="member-chip">
+                            <strong>${member.name}</strong>
+                            <span>${member.entrySupport.join(" / ")}</span>
+                          </div>
+                        `
+                      )
                       .join("")}
                   </div>
                 </div>
-
-                <div>
-                  <div class="section-kicker">模型映射</div>
-                  <div class="mapping-list">${mappingEntries}</div>
-                </div>
-
-                <div class="reason-list">
-                  ${account.compatible
-                    ? `
-                      <div class="reason-line">
-                        <span>当前入口命中</span>
-                        <strong>${state.model} -> ${account.mapping.target}</strong>
-                      </div>
-                    `
-                    : account.reasons
-                        .map(
-                          (reason) => `
-                            <div class="reason-line">
-                              <span>排除原因</span>
-                              <strong>${reason}</strong>
-                            </div>
-                          `
-                        )
-                        .join("")}
+                <div class="group-actions">
+                  <button
+                    class="${selected ? "active" : ""}"
+                    type="button"
+                    data-group-action="${group.id}"
+                  >
+                    ${selected ? "当前使用中" : "切换到此组"}
+                  </button>
+                  <button type="button">查看账号池来源</button>
                 </div>
               </div>
             `;
@@ -1603,97 +1467,188 @@
           .join("");
       }
 
-      function renderOutlet(computed) {
-        const compatible = computed.filter((item) => item.compatible);
-        const blocked = computed.filter((item) => !item.compatible);
-        outletList.innerHTML = `
-          <div class="outlet-block primary" data-collaboration-id="RO.OUTLET.ACTIVE">
-            <div class="outlet-top">
-              <div>
-                <div class="outlet-name">当前有效出口</div>
-                <div class="locator-row"><span class="locator">RO.OUTLET.ACTIVE</span></div>
-                <div class="outlet-sub">只有经过组筛选、CLI 校验和模型映射命中的对象才会进入这块。</div>
-              </div>
-              <span class="badge success">${compatible.length} 可用</span>
-            </div>
-            <div class="metric-pair">
-              <span class="key">出口类型</span>
-              <span class="value">${compatible.some((item) => item.proxyMode === "custom") ? "代理出口" : "混合出口"}</span>
-            </div>
-            <div class="metric-pair">
-              <span class="key">最终模型语义</span>
-              <span class="value">${state.model}</span>
-            </div>
-            <div class="mapping-list">
-              ${compatible
-                .map(
-                  (item) => `
-                    <div class="mapping-line">
-                      <span>${item.name}</span>
-                      <strong>${item.mapping.target}${item.mapping.alias ? ` / ${item.mapping.alias}` : ""}</strong>
+      function renderProxies(computed) {
+        const selectedAccounts = computed.filter((item) => item.groupSelected);
+        const activeAccounts = selectedAccounts.filter((item) => item.entryAllowed);
+        const directAccounts = activeAccounts.filter((item) => !item.proxyId);
+
+        const routeEditor = `
+          <div class="route-block" data-collaboration-id="RO.PROXY.ROUTES">
+            <div class="locator-row"><span class="locator">RO.PROXY.ROUTES</span></div>
+            <div class="section-kicker">当前组账号挂接</div>
+            ${selectedAccounts
+              .map((account) => {
+                const locatorId = `RO.ACCOUNT.${toLocatorSegment(account.id)}`;
+                return `
+                  <div class="route-row" data-collaboration-id="${locatorId}">
+                    <div class="route-head">
+                      <div>
+                        <div class="row-name">${account.name}</div>
+                        <div class="locator-row"><span class="locator">${locatorId}</span></div>
+                        <div class="row-sub">${account.provider} / ${account.baseUrl}</div>
+                      </div>
+                      <span class="badge ${account.entryAllowed ? "success" : "warning"}">${account.entryAllowed ? "可参与" : "入口不兼容"}</span>
                     </div>
-                  `
-                )
-                .join("")}
+                    <div class="route-buttons">
+                      <button
+                        type="button"
+                        data-route-account="${account.id}"
+                        data-route-proxy="direct"
+                        class="${!account.proxyId ? "active" : ""}"
+                      >
+                        直连
+                      </button>
+                      ${state.proxies
+                        .map(
+                          (proxy) => `
+                            <button
+                              type="button"
+                              data-route-account="${account.id}"
+                              data-route-proxy="${proxy.id}"
+                              class="${account.proxyId === proxy.id ? "active" : ""}"
+                            >
+                              ${proxy.label}
+                            </button>
+                          `
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+                `;
+              })
+              .join("")}
+          </div>
+        `;
+
+        const directBlock = `
+          <div class="group-card" data-collaboration-id="RO.PROXY.DIRECT">
+            <div class="group-top">
+              <div>
+                <div class="group-name">直连</div>
+                <div class="locator-row"><span class="locator">RO.PROXY.DIRECT</span></div>
+                <div class="group-sub">未连到代理池节点的账号会直接出站。</div>
+              </div>
+              <span class="badge ${directAccounts.length > 0 ? "success" : "warning"}">${directAccounts.length} 个账号</span>
+            </div>
+            <div class="route-cloud">
+              ${directAccounts.length > 0
+                ? directAccounts.map((account) => `<div class="route-chip"><strong>${account.name}</strong></div>`).join("")
+                : '<div class="route-chip"><strong>当前无直连账号</strong></div>'}
             </div>
           </div>
+        `;
 
-          <div class="outlet-block" data-collaboration-id="RO.OUTLET.BLOCKED">
+        const proxyBlocks = state.proxies
+          .map((proxy) => {
+            const linkedAccounts = activeAccounts.filter((account) => account.proxyId === proxy.id);
+            const locatorId = `RO.PROXY.${toLocatorSegment(proxy.id)}`;
+            return `
+              <div class="group-card ${linkedAccounts.length > 0 ? "active" : ""}" data-collaboration-id="${locatorId}">
+                <div class="group-top">
+                  <div>
+                    <div class="group-name">${proxy.label}</div>
+                    <div class="locator-row"><span class="locator">${locatorId}</span></div>
+                    <div class="group-sub">${proxy.note}</div>
+                  </div>
+                  <span class="badge ${linkedAccounts.length > 0 ? "accent" : "warning"}">${linkedAccounts.length} 条连线</span>
+                </div>
+                <div class="route-cloud">
+                  ${linkedAccounts.length > 0
+                    ? linkedAccounts.map((account) => `<div class="route-chip"><strong>${account.name}</strong></div>`).join("")
+                    : '<div class="route-chip"><strong>当前无挂接账号</strong></div>'}
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+
+        proxyList.innerHTML = `${routeEditor}${directBlock}${proxyBlocks}`;
+      }
+
+      function renderEnd(computed) {
+        const selectedAccounts = computed.filter((item) => item.groupSelected);
+        const activeAccounts = selectedAccounts.filter((item) => item.entryAllowed);
+        const blockedAccounts = selectedAccounts.filter((item) => !item.entryAllowed);
+        const proxyCount = activeAccounts.filter((item) => item.proxyId).length;
+
+        endList.innerHTML = `
+          <div class="outlet-block primary" data-collaboration-id="RO.END.TEST">
             <div class="outlet-top">
               <div>
-                <div class="outlet-name">被排除对象</div>
-                <div class="locator-row"><span class="locator">RO.OUTLET.BLOCKED</span></div>
-                <div class="outlet-sub">排除原因必须能回链到上游泳道。</div>
+                <div class="outlet-name">结束与测试</div>
+                <div class="locator-row"><span class="locator">RO.END.TEST</span></div>
+                <div class="outlet-sub">确认链路后, 直接从这里发起一次测试请求。</div>
               </div>
-              <span class="badge warning">${blocked.length} 排除</span>
+              <span class="badge accent">${state.testStatus}</span>
+            </div>
+            <div class="metric-pair">
+              <span class="key">入口</span>
+              <span class="value">${state.cli}</span>
+            </div>
+            <div class="metric-pair">
+              <span class="key">账号组</span>
+              <span class="value">${state.groups.find((item) => item.id === state.activeGroupId).label}</span>
+            </div>
+            <div class="metric-pair">
+              <span class="key">代理挂接</span>
+              <span class="value">${proxyCount} 走代理 / ${activeAccounts.length - proxyCount} 直连</span>
             </div>
             <div class="mapping-list">
-              ${blocked
+              ${activeAccounts
                 .map(
-                  (item) => `
+                  (account) => `
                     <div class="mapping-line">
-                      <span>${item.name}</span>
-                      <strong>${item.reasons.join(" / ")}</strong>
+                      <span>${account.name}</span>
+                      <strong>${account.proxy ? `via ${account.proxy.label}` : "direct"}</strong>
                     </div>
                   `
                 )
                 .join("")}
+            </div>
+            <button class="test-button" type="button" id="run-test">测试当前链路</button>
+            <div class="test-console" id="test-log">${state.testLog}</div>
+          </div>
+
+          <div class="outlet-block" data-collaboration-id="RO.END.BLOCKED">
+            <div class="outlet-top">
+              <div>
+                <div class="outlet-name">未进入结束区的账号</div>
+                <div class="locator-row"><span class="locator">RO.END.BLOCKED</span></div>
+                <div class="outlet-sub">这里显示当前账号组里, 但与入口不兼容的对象。</div>
+              </div>
+              <span class="badge warning">${blockedAccounts.length} 排除</span>
+            </div>
+            <div class="mapping-list">
+              ${blockedAccounts.length > 0
+                ? blockedAccounts
+                    .map(
+                      (account) => `
+                        <div class="mapping-line">
+                          <span>${account.name}</span>
+                          <strong>${account.reasons.join(" / ")}</strong>
+                        </div>
+                      `
+                    )
+                    .join("")
+                : '<div class="mapping-line"><span>全部兼容</span><strong>当前账号组都能进入结束区</strong></div>'}
             </div>
           </div>
         `;
       }
 
-      function renderInspector() {
-        const meta = stageMeta[state.focus];
-        document.getElementById("focus-badge").textContent = state.focus;
-        document.getElementById("focus-copy").textContent = meta.focusCopy;
-        document.getElementById("focus-title").textContent = meta.focusTitle;
-        document.getElementById("focus-detail").textContent = meta.focusDetail;
+      function setTextIfPresent(id, value) {
+        const node = document.getElementById(id);
+        if (node) node.textContent = value;
       }
 
       function renderMeta(computed) {
-        const compatible = computed.filter((item) => item.compatible);
-        const cliBlocked = computed.filter((item) => !item.cliAllowed).length;
-        const mappingBlocked = computed.filter((item) => item.cliAllowed && !item.mapping && item.groupAllowed).length;
-        document.getElementById("meta-cli").textContent = state.cli;
-        document.getElementById("meta-entry-note").textContent =
-          `${state.entryType === "local-codex" ? "本地 Codex" : "Relay API"} / ${state.model} / ${state.strategy}`;
-        document.getElementById("meta-group").textContent =
-          state.activeGroupMode === "all"
-            ? "全部参与"
-            : `${state.groups.find((item) => item.id === state.activeGroupMode).label}`;
-        document.getElementById("meta-group-note").textContent =
-          state.activeGroupMode === "all"
-            ? `${state.groups.length} 个组仍在出站候选集合中`
-            : "当前仅保留一个组参与 sidecar 出站集合";
-        document.getElementById("meta-available").textContent = String(compatible.length).padStart(2, "0");
-        document.getElementById("meta-available-note").textContent =
-          `${cliBlocked} 个因 CLI 不兼容, ${mappingBlocked} 个因模型缺映射被排除`;
-        document.getElementById("meta-last-action").textContent = state.lastAction;
-        document.getElementById("meta-last-note").textContent =
-          state.lastAction === "已应用"
-            ? "已生成快照, 现有 disabled 状态可回滚"
-            : "当前设计稿演示 APP overlay 与 sidecar apply 的边界";
+        const activeAccounts = computed.filter((item) => item.active);
+        const proxyAccounts = activeAccounts.filter((item) => item.proxyId);
+        setTextIfPresent("meta-cli", state.cli);
+        setTextIfPresent("entry-strategy", state.cli);
+        setTextIfPresent("meta-group", state.groups.find((item) => item.id === state.activeGroupId).label);
+        setTextIfPresent("meta-available", `${activeAccounts.length} 节点 / ${proxyAccounts.length} 代理`);
+        setTextIfPresent("meta-last-action", state.lastAction);
       }
 
       function renderLaneFocus() {
@@ -1706,12 +1661,6 @@
         document.querySelectorAll(".cli-token").forEach((button) => {
           button.classList.toggle("active", button.dataset.cli === state.cli);
         });
-        document.querySelectorAll(".model-token").forEach((button) => {
-          button.classList.toggle("active", button.dataset.model === state.model);
-        });
-        document.querySelectorAll(".entry-type").forEach((button) => {
-          button.classList.toggle("active", button.dataset.entryType === state.entryType);
-        });
       }
 
       function render() {
@@ -1720,9 +1669,8 @@
         renderMeta(computed);
         renderChainBar();
         renderGroups(computed);
-        renderAccounts(computed);
-        renderOutlet(computed);
-        renderInspector();
+        renderProxies(computed);
+        renderEnd(computed);
         renderLaneFocus();
         hydrateLocators();
       }
@@ -1754,36 +1702,19 @@
           return;
         }
 
-        if (target.dataset.model) {
-          state.model = target.dataset.model;
-          state.focus = "entry";
-          render();
-          return;
-        }
-
-        if (target.dataset.entryType) {
-          state.entryType = target.dataset.entryType;
-          state.focus = "entry";
-          render();
-          return;
-        }
-
         if (target.dataset.groupAction) {
-          state.activeGroupMode = target.dataset.groupAction;
+          state.activeGroupId = target.dataset.groupAction;
           state.focus = "groups";
           render();
           return;
         }
 
-        if (target.dataset.proxy) {
-          const accountID = target.parentElement.dataset.account;
+        if (target.dataset.routeAccount) {
+          const accountID = target.dataset.routeAccount;
           const account = state.accounts.find((item) => item.id === accountID);
           if (!account) return;
-          account.proxyMode = target.dataset.proxy;
-          if (account.proxyMode === "inherit") account.proxySource = "继承默认出口";
-          if (account.proxyMode === "direct") account.proxySource = "显式直连";
-          if (account.proxyMode === "custom") account.proxySource = "proxy-pool / custom-linked";
-          state.focus = "accounts";
+          account.proxyId = target.dataset.routeProxy === "direct" ? null : target.dataset.routeProxy;
+          state.focus = "proxies";
           render();
           return;
         }
@@ -1796,14 +1727,39 @@
 
         if (target.id === "apply-flow") {
           state.lastAction = "已应用";
-          state.focus = "outlet";
+          state.focus = "end";
+          render();
+          return;
+        }
+
+        if (target.id === "run-test") {
+          const computed = computeAccounts();
+          const activeAccounts = computed.filter((item) => item.active);
+          const proxyCount = activeAccounts.filter((item) => item.proxyId).length;
+          const now = new Date();
+          const hh = String(now.getHours()).padStart(2, "0");
+          const mm = String(now.getMinutes()).padStart(2, "0");
+          state.testStatus = "测试通过";
+          state.lastAction = "已测试";
+          state.testLog =
+            `[${hh}:${mm}] ${state.cli} -> ${state.groups.find((item) => item.id === state.activeGroupId).label}\n` +
+            `active accounts: ${activeAccounts.length}\n` +
+            `proxy routes: ${proxyCount}\n` +
+            `result: routing snapshot accepted`;
+          state.focus = "end";
           render();
           return;
         }
 
         if (target.id === "reset-flow") {
-          state.activeGroupMode = "all";
+          state.cli = "codex";
+          state.activeGroupId = "codex";
+          state.accounts.forEach((account) => {
+            account.proxyId = defaultProxyBindings[account.id];
+          });
           state.lastAction = "已恢复";
+          state.testStatus = "未测试";
+          state.testLog = "等待从结束节点发起测试。";
           state.focus = "groups";
           render();
         }
