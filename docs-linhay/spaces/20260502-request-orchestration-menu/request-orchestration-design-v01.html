@@ -413,12 +413,45 @@
         padding: 16px 32px 32px;
       }
 
+      .graph-stage {
+        position: relative;
+        min-width: 0;
+      }
+
+      .connection-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: visible;
+      }
+
+      .graph-line {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.22);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-dasharray: 6 8;
+      }
+
+      .graph-line-primary {
+        stroke: rgba(243, 87, 45, 0.68);
+      }
+
+      .graph-line-accent {
+        stroke: rgba(101, 210, 123, 0.62);
+      }
+
       .lane-board {
         display: grid;
         grid-template-columns: repeat(4, minmax(280px, 1fr));
         gap: 20px;
         min-width: 0;
         align-items: start;
+        position: relative;
+        z-index: 1;
       }
 
       .lane {
@@ -557,6 +590,7 @@
         padding: 14px;
         display: grid;
         gap: 10px;
+        position: relative;
       }
 
       .group-card.active,
@@ -712,6 +746,7 @@
         padding: 12px;
         display: grid;
         gap: 10px;
+        position: relative;
       }
 
       .route-row {
@@ -768,6 +803,25 @@
         font-size: 11px;
         line-height: 1.6;
         color: var(--text-secondary);
+      }
+
+      .graph-anchor-dot {
+        position: absolute;
+        top: 50%;
+        width: 10px;
+        height: 10px;
+        border: 2px solid var(--accent);
+        background: var(--bg-panel-soft);
+        transform: translateY(-50%);
+        box-shadow: 0 0 0 3px rgba(243, 87, 45, 0.12);
+      }
+
+      .graph-anchor-dot.left {
+        left: -7px;
+      }
+
+      .graph-anchor-dot.right {
+        right: -7px;
       }
 
       .mapping-line,
@@ -1098,7 +1152,9 @@
         <div class="chain-bar" id="chain-bar" data-collaboration-id="RO.CHAIN"></div>
 
         <div class="content-grid">
-          <section class="lane-board">
+          <div class="graph-stage" id="graph-stage">
+            <svg class="connection-layer" id="connection-layer" aria-hidden="true"></svg>
+            <section class="lane-board">
             <article class="lane active" data-lane="entry" data-collaboration-id="RO.LANE.ENTRY">
               <div class="lane-head">
                 <div class="lane-head-top">
@@ -1114,7 +1170,8 @@
                 </div>
               </div>
 
-              <div class="lane-section">
+              <div class="lane-section" data-graph-anchor="entry">
+                <span class="graph-anchor-dot right" aria-hidden="true"></span>
                 <div class="section-kicker">请求入口</div>
                 <div class="segmented">
                   <button class="cli-token active" data-cli="codex" type="button">codex</button>
@@ -1185,14 +1242,15 @@
                   <span>结束</span>
                   <span class="locator">RO.LANE.END</span>
                 </div>
-                <div class="lane-copy">
+              <div class="lane-copy">
                   这里是链路收口区。确认当前请求会落到哪些账号, 走不走代理, 并允许直接发起测试。
                 </div>
               </div>
 
               <div class="lane-section" id="end-list" data-collaboration-id="RO.LANE.END.LIST"></div>
             </article>
-          </section>
+            </section>
+          </div>
 
         </div>
 
@@ -1325,11 +1383,14 @@
       const defaultProxyBindings = Object.fromEntries(state.accounts.map((account) => [account.id, account.proxyId]));
 
       const chainBar = document.getElementById("chain-bar");
+      const graphStage = document.getElementById("graph-stage");
+      const connectionLayer = document.getElementById("connection-layer");
       const groupList = document.getElementById("group-list");
       const proxyList = document.getElementById("proxy-list");
       const endList = document.getElementById("end-list");
       const copyToast = document.getElementById("copy-toast");
       let copyToastTimer = null;
+      let connectionFrame = null;
 
       function toLocatorSegment(value) {
         return String(value).replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toUpperCase();
@@ -1365,6 +1426,53 @@
         document.querySelectorAll(".locator").forEach((locator) => {
           locator.setAttribute("title", `点击复制 ${locator.textContent.trim()}`);
         });
+      }
+
+      function getAnchorPoint(name, side) {
+        const node = document.querySelector(`[data-graph-anchor="${name}"]`);
+        if (!node || !graphStage) return null;
+        const nodeRect = node.getBoundingClientRect();
+        const stageRect = graphStage.getBoundingClientRect();
+        const x = side === "left" ? nodeRect.left - stageRect.left : nodeRect.right - stageRect.left;
+        const y = nodeRect.top - stageRect.top + nodeRect.height / 2;
+        return { x, y };
+      }
+
+      function buildConnectionPath(from, to) {
+        const delta = Math.max(48, (to.x - from.x) * 0.35);
+        return `M ${from.x} ${from.y} C ${from.x + delta} ${from.y}, ${to.x - delta} ${to.y}, ${to.x} ${to.y}`;
+      }
+
+      function renderConnections(computed) {
+        if (!graphStage || !connectionLayer) return;
+
+        const activeAccounts = computed.filter((item) => item.active);
+        const destinations = [
+          ...new Set(activeAccounts.map((account) => (account.proxyId ? `proxy-${account.proxyId}` : "proxy-direct"))),
+        ];
+        const segments = [];
+
+        const entryPoint = getAnchorPoint("entry", "right");
+        const groupPointLeft = getAnchorPoint("group-selected", "left");
+        const groupPointRight = getAnchorPoint("group-selected", "right");
+        const endPoint = getAnchorPoint("end", "left");
+
+        if (entryPoint && groupPointLeft) {
+          segments.push(`<path d="${buildConnectionPath(entryPoint, groupPointLeft)}" class="graph-line graph-line-primary" />`);
+        }
+
+        destinations.forEach((destination) => {
+          const destinationLeft = getAnchorPoint(destination, "left");
+          const destinationRight = getAnchorPoint(destination, "right");
+          if (groupPointRight && destinationLeft) {
+            segments.push(`<path d="${buildConnectionPath(groupPointRight, destinationLeft)}" class="graph-line" />`);
+          }
+          if (destinationRight && endPoint) {
+            segments.push(`<path d="${buildConnectionPath(destinationRight, endPoint)}" class="graph-line graph-line-accent" />`);
+          }
+        });
+
+        connectionLayer.innerHTML = segments.join("");
       }
 
       function computeAccounts() {
@@ -1419,7 +1527,12 @@
             const locatorId = `RO.GROUP.${toLocatorSegment(group.id)}`;
             if (selected) cardClasses.push("unique");
             return `
-              <div class="${cardClasses.join(" ")}" data-collaboration-id="${locatorId}">
+              <div
+                class="${cardClasses.join(" ")}"
+                data-collaboration-id="${locatorId}"
+                ${selected ? 'data-graph-anchor="group-selected"' : ""}
+              >
+                ${selected ? '<span class="graph-anchor-dot left" aria-hidden="true"></span><span class="graph-anchor-dot right" aria-hidden="true"></span>' : ""}
                 <div class="group-top">
                   <div>
                     <div class="group-name">${group.label}</div>
@@ -1521,7 +1634,9 @@
         `;
 
         const directBlock = `
-          <div class="group-card" data-collaboration-id="RO.PROXY.DIRECT">
+          <div class="group-card" data-collaboration-id="RO.PROXY.DIRECT" data-graph-anchor="proxy-direct">
+            <span class="graph-anchor-dot left" aria-hidden="true"></span>
+            <span class="graph-anchor-dot right" aria-hidden="true"></span>
             <div class="group-top">
               <div>
                 <div class="group-name">直连</div>
@@ -1543,7 +1658,13 @@
             const linkedAccounts = activeAccounts.filter((account) => account.proxyId === proxy.id);
             const locatorId = `RO.PROXY.${toLocatorSegment(proxy.id)}`;
             return `
-              <div class="group-card ${linkedAccounts.length > 0 ? "active" : ""}" data-collaboration-id="${locatorId}">
+              <div
+                class="group-card ${linkedAccounts.length > 0 ? "active" : ""}"
+                data-collaboration-id="${locatorId}"
+                data-graph-anchor="proxy-${proxy.id}"
+              >
+                <span class="graph-anchor-dot left" aria-hidden="true"></span>
+                <span class="graph-anchor-dot right" aria-hidden="true"></span>
                 <div class="group-top">
                   <div>
                     <div class="group-name">${proxy.label}</div>
@@ -1572,7 +1693,8 @@
         const proxyCount = activeAccounts.filter((item) => item.proxyId).length;
 
         endList.innerHTML = `
-          <div class="outlet-block primary" data-collaboration-id="RO.END.TEST">
+          <div class="outlet-block primary" data-collaboration-id="RO.END.TEST" data-graph-anchor="end">
+            <span class="graph-anchor-dot left" aria-hidden="true"></span>
             <div class="outlet-top">
               <div>
                 <div class="outlet-name">结束与测试</div>
@@ -1673,6 +1795,8 @@
         renderEnd(computed);
         renderLaneFocus();
         hydrateLocators();
+        window.cancelAnimationFrame(connectionFrame);
+        connectionFrame = window.requestAnimationFrame(() => renderConnections(computed));
       }
 
       document.addEventListener("click", async (event) => {
@@ -1763,6 +1887,12 @@
           state.focus = "groups";
           render();
         }
+      });
+
+      window.addEventListener("resize", () => {
+        const computed = computeAccounts();
+        window.cancelAnimationFrame(connectionFrame);
+        connectionFrame = window.requestAnimationFrame(() => renderConnections(computed));
       });
 
       render();
