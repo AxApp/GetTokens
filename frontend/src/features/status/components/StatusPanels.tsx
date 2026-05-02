@@ -661,7 +661,7 @@ export function StatusCodexFeaturesSection({
       ) : null}
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[52rem] border-collapse text-left">
+        <table className="w-full min-w-[44rem] border-collapse text-left">
           <thead>
             <tr className="bg-[var(--bg-main)]">
               <th className="border-b-2 border-[var(--border-color)] px-4 py-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -669,9 +669,6 @@ export function StatusCodexFeaturesSection({
               </th>
               <th className="w-32 border-b-2 border-l-2 border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('status.codex_features_stage')}
-              </th>
-              <th className="w-44 border-b-2 border-l-2 border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {t('status.codex_features_local_value')}
               </th>
               <th className="w-36 border-b-2 border-l-2 border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('status.codex_features_switch')}
@@ -720,23 +717,6 @@ export function StatusCodexFeaturesSection({
                     </div>
                   ) : null}
                 </td>
-                <td className="border-b-2 border-l-2 border-[var(--border-color)] px-3 py-3 align-top">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="border-2 border-[var(--border-color)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
-                      {t('status.codex_features_default')}: {row.defaultValue ? t('common.yes') : t('common.no')}
-                    </span>
-                    {row.hasLocalValue ? (
-                      <span className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
-                        {t('status.codex_features_local')}: {row.localRawValue || String(row.localValue)}
-                      </span>
-                    ) : null}
-                    {row.dirty ? (
-                      <span className="border-2 border-red-600 bg-white px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-red-600">
-                        {t(`status.codex_features_change_${row.changeKind}`)}
-                      </span>
-                    ) : null}
-                  </div>
-                </td>
                 <td className="w-24 border-b-2 border-l-2 border-[var(--border-color)] px-3 py-3 text-center align-middle">
                   <button
                     type="button"
@@ -765,7 +745,7 @@ export function StatusCodexFeaturesSection({
             {rows.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={3}
                   className="border-b-2 border-[var(--border-color)] px-4 py-8 text-center text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
                 >
                   {isLoading ? t('status.codex_features_loading') : t('status.codex_features_empty')}

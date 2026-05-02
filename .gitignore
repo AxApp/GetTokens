@@ -10,4 +10,8 @@ dist/
 frontend/dist
 frontend/node_modules
 .playwright-cli
+.playwright-mcp/
 .local/
+
+.DS_Store
+docs-linhay/references/codex/

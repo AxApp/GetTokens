@@ -248,7 +248,6 @@
     "codex_features_search_placeholder": "Search feature key / description / legacy alias",
     "codex_features_key": "Feature Key",
     "codex_features_stage": "Stage",
-    "codex_features_local_value": "Local Value",
     "codex_features_switch": "Switch",
     "codex_features_no_description": "No description",
     "codex_feature_descriptions": {
@@ -334,8 +333,6 @@
     "codex_features_legacy_alias": "Legacy alias",
     "codex_features_unsupported_hint": "Non-bool or unsupported local feature. Shown as a read-only hint.",
     "codex_features_hidden_default": "Hidden by default",
-    "codex_features_default": "Default",
-    "codex_features_local": "Local",
     "codex_features_empty": "No matching bool feature",
     "codex_features_preview_title": "Change Preview",
     "codex_features_save_hint": "Save previews changes first. Failed saves keep the current draft.",
@@ -364,9 +361,7 @@
     "codex_features_stage_removed": "Removed",
     "codex_features_stage_legacy": "Legacy",
     "codex_features_stage_unknown": "Unknown",
-    "codex_features_stage_unsupported": "Unsupported",
-    "codex_features_change_added": "Added",
-    "codex_features_change_modified": "Modified"
+    "codex_features_stage_unsupported": "Unsupported"
   },
   "accounts": {
     "title": "Accounts",

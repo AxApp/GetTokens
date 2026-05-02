@@ -248,7 +248,6 @@
     "codex_features_search_placeholder": "搜索 feature key / 描述 / legacy alias",
     "codex_features_key": "Feature Key",
     "codex_features_stage": "Stage",
-    "codex_features_local_value": "Local Value",
     "codex_features_switch": "Switch",
     "codex_features_no_description": "暂无描述",
     "codex_feature_descriptions": {
@@ -334,8 +333,6 @@
     "codex_features_legacy_alias": "Legacy alias",
     "codex_features_unsupported_hint": "非 bool 或不支持的本地 feature，仅提示不写入",
     "codex_features_hidden_default": "默认隐藏",
-    "codex_features_default": "默认",
-    "codex_features_local": "本地",
     "codex_features_empty": "没有匹配的 bool feature",
     "codex_features_preview_title": "预览变更",
     "codex_features_save_hint": "保存前会预览变更；失败不会覆盖当前草稿。",
@@ -364,9 +361,7 @@
     "codex_features_stage_removed": "移除",
     "codex_features_stage_legacy": "Legacy",
     "codex_features_stage_unknown": "未知",
-    "codex_features_stage_unsupported": "不支持",
-    "codex_features_change_added": "新增",
-    "codex_features_change_modified": "修改"
+    "codex_features_stage_unsupported": "不支持"
   },
   "accounts": {
     "title": "账号池",

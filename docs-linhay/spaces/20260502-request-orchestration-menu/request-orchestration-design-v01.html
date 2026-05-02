@@ -221,6 +221,72 @@
         letter-spacing: 0;
       }
 
+      .locator {
+        display: inline-flex;
+        align-items: center;
+        min-height: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0 7px;
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+        white-space: nowrap;
+        user-select: all;
+        cursor: copy;
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease;
+      }
+
+      .locator:hover {
+        border-color: var(--accent);
+        background: rgba(243, 87, 45, 0.12);
+      }
+
+      .locator:active {
+        transform: scale(0.96);
+      }
+
+      .locator.copied {
+        border-color: var(--success);
+        color: var(--success);
+        background: rgba(101, 210, 123, 0.12);
+      }
+
+      .locator-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .copy-toast {
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        min-height: 38px;
+        border: 2px solid var(--success);
+        background: rgba(15, 22, 18, 0.96);
+        color: var(--text-primary);
+        padding: 0 14px;
+        display: inline-flex;
+        align-items: center;
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        box-shadow: 6px 6px 0 var(--shadow);
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 140ms ease, transform 140ms ease;
+        z-index: 40;
+      }
+
+      .copy-toast.visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
       .headline-sub {
         max-width: 760px;
         color: var(--text-secondary);
@@ -411,6 +477,7 @@
       .lane-title {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
         gap: 10px;
         font-size: 16px;
         font-weight: 700;
@@ -946,12 +1013,16 @@
         <div class="sidebar-footer">build 2026.05.03.01</div>
       </aside>
 
-      <main class="workspace">
-        <header class="workspace-header">
+      <main class="workspace" data-collaboration-id="RO.WORKSPACE">
+        <header class="workspace-header" data-collaboration-id="RO.HEADER">
           <div class="workspace-top">
             <div>
               <div class="eyebrow">Request orchestration / app-owned control plane</div>
               <h1>请求如何进入, 如何被筛掉, 最后如何发出</h1>
+              <div class="locator-row">
+                <span class="locator">RO.HEADER</span>
+                <span class="locator">RO.WORKSPACE</span>
+              </div>
               <div class="headline-sub">
                 这不是路由表单, 也不是账号资产页。它是一个以链路为中心的工作台, 把入口上下文、账号组参与、账号级代理语义和最终出口压在同一条可读路径里。
               </div>
@@ -972,23 +1043,27 @@
             </div>
           </div>
 
-          <div class="workspace-meta">
-            <div class="meta-block">
+          <div class="workspace-meta" data-collaboration-id="RO.SUMMARY">
+            <div class="meta-block" data-collaboration-id="RO.SUMMARY.ENTRY">
+              <div class="locator-row"><span class="locator">RO.SUMMARY.ENTRY</span></div>
               <div class="meta-label">当前入口</div>
               <div class="meta-value" id="meta-cli">codex</div>
               <div class="meta-note" id="meta-entry-note">本地 Codex / gpt-5.5 / round-robin</div>
             </div>
-            <div class="meta-block">
+            <div class="meta-block" data-collaboration-id="RO.SUMMARY.GROUP">
+              <div class="locator-row"><span class="locator">RO.SUMMARY.GROUP</span></div>
               <div class="meta-label">活跃账号组</div>
               <div class="meta-value" id="meta-group">全部参与</div>
               <div class="meta-note" id="meta-group-note">2 个组仍在出站候选集合中</div>
             </div>
-            <div class="meta-block">
+            <div class="meta-block" data-collaboration-id="RO.SUMMARY.OUTLET">
+              <div class="locator-row"><span class="locator">RO.SUMMARY.OUTLET</span></div>
               <div class="meta-label">可用出口对象</div>
               <div class="meta-value" id="meta-available">03</div>
               <div class="meta-note" id="meta-available-note">1 个因 CLI 不兼容, 1 个因模型缺映射被排除</div>
             </div>
-            <div class="meta-block">
+            <div class="meta-block" data-collaboration-id="RO.SUMMARY.ACTION">
+              <div class="locator-row"><span class="locator">RO.SUMMARY.ACTION</span></div>
               <div class="meta-label">最后一次动作</div>
               <div class="meta-value" id="meta-last-action">未应用</div>
               <div class="meta-note" id="meta-last-note">当前设计稿演示 APP overlay 与 sidecar apply 的边界</div>
@@ -996,17 +1071,20 @@
           </div>
         </header>
 
-        <div class="chain-bar" id="chain-bar"></div>
+        <div class="chain-bar" id="chain-bar" data-collaboration-id="RO.CHAIN"></div>
 
         <div class="content-grid">
           <section class="lane-board">
-            <article class="lane active" data-lane="entry">
+            <article class="lane active" data-lane="entry" data-collaboration-id="RO.LANE.ENTRY">
               <div class="lane-head">
                 <div class="lane-head-top">
                   <div class="lane-number">lane 01</div>
                   <button class="lane-toggle" type="button" data-focus="entry">+</button>
                 </div>
-                <div class="lane-title">请求入口</div>
+                <div class="lane-title">
+                  <span>请求入口</span>
+                  <span class="locator">RO.LANE.ENTRY</span>
+                </div>
                 <div class="lane-copy">
                   决定链路从哪个客户端语义进入, 用什么模型名看待后续账号兼容性, 以及当前是普通参与还是锁定意图。
                 </div>
@@ -1056,56 +1134,68 @@
               </div>
             </article>
 
-            <article class="lane" data-lane="groups">
+            <article class="lane" data-lane="groups" data-collaboration-id="RO.LANE.GROUPS">
               <div class="lane-head">
                 <div class="lane-head-top">
                   <div class="lane-number">lane 02</div>
                   <button class="lane-toggle" type="button" data-focus="groups">+</button>
                 </div>
-                <div class="lane-title">账号组</div>
+                <div class="lane-title">
+                  <span>账号组</span>
+                  <span class="locator">RO.LANE.GROUPS</span>
+                </div>
                 <div class="lane-copy">
                   这层只表达“哪一组参与这条链路”。唯一组模式不是 sidecar 新策略, 而是 APP 把其他组从当前参与集合里剔除。
                 </div>
               </div>
 
-              <div class="lane-section" id="group-list"></div>
+              <div class="lane-section" id="group-list" data-collaboration-id="RO.LANE.GROUPS.LIST"></div>
             </article>
 
-            <article class="lane" data-lane="accounts">
+            <article class="lane" data-lane="accounts" data-collaboration-id="RO.LANE.ACCOUNTS">
               <div class="lane-head">
                 <div class="lane-head-top">
                   <div class="lane-number">lane 03</div>
                   <button class="lane-toggle" type="button" data-focus="accounts">+</button>
                 </div>
-                <div class="lane-title">账号代理</div>
+                <div class="lane-title">
+                  <span>账号代理</span>
+                  <span class="locator">RO.LANE.ACCOUNTS</span>
+                </div>
                 <div class="lane-copy">
                   这里不直接管理代理池, 只管理账号级语义: 走不走代理、支持哪些 CLI、入口模型会如何映射到真实模型。
                 </div>
               </div>
 
-              <div class="lane-section" id="account-list"></div>
+              <div class="lane-section" id="account-list" data-collaboration-id="RO.LANE.ACCOUNTS.LIST"></div>
             </article>
 
-            <article class="lane" data-lane="outlet">
+            <article class="lane" data-lane="outlet" data-collaboration-id="RO.LANE.OUTLET">
               <div class="lane-head">
                 <div class="lane-head-top">
                   <div class="lane-number">lane 04</div>
                   <button class="lane-toggle" type="button" data-focus="outlet">+</button>
                 </div>
-                <div class="lane-title">出口</div>
+                <div class="lane-title">
+                  <span>出口</span>
+                  <span class="locator">RO.LANE.OUTLET</span>
+                </div>
                 <div class="lane-copy">
                   最终出口只做结果确认: 哪些对象真的还在候选里, 会从哪个 baseUrl 发出, 当前排除理由都是什么。
                 </div>
               </div>
 
-              <div class="lane-section" id="outlet-list"></div>
+              <div class="lane-section" id="outlet-list" data-collaboration-id="RO.LANE.OUTLET.LIST"></div>
             </article>
           </section>
 
-          <aside class="inspector">
-            <section class="inspector-panel">
+          <aside class="inspector" data-collaboration-id="RO.INSPECTOR">
+            <section class="inspector-panel" data-collaboration-id="RO.INSPECTOR.IMPACT">
               <div class="inspector-head">
-                <div class="inspector-title">当前影响</div>
+                <div class="inspector-title">
+                  当前影响
+                  <span class="locator">RO.INSPECTOR.IMPACT</span>
+                </div>
                 <span class="badge accent" id="focus-badge">entry</span>
               </div>
               <div class="inspector-body">
@@ -1122,9 +1212,12 @@
               </div>
             </section>
 
-            <section class="inspector-panel">
+            <section class="inspector-panel" data-collaboration-id="RO.INSPECTOR.TIMELINE">
               <div class="inspector-head">
-                <div class="inspector-title">最近变更</div>
+                <div class="inspector-title">
+                  最近变更
+                  <span class="locator">RO.INSPECTOR.TIMELINE</span>
+                </div>
                 <span class="badge warning">app overlay</span>
               </div>
               <div class="inspector-body">
@@ -1145,9 +1238,12 @@
               </div>
             </section>
 
-            <section class="inspector-panel">
+            <section class="inspector-panel" data-collaboration-id="RO.INSPECTOR.LEGEND">
               <div class="inspector-head">
-                <div class="inspector-title">边界图例</div>
+                <div class="inspector-title">
+                  边界图例
+                  <span class="locator">RO.INSPECTOR.LEGEND</span>
+                </div>
                 <span class="badge success">v1</span>
               </div>
               <div class="inspector-body">
@@ -1176,6 +1272,8 @@
         </div>
       </main>
     </div>
+
+    <div class="copy-toast" id="copy-toast" aria-live="polite"></div>
 
     <script>
       const stageMeta = {
@@ -1298,6 +1396,44 @@
       const groupList = document.getElementById("group-list");
       const accountList = document.getElementById("account-list");
       const outletList = document.getElementById("outlet-list");
+      const copyToast = document.getElementById("copy-toast");
+      let copyToastTimer = null;
+
+      function toLocatorSegment(value) {
+        return String(value).replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toUpperCase();
+      }
+
+      function showCopyToast(message) {
+        copyToast.textContent = message;
+        copyToast.classList.add("visible");
+        window.clearTimeout(copyToastTimer);
+        copyToastTimer = window.setTimeout(() => {
+          copyToast.classList.remove("visible");
+        }, 1200);
+      }
+
+      async function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(text);
+          return;
+        }
+
+        const input = document.createElement("textarea");
+        input.value = text;
+        input.setAttribute("readonly", "");
+        input.style.position = "absolute";
+        input.style.left = "-9999px";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
+
+      function hydrateLocators() {
+        document.querySelectorAll(".locator").forEach((locator) => {
+          locator.setAttribute("title", `点击复制 ${locator.textContent.trim()}`);
+        });
+      }
 
       function computeAccounts() {
         return state.accounts.map((account) => {
@@ -1330,10 +1466,11 @@
             const meta = stageMeta[key];
             const active = state.focus === key ? "active" : "";
             return `
-              <button class="chain-node ${active}" type="button" data-focus="${key}">
+              <button class="chain-node ${active}" type="button" data-focus="${key}" data-collaboration-id="RO.CHAIN.${toLocatorSegment(key)}">
                 <span class="chain-index">0${index + 1}</span>
                 <span class="chain-copy">
                   <strong>${meta.label}</strong>
+                  <span class="locator">RO.CHAIN.${toLocatorSegment(key)}</span>
                   <span>${meta.hint}</span>
                 </span>
               </button>
@@ -1350,13 +1487,15 @@
             const isUnique = state.activeGroupMode === group.id;
             const modeLabel = isUnique ? "唯一活跃组" : state.activeGroupMode === "all" ? "普通参与" : "已排除";
             const cardClasses = ["group-card"];
+            const locatorId = `RO.GROUP.${toLocatorSegment(group.id)}`;
             if (isUnique) cardClasses.push("unique");
             if (state.activeGroupMode === "all") cardClasses.push("active");
             return `
-              <div class="${cardClasses.join(" ")}">
+              <div class="${cardClasses.join(" ")}" data-collaboration-id="${locatorId}">
                 <div class="group-top">
                   <div>
                     <div class="group-name">${group.label}</div>
+                    <div class="locator-row"><span class="locator">${locatorId}</span></div>
                     <div class="group-sub">${group.note}</div>
                   </div>
                   <span class="badge ${isUnique ? "accent" : compatibleCount > 0 ? "success" : "warning"}">${modeLabel}</span>
@@ -1389,6 +1528,7 @@
         accountList.innerHTML = computed
           .map((account) => {
             const rowClass = account.compatible ? "account-row compatible" : "account-row";
+            const locatorId = `RO.ACCOUNT.${toLocatorSegment(account.id)}`;
             const statusBadge = account.compatible
               ? '<span class="badge success">可出站</span>'
               : `<span class="badge ${account.groupAllowed ? "danger" : "warning"}">${account.reasons[0]}</span>`;
@@ -1403,10 +1543,11 @@
               )
               .join("");
             return `
-              <div class="${rowClass}">
+              <div class="${rowClass}" data-collaboration-id="${locatorId}">
                 <div class="row-top">
                   <div>
                     <div class="row-name">${account.name}</div>
+                    <div class="locator-row"><span class="locator">${locatorId}</span></div>
                     <div class="row-sub">${account.group} / ${account.baseUrl}</div>
                   </div>
                   ${statusBadge}
@@ -1466,10 +1607,11 @@
         const compatible = computed.filter((item) => item.compatible);
         const blocked = computed.filter((item) => !item.compatible);
         outletList.innerHTML = `
-          <div class="outlet-block primary">
+          <div class="outlet-block primary" data-collaboration-id="RO.OUTLET.ACTIVE">
             <div class="outlet-top">
               <div>
                 <div class="outlet-name">当前有效出口</div>
+                <div class="locator-row"><span class="locator">RO.OUTLET.ACTIVE</span></div>
                 <div class="outlet-sub">只有经过组筛选、CLI 校验和模型映射命中的对象才会进入这块。</div>
               </div>
               <span class="badge success">${compatible.length} 可用</span>
@@ -1496,10 +1638,11 @@
             </div>
           </div>
 
-          <div class="outlet-block">
+          <div class="outlet-block" data-collaboration-id="RO.OUTLET.BLOCKED">
             <div class="outlet-top">
               <div>
                 <div class="outlet-name">被排除对象</div>
+                <div class="locator-row"><span class="locator">RO.OUTLET.BLOCKED</span></div>
                 <div class="outlet-sub">排除原因必须能回链到上游泳道。</div>
               </div>
               <span class="badge warning">${blocked.length} 排除</span>
@@ -1581,9 +1724,26 @@
         renderOutlet(computed);
         renderInspector();
         renderLaneFocus();
+        hydrateLocators();
       }
 
-      document.addEventListener("click", (event) => {
+      document.addEventListener("click", async (event) => {
+        const locator = event.target.closest(".locator");
+        if (locator) {
+          event.preventDefault();
+          event.stopPropagation();
+          const locatorText = locator.textContent.trim();
+          try {
+            await copyText(locatorText);
+            locator.classList.add("copied");
+            window.setTimeout(() => locator.classList.remove("copied"), 900);
+            showCopyToast(`已复制 ${locatorText}`);
+          } catch (error) {
+            showCopyToast(`复制失败: ${locatorText}`);
+          }
+          return;
+        }
+
         const target = event.target.closest("button");
         if (!target) return;
 
