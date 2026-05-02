@@ -1,4 +1,9 @@
+import { useEffect, useRef, useState } from 'react';
+import { Copy, FileText, MoreVertical, Trash2 } from 'lucide-react';
+import { DownloadAuthFile } from '../../../../wailsjs/go/main/App';
 import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRelative, supportsQuota } from '../model/accountQuota';
+import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions';
+import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
 import {
   isCodexReauthEligible,
@@ -51,6 +56,10 @@ export default function AccountCard({
   onCancelDelete,
   onConfirmDelete,
 }: AccountCardProps) {
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+  const copyResetTimerRef = useRef<number | null>(null);
   const quotaDisplay = buildQuotaDisplay(account, quotaState);
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account);
@@ -69,6 +78,75 @@ export default function AccountCard({
     }
     onOpenDetails(account);
   }
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!actionMenuRef.current?.contains(event.target as Node)) {
+        setIsActionMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsActionMenuOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current !== null) {
+        window.clearTimeout(copyResetTimerRef.current);
+      }
+    };
+  }, []);
+
+  async function copyText(value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyState('success');
+    } catch {
+      setCopyState('error');
+    }
+
+    if (copyResetTimerRef.current !== null) {
+      window.clearTimeout(copyResetTimerRef.current);
+    }
+    copyResetTimerRef.current = window.setTimeout(() => {
+      setCopyState('idle');
+      copyResetTimerRef.current = null;
+    }, 1600);
+  }
+
+  async function copyAccountContent() {
+    if (account.credentialSource !== 'auth-file' || !account.name) {
+      await copyText(buildAccountCardContentText(account));
+      return;
+    }
+
+    try {
+      const response = await DownloadAuthFile(account.name);
+      const rawContent = decodeBase64Utf8(response.contentBase64);
+      await copyText(buildAccountCardContentText(account, parseMaybeJSON(rawContent)));
+    } catch {
+      await copyText(buildAccountCardContentText(account));
+    }
+  }
+
+  const actionColumnClass = supportsQuota(account)
+    ? canReauth
+      ? 'grid-cols-3'
+      : 'grid-cols-2'
+    : canReauth
+      ? 'grid-cols-2'
+      : 'grid-cols-1';
 
   if (quotaDisplay.status === 'loading') {
     return <AccountCardSkeleton />;
@@ -136,6 +214,67 @@ export default function AccountCard({
               {t('accounts.select_account')}
             </label>
           ) : null}
+          {!isSelectionMode && !isPendingDelete ? (
+            <div ref={actionMenuRef} className="relative" data-account-card-ignore-click="true">
+              <button
+                type="button"
+                aria-label={t('accounts.card_actions')}
+                aria-haspopup="menu"
+                aria-expanded={isActionMenuOpen}
+                onClick={() => setIsActionMenuOpen((prev) => !prev)}
+                className="btn-swiss flex h-8 w-8 items-center justify-center !px-0 !py-0"
+                title={t('accounts.card_actions')}
+              >
+                <MoreVertical size={16} strokeWidth={3} />
+              </button>
+              {isActionMenuOpen ? (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-full z-30 mt-2 w-44 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void copyText(buildAccountCardCopyText(account))}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                  >
+                    <Copy size={14} strokeWidth={3} />
+                    {t('common.copy')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => void copyAccountContent()}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                  >
+                    <FileText size={14} strokeWidth={3} />
+                    {t('common.copy_content')}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsActionMenuOpen(false);
+                      onRequestDelete(account.id);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] text-red-500 hover:bg-[var(--bg-surface)]"
+                  >
+                    <Trash2 size={14} strokeWidth={3} />
+                    {t('accounts.card_delete')}
+                  </button>
+                  {copyState !== 'idle' ? (
+                    <div
+                      className={`border-t border-dashed border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+                        copyState === 'success' ? 'text-green-600' : 'text-red-500'
+                      }`}
+                    >
+                      {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -168,11 +307,7 @@ export default function AccountCard({
             </div>
           </div>
         ) : (
-          <div
-            className={`grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${
-              supportsQuota(account) ? (canReauth ? 'grid-cols-4' : 'grid-cols-3') : canReauth ? 'grid-cols-3' : 'grid-cols-2'
-            }`}
-          >
+          <div className={`grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}>
             <button onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
               {t('common.details')}
             </button>
@@ -194,9 +329,6 @@ export default function AccountCard({
                 {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
               </button>
             ) : null}
-            <button onClick={() => onRequestDelete(account.id)} className="btn-swiss !py-1.5 !text-[0.5625rem] !text-red-500">
-              {t('common.delete')}
-            </button>
           </div>
         )}
       </div>

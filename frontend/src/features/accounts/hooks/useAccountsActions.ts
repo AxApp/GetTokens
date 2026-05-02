@@ -22,6 +22,7 @@ import { fallbackAPIKeyDisplayName } from '../model/accountPresentation';
 import {
   buildAccountsExportFilename,
   encodeUTF8Base64,
+  parseAccountCardImportPayload,
   readUploadFiles,
   resolvePastedAuthFileName,
 } from '../model/accountTransfer';
@@ -201,10 +202,33 @@ export default function useAccountsActions({
       return;
     }
 
-    const name = resolvePastedAuthFileName(parsed);
+    const copiedAccount = parseAccountCardImportPayload(parsed);
 
     try {
-      const payload = [{ name, contentBase64: encodeUTF8Base64(content) }];
+      if (copiedAccount?.type === 'codex-api-key') {
+        const lowestPriority = accounts.reduce((min, account) => Math.min(min, Number(account.priority || 0)), 0);
+        await trackRequest(
+          'CreateCodexAPIKey',
+          { baseUrl: copiedAccount.baseUrl, source: 'account-card-paste' },
+          () =>
+            CreateCodexAPIKey({
+              apiKey: copiedAccount.apiKey,
+              label: copiedAccount.label,
+              baseUrl: copiedAccount.baseUrl,
+              priority: lowestPriority - 1,
+              prefix: copiedAccount.prefix,
+            })
+        );
+        setIsPasteModalOpen(false);
+        setPasteContent('');
+        setPasteError('');
+        await loadAccounts();
+        return;
+      }
+
+      const name = copiedAccount?.type === 'auth-file' ? copiedAccount.name : resolvePastedAuthFileName(parsed);
+      const uploadContent = copiedAccount?.type === 'auth-file' ? copiedAccount.content : content;
+      const payload = [{ name, contentBase64: encodeUTF8Base64(uploadContent) }];
 
       await trackRequest('UploadAuthFiles', { files: [{ name }] }, () => UploadAuthFiles(payload));
       setIsPasteModalOpen(false);
@@ -215,7 +239,7 @@ export default function useAccountsActions({
       console.error(error);
       setPasteError(toErrorMessage(error));
     }
-  }, [loadAccounts, pasteContent, setIsPasteModalOpen, setPasteContent, setPasteError, t, trackRequest]);
+  }, [accounts, loadAccounts, pasteContent, setIsPasteModalOpen, setPasteContent, setPasteError, t, trackRequest]);
 
   const exportSelectedAccounts = useCallback(async () => {
     if (selectedAccounts.length === 0) {

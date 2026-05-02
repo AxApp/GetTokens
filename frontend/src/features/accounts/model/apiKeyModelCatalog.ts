@@ -13,7 +13,57 @@ export function normalizeAPIKeyModelNames(modelNames: string[] | undefined): str
     seen.add(name);
     normalized.push(name);
   }
-  return normalized;
+  return normalized.sort(compareAPIKeyModelNames);
+}
+
+function compareAPIKeyModelNames(left: string, right: string): number {
+  const leftKey = buildAPIKeyModelSortKey(left);
+  const rightKey = buildAPIKeyModelSortKey(right);
+
+  if (leftKey.family !== rightKey.family) {
+    return leftKey.family.localeCompare(rightKey.family);
+  }
+
+  const maxParts = Math.max(leftKey.numbers.length, rightKey.numbers.length);
+  for (let index = 0; index < maxParts; index += 1) {
+    const leftPart = leftKey.numbers[index] ?? 0;
+    const rightPart = rightKey.numbers[index] ?? 0;
+    if (leftPart !== rightPart) {
+      return rightPart - leftPart;
+    }
+  }
+
+  if (leftKey.sizeRank !== rightKey.sizeRank) {
+    return rightKey.sizeRank - leftKey.sizeRank;
+  }
+
+  return leftKey.normalizedName.localeCompare(rightKey.normalizedName);
+}
+
+function buildAPIKeyModelSortKey(name: string) {
+  const normalizedName = String(name || '').trim().toLowerCase();
+  const firstDigitIndex = normalizedName.search(/\d/);
+  const family =
+    firstDigitIndex >= 0
+      ? normalizedName.slice(0, firstDigitIndex).replace(/[-_.\s]+$/g, '') || normalizedName
+      : normalizedName;
+  const numbers = Array.from(normalizedName.matchAll(/\d+/g), (match) => Number.parseInt(match[0], 10)).filter(
+    Number.isFinite,
+  );
+
+  return {
+    family,
+    numbers,
+    sizeRank: resolveModelSizeRank(normalizedName),
+    normalizedName,
+  };
+}
+
+function resolveModelSizeRank(name: string): number {
+  if (name.includes('nano')) return -4;
+  if (name.includes('mini') || name.includes('lite')) return -3;
+  if (name.includes('small')) return -2;
+  return 0;
 }
 
 export function resolveAPIKeyModelMenuNames(

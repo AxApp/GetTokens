@@ -23,6 +23,7 @@
 - [ ] `StatusApplyLocalSection` 的模型选择下拉框展示 ≥1 个模型
 - [ ] `ApiKeyDetailModal` 的验证模型输入旁有下拉按钮，点击后展示模型列表
 - [ ] 两处下拉框都展示来自 sidecar 的静态模型名称（gpt-5.2、gpt-5.4-mini 等）
+- [ ] 同一模型族按模型版本从大到小展示，例如 `gpt-5.5`、`gpt-5.4`、`gpt-5.4-mini`、`gpt-5.3-codex`、`gpt-5.2`
 - [ ] 现有测试通过，不引入 regression
 
 ## 实现进度
@@ -90,3 +91,11 @@
 - 修复 rotation priority 拖拽取消：`RotationPriorityItem` 补回 `onDragEnd`，并确保 drop 到自身时也清空 `draggedAccountID`。
 - 新增 `apiKeyModelCatalog.test.mjs` 覆盖完整 catalog 浏览、输入过滤、provider model 变化签名。
 - 验证：`npm run test:unit` 190 项通过；`npm run typecheck` 通过；`go test ./...` 通过；`npm run build` 已完成产物输出但 Vite 进程未自然退出，已手动清理卡住的 build 进程。
+
+## 排序修复记录（2026-05-02）
+
+- 规则：模型列表按“模型族字母序 + 同族版本从大到小”排序；同版本下标准版排在 `mini` / `lite` / `nano` 等小型号前。
+- 示例顺序：`gpt-5.5` → `gpt-5.4` → `gpt-5.4-mini` → `gpt-5.3-codex` → `gpt-5.2` → `gpt-4.1`。
+- 后端：`ListRelaySupportedModels` 聚合结果使用同一排序规则，保证 Status 页和账号详情入口一致。
+- 前端：`ApiKeyDetailModal` 下拉菜单兜底排序，即使传入顺序不稳定也按同一规则展示。
+- 验证：新增后端排序测试和前端下拉排序测试；`go test ./...`、`npm run test:unit -- src/features/accounts/tests/apiKeyModelCatalog.test.mjs`、`npm run typecheck` 通过。

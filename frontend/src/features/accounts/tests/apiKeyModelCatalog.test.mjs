@@ -6,16 +6,22 @@ import {
   resolveAPIKeyModelMenuNames,
 } from '../model/apiKeyModelCatalog.ts';
 
-test('resolveAPIKeyModelMenuNames returns the full catalog while browsing', () => {
-  const models = ['gpt-5.4-mini', 'deepseek-chat', 'qwen3-plus'];
+test('resolveAPIKeyModelMenuNames returns the full catalog while browsing in model-size order', () => {
+  const models = ['gpt-5.2', 'gpt-5.4-mini', 'gpt-5.5', 'gpt-5.3-codex', 'gpt-5.4'];
 
-  assert.deepEqual(resolveAPIKeyModelMenuNames(models, 'gpt-5.4-mini', 'browse'), models);
+  assert.deepEqual(resolveAPIKeyModelMenuNames(models, 'gpt-5.4-mini', 'browse'), [
+    'gpt-5.5',
+    'gpt-5.4',
+    'gpt-5.4-mini',
+    'gpt-5.3-codex',
+    'gpt-5.2',
+  ]);
 });
 
 test('resolveAPIKeyModelMenuNames filters only after the user edits the query', () => {
   assert.deepEqual(
-    resolveAPIKeyModelMenuNames(['gpt-5.4-mini', 'deepseek-chat', 'qwen3-plus'], 'deep', 'filter'),
-    ['deepseek-chat'],
+    resolveAPIKeyModelMenuNames(['gpt-5.2', 'gpt-5.4-mini', 'deepseek-chat', 'gpt-5.4'], 'gpt', 'filter'),
+    ['gpt-5.4', 'gpt-5.4-mini', 'gpt-5.2'],
   );
 });
 

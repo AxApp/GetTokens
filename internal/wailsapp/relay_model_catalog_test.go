@@ -86,6 +86,27 @@ func TestListRelaySupportedModelsFallsBackToLocalCodexModelsCacheWhenAggregatedE
 	}
 }
 
+func TestListRelaySupportedModelsSortsModelFamilyFromLargeToSmall(t *testing.T) {
+	models := listRelaySupportedModels(nil, nil, nil, nil, []OpenAICompatibleModel{
+		{Name: "gpt-5.2"},
+		{Name: "gpt-4.1"},
+		{Name: "gpt-5.4-mini"},
+		{Name: "gpt-5.5"},
+		{Name: "gpt-5.3-codex"},
+		{Name: "gpt-5.4"},
+	})
+
+	want := []string{"gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex", "gpt-5.2", "gpt-4.1"}
+	if len(models) != len(want) {
+		t.Fatalf("unexpected model count: %#v", models)
+	}
+	for index, name := range want {
+		if models[index].Name != name {
+			t.Fatalf("model[%d] = %q, want %q; full list: %#v", index, models[index].Name, name, models)
+		}
+	}
+}
+
 func TestLoadLocalCodexModelsCacheReadsModelsCacheJSON(t *testing.T) {
 	tempHome := t.TempDir()
 	if err := os.MkdirAll(filepath.Join(tempHome, ".codex"), 0700); err != nil {

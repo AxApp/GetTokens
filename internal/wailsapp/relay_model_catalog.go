@@ -5,7 +5,10 @@ import (
 	"net/http"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
@@ -174,13 +177,112 @@ func listRelaySupportedModels(
 	for name := range merged {
 		names = append(names, name)
 	}
-	sort.Strings(names)
+	sortModelNames(names)
 
 	models := make([]OpenAICompatibleModel, 0, len(names))
 	for _, name := range names {
 		models = append(models, merged[name])
 	}
 	return models
+}
+
+func sortModelNames(names []string) {
+	sort.SliceStable(names, func(i, j int) bool {
+		return compareModelNames(names[i], names[j]) < 0
+	})
+}
+
+func compareModelNames(left string, right string) int {
+	leftKey := buildModelSortKey(left)
+	rightKey := buildModelSortKey(right)
+
+	if leftKey.family != rightKey.family {
+		return strings.Compare(leftKey.family, rightKey.family)
+	}
+
+	maxParts := len(leftKey.numbers)
+	if len(rightKey.numbers) > maxParts {
+		maxParts = len(rightKey.numbers)
+	}
+	for index := 0; index < maxParts; index++ {
+		leftPart := 0
+		if index < len(leftKey.numbers) {
+			leftPart = leftKey.numbers[index]
+		}
+		rightPart := 0
+		if index < len(rightKey.numbers) {
+			rightPart = rightKey.numbers[index]
+		}
+		if leftPart != rightPart {
+			return rightPart - leftPart
+		}
+	}
+
+	if leftKey.sizeRank != rightKey.sizeRank {
+		return rightKey.sizeRank - leftKey.sizeRank
+	}
+
+	return strings.Compare(leftKey.normalizedName, rightKey.normalizedName)
+}
+
+type modelSortKey struct {
+	family         string
+	numbers        []int
+	sizeRank       int
+	normalizedName string
+}
+
+func buildModelSortKey(name string) modelSortKey {
+	normalizedName := strings.ToLower(strings.TrimSpace(name))
+	familyEnd := len(normalizedName)
+	numbers := make([]int, 0, 3)
+
+	for index := 0; index < len(normalizedName); {
+		r, size := utf8.DecodeRuneInString(normalizedName[index:])
+		if unicode.IsDigit(r) {
+			if familyEnd == len(normalizedName) {
+				familyEnd = index
+			}
+			start := index
+			for index < len(normalizedName) {
+				r, size = utf8.DecodeRuneInString(normalizedName[index:])
+				if !unicode.IsDigit(r) {
+					break
+				}
+				index += size
+			}
+			if value, err := strconv.Atoi(normalizedName[start:index]); err == nil {
+				numbers = append(numbers, value)
+			}
+			continue
+		}
+		index += size
+	}
+
+	family := strings.Trim(normalizedName[:familyEnd], "-_. ")
+	if family == "" {
+		family = normalizedName
+	}
+
+	return modelSortKey{
+		family:         family,
+		numbers:        numbers,
+		sizeRank:       modelSizeRank(normalizedName),
+		normalizedName: normalizedName,
+	}
+}
+
+func modelSizeRank(name string) int {
+	switch {
+	case strings.Contains(name, "nano"):
+		return -4
+	case strings.Contains(name, "mini"), strings.Contains(name, "lite"):
+		return -3
+	case strings.Contains(name, "small"):
+		return -2
+	default:
+		return 0
+	}
 }
 
 func appendRelaySupportedModels(target map[string]OpenAICompatibleModel, items []OpenAICompatibleModel) {
