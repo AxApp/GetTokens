@@ -1892,6 +1892,9 @@
         const selectedAccount = computed.find((item) => item.id === state.currentAccountId) || null;
         const proxyCount = activeAccounts.filter((item) => item.routeKey !== "direct").length;
         const selectedTested = isCurrentTested(selectedAccount);
+        const displayLog = selectedTested || !state.lastTest
+          ? state.testLog
+          : "当前账号尚未测试。最近测试结果保留在另一条链路上。";
 
         endList.innerHTML = `
           <div class="sink-card primary ${state.focus === "end" ? "active" : ""}" data-collaboration-id="RO.END.TEST" data-graph-anchor="end">
@@ -1938,7 +1941,7 @@
             </div>
 
             <button class="test-button ${selectedTested ? "tested" : ""}" type="button" id="run-test">${selectedTested ? `测试通过 ${state.lastTest.time}` : "测试当前链路"}</button>
-            <div class="test-console" id="test-log">${state.testLog}</div>
+            <div class="test-console" id="test-log">${displayLog}</div>
           </div>
 
           <div class="sink-card" data-collaboration-id="RO.END.BLOCKED">
