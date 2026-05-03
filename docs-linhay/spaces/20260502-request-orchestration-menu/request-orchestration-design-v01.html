@@ -1315,7 +1315,7 @@
                       <span>请求入口</span>
                       <span class="locator">RO.LANE.ENTRY</span>
                     </div>
-                    <div class="node-copy">入口只保留两个客户端，避免链路意图分散。</div>
+                    <div class="node-copy">codex / claude code</div>
                   </div>
 
                   <div class="node-body entry" data-graph-anchor="entry">
@@ -1355,7 +1355,7 @@
                       <span>账号组</span>
                       <span class="locator">RO.LANE.GROUPS</span>
                     </div>
-                    <div class="node-copy">从账号池中选一个组，再从组里挑当前正在编辑连线的账号。</div>
+                    <div class="node-copy">group -> account node</div>
                   </div>
 
                   <div class="node-body">
@@ -1374,7 +1374,7 @@
                       <span>代理池</span>
                       <span class="locator">RO.LANE.PROXIES</span>
                     </div>
-                    <div class="node-copy">先选账号，再点目标节点。点直连就是撤销代理，点代理节点就是建立连接。</div>
+                    <div class="node-copy">direct / proxy targets</div>
                   </div>
 
                   <div class="node-body">
@@ -1393,7 +1393,7 @@
                       <span>结束</span>
                       <span class="locator">RO.LANE.END</span>
                     </div>
-                    <div class="node-copy">收口链路，确认所有账号最终走向，并从这里直接发起测试。</div>
+                    <div class="node-copy">test and route result</div>
                   </div>
 
                   <div class="node-body">
@@ -1882,8 +1882,8 @@
                   <span class="badge ${linkedAccounts.length > 0 ? "accent" : "warning"}">${linkedAccounts.length} 条连接</span>
                 </div>
                 <div class="route-cloud">
-                  ${isTestedTarget ? `<div class="route-chip"><strong>tested ${state.lastTest.time}</strong></div>` : ""}
-                  ${isCurrentAccountTarget ? '<div class="route-chip"><strong>current path</strong></div>' : ""}
+                  ${isTestedTarget ? `<div class="route-chip tested"><strong>tested ${state.lastTest.time}</strong></div>` : ""}
+                  ${isCurrentAccountTarget ? '<div class="route-chip current"><strong>current path</strong></div>' : ""}
                   ${linkedAccounts.length > 0
                     ? linkedAccounts.map((account) => `<div class="route-chip"><strong>${account.name}</strong></div>`).join("")
                     : '<div class="route-chip"><strong>当前无账号</strong></div>'}
