@@ -7,27 +7,28 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg-main: #101113;
-        --bg-panel: #17191d;
-        --bg-panel-strong: #1f2328;
-        --bg-panel-soft: #14161a;
-        --bg-active: #f5f0e8;
-        --text-primary: #f3f1eb;
-        --text-secondary: #a7adb6;
-        --text-dark: #0e1012;
+        --bg-main: #0f1113;
+        --bg-panel: #171a1f;
+        --bg-panel-strong: #1d2229;
+        --bg-panel-soft: #13161a;
+        --bg-node: rgba(22, 25, 30, 0.92);
+        --bg-node-active: rgba(243, 87, 45, 0.08);
+        --bg-active: #f3ece2;
+        --text-primary: #f2efe8;
+        --text-secondary: #a7adb5;
+        --text-dim: #7b8189;
+        --text-dark: #101214;
         --line: rgba(255, 255, 255, 0.12);
-        --line-strong: rgba(255, 255, 255, 0.28);
+        --line-strong: rgba(255, 255, 255, 0.26);
         --shadow: rgba(0, 0, 0, 0.34);
         --accent: #f3572d;
-        --accent-soft: rgba(243, 87, 45, 0.16);
+        --accent-soft: rgba(243, 87, 45, 0.14);
         --success: #65d27b;
         --success-soft: rgba(101, 210, 123, 0.16);
         --warning: #f5c95c;
         --warning-soft: rgba(245, 201, 92, 0.16);
         --danger: #ff6c6c;
         --danger-soft: rgba(255, 108, 108, 0.16);
-        --radius: 8px;
-        --radius-tight: 6px;
         --mono: "IBM Plex Mono", "SFMono-Regular", "SF Mono", ui-monospace, monospace;
         --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
       }
@@ -47,165 +48,70 @@
 
       body {
         min-height: 100vh;
-      }
-
-      button,
-      input {
-        font: inherit;
+        overflow: hidden;
       }
 
       button {
+        font: inherit;
         cursor: pointer;
       }
 
       .app-shell {
-        display: grid;
-        grid-template-columns: 240px minmax(0, 1fr);
         min-height: 100vh;
       }
 
       .sidebar {
-        border-right: 2px solid var(--line-strong);
-        background: linear-gradient(180deg, #111316 0%, #0d0f11 100%);
-        display: flex;
-        flex-direction: column;
-      }
-
-      .brand {
-        padding: 28px 24px 22px;
-        border-bottom: 2px solid var(--line-strong);
-      }
-
-      .brand-mark {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .brand-icon {
-        width: 36px;
-        height: 36px;
-        background: var(--accent);
-        color: var(--text-dark);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--mono);
-        font-size: 13px;
-        font-weight: 700;
-        border: 2px solid rgba(0, 0, 0, 0.28);
-        box-shadow: 4px 4px 0 var(--shadow);
-      }
-
-      .brand-copy {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .brand-copy strong {
-        font-size: 22px;
-        line-height: 1;
-        letter-spacing: 0;
-      }
-
-      .brand-copy span {
-        font-size: 11px;
-        color: var(--text-secondary);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .nav {
-        padding: 20px 14px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .nav-button {
-        min-height: 48px;
-        border: 2px solid transparent;
-        background: transparent;
-        color: var(--text-secondary);
-        display: grid;
-        grid-template-columns: 18px minmax(0, 1fr) 12px;
-        align-items: center;
-        gap: 12px;
-        padding: 0 14px;
-        text-align: left;
-        text-transform: uppercase;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.14em;
-        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease;
+        display: none;
       }
 
       .nav-button:active,
       .ghost-button:active,
       .solid-button:active,
-      .segmented button:active,
-      .group-card button:active,
-      .proxy-pills button:active,
-      .lane-toggle:active,
-      .token:active {
-        transform: scale(0.95);
-      }
-
-      .nav-button.active {
-        border-color: var(--bg-active);
-        background: var(--bg-active);
-        color: var(--text-dark);
-        box-shadow: 4px 4px 0 var(--shadow);
-      }
-
-      .nav-button .tail {
-        opacity: 0.56;
-        text-align: right;
-      }
-
-      .sidebar-footer {
-        margin-top: auto;
-        padding: 20px 24px 28px;
-        border-top: 2px solid var(--line-strong);
-        font-family: var(--mono);
-        font-size: 11px;
-        color: var(--text-secondary);
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+      .entry-button:active,
+      .group-switch:active,
+      .account-chip:active,
+      .route-target:active,
+      .test-button:active {
+        transform: scale(0.96);
       }
 
       .workspace {
         min-width: 0;
+        min-height: 100vh;
+        position: relative;
         background:
-          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
           var(--bg-panel-soft);
         background-size: 24px 24px, 24px 24px, auto;
       }
 
       .workspace-header {
-        padding: 16px 32px 0;
-        border-bottom: 0;
-        background: transparent;
+        position: absolute;
+        top: 24px;
+        left: 24px;
+        right: 24px;
+        z-index: 4;
+        pointer-events: none;
       }
 
       .canvas-toolbar {
-        min-height: 54px;
-        border: 2px solid var(--line);
-        background: rgba(17, 19, 22, 0.9);
-        box-shadow: 6px 6px 0 var(--shadow);
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: 16px;
-        align-items: center;
-        padding: 12px 14px;
+        gap: 18px;
+        align-items: start;
       }
 
       .canvas-toolbar-copy {
         display: grid;
         gap: 10px;
         min-width: 0;
+        max-width: 760px;
+        pointer-events: auto;
+        border: 2px solid var(--line);
+        background: rgba(12, 14, 17, 0.9);
+        box-shadow: 8px 8px 0 var(--shadow);
+        padding: 14px 16px;
       }
 
       .canvas-title-row {
@@ -220,12 +126,6 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-      }
-
-      .canvas-note {
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.5;
       }
 
       .canvas-stats {
@@ -250,7 +150,51 @@
 
       .canvas-pill strong {
         color: var(--text-primary);
+      }
+
+      .canvas-pill.active {
+        border-color: rgba(243, 87, 45, 0.38);
+        background: rgba(243, 87, 45, 0.08);
+      }
+
+      .canvas-pill.active strong {
+        color: var(--accent);
+      }
+
+      .header-actions {
+        position: absolute;
+        top: 0;
+        right: 24px;
+        display: grid;
+        gap: 10px;
+        justify-items: stretch;
+        pointer-events: auto;
+        z-index: 5;
+      }
+
+      .ghost-button,
+      .solid-button {
+        min-height: 46px;
+        min-width: 136px;
+        border: 2px solid var(--line-strong);
+        padding: 0 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
         font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        background: transparent;
+        color: var(--text-primary);
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      }
+
+      .solid-button {
+        background: var(--bg-active);
+        color: var(--text-dark);
+        border-color: var(--bg-active);
+        box-shadow: 6px 6px 0 var(--shadow);
       }
 
       .locator {
@@ -292,6 +236,805 @@
         gap: 6px;
       }
 
+      .content-grid {
+        padding: 0;
+      }
+
+      .graph-stage {
+        position: relative;
+        min-width: 0;
+        min-height: 100vh;
+        padding: 122px 28px 28px;
+        overflow: auto;
+      }
+
+      .active-path-strip {
+        position: absolute;
+        top: 122px;
+        left: 256px;
+        z-index: 2;
+        min-height: 42px;
+        max-width: 780px;
+        border: 2px solid rgba(243, 87, 45, 0.22);
+        background: rgba(16, 18, 21, 0.92);
+        box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.18);
+        padding: 8px 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        pointer-events: none;
+      }
+
+      .path-kicker,
+      .path-segment,
+      .path-arrow {
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .path-kicker {
+        color: var(--text-secondary);
+        margin-right: 4px;
+      }
+
+      .path-segment {
+        min-height: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 0 8px;
+        display: inline-flex;
+        align-items: center;
+        color: var(--text-primary);
+      }
+
+      .path-segment.emphasis {
+        border-color: rgba(243, 87, 45, 0.38);
+        background: rgba(243, 87, 45, 0.12);
+        color: var(--accent);
+      }
+
+      .path-segment.test-ok {
+        border-color: rgba(101, 210, 123, 0.42);
+        background: rgba(101, 210, 123, 0.12);
+        color: var(--success);
+      }
+
+      .path-arrow {
+        color: rgba(255, 255, 255, 0.24);
+      }
+
+      .graph-stage::before {
+        content: "node canvas";
+        position: absolute;
+        top: 28px;
+        right: 28px;
+        color: rgba(255, 255, 255, 0.16);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .graph-stage::after {
+        content: "drag from account handle to direct / proxy";
+        position: absolute;
+        left: 28px;
+        bottom: 18px;
+        color: rgba(255, 255, 255, 0.2);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .connection-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        overflow: visible;
+      }
+
+      .graph-line {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.18);
+        stroke-width: 2.4;
+        stroke-linecap: round;
+        stroke-dasharray: 5 8;
+        transition: opacity 120ms ease;
+      }
+
+      .graph-line-primary {
+        stroke: rgba(243, 87, 45, 0.7);
+        stroke-dasharray: none;
+      }
+
+      .graph-line-accent {
+        stroke: rgba(101, 210, 123, 0.7);
+        stroke-dasharray: none;
+      }
+
+      .graph-line-tested {
+        stroke: rgba(101, 210, 123, 0.96);
+        stroke-width: 3.8;
+        stroke-dasharray: none;
+      }
+
+      .graph-line-selected {
+        stroke-width: 3.4;
+      }
+
+      .graph-line-preview {
+        stroke: rgba(243, 87, 45, 0.9);
+        stroke-width: 3;
+        stroke-dasharray: 4 6;
+      }
+
+      .graph-label {
+        fill: var(--text-primary);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.04em;
+      }
+
+      .graph-board {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: 200px minmax(300px, 360px) 240px minmax(320px, 340px);
+        grid-template-rows: auto auto;
+        grid-template-areas:
+          "entry groups sink sink"
+          ". proxies sink sink";
+        gap: 22px 28px;
+        align-items: start;
+        min-height: 790px;
+      }
+
+      .node-column {
+        display: grid;
+        gap: 14px;
+      }
+
+      .node-column.entry {
+        grid-area: entry;
+        margin-top: 92px;
+      }
+
+      .node-column.groups {
+        grid-area: groups;
+      }
+
+      .node-column.proxies {
+        grid-area: proxies;
+        margin-top: -10px;
+      }
+
+      .node-column.sink {
+        grid-area: sink;
+        margin-top: 54px;
+      }
+
+      .node-shell {
+        display: grid;
+        gap: 12px;
+      }
+
+      .node-shell.active .node-head {
+        border-color: var(--accent);
+        background: linear-gradient(180deg, rgba(243, 87, 45, 0.1), rgba(243, 87, 45, 0.03));
+      }
+
+      .node-head,
+      .node-body {
+        border: 2px solid var(--line);
+        background: var(--bg-node);
+        box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.22);
+      }
+
+      .node-head {
+        padding: 10px 12px;
+        display: grid;
+        gap: 6px;
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease;
+      }
+
+      .node-head:hover {
+        border-color: var(--line-strong);
+      }
+
+      .node-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .node-number {
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .node-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .node-copy {
+        color: var(--text-secondary);
+        font-size: 10px;
+        line-height: 1.45;
+        max-width: 34ch;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .node-body {
+        padding: 14px;
+        display: grid;
+        gap: 14px;
+        position: relative;
+      }
+
+      .node-body.entry {
+        gap: 12px;
+      }
+
+      .section-kicker {
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .entry-grid {
+        display: grid;
+        gap: 8px;
+      }
+
+      .entry-button-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .entry-button {
+        min-height: 74px;
+        border: 2px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-secondary);
+        padding: 10px;
+        display: grid;
+        justify-items: start;
+        align-content: space-between;
+        gap: 8px;
+      }
+
+      .entry-button.active {
+        border-color: var(--bg-active);
+        background: var(--bg-active);
+        color: var(--text-dark);
+      }
+
+      .entry-button strong {
+        font-size: 12px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .entry-button span {
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
+      .metric-list {
+        display: grid;
+        gap: 0;
+      }
+
+      .metric-pair {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 12px;
+      }
+
+      .metric-pair:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .metric-pair .key {
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .metric-pair .value {
+        text-align: right;
+      }
+
+      .group-stack,
+      .sink-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .group-card,
+      .sink-card,
+      .route-target,
+      .route-editor {
+        border: 2px solid var(--line);
+        background: var(--bg-panel-strong);
+        box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.22);
+        position: relative;
+      }
+
+      .group-card,
+      .route-target,
+      .sink-card {
+        padding: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .group-card.selected {
+        border-color: var(--accent);
+        background: linear-gradient(180deg, rgba(243, 87, 45, 0.16), rgba(243, 87, 45, 0.04));
+      }
+
+      .group-card.pending {
+        opacity: 0.88;
+      }
+
+      .group-card-header,
+      .sink-head,
+      .target-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .group-name,
+      .target-name,
+      .sink-name {
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .group-note,
+      .target-note,
+      .sink-copy {
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.45;
+        margin-top: 4px;
+      }
+
+      .badge {
+        min-height: 26px;
+        border: 2px solid var(--line);
+        padding: 0 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .badge.success {
+        border-color: var(--success);
+        color: var(--success);
+        background: var(--success-soft);
+      }
+
+      .badge.warning {
+        border-color: var(--warning);
+        color: var(--warning);
+        background: var(--warning-soft);
+      }
+
+      .badge.accent {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-soft);
+      }
+
+      .group-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .group-editing-strip {
+        min-height: 54px;
+        border: 2px solid rgba(243, 87, 45, 0.24);
+        background: rgba(243, 87, 45, 0.08);
+        padding: 10px 12px;
+        display: grid;
+        gap: 6px;
+      }
+
+      .group-editing-strip.tested {
+        border-color: rgba(101, 210, 123, 0.38);
+        background: rgba(101, 210, 123, 0.1);
+      }
+
+      .group-editing-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .group-editing-row strong {
+        font-size: 12px;
+        letter-spacing: 0.04em;
+      }
+
+      .group-editing-row span {
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .group-switch {
+        min-height: 34px;
+        border: 2px solid var(--line);
+        background: transparent;
+        color: var(--text-primary);
+        padding: 0 12px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .group-switch.active {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: var(--text-dark);
+      }
+
+      .account-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .account-chip {
+        min-height: 42px;
+        border: 2px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text-secondary);
+        padding: 0 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+      }
+
+      .account-chip.compatible {
+        cursor: pointer;
+      }
+
+      .account-chip.compatible:hover {
+        border-color: var(--line-strong);
+      }
+
+      .account-chip.active {
+        border-color: var(--bg-active);
+        background: var(--bg-active);
+        color: var(--text-dark);
+        box-shadow: 0 0 0 4px rgba(243, 236, 226, 0.08);
+      }
+
+      .account-chip.active strong::after {
+        content: " editing";
+        margin-left: 6px;
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .account-chip.blocked {
+        opacity: 0.54;
+      }
+
+      .account-chip strong {
+        font-size: 11px;
+        letter-spacing: 0.04em;
+      }
+
+      .account-chip span {
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
+      .account-link-handle {
+        width: 18px;
+        height: 18px;
+        border: 2px solid currentColor;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        opacity: 0.72;
+        box-shadow: 0 0 0 0 rgba(243, 87, 45, 0);
+        transition: box-shadow 120ms ease, opacity 120ms ease, transform 120ms ease;
+      }
+
+      .account-link-handle::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: currentColor;
+      }
+
+      .account-chip.active .account-link-handle,
+      .account-chip:hover .account-link-handle {
+        opacity: 1;
+        transform: scale(1.04);
+        box-shadow: 0 0 0 4px rgba(243, 87, 45, 0.16);
+      }
+
+      .account-chip.dragging {
+        border-color: var(--accent);
+        background: rgba(243, 87, 45, 0.16);
+        color: var(--text-primary);
+      }
+
+      .route-editor {
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        display: grid;
+        gap: 10px;
+      }
+
+      .route-editor-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .route-editor-copy {
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .selected-account {
+        min-height: 68px;
+        border: 2px solid rgba(243, 87, 45, 0.28);
+        background: rgba(243, 87, 45, 0.08);
+        padding: 12px;
+        display: grid;
+        gap: 8px;
+      }
+
+      .selected-account.empty {
+        border-style: dashed;
+        border-color: var(--line);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .selected-account strong {
+        font-size: 13px;
+        letter-spacing: 0.04em;
+      }
+
+      .selected-account span {
+        color: var(--text-secondary);
+        font-size: 11px;
+      }
+
+      .route-target-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .route-target {
+        text-align: left;
+        cursor: pointer;
+        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      }
+
+      .route-target:hover {
+        border-color: var(--line-strong);
+      }
+
+      .route-target.target-selected {
+        border-color: var(--accent);
+        background: linear-gradient(180deg, rgba(243, 87, 45, 0.14), rgba(243, 87, 45, 0.04));
+        box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.24);
+      }
+
+      .route-target.current-account-target .target-head {
+        border-bottom: 1px solid rgba(243, 87, 45, 0.16);
+        padding-bottom: 8px;
+      }
+
+      .route-target.tested-target {
+        border-color: rgba(101, 210, 123, 0.64);
+        background: linear-gradient(180deg, rgba(101, 210, 123, 0.14), rgba(101, 210, 123, 0.04));
+      }
+
+      .route-target.target-preview {
+        border-color: rgba(243, 87, 45, 0.58);
+        background: rgba(243, 87, 45, 0.08);
+      }
+
+      .route-target.drag-hover {
+        border-color: var(--accent);
+        background: rgba(243, 87, 45, 0.12);
+        transform: translateY(-4px);
+        box-shadow: 10px 10px 0 rgba(243, 87, 45, 0.12);
+      }
+
+      .route-target.drag-hover::after {
+        content: "drop";
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        min-height: 20px;
+        padding: 0 6px;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid rgba(243, 87, 45, 0.38);
+        background: rgba(243, 87, 45, 0.16);
+        color: var(--text-primary);
+        font-family: var(--mono);
+        font-size: 9px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .route-target .route-cloud {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .route-chip {
+        min-height: 24px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.03);
+        padding: 0 8px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
+      .route-chip strong {
+        color: var(--text-primary);
+      }
+
+      .sink-card.primary {
+        border-color: rgba(255, 255, 255, 0.28);
+      }
+
+      .sink-card.primary.active {
+        border-color: var(--accent);
+      }
+
+      .mapping-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .mapping-line {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        align-items: start;
+        font-size: 12px;
+        border: 1px solid transparent;
+        min-height: 34px;
+        padding: 6px 8px;
+      }
+
+      .mapping-line span:first-child {
+        color: var(--text-secondary);
+      }
+
+      .mapping-line strong {
+        color: var(--text-primary);
+      }
+
+      .mapping-line.current {
+        border-color: rgba(243, 87, 45, 0.28);
+        background: rgba(243, 87, 45, 0.08);
+      }
+
+      .mapping-line.tested {
+        border-color: rgba(101, 210, 123, 0.38);
+        background: rgba(101, 210, 123, 0.1);
+      }
+
+      .test-button {
+        min-height: 36px;
+        border: 2px solid var(--accent);
+        background: var(--accent);
+        color: var(--text-dark);
+        padding: 0 12px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .test-button.tested {
+        border-color: var(--success);
+        background: var(--success);
+      }
+
+      .test-console {
+        min-height: 108px;
+        border: 2px solid var(--line);
+        background: rgba(0, 0, 0, 0.18);
+        padding: 12px;
+        color: var(--text-secondary);
+        font-family: var(--mono);
+        font-size: 11px;
+        line-height: 1.6;
+        white-space: pre-line;
+      }
+
+      .graph-anchor {
+        position: absolute;
+        top: 50%;
+        width: 10px;
+        height: 10px;
+        border: 2px solid var(--accent);
+        background: var(--bg-panel-soft);
+        transform: translateY(-50%);
+        box-shadow: 0 0 0 3px rgba(243, 87, 45, 0.12);
+      }
+
+      .graph-anchor.left {
+        left: -7px;
+      }
+
+      .graph-anchor.right {
+        right: -7px;
+      }
+
       .copy-toast {
         position: fixed;
         right: 20px;
@@ -319,713 +1062,110 @@
         transform: translateY(0);
       }
 
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
+      .graph-stage.is-dragging .group-card.pending,
+      .graph-stage.is-dragging .sink-card:not(.primary) {
+        opacity: 0.5;
       }
 
-      .ghost-button,
-      .solid-button {
-        min-height: 42px;
-        border: 2px solid var(--line-strong);
-        padding: 0 16px;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        background: transparent;
-        color: var(--text-primary);
-        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      .graph-stage.is-dragging {
+        cursor: crosshair;
       }
 
-      .solid-button {
-        background: var(--bg-active);
-        color: var(--text-dark);
-        border-color: var(--bg-active);
-        box-shadow: 4px 4px 0 var(--shadow);
+      .graph-stage.is-dragging .route-target:not(.drag-hover):not(.target-selected) {
+        opacity: 0.72;
       }
 
-      .content-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        gap: 18px;
-        padding: 16px 32px 32px;
+      .graph-stage.is-dragging .route-editor {
+        border-color: rgba(243, 87, 45, 0.36);
+        background: rgba(243, 87, 45, 0.06);
       }
 
-      .graph-stage {
-        position: relative;
-        min-width: 0;
-        border: 2px solid var(--line);
-        background: rgba(14, 16, 18, 0.72);
-        box-shadow: 8px 8px 0 var(--shadow);
-        padding: 18px;
+      .graph-stage.is-dragging .selected-account {
+        border-color: rgba(243, 87, 45, 0.5);
+        box-shadow: inset 0 0 0 1px rgba(243, 87, 45, 0.22);
       }
 
-      .connection-layer {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        overflow: visible;
+      .graph-stage.is-dragging .graph-line:not(.graph-line-preview):not(.graph-line-selected) {
+        opacity: 0.18;
       }
 
-      .graph-line {
-        fill: none;
-        stroke: rgba(255, 255, 255, 0.22);
-        stroke-width: 2.5;
-        stroke-linecap: round;
-        stroke-dasharray: 6 8;
-      }
-
-      .graph-line-primary {
-        stroke: rgba(243, 87, 45, 0.68);
-      }
-
-      .graph-line-accent {
-        stroke: rgba(101, 210, 123, 0.62);
-      }
-
-      .lane-board {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(280px, 1fr));
-        gap: 20px;
-        min-width: 0;
-        align-items: start;
-        position: relative;
-        z-index: 1;
-      }
-
-      .lane {
-        display: flex;
-        flex-direction: column;
-        min-height: auto;
-        transition: transform 140ms ease;
-      }
-
-      .lane.active {
-        transform: translateY(-2px);
-      }
-
-      .lane-head {
-        padding: 14px;
-        border: 2px solid var(--line);
-        background: rgba(255, 255, 255, 0.03);
-        box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
-        display: grid;
-        gap: 8px;
-      }
-
-      .lane-head-top {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: center;
-      }
-
-      .lane-number {
-        font-family: var(--mono);
-        font-size: 11px;
-        color: var(--text-secondary);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .lane-title {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-        font-size: 16px;
-        font-weight: 700;
-        letter-spacing: 0;
-      }
-
-      .lane-toggle {
-        display: none;
-      }
-
-      .lane-copy {
-        color: var(--text-secondary);
-        font-size: 11px;
-        line-height: 1.45;
-      }
-
-      .lane-section {
-        padding: 0;
-        display: grid;
-        gap: 14px;
-        border-bottom: 0;
-      }
-
-      .lane[data-lane="entry"] .lane-section {
-        border: 2px solid var(--line);
-        background: rgba(255, 255, 255, 0.03);
-        padding: 14px;
-      }
-
-      .section-kicker {
-        font-size: 10px;
-        font-family: var(--mono);
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        color: var(--text-secondary);
-      }
-
-      .segmented {
-        display: inline-grid;
-        grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
-        gap: 6px;
-      }
-
-      .segmented button,
-      .token {
-        min-height: 38px;
-        border: 2px solid var(--line);
-        background: var(--bg-panel-strong);
-        color: var(--text-secondary);
-        padding: 0 10px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        transition: transform 120ms ease, border-color 120ms ease, color 120ms ease, background 120ms ease;
-      }
-
-      .segmented button.active,
-      .token.active {
-        border-color: var(--bg-active);
-        background: var(--bg-active);
-        color: var(--text-dark);
-      }
-
-      .model-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-
-      .metric-pair {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        font-size: 12px;
-      }
-
-      .metric-pair:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-
-      .metric-pair .key {
-        color: var(--text-secondary);
-        font-family: var(--mono);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        font-size: 11px;
-      }
-
-      .metric-pair .value {
-        text-align: right;
-      }
-
-      .group-card,
-      .account-row,
-      .outlet-block,
-      .inspector-block {
-        border: 2px solid var(--line);
-        background: var(--bg-panel-strong);
-        padding: 14px;
-        display: grid;
-        gap: 10px;
-        position: relative;
-      }
-
-      .group-card.active,
-      .account-row.compatible,
-      .outlet-block.primary {
-        border-color: rgba(255, 255, 255, 0.34);
-      }
-
-      .group-card.unique {
-        border-color: var(--accent);
-        background: linear-gradient(180deg, rgba(243, 87, 45, 0.18), rgba(243, 87, 45, 0.05));
-      }
-
-      .row-top,
-      .group-top,
-      .outlet-top {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: start;
-      }
-
-      .row-name,
-      .group-name,
-      .outlet-name {
-        font-size: 13px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
-
-      .row-sub,
-      .group-sub,
-      .outlet-sub {
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.45;
-        margin-top: 4px;
-      }
-
-      .badge {
-        min-height: 26px;
-        border: 2px solid var(--line);
-        padding: 0 9px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--mono);
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--text-secondary);
-        flex-shrink: 0;
-      }
-
-      .badge.success {
-        border-color: var(--success);
-        color: var(--success);
-        background: var(--success-soft);
-      }
-
-      .badge.warning {
-        border-color: var(--warning);
-        color: var(--warning);
-        background: var(--warning-soft);
-      }
-
-      .badge.danger {
-        border-color: var(--danger);
-        color: var(--danger);
-        background: var(--danger-soft);
-      }
-
-      .badge.accent {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: var(--accent-soft);
-      }
-
-      .token-row,
-      .proxy-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-
-      .mini-token {
-        min-height: 24px;
-        border: 1px solid var(--line);
-        padding: 0 7px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-family: var(--mono);
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--text-secondary);
-      }
-
-      .proxy-pills button {
-        min-height: 30px;
-        border: 2px solid var(--line);
-        background: transparent;
-        color: var(--text-secondary);
-        padding: 0 10px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .proxy-pills button.active {
-        border-color: var(--bg-active);
-        background: var(--bg-active);
-        color: var(--text-dark);
-      }
-
-      .mapping-list,
-      .reason-list {
-        display: grid;
-        gap: 8px;
-      }
-
-      .member-cloud,
-      .route-cloud {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-
-      .member-chip,
-      .route-chip {
-        min-height: 24px;
-        border: 1px solid var(--line);
-        padding: 0 8px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-family: var(--mono);
-        font-size: 10px;
-        color: var(--text-secondary);
-        background: rgba(255, 255, 255, 0.03);
-      }
-
-      .member-chip strong,
-      .route-chip strong {
-        color: var(--text-primary);
-      }
-
-      .route-block {
-        border: 2px dashed rgba(255, 255, 255, 0.12);
-        padding: 12px;
-        display: grid;
-        gap: 10px;
-        position: relative;
-      }
-
-      .route-row {
-        display: grid;
-        gap: 10px;
-      }
-
-      .route-head {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        gap: 10px;
-      }
-
-      .route-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-
-      .route-buttons button,
-      .test-button {
-        min-height: 32px;
-        border: 2px solid var(--line);
-        background: transparent;
-        color: var(--text-primary);
-        padding: 0 10px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .route-buttons button.active,
-      .test-button {
-        border-color: var(--accent);
-      }
-
-      .route-buttons button.active {
-        background: rgba(243, 87, 45, 0.12);
-      }
-
-      .test-button {
-        background: var(--accent);
-        color: var(--text-dark);
-      }
-
-      .test-console {
-        min-height: 96px;
-        border: 2px solid var(--line);
-        background: rgba(0, 0, 0, 0.16);
-        padding: 12px;
-        font-family: var(--mono);
-        font-size: 11px;
-        line-height: 1.6;
-        color: var(--text-secondary);
-      }
-
-      .graph-anchor-dot {
-        position: absolute;
-        top: 50%;
-        width: 10px;
-        height: 10px;
-        border: 2px solid var(--accent);
-        background: var(--bg-panel-soft);
-        transform: translateY(-50%);
-        box-shadow: 0 0 0 3px rgba(243, 87, 45, 0.12);
-      }
-
-      .graph-anchor-dot.left {
-        left: -7px;
-      }
-
-      .graph-anchor-dot.right {
-        right: -7px;
-      }
-
-      .mapping-line,
-      .reason-line {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 8px;
-        align-items: start;
-        font-size: 12px;
-      }
-
-      .mapping-line span:first-child,
-      .reason-line span:first-child {
-        color: var(--text-secondary);
-      }
-
-      .mapping-line strong,
-      .reason-line strong {
-        color: var(--text-primary);
-      }
-
-      .group-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .group-card button {
-        min-height: 34px;
-        border: 2px solid var(--line);
-        background: transparent;
-        color: var(--text-primary);
-        padding: 0 12px;
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .group-card button.active {
-        border-color: var(--accent);
-        background: var(--accent);
-        color: var(--text-dark);
-      }
-
-      .inspector {
-        display: grid;
-        gap: 14px;
-        align-content: start;
-      }
-
-      .inspector-panel {
-        border: 2px solid var(--line);
-        background: var(--bg-panel);
-        box-shadow: 6px 6px 0 var(--shadow);
-        overflow: hidden;
-      }
-
-      .inspector-head {
-        padding: 16px 16px 14px;
-        border-bottom: 2px solid var(--line);
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        align-items: center;
-      }
-
-      .inspector-title {
-        font-size: 14px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .inspector-body {
-        padding: 16px;
-        display: grid;
-        gap: 12px;
-      }
-
-      .focus-copy {
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.6;
-      }
-
-      .focus-highlight {
-        min-height: 112px;
-        border: 2px solid var(--line);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent);
-        padding: 14px;
-        display: grid;
-        gap: 10px;
-      }
-
-      .focus-highlight strong {
-        font-size: 15px;
-      }
-
-      .timeline {
-        display: grid;
-        gap: 10px;
-      }
-
-      .timeline-entry {
-        display: grid;
-        grid-template-columns: 68px minmax(0, 1fr);
-        gap: 12px;
-        padding: 10px 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .timeline-entry:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-
-      .timeline-entry time {
-        color: var(--text-secondary);
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .timeline-entry div {
-        font-size: 12px;
-        line-height: 1.5;
-      }
-
-      .legend {
-        display: grid;
-        gap: 8px;
-      }
-
-      .legend-item {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        font-size: 12px;
-        color: var(--text-secondary);
-      }
-
-      .legend-item strong {
-        color: var(--text-primary);
-      }
-
-      .inspector-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .inspector-actions .ghost-button,
-      .inspector-actions .solid-button {
-        width: 100%;
-        justify-content: center;
-      }
-
-      .footer-note {
-        padding: 0 32px 30px;
-        color: var(--text-secondary);
-        font-size: 11px;
-        font-family: var(--mono);
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      @media (max-width: 1440px) {
-        .content-grid {
-          grid-template-columns: minmax(0, 1fr);
-        }
-
-        .inspector {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-      }
-
-      @media (max-width: 1200px) {
-        .inspector {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .lane-board {
-          overflow-x: auto;
-          padding-bottom: 6px;
+      @media (max-width: 1360px) {
+        .graph-board {
+          grid-template-columns: 200px minmax(300px, 1fr) minmax(320px, 1fr);
+          grid-template-areas:
+            "entry groups sink"
+            ". proxies sink";
         }
       }
 
       @media (max-width: 980px) {
-        .app-shell {
-          grid-template-columns: 1fr;
+        body {
+          overflow: auto;
         }
 
-        .sidebar {
-          border-right: 0;
-          border-bottom: 2px solid var(--line-strong);
-        }
-
-        .nav {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .nav-button {
-          min-height: 42px;
-          grid-template-columns: 18px minmax(0, 1fr);
-        }
-
-        .nav-button .tail {
-          display: none;
-        }
-      }
-
-      @media (max-width: 720px) {
-        .workspace-header,
-        .content-grid,
-        .footer-note {
-          padding-left: 18px;
-          padding-right: 18px;
+        .workspace-header {
+          top: 18px;
+          left: 18px;
+          right: 18px;
         }
 
         .canvas-toolbar {
           grid-template-columns: 1fr;
         }
 
-        .header-actions {
-          justify-content: flex-start;
+        .canvas-toolbar-copy {
+          max-width: none;
         }
 
-        .inspector,
-        .model-grid {
-          grid-template-columns: 1fr;
+        .graph-stage {
+          padding-top: 170px;
         }
 
-        .lane-board {
+        .active-path-strip {
+          left: 208px;
+          max-width: 640px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .content-grid {
+          padding: 0;
+        }
+
+        .graph-stage {
+          padding: 246px 16px 40px;
+        }
+
+        .graph-board {
           grid-template-columns: 1fr;
+          grid-template-areas:
+            "entry"
+            "groups"
+            "proxies"
+            "sink";
           overflow: visible;
-        }
-
-        .lane {
           min-height: auto;
         }
 
-        .nav {
+        .node-column.entry,
+        .node-column.proxies,
+        .node-column.sink {
+          margin-top: 0;
+        }
+
+        .entry-button-grid,
+        .route-target-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .header-actions {
+          position: static;
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ghost-button,
+        .solid-button {
+          min-width: 0;
         }
       }
     </style>
@@ -1074,7 +1214,7 @@
             <span class="tail">v</span>
           </button>
         </nav>
-        <div class="sidebar-footer">build 2026.05.03.01</div>
+        <div class="sidebar-footer">build 2026.05.03.02</div>
       </aside>
 
       <main class="workspace" data-collaboration-id="RO.WORKSPACE">
@@ -1089,10 +1229,10 @@
               <div class="canvas-stats" data-collaboration-id="RO.SUMMARY">
                 <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.ENTRY"><span>入口</span><strong id="meta-cli">codex</strong></div>
                 <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.GROUP"><span>账号组</span><strong id="meta-group">Codex 生产组</strong></div>
-                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.OUTLET"><span>连线结果</span><strong id="meta-available">2 节点</strong></div>
+                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.OUTLET"><span>当前账号</span><strong id="meta-account">codex-prod-01</strong></div>
+                <div class="canvas-pill active" data-collaboration-id="RO.SUMMARY.MODE"><span>模式</span><strong id="meta-mode">选择账号</strong></div>
                 <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.ACTION"><span>状态</span><strong id="meta-last-action">未应用</strong></div>
               </div>
-              <div class="canvas-note">主视图改为节点连线制: 左侧选入口, 中间选账号组和代理节点, 最右侧结束并测试。</div>
             </div>
             <div class="header-actions">
               <button class="ghost-button" type="button" id="reset-flow">
@@ -1110,100 +1250,107 @@
         <div class="content-grid">
           <div class="graph-stage" id="graph-stage">
             <svg class="connection-layer" id="connection-layer" aria-hidden="true"></svg>
-            <section class="lane-board">
-              <article class="lane active" data-lane="entry" data-collaboration-id="RO.LANE.ENTRY">
-                <div class="lane-head">
-                  <div class="lane-head-top">
-                    <div class="lane-number">node 01</div>
-                    <button class="lane-toggle" type="button" data-focus="entry">+</button>
-                  </div>
-                  <div class="lane-title">
-                    <span>请求入口</span>
-                    <span class="locator">RO.LANE.ENTRY</span>
-                  </div>
-                  <div class="lane-copy">只保留 `codex` 与 `claude code` 两种入口。</div>
-                </div>
+            <div class="active-path-strip" id="active-path-strip" data-collaboration-id="RO.ACTIVE.PATH"></div>
 
-                <div class="lane-section" data-graph-anchor="entry">
-                  <span class="graph-anchor-dot right" aria-hidden="true"></span>
-                  <div class="section-kicker">请求入口</div>
-                  <div class="segmented">
-                    <button class="cli-token active" data-cli="codex" type="button">codex</button>
-                    <button class="cli-token" data-cli="claude-code" type="button">claude code</button>
+            <section class="graph-board">
+              <div class="node-column entry">
+                <article class="node-shell active" data-focus-shell="entry" data-collaboration-id="RO.LANE.ENTRY">
+                  <div class="node-head" data-focus-card="entry">
+                    <div class="node-meta">
+                      <div class="node-number">node 01</div>
+                    </div>
+                    <div class="node-title">
+                      <span>请求入口</span>
+                      <span class="locator">RO.LANE.ENTRY</span>
+                    </div>
+                    <div class="node-copy">入口只保留两个客户端，避免链路意图分散。</div>
                   </div>
-                </div>
 
-                <div class="lane-section">
-                  <div class="section-kicker">节点说明</div>
-                  <div class="metric-pair">
-                    <span class="key">current client</span>
-                    <span class="value" id="entry-strategy">codex</span>
+                  <div class="node-body entry" data-graph-anchor="entry">
+                    <span class="graph-anchor right" aria-hidden="true"></span>
+                    <div class="section-kicker">入口客户端</div>
+                    <div class="entry-button-grid">
+                      <button class="entry-button active" data-cli="codex" type="button">
+                        <strong>codex</strong>
+                        <span>local shell</span>
+                      </button>
+                      <button class="entry-button" data-cli="claude-code" type="button">
+                        <strong>claude code</strong>
+                        <span>app relay</span>
+                      </button>
+                    </div>
+                    <div class="metric-list">
+                      <div class="metric-pair">
+                        <span class="key">scope</span>
+                        <span class="value">仅允许两种 CLI</span>
+                      </div>
+                      <div class="metric-pair">
+                        <span class="key">next</span>
+                        <span class="value">进入账号组节点</span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="metric-pair">
-                    <span class="key">scope</span>
-                    <span class="value">仅允许两种 CLI</span>
-                  </div>
-                  <div class="metric-pair">
-                    <span class="key">next</span>
-                    <span class="value">进入账号组节点</span>
-                  </div>
-                </div>
-              </article>
+                </article>
+              </div>
 
-              <article class="lane" data-lane="groups" data-collaboration-id="RO.LANE.GROUPS">
-                <div class="lane-head">
-                  <div class="lane-head-top">
-                    <div class="lane-number">node 02</div>
-                    <button class="lane-toggle" type="button" data-focus="groups">+</button>
+              <div class="node-column groups">
+                <article class="node-shell" data-focus-shell="groups" data-collaboration-id="RO.LANE.GROUPS">
+                  <div class="node-head" data-focus-card="groups">
+                    <div class="node-meta">
+                      <div class="node-number">node 02</div>
+                    </div>
+                    <div class="node-title">
+                      <span>账号组</span>
+                      <span class="locator">RO.LANE.GROUPS</span>
+                    </div>
+                    <div class="node-copy">从账号池中选一个组，再从组里挑当前正在编辑连线的账号。</div>
                   </div>
-                  <div class="lane-title">
-                    <span>账号组</span>
-                    <span class="locator">RO.LANE.GROUPS</span>
-                  </div>
-                  <div class="lane-copy">从账号池中选当前请求要经过的账号组。</div>
-                </div>
 
-                <div class="lane-section" id="group-list" data-collaboration-id="RO.LANE.GROUPS.LIST"></div>
-              </article>
-
-              <article class="lane" data-lane="proxies" data-collaboration-id="RO.LANE.PROXIES">
-                <div class="lane-head">
-                  <div class="lane-head-top">
-                    <div class="lane-number">node 03</div>
-                    <button class="lane-toggle" type="button" data-focus="proxies">+</button>
+                  <div class="node-body">
+                    <div class="group-stack" id="group-list" data-collaboration-id="RO.LANE.GROUPS.LIST"></div>
                   </div>
-                  <div class="lane-title">
-                    <span>代理池</span>
-                    <span class="locator">RO.LANE.PROXIES</span>
-                  </div>
-                  <div class="lane-copy">账号可直连，也可挂到具体代理节点。</div>
-                </div>
+                </article>
+              </div>
 
-                <div class="lane-section" id="proxy-list" data-collaboration-id="RO.LANE.PROXIES.LIST"></div>
-              </article>
-
-              <article class="lane" data-lane="end" data-collaboration-id="RO.LANE.END">
-                <div class="lane-head">
-                  <div class="lane-head-top">
-                    <div class="lane-number">node 04</div>
-                    <button class="lane-toggle" type="button" data-focus="end">+</button>
+              <div class="node-column proxies">
+                <article class="node-shell" data-focus-shell="proxies" data-collaboration-id="RO.LANE.PROXIES">
+                  <div class="node-head" data-focus-card="proxies">
+                    <div class="node-meta">
+                      <div class="node-number">node 03</div>
+                    </div>
+                    <div class="node-title">
+                      <span>代理池</span>
+                      <span class="locator">RO.LANE.PROXIES</span>
+                    </div>
+                    <div class="node-copy">先选账号，再点目标节点。点直连就是撤销代理，点代理节点就是建立连接。</div>
                   </div>
-                  <div class="lane-title">
-                    <span>结束</span>
-                    <span class="locator">RO.LANE.END</span>
-                  </div>
-                  <div class="lane-copy">收口当前链路，并直接发起测试。</div>
-                </div>
 
-                <div class="lane-section" id="end-list" data-collaboration-id="RO.LANE.END.LIST"></div>
-              </article>
+                  <div class="node-body">
+                    <div id="proxy-list" data-collaboration-id="RO.LANE.PROXIES.LIST"></div>
+                  </div>
+                </article>
+              </div>
+
+              <div class="node-column sink">
+                <article class="node-shell" data-focus-shell="end" data-collaboration-id="RO.LANE.END">
+                  <div class="node-head" data-focus-card="end">
+                    <div class="node-meta">
+                      <div class="node-number">node 04</div>
+                    </div>
+                    <div class="node-title">
+                      <span>结束</span>
+                      <span class="locator">RO.LANE.END</span>
+                    </div>
+                    <div class="node-copy">收口链路，确认所有账号最终走向，并从这里直接发起测试。</div>
+                  </div>
+
+                  <div class="node-body">
+                    <div class="sink-stack" id="end-list" data-collaboration-id="RO.LANE.END.LIST"></div>
+                  </div>
+                </article>
+              </div>
             </section>
           </div>
-
-        </div>
-
-        <div class="footer-note">
-          DESIGN PREVIEW / GETTOKENS REQUEST ORCHESTRATION / SINGLE HTML / V01
         </div>
       </main>
     </div>
@@ -1214,10 +1361,12 @@
       const state = {
         cli: "codex",
         activeGroupId: "codex",
+        currentAccountId: "codex-prod-01",
         focus: "entry",
         lastAction: "未应用",
         testStatus: "未测试",
         testLog: "等待从结束节点发起测试。",
+        lastTest: null,
         groups: [
           {
             id: "codex",
@@ -1272,6 +1421,11 @@
         ],
         proxies: [
           {
+            id: "direct",
+            label: "直连",
+            note: "不经过代理池，直接出站",
+          },
+          {
             id: "hk-resi-03",
             label: "hk-resi-03",
             note: "住宅出口 / Hong Kong",
@@ -1289,19 +1443,28 @@
         ],
       };
 
-      const defaultProxyBindings = Object.fromEntries(state.accounts.map((account) => [account.id, account.proxyId]));
+      const defaultProxyBindings = Object.fromEntries(
+        state.accounts.map((account) => [account.id, account.proxyId])
+      );
 
       const graphStage = document.getElementById("graph-stage");
       const connectionLayer = document.getElementById("connection-layer");
+      const activePathStrip = document.getElementById("active-path-strip");
       const groupList = document.getElementById("group-list");
       const proxyList = document.getElementById("proxy-list");
       const endList = document.getElementById("end-list");
       const copyToast = document.getElementById("copy-toast");
       let copyToastTimer = null;
       let connectionFrame = null;
+      let previewRouteTarget = null;
+      let dragState = null;
+      let suppressNextClick = false;
 
       function toLocatorSegment(value) {
-        return String(value).replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toUpperCase();
+        return String(value)
+          .replace(/[^a-zA-Z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .toUpperCase();
       }
 
       function showCopyToast(message) {
@@ -1336,6 +1499,41 @@
         });
       }
 
+      function computeAccounts() {
+        return state.accounts.map((account) => {
+          const groupSelected = account.group === state.activeGroupId;
+          const entryAllowed = account.entrySupport.includes(state.cli);
+          const active = groupSelected && entryAllowed;
+          const selected = account.id === state.currentAccountId;
+          const routeKey = account.proxyId || "direct";
+          const proxy = state.proxies.find((item) => item.id === routeKey) || null;
+          const reasons = [];
+
+          if (!groupSelected) reasons.push("不在当前账号组");
+          if (!entryAllowed) reasons.push("入口不兼容");
+
+          return {
+            ...account,
+            groupSelected,
+            entryAllowed,
+            active,
+            selected,
+            routeKey,
+            proxy,
+            reasons,
+          };
+        });
+      }
+
+      function ensureCurrentAccount(computed) {
+        const selectedGroupAccounts = computed.filter((item) => item.groupSelected);
+        const activeAccounts = selectedGroupAccounts.filter((item) => item.entryAllowed);
+        const current = computed.find((item) => item.id === state.currentAccountId);
+
+        if (current && current.groupSelected) return;
+        state.currentAccountId = activeAccounts[0]?.id || selectedGroupAccounts[0]?.id || null;
+      }
+
       function getAnchorPoint(name, side) {
         const node = document.querySelector(`[data-graph-anchor="${name}"]`);
         if (!node || !graphStage) return null;
@@ -1347,120 +1545,249 @@
       }
 
       function buildConnectionPath(from, to) {
-        const delta = Math.max(48, (to.x - from.x) * 0.35);
+        const delta = Math.max(56, (to.x - from.x) * 0.34);
         return `M ${from.x} ${from.y} C ${from.x + delta} ${from.y}, ${to.x - delta} ${to.y}, ${to.x} ${to.y}`;
+      }
+
+      function buildLabel(x, y, label, selected) {
+        const dy = selected ? -10 : -6;
+        return `<text x="${x}" y="${y + dy}" text-anchor="middle" class="graph-label">${label}</text>`;
+      }
+
+      function currentModeLabel(computed) {
+        const currentAccount = computed.find((item) => item.id === state.currentAccountId) || null;
+        if (dragState) return "拖拽改线";
+        if (!currentAccount) return "选择账号";
+        if (!currentAccount.entryAllowed) return "账号灰态";
+        if (previewRouteTarget && previewRouteTarget !== currentAccount.routeKey) return "预览出口";
+        if (state.focus === "end") return "收口检查";
+        return "选择账号";
+      }
+
+      function invalidateTest(message = "链路已变更，等待重新测试。") {
+        state.lastTest = null;
+        state.testStatus = "未测试";
+        state.testLog = message;
+      }
+
+      function isCurrentTested(account) {
+        if (!account || !state.lastTest) return false;
+        return (
+          state.lastTest.accountId === account.id &&
+          state.lastTest.routeKey === account.routeKey &&
+          state.lastTest.cli === state.cli &&
+          state.lastTest.groupId === state.activeGroupId
+        );
+      }
+
+      function renderActivePath(computed) {
+        const currentGroup = state.groups.find((item) => item.id === state.activeGroupId) || null;
+        const currentAccount = computed.find((item) => item.id === state.currentAccountId) || null;
+        const routeLabel = currentAccount?.proxy ? currentAccount.proxy.label : "direct";
+        const modeLabel = currentModeLabel(computed);
+        const tested = isCurrentTested(currentAccount);
+
+        activePathStrip.innerHTML = `
+          <span class="path-kicker">active path</span>
+          <span class="path-segment">${state.cli}</span>
+          <span class="path-arrow">→</span>
+          <span class="path-segment">${currentGroup ? currentGroup.label : "group"}</span>
+          <span class="path-arrow">→</span>
+          <span class="path-segment emphasis">${currentAccount ? currentAccount.name : "account"}</span>
+          <span class="path-arrow">→</span>
+          <span class="path-segment">${routeLabel}</span>
+          <span class="path-arrow">→</span>
+          <span class="path-segment ${tested ? "test-ok" : ""}">${tested ? `test ok ${state.lastTest.time}` : "test"}</span>
+          <span class="path-segment">${modeLabel}</span>
+        `;
       }
 
       function renderConnections(computed) {
         if (!graphStage || !connectionLayer) return;
 
         const activeAccounts = computed.filter((item) => item.active);
-        const destinations = [
-          ...new Set(activeAccounts.map((account) => (account.proxyId ? `proxy-${account.proxyId}` : "proxy-direct"))),
-        ];
+        const selectedAccount = computed.find((item) => item.id === state.currentAccountId) || null;
+        const defs = `
+          <defs>
+            <marker id="graph-arrow-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.18)" />
+            </marker>
+            <marker id="graph-arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(243,87,45,0.7)" />
+            </marker>
+            <marker id="graph-arrow-accent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(101,210,123,0.7)" />
+            </marker>
+          </defs>
+        `;
+
         const segments = [];
-
         const entryPoint = getAnchorPoint("entry", "right");
-        const groupPointLeft = getAnchorPoint("group-selected", "left");
-        const groupPointRight = getAnchorPoint("group-selected", "right");
-        const endPoint = getAnchorPoint("end", "left");
+        const groupPoint = getAnchorPoint("group-selected", "left");
 
-        if (entryPoint && groupPointLeft) {
-          segments.push(`<path d="${buildConnectionPath(entryPoint, groupPointLeft)}" class="graph-line graph-line-primary" />`);
+        if (entryPoint && groupPoint) {
+          segments.push(
+            `<path d="${buildConnectionPath(entryPoint, groupPoint)}" class="graph-line graph-line-primary${state.focus === "entry" || state.focus === "groups" ? " graph-line-selected" : ""}" marker-end="url(#graph-arrow-primary)" />`
+          );
         }
 
-        destinations.forEach((destination) => {
-          const destinationLeft = getAnchorPoint(destination, "left");
-          const destinationRight = getAnchorPoint(destination, "right");
-          if (groupPointRight && destinationLeft) {
-            segments.push(`<path d="${buildConnectionPath(groupPointRight, destinationLeft)}" class="graph-line" />`);
+        const endPoint = getAnchorPoint("end", "left");
+
+        activeAccounts.forEach((account) => {
+          const accountPoint = getAnchorPoint(`account-${account.id}`, "right");
+          const routePointLeft = getAnchorPoint(`route-${account.routeKey}`, "left");
+          const routePointRight = getAnchorPoint(`route-${account.routeKey}`, "right");
+          const selectedClass = account.selected ? " graph-line-selected" : "";
+          const testedClass = isCurrentTested(account) ? " graph-line-tested" : "";
+
+          if (accountPoint && routePointLeft) {
+            segments.push(
+              `<path d="${buildConnectionPath(accountPoint, routePointLeft)}" class="graph-line${selectedClass}${testedClass}" marker-end="url(#graph-arrow-neutral)" />`
+            );
+            if (account.selected) {
+              const mx = (accountPoint.x + routePointLeft.x) / 2;
+              const my = (accountPoint.y + routePointLeft.y) / 2;
+              segments.push(buildLabel(mx, my, account.name, account.selected));
+            }
           }
-          if (destinationRight && endPoint) {
-            segments.push(`<path d="${buildConnectionPath(destinationRight, endPoint)}" class="graph-line graph-line-accent" />`);
+
+          if (routePointRight && endPoint) {
+            segments.push(
+              `<path d="${buildConnectionPath(routePointRight, endPoint)}" class="graph-line graph-line-accent${selectedClass}${testedClass}" marker-end="url(#graph-arrow-accent)" />`
+            );
           }
         });
 
-        connectionLayer.innerHTML = segments.join("");
-      }
+        if (
+          selectedAccount &&
+          selectedAccount.active &&
+          previewRouteTarget &&
+          previewRouteTarget !== selectedAccount.routeKey
+        ) {
+          const accountPoint = getAnchorPoint(`account-${selectedAccount.id}`, "right");
+          const previewLeft = getAnchorPoint(`route-${previewRouteTarget}`, "left");
+          const previewRight = getAnchorPoint(`route-${previewRouteTarget}`, "right");
+          if (accountPoint && previewLeft) {
+            segments.push(
+              `<path d="${buildConnectionPath(accountPoint, previewLeft)}" class="graph-line graph-line-preview" marker-end="url(#graph-arrow-primary)" />`
+            );
+          }
+          if (previewRight && endPoint) {
+            segments.push(
+              `<path d="${buildConnectionPath(previewRight, endPoint)}" class="graph-line graph-line-preview" marker-end="url(#graph-arrow-primary)" />`
+            );
+          }
+        }
 
-      function computeAccounts() {
-        return state.accounts.map((account) => {
-          const groupSelected = account.group === state.activeGroupId;
-          const entryAllowed = account.entrySupport.includes(state.cli);
-          const active = groupSelected && entryAllowed;
-          const proxy = state.proxies.find((item) => item.id === account.proxyId) || null;
+        if (dragState) {
+          const dragAccount = computed.find((item) => item.id === dragState.accountId) || null;
+          const dragFrom = dragAccount ? getAnchorPoint(`account-${dragAccount.id}`, "right") : null;
+          const dragTargetLeft = dragState.hoverTarget ? getAnchorPoint(`route-${dragState.hoverTarget}`, "left") : null;
+          const dragTargetRight = dragState.hoverTarget ? getAnchorPoint(`route-${dragState.hoverTarget}`, "right") : null;
 
-          const reasons = [];
-          if (!groupSelected) reasons.push("不在当前账号组");
-          if (!entryAllowed) reasons.push("入口不兼容");
+          if (dragFrom) {
+            if (dragTargetLeft) {
+              segments.push(
+                `<path d="${buildConnectionPath(dragFrom, dragTargetLeft)}" class="graph-line graph-line-preview graph-line-selected" marker-end="url(#graph-arrow-primary)" />`
+              );
+              if (dragTargetRight && endPoint) {
+                segments.push(
+                  `<path d="${buildConnectionPath(dragTargetRight, endPoint)}" class="graph-line graph-line-preview graph-line-selected" marker-end="url(#graph-arrow-primary)" />`
+                );
+              }
+            } else if (typeof dragState.x === "number" && typeof dragState.y === "number") {
+              segments.push(
+                `<path d="${buildConnectionPath(dragFrom, { x: dragState.x, y: dragState.y })}" class="graph-line graph-line-preview graph-line-selected" marker-end="url(#graph-arrow-primary)" />`
+              );
+            }
+          }
+        }
 
-          return {
-            ...account,
-            groupSelected,
-            entryAllowed,
-            active,
-            proxy,
-            reasons,
-          };
-        });
+        connectionLayer.innerHTML = `${defs}${segments.join("")}`;
       }
 
       function renderGroups(computed) {
         groupList.innerHTML = state.groups
           .map((group) => {
             const members = computed.filter((item) => item.group === group.id);
-            const compatibleCount = members.filter((item) => item.entryAllowed).length;
             const selected = state.activeGroupId === group.id;
-            const cardClasses = ["group-card"];
+            const compatibleCount = members.filter((item) => item.entryAllowed).length;
             const locatorId = `RO.GROUP.${toLocatorSegment(group.id)}`;
-            if (selected) cardClasses.push("unique");
+            const selectedMember = members.find((item) => item.selected) || null;
+            const selectedMemberTested = isCurrentTested(selectedMember);
+
             return `
-              <div
-                class="${cardClasses.join(" ")}"
-                data-collaboration-id="${locatorId}"
-                ${selected ? 'data-graph-anchor="group-selected"' : ""}
-              >
-                ${selected ? '<span class="graph-anchor-dot left" aria-hidden="true"></span><span class="graph-anchor-dot right" aria-hidden="true"></span>' : ""}
-                <div class="group-top">
+              <div class="group-card ${selected ? "selected" : "pending"}" data-collaboration-id="${locatorId}" ${selected ? 'data-graph-anchor="group-selected"' : ""}>
+                ${selected ? '<span class="graph-anchor left" aria-hidden="true"></span>' : ""}
+                <div class="group-card-header">
                   <div>
                     <div class="group-name">${group.label}</div>
                     <div class="locator-row"><span class="locator">${locatorId}</span></div>
-                    <div class="group-sub">${group.note}</div>
+                    <div class="group-note">${group.note}</div>
                   </div>
                   <span class="badge ${selected ? "accent" : compatibleCount > 0 ? "success" : "warning"}">${selected ? "当前链路" : "待选"}</span>
                 </div>
-                <div class="metric-pair">
-                  <span class="key">账号池成员</span>
-                  <span class="value">${members.length}</span>
+
+                <div class="metric-list">
+                  <div class="metric-pair">
+                    <span class="key">账号池成员</span>
+                    <span class="value">${members.length}</span>
+                  </div>
+                  <div class="metric-pair">
+                    <span class="key">兼容当前入口</span>
+                    <span class="value">${compatibleCount}</span>
+                  </div>
                 </div>
-                <div class="metric-pair">
-                  <span class="key">兼容当前入口</span>
-                  <span class="value">${compatibleCount}</span>
-                </div>
+
+                ${
+                  selected
+                    ? `
+                      <div class="group-editing-strip ${selectedMemberTested ? "tested" : ""}">
+                        <div class="group-editing-row">
+                          <span>当前编辑</span>
+                          <span>${selectedMemberTested ? `tested ${state.lastTest.time}` : selectedMember?.entryAllowed ? "ready" : "blocked"}</span>
+                        </div>
+                        <div class="group-editing-row">
+                          <strong>${selectedMember?.name || "未选中账号"}</strong>
+                          <span>${selectedMember?.proxy ? selectedMember.proxy.label : "direct"}</span>
+                        </div>
+                      </div>
+                    `
+                    : ""
+                }
+
                 <div>
                   <div class="section-kicker">组内账号</div>
-                  <div class="member-cloud">
+                  <div class="account-cloud">
                     ${members
-                      .map(
-                        (member) => `
-                          <div class="member-chip">
-                            <strong>${member.name}</strong>
-                            <span>${member.entrySupport.join(" / ")}</span>
-                          </div>
-                        `
-                      )
+                      .map((account) => {
+                        const classes = ["account-chip"];
+                        if (account.selected) classes.push("active");
+                        if (account.entryAllowed) classes.push("compatible");
+                        if (!account.entryAllowed) classes.push("blocked");
+                        if (dragState && dragState.accountId === account.id) classes.push("dragging");
+                        return `
+                          <button
+                            class="${classes.join(" ")}"
+                            type="button"
+                            data-account-focus="${account.id}"
+                            ${selected ? `data-graph-anchor="account-${account.id}"` : ""}
+                          >
+                            ${selected ? '<span class="graph-anchor right" aria-hidden="true"></span>' : ""}
+                            ${account.entryAllowed ? `<span class="account-link-handle" data-drag-account="${account.id}" title="拖拽建立连接"></span>` : ""}
+                            <strong>${account.name}</strong>
+                            <span>${account.entryAllowed ? account.provider : account.reasons[0]}</span>
+                          </button>
+                        `;
+                      })
                       .join("")}
                   </div>
                 </div>
+
                 <div class="group-actions">
-                  <button
-                    class="${selected ? "active" : ""}"
-                    type="button"
-                    data-group-action="${group.id}"
-                  >
+                  <button class="group-switch ${selected ? "active" : ""}" type="button" data-group-action="${group.id}">
                     ${selected ? "当前使用中" : "切换到此组"}
                   </button>
-                  <button type="button">查看账号池来源</button>
                 </div>
               </div>
             `;
@@ -1469,224 +1796,238 @@
       }
 
       function renderProxies(computed) {
-        const selectedAccounts = computed.filter((item) => item.groupSelected);
-        const activeAccounts = selectedAccounts.filter((item) => item.entryAllowed);
-        const directAccounts = activeAccounts.filter((item) => !item.proxyId);
+        const selectedGroupAccounts = computed.filter((item) => item.groupSelected);
+        const selectedAccount = computed.find((item) => item.id === state.currentAccountId) || null;
 
-        const routeEditor = `
-          <div class="route-block" data-collaboration-id="RO.PROXY.ROUTES">
-            <div class="locator-row"><span class="locator">RO.PROXY.ROUTES</span></div>
-            <div class="section-kicker">当前组账号挂接</div>
-            ${selectedAccounts
-              .map((account) => {
-                const locatorId = `RO.ACCOUNT.${toLocatorSegment(account.id)}`;
-                return `
-                  <div class="route-row" data-collaboration-id="${locatorId}">
-                    <div class="route-head">
-                      <div>
-                        <div class="row-name">${account.name}</div>
-                        <div class="locator-row"><span class="locator">${locatorId}</span></div>
-                        <div class="row-sub">${account.provider} / ${account.baseUrl}</div>
-                      </div>
-                      <span class="badge ${account.entryAllowed ? "success" : "warning"}">${account.entryAllowed ? "可参与" : "入口不兼容"}</span>
-                    </div>
-                    <div class="route-buttons">
-                      <button
-                        type="button"
-                        data-route-account="${account.id}"
-                        data-route-proxy="direct"
-                        class="${!account.proxyId ? "active" : ""}"
-                      >
-                        直连
-                      </button>
-                      ${state.proxies
-                        .map(
-                          (proxy) => `
-                            <button
-                              type="button"
-                              data-route-account="${account.id}"
-                              data-route-proxy="${proxy.id}"
-                              class="${account.proxyId === proxy.id ? "active" : ""}"
-                            >
-                              ${proxy.label}
-                            </button>
-                          `
-                        )
-                        .join("")}
-                    </div>
-                  </div>
-                `;
-              })
-              .join("")}
-          </div>
-        `;
-
-        const directBlock = `
-          <div class="group-card" data-collaboration-id="RO.PROXY.DIRECT" data-graph-anchor="proxy-direct">
-            <span class="graph-anchor-dot left" aria-hidden="true"></span>
-            <span class="graph-anchor-dot right" aria-hidden="true"></span>
-            <div class="group-top">
-              <div>
-                <div class="group-name">直连</div>
-                <div class="locator-row"><span class="locator">RO.PROXY.DIRECT</span></div>
-                <div class="group-sub">未连到代理池节点的账号会直接出站。</div>
-              </div>
-              <span class="badge ${directAccounts.length > 0 ? "success" : "warning"}">${directAccounts.length} 个账号</span>
-            </div>
-            <div class="route-cloud">
-              ${directAccounts.length > 0
-                ? directAccounts.map((account) => `<div class="route-chip"><strong>${account.name}</strong></div>`).join("")
-                : '<div class="route-chip"><strong>当前无直连账号</strong></div>'}
-            </div>
-          </div>
-        `;
-
-        const proxyBlocks = state.proxies
+        const routeNodes = state.proxies
           .map((proxy) => {
-            const linkedAccounts = activeAccounts.filter((account) => account.proxyId === proxy.id);
-            const locatorId = `RO.PROXY.${toLocatorSegment(proxy.id)}`;
+            const linkedAccounts = computed.filter((item) => item.active && item.routeKey === proxy.id);
+            const locatorId =
+              proxy.id === "direct" ? "RO.PROXY.DIRECT" : `RO.PROXY.${toLocatorSegment(proxy.id)}`;
+            const isTarget = selectedAccount ? selectedAccount.routeKey === proxy.id : false;
+            const isPreview = previewRouteTarget === proxy.id && selectedAccount && selectedAccount.entryAllowed;
+            const isDragHover = dragState && dragState.hoverTarget === proxy.id;
+            const isCurrentAccountTarget = selectedAccount && selectedAccount.routeKey === proxy.id;
+            const isTestedTarget = isCurrentAccountTarget && isCurrentTested(selectedAccount);
+
             return `
-              <div
-                class="group-card ${linkedAccounts.length > 0 ? "active" : ""}"
+              <button
+                class="route-target ${isTarget ? "target-selected" : ""} ${isPreview && !isTarget ? "target-preview" : ""} ${isDragHover ? "drag-hover" : ""} ${isCurrentAccountTarget ? "current-account-target" : ""} ${isTestedTarget ? "tested-target" : ""}"
+                type="button"
+                data-route-target="${proxy.id}"
                 data-collaboration-id="${locatorId}"
-                data-graph-anchor="proxy-${proxy.id}"
+                data-graph-anchor="route-${proxy.id}"
+                data-route-hover="${proxy.id}"
               >
-                <span class="graph-anchor-dot left" aria-hidden="true"></span>
-                <span class="graph-anchor-dot right" aria-hidden="true"></span>
-                <div class="group-top">
+                <span class="graph-anchor left" aria-hidden="true"></span>
+                <span class="graph-anchor right" aria-hidden="true"></span>
+                <div class="target-head">
                   <div>
-                    <div class="group-name">${proxy.label}</div>
+                    <div class="target-name">${proxy.label}</div>
                     <div class="locator-row"><span class="locator">${locatorId}</span></div>
-                    <div class="group-sub">${proxy.note}</div>
+                    <div class="target-note">${proxy.note}</div>
                   </div>
-                  <span class="badge ${linkedAccounts.length > 0 ? "accent" : "warning"}">${linkedAccounts.length} 条连线</span>
+                  <span class="badge ${linkedAccounts.length > 0 ? "accent" : "warning"}">${linkedAccounts.length} 条连接</span>
                 </div>
                 <div class="route-cloud">
+                  ${isTestedTarget ? `<div class="route-chip"><strong>tested ${state.lastTest.time}</strong></div>` : ""}
+                  ${isCurrentAccountTarget ? '<div class="route-chip"><strong>current path</strong></div>' : ""}
                   ${linkedAccounts.length > 0
                     ? linkedAccounts.map((account) => `<div class="route-chip"><strong>${account.name}</strong></div>`).join("")
-                    : '<div class="route-chip"><strong>当前无挂接账号</strong></div>'}
+                    : '<div class="route-chip"><strong>当前无账号</strong></div>'}
                 </div>
-              </div>
+              </button>
             `;
           })
           .join("");
 
-        proxyList.innerHTML = `${routeEditor}${directBlock}${proxyBlocks}`;
+        proxyList.innerHTML = `
+          <div class="route-editor" data-collaboration-id="RO.PROXY.ROUTES">
+            <div class="locator-row"><span class="locator">RO.PROXY.ROUTES</span></div>
+            <div class="section-kicker">当前连线对象</div>
+            <div class="route-editor-meta">
+              <span class="badge accent">${selectedAccount ? (selectedAccount.entryAllowed ? "可出站" : "不可出站") : "未选中"}</span>
+              <span class="badge">${dragState ? "拖拽中" : "点击或拖拽"}</span>
+              ${
+                selectedAccount
+                  ? `<span class="badge">${selectedAccount.proxy ? selectedAccount.proxy.label : "direct"}</span>`
+                  : ""
+              }
+            </div>
+            <div class="selected-account ${selectedAccount ? "" : "empty"}">
+              ${
+                selectedAccount
+                  ? `
+                    <strong>${selectedAccount.name}</strong>
+                    <span>${
+                      selectedAccount.entryAllowed
+                        ? `${
+                            dragState && dragState.accountId === selectedAccount.id
+                              ? "拖到右侧目标节点后松手建立连接"
+                              : `当前出口: ${selectedAccount.proxy ? selectedAccount.proxy.label : "直连"}，点击或拖到下方目标节点即可改线`
+                          }`
+                        : "当前入口不兼容, 这条链路不会进入结束节点"
+                    }</span>
+                  `
+                  : `
+                    <strong>未选中账号</strong>
+                    <span>先回到账号组节点选择一个账号。</span>
+                  `
+              }
+            </div>
+            <div class="route-editor-copy">
+              当前组共有 ${selectedGroupAccounts.length} 个账号，兼容当前入口的账号会即时出现在下方连线图中。
+            </div>
+          </div>
+
+          <div class="route-target-grid">
+            ${routeNodes}
+          </div>
+        `;
       }
 
       function renderEnd(computed) {
-        const selectedAccounts = computed.filter((item) => item.groupSelected);
-        const activeAccounts = selectedAccounts.filter((item) => item.entryAllowed);
-        const blockedAccounts = selectedAccounts.filter((item) => !item.entryAllowed);
-        const proxyCount = activeAccounts.filter((item) => item.proxyId).length;
+        const activeAccounts = computed.filter((item) => item.active);
+        const blockedAccounts = computed.filter((item) => item.groupSelected && !item.entryAllowed);
+        const selectedAccount = computed.find((item) => item.id === state.currentAccountId) || null;
+        const proxyCount = activeAccounts.filter((item) => item.routeKey !== "direct").length;
+        const selectedTested = isCurrentTested(selectedAccount);
 
         endList.innerHTML = `
-          <div class="outlet-block primary" data-collaboration-id="RO.END.TEST" data-graph-anchor="end">
-            <span class="graph-anchor-dot left" aria-hidden="true"></span>
-            <div class="outlet-top">
+          <div class="sink-card primary ${state.focus === "end" ? "active" : ""}" data-collaboration-id="RO.END.TEST" data-graph-anchor="end">
+            <span class="graph-anchor left" aria-hidden="true"></span>
+            <div class="sink-head">
               <div>
-                <div class="outlet-name">结束与测试</div>
+                <div class="sink-name">结束与测试</div>
                 <div class="locator-row"><span class="locator">RO.END.TEST</span></div>
-                <div class="outlet-sub">确认链路后, 直接从这里发起一次测试请求。</div>
+                <div class="sink-copy">收口所有兼容账号，并保留一次点击即可验证的测试动作。</div>
               </div>
-              <span class="badge accent">${state.testStatus}</span>
+              <span class="badge ${selectedTested ? "success" : "accent"}">${selectedTested ? state.testStatus : "未测试"}</span>
             </div>
-            <div class="metric-pair">
-              <span class="key">入口</span>
-              <span class="value">${state.cli}</span>
+
+            <div class="metric-list">
+              <div class="metric-pair">
+                <span class="key">入口</span>
+                <span class="value">${state.cli}</span>
+              </div>
+              <div class="metric-pair">
+                <span class="key">账号组</span>
+                <span class="value">${state.groups.find((item) => item.id === state.activeGroupId).label}</span>
+              </div>
+              <div class="metric-pair">
+                <span class="key">代理挂接</span>
+                <span class="value">${proxyCount} 走代理 / ${activeAccounts.length - proxyCount} 直连</span>
+              </div>
+              <div class="metric-pair">
+                <span class="key">当前账号</span>
+                <span class="value">${selectedAccount ? selectedAccount.name : "未选择"}</span>
+              </div>
             </div>
-            <div class="metric-pair">
-              <span class="key">账号组</span>
-              <span class="value">${state.groups.find((item) => item.id === state.activeGroupId).label}</span>
-            </div>
-            <div class="metric-pair">
-              <span class="key">代理挂接</span>
-              <span class="value">${proxyCount} 走代理 / ${activeAccounts.length - proxyCount} 直连</span>
-            </div>
+
             <div class="mapping-list">
               ${activeAccounts
                 .map(
                   (account) => `
-                    <div class="mapping-line">
+                    <div class="mapping-line ${selectedAccount && selectedAccount.id === account.id ? "current" : ""} ${isCurrentTested(account) ? "tested" : ""}">
                       <span>${account.name}</span>
-                      <strong>${account.proxy ? `via ${account.proxy.label}` : "direct"}</strong>
+                      <strong>${account.proxy ? account.proxy.label : "direct"}</strong>
                     </div>
                   `
                 )
                 .join("")}
             </div>
-            <button class="test-button" type="button" id="run-test">测试当前链路</button>
+
+            <button class="test-button ${selectedTested ? "tested" : ""}" type="button" id="run-test">${selectedTested ? `测试通过 ${state.lastTest.time}` : "测试当前链路"}</button>
             <div class="test-console" id="test-log">${state.testLog}</div>
           </div>
 
-          <div class="outlet-block" data-collaboration-id="RO.END.BLOCKED">
-            <div class="outlet-top">
+          <div class="sink-card" data-collaboration-id="RO.END.BLOCKED">
+            <div class="sink-head">
               <div>
-                <div class="outlet-name">未进入结束区的账号</div>
+                <div class="sink-name">未进入结束节点的账号</div>
                 <div class="locator-row"><span class="locator">RO.END.BLOCKED</span></div>
-                <div class="outlet-sub">这里显示当前账号组里, 但与入口不兼容的对象。</div>
+                <div class="sink-copy">这些账号留在组里，但和当前入口不兼容。</div>
               </div>
               <span class="badge warning">${blockedAccounts.length} 排除</span>
             </div>
+
             <div class="mapping-list">
-              ${blockedAccounts.length > 0
-                ? blockedAccounts
-                    .map(
-                      (account) => `
-                        <div class="mapping-line">
-                          <span>${account.name}</span>
-                          <strong>${account.reasons.join(" / ")}</strong>
-                        </div>
-                      `
-                    )
-                    .join("")
-                : '<div class="mapping-line"><span>全部兼容</span><strong>当前账号组都能进入结束区</strong></div>'}
+              ${
+                blockedAccounts.length > 0
+                  ? blockedAccounts
+                      .map(
+                        (account) => `
+                          <div class="mapping-line">
+                            <span>${account.name}</span>
+                            <strong>${account.reasons.join(" / ")}</strong>
+                          </div>
+                        `
+                      )
+                      .join("")
+                  : '<div class="mapping-line"><span>全部兼容</span><strong>当前账号组都能进入结束节点</strong></div>'
+              }
             </div>
           </div>
         `;
       }
 
-      function setTextIfPresent(id, value) {
-        const node = document.getElementById(id);
-        if (node) node.textContent = value;
-      }
-
       function renderMeta(computed) {
-        const activeAccounts = computed.filter((item) => item.active);
-        const proxyAccounts = activeAccounts.filter((item) => item.proxyId);
-        setTextIfPresent("meta-cli", state.cli);
-        setTextIfPresent("entry-strategy", state.cli);
-        setTextIfPresent("meta-group", state.groups.find((item) => item.id === state.activeGroupId).label);
-        setTextIfPresent("meta-available", `${activeAccounts.length} 节点 / ${proxyAccounts.length} 代理`);
-        setTextIfPresent("meta-last-action", state.lastAction);
+        const currentAccount = computed.find((item) => item.id === state.currentAccountId);
+        document.getElementById("meta-cli").textContent = state.cli;
+        document.getElementById("meta-group").textContent = state.groups.find((item) => item.id === state.activeGroupId).label;
+        document.getElementById("meta-account").textContent = currentAccount ? currentAccount.name : "未选择";
+        document.getElementById("meta-mode").textContent = currentModeLabel(computed);
+        document.getElementById("meta-last-action").textContent = state.lastAction;
       }
 
-      function renderLaneFocus() {
-        document.querySelectorAll(".lane").forEach((lane) => {
-          lane.classList.toggle("active", lane.dataset.lane === state.focus);
+      function renderFocus() {
+        document.querySelectorAll(".node-shell").forEach((node) => {
+          node.classList.toggle("active", node.dataset.focusShell === state.focus);
         });
       }
 
       function renderButtons() {
-        document.querySelectorAll(".cli-token").forEach((button) => {
+        document.querySelectorAll(".entry-button").forEach((button) => {
           button.classList.toggle("active", button.dataset.cli === state.cli);
         });
       }
 
       function render() {
-        const computed = computeAccounts();
+        let computed = computeAccounts();
+        ensureCurrentAccount(computed);
+        computed = computeAccounts();
+        graphStage.classList.toggle("is-dragging", Boolean(dragState));
         renderButtons();
         renderMeta(computed);
+        renderActivePath(computed);
         renderGroups(computed);
         renderProxies(computed);
         renderEnd(computed);
-        renderLaneFocus();
+        renderFocus();
         hydrateLocators();
         window.cancelAnimationFrame(connectionFrame);
         connectionFrame = window.requestAnimationFrame(() => renderConnections(computed));
       }
 
+      function rerenderConnectionsOnly() {
+        const computed = computeAccounts();
+        window.cancelAnimationFrame(connectionFrame);
+        connectionFrame = window.requestAnimationFrame(() => renderConnections(computed));
+      }
+
+      function routeHoverFromPoint(clientX, clientY) {
+        const node = document.elementFromPoint(clientX, clientY)?.closest("[data-route-hover]");
+        return node ? node.dataset.routeHover : null;
+      }
+
       document.addEventListener("click", async (event) => {
+        if (suppressNextClick) {
+          suppressNextClick = false;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+
         const locator = event.target.closest(".locator");
         if (locator) {
           event.preventDefault();
@@ -1703,11 +2044,20 @@
           return;
         }
 
+        const focusCard = event.target.closest("[data-focus-card]");
+        if (focusCard) {
+          state.focus = focusCard.dataset.focusCard;
+          render();
+          return;
+        }
+
         const target = event.target.closest("button");
         if (!target) return;
 
         if (target.dataset.cli) {
           state.cli = target.dataset.cli;
+          previewRouteTarget = null;
+          invalidateTest("入口已变更，等待重新测试。");
           state.focus = "entry";
           render();
           return;
@@ -1715,23 +2065,29 @@
 
         if (target.dataset.groupAction) {
           state.activeGroupId = target.dataset.groupAction;
+          previewRouteTarget = null;
+          invalidateTest("账号组已变更，等待重新测试。");
           state.focus = "groups";
           render();
           return;
         }
 
-        if (target.dataset.routeAccount) {
-          const accountID = target.dataset.routeAccount;
-          const account = state.accounts.find((item) => item.id === accountID);
-          if (!account) return;
-          account.proxyId = target.dataset.routeProxy === "direct" ? null : target.dataset.routeProxy;
-          state.focus = "proxies";
+        if (target.dataset.accountFocus) {
+          state.currentAccountId = target.dataset.accountFocus;
+          previewRouteTarget = null;
+          state.focus = "groups";
           render();
           return;
         }
 
-        if (target.dataset.focus) {
-          state.focus = target.dataset.focus;
+        if (target.dataset.routeTarget) {
+          const account = state.accounts.find((item) => item.id === state.currentAccountId);
+          if (!account) return;
+          account.proxyId = target.dataset.routeTarget === "direct" ? null : target.dataset.routeTarget;
+          previewRouteTarget = null;
+          invalidateTest("出口已变更，等待重新测试。");
+          state.lastAction = "已改线";
+          state.focus = "proxies";
           render();
           return;
         }
@@ -1746,14 +2102,26 @@
         if (target.id === "run-test") {
           const computed = computeAccounts();
           const activeAccounts = computed.filter((item) => item.active);
-          const proxyCount = activeAccounts.filter((item) => item.proxyId).length;
+          const proxyCount = activeAccounts.filter((item) => item.routeKey !== "direct").length;
+          const currentAccount = computed.find((item) => item.id === state.currentAccountId) || null;
           const now = new Date();
           const hh = String(now.getHours()).padStart(2, "0");
           const mm = String(now.getMinutes()).padStart(2, "0");
+          const time = `${hh}:${mm}`;
           state.testStatus = "测试通过";
           state.lastAction = "已测试";
+          state.lastTest = currentAccount
+            ? {
+                accountId: currentAccount.id,
+                routeKey: currentAccount.routeKey,
+                cli: state.cli,
+                groupId: state.activeGroupId,
+                time,
+              }
+            : null;
           state.testLog =
-            `[${hh}:${mm}] ${state.cli} -> ${state.groups.find((item) => item.id === state.activeGroupId).label}\n` +
+            `[${time}] ${state.cli} -> ${state.groups.find((item) => item.id === state.activeGroupId).label}\n` +
+            `selected account: ${state.currentAccountId || "none"}\n` +
             `active accounts: ${activeAccounts.length}\n` +
             `proxy routes: ${proxyCount}\n` +
             `result: routing snapshot accepted`;
@@ -1765,15 +2133,91 @@
         if (target.id === "reset-flow") {
           state.cli = "codex";
           state.activeGroupId = "codex";
+          state.currentAccountId = "codex-prod-01";
+          previewRouteTarget = null;
           state.accounts.forEach((account) => {
             account.proxyId = defaultProxyBindings[account.id];
           });
           state.lastAction = "已恢复";
           state.testStatus = "未测试";
           state.testLog = "等待从结束节点发起测试。";
+          state.lastTest = null;
           state.focus = "groups";
           render();
         }
+      });
+
+      document.addEventListener("pointerdown", (event) => {
+        const handle = event.target.closest("[data-drag-account]");
+        if (!handle) return;
+
+        const accountId = handle.dataset.dragAccount;
+        const account = state.accounts.find((item) => item.id === accountId);
+        if (!account) return;
+
+        state.currentAccountId = accountId;
+        state.focus = "proxies";
+        state.lastAction = "拖拽中";
+        previewRouteTarget = null;
+        dragState = {
+          accountId,
+          x: event.clientX - graphStage.getBoundingClientRect().left,
+          y: event.clientY - graphStage.getBoundingClientRect().top,
+          hoverTarget: routeHoverFromPoint(event.clientX, event.clientY),
+        };
+
+        event.preventDefault();
+        render();
+      });
+
+      document.addEventListener("mouseover", (event) => {
+        if (dragState) return;
+        const target = event.target.closest("[data-route-hover]");
+        if (!target) return;
+        previewRouteTarget = target.dataset.routeHover;
+        rerenderConnectionsOnly();
+        target.classList.add("target-preview");
+      });
+
+      document.addEventListener("mouseout", (event) => {
+        if (dragState) return;
+        const target = event.target.closest("[data-route-hover]");
+        if (!target) return;
+        target.classList.remove("target-preview");
+        if (previewRouteTarget === target.dataset.routeHover) {
+          previewRouteTarget = null;
+          rerenderConnectionsOnly();
+        }
+      });
+
+      document.addEventListener("pointermove", (event) => {
+        if (!dragState || !graphStage) return;
+        const rect = graphStage.getBoundingClientRect();
+        dragState.x = event.clientX - rect.left;
+        dragState.y = event.clientY - rect.top;
+        dragState.hoverTarget = routeHoverFromPoint(event.clientX, event.clientY);
+        rerenderConnectionsOnly();
+      });
+
+      document.addEventListener("pointerup", (event) => {
+        if (!dragState) return;
+        suppressNextClick = true;
+
+        const routeTarget = routeHoverFromPoint(event.clientX, event.clientY);
+        if (routeTarget) {
+          const account = state.accounts.find((item) => item.id === dragState.accountId);
+          if (account) {
+            account.proxyId = routeTarget === "direct" ? null : routeTarget;
+            state.currentAccountId = account.id;
+            invalidateTest("出口已变更，等待重新测试。");
+            state.lastAction = "已改线";
+            state.focus = "proxies";
+          }
+        }
+
+        dragState = null;
+        previewRouteTarget = null;
+        render();
       });
 
       window.addEventListener("resize", () => {
