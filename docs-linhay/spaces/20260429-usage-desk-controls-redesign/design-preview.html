@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GetTokens - Interactive Precision Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-main: #ffffff;
+            --bg-surface: #f3f3f3;
+            --border-color: #000000;
+            --text-primary: #000000;
+            --text-muted: #666666;
+            --shadow-color: #dddddd;
+            --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-main: #000000;
+                --bg-surface: #111111;
+                --border-color: #ffffff;
+                --text-primary: #ffffff;
+                --text-muted: #888888;
+                --shadow-color: #222222;
+            }
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            padding: 4rem;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .console-panel {
+            border: 2px solid var(--border-color);
+            background: var(--bg-main);
+            box-shadow: 8px 8px 0px 0px var(--shadow-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 5rem;
+        }
+
+        .console-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 1rem;
+            background: var(--bg-surface);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .status-badge {
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .status-dot { width: 6px; height: 6px; background: var(--text-primary); border-radius: 0; }
+
+        .console-controls-bar {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-main);
+        }
+
+        .layer-primary {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            gap: 2rem;
+            border-bottom: 1px solid var(--shadow-color);
+        }
+
+        /* 二级控制层动画 */
+        .layer-secondary {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            gap: 1.5rem;
+            background: var(--bg-surface);
+            border-bottom: 2px solid var(--border-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .layer-secondary.hidden {
+            padding: 0 1rem;
+            height: 0;
+            border-bottom-width: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .track-group {
+            display: flex;
+            align-items: center;
+            background: var(--bg-main);
+            padding: 2px;
+            border: 1px solid var(--border-color);
+        }
+
+        .opt {
+            padding: 0.35rem 1.25rem;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 100ms;
+            color: var(--text-muted);
+        }
+
+        .opt.active {
+            background: var(--text-primary);
+            color: var(--bg-main);
+        }
+
+        .metric-group {
+            margin-left: auto;
+            display: flex;
+            border: 2px solid var(--border-color);
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .metric-tab {
+            padding: 0.25rem 0.75rem;
+            font-size: 9px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .metric-tab.active {
+            background: var(--text-primary);
+            color: var(--bg-main);
+        }
+
+        /* 凹陷图表区 */
+        .console-body { 
+            height: 240px; 
+            position: relative; 
+            background-color: var(--bg-main);
+            background-image: 
+                linear-gradient(var(--shadow-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--shadow-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            box-shadow: 
+                inset 0 12px 16px -8px rgba(0,0,0,0.1),
+                inset 0 -12px 16px -8px rgba(0,0,0,0.1);
+        }
+
+        .shadow-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, transparent 15%, transparent 85%, rgba(0,0,0,0.05) 100%);
+        }
+
+        .console-footer {
+            border-top: 2px solid var(--border-color);
+            background: var(--bg-surface);
+            padding: 1.25rem 1rem;
+            display: flex;
+            gap: 4rem;
+        }
+
+        .stat-box { display: flex; flex-direction: column; gap: 4px; transition: opacity 0.2s; }
+        .stat-head { font-size: 8px; font-weight: 900; opacity: 0.5; text-transform: uppercase; }
+        .stat-val { font-size: 12px; font-weight: 900; text-transform: uppercase; }
+
+        .label-sm { font-size: 8px; font-weight: 900; opacity: 0.4; text-transform: uppercase; letter-spacing: 0.1em; }
+
+        /* 图表线条动画 */
+        #chart-path {
+            transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #chart-area {
+            transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="text-3xl font-black uppercase mb-12 italic tracking-tighter border-l-8 border-black pl-4">Precision Analytics Console</h1>
+
+    <div class="console-panel">
+        <div class="console-header-top">
+            <div class="status-badge"><div class="status-dot"></div>System: <span id="status-text">Precision View</span></div>
+            <div class="flex gap-4">
+                <button class="text-[10px] font-bold uppercase underline underline-offset-4 hover:opacity-50 transition-opacity">Refresh</button>
+                <button class="text-[10px] font-bold uppercase underline underline-offset-4 hover:opacity-50 transition-opacity">Rebuild</button>
+            </div>
+        </div>
+
+        <div class="console-controls-bar">
+            <!-- 层级 1：Range -->
+            <div class="layer-primary">
+                <div class="label-sm">Range</div>
+                <div class="track-group" id="range-selector">
+                    <div class="opt active" data-range="today">Today</div>
+                    <div class="opt" data-range="7d">7D</div>
+                    <div class="opt" data-range="14d">14D</div>
+                    <div class="opt" data-range="30d">30D</div>
+                </div>
+
+                <div class="metric-group" id="metric-selector">
+                    <div class="metric-tab active" data-metric="tokens">Tokens</div>
+                    <div class="metric-tab" data-metric="requests">Requests</div>
+                </div>
+            </div>
+
+            <!-- 层级 2：Precision (仅在今日激活) -->
+            <div class="layer-secondary" id="precision-layer">
+                <div class="label-sm">Precision</div>
+                <div class="track-group" id="precision-selector">
+                    <div class="opt" data-prec="1m">1m</div>
+                    <div class="opt active" data-prec="5m">5m</div>
+                    <div class="opt" data-prec="15m">15m</div>
+                    <div class="opt" data-prec="30m">30m</div>
+                    <div class="opt" data-prec="60m">60m</div>
+                </div>
+                <div class="ml-auto text-[9px] font-black italic opacity-30 uppercase tracking-tighter">Real-time Sample Engine</div>
+            </div>
+        </div>
+
+        <!-- 凹陷效果图表区 -->
+        <div class="console-body">
+            <div class="shadow-overlay"></div>
+            <svg viewBox="0 0 1000 240" preserveAspectRatio="none" class="w-full h-full opacity-10">
+                <path id="chart-area" d="" fill="black" opacity="0.5" />
+                <path id="chart-path" d="" fill="none" stroke="black" stroke-width="2" />
+            </svg>
+        </div>
+
+        <footer class="console-footer">
+            <div class="stat-box"><div class="stat-head">Aggregated Flux</div><div class="stat-val" id="stat-total">1.25M</div></div>
+            <div class="stat-box"><div class="stat-head">Peak / interval</div><div class="stat-val" id="stat-peak">42k</div></div>
+            <div class="stat-box ml-auto text-right"><div class="stat-head">Node Status</div><div class="stat-val italic" id="stat-node">Synced</div></div>
+        </footer>
+    </div>
+
+    <script>
+        // 模拟数据生成器
+        const generateData = (count, variance) => {
+            const points = [];
+            let current = 120;
+            for (let i = 0; i <= count; i++) {
+                current += (Math.random() - 0.5) * variance;
+                current = Math.max(20, Math.min(200, current));
+                points.push({ x: (i / count) * 1000, y: 240 - current });
+            }
+            return points;
+        };
+
+        const pointsToPath = (points) => {
+            let d = `M ${points[0].x} ${points[0].y}`;
+            for (let i = 1; i < points.length; i++) {
+                const prev = points[i-1];
+                const curr = points[i];
+                const cp1x = prev.x + (curr.x - prev.x) / 2;
+                d += ` C ${cp1x} ${prev.y} ${cp1x} ${curr.y} ${curr.x} ${curr.y}`;
+            }
+            return d;
+        };
+
+        const state = {
+            range: 'today',
+            metric: 'tokens',
+            precision: '5m'
+        };
+
+        const updateUI = () => {
+            // 更新控制层可见性
+            const precLayer = document.getElementById('precision-layer');
+            if (state.range === 'today') {
+                precLayer.classList.remove('hidden');
+                document.getElementById('status-text').innerText = 'Precision View';
+            } else {
+                precLayer.classList.add('hidden');
+                document.getElementById('status-text').innerText = 'Aggregate View';
+            }
+
+            // 生成模拟数据
+            let pointCount = 20;
+            let variance = 40;
+            if (state.range === 'today') {
+                const precMap = { '1m': 60, '5m': 30, '15m': 15, '30m': 10, '60m': 6 };
+                pointCount = precMap[state.precision];
+                variance = state.precision === '1m' ? 80 : 40;
+            }
+
+            const points = generateData(pointCount, variance);
+            const pathD = pointsToPath(points);
+            
+            document.getElementById('chart-path').setAttribute('d', pathD);
+            document.getElementById('chart-area').setAttribute('d', pathD + ` L 1000 240 L 0 240 Z`);
+
+            // 更新汇总数据
+            const multiplier = state.metric === 'tokens' ? 1000 : 1;
+            const unit = state.metric === 'tokens' ? 'M' : 'k';
+            
+            document.getElementById('stat-total').innerText = (Math.random() * 5 + 1).toFixed(2) + unit;
+            document.getElementById('stat-peak').innerText = (Math.random() * 50 + 10).toFixed(1) + (state.metric === 'tokens' ? 'k' : '');
+            document.getElementById('stat-node').innerText = state.range === 'today' ? 'Live' : 'Cached';
+        };
+
+        // 事件监听
+        document.getElementById('range-selector').addEventListener('click', (e) => {
+            if (e.target.dataset.range) {
+                document.querySelectorAll('#range-selector .opt').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+                state.range = e.target.dataset.range;
+                updateUI();
+            }
+        });
+
+        document.getElementById('precision-selector').addEventListener('click', (e) => {
+            if (e.target.dataset.prec) {
+                document.querySelectorAll('#precision-selector .opt').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+                state.precision = e.target.dataset.prec;
+                updateUI();
+            }
+        });
+
+        document.getElementById('metric-selector').addEventListener('click', (e) => {
+            if (e.target.dataset.metric) {
+                document.querySelectorAll('#metric-selector .metric-tab').forEach(el => el.classList.remove('active'));
+                e.target.classList.add('active');
+                state.metric = e.target.dataset.metric;
+                updateUI();
+            }
+        });
+
+        // 初始化
+        updateUI();
+    </script>
+</body>
+</html>

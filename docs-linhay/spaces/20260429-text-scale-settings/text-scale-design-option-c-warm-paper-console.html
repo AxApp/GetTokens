@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetTokens Text Scale Settings - Option C / Warm Paper Console</title>
+  <style>
+    :root {
+      --bg: #ede5d8;
+      --panel: #fbf7f0;
+      --panel-2: #f2ebdf;
+      --ink: #201b16;
+      --muted: #74695e;
+      --accent: #8f2019;
+      --accent-soft: rgba(143,32,25,0.11);
+      --shadow: rgba(32,27,22,0.12);
+      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--mono);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(143,32,25,0.05), transparent 24%),
+        linear-gradient(90deg, rgba(32,27,22,0.03) 1px, transparent 1px),
+        linear-gradient(rgba(32,27,22,0.03) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 26px 26px, 26px 26px, auto;
+    }
+
+    .board {
+      width: min(1460px, calc(100vw - 36px));
+      margin: 18px auto;
+      min-height: calc(100vh - 36px);
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: 10px 10px 0 var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .masthead {
+      padding: 18px 24px;
+      border-bottom: 2px solid var(--ink);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.2));
+    }
+
+    .eyebrow, .micro, .label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .masthead h1, .panel-head h2, .preview-head h3 {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: -0.08em;
+      font-weight: 900;
+    }
+
+    .masthead h1 {
+      margin-top: 10px;
+      font-size: 48px;
+      line-height: 0.9;
+      max-width: 760px;
+    }
+
+    .masthead p {
+      margin: 14px 0 0;
+      max-width: 760px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .summary {
+      border: 2px solid var(--ink);
+      background: linear-gradient(180deg, #fffdf9, #f2e8da);
+      padding: 14px;
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .summary strong {
+      display: block;
+      margin-top: 16px;
+      font-size: 24px;
+      letter-spacing: -0.05em;
+      color: var(--accent);
+    }
+
+    .layout {
+      padding: 18px 24px 24px;
+      display: grid;
+      grid-template-columns: 390px minmax(0, 1fr);
+      gap: 18px;
+      min-height: 0;
+    }
+
+    .panel, .preview {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: 5px 5px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--ink);
+      background: var(--panel-2);
+    }
+
+    .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .scale-stack {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .scale-chip {
+      border: 2px solid var(--ink);
+      background: #fff;
+      padding: 12px 14px;
+      min-width: 104px;
+      box-shadow: 3px 3px 0 rgba(32,27,22,0.1);
+    }
+
+    .scale-chip.active {
+      background: var(--accent);
+      color: #fffaf6;
+    }
+
+    .scale-chip strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 18px;
+      letter-spacing: -0.06em;
+    }
+
+    .script-note {
+      border: 2px solid var(--ink);
+      background: var(--accent-soft);
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.8;
+      color: #4e4339;
+    }
+
+    .preview-stage {
+      border: 2px solid var(--ink);
+      background: #fffdf9;
+      box-shadow: 6px 6px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .preview-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--ink);
+      background: #f5eee2;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      min-height: 0;
+    }
+
+    .sheet {
+      border-right: 2px solid var(--ink);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .sheet:last-child { border-right: 0; }
+
+    .paper-card {
+      border: 2px solid var(--ink);
+      background: #fff;
+      padding: 14px;
+      box-shadow: 4px 4px 0 rgba(32,27,22,0.08);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .headline {
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.06em;
+      line-height: 0.95;
+    }
+
+    .meta {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 900;
+      color: var(--muted);
+    }
+
+    .copy {
+      color: #554b42;
+    }
+
+    .small .headline { font-size: 18px; }
+    .small .meta { font-size: 9px; }
+    .small .copy { font-size: 11px; line-height: 1.65; }
+
+    .large .headline { font-size: 24px; }
+    .large .meta { font-size: 11px; }
+    .large .copy { font-size: 14px; line-height: 1.8; }
+
+    .button-line {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .button-line button {
+      border: 2px solid var(--ink);
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 10px 12px;
+      box-shadow: 3px 3px 0 rgba(32,27,22,0.1);
+    }
+
+    .button-line button.primary {
+      background: var(--accent);
+      color: #fff8f4;
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .legend .item {
+      border: 2px solid var(--ink);
+      background: #fff;
+      padding: 10px;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 1100px) {
+      .board,
+      .masthead,
+      .layout,
+      .preview-grid,
+      .legend {
+        grid-template-columns: 1fr;
+      }
+
+      .board { width: min(100vw, calc(100vw - 16px)); margin: 8px; }
+      .sheet { border-right: 0; border-bottom: 2px solid var(--ink); }
+      .sheet:last-child { border-bottom: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="board">
+    <section class="masthead">
+      <div>
+        <div class="eyebrow">Option C / Warm Paper Console</div>
+        <h1>Make Text Feel Kinder Without Losing the Operator Mood.</h1>
+        <p>这版比前两版更柔和，适合你如果希望“可读性提升”不只是工程开关，而是顺手改善设置页的整体气质。它仍然保持 mono、边框、黑白红语义，但背景和层次更接近纸面工作台，减弱冷硬感。</p>
+      </div>
+      <div class="summary">
+        <div class="eyebrow">Remembered Thing</div>
+        <strong>Before / After as Printed Sheets</strong>
+      </div>
+    </section>
+
+    <section class="layout">
+      <div class="panel">
+        <div class="card">
+          <div class="card-head">
+            <div class="eyebrow">Settings Composition</div>
+            <div class="micro">appearance / readable / calm</div>
+          </div>
+          <div class="card-body">
+            <div class="label">文字大小</div>
+            <div class="scale-stack">
+              <div class="scale-chip">
+                <div class="eyebrow">01</div>
+                <strong>默认</strong>
+              </div>
+              <div class="scale-chip active">
+                <div class="eyebrow" style="color:#f7ddd9;">02</div>
+                <strong>较大</strong>
+              </div>
+              <div class="scale-chip">
+                <div class="eyebrow">03</div>
+                <strong>更大</strong>
+              </div>
+            </div>
+            <div class="script-note">推荐在设置页直接解释：文字大小会影响导航、卡片、详情弹窗和 Usage Desk 标签，但不会改变窗口缩放比例。这样用户理解的是“阅读密度调节”，不是“全局 zoom”。</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="eyebrow">Why This Direction</div>
+            <div class="micro">paper / contrast / calm</div>
+          </div>
+          <div class="card-body">
+            <div style="font-size:12px; line-height:1.8; color:#5b5047;">如果你觉得当前界面已经足够硬朗，这版的价值不在“更炫”，而在让设置这件事更像一张可以审阅的方案纸。用户会更自然地做 before / after 比较，也更容易接受“较大”是一个更友好的默认推荐。</div>
+            <div class="legend">
+              <div class="item"><strong>气质</strong><br>更柔和，但不是消费级</div>
+              <div class="item"><strong>适配</strong><br>保留现有 app shell</div>
+              <div class="item"><strong>风险</strong><br>需要控制米色比例</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview">
+        <div class="preview-stage">
+          <div class="preview-head">
+            <div class="eyebrow">Printed Comparison</div>
+            <div class="micro">default vs large</div>
+          </div>
+          <div class="preview-grid">
+            <div class="sheet small">
+              <div class="micro">默认</div>
+              <div class="paper-card">
+                <div class="header-row">
+                  <div class="headline">Usage Desk</div>
+                  <div class="meta">14D</div>
+                </div>
+                <div class="copy">本地投影数据稳定，图例标签可读性一般，说明文字与指标之间层级偏紧。</div>
+                <div class="button-line">
+                  <button>刷新</button>
+                  <button class="primary">进入设置</button>
+                </div>
+              </div>
+              <div class="paper-card">
+                <div class="header-row">
+                  <div class="headline">Account Detail</div>
+                  <div class="meta">proxy direct</div>
+                </div>
+                <div class="copy">当前 provider 未发现异常退避。小字号标签较多，连续阅读时疲劳感更明显。</div>
+              </div>
+            </div>
+
+            <div class="sheet large">
+              <div class="micro" style="color:var(--accent);">较大</div>
+              <div class="paper-card">
+                <div class="header-row">
+                  <div class="headline">Usage Desk</div>
+                  <div class="meta">14D</div>
+                </div>
+                <div class="copy">本地投影数据稳定，图例标签、按钮与说明段落之间的边界变得更自然，用户更容易在一眼内抓到主叙事。</div>
+                <div class="button-line">
+                  <button>刷新</button>
+                  <button class="primary">进入设置</button>
+                </div>
+              </div>
+              <div class="paper-card">
+                <div class="header-row">
+                  <div class="headline">Account Detail</div>
+                  <div class="meta">proxy direct</div>
+                </div>
+                <div class="copy">阅读舒适度明显提升，同时还保留了一定密度，不会像整页缩放那样破坏当前工作台的紧凑感。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

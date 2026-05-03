@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GetTokens / 会话管理 / 设计预览</title>
+  <style>
+    :root {
+      --bg-app: #f2f2f2;
+      --bg-main: #ffffff;
+      --bg-soft: #f7f7f7;
+      --ink: #050505;
+      --muted: #727272;
+      --faint: #969696;
+      --red: #c93326;
+      --line: #000000;
+      --shadow: #dddddd;
+      --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      background: var(--bg-app);
+      color: var(--ink);
+      font-family: var(--mono);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      border-right: 2px solid var(--line);
+    }
+
+    .brand {
+      padding: 28px 26px 24px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      color: var(--red);
+      flex: 0 0 auto;
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      font-size: 28px;
+      line-height: 0.92;
+      font-weight: 900;
+      letter-spacing: -0.08em;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .brand-copy span:last-child {
+      margin-top: -2px;
+      color: var(--faint);
+    }
+
+    .nav {
+      flex: 1 1 auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .nav-item,
+    .nav-subitem {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      border: 2px solid transparent;
+      background: transparent;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    .nav-item svg {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 auto;
+    }
+
+    .nav-item.soft {
+      border-color: var(--line);
+      background: var(--bg-main);
+    }
+
+    .nav-item.active {
+      border-color: var(--line);
+      background: var(--ink);
+      color: var(--bg-main);
+      box-shadow: 4px 4px 0 var(--shadow);
+      transform: translate(-1px, -1px);
+    }
+
+    .nav-substack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 4px 0 2px 28px;
+    }
+
+    .nav-subitem {
+      min-height: 40px;
+      border: 2px solid var(--line);
+      background: var(--bg-main);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .nav-subitem.active {
+      background: var(--ink);
+      color: var(--bg-main);
+    }
+
+    .sidebar-foot {
+      padding: 22px 24px;
+      border-top: 2px solid var(--line);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .workspace {
+      padding: 20px;
+      min-width: 0;
+    }
+
+    .frame {
+      min-height: calc(100vh - 40px);
+      border: 2px solid var(--line);
+      background: var(--bg-main);
+      box-shadow: 8px 8px 0 var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .topline {
+      padding: 12px 18px;
+      border-bottom: 2px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: var(--bg-soft);
+    }
+
+    .main {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      min-width: 0;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-end;
+      padding-bottom: 18px;
+      border-bottom: 4px solid var(--line);
+    }
+
+    .eyebrow {
+      margin-bottom: 8px;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .hero h1 {
+      font-size: 44px;
+      line-height: 0.92;
+      font-weight: 900;
+      letter-spacing: -0.08em;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .hero p {
+      margin-top: 10px;
+      max-width: 660px;
+      font-size: 11px;
+      line-height: 1.7;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .action {
+      min-height: 40px;
+      padding: 0 14px;
+      border: 2px solid var(--line);
+      background: var(--bg-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .action.primary {
+      background: var(--ink);
+      color: var(--bg-main);
+    }
+
+    .hero-meta {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      min-height: 640px;
+      border: 2px solid var(--line);
+      background: var(--bg-main);
+    }
+
+    .pane {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .pane + .pane {
+      border-left: 2px solid var(--line);
+    }
+
+    .pane-head {
+      padding: 14px 16px;
+      min-height: 68px;
+      border-bottom: 2px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .pane-head h2,
+    .pane-head h3 {
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    .pane-meta {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .head-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .head-filter {
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: var(--bg-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .head-filter.active {
+      background: var(--ink);
+      color: var(--bg-main);
+    }
+
+    .project-list,
+    .session-grid {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .project-row,
+    .session-row {
+      padding: 18px 16px;
+      border-bottom: 2px solid var(--line);
+      background: var(--bg-main);
+    }
+
+    .session-row {
+      cursor: pointer;
+    }
+
+    .project-row.active,
+    .session-row.active {
+      background: #f8f8f8;
+    }
+
+    .row-label {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .row-title {
+      margin-top: 10px;
+      font-size: 18px;
+      line-height: 1.35;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      text-transform: uppercase;
+    }
+
+    .row-sub {
+      margin-top: 10px;
+      font-size: 11px;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .sessions-top {
+      padding: 18px 18px 20px;
+      border-bottom: 2px solid var(--line);
+      background: var(--bg-soft);
+    }
+
+    .sessions-title {
+      margin-top: 10px;
+      font-size: 26px;
+      line-height: 1.1;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+    }
+
+    .sessions-copy,
+    .detail-copy {
+      margin-top: 12px;
+      max-width: 720px;
+      font-size: 12px;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    .session-grid .session-row {
+      min-height: 0;
+    }
+
+    .detail-kicker {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 5, 0.16);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+    }
+
+    .modal-backdrop.hidden {
+      display: none;
+    }
+
+    .modal {
+      width: min(980px, calc(100vw - 56px));
+      border: 2px solid var(--line);
+      background: var(--bg-main);
+      box-shadow: 10px 10px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .modal-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 16px 18px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .modal-title {
+      margin-top: 10px;
+      max-width: 680px;
+      font-size: 26px;
+      line-height: 1.12;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+    }
+
+    .modal-close {
+      min-width: 44px;
+      min-height: 44px;
+      border: 2px solid var(--line);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      background: var(--bg-main);
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .modal-body {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .modal-summary {
+      padding: 14px 18px;
+      border-bottom: 2px solid var(--line);
+      background: var(--bg-soft);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .summary-chip {
+      min-height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: var(--bg-main);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .modal-section-head {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+    }
+
+    .modal-section-head h4 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+    }
+
+    .modal-section-meta {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .request-list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .request-row {
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg-main);
+    }
+
+    .request-row.active {
+      background: #f8f8f8;
+    }
+
+    .request-label {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .request-title {
+      margin-top: 6px;
+      font-size: 14px;
+      line-height: 1.45;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+    }
+
+    .request-sub {
+      margin-top: 6px;
+      font-size: 10px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
+    @media (max-width: 1280px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 920px) {
+      .app { grid-template-columns: 1fr; }
+
+      .sidebar {
+        border-right: 0;
+        border-bottom: 2px solid var(--line);
+      }
+
+      .workspace { padding: 10px; }
+
+      .frame {
+        min-height: auto;
+        box-shadow: none;
+      }
+
+      .hero {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .hero h1 { font-size: 36px; }
+    }
+
+    @media (max-width: 560px) {
+      .topline {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .main { padding: 16px; }
+      .row-title { font-size: 16px; }
+      .sessions-title,
+      .modal-title { font-size: 22px; }
+
+      .modal-backdrop { padding: 10px; }
+      .modal { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-row">
+          <div class="brand-mark">
+            <svg viewBox="0 0 100 100" fill="currentColor">
+              <rect x="10" y="14" width="80" height="32"></rect>
+              <rect x="58" y="46" width="32" height="24"></rect>
+              <rect x="74" y="70" width="16" height="16"></rect>
+              <circle cx="26" cy="30" r="6.4" fill="#ffffff"></circle>
+            </svg>
+          </div>
+          <div class="brand-copy">
+            <span>GET</span>
+            <span>TOKENS</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav">
+        <div class="nav-item soft">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 8v4l3 3 M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0"></path></svg>
+          <span>运行状态</span>
+        </div>
+        <div class="nav-item soft">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path></svg>
+          <span>账号池</span>
+        </div>
+        <div class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 3h18v18H3z M7 15l3-3 2 2 5-5"></path></svg>
+          <span>会话管理</span>
+        </div>
+        <div class="nav-substack">
+          <div class="nav-subitem active">codex sessions</div>
+          <div class="nav-subitem">provider groups</div>
+        </div>
+        <div class="nav-item soft">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 4h18v6H3z M3 14h8v6H3z M13 14h8v6h-8z"></path></svg>
+          <span>代理池</span>
+        </div>
+        <div class="nav-item soft">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2"></path></svg>
+          <span>应用设置</span>
+        </div>
+        <div class="nav-item soft">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9.75 3.25h4.5 M12 3.25v3.5 M5.5 9.5l-2 2 2 2 M18.5 9.5l2 2-2 2 M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7 M7.5 20.75h9"></path></svg>
+          <span>调试面板</span>
+        </div>
+      </div>
+
+      <div class="sidebar-foot">version 2026.04.30.03</div>
+    </aside>
+
+    <main class="workspace">
+      <div class="frame">
+        <div class="topline">
+          <span>GetTokens / 会话管理 / 截图态设计稿</span>
+          <span>仅设计稿 / 项目列表 + 会话列表 + 请求详情弹层</span>
+        </div>
+
+        <div class="main">
+          <section class="hero">
+            <div>
+              <div class="eyebrow">Session Management / Codex</div>
+              <h1>Codex 会话</h1>
+              <p>左边先看项目，右边只看该项目下的会话。点击某条会话时，用弹层承接详情和 rewrite 预演，不把详情常驻塞进主画布。</p>
+              <div class="hero-meta">
+                <span>12 个项目 / 48 条会话</span>
+                <span>最近扫描 2026-04-29 23:41</span>
+                <span>usage index 部分可用</span>
+                <span>projection cache 可丢弃</span>
+                <span>codex 31</span>
+                <span>gemini 17</span>
+                <span>rewrite 候选 7</span>
+              </div>
+            </div>
+            <div class="hero-actions">
+              <div class="action primary">全部项目</div>
+              <div class="action">仅归档</div>
+              <div class="action">按最近排序</div>
+            </div>
+          </section>
+
+          <section class="content">
+            <div class="pane">
+              <div class="pane-head">
+                <h2>项目列表</h2>
+                <div class="pane-meta">12 个项目</div>
+              </div>
+
+              <div class="project-list">
+                <div class="project-row active">
+                  <div class="row-label">项目 / gettokens</div>
+                  <div class="row-title">GetTokens</div>
+                  <div class="row-sub">16 条会话 / codex + gemini / 4 条 rewrite 候选 / 最近活跃 23:41</div>
+                </div>
+
+                <div class="project-row">
+                  <div class="row-label">项目 / cli-proxy</div>
+                  <div class="row-title">CLIProxyAPI</div>
+                  <div class="row-sub">9 条会话 / 仅 codex / 归档较多 / 最近活跃 19:14</div>
+                </div>
+
+                <div class="project-row">
+                  <div class="row-label">项目 / nolon</div>
+                  <div class="row-title">Nolon</div>
+                  <div class="row-sub">11 条会话 / 仅 codex / rewrite 敏感 / 最近活跃 17:08</div>
+                </div>
+
+                <div class="project-row">
+                  <div class="row-label">项目 / docs-linhay</div>
+                  <div class="row-title">Docs Linhay</div>
+                  <div class="row-sub">5 条会话 / 归档混合 / usage 较低 / 最近活跃 11:23</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pane">
+              <div class="pane-head">
+                <h3>项目会话</h3>
+                <div class="head-filters">
+                  <div class="head-filter active">全部</div>
+                  <div class="head-filter">活跃</div>
+                  <div class="head-filter">已归档</div>
+                </div>
+              </div>
+
+              <div class="sessions-top">
+                <div class="detail-kicker">当前选中项目</div>
+                <div class="sessions-title">GetTokens 会话</div>
+                <div class="sessions-copy">右侧只显示当前项目下的会话列表。主页面不同时承担“列表 + 常驻详情”两套视线，详情通过点击某条会话后的弹层出现。</div>
+              </div>
+
+              <div class="session-grid">
+                <div class="session-row active" data-open-detail>
+                  <div class="row-label">codex / 待 rewrite / 最近触达 23:41</div>
+                  <div class="row-title">账号池页面接入 codex api key 的 UI 方案讨论</div>
+                  <div class="row-sub">1 个会话文件 / 6 条请求 / 已做脱敏展示 / 点击后弹出请求列表与详情</div>
+                </div>
+
+                <div class="session-row" data-open-detail>
+                  <div class="row-label">gemini / usage only / 最近触达 22:06</div>
+                  <div class="row-title">Gemini 双源投影在本地重建后的不一致</div>
+                  <div class="row-sub">3 个 thread ids / summary 稀疏 / 适合进入 provider group 视图</div>
+                </div>
+
+                <div class="session-row" data-open-detail>
+                  <div class="row-label">codex / 已归档 / 最近触达 19:18</div>
+                  <div class="row-title">本地重扫后的账号 quota 回填校验</div>
+                  <div class="row-sub">4 个 thread ids / cache 已重建 / 不需要 rewrite</div>
+                </div>
+
+                <div class="session-row" data-open-detail>
+                  <div class="row-label">codex / 活跃中 / 最近触达 17:52</div>
+                  <div class="row-title">Provider 分组讨论与 stale delta 折叠方案</div>
+                  <div class="row-sub">3 个 thread ids / 可能触发 group rewrite / 需要 verify</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="session-detail-modal">
+    <div class="modal">
+      <div class="modal-top">
+        <div>
+          <div class="detail-kicker">会话文件弹层</div>
+          <div class="modal-title">账号池页面接入 codex api key 的 UI 方案讨论</div>
+          <div class="detail-copy">这里展示的是从本机真实 rollout 文件中抽出的脱敏样本。路径、仓库绝对地址、内部约束原文和敏感标识都已抹去，只保留请求顺序、角色、标题和信息密度。</div>
+        </div>
+        <button class="modal-close" id="close-session-detail" type="button">关闭</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-summary">
+          <div class="summary-chip">共 6 条消息</div>
+          <div class="summary-chip">1 个会话文件</div>
+          <div class="summary-chip">已脱敏</div>
+          <div class="summary-chip">当前选中 请求 01</div>
+          <div class="summary-chip">用户 1 / assistant 5</div>
+          <div class="summary-chip">主题：账号池 UI 方案</div>
+        </div>
+
+        <div class="modal-section">
+          <div class="modal-section-head">
+            <h4>消息列表</h4>
+            <div class="modal-section-meta">主体区域</div>
+          </div>
+
+          <div class="request-list">
+            <div class="request-row active">
+              <div class="request-label">请求 01 / user / 已脱敏</div>
+              <div class="request-title">给出“把 codex api key 模式账号也放进账号池页面”的 UI 交互方案</div>
+              <div class="request-sub">真实用户请求改写后展示，去除了本地路径与工程细节。当前选中。</div>
+            </div>
+
+            <div class="request-row">
+              <div class="request-label">请求 02 / assistant / 已脱敏</div>
+              <div class="request-title">当前账号池页已经有 provider、quota、搜索和添加入口</div>
+              <div class="request-sub">真实 assistant 回合摘要，保留页面理解和骨架判断，去掉具体代码引用。</div>
+            </div>
+
+            <div class="request-row">
+              <div class="request-label">请求 03 / assistant / 已脱敏</div>
+              <div class="request-title">现有页面骨架不能推翻，只能增加“接入方式”这一层信息</div>
+              <div class="request-sub">真实 assistant 回合摘要，保留方案约束，去掉仓库结构和组件名。</div>
+            </div>
+
+            <div class="request-row">
+              <div class="request-label">请求 04 / assistant / 已脱敏</div>
+              <div class="request-title">需要核对详情弹窗里哪些信息能展示，哪些不该展示</div>
+              <div class="request-sub">真实 assistant 回合摘要，聚焦字段边界和泄露风险，去掉原始字段名。</div>
+            </div>
+
+            <div class="request-row">
+              <div class="request-label">请求 05 / assistant / 已脱敏</div>
+              <div class="request-title">确认存在更多元信息，可用于卡片主区和详情区分层展示</div>
+              <div class="request-sub">真实 assistant 回合摘要，保留“补齐字段后再定方案”的工作节奏，去掉类型定义细节。</div>
+            </div>
+
+            <div class="request-row">
+              <div class="request-label">请求 06 / assistant / 已脱敏</div>
+              <div class="request-title">输出最终 UI 方案：同页区分、筛选组织、显示边界、风格和风险</div>
+              <div class="request-sub">真实 final answer 改写后展示，保留结论结构，去掉具体文件路径和源码定位。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('session-detail-modal');
+    const closeButton = document.getElementById('close-session-detail');
+    const openTriggers = document.querySelectorAll('[data-open-detail]');
+
+    function openModal() {
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      modal.classList.add('hidden');
+    }
+
+    openTriggers.forEach((item) => {
+      item.addEventListener('click', openModal);
+    });
+
+    closeButton.addEventListener('click', closeModal);
+
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        closeModal();
+      }
+    });
+  </script>
+</body>
+</html>

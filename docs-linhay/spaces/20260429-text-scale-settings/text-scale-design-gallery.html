@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GetTokens Text Scale Settings - Same Content Comparison</title>
+  <style>
+    :root {
+      --bg: #f3ede3;
+      --panel: #fffbf5;
+      --panel-2: #f0e8db;
+      --ink: #181512;
+      --muted: #6f665c;
+      --accent: #aa261f;
+      --shadow: rgba(24, 21, 18, 0.12);
+      --surface: #ffffff;
+      --surface-2: #f8f3eb;
+      --font-family: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    body[data-theme="terminal"] {
+      --bg: #060606;
+      --panel: #0e0e0e;
+      --panel-2: #171717;
+      --ink: #f5f5f5;
+      --muted: #8d8d8d;
+      --accent: #ff3b30;
+      --shadow: rgba(255, 255, 255, 0.08);
+      --surface: #111111;
+      --surface-2: #161616;
+    }
+
+    body[data-theme="paper"] {
+      --bg: #ede5d8;
+      --panel: #fbf7f0;
+      --panel-2: #f2ebdf;
+      --ink: #201b16;
+      --muted: #74695e;
+      --accent: #8f2019;
+      --shadow: rgba(32, 27, 22, 0.12);
+      --surface: #fffdf9;
+      --surface-2: #f7f0e4;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: var(--font-family);
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 18%),
+        linear-gradient(90deg, color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(color-mix(in srgb, var(--ink) 6%, transparent) 1px, transparent 1px),
+        var(--bg);
+      background-size: auto, 28px 28px, 28px 28px, auto;
+    }
+
+    .page {
+      width: min(1560px, calc(100vw - 24px));
+      margin: 12px auto;
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      box-shadow: 10px 10px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero {
+      padding: 20px 24px;
+      border-bottom: 2px solid var(--ink);
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 18px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface) 35%, transparent));
+    }
+
+    .eyebrow,
+    .micro,
+    .meta {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+    }
+
+    h1, h2, h3, p { margin: 0; }
+
+    .hero h1 {
+      margin-top: 10px;
+      font-size: 50px;
+      line-height: 0.9;
+      letter-spacing: -0.08em;
+      text-transform: uppercase;
+      font-weight: 900;
+      max-width: 860px;
+    }
+
+    .hero p {
+      margin-top: 14px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: var(--muted);
+      max-width: 780px;
+    }
+
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      min-height: 106px;
+      border: 2px solid var(--ink);
+      background: linear-gradient(180deg, var(--surface), var(--surface-2));
+      padding: 12px;
+      box-shadow: 4px 4px 0 var(--shadow);
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 16px;
+      font-size: 22px;
+      letter-spacing: -0.06em;
+      text-transform: uppercase;
+    }
+
+    .toolbar {
+      padding: 14px 24px;
+      border-bottom: 2px solid var(--ink);
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      background: color-mix(in srgb, var(--panel) 92%, transparent);
+    }
+
+    .theme-switches {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .switch {
+      border: 2px solid var(--ink);
+      background: var(--panel-2);
+      color: var(--ink);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 10px 14px;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 var(--shadow);
+      transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+    }
+
+    .switch:active { transform: scale(0.95); }
+    .switch.active {
+      background: var(--ink);
+      color: var(--panel);
+    }
+
+    .layout {
+      padding: 18px 24px 24px;
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .card {
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      box-shadow: 5px 5px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--ink);
+      background: var(--surface-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .notes {
+      font-size: 12px;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .legend-item {
+      border: 2px solid var(--ink);
+      padding: 10px;
+      background: var(--panel);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .viewer {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .viewer-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 12px;
+    }
+
+    .viewer-head h2 {
+      font-size: 34px;
+      line-height: 0.92;
+      letter-spacing: -0.08em;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .compare-panel {
+      min-width: 0;
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      box-shadow: 6px 6px 0 var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .compare-head {
+      padding: 10px 12px;
+      border-bottom: 2px solid var(--ink);
+      background: var(--surface-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 980px;
+    }
+
+    .app-frame {
+      border: 2px solid var(--ink);
+      background: var(--panel);
+      display: grid;
+      grid-template-columns: 118px minmax(0, 1fr);
+      min-height: 760px;
+    }
+
+    .app-nav {
+      border-right: 2px solid var(--ink);
+      background: var(--surface-2);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .nav-brand {
+      border: 2px solid var(--ink);
+      background: var(--ink);
+      color: var(--panel);
+      padding: 8px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .nav-item {
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      padding: 8px 6px;
+      text-transform: uppercase;
+      font-weight: 900;
+      line-height: 1.2;
+    }
+
+    .nav-item.active {
+      background: var(--accent);
+      color: #fff9f6;
+    }
+
+    .app-main {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+      background: color-mix(in srgb, var(--surface) 92%, transparent);
+    }
+
+    .settings-header,
+    .surface,
+    .preview-card,
+    .usage-card {
+      border: 2px solid var(--ink);
+      background: var(--surface);
+      box-shadow: 4px 4px 0 color-mix(in srgb, var(--shadow) 90%, transparent);
+    }
+
+    .settings-header {
+      padding: 12px;
+    }
+
+    .surface {
+      overflow: hidden;
+    }
+
+    .surface-head {
+      padding: 10px 12px;
+      border-bottom: 2px solid var(--ink);
+      background: var(--surface-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .surface-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+    }
+
+    .control-label {
+      padding-top: 10px;
+      font-size: var(--label-size);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 900;
+      color: var(--muted);
+      line-height: 1.3;
+    }
+
+    .segmented {
+      display: inline-flex;
+      border: 2px solid var(--ink);
+      background: var(--panel-2);
+      padding: 2px;
+      gap: 2px;
+      width: fit-content;
+      flex-wrap: wrap;
+    }
+
+    .segmented span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 68px;
+      padding: 8px 10px;
+      border: 0;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      font-size: var(--segment-size);
+      line-height: 1.2;
+      background: transparent;
+      color: var(--ink);
+    }
+
+    .segmented span.active {
+      background: var(--ink);
+      color: var(--panel);
+    }
+
+    .helper {
+      font-size: var(--helper-size);
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .preview-card,
+    .usage-card {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .title {
+      font-size: var(--title-size);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+      font-weight: 900;
+    }
+
+    .value {
+      font-size: var(--value-size);
+      line-height: 1;
+      letter-spacing: -0.05em;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .copy {
+      font-size: var(--body-size);
+      line-height: 1.7;
+      color: color-mix(in srgb, var(--ink) 78%, var(--muted) 22%);
+    }
+
+    .chip-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip-row span,
+    .action-row button {
+      border: 2px solid var(--ink);
+      background: var(--surface-2);
+      padding: 6px 8px;
+      font-size: var(--chip-size);
+      line-height: 1.2;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .action-row button.primary {
+      background: var(--accent);
+      color: #fff9f6;
+    }
+
+    .scale-default {
+      --label-size: 8px;
+      --segment-size: 8px;
+      --helper-size: 10px;
+      --title-size: 16px;
+      --value-size: 16px;
+      --body-size: 11px;
+      --chip-size: 8px;
+    }
+
+    .scale-large {
+      --label-size: 10px;
+      --segment-size: 10px;
+      --helper-size: 12px;
+      --title-size: 22px;
+      --value-size: 22px;
+      --body-size: 14px;
+      --chip-size: 10px;
+    }
+
+    .scale-xl {
+      --label-size: 13px;
+      --segment-size: 13px;
+      --helper-size: 15px;
+      --title-size: 30px;
+      --value-size: 30px;
+      --body-size: 18px;
+      --chip-size: 13px;
+    }
+
+    @media (max-width: 1260px) {
+      .compare-grid {
+        grid-template-columns: 1fr;
+      }
+      .panel-body {
+        min-height: auto;
+      }
+      .app-frame {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 980px) {
+      .hero,
+      .layout {
+        grid-template-columns: 1fr;
+      }
+      .page {
+        width: min(100vw, calc(100vw - 12px));
+        margin: 6px;
+      }
+    }
+  </style>
+</head>
+<body data-theme="editorial">
+  <div class="page">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">20260429 Text Scale Settings / Same Content Preview</div>
+        <h1>Now You Can See Only One Variable Change: Text Size.</h1>
+        <p>这次不再拿三份不同内容误导判断。右侧三栏永远是同一份 `Settings + 预览卡片 + Usage Desk 摘要`，唯一变化只有字号档位：`默认 / 较大 / 更大`。上面的风格切换只影响外观语气，不改变内容本身。</p>
+      </div>
+      <div class="hero-metrics">
+        <div class="metric"><div class="eyebrow">Content</div><strong>Same</strong></div>
+        <div class="metric"><div class="eyebrow">Layout</div><strong>Same</strong></div>
+        <div class="metric"><div class="eyebrow">Variable</div><strong>Text Scale</strong></div>
+        <div class="metric"><div class="eyebrow">Themes</div><strong>3 Directions</strong></div>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div class="theme-switches">
+        <button class="switch active" data-theme="editorial">Editorial Utility</button>
+        <button class="switch" data-theme="terminal">Raw Terminal</button>
+        <button class="switch" data-theme="paper">Warm Paper</button>
+      </div>
+      <div class="micro">theme changes style only / scale panels stay identical</div>
+    </div>
+
+    <section class="layout">
+      <aside class="sidebar">
+        <div class="card">
+          <div class="card-head">
+            <div class="eyebrow">How to Review</div>
+            <div class="micro">one variable only</div>
+          </div>
+          <div class="card-body notes">
+            <div>1. 先横向看三栏，同一行内容是否仅因为字号变化而重新分层。</div>
+            <div>2. 重点看 `segmented control`、按钮、说明文字和卡片标题是否先拥挤。</div>
+            <div>3. 再切换主题，只判断气质，不要把主题差异误判成字号差异。</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="eyebrow">Reading Guide</div>
+            <div class="micro">where to look</div>
+          </div>
+          <div class="card-body">
+            <div class="legend-item"><strong>Settings 行</strong><br>看标签、分段控件和说明文的压力。</div>
+            <div class="legend-item"><strong>Account 卡片</strong><br>看标题、指标、辅助说明是否更易扫读。</div>
+            <div class="legend-item"><strong>Usage Desk 摘要</strong><br>看高密度信息在放大后是否开始占满空间。</div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="viewer">
+        <div class="viewer-head">
+          <div>
+            <div class="eyebrow">Synchronized Comparison</div>
+            <h2>Default vs Large vs XL</h2>
+          </div>
+          <div class="meta">same content / same width / same structure</div>
+        </div>
+
+        <div class="compare-grid">
+          <section class="compare-panel scale-default">
+            <div class="compare-head">
+              <div class="eyebrow">01 / Default</div>
+              <div class="micro">current baseline</div>
+            </div>
+            <div class="panel-body">
+              <div class="app-frame">
+                <div class="app-nav">
+                  <div class="nav-brand">GT</div>
+                  <div class="nav-item">Status</div>
+                  <div class="nav-item">Accounts</div>
+                  <div class="nav-item">Usage</div>
+                  <div class="nav-item active">Settings</div>
+                </div>
+                <div class="app-main">
+                  <div class="settings-header">
+                    <div class="eyebrow">Settings</div>
+                    <div class="title">Appearance</div>
+                  </div>
+
+                  <div class="surface">
+                    <div class="surface-head">
+                      <div class="eyebrow">Text Scale</div>
+                      <div class="micro">config_x_text_scale</div>
+                    </div>
+                    <div class="surface-body">
+                      <div class="control-row">
+                        <div class="control-label">文字大小</div>
+                        <div class="segmented">
+                          <span class="active">默认</span>
+                          <span>较大</span>
+                          <span>更大</span>
+                        </div>
+                      </div>
+                      <div class="helper">调整导航、卡片、说明文与数据标签的可读性，不改变窗口缩放比例。</div>
+                    </div>
+                  </div>
+
+                  <div class="preview-grid">
+                    <div class="preview-card">
+                      <div class="row">
+                        <div class="title">Claude Main</div>
+                        <div class="value">91%</div>
+                      </div>
+                      <div class="chip-row">
+                        <span>proxy direct</span>
+                        <span>healthy</span>
+                      </div>
+                      <div class="copy">过去 7 天请求量稳定，当前 provider 没有检测到 fallback。</div>
+                      <div class="action-row">
+                        <button>刷新</button>
+                        <button class="primary">进入设置</button>
+                      </div>
+                    </div>
+
+                    <div class="usage-card">
+                      <div class="row">
+                        <div class="title">Usage Desk</div>
+                        <div class="value">14D</div>
+                      </div>
+                      <div class="copy">本地投影数据已同步，图例标签与说明文字在当前基线下仍然偏紧。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="compare-panel scale-large">
+            <div class="compare-head">
+              <div class="eyebrow">02 / Large</div>
+              <div class="micro">recommended candidate</div>
+            </div>
+            <div class="panel-body">
+              <div class="app-frame">
+                <div class="app-nav">
+                  <div class="nav-brand">GT</div>
+                  <div class="nav-item">Status</div>
+                  <div class="nav-item">Accounts</div>
+                  <div class="nav-item">Usage</div>
+                  <div class="nav-item active">Settings</div>
+                </div>
+                <div class="app-main">
+                  <div class="settings-header">
+                    <div class="eyebrow">Settings</div>
+                    <div class="title">Appearance</div>
+                  </div>
+
+                  <div class="surface">
+                    <div class="surface-head">
+                      <div class="eyebrow">Text Scale</div>
+                      <div class="micro">config_x_text_scale</div>
+                    </div>
+                    <div class="surface-body">
+                      <div class="control-row">
+                        <div class="control-label">文字大小</div>
+                        <div class="segmented">
+                          <span>默认</span>
+                          <span class="active">较大</span>
+                          <span>更大</span>
+                        </div>
+                      </div>
+                      <div class="helper">调整导航、卡片、说明文与数据标签的可读性，不改变窗口缩放比例。</div>
+                    </div>
+                  </div>
+
+                  <div class="preview-grid">
+                    <div class="preview-card">
+                      <div class="row">
+                        <div class="title">Claude Main</div>
+                        <div class="value">91%</div>
+                      </div>
+                      <div class="chip-row">
+                        <span>proxy direct</span>
+                        <span>healthy</span>
+                      </div>
+                      <div class="copy">过去 7 天请求量稳定，当前 provider 没有检测到 fallback，主信息层级更容易被快速扫到。</div>
+                      <div class="action-row">
+                        <button>刷新</button>
+                        <button class="primary">进入设置</button>
+                      </div>
+                    </div>
+
+                    <div class="usage-card">
+                      <div class="row">
+                        <div class="title">Usage Desk</div>
+                        <div class="value">14D</div>
+                      </div>
+                      <div class="copy">本地投影数据已同步，图例标签与说明文字的层级更清楚，但组件高度已经开始上涨。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="compare-panel scale-xl">
+            <div class="compare-head">
+              <div class="eyebrow">03 / XL</div>
+              <div class="micro">highest readability</div>
+            </div>
+            <div class="panel-body">
+              <div class="app-frame">
+                <div class="app-nav">
+                  <div class="nav-brand">GT</div>
+                  <div class="nav-item">Status</div>
+                  <div class="nav-item">Accounts</div>
+                  <div class="nav-item">Usage</div>
+                  <div class="nav-item active">Settings</div>
+                </div>
+                <div class="app-main">
+                  <div class="settings-header">
+                    <div class="eyebrow">Settings</div>
+                    <div class="title">Appearance</div>
+                  </div>
+
+                  <div class="surface">
+                    <div class="surface-head">
+                      <div class="eyebrow">Text Scale</div>
+                      <div class="micro">config_x_text_scale</div>
+                    </div>
+                    <div class="surface-body">
+                      <div class="control-row">
+                        <div class="control-label">文字大小</div>
+                        <div class="segmented">
+                          <span>默认</span>
+                          <span>较大</span>
+                          <span class="active">更大</span>
+                        </div>
+                      </div>
+                      <div class="helper">调整导航、卡片、说明文与数据标签的可读性，不改变窗口缩放比例。</div>
+                    </div>
+                  </div>
+
+                  <div class="preview-grid">
+                    <div class="preview-card">
+                      <div class="row">
+                        <div class="title">Claude Main</div>
+                        <div class="value">91%</div>
+                      </div>
+                      <div class="chip-row">
+                        <span>proxy direct</span>
+                        <span>healthy</span>
+                      </div>
+                      <div class="copy">过去 7 天请求量稳定，当前 provider 没有检测到 fallback。阅读最轻松，但按钮区和标签区已经明显更占空间。</div>
+                      <div class="action-row">
+                        <button>刷新</button>
+                        <button class="primary">进入设置</button>
+                      </div>
+                    </div>
+
+                    <div class="usage-card">
+                      <div class="row">
+                        <div class="title">Usage Desk</div>
+                        <div class="value">14D</div>
+                      </div>
+                      <div class="copy">本地投影数据已同步，摘要信息最容易读，但高密度区域若不加高卡片和间距，就会开始显得拥挤。</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const switches = document.querySelectorAll('[data-theme]');
+    switches.forEach((button) => {
+      button.addEventListener('click', () => {
+        const theme = button.dataset.theme;
+        document.body.setAttribute('data-theme', theme);
+        switches.forEach((node) => node.classList.toggle('active', node === button));
+      });
+    });
+  </script>
+</body>
+</html>

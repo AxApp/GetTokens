@@ -1,0 +1,339 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  GITHUB_TOKEN: ${{ github.token }}
+  MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+  MACOS_NOTARY_KEY_ID: ${{ secrets.MACOS_NOTARY_KEY_ID }}
+  MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
+  SPARKLE_ENABLE: ${{ vars.SPARKLE_ENABLE }}
+  SPARKLE_APPCAST_BRANCH: ${{ vars.SPARKLE_APPCAST_BRANCH }}
+  SPARKLE_PRIVATE_ED_KEY: ${{ secrets.SPARKLE_PRIVATE_ED_KEY }}
+  SPARKLE_PUBLIC_ED_KEY: ${{ secrets.SPARKLE_PUBLIC_ED_KEY }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ── Build frontend once, share across platform jobs ──────────────────────
+  build-frontend:
+    name: Build H5
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        env:
+          VITE_VERSION: ${{ github.ref_name }}
+        working-directory: frontend
+      - uses: actions/upload-artifact@v6
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+  # ── Platform matrix ───────────────────────────────────────────────────────
+  build:
+    name: Build ${{ matrix.os-name }}
+    needs: build-frontend
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-latest
+            os-name: macOS arm64
+            goos: darwin
+            goarch: arm64
+            wails-platform: darwin/arm64
+            package-ext: dmg
+            asset-name: GetTokens_macOS_AppleSilicon.dmg
+            updater-asset-name: GetTokens_macOS_AppleSilicon.tar.gz
+            sparkle-appcast-name: appcast-arm64.xml
+            sparkle-feed-url: https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-arm64.xml
+
+          - runner: macos-15-intel
+            os-name: macOS amd64
+            goos: darwin
+            goarch: amd64
+            wails-platform: darwin/amd64
+            package-ext: dmg
+            asset-name: GetTokens_macOS_Intel.dmg
+            updater-asset-name: GetTokens_macOS_Intel.tar.gz
+            sparkle-appcast-name: appcast-amd64.xml
+            sparkle-feed-url: https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-amd64.xml
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # ── Go ────────────────────────────────────────────────────────────────
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.26'
+
+      # ── Node ──────────────────────────────────────────────────────────────
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      # ── Restore built frontend ────────────────────────────────────────────
+      - uses: actions/download-artifact@v5
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+
+      # ── Wails ────────────────────────────────────────────────────────────
+      - name: Install Wails
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      # ── Build sidecar from fork source ───────────────────────────────────
+      - name: Build CLIProxyAPI sidecar from source
+        shell: bash
+        run: |
+          chmod +x scripts/build-sidecar.sh
+          ./scripts/build-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch }} build/bin
+
+      # ── Platform-specific dependencies ───────────────────────────────────
+      - name: Install macOS packaging tools
+        if: runner.os == 'macOS'
+        run: brew install create-dmg
+
+      - name: Prepare macOS signing materials
+        if: runner.os == 'macOS'
+        env:
+          MACOS_DEVELOPER_ID_P12_BASE64: ${{ secrets.MACOS_DEVELOPER_ID_P12_BASE64 }}
+          MACOS_DEVELOPER_ID_P12_PASSWORD: ${{ secrets.MACOS_DEVELOPER_ID_P12_PASSWORD }}
+          MACOS_NOTARY_API_KEY_BASE64: ${{ secrets.MACOS_NOTARY_API_KEY_BASE64 }}
+        run: |
+          test -n "$MACOS_SIGNING_IDENTITY"
+          test -n "$MACOS_NOTARY_KEY_ID"
+          test -n "$MACOS_NOTARY_ISSUER_ID"
+          test -n "$MACOS_DEVELOPER_ID_P12_BASE64"
+          test -n "$MACOS_DEVELOPER_ID_P12_PASSWORD"
+          test -n "$MACOS_NOTARY_API_KEY_BASE64"
+
+          export CI_KEYCHAIN_PATH="$RUNNER_TEMP/gettokens-signing.keychain-db"
+          export CI_KEYCHAIN_PASSWORD="$(uuidgen)"
+          export MACOS_NOTARY_KEY_PATH="$RUNNER_TEMP/AuthKey_${MACOS_NOTARY_KEY_ID}.p8"
+
+          python3 -c 'import base64, os, pathlib; pathlib.Path(os.environ["RUNNER_TEMP"], "developer-id.p12").write_bytes(base64.b64decode(os.environ["MACOS_DEVELOPER_ID_P12_BASE64"]))'
+          python3 -c 'import base64, os, pathlib; pathlib.Path(os.environ["MACOS_NOTARY_KEY_PATH"]).write_bytes(base64.b64decode(os.environ["MACOS_NOTARY_API_KEY_BASE64"]))'
+
+          security create-keychain -p "$CI_KEYCHAIN_PASSWORD" "$CI_KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$CI_KEYCHAIN_PATH"
+          security unlock-keychain -p "$CI_KEYCHAIN_PASSWORD" "$CI_KEYCHAIN_PATH"
+          security import "$RUNNER_TEMP/developer-id.p12" \
+            -k "$CI_KEYCHAIN_PATH" \
+            -P "$MACOS_DEVELOPER_ID_P12_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security list-keychains -d user -s "$CI_KEYCHAIN_PATH"
+          security default-keychain -d user -s "$CI_KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$CI_KEYCHAIN_PASSWORD" "$CI_KEYCHAIN_PATH"
+          echo "CI_KEYCHAIN_PATH=$CI_KEYCHAIN_PATH" >> "$GITHUB_ENV"
+          echo "CI_KEYCHAIN_PASSWORD=$CI_KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
+          echo "MACOS_NOTARY_KEY_PATH=$MACOS_NOTARY_KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Compute release label
+        shell: bash
+        run: |
+          echo "RELEASE_LABEL=$(TZ=Asia/Shanghai date +'%Y.%m.%d.%H')" >> "$GITHUB_ENV"
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - name: Wails build
+        shell: bash
+        run: |
+          wails build \
+            -platform ${{ matrix.wails-platform }} \
+            ${{ matrix.wails-extra || '' }} \
+            -ldflags "-X main.Version=${{ github.ref_name }} -X main.ReleaseLabel=${RELEASE_LABEL}"
+
+      - name: Sync macOS bundle version metadata
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          chmod +x scripts/sync-macos-bundle-version.sh
+          scripts/sync-macos-bundle-version.sh "build/bin/GetTokens.app" "${{ github.ref_name }}"
+
+      - name: Reinstall sidecar into macOS app bundle
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          cp build/bin/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+          chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+          file build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+
+      - name: Configure Sparkle metadata
+        if: runner.os == 'macOS' && env.SPARKLE_ENABLE == '1'
+        shell: bash
+        run: |
+          chmod +x scripts/configure-sparkle-macos.sh
+          scripts/configure-sparkle-macos.sh "build/bin/GetTokens.app"
+        env:
+          SPARKLE_FEED_URL: ${{ matrix.sparkle-feed-url }}
+
+      - name: Embed Sparkle framework
+        if: runner.os == 'macOS' && env.SPARKLE_ENABLE == '1'
+        shell: bash
+        run: |
+          chmod +x scripts/prepare-sparkle-framework.sh scripts/embed-sparkle-framework.sh
+          scripts/embed-sparkle-framework.sh "build/bin/GetTokens.app"
+
+      # ── Package ───────────────────────────────────────────────────────────
+      - name: Sign and notarize macOS app
+        if: runner.os == 'macOS'
+        run: |
+          chmod +x scripts/sign-notarize-macos-release.sh scripts/package-updater-asset.sh
+          scripts/sign-notarize-macos-release.sh app "build/bin/GetTokens.app"
+
+      - name: Package DMG (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir -p dist/release
+          chmod +x scripts/package-macos-dmg.sh
+          scripts/package-macos-dmg.sh "dist/release/${{ matrix.asset-name }}" "build/bin/GetTokens.app"
+
+      - name: Sign and notarize macOS DMG
+        if: runner.os == 'macOS'
+        run: |
+          chmod +x scripts/sign-notarize-macos-release.sh scripts/package-updater-asset.sh
+          scripts/sign-notarize-macos-release.sh dmg "dist/release/${{ matrix.asset-name }}"
+          scripts/package-updater-asset.sh ${{ matrix.goos }} ${{ matrix.goarch }}
+
+      # ── Upload artifact ───────────────────────────────────────────────────
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            dist/release/${{ matrix.asset-name }}
+            dist/release/${{ matrix.updater-asset-name }}
+      - name: Cleanup macOS signing materials
+        if: runner.os == 'macOS' && always()
+        run: |
+          if [[ -n "${CI_KEYCHAIN_PATH:-}" ]]; then
+            security delete-keychain "$CI_KEYCHAIN_PATH" || true
+          fi
+          rm -f "$RUNNER_TEMP/developer-id.p12" "${MACOS_NOTARY_KEY_PATH:-}"
+
+  sparkle-appcast:
+    name: Publish Sparkle appcast
+    if: vars.SPARKLE_ENABLE == '1'
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist/release/
+          merge-multiple: true
+
+      - name: Restore previous appcast
+        shell: bash
+        run: |
+          mkdir -p dist/sparkle-feed
+          APPCAST_BRANCH="${SPARKLE_APPCAST_BRANCH:-sparkle-appcast}"
+          if git ls-remote --exit-code origin "refs/heads/${APPCAST_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${APPCAST_BRANCH}:${APPCAST_BRANCH}"
+            for appcast_name in appcast-arm64.xml appcast-amd64.xml; do
+              if git cat-file -e "${APPCAST_BRANCH}:${appcast_name}" 2>/dev/null; then
+                git show "${APPCAST_BRANCH}:${appcast_name}" > "dist/sparkle-feed/${appcast_name}"
+              fi
+            done
+          fi
+
+      - name: Generate Sparkle appcasts
+        shell: bash
+        run: |
+          chmod +x scripts/prepare-sparkle-framework.sh scripts/generate-sparkle-appcast.sh
+          SPARKLE_ARCHIVE_PATTERN="GetTokens_macOS_AppleSilicon.dmg" \
+          SPARKLE_APPCAST_NAME="appcast-arm64.xml" \
+          SPARKLE_RELEASE_BASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}" \
+          SPARKLE_FULL_RELEASE_NOTES_URL="https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}" \
+          SPARKLE_PRODUCT_URL="https://github.com/${{ github.repository }}" \
+          scripts/generate-sparkle-appcast.sh dist/release dist/sparkle-feed
+
+          SPARKLE_ARCHIVE_PATTERN="GetTokens_macOS_Intel.dmg" \
+          SPARKLE_APPCAST_NAME="appcast-amd64.xml" \
+          SPARKLE_RELEASE_BASE_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}" \
+          SPARKLE_FULL_RELEASE_NOTES_URL="https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}" \
+          SPARKLE_PRODUCT_URL="https://github.com/${{ github.repository }}" \
+          scripts/generate-sparkle-appcast.sh dist/release dist/sparkle-feed
+
+      - name: Publish Sparkle appcast branch
+        shell: bash
+        run: |
+          APPCAST_BRANCH="${SPARKLE_APPCAST_BRANCH:-sparkle-appcast}"
+          PUBLISH_DIR="$RUNNER_TEMP/sparkle-appcast-publish"
+          REPO_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          rm -rf "${PUBLISH_DIR}"
+          if git ls-remote --exit-code origin "refs/heads/${APPCAST_BRANCH}" >/dev/null 2>&1; then
+            git clone --branch "${APPCAST_BRANCH}" --single-branch "${REPO_URL}" "${PUBLISH_DIR}"
+          else
+            git clone --single-branch "${REPO_URL}" "${PUBLISH_DIR}"
+            (
+              cd "${PUBLISH_DIR}"
+              git checkout --orphan "${APPCAST_BRANCH}"
+            )
+          fi
+
+          (
+            cd "${PUBLISH_DIR}"
+            find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+            cp "${GITHUB_WORKSPACE}/dist/sparkle-feed/appcast-arm64.xml" ./appcast-arm64.xml
+            cp "${GITHUB_WORKSPACE}/dist/sparkle-feed/appcast-amd64.xml" ./appcast-amd64.xml
+            git add appcast-arm64.xml appcast-amd64.xml
+            if git diff --cached --quiet; then
+              echo "Sparkle appcast unchanged; skipping commit."
+              exit 0
+            fi
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore: update Sparkle appcast for ${GITHUB_REF_NAME}"
+            git push origin HEAD:"${APPCAST_BRANCH}"
+          )
+
+  # ── Publish GitHub Release ────────────────────────────────────────────────
+  release:
+    name: Publish Release
+    needs:
+      - build
+      - sparkle-appcast
+    if: ${{ always() && needs.build.result == 'success' && (needs.sparkle-appcast.result == 'success' || needs.sparkle-appcast.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          path: dist/release/
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          chmod +x scripts/gen-checksums.sh
+          ./scripts/gen-checksums.sh dist/release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            dist/release/GetTokens_macOS_AppleSilicon.dmg
+            dist/release/GetTokens_macOS_AppleSilicon.tar.gz
+            dist/release/GetTokens_macOS_Intel.dmg
+            dist/release/GetTokens_macOS_Intel.tar.gz
+            dist/release/checksums.txt
+          generate_release_notes: true

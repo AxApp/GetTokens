@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-main: #ffffff;
+    --bg-surface: #f9f9f9;
+    --border-color: #000000;
+    --text-primary: #000000;
+    --text-muted: #666666;
+    --bg-muted: #f0f0f0;
+    --accent-red: #ff0000;
+    --shadow-color: #e5e5e5;
+    --gt-text-scale-factor: 1;
+    --font-size-ui-2xs: 0.5rem;
+    --font-size-ui-xs: 0.5625rem;
+    --font-size-ui-sm: 0.625rem;
+    --font-size-ui-md: 0.75rem;
+    --font-size-ui-lg: 0.875rem;
+    --line-height-ui-tight: 1.2;
+    --line-height-ui-normal: 1.4;
+    --line-height-ui-relaxed: 1.6;
+    --gt-control-segmented-font-size: 0.5625rem;
+    --gt-control-segmented-min-height: 2.125rem;
+    --gt-control-segmented-padding-inline: 0.625rem;
+    --gt-control-segmented-indicator-height: 0.1875rem;
+    --gt-settings-section-badge-size: 0.5rem;
+    --gt-settings-section-title-size: 0.75rem;
+    --gt-settings-label-size: 0.5625rem;
+    --gt-settings-meta-size: 0.5rem;
+    --gt-settings-body-size: 0.5625rem;
+    --gt-settings-value-size: 0.625rem;
+  }
+
+  .dark {
+    --bg-main: #000000;
+    --bg-surface: #111111; /* 稍微亮一点，区别于纯黑背景 */
+    --border-color: #ffffff;
+    --text-primary: #ffffff;
+    --text-muted: #888888;
+    --bg-muted: #222222;
+    --accent-red: #ff3333;
+    --shadow-color: #222222;
+  }
+
+  html {
+    font-size: calc(16px * var(--gt-text-scale-factor));
+  }
+
+  body {
+    @apply bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-200;
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    font-size: var(--font-size-ui-lg);
+    line-height: var(--line-height-ui-normal);
+  }
+}
+
+@layer components {
+  .btn-swiss {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 2px;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+    transition: all 75ms;
+    cursor: pointer;
+  }
+
+  .btn-swiss:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 6px 6px 0px 0px var(--shadow-color);
+  }
+
+  .btn-swiss:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+  }
+
+  .card-swiss {
+    border: 2px solid var(--border-color);
+    border-radius: 0px;
+    background-color: var(--bg-main);
+    padding: 1rem;
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+  }
+
+  .input-swiss {
+    padding: 0.5rem 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 2px;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+  }
+
+  .select-swiss {
+    appearance: none;
+    width: 100%;
+    padding: 0.5rem 2.75rem 0.5rem 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 2px;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background-color 75ms, transform 75ms, box-shadow 75ms;
+    box-shadow: 4px 4px 0px 0px var(--shadow-color);
+  }
+
+  .select-swiss:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 6px 6px 0px 0px var(--shadow-color);
+    background-color: var(--bg-surface);
+  }
+
+  .select-swiss:focus {
+    outline: none;
+    background-color: var(--bg-surface);
+  }
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background-color: var(--bg-main); }
+::-webkit-scrollbar-thumb { 
+  background-color: var(--border-color); 
+  border: 2px solid var(--bg-main); 
+}

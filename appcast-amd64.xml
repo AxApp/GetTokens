@@ -1,0 +1,16 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>GetTokens</title>
+        <item>
+            <title>1.0.4</title>
+            <pubDate>Sun, 03 May 2026 04:20:11 +0000</pubDate>
+            <link>https://github.com/AxApp/GetTokens</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/AxApp/GetTokens/releases/tag/v1.0.4</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1.0.4</sparkle:version>
+            <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.4/GetTokens_macOS_Intel.dmg" length="23638283" type="application/octet-stream" sparkle:edSignature="zt3xWtoZ8y0LP/EGbZ8E98lu6dtExW0ikbl0M1ZKeF0V4Ba1jVo1r2ezVrIuveuXpHf4v25PVlBC423EkSUcDA=="/>
+        </item>
+    </channel>
+</rss>

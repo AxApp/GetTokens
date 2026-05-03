@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GetTokens - 代理池管理设计稿</title>
+  <style>
+    :root {
+      --bg-main: #ffffff;
+      --bg-surface: #f7f7f7;
+      --bg-muted: #efefef;
+      --bg-ink: #050505;
+      --border-color: #000000;
+      --border-soft: #d7d7d7;
+      --text-primary: #000000;
+      --text-muted: #676767;
+      --text-faint: #969696;
+      --accent-red: #ff2d2d;
+      --accent-green: #1f9b68;
+      --accent-amber: #d26b00;
+      --accent-blue: #1c5cff;
+      --shadow-color: #dfdfdf;
+      --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, #fafafa 0%, #f1f1f1 100%);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main);
+      border-right: 2px solid var(--border-color);
+    }
+
+    .brand {
+      padding: 28px 26px 24px;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      color: var(--accent-red);
+      flex: 0 0 auto;
+    }
+
+    .brand-copy {
+      display: flex;
+      flex-direction: column;
+      line-height: 0.92;
+      font-size: 28px;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-style: italic;
+      letter-spacing: -0.08em;
+    }
+
+    .brand-copy span:last-child {
+      color: var(--text-faint);
+      margin-top: -2px;
+    }
+
+    .nav {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1 1 auto;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border: 2px solid transparent;
+      background: transparent;
+      color: var(--text-primary);
+      text-align: left;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      cursor: default;
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+
+    .nav-item.active {
+      border-color: var(--border-color);
+      background: var(--bg-ink);
+      color: var(--bg-main);
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+      transform: translate(-1px, -1px);
+    }
+
+    .nav-item svg {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 auto;
+    }
+
+    .nav-group {
+      margin-left: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-subitem {
+      padding: 10px 12px;
+      border: 2px solid transparent;
+      background: transparent;
+      color: var(--text-faint);
+      text-align: left;
+      font: inherit;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+    }
+
+    .nav-subitem.active {
+      border-color: var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+    }
+
+    .sidebar-foot {
+      padding: 22px 24px;
+      border-top: 2px solid var(--border-color);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .workspace {
+      padding: 22px;
+    }
+
+    .frame {
+      min-height: calc(100vh - 44px);
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: 8px 8px 0 0 var(--shadow-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 24px;
+      padding: 20px 22px 16px;
+      background: var(--bg-main);
+      border-bottom: 4px solid var(--border-color);
+    }
+
+    .eyebrow {
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .title {
+      font-size: 38px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.08em;
+      font-style: italic;
+      line-height: 0.9;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      max-width: 860px;
+      font-size: 10px;
+      line-height: 1.55;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
+    .header-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+      color: var(--text-primary);
+      flex: 0 0 auto;
+    }
+
+    .header-icon-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      background: var(--accent-green);
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0;
+      border-bottom: 2px solid var(--border-color);
+      background: var(--bg-surface);
+    }
+
+    .summary-card {
+      min-width: 0;
+      padding: 12px 16px;
+      border-right: 1px solid var(--border-soft);
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .summary-card:last-child {
+      border-right: 0;
+    }
+
+    .summary-label {
+      flex: 0 0 auto;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      white-space: nowrap;
+    }
+
+    .summary-value {
+      flex: 0 0 auto;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: -0.05em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .summary-copy {
+      min-width: 0;
+      font-size: 10px;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1 1 auto;
+    }
+
+    .main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px 18px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--shadow-color);
+      background: var(--bg-main);
+    }
+
+    .segmented {
+      display: inline-grid;
+      grid-template-columns: repeat(3, auto);
+      gap: 0;
+      padding: 2px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+    }
+
+    .segment {
+      border: 0;
+      background: transparent;
+      color: var(--text-faint);
+      padding: 8px 12px;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      transition: background-color 180ms ease, color 180ms ease, opacity 180ms ease;
+      cursor: default;
+    }
+
+    .segment.active {
+      background: var(--bg-ink);
+      color: var(--bg-main);
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-left: auto;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      color: var(--text-primary);
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+      font: inherit;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      transition: transform 120ms ease, box-shadow 120ms ease, background-color 180ms ease, color 180ms ease;
+      cursor: default;
+    }
+
+    .btn.primary {
+      background: var(--bg-ink);
+      color: var(--bg-main);
+    }
+
+    .btn.slim {
+      padding: 8px 12px;
+      box-shadow: none;
+      background: var(--bg-surface);
+    }
+
+    .btn:active,
+    .btn.pressed {
+      transform: scale(0.95);
+      box-shadow: 2px 2px 0 0 var(--shadow-color);
+    }
+
+    .canvas {
+      padding: 0;
+      display: grid;
+      gap: 0;
+      flex: 1 1 auto;
+      min-height: 0;
+      transition: all 220ms ease;
+    }
+
+    .pool-grid {
+      display: none;
+    }
+
+    .pool-card {
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: 4px 4px 0 0 var(--shadow-color);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .pool-card.warn {
+      outline: 2px solid var(--accent-amber);
+      outline-offset: -2px;
+    }
+
+    .pool-card.bad {
+      outline: 2px solid var(--accent-red);
+      outline-offset: -2px;
+    }
+
+    .pool-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .pool-title {
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+    }
+
+    .pool-subtitle {
+      font-size: 10px;
+      line-height: 1.55;
+      color: var(--text-muted);
+      word-break: break-word;
+    }
+
+    .mini-bar {
+      height: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-muted);
+      overflow: hidden;
+    }
+
+    .mini-bar-fill {
+      height: 100%;
+      background: var(--bg-ink);
+    }
+
+    .mini-bar-fill.good { background: var(--accent-green); }
+    .mini-bar-fill.warn { background: var(--accent-amber); }
+    .mini-bar-fill.bad { background: var(--accent-red); }
+
+    .pool-metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric-box {
+      padding: 10px;
+      border: 1px solid var(--border-soft);
+      background: var(--bg-surface);
+    }
+
+    .metric-label {
+      font-size: 8px;
+      font-weight: 900;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    .metric-value {
+      margin-top: 6px;
+      font-size: 14px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.03em;
+    }
+
+    .tag-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag {
+      padding: 6px 8px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-muted);
+    }
+
+    .pool-table {
+      display: block;
+      border: 2px solid var(--border-color);
+      border-top: 0;
+      overflow-x: auto;
+      overflow-y: visible;
+      background: var(--bg-main);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1080px;
+      font-size: 10px;
+    }
+
+    th,
+    td {
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--border-soft);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--bg-surface);
+      border-bottom: 2px solid var(--border-color);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: var(--text-primary);
+    }
+
+    td {
+      font-weight: 700;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: #fcfcfc;
+    }
+
+    tbody tr:hover td {
+      background: #f3f3f3;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .row-actions {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .mini-action {
+      padding: 4px 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-primary);
+      white-space: nowrap;
+    }
+
+    .footer {
+      padding: 14px 18px;
+      border-top: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--text-faint);
+    }
+
+    @media (max-width: 1220px) {
+      .pool-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 980px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .workspace {
+        padding: 14px;
+      }
+
+    }
+
+    @media (max-width: 720px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .summary-card {
+        border-right: 0;
+        border-bottom: 1px solid var(--border-soft);
+        flex-wrap: wrap;
+      }
+
+      .summary-card:last-child {
+        border-bottom: 0;
+      }
+
+      .segmented {
+        width: 100%;
+      }
+
+      .toolbar {
+        align-items: stretch;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .workspace {
+        padding: 0;
+      }
+
+      .frame {
+        border-left: 0;
+        border-right: 0;
+        box-shadow: none;
+      }
+
+      .title {
+        font-size: 22px;
+      }
+
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .status-row {
+        justify-content: flex-start;
+      }
+
+      .segmented {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar-actions {
+        width: 100%;
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-row">
+          <svg viewBox="0 0 100 100" class="brand-icon" fill="currentColor" aria-hidden="true">
+            <rect x="10" y="14" width="80" height="32"></rect>
+            <rect x="58" y="46" width="32" height="24"></rect>
+            <rect x="74" y="70" width="16" height="16"></rect>
+            <circle cx="26" cy="30" r="6.4" fill="#ffffff"></circle>
+          </svg>
+          <div class="brand-copy">
+            <span>GET</span>
+            <span>TOKENS</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 8v4l3 3"></path></svg>
+          状态
+        </button>
+        <button class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0"></path></svg>
+          账号
+        </button>
+        <div class="nav-group">
+          <button class="nav-subitem">全部</button>
+          <button class="nav-subitem">Codex</button>
+          <button class="nav-subitem">OpenAI 兼容</button>
+        </div>
+        <button class="nav-item active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 4h18v6H3z M3 14h8v6H3z M13 14h8v6h-8z"></path></svg>
+          代理池
+        </button>
+        <button class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 4h18v6H3z M3 14h8v6H3z M13 14h8v6h-8z"></path></svg>
+          会话管理
+        </button>
+        <button class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M3 3h18v18H3z M7 15l3-3 2 2 5-5"></path></svg>
+          用量台
+        </button>
+        <div class="nav-group">
+          <button class="nav-subitem">codex</button>
+          <button class="nav-subitem">gemini</button>
+        </div>
+        <button class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0 M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2"></path></svg>
+          设置
+        </button>
+        <button class="nav-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9.75 3.25h4.5 M12 3.25v3.5 M5.5 9.5l-2 2 2 2 M18.5 9.5l2 2-2 2 M12 8.5a3.5 3.5 0 1 0 0 7a3.5 3.5 0 1 0 0-7 M7.5 20.75h9"></path></svg>
+          调试
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">版本 v0.1.x</div>
+    </aside>
+
+    <main class="workspace">
+      <div class="frame">
+        <header class="topbar">
+          <div>
+            <div class="eyebrow">独立页面</div>
+            <div class="title">代理池</div>
+            <div class="subtitle">
+              与账号池同级的本地代理节点管理页面
+            </div>
+          </div>
+          <div class="status-row">
+            <div class="chip"><span class="dot"></span> 本地维护</div>
+            <div class="chip">最近检测 12:48</div>
+            <button class="header-icon-btn" aria-label="刷新本地列表">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square">
+                <path d="M23 4v6h-6M1 20v-6h6"></path>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="summary-grid">
+          <div class="summary-card">
+            <div class="summary-label">池容量</div>
+            <div class="summary-value">24</div>
+            <div class="summary-copy">节点</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">可用占比</div>
+            <div class="summary-value">87%</div>
+            <div class="summary-copy">最近 10 次通过率</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">平均延时</div>
+            <div class="summary-value">182ms</div>
+            <div class="summary-copy">最近 10 次均值</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-label">待复查</div>
+            <div class="summary-value">03</div>
+            <div class="summary-copy">最近一次检测失败</div>
+          </div>
+        </section>
+
+        <div class="layout">
+          <section class="main">
+            <div class="toolbar">
+              <div class="segmented">
+                <button class="segment active">全部</button>
+                <button class="segment">可用</button>
+                <button class="segment">待复查</button>
+              </div>
+              <div class="toolbar-actions">
+                <button class="btn slim">导入列表</button>
+                <button class="btn slim">导出</button>
+                <button class="btn">新增代理</button>
+                <button class="btn primary pressed">批量复测</button>
+              </div>
+            </div>
+
+            <div class="canvas">
+              <div class="pool-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>节点</th>
+                      <th>分组</th>
+                      <th>协议</th>
+                      <th>地址</th>
+                      <th>延迟</th>
+                      <th>可用率</th>
+                      <th>检测时间</th>
+                      <th>状态</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>东京 Alpha</td>
+                      <td>主用组</td>
+                      <td>socks5</td>
+                      <td>socks5://proxy-01.internal:7890</td>
+                      <td>128ms</td>
+                      <td>99.1%</td>
+                      <td>12:48</td>
+                      <td>可用</td>
+                      <td><div class="row-actions"><span class="mini-action">复测</span><span class="mini-action">编辑</span></div></td>
+                    </tr>
+                    <tr>
+                      <td>新加坡 Beta</td>
+                      <td>备用组</td>
+                      <td>http</td>
+                      <td>http://proxy-02.internal:8080</td>
+                      <td>164ms</td>
+                      <td>96.4%</td>
+                      <td>12:48</td>
+                      <td>可用</td>
+                      <td><div class="row-actions"><span class="mini-action">复测</span><span class="mini-action">编辑</span></div></td>
+                    </tr>
+                    <tr>
+                      <td>法兰克福 Gamma</td>
+                      <td>观察组</td>
+                      <td>https</td>
+                      <td>https://proxy-03.internal:8443</td>
+                      <td>281ms</td>
+                      <td>87.8%</td>
+                      <td>12:45</td>
+                      <td>待观察</td>
+                      <td><div class="row-actions"><span class="mini-action">复测</span><span class="mini-action">移组</span></div></td>
+                    </tr>
+                    <tr>
+                      <td>首尔 Delta</td>
+                      <td>冷备组</td>
+                      <td>socks5h</td>
+                      <td>socks5h://proxy-04.internal:7891</td>
+                      <td>176ms</td>
+                      <td>94.2%</td>
+                      <td>12:47</td>
+                      <td>待命</td>
+                      <td><div class="row-actions"><span class="mini-action">复测</span><span class="mini-action">编辑</span></div></td>
+                    </tr>
+                    <tr>
+                      <td>洛杉矶 Epsilon</td>
+                      <td>隔离组</td>
+                      <td>http</td>
+                      <td>http://proxy-05.internal:8088</td>
+                      <td>711ms</td>
+                      <td>42.3%</td>
+                      <td>12:41</td>
+                      <td>不可用</td>
+                      <td><div class="row-actions"><span class="mini-action">复测</span><span class="mini-action">删除</span></div></td>
+                    </tr>
+                    <tr>
+                      <td>伦敦 Zeta</td>
+                      <td>主用组</td>
+                      <td>https</td>
+                      <td>https://proxy-06.internal:9443</td>
+                      <td>136ms</td>
+                      <td>98.7%</td>
+                      <td>12:48</td>
+                      <td>可用</td>
+                      <td><div class="row-actions"><span class="mini-action">复测</span><span class="mini-action">编辑</span></div></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="footer">
+          <span>独立代理池页面</span>
+          <span>数据本地维护</span>
+          <span>主表格优先</span>
+        </footer>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
