@@ -386,14 +386,11 @@
         position: relative;
         z-index: 1;
         display: grid;
-        grid-template-columns: 200px minmax(300px, 360px) 240px minmax(320px, 340px);
-        grid-template-rows: auto auto;
-        grid-template-areas:
-          "entry groups sink sink"
-          ". proxies sink sink";
+        grid-template-columns: 200px minmax(300px, 340px) minmax(320px, 360px) minmax(320px, 360px);
+        grid-template-areas: "entry groups proxies sink";
         gap: 22px 28px;
         align-items: start;
-        min-height: 790px;
+        min-height: 680px;
       }
 
       .node-column {
@@ -412,7 +409,7 @@
 
       .node-column.proxies {
         grid-area: proxies;
-        margin-top: -10px;
+        margin-top: 54px;
       }
 
       .node-column.sink {
@@ -605,6 +602,14 @@
 
       .group-card.pending {
         opacity: 0.88;
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      .group-card.pending .metric-list,
+      .group-card.pending .account-cloud,
+      .group-card.pending .section-kicker {
+        display: none;
       }
 
       .group-card-header,
@@ -862,7 +867,7 @@
 
       .route-target-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         gap: 12px;
       }
 
