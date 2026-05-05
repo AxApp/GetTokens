@@ -178,6 +178,10 @@ export function StartCodexOAuth() {
   return window['go']['main']['App']['StartCodexOAuth']();
 }
 
+export function TestCodexAPIKeyQuotaCurl(arg1) {
+  return window['go']['main']['App']['TestCodexAPIKeyQuotaCurl'](arg1);
+}
+
 export function UpdateAccountPriority(arg1) {
   return window['go']['main']['App']['UpdateAccountPriority'](arg1);
 }

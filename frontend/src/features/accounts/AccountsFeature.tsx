@@ -102,6 +102,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,
+    testSelectedApiKeyQuotaCurl,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
@@ -395,6 +396,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           onRename={renameSelectedApiKey}
           onSaveConfig={(draft) => updateSelectedApiKeyConfig(draft)}
           onVerify={(input) => void verifySelectedApiKey(input)}
+          onTestQuotaCurl={(input) => testSelectedApiKeyQuotaCurl(input)}
           t={t}
         />
       ) : null}

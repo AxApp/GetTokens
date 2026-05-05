@@ -11,6 +11,8 @@ export const emptyApiKeyForm = {
   apiKey: '',
   baseUrl: '',
   prefix: '',
+  quotaCurl: '',
+  quotaEnabled: true,
 };
 
 export function normalizeBaseUrl(value: string) {
@@ -48,6 +50,15 @@ export function formatCompactBaseUrl(value?: string) {
   } catch {
     return trimmed;
   }
+}
+
+export function buildDefaultCodexQuotaCurl(baseUrl?: string) {
+  const normalized = normalizeBaseUrl(String(baseUrl || '')) || 'https://chatgpt.com/backend-api';
+  const root = normalized.replace(/\/+$/, '');
+  const usageUrl = root.endsWith('/api/codex') || root.endsWith('/wham')
+    ? `${root}/usage`
+    : `${root}/api/codex/usage`;
+  return `curl -sS ${JSON.stringify(usageUrl)} -H "Authorization: Bearer {{apiKey}}" -H "Accept: application/json"`;
 }
 
 function quoteYAMLString(value: string) {

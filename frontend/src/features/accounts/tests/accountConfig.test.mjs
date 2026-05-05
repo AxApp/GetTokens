@@ -1,8 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import {
   buildAPIKeyLabelStorageKey,
+  buildDefaultCodexQuotaCurl,
   buildCodexAPIKeyVerifyInput,
   buildRelayCodexAuthJSONSnippet,
   buildRelayCodexConfigTomlSnippet,
@@ -11,6 +14,9 @@ import {
   normalizeBaseUrl,
   normalizePrefix,
 } from '../model/accountConfig.ts';
+
+const wailsModelsPath = fileURLToPath(new URL('../../../../wailsjs/go/models.ts', import.meta.url));
+const wailsAppBindingsPath = fileURLToPath(new URL('../../../../wailsjs/go/main/App.js', import.meta.url));
 
 test('normalizeBaseUrl trims and removes trailing slashes', () => {
   assert.equal(normalizeBaseUrl(' https://api.example.com/v1/// '), 'https://api.example.com/v1');
@@ -28,6 +34,13 @@ test('buildAPIKeyLabelStorageKey normalizes url and prefix before serializing', 
       baseUrl: 'https://api.example.com/v1',
       prefix: 'relay',
     })
+  );
+});
+
+test('buildDefaultCodexQuotaCurl creates a safe editable quota template', () => {
+  assert.equal(
+    buildDefaultCodexQuotaCurl(' https://api.example.com/v1/ '),
+    'curl -sS "https://api.example.com/v1/api/codex/usage" -H "Authorization: Bearer {{apiKey}}" -H "Accept: application/json"'
   );
 });
 
@@ -131,4 +144,19 @@ test('buildCodexAPIKeyVerifyInput trims values and normalizes base url', () => {
       model: 'gpt-4.1-mini',
     },
   );
+});
+
+test('generated Wails account models preserve quota curl fields', () => {
+  const source = readFileSync(wailsModelsPath, 'utf8');
+
+  assert.match(source, /export class AccountRecord[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
+  assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
+  assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
+  assert.match(source, /export class TestCodexAPIKeyQuotaCurlInput[\s\S]*quotaCurl: string;/);
+});
+
+test('generated Wails app bindings expose quota curl draft test method', () => {
+  const source = readFileSync(wailsAppBindingsPath, 'utf8');
+
+  assert.match(source, /export function TestCodexAPIKeyQuotaCurl\(arg1\)/);
 });

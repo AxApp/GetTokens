@@ -126,6 +126,9 @@ func loadStoredCodexAPIKeys() ([]cliproxyapi.CodexAPIKeyInput, error) {
 		if err := json.Unmarshal(data, &item); err != nil {
 			return nil, err
 		}
+		if !jsonObjectHasKey(data, "quota-enabled") && strings.TrimSpace(item.QuotaCurl) != "" {
+			item.QuotaEnabled = true
+		}
 		normalizeCodexAPIKeyInput(&item)
 		if strings.TrimSpace(item.APIKey) == "" || strings.TrimSpace(item.BaseURL) == "" {
 			continue
@@ -183,6 +186,15 @@ func deleteStoredCodexAPIKey(id string) error {
 	return nil
 }
 
+func jsonObjectHasKey(data []byte, key string) bool {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return false
+	}
+	_, ok := raw[key]
+	return ok
+}
+
 func normalizeCodexAPIKeyInput(item *cliproxyapi.CodexAPIKeyInput) {
 	if item == nil {
 		return
@@ -193,6 +205,8 @@ func normalizeCodexAPIKeyInput(item *cliproxyapi.CodexAPIKeyInput) {
 	item.BaseURL = accountsdomain.NormalizeBaseURL(item.BaseURL)
 	item.Prefix = accountsdomain.NormalizePrefix(item.Prefix)
 	item.ProxyURL = strings.TrimSpace(item.ProxyURL)
+	item.QuotaCurl = strings.TrimSpace(item.QuotaCurl)
+	item.QuotaEnabled = item.QuotaEnabled && item.QuotaCurl != ""
 }
 
 func codexAPIKeyAssetIDFromInput(item cliproxyapi.CodexAPIKeyInput) string {
@@ -227,6 +241,8 @@ func codexAPIKeyInputFromKey(item cliproxyapi.CodexAPIKey) cliproxyapi.CodexAPIK
 		Models:         item.Models,
 		Headers:        item.Headers,
 		ExcludedModels: item.ExcludedModels,
+		QuotaCurl:      item.QuotaCurl,
+		QuotaEnabled:   item.QuotaEnabled,
 	}
 	normalizeCodexAPIKeyInput(&input)
 	return input

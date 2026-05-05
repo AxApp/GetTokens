@@ -358,6 +358,34 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	}, nil
 }
 
+func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaResponse, error) {
+	result, err := a.core.TestCodexAPIKeyQuotaCurl(wailsapp.TestCodexAPIKeyQuotaCurlInput{
+		APIKey:    input.APIKey,
+		BaseURL:   input.BaseURL,
+		Prefix:    input.Prefix,
+		QuotaCurl: input.QuotaCurl,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	windows := make([]CodexQuotaWindow, 0, len(result.Windows))
+	for _, window := range result.Windows {
+		windows = append(windows, CodexQuotaWindow{
+			ID:               window.ID,
+			Label:            window.Label,
+			RemainingPercent: window.RemainingPercent,
+			ResetLabel:       window.ResetLabel,
+			ResetAtUnix:      window.ResetAtUnix,
+		})
+	}
+
+	return &CodexQuotaResponse{
+		PlanType: result.PlanType,
+		Windows:  windows,
+	}, nil
+}
+
 func (a *App) ListAccounts() ([]AccountRecord, error) {
 	result, err := a.core.ListAccounts()
 	if err != nil {
@@ -538,6 +566,8 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		ProxyURL:       input.ProxyURL,
 		Headers:        input.Headers,
 		ExcludedModels: input.ExcludedModels,
+		QuotaCurl:      input.QuotaCurl,
+		QuotaEnabled:   input.QuotaEnabled,
 	})
 }
 
@@ -550,10 +580,12 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 
 func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
 	return a.core.UpdateCodexAPIKeyConfig(wailsapp.UpdateCodexAPIKeyConfigInput{
-		ID:      input.ID,
-		APIKey:  input.APIKey,
-		BaseURL: input.BaseURL,
-		Prefix:  input.Prefix,
+		ID:           input.ID,
+		APIKey:       input.APIKey,
+		BaseURL:      input.BaseURL,
+		Prefix:       input.Prefix,
+		QuotaCurl:    input.QuotaCurl,
+		QuotaEnabled: input.QuotaEnabled,
 	})
 }
 

@@ -1,16 +1,16 @@
 import { useCallback, useRef, useState } from 'react';
 import { GetCodexQuota } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
-import { isCodexAuthFile, supportsQuota } from '../model/accountQuota';
-import type { AuthFile, CodexQuotaState, TrackRequest } from '../model/types';
+import { supportsQuota } from '../model/accountQuota';
+import type { CodexQuotaState, TrackRequest } from '../model/types';
 
 export default function useAccountsQuotaState(trackRequest: TrackRequest) {
   const [codexQuotaByName, setCodexQuotaByName] = useState<Record<string, CodexQuotaState>>({});
   const quotaRequestIdRef = useRef(0);
 
   const loadCodexQuotas = useCallback(
-    async (items: AuthFile[]) => {
-      const codexAccounts = items.filter((account) => isCodexAuthFile(account));
+    async (items: AccountRecord[]) => {
+      const codexAccounts = items.filter((account) => supportsQuota(account) && account.quotaKey);
       quotaRequestIdRef.current += 1;
       const requestID = quotaRequestIdRef.current;
 
@@ -21,7 +21,7 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
 
       setCodexQuotaByName(
         codexAccounts.reduce<Record<string, CodexQuotaState>>((result, account) => {
-          result[account.name] = { status: 'loading' };
+          result[account.quotaKey!] = { status: 'loading' };
           return result;
         }, {})
       );
@@ -29,13 +29,13 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
       const results = await Promise.all(
         codexAccounts.map(async (account) => {
           try {
-            const quota = await trackRequest('GetCodexQuota', { name: account.name }, () =>
-              GetCodexQuota(account.name)
+            const quota = await trackRequest('GetCodexQuota', { name: account.quotaKey }, () =>
+              GetCodexQuota(account.quotaKey!)
             );
-            return [account.name, { status: 'success', quota } satisfies CodexQuotaState] as const;
+            return [account.quotaKey!, { status: 'success', quota } satisfies CodexQuotaState] as const;
           } catch (error) {
             console.error(error);
-            return [account.name, { status: 'error' } satisfies CodexQuotaState] as const;
+            return [account.quotaKey!, { status: 'error' } satisfies CodexQuotaState] as const;
           }
         })
       );

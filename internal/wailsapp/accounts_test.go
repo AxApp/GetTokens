@@ -221,6 +221,62 @@ func TestUpdateCodexAPIKeyConfigPreservesStableID(t *testing.T) {
 	}
 }
 
+func TestUpdateCodexAPIKeyConfigPersistsQuotaCurl(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	item := cliproxyapi.CodexAPIKeyInput{
+		LocalID: "codex-api-key:stable-001",
+		APIKey:  "sk-test-1111",
+		BaseURL: "https://api.openai.com/v1",
+	}
+	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
+		t.Fatalf("persistCodexAPIKeySet: %v", err)
+	}
+
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method != "PUT" || path != "/v0/management/codex-api-key" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read body: %v", err)
+				}
+				if strings.Contains(string(payload), "quota-curl") || strings.Contains(string(payload), "quota-enabled") {
+					t.Fatalf("quota curl must stay local and not sync to sidecar: %s", payload)
+				}
+				return nil, 200, nil
+			})
+		},
+	}
+
+	const quotaCurl = `curl -sS "https://quota.example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"`
+	if err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
+		ID:           "codex-api-key:stable-001",
+		APIKey:       "sk-test-1111",
+		BaseURL:      "https://api.openai.com/v1",
+		QuotaCurl:    quotaCurl,
+		QuotaEnabled: true,
+	}); err != nil {
+		t.Fatalf("UpdateCodexAPIKeyConfig: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if got := items[0].QuotaCurl; got != quotaCurl {
+		t.Fatalf("QuotaCurl = %q, want %q", got, quotaCurl)
+	}
+	if !items[0].QuotaEnabled {
+		t.Fatalf("QuotaEnabled = false, want true")
+	}
+}
+
 func TestDeleteCodexAPIKeyAcceptsDerivedConfigIDForStableLocalRecord(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

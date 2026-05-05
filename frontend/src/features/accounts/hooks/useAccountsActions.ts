@@ -153,6 +153,7 @@ export default function useAccountsActions({
       const trimmedBaseURL = apiKeyForm.baseUrl.trim();
       const trimmedPrefix = apiKeyForm.prefix.trim();
       const trimmedLabel = apiKeyForm.label.trim();
+      const trimmedQuotaCurl = apiKeyForm.quotaCurl.trim();
       const lowestPriority = accounts.reduce((min, account) => Math.min(min, Number(account.priority || 0)), 0);
       await trackRequest(
         'CreateCodexAPIKey',
@@ -164,6 +165,8 @@ export default function useAccountsActions({
             baseUrl: trimmedBaseURL,
             priority: lowestPriority - 1,
             prefix: trimmedPrefix,
+            quotaCurl: trimmedQuotaCurl,
+            quotaEnabled: Boolean(apiKeyForm.quotaEnabled && trimmedQuotaCurl),
           })
       );
       setIsApiKeyModalOpen(false);
@@ -373,7 +376,7 @@ export default function useAccountsActions({
   );
 
   const updateSelectedApiKeyConfig = useCallback(
-    async (draft: { apiKey: string; baseUrl: string; prefix: string }) => {
+    async (draft: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; quotaEnabled: boolean }) => {
       if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
         return;
       }
@@ -381,6 +384,7 @@ export default function useAccountsActions({
       const nextAPIKey = draft.apiKey.trim();
       const nextBaseURL = draft.baseUrl.trim();
       const nextPrefix = draft.prefix.trim();
+      const nextQuotaCurl = draft.quotaCurl.trim();
       if (!nextAPIKey) {
         setDeleteError(`SAVE ERROR: ${t('accounts.api_key_required')}`);
         return;
@@ -397,6 +401,8 @@ export default function useAccountsActions({
                 apiKey: nextAPIKey,
                 baseUrl: nextBaseURL,
                 prefix: nextPrefix,
+                quotaCurl: nextQuotaCurl,
+                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
               })
             )
         );
@@ -408,6 +414,8 @@ export default function useAccountsActions({
                 apiKey: nextAPIKey,
                 baseUrl: nextBaseURL,
                 prefix: nextPrefix,
+                quotaCurl: nextQuotaCurl,
+                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
               }
             : prev
         );

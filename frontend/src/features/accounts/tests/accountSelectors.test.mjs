@@ -132,6 +132,51 @@ test('filterAccounts keeps only auth-file codex accounts with positive longest-w
   );
 });
 
+test('filterAccounts includes codex api keys with configured positive longest quota', () => {
+  const accounts = [
+    {
+      id: 'codex-api-key:ready',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'Codex key',
+      status: 'ACTIVE',
+      quotaKey: 'codex-api-key:ready',
+      quotaCurl: 'curl https://codex.example.com/api/codex/usage',
+      quotaEnabled: true,
+    },
+    {
+      id: 'codex-api-key:missing',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'Missing quota',
+      status: 'ACTIVE',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        hasLongestQuota: true,
+      },
+      codexQuotaByName: {
+        'codex-api-key:ready': {
+          status: 'success',
+          quota: {
+            planType: 'pro',
+            windows: [
+              { id: 'five-hour', label: '5H', remainingPercent: 12, resetLabel: 'later', resetAtUnix: 1 },
+              { id: 'weekly', label: '7D', remainingPercent: 88, resetLabel: 'later', resetAtUnix: 1 },
+            ],
+          },
+        },
+      },
+    }).map((item) => item.id),
+    ['codex-api-key:ready']
+  );
+});
+
 test('filterAccounts keeps only unavailable or unusable accounts when errorsOnly is enabled', () => {
   const accounts = [
     {

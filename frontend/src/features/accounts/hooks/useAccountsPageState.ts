@@ -5,12 +5,13 @@ import {
   ListAccounts,
   ListAuthFiles,
   StartCodexOAuth,
+  TestCodexAPIKeyQuotaCurl,
   UpdateCodexAPIKeyLabel,
   VerifyOpenAICompatibleProvider,
 } from '../../../../wailsjs/go/main/App';
 import { main } from '../../../../wailsjs/go/models';
 import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
-import type { AccountRecord } from '../../../types';
+import type { AccountRecord, CodexQuota } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
 import {
   buildAPIKeyLabelStorageKey,
@@ -224,7 +225,7 @@ export default function useAccountsPageState({
           ...apiKeyAccounts.map((account) => account.id),
         ])
       );
-      void loadCodexQuotas(files);
+      void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
       void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
     } catch (error) {
       console.error(error);
@@ -447,6 +448,23 @@ export default function useAccountsPageState({
     [selectedAccount, t, trackRequest],
   );
 
+  const testSelectedApiKeyQuotaCurl = useCallback(
+    async (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }): Promise<CodexQuota> => {
+      const nextInput = {
+        apiKey: input.apiKey.trim(),
+        baseUrl: input.baseUrl.trim(),
+        prefix: input.prefix.trim(),
+        quotaCurl: input.quotaCurl.trim(),
+      };
+      return trackRequest(
+        'TestCodexAPIKeyQuotaCurl',
+        { id: selectedAccount?.id, baseUrl: nextInput.baseUrl },
+        () => TestCodexAPIKeyQuotaCurl(main.TestCodexAPIKeyQuotaCurlInput.createFrom(nextInput)),
+      );
+    },
+    [selectedAccount?.id, trackRequest],
+  );
+
   const {
     deleteAccount,
     uploadAccounts,
@@ -524,6 +542,7 @@ export default function useAccountsPageState({
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,
+    testSelectedApiKeyQuotaCurl,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,

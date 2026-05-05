@@ -19,6 +19,8 @@ type CodexAPIKey struct {
 	Headers        map[string]string `json:"headers,omitempty"`
 	ExcludedModels []string          `json:"excluded-models,omitempty"`
 	AuthIndex      string            `json:"auth-index,omitempty"`
+	QuotaCurl      string            `json:"quota-curl,omitempty"`
+	QuotaEnabled   bool              `json:"quota-enabled,omitempty"`
 }
 
 type CodexAPIKeysResponse struct {
@@ -37,6 +39,8 @@ type CodexAPIKeyInput struct {
 	Models         []CodexModel      `json:"models,omitempty"`
 	Headers        map[string]string `json:"headers,omitempty"`
 	ExcludedModels []string          `json:"excluded-models,omitempty"`
+	QuotaCurl      string            `json:"quota-curl,omitempty"`
+	QuotaEnabled   bool              `json:"quota-enabled,omitempty"`
 }
 
 type CodexAPIKeyPatch struct {

@@ -51,6 +51,8 @@ type AccountRecord struct {
 	Prefix           string      `json:"prefix,omitempty"`
 	AuthIndex        interface{} `json:"authIndex,omitempty"`
 	QuotaKey         string      `json:"quotaKey,omitempty"`
+	QuotaCurl        string      `json:"quotaCurl,omitempty"`
+	QuotaEnabled     bool        `json:"quotaEnabled,omitempty"`
 	LocalOnly        bool        `json:"localOnly,omitempty"`
 }
 
@@ -184,7 +186,17 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		BaseURL:          baseURL,
 		Prefix:           prefix,
 		AuthIndex:        strings.TrimSpace(key.AuthIndex),
+		QuotaKey:         codexAPIKeyQuotaKey(key),
+		QuotaCurl:        strings.TrimSpace(key.QuotaCurl),
+		QuotaEnabled:     key.QuotaEnabled,
 	}
+}
+
+func codexAPIKeyQuotaKey(key cliproxyapi.CodexAPIKey) string {
+	if !key.QuotaEnabled || strings.TrimSpace(key.QuotaCurl) == "" {
+		return ""
+	}
+	return codexAPIKeyRecordID(key)
 }
 
 func codexAPIKeyRecordID(key cliproxyapi.CodexAPIKey) string {

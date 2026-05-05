@@ -43,6 +43,8 @@ export interface ApiKeyFormState {
   apiKey: string;
   baseUrl: string;
   prefix: string;
+  quotaCurl: string;
+  quotaEnabled: boolean;
 }
 
 export interface ClickEventLike {

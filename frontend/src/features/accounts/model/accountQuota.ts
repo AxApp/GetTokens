@@ -2,7 +2,16 @@ import type { AccountRecord, AuthFile, CodexQuota } from '../../../types';
 import type { CodexQuotaState, QuotaDisplay, QuotaWindowDisplay } from './types';
 
 export function supportsQuota(account: AccountRecord) {
-  return account.credentialSource === 'auth-file' && String(account.provider || '').trim().toLowerCase() === 'codex';
+  const provider = String(account.provider || '').trim().toLowerCase();
+  if (account.credentialSource === 'auth-file') {
+    return provider === 'codex';
+  }
+  return (
+    account.credentialSource === 'api-key' &&
+    provider === 'codex' &&
+    Boolean(account.quotaEnabled) &&
+    Boolean(String(account.quotaCurl || '').trim())
+  );
 }
 
 export function isCodexAuthFile(account: AuthFile) {

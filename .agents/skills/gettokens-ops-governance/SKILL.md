@@ -11,6 +11,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Restart**: Always restart the app if Go files, Wails bindings, or sidecar logic change. Restart for Svelte/CSS if HMR shows stale results.
 - **Readiness**: Sidecar `ready` status is required for account data flow. UI mount success does not guarantee data flow.
 - **Verification**: Only claim a fix is live after verifying it in the actual desktop app window, not just the browser.
+- **Binding Boundary**: Wails binds the root `main.App`, not `internal/wailsapp.App`. Any new Wails-facing method or DTO added under `internal/wailsapp` must also be exposed through root-level `app.go`, `app_types.go`, and mappers as needed before regenerating bindings; otherwise `wails dev` will remove the frontend export.
 
 ### 1.1 Browser Preview & Screenshot Loop
 - **When to use**:

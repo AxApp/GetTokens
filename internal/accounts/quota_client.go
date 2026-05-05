@@ -77,15 +77,10 @@ func BuildCodexQuotaResponse(authFileBody []byte, usagePayloadBody []byte) (*Cod
 		return nil, err
 	}
 
-	var payload codexUsagePayload
-	if err := json.Unmarshal(usagePayloadBody, &payload); err != nil {
-		return nil, fmt.Errorf("codex 额度响应解析失败: %w", err)
-	}
-
 	cachedQuota := parseCachedCodexQuota(authFileBody)
-	result := &CodexQuotaResponse{
-		PlanType: normalizePlanType(firstNonEmpty(payload.PlanType, payload.PlanTypeCamel, authFile.PlanType)),
-		Windows:  buildCodexQuotaWindows(&payload),
+	result, err := BuildCodexQuotaResponseFromUsagePayload(usagePayloadBody, authFile.PlanType)
+	if err != nil {
+		return nil, err
 	}
 	if cachedQuota != nil {
 		if result.PlanType == "" {

@@ -5,7 +5,7 @@ interface ApiKeyComposeModalProps {
   form: ApiKeyFormState;
   error: string;
   onClose: () => void;
-  onChange: (field: keyof ApiKeyFormState, value: string) => void;
+  onChange: (field: keyof ApiKeyFormState, value: string | boolean) => void;
   onSubmit: () => void;
 }
 
@@ -65,6 +65,27 @@ export default function ApiKeyComposeModal({
                 onChange={(event: TextInputEvent) => onChange('baseUrl', event.target.value)}
                 className="input-swiss w-full"
                 placeholder="https://api.openai.com/v1"
+              />
+            </label>
+            <label className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2">
+              <input
+                type="checkbox"
+                checked={form.quotaEnabled}
+                onChange={(event) => onChange('quotaEnabled', event.target.checked)}
+              />
+              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {t('accounts.quota_curl_enabled')}
+              </span>
+            </label>
+            <label className="space-y-2">
+              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {t('accounts.quota_curl')}
+              </span>
+              <textarea
+                value={form.quotaCurl}
+                onChange={(event) => onChange('quotaCurl', event.target.value)}
+                className="input-swiss min-h-28 w-full resize-y font-mono"
+                placeholder='curl -sS "https://example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"'
               />
             </label>
           </div>

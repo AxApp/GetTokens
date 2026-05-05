@@ -88,6 +88,65 @@ func TestMergeCodexAPIKeyInputsMigratesSidecarOnlyItems(t *testing.T) {
 	}
 }
 
+func TestLoadStoredCodexAPIKeysEnablesLegacyQuotaCurl(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	dir, err := codexAPIKeyStoreDir()
+	if err != nil {
+		t.Fatalf("codexAPIKeyStoreDir: %v", err)
+	}
+	path := filepath.Join(dir, "legacy-quota.json")
+	if err := os.WriteFile(path, []byte(`{
+		"local-id":"codex-api-key:legacy-quota",
+		"api-key":"sk-test-1111",
+		"base-url":"https://api.openai.com/v1",
+		"quota-curl":"curl https://codex.example.com/api/codex/usage"
+	}`), 0600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if !items[0].QuotaEnabled {
+		t.Fatalf("QuotaEnabled = false, want true for legacy quota curl")
+	}
+}
+
+func TestLoadStoredCodexAPIKeysKeepsExplicitQuotaDisabled(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	dir, err := codexAPIKeyStoreDir()
+	if err != nil {
+		t.Fatalf("codexAPIKeyStoreDir: %v", err)
+	}
+	path := filepath.Join(dir, "explicit-disabled-quota.json")
+	if err := os.WriteFile(path, []byte(`{
+		"local-id":"codex-api-key:explicit-disabled-quota",
+		"api-key":"sk-test-1111",
+		"base-url":"https://api.openai.com/v1",
+		"quota-curl":"curl https://codex.example.com/api/codex/usage",
+		"quota-enabled":false
+	}`), 0600); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(items))
+	}
+	if items[0].QuotaEnabled {
+		t.Fatalf("QuotaEnabled = true, want false for explicit disabled quota")
+	}
+}
+
 func TestMergeCodexAPIKeyInputsDeduplicatesStoredStableIDAndSidecarMirror(t *testing.T) {
 	stored := []cliproxyapi.CodexAPIKeyInput{
 		{

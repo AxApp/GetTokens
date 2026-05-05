@@ -3,6 +3,7 @@ import type { main, sidecar, updater } from '../wailsjs/go/models';
 export type AppPage =
   | 'status'
   | 'accounts'
+  | 'request-orchestration'
   | 'session-management'
   | 'vendor-status'
   | 'proxy-pool'
@@ -49,6 +50,8 @@ export interface AccountRecord {
   prefix?: string;
   authIndex?: unknown;
   quotaKey?: string;
+  quotaCurl?: string;
+  quotaEnabled?: boolean;
   localOnly?: boolean;
   rawAuthFile?: AuthFile;
 }

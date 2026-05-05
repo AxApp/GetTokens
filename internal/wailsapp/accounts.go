@@ -62,6 +62,8 @@ type CreateCodexAPIKeyInput struct {
 	ProxyURL       string            `json:"proxyUrl,omitempty"`
 	Headers        map[string]string `json:"headers,omitempty"`
 	ExcludedModels []string          `json:"excludedModels,omitempty"`
+	QuotaCurl      string            `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool              `json:"quotaEnabled,omitempty"`
 }
 
 type UpdateAccountPriorityInput struct {
@@ -89,10 +91,12 @@ type UpdateCodexAPIKeyLabelInput struct {
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID      string `json:"id"`
-	APIKey  string `json:"apiKey"`
-	BaseURL string `json:"baseUrl"`
-	Prefix  string `json:"prefix,omitempty"`
+	ID           string `json:"id"`
+	APIKey       string `json:"apiKey"`
+	BaseURL      string `json:"baseUrl"`
+	Prefix       string `json:"prefix,omitempty"`
+	QuotaCurl    string `json:"quotaCurl,omitempty"`
+	QuotaEnabled bool   `json:"quotaEnabled,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -126,6 +130,8 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		ProxyURL:       strings.TrimSpace(input.ProxyURL),
 		Headers:        input.Headers,
 		ExcludedModels: input.ExcludedModels,
+		QuotaCurl:      strings.TrimSpace(input.QuotaCurl),
+		QuotaEnabled:   input.QuotaEnabled && strings.TrimSpace(input.QuotaCurl) != "",
 	})
 
 	if err := persistCodexAPIKeySet(items); err != nil {
@@ -183,6 +189,8 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 			existing.APIKey = nextAPIKey
 			existing.BaseURL = nextBaseURL
 			existing.Prefix = nextPrefix
+			existing.QuotaCurl = strings.TrimSpace(input.QuotaCurl)
+			existing.QuotaEnabled = input.QuotaEnabled && existing.QuotaCurl != ""
 			found = true
 		} else if codexAPIKeyConfigIdentityFromInput(existing) == nextIdentity {
 			return errors.New("账号已存在")
@@ -316,7 +324,7 @@ func (a *App) syncStoredCodexAPIKeysToSidecar() error {
 	if err != nil {
 		return err
 	}
-	return a.managementClient().PutCodexAPIKeys(items)
+	return a.managementClient().PutCodexAPIKeys(sidecarCodexAPIKeyInputs(items))
 }
 
 func codexAPIKeysFromInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyapi.CodexAPIKey {
@@ -334,9 +342,21 @@ func codexAPIKeysFromInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyapi.
 			Models:         item.Models,
 			Headers:        item.Headers,
 			ExcludedModels: item.ExcludedModels,
+			QuotaCurl:      item.QuotaCurl,
+			QuotaEnabled:   item.QuotaEnabled,
 		})
 	}
 	return keys
+}
+
+func sidecarCodexAPIKeyInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyapi.CodexAPIKeyInput {
+	out := make([]cliproxyapi.CodexAPIKeyInput, 0, len(items))
+	for _, item := range items {
+		item.QuotaCurl = ""
+		item.QuotaEnabled = false
+		out = append(out, item)
+	}
+	return out
 }
 
 func isReservedCodexAPIKeyAuthArtifact(name string) bool {

@@ -92,6 +92,8 @@ export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 
+export function TestCodexAPIKeyQuotaCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput):Promise<main.CodexQuotaResponse>;
+
 export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<void>;
 
 export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):Promise<void>;

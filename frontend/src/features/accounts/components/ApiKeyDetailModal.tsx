@@ -11,6 +11,9 @@ import type { AccountRecord, TextInputEvent, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountHealthBar from './AccountHealthBar';
 import { resolveAPIKeyModelMenuNames, type APIKeyModelMenuMode } from '../model/apiKeyModelCatalog';
+import { buildDefaultCodexQuotaCurl } from '../model/accountConfig';
+import type { CodexQuota } from '../../../types';
+import { toErrorMessage } from '../../../utils/error';
 
 const DEFAULT_CODEX_API_KEY_VERIFY_MODEL = 'gpt-5.4-mini';
 
@@ -28,8 +31,9 @@ interface ApiKeyDetailModalProps {
   modelNames?: string[];
   onClose: () => void;
   onRename: (nextName: string) => void;
-  onSaveConfig: (draft: { apiKey: string; baseUrl: string; prefix: string }) => Promise<void>;
+  onSaveConfig: (draft: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; quotaEnabled: boolean }) => Promise<void>;
   onVerify: (input: { apiKey: string; baseUrl: string; model: string }) => void;
+  onTestQuotaCurl: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }) => Promise<CodexQuota>;
   t: Translator;
 }
 
@@ -55,6 +59,7 @@ export default function ApiKeyDetailModal({
   onRename,
   onSaveConfig,
   onVerify,
+  onTestQuotaCurl,
   t,
 }: ApiKeyDetailModalProps) {
   const [draftName, setDraftName] = useState(account.displayName);
@@ -64,6 +69,8 @@ export default function ApiKeyDetailModal({
     apiKey: account.apiKey || '',
     baseUrl: account.baseUrl || '',
     prefix: account.prefix || '',
+    quotaCurl: account.quotaCurl || '',
+    quotaEnabled: Boolean(account.quotaEnabled),
   });
   const [copyState, setCopyState] = useState<{
     target: 'apiKey' | 'baseUrl' | null;
@@ -73,6 +80,14 @@ export default function ApiKeyDetailModal({
     status: 'idle',
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [quotaTestState, setQuotaTestState] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    message: string;
+    quota?: CodexQuota;
+  }>({
+    status: 'idle',
+    message: '',
+  });
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [modelMenuMode, setModelMenuMode] = useState<APIKeyModelMenuMode>('browse');
   const modelMenuRef = useRef<HTMLDivElement | null>(null);
@@ -104,12 +119,18 @@ export default function ApiKeyDetailModal({
       apiKey: account.apiKey || '',
       baseUrl: account.baseUrl || '',
       prefix: account.prefix || '',
+      quotaCurl: account.quotaCurl || '',
+      quotaEnabled: Boolean(account.quotaEnabled),
     });
-  }, [account.apiKey, account.baseUrl, account.prefix]);
+  }, [account.apiKey, account.baseUrl, account.prefix, account.quotaCurl, account.quotaEnabled]);
 
   useEffect(() => {
     setVerifyModel(verifyState.model || DEFAULT_CODEX_API_KEY_VERIFY_MODEL);
   }, [verifyState.model, account.id]);
+
+  useEffect(() => {
+    setQuotaTestState({ status: 'idle', message: '' });
+  }, [account.id]);
 
   useEffect(() => {
     if (copyState.status === 'idle') {
@@ -147,10 +168,28 @@ export default function ApiKeyDetailModal({
     () =>
       configDraft.apiKey.trim() !== String(account.apiKey || '').trim() ||
       configDraft.baseUrl.trim() !== String(account.baseUrl || '').trim() ||
-      configDraft.prefix.trim() !== String(account.prefix || '').trim(),
-    [account.apiKey, account.baseUrl, account.prefix, configDraft.apiKey, configDraft.baseUrl, configDraft.prefix]
+      configDraft.prefix.trim() !== String(account.prefix || '').trim() ||
+      configDraft.quotaCurl.trim() !== String(account.quotaCurl || '').trim() ||
+      configDraft.quotaEnabled !== Boolean(account.quotaEnabled),
+    [
+      account.apiKey,
+      account.baseUrl,
+      account.prefix,
+      account.quotaCurl,
+      account.quotaEnabled,
+      configDraft.apiKey,
+      configDraft.baseUrl,
+      configDraft.prefix,
+      configDraft.quotaCurl,
+      configDraft.quotaEnabled,
+    ]
   );
   const healthMetaItems = useMemo(() => buildAccountHealthMetaItems(usageSummary, t), [usageSummary, t]);
+  const quotaTestDisabled =
+    quotaTestState.status === 'loading' ||
+    !configDraft.apiKey.trim() ||
+    !configDraft.baseUrl.trim() ||
+    !configDraft.quotaCurl.trim();
 
   const messageTone =
     verifyState.status === 'success'
@@ -198,9 +237,41 @@ export default function ApiKeyDetailModal({
         apiKey: configDraft.apiKey,
         baseUrl: configDraft.baseUrl,
         prefix: configDraft.prefix,
+        quotaCurl: configDraft.quotaCurl,
+        quotaEnabled: configDraft.quotaEnabled,
       });
     } finally {
       setIsSavingConfig(false);
+    }
+  }
+
+  async function testQuotaCurl() {
+    if (quotaTestDisabled) {
+      setQuotaTestState({
+        status: 'error',
+        message: t('accounts.quota_curl_test_missing'),
+      });
+      return;
+    }
+
+    setQuotaTestState({ status: 'loading', message: '' });
+    try {
+      const quota = await onTestQuotaCurl({
+        apiKey: configDraft.apiKey,
+        baseUrl: configDraft.baseUrl,
+        prefix: configDraft.prefix,
+        quotaCurl: configDraft.quotaCurl,
+      });
+      setQuotaTestState({
+        status: 'success',
+        message: t('accounts.quota_curl_test_success'),
+        quota,
+      });
+    } catch (error) {
+      setQuotaTestState({
+        status: 'error',
+        message: toErrorMessage(error),
+      });
     }
   }
 
@@ -351,6 +422,83 @@ export default function ApiKeyDetailModal({
                         placeholder="/v1"
                       />
                     </label>
+                    <div className="space-y-2 border-t border-dashed border-[var(--border-color)] pt-3">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={configDraft.quotaEnabled}
+                          onChange={(event) =>
+                            setConfigDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))
+                          }
+                        />
+                        <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                          {t('accounts.quota_curl_enabled')}
+                        </span>
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="flex items-center justify-between gap-3 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                          <span>{t('accounts.quota_curl')}</span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <button
+                              type="button"
+                              className="btn-swiss !px-2 !py-0.5 !text-[0.5rem]"
+                              onClick={() => void testQuotaCurl()}
+                              disabled={quotaTestState.status === 'loading' || !configDraft.quotaCurl.trim()}
+                            >
+                              {quotaTestState.status === 'loading' ? (
+                                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                              ) : (
+                                t('accounts.quota_curl_test')
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-swiss !px-2 !py-0.5 !text-[0.5rem]"
+                              onClick={() =>
+                                setConfigDraft((prev) => ({
+                                  ...prev,
+                                  quotaCurl: buildDefaultCodexQuotaCurl(prev.baseUrl),
+                                  quotaEnabled: true,
+                                }))
+                              }
+                            >
+                              {t('accounts.quota_curl_use_template')}
+                            </button>
+                          </span>
+                        </span>
+                        <textarea
+                          value={configDraft.quotaCurl}
+                          onChange={(event: TextInputEvent) =>
+                            setConfigDraft((prev) => ({ ...prev, quotaCurl: event.target.value }))
+                          }
+                          className="input-swiss min-h-28 w-full resize-y font-mono !text-[0.625rem]"
+                          placeholder='curl -sS "https://example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"'
+                        />
+                      </label>
+                      {quotaTestState.status !== 'idle' ? (
+                        <div
+                          className={`border-2 px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+                            quotaTestState.status === 'success'
+                              ? 'border-green-600 bg-green-600/10 text-green-700'
+                              : quotaTestState.status === 'error'
+                                ? 'border-red-500 bg-red-500/10 text-red-500'
+                                : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]'
+                          }`}
+                        >
+                          <div>{quotaTestState.message || t('accounts.quota_curl_test_running')}</div>
+                          {quotaTestState.status === 'success' && quotaTestState.quota?.windows?.length ? (
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.5rem] text-[var(--text-primary)]">
+                              <span>{quotaTestState.quota.planType || '—'}</span>
+                              {quotaTestState.quota.windows.slice(0, 2).map((window) => (
+                                <span key={window.id}>
+                                  {window.label}: {window.remainingPercent ?? '--'}% / {window.resetLabel || '--'}
+                                </span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
                 </div>
               </div>
             </section>

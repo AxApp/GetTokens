@@ -18,6 +18,8 @@ export namespace main {
 	    prefix?: string;
 	    authIndex?: any;
 	    quotaKey?: string;
+	    quotaCurl?: string;
+	    quotaEnabled?: boolean;
 	    localOnly?: boolean;
 
 	    static createFrom(source: any = {}) {
@@ -43,6 +45,8 @@ export namespace main {
 	        this.prefix = source["prefix"];
 	        this.authIndex = source["authIndex"];
 	        this.quotaKey = source["quotaKey"];
+	        this.quotaCurl = source["quotaCurl"];
+	        this.quotaEnabled = source["quotaEnabled"];
 	        this.localOnly = source["localOnly"];
 	    }
 	}
@@ -333,6 +337,8 @@ export namespace main {
 	    proxyUrl?: string;
 	    headers?: Record<string, string>;
 	    excludedModels?: string[];
+	    quotaCurl?: string;
+	    quotaEnabled?: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new CreateCodexAPIKeyInput(source);
@@ -348,6 +354,8 @@ export namespace main {
 	        this.proxyUrl = source["proxyUrl"];
 	        this.headers = source["headers"];
 	        this.excludedModels = source["excludedModels"];
+	        this.quotaCurl = source["quotaCurl"];
+	        this.quotaEnabled = source["quotaEnabled"];
 	    }
 	}
 	export class CreateOpenAICompatibleProviderInput {
@@ -1077,6 +1085,24 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class TestCodexAPIKeyQuotaCurlInput {
+	    apiKey: string;
+	    baseUrl: string;
+	    prefix?: string;
+	    quotaCurl: string;
+
+	    static createFrom(source: any = {}) {
+	        return new TestCodexAPIKeyQuotaCurlInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.apiKey = source["apiKey"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.quotaCurl = source["quotaCurl"];
+	    }
+	}
 	export class UpdateAccountPriorityInput {
 	    id: string;
 	    priority?: number;
@@ -1096,6 +1122,8 @@ export namespace main {
 	    apiKey: string;
 	    baseUrl: string;
 	    prefix?: string;
+	    quotaCurl?: string;
+	    quotaEnabled?: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyConfigInput(source);
@@ -1107,6 +1135,8 @@ export namespace main {
 	        this.apiKey = source["apiKey"];
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
+	        this.quotaCurl = source["quotaCurl"];
+	        this.quotaEnabled = source["quotaEnabled"];
 	    }
 	}
 	export class UpdateCodexAPIKeyLabelInput {

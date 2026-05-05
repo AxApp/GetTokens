@@ -78,6 +78,8 @@ type AccountRecord struct {
 	Prefix           string      `json:"prefix,omitempty"`
 	AuthIndex        interface{} `json:"authIndex,omitempty"`
 	QuotaKey         string      `json:"quotaKey,omitempty"`
+	QuotaCurl        string      `json:"quotaCurl,omitempty"`
+	QuotaEnabled     bool        `json:"quotaEnabled,omitempty"`
 	LocalOnly        bool        `json:"localOnly,omitempty"`
 }
 
@@ -90,6 +92,8 @@ type CreateCodexAPIKeyInput struct {
 	ProxyURL       string            `json:"proxyUrl,omitempty"`
 	Headers        map[string]string `json:"headers,omitempty"`
 	ExcludedModels []string          `json:"excludedModels,omitempty"`
+	QuotaCurl      string            `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool              `json:"quotaEnabled,omitempty"`
 }
 
 type UpdateCodexAPIKeyPriorityInput struct {
@@ -103,10 +107,19 @@ type UpdateCodexAPIKeyLabelInput struct {
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID      string `json:"id"`
-	APIKey  string `json:"apiKey"`
-	BaseURL string `json:"baseUrl"`
-	Prefix  string `json:"prefix,omitempty"`
+	ID           string `json:"id"`
+	APIKey       string `json:"apiKey"`
+	BaseURL      string `json:"baseUrl"`
+	Prefix       string `json:"prefix,omitempty"`
+	QuotaCurl    string `json:"quotaCurl,omitempty"`
+	QuotaEnabled bool   `json:"quotaEnabled,omitempty"`
+}
+
+type TestCodexAPIKeyQuotaCurlInput struct {
+	APIKey    string `json:"apiKey"`
+	BaseURL   string `json:"baseUrl"`
+	Prefix    string `json:"prefix,omitempty"`
+	QuotaCurl string `json:"quotaCurl"`
 }
 
 type UpdateAccountPriorityInput struct {

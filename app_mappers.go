@@ -40,6 +40,8 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		Prefix:           record.Prefix,
 		AuthIndex:        record.AuthIndex,
 		QuotaKey:         record.QuotaKey,
+		QuotaCurl:        record.QuotaCurl,
+		QuotaEnabled:     record.QuotaEnabled,
 		LocalOnly:        record.LocalOnly,
 	}
 }
