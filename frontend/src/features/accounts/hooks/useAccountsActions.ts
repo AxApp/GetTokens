@@ -47,7 +47,8 @@ interface UseAccountsActionsArgs {
   setPasteError: Dispatch<SetStateAction<string>>;
   setSearchTerm: Dispatch<SetStateAction<string>>;
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
-  loadAccounts: () => Promise<void>;
+  removeDeletedAccountLocally: (account: AccountRecord) => void;
+  loadAccounts: (options?: { showLoading?: boolean }) => Promise<void>;
 }
 
 export default function useAccountsActions({
@@ -69,6 +70,7 @@ export default function useAccountsActions({
   setPasteError,
   setSearchTerm,
   setSelectedAccountIDs,
+  removeDeletedAccountLocally,
   loadAccounts,
 }: UseAccountsActionsArgs) {
   const deleteAccount = useCallback(
@@ -82,7 +84,8 @@ export default function useAccountsActions({
           if (selectedAccount?.id === account.id) {
             setSelectedAccount(null);
           }
-          await loadAccounts();
+          removeDeletedAccountLocally(account);
+          await loadAccounts({ showLoading: false });
         } catch (error) {
           console.error(error);
           setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
@@ -98,7 +101,8 @@ export default function useAccountsActions({
       try {
         await trackRequest('DeleteAuthFiles', { names: [account.name] }, () => DeleteAuthFiles([account.name!]));
         setPendingDeleteID(null);
-        await loadAccounts();
+        removeDeletedAccountLocally(account);
+        await loadAccounts({ showLoading: false });
       } catch (error) {
         console.error(error);
         setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
@@ -106,6 +110,7 @@ export default function useAccountsActions({
     },
     [
       loadAccounts,
+      removeDeletedAccountLocally,
       selectedAccount,
       setDeleteError,
       setPendingDeleteID,

@@ -26,6 +26,11 @@ import {
   readStoredAccountsFilterState,
 } from '../model/accountFilters';
 import {
+  removeDeletedAPIKeyRecord,
+  removeDeletedAuthFile,
+  shouldClearDeletedSelectedAccount,
+} from '../model/accountDelete';
+import {
   filterSelectedAccountIDs,
   useAccountSelectionState,
 } from '../model/accountSelection';
@@ -199,12 +204,15 @@ export default function useAccountsPageState({
     [trackRequest]
   );
 
-  const loadAccounts = useCallback(async () => {
+  const loadAccounts = useCallback(async (options: { showLoading?: boolean } = {}) => {
     if (!ready) {
       return;
     }
 
-    setLoading(true);
+    const showLoading = options.showLoading ?? true;
+    if (showLoading) {
+      setLoading(true);
+    }
     try {
       const [authFileResponse, rawAccountResponse] = await Promise.all([
         trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles()),
@@ -230,9 +238,21 @@ export default function useAccountsPageState({
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, [loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
+
+  const removeDeletedAccountLocally = useCallback(
+    (account: AccountRecord) => {
+      setAuthFiles((prev) => removeDeletedAuthFile(prev, account));
+      setApiKeyRecords((prev) => removeDeletedAPIKeyRecord(prev, account));
+      setSelectedAccount((prev) => (shouldClearDeletedSelectedAccount(prev, account) ? null : prev));
+      setSelectedAccountIDs((prev) => prev.filter((id) => id !== account.id));
+    },
+    [setSelectedAccountIDs],
+  );
 
   useEffect(() => {
     if (ready) {
@@ -494,6 +514,7 @@ export default function useAccountsPageState({
     setPasteError,
     setSearchTerm,
     setSelectedAccountIDs,
+    removeDeletedAccountLocally,
     loadAccounts,
   });
 
