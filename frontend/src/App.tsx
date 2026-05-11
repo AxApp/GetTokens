@@ -14,7 +14,6 @@ const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 const CodexPage = lazy(() => import('./pages/CodexPage'));
 const DebugPage = lazy(() => import('./pages/DebugPage'));
 const ProxyPoolPage = lazy(() => import('./pages/ProxyPoolPage'));
-const RequestOrchestrationPage = lazy(() => import('./pages/RequestOrchestrationPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
 
@@ -61,9 +60,6 @@ function AppShell() {
     }
     if (activePage === 'proxy-pool') {
       return <ProxyPoolPage />;
-    }
-    if (activePage === 'request-orchestration') {
-      return <RequestOrchestrationPage sidecarStatus={sidecarStatus} />;
     }
     if (activePage === 'codex') {
       return <CodexPage workspace={activeCodexWorkspace} sidecarStatus={sidecarStatus} />;

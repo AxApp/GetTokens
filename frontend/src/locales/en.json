@@ -22,7 +22,6 @@
   "nav": {
     "status": "STATUS",
     "accounts": "ACCOUNTS",
-    "request_orchestration": "REQUEST FLOW",
     "session_management": "SESSION MGMT",
     "vendor_status": "VENDOR STATUS",
     "proxy_pool": "PROXY POOL",

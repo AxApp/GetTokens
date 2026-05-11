@@ -11,7 +11,6 @@ export const USAGE_DESK_RANGE_STORAGE_KEY = 'gettokens.usageDesk.range';
 const appPages: ReadonlySet<AppPage> = new Set([
   'status',
   'accounts',
-  'request-orchestration',
   'session-management',
   'vendor-status',
   'proxy-pool',

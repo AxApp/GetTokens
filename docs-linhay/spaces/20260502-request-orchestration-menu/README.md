@@ -447,7 +447,7 @@
 - 网络代理研究：`docs-linhay/spaces/20260429-network-proxy/README.md`
 
 ## 当前状态
-- 状态：V1 APP 层工作台与后端 apply / restore 闭环已实现，真实桌面窗口 apply / restore 已完成截图验收
+- 状态：retired，业务代码已按 `docs-linhay/spaces/20260511-remove-request-orchestration/` 移除，本文档仅作历史归档
 - 最近更新：2026-05-11
 - 已完成：
   - 新增独立一级菜单与请求编排页面入口
