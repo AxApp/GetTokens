@@ -304,6 +304,71 @@ export function calculateStatusBarData(usageDetails: UsageDetail[], nowMs: numbe
   };
 }
 
+function resolveStatusBlockState(success: number, failure: number): StatusBlockState {
+  if (success + failure === 0) {
+    return 'idle';
+  }
+  if (failure === 0) {
+    return 'success';
+  }
+  if (success === 0) {
+    return 'failure';
+  }
+  return 'mixed';
+}
+
+function resolveResponsiveBlockCount(sourceBlockCount: number, containerWidth: number | null | undefined) {
+  if (!Number.isFinite(containerWidth) || !containerWidth || containerWidth <= 0) {
+    return sourceBlockCount;
+  }
+
+  const minReadableBlockWidth = 8;
+  const blockGap = 6;
+  const availableCount = Math.floor((containerWidth + blockGap) / (minReadableBlockWidth + blockGap));
+  return Math.max(4, Math.min(sourceBlockCount, availableCount));
+}
+
+export function resolveResponsiveStatusBarData(statusBar: StatusBarData, containerWidth: number | null | undefined): StatusBarData {
+  const sourceBlockCount = statusBar.blocks.length;
+  const targetBlockCount = resolveResponsiveBlockCount(sourceBlockCount, containerWidth);
+  if (targetBlockCount >= sourceBlockCount) {
+    return statusBar;
+  }
+
+  const blocks: StatusBlockState[] = [];
+  const blockDetails: StatusBlockDetail[] = [];
+
+  for (let index = 0; index < targetBlockCount; index += 1) {
+    const startIndex = Math.floor((index * sourceBlockCount) / targetBlockCount);
+    const endIndex = Math.floor(((index + 1) * sourceBlockCount) / targetBlockCount);
+    const details = statusBar.blockDetails.slice(startIndex, Math.max(startIndex + 1, endIndex));
+    let success = 0;
+    let failure = 0;
+
+    details.forEach((detail) => {
+      success += detail.success;
+      failure += detail.failure;
+    });
+
+    blocks.push(resolveStatusBlockState(success, failure));
+    blockDetails.push({
+      success,
+      failure,
+      rate: success + failure > 0 ? success / (success + failure) : -1,
+      startTime: details[0]?.startTime ?? 0,
+      endTime: details[details.length - 1]?.endTime ?? 0,
+    });
+  }
+
+  return {
+    blocks,
+    blockDetails,
+    successRate: statusBar.successRate,
+    totalSuccess: statusBar.totalSuccess,
+    totalFailure: statusBar.totalFailure,
+  };
+}
+
 function buildEmptyAccountUsageSummary(): AccountUsageSummary {
   return {
     hasData: false,

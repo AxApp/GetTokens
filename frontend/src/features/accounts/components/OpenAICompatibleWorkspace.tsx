@@ -2,7 +2,7 @@ import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { Translator } from '../model/types';
 import type { OpenAICompatibleProvider, ProviderRemoteModelsState, ProviderVerifyState } from '../model/openAICompatible';
 import { buildProviderConfigSignature, maskProviderAPIKey } from '../model/openAICompatible';
-import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
+import AccountCardFrame from './AccountCardFrame';
 
 interface OpenAICompatibleWorkspaceProps {
   t: Translator;
@@ -117,30 +117,10 @@ export default function OpenAICompatibleWorkspace({
                 verifyState.status === 'success' ? 'text-green-600' : verifyState.status === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]';
 
               return (
-                <div
-                  data-account-card
+                <AccountCardFrame
                   key={provider.name}
-                  className={`card-swiss flex h-full cursor-pointer flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] ${
-                    provider.disabled ? 'opacity-80' : ''
-                  }`}
-                  onClick={(event) => {
-                    if (!shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
-                      return;
-                    }
-                    onOpenDetail(provider);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key !== 'Enter' && event.key !== ' ') {
-                      return;
-                    }
-                    if (!shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
-                      return;
-                    }
-                    event.preventDefault();
-                    onOpenDetail(provider);
-                  }}
-                  role="button"
-                  tabIndex={0}
+                  className={provider.disabled ? 'opacity-80' : ''}
+                  onOpen={() => onOpenDetail(provider)}
                 >
                   <div className="mb-4 flex items-start justify-between gap-3">
                     <div className="min-w-0 space-y-1.5">
@@ -220,11 +200,17 @@ export default function OpenAICompatibleWorkspace({
                     </div>
                   </div>
 
-                  <div className="mt-auto grid grid-cols-3 gap-2 border-t border-dashed border-[var(--border-color)] pt-4">
-                    <button onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
+                  <div
+                    className="mt-auto grid grid-cols-3 gap-2 border-t border-dashed border-[var(--border-color)] pt-4"
+                    data-account-card-ignore-click="true"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
+                    <button type="button" onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
                       {t('accounts.openai_provider_manage')}
                     </button>
                     <button
+                      type="button"
                       onClick={() => onToggleDisabled(provider)}
                       className="btn-swiss !py-1.5 !text-[0.5625rem]"
                       disabled={pendingStatusName === provider.name}
@@ -236,6 +222,7 @@ export default function OpenAICompatibleWorkspace({
                           : t('common.disable')}
                     </button>
                     <button
+                      type="button"
                       onClick={() => onDelete(provider.name)}
                       className="btn-swiss !py-1.5 !text-[0.5625rem] !text-red-500"
                       disabled={pendingDeleteName === provider.name}
@@ -243,7 +230,7 @@ export default function OpenAICompatibleWorkspace({
                       {pendingDeleteName === provider.name ? t('common.loading') : t('common.delete')}
                     </button>
                   </div>
-                </div>
+                </AccountCardFrame>
               );
           })}
         </div>

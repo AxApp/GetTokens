@@ -7,6 +7,7 @@ import {
   type ProviderRemoteModelsState,
   type ProviderVerifyState,
 } from '../model/openAICompatible';
+import AccountDetailModalFrame from './AccountDetailModalFrame';
 
 interface OpenAICompatibleDetailModalProps {
   t: Translator;
@@ -71,12 +72,8 @@ export default function OpenAICompatibleDetailModal({
         : 'text-[var(--text-muted)]';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="flex w-full max-w-6xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
+    <AccountDetailModalFrame onClose={onClose}>
+        <header className="shrink-0 border-b-2 border-[var(--border-color)] px-6 py-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1 space-y-2">
               <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
@@ -119,8 +116,9 @@ export default function OpenAICompatibleDetailModal({
           </div>
         </header>
 
-        <div className="grid gap-0 overflow-hidden xl:grid-cols-[1.1fr_0.9fr]">
-          <section className="min-h-[500px] overflow-auto px-6 py-6 xl:border-r-2 xl:border-[var(--border-color)]">
+        <div className="min-h-0 flex-1 overflow-auto">
+          <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
+            <section className="min-h-0 px-6 py-6 xl:border-r-2 xl:border-[var(--border-color)]">
             <div className="space-y-6">
               <label className="space-y-2">
                 <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
@@ -142,7 +140,7 @@ export default function OpenAICompatibleDetailModal({
                   value={draft.apiKey}
                   onChange={(event) => onChange({ ...draft, apiKey: event.target.value })}
                   className="input-swiss w-full"
-                  type="password"
+                  type="text"
                   placeholder={selectedPreset?.apiKeyPlaceholder || 'sk-...'}
                 />
               </label>
@@ -263,7 +261,7 @@ export default function OpenAICompatibleDetailModal({
             </div>
           </section>
 
-          <section className="min-h-[500px] overflow-auto space-y-6 bg-[var(--bg-surface)]/30 px-6 py-6">
+          <section className="min-h-0 space-y-6 bg-[var(--bg-surface)]/30 px-6 py-6">
             <div className="space-y-4">
               <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_test_model')}
@@ -313,23 +311,28 @@ export default function OpenAICompatibleDetailModal({
               </div>
             </div>
           </section>
+          </div>
         </div>
 
         {error ? (
-          <div className="mx-6 mb-6 border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+          <div className="mx-6 mb-4 shrink-0 border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
             {error}
           </div>
         ) : null}
 
-        <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
-          <button onClick={onClose} className="btn-swiss">
-            {t('common.cancel')}
-          </button>
-          <button onClick={onSave} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]" disabled={saving}>
-            {saving ? t('common.loading') : t('common.save')}
-          </button>
+        <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-[0.5625rem] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
+            {verifyState.message || t('accounts.openai_provider_test_idle')}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={onSave} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]" disabled={saving}>
+              {saving ? t('common.loading') : t('common.save')}
+            </button>
+            <button onClick={onClose} className="btn-swiss">
+              {t('common.cancel')}
+            </button>
+          </div>
         </footer>
-      </div>
-    </div>
+    </AccountDetailModalFrame>
   );
 }

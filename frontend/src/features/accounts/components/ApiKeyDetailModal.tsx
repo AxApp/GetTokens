@@ -10,6 +10,7 @@ import { buildAccountHealthMetaItems } from '../model/accountHealthMeta';
 import type { AccountRecord, TextInputEvent, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountHealthBar from './AccountHealthBar';
+import AccountDetailModalFrame from './AccountDetailModalFrame';
 import { resolveAPIKeyModelMenuNames, type APIKeyModelMenuMode } from '../model/apiKeyModelCatalog';
 import { buildDefaultCodexQuotaCurl } from '../model/accountConfig';
 import type { CodexQuota } from '../../../types';
@@ -276,14 +277,7 @@ export default function ApiKeyDetailModal({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6"
-      onClick={onClose}
-    >
-      <div
-        className="flex max-h-[calc(100vh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)]"
-        onClick={(event) => event.stopPropagation()}
-      >
+    <AccountDetailModalFrame onClose={onClose}>
         <header className="shrink-0 border-b-2 border-[var(--border-color)] px-6 py-5">
           <div className="flex flex-col gap-3">
             <div>
@@ -642,7 +636,6 @@ export default function ApiKeyDetailModal({
             </button>
           </div>
         </footer>
-      </div>
-    </div>
+    </AccountDetailModalFrame>
   );
 }

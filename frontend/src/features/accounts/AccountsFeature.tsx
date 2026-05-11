@@ -22,6 +22,9 @@ import { mapOpenAICompatibleProviderToRotationAccount } from './model/accountRot
 import { isCodexAuthFile } from './model/accountPresentation';
 import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
+import { buildAccountDetailFrameHash, clearAccountDetailFrameHash } from '../../utils/pagePersistence';
+import type { AccountRecord } from './model/types';
+import type { OpenAICompatibleProvider } from './model/openAICompatible';
 
 interface AccountsFeatureProps {
   sidecarStatus: SidecarStatus;
@@ -162,6 +165,52 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     await openAICompatibleState.loadProviders();
   }
 
+  const markAccountDetailInHash = useCallback((detailID: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = buildAccountDetailFrameHash(window.location.hash, detailID);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }, []);
+
+  const clearAccountDetailInHash = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = clearAccountDetailFrameHash(window.location.hash);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }, []);
+
+  const openAccountDetail = useCallback(
+    (account: AccountRecord) => {
+      setSelectedAccount(account);
+      markAccountDetailInHash(account.id);
+    },
+    [markAccountDetailInHash, setSelectedAccount],
+  );
+
+  const closeAccountDetail = useCallback(() => {
+    setSelectedAccount(null);
+    clearAccountDetailInHash();
+  }, [clearAccountDetailInHash, setSelectedAccount]);
+
+  const openOpenAICompatibleDetail = useCallback(
+    (provider: OpenAICompatibleProvider) => {
+      openAICompatibleState.openDetailModal(provider);
+      markAccountDetailInHash(`openai-compatible:${provider.name}`);
+    },
+    [markAccountDetailInHash, openAICompatibleState],
+  );
+
+  const closeOpenAICompatibleDetail = useCallback(() => {
+    openAICompatibleState.closeDetailModal();
+    clearAccountDetailInHash();
+  }, [clearAccountDetailInHash, openAICompatibleState]);
+
   if (workspace === 'openai-compatible') {
     return (
       <>
@@ -176,7 +225,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           pendingStatusName={openAICompatibleState.pendingStatusName}
           onCreate={openAICompatibleState.openCreateModal}
           onRefresh={() => void openAICompatibleState.loadProviders()}
-          onOpenDetail={openAICompatibleState.openDetailModal}
+          onOpenDetail={openOpenAICompatibleDetail}
           onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
           onToggleDisabled={(provider) => void openAICompatibleState.toggleProviderDisabled(provider)}
         />
@@ -209,7 +258,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
             remoteModelsState={openAICompatibleState.remoteModelsStates[openAICompatibleState.detailDraft.currentName]}
             error={openAICompatibleState.detailError}
             saving={openAICompatibleState.detailSaving}
-            onClose={openAICompatibleState.closeDetailModal}
+            onClose={closeOpenAICompatibleDetail}
             onChange={openAICompatibleState.setDetailDraft}
             onSave={() => void openAICompatibleState.saveDetail()}
             onVerify={() => void openAICompatibleState.verifyDetail()}
@@ -336,7 +385,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
                   pendingDeleteID={pendingDeleteID}
                   oauthPendingAccountID={oauthPendingAccountID}
                   onToggleSelection={toggleAccountSelection}
-                  onOpenDetails={setSelectedAccount}
+                  onOpenDetails={openAccountDetail}
                   onRefreshQuota={(account) => void refreshCodexQuota(account)}
                   onStartReauth={(account) => void startCodexOAuth(account)}
                   onRequestDelete={(accountID) => {
@@ -362,7 +411,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
               pendingStatusName={openAICompatibleState.pendingStatusName}
               onCreate={openAICompatibleState.openCreateModal}
               onRefresh={() => void openAICompatibleState.loadProviders()}
-              onOpenDetail={openAICompatibleState.openDetailModal}
+              onOpenDetail={openOpenAICompatibleDetail}
               onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
               onToggleDisabled={(provider) => void openAICompatibleState.toggleProviderDisabled(provider)}
               embedded
@@ -377,7 +426,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           usageSummary={accountUsageByID[selectedAccount.id]}
           canStartReauth={isCodexAuthFile(selectedAccount)}
           isReauthing={oauthPendingAccountID === selectedAccount.id}
-          onClose={() => setSelectedAccount(null)}
+          onClose={closeAccountDetail}
           onStartReauth={() => {
             const targetAccount = selectedAccount;
             void startCodexOAuth(targetAccount);
@@ -392,7 +441,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           usageSummary={accountUsageByID[selectedAccount.id]}
           verifyState={apiKeyVerifyState}
           modelNames={relayModelNames}
-          onClose={() => setSelectedAccount(null)}
+          onClose={closeAccountDetail}
           onRename={renameSelectedApiKey}
           onSaveConfig={(draft) => updateSelectedApiKeyConfig(draft)}
           onVerify={(input) => void verifySelectedApiKey(input)}

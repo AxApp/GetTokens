@@ -8,6 +8,7 @@ import {
   calculateStatusBarData,
   collectUsageDetails,
   normalizeUsageSourceId,
+  resolveResponsiveStatusBarData,
 } from '../model/accountUsage.ts';
 
 test('collectUsageDetails normalizes nested usage snapshot details', () => {
@@ -153,6 +154,26 @@ test('calculateStatusBarData buckets recent activity into 20 blocks', () => {
   assert.equal(statusBar.totalSuccess, 1);
   assert.equal(statusBar.totalFailure, 1);
   assert.equal(statusBar.blocks[19], 'success');
+});
+
+test('resolveResponsiveStatusBarData merges status blocks for narrow containers', () => {
+  const nowMs = Date.parse('2026-04-27T10:00:00.000Z');
+  const statusBar = calculateStatusBarData(
+    [
+      { timestamp: '2026-04-27T09:59:00.000Z', source: 'a', auth_index: null, failed: false },
+      { timestamp: '2026-04-27T09:58:00.000Z', source: 'a', auth_index: null, failed: true },
+      { timestamp: '2026-04-27T09:40:00.000Z', source: 'a', auth_index: null, failed: false },
+    ],
+    nowMs
+  );
+
+  const compact = resolveResponsiveStatusBarData(statusBar, 96);
+
+  assert.ok(compact.blocks.length < statusBar.blocks.length);
+  assert.equal(compact.totalSuccess, 2);
+  assert.equal(compact.totalFailure, 1);
+  assert.ok(compact.blocks.includes('mixed'));
+  assert.equal(resolveResponsiveStatusBarData(statusBar, 400).blocks.length, 20);
 });
 
 test('buildAccountUsageSummaryMap returns per-account summaries', () => {

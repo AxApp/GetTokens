@@ -9,7 +9,9 @@ import {
   SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_SOURCE_STORAGE_KEY,
   USAGE_DESK_RANGE_STORAGE_KEY,
+  buildAccountDetailFrameHash,
   buildFrameHash,
+  clearAccountDetailFrameHash,
   isAccountWorkspace,
   isAppPage,
   isCodexWorkspace,
@@ -44,6 +46,7 @@ import {
 test('isAppPage only accepts known sidebar pages', () => {
   assert.equal(isAppPage('status'), true);
   assert.equal(isAppPage('accounts'), true);
+  assert.equal(isAppPage('request-orchestration'), true);
   assert.equal(isAppPage('session-management'), true);
   assert.equal(isAppPage('vendor-status'), true);
   assert.equal(isAppPage('proxy-pool'), true);
@@ -60,6 +63,7 @@ test('resolveInitialActivePage falls back to accounts for invalid values', () =>
   assert.equal(resolveInitialActivePage('session-management'), 'codex');
   assert.equal(resolveInitialActivePage('vendor-status'), 'codex');
   assert.equal(resolveInitialActivePage('proxy-pool'), 'proxy-pool');
+  assert.equal(resolveInitialActivePage('request-orchestration'), 'request-orchestration');
   assert.equal(resolveInitialActivePage('codex'), 'codex');
   assert.equal(resolveInitialActivePage('unknown'), 'accounts');
   assert.equal(resolveInitialActivePage(null), 'accounts');
@@ -342,6 +346,7 @@ test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=session-management'), { page: 'codex', codexWorkspace: 'session-management' });
   assert.deepEqual(readFrameHashState('#frame=vendor-status'), { page: 'codex', codexWorkspace: 'vendor-status' });
   assert.deepEqual(readFrameHashState('#frame=proxy-pool'), { page: 'proxy-pool' });
+  assert.deepEqual(readFrameHashState('#frame=request-orchestration'), { page: 'request-orchestration' });
   assert.deepEqual(readFrameHashState('#frame=proxy-pool&workspace=codex'), { page: 'proxy-pool' });
   assert.deepEqual(readFrameHashState('#frame=codex'), { page: 'codex', codexWorkspace: 'feature-config' });
   assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'codex', codexWorkspace: 'usage-codex' });
@@ -352,6 +357,11 @@ test('readFrameHashState parses accounts workspace and falls back to all', () =>
   assert.deepEqual(readFrameHashState('#frame=accounts&workspace=codex'), {
     page: 'accounts',
     workspace: 'codex',
+  });
+  assert.deepEqual(readFrameHashState('#frame=accounts&workspace=codex&detail=api-key%3Alocal-1'), {
+    page: 'accounts',
+    workspace: 'codex',
+    accountDetailID: 'api-key:local-1',
   });
   assert.deepEqual(readFrameHashState('#frame=accounts'), {
     page: 'accounts',
@@ -419,6 +429,15 @@ test('readFrameHashState returns null for invalid hashes', () => {
   assert.equal(readFrameHashState(null), null);
 });
 
+test('account detail hash helpers add and remove modal marker', () => {
+  assert.equal(
+    buildAccountDetailFrameHash('#frame=accounts&workspace=openai-compatible', 'openai-compatible:deepseek'),
+    '#frame=accounts&workspace=openai-compatible&detail=openai-compatible%3Adeepseek',
+  );
+  assert.equal(buildAccountDetailFrameHash('#frame=accounts', 'api-key:local-1'), '#frame=accounts&detail=api-key%3Alocal-1');
+  assert.equal(clearAccountDetailFrameHash('#frame=accounts&workspace=codex&detail=api-key%3Alocal-1'), '#frame=accounts&workspace=codex');
+});
+
 test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(buildFrameHash('status', 'all', 'feature-config', 'codex', 'codex'), '#frame=status');
   assert.equal(
@@ -431,6 +450,10 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   );
   assert.equal(buildFrameHash('vendor-status', 'all', 'feature-config', 'codex', 'codex'), '#frame=vendor-status');
   assert.equal(buildFrameHash('proxy-pool', 'all', 'feature-config', 'codex', 'codex'), '#frame=proxy-pool');
+  assert.equal(
+    buildFrameHash('request-orchestration', 'all', 'feature-config', 'codex', 'codex'),
+    '#frame=request-orchestration',
+  );
   assert.equal(buildFrameHash('codex', 'all', 'feature-config', 'codex', 'codex'), '#frame=codex');
   assert.equal(
     buildFrameHash('codex', 'all', 'usage-codex', 'codex', 'codex'),

@@ -1,11 +1,6 @@
 import { createViteDebugInspectorPlugin } from '@linhey/react-debug-inspector'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import {
-  loadSessionManagementDetail,
-  loadSessionManagementSnapshot,
-  updateSessionManagementProviders,
-} from './dev/sessionManagementDevData.js'
 
 function sessionManagementDevBridgePlugin() {
   function writeJSON(res, statusCode, payload) {
@@ -33,6 +28,7 @@ function sessionManagementDevBridgePlugin() {
         }
 
         try {
+          const { updateSessionManagementProviders } = await import('./dev/sessionManagementDevData.js')
           const chunks = []
           for await (const chunk of req) {
             chunks.push(chunk)
@@ -48,6 +44,7 @@ function sessionManagementDevBridgePlugin() {
 
       server.middlewares.use('/__dev/session-management/snapshot', async (req, res) => {
         try {
+          const { loadSessionManagementSnapshot } = await import('./dev/sessionManagementDevData.js')
           const url = new URL(req.url || '', 'http://127.0.0.1')
           const forceRefresh = url.searchParams.get('refresh') === '1'
           const payload = await loadSessionManagementSnapshot({ forceRefresh })
@@ -59,6 +56,7 @@ function sessionManagementDevBridgePlugin() {
 
       server.middlewares.use('/__dev/session-management/detail', async (req, res) => {
         try {
+          const { loadSessionManagementDetail } = await import('./dev/sessionManagementDevData.js')
           const url = new URL(req.url || '', 'http://127.0.0.1')
           const sessionID = url.searchParams.get('sessionID') || ''
           const payload = await loadSessionManagementDetail(sessionID)
@@ -72,10 +70,10 @@ function sessionManagementDevBridgePlugin() {
 }
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
-    createViteDebugInspectorPlugin(),
-    sessionManagementDevBridgePlugin(),
+    command === 'serve' ? createViteDebugInspectorPlugin() : null,
+    command === 'serve' ? sessionManagementDevBridgePlugin() : null,
     react(),
-  ],
-})
+  ].filter(Boolean),
+}))

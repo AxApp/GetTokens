@@ -10,6 +10,10 @@ export function ApplyRelayServiceConfigToLocal(arg1, arg2, arg3, arg4, arg5, arg
   return window['go']['main']['App']['ApplyRelayServiceConfigToLocal'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
+export function ApplyRequestOrchestration() {
+  return window['go']['main']['App']['ApplyRequestOrchestration']();
+}
+
 export function ApplyUpdate() {
   return window['go']['main']['App']['ApplyUpdate']();
 }
@@ -106,6 +110,14 @@ export function GetReleaseLabel() {
   return window['go']['main']['App']['GetReleaseLabel']();
 }
 
+export function GetRequestOrchestrationConfig() {
+  return window['go']['main']['App']['GetRequestOrchestrationConfig']();
+}
+
+export function GetRequestOrchestrationSnapshot() {
+  return window['go']['main']['App']['GetRequestOrchestrationSnapshot']();
+}
+
 export function GetSidecarStatus() {
   return window['go']['main']['App']['GetSidecarStatus']();
 }
@@ -162,8 +174,16 @@ export function RefreshCodexSessionManagementSnapshot() {
   return window['go']['main']['App']['RefreshCodexSessionManagementSnapshot']();
 }
 
+export function RestoreRequestOrchestration() {
+  return window['go']['main']['App']['RestoreRequestOrchestration']();
+}
+
 export function SaveCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['SaveCodexFeatureConfig'](arg1);
+}
+
+export function SaveRequestOrchestrationConfig(arg1) {
+  return window['go']['main']['App']['SaveRequestOrchestrationConfig'](arg1);
 }
 
 export function SetAccountDisabled(arg1, arg2) {

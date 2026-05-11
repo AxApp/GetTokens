@@ -4,7 +4,6 @@ import { DownloadAuthFile } from '../../../../wailsjs/go/main/App';
 import { buildQuotaDisplay, formatQuotaResetDisplayWithUnix, formatQuotaResetRelative, supportsQuota } from '../model/accountQuota';
 import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
-import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions';
 import {
   isCodexReauthEligible,
   resolveAccountOperationalState,
@@ -16,6 +15,7 @@ import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from '.
 import type { AccountUsageSummary } from '../model/accountUsage';
 import AccountHealthBar from './AccountHealthBar';
 import AccountCardSkeleton from './AccountCardSkeleton';
+import AccountCardFrame from './AccountCardFrame';
 
 interface AccountCardProps {
   t: Translator;
@@ -153,30 +153,10 @@ export default function AccountCard({
   }
 
   return (
-    <div
-      data-account-card
-      className={`card-swiss flex h-full flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] ${
-        isSelectionMode || isPendingDelete ? '' : 'cursor-pointer'
-      }`}
+    <AccountCardFrame
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
-      onClick={(event) => {
-        if (!shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
-          return;
-        }
-        openDetails();
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== 'Enter' && event.key !== ' ') {
-          return;
-        }
-        if (!shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
-          return;
-        }
-        event.preventDefault();
-        openDetails();
-      }}
-      role="button"
-      tabIndex={isSelectionMode || isPendingDelete ? -1 : 0}
+      interactive={!isSelectionMode && !isPendingDelete}
+      onOpen={openDetails}
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-3">
@@ -293,26 +273,41 @@ export default function AccountCard({
 
       <div className="mt-auto">
         {isPendingDelete ? (
-          <div className="flex items-center justify-between gap-3 border-t border-dashed border-[var(--border-color)] pt-3">
+          <div
+            className="flex items-center justify-between gap-3 border-t border-dashed border-[var(--border-color)] pt-3"
+            data-account-card-ignore-click="true"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
             <div className="shrink-0 text-[0.5625rem] font-black uppercase tracking-wide text-red-500">
               {t('common.confirm_delete')}
             </div>
             <div className="flex gap-2">
-              <button onClick={onCancelDelete} className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
+              <button type="button" onClick={onCancelDelete} className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
                 {t('common.cancel')}
               </button>
-              <button onClick={() => onConfirmDelete(account)} className="btn-swiss !px-3 !py-1 !text-[0.5625rem] !text-red-500">
+              <button
+                type="button"
+                onClick={() => onConfirmDelete(account)}
+                className="btn-swiss !px-3 !py-1 !text-[0.5625rem] !text-red-500"
+              >
                 {t('common.delete')}
               </button>
             </div>
           </div>
         ) : (
-          <div className={`grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}>
-            <button onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
+          <div
+            className={`grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}
+            data-account-card-ignore-click="true"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
+          >
+            <button type="button" onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
               {t('common.details')}
             </button>
             {supportsQuota(account) ? (
               <button
+                type="button"
                 onClick={() => onRefreshQuota(account)}
                 className="btn-swiss !py-1.5 !text-[0.5625rem]"
                 disabled={!ready || quotaState?.status === 'loading'}
@@ -322,6 +317,7 @@ export default function AccountCard({
             ) : null}
             {canReauth ? (
               <button
+                type="button"
                 onClick={() => onStartReauth(account)}
                 className="btn-swiss !py-1.5 !text-[0.5625rem]"
                 disabled={isOAuthPending}
@@ -332,7 +328,7 @@ export default function AccountCard({
           </div>
         )}
       </div>
-    </div>
+    </AccountCardFrame>
   );
 }
 

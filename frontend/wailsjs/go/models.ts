@@ -1372,3 +1372,228 @@ export namespace updater {
 
 }
 
+export namespace wailsapp {
+
+	export class ApplyRequestOrchestrationResult {
+	    appliedFlowID?: string;
+	    enabledCount?: number;
+	    disabledCount?: number;
+	    restoredCount?: number;
+	    snapshotPath?: string;
+	    configPath?: string;
+	    message?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ApplyRequestOrchestrationResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.appliedFlowID = source["appliedFlowID"];
+	        this.enabledCount = source["enabledCount"];
+	        this.disabledCount = source["disabledCount"];
+	        this.restoredCount = source["restoredCount"];
+	        this.snapshotPath = source["snapshotPath"];
+	        this.configPath = source["configPath"];
+	        this.message = source["message"];
+	    }
+	}
+	export class RelayRoutingConfig {
+	    strategy: string;
+	    sessionAffinity: boolean;
+	    sessionAffinityTTL: string;
+	    requestRetry: number;
+	    maxRetryCredentials: number;
+	    maxRetryInterval: number;
+	    switchProject: boolean;
+	    switchPreviewModel: boolean;
+	    antigravityCredits: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new RelayRoutingConfig(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.strategy = source["strategy"];
+	        this.sessionAffinity = source["sessionAffinity"];
+	        this.sessionAffinityTTL = source["sessionAffinityTTL"];
+	        this.requestRetry = source["requestRetry"];
+	        this.maxRetryCredentials = source["maxRetryCredentials"];
+	        this.maxRetryInterval = source["maxRetryInterval"];
+	        this.switchProject = source["switchProject"];
+	        this.switchPreviewModel = source["switchPreviewModel"];
+	        this.antigravityCredits = source["antigravityCredits"];
+	    }
+	}
+	export class RequestOrchestrationAccountOverride {
+	    disabled?: boolean;
+	    proxyPoolEnabled?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new RequestOrchestrationAccountOverride(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.disabled = source["disabled"];
+	        this.proxyPoolEnabled = source["proxyPoolEnabled"];
+	    }
+	}
+	export class RequestOrchestrationAccountState {
+	    id: string;
+	    disabled: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new RequestOrchestrationAccountState(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.disabled = source["disabled"];
+	    }
+	}
+	export class RequestOrchestrationFlowTest {
+	    status: string;
+	    time?: string;
+	    reason?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new RequestOrchestrationFlowTest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.time = source["time"];
+	        this.reason = source["reason"];
+	    }
+	}
+	export class RequestOrchestrationFlowConfig {
+	    id: string;
+	    label: string;
+	    cli: string;
+	    groupID: string;
+	    accountID?: string;
+	    enabledAccountIDs: string[];
+	    routes?: Record<string, string>;
+	    applied?: boolean;
+	    test?: RequestOrchestrationFlowTest;
+
+	    static createFrom(source: any = {}) {
+	        return new RequestOrchestrationFlowConfig(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	        this.cli = source["cli"];
+	        this.groupID = source["groupID"];
+	        this.accountID = source["accountID"];
+	        this.enabledAccountIDs = source["enabledAccountIDs"];
+	        this.routes = source["routes"];
+	        this.applied = source["applied"];
+	        this.test = this.convertValues(source["test"], RequestOrchestrationFlowTest);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class RequestOrchestrationConfig {
+	    activeFlowID: string;
+	    flows: RequestOrchestrationFlowConfig[];
+	    accountOverrides?: Record<string, RequestOrchestrationAccountOverride>;
+	    routing?: RelayRoutingConfig;
+
+	    static createFrom(source: any = {}) {
+	        return new RequestOrchestrationConfig(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.activeFlowID = source["activeFlowID"];
+	        this.flows = this.convertValues(source["flows"], RequestOrchestrationFlowConfig);
+	        this.accountOverrides = this.convertValues(source["accountOverrides"], RequestOrchestrationAccountOverride, true);
+	        this.routing = this.convertValues(source["routing"], RelayRoutingConfig);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+	export class RequestOrchestrationSnapshot {
+	    applied: boolean;
+	    appliedFlowID?: string;
+	    appliedAt?: string;
+	    config: RequestOrchestrationConfig;
+	    routing: RelayRoutingConfig;
+	    accounts: RequestOrchestrationAccountState[];
+
+	    static createFrom(source: any = {}) {
+	        return new RequestOrchestrationSnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.applied = source["applied"];
+	        this.appliedFlowID = source["appliedFlowID"];
+	        this.appliedAt = source["appliedAt"];
+	        this.config = this.convertValues(source["config"], RequestOrchestrationConfig);
+	        this.routing = this.convertValues(source["routing"], RelayRoutingConfig);
+	        this.accounts = this.convertValues(source["accounts"], RequestOrchestrationAccountState);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+}
+

@@ -4,33 +4,49 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GetTokens / Request Orchestration Design V01</title>
+    <link rel="icon" href="data:," />
     <style>
       :root {
-        color-scheme: dark;
-        --bg-main: #0f1113;
-        --bg-panel: #171a1f;
-        --bg-panel-strong: #1d2229;
-        --bg-panel-soft: #13161a;
-        --bg-node: rgba(22, 25, 30, 0.92);
-        --bg-node-active: rgba(243, 87, 45, 0.08);
-        --bg-active: #f3ece2;
-        --text-primary: #f2efe8;
-        --text-secondary: #a7adb5;
-        --text-dim: #7b8189;
-        --text-dark: #101214;
-        --line: rgba(255, 255, 255, 0.12);
-        --line-strong: rgba(255, 255, 255, 0.26);
-        --shadow: rgba(0, 0, 0, 0.34);
-        --accent: #f3572d;
-        --accent-soft: rgba(243, 87, 45, 0.14);
-        --success: #65d27b;
-        --success-soft: rgba(101, 210, 123, 0.16);
-        --warning: #f5c95c;
-        --warning-soft: rgba(245, 201, 92, 0.16);
-        --danger: #ff6c6c;
-        --danger-soft: rgba(255, 108, 108, 0.16);
+        color-scheme: light dark;
+        --bg: #f2f1eb;
+        --panel: #ffffff;
+        --panel-2: #e8e7df;
+        --ink: #050505;
+        --muted: #55554e;
+        --soft: #85857b;
+        --line: #050505;
+        --inverse: #050505;
+        --inverse-ink: #ffffff;
+        --shadow: #d0cfc6;
+        --accent: #f05a28;
+        --accent-soft: #fff0e8;
+        --green: #148247;
+        --green-soft: #e8f6ee;
+        --yellow: #8b6400;
+        --yellow-soft: #fff3c8;
+        --red: #b91c28;
+        --red-soft: #fff0f2;
         --mono: "IBM Plex Mono", "SFMono-Regular", "SF Mono", ui-monospace, monospace;
         --sans: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #050505;
+          --panel: #111111;
+          --panel-2: #1d1d1a;
+          --ink: #f6f6ee;
+          --muted: #c8c7bd;
+          --soft: #929187;
+          --line: #f6f6ee;
+          --inverse: #f6f6ee;
+          --inverse-ink: #050505;
+          --shadow: #292925;
+          --accent-soft: rgba(240, 90, 40, 0.2);
+          --green-soft: rgba(20, 130, 71, 0.22);
+          --yellow-soft: rgba(139, 100, 0, 0.24);
+          --red-soft: rgba(185, 28, 40, 0.24);
+        }
       }
 
       * {
@@ -41,8 +57,8 @@
       body {
         margin: 0;
         min-height: 100%;
-        background: var(--bg-main);
-        color: var(--text-primary);
+        background: var(--bg);
+        color: var(--ink);
         font-family: var(--sans);
       }
 
@@ -51,1387 +67,909 @@
         overflow: hidden;
       }
 
-      button {
+      button,
+      input {
         font: inherit;
+      }
+
+      button {
         cursor: pointer;
       }
 
-      .app-shell {
-        min-height: 100vh;
+      .app {
+        height: 100vh;
+        display: grid;
+        grid-template-rows: 62px minmax(0, 1fr);
+        background:
+          linear-gradient(var(--panel-2) 1px, transparent 1px),
+          linear-gradient(90deg, var(--panel-2) 1px, transparent 1px),
+          var(--bg);
+        background-size: 24px 24px, 24px 24px, auto;
       }
 
-      .sidebar {
-        display: none;
+      .topbar {
+        background: var(--panel);
+        border-bottom: 2px solid var(--line);
       }
 
-      .nav-button:active,
-      .ghost-button:active,
-      .solid-button:active,
-      .entry-button:active,
-      .group-switch:active,
-      .account-chip:active,
-      .route-target:active,
-      .test-button:active {
-        transform: scale(0.96);
+      .topbar {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) auto auto;
+        align-items: stretch;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 18px;
+      }
+
+      .mark {
+        width: 40px;
+        height: 40px;
+        border: 2px solid var(--line);
+        background: var(--inverse);
+        color: var(--inverse-ink);
+        box-shadow: 4px 4px 0 var(--shadow);
+        display: grid;
+        place-items: center;
+        font-family: var(--mono);
+        font-weight: 900;
+      }
+
+      h1,
+      h2,
+      h3,
+      .brand strong {
+        margin: 0;
+        letter-spacing: 0;
+      }
+
+      h1,
+      .brand strong {
+        font-size: 17px;
+        text-transform: uppercase;
+        line-height: 1;
+      }
+
+      .brand-copy {
+        display: grid;
+        gap: 4px;
+      }
+
+      .muted,
+      .micro,
+      .locator,
+      .path-token,
+      .label {
+        font-family: var(--mono);
+        letter-spacing: 0;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.45;
+      }
+
+      .top-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 0 12px;
+      }
+
+      .btn,
+      .mini,
+      .flow-card,
+      .item,
+      .test-btn {
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: 4px 4px 0 var(--shadow);
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0;
+        transition: transform 75ms ease, box-shadow 75ms ease, background 75ms ease;
+      }
+
+      .btn,
+      .mini,
+      .test-btn {
+        min-height: 34px;
+        padding: 0 10px;
+      }
+
+      .mini {
+        min-height: 28px;
+        padding: 0 8px;
+        box-shadow: none;
+        font-size: 9px;
+      }
+
+      .btn.primary,
+      .mini.active,
+      .flow-card.active,
+      .item.active,
+      .test-btn {
+        background: var(--inverse);
+        color: var(--inverse-ink);
+      }
+
+      .mini.warn {
+        color: var(--yellow);
+        background: var(--yellow-soft);
+      }
+
+      .btn:active,
+      .mini:active,
+      .flow-card:active,
+      .item:active,
+      .test-btn:active {
+        transform: translate(3px, 3px) scale(0.98);
+        box-shadow: 1px 1px 0 var(--shadow);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+
+      .flow-card span,
+      .item small {
+        color: inherit;
+        opacity: 0.72;
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1.35;
+      }
+
+      .flow-tools {
+        border-left: 2px solid var(--line);
+        background: var(--panel-2);
+        padding: 0 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .input {
+        width: 210px;
+        min-height: 34px;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        padding: 0 9px;
+        font-family: var(--mono);
+        font-size: 11px;
+        outline: none;
+      }
+
+      .input:focus {
+        box-shadow: 4px 4px 0 var(--shadow);
+      }
+
+      .row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 8px;
       }
 
       .workspace {
         min-width: 0;
-        min-height: 100vh;
-        position: relative;
-        background:
-          linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
-          var(--bg-panel-soft);
-        background-size: 24px 24px, 24px 24px, auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 14px 18px 22px;
       }
 
-      .workspace-header {
-        position: absolute;
-        top: 24px;
-        left: 24px;
-        right: 24px;
-        z-index: 4;
-        pointer-events: none;
-      }
-
-      .canvas-toolbar {
+      .flow-stack {
+        min-width: 1220px;
+        max-width: 1500px;
+        margin: 0 auto;
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 18px;
-        align-items: start;
+        gap: 12px;
       }
 
-      .canvas-toolbar-copy {
-        display: grid;
-        gap: 10px;
-        min-width: 0;
-        max-width: 760px;
-        pointer-events: auto;
+      .flow-group {
         border: 2px solid var(--line);
-        background: rgba(12, 14, 17, 0.9);
-        box-shadow: 8px 8px 0 var(--shadow);
-        padding: 14px 16px;
-      }
-
-      .canvas-title-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .canvas-title {
-        font-size: 13px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-      }
-
-      .canvas-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .canvas-pill {
-        min-height: 28px;
-        border: 2px solid var(--line);
-        background: rgba(255, 255, 255, 0.04);
-        padding: 0 10px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--text-secondary);
-        font-family: var(--mono);
-        font-size: 11px;
-        letter-spacing: 0.06em;
-      }
-
-      .canvas-pill strong {
-        color: var(--text-primary);
-      }
-
-      .canvas-pill.active {
-        border-color: rgba(243, 87, 45, 0.38);
-        background: rgba(243, 87, 45, 0.08);
-      }
-
-      .canvas-pill.active strong {
-        color: var(--accent);
-      }
-
-      .header-actions {
-        position: absolute;
-        top: 0;
-        right: 24px;
-        display: grid;
-        gap: 10px;
-        justify-items: stretch;
-        pointer-events: auto;
-        z-index: 5;
-      }
-
-      .ghost-button,
-      .solid-button {
-        min-height: 46px;
-        min-width: 136px;
-        border: 2px solid var(--line-strong);
-        padding: 0 16px;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.12em;
-        background: transparent;
-        color: var(--text-primary);
-        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
-      }
-
-      .solid-button {
-        background: var(--bg-active);
-        color: var(--text-dark);
-        border-color: var(--bg-active);
+        background: var(--panel);
         box-shadow: 6px 6px 0 var(--shadow);
       }
 
-      .locator {
-        display: inline-flex;
-        align-items: center;
-        min-height: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        background: rgba(255, 255, 255, 0.04);
-        padding: 0 7px;
-        font-family: var(--mono);
-        font-size: 10px;
-        line-height: 1;
-        letter-spacing: 0.04em;
-        color: var(--accent);
-        white-space: nowrap;
-        user-select: all;
-        cursor: copy;
-        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease, color 120ms ease;
-      }
-
-      .locator:hover {
-        border-color: var(--accent);
-        background: rgba(243, 87, 45, 0.12);
-      }
-
-      .locator:active {
-        transform: scale(0.96);
-      }
-
-      .locator.copied {
-        border-color: var(--success);
-        color: var(--success);
-        background: rgba(101, 210, 123, 0.12);
-      }
-
-      .locator-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-
-      .content-grid {
-        padding: 0;
-      }
-
-      .graph-stage {
-        position: relative;
-        min-width: 0;
-        min-height: 100vh;
-        padding: 154px 28px 28px;
-        overflow: auto;
-      }
-
-      .active-path-strip {
-        position: absolute;
-        top: 104px;
-        left: 268px;
-        z-index: 2;
-        min-height: 42px;
-        max-width: 780px;
-        border: 2px solid rgba(243, 87, 45, 0.22);
-        background: rgba(16, 18, 21, 0.92);
-        box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.18);
-        padding: 8px 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        pointer-events: none;
-      }
-
-      .path-kicker,
-      .path-segment,
-      .path-arrow {
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .path-kicker {
-        color: var(--text-secondary);
-        margin-right: 4px;
-      }
-
-      .path-segment {
-        min-height: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: rgba(255, 255, 255, 0.04);
-        padding: 0 8px;
-        display: inline-flex;
-        align-items: center;
-        color: var(--text-primary);
-      }
-
-      .path-segment.emphasis {
-        border-color: rgba(243, 87, 45, 0.38);
-        background: rgba(243, 87, 45, 0.12);
-        color: var(--accent);
-      }
-
-      .path-segment.test-ok {
-        border-color: rgba(101, 210, 123, 0.42);
-        background: rgba(101, 210, 123, 0.12);
-        color: var(--success);
-      }
-
-      .path-arrow {
-        color: rgba(255, 255, 255, 0.24);
-      }
-
-      .graph-stage::before {
-        content: "node canvas";
-        position: absolute;
-        top: 28px;
-        right: 28px;
-        color: rgba(255, 255, 255, 0.16);
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .graph-stage::after {
-        content: "drag from account handle to direct / proxy";
-        position: absolute;
-        left: 28px;
-        bottom: 18px;
-        color: rgba(255, 255, 255, 0.2);
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .connection-layer {
-        position: absolute;
-        inset: 0;
+      .group-head {
         width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        overflow: visible;
-      }
-
-      .graph-line {
-        fill: none;
-        stroke: rgba(255, 255, 255, 0.18);
-        stroke-width: 2.4;
-        stroke-linecap: round;
-        stroke-dasharray: 5 8;
-        transition: opacity 120ms ease;
-      }
-
-      .graph-line-primary {
-        stroke: rgba(243, 87, 45, 0.7);
-        stroke-dasharray: none;
-      }
-
-      .graph-line-accent {
-        stroke: rgba(101, 210, 123, 0.7);
-        stroke-dasharray: none;
-      }
-
-      .graph-line-tested {
-        stroke: rgba(101, 210, 123, 0.96);
-        stroke-width: 3.8;
-        stroke-dasharray: none;
-      }
-
-      .graph-line-selected {
-        stroke-width: 3.4;
-      }
-
-      .graph-line-preview {
-        stroke: rgba(243, 87, 45, 0.9);
-        stroke-width: 3;
-        stroke-dasharray: 4 6;
-      }
-
-      .graph-label {
-        fill: var(--text-primary);
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.04em;
-      }
-
-      .graph-board {
-        position: relative;
-        z-index: 1;
-        display: block;
-        min-width: 1300px;
-        min-height: 790px;
-      }
-
-      .node-column {
-        position: absolute;
-        display: grid;
-        gap: 10px;
-      }
-
-      .node-column.entry {
-        left: 0;
-        top: 96px;
-        width: 200px;
-      }
-
-      .node-column.groups {
-        left: 240px;
-        top: 0;
-        width: 330px;
-      }
-
-      .node-column.proxies {
-        left: 610px;
-        top: 72px;
-        width: 330px;
-      }
-
-      .node-column.sink {
-        left: 980px;
-        top: 72px;
-        width: 340px;
-      }
-
-      .node-shell {
-        display: grid;
-        gap: 8px;
-      }
-
-      .node-shell.active .node-head {
-        border-color: var(--accent);
-        background: linear-gradient(180deg, rgba(243, 87, 45, 0.1), rgba(243, 87, 45, 0.03));
-      }
-
-      .node-head,
-      .node-body {
-        position: relative;
-      }
-
-      .node-head {
-        width: fit-content;
-        max-width: 100%;
-        border: 2px solid var(--line);
-        background: rgba(15, 17, 20, 0.9);
-        box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.2);
-        padding: 9px 11px;
-        display: grid;
-        gap: 5px;
-        cursor: pointer;
-        transition: transform 120ms ease, border-color 120ms ease;
-      }
-
-      .node-head:hover {
-        border-color: var(--line-strong);
-      }
-
-      .node-meta {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .node-number {
-        color: var(--text-secondary);
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-      }
-
-      .node-title {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .node-copy {
-        color: var(--text-secondary);
-        font-size: 10px;
-        line-height: 1.45;
-        max-width: 26ch;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .node-body {
-        padding: 0;
-        display: grid;
-        gap: 10px;
+        min-height: 76px;
         border: 0;
-        background: transparent;
-        box-shadow: none;
+        background: var(--panel);
+        color: var(--ink);
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr) auto;
+        align-items: stretch;
+        padding: 0;
+        text-align: left;
       }
 
-      .node-body.entry {
-        gap: 12px;
+      .flow-group.active .group-head {
+        background: var(--panel-2);
+        border-bottom: 2px solid var(--line);
       }
 
-      .section-kicker {
-        color: var(--text-secondary);
+      .group-index {
+        border-right: 2px solid var(--line);
+        background: var(--inverse);
+        color: var(--inverse-ink);
+        display: grid;
+        place-items: center;
         font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.12em;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .group-main {
+        min-width: 0;
+        padding: 12px 14px;
+        display: grid;
+        gap: 7px;
+      }
+
+      .group-main strong {
+        font-size: 14px;
         text-transform: uppercase;
       }
 
-      .entry-grid {
-        display: grid;
-        gap: 8px;
-      }
-
-      .entry-button-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-
-      .entry-button {
-        min-height: 74px;
-        border: 2px solid var(--line);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text-secondary);
-        padding: 10px;
-        display: grid;
-        justify-items: start;
-        align-content: space-between;
-        gap: 8px;
-      }
-
-      .entry-button.active {
-        border-color: var(--bg-active);
-        background: var(--bg-active);
-        color: var(--text-dark);
-      }
-
-      .entry-button strong {
-        font-size: 12px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .entry-button span {
-        font-family: var(--mono);
-        font-size: 10px;
-      }
-
-      .metric-list {
-        display: grid;
-        gap: 0;
-      }
-
-      .metric-pair {
+      .group-summary {
         display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: center;
-        padding: 10px 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.08);
-        font-size: 12px;
-      }
-
-      .metric-pair:first-child {
-        border-top: 0;
-        padding-top: 0;
-      }
-
-      .metric-pair .key {
-        color: var(--text-secondary);
-        font-family: var(--mono);
-        font-size: 11px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .metric-pair .value {
-        text-align: right;
-      }
-
-      .group-stack,
-      .sink-stack {
-        display: grid;
-        gap: 12px;
-      }
-
-      .group-card,
-      .sink-card,
-      .route-target,
-      .route-editor {
-        border: 2px solid var(--line);
-        background: var(--bg-panel-strong);
-        box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.22);
-        position: relative;
-      }
-
-      .group-card,
-      .route-target,
-      .sink-card {
-        padding: 12px;
-        display: grid;
-        gap: 8px;
-      }
-
-      .group-card,
-      .route-target,
-      .account-chip,
-      .sink-card,
-      .entry-button,
-      .route-editor {
-        outline: 1px solid rgba(255, 255, 255, 0.02);
-      }
-
-      .group-card.selected {
-        border-color: var(--accent);
-        background: linear-gradient(180deg, rgba(243, 87, 45, 0.16), rgba(243, 87, 45, 0.04));
-      }
-
-      .group-card.pending {
-        opacity: 0.88;
-        padding-top: 9px;
-        padding-bottom: 9px;
-      }
-
-      .group-card.pending .metric-list,
-      .group-card.pending .account-cloud,
-      .group-card.pending .section-kicker {
-        display: none;
-      }
-
-      .group-card-header,
-      .sink-head,
-      .target-head {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: start;
-      }
-
-      .group-name,
-      .target-name,
-      .sink-name {
-        font-size: 13px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-      }
-
-      .group-note,
-      .target-note,
-      .sink-copy {
-        color: var(--text-secondary);
-        font-size: 11px;
-        line-height: 1.45;
-        margin-top: 4px;
-      }
-
-      .target-note {
-        display: none;
-      }
-
-      .badge {
-        min-height: 26px;
-        border: 2px solid var(--line);
-        padding: 0 9px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        color: var(--text-secondary);
-        font-family: var(--mono);
-        font-size: 10px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .badge.success {
-        border-color: var(--success);
-        color: var(--success);
-        background: var(--success-soft);
-      }
-
-      .badge.warning {
-        border-color: var(--warning);
-        color: var(--warning);
-        background: var(--warning-soft);
-      }
-
-      .badge.accent {
-        border-color: var(--accent);
-        color: var(--accent);
-        background: var(--accent-soft);
+        flex-wrap: wrap;
+        gap: 7px;
       }
 
       .group-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
+        min-width: 180px;
+        border-left: 2px solid var(--line);
+        display: grid;
+        place-items: center;
+        padding: 0 12px;
       }
 
-      .group-editing-strip {
-        min-height: 48px;
-        border: 2px solid rgba(243, 87, 45, 0.24);
-        background: rgba(243, 87, 45, 0.08);
-        padding: 8px 10px;
+      .group-actions .badge {
+        min-width: 72px;
+        justify-content: center;
+      }
+
+      .group-body {
+        background:
+          linear-gradient(var(--panel-2) 1px, transparent 1px),
+          linear-gradient(90deg, var(--panel-2) 1px, transparent 1px),
+          var(--bg);
+        background-size: 18px 18px, 18px 18px, auto;
         display: grid;
+        gap: 14px;
+        padding: 14px;
+      }
+
+      .group-detail {
+        border: 2px solid var(--line);
+        background: var(--panel);
+        display: grid;
+        grid-template-columns: 1.1fr repeat(4, minmax(140px, 1fr));
+        box-shadow: 4px 4px 0 var(--shadow);
+      }
+
+      .detail-title,
+      .detail-cell {
+        min-width: 0;
+        min-height: 66px;
+        padding: 10px;
+        display: grid;
+        align-content: center;
         gap: 6px;
       }
 
-      .group-editing-strip.tested {
-        border-color: rgba(101, 210, 123, 0.38);
-        background: rgba(101, 210, 123, 0.1);
+      .detail-title {
+        background: var(--inverse);
+        color: var(--inverse-ink);
       }
 
-      .group-editing-row {
+      .detail-cell {
+        border-left: 2px solid var(--line);
+        background: var(--panel);
+      }
+
+      .detail-title strong,
+      .detail-cell strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .detail-title span,
+      .detail-cell span {
+        color: inherit;
+        opacity: 0.72;
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1.35;
+        text-transform: uppercase;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(280px, 1fr));
+        gap: 14px;
+        align-items: stretch;
+      }
+
+      .flow-card-panel {
+        min-height: calc(100vh - 420px);
+        border: 2px solid var(--line);
+        background: var(--panel);
+        box-shadow: 6px 6px 0 var(--shadow);
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+
+      .card-head {
+        min-height: 72px;
+        border-bottom: 2px solid var(--line);
+        background: var(--panel-2);
+        display: grid;
+        grid-template-columns: 58px minmax(0, 1fr);
+      }
+
+      .card-no {
+        border-right: 2px solid var(--line);
+        background: var(--inverse);
+        color: var(--inverse-ink);
+        display: grid;
+        place-items: center;
+        font-family: var(--mono);
+        font-size: 24px;
+        font-weight: 900;
+      }
+
+      .card-title {
+        padding: 11px;
+        display: grid;
+        gap: 5px;
+      }
+
+      .card-title strong {
+        font-size: 13px;
+        text-transform: uppercase;
+      }
+
+      .card-list {
+        min-height: 0;
+        overflow: auto;
+        padding: 10px;
+        display: grid;
+        align-content: start;
+        gap: 9px;
+      }
+
+      .card-config {
+        border-top: 2px solid var(--line);
+        background: var(--panel-2);
+        padding: 10px;
+        display: grid;
+        gap: 9px;
+      }
+
+      .config-title {
         display: flex;
-        align-items: center;
         justify-content: space-between;
+        align-items: center;
         gap: 10px;
       }
 
-      .group-editing-row strong {
-        font-size: 12px;
-        letter-spacing: 0.04em;
-      }
-
-      .group-editing-row span {
-        color: var(--text-secondary);
-        font-family: var(--mono);
+      .label {
+        color: var(--muted);
         font-size: 10px;
-        letter-spacing: 0.06em;
+        font-weight: 900;
         text-transform: uppercase;
       }
 
-      .group-switch {
-        min-height: 34px;
-        border: 2px solid var(--line);
-        background: transparent;
-        color: var(--text-primary);
-        padding: 0 12px;
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .group-switch.active {
-        border-color: var(--accent);
-        background: var(--accent);
-        color: var(--text-dark);
-      }
-
-      .account-cloud {
+      .item {
+        min-height: 72px;
+        padding: 9px;
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 8px;
-      }
-
-      .account-chip {
-        min-height: 86px;
-        border: 2px solid var(--line);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text-secondary);
-        padding: 10px;
-        display: grid;
+        gap: 7px;
         align-content: space-between;
-        justify-items: start;
-        gap: 8px;
-        position: relative;
         text-align: left;
-        box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.18);
+        box-shadow: none;
       }
 
-      .account-chip.compatible {
-        cursor: pointer;
+      .item.disabled {
+        opacity: 0.45;
       }
 
-      .account-chip.compatible:hover {
-        border-color: var(--line-strong);
+      .item.blocked {
+        opacity: 0.55;
       }
 
-      .account-chip.active {
-        border-color: var(--bg-active);
-        background: var(--bg-active);
-        color: var(--text-dark);
-        box-shadow: 0 0 0 4px rgba(243, 236, 226, 0.08);
+      .account-item {
+        min-height: 96px;
       }
 
-      .account-chip.active strong::after {
-        content: " current";
-        margin-left: 6px;
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+      .timeline {
+        position: relative;
+        display: grid;
+        gap: 0;
+        padding: 4px 0 4px 12px;
       }
 
-      .account-chip.blocked {
-        opacity: 0.54;
-      }
-
-      .account-chip strong {
-        font-size: 11px;
-        letter-spacing: 0.04em;
-      }
-
-      .account-chip span {
-        font-family: var(--mono);
-        font-size: 10px;
-      }
-
-      .account-link-handle {
+      .timeline::before {
+        content: "";
         position: absolute;
-        right: 8px;
-        bottom: 8px;
+        top: 18px;
+        bottom: 18px;
+        left: 24px;
+        width: 2px;
+        background: var(--line);
+      }
+
+      .timeline-step {
+        position: relative;
+        min-height: 82px;
+        padding: 8px 0 8px 42px;
+        display: grid;
+        align-content: center;
+        gap: 6px;
+      }
+
+      .timeline-dot {
+        position: absolute;
+        top: 17px;
+        left: 3px;
         width: 20px;
         height: 20px;
-        border: 2px solid currentColor;
-        border-radius: 999px;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        display: grid;
+        place-items: center;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 900;
+        z-index: 1;
+      }
+
+      .timeline-step.ok .timeline-dot {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .timeline-step.warn .timeline-dot {
+        background: var(--yellow-soft);
+        color: var(--yellow);
+      }
+
+      .timeline-copy {
+        border: 2px solid var(--line);
+        background: var(--panel);
+        padding: 9px;
+        display: grid;
+        gap: 5px;
+      }
+
+      .timeline-copy strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .timeline-copy small {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1.35;
+        text-transform: uppercase;
+      }
+
+      .badge {
+        min-height: 22px;
+        border: 1px solid var(--line);
+        background: var(--panel);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;
-        opacity: 0.72;
-        box-shadow: 0 0 0 0 rgba(243, 87, 45, 0);
-        transition: box-shadow 120ms ease, opacity 120ms ease, transform 120ms ease;
+        padding: 0 7px;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        white-space: nowrap;
       }
 
-      .account-link-handle::before {
-        content: "";
-        width: 6px;
-        height: 6px;
-        border-radius: 999px;
-        background: currentColor;
+      .badge.accent {
+        background: var(--accent-soft);
+        color: var(--accent);
       }
 
-      .account-chip.active .account-link-handle,
-      .account-chip:hover .account-link-handle {
-        opacity: 1;
-        transform: scale(1.04);
-        box-shadow: 0 0 0 4px rgba(243, 87, 45, 0.16);
+      .badge.ok {
+        background: var(--green-soft);
+        color: var(--green);
       }
 
-      .account-chip.dragging {
-        border-color: var(--accent);
-        background: rgba(243, 87, 45, 0.16);
-        color: var(--text-primary);
+      .badge.warn {
+        background: var(--yellow-soft);
+        color: var(--yellow);
       }
 
-      .route-editor {
-        padding: 10px;
-        background: rgba(255, 255, 255, 0.03);
-        display: grid;
-        gap: 8px;
-      }
-
-      .route-editor-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .route-editor-copy {
-        color: var(--text-secondary);
-        font-size: 11px;
-        line-height: 1.45;
-        display: none;
-      }
-
-      .selected-account {
-        min-height: 54px;
-        border: 2px solid rgba(243, 87, 45, 0.28);
-        background: rgba(243, 87, 45, 0.08);
-        padding: 10px;
-        display: grid;
-        gap: 6px;
-      }
-
-      .selected-account.empty {
-        border-style: dashed;
-        border-color: var(--line);
-        background: rgba(255, 255, 255, 0.03);
-      }
-
-      .selected-account strong {
-        font-size: 13px;
-        letter-spacing: 0.04em;
-      }
-
-      .selected-account span {
-        color: var(--text-secondary);
-        font-size: 11px;
-      }
-
-      .route-target-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
-      }
-
-      .route-target {
-        min-height: 118px;
-        text-align: left;
-        cursor: pointer;
-        align-content: space-between;
-        transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
-      }
-
-      .route-target:hover {
-        border-color: var(--line-strong);
-      }
-
-      .route-target.target-selected {
-        border-color: var(--accent);
-        background: linear-gradient(180deg, rgba(243, 87, 45, 0.14), rgba(243, 87, 45, 0.04));
-        box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.24);
-      }
-
-      .route-target.current-account-target .target-head {
-        border-bottom: 1px solid rgba(243, 87, 45, 0.16);
-        padding-bottom: 8px;
-      }
-
-      .route-target.tested-target {
-        border-color: rgba(101, 210, 123, 0.64);
-        background: linear-gradient(180deg, rgba(101, 210, 123, 0.14), rgba(101, 210, 123, 0.04));
-      }
-
-      .route-target.target-preview {
-        border-color: rgba(243, 87, 45, 0.58);
-        background: rgba(243, 87, 45, 0.08);
-      }
-
-      .route-target.drag-hover {
-        border-color: var(--accent);
-        background: rgba(243, 87, 45, 0.12);
-        transform: translateY(-4px);
-        box-shadow: 10px 10px 0 rgba(243, 87, 45, 0.12);
-      }
-
-      .route-target.drag-hover::after {
-        content: "drop";
-        position: absolute;
-        top: 12px;
-        right: 12px;
+      .locator {
         min-height: 20px;
-        padding: 0 6px;
-        display: inline-flex;
-        align-items: center;
-        border: 1px solid rgba(243, 87, 45, 0.38);
-        background: rgba(243, 87, 45, 0.16);
-        color: var(--text-primary);
-        font-family: var(--mono);
-        font-size: 9px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .route-target .route-cloud {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-
-      .route-chip {
-        min-height: 22px;
         border: 1px solid var(--line);
-        background: rgba(255, 255, 255, 0.03);
-        padding: 0 6px;
+        background: var(--panel);
+        color: var(--accent);
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        color: var(--text-secondary);
+        padding: 0 6px;
+        font-size: 10px;
+        cursor: copy;
+        user-select: all;
+        white-space: nowrap;
+      }
+
+      .locator.copied {
+        color: var(--green);
+        background: var(--green-soft);
+      }
+
+      .micro {
+        min-width: 0;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.4;
+      }
+
+      .kv {
+        border: 2px solid var(--line);
+        background: var(--panel);
+        display: grid;
+        grid-template-columns: 92px minmax(0, 1fr);
+        align-items: stretch;
+      }
+
+      .kv span,
+      .kv strong {
+        min-width: 0;
+        padding: 8px;
+        display: flex;
+        align-items: center;
+      }
+
+      .kv span {
+        border-right: 2px solid var(--line);
+        color: var(--muted);
         font-family: var(--mono);
         font-size: 10px;
-      }
-
-      .route-chip.current,
-      .route-chip.tested {
-        border-color: rgba(243, 87, 45, 0.32);
-        background: rgba(243, 87, 45, 0.1);
-      }
-
-      .route-chip.tested {
-        border-color: rgba(101, 210, 123, 0.42);
-        background: rgba(101, 210, 123, 0.12);
-      }
-
-      .sink-card .metric-list {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 0 12px;
-      }
-
-      .route-chip strong {
-        color: var(--text-primary);
-      }
-
-      .sink-card.primary {
-        border-color: rgba(255, 255, 255, 0.28);
-      }
-
-      .sink-card.primary.active {
-        border-color: var(--accent);
-      }
-
-      .mapping-list {
-        display: grid;
-        gap: 8px;
-      }
-
-      .mapping-line {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 8px;
-        align-items: start;
-        font-size: 12px;
-        border: 1px solid transparent;
-        min-height: 34px;
-        padding: 6px 8px;
-      }
-
-      .mapping-line span:first-child {
-        color: var(--text-secondary);
-      }
-
-      .mapping-line strong {
-        color: var(--text-primary);
-      }
-
-      .mapping-line.current {
-        border-color: rgba(243, 87, 45, 0.28);
-        background: rgba(243, 87, 45, 0.08);
-      }
-
-      .mapping-line.tested {
-        border-color: rgba(101, 210, 123, 0.38);
-        background: rgba(101, 210, 123, 0.1);
-      }
-
-      .test-button {
-        min-height: 36px;
-        border: 2px solid var(--accent);
-        background: var(--accent);
-        color: var(--text-dark);
-        padding: 0 12px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.08em;
+        font-weight: 900;
         text-transform: uppercase;
       }
 
-      .test-button.tested {
-        border-color: var(--success);
-        background: var(--success);
+      .kv strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
       }
 
-      .test-console {
-        min-height: 78px;
-        border: 2px solid var(--line);
-        background: rgba(0, 0, 0, 0.18);
-        padding: 10px;
-        color: var(--text-secondary);
-        font-family: var(--mono);
-        font-size: 10px;
-        line-height: 1.5;
-        white-space: pre-line;
-      }
-
-      .graph-anchor {
-        position: absolute;
-        top: 50%;
-        width: 10px;
-        height: 10px;
-        border: 2px solid var(--accent);
-        background: var(--bg-panel-soft);
-        transform: translateY(-50%);
-        box-shadow: 0 0 0 3px rgba(243, 87, 45, 0.12);
-      }
-
-      .graph-anchor.left {
-        left: -7px;
-      }
-
-      .graph-anchor.right {
-        right: -7px;
-      }
-
-      .copy-toast {
+      .toast {
         position: fixed;
-        right: 20px;
-        bottom: 20px;
+        right: 24px;
+        bottom: 24px;
+        z-index: 30;
         min-height: 38px;
-        border: 2px solid var(--success);
-        background: rgba(15, 22, 18, 0.96);
-        color: var(--text-primary);
-        padding: 0 14px;
+        border: 2px solid var(--line);
+        background: var(--green-soft);
+        color: var(--green);
+        box-shadow: 4px 4px 0 var(--shadow);
+        padding: 0 12px;
         display: inline-flex;
         align-items: center;
         font-family: var(--mono);
-        font-size: 11px;
-        letter-spacing: 0.04em;
-        box-shadow: 6px 6px 0 var(--shadow);
+        font-size: 10px;
+        font-weight: 900;
         opacity: 0;
-        pointer-events: none;
         transform: translateY(8px);
-        transition: opacity 140ms ease, transform 140ms ease;
-        z-index: 40;
+        pointer-events: none;
+        transition: opacity 120ms ease, transform 120ms ease;
       }
 
-      .copy-toast.visible {
+      .toast.visible {
         opacity: 1;
         transform: translateY(0);
       }
 
-      .graph-stage.is-dragging .group-card.pending,
-      .graph-stage.is-dragging .sink-card:not(.primary) {
-        opacity: 0.5;
+      .flow-stack {
+        min-width: 980px;
+        max-width: 1280px;
       }
 
-      .graph-stage.is-dragging {
-        cursor: crosshair;
+      .group-body {
+        gap: 10px;
+        padding: 12px;
       }
 
-      .graph-stage.is-dragging .route-target:not(.drag-hover):not(.target-selected) {
+      .route-line {
+        border: 2px solid var(--line);
+        background: var(--panel);
+        box-shadow: 4px 4px 0 var(--shadow);
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .route-node {
+        min-width: 0;
+        min-height: 70px;
+        padding: 10px 12px;
+        display: grid;
+        gap: 6px;
+        align-content: center;
+        border-left: 2px solid var(--line);
+        position: relative;
+      }
+
+      .route-node:first-child {
+        border-left: 0;
+      }
+
+      .route-node::after {
+        content: ">";
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        width: 16px;
+        height: 16px;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        transform: translateY(-50%);
+        display: grid;
+        place-items: center;
+        font-family: var(--mono);
+        font-size: 9px;
+        font-weight: 900;
+        z-index: 2;
+      }
+
+      .route-node:last-child::after {
+        content: none;
+      }
+
+      .route-node strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 13px;
+        text-transform: uppercase;
+      }
+
+      .route-node small {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 10px;
+        line-height: 1.35;
+        text-transform: uppercase;
+      }
+
+      .route-node.warn {
+        background: var(--yellow-soft);
+      }
+
+      .route-node.ok {
+        background: var(--green-soft);
+      }
+
+      .simple-editor {
+        display: grid;
+        grid-template-columns: 220px minmax(420px, 1fr) 270px;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .decision-panel {
+        min-width: 0;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        box-shadow: 4px 4px 0 var(--shadow);
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+      }
+
+      .decision-panel.accounts {
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+
+      .decision-panel.exit-test {
+        grid-template-rows: auto minmax(0, auto) auto;
+      }
+
+      .panel-title {
+        min-height: 48px;
+        border-bottom: 2px solid var(--line);
+        background: var(--panel-2);
+        padding: 9px 10px;
+        display: grid;
+        gap: 3px;
+      }
+
+      .panel-title strong {
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .choice-strip {
+        padding: 9px;
+        display: grid;
+        gap: 7px;
+        align-content: start;
+      }
+
+      .choice-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .choice {
+        min-height: 38px;
+        padding: 7px;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        color: var(--ink);
+        box-shadow: none;
+        display: grid;
+        gap: 3px;
+        text-align: left;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .choice.active {
+        background: var(--inverse);
+        color: var(--inverse-ink);
+      }
+
+      .choice.blocked,
+      .choice.disabled {
+        opacity: 0.52;
+      }
+
+      .choice small {
+        color: inherit;
         opacity: 0.72;
+        font-size: 9px;
+        line-height: 1.35;
       }
 
-      .graph-stage.is-dragging .route-editor {
-        border-color: rgba(243, 87, 45, 0.36);
-        background: rgba(243, 87, 45, 0.06);
+      .choice .locator {
+        min-height: 15px;
+        width: fit-content;
+        max-width: 100%;
+        padding: 0 4px;
+        font-size: 8px;
+        opacity: 0.78;
       }
 
-      .graph-stage.is-dragging .selected-account {
-        border-color: rgba(243, 87, 45, 0.5);
-        box-shadow: inset 0 0 0 1px rgba(243, 87, 45, 0.22);
+      .account-row {
+        min-height: 52px;
+        border: 2px solid var(--line);
+        background: var(--panel);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        text-align: left;
+        box-shadow: none;
       }
 
-      .graph-stage.is-dragging .graph-line:not(.graph-line-preview):not(.graph-line-selected) {
-        opacity: 0.18;
+      .account-row.active {
+        background: var(--inverse);
+        color: var(--inverse-ink);
       }
 
-      @media (max-width: 1360px) {
-        .graph-board {
-          grid-template-columns: 200px minmax(300px, 1fr) minmax(320px, 1fr);
-          grid-template-areas:
-            "entry groups sink"
-            ". proxies sink";
-        }
+      .account-row.blocked {
+        opacity: 0.58;
       }
 
-      @media (max-width: 980px) {
-        body {
-          overflow: auto;
-        }
-
-        .workspace-header {
-          top: 18px;
-          left: 18px;
-          right: 18px;
-        }
-
-        .canvas-toolbar {
-          grid-template-columns: 1fr;
-        }
-
-        .canvas-toolbar-copy {
-          max-width: none;
-        }
-
-        .graph-stage {
-          padding-top: 170px;
-        }
-
-        .active-path-strip {
-          left: 208px;
-          max-width: 640px;
-        }
+      .account-copy {
+        min-width: 0;
+        display: grid;
+        gap: 4px;
       }
 
-      @media (max-width: 720px) {
-        .content-grid {
-          padding: 0;
-        }
+      .account-copy strong,
+      .account-copy small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-        .graph-stage {
-          padding: 246px 16px 40px;
-        }
+      .account-copy small {
+        color: inherit;
+        opacity: 0.72;
+        font-family: var(--mono);
+        font-size: 10px;
+      }
 
-        .graph-board {
-          grid-template-columns: 1fr;
-          grid-template-areas:
-            "entry"
-            "groups"
-            "proxies"
-            "sink";
-          overflow: visible;
-          min-height: auto;
-        }
+      .inline-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
 
-        .node-column.entry,
-        .node-column.proxies,
-        .node-column.sink {
-          margin-top: 0;
-        }
+      .compact-config {
+        border-top: 2px solid var(--line);
+        background: var(--panel-2);
+        padding: 9px;
+        display: grid;
+        gap: 7px;
+      }
 
-        .entry-button-grid,
-        .route-target-grid {
-          grid-template-columns: 1fr;
-        }
+      #entry-config,
+      #route-config {
+        display: none;
+      }
 
-        .header-actions {
-          position: static;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .ghost-button,
-        .solid-button {
-          min-width: 0;
-        }
+      .test-panel {
+        display: grid;
+        gap: 8px;
       }
     </style>
   </head>
   <body>
-    <div class="app-shell">
-      <aside class="sidebar">
+    <div class="app">
+      <header class="topbar">
         <div class="brand">
-          <div class="brand-mark">
-            <div class="brand-icon">GT</div>
-            <div class="brand-copy">
-              <strong>GETTOKENS</strong>
-              <span>Swiss-industrial workbench</span>
-            </div>
+          <div class="mark">GT</div>
+          <div class="brand-copy">
+            <strong>GetTokens</strong>
+            <span class="muted">request orchestration</span>
           </div>
         </div>
-        <nav class="nav">
-          <button class="nav-button">
-            <span>◷</span>
-            <span>状态</span>
-            <span class="tail">ready</span>
-          </button>
-          <button class="nav-button">
-            <span>◎</span>
-            <span>账号池</span>
-            <span class="tail">146</span>
-          </button>
-          <button class="nav-button active">
-            <span>→</span>
-            <span>请求编排</span>
-            <span class="tail">active</span>
-          </button>
-          <button class="nav-button">
-            <span>◫</span>
-            <span>代理池</span>
-            <span class="tail">28</span>
-          </button>
-          <button class="nav-button">
-            <span>⌘</span>
-            <span>Codex</span>
-            <span class="tail">4</span>
-          </button>
-          <button class="nav-button">
-            <span>⚙</span>
-            <span>设置</span>
-            <span class="tail">v</span>
-          </button>
-        </nav>
-        <div class="sidebar-footer">build 2026.05.03.02</div>
-      </aside>
+        <div class="flow-tools" data-collaboration-id="RO.FLOWGROUPS">
+          <input class="input" id="flow-name" aria-label="当前流程组名称" />
+          <div class="row">
+            <button class="mini active" type="button" data-flow-op="new">+ 自定义组</button>
+            <button class="mini" type="button" data-flow-op="clone">复制当前</button>
+            <button class="mini warn" type="button" data-flow-op="delete">删除当前</button>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="btn" type="button" id="reset-all">恢复默认</button>
+          <button class="btn primary" type="button" id="apply-flow">应用当前组</button>
+        </div>
+      </header>
 
       <main class="workspace" data-collaboration-id="RO.WORKSPACE">
-        <header class="workspace-header" data-collaboration-id="RO.HEADER">
-          <div class="canvas-toolbar">
-            <div class="canvas-toolbar-copy">
-              <div class="canvas-title-row">
-                <span class="canvas-title">请求编排画布</span>
-                <span class="locator">RO.HEADER</span>
-                <span class="locator">RO.WORKSPACE</span>
-              </div>
-              <div class="canvas-stats" data-collaboration-id="RO.SUMMARY">
-                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.ENTRY"><span>入口</span><strong id="meta-cli">codex</strong></div>
-                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.GROUP"><span>账号组</span><strong id="meta-group">Codex 生产组</strong></div>
-                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.OUTLET"><span>当前账号</span><strong id="meta-account">codex-prod-01</strong></div>
-                <div class="canvas-pill active" data-collaboration-id="RO.SUMMARY.MODE"><span>模式</span><strong id="meta-mode">选择账号</strong></div>
-                <div class="canvas-pill" data-collaboration-id="RO.SUMMARY.ACTION"><span>状态</span><strong id="meta-last-action">未应用</strong></div>
-              </div>
-            </div>
-            <div class="header-actions">
-              <button class="ghost-button" type="button" id="reset-flow">
-                <span>↺</span>
-                <span>恢复默认</span>
-              </button>
-              <button class="solid-button" type="button" id="apply-flow">
-                <span>→</span>
-                <span>应用</span>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div class="content-grid">
-          <div class="graph-stage" id="graph-stage">
-            <svg class="connection-layer" id="connection-layer" aria-hidden="true"></svg>
-            <div class="active-path-strip" id="active-path-strip" data-collaboration-id="RO.ACTIVE.PATH"></div>
-
-            <section class="graph-board">
-              <div class="node-column entry">
-                <article class="node-shell active" data-focus-shell="entry" data-collaboration-id="RO.LANE.ENTRY">
-                  <div class="node-head" data-focus-card="entry">
-                    <div class="node-meta">
-                      <div class="node-number">node 01</div>
-                    </div>
-                    <div class="node-title">
-                      <span>请求入口</span>
-                      <span class="locator">RO.LANE.ENTRY</span>
-                    </div>
-                    <div class="node-copy">codex / claude code</div>
-                  </div>
-
-                  <div class="node-body entry" data-graph-anchor="entry">
-                    <span class="graph-anchor right" aria-hidden="true"></span>
-                    <div class="section-kicker">入口客户端</div>
-                    <div class="entry-button-grid">
-                      <button class="entry-button active" data-cli="codex" type="button">
-                        <strong>codex</strong>
-                        <span>local shell</span>
-                      </button>
-                      <button class="entry-button" data-cli="claude-code" type="button">
-                        <strong>claude code</strong>
-                        <span>app relay</span>
-                      </button>
-                    </div>
-                    <div class="metric-list">
-                      <div class="metric-pair">
-                        <span class="key">scope</span>
-                        <span class="value">仅允许两种 CLI</span>
-                      </div>
-                      <div class="metric-pair">
-                        <span class="key">next</span>
-                        <span class="value">进入账号组节点</span>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              </div>
-
-              <div class="node-column groups">
-                <article class="node-shell" data-focus-shell="groups" data-collaboration-id="RO.LANE.GROUPS">
-                  <div class="node-head" data-focus-card="groups">
-                    <div class="node-meta">
-                      <div class="node-number">node 02</div>
-                    </div>
-                    <div class="node-title">
-                      <span>账号组</span>
-                      <span class="locator">RO.LANE.GROUPS</span>
-                    </div>
-                    <div class="node-copy">group -> account node</div>
-                  </div>
-
-                  <div class="node-body">
-                    <div class="group-stack" id="group-list" data-collaboration-id="RO.LANE.GROUPS.LIST"></div>
-                  </div>
-                </article>
-              </div>
-
-              <div class="node-column proxies">
-                <article class="node-shell" data-focus-shell="proxies" data-collaboration-id="RO.LANE.PROXIES">
-                  <div class="node-head" data-focus-card="proxies">
-                    <div class="node-meta">
-                      <div class="node-number">node 03</div>
-                    </div>
-                    <div class="node-title">
-                      <span>代理池</span>
-                      <span class="locator">RO.LANE.PROXIES</span>
-                    </div>
-                    <div class="node-copy">direct / proxy targets</div>
-                  </div>
-
-                  <div class="node-body">
-                    <div id="proxy-list" data-collaboration-id="RO.LANE.PROXIES.LIST"></div>
-                  </div>
-                </article>
-              </div>
-
-              <div class="node-column sink">
-                <article class="node-shell" data-focus-shell="end" data-collaboration-id="RO.LANE.END">
-                  <div class="node-head" data-focus-card="end">
-                    <div class="node-meta">
-                      <div class="node-number">node 04</div>
-                    </div>
-                    <div class="node-title">
-                      <span>结束</span>
-                      <span class="locator">RO.LANE.END</span>
-                    </div>
-                    <div class="node-copy">test and route result</div>
-                  </div>
-
-                  <div class="node-body">
-                    <div class="sink-stack" id="end-list" data-collaboration-id="RO.LANE.END.LIST"></div>
-                  </div>
-                </article>
-              </div>
-            </section>
-          </div>
-        </div>
+        <div class="flow-stack" id="flow-stack"></div>
       </main>
     </div>
 
-    <div class="copy-toast" id="copy-toast" aria-live="polite"></div>
+    <div class="toast" id="toast" aria-live="polite"></div>
 
     <script>
-      const state = {
-        cli: "codex",
-        activeGroupId: "codex",
-        currentAccountId: "codex-prod-01",
-        focus: "entry",
-        lastAction: "未应用",
-        testStatus: "未测试",
-        testLog: "等待从结束节点发起测试。",
-        lastTest: null,
+	      const state = {
+	        activeFlowId: null,
+        flowSeed: 2,
+        entryModels: {
+          codex: "gpt-5.5",
+          "claude-code": "claude-sonnet-4.5",
+        },
         groups: [
-          {
-            id: "codex",
-            label: "Codex 生产组",
-            note: "来自账号池 / 2 个账号",
-            members: ["codex-prod-01", "codex-lab-02"],
-          },
-          {
-            id: "claude",
-            label: "Claude 灰度组",
-            note: "来自账号池 / 2 个账号",
-            members: ["claude-prod-01", "bridge-01"],
-          },
+          { id: "codex", label: "Codex 生产组", note: "2 个账号 / 面向 codex" },
+          { id: "claude", label: "Claude 灰度组", note: "2 个账号 / 面向 claude code" },
         ],
         accounts: [
           {
@@ -1439,93 +977,175 @@
             name: "codex-prod-01",
             group: "codex",
             entrySupport: ["codex"],
+            modelMappings: { "codex:gpt-5.5": "gpt-5.5" },
             provider: "OpenAI",
-            proxyId: null,
             baseUrl: "https://relay.local/v1",
+            proxyPoolEnabled: false,
+            defaultRoute: null,
+            disabled: false,
           },
           {
             id: "codex-lab-02",
             name: "codex-lab-02",
             group: "codex",
             entrySupport: ["codex", "claude-code"],
+            modelMappings: { "codex:gpt-5.5": "gpt-5.4-mini", "claude-code:claude-sonnet-4.5": "claude-sonnet-4.5" },
             provider: "OpenAI",
-            proxyId: "hk-resi-03",
             baseUrl: "https://relay.local/v1",
+            proxyPoolEnabled: true,
+            defaultRoute: "hk-resi-03",
+            disabled: false,
           },
           {
             id: "claude-prod-01",
             name: "claude-prod-01",
             group: "claude",
             entrySupport: ["claude-code"],
+            modelMappings: { "claude-code:claude-sonnet-4.5": "claude-sonnet-4.5" },
             provider: "Anthropic",
-            proxyId: "sg-biz-01",
             baseUrl: "https://relay.local/claude",
+            proxyPoolEnabled: true,
+            defaultRoute: "sg-biz-01",
+            disabled: false,
           },
           {
             id: "bridge-01",
             name: "bridge-01",
             group: "claude",
             entrySupport: ["codex", "claude-code"],
+            modelMappings: { "codex:gpt-5.5": "gpt-5.4-mini", "claude-code:claude-sonnet-4.5": "claude-sonnet-4.5" },
             provider: "Bridge",
-            proxyId: null,
             baseUrl: "https://relay.local/bridge",
+            proxyPoolEnabled: false,
+            defaultRoute: null,
+            disabled: false,
           },
         ],
         proxies: [
+          { id: "direct", label: "直连", note: "系统出口，不走代理池", system: true, disabled: false },
+          { id: "hk-resi-03", label: "hk-resi-03", note: "住宅出口 / Hong Kong", disabled: false },
+          { id: "sg-biz-01", label: "sg-biz-01", note: "商务出口 / Singapore", disabled: false },
+          { id: "us-static-02", label: "us-static-02", note: "静态出口 / US West", disabled: false },
+        ],
+        flows: [
           {
-            id: "direct",
-            label: "直连",
-            note: "不经过代理池，直接出站",
+            id: "default",
+            label: "默认组",
+            cli: "codex",
+            groupId: "codex",
+            accountId: "codex-prod-01",
+            routes: { "codex-prod-01": null, "codex-lab-02": "hk-resi-03" },
+            lastAction: "未应用",
+            applied: false,
+            test: null,
           },
           {
-            id: "hk-resi-03",
-            label: "hk-resi-03",
-            note: "住宅出口 / Hong Kong",
-          },
-          {
-            id: "sg-biz-01",
-            label: "sg-biz-01",
-            note: "商务出口 / Singapore",
-          },
-          {
-            id: "us-static-02",
-            label: "us-static-02",
-            note: "静态出口 / US West",
+            id: "custom-flow-01",
+            label: "自定义组 01",
+            cli: "codex",
+            groupId: "codex",
+            accountId: "codex-lab-02",
+            routes: { "codex-lab-02": "hk-resi-03" },
+            lastAction: "未应用",
+            applied: false,
+            test: null,
           },
         ],
       };
 
-      const defaultProxyBindings = Object.fromEntries(
-        state.accounts.map((account) => [account.id, account.proxyId])
-      );
+      const initialState = JSON.parse(JSON.stringify(state));
+	      const flowStack = document.getElementById("flow-stack");
+	      const flowName = document.getElementById("flow-name");
+	      const applyButton = document.getElementById("apply-flow");
+	      let entryList = null;
+	      let entryConfig = null;
+	      let accountList = null;
+	      let accountConfig = null;
+	      let routeList = null;
+	      let routeConfig = null;
+	      let resultList = null;
+	      let resultConfig = null;
+      const toast = document.getElementById("toast");
+      let toastTimer = null;
 
-      const graphStage = document.getElementById("graph-stage");
-      const connectionLayer = document.getElementById("connection-layer");
-      const activePathStrip = document.getElementById("active-path-strip");
-      const groupList = document.getElementById("group-list");
-      const proxyList = document.getElementById("proxy-list");
-      const endList = document.getElementById("end-list");
-      const copyToast = document.getElementById("copy-toast");
-      let copyToastTimer = null;
-      let connectionFrame = null;
-      let previewRouteTarget = null;
-      let dragState = null;
-      let suppressNextClick = false;
+	      function currentFlow() {
+	        return state.flows.find((flow) => flow.id === state.activeFlowId) || null;
+	      }
 
-      function toLocatorSegment(value) {
-        return String(value)
-          .replace(/[^a-zA-Z0-9]+/g, "-")
-          .replace(/^-+|-+$/g, "")
-          .toUpperCase();
+	      function currentModel(flow = currentFlow()) {
+	        return flow ? state.entryModels[flow.cli] || "" : "";
+	      }
+
+	      function modelKey(flow = currentFlow()) {
+	        return flow ? `${flow.cli}:${currentModel(flow)}` : "";
+	      }
+
+	      function computeAccount(account, flow = currentFlow()) {
+	        if (!flow) {
+	          return { ...account, inGroup: false, cliOk: false, targetModel: null, modelOk: false, routeId: "direct", proxy: state.proxies[0], proxyOk: true, enabled: !account.disabled, active: false, reasons: ["未展开流程组"] };
+	        }
+	        const inGroup = account.group === flow.groupId;
+	        const cliOk = account.entrySupport.includes(flow.cli);
+	        const targetModel = account.modelMappings[modelKey(flow)] || null;
+        const modelOk = Boolean(targetModel);
+        const configuredRoute = Object.prototype.hasOwnProperty.call(flow.routes, account.id) ? flow.routes[account.id] : account.defaultRoute;
+        const routeId = account.proxyPoolEnabled ? configuredRoute || "direct" : "direct";
+        const proxy = state.proxies.find((item) => item.id === routeId) || state.proxies[0];
+        const proxyOk = routeId === "direct" || !proxy.disabled;
+        const enabled = !account.disabled;
+        const active = inGroup && cliOk && modelOk && enabled && proxyOk;
+        const reasons = [];
+        if (!inGroup) reasons.push("不在当前账号组");
+        if (!cliOk) reasons.push("CLI 不兼容");
+        if (cliOk && !modelOk) reasons.push("缺少模型映射");
+        if (!enabled) reasons.push("账号已禁用");
+        if (!proxyOk) reasons.push("代理不可用");
+        return { ...account, inGroup, cliOk, targetModel, modelOk, routeId, proxy, proxyOk, enabled, active, reasons };
       }
 
-      function showCopyToast(message) {
-        copyToast.textContent = message;
-        copyToast.classList.add("visible");
-        window.clearTimeout(copyToastTimer);
-        copyToastTimer = window.setTimeout(() => {
-          copyToast.classList.remove("visible");
-        }, 1200);
+	      function currentAccount(flow = currentFlow()) {
+	        if (!flow) return null;
+	        const computed = state.accounts.map((account) => computeAccount(account, flow));
+	        return computed.find((account) => account.id === flow.accountId) || computed.find((account) => account.inGroup) || null;
+	      }
+
+      function compatibleAccountsFor(flow, groupId) {
+        const scopedFlow = { ...flow, groupId };
+        return state.accounts.map((account) => computeAccount(account, scopedFlow)).filter((account) => account.group === groupId && account.active);
+      }
+
+	      function selectFirstCompatible(flow) {
+	        const currentGroupAccounts = compatibleAccountsFor(flow, flow.groupId);
+	        if (currentGroupAccounts.length > 0) {
+	          flow.accountId = currentGroupAccounts[0].id;
+	          return;
+	        }
+	        const nextGroup = state.groups.find((group) => compatibleAccountsFor(flow, group.id).length > 0);
+	        if (nextGroup) {
+	          flow.groupId = nextGroup.id;
+	          flow.accountId = compatibleAccountsFor(flow, nextGroup.id)[0]?.id || null;
+	          return;
+	        }
+	        flow.accountId = state.accounts.find((account) => account.group === flow.groupId)?.id || null;
+	      }
+
+	      function ensureAccount() {
+	        const flow = currentFlow();
+	        if (!flow) return;
+	        const account = state.accounts.find((item) => item.id === flow.accountId);
+	        if (account && account.group === flow.groupId) return;
+	        selectFirstCompatible(flow);
+	      }
+
+      function toLocator(value) {
+        return String(value).replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-+|-+$/g, "").toUpperCase();
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 1200);
       }
 
       async function copyText(text) {
@@ -1533,7 +1153,6 @@
           await navigator.clipboard.writeText(text);
           return;
         }
-
         const input = document.createElement("textarea");
         input.value = text;
         input.setAttribute("readonly", "");
@@ -1545,740 +1164,441 @@
         document.body.removeChild(input);
       }
 
-      function hydrateLocators() {
-        document.querySelectorAll(".locator").forEach((locator) => {
-          locator.setAttribute("title", `点击复制 ${locator.textContent.trim()}`);
-        });
+	      function invalidate(action) {
+	        const flow = currentFlow();
+	        if (!flow) return;
+	        flow.lastAction = action;
+	        flow.applied = false;
+	        flow.test = null;
       }
 
-      function computeAccounts() {
-        return state.accounts.map((account) => {
-          const groupSelected = account.group === state.activeGroupId;
-          const entryAllowed = account.entrySupport.includes(state.cli);
-          const active = groupSelected && entryAllowed;
-          const selected = account.id === state.currentAccountId;
-          const routeKey = account.proxyId || "direct";
-          const proxy = state.proxies.find((item) => item.id === routeKey) || null;
-          const reasons = [];
-
-          if (!groupSelected) reasons.push("不在当前账号组");
-          if (!entryAllowed) reasons.push("入口不兼容");
-
-          return {
-            ...account,
-            groupSelected,
-            entryAllowed,
-            active,
-            selected,
-            routeKey,
-            proxy,
-            reasons,
-          };
-        });
+      function flowSummary(flow) {
+        const group = state.groups.find((item) => item.id === flow.groupId);
+        const account = state.accounts.find((item) => item.id === flow.accountId);
+        return `01 ${flow.cli} / 02 ${group?.label || "none"} / 03 ${account?.name || "none"} / 04 test`;
       }
 
-      function ensureCurrentAccount(computed) {
-        const selectedGroupAccounts = computed.filter((item) => item.groupSelected);
-        const activeAccounts = selectedGroupAccounts.filter((item) => item.entryAllowed);
-        const current = computed.find((item) => item.id === state.currentAccountId);
-
-        if (current && current.groupSelected) return;
-        state.currentAccountId = activeAccounts[0]?.id || selectedGroupAccounts[0]?.id || null;
+      function testState(flow) {
+        const status = flow?.test?.status || "pending";
+        const accepted = status === "accepted";
+        const rejected = status === "blocked";
+        return {
+          className: accepted ? "ok" : "warn",
+          label: accepted ? "测试通过" : rejected ? "测试未通过" : "待测试",
+          detail: accepted ? `最近测试 ${flow.test.time}` : rejected ? flow.test.reason : "点击下方按钮执行",
+          badge: accepted ? "测试通过" : rejected ? "测试未通过" : "待测试",
+        };
       }
 
-      function getAnchorPoint(name, side) {
-        const node = document.querySelector(`[data-graph-anchor="${name}"]`);
-        if (!node || !graphStage) return null;
-        const nodeRect = node.getBoundingClientRect();
-        const stageRect = graphStage.getBoundingClientRect();
-        const x = side === "left" ? nodeRect.left - stageRect.left : nodeRect.right - stageRect.left;
-        const y = nodeRect.top - stageRect.top + nodeRect.height / 2;
-        return { x, y };
-      }
+      function boardTemplate(flow) {
+        return `
+          <div class="group-body" data-collaboration-id="RO.FLOWBODY.${toLocator(flow.id)}">
+            <div class="route-line" id="result-list" data-collaboration-id="RO.PATH.${toLocator(flow.id)}"></div>
 
-      function buildConnectionPath(from, to) {
-        const delta = Math.max(56, (to.x - from.x) * 0.34);
-        return `M ${from.x} ${from.y} C ${from.x + delta} ${from.y}, ${to.x - delta} ${to.y}, ${to.x} ${to.y}`;
-      }
+            <div class="simple-editor">
+              <section class="decision-panel" data-collaboration-id="RO.CARD.ENTRY">
+                <header class="panel-title">
+                  <strong>1. 请求入口</strong>
+                  <span class="muted">只选 CLI。</span>
+                </header>
+                <div class="choice-strip" id="entry-list"></div>
+                <div class="compact-config" id="entry-config"></div>
+              </section>
 
-      function buildLabel(x, y, label, selected) {
-        const dy = selected ? -10 : -6;
-        return `<text x="${x}" y="${y + dy}" text-anchor="middle" class="graph-label">${label}</text>`;
-      }
+              <section class="decision-panel accounts" data-collaboration-id="RO.CARD.ACCOUNTS">
+                <header class="panel-title">
+                  <strong>2. 账号</strong>
+                  <span class="muted">先选组，再选账号；代理开关跟着账号走。</span>
+                </header>
+                <div class="choice-strip" id="account-list"></div>
+                <div class="compact-config" id="account-config"></div>
+              </section>
 
-      function currentModeLabel(computed) {
-        const currentAccount = computed.find((item) => item.id === state.currentAccountId) || null;
-        if (dragState) return "拖拽改线";
-        if (!currentAccount) return "选择账号";
-        if (!currentAccount.entryAllowed) return "账号灰态";
-        if (previewRouteTarget && previewRouteTarget !== currentAccount.routeKey) return "预览出口";
-        if (state.focus === "end") return "收口检查";
-        return "选择账号";
-      }
-
-      function invalidateTest(message = "链路已变更，等待重新测试。") {
-        state.lastTest = null;
-        state.testStatus = "未测试";
-        state.testLog = message;
-      }
-
-      function isCurrentTested(account) {
-        if (!account || !state.lastTest) return false;
-        return (
-          state.lastTest.accountId === account.id &&
-          state.lastTest.routeKey === account.routeKey &&
-          state.lastTest.cli === state.cli &&
-          state.lastTest.groupId === state.activeGroupId
-        );
-      }
-
-      function renderActivePath(computed) {
-        const currentGroup = state.groups.find((item) => item.id === state.activeGroupId) || null;
-        const currentAccount = computed.find((item) => item.id === state.currentAccountId) || null;
-        const routeLabel = currentAccount?.proxy ? currentAccount.proxy.label : "direct";
-        const modeLabel = currentModeLabel(computed);
-        const tested = isCurrentTested(currentAccount);
-
-        activePathStrip.innerHTML = `
-          <span class="path-kicker">active path</span>
-          <span class="path-segment">${state.cli}</span>
-          <span class="path-arrow">→</span>
-          <span class="path-segment">${currentGroup ? currentGroup.label : "group"}</span>
-          <span class="path-arrow">→</span>
-          <span class="path-segment emphasis">${currentAccount ? currentAccount.name : "account"}</span>
-          <span class="path-arrow">→</span>
-          <span class="path-segment">${routeLabel}</span>
-          <span class="path-arrow">→</span>
-          <span class="path-segment ${tested ? "test-ok" : ""}">${tested ? `test ok ${state.lastTest.time}` : "test"}</span>
-          <span class="path-segment">${modeLabel}</span>
+              <section class="decision-panel exit-test" data-collaboration-id="RO.CARD.EXIT">
+                <header class="panel-title">
+                  <strong>3. 出口与测试</strong>
+                  <span class="muted">当前账号的出口和连通性。</span>
+                </header>
+                <div class="choice-strip" id="route-list"></div>
+                <div class="compact-config" id="route-config"></div>
+                <div class="compact-config test-panel" id="result-config"></div>
+              </section>
+            </div>
+          </div>
         `;
       }
 
-      function renderConnections(computed) {
-        if (!graphStage || !connectionLayer) return;
+	      function bindBoardRefs() {
+	        entryList = document.getElementById("entry-list");
+	        entryConfig = document.getElementById("entry-config");
+	        accountList = document.getElementById("account-list");
+	        accountConfig = document.getElementById("account-config");
+	        routeList = document.getElementById("route-list");
+	        routeConfig = document.getElementById("route-config");
+	        resultList = document.getElementById("result-list");
+	        resultConfig = document.getElementById("result-config");
+	      }
 
-        const activeAccounts = computed.filter((item) => item.active);
-        const selectedAccount = computed.find((item) => item.id === state.currentAccountId) || null;
-        const defs = `
-          <defs>
-            <marker id="graph-arrow-neutral" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.18)" />
-            </marker>
-            <marker id="graph-arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(243,87,45,0.7)" />
-            </marker>
-            <marker id="graph-arrow-accent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(101,210,123,0.7)" />
-            </marker>
-          </defs>
-        `;
+	      function renderFlows() {
+	        const flow = currentFlow();
+	        flowName.value = flow ? flow.label : "";
+	        flowName.placeholder = flow ? "" : "未选中流程组";
+	        flowName.disabled = !flow;
+	        if (applyButton) applyButton.disabled = !flow;
+	        const cloneButton = document.querySelector('[data-flow-op="clone"]');
+	        const deleteButton = document.querySelector('[data-flow-op="delete"]');
+	        if (cloneButton) cloneButton.disabled = !flow;
+	        if (deleteButton) deleteButton.disabled = !flow || flow.id === "default" || state.flows.length <= 1;
+	        flowStack.innerHTML = state.flows
+	          .map(
+	            (item, index) => {
+		              const active = flow && item.id === flow.id;
+		              const account = currentAccount(item);
+		              const ready = state.accounts.map((accountItem) => computeAccount(accountItem, item)).filter((accountItem) => accountItem.group === item.groupId && accountItem.active).length;
+                  const test = testState(item);
+		              return `
+	                <section class="flow-group ${active ? "active" : ""}" data-collaboration-id="RO.FLOW.${toLocator(item.id)}">
+	                  <button class="group-head" type="button" data-flow-toggle="${item.id}">
+	                    <span class="group-index">${String(index + 1).padStart(2, "0")}</span>
+	                    <span class="group-main">
+	                      <strong>${item.label}</strong>
+	                      <span class="muted">${flowSummary(item)}</span>
+	                      <span class="group-summary">
+		                        <span class="badge ${item.applied ? "ok" : "warn"}">${item.applied ? "已应用" : "未应用"}</span>
+		                        <span class="badge ${test.className === "ok" ? "ok" : ""}">${test.label}</span>
+	                        <span class="badge accent">ready ${ready}</span>
+	                        <span class="badge">${account?.proxy?.label || "none"}</span>
+	                      </span>
+	                    </span>
+	                    <span class="group-actions">
+	                      <span class="badge ${active ? "ok" : ""}">${active ? "收起" : "展开"}</span>
+	                    </span>
+	                  </button>
+		                  ${active ? boardTemplate(item) : ""}
+	                </section>
+		              `;
+		            }
+		          )
+		          .join("");
+	      }
 
-        const segments = [];
-        const entryPoint = getAnchorPoint("entry", "right");
-        const groupPoint = getAnchorPoint("group-selected", "left");
-
-        if (entryPoint && groupPoint) {
-          segments.push(
-            `<path d="${buildConnectionPath(entryPoint, groupPoint)}" class="graph-line graph-line-primary${state.focus === "entry" || state.focus === "groups" ? " graph-line-selected" : ""}" marker-end="url(#graph-arrow-primary)" />`
-          );
-        }
-
-        const endPoint = getAnchorPoint("end", "left");
-
-        activeAccounts.forEach((account) => {
-          const accountPoint = getAnchorPoint(`account-${account.id}`, "right");
-          const routePointLeft = getAnchorPoint(`route-${account.routeKey}`, "left");
-          const routePointRight = getAnchorPoint(`route-${account.routeKey}`, "right");
-          const selectedClass = account.selected ? " graph-line-selected" : "";
-          const testedClass = isCurrentTested(account) ? " graph-line-tested" : "";
-
-          if (accountPoint && routePointLeft) {
-            segments.push(
-              `<path d="${buildConnectionPath(accountPoint, routePointLeft)}" class="graph-line${selectedClass}${testedClass}" marker-end="url(#graph-arrow-neutral)" />`
-            );
-            if (account.selected) {
-              const mx = (accountPoint.x + routePointLeft.x) / 2;
-              const my = (accountPoint.y + routePointLeft.y) / 2;
-              segments.push(buildLabel(mx, my, account.name, account.selected));
-            }
-          }
-
-          if (routePointRight && endPoint) {
-            segments.push(
-              `<path d="${buildConnectionPath(routePointRight, endPoint)}" class="graph-line graph-line-accent${selectedClass}${testedClass}" marker-end="url(#graph-arrow-accent)" />`
-            );
-          }
-        });
-
-        if (
-          selectedAccount &&
-          selectedAccount.active &&
-          previewRouteTarget &&
-          previewRouteTarget !== selectedAccount.routeKey
-        ) {
-          const accountPoint = getAnchorPoint(`account-${selectedAccount.id}`, "right");
-          const previewLeft = getAnchorPoint(`route-${previewRouteTarget}`, "left");
-          const previewRight = getAnchorPoint(`route-${previewRouteTarget}`, "right");
-          if (accountPoint && previewLeft) {
-            segments.push(
-              `<path d="${buildConnectionPath(accountPoint, previewLeft)}" class="graph-line graph-line-preview" marker-end="url(#graph-arrow-primary)" />`
-            );
-          }
-          if (previewRight && endPoint) {
-            segments.push(
-              `<path d="${buildConnectionPath(previewRight, endPoint)}" class="graph-line graph-line-preview" marker-end="url(#graph-arrow-primary)" />`
-            );
-          }
-        }
-
-        if (dragState) {
-          const dragAccount = computed.find((item) => item.id === dragState.accountId) || null;
-          const dragFrom = dragAccount ? getAnchorPoint(`account-${dragAccount.id}`, "right") : null;
-          const dragTargetLeft = dragState.hoverTarget ? getAnchorPoint(`route-${dragState.hoverTarget}`, "left") : null;
-          const dragTargetRight = dragState.hoverTarget ? getAnchorPoint(`route-${dragState.hoverTarget}`, "right") : null;
-
-          if (dragFrom) {
-            if (dragTargetLeft) {
-              segments.push(
-                `<path d="${buildConnectionPath(dragFrom, dragTargetLeft)}" class="graph-line graph-line-preview graph-line-selected" marker-end="url(#graph-arrow-primary)" />`
-              );
-              if (dragTargetRight && endPoint) {
-                segments.push(
-                  `<path d="${buildConnectionPath(dragTargetRight, endPoint)}" class="graph-line graph-line-preview graph-line-selected" marker-end="url(#graph-arrow-primary)" />`
-                );
-              }
-            } else if (typeof dragState.x === "number" && typeof dragState.y === "number") {
-              segments.push(
-                `<path d="${buildConnectionPath(dragFrom, { x: dragState.x, y: dragState.y })}" class="graph-line graph-line-preview graph-line-selected" marker-end="url(#graph-arrow-primary)" />`
-              );
-            }
-          }
-        }
-
-        connectionLayer.innerHTML = `${defs}${segments.join("")}`;
-      }
-
-      function renderGroups(computed) {
-        groupList.innerHTML = state.groups
-          .map((group) => {
-            const members = computed.filter((item) => item.group === group.id);
-            const selected = state.activeGroupId === group.id;
-            const compatibleCount = members.filter((item) => item.entryAllowed).length;
-            const locatorId = `RO.GROUP.${toLocatorSegment(group.id)}`;
-            const selectedMember = members.find((item) => item.selected) || null;
-            const selectedMemberTested = isCurrentTested(selectedMember);
-
-            return `
-              <div class="group-card ${selected ? "selected" : "pending"}" data-collaboration-id="${locatorId}" ${selected ? 'data-graph-anchor="group-selected"' : ""}>
-                ${selected ? '<span class="graph-anchor left" aria-hidden="true"></span>' : ""}
-                <div class="group-card-header">
-                  <div>
-                    <div class="group-name">${group.label}</div>
-                    <div class="locator-row"><span class="locator">${locatorId}</span></div>
-                    <div class="group-note">${group.note}</div>
-                  </div>
-                  <span class="badge ${selected ? "accent" : compatibleCount > 0 ? "success" : "warning"}">${selected ? "当前链路" : "待选"}</span>
-                </div>
-
-                <div class="metric-list">
-                  <div class="metric-pair">
-                    <span class="key">账号池成员</span>
-                    <span class="value">${members.length}</span>
-                  </div>
-                  <div class="metric-pair">
-                    <span class="key">兼容当前入口</span>
-                    <span class="value">${compatibleCount}</span>
-                  </div>
-                </div>
-
-                ${
-                  selected
-                    ? `
-                      <div class="group-editing-strip ${selectedMemberTested ? "tested" : ""}">
-                        <div class="group-editing-row">
-                          <span>当前编辑</span>
-                          <span>${selectedMemberTested ? `tested ${state.lastTest.time}` : selectedMember?.entryAllowed ? "ready" : "blocked"}</span>
-                        </div>
-                        <div class="group-editing-row">
-                          <strong>${selectedMember?.name || "未选中账号"}</strong>
-                          <span>${selectedMember?.proxy ? selectedMember.proxy.label : "direct"}</span>
-                        </div>
-                      </div>
-                    `
-                    : ""
-                }
-
-                <div>
-                  <div class="section-kicker">组内账号</div>
-                  <div class="account-cloud">
-                    ${members
-                      .map((account) => {
-                        const classes = ["account-chip"];
-                        if (account.selected) classes.push("active");
-                        if (account.entryAllowed) classes.push("compatible");
-                        if (!account.entryAllowed) classes.push("blocked");
-                        if (dragState && dragState.accountId === account.id) classes.push("dragging");
-                        return `
-                          <button
-                            class="${classes.join(" ")}"
-                            type="button"
-                            data-account-focus="${account.id}"
-                            ${selected ? `data-graph-anchor="account-${account.id}"` : ""}
-                          >
-                            ${selected ? '<span class="graph-anchor right" aria-hidden="true"></span>' : ""}
-                            ${account.entryAllowed ? `<span class="account-link-handle" data-drag-account="${account.id}" title="拖拽建立连接"></span>` : ""}
-                            <strong>${account.name}</strong>
-                            <span>${account.entryAllowed ? account.provider : account.reasons[0]}</span>
-                          </button>
-                        `;
-                      })
-                      .join("")}
-                  </div>
-                </div>
-
-                <div class="group-actions">
-                  <button class="group-switch ${selected ? "active" : ""}" type="button" data-group-action="${group.id}">
-                    ${selected ? "当前使用中" : "切换到此组"}
-                  </button>
-                </div>
-              </div>
-            `;
-          })
-          .join("");
-      }
-
-      function renderProxies(computed) {
-        const selectedGroupAccounts = computed.filter((item) => item.groupSelected);
-        const selectedAccount = computed.find((item) => item.id === state.currentAccountId) || null;
-
-        const routeNodes = state.proxies
-          .map((proxy) => {
-            const linkedAccounts = computed.filter((item) => item.active && item.routeKey === proxy.id);
-            const locatorId =
-              proxy.id === "direct" ? "RO.PROXY.DIRECT" : `RO.PROXY.${toLocatorSegment(proxy.id)}`;
-            const isTarget = selectedAccount ? selectedAccount.routeKey === proxy.id : false;
-            const isPreview = previewRouteTarget === proxy.id && selectedAccount && selectedAccount.entryAllowed;
-            const isDragHover = dragState && dragState.hoverTarget === proxy.id;
-            const isCurrentAccountTarget = selectedAccount && selectedAccount.routeKey === proxy.id;
-            const isTestedTarget = isCurrentAccountTarget && isCurrentTested(selectedAccount);
-
-            return `
-              <button
-                class="route-target ${isTarget ? "target-selected" : ""} ${isPreview && !isTarget ? "target-preview" : ""} ${isDragHover ? "drag-hover" : ""} ${isCurrentAccountTarget ? "current-account-target" : ""} ${isTestedTarget ? "tested-target" : ""}"
-                type="button"
-                data-route-target="${proxy.id}"
-                data-collaboration-id="${locatorId}"
-                data-graph-anchor="route-${proxy.id}"
-                data-route-hover="${proxy.id}"
-              >
-                <span class="graph-anchor left" aria-hidden="true"></span>
-                <span class="graph-anchor right" aria-hidden="true"></span>
-                <div class="target-head">
-                  <div>
-                    <div class="target-name">${proxy.label}</div>
-                    <div class="locator-row"><span class="locator">${locatorId}</span></div>
-                    <div class="target-note">${proxy.note}</div>
-                  </div>
-                  <span class="badge ${linkedAccounts.length > 0 ? "accent" : "warning"}">${linkedAccounts.length} 条连接</span>
-                </div>
-                <div class="route-cloud">
-                  ${isTestedTarget ? `<div class="route-chip tested"><strong>tested ${state.lastTest.time}</strong></div>` : ""}
-                  ${isCurrentAccountTarget ? '<div class="route-chip current"><strong>current path</strong></div>' : ""}
-                  ${linkedAccounts.length > 0
-                    ? linkedAccounts.map((account) => `<div class="route-chip"><strong>${account.name}</strong></div>`).join("")
-                    : '<div class="route-chip"><strong>当前无账号</strong></div>'}
-                </div>
+      function renderEntry() {
+        const flow = currentFlow();
+        entryList.innerHTML = [
+          { id: "codex", label: "codex", note: "Codex 请求入口" },
+          { id: "claude-code", label: "claude code", note: "Claude Code 请求入口" },
+        ]
+          .map(
+            (entry) => `
+              <button class="choice ${flow.cli === entry.id ? "active" : ""}" type="button" data-cli="${entry.id}" data-collaboration-id="RO.ENTRY.${toLocator(entry.id)}">
+                <span class="locator">RO.ENTRY.${toLocator(entry.id)}</span>
+                <strong>${entry.label}</strong>
+                <small>${entry.note}</small>
               </button>
-            `;
-          })
+            `
+          )
           .join("");
-
-        proxyList.innerHTML = `
-          <div class="route-editor" data-collaboration-id="RO.PROXY.ROUTES">
-            <div class="locator-row"><span class="locator">RO.PROXY.ROUTES</span></div>
-            <div class="section-kicker">当前连线对象</div>
-            <div class="route-editor-meta">
-              <span class="badge accent">${selectedAccount ? (selectedAccount.entryAllowed ? "可出站" : "不可出站") : "未选中"}</span>
-              <span class="badge">${dragState ? "拖拽中" : "点击或拖拽"}</span>
-              ${
-                selectedAccount
-                  ? `<span class="badge">${selectedAccount.proxy ? selectedAccount.proxy.label : "direct"}</span>`
-                  : ""
-              }
-            </div>
-            <div class="selected-account ${selectedAccount ? "" : "empty"}">
-              ${
-                selectedAccount
-                  ? `
-                    <strong>${selectedAccount.name}</strong>
-                    <span>${
-                      selectedAccount.entryAllowed
-                        ? `${
-                            dragState && dragState.accountId === selectedAccount.id
-                              ? "拖到右侧目标节点后松手建立连接"
-                              : `当前出口: ${selectedAccount.proxy ? selectedAccount.proxy.label : "直连"}，点击或拖到下方目标节点即可改线`
-                          }`
-                        : "当前入口不兼容, 这条链路不会进入结束节点"
-                    }</span>
-                  `
-                  : `
-                    <strong>未选中账号</strong>
-                    <span>先回到账号组节点选择一个账号。</span>
-                  `
-              }
-            </div>
-            <div class="route-editor-copy">
-              当前组共有 ${selectedGroupAccounts.length} 个账号，兼容当前入口的账号会即时出现在下方连线图中。
-            </div>
-          </div>
-
-          <div class="route-target-grid">
-            ${routeNodes}
-          </div>
-        `;
+	        entryConfig.innerHTML = `
+	          <div class="config-title"><span class="label">当前入口</span><span class="badge ${flow.applied ? "ok" : "warn"}">${flow.applied ? "已应用" : "未应用"}</span></div>
+	          <div class="kv"><span>CLI</span><strong>${flow.cli}</strong></div>
+	        `;
       }
 
-      function renderEnd(computed) {
-        const activeAccounts = computed.filter((item) => item.active);
-        const blockedAccounts = computed.filter((item) => item.groupSelected && !item.entryAllowed);
-        const selectedAccount = computed.find((item) => item.id === state.currentAccountId) || null;
-        const proxyCount = activeAccounts.filter((item) => item.routeKey !== "direct").length;
-        const selectedTested = isCurrentTested(selectedAccount);
-        const displayLog = selectedTested || !state.lastTest
-          ? state.testLog
-          : "当前账号尚未测试。最近测试结果保留在另一条链路上。";
-
-        endList.innerHTML = `
-          <div class="sink-card primary ${state.focus === "end" ? "active" : ""}" data-collaboration-id="RO.END.TEST" data-graph-anchor="end">
-            <span class="graph-anchor left" aria-hidden="true"></span>
-            <div class="sink-head">
-              <div>
-                <div class="sink-name">结束与测试</div>
-                <div class="locator-row"><span class="locator">RO.END.TEST</span></div>
-                <div class="sink-copy">收口所有兼容账号，并保留一次点击即可验证的测试动作。</div>
-              </div>
-              <span class="badge ${selectedTested ? "success" : "accent"}">${selectedTested ? state.testStatus : "未测试"}</span>
-            </div>
-
-            <div class="metric-list">
-              <div class="metric-pair">
-                <span class="key">入口</span>
-                <span class="value">${state.cli}</span>
-              </div>
-              <div class="metric-pair">
-                <span class="key">账号组</span>
-                <span class="value">${state.groups.find((item) => item.id === state.activeGroupId).label}</span>
-              </div>
-              <div class="metric-pair">
-                <span class="key">代理挂接</span>
-                <span class="value">${proxyCount} 走代理 / ${activeAccounts.length - proxyCount} 直连</span>
-              </div>
-              <div class="metric-pair">
-                <span class="key">当前账号</span>
-                <span class="value">${selectedAccount ? selectedAccount.name : "未选择"}</span>
-              </div>
-            </div>
-
-            <div class="mapping-list">
-              ${activeAccounts
-                .map(
-                  (account) => `
-                    <div class="mapping-line ${selectedAccount && selectedAccount.id === account.id ? "current" : ""} ${isCurrentTested(account) ? "tested" : ""}">
-                      <span>${account.name}</span>
-                      <strong>${account.proxy ? account.proxy.label : "direct"}</strong>
-                    </div>
-                  `
-                )
-                .join("")}
-            </div>
-
-            <button class="test-button ${selectedTested ? "tested" : ""}" type="button" id="run-test">${selectedTested ? `测试通过 ${state.lastTest.time}` : "测试当前链路"}</button>
-            <div class="test-console" id="test-log">${displayLog}</div>
-          </div>
-
-          <div class="sink-card" data-collaboration-id="RO.END.BLOCKED">
-            <div class="sink-head">
-              <div>
-                <div class="sink-name">未进入结束节点的账号</div>
-                <div class="locator-row"><span class="locator">RO.END.BLOCKED</span></div>
-                <div class="sink-copy">这些账号留在组里，但和当前入口不兼容。</div>
-              </div>
-              <span class="badge warning">${blockedAccounts.length} 排除</span>
-            </div>
-
-            <div class="mapping-list">
-              ${
-                blockedAccounts.length > 0
-                  ? blockedAccounts
-                      .map(
-                        (account) => `
-                          <div class="mapping-line">
-                            <span>${account.name}</span>
-                            <strong>${account.reasons.join(" / ")}</strong>
-                          </div>
-                        `
-                      )
-                      .join("")
-                  : '<div class="mapping-line"><span>全部兼容</span><strong>当前账号组都能进入结束节点</strong></div>'
-              }
-            </div>
+	      function renderAccounts() {
+	        const flow = currentFlow();
+	        const account = currentAccount();
+	        const computed = state.accounts.map((item) => computeAccount(item));
+	        const groupItems = state.groups
+	          .map((group) => {
+	            const ready = compatibleAccountsFor(flow, group.id).length;
+	            const selected = flow.groupId === group.id;
+	            const available = ready > 0;
+	            return `
+	              <button class="choice ${selected ? "active" : ""} ${available ? "" : "blocked"}" type="button" data-group-id="${group.id}" data-collaboration-id="RO.GROUP.${toLocator(group.id)}">
+	                <span class="locator">RO.GROUP.${toLocator(group.id)}</span>
+	                <strong>${group.label}</strong>
+	                <small>${flow.cli} 可参与 ${ready}</small>
+	              </button>
+	            `;
+	          })
+	          .join("");
+        const accountItems = computed
+          .filter((item) => item.group === flow.groupId)
+	          .map(
+	            (item) => `
+	              <button class="account-row ${item.id === flow.accountId ? "active" : ""} ${item.active ? "" : "blocked"}" type="button" data-account-select="${item.id}">
+	                <span class="account-copy">
+	                  <strong>${item.name}</strong>
+	                  <small>${item.active ? `${item.provider} / ${item.targetModel}` : item.reasons.join(" / ")}</small>
+	                </span>
+	                <span class="inline-actions">
+	                  <span class="badge ${item.active ? "ok" : "warn"}">${item.active ? "可用" : "灰态"}</span>
+	                  <span class="badge ${item.proxyPoolEnabled ? "accent" : ""}">${item.proxyPoolEnabled ? "代理" : "直连"}</span>
+	                </span>
+	              </button>
+	            `
+	          )
+	          .join("");
+	        accountList.innerHTML = `<span class="label">账号组</span><div class="choice-grid">${groupItems}</div><span class="label">账号</span>${accountItems}`;
+	        accountConfig.innerHTML = `
+	          <div class="config-title"><span class="label">当前账号</span><span class="badge ${account?.active ? "ok" : "warn"}">${account?.active ? "ready" : "blocked"}</span></div>
+          <div class="row">
+            <button class="mini ${account?.proxyPoolEnabled ? "warn" : "active"}" type="button" data-account-op="proxy" data-account-id="${account?.id || ""}">${account?.proxyPoolEnabled ? "关闭代理池" : "启用代理池"}</button>
+            <button class="mini" type="button" data-account-op="toggle" data-account-id="${account?.id || ""}">${account?.disabled ? "启用账号" : "禁用账号"}</button>
           </div>
         `;
       }
 
-      function renderMeta(computed) {
-        const currentAccount = computed.find((item) => item.id === state.currentAccountId);
-        document.getElementById("meta-cli").textContent = state.cli;
-        document.getElementById("meta-group").textContent = state.groups.find((item) => item.id === state.activeGroupId).label;
-        document.getElementById("meta-account").textContent = currentAccount ? currentAccount.name : "未选择";
-        document.getElementById("meta-mode").textContent = currentModeLabel(computed);
-        document.getElementById("meta-last-action").textContent = state.lastAction;
+      function renderRoutes() {
+        const account = currentAccount();
+        if (!account) {
+          routeList.innerHTML = "";
+          routeConfig.innerHTML = "<span class='label'>未选中账号</span>";
+          return;
+        }
+        const visibleProxies = account.proxyPoolEnabled ? state.proxies : state.proxies.filter((proxy) => proxy.id === "direct");
+        routeList.innerHTML = visibleProxies
+          .map(
+            (proxy) => `
+              <button class="choice ${account.routeId === proxy.id ? "active" : ""} ${proxy.disabled ? "disabled" : ""}" type="button" data-route-id="${proxy.id}" data-collaboration-id="RO.ROUTE.${toLocator(proxy.id)}">
+                <span class="locator">RO.ROUTE.${toLocator(proxy.id)}</span>
+                <strong>${proxy.label}</strong>
+                <small>${account.proxyPoolEnabled ? proxy.note : "启用账号代理池后再选择代理出口"}</small>
+              </button>
+            `
+          )
+          .join("");
+        routeConfig.innerHTML = `
+          <div class="config-title"><span class="label">当前出口</span><span class="badge accent">${account.proxy.label}</span></div>
+          <div class="kv"><span>模式</span><strong>${account.proxyPoolEnabled ? "代理池可选" : "锁定直连"}</strong></div>
+        `;
       }
 
-      function renderFocus() {
-        document.querySelectorAll(".node-shell").forEach((node) => {
-          node.classList.toggle("active", node.dataset.focusShell === state.focus);
-        });
+      function renderResultCard() {
+        const flow = currentFlow();
+        const account = currentAccount();
+        const group = state.groups.find((item) => item.id === flow.groupId);
+        const test = testState(flow);
+        resultList.innerHTML = `
+          <div class="route-node ok">
+            <small>入口</small>
+            <strong>${flow.cli}</strong>
+          </div>
+          <div class="route-node ${group ? "ok" : "warn"}">
+            <small>账号组</small>
+            <strong>${group?.label || "未选择"}</strong>
+          </div>
+          <div class="route-node ${account?.active ? "ok" : "warn"}">
+            <small>账号 / 出口</small>
+            <strong>${account?.name || "none"} -> ${account?.proxy?.label || "none"}</strong>
+          </div>
+          <div class="route-node ${test.className}">
+            <small>测试</small>
+            <strong>${test.label}</strong>
+          </div>
+        `;
+	        resultConfig.innerHTML = `
+          <div class="config-title"><span class="label">测试配置</span><span class="badge ${test.className}">${test.badge}</span></div>
+          <button class="test-btn" type="button" id="run-test">测试当前流程组</button>
+        `;
       }
 
-      function renderButtons() {
-        document.querySelectorAll(".entry-button").forEach((button) => {
-          button.classList.toggle("active", button.dataset.cli === state.cli);
-        });
-      }
+	      function render() {
+	        const flow = currentFlow();
+	        if (flow) ensureAccount();
+	        renderFlows();
+	        bindBoardRefs();
+	        if (flow) {
+	          renderEntry();
+	          renderAccounts();
+	          renderRoutes();
+	          renderResultCard();
+	        }
+	        document.querySelectorAll(".locator").forEach((item) => item.setAttribute("title", "点击复制定位器"));
+	      }
 
-      function render() {
-        let computed = computeAccounts();
-        ensureCurrentAccount(computed);
-        computed = computeAccounts();
-        graphStage.classList.toggle("is-dragging", Boolean(dragState));
-        renderButtons();
-        renderMeta(computed);
-        renderActivePath(computed);
-        renderGroups(computed);
-        renderProxies(computed);
-        renderEnd(computed);
-        renderFocus();
-        hydrateLocators();
-        window.cancelAnimationFrame(connectionFrame);
-        connectionFrame = window.requestAnimationFrame(() => renderConnections(computed));
-      }
-
-      function rerenderConnectionsOnly() {
-        const computed = computeAccounts();
-        window.cancelAnimationFrame(connectionFrame);
-        connectionFrame = window.requestAnimationFrame(() => renderConnections(computed));
-      }
-
-      function routeHoverFromPoint(clientX, clientY) {
-        const node = document.elementFromPoint(clientX, clientY)?.closest("[data-route-hover]");
-        return node ? node.dataset.routeHover : null;
+      function makeCustomFlow(source) {
+        const serial = String(state.flowSeed++).padStart(2, "0");
+        const base = source || { cli: "codex", groupId: "codex", accountId: "codex-prod-01", routes: {} };
+        return {
+          id: `custom-flow-${serial}`,
+          label: source ? `${source.label} 副本 ${serial}` : `自定义组 ${serial}`,
+          cli: base.cli,
+          groupId: base.groupId,
+          accountId: base.accountId,
+          routes: JSON.parse(JSON.stringify(base.routes || {})),
+          lastAction: source ? "已复制流程组" : "已新建流程组",
+          applied: false,
+          test: null,
+        };
       }
 
       document.addEventListener("click", async (event) => {
-        if (suppressNextClick) {
-          suppressNextClick = false;
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-
         const locator = event.target.closest(".locator");
         if (locator) {
           event.preventDefault();
           event.stopPropagation();
-          const locatorText = locator.textContent.trim();
+          const text = locator.textContent.trim();
           try {
-            await copyText(locatorText);
+            await copyText(text);
             locator.classList.add("copied");
             window.setTimeout(() => locator.classList.remove("copied"), 900);
-            showCopyToast(`已复制 ${locatorText}`);
+            showToast(`已复制 ${text}`);
           } catch (error) {
-            showCopyToast(`复制失败: ${locatorText}`);
+            showToast(`复制失败 ${text}`);
           }
           return;
         }
 
-        const focusCard = event.target.closest("[data-focus-card]");
-        if (focusCard) {
-          state.focus = focusCard.dataset.focusCard;
+	        const flowSwitch = event.target.closest("[data-flow-toggle]");
+	        if (flowSwitch) {
+	          const nextFlowId = flowSwitch.dataset.flowToggle;
+	          state.activeFlowId = state.activeFlowId === nextFlowId ? null : nextFlowId;
+	          render();
+	          return;
+	        }
+
+        const flowOp = event.target.closest("[data-flow-op]");
+        if (flowOp) {
+          const op = flowOp.dataset.flowOp;
+          if (op === "new") {
+            const flow = makeCustomFlow(null);
+            state.flows.push(flow);
+            state.activeFlowId = flow.id;
+          }
+	          if (op === "clone") {
+	            const source = currentFlow();
+	            if (source) {
+	              const flow = makeCustomFlow(source);
+	              state.flows.push(flow);
+	              state.activeFlowId = flow.id;
+	            }
+	          }
+	          if (op === "delete" && currentFlow() && state.flows.length > 1 && state.activeFlowId !== "default") {
+	            const index = state.flows.findIndex((flow) => flow.id === state.activeFlowId);
+	            state.flows.splice(index, 1);
+	            state.activeFlowId = null;
+	          }
           render();
           return;
         }
 
-        const target = event.target.closest("button");
-        if (!target) return;
+        const cli = event.target.closest("[data-cli]");
+	        if (cli) {
+	          const flow = currentFlow();
+	          flow.cli = cli.dataset.cli;
+	          selectFirstCompatible(flow);
+	          invalidate("已切换入口");
+	          render();
+	          return;
+	        }
 
-        if (target.dataset.cli) {
-          state.cli = target.dataset.cli;
-          previewRouteTarget = null;
-          invalidateTest("入口已变更，等待重新测试。");
-          state.focus = "entry";
+        const group = event.target.closest("[data-group-id]");
+	        if (group) {
+	          const flow = currentFlow();
+	          flow.groupId = group.dataset.groupId;
+	          selectFirstCompatible(flow);
+	          invalidate("已切换账号组");
+	          render();
+          return;
+        }
+
+        const accountSelect = event.target.closest("[data-account-select]");
+        if (accountSelect) {
+          const flow = currentFlow();
+          flow.accountId = accountSelect.dataset.accountSelect;
+          flow.lastAction = "已选择账号";
+          flow.applied = false;
           render();
           return;
         }
 
-        if (target.dataset.groupAction) {
-          state.activeGroupId = target.dataset.groupAction;
-          previewRouteTarget = null;
-          invalidateTest("账号组已变更，等待重新测试。");
-          state.focus = "groups";
-          render();
-          return;
-        }
-
-        if (target.dataset.accountFocus) {
-          state.currentAccountId = target.dataset.accountFocus;
-          previewRouteTarget = null;
-          state.focus = "groups";
-          render();
-          return;
-        }
-
-        if (target.dataset.routeTarget) {
-          const account = state.accounts.find((item) => item.id === state.currentAccountId);
+        const accountOp = event.target.closest("[data-account-op]");
+        if (accountOp) {
+          const account = state.accounts.find((item) => item.id === accountOp.dataset.accountId);
           if (!account) return;
-          account.proxyId = target.dataset.routeTarget === "direct" ? null : target.dataset.routeTarget;
-          previewRouteTarget = null;
-          invalidateTest("出口已变更，等待重新测试。");
-          state.lastAction = "已改线";
-          state.focus = "proxies";
-          render();
-          return;
-        }
-
-        if (target.id === "apply-flow") {
-          state.lastAction = "已应用";
-          state.focus = "end";
-          render();
-          return;
-        }
-
-        if (target.id === "run-test") {
-          const computed = computeAccounts();
-          const activeAccounts = computed.filter((item) => item.active);
-          const proxyCount = activeAccounts.filter((item) => item.routeKey !== "direct").length;
-          const currentAccount = computed.find((item) => item.id === state.currentAccountId) || null;
-          const now = new Date();
-          const hh = String(now.getHours()).padStart(2, "0");
-          const mm = String(now.getMinutes()).padStart(2, "0");
-          const time = `${hh}:${mm}`;
-          state.testStatus = "测试通过";
-          state.lastAction = "已测试";
-          state.lastTest = currentAccount
-            ? {
-                accountId: currentAccount.id,
-                routeKey: currentAccount.routeKey,
-                cli: state.cli,
-                groupId: state.activeGroupId,
-                time,
-              }
-            : null;
-          state.testLog =
-            `[${time}] ${state.cli} -> ${state.groups.find((item) => item.id === state.activeGroupId).label}\n` +
-            `selected account: ${state.currentAccountId || "none"}\n` +
-            `active accounts: ${activeAccounts.length}\n` +
-            `proxy routes: ${proxyCount}\n` +
-            `result: routing snapshot accepted`;
-          state.focus = "end";
-          render();
-          return;
-        }
-
-        if (target.id === "reset-flow") {
-          state.cli = "codex";
-          state.activeGroupId = "codex";
-          state.currentAccountId = "codex-prod-01";
-          previewRouteTarget = null;
-          state.accounts.forEach((account) => {
-            account.proxyId = defaultProxyBindings[account.id];
-          });
-          state.lastAction = "已恢复";
-          state.testStatus = "未测试";
-          state.testLog = "等待从结束节点发起测试。";
-          state.lastTest = null;
-          state.focus = "groups";
-          render();
-        }
-      });
-
-      document.addEventListener("pointerdown", (event) => {
-        const handle = event.target.closest("[data-drag-account]");
-        if (!handle) return;
-
-        const accountId = handle.dataset.dragAccount;
-        const account = state.accounts.find((item) => item.id === accountId);
-        if (!account) return;
-
-        state.currentAccountId = accountId;
-        state.focus = "proxies";
-        state.lastAction = "拖拽中";
-        previewRouteTarget = null;
-        dragState = {
-          accountId,
-          x: event.clientX - graphStage.getBoundingClientRect().left,
-          y: event.clientY - graphStage.getBoundingClientRect().top,
-          hoverTarget: routeHoverFromPoint(event.clientX, event.clientY),
-        };
-
-        event.preventDefault();
-        render();
-      });
-
-      document.addEventListener("mouseover", (event) => {
-        if (dragState) return;
-        const target = event.target.closest("[data-route-hover]");
-        if (!target) return;
-        previewRouteTarget = target.dataset.routeHover;
-        rerenderConnectionsOnly();
-        target.classList.add("target-preview");
-      });
-
-      document.addEventListener("mouseout", (event) => {
-        if (dragState) return;
-        const target = event.target.closest("[data-route-hover]");
-        if (!target) return;
-        target.classList.remove("target-preview");
-        if (previewRouteTarget === target.dataset.routeHover) {
-          previewRouteTarget = null;
-          rerenderConnectionsOnly();
-        }
-      });
-
-      document.addEventListener("pointermove", (event) => {
-        if (!dragState || !graphStage) return;
-        const rect = graphStage.getBoundingClientRect();
-        dragState.x = event.clientX - rect.left;
-        dragState.y = event.clientY - rect.top;
-        dragState.hoverTarget = routeHoverFromPoint(event.clientX, event.clientY);
-        rerenderConnectionsOnly();
-      });
-
-      document.addEventListener("pointerup", (event) => {
-        if (!dragState) return;
-        suppressNextClick = true;
-
-        const routeTarget = routeHoverFromPoint(event.clientX, event.clientY);
-        if (routeTarget) {
-          const account = state.accounts.find((item) => item.id === dragState.accountId);
-          if (account) {
-            account.proxyId = routeTarget === "direct" ? null : routeTarget;
-            state.currentAccountId = account.id;
-            invalidateTest("出口已变更，等待重新测试。");
-            state.lastAction = "已改线";
-            state.focus = "proxies";
+          currentFlow().accountId = account.id;
+          if (accountOp.dataset.accountOp === "proxy") {
+            account.proxyPoolEnabled = !account.proxyPoolEnabled;
+            invalidate(account.proxyPoolEnabled ? "已启用账号代理池" : "已关闭账号代理池");
           }
+          if (accountOp.dataset.accountOp === "toggle") {
+            account.disabled = !account.disabled;
+            invalidate(account.disabled ? "已禁用账号" : "已启用账号");
+          }
+          render();
+          return;
         }
 
-        dragState = null;
-        previewRouteTarget = null;
-        render();
+        const route = event.target.closest("[data-route-id]");
+        if (route) {
+          const account = currentAccount();
+          const routeId = route.dataset.routeId;
+          const proxy = state.proxies.find((item) => item.id === routeId);
+          if (!account || !proxy || proxy.disabled || (!account.proxyPoolEnabled && routeId !== "direct")) return;
+          currentFlow().routes[account.id] = routeId === "direct" ? null : routeId;
+          invalidate("已更新账号出口");
+          render();
+          return;
+        }
+
+        const button = event.target.closest("button");
+        if (!button) return;
+	        if (button.id === "apply-flow") {
+	          const flow = currentFlow();
+	          if (!flow) return;
+	          const account = currentAccount();
+	          if (!account?.active) {
+	            flow.lastAction = "当前链路不可应用";
+	            flow.applied = false;
+	            render();
+	            return;
+	          }
+	          flow.lastAction = "已应用当前组";
+	          flow.applied = true;
+          render();
+          return;
+        }
+	        if (button.id === "run-test") {
+	          const flow = currentFlow();
+	          if (!flow) return;
+	          const account = currentAccount();
+          const now = new Date();
+          const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+          if (!account?.active) {
+            flow.lastAction = "当前链路不可测试";
+            flow.test = {
+              time,
+              status: "blocked",
+              reason: account?.reasons?.join(" / ") || "无可用账号",
+            };
+            render();
+            return;
+          }
+          flow.lastAction = "已测试";
+          flow.test = {
+            time,
+            status: "accepted",
+          };
+          render();
+          return;
+        }
+        if (button.id === "reset-all") {
+          Object.keys(state).forEach((key) => delete state[key]);
+          Object.assign(state, JSON.parse(JSON.stringify(initialState)));
+          render();
+        }
       });
 
-      window.addEventListener("resize", () => {
-        const computed = computeAccounts();
-        window.cancelAnimationFrame(connectionFrame);
-        connectionFrame = window.requestAnimationFrame(() => renderConnections(computed));
+	      document.addEventListener("input", (event) => {
+	        if (event.target.id !== "flow-name") return;
+	        const flow = currentFlow();
+	        if (!flow) return;
+        flow.label = event.target.value.trim() || "未命名流程";
+        flow.lastAction = "已重命名流程组";
+        flow.applied = false;
+        renderFlows();
+        renderResultCard();
       });
 
       render();

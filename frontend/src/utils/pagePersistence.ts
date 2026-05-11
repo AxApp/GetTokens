@@ -11,6 +11,7 @@ export const USAGE_DESK_RANGE_STORAGE_KEY = 'gettokens.usageDesk.range';
 const appPages: ReadonlySet<AppPage> = new Set([
   'status',
   'accounts',
+  'request-orchestration',
   'session-management',
   'vendor-status',
   'proxy-pool',
@@ -37,6 +38,7 @@ export type UsageDeskRangeStorageValue = 'TODAY' | '7D' | '14D' | '30D' | 'å…¨éƒ
 export interface FrameHashState {
   page: AppPage;
   workspace?: AccountWorkspace;
+  accountDetailID?: string;
   codexWorkspace?: CodexWorkspace;
   sessionManagementWorkspace?: SessionManagementWorkspace;
   usageDeskWorkspace?: UsageDeskWorkspace;
@@ -243,10 +245,15 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
 
   if (page === 'accounts') {
     const workspace = params.get('workspace');
-    return {
+    const detail = params.get('detail');
+    const state: FrameHashState = {
       page,
       workspace: isAccountWorkspace(workspace) ? workspace : 'all',
     };
+    if (detail && detail.trim()) {
+      state.accountDetailID = detail;
+    }
+    return state;
   }
 
   if (page === 'codex') {
@@ -289,5 +296,20 @@ export function buildFrameHash(
   if (page === 'usage-desk' && usageDeskWorkspace !== 'codex') {
     params.set('workspace', usageDeskWorkspace);
   }
+  return `#${params.toString()}`;
+}
+
+export function buildAccountDetailFrameHash(hash: string | null | undefined, detailID: string): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.set('frame', 'accounts');
+  params.set('detail', detailID);
+  return `#${params.toString()}`;
+}
+
+export function clearAccountDetailFrameHash(hash: string | null | undefined): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.delete('detail');
   return `#${params.toString()}`;
 }

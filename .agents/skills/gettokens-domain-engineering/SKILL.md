@@ -118,6 +118,12 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Themes**: Support `system`, `light`, and `dark`. Ensure `--bg-main` and `--bg-surface` are distinct in dark mode.
 - **l10n**: Add new copy to both `zh.json` and `en.json`. Default is Chinese.
 - **Controls**: Use segmented controls for discrete settings.
+- **Complex Workflow Screens**: When a flow/configuration page starts feeling complex, reduce the information architecture before adding more components:
+  - put the final route/result summary first
+  - keep the expanded editor to the fewest decision zones users must act on
+  - hide proxy/route choices until the selected account can actually use them
+  - remove duplicate “current configuration” KV panels when the path summary already carries the same truth
+  - keep locators/debug metadata available, but visually subordinate to the main decision path
 - **Action Selects**: For `select + right-side actions` patterns, use the project-level `frontend/src/components/ui/ActionSelect.tsx` instead of hand-rolling label/select/button grids. Keep `+` and optional delete actions inside the select frame so field widths align across sibling rows.
 - **Status Local CLI Config**: In `StatusApplyLocalSection`, Codex and Claude Code tabs must share field components for equivalent concepts such as Relay API key, endpoint/base URL, provider, and model. Do not maintain parallel JSX just because one tab has fewer fields.
 - **Codex Feature Config UI**: The local Codex `[features]` bool editor is a config list, not a data table. Each feature is one row with feature key as the title, stage as a compact tag before the subtitle, localized description as the subtitle, and the switch as the only bool value expression. Do not add duplicate `default/local/on/off` value labels when the switch already communicates the state. Do not force feature keys or descriptions to uppercase; preserve source and localization casing.
