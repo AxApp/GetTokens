@@ -10,8 +10,10 @@ import {
   USAGE_DESK_SOURCE_STORAGE_KEY,
   USAGE_DESK_RANGE_STORAGE_KEY,
   buildAccountDetailFrameHash,
+  buildCodexDetailFrameHash,
   buildFrameHash,
   clearAccountDetailFrameHash,
+  clearCodexDetailFrameHash,
   isAccountWorkspace,
   isAppPage,
   isCodexWorkspace,
@@ -146,6 +148,10 @@ test('persistAccountWorkspace writes the selected workspace to storage', () => {
 
 test('isCodexWorkspace only accepts known codex subpages', () => {
   assert.equal(isCodexWorkspace('feature-config'), true);
+  assert.equal(isCodexWorkspace('binary-management'), true);
+  assert.equal(isCodexWorkspace('skills'), true);
+  assert.equal(isCodexWorkspace('mcp-servers'), true);
+  assert.equal(isCodexWorkspace('account-list'), true);
   assert.equal(isCodexWorkspace('session-management'), true);
   assert.equal(isCodexWorkspace('vendor-status'), true);
   assert.equal(isCodexWorkspace('usage-codex'), true);
@@ -156,6 +162,10 @@ test('isCodexWorkspace only accepts known codex subpages', () => {
 
 test('resolveInitialCodexWorkspace falls back to feature config for invalid values', () => {
   assert.equal(resolveInitialCodexWorkspace('feature-config'), 'feature-config');
+  assert.equal(resolveInitialCodexWorkspace('binary-management'), 'binary-management');
+  assert.equal(resolveInitialCodexWorkspace('skills'), 'skills');
+  assert.equal(resolveInitialCodexWorkspace('mcp-servers'), 'mcp-servers');
+  assert.equal(resolveInitialCodexWorkspace('account-list'), 'account-list');
   assert.equal(resolveInitialCodexWorkspace('session-management'), 'session-management');
   assert.equal(resolveInitialCodexWorkspace('vendor-status'), 'vendor-status');
   assert.equal(resolveInitialCodexWorkspace('usage-codex'), 'usage-codex');
@@ -378,6 +388,23 @@ test('readFrameHashState parses codex workspace and falls back to feature config
     page: 'codex',
     codexWorkspace: 'feature-config',
   });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=skills'), {
+    page: 'codex',
+    codexWorkspace: 'skills',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=mcp-servers'), {
+    page: 'codex',
+    codexWorkspace: 'mcp-servers',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=account-list'), {
+    page: 'codex',
+    codexWorkspace: 'account-list',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=account-list&detail=openai-compatible%3Adeepseek'), {
+    page: 'codex',
+    codexWorkspace: 'account-list',
+    accountDetailID: 'openai-compatible:deepseek',
+  });
   assert.deepEqual(readFrameHashState('#frame=codex&workspace=session-management'), {
     page: 'codex',
     codexWorkspace: 'session-management',
@@ -438,8 +465,35 @@ test('account detail hash helpers add and remove modal marker', () => {
   assert.equal(clearAccountDetailFrameHash('#frame=accounts&workspace=codex&detail=api-key%3Alocal-1'), '#frame=accounts&workspace=codex');
 });
 
+test('codex detail hash helpers add and remove modal marker', () => {
+  assert.equal(
+    buildCodexDetailFrameHash('#frame=codex&workspace=account-list', 'openai-compatible:deepseek'),
+    '#frame=codex&workspace=account-list&detail=openai-compatible%3Adeepseek',
+  );
+  assert.equal(
+    buildCodexDetailFrameHash('#frame=codex', 'codex-api-key:stable'),
+    '#frame=codex&detail=codex-api-key%3Astable',
+  );
+  assert.equal(
+    clearCodexDetailFrameHash('#frame=codex&workspace=account-list&detail=openai-compatible%3Adeepseek'),
+    '#frame=codex&workspace=account-list',
+  );
+});
+
 test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(buildFrameHash('status', 'all', 'feature-config', 'codex', 'codex'), '#frame=status');
+  assert.equal(
+    buildFrameHash('codex', 'all', 'skills', 'codex', 'codex'),
+    '#frame=codex&workspace=skills',
+  );
+  assert.equal(
+    buildFrameHash('codex', 'all', 'mcp-servers', 'codex', 'codex'),
+    '#frame=codex&workspace=mcp-servers',
+  );
+  assert.equal(
+    buildFrameHash('codex', 'all', 'account-list', 'codex', 'codex'),
+    '#frame=codex&workspace=account-list',
+  );
   assert.equal(
     buildFrameHash('codex', 'all', 'session-management', 'codex', 'codex'),
     '#frame=codex&workspace=session-management',
@@ -459,5 +513,13 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(
     buildFrameHash('accounts', 'openai-compatible', 'feature-config', 'codex', 'codex'),
     '#frame=accounts&workspace=openai-compatible',
+  );
+  assert.equal(
+    buildFrameHash('codex', 'all', 'account-list', 'codex', 'codex', 'openai-compatible:deepseek'),
+    '#frame=codex&workspace=account-list&detail=openai-compatible%3Adeepseek',
+  );
+  assert.equal(
+    buildFrameHash('accounts', 'codex', 'feature-config', 'codex', 'codex', 'api-key:local-1'),
+    '#frame=accounts&workspace=codex&detail=api-key%3Alocal-1',
   );
 });

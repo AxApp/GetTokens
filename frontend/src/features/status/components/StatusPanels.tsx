@@ -2,6 +2,7 @@ import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import type { main } from '../../../../wailsjs/go/models';
 import ActionSelect, { type ActionSelectOption } from '../../../components/ui/ActionSelect';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { RelayModelEditorModal } from './RelayEditors';
 import type {
   CodexFeatureConfigSnapshot,
@@ -703,27 +704,13 @@ export function StatusCodexFeaturesSection({
               ) : null}
             </div>
             <div className="flex justify-start md:justify-center">
-              <button
-                type="button"
-                role="switch"
-                aria-label={row.key}
-                aria-checked={row.draftValue}
-                onClick={() => onToggleFeature(row.key, !row.draftValue)}
+              <ToggleSwitch
+                label={row.key}
+                checked={row.draftValue}
                 disabled={row.readOnly || isBusy}
-                className="mx-auto flex h-9 w-16 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <span
-                  className={`relative h-7 w-14 shrink-0 overflow-hidden border-2 border-[var(--border-color)] transition-colors duration-200 ease-out ${
-                    row.draftValue ? 'bg-green-600' : 'bg-[var(--bg-surface)]'
-                  }`}
-                >
-                  <span
-                    className={`absolute left-0.5 top-0.5 h-5 w-5 border-2 border-[var(--border-color)] transition-transform duration-200 ease-out ${
-                      row.draftValue ? 'translate-x-7 bg-[var(--bg-main)]' : 'translate-x-0 bg-[var(--text-primary)]'
-                    }`}
-                  ></span>
-                </span>
-              </button>
+                className="mx-auto h-9 w-16"
+                onChange={(checked) => onToggleFeature(row.key, checked)}
+              />
             </div>
           </div>
         ))}

@@ -103,12 +103,23 @@ export function useAppNavigation() {
       return;
     }
 
+    const hashState = readFrameHashState(window.location.hash);
+    let detailID: string | null = null;
+    if (shouldPreserveDetailHash(
+      hashState,
+      activePage,
+      activeAccountWorkspace,
+      activeCodexWorkspace,
+    )) {
+      detailID = hashState?.accountDetailID ?? null;
+    }
     const nextHash = buildFrameHash(
       activePage,
       activeAccountWorkspace,
       activeCodexWorkspace,
       activeSessionManagementWorkspace,
       activeUsageDeskWorkspace,
+      detailID,
     );
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
@@ -165,4 +176,22 @@ export function useAppNavigation() {
     activeUsageDeskWorkspace,
     setActiveUsageDeskWorkspace,
   };
+}
+
+function shouldPreserveDetailHash(
+  hashState: ReturnType<typeof readFrameHashState>,
+  activePage: AppPage,
+  activeAccountWorkspace: AccountWorkspace,
+  activeCodexWorkspace: CodexWorkspace,
+) {
+  if (!hashState?.accountDetailID || hashState.page !== activePage) {
+    return false;
+  }
+  if (activePage === 'accounts') {
+    return (hashState.workspace ?? 'all') === activeAccountWorkspace;
+  }
+  if (activePage === 'codex') {
+    return (hashState.codexWorkspace ?? 'feature-config') === activeCodexWorkspace;
+  }
+  return false;
 }

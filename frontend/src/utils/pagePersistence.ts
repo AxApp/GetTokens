@@ -22,6 +22,10 @@ const appPages: ReadonlySet<AppPage> = new Set([
 const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all', 'codex', 'openai-compatible']);
 const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'feature-config',
+  'binary-management',
+  'skills',
+  'mcp-servers',
+  'account-list',
   'session-management',
   'vendor-status',
   'usage-codex',
@@ -257,10 +261,15 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
 
   if (page === 'codex') {
     const workspace = params.get('workspace');
-    return {
+    const detail = params.get('detail');
+    const state: FrameHashState = {
       page,
       codexWorkspace: isCodexWorkspace(workspace) ? workspace : 'feature-config',
     };
+    if (detail && detail.trim()) {
+      state.accountDetailID = detail;
+    }
+    return state;
   }
 
   if (page === 'usage-desk') {
@@ -280,6 +289,7 @@ export function buildFrameHash(
   codexWorkspace: CodexWorkspace,
   sessionManagementWorkspace: SessionManagementWorkspace,
   usageDeskWorkspace: UsageDeskWorkspace,
+  detailID?: string | null,
 ): string {
   const params = new URLSearchParams();
   params.set('frame', page);
@@ -295,6 +305,9 @@ export function buildFrameHash(
   if (page === 'usage-desk' && usageDeskWorkspace !== 'codex') {
     params.set('workspace', usageDeskWorkspace);
   }
+  if (detailID && detailID.trim()) {
+    params.set('detail', detailID);
+  }
   return `#${params.toString()}`;
 }
 
@@ -307,6 +320,21 @@ export function buildAccountDetailFrameHash(hash: string | null | undefined, det
 }
 
 export function clearAccountDetailFrameHash(hash: string | null | undefined): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.delete('detail');
+  return `#${params.toString()}`;
+}
+
+export function buildCodexDetailFrameHash(hash: string | null | undefined, detailID: string): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.set('frame', 'codex');
+  params.set('detail', detailID);
+  return `#${params.toString()}`;
+}
+
+export function clearCodexDetailFrameHash(hash: string | null | undefined): string {
   const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
   const params = new URLSearchParams(normalized);
   params.delete('detail');

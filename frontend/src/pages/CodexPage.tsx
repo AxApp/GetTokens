@@ -1,4 +1,7 @@
+import CodexAccountListFeature from '../features/codex/CodexAccountListFeature';
 import CodexFeature from '../features/codex/CodexFeature';
+import CodexBinaryFeature from '../features/codex-binary/CodexBinaryFeature';
+import CodexExtensionsFeature from '../features/codex-extensions/CodexExtensionsFeature';
 import UsageDeskFeature from '../features/accounts/UsageDeskFeature';
 import SessionManagementPage from './SessionManagementPage';
 import VendorStatusPage from './VendorStatusPage';
@@ -10,6 +13,18 @@ interface CodexPageProps {
 }
 
 export default function CodexPage({ workspace, sidecarStatus }: CodexPageProps) {
+  if (workspace === 'account-list') {
+    return <CodexAccountListFeature sidecarStatus={sidecarStatus} />;
+  }
+
+  if (workspace === 'binary-management') {
+    return <CodexBinaryFeature />;
+  }
+
+  if (workspace === 'skills' || workspace === 'mcp-servers') {
+    return <CodexExtensionsFeature workspace={workspace} />;
+  }
+
   if (workspace === 'session-management') {
     return <SessionManagementPage workspace="codex" />;
   }

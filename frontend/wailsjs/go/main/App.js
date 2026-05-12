@@ -46,6 +46,14 @@ export function DownloadAuthFile(arg1) {
   return window['go']['main']['App']['DownloadAuthFile'](arg1);
 }
 
+export function DownloadCodexBinary(arg1) {
+  return window['go']['main']['App']['DownloadCodexBinary'](arg1);
+}
+
+export function EnableCodexBinaryManagedPath() {
+  return window['go']['main']['App']['EnableCodexBinaryManagedPath']();
+}
+
 export function FetchOpenAICompatibleProviderModels(arg1) {
   return window['go']['main']['App']['FetchOpenAICompatibleProviderModels'](arg1);
 }
@@ -66,12 +74,32 @@ export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
 }
 
+export function GetCodexBinaryDoctor() {
+  return window['go']['main']['App']['GetCodexBinaryDoctor']();
+}
+
+export function GetCodexBinarySnapshot() {
+  return window['go']['main']['App']['GetCodexBinarySnapshot']();
+}
+
+export function GetCodexBinaryVersionNotes(arg1) {
+  return window['go']['main']['App']['GetCodexBinaryVersionNotes'](arg1);
+}
+
+export function GetCodexConfigToml() {
+  return window['go']['main']['App']['GetCodexConfigToml']();
+}
+
 export function GetCodexFeatureConfig() {
   return window['go']['main']['App']['GetCodexFeatureConfig']();
 }
 
 export function GetCodexLocalUsage() {
   return window['go']['main']['App']['GetCodexLocalUsage']();
+}
+
+export function GetCodexMcpServers() {
+  return window['go']['main']['App']['GetCodexMcpServers']();
 }
 
 export function GetCodexQuota(arg1) {
@@ -84,6 +112,10 @@ export function GetCodexSessionDetail(arg1) {
 
 export function GetCodexSessionManagementSnapshot() {
   return window['go']['main']['App']['GetCodexSessionManagementSnapshot']();
+}
+
+export function GetCodexSkillsSnapshot() {
+  return window['go']['main']['App']['GetCodexSkillsSnapshot']();
 }
 
 export function GetLocalProjectedUsageSettings() {
@@ -118,6 +150,10 @@ export function GetVersion() {
   return window['go']['main']['App']['GetVersion']();
 }
 
+export function ImportCodexBinary(arg1) {
+  return window['go']['main']['App']['ImportCodexBinary'](arg1);
+}
+
 export function ListAccounts() {
   return window['go']['main']['App']['ListAccounts']();
 }
@@ -142,6 +178,10 @@ export function NormalizeAuthFileContent(arg1) {
   return window['go']['main']['App']['NormalizeAuthFileContent'](arg1);
 }
 
+export function OpenCodexConfigToml() {
+  return window['go']['main']['App']['OpenCodexConfigToml']();
+}
+
 export function PreviewCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['PreviewCodexFeatureConfig'](arg1);
 }
@@ -154,6 +194,10 @@ export function RebuildCodexLocalUsage() {
   return window['go']['main']['App']['RebuildCodexLocalUsage']();
 }
 
+export function RefreshCodexBinaryAvailable() {
+  return window['go']['main']['App']['RefreshCodexBinaryAvailable']();
+}
+
 export function RefreshCodexLocalUsage() {
   return window['go']['main']['App']['RefreshCodexLocalUsage']();
 }
@@ -162,8 +206,20 @@ export function RefreshCodexSessionManagementSnapshot() {
   return window['go']['main']['App']['RefreshCodexSessionManagementSnapshot']();
 }
 
+export function SaveCodexConfigToml(arg1) {
+  return window['go']['main']['App']['SaveCodexConfigToml'](arg1);
+}
+
 export function SaveCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['SaveCodexFeatureConfig'](arg1);
+}
+
+export function SaveCodexMcpServer(arg1) {
+  return window['go']['main']['App']['SaveCodexMcpServer'](arg1);
+}
+
+export function SaveCodexSkillEnabled(arg1) {
+  return window['go']['main']['App']['SaveCodexSkillEnabled'](arg1);
 }
 
 export function SetAccountDisabled(arg1, arg2) {
@@ -224,6 +280,10 @@ export function UpdateRelayServiceAPIKeys(arg1) {
 
 export function UploadAuthFiles(arg1) {
   return window['go']['main']['App']['UploadAuthFiles'](arg1);
+}
+
+export function UseCodexBinary(arg1) {
+  return window['go']['main']['App']['UseCodexBinary'](arg1);
 }
 
 export function UsesNativeUpdaterUI() {

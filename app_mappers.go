@@ -138,6 +138,125 @@ func mapCodexFeatureConfigPreview(result *wailsapp.CodexFeatureConfigPreview) *C
 	}
 }
 
+func mapCodexSkillsSnapshot(result *wailsapp.CodexSkillsSnapshot) *CodexSkillsSnapshot {
+	if result == nil {
+		return &CodexSkillsSnapshot{Roots: []CodexSkillRoot{}, Skills: []CodexSkillRecord{}, Warnings: []string{}}
+	}
+	roots := make([]CodexSkillRoot, 0, len(result.Roots))
+	for _, root := range result.Roots {
+		roots = append(roots, CodexSkillRoot{
+			Label:      root.Label,
+			Path:       root.Path,
+			SourceKind: root.SourceKind,
+			Exists:     root.Exists,
+		})
+	}
+	skills := make([]CodexSkillRecord, 0, len(result.Skills))
+	for _, skill := range result.Skills {
+		files := make([]CodexSkillFile, 0, len(skill.Files))
+		for _, file := range skill.Files {
+			files = append(files, CodexSkillFile{Path: file.Path, Kind: file.Kind})
+		}
+		skills = append(skills, CodexSkillRecord{
+			ID:              skill.ID,
+			Name:            skill.Name,
+			Description:     skill.Description,
+			Enabled:         skill.Enabled,
+			RootLabel:       skill.RootLabel,
+			RootPath:        skill.RootPath,
+			SourceKind:      skill.SourceKind,
+			Origin:          skill.Origin,
+			VersionLabel:    skill.VersionLabel,
+			Files:           files,
+			SkillMarkdown:   skill.SkillMarkdown,
+			PreviewMarkdown: skill.PreviewMarkdown,
+			Warnings:        append([]string(nil), skill.Warnings...),
+		})
+	}
+	return &CodexSkillsSnapshot{
+		CodexHomePath: result.CodexHomePath,
+		ConfigPath:    result.ConfigPath,
+		Roots:         roots,
+		Skills:        skills,
+		Warnings:      append([]string(nil), result.Warnings...),
+	}
+}
+
+func mapCodexMcpServersSnapshot(result *wailsapp.CodexMcpServersSnapshot) *CodexMcpServersSnapshot {
+	if result == nil {
+		return &CodexMcpServersSnapshot{Servers: []CodexMcpServer{}, Warnings: []string{}}
+	}
+	servers := make([]CodexMcpServer, 0, len(result.Servers))
+	for _, server := range result.Servers {
+		servers = append(servers, mapCodexMcpServer(server))
+	}
+	return &CodexMcpServersSnapshot{
+		CodexHomePath: result.CodexHomePath,
+		ConfigPath:    result.ConfigPath,
+		Exists:        result.Exists,
+		Servers:       servers,
+		Warnings:      append([]string(nil), result.Warnings...),
+	}
+}
+
+func mapCodexMcpServer(server wailsapp.CodexMcpServer) CodexMcpServer {
+	env := make([]CodexMcpEnvRow, 0, len(server.Env))
+	for _, row := range server.Env {
+		env = append(env, CodexMcpEnvRow{Key: row.Key, Value: row.Value})
+	}
+	return CodexMcpServer{
+		ID:                server.ID,
+		Label:             server.Label,
+		Enabled:           server.Enabled,
+		Transport:         server.Transport,
+		Command:           server.Command,
+		Args:              append([]string(nil), server.Args...),
+		URL:               server.URL,
+		Env:               env,
+		BearerTokenEnvVar: server.BearerTokenEnvVar,
+		SourcePath:        server.SourcePath,
+		Status:            server.Status,
+		Warnings:          append([]string(nil), server.Warnings...),
+	}
+}
+
+func mapWailsCodexMcpServer(server CodexMcpServer) wailsapp.CodexMcpServer {
+	env := make([]wailsapp.CodexMcpEnvRow, 0, len(server.Env))
+	for _, row := range server.Env {
+		env = append(env, wailsapp.CodexMcpEnvRow{Key: row.Key, Value: row.Value})
+	}
+	return wailsapp.CodexMcpServer{
+		ID:                server.ID,
+		Label:             server.Label,
+		Enabled:           server.Enabled,
+		Transport:         server.Transport,
+		Command:           server.Command,
+		Args:              append([]string(nil), server.Args...),
+		URL:               server.URL,
+		Env:               env,
+		BearerTokenEnvVar: server.BearerTokenEnvVar,
+		SourcePath:        server.SourcePath,
+		Status:            server.Status,
+		Warnings:          append([]string(nil), server.Warnings...),
+	}
+}
+
+func mapCodexMcpSaveResult(result *wailsapp.SaveCodexMcpServerResult) *SaveCodexMcpServerResult {
+	if result == nil {
+		return &SaveCodexMcpServerResult{Changes: []CodexMcpChange{}}
+	}
+	changes := make([]CodexMcpChange, 0, len(result.Changes))
+	for _, change := range result.Changes {
+		changes = append(changes, CodexMcpChange{Key: change.Key, Before: change.Before, After: change.After})
+	}
+	return &SaveCodexMcpServerResult{
+		ConfigPath: result.ConfigPath,
+		Server:     mapCodexMcpServer(result.Server),
+		Preview:    result.Preview,
+		Changes:    changes,
+	}
+}
+
 func cloneBoolMap(source map[string]bool) map[string]bool {
 	if len(source) == 0 {
 		return map[string]bool{}

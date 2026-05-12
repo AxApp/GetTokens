@@ -1,3 +1,524 @@
+export namespace codexbinary {
+
+	export class DoctorSummary {
+	    severity: string;
+	    message: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DoctorSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.severity = source["severity"];
+	        this.message = source["message"];
+	    }
+	}
+	export class DownloadInput {
+	    sourceID: string;
+	    tag: string;
+	    activateAfterInstall: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new DownloadInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sourceID = source["sourceID"];
+	        this.tag = source["tag"];
+	        this.activateAfterInstall = source["activateAfterInstall"];
+	    }
+	}
+	export class SourceView {
+	    id: string;
+	    type: string;
+	    name: string;
+	    enabled: boolean;
+	    repo?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new SourceView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.type = source["type"];
+	        this.name = source["name"];
+	        this.enabled = source["enabled"];
+	        this.repo = source["repo"];
+	    }
+	}
+	export class DownloadTaskView {
+	    id: string;
+	    sourceID: string;
+	    tag: string;
+	    version: string;
+	    status: string;
+	    phase: string;
+	    bytesDone: number;
+	    bytesTotal: number;
+	    installAfterDownload: boolean;
+	    activateAfterInstall: boolean;
+	    errorCode?: string;
+	    errorMessage?: string;
+	    updatedAt: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DownloadTaskView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.sourceID = source["sourceID"];
+	        this.tag = source["tag"];
+	        this.version = source["version"];
+	        this.status = source["status"];
+	        this.phase = source["phase"];
+	        this.bytesDone = source["bytesDone"];
+	        this.bytesTotal = source["bytesTotal"];
+	        this.installAfterDownload = source["installAfterDownload"];
+	        this.activateAfterInstall = source["activateAfterInstall"];
+	        this.errorCode = source["errorCode"];
+	        this.errorMessage = source["errorMessage"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
+	export class VersionRowView {
+	    rowID: string;
+	    version: string;
+	    tag?: string;
+	    sourceID: string;
+	    installedVersionID?: string;
+	    isInstalled: boolean;
+	    isSelected: boolean;
+	    isRollback: boolean;
+	    hasRemote: boolean;
+	    publishedAt?: string;
+	    installedAt?: string;
+	    notesState: string;
+	    task?: DownloadTaskView;
+	    primaryAction: string;
+	    secondaryAction?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new VersionRowView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rowID = source["rowID"];
+	        this.version = source["version"];
+	        this.tag = source["tag"];
+	        this.sourceID = source["sourceID"];
+	        this.installedVersionID = source["installedVersionID"];
+	        this.isInstalled = source["isInstalled"];
+	        this.isSelected = source["isSelected"];
+	        this.isRollback = source["isRollback"];
+	        this.hasRemote = source["hasRemote"];
+	        this.publishedAt = source["publishedAt"];
+	        this.installedAt = source["installedAt"];
+	        this.notesState = source["notesState"];
+	        this.task = this.convertValues(source["task"], DownloadTaskView);
+	        this.primaryAction = source["primaryAction"];
+	        this.secondaryAction = source["secondaryAction"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class RemoteVersionView {
+	    sourceID: string;
+	    version: string;
+	    tag: string;
+	    title: string;
+	    downloadURL: string;
+	    htmlURL?: string;
+	    assetName?: string;
+	    assetSize?: number;
+	    publishedAt?: string;
+	    isPrerelease: boolean;
+	    isInstalled: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new RemoteVersionView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sourceID = source["sourceID"];
+	        this.version = source["version"];
+	        this.tag = source["tag"];
+	        this.title = source["title"];
+	        this.downloadURL = source["downloadURL"];
+	        this.htmlURL = source["htmlURL"];
+	        this.assetName = source["assetName"];
+	        this.assetSize = source["assetSize"];
+	        this.publishedAt = source["publishedAt"];
+	        this.isPrerelease = source["isPrerelease"];
+	        this.isInstalled = source["isInstalled"];
+	    }
+	}
+	export class ManagedConfigView {
+	    binDir: string;
+	    binPath: string;
+	    enableCommand: string;
+	    profilePath?: string;
+	    profileKind?: string;
+	    isPathConfigured: boolean;
+	    resolvedCodexPath?: string;
+	    isResolvedToManaged: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ManagedConfigView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.binDir = source["binDir"];
+	        this.binPath = source["binPath"];
+	        this.enableCommand = source["enableCommand"];
+	        this.profilePath = source["profilePath"];
+	        this.profileKind = source["profileKind"];
+	        this.isPathConfigured = source["isPathConfigured"];
+	        this.resolvedCodexPath = source["resolvedCodexPath"];
+	        this.isResolvedToManaged = source["isResolvedToManaged"];
+	    }
+	}
+	export class Snapshot {
+	    manifestPath: string;
+	    managedBinPath: string;
+	    managedConfig: ManagedConfigView;
+	    selectedVersionID?: string;
+	    currentVersion?: VersionView;
+	    versions: VersionView[];
+	    remoteVersions: RemoteVersionView[];
+	    versionRows: VersionRowView[];
+	    downloadTasks: DownloadTaskView[];
+	    sources: SourceView[];
+	    doctor: DoctorSummary;
+
+	    static createFrom(source: any = {}) {
+	        return new Snapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.manifestPath = source["manifestPath"];
+	        this.managedBinPath = source["managedBinPath"];
+	        this.managedConfig = this.convertValues(source["managedConfig"], ManagedConfigView);
+	        this.selectedVersionID = source["selectedVersionID"];
+	        this.currentVersion = this.convertValues(source["currentVersion"], VersionView);
+	        this.versions = this.convertValues(source["versions"], VersionView);
+	        this.remoteVersions = this.convertValues(source["remoteVersions"], RemoteVersionView);
+	        this.versionRows = this.convertValues(source["versionRows"], VersionRowView);
+	        this.downloadTasks = this.convertValues(source["downloadTasks"], DownloadTaskView);
+	        this.sources = this.convertValues(source["sources"], SourceView);
+	        this.doctor = this.convertValues(source["doctor"], DoctorSummary);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class VersionView {
+	    id: string;
+	    displayName: string;
+	    detectedVersion: string;
+	    releaseTag?: string;
+	    sourceID: string;
+	    sourceType: string;
+	    sourceURL?: string;
+	    installedAt: string;
+	    lastActivatedAt?: string;
+	    isSelected: boolean;
+	    existsOnDisk: boolean;
+	    binaryRelativePath?: string;
+	    binaryPath?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new VersionView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.displayName = source["displayName"];
+	        this.detectedVersion = source["detectedVersion"];
+	        this.releaseTag = source["releaseTag"];
+	        this.sourceID = source["sourceID"];
+	        this.sourceType = source["sourceType"];
+	        this.sourceURL = source["sourceURL"];
+	        this.installedAt = source["installedAt"];
+	        this.lastActivatedAt = source["lastActivatedAt"];
+	        this.isSelected = source["isSelected"];
+	        this.existsOnDisk = source["existsOnDisk"];
+	        this.binaryRelativePath = source["binaryRelativePath"];
+	        this.binaryPath = source["binaryPath"];
+	    }
+	}
+	export class DownloadResult {
+	    version: VersionView;
+	    alreadyInstalled: boolean;
+	    activated: boolean;
+	    snapshot: Snapshot;
+
+	    static createFrom(source: any = {}) {
+	        return new DownloadResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = this.convertValues(source["version"], VersionView);
+	        this.alreadyInstalled = source["alreadyInstalled"];
+	        this.activated = source["activated"];
+	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+	export class EnableManagedPathResult {
+	    profilePath: string;
+	    backupPath?: string;
+	    changed: boolean;
+	    messages: string[];
+	    snapshot: Snapshot;
+
+	    static createFrom(source: any = {}) {
+	        return new EnableManagedPathResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.profilePath = source["profilePath"];
+	        this.backupPath = source["backupPath"];
+	        this.changed = source["changed"];
+	        this.messages = source["messages"];
+	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class ImportLocalInput {
+	    Path: string;
+	    SourceID: string;
+	    SourceType: string;
+	    SourceURL: string;
+	    ReleaseTag: string;
+	    ActivateAfterInstall: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ImportLocalInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.Path = source["Path"];
+	        this.SourceID = source["SourceID"];
+	        this.SourceType = source["SourceType"];
+	        this.SourceURL = source["SourceURL"];
+	        this.ReleaseTag = source["ReleaseTag"];
+	        this.ActivateAfterInstall = source["ActivateAfterInstall"];
+	    }
+	}
+	export class InstallResult {
+	    version: VersionView;
+	    alreadyInstalled: boolean;
+	    activated: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new InstallResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.version = this.convertValues(source["version"], VersionView);
+	        this.alreadyInstalled = source["alreadyInstalled"];
+	        this.activated = source["activated"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+
+
+	export class UseInput {
+	    versionID: string;
+	    expectedCurrentVersionID?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new UseInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.versionID = source["versionID"];
+	        this.expectedCurrentVersionID = source["expectedCurrentVersionID"];
+	    }
+	}
+	export class UseResult {
+	    selectedVersionID: string;
+	    snapshot: Snapshot;
+
+	    static createFrom(source: any = {}) {
+	        return new UseResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.selectedVersionID = source["selectedVersionID"];
+	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class VersionNotesInput {
+	    sourceID: string;
+	    tag: string;
+
+	    static createFrom(source: any = {}) {
+	        return new VersionNotesInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sourceID = source["sourceID"];
+	        this.tag = source["tag"];
+	    }
+	}
+	export class VersionNotesView {
+	    sourceID: string;
+	    tag: string;
+	    version: string;
+	    title: string;
+	    htmlURL?: string;
+	    publishedAt?: string;
+	    bodyMarkdown: string;
+	    bodyPlainText?: string;
+	    source: string;
+	    truncated: boolean;
+	    fetchedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new VersionNotesView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sourceID = source["sourceID"];
+	        this.tag = source["tag"];
+	        this.version = source["version"];
+	        this.title = source["title"];
+	        this.htmlURL = source["htmlURL"];
+	        this.publishedAt = source["publishedAt"];
+	        this.bodyMarkdown = source["bodyMarkdown"];
+	        this.bodyPlainText = source["bodyPlainText"];
+	        this.source = source["source"];
+	        this.truncated = source["truncated"];
+	        this.fetchedAt = source["fetchedAt"];
+	    }
+	}
+
+
+}
+
 export namespace main {
 
 	export class AccountRecord {
@@ -138,6 +659,22 @@ export namespace main {
 	        this.conflicts = source["conflicts"];
 	    }
 	}
+	export class CodexConfigTomlDocument {
+	    configPath: string;
+	    content: string;
+	    exists: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexConfigTomlDocument(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configPath = source["configPath"];
+	        this.content = source["content"];
+	        this.exists = source["exists"];
+	    }
+	}
 	export class CodexFeatureConfigChange {
 	    key: string;
 	    type: string;
@@ -261,6 +798,126 @@ export namespace main {
 		}
 	}
 
+	export class CodexMcpChange {
+	    key: string;
+	    before: string;
+	    after: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexMcpChange(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.before = source["before"];
+	        this.after = source["after"];
+	    }
+	}
+	export class CodexMcpEnvRow {
+	    key: string;
+	    value: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexMcpEnvRow(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.value = source["value"];
+	    }
+	}
+	export class CodexMcpServer {
+	    id: string;
+	    label: string;
+	    enabled: boolean;
+	    transport: string;
+	    command?: string;
+	    args?: string[];
+	    url?: string;
+	    env?: CodexMcpEnvRow[];
+	    bearerTokenEnvVar?: string;
+	    sourcePath: string;
+	    status: string;
+	    warnings?: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexMcpServer(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	        this.enabled = source["enabled"];
+	        this.transport = source["transport"];
+	        this.command = source["command"];
+	        this.args = source["args"];
+	        this.url = source["url"];
+	        this.env = this.convertValues(source["env"], CodexMcpEnvRow);
+	        this.bearerTokenEnvVar = source["bearerTokenEnvVar"];
+	        this.sourcePath = source["sourcePath"];
+	        this.status = source["status"];
+	        this.warnings = source["warnings"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CodexMcpServersSnapshot {
+	    codexHomePath: string;
+	    configPath: string;
+	    exists: boolean;
+	    servers: CodexMcpServer[];
+	    warnings?: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexMcpServersSnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.codexHomePath = source["codexHomePath"];
+	        this.configPath = source["configPath"];
+	        this.exists = source["exists"];
+	        this.servers = this.convertValues(source["servers"], CodexMcpServer);
+	        this.warnings = source["warnings"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class CodexQuotaWindow {
 	    id: string;
 	    label: string;
@@ -314,6 +971,130 @@ export namespace main {
 		}
 	}
 
+	export class CodexSkillFile {
+	    path: string;
+	    kind: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexSkillFile(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.kind = source["kind"];
+	    }
+	}
+	export class CodexSkillRecord {
+	    id: string;
+	    name: string;
+	    description?: string;
+	    enabled: boolean;
+	    rootLabel: string;
+	    rootPath: string;
+	    sourceKind: string;
+	    origin: string;
+	    versionLabel?: string;
+	    files: CodexSkillFile[];
+	    skillMarkdown: string;
+	    previewMarkdown: string;
+	    warnings?: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexSkillRecord(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.description = source["description"];
+	        this.enabled = source["enabled"];
+	        this.rootLabel = source["rootLabel"];
+	        this.rootPath = source["rootPath"];
+	        this.sourceKind = source["sourceKind"];
+	        this.origin = source["origin"];
+	        this.versionLabel = source["versionLabel"];
+	        this.files = this.convertValues(source["files"], CodexSkillFile);
+	        this.skillMarkdown = source["skillMarkdown"];
+	        this.previewMarkdown = source["previewMarkdown"];
+	        this.warnings = source["warnings"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CodexSkillRoot {
+	    label: string;
+	    path: string;
+	    sourceKind: string;
+	    exists: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexSkillRoot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.label = source["label"];
+	        this.path = source["path"];
+	        this.sourceKind = source["sourceKind"];
+	        this.exists = source["exists"];
+	    }
+	}
+	export class CodexSkillsSnapshot {
+	    codexHomePath: string;
+	    configPath: string;
+	    roots: CodexSkillRoot[];
+	    skills: CodexSkillRecord[];
+	    warnings?: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexSkillsSnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.codexHomePath = source["codexHomePath"];
+	        this.configPath = source["configPath"];
+	        this.roots = this.convertValues(source["roots"], CodexSkillRoot);
+	        this.skills = this.convertValues(source["skills"], CodexSkillRecord);
+	        this.warnings = source["warnings"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class CompleteCodexOAuthInput {
 	    existingName: string;
 	    previousNames: string[];
@@ -667,6 +1448,18 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class OpenCodexConfigTomlResult {
+	    configPath: string;
+
+	    static createFrom(source: any = {}) {
+	        return new OpenCodexConfigTomlResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configPath = source["configPath"];
+	    }
+	}
 	export class ProbeProxyNodeInput {
 	    proxyUrl: string;
 	    targetUrl?: string;
@@ -848,6 +1641,32 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class SaveCodexConfigTomlInput {
+	    content: string;
+
+	    static createFrom(source: any = {}) {
+	        return new SaveCodexConfigTomlInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.content = source["content"];
+	    }
+	}
+	export class SaveCodexConfigTomlResult {
+	    configPath: string;
+	    content: string;
+
+	    static createFrom(source: any = {}) {
+	        return new SaveCodexConfigTomlResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configPath = source["configPath"];
+	        this.content = source["content"];
+	    }
+	}
 	export class SaveCodexFeatureConfigInput {
 	    values: Record<string, boolean>;
 
@@ -858,6 +1677,100 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.values = source["values"];
+	    }
+	}
+	export class SaveCodexMcpServerInput {
+	    server: CodexMcpServer;
+
+	    static createFrom(source: any = {}) {
+	        return new SaveCodexMcpServerInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.server = this.convertValues(source["server"], CodexMcpServer);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SaveCodexMcpServerResult {
+	    configPath: string;
+	    server: CodexMcpServer;
+	    preview: string;
+	    changes: CodexMcpChange[];
+
+	    static createFrom(source: any = {}) {
+	        return new SaveCodexMcpServerResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configPath = source["configPath"];
+	        this.server = this.convertValues(source["server"], CodexMcpServer);
+	        this.preview = source["preview"];
+	        this.changes = this.convertValues(source["changes"], CodexMcpChange);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SaveCodexSkillEnabledInput {
+	    path: string;
+	    enabled: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new SaveCodexSkillEnabledInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.enabled = source["enabled"];
+	    }
+	}
+	export class SaveCodexSkillEnabledResult {
+	    configPath: string;
+	    preview: string;
+
+	    static createFrom(source: any = {}) {
+	        return new SaveCodexSkillEnabledResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configPath = source["configPath"];
+	        this.preview = source["preview"];
 	    }
 	}
 	export class SessionManagementMessageRecord {
@@ -1367,39 +2280,6 @@ export namespace updater {
 	        this.releaseUrl = source["releaseUrl"];
 	        this.assetName = source["assetName"];
 	        this.releaseNote = source["releaseNote"];
-	    }
-	}
-
-}
-
-export namespace wailsapp {
-
-	export class RelayRoutingConfig {
-	    strategy: string;
-	    sessionAffinity: boolean;
-	    sessionAffinityTTL: string;
-	    requestRetry: number;
-	    maxRetryCredentials: number;
-	    maxRetryInterval: number;
-	    switchProject: boolean;
-	    switchPreviewModel: boolean;
-	    antigravityCredits: boolean;
-
-	    static createFrom(source: any = {}) {
-	        return new RelayRoutingConfig(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.strategy = source["strategy"];
-	        this.sessionAffinity = source["sessionAffinity"];
-	        this.sessionAffinityTTL = source["sessionAffinityTTL"];
-	        this.requestRetry = source["requestRetry"];
-	        this.maxRetryCredentials = source["maxRetryCredentials"];
-	        this.maxRetryInterval = source["maxRetryInterval"];
-	        this.switchProject = source["switchProject"];
-	        this.switchPreviewModel = source["switchPreviewModel"];
-	        this.antigravityCredits = source["antigravityCredits"];
 	    }
 	}
 

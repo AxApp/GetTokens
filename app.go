@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/linhay/gettokens/internal/codexbinary"
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/updater"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
@@ -220,6 +221,38 @@ func (a *App) GetCodexSessionManagementSnapshot() (*SessionManagementSnapshot, e
 	return mapSessionManagementSnapshot(result), nil
 }
 
+func (a *App) GetCodexBinarySnapshot() (*codexbinary.Snapshot, error) {
+	return a.core.GetCodexBinarySnapshot()
+}
+
+func (a *App) RefreshCodexBinaryAvailable() (*codexbinary.Snapshot, error) {
+	return a.core.RefreshCodexBinaryAvailable()
+}
+
+func (a *App) ImportCodexBinary(input codexbinary.ImportLocalInput) (*codexbinary.InstallResult, error) {
+	return a.core.ImportCodexBinary(input)
+}
+
+func (a *App) DownloadCodexBinary(input codexbinary.DownloadInput) (*codexbinary.DownloadResult, error) {
+	return a.core.DownloadCodexBinary(input)
+}
+
+func (a *App) EnableCodexBinaryManagedPath() (*codexbinary.EnableManagedPathResult, error) {
+	return a.core.EnableCodexBinaryManagedPath()
+}
+
+func (a *App) UseCodexBinary(input codexbinary.UseInput) (*codexbinary.UseResult, error) {
+	return a.core.UseCodexBinary(input)
+}
+
+func (a *App) GetCodexBinaryVersionNotes(input codexbinary.VersionNotesInput) (*codexbinary.VersionNotesView, error) {
+	return a.core.GetCodexBinaryVersionNotes(input)
+}
+
+func (a *App) GetCodexBinaryDoctor() (*codexbinary.DoctorSummary, error) {
+	return a.core.GetCodexBinaryDoctor()
+}
+
 func (a *App) RefreshCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
 	result, err := a.core.RefreshCodexSessionManagementSnapshot()
 	if err != nil {
@@ -304,6 +337,77 @@ func (a *App) SaveCodexFeatureConfig(input SaveCodexFeatureConfigInput) (*CodexF
 		return nil, err
 	}
 	return mapCodexFeatureConfigPreview(result), nil
+}
+
+func (a *App) GetCodexSkillsSnapshot() (*CodexSkillsSnapshot, error) {
+	result, err := a.core.GetCodexSkillsSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexSkillsSnapshot(result), nil
+}
+
+func (a *App) SaveCodexSkillEnabled(input SaveCodexSkillEnabledInput) (*SaveCodexSkillEnabledResult, error) {
+	result, err := a.core.SaveCodexSkillEnabled(wailsapp.SaveCodexSkillEnabledInput{
+		Path:    input.Path,
+		Enabled: input.Enabled,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &SaveCodexSkillEnabledResult{
+		ConfigPath: result.ConfigPath,
+		Preview:    result.Preview,
+	}, nil
+}
+
+func (a *App) GetCodexMcpServers() (*CodexMcpServersSnapshot, error) {
+	result, err := a.core.GetCodexMcpServers()
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexMcpServersSnapshot(result), nil
+}
+
+func (a *App) SaveCodexMcpServer(input SaveCodexMcpServerInput) (*SaveCodexMcpServerResult, error) {
+	result, err := a.core.SaveCodexMcpServer(wailsapp.SaveCodexMcpServerInput{
+		Server: mapWailsCodexMcpServer(input.Server),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexMcpSaveResult(result), nil
+}
+
+func (a *App) OpenCodexConfigToml() (*OpenCodexConfigTomlResult, error) {
+	result, err := a.core.OpenCodexConfigToml()
+	if err != nil {
+		return nil, err
+	}
+	return &OpenCodexConfigTomlResult{ConfigPath: result.ConfigPath}, nil
+}
+
+func (a *App) GetCodexConfigToml() (*CodexConfigTomlDocument, error) {
+	result, err := a.core.GetCodexConfigToml()
+	if err != nil {
+		return nil, err
+	}
+	return &CodexConfigTomlDocument{
+		ConfigPath: result.ConfigPath,
+		Content:    result.Content,
+		Exists:     result.Exists,
+	}, nil
+}
+
+func (a *App) SaveCodexConfigToml(input SaveCodexConfigTomlInput) (*SaveCodexConfigTomlResult, error) {
+	result, err := a.core.SaveCodexConfigToml(wailsapp.SaveCodexConfigTomlInput{Content: input.Content})
+	if err != nil {
+		return nil, err
+	}
+	return &SaveCodexConfigTomlResult{
+		ConfigPath: result.ConfigPath,
+		Content:    result.Content,
+	}, nil
 }
 
 func (a *App) StartCodexOAuth() (*OAuthStartResult, error) {

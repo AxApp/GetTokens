@@ -11,7 +11,15 @@ export type AppPage =
   | 'settings'
   | 'debug';
 export type AccountWorkspace = 'all' | 'codex' | 'openai-compatible';
-export type CodexWorkspace = 'feature-config' | 'session-management' | 'vendor-status' | 'usage-codex';
+export type CodexWorkspace =
+  | 'feature-config'
+  | 'binary-management'
+  | 'skills'
+  | 'mcp-servers'
+  | 'account-list'
+  | 'session-management'
+  | 'vendor-status'
+  | 'usage-codex';
 export type SessionManagementWorkspace = 'codex';
 export type UsageDeskWorkspace = 'codex' | 'gemini';
 

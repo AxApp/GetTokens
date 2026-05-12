@@ -317,6 +317,116 @@ type CodexFeatureConfigPreview struct {
 	Warnings   []string                   `json:"warnings"`
 }
 
+type CodexSkillFile struct {
+	Path string `json:"path"`
+	Kind string `json:"kind"`
+}
+
+type CodexSkillRecord struct {
+	ID              string           `json:"id"`
+	Name            string           `json:"name"`
+	Description     string           `json:"description,omitempty"`
+	Enabled         bool             `json:"enabled"`
+	RootLabel       string           `json:"rootLabel"`
+	RootPath        string           `json:"rootPath"`
+	SourceKind      string           `json:"sourceKind"`
+	Origin          string           `json:"origin"`
+	VersionLabel    string           `json:"versionLabel,omitempty"`
+	Files           []CodexSkillFile `json:"files"`
+	SkillMarkdown   string           `json:"skillMarkdown"`
+	PreviewMarkdown string           `json:"previewMarkdown"`
+	Warnings        []string         `json:"warnings,omitempty"`
+}
+
+type CodexSkillRoot struct {
+	Label      string `json:"label"`
+	Path       string `json:"path"`
+	SourceKind string `json:"sourceKind"`
+	Exists     bool   `json:"exists"`
+}
+
+type CodexSkillsSnapshot struct {
+	CodexHomePath string             `json:"codexHomePath"`
+	ConfigPath    string             `json:"configPath"`
+	Roots         []CodexSkillRoot   `json:"roots"`
+	Skills        []CodexSkillRecord `json:"skills"`
+	Warnings      []string           `json:"warnings,omitempty"`
+}
+
+type SaveCodexSkillEnabledInput struct {
+	Path    string `json:"path"`
+	Enabled bool   `json:"enabled"`
+}
+
+type SaveCodexSkillEnabledResult struct {
+	ConfigPath string `json:"configPath"`
+	Preview    string `json:"preview"`
+}
+
+type CodexMcpEnvRow struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+type CodexMcpServer struct {
+	ID                string           `json:"id"`
+	Label             string           `json:"label"`
+	Enabled           bool             `json:"enabled"`
+	Transport         string           `json:"transport"`
+	Command           string           `json:"command,omitempty"`
+	Args              []string         `json:"args,omitempty"`
+	URL               string           `json:"url,omitempty"`
+	Env               []CodexMcpEnvRow `json:"env,omitempty"`
+	BearerTokenEnvVar string           `json:"bearerTokenEnvVar,omitempty"`
+	SourcePath        string           `json:"sourcePath"`
+	Status            string           `json:"status"`
+	Warnings          []string         `json:"warnings,omitempty"`
+}
+
+type CodexMcpServersSnapshot struct {
+	CodexHomePath string           `json:"codexHomePath"`
+	ConfigPath    string           `json:"configPath"`
+	Exists        bool             `json:"exists"`
+	Servers       []CodexMcpServer `json:"servers"`
+	Warnings      []string         `json:"warnings,omitempty"`
+}
+
+type SaveCodexMcpServerInput struct {
+	Server CodexMcpServer `json:"server"`
+}
+
+type CodexMcpChange struct {
+	Key    string `json:"key"`
+	Before string `json:"before"`
+	After  string `json:"after"`
+}
+
+type SaveCodexMcpServerResult struct {
+	ConfigPath string           `json:"configPath"`
+	Server     CodexMcpServer   `json:"server"`
+	Preview    string           `json:"preview"`
+	Changes    []CodexMcpChange `json:"changes"`
+}
+
+type OpenCodexConfigTomlResult struct {
+	ConfigPath string `json:"configPath"`
+}
+
+type CodexConfigTomlDocument struct {
+	ConfigPath string `json:"configPath"`
+	Content    string `json:"content"`
+	Exists     bool   `json:"exists"`
+}
+
+type SaveCodexConfigTomlInput struct {
+	Content string `json:"content"`
+}
+
+type SaveCodexConfigTomlResult struct {
+	ConfigPath string `json:"configPath"`
+	Content    string `json:"content"`
+}
+
 type UpdateSessionProviderMapping struct {
 	SourceProvider string `json:"sourceProvider"`
 	TargetProvider string `json:"targetProvider"`
