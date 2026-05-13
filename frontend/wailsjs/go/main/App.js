@@ -38,6 +38,10 @@ export function DeleteCodexAPIKey(arg1) {
   return window['go']['main']['App']['DeleteCodexAPIKey'](arg1);
 }
 
+export function DeleteCodexBinaryVersion(arg1) {
+  return window['go']['main']['App']['DeleteCodexBinaryVersion'](arg1);
+}
+
 export function DeleteOpenAICompatibleProvider(arg1) {
   return window['go']['main']['App']['DeleteOpenAICompatibleProvider'](arg1);
 }
@@ -204,6 +208,10 @@ export function RefreshCodexLocalUsage() {
 
 export function RefreshCodexSessionManagementSnapshot() {
   return window['go']['main']['App']['RefreshCodexSessionManagementSnapshot']();
+}
+
+export function RevealCodexBinaryVersion(arg1) {
+  return window['go']['main']['App']['RevealCodexBinaryVersion'](arg1);
 }
 
 export function SaveCodexConfigToml(arg1) {

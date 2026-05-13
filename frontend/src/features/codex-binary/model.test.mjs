@@ -3,11 +3,17 @@ import assert from 'node:assert/strict';
 
 import {
   buildCodexBinaryRows,
+  DEFAULT_CODEX_BINARY_RELEASE_FILTER,
   filterCodexBinaryRows,
+  formatBinarySize,
   formatTaskProgress,
   getCodexBinaryRowActions,
   isActiveDownloadTask,
 } from './model.ts';
+
+test('default release filter is stable', () => {
+  assert.equal(DEFAULT_CODEX_BINARY_RELEASE_FILTER, 'stable');
+});
 
 test('buildCodexBinaryRows merges installed and remote release into one cell', () => {
   const rows = buildCodexBinaryRows({
@@ -34,6 +40,8 @@ test('buildCodexBinaryRows merges installed and remote release into one cell', (
         tag: 'rust-v0.119.0',
         title: 'rust-v0.119.0',
         downloadURL: 'https://example.com/codex.tar.gz',
+        htmlURL: 'https://github.com/openai/codex/releases/tag/rust-v0.119.0',
+        assetSize: 18400000,
         publishedAt: '2026-05-11T00:00:00Z',
         isPrerelease: false,
         isInstalled: true,
@@ -45,7 +53,16 @@ test('buildCodexBinaryRows merges installed and remote release into one cell', (
   assert.equal(rows.length, 1);
   assert.equal(rows[0].isInstalled, true);
   assert.equal(rows[0].hasRemote, true);
+  assert.equal(rows[0].htmlURL, 'https://github.com/openai/codex/releases/tag/rust-v0.119.0');
+  assert.equal(rows[0].assetSize, 18400000);
   assert.equal(rows[0].isSelected, true);
+});
+
+test('formatBinarySize renders compact binary units', () => {
+  assert.equal(formatBinarySize(undefined), '');
+  assert.equal(formatBinarySize(0), '');
+  assert.equal(formatBinarySize(1024), '1.0 KB');
+  assert.equal(formatBinarySize(18400000), '18 MB');
 });
 
 test('row actions keep download cancel inside active cell task', () => {
@@ -59,7 +76,7 @@ test('row actions keep download cancel inside active cell task', () => {
     isRollback: false,
     hasRemote: true,
     notesState: 'none',
-    primaryAction: 'download_activate',
+    primaryAction: 'download',
     task: {
       id: 'dl-1',
       sourceID: 'openai-codex-github',
@@ -70,7 +87,7 @@ test('row actions keep download cancel inside active cell task', () => {
       bytesDone: 50,
       bytesTotal: 100,
       installAfterDownload: true,
-      activateAfterInstall: true,
+      activateAfterInstall: false,
       updatedAt: '2026-05-12T00:00:00Z',
     },
   };
@@ -78,6 +95,70 @@ test('row actions keep download cancel inside active cell task', () => {
   assert.equal(isActiveDownloadTask(row.task), true);
   assert.deepEqual(getCodexBinaryRowActions(row), { primary: 'none', secondary: 'cancel' });
   assert.equal(formatTaskProgress(row.task), 50);
+});
+
+test('remote version uses download action before activation', () => {
+  const rows = buildCodexBinaryRows({
+    manifestPath: '/tmp/manifest.json',
+    managedBinPath: '/tmp/bin/codex',
+    versions: [],
+    remoteVersions: [
+      {
+        sourceID: 'openai-codex-github',
+        version: '0.121.0',
+        tag: 'rust-v0.121.0',
+        title: 'rust-v0.121.0',
+        downloadURL: 'https://example.com/codex.tar.gz',
+        htmlURL: 'https://github.com/openai/codex/releases/tag/rust-v0.121.0',
+        assetSize: 18400000,
+        publishedAt: '2026-05-11T01:00:00Z',
+        isPrerelease: false,
+        isInstalled: false,
+      },
+    ],
+    doctor: { severity: 'ok', message: 'ok' },
+  });
+
+  assert.equal(rows[0].primaryAction, 'download');
+  assert.equal(rows[0].htmlURL, 'https://github.com/openai/codex/releases/tag/rust-v0.121.0');
+  assert.equal(rows[0].assetSize, 18400000);
+  assert.equal(getCodexBinaryRowActions(rows[0]).primary, 'download');
+});
+
+test('downloaded newer remote version uses activate action when not selected', () => {
+  const rows = buildCodexBinaryRows({
+    manifestPath: '/tmp/manifest.json',
+    managedBinPath: '/tmp/bin/codex',
+    selectedVersionID: '0.120.0-active',
+    versions: [
+      {
+        id: '0.120.0-active',
+        displayName: 'Codex 0.120.0',
+        detectedVersion: '0.120.0',
+        releaseTag: 'rust-v0.120.0',
+        sourceID: 'openai-codex-github',
+        sourceType: 'download',
+        installedAt: '2026-05-10T00:00:00Z',
+        isSelected: true,
+        existsOnDisk: true,
+      },
+      {
+        id: '0.121.0-installed',
+        displayName: 'Codex 0.121.0',
+        detectedVersion: '0.121.0',
+        releaseTag: 'rust-v0.121.0',
+        sourceID: 'openai-codex-github',
+        sourceType: 'download',
+        installedAt: '2026-05-11T00:00:00Z',
+        isSelected: false,
+        existsOnDisk: true,
+      },
+    ],
+    doctor: { severity: 'ok', message: 'ok' },
+  });
+
+  const downloaded = rows.find((row) => row.version === '0.121.0');
+  assert.equal(getCodexBinaryRowActions(downloaded).primary, 'activate');
 });
 
 test('installed old version uses rollback action', () => {
@@ -145,6 +226,16 @@ test('filterCodexBinaryRows separates stable and alpha releases', () => {
       },
       {
         sourceID: 'openai-codex-github',
+        version: '0.122.0-beta.1',
+        tag: 'rust-v0.122.0-beta.1',
+        title: 'rust-v0.122.0-beta.1',
+        downloadURL: 'https://example.com/codex-beta.tar.gz',
+        publishedAt: '2026-05-12T02:00:00Z',
+        isPrerelease: true,
+        isInstalled: false,
+      },
+      {
+        sourceID: 'openai-codex-github',
         version: '0.121.0',
         tag: 'rust-v0.121.0',
         title: 'rust-v0.121.0',
@@ -159,5 +250,5 @@ test('filterCodexBinaryRows separates stable and alpha releases', () => {
 
   assert.deepEqual(filterCodexBinaryRows(rows, 'alpha').map((row) => row.version), ['0.131.0-alpha.9']);
   assert.deepEqual(filterCodexBinaryRows(rows, 'stable').map((row) => row.version), ['0.121.0', '0.120.0']);
-  assert.equal(filterCodexBinaryRows(rows, 'all').length, 3);
+  assert.equal(filterCodexBinaryRows(rows, 'all').length, 4);
 });

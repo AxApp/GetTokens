@@ -14,22 +14,6 @@ export namespace codexbinary {
 	        this.message = source["message"];
 	    }
 	}
-	export class DownloadInput {
-	    sourceID: string;
-	    tag: string;
-	    activateAfterInstall: boolean;
-
-	    static createFrom(source: any = {}) {
-	        return new DownloadInput(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.sourceID = source["sourceID"];
-	        this.tag = source["tag"];
-	        this.activateAfterInstall = source["activateAfterInstall"];
-	    }
-	}
 	export class SourceView {
 	    id: string;
 	    type: string;
@@ -96,8 +80,11 @@ export namespace codexbinary {
 	    isSelected: boolean;
 	    isRollback: boolean;
 	    hasRemote: boolean;
+	    htmlURL?: string;
+	    assetSize?: number;
 	    publishedAt?: string;
 	    installedAt?: string;
+	    isPrerelease?: boolean;
 	    notesState: string;
 	    task?: DownloadTaskView;
 	    primaryAction: string;
@@ -118,8 +105,11 @@ export namespace codexbinary {
 	        this.isSelected = source["isSelected"];
 	        this.isRollback = source["isRollback"];
 	        this.hasRemote = source["hasRemote"];
+	        this.htmlURL = source["htmlURL"];
+	        this.assetSize = source["assetSize"];
 	        this.publishedAt = source["publishedAt"];
 	        this.installedAt = source["installedAt"];
+	        this.isPrerelease = source["isPrerelease"];
 	        this.notesState = source["notesState"];
 	        this.task = this.convertValues(source["task"], DownloadTaskView);
 	        this.primaryAction = source["primaryAction"];
@@ -174,6 +164,42 @@ export namespace codexbinary {
 	        this.publishedAt = source["publishedAt"];
 	        this.isPrerelease = source["isPrerelease"];
 	        this.isInstalled = source["isInstalled"];
+	    }
+	}
+	export class VersionView {
+	    id: string;
+	    displayName: string;
+	    detectedVersion: string;
+	    releaseTag?: string;
+	    sourceID: string;
+	    sourceType: string;
+	    sourceURL?: string;
+	    installedAt: string;
+	    lastActivatedAt?: string;
+	    isSelected: boolean;
+	    existsOnDisk: boolean;
+	    binaryRelativePath?: string;
+	    binaryPath?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new VersionView(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.displayName = source["displayName"];
+	        this.detectedVersion = source["detectedVersion"];
+	        this.releaseTag = source["releaseTag"];
+	        this.sourceID = source["sourceID"];
+	        this.sourceType = source["sourceType"];
+	        this.sourceURL = source["sourceURL"];
+	        this.installedAt = source["installedAt"];
+	        this.lastActivatedAt = source["lastActivatedAt"];
+	        this.isSelected = source["isSelected"];
+	        this.existsOnDisk = source["existsOnDisk"];
+	        this.binaryRelativePath = source["binaryRelativePath"];
+	        this.binaryPath = source["binaryPath"];
 	    }
 	}
 	export class ManagedConfigView {
@@ -252,40 +278,53 @@ export namespace codexbinary {
 		    return a;
 		}
 	}
-	export class VersionView {
-	    id: string;
-	    displayName: string;
-	    detectedVersion: string;
-	    releaseTag?: string;
-	    sourceID: string;
-	    sourceType: string;
-	    sourceURL?: string;
-	    installedAt: string;
-	    lastActivatedAt?: string;
-	    isSelected: boolean;
-	    existsOnDisk: boolean;
-	    binaryRelativePath?: string;
-	    binaryPath?: string;
+	export class DeleteVersionResult {
+	    deletedVersionID: string;
+	    snapshot: Snapshot;
 
 	    static createFrom(source: any = {}) {
-	        return new VersionView(source);
+	        return new DeleteVersionResult(source);
 	    }
 
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.displayName = source["displayName"];
-	        this.detectedVersion = source["detectedVersion"];
-	        this.releaseTag = source["releaseTag"];
+	        this.deletedVersionID = source["deletedVersionID"];
+	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+	export class DownloadInput {
+	    sourceID: string;
+	    tag: string;
+	    activateAfterInstall: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new DownloadInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sourceID = source["sourceID"];
-	        this.sourceType = source["sourceType"];
-	        this.sourceURL = source["sourceURL"];
-	        this.installedAt = source["installedAt"];
-	        this.lastActivatedAt = source["lastActivatedAt"];
-	        this.isSelected = source["isSelected"];
-	        this.existsOnDisk = source["existsOnDisk"];
-	        this.binaryRelativePath = source["binaryRelativePath"];
-	        this.binaryPath = source["binaryPath"];
+	        this.tag = source["tag"];
+	        this.activateAfterInstall = source["activateAfterInstall"];
 	    }
 	}
 	export class DownloadResult {
@@ -468,6 +507,18 @@ export namespace codexbinary {
 		    }
 		    return a;
 		}
+	}
+	export class VersionActionInput {
+	    versionID: string;
+
+	    static createFrom(source: any = {}) {
+	        return new VersionActionInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.versionID = source["versionID"];
+	    }
 	}
 	export class VersionNotesInput {
 	    sourceID: string;

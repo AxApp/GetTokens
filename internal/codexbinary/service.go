@@ -30,6 +30,10 @@ import (
 const (
 	defaultSourceID = "openai-codex-github"
 	schemaVersion   = 1
+
+	githubReleaseAPIPerPage   = 100
+	githubReleaseAPIMaxPages  = 5
+	githubReleaseHTMLMaxPages = 5
 )
 
 type Service struct {
@@ -40,6 +44,7 @@ type Service struct {
 	shellProfilePath string
 	releaseClient    ReleaseClient
 	httpClient       *http.Client
+	downloadTasks    map[string]DownloadTaskView
 	mu               sync.Mutex
 }
 
@@ -185,8 +190,11 @@ type VersionRowView struct {
 	IsSelected         bool              `json:"isSelected"`
 	IsRollback         bool              `json:"isRollback"`
 	HasRemote          bool              `json:"hasRemote"`
+	HTMLURL            string            `json:"htmlURL,omitempty"`
+	AssetSize          int64             `json:"assetSize,omitempty"`
 	PublishedAt        string            `json:"publishedAt,omitempty"`
 	InstalledAt        string            `json:"installedAt,omitempty"`
+	IsPrerelease       bool              `json:"isPrerelease,omitempty"`
 	NotesState         string            `json:"notesState"`
 	Task               *DownloadTaskView `json:"task,omitempty"`
 	PrimaryAction      string            `json:"primaryAction"`
@@ -279,6 +287,15 @@ type UseResult struct {
 	Snapshot          Snapshot `json:"snapshot"`
 }
 
+type VersionActionInput struct {
+	VersionID string `json:"versionID"`
+}
+
+type DeleteVersionResult struct {
+	DeletedVersionID string   `json:"deletedVersionID"`
+	Snapshot         Snapshot `json:"snapshot"`
+}
+
 type VersionNotesInput struct {
 	SourceID string `json:"sourceID"`
 	Tag      string `json:"tag"`
@@ -324,7 +341,16 @@ func NewService(options ServiceOptions) *Service {
 	if httpClient == nil {
 		httpClient = &http.Client{Timeout: 5 * time.Minute}
 	}
-	return &Service{rootDir: rootDir, now: now, goos: goos, goarch: goarch, shellProfilePath: shellProfilePath, releaseClient: releaseClient, httpClient: httpClient}
+	return &Service{
+		rootDir:          rootDir,
+		now:              now,
+		goos:             goos,
+		goarch:           goarch,
+		shellProfilePath: shellProfilePath,
+		releaseClient:    releaseClient,
+		httpClient:       httpClient,
+		downloadTasks:    map[string]DownloadTaskView{},
+	}
 }
 
 func defaultRootDir() string {
@@ -357,6 +383,8 @@ func (s *Service) Snapshot() (*Snapshot, error) {
 
 	remoteVersions, _ := s.cachedRemoteVersions()
 	managedConfig := s.managedConfig()
+	remoteVersions = markInstalledRemoteVersions(remoteVersions, versions)
+	tasks := s.downloadTasksLocked()
 	return &Snapshot{
 		ManifestPath:      s.manifestPath(),
 		ManagedBinPath:    filepath.Join(s.rootDir, "bin", "codex"),
@@ -364,8 +392,9 @@ func (s *Service) Snapshot() (*Snapshot, error) {
 		SelectedVersionID: manifest.SelectedVersionID,
 		CurrentVersion:    current,
 		Versions:          versions,
-		RemoteVersions:    markInstalledRemoteVersions(remoteVersions, versions),
-		VersionRows:       buildRows(versions, markInstalledRemoteVersions(remoteVersions, versions), nil, manifest.SelectedVersionID),
+		RemoteVersions:    remoteVersions,
+		DownloadTasks:     tasks,
+		VersionRows:       buildRows(versions, remoteVersions, tasks, manifest.SelectedVersionID),
 		Sources:           sourceViews(manifest.Sources),
 		Doctor:            s.doctorSummary(manifest, current, managedConfig),
 	}, nil
@@ -411,7 +440,7 @@ func (s *Service) RefreshAvailable(ctx context.Context) (*Snapshot, error) {
 	}
 
 	releases = s.enrichReleaseAssetsFromHTML(ctx, releases)
-	remoteVersions := s.remoteViewsFromReleases(*source, releases, manifest.IncludePrerelease)
+	remoteVersions := s.remoteViewsFromReleases(*source, releases, true)
 	catalog := ReleaseCatalog{
 		SchemaVersion: schemaVersion,
 		SourceID:      source.ID,
@@ -555,15 +584,33 @@ func (s *Service) Download(ctx context.Context, input DownloadInput) (*DownloadR
 	if input.Tag == "" {
 		return nil, errors.New("release tag is required")
 	}
+	taskKey := downloadTaskKey(input.SourceID, input.Tag)
+	s.upsertDownloadTask(taskKey, DownloadTaskView{
+		ID:                   taskKey,
+		SourceID:             input.SourceID,
+		Tag:                  input.Tag,
+		Status:               "resolving_asset",
+		Phase:                "resolving_asset",
+		InstallAfterDownload: true,
+		ActivateAfterInstall: input.ActivateAfterInstall,
+	})
 	remote, err := s.resolveRemoteVersion(ctx, input.SourceID, input.Tag)
 	if err != nil {
+		s.failDownloadTask(taskKey, err)
 		return nil, err
 	}
 	if strings.TrimSpace(remote.DownloadURL) == "" || remote.DownloadURL == remote.HTMLURL {
-		return nil, fmt.Errorf("codex_binary_asset_missing: %s", input.Tag)
+		err := fmt.Errorf("codex_binary_asset_missing: %s", input.Tag)
+		s.failDownloadTask(taskKey, err)
+		return nil, err
 	}
+	s.patchDownloadTask(taskKey, func(task *DownloadTaskView) {
+		task.Version = remote.Version
+		task.BytesTotal = remote.AssetSize
+	})
 
 	if installedID := s.installedVersionIDByTag(input.Tag); installedID != "" {
+		s.removeDownloadTask(taskKey)
 		result := &DownloadResult{AlreadyInstalled: true}
 		if input.ActivateAfterInstall {
 			useResult, err := s.Use(UseInput{VersionID: installedID})
@@ -588,23 +635,47 @@ func (s *Service) Download(ctx context.Context, input DownloadInput) (*DownloadR
 		return result, nil
 	}
 
-	downloadedPath, cleanup, err := s.downloadRemoteAsset(ctx, remote)
+	downloadedPath, cleanup, err := s.downloadRemoteAsset(ctx, remote, func(done int64, total int64) {
+		s.patchDownloadTask(taskKey, func(task *DownloadTaskView) {
+			task.Status = "downloading"
+			task.Phase = "downloading"
+			task.BytesDone = done
+			if total > 0 {
+				task.BytesTotal = total
+			}
+		})
+	})
 	if cleanup != nil {
 		defer cleanup()
 	}
 	if err != nil {
+		s.failDownloadTask(taskKey, err)
 		return nil, err
 	}
 
 	codexPath := downloadedPath
 	if isTarGz(remote.AssetName, downloadedPath) {
+		s.patchDownloadTask(taskKey, func(task *DownloadTaskView) {
+			task.Status = "extracting"
+			task.Phase = "extracting"
+		})
 		extracted, err := s.extractCodexFromTarGz(downloadedPath, input.Tag)
 		if err != nil {
+			s.failDownloadTask(taskKey, err)
 			return nil, err
 		}
 		codexPath = extracted
 	}
 
+	s.patchDownloadTask(taskKey, func(task *DownloadTaskView) {
+		if input.ActivateAfterInstall {
+			task.Status = "activating"
+			task.Phase = "activating"
+		} else {
+			task.Status = "importing"
+			task.Phase = "importing"
+		}
+	})
 	install, err := s.ImportLocal(ImportLocalInput{
 		Path:                 codexPath,
 		SourceID:             remote.SourceID,
@@ -614,8 +685,10 @@ func (s *Service) Download(ctx context.Context, input DownloadInput) (*DownloadR
 		ActivateAfterInstall: input.ActivateAfterInstall,
 	})
 	if err != nil {
+		s.failDownloadTask(taskKey, err)
 		return nil, err
 	}
+	s.removeDownloadTask(taskKey)
 	snapshot, err := s.Snapshot()
 	if err != nil {
 		return nil, err
@@ -686,6 +759,62 @@ func (s *Service) Use(input UseInput) (*UseResult, error) {
 		return nil, err
 	}
 	return &UseResult{SelectedVersionID: input.VersionID, Snapshot: *snapshot}, nil
+}
+
+func (s *Service) VersionBinaryPath(input VersionActionInput) (string, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	version, _, err := s.findManagedVersionLocked(input.VersionID)
+	if err != nil {
+		return "", err
+	}
+	binaryPath := filepath.Join(s.rootDir, filepath.FromSlash(version.BinaryRelativePath))
+	if _, err := os.Stat(binaryPath); err != nil {
+		return "", err
+	}
+	return binaryPath, nil
+}
+
+func (s *Service) DeleteVersion(input VersionActionInput) (*DeleteVersionResult, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if input.VersionID == "" {
+		return nil, errors.New("version id is required")
+	}
+	manifest, err := s.loadManifest()
+	if err != nil {
+		return nil, err
+	}
+	if manifest.SelectedVersionID == input.VersionID {
+		return nil, fmt.Errorf("codex_binary_delete_active_version: %s", input.VersionID)
+	}
+	index := -1
+	var version ManagedVersion
+	for idx, item := range manifest.Versions {
+		if item.ID == input.VersionID {
+			index = idx
+			version = item
+			break
+		}
+	}
+	if index < 0 {
+		return nil, fmt.Errorf("codex_binary_version_missing: %s", input.VersionID)
+	}
+	versionDir := filepath.Join(s.rootDir, "versions", version.ID)
+	if err := os.RemoveAll(versionDir); err != nil {
+		return nil, err
+	}
+	manifest.Versions = append(manifest.Versions[:index], manifest.Versions[index+1:]...)
+	if err := s.saveManifest(manifest); err != nil {
+		return nil, err
+	}
+	snapshot, err := s.snapshotLocked()
+	if err != nil {
+		return nil, err
+	}
+	return &DeleteVersionResult{DeletedVersionID: input.VersionID, Snapshot: *snapshot}, nil
 }
 
 func (s *Service) SaveVersionNotes(notes VersionNotesView) error {
@@ -779,6 +908,22 @@ func (s *Service) useLocked(manifest *Manifest, versionID string, expectedCurren
 	return s.saveManifest(manifest)
 }
 
+func (s *Service) findManagedVersionLocked(versionID string) (ManagedVersion, int, error) {
+	if versionID == "" {
+		return ManagedVersion{}, -1, errors.New("version id is required")
+	}
+	manifest, err := s.loadManifest()
+	if err != nil {
+		return ManagedVersion{}, -1, err
+	}
+	for idx, version := range manifest.Versions {
+		if version.ID == versionID {
+			return version, idx, nil
+		}
+	}
+	return ManagedVersion{}, -1, fmt.Errorf("codex_binary_version_missing: %s", versionID)
+}
+
 func (s *Service) snapshotLocked() (*Snapshot, error) {
 	return s.snapshotLockedWithDoctor(DoctorSummary{})
 }
@@ -805,6 +950,8 @@ func (s *Service) snapshotLockedWithDoctor(doctorOverride DoctorSummary) (*Snaps
 	if doctorOverride.Severity != "" || doctorOverride.Message != "" {
 		doctor = doctorOverride
 	}
+	remoteVersions = markInstalledRemoteVersions(remoteVersions, versions)
+	tasks := s.downloadTasksLocked()
 	return &Snapshot{
 		ManifestPath:      s.manifestPath(),
 		ManagedBinPath:    filepath.Join(s.rootDir, "bin", "codex"),
@@ -812,8 +959,9 @@ func (s *Service) snapshotLockedWithDoctor(doctorOverride DoctorSummary) (*Snaps
 		SelectedVersionID: manifest.SelectedVersionID,
 		CurrentVersion:    current,
 		Versions:          versions,
-		RemoteVersions:    markInstalledRemoteVersions(remoteVersions, versions),
-		VersionRows:       buildRows(versions, markInstalledRemoteVersions(remoteVersions, versions), nil, manifest.SelectedVersionID),
+		RemoteVersions:    remoteVersions,
+		DownloadTasks:     tasks,
+		VersionRows:       buildRows(versions, remoteVersions, tasks, manifest.SelectedVersionID),
 		Sources:           sourceViews(manifest.Sources),
 		Doctor:            doctor,
 	}, nil
@@ -841,6 +989,7 @@ func (s *Service) snapshotLockedWithRemoteAndDoctor(remoteVersions []RemoteVersi
 	if doctorOverride.Severity != "" || doctorOverride.Message != "" {
 		doctor = doctorOverride
 	}
+	tasks := s.downloadTasksLocked()
 	return &Snapshot{
 		ManifestPath:      s.manifestPath(),
 		ManagedBinPath:    filepath.Join(s.rootDir, "bin", "codex"),
@@ -849,7 +998,8 @@ func (s *Service) snapshotLockedWithRemoteAndDoctor(remoteVersions []RemoteVersi
 		CurrentVersion:    current,
 		Versions:          versions,
 		RemoteVersions:    remoteVersions,
-		VersionRows:       buildRows(versions, remoteVersions, nil, manifest.SelectedVersionID),
+		DownloadTasks:     tasks,
+		VersionRows:       buildRows(versions, remoteVersions, tasks, manifest.SelectedVersionID),
 		Sources:           sourceViews(manifest.Sources),
 		Doctor:            doctor,
 	}, nil
@@ -1119,7 +1269,64 @@ func (s *Service) installedVersionIDByTag(tag string) string {
 	return ""
 }
 
-func (s *Service) downloadRemoteAsset(ctx context.Context, remote RemoteVersionView) (string, func(), error) {
+func (s *Service) downloadTasksLocked() []DownloadTaskView {
+	tasks := make([]DownloadTaskView, 0, len(s.downloadTasks))
+	for _, task := range s.downloadTasks {
+		tasks = append(tasks, task)
+	}
+	sort.SliceStable(tasks, func(i, j int) bool {
+		if tasks[i].UpdatedAt == tasks[j].UpdatedAt {
+			return tasks[i].ID < tasks[j].ID
+		}
+		return tasks[i].UpdatedAt > tasks[j].UpdatedAt
+	})
+	return tasks
+}
+
+func (s *Service) upsertDownloadTask(key string, task DownloadTaskView) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if task.ID == "" {
+		task.ID = key
+	}
+	task.UpdatedAt = s.now().UTC().Format(time.RFC3339)
+	s.downloadTasks[key] = task
+}
+
+func (s *Service) patchDownloadTask(key string, update func(*DownloadTaskView)) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	task, ok := s.downloadTasks[key]
+	if !ok {
+		return
+	}
+	update(&task)
+	task.UpdatedAt = s.now().UTC().Format(time.RFC3339)
+	s.downloadTasks[key] = task
+}
+
+func (s *Service) failDownloadTask(key string, err error) {
+	s.patchDownloadTask(key, func(task *DownloadTaskView) {
+		task.Status = "failed"
+		task.Phase = "failed"
+		task.ErrorMessage = err.Error()
+	})
+}
+
+func (s *Service) removeDownloadTask(key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	delete(s.downloadTasks, key)
+}
+
+func downloadTaskKey(sourceID string, tag string) string {
+	return sourceID + ":" + tag
+}
+
+func (s *Service) downloadRemoteAsset(ctx context.Context, remote RemoteVersionView, onProgress func(done int64, total int64)) (string, func(), error) {
 	assetName := remote.AssetName
 	if assetName == "" {
 		if parsed, err := url.Parse(remote.DownloadURL); err == nil {
@@ -1156,12 +1363,19 @@ func (s *Service) downloadRemoteAsset(ctx context.Context, remote RemoteVersionV
 		cleanup()
 		return "", nil, fmt.Errorf("codex_binary_download_failed: %d %s", resp.StatusCode, strings.TrimSpace(string(body)))
 	}
+	total := resp.ContentLength
+	if total <= 0 {
+		total = remote.AssetSize
+	}
+	if onProgress != nil {
+		onProgress(0, total)
+	}
 	file, err := os.Create(target)
 	if err != nil {
 		cleanup()
 		return "", nil, err
 	}
-	if _, err := io.Copy(file, resp.Body); err != nil {
+	if err := copyWithProgress(file, resp.Body, total, onProgress); err != nil {
 		_ = file.Close()
 		cleanup()
 		return "", nil, err
@@ -1177,6 +1391,33 @@ func (s *Service) downloadRemoteAsset(ctx context.Context, remote RemoteVersionV
 		}
 	}
 	return target, cleanup, nil
+}
+
+func copyWithProgress(dst io.Writer, src io.Reader, total int64, onProgress func(done int64, total int64)) error {
+	buffer := make([]byte, 64*1024)
+	var done int64
+	for {
+		read, readErr := src.Read(buffer)
+		if read > 0 {
+			written, writeErr := dst.Write(buffer[:read])
+			done += int64(written)
+			if onProgress != nil {
+				onProgress(done, total)
+			}
+			if writeErr != nil {
+				return writeErr
+			}
+			if written != read {
+				return io.ErrShortWrite
+			}
+		}
+		if errors.Is(readErr, io.EOF) {
+			return nil
+		}
+		if readErr != nil {
+			return readErr
+		}
+	}
 }
 
 func (s *Service) extractCodexFromTarGz(path string, tag string) (string, error) {
@@ -1203,7 +1444,7 @@ func (s *Service) extractCodexFromTarGz(path string, tag string) (string, error)
 		if err != nil {
 			return "", err
 		}
-		if header == nil || header.FileInfo().IsDir() || filepath.Base(header.Name) != "codex" {
+		if header == nil || header.FileInfo().IsDir() || !isCodexArchiveBinary(header.Name, header.FileInfo().Mode()) {
 			continue
 		}
 		target := filepath.Join(targetDir, "codex")
@@ -1221,6 +1462,14 @@ func (s *Service) extractCodexFromTarGz(path string, tag string) (string, error)
 		return target, nil
 	}
 	return "", fmt.Errorf("codex_binary_archive_missing_binary: %s", tag)
+}
+
+func isCodexArchiveBinary(name string, mode os.FileMode) bool {
+	base := filepath.Base(name)
+	if base != "codex" && !strings.HasPrefix(base, "codex-") {
+		return false
+	}
+	return mode&0o111 != 0
 }
 
 func (s *Service) remoteViewsFromReleases(source Source, releases []GitHubRelease, includePrerelease bool) []RemoteVersionView {
@@ -1460,11 +1709,30 @@ func sortVersionRows(items []VersionRowView) {
 func buildRows(versions []VersionView, remotes []RemoteVersionView, tasks []DownloadTaskView, selectedID string) []VersionRowView {
 	rows := make([]VersionRowView, 0, len(versions)+len(remotes))
 	rowsByTag := map[string]int{}
+	tasksByTag := map[string]DownloadTaskView{}
+	for _, task := range tasks {
+		tasksByTag[downloadTaskKey(task.SourceID, task.Tag)] = task
+	}
+	selectedVersion := ""
+	for _, version := range versions {
+		if version.ID == selectedID {
+			selectedVersion = version.DetectedVersion
+			break
+		}
+	}
 	for _, version := range versions {
 		action := "activate"
 		secondary := "reveal"
+		isRollback := selectedVersion != "" && version.ID != selectedID && versionIsOlder(version.DetectedVersion, selectedVersion)
 		if version.IsSelected {
 			action = "none"
+		} else if isRollback {
+			action = "rollback"
+		}
+		task, hasTask := tasksByTag[downloadTaskKey(version.SourceID, version.ReleaseTag)]
+		if hasTask && isActiveDownloadTaskStatus(task.Status) {
+			action = "none"
+			secondary = "cancel"
 		}
 		row := VersionRowView{
 			RowID:              "installed:" + version.ID,
@@ -1474,11 +1742,15 @@ func buildRows(versions []VersionView, remotes []RemoteVersionView, tasks []Down
 			InstalledVersionID: version.ID,
 			IsInstalled:        true,
 			IsSelected:         version.IsSelected,
-			IsRollback:         selectedID != "" && version.ID != selectedID,
+			IsRollback:         isRollback,
 			InstalledAt:        version.InstalledAt,
+			IsPrerelease:       isPrereleaseVersion(version.DetectedVersion, version.ReleaseTag),
 			NotesState:         notesState(version),
 			PrimaryAction:      action,
 			SecondaryAction:    secondary,
+		}
+		if hasTask {
+			row.Task = &task
 		}
 		rows = append(rows, row)
 		if version.ReleaseTag != "" {
@@ -1486,25 +1758,74 @@ func buildRows(versions []VersionView, remotes []RemoteVersionView, tasks []Down
 		}
 	}
 	for _, remote := range remotes {
+		task, hasTask := tasksByTag[downloadTaskKey(remote.SourceID, remote.Tag)]
 		if idx, ok := rowsByTag[remote.Tag]; ok {
 			rows[idx].HasRemote = true
+			rows[idx].HTMLURL = remote.HTMLURL
+			rows[idx].AssetSize = remote.AssetSize
 			rows[idx].PublishedAt = remote.PublishedAt
+			rows[idx].IsPrerelease = remote.IsPrerelease || isPrereleaseVersion(remote.Version, remote.Tag)
+			if hasTask {
+				rows[idx].Task = &task
+				if isActiveDownloadTaskStatus(task.Status) {
+					rows[idx].PrimaryAction = "none"
+					rows[idx].SecondaryAction = "cancel"
+				}
+			}
 			continue
 		}
-		rows = append(rows, VersionRowView{
+		action := "download"
+		secondary := ""
+		if hasTask && isActiveDownloadTaskStatus(task.Status) {
+			action = "none"
+			secondary = "cancel"
+		}
+		if hasTask && task.Status == "failed" {
+			action = "download"
+			secondary = "retry"
+		}
+		row := VersionRowView{
 			RowID:         "remote:" + remote.Tag,
 			Version:       remote.Version,
 			Tag:           remote.Tag,
 			SourceID:      remote.SourceID,
 			IsInstalled:   remote.IsInstalled,
 			HasRemote:     true,
+			HTMLURL:       remote.HTMLURL,
+			AssetSize:     remote.AssetSize,
 			PublishedAt:   remote.PublishedAt,
+			IsPrerelease:  remote.IsPrerelease || isPrereleaseVersion(remote.Version, remote.Tag),
 			NotesState:    "none",
-			PrimaryAction: "download_activate",
-		})
+			PrimaryAction: action,
+		}
+		if secondary != "" {
+			row.SecondaryAction = secondary
+		}
+		if hasTask {
+			row.Task = &task
+		}
+		rows = append(rows, row)
 	}
 	sortVersionRows(rows)
 	return rows
+}
+
+func versionIsOlder(version string, selectedVersion string) bool {
+	current, currentErr := semver.NewVersion(version)
+	selected, selectedErr := semver.NewVersion(selectedVersion)
+	if currentErr != nil || selectedErr != nil {
+		return false
+	}
+	return current.LessThan(selected)
+}
+
+func isActiveDownloadTaskStatus(status string) bool {
+	switch status {
+	case "queued", "resolving_asset", "downloading", "verifying", "extracting", "importing", "activating", "canceling":
+		return true
+	default:
+		return false
+	}
 }
 
 func notesState(version VersionView) string {
@@ -1575,26 +1896,55 @@ func (c *GitHubRESTReleaseClient) ListReleases(ctx context.Context, source Sourc
 	if len(repoParts) != 2 || repoParts[0] == "" || repoParts[1] == "" {
 		return nil, fmt.Errorf("invalid github repo: %s", source.Repo)
 	}
-	endpoint := "https://api.github.com/repos/" + url.PathEscape(repoParts[0]) + "/" + url.PathEscape(repoParts[1]) + "/releases?per_page=50"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return nil, err
+	releases := []GitHubRelease{}
+	for page := 1; page <= githubReleaseAPIMaxPages; page++ {
+		endpoint := fmt.Sprintf(
+			"https://api.github.com/repos/%s/%s/releases?per_page=%d&page=%d",
+			url.PathEscape(repoParts[0]),
+			url.PathEscape(repoParts[1]),
+			githubReleaseAPIPerPage,
+			page,
+		)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Accept", "application/vnd.github+json")
+		req.Header.Set("User-Agent", "GetTokens Codex Binary Manager")
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return c.listReleasesAtom(ctx, source, err)
+		}
+		payload, err := func() ([]githubReleasePayload, error) {
+			defer resp.Body.Close()
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+				body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+				return nil, fmt.Errorf("github releases returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+			}
+			var payload []githubReleasePayload
+			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+				return nil, err
+			}
+			return payload, nil
+		}()
+		if err != nil {
+			if page == 1 {
+				return c.listReleasesAtom(ctx, source, err)
+			}
+			return releases, nil
+		}
+		if len(payload) == 0 {
+			break
+		}
+		releases = append(releases, releasesFromGitHubPayload(payload)...)
+		if len(payload) < githubReleaseAPIPerPage {
+			break
+		}
 	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "GetTokens Codex Binary Manager")
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return c.listReleasesAtom(ctx, source, err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return c.listReleasesAtom(ctx, source, fmt.Errorf("github releases returned %d: %s", resp.StatusCode, strings.TrimSpace(string(body))))
-	}
-	var payload []githubReleasePayload
-	if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-		return nil, err
-	}
+	return releases, nil
+}
+
+func releasesFromGitHubPayload(payload []githubReleasePayload) []GitHubRelease {
 	releases := make([]GitHubRelease, 0, len(payload))
 	for _, item := range payload {
 		publishedAt, _ := time.Parse(time.RFC3339, item.PublishedAt)
@@ -1618,7 +1968,7 @@ func (c *GitHubRESTReleaseClient) ListReleases(ctx context.Context, source Sourc
 			Assets:      assets,
 		})
 	}
-	return releases, nil
+	return releases
 }
 
 func (c *GitHubRESTReleaseClient) listReleasesAtom(ctx context.Context, source Source, originalErr error) ([]GitHubRelease, error) {
@@ -1629,21 +1979,21 @@ func (c *GitHubRESTReleaseClient) listReleasesAtom(ctx context.Context, source S
 	endpoint := "https://github.com/" + url.PathEscape(repoParts[0]) + "/" + url.PathEscape(repoParts[1]) + "/releases.atom"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, originalErr
+		return c.listReleasesHTMLPagesOrError(ctx, source, repoParts, originalErr)
 	}
 	req.Header.Set("Accept", "application/atom+xml, application/xml;q=0.9, */*;q=0.5")
 	req.Header.Set("User-Agent", "GetTokens Codex Binary Manager")
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, originalErr
+		return c.listReleasesHTMLPagesOrError(ctx, source, repoParts, originalErr)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, originalErr
+		return c.listReleasesHTMLPagesOrError(ctx, source, repoParts, originalErr)
 	}
 	var feed atomFeed
 	if err := xml.NewDecoder(resp.Body).Decode(&feed); err != nil {
-		return nil, originalErr
+		return c.listReleasesHTMLPagesOrError(ctx, source, repoParts, originalErr)
 	}
 	releases := make([]GitHubRelease, 0, len(feed.Entries))
 	for _, entry := range feed.Entries {
@@ -1656,19 +2006,139 @@ func (c *GitHubRESTReleaseClient) listReleasesAtom(ctx context.Context, source S
 		body = strings.ReplaceAll(body, "<p>", "")
 		body = strings.ReplaceAll(body, "</p>", "\n")
 		body = strings.TrimSpace(body)
+		version := strings.TrimPrefix(tag, source.TagPrefix)
 		releases = append(releases, GitHubRelease{
 			TagName:     tag,
 			Name:        entry.Title,
 			Body:        body,
 			HTMLURL:     atomEntryHTMLURL(entry),
 			PublishedAt: updated,
-			Prerelease:  strings.Contains(tag, "-"),
+			Prerelease:  isPrereleaseVersion(version, tag),
 		})
 	}
+	if len(releases) == 0 {
+		return c.listReleasesHTMLPagesOrError(ctx, source, repoParts, originalErr)
+	}
+	if !hasStableRelease(releases, source.TagPrefix) {
+		htmlReleases := c.listReleasesHTMLPages(ctx, source, repoParts)
+		releases = mergeGitHubReleases(releases, htmlReleases)
+	}
+	return releases, nil
+}
+
+func (c *GitHubRESTReleaseClient) listReleasesHTMLPagesOrError(ctx context.Context, source Source, repoParts []string, originalErr error) ([]GitHubRelease, error) {
+	releases := c.listReleasesHTMLPages(ctx, source, repoParts)
 	if len(releases) == 0 {
 		return nil, originalErr
 	}
 	return releases, nil
+}
+
+func (c *GitHubRESTReleaseClient) listReleasesHTMLPages(ctx context.Context, source Source, repoParts []string) []GitHubRelease {
+	releases := []GitHubRelease{}
+	for page := 1; page <= githubReleaseHTMLMaxPages; page++ {
+		endpoint := "https://github.com/" + url.PathEscape(repoParts[0]) + "/" + url.PathEscape(repoParts[1]) + "/releases?page=" + fmt.Sprint(page)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+		if err != nil {
+			return releases
+		}
+		req.Header.Set("Accept", "text/html, */*;q=0.5")
+		req.Header.Set("User-Agent", "GetTokens Codex Binary Manager")
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return releases
+		}
+		body, readErr := func() ([]byte, error) {
+			defer resp.Body.Close()
+			if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+				return nil, fmt.Errorf("github releases html returned %d", resp.StatusCode)
+			}
+			return io.ReadAll(io.LimitReader(resp.Body, 2*1024*1024))
+		}()
+		if readErr != nil {
+			return releases
+		}
+		pageReleases := releasesFromGitHubHTML(string(body), repoParts[0], repoParts[1], source.TagPrefix)
+		if len(pageReleases) == 0 {
+			return releases
+		}
+		releases = mergeGitHubReleases(releases, pageReleases)
+	}
+	return releases
+}
+
+func releasesFromGitHubHTML(body string, owner string, repo string, tagPrefix string) []GitHubRelease {
+	re := regexp.MustCompile(`href="(/` + regexp.QuoteMeta(owner) + `/` + regexp.QuoteMeta(repo) + `/releases/tag/([^"#?]+))"`)
+	matches := re.FindAllStringSubmatch(body, -1)
+	releases := make([]GitHubRelease, 0, len(matches))
+	seen := map[string]bool{}
+	for _, match := range matches {
+		if len(match) < 3 {
+			continue
+		}
+		tag, err := url.PathUnescape(html.UnescapeString(match[2]))
+		if err != nil {
+			tag = html.UnescapeString(match[2])
+		}
+		if tag == "" || seen[tag] {
+			continue
+		}
+		if tagPrefix != "" && !strings.HasPrefix(tag, tagPrefix) {
+			continue
+		}
+		version := strings.TrimPrefix(tag, tagPrefix)
+		if _, err := semver.NewVersion(version); err != nil {
+			continue
+		}
+		seen[tag] = true
+		releases = append(releases, GitHubRelease{
+			TagName:    tag,
+			Name:       tag,
+			HTMLURL:    "https://github.com/" + owner + "/" + repo + "/releases/tag/" + url.PathEscape(tag),
+			Prerelease: isPrereleaseVersion(version, tag),
+		})
+	}
+	return releases
+}
+
+func mergeGitHubReleases(primary []GitHubRelease, extra []GitHubRelease) []GitHubRelease {
+	if len(extra) == 0 {
+		return primary
+	}
+	result := append([]GitHubRelease(nil), primary...)
+	seen := map[string]bool{}
+	for _, release := range result {
+		if release.TagName != "" {
+			seen[release.TagName] = true
+		}
+	}
+	for _, release := range extra {
+		if release.TagName == "" || seen[release.TagName] {
+			continue
+		}
+		result = append(result, release)
+		seen[release.TagName] = true
+	}
+	return result
+}
+
+func hasStableRelease(releases []GitHubRelease, tagPrefix string) bool {
+	for _, release := range releases {
+		if release.Draft || release.Prerelease {
+			continue
+		}
+		if tagPrefix != "" && !strings.HasPrefix(release.TagName, tagPrefix) {
+			continue
+		}
+		version := strings.TrimPrefix(release.TagName, tagPrefix)
+		if _, err := semver.NewVersion(version); err != nil {
+			continue
+		}
+		if !isPrereleaseVersion(version, release.TagName) {
+			return true
+		}
+	}
+	return false
 }
 
 type githubReleasePayload struct {
@@ -1741,6 +2211,11 @@ func parseVersion(output string) string {
 		return "unknown"
 	}
 	return match
+}
+
+func isPrereleaseVersion(version string, tag string) bool {
+	value := strings.ToLower(version + " " + tag)
+	return regexp.MustCompile(`(^|[.\-_\s])(alpha|beta|rc|pre|preview)([.\-_\s]|\d|$)`).MatchString(value)
 }
 
 func formatOptionalTime(value time.Time) string {

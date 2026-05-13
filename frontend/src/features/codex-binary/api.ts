@@ -9,6 +9,8 @@ type WailsCodexBinaryBridge = {
   DownloadCodexBinary?: (input: { sourceID: string; tag: string; activateAfterInstall: boolean }) => Promise<{ snapshot?: CodexBinarySnapshot }>;
   EnableCodexBinaryManagedPath?: () => Promise<CodexBinaryEnableManagedPathResult>;
   UseCodexBinary?: (input: { versionID: string; expectedCurrentVersionID?: string }) => Promise<{ snapshot?: CodexBinarySnapshot }>;
+  RevealCodexBinaryVersion?: (input: { versionID: string }) => Promise<void>;
+  DeleteCodexBinaryVersion?: (input: { versionID: string }) => Promise<{ snapshot?: CodexBinarySnapshot }>;
 };
 
 function getBridge(): WailsCodexBinaryBridge | null {
@@ -68,7 +70,7 @@ export async function useCodexBinary(versionID: string, expectedCurrentVersionID
   return result.snapshot || getCodexBinarySnapshot();
 }
 
-export async function downloadCodexBinary(sourceID: string, tag: string): Promise<CodexBinarySnapshot> {
+export async function downloadCodexBinary(sourceID: string, tag: string, activateAfterInstall = false): Promise<CodexBinarySnapshot> {
   const bridge = getBridge();
   if (!bridge?.DownloadCodexBinary || hasPreviewMode('codex-binary')) {
     return {
@@ -79,7 +81,27 @@ export async function downloadCodexBinary(sourceID: string, tag: string): Promis
       })),
     };
   }
-  const result = await bridge.DownloadCodexBinary({ sourceID, tag, activateAfterInstall: true });
+  const result = await bridge.DownloadCodexBinary({ sourceID, tag, activateAfterInstall });
+  return result.snapshot || getCodexBinarySnapshot();
+}
+
+export async function revealCodexBinaryVersion(versionID: string): Promise<void> {
+  const bridge = getBridge();
+  if (!bridge?.RevealCodexBinaryVersion || hasPreviewMode('codex-binary')) {
+    return;
+  }
+  await bridge.RevealCodexBinaryVersion({ versionID });
+}
+
+export async function deleteCodexBinaryVersion(versionID: string): Promise<CodexBinarySnapshot> {
+  const bridge = getBridge();
+  if (!bridge?.DeleteCodexBinaryVersion || hasPreviewMode('codex-binary')) {
+    return {
+      ...codexBinaryPreviewSnapshot,
+      versions: codexBinaryPreviewSnapshot.versions.filter((version) => version.id !== versionID),
+    };
+  }
+  const result = await bridge.DeleteCodexBinaryVersion({ versionID });
   return result.snapshot || getCodexBinarySnapshot();
 }
 

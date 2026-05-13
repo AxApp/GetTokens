@@ -38,6 +38,18 @@ func (a *App) UseCodexBinary(input codexbinary.UseInput) (*codexbinary.UseResult
 	return a.codexBinary.Use(input)
 }
 
+func (a *App) RevealCodexBinaryVersion(input codexbinary.VersionActionInput) error {
+	path, err := a.codexBinary.VersionBinaryPath(input)
+	if err != nil {
+		return err
+	}
+	return openPathInFileManager(path)
+}
+
+func (a *App) DeleteCodexBinaryVersion(input codexbinary.VersionActionInput) (*codexbinary.DeleteVersionResult, error) {
+	return a.codexBinary.DeleteVersion(input)
+}
+
 func (a *App) GetCodexBinaryVersionNotes(input codexbinary.VersionNotesInput) (*codexbinary.VersionNotesView, error) {
 	return a.codexBinary.VersionNotes(input)
 }

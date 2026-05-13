@@ -5,7 +5,10 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -118,6 +121,58 @@ func TestActivateUpdatesSymlinksAndSnapshot(t *testing.T) {
 	}
 }
 
+func TestDeleteVersionRemovesNonSelectedVersion(t *testing.T) {
+	root := t.TempDir()
+	service := NewService(ServiceOptions{RootDir: root, Now: fixedNow})
+	activeBinary := writeFakeCodex(t, root, "active-codex", "codex-cli 0.121.0")
+	oldBinary := writeFakeCodex(t, root, "old-codex", "codex-cli 0.120.0")
+	active, err := service.ImportLocal(ImportLocalInput{Path: activeBinary, ActivateAfterInstall: true})
+	if err != nil {
+		t.Fatalf("ImportLocal(active) error = %v", err)
+	}
+	old, err := service.ImportLocal(ImportLocalInput{Path: oldBinary})
+	if err != nil {
+		t.Fatalf("ImportLocal(old) error = %v", err)
+	}
+
+	result, err := service.DeleteVersion(VersionActionInput{VersionID: old.Version.ID})
+	if err != nil {
+		t.Fatalf("DeleteVersion() error = %v", err)
+	}
+	if result.DeletedVersionID != old.Version.ID {
+		t.Fatalf("DeletedVersionID = %q, want %q", result.DeletedVersionID, old.Version.ID)
+	}
+	if result.Snapshot.SelectedVersionID != active.Version.ID {
+		t.Fatalf("SelectedVersionID = %q, want active %q", result.Snapshot.SelectedVersionID, active.Version.ID)
+	}
+	if _, err := os.Stat(filepath.Join(root, old.Version.BinaryRelativePath)); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("deleted binary stat error = %v, want not exist", err)
+	}
+	for _, version := range result.Snapshot.Versions {
+		if version.ID == old.Version.ID {
+			t.Fatalf("deleted version still in snapshot: %#v", version)
+		}
+	}
+}
+
+func TestDeleteVersionRejectsSelectedVersion(t *testing.T) {
+	root := t.TempDir()
+	service := NewService(ServiceOptions{RootDir: root, Now: fixedNow})
+	binary := writeFakeCodex(t, root, "active-codex", "codex-cli 0.121.0")
+	active, err := service.ImportLocal(ImportLocalInput{Path: binary, ActivateAfterInstall: true})
+	if err != nil {
+		t.Fatalf("ImportLocal() error = %v", err)
+	}
+
+	_, err = service.DeleteVersion(VersionActionInput{VersionID: active.Version.ID})
+	if err == nil || !strings.Contains(err.Error(), "codex_binary_delete_active_version") {
+		t.Fatalf("DeleteVersion() error = %v, want active-version rejection", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, active.Version.BinaryRelativePath)); err != nil {
+		t.Fatalf("active binary should remain: %v", err)
+	}
+}
+
 func TestVersionNotesUsesCacheWhenPresent(t *testing.T) {
 	root := t.TempDir()
 	service := NewService(ServiceOptions{RootDir: root, Now: fixedNow})
@@ -165,6 +220,17 @@ func TestRefreshAvailableFiltersAndCachesGitHubReleases(t *testing.T) {
 				}},
 			},
 			{
+				TagName:    "rust-v0.121.0-alpha.1",
+				Name:       "rust-v0.121.0-alpha.1",
+				HTMLURL:    "https://github.com/openai/codex/releases/tag/rust-v0.121.0-alpha.1",
+				Prerelease: true,
+				Assets: []GitHubReleaseAsset{{
+					Name:        "codex-aarch64-apple-darwin.tar.gz",
+					DownloadURL: "https://example.com/codex-aarch64-apple-darwin-alpha.tar.gz",
+					Size:        10,
+				}},
+			},
+			{
 				TagName: "rust-v0.119.0",
 				Draft:   true,
 				Assets:  []GitHubReleaseAsset{{Name: "codex-aarch64-apple-darwin.tar.gz"}},
@@ -184,22 +250,25 @@ func TestRefreshAvailableFiltersAndCachesGitHubReleases(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RefreshAvailable() error = %v", err)
 	}
-	if len(snapshot.RemoteVersions) != 1 {
-		t.Fatalf("len(RemoteVersions) = %d, want 1", len(snapshot.RemoteVersions))
+	if len(snapshot.RemoteVersions) != 2 {
+		t.Fatalf("len(RemoteVersions) = %d, want 2", len(snapshot.RemoteVersions))
 	}
-	if snapshot.RemoteVersions[0].Version != "0.120.0" {
-		t.Fatalf("Version = %q, want 0.120.0", snapshot.RemoteVersions[0].Version)
+	if !containsRemoteVersion(snapshot.RemoteVersions, "0.120.0", false) {
+		t.Fatalf("RemoteVersions = %#v, want stable 0.120.0", snapshot.RemoteVersions)
 	}
-	if len(snapshot.VersionRows) != 1 || !snapshot.VersionRows[0].HasRemote {
-		t.Fatalf("VersionRows = %#v, want one remote row", snapshot.VersionRows)
+	if !containsRemoteVersion(snapshot.RemoteVersions, "0.121.0-alpha.1", true) {
+		t.Fatalf("RemoteVersions = %#v, want alpha 0.121.0-alpha.1", snapshot.RemoteVersions)
+	}
+	if len(snapshot.VersionRows) != 2 {
+		t.Fatalf("VersionRows = %#v, want stable and alpha remote rows", snapshot.VersionRows)
 	}
 
 	cached, err := service.Snapshot()
 	if err != nil {
 		t.Fatalf("Snapshot() error = %v", err)
 	}
-	if len(cached.RemoteVersions) != 1 {
-		t.Fatalf("cached len(RemoteVersions) = %d, want 1", len(cached.RemoteVersions))
+	if len(cached.RemoteVersions) != 2 {
+		t.Fatalf("cached len(RemoteVersions) = %d, want 2", len(cached.RemoteVersions))
 	}
 }
 
@@ -237,7 +306,7 @@ func TestRefreshAvailableFallsBackToCacheOnNetworkError(t *testing.T) {
 
 func TestDownloadInstallsAndActivatesTarGzRelease(t *testing.T) {
 	root := t.TempDir()
-	archive := codexTarGz(t, "codex-cli 0.122.0")
+	archive := codexTarGzNamed(t, "codex-aarch64-apple-darwin", "codex-cli 0.122.0")
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/codex-aarch64-apple-darwin.tar.gz" {
 			t.Fatalf("unexpected download path: %s", r.URL.Path)
@@ -284,6 +353,61 @@ func TestDownloadInstallsAndActivatesTarGzRelease(t *testing.T) {
 	}
 }
 
+func TestDownloadInstallsWithoutActivatingTarGzRelease(t *testing.T) {
+	root := t.TempDir()
+	activeBinary := writeFakeCodex(t, root, "active-codex", "codex-cli 0.121.0")
+	archive := codexTarGz(t, "codex-cli 0.122.0")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/codex-aarch64-apple-darwin.tar.gz" {
+			t.Fatalf("unexpected download path: %s", r.URL.Path)
+		}
+		_, _ = w.Write(archive)
+	}))
+	defer server.Close()
+
+	service := NewService(ServiceOptions{
+		RootDir: root,
+		Now:     fixedNow,
+		GOOS:    "darwin",
+		GOARCH:  "arm64",
+		ReleaseClient: fakeReleaseClient{releases: []GitHubRelease{{
+			TagName: "rust-v0.122.0",
+			Assets: []GitHubReleaseAsset{{
+				Name:        "codex-aarch64-apple-darwin.tar.gz",
+				DownloadURL: server.URL + "/codex-aarch64-apple-darwin.tar.gz",
+				Size:        int64(len(archive)),
+			}},
+		}}},
+		HTTPClient: server.Client(),
+	})
+	active, err := service.ImportLocal(ImportLocalInput{Path: activeBinary, ActivateAfterInstall: true})
+	if err != nil {
+		t.Fatalf("ImportLocal() error = %v", err)
+	}
+
+	result, err := service.Download(context.Background(), DownloadInput{
+		SourceID:             "openai-codex-github",
+		Tag:                  "rust-v0.122.0",
+		ActivateAfterInstall: false,
+	})
+	if err != nil {
+		t.Fatalf("Download() error = %v", err)
+	}
+	if result.Activated {
+		t.Fatalf("Activated = true, want false")
+	}
+	if result.Snapshot.SelectedVersionID != active.Version.ID {
+		t.Fatalf("SelectedVersionID = %q, want active %q", result.Snapshot.SelectedVersionID, active.Version.ID)
+	}
+	downloaded := findRowByVersion(result.Snapshot.VersionRows, "0.122.0")
+	if downloaded == nil || !downloaded.IsInstalled {
+		t.Fatalf("downloaded row = %#v, want installed 0.122.0", downloaded)
+	}
+	if downloaded.PrimaryAction != "activate" {
+		t.Fatalf("PrimaryAction = %q, want activate", downloaded.PrimaryAction)
+	}
+}
+
 func TestDownloadRejectsReleaseWithoutPlatformAsset(t *testing.T) {
 	service := NewService(ServiceOptions{
 		RootDir: t.TempDir(),
@@ -306,6 +430,229 @@ func TestDownloadRejectsReleaseWithoutPlatformAsset(t *testing.T) {
 	})
 	if err == nil || !strings.Contains(err.Error(), "codex_binary_release_missing") {
 		t.Fatalf("Download() error = %v, want release missing", err)
+	}
+}
+
+func TestCopyWithProgressReportsBytes(t *testing.T) {
+	var output bytes.Buffer
+	var seen []int64
+	err := copyWithProgress(&output, strings.NewReader("abcdef"), 6, func(done int64, total int64) {
+		if total != 6 {
+			t.Fatalf("total = %d, want 6", total)
+		}
+		seen = append(seen, done)
+	})
+	if err != nil {
+		t.Fatalf("copyWithProgress() error = %v", err)
+	}
+	if output.String() != "abcdef" {
+		t.Fatalf("output = %q, want abcdef", output.String())
+	}
+	if len(seen) == 0 || seen[len(seen)-1] != 6 {
+		t.Fatalf("progress = %v, want final 6", seen)
+	}
+}
+
+func TestGitHubRESTReleaseClientPaginatesReleases(t *testing.T) {
+	pageCalls := []string{}
+	pageOne := make([]githubReleasePayload, 0, githubReleaseAPIPerPage)
+	for idx := 0; idx < githubReleaseAPIPerPage; idx++ {
+		pageOne = append(pageOne, githubReleasePayload{
+			TagName:     fmt.Sprintf("rust-v0.131.0-alpha.%d", idx+1),
+			Name:        fmt.Sprintf("rust-v0.131.0-alpha.%d", idx+1),
+			HTMLURL:     fmt.Sprintf("https://github.com/openai/codex/releases/tag/rust-v0.131.0-alpha.%d", idx+1),
+			PublishedAt: "2026-05-13T00:00:00Z",
+			Prerelease:  true,
+			Assets: []githubReleaseAssetPayload{{
+				Name:               "codex-aarch64-apple-darwin.tar.gz",
+				BrowserDownloadURL: "https://example.com/codex-alpha.tar.gz",
+			}},
+		})
+	}
+	client := NewGitHubRESTReleaseClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			if req.URL.Host != "api.github.com" {
+				t.Fatalf("unexpected request: %s", req.URL.String())
+			}
+			page := req.URL.Query().Get("page")
+			pageCalls = append(pageCalls, page)
+			switch page {
+			case "1":
+				return stringResponse(http.StatusOK, githubReleaseJSON(t, pageOne)), nil
+			case "2":
+				return stringResponse(http.StatusOK, githubReleaseJSON(t, []githubReleasePayload{
+					{
+						TagName:     "rust-v0.130.0",
+						Name:        "rust-v0.130.0",
+						HTMLURL:     "https://github.com/openai/codex/releases/tag/rust-v0.130.0",
+						PublishedAt: "2026-05-10T00:00:00Z",
+						Assets: []githubReleaseAssetPayload{{
+							Name:               "codex-aarch64-apple-darwin.tar.gz",
+							BrowserDownloadURL: "https://example.com/codex-stable.tar.gz",
+						}},
+					},
+				})), nil
+			default:
+				t.Fatalf("unexpected page %q", page)
+				return stringResponse(http.StatusNotFound, "not found"), nil
+			}
+		}),
+	})
+
+	releases, err := client.ListReleases(context.Background(), Source{
+		Repo:      "openai/codex",
+		TagPrefix: "rust-v",
+	})
+	if err != nil {
+		t.Fatalf("ListReleases() error = %v", err)
+	}
+	if strings.Join(pageCalls, ",") != "1,2" {
+		t.Fatalf("page calls = %v, want [1 2]", pageCalls)
+	}
+	if !containsRelease(releases, "rust-v0.130.0", false) {
+		t.Fatalf("releases missing page 2 stable: %#v", releases)
+	}
+	if !containsRelease(releases, "rust-v0.131.0-alpha.1", true) {
+		t.Fatalf("releases missing page 1 alpha: %#v", releases)
+	}
+}
+
+func TestGitHubReleaseFallbackSupplementsStableFromHTMLWhenAtomOnlyHasAlpha(t *testing.T) {
+	client := NewGitHubRESTReleaseClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			switch {
+			case req.URL.Host == "api.github.com":
+				return stringResponse(http.StatusForbidden, "rate limited"), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases.atom":
+				return stringResponse(http.StatusOK, `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>tag:github.com,2008:Repository/1/rust-v0.131.0-alpha.9</id>
+    <updated>2026-05-12T00:00:00Z</updated>
+    <title>rust-v0.131.0-alpha.9</title>
+    <link rel="alternate" href="https://github.com/openai/codex/releases/tag/rust-v0.131.0-alpha.9"/>
+    <content type="html">&lt;p&gt;alpha&lt;/p&gt;</content>
+  </entry>
+</feed>`), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases" && req.URL.Query().Get("page") == "1":
+				return stringResponse(http.StatusOK, `<a href="/openai/codex/releases/tag/rust-v0.131.0-alpha.9">alpha</a>`), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases" && req.URL.Query().Get("page") == "2":
+				return stringResponse(http.StatusOK, `<a href="/openai/codex/releases/tag/rust-v0.130.0">stable</a>`), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases" && req.URL.Query().Get("page") == "3":
+				return stringResponse(http.StatusOK, ``), nil
+			default:
+				t.Fatalf("unexpected request: %s", req.URL.String())
+				return stringResponse(http.StatusNotFound, "not found"), nil
+			}
+		}),
+	})
+
+	releases, err := client.ListReleases(context.Background(), Source{
+		Repo:      "openai/codex",
+		TagPrefix: "rust-v",
+	})
+	if err != nil {
+		t.Fatalf("ListReleases() error = %v", err)
+	}
+	if !containsRelease(releases, "rust-v0.131.0-alpha.9", true) {
+		t.Fatalf("releases = %#v, want alpha from atom", releases)
+	}
+	if !containsRelease(releases, "rust-v0.130.0", false) {
+		t.Fatalf("releases = %#v, want stable from html fallback", releases)
+	}
+}
+
+func TestGitHubReleaseFallbackPaginatesHTMLHistory(t *testing.T) {
+	client := NewGitHubRESTReleaseClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			switch {
+			case req.URL.Host == "api.github.com":
+				return stringResponse(http.StatusForbidden, "rate limited"), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases.atom":
+				return stringResponse(http.StatusOK, `<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom"></feed>`), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases" && req.URL.Query().Get("page") == "1":
+				return stringResponse(http.StatusOK, `<a href="/openai/codex/releases/tag/rust-v0.131.0-alpha.9">alpha</a>`), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases" && req.URL.Query().Get("page") == "2":
+				return stringResponse(http.StatusOK, `<a href="/openai/codex/releases/tag/rust-v0.130.0">stable</a>`), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases" && req.URL.Query().Get("page") == "3":
+				return stringResponse(http.StatusOK, `<a href="/openai/codex/releases/tag/rust-v0.129.0">older stable</a>`), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases" && req.URL.Query().Get("page") == "4":
+				return stringResponse(http.StatusOK, ``), nil
+			default:
+				t.Fatalf("unexpected request: %s", req.URL.String())
+				return stringResponse(http.StatusNotFound, "not found"), nil
+			}
+		}),
+	})
+
+	releases, err := client.ListReleases(context.Background(), Source{
+		Repo:      "openai/codex",
+		TagPrefix: "rust-v",
+	})
+	if err != nil {
+		t.Fatalf("ListReleases() error = %v", err)
+	}
+	if !containsRelease(releases, "rust-v0.130.0", false) {
+		t.Fatalf("releases = %#v, want page 2 stable", releases)
+	}
+	if !containsRelease(releases, "rust-v0.129.0", false) {
+		t.Fatalf("releases = %#v, want page 3 stable", releases)
+	}
+}
+
+func TestGitHubReleaseFallbackDoesNotMarkRustStableAtomTagAsPrerelease(t *testing.T) {
+	client := NewGitHubRESTReleaseClient(&http.Client{
+		Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			switch {
+			case req.URL.Host == "api.github.com":
+				return stringResponse(http.StatusForbidden, "rate limited"), nil
+			case req.URL.Host == "github.com" && req.URL.Path == "/openai/codex/releases.atom":
+				return stringResponse(http.StatusOK, `<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <entry>
+    <id>tag:github.com,2008:Repository/1/rust-v0.129.0</id>
+    <updated>2026-05-10T00:00:00Z</updated>
+    <title>rust-v0.129.0</title>
+    <link rel="alternate" href="https://github.com/openai/codex/releases/tag/rust-v0.129.0"/>
+    <content type="html">&lt;p&gt;stable&lt;/p&gt;</content>
+  </entry>
+</feed>`), nil
+			default:
+				t.Fatalf("unexpected request: %s", req.URL.String())
+				return stringResponse(http.StatusNotFound, "not found"), nil
+			}
+		}),
+	})
+
+	releases, err := client.ListReleases(context.Background(), Source{
+		Repo:      "openai/codex",
+		TagPrefix: "rust-v",
+	})
+	if err != nil {
+		t.Fatalf("ListReleases() error = %v", err)
+	}
+	if !containsRelease(releases, "rust-v0.129.0", false) {
+		t.Fatalf("releases = %#v, want stable atom tag not marked prerelease", releases)
+	}
+}
+
+func TestReleasesFromGitHubHTMLFiltersCodexRustSemverTags(t *testing.T) {
+	releases := releasesFromGitHubHTML(`
+<a href="/openai/codex/releases/tag/rust-v0.130.0">stable</a>
+<a href="/openai/codex/releases/tag/rust-v0.131.0-alpha.9">alpha</a>
+<a href="/openai/codex/releases/tag/npm-v0.130.0">npm</a>
+<a href="/openai/codex/releases/tag/rust-vnot-semver">bad</a>
+<a href="/other/repo/releases/tag/rust-v0.999.0">other repo</a>
+`, "openai", "codex", "rust-v")
+
+	if len(releases) != 2 {
+		t.Fatalf("len(releases) = %d, want 2: %#v", len(releases), releases)
+	}
+	if !containsRelease(releases, "rust-v0.130.0", false) {
+		t.Fatalf("releases = %#v, want stable", releases)
+	}
+	if !containsRelease(releases, "rust-v0.131.0-alpha.9", true) {
+		t.Fatalf("releases = %#v, want alpha", releases)
 	}
 }
 
@@ -479,6 +826,74 @@ func TestEnableManagedPathUsesExistingBashProfile(t *testing.T) {
 	}
 }
 
+func TestBuildRowsMarksPrereleaseVersions(t *testing.T) {
+	rows := buildRows(
+		[]VersionView{
+			{
+				ID:              "stable",
+				DetectedVersion: "0.120.0",
+				ReleaseTag:      "rust-v0.120.0",
+				SourceID:        "openai-codex-github",
+				InstalledAt:     "2026-05-12T00:00:00Z",
+			},
+		},
+		[]RemoteVersionView{
+			{
+				SourceID:     "openai-codex-github",
+				Version:      "0.131.0-alpha.9",
+				Tag:          "rust-v0.131.0-alpha.9",
+				HTMLURL:      "https://github.com/openai/codex/releases/tag/rust-v0.131.0-alpha.9",
+				AssetSize:    18400000,
+				PublishedAt:  "2026-05-12T01:00:00Z",
+				IsPrerelease: true,
+			},
+		},
+		nil,
+		"",
+	)
+	alpha := findRowByVersion(rows, "0.131.0-alpha.9")
+	if alpha == nil || !alpha.IsPrerelease {
+		t.Fatalf("alpha row = %#v, want prerelease", alpha)
+	}
+	if alpha.HTMLURL != "https://github.com/openai/codex/releases/tag/rust-v0.131.0-alpha.9" {
+		t.Fatalf("alpha HTMLURL = %q, want release page", alpha.HTMLURL)
+	}
+	if alpha.AssetSize != 18400000 {
+		t.Fatalf("alpha AssetSize = %d, want 18400000", alpha.AssetSize)
+	}
+	stable := findRowByVersion(rows, "0.120.0")
+	if stable == nil || stable.IsPrerelease {
+		t.Fatalf("stable row = %#v, want non-prerelease", stable)
+	}
+}
+
+func findRowByVersion(rows []VersionRowView, version string) *VersionRowView {
+	for idx := range rows {
+		if rows[idx].Version == version {
+			return &rows[idx]
+		}
+	}
+	return nil
+}
+
+func containsRelease(releases []GitHubRelease, tag string, prerelease bool) bool {
+	for _, release := range releases {
+		if release.TagName == tag && release.Prerelease == prerelease {
+			return true
+		}
+	}
+	return false
+}
+
+func containsRemoteVersion(remotes []RemoteVersionView, version string, prerelease bool) bool {
+	for _, remote := range remotes {
+		if remote.Version == version && remote.IsPrerelease == prerelease {
+			return true
+		}
+	}
+	return false
+}
+
 func fixedNow() time.Time {
 	return time.Date(2026, 5, 12, 8, 0, 0, 0, time.UTC)
 }
@@ -494,13 +909,17 @@ func writeFakeCodex(t *testing.T, dir string, name string, versionOutput string)
 }
 
 func codexTarGz(t *testing.T, versionOutput string) []byte {
+	return codexTarGzNamed(t, "codex", versionOutput)
+}
+
+func codexTarGzNamed(t *testing.T, name string, versionOutput string) []byte {
 	t.Helper()
 	var buffer bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buffer)
 	tarWriter := tar.NewWriter(gzipWriter)
 	content := []byte("#!/bin/sh\nif [ \"$1\" = \"--version\" ]; then echo \"" + versionOutput + "\"; exit 0; fi\necho ok\n")
 	if err := tarWriter.WriteHeader(&tar.Header{
-		Name: "codex",
+		Name: name,
 		Mode: 0o755,
 		Size: int64(len(content)),
 	}); err != nil {
@@ -528,4 +947,27 @@ func (f fakeReleaseClient) ListReleases(ctx context.Context, source Source) ([]G
 		return nil, f.err
 	}
 	return f.releases, nil
+}
+
+type roundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func stringResponse(status int, body string) *http.Response {
+	return &http.Response{
+		StatusCode: status,
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(body)),
+	}
+}
+
+func githubReleaseJSON(t *testing.T, payload []githubReleasePayload) string {
+	t.Helper()
+	body, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatalf("marshal github release payload: %v", err)
+	}
+	return string(body)
 }

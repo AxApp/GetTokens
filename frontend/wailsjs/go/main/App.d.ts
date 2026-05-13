@@ -23,6 +23,8 @@ export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
 
 export function DeleteCodexAPIKey(arg1:string):Promise<void>;
 
+export function DeleteCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<codexbinary.DeleteVersionResult>;
+
 export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
 
 export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>;
@@ -106,6 +108,8 @@ export function RefreshCodexBinaryAvailable():Promise<codexbinary.Snapshot>;
 export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function RefreshCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
+export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<void>;
 
 export function SaveCodexConfigToml(arg1:main.SaveCodexConfigTomlInput):Promise<main.SaveCodexConfigTomlResult>;
 

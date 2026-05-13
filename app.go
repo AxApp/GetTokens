@@ -245,6 +245,14 @@ func (a *App) UseCodexBinary(input codexbinary.UseInput) (*codexbinary.UseResult
 	return a.core.UseCodexBinary(input)
 }
 
+func (a *App) RevealCodexBinaryVersion(input codexbinary.VersionActionInput) error {
+	return a.core.RevealCodexBinaryVersion(input)
+}
+
+func (a *App) DeleteCodexBinaryVersion(input codexbinary.VersionActionInput) (*codexbinary.DeleteVersionResult, error) {
+	return a.core.DeleteCodexBinaryVersion(input)
+}
+
 func (a *App) GetCodexBinaryVersionNotes(input codexbinary.VersionNotesInput) (*codexbinary.VersionNotesView, error) {
 	return a.core.GetCodexBinaryVersionNotes(input)
 }

@@ -68,6 +68,8 @@ export interface CodexBinaryVersionRowView {
   isSelected: boolean;
   isRollback: boolean;
   hasRemote: boolean;
+  htmlURL?: string;
+  assetSize?: number;
   publishedAt?: string;
   installedAt?: string;
   isPrerelease?: boolean;
@@ -79,8 +81,9 @@ export interface CodexBinaryVersionRowView {
 
 export type CodexBinaryReleaseFilter = 'all' | 'stable' | 'alpha';
 
+export const DEFAULT_CODEX_BINARY_RELEASE_FILTER: CodexBinaryReleaseFilter = 'stable';
+
 export type CodexBinaryPrimaryAction =
-  | 'download_activate'
   | 'download'
   | 'activate'
   | 'rollback'
@@ -160,9 +163,11 @@ export function buildCodexBinaryRows(snapshot: CodexBinarySnapshot): CodexBinary
 
   const rowsByKey = new Map<string, CodexBinaryVersionRowView>();
   const tasksByTag = new Map((snapshot.downloadTasks || []).map((task) => [task.tag, task]));
+  const selectedVersion = (snapshot.versions || []).find((version) => version.id === snapshot.selectedVersionID);
 
   for (const version of snapshot.versions || []) {
     const key = version.releaseTag || `local:${version.id}`;
+    const isRollback = Boolean(selectedVersion && !version.isSelected && compareVersionStrings(version.detectedVersion, selectedVersion.detectedVersion) < 0);
     rowsByKey.set(key, {
       rowID: `installed:${version.id}`,
       version: version.detectedVersion,
@@ -171,12 +176,12 @@ export function buildCodexBinaryRows(snapshot: CodexBinarySnapshot): CodexBinary
       installedVersionID: version.id,
       isInstalled: true,
       isSelected: version.isSelected,
-      isRollback: Boolean(snapshot.selectedVersionID && !version.isSelected),
+      isRollback,
       hasRemote: false,
       installedAt: version.installedAt,
       isPrerelease: isPrereleaseVersion(version.detectedVersion, version.releaseTag),
       notesState: version.releaseTag ? 'none' : 'local',
-      primaryAction: version.isSelected ? 'none' : snapshot.selectedVersionID ? 'rollback' : 'activate',
+      primaryAction: version.isSelected ? 'none' : isRollback ? 'rollback' : 'activate',
       secondaryAction: 'reveal',
     });
   }
@@ -186,6 +191,8 @@ export function buildCodexBinaryRows(snapshot: CodexBinarySnapshot): CodexBinary
     const task = tasksByTag.get(remote.tag);
     if (existing) {
       existing.hasRemote = true;
+      existing.htmlURL = remote.htmlURL;
+      existing.assetSize = remote.assetSize;
       existing.publishedAt = remote.publishedAt;
       existing.task = task;
       existing.isPrerelease = remote.isPrerelease || isPrereleaseVersion(remote.version, remote.tag);
@@ -200,11 +207,13 @@ export function buildCodexBinaryRows(snapshot: CodexBinarySnapshot): CodexBinary
       isSelected: false,
       isRollback: false,
       hasRemote: true,
+      htmlURL: remote.htmlURL,
+      assetSize: remote.assetSize,
       publishedAt: remote.publishedAt,
       isPrerelease: remote.isPrerelease || isPrereleaseVersion(remote.version, remote.tag),
       notesState: 'none',
       task,
-      primaryAction: task && isActiveDownloadTask(task) ? 'none' : 'download_activate',
+      primaryAction: task && isActiveDownloadTask(task) ? 'none' : 'download',
       secondaryAction: task && isActiveDownloadTask(task) ? 'cancel' : undefined,
     });
   }
@@ -221,7 +230,7 @@ export function filterCodexBinaryRows(
   }
   return rows.filter((row) => {
     const prerelease = row.isPrerelease ?? isPrereleaseVersion(row.version, row.tag);
-    return filter === 'alpha' ? prerelease : !prerelease;
+    return filter === 'alpha' ? isAlphaVersion(row.version, row.tag) : !prerelease;
   });
 }
 
@@ -230,7 +239,7 @@ export function getCodexBinaryRowActions(row: CodexBinaryVersionRowView) {
     return { primary: 'none' as CodexBinaryPrimaryAction, secondary: 'cancel' as CodexBinarySecondaryAction };
   }
   if (row.task?.status === 'failed') {
-    return { primary: 'download_activate' as CodexBinaryPrimaryAction, secondary: 'retry' as CodexBinarySecondaryAction };
+    return { primary: 'download' as CodexBinaryPrimaryAction, secondary: 'retry' as CodexBinarySecondaryAction };
   }
   if (row.isSelected) {
     return { primary: 'none' as CodexBinaryPrimaryAction, secondary: 'reveal' as CodexBinarySecondaryAction };
@@ -241,7 +250,7 @@ export function getCodexBinaryRowActions(row: CodexBinaryVersionRowView) {
       secondary: 'reveal' as CodexBinarySecondaryAction,
     };
   }
-  return { primary: row.primaryAction || 'download_activate', secondary: row.secondaryAction };
+  return { primary: row.primaryAction || 'download', secondary: row.secondaryAction };
 }
 
 export function formatTaskProgress(task: CodexBinaryDownloadTaskView | undefined): number {
@@ -251,16 +260,39 @@ export function formatTaskProgress(task: CodexBinaryDownloadTaskView | undefined
   return Math.max(0, Math.min(100, Math.round((task.bytesDone / task.bytesTotal) * 100)));
 }
 
+export function formatBinarySize(bytes: number | undefined): string {
+  if (!bytes || bytes <= 0 || !Number.isFinite(bytes)) {
+    return '';
+  }
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  const fractionDigits = value >= 10 || unitIndex === 0 ? 0 : 1;
+  return `${value.toFixed(fractionDigits)} ${units[unitIndex]}`;
+}
+
 function compareRows(left: CodexBinaryVersionRowView, right: CodexBinaryVersionRowView): number {
-  const leftParts = parseVersion(left.version);
-  const rightParts = parseVersion(right.version);
+  const versionDelta = compareVersionStrings(right.version, left.version);
+  if (versionDelta !== 0) {
+    return versionDelta;
+  }
+  return (right.publishedAt || right.installedAt || '').localeCompare(left.publishedAt || left.installedAt || '');
+}
+
+function compareVersionStrings(left: string, right: string): number {
+  const leftParts = parseVersion(left);
+  const rightParts = parseVersion(right);
   for (let index = 0; index < 3; index += 1) {
-    const delta = rightParts[index] - leftParts[index];
+    const delta = leftParts[index] - rightParts[index];
     if (delta !== 0) {
       return delta;
     }
   }
-  return (right.publishedAt || right.installedAt || '').localeCompare(left.publishedAt || left.installedAt || '');
+  return 0;
 }
 
 function parseVersion(value: string): [number, number, number] {
@@ -274,4 +306,9 @@ function parseVersion(value: string): [number, number, number] {
 function isPrereleaseVersion(version: string, tag?: string): boolean {
   const value = `${version} ${tag || ''}`.toLowerCase();
   return /(?:^|[.\-_\s])(alpha|beta|rc|pre|preview)(?:[.\-_\s]|\d|$)/.test(value);
+}
+
+function isAlphaVersion(version: string, tag?: string): boolean {
+  const value = `${version} ${tag || ''}`.toLowerCase();
+  return /(?:^|[.\-_\s])alpha(?:[.\-_\s]|\d|$)/.test(value);
 }
