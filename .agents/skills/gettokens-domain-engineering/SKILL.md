@@ -77,6 +77,24 @@ This skill unifies the technical rules for building, styling, and debugging GetT
     - `auth.json` uses field-level merge
     - do not rewrite the whole file and destroy user ordering, comments, or unknown fields
 
+## 3.1 Codex Workspace & Local Config Surfaces
+- **Codex Binary**: For Codex CLI binary version/source management, use the dedicated `gettokens-codex-binary-management` skill. Keep it as an independent binary-management business; do not merge it into account pool, local apply, usage, session, or routing flows.
+- **Browser Support**: New Codex workspace tabs must be usable in a normal browser preview when the interaction is layout/config-flow checkable. Do not let missing `window.go.main.App` make the page blank; provide explicit preview data and visible preview-only save behavior.
+- **Frame URL Rule**: Modal/detail layers opened from Codex workspaces should preserve the frame hash, for example `#frame=codex&workspace=<key>&detail=<id>`, when the surrounding feature already follows frame/detail routing. Closing a modal should remove only the detail marker.
+- **Wails Binding Boundary**: Any Wails-facing Codex method added under `internal/wailsapp` must also be exposed through root `app.go`, mirrored in root DTOs/mappers when needed, and regenerated into `frontend/wailsjs`. Frontend should import from generated bindings only after the root `main.App` method exists.
+- **Raw + Structured Config Editors**:
+  - If a page provides both a structured editor and a raw `config.toml` editor, saving either path must reload or resync the other path before showing success.
+  - Browser preview raw editors should edit in-memory preview text and label the result as preview-only; desktop editors should read/write the real file through Wails.
+  - Raw saves must not bypass structured validation for later structured edits. After raw save, re-read the parsed snapshot and surface TOML errors instead of keeping stale rows.
+- **MCP Config Semantics**:
+  - `[mcp_servers.<id>.tools.<tool>]` belongs to the parent server and must not be rendered as a separate server row.
+  - `bearer_token` is not a valid Codex MCP field for saved config; prompt for `bearer_token_env_var` instead.
+  - Preserve unknown fields and non-MCP config when patching a single server section.
+- **Skills UI Semantics**:
+  - Skills list rows should be whole-row detail entries. Nested toggles must stop propagation and stay semantically independent.
+  - Skill detail is a modal/detail layer, not a permanent right column. Keep source/root/file metadata in the modal when the list row would otherwise become too dense.
+  - Render `SKILL.md` with the existing safe Markdown stack (`react-markdown` + `rehype-sanitize`) after stripping front matter; do not inject raw HTML.
+
 ## 4. Quota Rules
 - **Path**: `AccountsPage` -> `GetCodexQuota` -> Wails -> `POST /v0/management/api-call`.
 - **Logic**: CLIProxyAPI injects token via `auth_index` for target `chatgpt.com/backend-api/wham/usage`.
