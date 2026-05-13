@@ -3,6 +3,17 @@
     <channel>
         <title>GetTokens</title>
         <item>
+            <title>1.0.6</title>
+            <pubDate>Wed, 13 May 2026 18:48:24 +0000</pubDate>
+            <link>https://github.com/AxApp/GetTokens</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/AxApp/GetTokens/releases/tag/v1.0.6</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1.0.6</sparkle:version>
+            <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.6/GetTokens_macOS_AppleSilicon.dmg" length="22394293" type="application/octet-stream" sparkle:edSignature="FWvX8cEdiU7Hejlto4tuhTlIZR0I54OJIx+Fq0Up3Xh0CZ2mY9DgEjKBeTuZ+sE5SgmhJa7IfmZNgSfEN+7RDA=="/>
+        </item>
+        <item>
             <title>1.0.5</title>
             <pubDate>Tue, 05 May 2026 14:21:50 +0000</pubDate>
             <link>https://github.com/AxApp/GetTokens</link>
