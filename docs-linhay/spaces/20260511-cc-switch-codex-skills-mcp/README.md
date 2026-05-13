@@ -252,7 +252,7 @@ And 浏览器预览环境使用内置 preview 文本，不访问本机文件系�
 
 ## 当前状态
 
-- 状态：web-preview-implemented
+- 状态：implementation-cleanup-completed
 - 最近更新：2026-05-14
 - 已完成首个 Web 切片：
   - Codex 侧边栏新增 `Skills` / `MCP Servers` 两个独立入口。
@@ -268,7 +268,8 @@ And 浏览器预览环境使用内置 preview 文本，不访问本机文件系�
   - Git 安装 modal 会展开展示当前 schema 可解析出的全部相关值：Source、Provider、Host、Repo、Ref、Path。
   - MCP Servers 支持列表过滤；点击 server 行打开独立编辑 modal，modal 内完成单 server 参数编辑、字段级 change preview 与本地保存预览；页面不包含 `Config Groups`。
   - MCP server 编辑 modal 会展开展示当前记录的全部相关值：Server ID、Label、Enabled、Status、Transport、Source Path、stdio 字段、HTTP 字段、共享配置字段和 nested tool approval。
-  - MCP server 编辑 modal 的滚动由整个 overlay 承担，不在表单 `main` 内做独立滚动。
+  - MCP server 编辑 modal 左侧表单只展示当前 server 已配置的有效字段：transport 必需字段保留，空的 `cwd/env/env_vars`、HTTP header、runtime、tool filters 等可选字段不默认渲染。
+  - MCP server 编辑 modal 的滚动由整个 overlay / dialog 承担，不在表单 `main` 内做独立滚动；桌面视口下收窄 max-height，避免底部贴边。
   - MCP server 编辑 modal 按 Codex transport 互斥语义分区：stdio 展示 `command/args/env/env_vars/cwd`，streamable_http 展示 `url/bearer_token_env_var/http_headers/env_http_headers/oauth_resource`，共享区展示 `required/supports_parallel_tool_calls/timeouts/tool filters/scopes`。
   - MCP server 编辑 modal 左侧表单改为单层分区布局：左列展示分区标题与 transport/meta，右列统一字段网格；布尔项使用 `ToggleField` 展示字段名、当前 true/false 和通用 `ToggleSwitch`，避免只显示开关导致层级不齐。
   - MCP server 编辑 modal 在常规桌面宽度使用右侧当前值栏，结构对齐会话页 detail 布局，不把当前值区压到页面底部。
@@ -284,10 +285,16 @@ And 浏览器预览环境使用内置 preview 文本，不访问本机文件系�
   - MCP 保存支持 patch 单个 section，移除无效 `bearer_token`，保留目标 section 内未知字段和其他非目标配置。
   - MCP Servers 页新增 `编辑 config.toml` 按钮；点击后打开内置文本编辑 modal。桌面环境通过 Wails 读取/保存真实 `~/.codex/config.toml`，浏览器预览使用内置 preview 文本并只保存到页面状态。
   - Wails root `App`、`app_types.go`、`app_mappers.go` 与 `frontend/wailsjs` 已同步，前端桌面环境优先调用真实接口，浏览器继续 fallback 预览数据。
+- 已完成收尾整理：
+  - 前端 `CodexExtensionsFeature.tsx` 从单一大文件拆分为页面 controller、`SkillsModals.tsx`、`McpModals.tsx` 与 `adapters.ts`；业务纯函数继续留在 `model.ts`。
+  - 后端 `codex_extensions.go` 的 Wails DTO 与内部数据结构已迁移到 `codex_extensions_types.go`，保留现有 Wails 方法签名和解析/写回行为。
+  - 新增项目级 skill `.agents/skills/gettokens-codex-extensions-management/SKILL.md`，并在领域 skill 与 `AGENTS.md` 中补充入口规则。
+  - 整理文档已归档到 `docs-linhay/dev/20260514-codex-extensions-session-distillation.md`。
 - 验证产物：
+  - `go test ./internal/wailsapp -run 'Codex|Mcp|Skill'`
+  - `npm run typecheck`
   - `go test ./...`
   - `npm run test:unit`
-  - `npm run typecheck`
   - `npm run build`
   - `agent-browser --session codex-mcp-config-inline open 'http://127.0.0.1:5173/#frame=codex&workspace=mcp-servers'` 验证 `编辑 config.toml` 按钮可见；点击后打开内置 `config.toml` modal，textarea 载入 preview 内容，修改后保存按钮启用，保存后提示 `浏览器预览 config.toml 已保存`，浏览器 errors 为空。
   - 浏览器冒烟截图：
@@ -307,6 +314,8 @@ And 浏览器预览环境使用内置 preview 文本，不访问本机文件系�
     - `screenshots/20260513/codex-extensions/20260513-codex-extensions-mcp-list-redesign-after-v01.png`
     - `screenshots/20260514/codex-extensions/20260514-codex-extensions-mcp-editor-before-v01.png`
     - `screenshots/20260514/codex-extensions/20260514-codex-extensions-mcp-editor-after-v01.png`
+    - `screenshots/20260514/codex-extensions/20260514-codex-extensions-mcp-editor-bottom-gap-after-v01.png`
+    - `screenshots/20260514/codex-extensions/20260514-codex-extensions-mcp-editor-hide-empty-fields-after-v01.png`
     - `screenshots/20260514/codex-extensions/20260514-codex-extensions-skill-preview-stable-after-v01.png`
     - `screenshots/20260514/codex-extensions/20260514-codex-extensions-skill-preview-bottom-gap-after-v01.png`
     - `screenshots/20260512/codex-extensions/20260512-codex-extensions-mcp-modal-web-after-v01.png`

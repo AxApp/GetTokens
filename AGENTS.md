@@ -41,6 +41,7 @@
 10. 当用户明确说“整理”且语境指向刚完成的一轮工作会话时，默认触发一次会话沉淀流程：先按 `gettokens-session-skill-distill` 提炼可复用模式，再按是否 repo-wide 决定是否同步更新 `AGENTS.md`、`docs-linhay/dev/`、`docs-linhay/memory/`，并执行 `qmd update` 与 `qmd embed`。
 11. 多份独立需求稿并行推进时，默认按“一个需求单元一个 `space`，必要时再配一个同 key 的 branch 与 `worktree`”组织，不按个人姓名或临时阶段单独命名工作目录。
 12. 当用户明确要求“由 subagent 去做、主控 agent 负责监督”时，主控 agent 必须承担需求边界、任务拆分、集成、验收、文档与最终完成判断，不得在“代码已改完”但截图、实机验证、文档写回等验收环节仍未完成时提前停止。
+13. 当某个 `space` 的需求施工结束并进入整理期时，默认执行一次行为保持的收尾整理：识别大文件和大数据结构，优先按稳定边界拆分文件；同步提取可复用流程到项目级 `skills`，仅把 repo-wide 且长期稳定的规则写入 `AGENTS.md`；最后更新 space、dev 文档、memory 并重建 qmd 索引。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
@@ -101,6 +102,7 @@ Git `worktree` 治理：
 5. 涉及 Codex 账号列表、请求顺序、路由探测、OAuth/openai-compatible 模型映射时，优先使用 `gettokens-codex-account-list`。
 6. 涉及“主控 agent 监督、subagent 实做、直到完整需求闭环才停止”的执行模式时，优先使用 `gettokens-ops-governance` 中的 `Subagent Delivery Loop`。
 7. 若用户希望用显式 skill 名称触发该模式，使用 `gettokens-subagent-supervision`；它是监督交付模式的轻量触发入口。
+8. 涉及 Codex Skills / MCP Servers、`[[skills.config]]`、`tk://github.com` / `tk://gitlab.com` Skill source、`~/.codex/config.toml` MCP 解析与保存时，优先使用 `gettokens-codex-extensions-management`。
 
 ## 5. 记忆系统规则（必须）
 
