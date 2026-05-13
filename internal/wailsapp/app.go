@@ -21,6 +21,7 @@ type App struct {
 	version        string
 	releaseLabel   string
 	sidecarRequest sidecarRequestFunc
+	relayRequest   sidecarRelayRequestFunc
 	managementAPI  func() *cliproxyapi.Client
 	localUsageMu   sync.RWMutex
 	localUsage     localUsageRuntimeState
@@ -43,6 +44,7 @@ type sessionManagementRuntimeState struct {
 }
 
 type sidecarRequestFunc func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error)
+type sidecarRelayRequestFunc func(method string, path string, body io.Reader, contentType string, apiKey string, headers map[string]string) ([]byte, int, map[string][]string, error)
 
 func New(version string, releaseLabel string, repo string) *App {
 	return &App{

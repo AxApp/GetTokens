@@ -118,6 +118,10 @@ export function GetCodexSessionManagementSnapshot() {
   return window['go']['main']['App']['GetCodexSessionManagementSnapshot']();
 }
 
+export function GetCodexSkillFilePreview(arg1) {
+  return window['go']['main']['App']['GetCodexSkillFilePreview'](arg1);
+}
+
 export function GetCodexSkillsSnapshot() {
   return window['go']['main']['App']['GetCodexSkillsSnapshot']();
 }
@@ -170,6 +174,10 @@ export function ListLocalCodexProviderViews() {
   return window['go']['main']['App']['ListLocalCodexProviderViews']();
 }
 
+export function ListOAuthModelAliases(arg1) {
+  return window['go']['main']['App']['ListOAuthModelAliases'](arg1);
+}
+
 export function ListOpenAICompatibleProviders() {
   return window['go']['main']['App']['ListOpenAICompatibleProviders']();
 }
@@ -186,8 +194,16 @@ export function OpenCodexConfigToml() {
   return window['go']['main']['App']['OpenCodexConfigToml']();
 }
 
+export function OpenCodexSkillInFinder(arg1) {
+  return window['go']['main']['App']['OpenCodexSkillInFinder'](arg1);
+}
+
 export function PreviewCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['PreviewCodexFeatureConfig'](arg1);
+}
+
+export function ProbeCodexAccountRouting(arg1) {
+  return window['go']['main']['App']['ProbeCodexAccountRouting'](arg1);
 }
 
 export function ProbeProxyNode(arg1) {
@@ -208,6 +224,10 @@ export function RefreshCodexLocalUsage() {
 
 export function RefreshCodexSessionManagementSnapshot() {
   return window['go']['main']['App']['RefreshCodexSessionManagementSnapshot']();
+}
+
+export function RemoveCodexSkill(arg1) {
+  return window['go']['main']['App']['RemoveCodexSkill'](arg1);
 }
 
 export function RevealCodexBinaryVersion(arg1) {
@@ -268,6 +288,10 @@ export function UpdateCodexSessionProviders(arg1) {
 
 export function UpdateLocalProjectedUsageSettings(arg1) {
   return window['go']['main']['App']['UpdateLocalProjectedUsageSettings'](arg1);
+}
+
+export function UpdateOAuthModelAliases(arg1) {
+  return window['go']['main']['App']['UpdateOAuthModelAliases'](arg1);
 }
 
 export function UpdateOpenAICompatibleProvider(arg1) {

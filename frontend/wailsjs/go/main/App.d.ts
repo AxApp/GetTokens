@@ -63,6 +63,8 @@ export function GetCodexSessionDetail(arg1:string):Promise<main.SessionManagemen
 
 export function GetCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
 
+export function GetCodexSkillFilePreview(arg1:main.GetCodexSkillFilePreviewInput):Promise<main.GetCodexSkillFilePreviewResult>;
+
 export function GetCodexSkillsSnapshot():Promise<main.CodexSkillsSnapshot>;
 
 export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsageSettings>;
@@ -89,6 +91,8 @@ export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
 export function ListLocalCodexProviderViews():Promise<Array<main.LocalCodexModelProviderView>>;
 
+export function ListOAuthModelAliases(arg1:string):Promise<Array<main.OpenAICompatibleModel>>;
+
 export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
 
 export function ListRelaySupportedModels():Promise<main.RelaySupportedModelsResult>;
@@ -97,7 +101,11 @@ export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
 export function OpenCodexConfigToml():Promise<main.OpenCodexConfigTomlResult>;
 
+export function OpenCodexSkillInFinder(arg1:main.OpenCodexSkillInFinderInput):Promise<main.OpenCodexSkillInFinderResult>;
+
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
+
+export function ProbeCodexAccountRouting(arg1:main.ProbeCodexAccountRoutingInput):Promise<main.CodexAccountRoutingProbeResult>;
 
 export function ProbeProxyNode(arg1:main.ProbeProxyNodeInput):Promise<main.ProbeProxyNodeResult>;
 
@@ -108,6 +116,8 @@ export function RefreshCodexBinaryAvailable():Promise<codexbinary.Snapshot>;
 export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function RefreshCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
+export function RemoveCodexSkill(arg1:main.RemoveCodexSkillInput):Promise<main.RemoveCodexSkillResult>;
 
 export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<void>;
 
@@ -138,6 +148,8 @@ export function UpdateCodexAPIKeyPriority(arg1:main.UpdateCodexAPIKeyPriorityInp
 export function UpdateCodexSessionProviders(arg1:main.UpdateSessionProvidersInput):Promise<main.SessionManagementSnapshot>;
 
 export function UpdateLocalProjectedUsageSettings(arg1:main.LocalProjectedUsageSettings):Promise<main.LocalProjectedUsageSettings>;
+
+export function UpdateOAuthModelAliases(arg1:main.UpdateOAuthModelAliasesInput):Promise<void>;
 
 export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<void>;
 

@@ -6,9 +6,11 @@ import {
   parseMcpArgs,
   parseMcpEnv,
   parseTkGitSkillSource,
+  removeCodexSkillByID,
   serializeMcpArgs,
   serializeMcpEnv,
   stripSkillFrontmatter,
+  updateCodexSkillEnabled,
 } from './model.ts';
 
 test('stripSkillFrontmatter removes yaml metadata from SKILL.md preview', () => {
@@ -43,6 +45,66 @@ test('parseTkGitSkillSource accepts github and gitlab tk sources only', () => {
   });
   assert.equal(parseTkGitSkillSource('https://github.com/acme/tools'), null);
   assert.equal(parseTkGitSkillSource('tk://example.com/acme/tools'), null);
+});
+
+test('updateCodexSkillEnabled patches one skill without rebuilding other rows', () => {
+  const first = {
+    id: '/skills/one/SKILL.md',
+    name: 'one',
+    description: '',
+    enabled: true,
+    rootLabel: 'user',
+    rootPath: '/skills/one',
+    sourceKind: 'user',
+    origin: 'local',
+    versionLabel: 'local',
+    files: [],
+    skillMarkdown: '# One',
+  };
+  const second = {
+    id: '/skills/two/SKILL.md',
+    name: 'two',
+    description: '',
+    enabled: false,
+    rootLabel: 'user',
+    rootPath: '/skills/two',
+    sourceKind: 'user',
+    origin: 'local',
+    versionLabel: 'local',
+    files: [],
+    skillMarkdown: '# Two',
+  };
+
+  const updated = updateCodexSkillEnabled([first, second], second.id, true);
+
+  assert.equal(updated[0], first);
+  assert.notEqual(updated[1], second);
+  assert.equal(updated[1].enabled, true);
+});
+
+test('removeCodexSkillByID removes only the selected skill', () => {
+  const first = {
+    id: '/skills/one/SKILL.md',
+    name: 'one',
+    description: '',
+    enabled: true,
+    rootLabel: 'user',
+    rootPath: '/skills/one',
+    sourceKind: 'user',
+    origin: 'local',
+    versionLabel: 'local',
+    files: [],
+    skillMarkdown: '# One',
+  };
+  const second = {
+    ...first,
+    id: '/skills/two/SKILL.md',
+    name: 'two',
+    rootPath: '/skills/two',
+    skillMarkdown: '# Two',
+  };
+
+  assert.deepEqual(removeCodexSkillByID([first, second], first.id), [second]);
 });
 
 test('mcp args and env helpers preserve editable parameter values', () => {

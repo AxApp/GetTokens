@@ -98,8 +98,9 @@ Git `worktree` 治理：
 2. 涉及文档写回、memory 写回、`qmd update` / `qmd embed` 同步时，优先使用 `gettokens-ops-governance`。
 3. 涉及 AGENTS 级长期治理规则时，优先使用 `gettokens-ops-governance`；若用户明确说“整理”，同时使用 `gettokens-session-skill-distill`。
 4. 涉及账号池、quota、视觉系统、前端调试归因或 CLIProxyAPI fork 维护时，优先使用 `gettokens-domain-engineering`。
-5. 涉及“主控 agent 监督、subagent 实做、直到完整需求闭环才停止”的执行模式时，优先使用 `gettokens-ops-governance` 中的 `Subagent Delivery Loop`。
-6. 若用户希望用显式 skill 名称触发该模式，使用 `gettokens-subagent-supervision`；它是监督交付模式的轻量触发入口。
+5. 涉及 Codex 账号列表、请求顺序、路由探测、OAuth/openai-compatible 模型映射时，优先使用 `gettokens-codex-account-list`。
+6. 涉及“主控 agent 监督、subagent 实做、直到完整需求闭环才停止”的执行模式时，优先使用 `gettokens-ops-governance` 中的 `Subagent Delivery Loop`。
+7. 若用户希望用显式 skill 名称触发该模式，使用 `gettokens-subagent-supervision`；它是监督交付模式的轻量触发入口。
 
 ## 5. 记忆系统规则（必须）
 

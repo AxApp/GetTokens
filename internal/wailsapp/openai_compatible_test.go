@@ -279,6 +279,59 @@ func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *t
 	}
 }
 
+func TestUpdateOpenAICompatibleProviderKeepsMultipleAliasesForOneRealModel(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/openai-compatibility" {
+					return []byte(`{"openai-compatibility":[{"name":"MI","base-url":"https://token-plan-cn.xiaomimimo.com/v1","api-key-entries":[{"api-key":"sk-mi"}],"models":[{"name":"mimo-v2.5","alias":"gpt-5.5"}]}]}`), 200, nil
+				}
+				if method == http.MethodPut && path == "/v0/management/openai-compatibility" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					var items []cliproxyapi.OpenAICompatibleProvider
+					if err := json.Unmarshal(payload, &items); err != nil {
+						t.Fatalf("unmarshal payload: %v", err)
+					}
+					if len(items) != 1 {
+						t.Fatalf("unexpected provider count: %d", len(items))
+					}
+					if len(items[0].Models) != 2 {
+						t.Fatalf("unexpected model count: %d; payload=%s", len(items[0].Models), string(payload))
+					}
+					if items[0].Models[0].Name != "mimo-v2.5" || items[0].Models[0].Alias != "gpt-5.5" {
+						t.Fatalf("unexpected first model: %#v", items[0].Models[0])
+					}
+					if items[0].Models[1].Name != "mimo-v2.5" || items[0].Models[1].Alias != "gpt-5.4" {
+						t.Fatalf("unexpected second model: %#v", items[0].Models[1])
+					}
+					return nil, 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+		CurrentName: "MI",
+		Name:        "MI",
+		BaseURL:     "https://token-plan-cn.xiaomimimo.com/v1",
+		APIKey:      "sk-mi",
+		APIKeys:     []string{"sk-mi"},
+		Models: []OpenAICompatibleModel{
+			{Name: "mimo-v2.5", Alias: "gpt-5.5"},
+			{Name: "mimo-v2.5", Alias: "gpt-5.4"},
+			{Name: "mimo-v2.5", Alias: "gpt-5.4"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("UpdateOpenAICompatibleProvider returned error: %v", err)
+	}
+}
+
 func TestUpdateOpenAICompatibleProviderRejectsDuplicateName(t *testing.T) {
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {

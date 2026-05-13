@@ -284,10 +284,12 @@ test('buildModelRows and normalizeProviderModels keep editable model aliases', (
       { name: ' deepseek-chat ', alias: ' chat ' },
       { name: '', alias: 'ignored' },
       { name: 'deepseek-chat', alias: 'dup' },
+      { name: 'deepseek-chat', alias: 'dup' },
       { name: 'deepseek-reasoner', alias: '' },
     ]),
     [
       { name: 'deepseek-chat', alias: 'chat' },
+      { name: 'deepseek-chat', alias: 'dup' },
       { name: 'deepseek-reasoner', alias: '' },
     ],
   );

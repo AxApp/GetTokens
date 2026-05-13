@@ -127,6 +127,39 @@ type UpdateAccountPriorityInput struct {
 	Priority int    `json:"priority,omitempty"`
 }
 
+type ProbeCodexAccountRoutingInput struct {
+	Model           string   `json:"model"`
+	Attempts        int      `json:"attempts,omitempty"`
+	AllowAccountIDs []string `json:"allowAccountIDs,omitempty"`
+	DenyAccountIDs  []string `json:"denyAccountIDs,omitempty"`
+	OrderAccountIDs []string `json:"orderAccountIDs,omitempty"`
+	AllowFallback   bool     `json:"allowFallback,omitempty"`
+}
+
+type UpdateOAuthModelAliasesInput struct {
+	Channel string                  `json:"channel"`
+	Models  []OpenAICompatibleModel `json:"models,omitempty"`
+}
+
+type CodexAccountRoutingProbeResult struct {
+	Model    string                            `json:"model"`
+	Attempts []CodexAccountRoutingProbeAttempt `json:"attempts"`
+}
+
+type CodexAccountRoutingProbeAttempt struct {
+	Index        int    `json:"index"`
+	Success      bool   `json:"success"`
+	StatusCode   int    `json:"statusCode,omitempty"`
+	AccountID    string `json:"accountID,omitempty"`
+	AccountLabel string `json:"accountLabel,omitempty"`
+	Provider     string `json:"provider,omitempty"`
+	Message      string `json:"message,omitempty"`
+	Evidence     string `json:"evidence,omitempty"`
+	ResponseBody string `json:"responseBody,omitempty"`
+	StartedAt    string `json:"startedAt,omitempty"`
+	FinishedAt   string `json:"finishedAt,omitempty"`
+}
+
 type OpenAICompatibleProvider struct {
 	Name       string                  `json:"name"`
 	Priority   int                     `json:"priority,omitempty"`
@@ -318,8 +351,21 @@ type CodexFeatureConfigPreview struct {
 }
 
 type CodexSkillFile struct {
-	Path string `json:"path"`
-	Kind string `json:"kind"`
+	Path        string `json:"path"`
+	Kind        string `json:"kind"`
+	Content     string `json:"content,omitempty"`
+	Previewable bool   `json:"previewable"`
+}
+
+type GetCodexSkillFilePreviewInput struct {
+	SkillPath string `json:"skillPath"`
+	FilePath  string `json:"filePath"`
+}
+
+type GetCodexSkillFilePreviewResult struct {
+	Path        string `json:"path"`
+	Content     string `json:"content,omitempty"`
+	Previewable bool   `json:"previewable"`
 }
 
 type CodexSkillRecord struct {
@@ -355,6 +401,7 @@ type CodexSkillsSnapshot struct {
 
 type SaveCodexSkillEnabledInput struct {
 	Path    string `json:"path"`
+	Name    string `json:"name,omitempty"`
 	Enabled bool   `json:"enabled"`
 }
 
@@ -363,24 +410,62 @@ type SaveCodexSkillEnabledResult struct {
 	Preview    string `json:"preview"`
 }
 
+type RemoveCodexSkillInput struct {
+	Path string `json:"path"`
+}
+
+type RemoveCodexSkillResult struct {
+	ConfigPath  string `json:"configPath"`
+	RemovedPath string `json:"removedPath"`
+	Preview     string `json:"preview"`
+}
+
+type OpenCodexSkillInFinderInput struct {
+	Path string `json:"path"`
+}
+
+type OpenCodexSkillInFinderResult struct {
+	Path string `json:"path"`
+}
+
 type CodexMcpEnvRow struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
 }
 
+type CodexMcpToolRow struct {
+	Name         string `json:"name"`
+	ApprovalMode string `json:"approvalMode,omitempty"`
+}
+
 type CodexMcpServer struct {
-	ID                string           `json:"id"`
-	Label             string           `json:"label"`
-	Enabled           bool             `json:"enabled"`
-	Transport         string           `json:"transport"`
-	Command           string           `json:"command,omitempty"`
-	Args              []string         `json:"args,omitempty"`
-	URL               string           `json:"url,omitempty"`
-	Env               []CodexMcpEnvRow `json:"env,omitempty"`
-	BearerTokenEnvVar string           `json:"bearerTokenEnvVar,omitempty"`
-	SourcePath        string           `json:"sourcePath"`
-	Status            string           `json:"status"`
-	Warnings          []string         `json:"warnings,omitempty"`
+	ID                        string            `json:"id"`
+	Label                     string            `json:"label"`
+	Enabled                   bool              `json:"enabled"`
+	Transport                 string            `json:"transport"`
+	Command                   string            `json:"command,omitempty"`
+	Args                      []string          `json:"args,omitempty"`
+	Env                       []CodexMcpEnvRow  `json:"env,omitempty"`
+	EnvVarsRaw                string            `json:"envVarsRaw,omitempty"`
+	Cwd                       string            `json:"cwd,omitempty"`
+	URL                       string            `json:"url,omitempty"`
+	BearerTokenEnvVar         string            `json:"bearerTokenEnvVar,omitempty"`
+	HTTPHeaders               []CodexMcpEnvRow  `json:"httpHeaders,omitempty"`
+	EnvHTTPHeaders            []CodexMcpEnvRow  `json:"envHttpHeaders,omitempty"`
+	ExperimentalEnvironment   string            `json:"experimentalEnvironment,omitempty"`
+	Required                  bool              `json:"required,omitempty"`
+	SupportsParallelToolCalls bool              `json:"supportsParallelToolCalls,omitempty"`
+	StartupTimeoutSec         string            `json:"startupTimeoutSec,omitempty"`
+	ToolTimeoutSec            string            `json:"toolTimeoutSec,omitempty"`
+	DefaultToolsApprovalMode  string            `json:"defaultToolsApprovalMode,omitempty"`
+	EnabledTools              []string          `json:"enabledTools,omitempty"`
+	DisabledTools             []string          `json:"disabledTools,omitempty"`
+	Scopes                    []string          `json:"scopes,omitempty"`
+	OAuthResource             string            `json:"oauthResource,omitempty"`
+	Tools                     []CodexMcpToolRow `json:"tools,omitempty"`
+	SourcePath                string            `json:"sourcePath"`
+	Status                    string            `json:"status"`
+	Warnings                  []string          `json:"warnings,omitempty"`
 }
 
 type CodexMcpServersSnapshot struct {

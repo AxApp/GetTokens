@@ -5,6 +5,8 @@ export type McpTransport = 'stdio' | 'streamable_http';
 export interface CodexSkillFile {
   path: string;
   kind: 'skill' | 'asset' | 'script' | 'other';
+  content?: string;
+  previewable?: boolean;
 }
 
 export interface CodexSkillRecord {
@@ -26,6 +28,11 @@ export interface McpEnvRow {
   value: string;
 }
 
+export interface McpToolRow {
+  name: string;
+  approvalMode?: string;
+}
+
 export interface McpServerRecord {
   id: string;
   label: string;
@@ -33,9 +40,24 @@ export interface McpServerRecord {
   transport: McpTransport;
   command?: string;
   args?: string[];
-  url?: string;
   env?: McpEnvRow[];
+  envVarsRaw?: string;
+  cwd?: string;
+  url?: string;
   bearerTokenEnvVar?: string;
+  httpHeaders?: McpEnvRow[];
+  envHttpHeaders?: McpEnvRow[];
+  experimentalEnvironment?: string;
+  required?: boolean;
+  supportsParallelToolCalls?: boolean;
+  startupTimeoutSec?: string;
+  toolTimeoutSec?: string;
+  defaultToolsApprovalMode?: string;
+  enabledTools?: string[];
+  disabledTools?: string[];
+  scopes?: string[];
+  oauthResource?: string;
+  tools?: McpToolRow[];
   sourcePath: string;
   status: 'ready' | 'missing-env' | 'disabled';
 }
@@ -67,6 +89,18 @@ export function stripSkillFrontmatter(markdown: string): string {
   }
 
   return markdown.slice(end + 4).trim();
+}
+
+export function updateCodexSkillEnabled(
+  skills: CodexSkillRecord[],
+  skillID: string,
+  enabled: boolean,
+): CodexSkillRecord[] {
+  return skills.map((skill) => (skill.id === skillID ? { ...skill, enabled } : skill));
+}
+
+export function removeCodexSkillByID(skills: CodexSkillRecord[], skillID: string): CodexSkillRecord[] {
+  return skills.filter((skill) => skill.id !== skillID);
 }
 
 export function parseTkGitSkillSource(input: string): GitSkillSource | null {
@@ -142,6 +176,21 @@ export function parseMcpEnv(value: string): McpEnvRow[] {
     .filter((row) => row.key.length > 0);
 }
 
+export function serializeMcpList(values: string[] | undefined): string {
+  return (values || []).join('\n');
+}
+
+export function parseMcpList(value: string): string[] {
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+export function serializeMcpTools(tools: McpToolRow[] | undefined): string {
+  return (tools || []).map((tool) => `${tool.name}${tool.approvalMode ? `=${tool.approvalMode}` : ''}`).join('\n');
+}
+
 export function buildMcpChangePreview(original: McpServerRecord, draft: McpServerRecord): McpChangePreview[] {
   const changes: McpChangePreview[] = [];
   const pushChange = (key: string, before: string | undefined, after: string | undefined) => {
@@ -159,11 +208,34 @@ export function buildMcpChangePreview(original: McpServerRecord, draft: McpServe
       after: String(draft.enabled),
     });
   }
+  if ((original.required || false) !== (draft.required || false)) {
+    changes.push({ key: 'required', before: String(original.required || false), after: String(draft.required || false) });
+  }
+  if ((original.supportsParallelToolCalls || false) !== (draft.supportsParallelToolCalls || false)) {
+    changes.push({
+      key: 'supports_parallel_tool_calls',
+      before: String(original.supportsParallelToolCalls || false),
+      after: String(draft.supportsParallelToolCalls || false),
+    });
+  }
+  pushChange('transport', original.transport, draft.transport);
   pushChange('command', original.command, draft.command);
   pushChange('args', serializeMcpArgs(original.args), serializeMcpArgs(draft.args));
+  pushChange('env', serializeMcpEnv(original.env), serializeMcpEnv(draft.env));
+  pushChange('env_vars', original.envVarsRaw, draft.envVarsRaw);
+  pushChange('cwd', original.cwd, draft.cwd);
   pushChange('url', original.url, draft.url);
   pushChange('bearer_token_env_var', original.bearerTokenEnvVar, draft.bearerTokenEnvVar);
-  pushChange('env', serializeMcpEnv(original.env), serializeMcpEnv(draft.env));
+  pushChange('http_headers', serializeMcpEnv(original.httpHeaders), serializeMcpEnv(draft.httpHeaders));
+  pushChange('env_http_headers', serializeMcpEnv(original.envHttpHeaders), serializeMcpEnv(draft.envHttpHeaders));
+  pushChange('experimental_environment', original.experimentalEnvironment, draft.experimentalEnvironment);
+  pushChange('startup_timeout_sec', original.startupTimeoutSec, draft.startupTimeoutSec);
+  pushChange('tool_timeout_sec', original.toolTimeoutSec, draft.toolTimeoutSec);
+  pushChange('default_tools_approval_mode', original.defaultToolsApprovalMode, draft.defaultToolsApprovalMode);
+  pushChange('enabled_tools', serializeMcpList(original.enabledTools), serializeMcpList(draft.enabledTools));
+  pushChange('disabled_tools', serializeMcpList(original.disabledTools), serializeMcpList(draft.disabledTools));
+  pushChange('scopes', serializeMcpList(original.scopes), serializeMcpList(draft.scopes));
+  pushChange('oauth_resource', original.oauthResource, draft.oauthResource);
 
   return changes;
 }

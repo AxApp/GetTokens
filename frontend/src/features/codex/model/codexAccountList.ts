@@ -2,13 +2,38 @@ import type { AccountRecord } from '../../../types';
 import type { OpenAICompatibleProvider } from '../../accounts/model/openAICompatible.ts';
 import { compareAccountRecords } from '../../accounts/model/accountPresentation.ts';
 import { buildPriorityUpdates, reorderPriorityAccounts } from '../../accounts/model/accountRotation.ts';
+import { buildOpenAICompatibleModelMappings, type CodexModelMappingRow } from './codexModelMappings.ts';
+
+export {
+  buildCodexAuthFileModelMappings,
+  buildCodexModelAliasOptionNames,
+  buildCodexModelOptionNames,
+  buildOpenAICompatibleModelMappings,
+  mergeCodexAuthFileModelMappings,
+  normalizeCodexModelMappingsForProvider,
+  type CodexAuthFileModelLike,
+  type CodexModelMappingRow,
+} from './codexModelMappings.ts';
+export {
+  buildCodexRoutePolicyPreview,
+  buildCodexRoutePolicyRowStates,
+  buildCodexRoutePolicySummary,
+  buildCodexRoutingProbeModelOptions,
+  buildCodexRoutingProbeStreamLines,
+  DEFAULT_CODEX_ROUTING_PROBE_MODEL,
+  normalizeCodexAccountIDList,
+  resolveCodexRoutingProbeDefaultModel,
+  summarizeCodexRoutingProbeAttempt,
+  type CodexRoutePolicyDraft,
+  type CodexRoutePolicyRowMode,
+  type CodexRoutePolicyRowState,
+  type CodexRoutePolicySummary,
+  type CodexRoutingProbeAttemptView,
+  type CodexRoutingProbeStreamLine,
+  type CodexRoutingProbeStreamLineStatus,
+} from './codexRoutePolicy.ts';
 
 export type CodexAccountSourceKind = 'codex-auth-file' | 'codex-api-key' | 'openai-compatible';
-
-export interface CodexModelMappingRow {
-  realModel: string;
-  codexModel: string;
-}
 
 export interface CodexAccountRow {
   id: string;
@@ -39,44 +64,6 @@ export interface CodexAccountSummary {
   requestable: number;
   blocked: number;
   openAICompatible: number;
-}
-
-export function buildOpenAICompatibleModelMappings(
-  provider: Pick<OpenAICompatibleProvider, 'models'>,
-): CodexModelMappingRow[] {
-  return (provider.models || [])
-    .map((model) => {
-      const realModel = String(model.name || '').trim();
-      if (!realModel) {
-        return null;
-      }
-      const codexModel = String(model.alias || '').trim() || realModel;
-      return {
-        realModel,
-        codexModel,
-      };
-    })
-    .filter((row): row is CodexModelMappingRow => row !== null);
-}
-
-export function normalizeCodexModelMappingsForProvider(
-  mappings: CodexModelMappingRow[],
-): Array<{ name: string; alias: string }> {
-  const normalized: Array<{ name: string; alias: string }> = [];
-  const seen = new Set<string>();
-  for (const mapping of mappings) {
-    const realModel = String(mapping.realModel || '').trim();
-    const codexModel = String(mapping.codexModel || '').trim();
-    if (!realModel || seen.has(realModel)) {
-      continue;
-    }
-    seen.add(realModel);
-    normalized.push({
-      name: realModel,
-      alias: codexModel && codexModel !== realModel ? codexModel : '',
-    });
-  }
-  return normalized;
 }
 
 export function buildCodexAccountRows(input: BuildCodexAccountRowsInput): CodexAccountRow[] {

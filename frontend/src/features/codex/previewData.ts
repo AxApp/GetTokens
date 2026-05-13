@@ -1,6 +1,11 @@
 import type { AccountRecord } from '../../types';
 import type { OpenAICompatibleProvider } from '../accounts/model/openAICompatible.ts';
-import { buildCodexAccountRows, type CodexAccountRow } from './model/codexAccountList.ts';
+import {
+  buildCodexAccountRows,
+  buildCodexAuthFileModelMappings,
+  type CodexAccountRow,
+  type CodexModelMappingRow,
+} from './model/codexAccountList.ts';
 
 const PREVIEW_ACCOUNTS: AccountRecord[] = [
   {
@@ -65,11 +70,22 @@ const PREVIEW_PROVIDERS: OpenAICompatibleProvider[] = [
   }),
 ];
 
+const PREVIEW_AUTH_FILE_MODELS = {
+  'auth-file:codex-pro.json': [
+    { id: 'gpt-5.4', display_name: 'GPT 5.4' },
+    { id: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
+  ],
+};
+
 export function getCodexAccountListPreviewRows(): CodexAccountRow[] {
   return buildCodexAccountRows({
     accounts: PREVIEW_ACCOUNTS,
     providers: PREVIEW_PROVIDERS,
   });
+}
+
+export function getCodexAccountListPreviewAuthFileModelOptions(rowID: string): CodexModelMappingRow[] {
+  return buildCodexAuthFileModelMappings(PREVIEW_AUTH_FILE_MODELS[rowID as keyof typeof PREVIEW_AUTH_FILE_MODELS] || []);
 }
 
 function previewProvider(input: Omit<OpenAICompatibleProvider, 'convertValues'>): OpenAICompatibleProvider {

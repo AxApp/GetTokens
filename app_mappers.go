@@ -155,7 +155,12 @@ func mapCodexSkillsSnapshot(result *wailsapp.CodexSkillsSnapshot) *CodexSkillsSn
 	for _, skill := range result.Skills {
 		files := make([]CodexSkillFile, 0, len(skill.Files))
 		for _, file := range skill.Files {
-			files = append(files, CodexSkillFile{Path: file.Path, Kind: file.Kind})
+			files = append(files, CodexSkillFile{
+				Path:        file.Path,
+				Kind:        file.Kind,
+				Content:     file.Content,
+				Previewable: file.Previewable,
+			})
 		}
 		skills = append(skills, CodexSkillRecord{
 			ID:              skill.ID,
@@ -200,45 +205,99 @@ func mapCodexMcpServersSnapshot(result *wailsapp.CodexMcpServersSnapshot) *Codex
 }
 
 func mapCodexMcpServer(server wailsapp.CodexMcpServer) CodexMcpServer {
-	env := make([]CodexMcpEnvRow, 0, len(server.Env))
-	for _, row := range server.Env {
-		env = append(env, CodexMcpEnvRow{Key: row.Key, Value: row.Value})
-	}
 	return CodexMcpServer{
-		ID:                server.ID,
-		Label:             server.Label,
-		Enabled:           server.Enabled,
-		Transport:         server.Transport,
-		Command:           server.Command,
-		Args:              append([]string(nil), server.Args...),
-		URL:               server.URL,
-		Env:               env,
-		BearerTokenEnvVar: server.BearerTokenEnvVar,
-		SourcePath:        server.SourcePath,
-		Status:            server.Status,
-		Warnings:          append([]string(nil), server.Warnings...),
+		ID:                        server.ID,
+		Label:                     server.Label,
+		Enabled:                   server.Enabled,
+		Transport:                 server.Transport,
+		Command:                   server.Command,
+		Args:                      append([]string(nil), server.Args...),
+		Env:                       mapCodexMcpEnvRows(server.Env),
+		EnvVarsRaw:                server.EnvVarsRaw,
+		Cwd:                       server.Cwd,
+		URL:                       server.URL,
+		BearerTokenEnvVar:         server.BearerTokenEnvVar,
+		HTTPHeaders:               mapCodexMcpEnvRows(server.HTTPHeaders),
+		EnvHTTPHeaders:            mapCodexMcpEnvRows(server.EnvHTTPHeaders),
+		ExperimentalEnvironment:   server.ExperimentalEnvironment,
+		Required:                  server.Required,
+		SupportsParallelToolCalls: server.SupportsParallelToolCalls,
+		StartupTimeoutSec:         server.StartupTimeoutSec,
+		ToolTimeoutSec:            server.ToolTimeoutSec,
+		DefaultToolsApprovalMode:  server.DefaultToolsApprovalMode,
+		EnabledTools:              append([]string(nil), server.EnabledTools...),
+		DisabledTools:             append([]string(nil), server.DisabledTools...),
+		Scopes:                    append([]string(nil), server.Scopes...),
+		OAuthResource:             server.OAuthResource,
+		Tools:                     mapCodexMcpToolRows(server.Tools),
+		SourcePath:                server.SourcePath,
+		Status:                    server.Status,
+		Warnings:                  append([]string(nil), server.Warnings...),
 	}
 }
 
 func mapWailsCodexMcpServer(server CodexMcpServer) wailsapp.CodexMcpServer {
-	env := make([]wailsapp.CodexMcpEnvRow, 0, len(server.Env))
-	for _, row := range server.Env {
-		env = append(env, wailsapp.CodexMcpEnvRow{Key: row.Key, Value: row.Value})
-	}
 	return wailsapp.CodexMcpServer{
-		ID:                server.ID,
-		Label:             server.Label,
-		Enabled:           server.Enabled,
-		Transport:         server.Transport,
-		Command:           server.Command,
-		Args:              append([]string(nil), server.Args...),
-		URL:               server.URL,
-		Env:               env,
-		BearerTokenEnvVar: server.BearerTokenEnvVar,
-		SourcePath:        server.SourcePath,
-		Status:            server.Status,
-		Warnings:          append([]string(nil), server.Warnings...),
+		ID:                        server.ID,
+		Label:                     server.Label,
+		Enabled:                   server.Enabled,
+		Transport:                 server.Transport,
+		Command:                   server.Command,
+		Args:                      append([]string(nil), server.Args...),
+		Env:                       mapWailsCodexMcpEnvRows(server.Env),
+		EnvVarsRaw:                server.EnvVarsRaw,
+		Cwd:                       server.Cwd,
+		URL:                       server.URL,
+		BearerTokenEnvVar:         server.BearerTokenEnvVar,
+		HTTPHeaders:               mapWailsCodexMcpEnvRows(server.HTTPHeaders),
+		EnvHTTPHeaders:            mapWailsCodexMcpEnvRows(server.EnvHTTPHeaders),
+		ExperimentalEnvironment:   server.ExperimentalEnvironment,
+		Required:                  server.Required,
+		SupportsParallelToolCalls: server.SupportsParallelToolCalls,
+		StartupTimeoutSec:         server.StartupTimeoutSec,
+		ToolTimeoutSec:            server.ToolTimeoutSec,
+		DefaultToolsApprovalMode:  server.DefaultToolsApprovalMode,
+		EnabledTools:              append([]string(nil), server.EnabledTools...),
+		DisabledTools:             append([]string(nil), server.DisabledTools...),
+		Scopes:                    append([]string(nil), server.Scopes...),
+		OAuthResource:             server.OAuthResource,
+		Tools:                     mapWailsCodexMcpToolRows(server.Tools),
+		SourcePath:                server.SourcePath,
+		Status:                    server.Status,
+		Warnings:                  append([]string(nil), server.Warnings...),
 	}
+}
+
+func mapCodexMcpEnvRows(rows []wailsapp.CodexMcpEnvRow) []CodexMcpEnvRow {
+	result := make([]CodexMcpEnvRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, CodexMcpEnvRow{Key: row.Key, Value: row.Value})
+	}
+	return result
+}
+
+func mapWailsCodexMcpEnvRows(rows []CodexMcpEnvRow) []wailsapp.CodexMcpEnvRow {
+	result := make([]wailsapp.CodexMcpEnvRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, wailsapp.CodexMcpEnvRow{Key: row.Key, Value: row.Value})
+	}
+	return result
+}
+
+func mapCodexMcpToolRows(rows []wailsapp.CodexMcpToolRow) []CodexMcpToolRow {
+	result := make([]CodexMcpToolRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, CodexMcpToolRow{Name: row.Name, ApprovalMode: row.ApprovalMode})
+	}
+	return result
+}
+
+func mapWailsCodexMcpToolRows(rows []CodexMcpToolRow) []wailsapp.CodexMcpToolRow {
+	result := make([]wailsapp.CodexMcpToolRow, 0, len(rows))
+	for _, row := range rows {
+		result = append(result, wailsapp.CodexMcpToolRow{Name: row.Name, ApprovalMode: row.ApprovalMode})
+	}
+	return result
 }
 
 func mapCodexMcpSaveResult(result *wailsapp.SaveCodexMcpServerResult) *SaveCodexMcpServerResult {

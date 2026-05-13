@@ -3,11 +3,22 @@ import assert from 'node:assert/strict';
 
 import {
   applyCodexAccountPriorities,
+  buildCodexAuthFileModelMappings,
+  buildCodexModelAliasOptionNames,
+  buildCodexModelOptionNames,
   buildCodexAccountRows,
   buildCodexAccountSummary,
+  buildCodexRoutingProbeModelOptions,
+  buildCodexRoutingProbeStreamLines,
+  buildCodexRoutePolicyPreview,
+  buildCodexRoutePolicyRowStates,
+  buildCodexRoutePolicySummary,
   buildOpenAICompatibleModelMappings,
+  mergeCodexAuthFileModelMappings,
   normalizeCodexModelMappingsForProvider,
   reorderCodexAccountRows,
+  resolveCodexRoutingProbeDefaultModel,
+  summarizeCodexRoutingProbeAttempt,
   buildCodexAccountPriorityUpdates,
 } from './model/codexAccountList.ts';
 import { getCodexAccountListPreviewRows } from './previewData.ts';
@@ -121,11 +132,26 @@ test('normalizeCodexModelMappingsForProvider stores real model names and codex a
     [
       { name: 'deepseek-chat', alias: 'codex-deepseek' },
       { name: 'deepseek-reasoner', alias: '' },
+      { name: 'deepseek-chat', alias: 'duplicate' },
     ],
   );
 });
 
-test('reorderCodexAccountRows and buildCodexAccountPriorityUpdates preserve descending request order', () => {
+test('normalizeCodexModelMappingsForProvider keeps multiple codex aliases for one real model', () => {
+  assert.deepEqual(
+    normalizeCodexModelMappingsForProvider([
+      { realModel: 'mimo-v2.5', codexModel: 'gpt-5.5' },
+      { realModel: 'mimo-v2.5', codexModel: 'gpt-5.4' },
+      { realModel: 'mimo-v2.5', codexModel: 'gpt-5.4' },
+    ]),
+    [
+      { name: 'mimo-v2.5', alias: 'gpt-5.5' },
+      { name: 'mimo-v2.5', alias: 'gpt-5.4' },
+    ],
+  );
+});
+
+test('reorderCodexAccountRows and buildCodexAccountPriorityUpdates preserve top-to-bottom request order', () => {
   const rows = [
     { id: 'a', label: 'A', priority: 3 },
     { id: 'b', label: 'B', priority: 2 },
@@ -158,11 +184,213 @@ test('applyCodexAccountPriorities updates local browser-preview priority values 
   ]);
 });
 
+test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {
+  const rows = [
+    {
+      modelMappings: [
+        { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
+        { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
+      ],
+    },
+    {
+      modelMappings: [{ realModel: 'gpt-5.4-mini', codexModel: '' }],
+    },
+  ];
+
+  assert.deepEqual(buildCodexRoutingProbeModelOptions(rows), ['codex-deepseek', 'deepseek-chat', 'gpt-5.4-mini', 'gpt-5.4']);
+  assert.equal(resolveCodexRoutingProbeDefaultModel(rows), 'codex-deepseek');
+});
+
+test('summarizeCodexRoutingProbeAttempt shows landed account and evidence', () => {
+  assert.equal(
+    summarizeCodexRoutingProbeAttempt({
+      index: 1,
+      success: true,
+      statusCode: 200,
+      accountLabel: 'MI',
+      evidence: 'recent requests +1',
+    }),
+    'MI · HTTP 200 · recent requests +1',
+  );
+});
+
+test('buildCodexRoutingProbeStreamLines exposes candidate order and live attempt state', () => {
+  const rows = [
+    { id: 'openai-compatible:mi', label: 'MI', provider: 'MI', sourceKind: 'openai-compatible' },
+    { id: 'auth-file:company.json', label: '公司', provider: 'codex', sourceKind: 'codex-auth-file' },
+  ];
+
+  assert.deepEqual(
+    buildCodexRoutingProbeStreamLines(rows, [], {
+      model: 'gpt-5.4',
+      requestedAttempts: 3,
+      running: true,
+    }).map((line) => [line.marker, line.label, line.status]),
+    [
+      ['$', 'probe --model gpt-5.4 --attempts 3', 'command'],
+      ['01', 'MI', 'running'],
+      ['02', '公司', 'queued'],
+      ['...', 'attempt 1 running', 'running'],
+    ],
+  );
+
+  assert.deepEqual(
+    buildCodexRoutingProbeStreamLines(
+      rows,
+      [
+        {
+          index: 1,
+          success: true,
+          statusCode: 200,
+          accountID: 'auth-file:company.json',
+          accountLabel: '公司',
+          evidence: 'recent requests +1',
+        },
+      ],
+      {
+        model: 'gpt-5.4',
+        requestedAttempts: 1,
+        running: false,
+      },
+    ).map((line) => [line.marker, line.label, line.status]),
+    [
+      ['$', 'probe --model gpt-5.4 --attempts 1', 'command'],
+      ['01', 'MI', 'passed'],
+      ['02', '公司', 'hit'],
+      ['#01', '公司 · HTTP 200 · recent requests +1', 'hit'],
+    ],
+  );
+});
+
+test('buildCodexRoutePolicyPreview applies deny, custom order, and strict fallback', () => {
+  const rows = [
+    { id: 'auth-file:a.json', label: 'A', requestable: true },
+    { id: 'openai-compatible:mi', label: 'MI', requestable: true },
+    { id: 'codex-api-key:local', label: 'Local', requestable: true },
+    { id: 'auth-file:disabled.json', label: 'Disabled', requestable: false },
+  ];
+
+  assert.deepEqual(
+    buildCodexRoutePolicyPreview(rows, {
+      allowAccountIDs: ['openai-compatible:mi'],
+      denyAccountIDs: ['codex-api-key:local'],
+      orderAccountIDs: ['codex-api-key:local', 'openai-compatible:mi', 'auth-file:a.json'],
+      allowFallback: false,
+    }).map((row) => row.id),
+    ['openai-compatible:mi'],
+  );
+
+  assert.deepEqual(
+    buildCodexRoutePolicyPreview(rows, {
+      allowAccountIDs: [],
+      denyAccountIDs: ['codex-api-key:local'],
+      orderAccountIDs: ['openai-compatible:mi'],
+      allowFallback: true,
+    }).map((row) => row.id),
+    ['openai-compatible:mi', 'auth-file:a.json'],
+  );
+});
+
+test('buildCodexRoutePolicyRowStates gives each account one policy mode and preview rank', () => {
+  const rows = [
+    { id: 'auth-file:a.json', label: 'A', requestable: true },
+    { id: 'openai-compatible:mi', label: 'MI', requestable: true },
+    { id: 'codex-api-key:local', label: 'Local', requestable: true },
+    { id: 'auth-file:disabled.json', label: 'Disabled', requestable: false },
+  ];
+  const policy = {
+    allowAccountIDs: ['openai-compatible:mi'],
+    denyAccountIDs: ['codex-api-key:local'],
+    orderAccountIDs: ['openai-compatible:mi', 'auth-file:a.json'],
+    allowFallback: true,
+  };
+
+  const states = buildCodexRoutePolicyRowStates(rows, policy);
+  assert.deepEqual(states['openai-compatible:mi'], { mode: 'allow', previewRank: 1, participates: true });
+  assert.deepEqual(states['auth-file:a.json'], { mode: 'default', previewRank: 2, participates: true });
+  assert.deepEqual(states['codex-api-key:local'], { mode: 'deny', previewRank: 0, participates: false });
+  assert.deepEqual(states['auth-file:disabled.json'], { mode: 'blocked', previewRank: 0, participates: false });
+
+  assert.deepEqual(buildCodexRoutePolicySummary(rows, policy), {
+    allowCount: 1,
+    denyCount: 1,
+    orderedCount: 2,
+    previewCount: 2,
+    fallbackEnabled: true,
+  });
+});
+
+test('buildCodexAuthFileModelMappings exposes auth-file web models as same-name passthrough rows', () => {
+  assert.deepEqual(
+    buildCodexAuthFileModelMappings([
+      { id: 'gpt-5.4', display_name: 'GPT 5.4' },
+      { name: 'gpt-5.4-mini' },
+      { id: 'gpt-5.4' },
+      { display_name: 'legacy-display-only' },
+      { id: '' },
+    ]),
+    [
+      { realModel: 'gpt-5.4', codexModel: 'gpt-5.4' },
+      { realModel: 'gpt-5.4-mini', codexModel: 'gpt-5.4-mini' },
+      { realModel: 'legacy-display-only', codexModel: 'legacy-display-only' },
+    ],
+  );
+});
+
+test('mergeCodexAuthFileModelMappings returns only explicit oauth aliases and leaves passthrough implicit', () => {
+  assert.deepEqual(
+    mergeCodexAuthFileModelMappings(
+      [
+        { id: 'gpt-5.4' },
+        { id: 'gpt-5.4-mini' },
+        { id: 'gpt-5.5' },
+      ],
+      [
+        { name: 'gpt-5.4-mini', alias: 'gpt-5.4' },
+        { name: 'gpt-5.4-mini', alias: 'gpt-5.5' },
+        { name: 'gpt-5.4-mini', alias: 'gpt-5.5' },
+        { name: 'gpt-5.4', alias: 'gpt-5.4' },
+        { name: '', alias: 'ignored' },
+      ],
+    ),
+    [
+      { realModel: 'gpt-5.4-mini', codexModel: 'gpt-5.4' },
+      { realModel: 'gpt-5.4-mini', codexModel: 'gpt-5.5' },
+    ],
+  );
+});
+
+test('buildCodexModelOptionNames returns unique real model names for dropdowns', () => {
+  assert.deepEqual(
+    buildCodexModelOptionNames([
+      { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
+      { realModel: ' deepseek-reasoner ', codexModel: 'codex-reasoner' },
+      { realModel: 'deepseek-chat', codexModel: 'duplicate' },
+      { realModel: '', codexModel: 'empty' },
+    ]),
+    ['deepseek-chat', 'deepseek-reasoner'],
+  );
+});
+
+test('buildCodexModelAliasOptionNames returns alias and real names for editable codex model dropdowns', () => {
+  assert.deepEqual(
+    buildCodexModelAliasOptionNames([
+      { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
+      { realModel: 'deepseek-reasoner', codexModel: 'deepseek-reasoner' },
+      { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
+      { realModel: 'custom-real', codexModel: '' },
+    ]),
+    ['codex-deepseek', 'deepseek-chat', 'deepseek-reasoner', 'custom-real'],
+  );
+});
+
 test('getCodexAccountListPreviewRows provides browser-safe rows with model mappings', () => {
   const rows = getCodexAccountListPreviewRows();
+  const codexPro = rows.find((row) => row.id === 'auth-file:codex-pro.json');
   const deepseek = rows.find((row) => row.id === 'openai-compatible:deepseek');
 
   assert.ok(rows.length >= 4);
+  assert.deepEqual(codexPro?.modelMappings, []);
   assert.deepEqual(deepseek?.modelMappings.slice(0, 2), [
     { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
     { realModel: 'deepseek-reasoner', codexModel: 'codex-reasoner' },

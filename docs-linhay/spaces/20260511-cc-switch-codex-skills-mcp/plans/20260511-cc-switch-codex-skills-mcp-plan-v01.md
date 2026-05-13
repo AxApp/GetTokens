@@ -134,7 +134,7 @@ docs-linhay/spaces/20260511-cc-switch-codex-skills-mcp/design-preview.html
 2. 右侧采用会话页面式工作区，主视图保留列表，详情/编辑进入 modal。
 3. MCP 只保留列表，不做 `Config Groups`。
 4. Skills 预览参考 Nolon detail。
-5. Git source install 使用扁平输入区和 source metadata。
+5. Git source install 由 `添加 Skill` 打开独立 modal，modal 内使用扁平输入区和 source metadata。
 6. 全稿不做多层卡片嵌套。
 7. 生产实现优先复用 `WorkspacePageHeader`、`SegmentedControl`、`ActionSelect`、`btn-swiss`、`input-swiss`、`select-swiss`、通用 Toggle/Switch 和 `StatusCodexFeaturesSection` 的配置面板模式；设计稿样式只作为布局表达，不直接复制成另一套基础组件。
 
@@ -163,10 +163,11 @@ docs-linhay/spaces/20260511-cc-switch-codex-skills-mcp/design-preview.html
   3. `frontend/src/features/codex-extensions/` 提供浏览器可运行的 Skills / MCP 预览页面。
   4. `frontend/src/features/codex-extensions/model.test.mjs` 覆盖 front matter 剥离、Git schema 解析、MCP 参数/env 解析与 change preview。
   5. 冒烟验证已归档到本 space 的 `screenshots/20260512/codex-extensions/`。
-  6. Skills 详情已按用户确认改为 modal/detail layer：主视图只保留列表、筛选、Git source 输入和行操作，点击整行后覆盖打开预览层，`SKILL.md` 使用 `react-markdown` + `rehype-sanitize` 安全渲染。
+  6. Skills 详情已按用户确认改为 modal/detail layer：主视图只保留列表、筛选和行操作，点击整行后覆盖打开预览层，`SKILL.md` 使用 `react-markdown` + `rehype-sanitize` 安全渲染。
   7. MCP server 编辑已按用户确认改为独立 modal：主视图只保留 MCP 列表、筛选、搜索和 config.toml 编辑入口，点击 server 行后覆盖打开单 server 编辑器。
-  8. `internal/wailsapp/codex_extensions.go` 已提供真实读取/写回基础能力，`codex_extensions_test.go` 覆盖 Skills roots 扫描、Skill override 写回、Git schema 解析、MCP section 读取、per-tool approval 嵌套 section 过滤和单 server patch。
-  9. Wails root App 与 `frontend/wailsjs` 已更新，前端现在在桌面环境优先读取真实 Codex 配置，浏览器无 Wails runtime 时继续使用 preview data。
+  8. Skills Git 安装已按用户确认改为独立 modal：header `添加 Skill` 打开 Git source 输入与 schema 解析结果，主列表页面不再常驻安装表单。
+  9. `internal/wailsapp/codex_extensions.go` 已提供真实读取/写回基础能力，`codex_extensions_test.go` 覆盖 Skills roots 扫描、Skill override 写回、Git schema 解析、MCP section 读取、per-tool approval 嵌套 section 过滤和单 server patch。
+  10. Wails root App 与 `frontend/wailsjs` 已更新，前端现在在桌面环境优先读取真实 Codex 配置，浏览器无 Wails runtime 时继续使用 preview data。
 - 下一步：
   1. 后端实现 Git managed skill cache、manifest、install/update/rollback。
   2. 补 MCP inline table / plugin MCP 配置读取策略，明确与 user `config.toml` section 型写回的边界。

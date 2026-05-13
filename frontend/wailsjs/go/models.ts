@@ -710,6 +710,70 @@ export namespace main {
 	        this.conflicts = source["conflicts"];
 	    }
 	}
+	export class CodexAccountRoutingProbeAttempt {
+	    index: number;
+	    success: boolean;
+	    statusCode?: number;
+	    accountID?: string;
+	    accountLabel?: string;
+	    provider?: string;
+	    message?: string;
+	    evidence?: string;
+	    responseBody?: string;
+	    startedAt?: string;
+	    finishedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexAccountRoutingProbeAttempt(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.index = source["index"];
+	        this.success = source["success"];
+	        this.statusCode = source["statusCode"];
+	        this.accountID = source["accountID"];
+	        this.accountLabel = source["accountLabel"];
+	        this.provider = source["provider"];
+	        this.message = source["message"];
+	        this.evidence = source["evidence"];
+	        this.responseBody = source["responseBody"];
+	        this.startedAt = source["startedAt"];
+	        this.finishedAt = source["finishedAt"];
+	    }
+	}
+	export class CodexAccountRoutingProbeResult {
+	    model: string;
+	    attempts: CodexAccountRoutingProbeAttempt[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexAccountRoutingProbeResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.model = source["model"];
+	        this.attempts = this.convertValues(source["attempts"], CodexAccountRoutingProbeAttempt);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class CodexConfigTomlDocument {
 	    configPath: string;
 	    content: string;
@@ -879,6 +943,20 @@ export namespace main {
 	        this.value = source["value"];
 	    }
 	}
+	export class CodexMcpToolRow {
+	    name: string;
+	    approvalMode?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexMcpToolRow(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.approvalMode = source["approvalMode"];
+	    }
+	}
 	export class CodexMcpServer {
 	    id: string;
 	    label: string;
@@ -886,9 +964,24 @@ export namespace main {
 	    transport: string;
 	    command?: string;
 	    args?: string[];
-	    url?: string;
 	    env?: CodexMcpEnvRow[];
+	    envVarsRaw?: string;
+	    cwd?: string;
+	    url?: string;
 	    bearerTokenEnvVar?: string;
+	    httpHeaders?: CodexMcpEnvRow[];
+	    envHttpHeaders?: CodexMcpEnvRow[];
+	    experimentalEnvironment?: string;
+	    required?: boolean;
+	    supportsParallelToolCalls?: boolean;
+	    startupTimeoutSec?: string;
+	    toolTimeoutSec?: string;
+	    defaultToolsApprovalMode?: string;
+	    enabledTools?: string[];
+	    disabledTools?: string[];
+	    scopes?: string[];
+	    oauthResource?: string;
+	    tools?: CodexMcpToolRow[];
 	    sourcePath: string;
 	    status: string;
 	    warnings?: string[];
@@ -905,9 +998,24 @@ export namespace main {
 	        this.transport = source["transport"];
 	        this.command = source["command"];
 	        this.args = source["args"];
-	        this.url = source["url"];
 	        this.env = this.convertValues(source["env"], CodexMcpEnvRow);
+	        this.envVarsRaw = source["envVarsRaw"];
+	        this.cwd = source["cwd"];
+	        this.url = source["url"];
 	        this.bearerTokenEnvVar = source["bearerTokenEnvVar"];
+	        this.httpHeaders = this.convertValues(source["httpHeaders"], CodexMcpEnvRow);
+	        this.envHttpHeaders = this.convertValues(source["envHttpHeaders"], CodexMcpEnvRow);
+	        this.experimentalEnvironment = source["experimentalEnvironment"];
+	        this.required = source["required"];
+	        this.supportsParallelToolCalls = source["supportsParallelToolCalls"];
+	        this.startupTimeoutSec = source["startupTimeoutSec"];
+	        this.toolTimeoutSec = source["toolTimeoutSec"];
+	        this.defaultToolsApprovalMode = source["defaultToolsApprovalMode"];
+	        this.enabledTools = source["enabledTools"];
+	        this.disabledTools = source["disabledTools"];
+	        this.scopes = source["scopes"];
+	        this.oauthResource = source["oauthResource"];
+	        this.tools = this.convertValues(source["tools"], CodexMcpToolRow);
 	        this.sourcePath = source["sourcePath"];
 	        this.status = source["status"];
 	        this.warnings = source["warnings"];
@@ -969,6 +1077,7 @@ export namespace main {
 		    return a;
 		}
 	}
+
 	export class CodexQuotaWindow {
 	    id: string;
 	    label: string;
@@ -1025,6 +1134,8 @@ export namespace main {
 	export class CodexSkillFile {
 	    path: string;
 	    kind: string;
+	    content?: string;
+	    previewable: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new CodexSkillFile(source);
@@ -1034,6 +1145,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
 	        this.kind = source["kind"];
+	        this.content = source["content"];
+	        this.previewable = source["previewable"];
 	    }
 	}
 	export class CodexSkillRecord {
@@ -1322,6 +1435,36 @@ export namespace main {
 	        this.content = source["content"];
 	    }
 	}
+	export class GetCodexSkillFilePreviewInput {
+	    skillPath: string;
+	    filePath: string;
+
+	    static createFrom(source: any = {}) {
+	        return new GetCodexSkillFilePreviewInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.skillPath = source["skillPath"];
+	        this.filePath = source["filePath"];
+	    }
+	}
+	export class GetCodexSkillFilePreviewResult {
+	    path: string;
+	    content?: string;
+	    previewable: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new GetCodexSkillFilePreviewResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	        this.content = source["content"];
+	        this.previewable = source["previewable"];
+	    }
+	}
 	export class LocalCodexModelProviderView {
 	    providerID: string;
 	    providerName: string;
@@ -1511,6 +1654,52 @@ export namespace main {
 	        this.configPath = source["configPath"];
 	    }
 	}
+	export class OpenCodexSkillInFinderInput {
+	    path: string;
+
+	    static createFrom(source: any = {}) {
+	        return new OpenCodexSkillInFinderInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
+	export class OpenCodexSkillInFinderResult {
+	    path: string;
+
+	    static createFrom(source: any = {}) {
+	        return new OpenCodexSkillInFinderResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
+	export class ProbeCodexAccountRoutingInput {
+	    model: string;
+	    attempts?: number;
+	    allowAccountIDs?: string[];
+	    denyAccountIDs?: string[];
+	    orderAccountIDs?: string[];
+	    allowFallback?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ProbeCodexAccountRoutingInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.model = source["model"];
+	        this.attempts = source["attempts"];
+	        this.allowAccountIDs = source["allowAccountIDs"];
+	        this.denyAccountIDs = source["denyAccountIDs"];
+	        this.orderAccountIDs = source["orderAccountIDs"];
+	        this.allowFallback = source["allowFallback"];
+	    }
+	}
 	export class ProbeProxyNodeInput {
 	    proxyUrl: string;
 	    targetUrl?: string;
@@ -1692,6 +1881,34 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class RemoveCodexSkillInput {
+	    path: string;
+
+	    static createFrom(source: any = {}) {
+	        return new RemoveCodexSkillInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.path = source["path"];
+	    }
+	}
+	export class RemoveCodexSkillResult {
+	    configPath: string;
+	    removedPath: string;
+	    preview: string;
+
+	    static createFrom(source: any = {}) {
+	        return new RemoveCodexSkillResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configPath = source["configPath"];
+	        this.removedPath = source["removedPath"];
+	        this.preview = source["preview"];
+	    }
+	}
 	export class SaveCodexConfigTomlInput {
 	    content: string;
 
@@ -1798,6 +2015,7 @@ export namespace main {
 	}
 	export class SaveCodexSkillEnabledInput {
 	    path: string;
+	    name?: string;
 	    enabled: boolean;
 
 	    static createFrom(source: any = {}) {
@@ -1807,6 +2025,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
+	        this.name = source["name"];
 	        this.enabled = source["enabled"];
 	    }
 	}
@@ -2130,6 +2349,38 @@ export namespace main {
 	        this.id = source["id"];
 	        this.priority = source["priority"];
 	    }
+	}
+	export class UpdateOAuthModelAliasesInput {
+	    channel: string;
+	    models?: OpenAICompatibleModel[];
+
+	    static createFrom(source: any = {}) {
+	        return new UpdateOAuthModelAliasesInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.channel = source["channel"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class UpdateOpenAICompatibleProviderInput {
 	    currentName: string;

@@ -72,3 +72,50 @@ func (a *App) SidecarRequest(method string, path string, query url.Values, body 
 
 	return respBody, resp.StatusCode, nil
 }
+
+func (a *App) SidecarRelayRequest(method string, path string, body io.Reader, contentType string, apiKey string) ([]byte, int, map[string][]string, error) {
+	return a.SidecarRelayRequestWithHeaders(method, path, body, contentType, apiKey, nil)
+}
+
+func (a *App) SidecarRelayRequestWithHeaders(method string, path string, body io.Reader, contentType string, apiKey string, headers map[string]string) ([]byte, int, map[string][]string, error) {
+	if a.relayRequest != nil {
+		return a.relayRequest(method, path, body, contentType, apiKey, headers)
+	}
+
+	baseURL, err := a.SidecarBaseURL()
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	req, err := http.NewRequest(method, baseURL+path, body)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	if trimmedKey := strings.TrimSpace(apiKey); trimmedKey != "" {
+		req.Header.Set("Authorization", "Bearer "+trimmedKey)
+	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	for key, value := range headers {
+		trimmedKey := strings.TrimSpace(key)
+		trimmedValue := strings.TrimSpace(value)
+		if trimmedKey == "" || trimmedValue == "" {
+			continue
+		}
+		req.Header.Set(trimmedKey, trimmedValue)
+	}
+
+	client := &http.Client{Timeout: SidecarRequestTimeout}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	responseHeaders := map[string][]string(resp.Header.Clone())
+	if err != nil {
+		return nil, resp.StatusCode, responseHeaders, err
+	}
+	return respBody, resp.StatusCode, responseHeaders, nil
+}

@@ -561,16 +561,18 @@ func normalizeProviderModels(items []OpenAICompatibleModel) []OpenAICompatibleMo
 	seen := make(map[string]struct{}, len(items))
 	for _, item := range items {
 		name := strings.TrimSpace(item.Name)
+		alias := strings.TrimSpace(item.Alias)
 		if name == "" {
 			continue
 		}
-		if _, ok := seen[name]; ok {
+		key := name + "\x00" + alias
+		if _, ok := seen[key]; ok {
 			continue
 		}
-		seen[name] = struct{}{}
+		seen[key] = struct{}{}
 		normalized = append(normalized, OpenAICompatibleModel{
 			Name:                      name,
-			Alias:                     strings.TrimSpace(item.Alias),
+			Alias:                     alias,
 			SupportedReasoningEfforts: normalizeReasoningEfforts(item.SupportedReasoningEfforts),
 			DefaultReasoningEffort:    normalizeReasoningEffort(item.DefaultReasoningEffort),
 		})

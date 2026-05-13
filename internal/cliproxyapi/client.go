@@ -120,6 +120,36 @@ func (c *Client) PutOpenAICompatibleProviders(items []OpenAICompatibleProvider) 
 	return err
 }
 
+func (c *Client) ListOAuthModelAliases() (map[string][]OAuthModelAlias, error) {
+	body, _, err := c.request("GET", "/v0/management/oauth-model-alias", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var response OAuthModelAliasesResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return map[string][]OAuthModelAlias{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) PutOAuthModelAliases(items map[string][]OAuthModelAlias) error {
+	if items == nil {
+		items = map[string][]OAuthModelAlias{}
+	}
+
+	payload, err := json.Marshal(items)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = c.request("PUT", "/v0/management/oauth-model-alias", nil, bytes.NewReader(payload), "application/json")
+	return err
+}
+
 func (c *Client) PatchCodexAPIKey(index int, value CodexAPIKeyPatch) error {
 	payload, err := json.Marshal(struct {
 		Index int              `json:"index"`

@@ -151,6 +151,40 @@ func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
 	})
 }
 
+func (a *App) ProbeCodexAccountRouting(input ProbeCodexAccountRoutingInput) (*CodexAccountRoutingProbeResult, error) {
+	result, err := a.core.ProbeCodexAccountRouting(wailsapp.ProbeCodexAccountRoutingInput{
+		Model:           input.Model,
+		Attempts:        input.Attempts,
+		AllowAccountIDs: append([]string(nil), input.AllowAccountIDs...),
+		DenyAccountIDs:  append([]string(nil), input.DenyAccountIDs...),
+		OrderAccountIDs: append([]string(nil), input.OrderAccountIDs...),
+		AllowFallback:   input.AllowFallback,
+	})
+	if err != nil {
+		return nil, err
+	}
+	attempts := make([]CodexAccountRoutingProbeAttempt, 0, len(result.Attempts))
+	for _, attempt := range result.Attempts {
+		attempts = append(attempts, CodexAccountRoutingProbeAttempt{
+			Index:        attempt.Index,
+			Success:      attempt.Success,
+			StatusCode:   attempt.StatusCode,
+			AccountID:    attempt.AccountID,
+			AccountLabel: attempt.AccountLabel,
+			Provider:     attempt.Provider,
+			Message:      attempt.Message,
+			Evidence:     attempt.Evidence,
+			ResponseBody: attempt.ResponseBody,
+			StartedAt:    attempt.StartedAt,
+			FinishedAt:   attempt.FinishedAt,
+		})
+	}
+	return &CodexAccountRoutingProbeResult{
+		Model:    result.Model,
+		Attempts: attempts,
+	}, nil
+}
+
 func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 	payload := make([]wailsapp.UploadFilePayload, 0, len(files))
 	for _, file := range files {
@@ -164,6 +198,35 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 
 func (a *App) GetAuthFileModels(name string) ([]map[string]interface{}, error) {
 	return a.core.GetAuthFileModels(name)
+}
+
+func (a *App) ListOAuthModelAliases(channel string) ([]OpenAICompatibleModel, error) {
+	items, err := a.core.ListOAuthModelAliases(channel)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]OpenAICompatibleModel, 0, len(items))
+	for _, item := range items {
+		out = append(out, OpenAICompatibleModel{
+			Name:  item.Name,
+			Alias: item.Alias,
+		})
+	}
+	return out, nil
+}
+
+func (a *App) UpdateOAuthModelAliases(input UpdateOAuthModelAliasesInput) error {
+	models := make([]wailsapp.OpenAICompatibleModel, 0, len(input.Models))
+	for _, model := range input.Models {
+		models = append(models, wailsapp.OpenAICompatibleModel{
+			Name:  model.Name,
+			Alias: model.Alias,
+		})
+	}
+	return a.core.UpdateOAuthModelAliases(wailsapp.UpdateOAuthModelAliasesInput{
+		Channel: input.Channel,
+		Models:  models,
+	})
 }
 
 func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
@@ -358,6 +421,7 @@ func (a *App) GetCodexSkillsSnapshot() (*CodexSkillsSnapshot, error) {
 func (a *App) SaveCodexSkillEnabled(input SaveCodexSkillEnabledInput) (*SaveCodexSkillEnabledResult, error) {
 	result, err := a.core.SaveCodexSkillEnabled(wailsapp.SaveCodexSkillEnabledInput{
 		Path:    input.Path,
+		Name:    input.Name,
 		Enabled: input.Enabled,
 	})
 	if err != nil {
@@ -367,6 +431,45 @@ func (a *App) SaveCodexSkillEnabled(input SaveCodexSkillEnabledInput) (*SaveCode
 		ConfigPath: result.ConfigPath,
 		Preview:    result.Preview,
 	}, nil
+}
+
+func (a *App) GetCodexSkillFilePreview(input GetCodexSkillFilePreviewInput) (*GetCodexSkillFilePreviewResult, error) {
+	result, err := a.core.GetCodexSkillFilePreview(wailsapp.GetCodexSkillFilePreviewInput{
+		SkillPath: input.SkillPath,
+		FilePath:  input.FilePath,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &GetCodexSkillFilePreviewResult{
+		Path:        result.Path,
+		Content:     result.Content,
+		Previewable: result.Previewable,
+	}, nil
+}
+
+func (a *App) RemoveCodexSkill(input RemoveCodexSkillInput) (*RemoveCodexSkillResult, error) {
+	result, err := a.core.RemoveCodexSkill(wailsapp.RemoveCodexSkillInput{
+		Path: input.Path,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &RemoveCodexSkillResult{
+		ConfigPath:  result.ConfigPath,
+		RemovedPath: result.RemovedPath,
+		Preview:     result.Preview,
+	}, nil
+}
+
+func (a *App) OpenCodexSkillInFinder(input OpenCodexSkillInFinderInput) (*OpenCodexSkillInFinderResult, error) {
+	result, err := a.core.OpenCodexSkillInFinder(wailsapp.OpenCodexSkillInFinderInput{
+		Path: input.Path,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &OpenCodexSkillInFinderResult{Path: result.Path}, nil
 }
 
 func (a *App) GetCodexMcpServers() (*CodexMcpServersSnapshot, error) {

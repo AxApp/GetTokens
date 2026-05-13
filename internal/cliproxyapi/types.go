@@ -64,6 +64,16 @@ type OpenAICompatibleModel struct {
 	Alias string `json:"alias"`
 }
 
+type OAuthModelAlias struct {
+	Name  string `json:"name"`
+	Alias string `json:"alias"`
+	Fork  bool   `json:"fork,omitempty"`
+}
+
+type OAuthModelAliasesResponse struct {
+	Items map[string][]OAuthModelAlias `json:"oauth-model-alias"`
+}
+
 type OpenAICompatibleProvider struct {
 	Name          string                        `json:"name"`
 	Priority      int                           `json:"priority,omitempty"`

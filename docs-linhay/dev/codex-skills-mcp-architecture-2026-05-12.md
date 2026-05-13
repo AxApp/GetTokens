@@ -14,6 +14,37 @@
 
 三条链路不能共享同一个“保存配置”接口。它们的事务边界、风险和回滚方式不同。
 
+## 2026-05-12 落地后沉淀
+
+本轮实现验证了两个首期能力：Codex `Skills` / `MCP Servers` 浏览器预览，以及 MCP `config.toml` 内置文本编辑器。以下规则后续继续沿用。
+
+1. 浏览器预览是一等入口：Codex workspace tab 需要在无 Wails runtime 时显式 fallback 到 preview data，不能因为缺少 `window.go.main.App` 空白或崩溃。
+2. 桌面真实能力仍以 Wails 为准：新增后端方法必须经过 `internal/wailsapp`、root `app.go`、root DTO/mapper、`frontend/wailsjs` 和前端调用链完整暴露。
+3. raw editor 与结构化 editor 需要同步：保存 `config.toml` 后必须重新加载 MCP 列表；结构化保存后也应刷新 raw 视图，避免两个编辑面展示不同真相。
+4. 浏览器 raw editor 只保存到页面状态，并明确展示 preview-only 结果；桌面 raw editor 才读写真实 `~/.codex/config.toml`。
+5. modal/detail layer 需要接入 frame hash 约定。Codex 工作区内的详情 modal 应保留 `frame=codex` 与 `workspace=<key>`，并只增删 `detail` 参数。
+6. Skill 和 MCP 列表以“列表为主，整行打开详情”为默认交互；启停 toggle 是独立控件，点击时不得触发行级详情。
+
+本次不沉淀的临时内容：
+
+1. 针对某一张截图的行高、间距、边框权重等微调，只保留在代码和截图记录中，不上升为长期规范。
+2. 未落地的 Git managed Skill clone/fetch/materialize/update 仍保留为后续计划，不把尚未验证的实现细节写成 skill 规则。
+3. 用户本地现有图标、参考项目删除、Codex binary prerelease 标记等脏文件不属于本 space 的整理对象。
+
+## 2026-05-13 MCP 源码核对修正
+
+本轮按 `docs-linhay/references/codex/codex-rs/config/src/mcp_types.rs` 与 `mcp_edit.rs` 重新核对 MCP 配置语义，并修正 UI / DTO / parser。
+
+1. `[mcp_servers.<id>.tools.<tool>]` 是父 server 的 `tools` nested table，列表只能展示一个 `<id>` server。读取时将 tool name 与 `approval_mode` 挂到父 server 的 `Tools`，保存父 section 时保留已有 nested tool sections。
+2. 结构化编辑按 transport 互斥字段分区：
+   - stdio：`command`、`args`、`env`、`env_vars`、`cwd`
+   - streamable_http：`url`、`bearer_token_env_var`、`http_headers`、`env_http_headers`、`oauth_resource`
+   - shared：`experimental_environment`、`enabled`、`required`、`supports_parallel_tool_calls`、`startup_timeout_sec`、`tool_timeout_sec`、`default_tools_approval_mode`、`enabled_tools`、`disabled_tools`、`scopes`
+3. `bearer_token` 继续视为无效字段，不写回；保存时只写 `bearer_token_env_var`。
+4. `default_tools_approval_mode` 只允许 Codex 当前源码里的 `auto`、`prompt`、`approve`。
+5. `startup_timeout_ms` 读取时折算为秒展示；写回统一使用 `startup_timeout_sec`，避免新旧字段同时存在。
+6. modal 布局保持单层 overlay：最外层 overlay 负责滚动，表单 `main` 不独立滚动；桌面宽度下右侧当前值栏与编辑区并排，移动端自然下排。
+
 ## 后端模块建议
 
 ### `internal/codexskills`
@@ -220,6 +251,7 @@ UI 原则：
 4. MCP 点击 server 行打开独立编辑 modal，单次只编辑一个 server。
 5. Skills preview 参考 Nolon：左 identity / source / files，右侧使用 `react-markdown` + `rehype-sanitize` 安全渲染 `SKILL.md`。
 6. 禁止卡片套卡片；详情层用分隔线和字段网格。
+7. Skills Git source install 不常驻主列表页面；主页面只放 `添加 Skill` 操作，点击后打开独立 Git 安装 modal。
 
 ### 通用组件优先
 

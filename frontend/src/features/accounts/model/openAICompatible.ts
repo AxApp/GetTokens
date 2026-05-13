@@ -344,10 +344,11 @@ export function normalizeProviderModels(rows: OpenAICompatibleModelRow[]): OpenA
   for (const row of rows) {
     const name = String(row.name || '').trim();
     const alias = String(row.alias || '').trim();
-    if (!name || seen.has(name)) {
+    const key = `${name}\u0000${alias}`;
+    if (!name || seen.has(key)) {
       continue;
     }
-    seen.add(name);
+    seen.add(key);
     normalized.push({ name, alias });
   }
   return normalized;
