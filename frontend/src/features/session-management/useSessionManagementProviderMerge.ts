@@ -64,19 +64,14 @@ export function useSessionManagementProviderMerge({
   }, [editingProject, providerDraft, unknownProviderLabel]);
 
   const editingProjectProviderCandidates = useMemo(() => {
-    if (!editingProjectProviderRows.length) {
-      return [];
-    }
+    // Collect known providers from ALL projects so the user can merge into any existing provider.
+    const labels = projects
+      .flatMap((project) => project.sessions.map((session) => session.provider))
+      .map((provider) => getProviderDisplayLabel(provider, unknownProviderLabel))
+      .filter((label) => label !== unknownProviderLabel);
 
-    return Array.from(
-      new Set(
-        editingProjectProviderRows
-          .flatMap((row) => [row.sourceProvider, row.targetProvider])
-          .map((provider) => getProviderDisplayLabel(provider, unknownProviderLabel))
-          .filter(Boolean),
-      ),
-    ).sort((left, right) => left.localeCompare(right));
-  }, [editingProjectProviderRows, unknownProviderLabel]);
+    return Array.from(new Set(labels)).sort((left, right) => left.localeCompare(right));
+  }, [projects, unknownProviderLabel]);
 
   const openProviderEditor = useCallback((projectID: string) => {
     setEditingProjectId(projectID);

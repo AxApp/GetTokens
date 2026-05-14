@@ -20,6 +20,7 @@ import {
   ProjectListPanel,
   ProviderMergeModal,
   SessionDetailModal,
+  SessionManagementSearchBar,
   SessionsPanel,
 } from './SessionManagementView.tsx';
 
@@ -286,51 +287,58 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         }
       />
 
-      <div className={`mt-8 flex min-h-0 flex-1 border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)] ${compactLayout ? 'flex-col' : 'flex-row'}`}>
-        <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-4' : 'w-[20rem] shrink-0 border-r-4'}`}>
-          <ProjectListPanel
-            copy={copy}
-            projects={filteredProjects}
-            stats={stats}
-            activeProjectId={activeProject?.id ?? ''}
-            compactLayout={compactLayout}
-            snapshotLoading={snapshotLoading}
-            snapshotRefreshing={snapshotRefreshing}
-            snapshotError={snapshotError}
-            searchQuery={searchQuery}
-            onRetry={() => void loadSnapshot()}
-            onRefresh={() => void loadSnapshot('refresh')}
-            onSelectProject={(projectID, openCompact) => {
-              setActiveProjectId(projectID);
-              if (openCompact) {
-                setCompactSessionsOpen(true);
-              }
-            }}
-            onOpenProviderEditor={openProviderEditor}
-            onSearchChange={setSearchQuery}
-          />
-        </div>
-
-        {compactLayout ? null : (
-          <div className="flex min-h-0 flex-1 flex-col min-w-0">
-            <SessionsPanel
+      <div className="mt-8 flex min-h-0 flex-1 flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
+        <SessionManagementSearchBar
+          copy={copy}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
+        <div className={`flex min-h-0 flex-1 ${compactLayout ? 'flex-col' : 'flex-row'}`}>
+          <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-4' : 'w-[20rem] shrink-0 border-r-4'}`}>
+            <ProjectListPanel
               copy={copy}
-              activeProjectName={activeProject?.name ?? copy.unavailable}
-              activeFilter={activeFilter}
-              filters={sessionFilters.map((filter) => ({
-                id: filter.id,
-                label: t(filter.labelKey),
-              }))}
+              projects={filteredProjects}
+              stats={stats}
+              activeProjectId={activeProject?.id ?? ''}
+              compactLayout={compactLayout}
               snapshotLoading={snapshotLoading}
+              snapshotRefreshing={snapshotRefreshing}
               snapshotError={snapshotError}
-              visibleSessions={visibleSessions}
+              searchActive={Boolean(searchQuery.trim())}
               onRetry={() => void loadSnapshot()}
               onRefresh={() => void loadSnapshot('refresh')}
-              onSelectFilter={setActiveFilter}
-              onSelectSession={setSelectedSessionId}
+              onSelectProject={(projectID, openCompact) => {
+                setActiveProjectId(projectID);
+                if (openCompact) {
+                  setCompactSessionsOpen(true);
+                }
+              }}
+              onOpenProviderEditor={openProviderEditor}
             />
           </div>
-        )}
+
+          {compactLayout ? null : (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <SessionsPanel
+                copy={copy}
+                activeProjectName={activeProject?.name ?? copy.unavailable}
+                activeFilter={activeFilter}
+                filters={sessionFilters.map((filter) => ({
+                  id: filter.id,
+                  label: t(filter.labelKey),
+                }))}
+                snapshotLoading={snapshotLoading}
+                snapshotError={snapshotError}
+                searchActive={Boolean(searchQuery.trim())}
+                visibleSessions={visibleSessions}
+                onRetry={() => void loadSnapshot()}
+                onRefresh={() => void loadSnapshot('refresh')}
+                onSelectFilter={setActiveFilter}
+                onSelectSession={setSelectedSessionId}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {compactLayout && compactSessionsOpen ? (
@@ -361,6 +369,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
               }))}
               snapshotLoading={snapshotLoading}
               snapshotError={snapshotError}
+              searchActive={Boolean(searchQuery.trim())}
               visibleSessions={visibleSessions}
               onRetry={() => void loadSnapshot()}
               onRefresh={() => void loadSnapshot('refresh')}

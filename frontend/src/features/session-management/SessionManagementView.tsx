@@ -1,4 +1,5 @@
-import { Pencil, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowRight, Pencil, RefreshCw, Search, X } from 'lucide-react';
+import { Combobox } from '../../components/ui/Combobox.tsx';
 import type {
   MessageRole,
   ProjectSummary,
@@ -184,6 +185,40 @@ export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
   );
 }
 
+export function SessionManagementSearchBar({
+  copy,
+  searchQuery,
+  onSearchChange,
+}: {
+  copy: SessionManagementCopy;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+}) {
+  return (
+    <div className="flex h-12 shrink-0 items-center gap-2 border-b-4 border-[var(--border-color)] px-4">
+      <Search className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" strokeWidth={2.5} />
+      <input
+        type="text"
+        value={searchQuery}
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder={copy.searchPlaceholder}
+        className="min-w-0 flex-1 bg-transparent text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 focus:outline-none"
+      />
+      {searchQuery ? (
+        <button
+          type="button"
+          onClick={() => onSearchChange('')}
+          className="flex h-7 w-7 shrink-0 items-center justify-center border border-transparent text-[var(--text-muted)] transition-colors hover:border-[var(--border-color)] hover:text-[var(--text-primary)] active:scale-90"
+          aria-label={copy.close}
+          title={copy.close}
+        >
+          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function ProjectListPanel({
   copy,
   projects,
@@ -193,12 +228,11 @@ export function ProjectListPanel({
   snapshotLoading,
   snapshotRefreshing,
   snapshotError,
-  searchQuery,
+  searchActive,
   onRetry,
   onRefresh,
   onSelectProject,
   onOpenProviderEditor,
-  onSearchChange,
 }: {
   copy: SessionManagementCopy;
   projects: ProjectSummary[];
@@ -208,12 +242,11 @@ export function ProjectListPanel({
   snapshotLoading: boolean;
   snapshotRefreshing: boolean;
   snapshotError: string | null;
-  searchQuery: string;
+  searchActive: boolean;
   onRetry: () => void;
   onRefresh: () => void;
   onSelectProject: (projectID: string, openCompact: boolean) => void;
   onOpenProviderEditor: (projectID: string) => void;
-  onSearchChange: (query: string) => void;
 }) {
   return (
     <section className="flex min-h-0 flex-1 flex-col">
@@ -223,26 +256,6 @@ export function ProjectListPanel({
           <span className="animate-pulse text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {copy.refreshing}
           </span>
-        ) : null}
-      </div>
-      {/* Search input */}
-      <div className="flex shrink-0 items-center gap-2 border-b-4 border-[var(--border-color)] px-4 py-2.5">
-        <Search className="h-3 w-3 shrink-0 text-[var(--text-muted)]" strokeWidth={2.5} />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder={copy.searchPlaceholder}
-          className="min-w-0 flex-1 bg-transparent text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 focus:outline-none"
-        />
-        {searchQuery ? (
-          <button
-            type="button"
-            onClick={() => onSearchChange('')}
-            className="shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] active:scale-90"
-          >
-            <X className="h-3 w-3" strokeWidth={2.5} />
-          </button>
         ) : null}
       </div>
       {snapshotLoading && !projects.length && !snapshotError ? (
@@ -320,10 +333,10 @@ export function ProjectListPanel({
         </div>
       ) : (
         <StatePanel
-          title={searchQuery ? copy.searchNoResults : copy.noProjects}
-          description={searchQuery ? undefined : copy.scanLine(stats.lastScanAt)}
-          actionLabel={searchQuery ? undefined : copy.refresh}
-          onAction={searchQuery ? undefined : onRefresh}
+          title={searchActive ? copy.searchNoResults : copy.noProjects}
+          description={searchActive ? undefined : copy.scanLine(stats.lastScanAt)}
+          actionLabel={searchActive ? undefined : copy.refresh}
+          onAction={searchActive ? undefined : onRefresh}
         />
       )}
     </section>
@@ -337,6 +350,7 @@ export function SessionsPanel({
   filters,
   snapshotLoading,
   snapshotError,
+  searchActive,
   visibleSessions,
   onRetry,
   onRefresh,
@@ -349,6 +363,7 @@ export function SessionsPanel({
   filters: ReadonlyArray<{ id: SessionFilter; label: string }>;
   snapshotLoading: boolean;
   snapshotError: string | null;
+  searchActive: boolean;
   visibleSessions: SessionSummary[];
   onRetry: () => void;
   onRefresh: () => void;
@@ -445,7 +460,7 @@ export function SessionsPanel({
               ))
             ) : (
               <StatePanel
-                title={copy.noSessions}
+                title={searchActive ? copy.searchNoResults : copy.noSessions}
                 description={activeProjectName}
                 actionLabel={snapshotError ? copy.retry : undefined}
                 onAction={snapshotError ? onRetry : undefined}
@@ -487,12 +502,13 @@ export function ProviderMergeModal({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-2xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+        className="flex w-full max-w-xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-management-provider-merge-title"
       >
+        {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
           <div>
             <div className="text-[0.5rem] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
@@ -500,13 +516,13 @@ export function ProviderMergeModal({
             </div>
             <h3
               id="session-management-provider-merge-title"
-              className="mt-1 text-xl font-black uppercase tracking-tight"
+              className="mt-1 text-[1.125rem] font-black uppercase tracking-tight leading-none"
             >
               {projectName}
             </h3>
-            <div className="mt-1.5 text-[0.625rem] leading-5 text-[var(--text-muted)]">
-              把同一项目下不同 provider 的会话归到同一个 provider 标签下。保存后会直接修改对应 rollout 文件里的 provider。
-            </div>
+            <p className="mt-2 text-[0.5625rem] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              将来源 Provider 统一映射到目标标签，不同来源可归并到同一个目标
+            </p>
           </div>
           <button
             type="button"
@@ -519,82 +535,73 @@ export function ProviderMergeModal({
           </button>
         </div>
 
-        <div className="max-h-[55vh] overflow-y-auto">
-          <div className="grid grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
-            <div className="border-b border-r-4 border-[var(--border-color)] px-4 py-2.5 text-[0.4375rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
-              来源 Provider
-            </div>
-            <div className="border-b border-[var(--border-color)] px-4 py-2.5 text-[0.4375rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
-              归并目标
-            </div>
-            {rows.map((row) => (
-              <div
-                key={row.sourceKey}
-                className="contents"
-              >
-                <div className="border-b border-r-4 border-[var(--border-color)] px-4 py-3">
-                  <div className="text-[0.75rem] font-black uppercase tracking-[0.12em]">
-                    {getProviderDisplayLabel(row.sourceProvider, copy.unknownProvider)}
+        {/* Mapping rows */}
+        <div className="max-h-[60vh] overflow-y-auto divide-y divide-[var(--border-color)]">
+          {rows.map((row) => {
+            const sourceLabel = getProviderDisplayLabel(row.sourceProvider, copy.unknownProvider);
+            return (
+              <div key={row.sourceKey} className="flex items-center gap-3 px-5 py-4">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[0.8125rem] font-black uppercase tracking-tight">
+                    {sourceLabel}
                   </div>
-                  <div className="mt-1 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div className="mt-0.5 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {row.count} 条会话
                   </div>
                 </div>
-                <label className="block border-b border-[var(--border-color)] px-4 py-3">
-                  <input
+                <ArrowRight className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={2} />
+                <div className="min-w-0 flex-1">
+                  <Combobox
                     value={row.targetProvider}
-                    disabled={saving}
-                    onChange={(event) => onChangeValue(row.sourceKey, event.target.value)}
-                    className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-1.5 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-[var(--text-primary)] outline-none focus:border-[var(--accent-red)] disabled:opacity-50"
+                    options={candidates}
                     placeholder={copy.unknownProvider}
-                    list={`provider-merge-candidates-${row.sourceKey}`}
+                    disabled={saving}
+                    onChange={(value) => onChangeValue(row.sourceKey, value)}
                   />
-                  <datalist id={`provider-merge-candidates-${row.sourceKey}`}>
-                    {candidates.map((candidate) => (
-                      <option key={`${row.sourceKey}-${candidate}`} value={candidate} />
-                    ))}
-                  </datalist>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {candidates.map((candidate) => {
-                      const isSelected = candidate === getProviderDisplayLabel(row.targetProvider, copy.unknownProvider);
-                      return (
-                        <button
-                          key={`${row.sourceKey}-${candidate}-chip`}
-                          type="button"
-                          disabled={saving}
-                          onClick={() => onChangeValue(row.sourceKey, candidate)}
-                          className={`border px-2 py-1 text-[0.4375rem] font-black uppercase tracking-[0.18em] transition-colors active:scale-95 ${
-                            isSelected
-                              ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                              : 'border-[var(--border-color)]/40 text-[var(--text-muted)] hover:border-[var(--border-color)] hover:text-[var(--text-primary)]'
-                          }`}
-                        >
-                          {candidate}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </label>
+                </div>
               </div>
-            ))}
-          </div>
-          {error ? (
-            <div className="border-t-4 border-[var(--border-color)] px-5 py-3 text-[0.5625rem] font-bold uppercase tracking-[0.14em] text-[var(--accent-red)]">
-              {error}
+            );
+          })}
+          {rows.length === 0 ? (
+            <div className="px-5 py-8 text-center text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              暂无可归并的 Provider
             </div>
           ) : null}
         </div>
 
+        {/* Error */}
+        {error ? (
+          <div className="border-t border-[var(--border-color)] px-5 py-3 text-[0.5625rem] font-bold uppercase tracking-[0.14em] text-[var(--accent-red)]">
+            {error}
+          </div>
+        ) : null}
+
+        {/* Footer */}
         <div className="flex items-center justify-between gap-3 border-t-4 border-[var(--border-color)] px-5 py-3">
-          <button type="button" onClick={onReset} disabled={saving} className="btn-swiss">
-            恢复当前值
+          <button
+            type="button"
+            onClick={onReset}
+            disabled={saving}
+            className="btn-swiss text-[0.5625rem] disabled:opacity-50"
+          >
+            重置
           </button>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onClose} disabled={saving} className="btn-swiss">
-              取消
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className="btn-swiss text-[0.5625rem] disabled:opacity-50"
+            >
+              {copy.close}
             </button>
-            <button type="button" onClick={onSave} disabled={saving} className="btn-swiss">
-              {saving ? '保存中' : '保存归并'}
+            <button
+              type="button"
+              onClick={onSave}
+              disabled={saving}
+              className="btn-swiss text-[0.5625rem] disabled:opacity-50"
+            >
+              {saving ? '保存中…' : '保存'}
             </button>
           </div>
         </div>
