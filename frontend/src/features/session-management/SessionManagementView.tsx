@@ -239,45 +239,52 @@ export function ProjectListPanel({
           {projects.map((project) => {
             const isActive = project.id === activeProjectId;
             return (
-              <button
+              <div
                 key={project.id}
-                type="button"
-                onClick={() => onSelectProject(project.id, compactLayout)}
-                className={`w-full border-b border-[var(--border-color)] px-5 py-4 text-left transition-colors select-text ${
+                className={`flex w-full items-start gap-3 overflow-hidden border-b border-[var(--border-color)] px-5 py-4 text-left transition-colors select-text ${
                   isActive ? 'bg-[var(--border-color)] text-[var(--bg-main)]' : 'bg-transparent hover:bg-[var(--bg-surface)]'
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-black uppercase tracking-[0.18em]">{project.name}</div>
-                    <div className={`mt-2 truncate text-[0.625rem] font-bold uppercase tracking-[0.16em] ${
+                <button
+                  type="button"
+                  onClick={() => onSelectProject(project.id, compactLayout)}
+                  className="min-w-0 flex-1 text-left"
+                >
+                  <div className="truncate text-sm font-black uppercase tracking-[0.14em]">{project.name}</div>
+                  <div
+                    className={`mt-3 flex min-w-0 flex-wrap items-center gap-1.5 text-[0.5625rem] font-black uppercase tracking-[0.14em] ${
                       isActive ? 'text-[var(--bg-main)]/80' : 'text-[var(--text-muted)]'
-                    }`}>
-                      {[
-                        copy.projectSessionTag(project),
-                        copy.projectActiveTag(project),
-                        copy.projectArchivedTag(project),
-                        getProviderDisplayLabel(project.providerSummary, copy.unknownProvider),
-                        copy.projectRecentTag(project),
-                      ].join(' · ')}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onOpenProviderEditor(project.id);
-                    }}
-                    className={`btn-swiss shrink-0 !px-2 !py-1 !text-[0.5625rem] !shadow-none ${
-                      isActive ? '!border-[var(--bg-main)]/40 !text-[var(--bg-main)] hover:!bg-[var(--bg-main)]/10' : ''
                     }`}
-                    title="编辑 provider 归并"
-                    aria-label="编辑 provider 归并"
                   >
-                    <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
-                  </button>
-                </div>
-              </button>
+                    <span className="inline-flex max-w-full shrink-0 border border-current px-1.5 py-0.5">
+                      {copy.projectSessionTag(project)}
+                    </span>
+                    <span className="inline-flex max-w-full shrink-0 border border-current px-1.5 py-0.5">
+                      {copy.projectActiveTag(project)}
+                    </span>
+                    <span className="inline-flex max-w-full shrink-0 border border-current px-1.5 py-0.5">
+                      {copy.projectArchivedTag(project)}
+                    </span>
+                    <span className="hidden max-w-full truncate border border-current px-1.5 py-0.5 min-[420px]:inline-flex">
+                      {getProviderDisplayLabel(project.providerSummary, copy.unknownProvider)}
+                    </span>
+                    <span className="hidden max-w-full truncate border border-current px-1.5 py-0.5 min-[560px]:inline-flex">
+                      {copy.projectRecentTag(project)}
+                    </span>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenProviderEditor(project.id)}
+                  className={`btn-swiss shrink-0 !px-2 !py-1 !text-[0.5625rem] !shadow-none ${
+                    isActive ? '!border-[var(--bg-main)]/40 !text-[var(--bg-main)] hover:!bg-[var(--bg-main)]/10' : ''
+                  }`}
+                  title="编辑 provider 归并"
+                  aria-label="编辑 provider 归并"
+                >
+                  <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -365,7 +372,7 @@ export function SessionsPanel({
                   key={session.id}
                   type="button"
                   onClick={() => onSelectSession(session.id)}
-                  className="w-full border-b border-[var(--border-color)] px-5 py-4 text-left transition-colors hover:bg-[var(--bg-surface)] select-text"
+                  className="w-full overflow-hidden border-b border-[var(--border-color)] px-5 py-4 text-left transition-colors hover:bg-[var(--bg-surface)] select-text"
                 >
                   <div>
                     <div>
@@ -373,7 +380,7 @@ export function SessionsPanel({
                         <div className="text-sm font-black uppercase tracking-[0.16em]">{session.title}</div>
                       ) : null}
                       <div className={`${session.title ? 'mt-2 ' : ''}line-clamp-2 text-[0.625rem] font-bold uppercase leading-5 tracking-[0.16em] text-[var(--text-muted)]`}>
-                        {copy.sessionSubtitleLine(session)}
+                        {session.summary || getFileName(session.fileLabel, copy.unavailable)}
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.5625rem] font-black uppercase tracking-[0.18em]">
@@ -388,6 +395,15 @@ export function SessionsPanel({
                       </div>
                       <div className="inline-flex border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
                         {getProviderDisplayLabel(session.provider, copy.unknownProvider)}
+                      </div>
+                      <div className="inline-flex border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
+                        {copy.metaMessages} {session.messageCount}
+                      </div>
+                      <div className="inline-flex border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
+                        {copy.metaUpdated} {session.updatedAt}
+                      </div>
+                      <div className="inline-flex max-w-full truncate border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
+                        {getFileName(session.fileLabel, session.id)}
                       </div>
                     </div>
                   </div>

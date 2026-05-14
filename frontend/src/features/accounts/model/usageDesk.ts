@@ -140,6 +140,7 @@ export interface UsageDeskProjectedStats {
 export type UsageDeskChartUnit = 'count' | 'tokens';
 export type UsageDeskRangeOption = 'TODAY' | '7D' | '14D' | '30D' | '全部';
 export type UsageDeskResolution = '1M' | '5M' | '15M' | '30M' | '60M';
+export type UsageDeskCurveMotion = 'standard' | 'realtime';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -205,6 +206,71 @@ export function formatUsageDeskChartValue(value: number, unit: UsageDeskChartUni
   return `${new Intl.NumberFormat('zh-CN').format(normalized)}`;
 }
 
+export function buildUsageDeskObservedSummaryItems({
+  drilldownDayKey,
+  dailyPoints,
+  visibleDailyPoints,
+}: {
+  drilldownDayKey: string | null;
+  dailyPoints: UsageDeskDailyPoint[];
+  visibleDailyPoints: UsageDeskDailyPoint[];
+}): string[] {
+  if (drilldownDayKey) {
+    const dayPoint = dailyPoints.find((point) => point.dayKey === drilldownDayKey);
+    if (!dayPoint) return [];
+    const total = dayPoint.success + dayPoint.failure;
+    return [
+      `全天请求 ${formatUsageDeskChartValue(total, 'count')}`,
+      `全天成功 ${formatUsageDeskChartValue(dayPoint.success, 'count')}`,
+      `全天失败 ${formatUsageDeskChartValue(dayPoint.failure, 'count')}`,
+    ];
+  }
+
+  const success = visibleDailyPoints.reduce((sum, point) => sum + point.success, 0);
+  const failure = visibleDailyPoints.reduce((sum, point) => sum + point.failure, 0);
+  const total = success + failure;
+  return [
+    `请求 ${formatUsageDeskChartValue(total, 'count')}`,
+    `成功 ${formatUsageDeskChartValue(success, 'count')}`,
+    `失败 ${formatUsageDeskChartValue(failure, 'count')}`,
+  ];
+}
+
+export function buildUsageDeskProjectedSummaryItems({
+  drilldownDayKey,
+  dailyPoints,
+  visibleDailyPoints,
+}: {
+  drilldownDayKey: string | null;
+  dailyPoints: UsageDeskProjectedDailyPoint[];
+  visibleDailyPoints: UsageDeskProjectedDailyPoint[];
+}): string[] {
+  if (drilldownDayKey) {
+    const dayPoint = dailyPoints.find((point) => point.dayKey === drilldownDayKey);
+    if (!dayPoint) return [];
+    return [
+      `全天请求 ${formatUsageDeskChartValue(dayPoint.requests, 'count')}`,
+      `全天 Token ${formatUsageDeskChartValue(dayPoint.totalTokens, 'tokens')}`,
+      `全天输入 ${formatUsageDeskChartValue(dayPoint.inputTokens, 'tokens')}`,
+      `全天缓存 ${formatUsageDeskChartValue(dayPoint.cachedInputTokens, 'tokens')}`,
+      `全天输出 ${formatUsageDeskChartValue(dayPoint.outputTokens, 'tokens')}`,
+    ];
+  }
+
+  const requests = visibleDailyPoints.reduce((sum, point) => sum + point.requests, 0);
+  const totalTokens = visibleDailyPoints.reduce((sum, point) => sum + point.totalTokens, 0);
+  const inputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.inputTokens, 0);
+  const cachedInputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.cachedInputTokens, 0);
+  const outputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.outputTokens, 0);
+  return [
+    `请求 ${formatUsageDeskChartValue(requests, 'count')}`,
+    `Token ${formatUsageDeskChartValue(totalTokens, 'tokens')}`,
+    `输入 ${formatUsageDeskChartValue(inputTokens, 'tokens')}`,
+    `缓存 ${formatUsageDeskChartValue(cachedInputTokens, 'tokens')}`,
+    `输出 ${formatUsageDeskChartValue(outputTokens, 'tokens')}`,
+  ];
+}
+
 export function resolveUsageDeskRangeDrilldownDayKey(
   range: UsageDeskRangeOption,
   latestDayKey: string | null,
@@ -254,6 +320,94 @@ export function buildUsageDeskChartPointStyle(x: number, y: number) {
     top: `${y}px`,
     transform: 'translate(-50%, -50%)',
   };
+}
+
+export interface UsageDeskCurveAnimationConfig {
+  durationMs: number;
+  pointDelayMs: number;
+}
+
+export function resolveUsageDeskCurveAnimationConfig(
+  motion: UsageDeskCurveMotion,
+  pointCount: number,
+): UsageDeskCurveAnimationConfig {
+  if (motion === 'realtime') {
+    const normalizedPointCount = Math.max(1, Number.isFinite(pointCount) ? pointCount : 1);
+    return {
+      durationMs: Math.min(3200, Math.max(1400, normalizedPointCount * 48)),
+      pointDelayMs: Math.min(60, 1600 / normalizedPointCount),
+    };
+  }
+
+  return {
+    durationMs: 420,
+    pointDelayMs: 0,
+  };
+}
+
+export interface UsageDeskChartValueScale {
+  mode: 'linear' | 'compressed';
+  maxValue: number;
+  ratio: (value: number) => number;
+}
+
+export function buildUsageDeskChartValueScale(values: number[]): UsageDeskChartValueScale {
+  const positiveValues = values
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((left, right) => left - right);
+  const maxValue = Math.max(positiveValues[positiveValues.length - 1] ?? 0, 1);
+  const referenceValues = positiveValues.length > 1 ? positiveValues.slice(0, -1) : positiveValues;
+  const referenceValue = Math.max(percentileUsageDeskValue(referenceValues, 0.75), 1);
+  const outlierRatio = maxValue / referenceValue;
+  const shouldCompress = positiveValues.length > 1 && outlierRatio >= 8;
+
+  if (!shouldCompress) {
+    return {
+      mode: 'linear',
+      maxValue,
+      ratio: (value: number) => clampUsageDeskRatio(normalizeUsageDeskChartValue(value) / maxValue),
+    };
+  }
+
+  const logMax = Math.log1p(maxValue);
+  return {
+    mode: 'compressed',
+    maxValue,
+    ratio: (value: number) => {
+      const normalized = normalizeUsageDeskChartValue(value);
+      if (normalized <= 0) {
+        return 0;
+      }
+      const logRatio = logMax > 0 ? Math.log1p(normalized) / logMax : 0;
+      return clampUsageDeskRatio(Math.max(0.08, logRatio));
+    },
+  };
+}
+
+function normalizeUsageDeskChartValue(value: number): number {
+  return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function percentileUsageDeskValue(values: number[], percentile: number): number {
+  if (values.length === 0) {
+    return 0;
+  }
+  if (values.length === 1) {
+    return values[0];
+  }
+  const index = (values.length - 1) * percentile;
+  const lowerIndex = Math.floor(index);
+  const upperIndex = Math.ceil(index);
+  const lower = values[lowerIndex] ?? 0;
+  const upper = values[upperIndex] ?? lower;
+  return lower + (upper - lower) * (index - lowerIndex);
+}
+
+function clampUsageDeskRatio(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.min(1, Math.max(0, value));
 }
 
 function formatUsageDeskCompactNumber(value: number): string {

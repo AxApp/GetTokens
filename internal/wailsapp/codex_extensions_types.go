@@ -121,6 +121,7 @@ type CodexMcpServer struct {
 	Scopes                    []string          `json:"scopes,omitempty"`
 	OAuthResource             string            `json:"oauthResource,omitempty"`
 	Tools                     []CodexMcpToolRow `json:"tools,omitempty"`
+	RawConfig                 string            `json:"rawConfig,omitempty"`
 	SourcePath                string            `json:"sourcePath"`
 	Status                    string            `json:"status"`
 	Warnings                  []string          `json:"warnings,omitempty"`
@@ -179,12 +180,13 @@ type codexSkillFrontmatter struct {
 }
 
 type codexMcpDocument struct {
-	lines      []string
-	newline    string
-	configPath string
-	exists     bool
-	servers    []codexMcpServerSection
-	tools      map[string][]CodexMcpToolRow
+	lines        []string
+	newline      string
+	configPath   string
+	exists       bool
+	servers      []codexMcpServerSection
+	tools        map[string][]CodexMcpToolRow
+	toolSections map[string][]codexMcpServerSection
 }
 
 type codexMcpServerSection struct {

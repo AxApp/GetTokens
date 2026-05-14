@@ -463,6 +463,7 @@ type CodexMcpServer struct {
 	Scopes                    []string          `json:"scopes,omitempty"`
 	OAuthResource             string            `json:"oauthResource,omitempty"`
 	Tools                     []CodexMcpToolRow `json:"tools,omitempty"`
+	RawConfig                 string            `json:"rawConfig,omitempty"`
 	SourcePath                string            `json:"sourcePath"`
 	Status                    string            `json:"status"`
 	Warnings                  []string          `json:"warnings,omitempty"`

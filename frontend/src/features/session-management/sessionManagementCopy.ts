@@ -54,8 +54,8 @@ export function createSessionManagementCopy(
         : `${snapshot.projectCount} 个项目 / ${snapshot.sessionCount} 条会话`,
     headerSubtitleLine: (snapshot: SessionManagementSnapshot['stats']) =>
       isEnglish
-        ? `${snapshot.projectCount} projects / ${snapshot.sessionCount} sessions / ${snapshot.providerSummary} / ${snapshot.lastScanAt}`
-        : `${snapshot.projectCount} 个项目 / ${snapshot.sessionCount} 条会话 / ${snapshot.providerSummary} / ${snapshot.lastScanAt}`,
+        ? `${snapshot.projectCount} projects / ${snapshot.sessionCount} sessions / ${snapshot.lastScanAt}`
+        : `${snapshot.projectCount} 个项目 / ${snapshot.sessionCount} 条会话 / ${snapshot.lastScanAt}`,
     scanLine: (value: string) => (isEnglish ? `Last scan / ${value}` : `最近扫描 / ${value}`),
     providerLine: (value: string) => `Provider / ${value}`,
     projectListTitle: resolve('session_management.project_list', '项目列表', 'Projects'),

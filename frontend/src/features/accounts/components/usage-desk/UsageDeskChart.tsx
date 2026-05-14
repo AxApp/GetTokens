@@ -1,7 +1,10 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import {
   buildUsageDeskChartPointStyle,
+  buildUsageDeskChartValueScale,
   formatUsageDeskChartValue,
+  resolveUsageDeskCurveAnimationConfig,
+  type UsageDeskCurveMotion,
   type UsageDeskChartUnit,
 } from '../../model/usageDesk';
 
@@ -17,6 +20,7 @@ export function UsageChartCard({
   onSelectPoint,
   status,
   footerExtra,
+  curveMotion = 'standard',
 }: {
   rangeAnimationVersion?: number;
   compactProgress?: number;
@@ -29,6 +33,7 @@ export function UsageChartCard({
   onSelectPoint: (chartSelectionKey: string, drilldownDayKey?: string) => void;
   status?: ReactNode;
   footerExtra?: ReactNode;
+  curveMotion?: UsageDeskCurveMotion;
 }) {
   return (
     <div className="flex flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
@@ -56,6 +61,7 @@ export function UsageChartCard({
           selectedPointKey={selectedPointKey}
           onSelectPoint={onSelectPoint}
           rangeAnimationVersion={rangeAnimationVersion}
+          curveMotion={curveMotion}
         />
         {/* 凹陷感内阴影叠加层 */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_12px_16px_-8px_rgba(0,0,0,0.1),inset_0_-12px_16px_-8px_rgba(0,0,0,0.1)]" />
@@ -83,6 +89,7 @@ function ChartSurface({
   selectedPointKey,
   onSelectPoint,
   rangeAnimationVersion = 0,
+  curveMotion = 'standard',
 }: {
   primary: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
   secondary?: Array<{ label: string; value: number; color: string; drilldownDayKey?: string }>;
@@ -91,6 +98,7 @@ function ChartSurface({
   selectedPointKey: string;
   onSelectPoint: (chartSelectionKey: string, drilldownDayKey?: string) => void;
   rangeAnimationVersion?: number;
+  curveMotion?: UsageDeskCurveMotion;
 }) {
   const chartHeight = 280;
   const chartTopInset = 42;
@@ -99,9 +107,13 @@ function ChartSurface({
   const chartBaseY = chartTopInset + chartInnerHeight;
   const labelBaseY = chartHeight - 12;
   const pointCount = Math.max(primary.length, secondary?.length ?? 0, 1);
-  const chartWidth = Math.max(420, pointCount * (pointCount <= 14 ? 72 : 78));
+  const chartSideInset = 72;
+  const chartPointStep = pointCount <= 14 ? 72 : 78;
+  const chartPlotWidth = Math.max(240, Math.max(pointCount - 1, 1) * chartPointStep);
+  const chartWidth = Math.max(420, chartPlotWidth + chartSideInset * 2);
   const allValues = [...primary, ...(secondary ?? [])].map((point) => point.value);
-  const maxValue = Math.max(...allValues, 1);
+  const valueScale = buildUsageDeskChartValueScale(allValues);
+  const curveAnimation = resolveUsageDeskCurveAnimationConfig(curveMotion, pointCount);
   const primaryTone = '#111111';
   const primaryAreaTone = '#2f2f2f';
   const secondaryTone = '#7a7a7a';
@@ -109,8 +121,8 @@ function ChartSurface({
 
   const buildChartCoords = (points: Array<{ value: number }>) =>
     points.map((point, index) => ({
-      x: points.length <= 1 ? 0 : (index / (points.length - 1)) * chartWidth,
-      y: chartBaseY - (point.value / maxValue) * chartInnerHeight,
+      x: points.length <= 1 ? chartWidth / 2 : chartSideInset + (index / (points.length - 1)) * chartPlotWidth,
+      y: chartBaseY - valueScale.ratio(point.value) * chartInnerHeight,
     }));
 
   const buildSmoothLinePath = (points: Array<{ x: number; y: number }>) => {
@@ -249,7 +261,7 @@ function ChartSurface({
               pathLength={1}
               strokeDasharray={1}
               strokeDashoffset={0}
-              style={{ animation: 'usage-desk-curve-sweep 420ms cubic-bezier(0.22,1,0.36,1)' }}
+              style={{ animation: `usage-desk-curve-sweep ${curveAnimation.durationMs}ms cubic-bezier(0.22,1,0.36,1)` }}
             />
             {secondary?.length ? (
               <path
@@ -263,7 +275,7 @@ function ChartSurface({
                 strokeLinejoin="round"
                 pathLength={1}
                 strokeDashoffset={0}
-                style={{ animation: 'usage-desk-curve-sweep 420ms cubic-bezier(0.22,1,0.36,1)' }}
+                style={{ animation: `usage-desk-curve-sweep ${curveAnimation.durationMs}ms cubic-bezier(0.22,1,0.36,1)` }}
               />
             ) : null}
           </svg>
@@ -272,31 +284,32 @@ function ChartSurface({
           <div className="absolute inset-0 h-full w-full overflow-hidden pointer-events-none">
             <div className="relative h-full w-full pointer-events-auto">
               {primary.map((point, index) => {
-                const x = primary.length <= 1 ? 0 : (index / (primary.length - 1)) * chartWidth;
-                const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
+                const coord = primaryCoords[index];
+                if (!coord) return null;
                 return (
                   <ChartPoint
                     key={`primary-${rangeAnimationVersion}-${point.label}`}
-                    x={x}
-                    y={y}
+                    x={coord.x}
+                    y={coord.y}
                     label={formatUsageDeskChartValue(point.value, unit)}
                     color={primaryTone}
                     helper={point.label}
                     helperY={labelBaseY}
                     selected={selectedPointKey === point.label}
                     onSelect={() => onSelectPoint(point.label, point.drilldownDayKey)}
+                    animationDelayMs={curveAnimation.pointDelayMs * index}
                     animate
                   />
                 );
               })}
               {secondary?.map((point, index) => {
-                const x = secondary.length <= 1 ? 0 : (index / (secondary.length - 1)) * chartWidth;
-                const y = chartBaseY - (point.value / maxValue) * chartInnerHeight;
+                const coord = secondaryCoords[index];
+                if (!coord) return null;
                 return (
                   <ChartPoint
                     key={`secondary-${rangeAnimationVersion}-${point.label}`}
-                    x={x}
-                    y={y}
+                    x={coord.x}
+                    y={coord.y}
                     label={formatUsageDeskChartValue(point.value, unit)}
                     color={secondaryTone}
                     helper={point.label}
@@ -304,6 +317,7 @@ function ChartSurface({
                     labelPosition="bottom"
                     small
                     selected={selectedPointKey === point.label}
+                    animationDelayMs={curveAnimation.pointDelayMs * index}
                     animate
                   />
                 );
@@ -327,6 +341,7 @@ function ChartPoint({
   selected = false,
   onSelect,
   animate = false,
+  animationDelayMs = 0,
 }: {
   x: number;
   y: number;
@@ -339,6 +354,7 @@ function ChartPoint({
   selected?: boolean;
   onSelect?: () => void;
   animate?: boolean;
+  animationDelayMs?: number;
 }) {
   return (
     <div
@@ -346,7 +362,8 @@ function ChartPoint({
         animate
           ? {
               ...buildUsageDeskChartPointStyle(x, y),
-              animation: 'usage-desk-point-rise 360ms cubic-bezier(0.22,1,0.36,1)',
+              animation: 'usage-desk-point-rise 360ms cubic-bezier(0.22,1,0.36,1) both',
+              animationDelay: `${animationDelayMs}ms`,
             }
           : buildUsageDeskChartPointStyle(x, y)
       }

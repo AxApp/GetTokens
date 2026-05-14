@@ -170,6 +170,7 @@ export default function UsageDeskFeature({
                             summaryItems={observedSummaryItems}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
+                            curveMotion="realtime"
                             status={
                               <div className="flex items-center gap-3 text-[0.9375rem] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                 <div className="h-3 w-3 bg-[var(--text-primary)]" />
@@ -298,6 +299,7 @@ export default function UsageDeskFeature({
                             summaryItems={projectedSummaryItems}
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
+                            curveMotion="realtime"
                             status={
                               <>
                                 <div className="flex items-center gap-6">

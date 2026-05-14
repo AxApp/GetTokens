@@ -89,6 +89,7 @@ export function mapBackendMcpServer(server: main.CodexMcpServer): McpServerRecor
     scopes: [...(server.scopes || [])],
     oauthResource: server.oauthResource || '',
     tools: (server.tools || []).map((tool) => ({ name: tool.name, approvalMode: tool.approvalMode || '' })),
+    rawConfig: server.rawConfig || '',
     sourcePath: server.sourcePath,
     status: server.status === 'disabled' || server.status === 'missing-env' ? server.status : 'ready',
   };
@@ -120,6 +121,7 @@ export function toBackendMcpServer(server: McpServerRecord): main.CodexMcpServer
     scopes: [...(server.scopes || [])],
     oauthResource: server.transport === 'streamable_http' ? server.oauthResource || '' : '',
     tools: (server.tools || []).map((tool) => ({ name: tool.name, approvalMode: tool.approvalMode || '' })),
+    rawConfig: server.rawConfig || '',
     sourcePath: server.sourcePath,
     status: server.status,
   } as main.CodexMcpServer;

@@ -58,6 +58,7 @@ export interface McpServerRecord {
   scopes?: string[];
   oauthResource?: string;
   tools?: McpToolRow[];
+  rawConfig?: string;
   sourcePath: string;
   status: 'ready' | 'missing-env' | 'disabled';
 }

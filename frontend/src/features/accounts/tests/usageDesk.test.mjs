@@ -2,13 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildUsageDeskChartValueScale,
   buildUsageDeskChartPointStyle,
+  buildUsageDeskObservedSummaryItems,
   buildUsageDeskObservedSnapshot,
   buildUsageDeskProjectedSnapshot,
+  buildUsageDeskProjectedSummaryItems,
   collectUsageDeskObservedDetails,
   collectUsageDeskProjectedDetails,
   formatUsageDeskChartValue,
   readUsageDeskProjectedStats,
+  resolveUsageDeskCurveAnimationConfig,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
   resolveUsageDeskRangeDrilldownDayKey,
@@ -19,6 +23,42 @@ test('buildUsageDeskChartPointStyle keeps hit area centered on the plotted coord
     left: '128px',
     top: '96px',
     transform: 'translate(-50%, -50%)',
+  });
+});
+
+test('buildUsageDeskChartValueScale keeps normal ranges linear', () => {
+  const scale = buildUsageDeskChartValueScale([10, 20, 30]);
+
+  assert.equal(scale.mode, 'linear');
+  assert.equal(scale.ratio(10), 10 / 30);
+  assert.equal(scale.ratio(30), 1);
+  assert.equal(scale.ratio(0), 0);
+});
+
+test('buildUsageDeskChartValueScale compresses extreme outliers without changing labels', () => {
+  const scale = buildUsageDeskChartValueScale([12, 14, 16, 120000]);
+
+  assert.equal(scale.mode, 'compressed');
+  assert.equal(scale.ratio(120000), 1);
+  assert.ok(scale.ratio(16) > 0.18);
+  assert.ok(scale.ratio(16) < 0.5);
+  assert.equal(scale.ratio(0), 0);
+});
+
+test('resolveUsageDeskCurveAnimationConfig keeps realtime motion bounded', () => {
+  assert.deepEqual(resolveUsageDeskCurveAnimationConfig('standard', 1440), {
+    durationMs: 420,
+    pointDelayMs: 0,
+  });
+
+  assert.deepEqual(resolveUsageDeskCurveAnimationConfig('realtime', 10), {
+    durationMs: 1400,
+    pointDelayMs: 60,
+  });
+
+  assert.deepEqual(resolveUsageDeskCurveAnimationConfig('realtime', 1440), {
+    durationMs: 3200,
+    pointDelayMs: 1600 / 1440,
   });
 });
 
@@ -322,6 +362,91 @@ test('buildUsageDeskProjectedSnapshot formats minute-row values with chinese com
   assert.equal(snapshot.minuteRows[0].inputTokens, '5.8 百万');
   assert.equal(snapshot.minuteRows[0].cachedInputTokens, '1.2 百万');
   assert.equal(snapshot.minuteRows[0].outputTokens, '20 万');
+});
+
+test('buildUsageDeskObservedSummaryItems uses the full selected day in minute view', () => {
+  const snapshot = buildUsageDeskObservedSnapshot(
+    {
+      apis: {
+        codex: {
+          models: {
+            'gpt-5': {
+              details: [
+                { timestamp: '2026-04-28T06:18:00.000Z', failed: false, latency_ms: 180 },
+                { timestamp: '2026-04-28T06:20:00.000Z', failed: true, latency_ms: 2200 },
+                { timestamp: '2026-04-28T06:20:10.000Z', failed: false, latency_ms: 140 },
+              ],
+            },
+          },
+        },
+      },
+    },
+    '2026-04-28',
+  );
+  const visibleMinutePoint = snapshot.minutePoints.find((point) => point.label === '14:18');
+
+  assert.deepEqual(
+    buildUsageDeskObservedSummaryItems({
+      drilldownDayKey: '2026-04-28',
+      dailyPoints: snapshot.dailyPoints,
+      visibleDailyPoints: visibleMinutePoint
+        ? [{ dayKey: '2026-04-28', label: visibleMinutePoint.label, success: visibleMinutePoint.success, failure: visibleMinutePoint.failure }]
+        : [],
+    }),
+    ['全天请求 3 次', '全天成功 2 次', '全天失败 1 次'],
+  );
+});
+
+test('buildUsageDeskProjectedSummaryItems uses the full selected day in minute view', () => {
+  const snapshot = buildUsageDeskProjectedSnapshot(
+    {
+      details: [
+        {
+          timestamp: '2026-04-28T06:18:00.000Z',
+          provider: 'codex',
+          sourceKind: 'local_projected',
+          model: 'gpt-5-codex',
+          inputTokens: 100,
+          cachedInputTokens: 10,
+          outputTokens: 20,
+          requestCount: 1,
+        },
+        {
+          timestamp: '2026-04-28T06:20:00.000Z',
+          provider: 'codex',
+          sourceKind: 'local_projected',
+          model: 'gpt-5-codex',
+          inputTokens: 300,
+          cachedInputTokens: 120,
+          outputTokens: 60,
+          requestCount: 1,
+        },
+      ],
+    },
+    '2026-04-28',
+  );
+  const visibleMinutePoint = snapshot.minutePoints.find((point) => point.label === '14:18');
+
+  assert.deepEqual(
+    buildUsageDeskProjectedSummaryItems({
+      drilldownDayKey: '2026-04-28',
+      dailyPoints: snapshot.dailyPoints,
+      visibleDailyPoints: visibleMinutePoint
+        ? [
+            {
+              dayKey: '2026-04-28',
+              label: visibleMinutePoint.label,
+              requests: visibleMinutePoint.requests,
+              totalTokens: visibleMinutePoint.totalTokens,
+              inputTokens: 100,
+              cachedInputTokens: 10,
+              outputTokens: 20,
+            },
+          ]
+        : [],
+    }),
+    ['全天请求 2 次', '全天 Token 480', '全天输入 400', '全天缓存 130', '全天输出 80'],
+  );
 });
 
 test('readUsageDeskProjectedStats reads sqlite index refresh counters', () => {

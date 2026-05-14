@@ -594,6 +594,11 @@ func TestGetCodexMcpServersTreatsToolApprovalSectionsAsNestedConfig(t *testing.T
 		server.Tools[2].Name != "evaluate_script" {
 		t.Fatalf("tool sections should be nested under the parent server: %#v", server.Tools)
 	}
+	if !strings.Contains(server.RawConfig, `[mcp_servers.chrome-devtools]`) ||
+		!strings.Contains(server.RawConfig, `args = ["-y", "chrome-devtools-mcp@latest"]`) ||
+		!strings.Contains(server.RawConfig, `[mcp_servers.chrome-devtools.tools.evaluate_script]`) {
+		t.Fatalf("raw config should preserve the server and nested tool sections: %q", server.RawConfig)
+	}
 }
 
 func TestSaveCodexMcpServerPatchesTargetSectionOnly(t *testing.T) {

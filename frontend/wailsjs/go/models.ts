@@ -982,6 +982,7 @@ export namespace main {
 	    scopes?: string[];
 	    oauthResource?: string;
 	    tools?: CodexMcpToolRow[];
+	    rawConfig?: string;
 	    sourcePath: string;
 	    status: string;
 	    warnings?: string[];
@@ -1016,6 +1017,7 @@ export namespace main {
 	        this.scopes = source["scopes"];
 	        this.oauthResource = source["oauthResource"];
 	        this.tools = this.convertValues(source["tools"], CodexMcpToolRow);
+	        this.rawConfig = source["rawConfig"];
 	        this.sourcePath = source["sourcePath"];
 	        this.status = source["status"];
 	        this.warnings = source["warnings"];

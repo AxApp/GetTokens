@@ -235,6 +235,7 @@ func (a *App) GetCodexMcpServers() (*CodexMcpServersSnapshot, error) {
 	for _, section := range document.servers {
 		server, sectionWarnings := parseCodexMcpServerSection(section, document.configPath)
 		server.Tools = append([]CodexMcpToolRow(nil), document.tools[server.ID]...)
+		server.RawConfig = formatCodexMcpRawConfig(document.lines, section, document.toolSections[server.ID])
 		servers = append(servers, server)
 		warnings = append(warnings, sectionWarnings...)
 	}
@@ -264,6 +265,8 @@ func (a *App) SaveCodexMcpServer(input SaveCodexMcpServerInput) (*SaveCodexMcpSe
 	for _, section := range document.servers {
 		if section.id == input.Server.ID {
 			original, _ = parseCodexMcpServerSection(section, document.configPath)
+			original.Tools = append([]CodexMcpToolRow(nil), document.tools[original.ID]...)
+			original.RawConfig = formatCodexMcpRawConfig(document.lines, section, document.toolSections[original.ID])
 			break
 		}
 	}
@@ -277,6 +280,7 @@ func (a *App) SaveCodexMcpServer(input SaveCodexMcpServerInput) (*SaveCodexMcpSe
 	saved.SourcePath = document.configPath
 	saved.Status = codexMcpStatus(saved)
 	saved.Tools = append([]CodexMcpToolRow(nil), document.tools[saved.ID]...)
+	saved.RawConfig = formatMcpCurrentConfigToml(saved)
 	return &SaveCodexMcpServerResult{
 		ConfigPath: document.configPath,
 		Server:     saved,
@@ -764,7 +768,14 @@ func readCodexMcpDocument() (*codexMcpDocument, error) {
 		return nil, err
 	}
 	lines, newline := splitTomlDocument(string(body))
-	document := &codexMcpDocument{lines: lines, newline: newline, configPath: configPath, exists: exists, tools: map[string][]CodexMcpToolRow{}}
+	document := &codexMcpDocument{
+		lines:        lines,
+		newline:      newline,
+		configPath:   configPath,
+		exists:       exists,
+		tools:        map[string][]CodexMcpToolRow{},
+		toolSections: map[string][]codexMcpServerSection{},
+	}
 	for index, line := range lines {
 		section := strings.TrimSpace(stripTomlLineComment(line))
 		if !strings.HasPrefix(section, "[mcp_servers.") || !strings.HasSuffix(section, "]") {
@@ -781,7 +792,20 @@ func readCodexMcpDocument() (*codexMcpDocument, error) {
 					break
 				}
 			}
+			end := len(lines)
+			for next := index + 1; next < len(lines); next++ {
+				if isTomlSectionHeader(lines[next]) {
+					end = next
+					break
+				}
+			}
 			document.tools[serverID] = append(document.tools[serverID], CodexMcpToolRow{Name: toolName, ApprovalMode: approvalMode})
+			document.toolSections[serverID] = append(document.toolSections[serverID], codexMcpServerSection{
+				id:    toolName,
+				start: index,
+				end:   end,
+				lines: append([]string(nil), lines[index+1:end]...),
+			})
 			continue
 		}
 		id, ok := parseCodexMcpServerSectionID(section)
@@ -800,6 +824,11 @@ func readCodexMcpDocument() (*codexMcpDocument, error) {
 	for serverID := range document.tools {
 		sort.Slice(document.tools[serverID], func(i, j int) bool {
 			return document.tools[serverID][i].Name < document.tools[serverID][j].Name
+		})
+	}
+	for serverID := range document.toolSections {
+		sort.Slice(document.toolSections[serverID], func(i, j int) bool {
+			return document.toolSections[serverID][i].start < document.toolSections[serverID][j].start
 		})
 	}
 	return document, nil
@@ -1133,6 +1162,38 @@ func formatCodexMcpServerKnownLines(server CodexMcpServer) []string {
 		lines = append(lines, fmt.Sprintf("oauth_resource = %s", quoteTomlString(server.OAuthResource)))
 	}
 	return lines
+}
+
+func formatCodexMcpRawConfig(lines []string, section codexMcpServerSection, toolSections []codexMcpServerSection) string {
+	if section.start < 0 || section.end > len(lines) || section.start >= section.end {
+		return ""
+	}
+	raw := append([]string(nil), lines[section.start:section.end]...)
+	for _, toolSection := range toolSections {
+		if toolSection.start < 0 || toolSection.end > len(lines) || toolSection.start >= toolSection.end {
+			continue
+		}
+		if len(raw) > 0 && strings.TrimSpace(raw[len(raw)-1]) != "" {
+			raw = append(raw, "")
+		}
+		raw = append(raw, lines[toolSection.start:toolSection.end]...)
+	}
+	return strings.TrimRight(strings.Join(raw, "\n"), "\n")
+}
+
+func formatMcpCurrentConfigToml(server CodexMcpServer) string {
+	lines := []string{"[mcp_servers." + server.ID + "]"}
+	lines = append(lines, formatCodexMcpServerKnownLines(server)...)
+	for _, tool := range server.Tools {
+		if strings.TrimSpace(tool.Name) == "" {
+			continue
+		}
+		lines = append(lines, "", "[mcp_servers."+server.ID+".tools."+tool.Name+"]")
+		if strings.TrimSpace(tool.ApprovalMode) != "" {
+			lines = append(lines, fmt.Sprintf("approval_mode = %s", quoteTomlString(tool.ApprovalMode)))
+		}
+	}
+	return strings.Join(lines, "\n")
 }
 
 func parseTomlRawKeyValue(line string, key string) (string, bool) {

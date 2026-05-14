@@ -17,8 +17,10 @@ import {
 } from '../../../utils/pagePersistence';
 import {
   buildUsageDeskChartPointStyle,
+  buildUsageDeskObservedSummaryItems,
   buildUsageDeskObservedSnapshot,
   buildUsageDeskProjectedSnapshot,
+  buildUsageDeskProjectedSummaryItems,
   formatUsageDeskChartValue,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
@@ -241,52 +243,19 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const projectedDrilldownDayKey = viewScale === 'minute' ? (selectedDayKey ?? projectedSnapshot.selectedDayKey) : null;
 
   const observedSummaryItems = useMemo(() => {
-    if (observedDrilldownDayKey) {
-      const dayPoint = observedSnapshot.dailyPoints.find((point) => point.dayKey === observedDrilldownDayKey);
-      if (!dayPoint) return [];
-      const total = dayPoint.success + dayPoint.failure;
-      return [
-        `请求 ${formatUsageDeskChartValue(total, 'count')}`,
-        `成功 ${formatUsageDeskChartValue(dayPoint.success, 'count')}`,
-        `失败 ${formatUsageDeskChartValue(dayPoint.failure, 'count')}`,
-      ];
-    }
-
-    const success = visibleDailyPoints.reduce((sum, point) => sum + point.success, 0);
-    const failure = visibleDailyPoints.reduce((sum, point) => sum + point.failure, 0);
-    const total = success + failure;
-    return [
-      `请求 ${formatUsageDeskChartValue(total, 'count')}`,
-      `成功 ${formatUsageDeskChartValue(success, 'count')}`,
-      `失败 ${formatUsageDeskChartValue(failure, 'count')}`,
-    ];
+    return buildUsageDeskObservedSummaryItems({
+      drilldownDayKey: observedDrilldownDayKey,
+      dailyPoints: observedSnapshot.dailyPoints,
+      visibleDailyPoints,
+    });
   }, [observedDrilldownDayKey, observedSnapshot.dailyPoints, visibleDailyPoints]);
 
   const projectedSummaryItems = useMemo(() => {
-    if (projectedDrilldownDayKey) {
-      const dayPoint = projectedSnapshot.dailyPoints.find((point) => point.dayKey === projectedDrilldownDayKey);
-      if (!dayPoint) return [];
-      return [
-        `请求 ${formatUsageDeskChartValue(dayPoint.requests, 'count')}`,
-        `Token ${formatUsageDeskChartValue(dayPoint.totalTokens, 'tokens')}`,
-        `输入 ${formatUsageDeskChartValue(dayPoint.inputTokens, 'tokens')}`,
-        `缓存 ${formatUsageDeskChartValue(dayPoint.cachedInputTokens, 'tokens')}`,
-        `输出 ${formatUsageDeskChartValue(dayPoint.outputTokens, 'tokens')}`,
-      ];
-    }
-
-    const requests = visibleProjectedDailyPoints.reduce((sum, point) => sum + point.requests, 0);
-    const totalTokens = visibleProjectedDailyPoints.reduce((sum, point) => sum + point.totalTokens, 0);
-    const inputTokens = visibleProjectedDailyPoints.reduce((sum, point) => sum + point.inputTokens, 0);
-    const cachedInputTokens = visibleProjectedDailyPoints.reduce((sum, point) => sum + point.cachedInputTokens, 0);
-    const outputTokens = visibleProjectedDailyPoints.reduce((sum, point) => sum + point.outputTokens, 0);
-    return [
-      `请求 ${formatUsageDeskChartValue(requests, 'count')}`,
-      `Token ${formatUsageDeskChartValue(totalTokens, 'tokens')}`,
-      `输入 ${formatUsageDeskChartValue(inputTokens, 'tokens')}`,
-      `缓存 ${formatUsageDeskChartValue(cachedInputTokens, 'tokens')}`,
-      `输出 ${formatUsageDeskChartValue(outputTokens, 'tokens')}`,
-    ];
+    return buildUsageDeskProjectedSummaryItems({
+      drilldownDayKey: projectedDrilldownDayKey,
+      dailyPoints: projectedSnapshot.dailyPoints,
+      visibleDailyPoints: visibleProjectedDailyPoints,
+    });
   }, [projectedDrilldownDayKey, projectedSnapshot.dailyPoints, visibleProjectedDailyPoints]);
 
   const projectedChartUnit: UsageDeskChartUnit = projectedChartMetric === 'requests' ? 'count' : 'tokens';

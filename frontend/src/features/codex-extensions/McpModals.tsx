@@ -62,34 +62,7 @@ export function McpServerEditorModal({
     });
   }
 
-  const currentValueRows = [
-    { key: 'server_id', label: t('codex_extensions.server_id'), value: draft.id, always: true },
-    { key: 'label', label: t('codex_extensions.label'), value: draft.label, always: true },
-    { key: 'enabled', label: t('codex_extensions.enabled'), value: String(draft.enabled), always: true },
-    { key: 'status', label: t('codex_extensions.status'), value: draft.status },
-    { key: 'transport', label: t('codex_extensions.transport'), value: draft.transport, always: true },
-    { key: 'source_path', label: t('codex_extensions.source_path'), value: draft.sourcePath },
-    { key: 'command', label: t('codex_extensions.command'), value: draft.command || '' },
-    { key: 'args', label: t('codex_extensions.args'), value: serializeMcpArgs(draft.args) },
-    { key: 'env', label: t('codex_extensions.env'), value: serializeMcpEnv(draft.env) },
-    { key: 'env_vars', label: t('codex_extensions.env_vars'), value: draft.envVarsRaw || '' },
-    { key: 'cwd', label: t('codex_extensions.cwd'), value: draft.cwd || '' },
-    { key: 'url', label: t('codex_extensions.url'), value: draft.url || '' },
-    { key: 'bearer_env', label: t('codex_extensions.bearer_env'), value: draft.bearerTokenEnvVar || '' },
-    { key: 'http_headers', label: t('codex_extensions.http_headers'), value: serializeMcpEnv(draft.httpHeaders) },
-    { key: 'env_http_headers', label: t('codex_extensions.env_http_headers'), value: serializeMcpEnv(draft.envHttpHeaders) },
-    { key: 'experimental_environment', label: t('codex_extensions.experimental_environment'), value: draft.experimentalEnvironment || '' },
-    { key: 'required', label: t('codex_extensions.required'), value: draft.required ? 'true' : '' },
-    { key: 'supports_parallel_tool_calls', label: t('codex_extensions.supports_parallel_tool_calls'), value: draft.supportsParallelToolCalls ? 'true' : '' },
-    { key: 'startup_timeout_sec', label: t('codex_extensions.startup_timeout_sec'), value: draft.startupTimeoutSec || '' },
-    { key: 'tool_timeout_sec', label: t('codex_extensions.tool_timeout_sec'), value: draft.toolTimeoutSec || '' },
-    { key: 'default_tools_approval_mode', label: t('codex_extensions.default_tools_approval_mode'), value: draft.defaultToolsApprovalMode || '' },
-    { key: 'enabled_tools', label: t('codex_extensions.enabled_tools'), value: serializeMcpList(draft.enabledTools) },
-    { key: 'disabled_tools', label: t('codex_extensions.disabled_tools'), value: serializeMcpList(draft.disabledTools) },
-    { key: 'scopes', label: t('codex_extensions.scopes'), value: serializeMcpList(draft.scopes) },
-    { key: 'oauth_resource', label: t('codex_extensions.oauth_resource'), value: draft.oauthResource || '' },
-    { key: 'tools', label: t('codex_extensions.tools'), value: serializeMcpTools(draft.tools) },
-  ].filter((row) => row.always || row.value.trim() !== '');
+  const currentValueToml = draft.rawConfig?.trim() || formatMcpCurrentValueToml(draft);
   const hasCwd = Boolean(draft.cwd?.trim());
   const hasEnvVars = Boolean(draft.envVarsRaw?.trim());
   const hasEnv = serializeMcpEnv(draft.env).trim() !== '';
@@ -269,11 +242,9 @@ export function McpServerEditorModal({
             <div className="mb-3 text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('codex_extensions.mcp_current_values')}
             </div>
-            <div className="divide-y-2 divide-[var(--border-color)]">
-              {currentValueRows.map((row) => (
-                <McpValueLine key={row.key} label={row.label} value={row.value} />
-              ))}
-            </div>
+            <pre className="scrollbar-stable max-h-[28rem] overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
+              <code className="whitespace-pre font-mono font-black">{currentValueToml}</code>
+            </pre>
 
             <div className="mb-3 mt-6 flex items-center gap-2 border-t-2 border-[var(--border-color)] pt-4 text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               <GitBranch className="h-3.5 w-3.5" />
@@ -472,15 +443,107 @@ function TextareaField({ label, value, onChange }: { label: string; value: strin
   );
 }
 
-function McpValueLine({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="grid gap-1 py-2 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-3">
-      <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-        {label}
-      </div>
-      <div className="min-w-0 whitespace-pre-wrap break-all font-mono text-[0.625rem] font-black text-[var(--text-primary)]">
-        {value || '-'}
-      </div>
-    </div>
-  );
+function formatMcpCurrentValueToml(server: McpServerRecord): string {
+  const lines = [`[mcp_servers.${formatTomlPathSegment(server.id)}]`];
+
+  if (server.transport === 'stdio') {
+    pushTomlString(lines, 'command', server.command);
+    pushTomlStringArray(lines, 'args', serializedArrayValues(server.args, serializeMcpArgs(server.args)));
+    pushTomlInlineMap(lines, 'env', serializeMcpEnv(server.env));
+    pushTomlRaw(lines, 'env_vars', server.envVarsRaw);
+    pushTomlString(lines, 'cwd', server.cwd);
+  } else {
+    pushTomlString(lines, 'url', server.url);
+    pushTomlString(lines, 'bearer_token_env_var', server.bearerTokenEnvVar);
+    pushTomlInlineMap(lines, 'http_headers', serializeMcpEnv(server.httpHeaders));
+    pushTomlInlineMap(lines, 'env_http_headers', serializeMcpEnv(server.envHttpHeaders));
+  }
+
+  if (!server.enabled) {
+    lines.push('enabled = false');
+  }
+  pushTomlString(lines, 'experimental_environment', server.experimentalEnvironment);
+  if (server.required) {
+    lines.push('required = true');
+  }
+  if (server.supportsParallelToolCalls) {
+    lines.push('supports_parallel_tool_calls = true');
+  }
+  pushTomlRaw(lines, 'startup_timeout_sec', server.startupTimeoutSec);
+  pushTomlRaw(lines, 'tool_timeout_sec', server.toolTimeoutSec);
+  pushTomlString(lines, 'default_tools_approval_mode', server.defaultToolsApprovalMode);
+  pushTomlStringArray(lines, 'enabled_tools', serializedArrayValues(server.enabledTools, serializeMcpList(server.enabledTools)));
+  pushTomlStringArray(lines, 'disabled_tools', serializedArrayValues(server.disabledTools, serializeMcpList(server.disabledTools)));
+  pushTomlStringArray(lines, 'scopes', serializedArrayValues(server.scopes, serializeMcpList(server.scopes)));
+  pushTomlString(lines, 'oauth_resource', server.oauthResource);
+
+  const toolLines = serializeMcpTools(server.tools).split('\n').map((value) => value.trim()).filter(Boolean);
+  for (const toolLine of toolLines) {
+    const [toolName, approvalMode = ''] = toolLine.split('=', 2);
+    lines.push('', `[mcp_servers.${formatTomlPathSegment(server.id)}.tools.${formatTomlPathSegment(toolName)}]`);
+    pushTomlString(lines, 'approval_mode', approvalMode);
+  }
+
+  return lines.join('\n');
+}
+
+function pushTomlString(lines: string[], key: string, value: string | undefined) {
+  const trimmed = value?.trim() || '';
+  if (trimmed) {
+    lines.push(`${key} = ${quoteTomlString(trimmed)}`);
+  }
+}
+
+function pushTomlRaw(lines: string[], key: string, value: string | undefined) {
+  const trimmed = value?.trim() || '';
+  if (trimmed) {
+    lines.push(`${key} = ${trimmed}`);
+  }
+}
+
+function pushTomlStringArray(lines: string[], key: string, values: string[]) {
+  if (values.length > 0) {
+    lines.push(`${key} = [${values.map(quoteTomlString).join(', ')}]`);
+  }
+}
+
+function serializedArrayValues(values: string[] | undefined, serialized: string): string[] {
+  if (!serialized.trim()) {
+    return [];
+  }
+  return (values || []).map((value) => value.trim()).filter(Boolean);
+}
+
+function pushTomlInlineMap(lines: string[], key: string, serialized: string) {
+  const parts = serialized
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const index = line.indexOf('=');
+      if (index === -1) {
+        return null;
+      }
+      const mapKey = line.slice(0, index).trim();
+      const mapValue = line.slice(index + 1).trim();
+      return isBareTomlKey(mapKey) ? `${mapKey} = ${quoteTomlString(mapValue)}` : null;
+    })
+    .filter((part): part is string => Boolean(part));
+
+  if (parts.length > 0) {
+    lines.push(`${key} = { ${parts.join(', ')} }`);
+  }
+}
+
+function quoteTomlString(value: string): string {
+  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+}
+
+function formatTomlPathSegment(value: string): string {
+  const trimmed = value.trim();
+  return isBareTomlKey(trimmed) ? trimmed : quoteTomlString(trimmed);
+}
+
+function isBareTomlKey(key: string): boolean {
+  return /^[A-Za-z0-9_-]+$/.test(key);
 }
