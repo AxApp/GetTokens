@@ -16,6 +16,7 @@ import type {
   SessionFilter,
 } from './model.ts';
 import {
+  InitialLoadingShell,
   ProjectListPanel,
   ProviderMergeModal,
   SessionDetailModal,
@@ -31,6 +32,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   const copy = useMemo(() => createSessionManagementCopy(locale, t), [locale, t]);
   const [activeProjectId, setActiveProjectId] = useState('');
   const [activeFilter, setActiveFilter] = useState<SessionFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [compactLayout, setCompactLayout] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= COMPACT_LAYOUT_MAX_WIDTH : false,
   );
@@ -57,6 +59,20 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   const snapshot = rawSnapshot;
   const projects = snapshot.projects;
   const stats = snapshot.stats;
+
+  const filteredProjects = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return projects;
+    return projects.filter(
+      (p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.sessions.some(
+          (s) =>
+            s.title.toLowerCase().includes(q) ||
+            s.summary.toLowerCase().includes(q),
+        ),
+    );
+  }, [projects, searchQuery]);
 
   const activeProject = useMemo(
     () => projects.find((project) => project.id === activeProjectId) ?? projects[0] ?? null,
@@ -85,11 +101,20 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
     if (!activeProject) {
       return [];
     }
-    if (activeFilter === 'all') {
-      return activeProject.sessions;
+    const q = searchQuery.trim().toLowerCase();
+    let sessions = activeProject.sessions;
+    if (activeFilter !== 'all') {
+      sessions = sessions.filter((session) => session.status === activeFilter);
     }
-    return activeProject.sessions.filter((session) => session.status === activeFilter);
-  }, [activeFilter, activeProject]);
+    if (q) {
+      sessions = sessions.filter(
+        (s) =>
+          s.title.toLowerCase().includes(q) ||
+          s.summary.toLowerCase().includes(q),
+      );
+    }
+    return sessions;
+  }, [activeFilter, activeProject, searchQuery]);
 
   const selectedSessionSummary = useMemo(
     () => activeProject?.sessions.find((session) => session.id === selectedSessionId) ?? null,
@@ -119,6 +144,15 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
       setActiveProjectId(projects[0].id);
     }
   }, [activeProjectId, projects]);
+
+  // When search changes, auto-select first filtered project if current is hidden
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || !filteredProjects.length) return;
+    if (!filteredProjects.some((p) => p.id === activeProjectId)) {
+      setActiveProjectId(filteredProjects[0].id);
+    }
+  }, [searchQuery, filteredProjects, activeProjectId]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -252,43 +286,50 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         }
       />
 
-      <div className={`mt-6 grid min-h-0 flex-1 gap-0 ${compactLayout ? 'grid-cols-1' : 'grid-cols-[18rem_minmax(0,1fr)]'}`}>
-        <ProjectListPanel
-          copy={copy}
-          projects={projects}
-          stats={stats}
-          activeProjectId={activeProject?.id ?? ''}
-          compactLayout={compactLayout}
-          snapshotLoading={snapshotLoading}
-          snapshotRefreshing={snapshotRefreshing}
-          snapshotError={snapshotError}
-          onRetry={() => void loadSnapshot()}
-          onRefresh={() => void loadSnapshot('refresh')}
-          onSelectProject={(projectID, openCompact) => {
-            setActiveProjectId(projectID);
-            if (openCompact) {
-              setCompactSessionsOpen(true);
-            }
-          }}
-          onOpenProviderEditor={openProviderEditor}
-        />
-        {compactLayout ? null : (
-          <SessionsPanel
+      <div className={`mt-8 flex min-h-0 flex-1 border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)] ${compactLayout ? 'flex-col' : 'flex-row'}`}>
+        <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-4' : 'w-[20rem] shrink-0 border-r-4'}`}>
+          <ProjectListPanel
             copy={copy}
-            activeProjectName={activeProject?.name ?? copy.unavailable}
-            activeFilter={activeFilter}
-            filters={sessionFilters.map((filter) => ({
-              id: filter.id,
-              label: t(filter.labelKey),
-            }))}
+            projects={filteredProjects}
+            stats={stats}
+            activeProjectId={activeProject?.id ?? ''}
+            compactLayout={compactLayout}
             snapshotLoading={snapshotLoading}
+            snapshotRefreshing={snapshotRefreshing}
             snapshotError={snapshotError}
-            visibleSessions={visibleSessions}
+            searchQuery={searchQuery}
             onRetry={() => void loadSnapshot()}
             onRefresh={() => void loadSnapshot('refresh')}
-            onSelectFilter={setActiveFilter}
-            onSelectSession={setSelectedSessionId}
+            onSelectProject={(projectID, openCompact) => {
+              setActiveProjectId(projectID);
+              if (openCompact) {
+                setCompactSessionsOpen(true);
+              }
+            }}
+            onOpenProviderEditor={openProviderEditor}
+            onSearchChange={setSearchQuery}
           />
+        </div>
+
+        {compactLayout ? null : (
+          <div className="flex min-h-0 flex-1 flex-col min-w-0">
+            <SessionsPanel
+              copy={copy}
+              activeProjectName={activeProject?.name ?? copy.unavailable}
+              activeFilter={activeFilter}
+              filters={sessionFilters.map((filter) => ({
+                id: filter.id,
+                label: t(filter.labelKey),
+              }))}
+              snapshotLoading={snapshotLoading}
+              snapshotError={snapshotError}
+              visibleSessions={visibleSessions}
+              onRetry={() => void loadSnapshot()}
+              onRefresh={() => void loadSnapshot('refresh')}
+              onSelectFilter={setActiveFilter}
+              onSelectSession={setSelectedSessionId}
+            />
+          </div>
         )}
       </div>
 

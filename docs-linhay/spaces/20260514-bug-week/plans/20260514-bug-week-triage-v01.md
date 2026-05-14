@@ -130,3 +130,31 @@
 - 验证结果：已将 Usage Desk 天级趋势和分钟明细都切到 `curveMotion="realtime"`；Playwright 隔离上下文注入 7 天样本后确认天级趋势仍为 7 个数据点，SVG 曲线动画为 `usage-desk-curve-sweep 1.4s`，点位延迟从 `0s` 到 `0.36s`，没有生成秒级数据点。已通过 usageDesk 目标单测、`npm run typecheck`、`npm run test:unit`、`npm run build`。
 - 截图：`screenshots/20260514/usage-desk/20260514-usage-desk-curve-motion-daily-after-v02.png`
 - 备注：
+
+### batch-04-session-project-row-density
+
+- 状态：verified
+- 来源：用户标注 `SessionManagementView.tsx:ProjectListPanel` 选中态编辑图标不可见、标签文本量仍过大
+- 影响范围：Session Management 项目列表
+- 复现步骤：打开 Session Management，选中项目行，观察右侧编辑按钮和项目统计标签
+- 预期结果：选中行编辑图标仍清晰可见；项目行标签更短、更紧凑
+- 实际结果：选中行编辑按钮文字色与按钮背景同为 `bg-main`，图标不可见；标签显示“条会话 / 活跃 / 归档”等较长文本
+- 验收标准：选中态编辑按钮保持可见对比；项目标签缩减为短计数；窄宽下 provider/最近时间继续降级隐藏
+- 测试计划：运行 session-management 目标单测、typecheck、build；浏览器截图验收选中行
+- 验证结果：已将选中态编辑按钮改为白底深色 Pencil 图标；项目统计标签缩短为 `会/活/归` 与 `S/A/R` 计数；520px 以下隐藏标签组并压缩项目行 padding/gap，保留项目名截断和编辑入口。已通过 session-management 目标单测、`npm run typecheck`、`npm run build`；Playwright 桌面和 375px 截图确认选中态编辑图标可见、窄宽不再显示竖排标签。
+- 截图：`screenshots/20260514/session-management/20260514-session-management-project-row-density-after-v02.png`、`screenshots/20260514/session-management/20260514-session-management-project-row-density-mobile-after-v04.png`
+- 备注：
+
+### batch-05-session-time-layout
+
+- 状态：verified
+- 来源：用户标注 `SessionManagementView.tsx:SessionsPanel` 和 `ProjectListPanel` 时间布局
+- 影响范围：Session Management 项目列表和会话列表
+- 复现步骤：打开 Session Management，观察项目行最近时间和会话行更新时间
+- 预期结果：会话正文占满右侧可用宽度并保持两行区域；更新时间单独起一行放右下角，不再使用标签样式；项目最近时间同样单独右下角显示
+- 实际结果：会话更新时间混在标签轨道里，会挤占 provider/message/file 标签空间；项目最近时间也作为标签显示
+- 验收标准：时间从标签轨道移除；会话 summary 保持两行高度并占满行宽；项目/会话时间均为右下角纯文本
+- 测试计划：运行 session-management 目标单测、typecheck、build；浏览器截图验收
+- 验证结果：已移除 `projectRecentTag` 标签文案；项目最近时间改为右下角纯文本；会话更新时间从 meta 标签组移到行尾右下角；会话 title 单行截断，summary 使用两行 clamp 区域占满可用宽度。已通过 session-management 目标单测、`npm run typecheck`，并完成 Playwright 截图验收。
+- 截图：`screenshots/20260514/session-management/20260514-session-management-session-time-layout-after-v02.png`
+- 备注：

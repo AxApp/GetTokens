@@ -33,13 +33,11 @@ export function createSessionManagementCopy(
         ? `Active ${project.activeSessionCount} / Archived ${project.archivedSessionCount}`
         : `活跃 ${project.activeSessionCount} / 归档 ${project.archivedSessionCount}`,
     projectSessionTag: (project: ProjectSummary) =>
-      isEnglish ? `${project.sessionCount} sessions` : `${project.sessionCount} 条会话`,
+      isEnglish ? `S ${project.sessionCount}` : `会 ${project.sessionCount}`,
     projectActiveTag: (project: ProjectSummary) =>
-      isEnglish ? `Active ${project.activeSessionCount}` : `活跃 ${project.activeSessionCount}`,
+      isEnglish ? `A ${project.activeSessionCount}` : `活 ${project.activeSessionCount}`,
     projectArchivedTag: (project: ProjectSummary) =>
-      isEnglish ? `Archived ${project.archivedSessionCount}` : `归档 ${project.archivedSessionCount}`,
-    projectRecentTag: (project: ProjectSummary) =>
-      isEnglish ? `Recent ${project.lastActiveAt}` : `最近 ${project.lastActiveAt}`,
+      isEnglish ? `R ${project.archivedSessionCount}` : `归 ${project.archivedSessionCount}`,
     sessionSubtitleLine: (session: {
       summary: string;
       messageCount: number;
@@ -79,5 +77,7 @@ export function createSessionManagementCopy(
     modalMetaStatus: isEnglish ? 'Status' : '状态',
     modalMetaCurrent: resolve('session_management.modal_summary_current', '当前消息', 'Current'),
     modalMetaTopic: resolve('session_management.modal_summary_topic', '主题', 'Topic'),
+    searchPlaceholder: isEnglish ? 'Search projects & sessions…' : '搜索项目或会话…',
+    searchNoResults: isEnglish ? 'No results.' : '无匹配结果。',
   };
 }

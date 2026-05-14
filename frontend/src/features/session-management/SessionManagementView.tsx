@@ -1,4 +1,4 @@
-import { Pencil, RefreshCw, X } from 'lucide-react';
+import { Pencil, RefreshCw, Search, X } from 'lucide-react';
 import type {
   MessageRole,
   ProjectSummary,
@@ -24,7 +24,6 @@ export interface SessionManagementCopy {
   projectSessionTag: (project: ProjectSummary) => string;
   projectActiveTag: (project: ProjectSummary) => string;
   projectArchivedTag: (project: ProjectSummary) => string;
-  projectRecentTag: (project: ProjectSummary) => string;
   sessionSubtitleLine: (session: {
     summary: string;
     messageCount: number;
@@ -55,6 +54,8 @@ export interface SessionManagementCopy {
   modalMetaStatus: string;
   modalMetaCurrent: string;
   modalMetaTopic: string;
+  searchPlaceholder: string;
+  searchNoResults: string;
 }
 
 export interface ProviderMergeRow {
@@ -123,17 +124,13 @@ export function StatePanel({
   onAction?: () => void;
 }) {
   return (
-    <div className="flex min-h-[12rem] flex-col items-start justify-center gap-3 px-5 py-6 text-left">
-      <div className="text-sm font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">{title}</div>
+    <div className="flex min-h-[10rem] flex-col items-start justify-center gap-2.5 px-6 py-8 text-left">
+      <div className="text-[0.8125rem] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">{title}</div>
       {description ? (
-        <div className="max-w-2xl text-[0.75rem] leading-6 text-[var(--text-muted)]">{description}</div>
+        <div className="text-[0.5625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{description}</div>
       ) : null}
       {actionLabel && onAction ? (
-        <button
-          type="button"
-          onClick={onAction}
-          className="border-2 border-[var(--border-color)] px-4 py-2 text-[0.625rem] font-black uppercase tracking-[0.22em] transition-colors hover:bg-[var(--border-color)] hover:text-[var(--bg-main)]"
-        >
+        <button type="button" onClick={onAction} className="btn-swiss mt-1">
           {actionLabel}
         </button>
       ) : null}
@@ -147,44 +144,38 @@ export function LoadingBar({ className = '' }: { className?: string }) {
 
 export function InitialLoadingShell({ copy }: { copy: SessionManagementCopy }) {
   return (
-    <div className="mt-6 grid min-h-0 flex-1 grid-cols-[22rem_minmax(0,1fr)] gap-0 max-[960px]:grid-cols-1">
-      <section className="flex min-h-0 flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-        <div className="flex h-14 items-center justify-between gap-3 border-b-2 border-[var(--border-color)] px-5">
-          <h2 className="text-[0.75rem] font-black uppercase tracking-[0.3em]">{copy.projectListTitle}</h2>
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{copy.loading}</div>
+    <div className="mt-6 grid min-h-0 flex-1 grid-cols-[18rem_minmax(0,1fr)] border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
+      <section className="flex min-h-0 flex-col border-r-4 border-[var(--border-color)]">
+        <div className="flex h-14 items-center border-b-4 border-[var(--border-color)] px-5">
+          <h2 className="text-[0.75rem] font-black uppercase tracking-[0.25em]">{copy.projectListTitle}</h2>
         </div>
-        <div className="space-y-0">
-          {Array.from({ length: 8 }).map((_, index) => (
+        <div>
+          {Array.from({ length: 5 }).map((_, index) => (
             <div key={`project-loading-${index}`} className="border-b border-[var(--border-color)] px-5 py-4">
-              <LoadingBar className="h-4 w-32" />
-              <LoadingBar className="mt-3 h-3 w-full max-w-[15rem]" />
+              <LoadingBar className="h-4 w-36" />
+              <div className="mt-2.5 flex items-center gap-1.5">
+                <LoadingBar className="h-3.5 w-10" />
+                <LoadingBar className="h-3.5 w-8" />
+                <LoadingBar className="h-3.5 w-8" />
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="flex min-h-0 flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-        <div className="flex h-14 items-center justify-between gap-3 border-b-2 border-[var(--border-color)] px-5">
-          <div className="flex min-w-0 items-center gap-4">
-            <h2 className="shrink-0 text-[0.75rem] font-black uppercase tracking-[0.3em]">{copy.projectSessionsTitle}</h2>
-            <LoadingBar className="h-3 w-28" />
-          </div>
-          <div className="flex items-center gap-2">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <LoadingBar key={`filter-loading-${index}`} className="h-8 w-16 border border-[var(--border-color)]" />
-            ))}
-          </div>
+      <section className="flex min-h-0 flex-col">
+        <div className="flex h-14 items-center border-b-4 border-[var(--border-color)] px-5">
+          <h2 className="text-[0.75rem] font-black uppercase tracking-[0.25em]">{copy.projectSessionsTitle}</h2>
         </div>
-        <div className="space-y-0">
-          {Array.from({ length: 7 }).map((_, index) => (
-            <div key={`session-loading-${index}`} className="border-b border-[var(--border-color)] px-5 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <LoadingBar className="h-4 w-56 max-w-full" />
-                  <LoadingBar className="mt-3 h-3 w-full max-w-[28rem]" />
-                </div>
-                <LoadingBar className="h-7 w-14 border border-[var(--border-color)]" />
+        <div>
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={`session-loading-${index}`} className="border-b border-[var(--border-color)] px-6 py-4">
+              <div className="flex items-center justify-between gap-4">
+                <LoadingBar className="h-4 w-48" />
+                <LoadingBar className="h-4 w-12" />
               </div>
+              <LoadingBar className="mt-2 h-3 w-64 max-w-full" />
+              <LoadingBar className="mt-1.5 h-2.5 w-40" />
             </div>
           ))}
         </div>
@@ -202,10 +193,12 @@ export function ProjectListPanel({
   snapshotLoading,
   snapshotRefreshing,
   snapshotError,
+  searchQuery,
   onRetry,
   onRefresh,
   onSelectProject,
   onOpenProviderEditor,
+  onSearchChange,
 }: {
   copy: SessionManagementCopy;
   projects: ProjectSummary[];
@@ -215,19 +208,41 @@ export function ProjectListPanel({
   snapshotLoading: boolean;
   snapshotRefreshing: boolean;
   snapshotError: string | null;
+  searchQuery: string;
   onRetry: () => void;
   onRefresh: () => void;
   onSelectProject: (projectID: string, openCompact: boolean) => void;
   onOpenProviderEditor: (projectID: string) => void;
+  onSearchChange: (query: string) => void;
 }) {
   return (
-    <section className="flex min-h-0 flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-      <div className="flex h-14 items-center justify-between gap-3 border-b-2 border-[var(--border-color)] px-5">
-        <h2 className="text-[0.75rem] font-black uppercase tracking-[0.3em]">{copy.projectListTitle}</h2>
+    <section className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--border-color)] px-5">
+        <h2 className="text-[0.75rem] font-black uppercase tracking-[0.25em]">{copy.projectListTitle}</h2>
         {snapshotRefreshing ? (
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="animate-pulse text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {copy.refreshing}
-          </div>
+          </span>
+        ) : null}
+      </div>
+      {/* Search input */}
+      <div className="flex shrink-0 items-center gap-2 border-b-4 border-[var(--border-color)] px-4 py-2.5">
+        <Search className="h-3 w-3 shrink-0 text-[var(--text-muted)]" strokeWidth={2.5} />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          placeholder={copy.searchPlaceholder}
+          className="min-w-0 flex-1 bg-transparent text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 focus:outline-none"
+        />
+        {searchQuery ? (
+          <button
+            type="button"
+            onClick={() => onSearchChange('')}
+            className="shrink-0 text-[var(--text-muted)] hover:text-[var(--text-primary)] active:scale-90"
+          >
+            <X className="h-3 w-3" strokeWidth={2.5} />
+          </button>
         ) : null}
       </div>
       {snapshotLoading && !projects.length && !snapshotError ? (
@@ -241,55 +256,75 @@ export function ProjectListPanel({
             return (
               <div
                 key={project.id}
-                className={`flex w-full items-start gap-3 overflow-hidden border-b border-[var(--border-color)] px-5 py-4 text-left transition-colors select-text ${
-                  isActive ? 'bg-[var(--border-color)] text-[var(--bg-main)]' : 'bg-transparent hover:bg-[var(--bg-surface)]'
+                className={`group flex w-full items-stretch border-b border-[var(--border-color)] transition-colors ${
+                  isActive ? 'bg-[var(--border-color)]' : 'hover:bg-[var(--bg-surface)]'
                 }`}
               >
+                {/* Left accent line */}
+                <div className={`w-0.5 shrink-0 self-stretch transition-colors ${
+                  isActive ? 'bg-[var(--bg-main)]' : 'bg-transparent group-hover:bg-[var(--text-muted)]/40'
+                }`} />
+
                 <button
                   type="button"
                   onClick={() => onSelectProject(project.id, compactLayout)}
-                  className="min-w-0 flex-1 text-left"
+                  className="flex min-w-0 flex-1 flex-col gap-2.5 py-4 pl-4 pr-3 text-left active:opacity-70"
                 >
-                  <div className="truncate text-sm font-black uppercase tracking-[0.14em]">{project.name}</div>
-                  <div
-                    className={`mt-3 flex min-w-0 flex-wrap items-center gap-1.5 text-[0.5625rem] font-black uppercase tracking-[0.14em] ${
-                      isActive ? 'text-[var(--bg-main)]/80' : 'text-[var(--text-muted)]'
-                    }`}
-                  >
-                    <span className="inline-flex max-w-full shrink-0 border border-current px-1.5 py-0.5">
-                      {copy.projectSessionTag(project)}
-                    </span>
-                    <span className="inline-flex max-w-full shrink-0 border border-current px-1.5 py-0.5">
-                      {copy.projectActiveTag(project)}
-                    </span>
-                    <span className="inline-flex max-w-full shrink-0 border border-current px-1.5 py-0.5">
-                      {copy.projectArchivedTag(project)}
-                    </span>
-                    <span className="hidden max-w-full truncate border border-current px-1.5 py-0.5 min-[420px]:inline-flex">
+                  <div className={`truncate text-[0.875rem] font-black uppercase tracking-tight leading-none ${
+                    isActive ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'
+                  }`}>
+                    {project.name}
+                  </div>
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                    {[
+                      copy.projectSessionTag(project),
+                      copy.projectActiveTag(project),
+                      copy.projectArchivedTag(project),
+                    ].map((tag) => (
+                      <span
+                        key={tag}
+                        className={`border px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-[0.16em] leading-none ${
+                          isActive
+                            ? 'border-[var(--bg-main)]/60 text-[var(--bg-main)]'
+                            : 'border-[var(--border-color)]/60 text-[var(--text-muted)]'
+                        }`}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                    <span className={`truncate text-[0.5rem] font-bold uppercase tracking-[0.12em] leading-none ${
+                      isActive ? 'text-[var(--bg-main)]/60' : 'text-[var(--text-muted)]/50'
+                    }`}>
                       {getProviderDisplayLabel(project.providerSummary, copy.unknownProvider)}
-                    </span>
-                    <span className="hidden max-w-full truncate border border-current px-1.5 py-0.5 min-[560px]:inline-flex">
-                      {copy.projectRecentTag(project)}
                     </span>
                   </div>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenProviderEditor(project.id)}
-                  className={`btn-swiss shrink-0 !px-2 !py-1 !text-[0.5625rem] !shadow-none ${
-                    isActive ? '!border-[var(--bg-main)]/40 !text-[var(--bg-main)] hover:!bg-[var(--bg-main)]/10' : ''
-                  }`}
-                  title="编辑 provider 归并"
-                  aria-label="编辑 provider 归并"
-                >
-                  <Pencil className="h-3.5 w-3.5" strokeWidth={2.5} />
-                </button>
+
+                <div className="flex shrink-0 items-center px-3">
+                  <button
+                    type="button"
+                    onClick={() => onOpenProviderEditor(project.id)}
+                    aria-label="Edit provider mapping"
+                    className={`flex h-7 w-7 items-center justify-center border transition-all active:scale-90 ${
+                      isActive
+                        ? 'border-[var(--bg-main)]/30 text-[var(--bg-main)] hover:border-[var(--bg-main)]'
+                        : 'border-transparent text-[var(--text-muted)]/40 hover:border-[var(--border-color)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    <Pencil className="h-3 w-3" strokeWidth={2.5} />
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
       ) : (
-        <StatePanel title={copy.noProjects} description={copy.scanLine(stats.lastScanAt)} actionLabel={copy.refresh} onAction={onRefresh} />
+        <StatePanel
+          title={searchQuery ? copy.searchNoResults : copy.noProjects}
+          description={searchQuery ? undefined : copy.scanLine(stats.lastScanAt)}
+          actionLabel={searchQuery ? undefined : copy.refresh}
+          onAction={searchQuery ? undefined : onRefresh}
+        />
       )}
     </section>
   );
@@ -321,13 +356,13 @@ export function SessionsPanel({
   onSelectSession: (sessionID: string) => void;
 }) {
   return (
-    <section className="flex min-h-0 flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-      <div className="flex h-14 items-center justify-between gap-3 border-b-2 border-[var(--border-color)] px-5">
-        <div className="flex min-w-0 items-center gap-4">
-          <h2 className="shrink-0 text-[0.75rem] font-black uppercase tracking-[0.3em]">{copy.projectSessionsTitle}</h2>
-          <div className="truncate text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            {activeProjectName}
-          </div>
+    <section className="flex min-h-0 flex-1 flex-col">
+      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b-4 border-[var(--border-color)] px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <h2 className="shrink-0 text-[0.75rem] font-black uppercase tracking-[0.25em]">{copy.projectSessionsTitle}</h2>
+          <span className="truncate text-[0.6875rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            / {activeProjectName}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           {filters.map((filter) => {
@@ -337,10 +372,10 @@ export function SessionsPanel({
                 key={filter.id}
                 type="button"
                 onClick={() => onSelectFilter(filter.id)}
-                className={`border px-3 py-1 text-[0.625rem] font-black uppercase tracking-[0.18em] transition-all ${
+                className={`border px-3 py-1.5 text-[0.5625rem] font-black uppercase tracking-[0.2em] transition-colors active:scale-95 ${
                   isActive
                     ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                    : 'border-[var(--border-color)] bg-transparent text-[var(--text-primary)]'
+                    : 'border-[var(--border-color)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
                 }`}
               >
                 {filter.label}
@@ -350,9 +385,11 @@ export function SessionsPanel({
           <button
             type="button"
             onClick={onRefresh}
-            className="border px-3 py-1 text-[0.625rem] font-black uppercase tracking-[0.18em] transition-colors hover:bg-[var(--bg-surface)]"
+            aria-label={copy.refresh}
+            title={copy.refresh}
+            className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
           >
-            {copy.refresh}
+            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         </div>
       </div>
@@ -361,56 +398,58 @@ export function SessionsPanel({
       ) : (
         <>
           {snapshotError ? (
-            <div className="border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-3 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-[var(--accent-red)]">
+            <div className="border-b border-[var(--border-color)] px-5 py-2.5 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
               {copy.loadFailed} / {snapshotError}
             </div>
           ) : null}
-          <div className="min-h-0 overflow-y-auto">
+          <div className="min-h-0 overflow-y-auto overflow-x-hidden">
             {visibleSessions.length ? (
               visibleSessions.map((session) => (
                 <button
                   key={session.id}
                   type="button"
                   onClick={() => onSelectSession(session.id)}
-                  className="w-full overflow-hidden border-b border-[var(--border-color)] px-5 py-4 text-left transition-colors hover:bg-[var(--bg-surface)] select-text"
+                  className="group block w-full border-b border-[var(--border-color)] px-6 py-4 text-left transition-colors hover:bg-[var(--bg-surface)] active:bg-[var(--bg-muted)]"
                 >
-                  <div>
-                    <div>
-                      {session.title ? (
-                        <div className="text-sm font-black uppercase tracking-[0.16em]">{session.title}</div>
-                      ) : null}
-                      <div className={`${session.title ? 'mt-2 ' : ''}line-clamp-2 text-[0.625rem] font-bold uppercase leading-5 tracking-[0.16em] text-[var(--text-muted)]`}>
-                        {session.summary || getFileName(session.fileLabel, copy.unavailable)}
-                      </div>
+                  {/* Line 1: title + status badge */}
+                  <div className="flex items-baseline justify-between gap-4">
+                    <div className="min-w-0 flex-1 truncate text-[0.875rem] font-black uppercase tracking-tight leading-none text-[var(--text-primary)]">
+                      {session.title || 'UNTITLED SESSION'}
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.5625rem] font-black uppercase tracking-[0.18em]">
-                      <div
-                        className={`inline-flex border px-2 py-1 ${
-                          session.status === 'active'
-                            ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                            : 'border-[var(--border-color)] text-[var(--text-muted)]'
-                        }`}
-                      >
-                        {session.status === 'active' ? copy.filterActive : copy.filterArchived}
-                      </div>
-                      <div className="inline-flex border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
-                        {getProviderDisplayLabel(session.provider, copy.unknownProvider)}
-                      </div>
-                      <div className="inline-flex border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
-                        {copy.metaMessages} {session.messageCount}
-                      </div>
-                      <div className="inline-flex border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
-                        {copy.metaUpdated} {session.updatedAt}
-                      </div>
-                      <div className="inline-flex max-w-full truncate border border-[var(--border-color)] px-2 py-1 text-[var(--text-muted)]">
-                        {getFileName(session.fileLabel, session.id)}
-                      </div>
+                    <span className={`shrink-0 border px-2 py-0.5 text-[0.4375rem] font-black uppercase tracking-[0.22em] leading-none ${
+                      session.status === 'active'
+                        ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
+                        : 'border-[var(--border-color)]/50 text-[var(--text-muted)]'
+                    }`}>
+                      {session.status}
+                    </span>
+                  </div>
+
+                  {/* Line 2: summary */}
+                  {session.summary ? (
+                    <div className="mt-1.5 truncate text-[0.6875rem] leading-snug text-[var(--text-muted)]">
+                      {session.summary}
                     </div>
+                  ) : null}
+
+                  {/* Line 3: metadata */}
+                  <div className="mt-2 flex items-center gap-x-2 text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]/60">
+                    <span>{getProviderDisplayLabel(session.provider, copy.unknownProvider)}</span>
+                    <span>·</span>
+                    <span>{session.messageCount} msgs</span>
+                    <span>·</span>
+                    <span className="max-w-[8rem] truncate">{getFileName(session.fileLabel, session.id)}</span>
+                    <span className="ml-auto shrink-0">{session.updatedAt}</span>
                   </div>
                 </button>
               ))
             ) : (
-              <StatePanel title={copy.noSessions} description={activeProjectName} actionLabel={snapshotError ? copy.retry : undefined} onAction={snapshotError ? onRetry : undefined} />
+              <StatePanel
+                title={copy.noSessions}
+                description={activeProjectName}
+                actionLabel={snapshotError ? copy.retry : undefined}
+                onAction={snapshotError ? onRetry : undefined}
+              />
             )}
           </div>
         </>
@@ -444,28 +483,28 @@ export function ProviderMergeModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-3xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+        className="flex w-full max-w-2xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-management-provider-merge-title"
       >
-        <div className="flex items-start justify-between gap-4 border-b-2 border-[var(--border-color)] px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
           <div>
-            <div className="text-[0.625rem] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+            <div className="text-[0.5rem] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
               Provider 归并
             </div>
             <h3
               id="session-management-provider-merge-title"
-              className="mt-2 text-2xl font-black italic uppercase tracking-tight"
+              className="mt-1 text-xl font-black uppercase tracking-tight"
             >
               {projectName}
             </h3>
-            <div className="mt-3 text-[0.75rem] leading-6 text-[var(--text-muted)]">
+            <div className="mt-1.5 text-[0.625rem] leading-5 text-[var(--text-muted)]">
               把同一项目下不同 provider 的会话归到同一个 provider 标签下。保存后会直接修改对应 rollout 文件里的 provider。
             </div>
           </div>
@@ -474,18 +513,18 @@ export function ProviderMergeModal({
             onClick={onClose}
             aria-label={copy.close}
             title={copy.close}
-            className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]"
+            className="flex h-7 w-7 shrink-0 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] active:scale-90"
           >
-            <X className="h-4 w-4" strokeWidth={2.5} />
+            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto px-6 py-5">
-          <div className="grid grid-cols-[minmax(0,16rem)_minmax(0,1fr)] border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-            <div className="border-b-2 border-r-2 border-[var(--border-color)] px-4 py-3 text-[0.5625rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
-              来源 provider
+        <div className="max-h-[55vh] overflow-y-auto">
+          <div className="grid grid-cols-[minmax(0,14rem)_minmax(0,1fr)]">
+            <div className="border-b border-r-4 border-[var(--border-color)] px-4 py-2.5 text-[0.4375rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              来源 Provider
             </div>
-            <div className="border-b-2 border-[var(--border-color)] px-4 py-3 text-[0.5625rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+            <div className="border-b border-[var(--border-color)] px-4 py-2.5 text-[0.4375rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
               归并目标
             </div>
             {rows.map((row) => (
@@ -493,20 +532,20 @@ export function ProviderMergeModal({
                 key={row.sourceKey}
                 className="contents"
               >
-                <div className="border-b border-r-2 border-[var(--border-color)] px-4 py-4">
-                  <div className="text-sm font-black uppercase tracking-[0.16em]">
+                <div className="border-b border-r-4 border-[var(--border-color)] px-4 py-3">
+                  <div className="text-[0.75rem] font-black uppercase tracking-[0.12em]">
                     {getProviderDisplayLabel(row.sourceProvider, copy.unknownProvider)}
                   </div>
-                  <div className="mt-2 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <div className="mt-1 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {row.count} 条会话
                   </div>
                 </div>
-                <label className="block border-b border-[var(--border-color)] px-4 py-4">
+                <label className="block border-b border-[var(--border-color)] px-4 py-3">
                   <input
                     value={row.targetProvider}
                     disabled={saving}
                     onChange={(event) => onChangeValue(row.sourceKey, event.target.value)}
-                    className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[0.75rem] font-bold uppercase tracking-[0.14em] text-[var(--text-primary)] outline-none focus:border-[var(--accent-red)]"
+                    className="w-full border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-1.5 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-[var(--text-primary)] outline-none focus:border-[var(--accent-red)] disabled:opacity-50"
                     placeholder={copy.unknownProvider}
                     list={`provider-merge-candidates-${row.sourceKey}`}
                   />
@@ -515,7 +554,7 @@ export function ProviderMergeModal({
                       <option key={`${row.sourceKey}-${candidate}`} value={candidate} />
                     ))}
                   </datalist>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  <div className="mt-2 flex flex-wrap gap-1.5">
                     {candidates.map((candidate) => {
                       const isSelected = candidate === getProviderDisplayLabel(row.targetProvider, copy.unknownProvider);
                       return (
@@ -524,10 +563,10 @@ export function ProviderMergeModal({
                           type="button"
                           disabled={saving}
                           onClick={() => onChangeValue(row.sourceKey, candidate)}
-                          className={`border px-2.5 py-1 text-[0.5625rem] font-black uppercase tracking-[0.18em] ${
+                          className={`border px-2 py-1 text-[0.4375rem] font-black uppercase tracking-[0.18em] transition-colors active:scale-95 ${
                             isSelected
                               ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                              : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]'
+                              : 'border-[var(--border-color)]/40 text-[var(--text-muted)] hover:border-[var(--border-color)] hover:text-[var(--text-primary)]'
                           }`}
                         >
                           {candidate}
@@ -540,17 +579,17 @@ export function ProviderMergeModal({
             ))}
           </div>
           {error ? (
-            <div className="mt-4 border border-[var(--accent-red)] bg-[var(--bg-main)] px-4 py-3 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-[var(--accent-red)]">
+            <div className="border-t-4 border-[var(--border-color)] px-5 py-3 text-[0.5625rem] font-bold uppercase tracking-[0.14em] text-[var(--accent-red)]">
               {error}
             </div>
           ) : null}
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t-2 border-[var(--border-color)] px-6 py-4">
+        <div className="flex items-center justify-between gap-3 border-t-4 border-[var(--border-color)] px-5 py-3">
           <button type="button" onClick={onReset} disabled={saving} className="btn-swiss">
             恢复当前值
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button type="button" onClick={onClose} disabled={saving} className="btn-swiss">
               取消
             </button>
@@ -589,89 +628,101 @@ export function SessionDetailModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-6xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)] select-text"
+        className="flex max-h-[90vh] w-full max-w-5xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)] select-text"
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="session-management-dialog-title"
       >
-        <div className="flex items-start justify-between gap-4 border-b-2 border-[var(--border-color)] px-6 py-5">
-          <div>
-            <div className="text-[0.625rem] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-[0.5rem] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
               {copy.modalTitle}
             </div>
-            <h3 id="session-management-dialog-title" className="mt-2 text-2xl font-black italic uppercase tracking-tight">
+            <h3 id="session-management-dialog-title" className="mt-1 truncate text-xl font-black uppercase tracking-tight">
               {getFileName(selectedSessionDetail?.fileLabel ?? selectedSessionSummary?.fileLabel, copy.unavailable)}
             </h3>
-            <div className="mt-3 space-y-2 text-[0.75rem] leading-6 text-[var(--text-muted)]">
-              <div className="text-[0.625rem] font-bold uppercase tracking-[0.18em]">
-                项目：{modalProjectName}
-              </div>
-              <div>
-                Provider：
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <span>{modalProjectName}</span>
+              <span className="opacity-40">·</span>
+              <span>
+                {copy.metaProvider}:{' '}
                 {getProviderDisplayLabel(
                   selectedSessionSummary?.provider ?? selectedSessionDetail?.provider,
                   copy.unknownProvider,
                 )}
-                {' / '}
-                状态：{selectedSessionStatus === null ? copy.unavailable : selectedSessionStatus === 'archived' ? copy.filterArchived : copy.filterActive}
-                {' / '}
-                消息：{(selectedSessionDetail?.messageCount ?? selectedSessionSummary?.messageCount) ?? 0}
-                {' / '}
-                当前：{selectedSessionDetail?.currentMessageLabel ?? copy.unavailable}
-              </div>
+              </span>
+              <span className="opacity-40">·</span>
+              <span>
+                {copy.modalMetaStatus}:{' '}
+                {selectedSessionStatus === null
+                  ? copy.unavailable
+                  : selectedSessionStatus === 'archived'
+                  ? copy.filterArchived
+                  : copy.filterActive}
+              </span>
+              <span className="opacity-40">·</span>
+              <span>
+                {copy.metaMessages}: {(selectedSessionDetail?.messageCount ?? selectedSessionSummary?.messageCount) ?? 0}
+              </span>
+              {selectedSessionDetail?.currentMessageLabel ? (
+                <>
+                  <span className="opacity-40">·</span>
+                  <span>{copy.modalMetaCurrent}: {selectedSessionDetail.currentMessageLabel}</span>
+                </>
+              ) : null}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             {detailState.refreshing ? (
-              <div className="text-[0.625rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              <span className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                 {copy.refreshing}
-              </div>
+              </span>
             ) : null}
             <button
               type="button"
               onClick={onRefresh}
               aria-label={copy.refresh}
               title={copy.refresh}
-              className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]"
+              className="flex h-7 w-7 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
             >
-              <RefreshCw className={`h-4 w-4 ${detailState.refreshing ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+              <RefreshCw className={`h-3.5 w-3.5 ${detailState.refreshing ? 'animate-spin' : ''}`} strokeWidth={2.5} />
             </button>
             <button
               type="button"
               onClick={onClose}
               aria-label={copy.close}
               title={copy.close}
-              className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]"
+              className="flex h-7 w-7 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
             >
-              <X className="h-4 w-4" strokeWidth={2.5} />
+              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
             </button>
           </div>
         </div>
         {detailState.error ? (
-          <div className="border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-3 text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-[var(--accent-red)]">
+          <div className="border-b border-[var(--border-color)] px-5 py-2.5 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
             {copy.loadFailed} / {detailState.error}
           </div>
         ) : null}
         <div className="min-h-0 overflow-y-auto">
           {detailState.loading && !selectedSessionDetail ? (
-            <div className="px-6 py-4">
-              {Array.from({ length: 4 }).map((_, index) => (
+            <div className="px-5 py-3">
+              {Array.from({ length: 5 }).map((_, index) => (
                 <div
                   key={`placeholder-${index}`}
-                  className="border-b border-[var(--border-color)] py-4"
+                  className="border-b border-[var(--border-color)] py-3"
                 >
-                  <div className="flex items-center gap-4">
-                    <LoadingBar className="h-3 w-10" />
-                    <LoadingBar className="h-3 w-12" />
-                    <LoadingBar className="h-3 w-14" />
+                  <div className="flex items-center gap-3">
+                    <LoadingBar className="h-2.5 w-8" />
+                    <LoadingBar className="h-2.5 w-10" />
+                    <LoadingBar className="h-2.5 w-12" />
                   </div>
-                  <LoadingBar className="mt-3 h-4 w-full" />
-                  <LoadingBar className="mt-2 h-4 w-4/5" />
+                  <LoadingBar className="mt-2.5 h-3 w-full" />
+                  <LoadingBar className="mt-1.5 h-3 w-4/5" />
                 </div>
               ))}
             </div>
@@ -679,15 +730,15 @@ export function SessionDetailModal({
             selectedSessionDetail.messages.map((message, index) => (
               <div
                 key={message.id}
-                className="border-b border-[var(--border-color)] px-6 py-4"
+                className="border-b border-[var(--border-color)] px-5 py-3"
               >
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.625rem] font-black uppercase tracking-[0.18em]">
-                  <span className="text-[var(--text-muted)]">#{String(index + 1).padStart(2, '0')}</span>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.5rem] font-black uppercase tracking-[0.18em]">
+                  <span className="text-[var(--text-muted)]/50">#{String(index + 1).padStart(2, '0')}</span>
                   <span className="text-[var(--text-muted)]">{message.timeLabel}</span>
                   <span className={roleTone(message.role)}>{renderRoleLabel(message.role)}</span>
                 </div>
                 <div
-                  className="mt-3 overflow-hidden text-[0.75rem] leading-6 text-[var(--text-primary)]"
+                  className="mt-2 overflow-hidden text-[0.6875rem] leading-5 text-[var(--text-primary)]"
                   style={{
                     display: '-webkit-box',
                     WebkitBoxOrient: 'vertical',
