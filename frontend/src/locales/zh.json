@@ -38,7 +38,9 @@
     "accounts_codex": "codex",
     "accounts_openai_compatible": "openai-compatible",
     "settings": "应用设置",
-    "debug": "调试面板"
+    "debug": "调试面板",
+    "collapse_sidebar": "收起侧边栏",
+    "expand_sidebar": "展开侧边栏"
   },
   "codex": {
     "title": "Codex",

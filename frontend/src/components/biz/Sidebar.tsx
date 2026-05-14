@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
 import type { AccountWorkspace, AppPage, CodexWorkspace } from '../../types';
 import { formatSidebarVersion } from '../../utils/version';
+import {
+  getSidebarToggleTranslationKey,
+  resolveHoveredSidebarSection,
+  type SidebarSection,
+} from './sidebarState';
 
 const navItems = [
   { id: 'status', label: 'nav.status', icon: 'M12 12m-10 0a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 8v4l3 3' },
@@ -49,79 +55,102 @@ export default function Sidebar({
 }: SidebarProps) {
   const { t } = useI18n();
   const sidebarVersion = formatSidebarVersion(releaseLabel);
-  const [expandedSection, setExpandedSection] = useState<'accounts' | 'codex' | null>(
-    activePage === 'accounts' ||
-      activePage === 'codex'
-      ? activePage
-      : null
-  );
-
-  useEffect(() => {
-    if (
-      activePage !== 'accounts' &&
-      activePage !== 'codex'
-    ) {
-      setExpandedSection(null);
-    }
-  }, [activePage]);
-
-  const accountsExpanded = expandedSection === 'accounts';
-  const codexExpanded = expandedSection === 'codex';
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [hoveredSection, setHoveredSection] = useState<SidebarSection | null>(null);
+  const accountsOpen = hoveredSection === 'accounts';
+  const codexOpen = hoveredSection === 'codex';
+  const sidebarToggleLabel = t(getSidebarToggleTranslationKey(isCollapsed));
 
   return (
     <aside
-      className="flex h-full w-60 shrink-0 flex-col border-r-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+      className={`relative z-20 flex h-full shrink-0 flex-col border-r-2 border-[var(--border-color)] bg-[var(--bg-main)] ${
+        isCollapsed ? 'w-[4.75rem]' : 'w-60'
+      }`}
       data-collaboration-id="NAV_SIDEBAR"
+      data-sidebar-collapsed={isCollapsed ? 'true' : 'false'}
     >
-      <div className="border-b-2 border-[var(--border-color)] p-8">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 shrink-0 text-[var(--accent-red)]">
-            <svg viewBox="0 0 100 100" className="h-full w-full" fill="currentColor">
-              <rect x="10" y="14" width="80" height="32" />
-              <rect x="58" y="46" width="32" height="24" />
-              <rect x="74" y="70" width="16" height="16" />
-              <circle cx="26" cy="30" r="6.4" fill="var(--bg-main)" />
-            </svg>
+      <div className={`border-b-2 border-[var(--border-color)] ${isCollapsed ? 'p-3' : 'p-8'}`}>
+        <div className={`flex ${isCollapsed ? 'flex-col items-center gap-3' : 'items-center justify-between gap-4'}`}>
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-4'}`}>
+            <div className="h-10 w-10 shrink-0 text-[var(--accent-red)]">
+              <svg viewBox="0 0 100 100" className="h-full w-full" fill="currentColor" aria-hidden="true">
+                <rect x="10" y="14" width="80" height="32" />
+                <rect x="58" y="46" width="32" height="24" />
+                <rect x="74" y="70" width="16" height="16" />
+                <circle cx="26" cy="30" r="6.4" fill="var(--bg-main)" />
+              </svg>
+            </div>
+            {!isCollapsed ? (
+              <div className="flex flex-col text-2xl font-black italic tracking-tighter uppercase leading-none">
+                <span>GET</span>
+                <span className="mt-[-4px] text-[var(--text-muted)]">TOKENS</span>
+              </div>
+            ) : null}
           </div>
-          <div className="flex flex-col text-2xl font-black italic tracking-tighter uppercase leading-none">
-            <span>GET</span>
-            <span className="mt-[-4px] text-[var(--text-muted)]">TOKENS</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            aria-label={sidebarToggleLabel}
+            title={sidebarToggleLabel}
+            aria-expanded={!isCollapsed}
+            className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-[var(--border-color)] text-[var(--text-primary)] transition-[background-color,color,transform] duration-150 hover:bg-[var(--border-color)] hover:text-[var(--bg-main)] active:scale-95"
+          >
+            {isCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-4 p-4">
+      <nav className={`flex-1 ${isCollapsed ? 'space-y-3 p-3' : 'space-y-4 p-4'}`}>
         {navItems.map((item) => (
-          <div key={item.id}>
+          <div
+            key={item.id}
+            className="relative"
+            onMouseEnter={() => setHoveredSection(resolveHoveredSidebarSection(item.id))}
+            onMouseLeave={() => setHoveredSection(null)}
+            onFocus={() => setHoveredSection(resolveHoveredSidebarSection(item.id))}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                setHoveredSection(null);
+              }
+            }}
+          >
             <button
+              type="button"
+              aria-label={isCollapsed ? t(item.label) : undefined}
+              aria-expanded={
+                item.id === 'accounts' || item.id === 'codex'
+                  ? (item.id === 'accounts' && accountsOpen) || (item.id === 'codex' && codexOpen)
+                  : undefined
+              }
+              title={isCollapsed ? t(item.label) : undefined}
               onClick={() => {
                 if (item.id === 'accounts') {
                   setActivePage('accounts');
-                  setExpandedSection((prev) => (activePage === 'accounts' && prev === 'accounts' ? null : 'accounts'));
                   return;
                 }
                 if (item.id === 'codex') {
                   setActivePage('codex');
-                  setExpandedSection((prev) => (activePage === 'codex' && prev === 'codex' ? null : 'codex'));
                   return;
                 }
                 setActivePage(item.id);
-                setExpandedSection(null);
+                setHoveredSection(null);
               }}
-              className={`w-full flex items-center gap-3 px-3 py-3 font-bold text-xs uppercase tracking-widest border-2 transition-all active:scale-95 ${
+              className={`flex w-full items-center border-2 py-3 text-xs font-bold uppercase tracking-widest transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
+                isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
+              } ${
                 activePage === item.id
                   ? 'bg-[var(--border-color)] text-[var(--bg-main)] border-[var(--border-color)] shadow-[4px_4px_0_var(--shadow-color)]'
                   : 'border-transparent text-[var(--text-primary)] hover:border-[var(--border-color)]'
               }`}
             >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
                 <path d={item.icon} />
               </svg>
-              <span className="flex-1 text-left">{t(item.label)}</span>
-              {item.id === 'accounts' || item.id === 'codex' ? (
+              {!isCollapsed ? <span className="flex-1 text-left">{t(item.label)}</span> : null}
+              {!isCollapsed && (item.id === 'accounts' || item.id === 'codex') ? (
                 <svg
                   className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ease-out ${
-                    (item.id === 'accounts' && accountsExpanded) || (item.id === 'codex' && codexExpanded)
+                    (item.id === 'accounts' && accountsOpen) || (item.id === 'codex' && codexOpen)
                       ? 'rotate-90'
                       : 'rotate-0'
                   }`}
@@ -129,33 +158,27 @@ export default function Sidebar({
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="3"
+                  aria-hidden="true"
                 >
                   <path d="M9 6l6 6-6 6" />
                 </svg>
               ) : null}
             </button>
-            {item.id === 'accounts' ? (
+            {item.id === 'accounts' && accountsOpen ? (
               <div
-                className={`grid transition-all duration-300 ease-out ${
-                  accountsExpanded ? 'mt-2 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'
-                }`}
-                aria-hidden={!accountsExpanded}
+                className="absolute left-full top-0 z-30 ml-3 w-56 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-2 shadow-[6px_6px_0_var(--shadow-color)]"
               >
                 <div className="overflow-hidden">
-                  <div
-                    className={`space-y-2 pl-6 transition-all duration-300 ease-out ${
-                      accountsExpanded ? 'translate-y-0' : '-translate-y-2'
-                    }`}
-                  >
+                  <div className="space-y-2 pl-0">
                     {accountWorkspaceItems.map((workspace) => (
                       <button
                         key={workspace.id}
                         onClick={() => {
                           setActivePage('accounts');
-                          setExpandedSection('accounts');
+                          setHoveredSection(null);
                           setActiveAccountWorkspace(workspace.id);
                         }}
-                        className={`w-full border px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.2em] transition-all ${
+                        className={`w-full border px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.2em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
                           activeAccountWorkspace === workspace.id
                             ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                             : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
@@ -168,28 +191,21 @@ export default function Sidebar({
                 </div>
               </div>
             ) : null}
-            {item.id === 'codex' ? (
+            {item.id === 'codex' && codexOpen ? (
               <div
-                className={`grid transition-all duration-300 ease-out ${
-                  codexExpanded ? 'mt-2 grid-rows-[1fr] opacity-100' : 'mt-0 grid-rows-[0fr] opacity-0'
-                }`}
-                aria-hidden={!codexExpanded}
+                className="absolute left-full top-0 z-30 ml-3 w-56 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-2 shadow-[6px_6px_0_var(--shadow-color)]"
               >
                 <div className="overflow-hidden">
-                  <div
-                    className={`space-y-2 pl-6 transition-all duration-300 ease-out ${
-                      codexExpanded ? 'translate-y-0' : '-translate-y-2'
-                    }`}
-                  >
+                  <div className="space-y-2 pl-0">
                     {codexWorkspaceItems.map((workspace) => (
                       <button
                         key={workspace.id}
                         onClick={() => {
                           setActivePage('codex');
-                          setExpandedSection('codex');
+                          setHoveredSection(null);
                           setActiveCodexWorkspace(workspace.id);
                         }}
-                        className={`w-full border px-3 py-2 text-left text-[0.6875rem] font-black tracking-[0.08em] transition-all ${
+                        className={`w-full border px-3 py-2 text-left text-[0.6875rem] font-black tracking-[0.08em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
                           activePage === 'codex' && activeCodexWorkspace === workspace.id
                             ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                             : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
@@ -206,10 +222,19 @@ export default function Sidebar({
         ))}
       </nav>
 
-      <div className="border-t-2 border-[var(--border-color)] p-6">
-        <div className="text-[0.5625rem] font-bold uppercase tracking-tighter text-[var(--text-muted)]">
-          VERSION {sidebarVersion}
-        </div>
+      <div className={`border-t-2 border-[var(--border-color)] ${isCollapsed ? 'p-3' : 'p-6'}`}>
+        {isCollapsed ? (
+          <div
+            className="mx-auto h-2.5 w-2.5 bg-[var(--accent-red)]"
+            role="img"
+            aria-label={`VERSION ${sidebarVersion}`}
+            title={`VERSION ${sidebarVersion}`}
+          />
+        ) : (
+          <div className="text-[0.5625rem] font-bold uppercase tracking-tighter text-[var(--text-muted)]">
+            VERSION {sidebarVersion}
+          </div>
+        )}
       </div>
     </aside>
   );

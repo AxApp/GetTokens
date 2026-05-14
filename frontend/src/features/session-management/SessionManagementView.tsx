@@ -1,4 +1,5 @@
-import { ArrowRight, Pencil, RefreshCw, Search, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Check, MoreVertical, Pencil, RefreshCw, Search, X } from 'lucide-react';
 import { Combobox } from '../../components/ui/Combobox.tsx';
 import type {
   MessageRole,
@@ -8,6 +9,11 @@ import type {
   SessionManagementSnapshot,
   SessionSummary,
 } from './model.ts';
+import {
+  formatSessionMetadataDate,
+  shouldUseCompactSessionMetadata,
+  shouldUseSessionsPanelActionMenu,
+} from './sessionManagementUtils.ts';
 
 export interface SessionManagementCopy {
   refresh: string;
@@ -57,6 +63,7 @@ export interface SessionManagementCopy {
   modalMetaTopic: string;
   searchPlaceholder: string;
   searchNoResults: string;
+  sessionActions: string;
 }
 
 export interface ProviderMergeRow {
@@ -370,8 +377,71 @@ export function SessionsPanel({
   onSelectFilter: (filter: SessionFilter) => void;
   onSelectSession: (sessionID: string) => void;
 }) {
+  const panelRef = useRef<HTMLElement | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement | null>(null);
+  const [panelWidth, setPanelWidth] = useState(0);
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
+  const useActionMenu = shouldUseSessionsPanelActionMenu(panelWidth);
+  const useCompactSessionMetadata = shouldUseCompactSessionMetadata(panelWidth);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) {
+      return;
+    }
+
+    const updateWidth = () => {
+      setPanelWidth(panel.getBoundingClientRect().width);
+    };
+    updateWidth();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      setPanelWidth(entry.contentRect.width);
+    });
+    observer.observe(panel);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!useActionMenu) {
+      setActionMenuOpen(false);
+    }
+  }, [useActionMenu]);
+
+  useEffect(() => {
+    if (!actionMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!actionMenuRef.current?.contains(event.target as Node)) {
+        setActionMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setActionMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [actionMenuOpen]);
+
   return (
-    <section className="flex min-h-0 flex-1 flex-col">
+    <section ref={panelRef} className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b-4 border-[var(--border-color)] px-5">
         <div className="flex min-w-0 items-center gap-3">
           <h2 className="shrink-0 text-[0.75rem] font-black uppercase tracking-[0.25em]">{copy.projectSessionsTitle}</h2>
@@ -380,32 +450,93 @@ export function SessionsPanel({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {filters.map((filter) => {
-            const isActive = activeFilter === filter.id;
-            return (
+          {useActionMenu ? (
+            <div ref={actionMenuRef} className="relative">
               <button
-                key={filter.id}
                 type="button"
-                onClick={() => onSelectFilter(filter.id)}
-                className={`border px-3 py-1.5 text-[0.5625rem] font-black uppercase tracking-[0.2em] transition-colors active:scale-95 ${
-                  isActive
-                    ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                    : 'border-[var(--border-color)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
-                }`}
+                aria-label={copy.sessionActions}
+                aria-haspopup="menu"
+                aria-expanded={actionMenuOpen}
+                title={copy.sessionActions}
+                onClick={() => setActionMenuOpen((prev) => !prev)}
+                className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
               >
-                {filter.label}
+                <MoreVertical className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={onRefresh}
-            aria-label={copy.refresh}
-            title={copy.refresh}
-            className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
-          >
-            <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
-          </button>
+              {actionMenuOpen ? (
+                <div
+                  role="menu"
+                  className="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-52 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                >
+                  {filters.map((filter) => {
+                    const isActive = activeFilter === filter.id;
+                    return (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={isActive}
+                        onClick={() => {
+                          onSelectFilter(filter.id);
+                          setActionMenuOpen(false);
+                        }}
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.12em] transition-colors active:scale-95 ${
+                          isActive
+                            ? 'bg-[var(--border-color)] text-[var(--bg-main)]'
+                            : 'text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
+                        }`}
+                      >
+                        <Check className={`h-3.5 w-3.5 shrink-0 ${isActive ? 'opacity-100' : 'opacity-0'}`} strokeWidth={3} />
+                        <span>{filter.label}</span>
+                      </button>
+                    );
+                  })}
+                  <div className="my-1 border-t border-dashed border-[var(--border-color)]" />
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setActionMenuOpen(false);
+                      onRefresh();
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] active:scale-95"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                    <span>{copy.refresh}</span>
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <>
+              {filters.map((filter) => {
+                const isActive = activeFilter === filter.id;
+                return (
+                  <button
+                    key={filter.id}
+                    type="button"
+                    onClick={() => onSelectFilter(filter.id)}
+                    className={`border px-3 py-1.5 text-[0.5625rem] font-black uppercase tracking-[0.2em] transition-colors active:scale-95 ${
+                      isActive
+                        ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
+                        : 'border-[var(--border-color)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
+                    }`}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+              <button
+                type="button"
+                onClick={onRefresh}
+                aria-label={copy.refresh}
+                title={copy.refresh}
+                className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
+              >
+                <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </button>
+            </>
+          )}
         </div>
       </div>
       {snapshotLoading && !visibleSessions.length && !snapshotError ? (
@@ -448,13 +579,26 @@ export function SessionsPanel({
                   ) : null}
 
                   {/* Line 3: metadata */}
-                  <div className="mt-2 flex items-center gap-x-2 text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]/60">
-                    <span>{getProviderDisplayLabel(session.provider, copy.unknownProvider)}</span>
-                    <span>·</span>
-                    <span>{session.messageCount} msgs</span>
-                    <span>·</span>
-                    <span className="max-w-[8rem] truncate">{getFileName(session.fileLabel, session.id)}</span>
-                    <span className="ml-auto shrink-0">{session.updatedAt}</span>
+                  <div
+                    className={`mt-2 flex items-center text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]/60 ${
+                      useCompactSessionMetadata ? 'justify-between gap-x-6' : 'gap-x-2'
+                    }`}
+                  >
+                    {useCompactSessionMetadata ? (
+                      <>
+                        <span>{session.messageCount}</span>
+                        <span className="ml-auto shrink-0">{formatSessionMetadataDate(session.updatedAt)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{getProviderDisplayLabel(session.provider, copy.unknownProvider)}</span>
+                        <span>·</span>
+                        <span>{session.messageCount} msgs</span>
+                        <span>·</span>
+                        <span className="max-w-[8rem] truncate">{getFileName(session.fileLabel, session.id)}</span>
+                        <span className="ml-auto shrink-0">{session.updatedAt}</span>
+                      </>
+                    )}
                   </div>
                 </button>
               ))

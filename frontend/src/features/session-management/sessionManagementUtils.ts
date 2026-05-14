@@ -3,6 +3,8 @@ import type { SessionDetailState } from './SessionManagementView.tsx';
 import { SESSION_MANAGEMENT_EMPTY_VALUE } from './sessionManagementCopy.ts';
 
 export const COMPACT_LAYOUT_MAX_WIDTH = 720;
+export const SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH = 560;
+export const SESSIONS_PANEL_COMPACT_META_MAX_WIDTH = 640;
 
 export const EMPTY_SNAPSHOT: SessionManagementSnapshot = {
   stats: {
@@ -48,4 +50,34 @@ export function normalizeProviderInput(value: string | null | undefined, fallbac
     return 'unknown';
   }
   return text;
+}
+
+export function shouldUseSessionsPanelActionMenu(panelWidth: number) {
+  return Number.isFinite(panelWidth) && panelWidth > 0 && panelWidth <= SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH;
+}
+
+export function shouldUseCompactSessionMetadata(panelWidth: number) {
+  return Number.isFinite(panelWidth) && panelWidth > 0 && panelWidth <= SESSIONS_PANEL_COMPACT_META_MAX_WIDTH;
+}
+
+function pad2(value: number) {
+  return String(value).padStart(2, '0');
+}
+
+export function formatSessionMetadataDate(value: string, now: Date = new Date()) {
+  const text = String(value || '').trim();
+  const match = text.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (!match) {
+    return text || SESSION_MANAGEMENT_EMPTY_VALUE;
+  }
+
+  const year = Number.parseInt(match[1], 10);
+  const month = Number.parseInt(match[2], 10);
+  const day = Number.parseInt(match[3], 10);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) {
+    return text;
+  }
+
+  const dateLabel = `${pad2(month)}/${pad2(day)}`;
+  return year === now.getFullYear() ? dateLabel : `${year}/${dateLabel}`;
 }

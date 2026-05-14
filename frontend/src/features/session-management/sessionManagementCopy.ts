@@ -79,5 +79,6 @@ export function createSessionManagementCopy(
     modalMetaTopic: resolve('session_management.modal_summary_topic', '主题', 'Topic'),
     searchPlaceholder: isEnglish ? 'Search projects & sessions…' : '搜索项目或会话…',
     searchNoResults: isEnglish ? 'No results.' : '无匹配结果。',
+    sessionActions: resolve('common.more_actions', '更多操作', 'More actions'),
   };
 }

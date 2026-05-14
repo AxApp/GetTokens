@@ -13,6 +13,36 @@ import {
   refreshCodexSessionManagementSnapshot,
   updateCodexSessionProviders,
 } from './api.ts';
+import {
+  formatSessionMetadataDate,
+  SESSIONS_PANEL_COMPACT_META_MAX_WIDTH,
+  SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH,
+  shouldUseCompactSessionMetadata,
+  shouldUseSessionsPanelActionMenu,
+} from './sessionManagementUtils.ts';
+
+test('sessions panel switches actions into a menu only when panel width is constrained', () => {
+  assert.equal(shouldUseSessionsPanelActionMenu(SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH - 1), true);
+  assert.equal(shouldUseSessionsPanelActionMenu(SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH), true);
+  assert.equal(shouldUseSessionsPanelActionMenu(SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH + 1), false);
+  assert.equal(shouldUseSessionsPanelActionMenu(0), false);
+});
+
+test('sessions panel uses compact metadata only when row width is constrained', () => {
+  assert.equal(shouldUseCompactSessionMetadata(SESSIONS_PANEL_COMPACT_META_MAX_WIDTH - 1), true);
+  assert.equal(shouldUseCompactSessionMetadata(SESSIONS_PANEL_COMPACT_META_MAX_WIDTH), true);
+  assert.equal(shouldUseCompactSessionMetadata(SESSIONS_PANEL_COMPACT_META_MAX_WIDTH + 1), false);
+  assert.equal(shouldUseCompactSessionMetadata(0), false);
+});
+
+test('formatSessionMetadataDate keeps current year compact and older years explicit', () => {
+  const now = new Date(2026, 4, 15);
+
+  assert.equal(formatSessionMetadataDate('2026-04-30 23:41', now), '04/30');
+  assert.equal(formatSessionMetadataDate('2025-12-09 08:10', now), '2025/12/09');
+  assert.equal(formatSessionMetadataDate('2026/5/7', now), '05/07');
+  assert.equal(formatSessionMetadataDate('unknown', now), 'unknown');
+});
 
 test('mapSessionManagementSnapshotResponse builds provider summary and does not invent rewrite metrics', () => {
   const snapshot = mapSessionManagementSnapshotResponse({

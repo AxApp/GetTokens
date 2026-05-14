@@ -38,7 +38,9 @@
     "accounts_codex": "CODEX",
     "accounts_openai_compatible": "OPENAI-COMPATIBLE",
     "settings": "SETTINGS",
-    "debug": "DEBUG"
+    "debug": "DEBUG",
+    "collapse_sidebar": "Collapse Sidebar",
+    "expand_sidebar": "Expand Sidebar"
   },
   "codex": {
     "title": "Codex",
