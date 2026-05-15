@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ListRelaySupportedModels } from '../../../wailsjs/go/main/App';
+import { FetchOpenAICompatibleProviderModels, ListRelaySupportedModels, VerifyOpenAICompatibleProvider } from '../../../wailsjs/go/main/App';
+import { main } from '../../../wailsjs/go/models';
 import AccountDetailModal from '../../components/biz/AccountDetailModal';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
@@ -102,6 +103,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
+    loadAccountUsage,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,
@@ -155,10 +157,22 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
 
   const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs);
   const isAggregateWorkspace = workspace === 'all';
+  const providerUsageAccounts = useMemo(
+    () => openAICompatibleState.providers.map((provider) => mapOpenAICompatibleProviderToRotationAccount(provider)),
+    [openAICompatibleState.providers],
+  );
+  const usageAccounts = useMemo(() => [...accounts, ...providerUsageAccounts], [accounts, providerUsageAccounts]);
   const rotationAccounts = [
     ...accounts,
-    ...openAICompatibleState.providers.map((provider) => mapOpenAICompatibleProviderToRotationAccount(provider)),
+    ...providerUsageAccounts,
   ];
+
+  useEffect(() => {
+    if (!ready) {
+      return;
+    }
+    void loadAccountUsage(usageAccounts);
+  }, [loadAccountUsage, ready, usageAccounts]);
 
   async function reloadRotationAccounts() {
     await loadAccounts();
@@ -223,6 +237,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           remoteModelsStates={openAICompatibleState.remoteModelsStates}
           pendingDeleteName={openAICompatibleState.pendingDeleteName}
           pendingStatusName={openAICompatibleState.pendingStatusName}
+          accountUsageByID={accountUsageByID}
           onCreate={openAICompatibleState.openCreateModal}
           onRefresh={() => void openAICompatibleState.loadProviders()}
           onOpenDetail={openOpenAICompatibleDetail}
@@ -354,13 +369,13 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           ) : null}
 
           {!ready ? (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {[...Array(6)].map((_, i) => (
                 <AccountCardSkeleton key={`ready-${i}`} />
               ))}
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 2xl:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
               {[...Array(6)].map((_, i) => (
                 <AccountCardSkeleton key={i} />
               ))}
@@ -409,6 +424,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
               remoteModelsStates={openAICompatibleState.remoteModelsStates}
               pendingDeleteName={openAICompatibleState.pendingDeleteName}
               pendingStatusName={openAICompatibleState.pendingStatusName}
+              accountUsageByID={accountUsageByID}
               onCreate={openAICompatibleState.openCreateModal}
               onRefresh={() => void openAICompatibleState.loadProviders()}
               onOpenDetail={openOpenAICompatibleDetail}
@@ -464,6 +480,21 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
             setApiKeyFormError('');
           }}
           onSubmit={submitApiKeyForm}
+          onFetchModels={async (input) => {
+            const result = await FetchOpenAICompatibleProviderModels(
+              main.FetchOpenAICompatibleProviderModelsInput.createFrom(input),
+            );
+            return {
+              models: (result.models ?? []).map((m) => m.name).filter(Boolean),
+              message: result.message ?? '',
+            };
+          }}
+          onVerify={async (input) => {
+            const result = await VerifyOpenAICompatibleProvider(
+              main.VerifyOpenAICompatibleProviderInput.createFrom(input),
+            );
+            return { success: result.success, message: result.message ?? '' };
+          }}
         />
       ) : null}
 
