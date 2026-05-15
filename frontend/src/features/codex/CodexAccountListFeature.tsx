@@ -20,8 +20,11 @@ import type { SidecarStatus } from '../../types';
 import { toErrorMessage } from '../../utils/error';
 import { buildCodexDetailFrameHash, clearCodexDetailFrameHash, readFrameHashState } from '../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../utils/previewMode';
+import useAccountsQuotaState from '../accounts/hooks/useAccountsQuotaState';
+import useAccountsUsageState from '../accounts/hooks/useAccountsUsageState';
+import { getAccountsPreviewCodexAccounts } from '../accounts/previewData';
 import { mapBackendAccountRecord } from '../accounts/model/accountPresentation';
-import { AccountOrderRow, CodexAccountDetailModal, EmptyState, RouteProbeCard } from './components/CodexAccountListView';
+import { CodexAccountDetailModal, CodexAccountOrderSection, RouteProbeCard } from './components/CodexAccountListView';
 import { getCodexAccountListPreviewAuthFileModelOptions, getCodexAccountListPreviewRows } from './previewData';
 import {
   applyCodexAccountPriorities,
@@ -78,6 +81,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const [detailRowID, setDetailRowID] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const suppressNextDetailClickRef = useRef(false);
+  const { codexQuotaByName, loadCodexQuotas } = useAccountsQuotaState(trackRequest);
+  const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
 
   const priorityUpdates = useMemo(() => buildCodexAccountPriorityUpdates(orderedRows), [orderedRows]);
   const detailRow = useMemo(
@@ -133,7 +138,27 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
   async function reload(messageOverride?: string) {
     if (browserMode) {
+      const previewAccounts = getAccountsPreviewCodexAccounts();
       setOrderedRows(getCodexAccountListPreviewRows());
+      void loadCodexQuotas(previewAccounts);
+      void loadAccountUsage([
+        ...previewAccounts,
+        {
+          id: 'openai-compatible:deepseek',
+          provider: 'deepseek',
+          credentialSource: 'api-key',
+          displayName: 'DeepSeek',
+          status: 'configured',
+        },
+        {
+          id: 'openai-compatible:openrouter',
+          provider: 'openrouter',
+          credentialSource: 'api-key',
+          displayName: 'OpenRouter',
+          status: 'disabled',
+          disabled: true,
+        },
+      ]);
       setMessage(messageOverride || t('codex.account_list_preview_loaded'));
       return;
     }
@@ -156,6 +181,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         accounts: accountRows,
         providers: nextProviders,
       });
+      void loadCodexQuotas(accountRows);
+      void loadAccountUsage(accountRows);
       setOrderedRows(nextRows);
       setMessage(messageOverride || t('codex.account_list_loaded'));
     } catch (error) {
@@ -168,7 +195,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
   useEffect(() => {
     void reload();
-  }, [browserMode, ready]);
+  }, [browserMode, loadAccountUsage, loadCodexQuotas, ready]);
 
   useEffect(() => {
     if (routingProbeModel.trim()) {
@@ -657,7 +684,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
   return (
     <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CODEX_ACCOUNT_LIST">
-      <div className="w-full min-w-[54rem] space-y-8">
+      <div className="mx-auto w-full max-w-6xl min-w-[72rem] space-y-8">
         <WorkspacePageHeader
           title={t('codex.account_list_title')}
           subtitle={t('codex.account_list_subtitle')}
@@ -681,84 +708,47 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onReset={resetRoutePolicy}
         />
 
-        <section className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
-          <header className="flex flex-col gap-4 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4 xl:flex-row xl:items-center xl:justify-between">
-            <div>
-              <h2 className="text-lg font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
-                {t('codex.account_list_order')}
-              </h2>
-              <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
-                {browserMode
-                  ? t('codex.account_list_browser_hint')
-                  : ready
-                    ? t('codex.account_list_order_hint')
-                    : t('codex.account_list_waiting_ready')}
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 xl:items-end">
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => void reload()}
-                  disabled={!ready || loading || saving || routingProbeRunning}
-                  className="btn-swiss !px-3 !py-2 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading ? t('common.loading') : t('common.refresh')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void saveOrder()}
-                  disabled={!ready || saving || routingProbeRunning || !orderChanged}
-                  className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {saving ? t('codex.account_list_saving') : t('codex.account_list_save_order')}
-                </button>
-              </div>
-              {orderChanged ? (
-                <div className="text-[0.5625rem] font-black uppercase tracking-wide text-[var(--accent-red)]">
-                  {t('codex.account_list_unsaved')}
-                </div>
-              ) : null}
-            </div>
-          </header>
-
-          {message ? (
-            <div className="border-b-2 border-[var(--border-color)] px-5 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
-              {message}
-            </div>
-          ) : null}
-
-          {!ready ? (
-            <EmptyState>{t('codex.account_list_waiting_ready')}</EmptyState>
-          ) : loading && orderedRows.length === 0 ? (
-            <EmptyState>{t('common.loading')}</EmptyState>
-          ) : orderedRows.length === 0 ? (
-            <EmptyState>{t('codex.account_list_empty')}</EmptyState>
-          ) : (
-            <div className="divide-y-2 divide-[var(--border-color)]">
-              {orderedRows.map((row, index) => (
-                <AccountOrderRow
-                  key={row.id}
-                  row={row}
-                  index={index}
-                  dragged={draggedID === row.id}
-                  pending={pendingToggleID === row.id}
-                  t={t}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDragEnter={handleDragEnter}
-                  onDragEnd={handleDragEnd}
-                  onDrop={handleDrop}
-                  onOpenDetail={() => openDetail(row.id)}
-                  onToggle={() => void toggleAccount(row)}
-                  probeHit={latestRoutingProbeAccountID === row.id}
-                  routePolicyState={routePolicyRowStates[row.id]}
-                  onPolicyModeChange={setRoutePolicyMode}
-                />
-              ))}
-            </div>
-          )}
-        </section>
+        <CodexAccountOrderSection
+          title={t('codex.account_list_order')}
+          hint={
+            browserMode
+              ? t('codex.account_list_browser_hint')
+              : ready
+                ? t('codex.account_list_order_hint')
+                : t('codex.account_list_waiting_ready')
+          }
+          message={message}
+          ready={ready}
+          loading={loading}
+          saving={saving}
+          routingProbeRunning={routingProbeRunning}
+          orderChanged={orderChanged}
+          rows={orderedRows}
+          draggedID={draggedID}
+          pendingToggleID={pendingToggleID}
+          latestRoutingProbeAccountID={latestRoutingProbeAccountID}
+          routePolicyRowStates={routePolicyRowStates}
+          codexQuotaByName={codexQuotaByName}
+          accountUsageByID={accountUsageByID}
+          refreshLabel={t('common.refresh')}
+          loadingLabel={t('common.loading')}
+          saveLabel={t('codex.account_list_save_order')}
+          savingLabel={t('codex.account_list_saving')}
+          unsavedLabel={t('codex.account_list_unsaved')}
+          emptyLabel={t('codex.account_list_empty')}
+          waitingLabel={t('codex.account_list_waiting_ready')}
+          t={t}
+          onReload={() => void reload()}
+          onSaveOrder={() => void saveOrder()}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragEnd={handleDragEnd}
+          onDrop={handleDrop}
+          onOpenDetail={openDetail}
+          onToggle={(row) => void toggleAccount(row)}
+          onPolicyModeChange={setRoutePolicyMode}
+        />
       </div>
       {detailRowWithModels ? (
         <CodexAccountDetailModal

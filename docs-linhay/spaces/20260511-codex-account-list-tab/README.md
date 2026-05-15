@@ -45,6 +45,33 @@
 - 本期设计稿：`（未产出）`
 - 约束：单期只保留一个 HTML 文件；若存在多稿对比，也必须收敛在同一个 HTML 文件内。
 
+## 2026-05-15 账号卡片样式统一要求
+
+用户明确要求 `CodexAccountListFeature.tsx` 的账号顺序区统一到 `20260514-sidecar-usage-account-attribution` 这期新设计出的账号卡片体系。最新口径不是“完全复制同一张卡”，而是同一套账号归因母版按数据区域组合：
+
+1. 每张 Codex 账号卡应共享本期账号归因卡的核心数据区域：
+   - 左侧状态 rail。
+   - 顶部 route tape：资产 key / 当前状态。
+   - identity 区：账号主标题、邮箱或 endpoint、副标题、chip stack；Codex 请求顺序可以作为 identity 前置区域显示。
+   - traffic attribution 区：请求经过数、24h token / 峰值 / 当前、持续前进的细曲线、用量节点。
+   - usage token strip：input / cache / output / total。
+   - quota windows：支持多个额度窗口；没有 quota 时显示空窗口。
+   - evidence 区：归因证据来源与最后命中信息。
+2. Codex 专属内容不再混成一个大底栏，而是按数据结构拆成独立区域：
+   - `RoutePolicy`：默认 / 允许 / 排除策略控件。
+   - `Runtime`：启停 switch 与候选顺位。
+   - `RouteTarget`：请求出口、模型映射、fallback 语义。
+   - `ProbeResult`：最近路由测试命中和真实请求量证据。
+3. 实现时需要组件化，不能在 `CodexAccountListFeature.tsx` 内复制整段账号卡 JSX。推荐拆分：
+   - shared `AccountAttributionCard` / `AccountAttributionRegions`：按 region slot 渲染 identity、traffic、usage、quota、evidence 等区域。
+   - `CodexAccountOrderCard`：组合账号归因 region + Codex route policy / runtime / route target / probe result 区域。
+   - `CodexAccountOrderSection`：承载列表标题、刷新/保存、空态、消息与列表。
+4. 上下区域都应可配置；一块数据结构对应一块可维护 UI 区域，避免“上方完全复制、下方再塞全部 Codex 状态”的不可维护结构。
+5. 同一组 Codex 账号卡必须保持一致尺寸；quota 窗口数量、模型映射数量、probe 文案长短不能改变卡片宽高，应由固定 region 高度、留白或区域内部滚动承接。
+6. Codex 账号卡必须与账号归因卡共享同一三列宽度轨道；不能因为 Codex 区域当前只有两张卡就改成两列半屏宽。
+7. Codex 账号卡需要支持 `完整 / 缩略` 密度模式。完整模式显示 traffic、usage、quota、evidence 等归因区域；缩略模式隐藏这些账号归因区域，只保留 route tape、带顺序的 identity、Codex 路由配置和 actions。
+8. 本轮不把 Codex 排序区做成独立“相似行样式”；它仍以本期账号归因卡片体系为母版，但允许按 Codex 数据结构调整 region 顺序、位置和可见性。
+
 ## Worktree 映射
 
 - branch：`feat/20260511-codex-account-list-tab`

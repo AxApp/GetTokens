@@ -40,6 +40,7 @@ export interface CodexAccountRow {
   label: string;
   sourceKind: CodexAccountSourceKind;
   provider: string;
+  quotaKey?: string;
   priority?: number;
   requestable: boolean;
   blockReason: string;
@@ -134,6 +135,7 @@ function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
     label: String(account.email || account.displayName || account.name || account.id).trim(),
     sourceKind: account.credentialSource === 'auth-file' ? 'codex-auth-file' : 'codex-api-key',
     provider: String(account.provider || 'codex').trim(),
+    quotaKey: account.quotaKey,
     priority: account.priority,
     requestable,
     blockReason: requestable ? '' : buildAccountBlockReason(account),

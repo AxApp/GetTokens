@@ -21,6 +21,7 @@ import {
   summarizeCodexRoutingProbeAttempt,
   buildCodexAccountPriorityUpdates,
 } from './model/codexAccountList.ts';
+import { CODEX_ORDER_SECTION_ACTION_MENU_GAP, shouldUseCodexOrderSectionActionMenu } from './model/codexAccountOrderSectionLayout.ts';
 import { getCodexAccountListPreviewRows } from './previewData.ts';
 
 test('buildCodexAccountRows merges codex auth files, codex api keys, and openai-compatible providers by priority', () => {
@@ -182,6 +183,19 @@ test('applyCodexAccountPriorities updates local browser-preview priority values 
     { id: 'a', label: 'A', priority: 2 },
     { id: 'b', label: 'B', priority: 1 },
   ]);
+});
+
+test('shouldUseCodexOrderSectionActionMenu collapses controls only when inline width no longer fits', () => {
+  assert.equal(shouldUseCodexOrderSectionActionMenu(0, 320), false);
+  assert.equal(shouldUseCodexOrderSectionActionMenu(320, 0), false);
+  assert.equal(
+    shouldUseCodexOrderSectionActionMenu(320 + CODEX_ORDER_SECTION_ACTION_MENU_GAP, 320),
+    false,
+  );
+  assert.equal(
+    shouldUseCodexOrderSectionActionMenu(320 + CODEX_ORDER_SECTION_ACTION_MENU_GAP - 1, 320),
+    true,
+  );
 });
 
 test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {
