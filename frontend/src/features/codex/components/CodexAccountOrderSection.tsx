@@ -162,7 +162,7 @@ export function CodexAccountOrderSection({
     content = <EmptyState>{emptyLabel}</EmptyState>;
   } else {
     content = (
-      <div className="grid auto-rows-fr gap-4 p-4 xl:grid-cols-3">
+      <div className="grid auto-rows-fr gap-4 p-4 xl:auto-rows-auto xl:grid-cols-3 xl:gap-x-4 xl:gap-y-0">
         {rows.map((row, index) => (
           <AccountOrderRow
             key={row.id}

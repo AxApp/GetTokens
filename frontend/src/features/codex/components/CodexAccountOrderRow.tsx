@@ -130,7 +130,7 @@ export function AccountOrderRow({
       onDragOver={onDragOver}
       onDragEnter={() => onDragEnter(row.id)}
       onDrop={onDrop}
-      className={dragged ? 'opacity-40 grayscale' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--text-primary)]' : ''}
+      className={`${density !== 'compact' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid]' : ''} ${dragged ? 'opacity-40 grayscale' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--text-primary)]' : ''}`.trim()}
     >
       <AttributionCard
         t={t}
@@ -143,7 +143,7 @@ export function AccountOrderRow({
         evidenceRows={evidenceRows}
         tone={cardTone}
         density={density}
-        className={policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}
+        className={`${density !== 'compact' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid] xl:h-auto' : ''} ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
         style={density === 'compact' ? { minHeight: '28rem' } : { minHeight: '48rem' }}
         leadingAction={
           <div

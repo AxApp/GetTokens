@@ -147,8 +147,8 @@ export default function AttributionCard({
 
       {showAttribution ? (
         <>
-          <section className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
-            <div className="flex min-h-[8.5rem] flex-col justify-between">
+          <section className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-3">
+            <div className="flex min-h-[6rem] flex-col justify-between">
               <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.recent_requests')}
               </div>
@@ -161,13 +161,13 @@ export default function AttributionCard({
             </div>
 
             <div className="min-w-0 border-l-2 border-[var(--border-color)] pl-3">
-              <div className="mb-2 grid grid-cols-3 gap-2">
+              <div className="mb-1 grid grid-cols-3 gap-2">
                 <FlowHeadCell label={t('accounts.attribution_window')} value={formatTokenMetric(flow.windowTokens)} />
                 <FlowHeadCell label={t('accounts.attribution_peak')} value={formatTokenMetric(flow.peakTokens)} />
                 <FlowHeadCell label={t('accounts.attribution_now')} value={formatTokenMetric(flow.currentTokens)} />
               </div>
               <div
-                className="relative h-[5.5rem] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
+                className="relative h-[4rem] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
                 style={{
                   backgroundImage:
                     'linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--border-color) 10%, transparent) 1px, transparent 1px)',
