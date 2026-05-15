@@ -1,25 +1,49 @@
+import type {
+  AccountUsageAttributionBucket,
+  AccountUsageAttributionItem,
+  AccountUsageAttributionResponse,
+} from './accountUsage';
+
 export type UsageDeskSource = 'observed' | 'projected';
 
 export interface UsageDeskObservedDetail {
   timestamp: string;
   provider: string;
   model: string;
+  accountKey: string;
+  attributionKey: string;
+  requestCount: number;
+  failedCount: number;
   failed: boolean;
   latencyMs: number | null;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
 }
 
 export interface UsageDeskDailyPoint {
   dayKey: string;
   label: string;
+  requests: number;
   success: number;
   failure: number;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
 }
 
 export interface UsageDeskMinutePoint {
   minuteKey: string;
   label: string;
+  requests: number;
   success: number;
   failure: number;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
 }
 
 export interface UsageDeskMinuteRow {
@@ -146,6 +170,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+function isAttributionResponse(payload: unknown): payload is AccountUsageAttributionResponse {
+  return isRecord(payload) && (Array.isArray(payload.items) || Array.isArray(payload.unresolved));
+}
+
 function parseTimestamp(value: unknown) {
   if (typeof value !== 'string') return null;
   const date = new Date(value);
@@ -218,21 +246,26 @@ export function buildUsageDeskObservedSummaryItems({
   if (drilldownDayKey) {
     const dayPoint = dailyPoints.find((point) => point.dayKey === drilldownDayKey);
     if (!dayPoint) return [];
-    const total = dayPoint.success + dayPoint.failure;
     return [
-      `全天请求 ${formatUsageDeskChartValue(total, 'count')}`,
-      `全天成功 ${formatUsageDeskChartValue(dayPoint.success, 'count')}`,
+      `全天请求 ${formatUsageDeskChartValue(dayPoint.requests, 'count')}`,
       `全天失败 ${formatUsageDeskChartValue(dayPoint.failure, 'count')}`,
+      `全天 Token ${formatUsageDeskChartValue(dayPoint.totalTokens, 'tokens')}`,
+      `全天输入 ${formatUsageDeskChartValue(dayPoint.inputTokens, 'tokens')}`,
+      `全天输出 ${formatUsageDeskChartValue(dayPoint.outputTokens, 'tokens')}`,
     ];
   }
 
-  const success = visibleDailyPoints.reduce((sum, point) => sum + point.success, 0);
+  const requests = visibleDailyPoints.reduce((sum, point) => sum + point.requests, 0);
   const failure = visibleDailyPoints.reduce((sum, point) => sum + point.failure, 0);
-  const total = success + failure;
+  const totalTokens = visibleDailyPoints.reduce((sum, point) => sum + point.totalTokens, 0);
+  const inputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.inputTokens, 0);
+  const outputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.outputTokens, 0);
   return [
-    `请求 ${formatUsageDeskChartValue(total, 'count')}`,
-    `成功 ${formatUsageDeskChartValue(success, 'count')}`,
+    `请求 ${formatUsageDeskChartValue(requests, 'count')}`,
     `失败 ${formatUsageDeskChartValue(failure, 'count')}`,
+    `Token ${formatUsageDeskChartValue(totalTokens, 'tokens')}`,
+    `输入 ${formatUsageDeskChartValue(inputTokens, 'tokens')}`,
+    `输出 ${formatUsageDeskChartValue(outputTokens, 'tokens')}`,
   ];
 }
 
@@ -418,7 +451,78 @@ function formatUsageDeskCompactNumber(value: number): string {
   return normalized.toFixed(1).replace(/\.0$/, '');
 }
 
+function normalizeUsageDeskMetricValue(value: unknown): number {
+  const normalized = Number(value);
+  return Number.isFinite(normalized) && normalized > 0 ? normalized : 0;
+}
+
+function formatRequestedModelsLabel(models: unknown): string {
+  if (!Array.isArray(models)) {
+    return '';
+  }
+  const normalized = Array.from(
+    new Set(
+      models
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter((value) => value.length > 0),
+    ),
+  ).sort();
+  if (normalized.length === 0) {
+    return '';
+  }
+  return normalized.length > 1 ? `${normalized[0]},*` : normalized[0];
+}
+
+function collectObservedDetailsFromAttributionItem(
+  item: AccountUsageAttributionItem,
+  result: UsageDeskObservedDetail[],
+) {
+  const provider = typeof item.provider === 'string' && item.provider.trim() ? item.provider : 'unknown';
+  const model = formatRequestedModelsLabel(item.requestedModels);
+  const accountKey = typeof item.accountKey === 'string' ? item.accountKey.trim() : '';
+  const attributionKey = typeof item.attributionKey === 'string' ? item.attributionKey.trim() : '';
+  const buckets = Array.isArray(item.buckets) ? item.buckets : [];
+
+  buckets.forEach((bucket: AccountUsageAttributionBucket) => {
+    if (!bucket || typeof bucket.start !== 'string' || !bucket.start.trim()) {
+      return;
+    }
+
+    const requestCount = normalizeUsageDeskMetricValue(bucket.requestCount);
+    const failedCount = Math.min(requestCount, normalizeUsageDeskMetricValue(bucket.failedCount));
+    const inputTokens = normalizeUsageDeskMetricValue(bucket.inputTokens);
+    const cachedInputTokens = normalizeUsageDeskMetricValue(bucket.cachedInputTokens);
+    const outputTokens = normalizeUsageDeskMetricValue(bucket.outputTokens);
+    const totalTokens =
+      normalizeUsageDeskMetricValue(bucket.totalTokens) ||
+      inputTokens + cachedInputTokens + outputTokens;
+
+    result.push({
+      timestamp: bucket.start,
+      provider,
+      model,
+      accountKey,
+      attributionKey,
+      requestCount,
+      failedCount,
+      failed: requestCount > 0 && failedCount >= requestCount,
+      latencyMs: null,
+      inputTokens,
+      cachedInputTokens,
+      outputTokens,
+      totalTokens,
+    });
+  });
+}
+
 export function collectUsageDeskObservedDetails(usageData: unknown): UsageDeskObservedDetail[] {
+  if (isAttributionResponse(usageData)) {
+    const result: UsageDeskObservedDetail[] = [];
+    (usageData.items ?? []).forEach((item) => collectObservedDetailsFromAttributionItem(item, result));
+    (usageData.unresolved ?? []).forEach((item) => collectObservedDetailsFromAttributionItem(item, result));
+    return result.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+  }
+
   const usageRecord = isRecord(usageData) ? usageData : null;
   const apis = usageRecord && isRecord(usageRecord.apis) ? usageRecord.apis : null;
   if (!apis) return [];
@@ -440,11 +544,19 @@ export function collectUsageDeskObservedDetails(usageData: unknown): UsageDeskOb
           timestamp,
           provider,
           model,
+          accountKey: '',
+          attributionKey: '',
+          requestCount: 1,
+          failedCount: detail.failed === true ? 1 : 0,
           failed: detail.failed === true,
           latencyMs:
             typeof detail.latency_ms === 'number' && Number.isFinite(detail.latency_ms)
               ? detail.latency_ms
               : null,
+          inputTokens: 0,
+          cachedInputTokens: 0,
+          outputTokens: 0,
+          totalTokens: 0,
         });
       });
     });
@@ -483,16 +595,26 @@ export function buildUsageDeskObservedSnapshot(
     const point = dailyMap.get(dayKey) ?? {
       dayKey,
       label: buildDayLabel(dayKey),
+      requests: 0,
       success: 0,
       failure: 0,
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
     };
-    if (detail.failed) {
-      point.failure += 1;
-      failure += 1;
-    } else {
-      point.success += 1;
-      success += 1;
-    }
+    const requestCount = Math.max(0, detail.requestCount);
+    const failedCount = Math.min(requestCount, Math.max(0, detail.failedCount));
+    const successCount = Math.max(0, requestCount - failedCount);
+    point.requests += requestCount;
+    point.success += successCount;
+    point.failure += failedCount;
+    point.inputTokens += Math.max(0, detail.inputTokens);
+    point.cachedInputTokens += Math.max(0, detail.cachedInputTokens);
+    point.outputTokens += Math.max(0, detail.outputTokens);
+    point.totalTokens += Math.max(0, detail.totalTokens);
+    success += successCount;
+    failure += failedCount;
     dailyMap.set(dayKey, point);
   });
 
@@ -508,10 +630,19 @@ export function buildUsageDeskObservedSnapshot(
     {
       timeLabel: string;
       provider: string;
+      model: string;
+      accountKey: string;
+      attributionKey: string;
       success: number;
       failure: number;
       requests: number;
       highLatencyCount: number;
+      inputTokens: number;
+      cachedInputTokens: number;
+      outputTokens: number;
+      totalTokens: number;
+      hasAttributionData: boolean;
+      dominantModelState: UsageDeskDominantModelState;
     }
   >();
 
@@ -523,34 +654,69 @@ export function buildUsageDeskObservedSnapshot(
     const minutePoint = minuteMap.get(minuteKey) ?? {
       minuteKey,
       label: buildMinuteLabel(date, resolution),
+      requests: 0,
       success: 0,
       failure: 0,
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
     };
-
-    if (detail.failed) {
-      minutePoint.failure += 1;
-    } else {
-      minutePoint.success += 1;
-    }
+    const requestCount = Math.max(0, detail.requestCount);
+    const failedCount = Math.min(requestCount, Math.max(0, detail.failedCount));
+    const successCount = Math.max(0, requestCount - failedCount);
+    minutePoint.requests += requestCount;
+    minutePoint.success += successCount;
+    minutePoint.failure += failedCount;
+    minutePoint.inputTokens += Math.max(0, detail.inputTokens);
+    minutePoint.cachedInputTokens += Math.max(0, detail.cachedInputTokens);
+    minutePoint.outputTokens += Math.max(0, detail.outputTokens);
+    minutePoint.totalTokens += Math.max(0, detail.totalTokens);
     minuteMap.set(minuteKey, minutePoint);
 
     const minuteRow = minuteRowMap.get(minuteKey) ?? {
       timeLabel: buildMinuteLabel(date, resolution),
       provider: detail.provider,
+      model: detail.model,
+      accountKey: detail.accountKey,
+      attributionKey: detail.attributionKey,
       success: 0,
       failure: 0,
       requests: 0,
       highLatencyCount: 0,
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      totalTokens: 0,
+      hasAttributionData: false,
+      dominantModelState: createDominantModelState(detail.model),
     };
     minuteRow.provider = minuteRow.provider === detail.provider ? detail.provider : 'mixed';
-    minuteRow.requests += 1;
-    if (detail.failed) {
-      minuteRow.failure += 1;
-    } else {
-      minuteRow.success += 1;
-      if (detail.latencyMs && detail.latencyMs > 2000) {
-        minuteRow.highLatencyCount += 1;
-      }
+    minuteRow.accountKey =
+      minuteRow.accountKey === detail.accountKey ? detail.accountKey : minuteRow.accountKey && detail.accountKey ? 'mixed' : minuteRow.accountKey || detail.accountKey;
+    minuteRow.attributionKey =
+      minuteRow.attributionKey === detail.attributionKey
+        ? detail.attributionKey
+        : minuteRow.attributionKey && detail.attributionKey
+          ? 'mixed'
+          : minuteRow.attributionKey || detail.attributionKey;
+    minuteRow.requests += requestCount;
+    minuteRow.success += successCount;
+    minuteRow.failure += failedCount;
+    minuteRow.inputTokens += Math.max(0, detail.inputTokens);
+    minuteRow.cachedInputTokens += Math.max(0, detail.cachedInputTokens);
+    minuteRow.outputTokens += Math.max(0, detail.outputTokens);
+    minuteRow.totalTokens += Math.max(0, detail.totalTokens);
+    minuteRow.hasAttributionData =
+      minuteRow.hasAttributionData ||
+      requestCount > 1 ||
+      detail.accountKey.length > 0 ||
+      detail.attributionKey.length > 0 ||
+      minuteRow.totalTokens > 0;
+    pushDominantModel(minuteRow.dominantModelState, detail.model, Math.max(1, detail.totalTokens || requestCount));
+    minuteRow.model = formatDominantModel(minuteRow.dominantModelState);
+    if (!detail.failed && detail.latencyMs && detail.latencyMs > 2000) {
+      minuteRow.highLatencyCount += 1;
     }
     minuteRowMap.set(minuteKey, minuteRow);
   });
@@ -558,7 +724,7 @@ export function buildUsageDeskObservedSnapshot(
   const minuteRows = Array.from(minuteRowMap.entries())
     .sort((a, b) => b[0].localeCompare(a[0]))
     .map(([, row]) => {
-      if (row.requests === 1 && resolution === '1M') {
+      if (!row.hasAttributionData && row.requests === 1 && resolution === '1M') {
         return {
           timeLabel: row.timeLabel,
           provider: row.provider,
@@ -573,17 +739,31 @@ export function buildUsageDeskObservedSnapshot(
         };
       }
 
+      const noteParts: string[] = [];
+      if (row.accountKey && row.accountKey !== 'mixed') {
+        noteParts.push(row.accountKey);
+      } else if (row.accountKey === 'mixed') {
+        noteParts.push('多个账号');
+      } else if (row.attributionKey && row.attributionKey !== 'mixed') {
+        noteParts.push(`未归因 ${row.attributionKey}`);
+      } else if (row.attributionKey === 'mixed') {
+        noteParts.push('多个未归因键');
+      }
+      if (row.failure > 0) {
+        noteParts.push(`失败 ${formatUsageDeskChartValue(row.failure, 'count')}`);
+      }
+
       return {
         timeLabel: row.timeLabel,
         provider: row.provider,
-        metric: '请求汇总',
-        value: `${row.success} / ${row.failure}`,
-        note:
-          row.failure > 0
-            ? `总请求 ${row.requests} 次 / 失败 ${row.failure} 次`
-            : row.highLatencyCount > 0
-              ? `总请求 ${row.requests} 次 / 高延迟 ${row.highLatencyCount} 次`
-              : `总请求 ${row.requests} 次`,
+        model: row.model || '--',
+        metric: '总请求',
+        value: formatUsageDeskChartValue(row.requests, 'count'),
+        note: noteParts.length > 0 ? noteParts.join(' / ') : undefined,
+        requests: formatUsageDeskChartValue(row.requests, 'count'),
+        inputTokens: formatUsageDeskChartValue(row.inputTokens, 'tokens'),
+        cachedInputTokens: formatUsageDeskChartValue(row.cachedInputTokens, 'tokens'),
+        outputTokens: formatUsageDeskChartValue(row.outputTokens, 'tokens'),
       };
     });
 

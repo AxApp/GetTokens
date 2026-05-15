@@ -1,8 +1,9 @@
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
+import type { AccountUsageSummary } from '../model/accountUsage';
 import type { Translator } from '../model/types';
 import type { OpenAICompatibleProvider, ProviderRemoteModelsState, ProviderVerifyState } from '../model/openAICompatible';
-import { buildProviderConfigSignature, maskProviderAPIKey } from '../model/openAICompatible';
-import AccountCardFrame from './AccountCardFrame';
+import { buildProviderConfigSignature } from '../model/openAICompatible';
+import OpenAICompatibleProviderCard from './OpenAICompatibleProviderCard';
 
 interface OpenAICompatibleWorkspaceProps {
   t: Translator;
@@ -13,6 +14,7 @@ interface OpenAICompatibleWorkspaceProps {
   remoteModelsStates: Record<string, ProviderRemoteModelsState>;
   pendingDeleteName: string | null;
   pendingStatusName: string | null;
+  accountUsageByID?: Record<string, AccountUsageSummary>;
   onCreate: () => void;
   onRefresh: () => void;
   onOpenDetail: (provider: OpenAICompatibleProvider) => void;
@@ -30,6 +32,7 @@ export default function OpenAICompatibleWorkspace({
   remoteModelsStates,
   pendingDeleteName,
   pendingStatusName,
+  accountUsageByID = {},
   onCreate,
   onRefresh,
   onOpenDetail,
@@ -91,7 +94,7 @@ export default function OpenAICompatibleWorkspace({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
           {providers.map((provider) => {
               const providerConfigSignature = buildProviderConfigSignature(provider);
               const cachedVerifyState = verifyStates[provider.name];
@@ -101,7 +104,7 @@ export default function OpenAICompatibleWorkspace({
                   ? cachedVerifyState
                   : {
                       model: '',
-                      status: 'idle',
+                      status: 'idle' as const,
                       message: '',
                       lastVerifiedAt: null,
                     };
@@ -110,127 +113,20 @@ export default function OpenAICompatibleWorkspace({
               const effectiveModelCount =
                 remoteModelsState?.status === 'success' ? remoteModelsState.models.length : provider.modelCount || 0;
 
-              const statusColor =
-                verifyState.status === 'success' ? 'bg-green-500' : verifyState.status === 'error' ? 'bg-red-500' : 'bg-yellow-500';
-
-              const messageTone =
-                verifyState.status === 'success' ? 'text-green-600' : verifyState.status === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]';
-
               return (
-                <AccountCardFrame
+                <OpenAICompatibleProviderCard
                   key={provider.name}
-                  className={provider.disabled ? 'opacity-80' : ''}
-                  onOpen={() => onOpenDetail(provider)}
-                >
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div className="min-w-0 space-y-1.5">
-                      <div className="text-[0.5rem] font-black uppercase tracking-[0.25em] text-[var(--text-muted)]">
-                        {t('accounts.ui_openai_compatible_badge')}
-                      </div>
-                      <h3 className="flex items-center gap-2 break-all text-[0.75rem] font-black uppercase italic leading-snug tracking-[0.08em] text-[var(--text-primary)]">
-                        <div title={verifyState.status} className={`h-2 w-2 shrink-0 ${statusColor}`} />
-                        <span>{provider.name}</span>
-                        {provider.disabled ? (
-                          <span className="border border-amber-600 bg-amber-100 px-1.5 py-0.5 text-[0.5rem] font-black uppercase tracking-[0.2em] text-amber-700">
-                            {t('accounts.rotation_disabled_badge')}
-                          </span>
-                        ) : null}
-                      </h3>
-                      {provider.disabled ? (
-                        <p className="text-[0.5625rem] font-bold uppercase tracking-[0.12em] text-amber-700">
-                          {t('accounts.rotation_disabled_hint')}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 border-t border-dashed border-[var(--border-color)] pt-4">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-1">
-                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                          {t('accounts.ui_base_url')}
-                        </div>
-                        <div className="break-all font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
-                          {provider.baseUrl}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                          {t('accounts.ui_api_key')}
-                        </div>
-                        <div className="font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
-                          {maskProviderAPIKey(provider.apiKey)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-1">
-                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                          {t('accounts.openai_provider_headers')}
-                        </div>
-                        <div className="font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
-                          {provider.hasHeaders ? t('accounts.ui_headers_configured') : '—'}
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                          {t('accounts.ui_models')}
-                        </div>
-                        <div className="font-mono text-[0.625rem] font-bold text-[var(--text-primary)]">
-                          {effectiveModelCount}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 border-t border-dashed border-[var(--border-color)] pt-4">
-                    <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
-                          {t('accounts.openai_provider_test_summary')}
-                        </div>
-                        <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                          {verifyState.model || '—'}
-                        </div>
-                      </div>
-                      <div className={`text-[0.625rem] font-black uppercase tracking-tight ${messageTone}`}>
-                        {verifyState.message || t('accounts.openai_provider_test_idle')}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    className="mt-auto grid grid-cols-3 gap-2 border-t border-dashed border-[var(--border-color)] pt-4"
-                    data-account-card-ignore-click="true"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                  >
-                    <button type="button" onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
-                      {t('accounts.openai_provider_manage')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onToggleDisabled(provider)}
-                      className="btn-swiss !py-1.5 !text-[0.5625rem]"
-                      disabled={pendingStatusName === provider.name}
-                    >
-                      {pendingStatusName === provider.name
-                        ? t('common.loading')
-                        : provider.disabled
-                          ? t('common.enable')
-                          : t('common.disable')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onDelete(provider.name)}
-                      className="btn-swiss !py-1.5 !text-[0.5625rem] !text-red-500"
-                      disabled={pendingDeleteName === provider.name}
-                    >
-                      {pendingDeleteName === provider.name ? t('common.loading') : t('common.delete')}
-                    </button>
-                  </div>
-                </AccountCardFrame>
+                  t={t}
+                  provider={provider}
+                  verifyState={verifyState}
+                  effectiveModelCount={effectiveModelCount}
+                  usageSummary={accountUsageByID[`openai-compatible:${provider.name}`]}
+                  pendingDelete={pendingDeleteName === provider.name}
+                  pendingStatus={pendingStatusName === provider.name}
+                  onOpenDetail={onOpenDetail}
+                  onDelete={onDelete}
+                  onToggleDisabled={onToggleDisabled}
+                />
               );
           })}
         </div>

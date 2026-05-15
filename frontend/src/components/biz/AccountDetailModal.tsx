@@ -82,8 +82,10 @@ export default function AccountDetailModal({
           ? `${Math.round(usageSummary.successRate)}%`
           : t('accounts.no_recent_activity'),
       ],
+      [t('accounts.recent_requests'), String(usageSummary?.requestCount ?? 0)],
       [t('accounts.recent_success'), String(usageSummary?.success ?? 0)],
       [t('accounts.recent_failure'), String(usageSummary?.failure ?? 0)],
+      [t('accounts.total_tokens'), String(usageSummary?.totalTokens ?? 0)],
       [
         t('accounts.average_latency'),
         usageSummary?.averageLatencyMs ? `${usageSummary.averageLatencyMs} ms` : '—',

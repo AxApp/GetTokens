@@ -28,6 +28,8 @@ import {
   renameProviderVerifyState,
   shouldRefreshRemoteModels,
 } from '../model/openAICompatible';
+import { getAccountsPreviewOpenAICompatibleProviders } from '../previewData';
+import { hasWailsAppBindings } from '../../../utils/previewMode';
 
 interface UseOpenAICompatibleStateArgs {
   ready: boolean;
@@ -36,6 +38,7 @@ interface UseOpenAICompatibleStateArgs {
 }
 
 export default function useOpenAICompatibleState({ ready, trackRequest, t }: UseOpenAICompatibleStateArgs) {
+  const browserMode = !hasWailsAppBindings();
   const [providers, setProviders] = useState<OpenAICompatibleProvider[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -54,6 +57,10 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     if (!ready) {
       return;
     }
+    if (browserMode) {
+      setProviders(getAccountsPreviewOpenAICompatibleProviders());
+      return;
+    }
     setLoading(true);
     try {
       const result = await trackRequest('ListOpenAICompatibleProviders', { args: [] }, () => ListOpenAICompatibleProviders());
@@ -61,7 +68,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     } finally {
       setLoading(false);
     }
-  }, [ready, trackRequest]);
+  }, [browserMode, ready, trackRequest]);
 
   useEffect(() => {
     if (ready) {
@@ -137,6 +144,9 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     const draft = buildOpenAICompatibleProviderDraft(provider, verifyStateByName[provider.name]);
     setDetailDraft(draft);
     setDetailError('');
+    if (browserMode) {
+      return;
+    }
     const providerConfigSignature = buildProviderConfigSignature(provider);
     const cachedState = remoteModelsStateByName[provider.name];
     if (
@@ -146,7 +156,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     ) {
       void fetchRemoteModelsForDraft(draft);
     }
-  }, [fetchRemoteModelsForDraft, remoteModelsStateByName, verifyStateByName]);
+  }, [browserMode, fetchRemoteModelsForDraft, remoteModelsStateByName, verifyStateByName]);
 
   const closeDetailModal = useCallback(() => {
     setDetailDraft(null);

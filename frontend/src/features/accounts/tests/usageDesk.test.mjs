@@ -84,6 +84,8 @@ test('collectUsageDeskObservedDetails keeps provider and model from nested usage
   assert.equal(details.length, 1);
   assert.equal(details[0].provider, 'codex');
   assert.equal(details[0].model, 'gpt-5');
+  assert.equal(details[0].requestCount, 1);
+  assert.equal(details[0].failedCount, 0);
   assert.equal(details[0].latencyMs, 180);
 });
 
@@ -116,14 +118,20 @@ test('buildUsageDeskObservedSnapshot aggregates daily and minute buckets and fal
   assert.equal(snapshot.failure, 1);
   assert.deepEqual(snapshot.availableDayKeys, ['2026-04-27', '2026-04-28']);
   assert.equal(snapshot.selectedDayKey, '2026-04-28');
+  assert.equal(snapshot.dailyPoints[1].requests, 3);
   assert.equal(snapshot.dailyPoints[1].success, 2);
   assert.equal(snapshot.dailyPoints[1].failure, 1);
   assert.equal(snapshot.minutePoints.length, 2);
   assert.equal(snapshot.minuteRows.length, 2);
   assert.equal(snapshot.minuteRows[0].timeLabel, '14:20');
   assert.equal(snapshot.minuteRows[0].provider, 'mixed');
-  assert.equal(snapshot.minuteRows[0].value, '2 / 0');
-  assert.equal(snapshot.minuteRows[0].note, '总请求 2 次');
+  assert.equal(snapshot.minuteRows[0].metric, '总请求');
+  assert.equal(snapshot.minuteRows[0].model, 'gemini-2.5-pro,*');
+  assert.equal(snapshot.minuteRows[0].value, '2 次');
+  assert.equal(snapshot.minuteRows[0].requests, '2 次');
+  assert.equal(snapshot.minuteRows[0].inputTokens, '0');
+  assert.equal(snapshot.minuteRows[0].cachedInputTokens, '0');
+  assert.equal(snapshot.minuteRows[0].outputTokens, '0');
 });
 
 test('buildUsageDeskObservedSnapshot supports explicit single-day minute drilldown from time-level history', () => {
@@ -153,6 +161,115 @@ test('buildUsageDeskObservedSnapshot supports explicit single-day minute drilldo
   assert.equal(snapshot.minutePoints[0].failure, 0);
   assert.equal(snapshot.minuteRows.length, 1);
   assert.equal(snapshot.minuteRows[0].metric, '请求成功');
+});
+
+test('collectUsageDeskObservedDetails supports sidecar attribution buckets', () => {
+  const details = collectUsageDeskObservedDetails({
+    items: [
+      {
+        accountKey: 'codex-api-key:local-1',
+        attributionKey: 'auth-id:runtime-auth-1',
+        provider: 'codex',
+        requestedModels: ['gpt-5'],
+        buckets: [
+          {
+            start: '2026-04-28T06:20:00.000Z',
+            requestCount: 4,
+            failedCount: 1,
+            inputTokens: 400,
+            cachedInputTokens: 80,
+            outputTokens: 120,
+            totalTokens: 600,
+          },
+        ],
+      },
+    ],
+    unresolved: [],
+  });
+
+  assert.equal(details.length, 1);
+  assert.equal(details[0].accountKey, 'codex-api-key:local-1');
+  assert.equal(details[0].attributionKey, 'auth-id:runtime-auth-1');
+  assert.equal(details[0].provider, 'codex');
+  assert.equal(details[0].model, 'gpt-5');
+  assert.equal(details[0].requestCount, 4);
+  assert.equal(details[0].failedCount, 1);
+  assert.equal(details[0].inputTokens, 400);
+  assert.equal(details[0].cachedInputTokens, 80);
+  assert.equal(details[0].outputTokens, 120);
+  assert.equal(details[0].totalTokens, 600);
+});
+
+test('buildUsageDeskObservedSnapshot aggregates sidecar attribution buckets by request count and tokens', () => {
+  const snapshot = buildUsageDeskObservedSnapshot(
+    {
+      items: [
+        {
+          accountKey: 'codex-api-key:local-1',
+          attributionKey: 'auth-id:runtime-auth-1',
+          provider: 'codex',
+          requestedModels: ['gpt-5'],
+          buckets: [
+            {
+              start: '2026-04-28T06:18:00.000Z',
+              requestCount: 2,
+              failedCount: 1,
+              inputTokens: 200,
+              cachedInputTokens: 20,
+              outputTokens: 50,
+              totalTokens: 270,
+            },
+            {
+              start: '2026-04-28T06:20:00.000Z',
+              requestCount: 3,
+              failedCount: 0,
+              inputTokens: 300,
+              cachedInputTokens: 40,
+              outputTokens: 90,
+              totalTokens: 430,
+            },
+          ],
+        },
+      ],
+      unresolved: [
+        {
+          accountKey: '',
+          attributionKey: 'auth-id:unresolved-1',
+          provider: 'codex',
+          requestedModels: ['gpt-5-mini'],
+          buckets: [
+            {
+              start: '2026-04-28T06:20:00.000Z',
+              requestCount: 1,
+              failedCount: 1,
+              inputTokens: 60,
+              cachedInputTokens: 0,
+              outputTokens: 10,
+              totalTokens: 70,
+            },
+          ],
+        },
+      ],
+    },
+    '2026-04-28',
+  );
+
+  assert.equal(snapshot.hasData, true);
+  assert.equal(snapshot.success, 4);
+  assert.equal(snapshot.failure, 2);
+  assert.equal(snapshot.dailyPoints[0].requests, 6);
+  assert.equal(snapshot.dailyPoints[0].totalTokens, 770);
+  assert.equal(snapshot.minutePoints.length, 2);
+  assert.equal(snapshot.minutePoints[1].requests, 4);
+  assert.equal(snapshot.minutePoints[1].totalTokens, 500);
+  assert.equal(snapshot.minuteRows[0].timeLabel, '14:20');
+  assert.equal(snapshot.minuteRows[0].metric, '总请求');
+  assert.equal(snapshot.minuteRows[0].value, '4 次');
+  assert.equal(snapshot.minuteRows[0].requests, '4 次');
+  assert.equal(snapshot.minuteRows[0].inputTokens, '360');
+  assert.equal(snapshot.minuteRows[0].cachedInputTokens, '40');
+  assert.equal(snapshot.minuteRows[0].outputTokens, '100');
+  assert.equal(snapshot.minuteRows[0].note, 'codex-api-key:local-1 / 失败 1 次');
 });
 
 test('collectUsageDeskProjectedDetails keeps provider and token fields from local projected payload', () => {
@@ -390,10 +507,20 @@ test('buildUsageDeskObservedSummaryItems uses the full selected day in minute vi
       drilldownDayKey: '2026-04-28',
       dailyPoints: snapshot.dailyPoints,
       visibleDailyPoints: visibleMinutePoint
-        ? [{ dayKey: '2026-04-28', label: visibleMinutePoint.label, success: visibleMinutePoint.success, failure: visibleMinutePoint.failure }]
+        ? [{
+            dayKey: '2026-04-28',
+            label: visibleMinutePoint.label,
+            requests: 3,
+            success: 2,
+            failure: 1,
+            inputTokens: 0,
+            cachedInputTokens: 0,
+            outputTokens: 0,
+            totalTokens: 0,
+          }]
         : [],
     }),
-    ['全天请求 3 次', '全天成功 2 次', '全天失败 1 次'],
+    ['全天请求 3 次', '全天失败 1 次', '全天 Token 0', '全天输入 0', '全天输出 0'],
   );
 });
 

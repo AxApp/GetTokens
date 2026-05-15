@@ -13,6 +13,7 @@ import { main } from '../../../../wailsjs/go/models';
 import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
 import type { AccountRecord, CodexQuota } from '../../../types';
 import { toErrorMessage } from '../../../utils/error';
+import { hasWailsAppBindings } from '../../../utils/previewMode';
 import {
   buildAPIKeyLabelStorageKey,
   buildCodexAPIKeyVerifyInput,
@@ -41,6 +42,7 @@ import {
   mapAuthFileToRecord,
   mapBackendAccountRecord,
 } from '../model/accountPresentation';
+import { getAccountsPreviewAPIKeyRecords, getAccountsPreviewAuthFiles } from '../previewData';
 import useAccountsActions from './useAccountsActions';
 import useAccountsQuotaState from './useAccountsQuotaState';
 import useAccountsUsageState from './useAccountsUsageState';
@@ -206,6 +208,24 @@ export default function useAccountsPageState({
 
   const loadAccounts = useCallback(async (options: { showLoading?: boolean } = {}) => {
     if (!ready) {
+      return;
+    }
+
+    if (!hasWailsAppBindings()) {
+      const files = getAccountsPreviewAuthFiles();
+      const apiKeyAccounts = getAccountsPreviewAPIKeyRecords();
+      const nextAuthFileRecords = files.map((account) => mapAuthFileToRecord(account));
+      setAuthFiles(files);
+      setApiKeyRecords(apiKeyAccounts);
+      setPendingDeleteID(null);
+      setSelectedAccountIDs((prev) =>
+        filterSelectedAccountIDs(prev, [
+          ...files.map((file) => `auth-file:${file.name}`),
+          ...apiKeyAccounts.map((account) => account.id),
+        ])
+      );
+      void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
+      void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
       return;
     }
 
@@ -560,6 +580,7 @@ export default function useAccountsPageState({
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
+    loadAccountUsage,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,

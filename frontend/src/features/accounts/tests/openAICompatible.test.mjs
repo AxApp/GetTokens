@@ -19,11 +19,77 @@ import {
   resolveOpenAICompatibleProviderPresetID,
   shouldRefreshRemoteModels,
 } from '../model/openAICompatible.ts';
+import {
+  buildOpenAICompatibleCardBadges,
+  buildOpenAICompatibleCardEvidenceRows,
+  resolveOpenAICompatibleCardEyebrow,
+  resolveOpenAICompatibleCardTone,
+  resolveOpenAICompatibleVerifyMessage,
+} from '../model/openAICompatibleCard.ts';
+
+const t = (key) =>
+  ({
+    'accounts.ui_openai_compatible_badge': '兼容 OpenAI',
+    'accounts.rotation_disabled_badge': '已禁用',
+    'accounts.openai_provider_test_success': '账号验证成功',
+    'accounts.openai_provider_test_failed': '账号验证失败',
+    'accounts.openai_provider_test_idle': '尚未执行验证',
+    'accounts.card_asset': '账号 ID',
+    'accounts.card_source_type': '数据源',
+    'accounts.ui_models': '模型',
+    'accounts.openai_provider_last_verified': '最近验证时间',
+  })[key] || key;
 
 test('maskProviderAPIKey keeps short keys and masks long keys', () => {
   assert.equal(maskProviderAPIKey(''), '—');
   assert.equal(maskProviderAPIKey('sk-1234'), 'sk-1234');
   assert.equal(maskProviderAPIKey('sk-1234567890'), 'sk-1...7890');
+});
+
+test('openai-compatible card helpers resolve shared top-region metadata', () => {
+  const provider = {
+    name: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    apiKey: 'sk-test',
+    disabled: false,
+  };
+  const verifyState = {
+    model: 'deepseek-chat',
+    status: 'success',
+    message: '',
+    lastVerifiedAt: 1747288800000,
+  };
+
+  assert.equal(resolveOpenAICompatibleCardTone(provider, verifyState), 'positive');
+  assert.equal(resolveOpenAICompatibleCardEyebrow(t, provider, verifyState), '账号验证成功');
+  assert.deepEqual(buildOpenAICompatibleCardBadges(t, provider), [{ label: '兼容 OpenAI' }]);
+  assert.deepEqual(
+    buildOpenAICompatibleCardEvidenceRows(t, provider, verifyState, 2).map((row) => row.label),
+    ['账号 ID', '数据源', '模型', '最近验证时间'],
+  );
+  assert.equal(resolveOpenAICompatibleVerifyMessage(t, verifyState), '尚未执行验证');
+});
+
+test('openai-compatible card helpers expose disabled warning state', () => {
+  const provider = {
+    name: 'openrouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    apiKey: 'sk-test',
+    disabled: true,
+  };
+  const verifyState = {
+    model: '',
+    status: 'idle',
+    message: '',
+    lastVerifiedAt: null,
+  };
+
+  assert.equal(resolveOpenAICompatibleCardTone(provider, verifyState), 'warning');
+  assert.equal(resolveOpenAICompatibleCardEyebrow(t, provider, verifyState), '已禁用');
+  assert.deepEqual(buildOpenAICompatibleCardBadges(t, provider), [
+    { label: '兼容 OpenAI' },
+    { label: '已禁用', tone: 'warning' },
+  ]);
 });
 
 test('emptyOpenAICompatibleProviderForm starts with blank fields', () => {

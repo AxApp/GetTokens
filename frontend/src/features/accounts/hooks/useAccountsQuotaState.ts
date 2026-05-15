@@ -1,7 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { GetCodexQuota } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
+import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { supportsQuota } from '../model/accountQuota';
+import { getAccountsPreviewQuotaStateByKey } from '../previewData';
 import type { CodexQuotaState, TrackRequest } from '../model/types';
 
 export default function useAccountsQuotaState(trackRequest: TrackRequest) {
@@ -10,6 +12,11 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
 
   const loadCodexQuotas = useCallback(
     async (items: AccountRecord[]) => {
+      if (!hasWailsAppBindings()) {
+        setCodexQuotaByName(getAccountsPreviewQuotaStateByKey(items));
+        return;
+      }
+
       const codexAccounts = items.filter((account) => supportsQuota(account) && account.quotaKey);
       quotaRequestIdRef.current += 1;
       const requestID = quotaRequestIdRef.current;
@@ -56,6 +63,14 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
 
   const refreshCodexQuota = useCallback(
     async (account: AccountRecord) => {
+      if (!hasWailsAppBindings()) {
+        setCodexQuotaByName((prev) => ({
+          ...prev,
+          ...getAccountsPreviewQuotaStateByKey([account]),
+        }));
+        return;
+      }
+
       if (!supportsQuota(account) || !account.quotaKey) {
         return;
       }

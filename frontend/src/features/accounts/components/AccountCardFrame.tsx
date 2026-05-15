@@ -31,7 +31,7 @@ export default function AccountCardFrame({ children, className = '', style, inte
   return (
     <div
       data-account-card
-      className={`card-swiss flex h-full flex-col bg-[var(--bg-main)] p-5 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] ${
+      className={`card-swiss flex h-full flex-col overflow-hidden bg-[var(--bg-main)] p-0 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] active:scale-[0.985] ${
         interactive ? 'cursor-pointer' : ''
       } ${className}`}
       style={style}

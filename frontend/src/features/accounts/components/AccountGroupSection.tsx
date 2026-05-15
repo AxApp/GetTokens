@@ -58,7 +58,7 @@ export default function AccountGroupSection({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 2xl:grid-cols-3" data-plan-group-grid={group.id}>
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3" data-plan-group-grid={group.id}>
         {group.accounts.map((account) => (
           <AccountCard
             key={account.id}

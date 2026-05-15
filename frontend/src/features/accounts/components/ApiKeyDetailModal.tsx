@@ -338,6 +338,14 @@ export default function ApiKeyDetailModal({
 
             {usageSummary ? (
               <div className="pt-2">
+                <div className="mb-3 grid gap-2 md:grid-cols-3">
+                  {healthMetaItems.map((item) => (
+                    <div key={item.label} className="border border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2">
+                      <div className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{item.label}</div>
+                      <div className="mt-1 text-[0.6875rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{item.value}</div>
+                    </div>
+                  ))}
+                </div>
                 <AccountHealthBar summary={usageSummary} />
               </div>
             ) : null}
