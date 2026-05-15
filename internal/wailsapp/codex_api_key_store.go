@@ -317,6 +317,7 @@ func persistCodexAPIKeySet(items []cliproxyapi.CodexAPIKeyInput) error {
 		return err
 	}
 	expected := make(map[string]struct{}, len(items))
+	persistedItems := make([]cliproxyapi.CodexAPIKeyInput, 0, len(items))
 	for _, item := range items {
 		if err := ensureCodexAPIKeyLocalID(&item); err != nil {
 			return err
@@ -326,6 +327,10 @@ func persistCodexAPIKeySet(items []cliproxyapi.CodexAPIKeyInput) error {
 		if err := saveStoredCodexAPIKey(item); err != nil {
 			return err
 		}
+		persistedItems = append(persistedItems, item)
+	}
+	if err := rememberCodexAPIKeyAttributionIdentities(persistedItems); err != nil {
+		return err
 	}
 
 	for _, entry := range existingEntries {

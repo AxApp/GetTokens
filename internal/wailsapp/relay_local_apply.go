@@ -18,7 +18,7 @@ const (
 	relayCodexDefaultReasoning = "high"
 )
 
-func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string) (*RelayLocalApplyResult, error) {
+func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) (*RelayLocalApplyResult, error) {
 	normalizedAPIKey := strings.TrimSpace(apiKey)
 	if normalizedAPIKey == "" {
 		return nil, errors.New("缺少 API KEY")
@@ -33,7 +33,7 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, mode
 	normalizedReasoningEffort := normalizeRelayLocalReasoningEffort(reasoningEffort)
 	normalizedProviderID, normalizedProviderName := normalizeRelayLocalProvider(providerID, providerName)
 
-	result, err := applyRelayServiceConfigToLocal(normalizedAPIKey, normalizedBaseURL, normalizedModel, normalizedReasoningEffort, normalizedProviderID, normalizedProviderName)
+	result, err := applyRelayServiceConfigToLocal(normalizedAPIKey, normalizedBaseURL, normalizedModel, normalizedReasoningEffort, normalizedProviderID, normalizedProviderName, supportsWebsockets)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, mode
 	return result, nil
 }
 
-func applyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string) (*RelayLocalApplyResult, error) {
+func applyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) (*RelayLocalApplyResult, error) {
 	codexHome, err := resolveCodexHomePath()
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func applyRelayServiceConfigToLocal(apiKey string, baseURL string, model string,
 	if err != nil {
 		return nil, err
 	}
-	configPayload := mergeRelayCodexConfigToml(existingConfig, baseURL, model, reasoningEffort, providerID, providerName)
+	configPayload := mergeRelayCodexConfigToml(existingConfig, baseURL, model, reasoningEffort, providerID, providerName, supportsWebsockets)
 	if err := writeFileAtomically(configPath, []byte(configPayload), 0600); err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func writeFileAtomically(path string, body []byte, mode os.FileMode) error {
 	return nil
 }
 
-func buildRelayCodexConfigToml(baseURL string, model string, reasoningEffort string, providerID string, providerName string) string {
+func buildRelayCodexConfigToml(baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) string {
 	if providerID == relayCodexOpenAIProviderID {
 		return fmt.Sprintf(
 			"model = %q\nmodel_reasoning_effort = %q\nopenai_base_url = %q\n",
@@ -249,18 +249,23 @@ func buildRelayCodexConfigToml(baseURL string, model string, reasoningEffort str
 		)
 	}
 
+		wsLine := ""
+	if supportsWebsockets {
+		wsLine = "\nsupports_websockets = true"
+	}
 	return fmt.Sprintf(
-		"model = %q\nmodel_reasoning_effort = %q\nmodel_provider = %q\n\n[model_providers.%s]\nname = %q\nbase_url = %q\nrequires_openai_auth = true\nwire_api = \"responses\"\n",
+		"model = %q\nmodel_reasoning_effort = %q\nmodel_provider = %q\n\n[model_providers.%s]\nname = %q\nbase_url = %q\nrequires_openai_auth = true\nwire_api = \"responses\"%s\n",
 		strings.TrimSpace(model),
 		reasoningEffort,
 		providerID,
 		providerID,
 		providerName,
 		strings.TrimSpace(baseURL),
+		wsLine,
 	)
 }
 
-func mergeRelayCodexConfigToml(existing string, baseURL string, model string, reasoningEffort string, providerID string, providerName string) string {
+func mergeRelayCodexConfigToml(existing string, baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) string {
 	lines, newline := splitTomlDocument(existing)
 
 	hasModelProvider := rootTomlKeyExists(lines, "model_provider")
@@ -279,6 +284,9 @@ func mergeRelayCodexConfigToml(existing string, baseURL string, model string, re
 		lines = upsertTomlSectionKey(lines, sectionName, "base_url", quoteTomlString(strings.TrimSpace(baseURL)), true)
 		lines = upsertTomlSectionKey(lines, sectionName, "requires_openai_auth", "true", true)
 		lines = upsertTomlSectionKey(lines, sectionName, "wire_api", quoteTomlString("responses"), true)
+			if supportsWebsockets {
+			lines = upsertTomlSectionKey(lines, sectionName, "supports_websockets", "true", true)
+		}
 	}
 
 	if len(lines) == 0 {

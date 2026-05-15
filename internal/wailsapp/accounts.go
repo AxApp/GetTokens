@@ -145,6 +145,9 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 	if err != nil {
 		return err
 	}
+	if err := rememberCodexAPIKeyAttributionIdentities(current); err != nil {
+		return err
+	}
 
 	targetID := strings.TrimSpace(input.ID)
 	found := false
@@ -167,6 +170,9 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
 	current, err := loadStoredCodexAPIKeys()
 	if err != nil {
+		return err
+	}
+	if err := rememberCodexAPIKeyAttributionIdentities(current); err != nil {
 		return err
 	}
 

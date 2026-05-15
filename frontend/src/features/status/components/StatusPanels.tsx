@@ -54,6 +54,8 @@ interface StatusApplyLocalSectionProps {
   onCommitRelayModelSelection: (value: string) => void;
   onCopyText: (value: string, successMessage?: string) => void;
   relayKeyDisplayName: (value: string, index: number) => string;
+  supportsWebsockets: boolean;
+  onToggleSupportsWebsockets: () => void;
 }
 
 export function StatusApplyLocalSection({
@@ -89,6 +91,8 @@ export function StatusApplyLocalSection({
   onCommitRelayModelSelection,
   onCopyText,
   relayKeyDisplayName,
+  supportsWebsockets,
+  onToggleSupportsWebsockets,
 }: StatusApplyLocalSectionProps) {
   type LocalCliPanelTarget = 'codex' | 'claude';
 
@@ -129,6 +133,7 @@ export function StatusApplyLocalSection({
         reasoningEffort: selectedRelayReasoningEffort,
         providerID: selectedRelayProvider.id,
         providerName: selectedRelayProvider.name,
+        supportsWebsockets,
       }),
     [
       selectedEndpointBaseUrl,
@@ -137,6 +142,7 @@ export function StatusApplyLocalSection({
       selectedRelayProvider.id,
       selectedRelayProvider.name,
       selectedRelayReasoningEffort,
+      supportsWebsockets,
     ]
   );
   const claudeDiff = useMemo(
@@ -298,6 +304,21 @@ export function StatusApplyLocalSection({
                   <input value="responses" readOnly className="input-swiss w-full" />
                 </label>
               </div>
+
+              {selectedRelayProvider.id !== 'openai' ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-[0.875rem] font-bold uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                    supports_websockets
+                  </span>
+                  <ToggleSwitch
+                    label="supports_websockets"
+                    checked={supportsWebsockets}
+                    disabled={isApplyingToLocal}
+                    className="h-9 w-16"
+                    onChange={onToggleSupportsWebsockets}
+                  />
+                </div>
+              ) : null}
 
               {localApplyMessage ? (
                 <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
@@ -545,6 +566,9 @@ const codexFeatureStageFilters: CodexFeatureStageFilter[] = [
   'experimental',
   'advanced',
   'compat',
+  'legacy',
+  'deprecated',
+  'removed',
   'unknown',
   'unsupported',
 ];

@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GetTokens Rate Limit Design v01</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: oklch(0.955 0.006 92);
+      --surface: oklch(0.985 0.004 92);
+      --surface-step: oklch(0.92 0.006 92);
+      --ink: oklch(0.145 0.01 92);
+      --muted: oklch(0.43 0.012 92);
+      --faint: oklch(0.66 0.01 92);
+      --line: oklch(0.23 0.009 92);
+      --shadow: oklch(0.145 0.01 92);
+      --accent: oklch(0.69 0.145 73);
+      --accent-ink: oklch(0.2 0.04 73);
+      --amber: oklch(0.72 0.16 73);
+      --good: oklch(0.58 0.16 148);
+      --warn: oklch(0.74 0.15 82);
+      --bad: oklch(0.58 0.2 29);
+      --idle: oklch(0.78 0.007 92);
+      --radius-card: 0;
+      --font-ui: "Aptos", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+      --font-mono: "SFMono-Regular", "Roboto Mono", "Consolas", monospace;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --canvas: oklch(0.13 0.008 92);
+      --surface: oklch(0.18 0.008 92);
+      --surface-step: oklch(0.245 0.008 92);
+      --ink: oklch(0.91 0.006 92);
+      --muted: oklch(0.69 0.008 92);
+      --faint: oklch(0.48 0.008 92);
+      --line: oklch(0.83 0.005 92);
+      --shadow: oklch(0.04 0.004 92);
+      --accent: oklch(0.73 0.14 73);
+      --accent-ink: oklch(0.18 0.04 73);
+      --amber: oklch(0.75 0.145 73);
+      --good: oklch(0.69 0.16 148);
+      --warn: oklch(0.78 0.15 82);
+      --bad: oklch(0.7 0.18 29);
+      --idle: oklch(0.32 0.006 92);
+    }
+
+    * { box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      -webkit-font-smoothing: antialiased;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: var(--font-ui);
+    }
+    body {
+      min-width: 1240px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        linear-gradient(90deg, color-mix(in oklch, var(--line) 6%, transparent) 1px, transparent 1px),
+        linear-gradient(180deg, color-mix(in oklch, var(--line) 5%, transparent) 1px, transparent 1px),
+        var(--canvas);
+      background-size: 32px 32px;
+    }
+    .page { width: 1180px; margin: 0 auto; padding: 40px 0 72px; }
+
+    /* ---- Toolbar ---- */
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 24px;
+      align-items: end;
+      margin-bottom: 22px;
+      border-bottom: 3px solid var(--line);
+      padding-bottom: 18px;
+    }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: 34px;
+      line-height: 0.95;
+      font-weight: 1000;
+      text-transform: uppercase;
+      text-wrap: balance;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .theme-button {
+      min-height: 40px;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      box-shadow: 5px 5px 0 var(--shadow);
+      color: var(--ink);
+      padding: 0 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    /* ---- Sections ---- */
+    .section-title {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: end;
+      margin: 42px 0 18px;
+      border-top: 3px solid var(--line);
+      padding-top: 18px;
+    }
+    .section-title h3 { margin: 0; font-size: 24px; font-weight: 1000; text-transform: uppercase; }
+    .section-title p { margin: 7px 0 0; max-width: 760px; color: var(--muted); font-family: var(--font-mono); font-size: 10px; font-weight: 900; line-height: 1.55; text-transform: uppercase; }
+
+    /* ---- Grid ---- */
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    /* ---- Card ---- */
+    .card {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto auto auto auto auto auto 1fr auto;
+      min-height: 492px;
+      border: 3px solid var(--line);
+      background: var(--surface);
+      box-shadow: 8px 8px 0 var(--shadow);
+      overflow: hidden;
+    }
+    .card[data-state="active"] { --state-color: var(--good); }
+    .card[data-state="mixed"] { --state-color: var(--warn); }
+    .card[data-state="blocked"] { --state-color: var(--bad); }
+    .card[data-state="idle"] { --state-color: var(--idle); }
+
+    .route-tape {
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 3px solid var(--line);
+      background: color-mix(in oklch, var(--state-color) 20%, var(--surface));
+      padding: 10px 12px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .state-mark {
+      width: 12px; height: 12px;
+      background: var(--state-color);
+      outline: 2px solid var(--line);
+    }
+    .route-tape strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .identity {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 16px 16px 14px;
+      border-bottom: 1px dashed color-mix(in oklch, var(--line) 70%, transparent);
+    }
+    .identity h2 { margin: 0; font-size: 18px; line-height: 1.05; font-weight: 1000; text-transform: uppercase; overflow-wrap: anywhere; }
+    .identity .mail { display: block; margin-top: 7px; color: var(--muted); font-family: var(--font-mono); font-size: 11px; font-weight: 800; }
+
+    .chip-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .chip {
+      display: inline-flex;
+      min-height: 24px;
+      align-items: center;
+      border: 2px solid var(--line);
+      background: var(--surface-step);
+      padding: 0 7px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 900;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .chip.critical { background: var(--bad); color: white; }
+
+    /* ---- Quota Windows (blue) ---- */
+    .section-label {
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .quota-block {
+      padding: 16px;
+      border-bottom: 1px dashed color-mix(in oklch, var(--line) 70%, transparent);
+    }
+    .quota-block + .quota-block { border-top: none; }
+    .quota-row {
+      display: grid;
+      grid-template-columns: 68px minmax(0, 1fr) 48px;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .quota-row:last-child { margin-bottom: 0; }
+    .quota-row .window-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .bar-track {
+      position: relative;
+      height: 16px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: var(--surface-step);
+    }
+    .bar-track.has-grid {
+      background-image: repeating-linear-gradient(to right, color-mix(in oklch, var(--line) 12%, transparent) 0 6px, transparent 6px 12px);
+    }
+    .bar-fill {
+      position: absolute;
+      inset: 0;
+      background: oklch(0.55 0.12 245);
+    }
+    .bar-fill.amber { background: var(--amber); }
+    .bar-fill.bad   { background: var(--bad); }
+    .bar-value {
+      text-align: right;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .bar-value.over { color: var(--bad); }
+
+    /* ---- Evidence ---- */
+    .evidence {
+      padding: 16px;
+      border-bottom: 1px dashed color-mix(in oklch, var(--line) 70%, transparent);
+    }
+    .evidence dl {
+      display: grid;
+      grid-template-columns: 80px minmax(0, 1fr);
+      gap: 4px 12px;
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .evidence dt { color: var(--muted); }
+    .evidence dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ---- Footer ---- */
+    .card-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 12px 14px;
+    }
+    .btn {
+      min-height: 32px;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      box-shadow: 4px 4px 0 var(--shadow);
+      color: var(--ink);
+      padding: 0 12px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    /* ---- Modal ---- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: color-mix(in oklch, var(--canvas) 80%, transparent);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 60px;
+      z-index: 100;
+    }
+    .modal {
+      width: 620px;
+      max-height: 85vh;
+      border: 3px solid var(--line);
+      background: var(--surface);
+      box-shadow: 12px 12px 0 var(--shadow);
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      overflow: hidden;
+    }
+    .modal-header {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 18px 14px;
+      border-bottom: 3px solid var(--line);
+    }
+    .modal-header h4 { margin: 0; font-size: 20px; font-weight: 1000; text-transform: uppercase; }
+    .modal-section-label {
+      padding: 14px 18px 6px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .modal-body {
+      padding: 0 18px 18px;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      border-top: 2px solid var(--line);
+      padding: 12px 18px;
+    }
+
+    /* ---- Rule Editor Row ---- */
+    .rule-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 10px;
+      border: 2px solid var(--line);
+      background: var(--surface-step);
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .rule-row.new-rule { border-style: dashed; background: transparent; }
+    .rule-controls {
+      display: grid;
+      grid-template-columns: auto auto auto auto;
+      align-items: center;
+      gap: 8px;
+    }
+    select, input[type="number"] {
+      min-height: 32px;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 0 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    select { min-width: 110px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23333' stroke-width='2'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px; }
+    [data-theme="dark"] select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23ddd' stroke-width='2'/%3E%3C/svg%3E"); }
+    input[type="number"] { width: 100px; }
+    .rule-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .toggle {
+      width: 38px; height: 22px;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      border-radius: 0;
+      cursor: pointer;
+      position: relative;
+    }
+    .toggle.on { background: var(--good); }
+    .toggle::after {
+      content: "";
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 14px; height: 14px;
+      background: var(--ink);
+      transition: translate 120ms;
+    }
+    .toggle.on::after { translate: 16px; }
+    .btn-icon {
+      width: 32px; height: 32px;
+      border: 2px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-add {
+      min-height: 36px;
+      width: 100%;
+      border: 2px dashed var(--line);
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    /* ---- Desk Table ---- */
+    .desk-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 3px solid var(--line);
+      background: var(--surface);
+      box-shadow: 8px 8px 0 var(--shadow);
+    }
+    .desk-table th {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 3px solid var(--line);
+      background: var(--surface-step);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .desk-table td {
+      padding: 12px 14px;
+      border-bottom: 1px dashed color-mix(in oklch, var(--line) 40%, transparent);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .desk-table tr.blocked { background: color-mix(in oklch, var(--bad) 8%, transparent); }
+    .desk-table tr.blocked td:first-child::before {
+      content: "● ";
+      color: var(--bad);
+    }
+    .mini-bar {
+      display: inline-block;
+      width: 120px;
+      height: 12px;
+      border: 1px solid var(--line);
+      background: var(--surface-step);
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    .mini-bar-fill {
+      height: 100%;
+      display: block;
+    }
+    .mini-bar-fill.ok  { background: var(--amber); }
+    .mini-bar-fill.over { background: var(--bad); }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ============ HEADER ============ -->
+  <div class="toolbar">
+    <div>
+      <p class="eyebrow">GetTokens · Rate Limit Design v01</p>
+      <h1>Account Rate Limits</h1>
+    </div>
+    <div class="controls">
+      <button class="theme-button" onclick="document.documentElement.toggleAttribute('data-theme')">Dark Mode</button>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 1: ACCOUNT CARDS ============ -->
+  <div class="section-title">
+    <div>
+      <h3>1. Account Cards with Rate Limits</h3>
+      <p>Card 2: 1h request limit exceeded (critical state). Card 3: 24h token limit warning. Card 1: both limits OK.</p>
+    </div>
+  </div>
+
+  <div class="grid-3">
+
+    <!-- Card 1: Normal — both limits OK -->
+    <div class="card" data-state="active">
+      <div class="route-tape">
+        <div class="state-mark"></div>
+        <strong>codex-api-key:sk-ny3m…a8x2</strong>
+        <span style="color:var(--good)">ACTIVE</span>
+      </div>
+      <div class="identity">
+        <div>
+          <h2>Company Codex Key</h2>
+          <span class="mail">api.openai.com/v1</span>
+        </div>
+        <div class="chip-stack">
+          <span class="chip">API KEY</span>
+          <span class="chip">CODEX</span>
+        </div>
+      </div>
+
+      <!-- Codex Quota (blue, existing) -->
+      <div class="quota-block">
+        <div class="section-label" style="margin-bottom:10px">Quota · Team Plan</div>
+        <div class="quota-row">
+          <span class="window-label">5H</span>
+          <div class="bar-track has-grid"><div class="bar-fill" style="width:78%"></div></div>
+          <span class="bar-value">78%</span>
+        </div>
+        <div class="quota-row">
+          <span class="window-label">7D</span>
+          <div class="bar-track has-grid"><div class="bar-fill" style="width:62%"></div></div>
+          <span class="bar-value">62%</span>
+        </div>
+      </div>
+
+      <!-- Rate Limits (amber, NEW) -->
+      <div class="quota-block">
+        <div class="section-label" style="margin-bottom:10px">Rate Limits</div>
+        <div class="quota-row">
+          <span class="window-label">24H TOKENS</span>
+          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:32%"></div></div>
+          <span class="bar-value">320K/1M</span>
+        </div>
+        <div class="quota-row">
+          <span class="window-label">1H REQ</span>
+          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:45%"></div></div>
+          <span class="bar-value">45/100</span>
+        </div>
+      </div>
+
+      <div class="evidence">
+        <div class="section-label" style="margin-bottom:8px">Evidence</div>
+        <dl>
+          <dt>ASSET ID</dt><dd>codex-api-key:sk-ny3m…a8x2</dd>
+          <dt>SOURCE</dt><dd>ATTRIBUTION</dd>
+        </dl>
+      </div>
+
+      <div class="card-footer">
+        <button class="btn">Details</button>
+      </div>
+    </div>
+
+    <!-- Card 2: BLOCKED — 1h request limit exceeded -->
+    <div class="card" data-state="blocked">
+      <div class="route-tape">
+        <div class="state-mark"></div>
+        <strong>codex-api-key:sk-mk9p…c3d1</strong>
+        <span style="color:var(--bad)">BLOCKED</span>
+      </div>
+      <div class="identity">
+        <div>
+          <h2>Personal Key</h2>
+          <span class="mail">api.openai.com/v1</span>
+        </div>
+        <div class="chip-stack">
+          <span class="chip">API KEY</span>
+          <span class="chip critical">1H REQ 已满</span>
+        </div>
+      </div>
+
+      <div class="quota-block">
+        <div class="section-label" style="margin-bottom:10px">Quota · Plus Plan</div>
+        <div class="quota-row">
+          <span class="window-label">5H</span>
+          <div class="bar-track has-grid"><div class="bar-fill" style="width:15%"></div></div>
+          <span class="bar-value">15%</span>
+        </div>
+      </div>
+
+      <div class="quota-block">
+        <div class="section-label" style="margin-bottom:10px">Rate Limits</div>
+        <div class="quota-row">
+          <span class="window-label">24H TOKENS</span>
+          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:68%"></div></div>
+          <span class="bar-value">340K/500K</span>
+        </div>
+        <div class="quota-row">
+          <span class="window-label" style="color:var(--bad)">1H REQ</span>
+          <div class="bar-track has-grid"><div class="bar-fill bad" style="width:100%"></div></div>
+          <span class="bar-value over">100/100 已满</span>
+        </div>
+      </div>
+
+      <div class="evidence">
+        <div class="section-label" style="margin-bottom:8px">Evidence</div>
+        <dl>
+          <dt>ASSET ID</dt><dd>codex-api-key:sk-mk9p…c3d1</dd>
+          <dt>SOURCE</dt><dd>ATTRIBUTION</dd>
+          <dt>STATUS</dt><dd style="color:var(--bad)">1h requests: 100/100</dd>
+        </dl>
+      </div>
+
+      <div class="card-footer">
+        <button class="btn">Details</button>
+      </div>
+    </div>
+
+    <!-- Card 3: WARNING — 24h token limit warn (action=warn, still usable) -->
+    <div class="card" data-state="mixed">
+      <div class="route-tape">
+        <div class="state-mark"></div>
+        <strong>auth-file:auth.json</strong>
+        <span style="color:var(--warn)">WARN</span>
+      </div>
+      <div class="identity">
+        <div>
+          <h2>Team OAuth</h2>
+          <span class="mail">team@company.com</span>
+        </div>
+        <div class="chip-stack">
+          <span class="chip">AUTH FILE</span>
+          <span class="chip">CODEX</span>
+        </div>
+      </div>
+
+      <div class="quota-block">
+        <div class="section-label" style="margin-bottom:10px">Quota · Pro Plan</div>
+        <div class="quota-row">
+          <span class="window-label">5H</span>
+          <div class="bar-track has-grid"><div class="bar-fill" style="width:45%"></div></div>
+          <span class="bar-value">45%</span>
+        </div>
+        <div class="quota-row">
+          <span class="window-label">7D</span>
+          <div class="bar-track has-grid"><div class="bar-fill" style="width:37%"></div></div>
+          <span class="bar-value">37%</span>
+        </div>
+      </div>
+
+      <div class="quota-block">
+        <div class="section-label" style="margin-bottom:10px">Rate Limits</div>
+        <div class="quota-row">
+          <span class="window-label" style="color:var(--warn)">24H TOKENS</span>
+          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:92%"></div></div>
+          <span class="bar-value" style="color:var(--warn)">1.84M/2M</span>
+        </div>
+        <div class="quota-row">
+          <span class="window-label">1H REQ</span>
+          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:12%"></div></div>
+          <span class="bar-value">12/200</span>
+        </div>
+      </div>
+
+      <div class="evidence">
+        <div class="section-label" style="margin-bottom:8px">Evidence</div>
+        <dl>
+          <dt>ASSET ID</dt><dd>auth-file:auth.json</dd>
+          <dt>SOURCE</dt><dd>ATTRIBUTION</dd>
+        </dl>
+      </div>
+
+      <div class="card-footer">
+        <button class="btn">Details</button>
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- ============ SECTION 2: RULE EDITOR IN DETAIL MODAL ============ -->
+  <div class="section-title">
+    <div>
+      <h3>2. Rate Limit Rule Editor</h3>
+      <p>Account detail modal · Rate Limits section · CRUD rules per account</p>
+    </div>
+  </div>
+
+  <div style="position:relative; min-height:460px; border:1px dashed var(--faint); display:flex; align-items:flex-start; justify-content:center; padding-top:24px;">
+    <!-- Inline modal mock (not fixed) -->
+    <div class="modal" style="position:relative; box-shadow:8px 8px 0 var(--shadow);">
+      <div class="modal-header">
+        <h4>codex-api-key:sk-ny3m…a8x2</h4>
+        <button class="btn-icon" style="width:36px;height:36px">✕</button>
+      </div>
+
+      <div class="modal-section-label">Management</div>
+      <div class="modal-body" style="border-bottom:1px dashed var(--faint);padding-bottom:10px;">
+        <div style="font-family:var(--font-mono);font-size:10px;font-weight:900;text-transform:uppercase;color:var(--faint);margin-bottom:8px;">
+          API Key · Base URL · Prefix · Quota Curl (existing)
+        </div>
+      </div>
+
+      <div class="modal-section-label">Rate Limits</div>
+      <div class="modal-body">
+
+        <!-- Rule 1: Token Window 24h -->
+        <div class="rule-row">
+          <div>
+            <div class="rule-controls">
+              <select><option selected>Token 窗口限流</option><option>请求窗口限流</option></select>
+              <select><option>1h</option><option>6h</option><option>12h</option><option selected>24h</option><option>7d</option><option>30d</option></select>
+              <input type="number" value="1000000" step="100000">
+              <select><option selected>Block</option><option>Warn</option></select>
+            </div>
+            <div class="rule-status">Current: 320K / 1M tokens (32%)</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding-top:2px;">
+            <button class="toggle on" aria-label="enabled"></button>
+            <button class="btn-icon" style="color:var(--bad)">✕</button>
+          </div>
+        </div>
+
+        <!-- Rule 2: Request Window 1h -->
+        <div class="rule-row">
+          <div>
+            <div class="rule-controls">
+              <select><option>Token 窗口限流</option><option selected>请求窗口限流</option></select>
+              <select><option selected>1h</option><option>6h</option><option>12h</option><option>24h</option></select>
+              <input type="number" value="100" step="10">
+              <select><option selected>Block</option><option>Warn</option></select>
+            </div>
+            <div class="rule-status">Current: 45 / 100 requests (45%)</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;padding-top:2px;">
+            <button class="toggle on" aria-label="enabled"></button>
+            <button class="btn-icon" style="color:var(--bad)">✕</button>
+          </div>
+        </div>
+
+        <button class="btn-add">+ Add Rule</button>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" style="color:var(--muted)">Close</button>
+        <button class="btn" style="background:var(--ink);color:var(--surface);">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ============ SECTION 3: USAGE DESK — RATE LIMIT SOURCE ============ -->
+  <div class="section-title">
+    <div>
+      <h3>3. Usage Desk — Rate Limit Observation Source</h3>
+      <p>Source toggle: Observed / Projected / <strong style="color:var(--amber)">Rate Limits</strong>. All configured accounts with current limit status, sorted by blocked first.</p>
+    </div>
+  </div>
+
+  <table class="desk-table">
+    <thead>
+      <tr>
+        <th style="width:200px">Account</th>
+        <th style="width:100px">Strategy</th>
+        <th style="width:60px">Window</th>
+        <th>Usage</th>
+        <th style="width:70px">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="blocked">
+        <td>Personal Key</td>
+        <td>请求窗口限流</td>
+        <td>1H</td>
+        <td>
+          <span class="mini-bar"><span class="mini-bar-fill over" style="width:100%"></span></span>
+          100/100
+        </td>
+        <td style="color:var(--bad)">BLOCKED</td>
+      </tr>
+      <tr class="blocked">
+        <td>Personal Key</td>
+        <td>Token 窗口限流</td>
+        <td>24H</td>
+        <td>
+          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:68%"></span></span>
+          340K/500K
+        </td>
+        <td style="color:var(--muted)">OK</td>
+      </tr>
+      <tr>
+        <td>Team OAuth</td>
+        <td>Token 窗口限流</td>
+        <td>24H</td>
+        <td>
+          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:92%"></span></span>
+          1.84M/2M
+        </td>
+        <td style="color:var(--warn)">WARN</td>
+      </tr>
+      <tr>
+        <td>Company Codex Key</td>
+        <td>Token 窗口限流</td>
+        <td>24H</td>
+        <td>
+          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:32%"></span></span>
+          320K/1M
+        </td>
+        <td style="color:var(--good)">OK</td>
+      </tr>
+      <tr>
+        <td>Company Codex Key</td>
+        <td>请求窗口限流</td>
+        <td>1H</td>
+        <td>
+          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:45%"></span></span>
+          45/100
+        </td>
+        <td style="color:var(--good)">OK</td>
+      </tr>
+      <tr>
+        <td>Team OAuth</td>
+        <td>请求窗口限流</td>
+        <td>1H</td>
+        <td>
+          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:6%"></span></span>
+          12/200
+        </td>
+        <td style="color:var(--good)">OK</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:7px;color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:900;text-transform:uppercase;">
+    6 rules across 3 accounts · 1 blocked · 1 warning · Source: sidecar rate-limit states
+  </div>
+
+
+  <!-- ============ SECTION 4: CODE NOT SHOWN ============ -->
+  <div class="section-title">
+    <div>
+      <h3>4. Account Row — Blocked Chip</h3>
+      <p>CodexAccountOrderRow badges include blocked chip when rate-limit state is blocked. Compact mode hides card body but keeps badges visible.</p>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <!-- Normal row -->
+    <div class="card" data-state="active" style="min-height:auto;">
+      <div class="route-tape">
+        <div class="state-mark"></div>
+        <strong>codex-api-key:sk-ny3m…a8x2</strong>
+        <span style="color:var(--good)">ACTIVE</span>
+      </div>
+      <div class="identity">
+        <h2>Company Codex Key</h2>
+        <div class="chip-stack">
+          <span class="chip">RANK 01</span>
+          <span class="chip">API KEY</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn">Details</button>
+      </div>
+    </div>
+
+    <!-- Blocked row -->
+    <div class="card" data-state="blocked" style="min-height:auto;">
+      <div class="route-tape">
+        <div class="state-mark"></div>
+        <strong>codex-api-key:sk-mk9p…c3d1</strong>
+        <span style="color:var(--bad)">BLOCKED</span>
+      </div>
+      <div class="identity">
+        <h2>Personal Key</h2>
+        <div class="chip-stack">
+          <span class="chip">RANK 02</span>
+          <span class="chip">API KEY</span>
+          <span class="chip critical">1H REQ 已满</span>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn">Details</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

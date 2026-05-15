@@ -13,6 +13,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 SOURCE_DIR="${CLI_PROXY_SOURCE_DIR:-${ROOT_DIR}/docs-linhay/references/CLIProxyAPI}"
 OUTPUT_DIR="${CLI_PROXY_OUTPUT_DIR:-${ROOT_DIR}/build/bin}"
 META_FILE="${OUTPUT_DIR}/cli-proxy-api.meta.json"
+BUILD_SCRIPT="${CLI_PROXY_BUILD_SCRIPT:-${SCRIPT_DIR}/build-sidecar.sh}"
 BINARY_NAME="cli-proxy-api"
 
 if [[ "$GOOS" == "windows" ]]; then
@@ -31,9 +32,68 @@ resolve_dirty() {
   fi
 }
 
+hash_stdin() {
+  shasum -a 256 | awk '{print $1}'
+}
+
+emit_file_state() {
+  local rel_path="$1"
+  local abs_path="${SOURCE_DIR}/${rel_path}"
+
+  if [[ -L "${abs_path}" ]]; then
+    printf 'symlink\t%s\t%s\n' "${rel_path}" "$(readlink "${abs_path}")"
+    return
+  fi
+
+  if [[ -f "${abs_path}" ]]; then
+    printf 'file\t%s\t%s\n' "${rel_path}" "$(shasum -a 256 "${abs_path}" | awk '{print $1}')"
+    return
+  fi
+
+  printf 'missing\t%s\n' "${rel_path}"
+}
+
+resolve_git_source_state_hash() {
+  {
+    while IFS= read -r rel_path; do
+      [[ -n "${rel_path}" ]] || continue
+      emit_file_state "${rel_path}"
+    done < <(git -C "${SOURCE_DIR}" ls-files)
+
+    while IFS= read -r rel_path; do
+      [[ -n "${rel_path}" ]] || continue
+      emit_file_state "${rel_path}"
+    done < <(git -C "${SOURCE_DIR}" ls-files --others --exclude-standard)
+  } | LC_ALL=C sort | hash_stdin
+}
+
+resolve_plain_source_state_hash() {
+  if [[ ! -d "${SOURCE_DIR}" ]]; then
+    printf 'missing-source-dir' | hash_stdin
+    return
+  fi
+
+  (
+    cd "${SOURCE_DIR}"
+    find . -type f ! -path './.git/*' -print
+  ) | LC_ALL=C sort | while IFS= read -r rel_path; do
+    [[ -n "${rel_path}" ]] || continue
+    emit_file_state "${rel_path#./}"
+  done | LC_ALL=C sort | hash_stdin
+}
+
+resolve_source_state_hash() {
+  if git -C "${SOURCE_DIR}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    resolve_git_source_state_hash
+    return
+  fi
+  resolve_plain_source_state_hash
+}
+
 current_commit="$(resolve_commit)"
 current_dirty="$(resolve_dirty)"
-current_fingerprint="${current_commit}:${current_dirty}:${GOOS}:${GOARCH}"
+current_source_state_hash="$(resolve_source_state_hash)"
+current_fingerprint="${current_commit}:${current_dirty}:${current_source_state_hash}:${GOOS}:${GOARCH}"
 
 needs_rebuild() {
   if [[ ! -x "${OUTPUT_DIR}/${BINARY_NAME}" ]]; then
@@ -51,14 +111,14 @@ needs_rebuild() {
 write_meta() {
   mkdir -p "${OUTPUT_DIR}"
   cat > "${META_FILE}" <<EOF
-{"fingerprint":"${current_fingerprint}","commit":"${current_commit}","dirty":"${current_dirty}","goos":"${GOOS}","goarch":"${GOARCH}"}
+{"fingerprint":"${current_fingerprint}","commit":"${current_commit}","dirty":"${current_dirty}","sourceStateHash":"${current_source_state_hash}","goos":"${GOOS}","goarch":"${GOARCH}"}
 EOF
 }
 
 if needs_rebuild; then
   echo "→ CLIProxyAPI binary out of date, rebuilding (${current_fingerprint})" >&2
   rm -f "${OUTPUT_DIR}/${BINARY_NAME}"
-  "${SCRIPT_DIR}/build-sidecar.sh" "${GOOS}" "${GOARCH}" "${OUTPUT_DIR}"
+  "${BUILD_SCRIPT}" "${GOOS}" "${GOARCH}" "${OUTPUT_DIR}"
   write_meta
 else
   echo "→ CLIProxyAPI binary is up to date (${current_fingerprint})" >&2

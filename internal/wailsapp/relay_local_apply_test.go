@@ -26,7 +26,7 @@ func TestApplyRelayServiceConfigToLocalWritesOpenAIProviderFacingFiles(t *testin
 	t.Setenv("CODEX_HOME", codexHome)
 	t.Setenv("HOME", t.TempDir())
 
-	result, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "low", "openai", "OpenAI")
+	result, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "low", "openai", "OpenAI", false)
 	if err != nil {
 		t.Fatalf("applyRelayServiceConfigToLocal returned error: %v", err)
 	}
@@ -59,7 +59,7 @@ func TestApplyRelayServiceConfigToLocalWritesCustomProviderFacingFiles(t *testin
 	t.Setenv("CODEX_HOME", codexHome)
 	t.Setenv("HOME", t.TempDir())
 
-	result, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "xhigh", "gettokens", "GetTokens")
+	result, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "xhigh", "gettokens", "GetTokens", true)
 	if err != nil {
 		t.Fatalf("applyRelayServiceConfigToLocal returned error: %v", err)
 	}
@@ -112,6 +112,9 @@ func TestApplyRelayServiceConfigToLocalWritesCustomProviderFacingFiles(t *testin
 	if !strings.Contains(configContent, `wire_api = "responses"`) {
 		t.Fatalf("config.toml missing wire_api: %s", configContent)
 	}
+		if !strings.Contains(configContent, `supports_websockets = true`) {
+			t.Fatalf("config.toml missing supports_websockets: %s", configContent)
+		}
 }
 
 func TestApplyRelayServiceConfigToLocalMarksLastUsedMetadata(t *testing.T) {
@@ -119,7 +122,7 @@ func TestApplyRelayServiceConfigToLocalMarksLastUsedMetadata(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	app := &App{}
-	if _, err := app.ApplyRelayServiceConfigToLocal("sk-gettokens-test", "http://127.0.0.1:8317/v1", "gpt-5.4", "high", "openai", "OpenAI"); err != nil {
+	if _, err := app.ApplyRelayServiceConfigToLocal("sk-gettokens-test", "http://127.0.0.1:8317/v1", "gpt-5.4", "high", "openai", "OpenAI", false); err != nil {
 		t.Fatalf("ApplyRelayServiceConfigToLocal returned error: %v", err)
 	}
 
@@ -165,7 +168,7 @@ func TestApplyRelayServiceConfigToLocalPreservesExistingConfigOrderAndExtraEntri
 		t.Fatalf("WriteFile config.toml: %v", err)
 	}
 
-	if _, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "low", "openai", "OpenAI"); err != nil {
+	if _, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "low", "openai", "OpenAI", false); err != nil {
 		t.Fatalf("applyRelayServiceConfigToLocal returned error: %v", err)
 	}
 
@@ -225,7 +228,7 @@ func TestApplyRelayServiceConfigToLocalPreservesExistingProviderSectionAndAuthFi
 		t.Fatalf("WriteFile config.toml: %v", err)
 	}
 
-	if _, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "xhigh", "gettokens", "GetTokens"); err != nil {
+	if _, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "xhigh", "gettokens", "GetTokens", true); err != nil {
 		t.Fatalf("applyRelayServiceConfigToLocal returned error: %v", err)
 	}
 
@@ -258,7 +261,7 @@ func TestApplyRelayServiceConfigToLocalPreservesExistingProviderSectionAndAuthFi
 	if !strings.Contains(configContent, `name = "GetTokens"`) || !strings.Contains(configContent, `base_url = "http://127.0.0.1:8317/v1"`) {
 		t.Fatalf("provider section should be updated in place: %s", configContent)
 	}
-	if !strings.Contains(configContent, `requires_openai_auth = true`) || !strings.Contains(configContent, `wire_api = "responses"`) {
+	if !strings.Contains(configContent, `requires_openai_auth = true`) || !strings.Contains(configContent, `wire_api = "responses"`) || !strings.Contains(configContent, `supports_websockets = true`) {
 		t.Fatalf("provider section missing required fields: %s", configContent)
 	}
 	if strings.Index(configContent, `name = "GetTokens"`) > strings.Index(configContent, `env_key = "OPENAI_API_KEY"`) {

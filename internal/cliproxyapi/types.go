@@ -55,8 +55,9 @@ type CodexAPIKeyPatch struct {
 }
 
 type OpenAICompatibleAPIKeyEntry struct {
-	APIKey   string `json:"api-key"`
-	ProxyURL string `json:"proxy-url,omitempty"`
+	APIKey    string `json:"api-key"`
+	ProxyURL  string `json:"proxy-url,omitempty"`
+	AuthIndex string `json:"auth-index,omitempty"`
 }
 
 type OpenAICompatibleModel struct {

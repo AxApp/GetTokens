@@ -58,6 +58,7 @@ export interface CodexLocalApplyDiffInput {
   reasoningEffort: string;
   providerID: string;
   providerName: string;
+  supportsWebsockets: boolean;
 }
 
 export interface ClaudeCodeSettingsDiffInput {
@@ -122,21 +123,25 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
   const model = input.model.trim();
   const reasoningEffort = input.reasoningEffort.trim();
   const maskedKey = maskRelayKey(input.apiKey);
+  const customProviderLines = [
+    `+model_provider = ${quoteConfigString(providerID)}`,
+    '',
+    `+[model_providers.${providerID}]`,
+    `+name = ${quoteConfigString(providerName)}`,
+    `+base_url = ${quoteConfigString(baseUrl)}`,
+    '+requires_openai_auth = true',
+    '+wire_api = "responses"',
+  ];
+  if (input.supportsWebsockets) {
+    customProviderLines.push('+supports_websockets = true');
+  }
   const providerLines =
     providerID === RELAY_CODEX_OPENAI_PROVIDER_ID
       ? [
           `+openai_base_url = ${quoteConfigString(baseUrl)}`,
           '# openai provider identity preserved; model_provider is not forced unless already present',
         ]
-      : [
-          `+model_provider = ${quoteConfigString(providerID)}`,
-          '',
-          `+[model_providers.${providerID}]`,
-          `+name = ${quoteConfigString(providerName)}`,
-          `+base_url = ${quoteConfigString(baseUrl)}`,
-          '+requires_openai_auth = true',
-          '+wire_api = "responses"',
-        ];
+      : customProviderLines;
 
   return [
     '--- CODEX_HOME/auth.json',

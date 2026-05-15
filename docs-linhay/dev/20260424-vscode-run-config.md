@@ -32,10 +32,11 @@
 规则：
 
 1. sidecar 源码默认取 `docs-linhay/references/CLIProxyAPI`
-2. 当前源码指纹固定为 `<short-commit>:<dirty|clean>:<goos>:<goarch>`
-3. 若 `build/bin/cli-proxy-api` 或 `build/bin/cli-proxy-api.meta.json` 缺失，直接重编
-4. 若 `meta.json` 里的 `fingerprint` 与当前源码指纹不一致，直接重编
-5. 若指纹一致，则跳过 sidecar 重编，继续执行 Wails CLI
+2. 当前源码指纹采用 `<short-commit>:<dirty|clean>:<source-state-hash>:<goos>:<goarch>`
+3. `source-state-hash` 会基于 sidecar 源码目录当前工作树内容计算，不再只看 `dirty` 布尔值；同一 commit 下只要 dirty 内容发生变化，也会触发重编
+4. 若 `build/bin/cli-proxy-api` 或 `build/bin/cli-proxy-api.meta.json` 缺失，直接重编
+5. 若 `meta.json` 里的 `fingerprint` 与当前源码指纹不一致，直接重编
+6. 若指纹一致，则跳过 sidecar 重编，继续执行 Wails CLI
 
 对应脚本：
 

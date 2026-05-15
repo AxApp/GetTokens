@@ -373,7 +373,6 @@ export function selectCodexFeatureRows(
   const query = options.query ?? '';
 
   return snapshot.items
-    .filter((item) => (stageFilter === 'all' || stageFilter === 'compat' ? !item.hiddenByDefault : true))
     .filter((item) => matchesStageFilter(item, stageFilter))
     .filter((item) => matchesQuery(item, query))
     .map((item) => {

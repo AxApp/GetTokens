@@ -87,6 +87,7 @@ export default function StatusFeature({
   const [selectedRelayProviderID, setSelectedRelayProviderID] = useState<string>(() =>
     loadSelectedRelayProvider(loadRelayProviderOptions())
   );
+  const [supportsWebsockets, setSupportsWebsockets] = useState(true);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
   const [localApplyMessage, setLocalApplyMessage] = useState('');
@@ -570,7 +571,8 @@ export default function StatusFeature({
             selectedRelayModel,
             selectedRelayReasoningEffort,
             selectedRelayProvider.id,
-            selectedRelayProvider.name
+            selectedRelayProvider.name,
+            supportsWebsockets
           )
       );
       setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}`);
@@ -697,6 +699,8 @@ export default function StatusFeature({
             onCommitRelayModelSelection={commitRelayModelSelection}
             onCopyText={(value, successMessage) => void copyText(value, successMessage)}
             relayKeyDisplayName={relayKeyDisplayName}
+            supportsWebsockets={supportsWebsockets}
+            onToggleSupportsWebsockets={() => setSupportsWebsockets((prev) => !prev)}
           />
         </section>
       </div>
