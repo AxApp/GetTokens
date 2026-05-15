@@ -77,6 +77,75 @@ func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse
 	}
 }
 
+func mapSidecarUsageAttributionInput(input SidecarUsageAttributionInput) wailsapp.SidecarUsageAttributionInput {
+	return wailsapp.SidecarUsageAttributionInput{
+		Window:            input.Window,
+		Bucket:            input.Bucket,
+		IncludeUnresolved: input.IncludeUnresolved,
+	}
+}
+
+func mapSidecarUsageAttributionResponse(result *wailsapp.SidecarUsageAttributionResponse) *SidecarUsageAttributionResponse {
+	if result == nil {
+		return &SidecarUsageAttributionResponse{
+			Items: []SidecarUsageAttributionItem{},
+		}
+	}
+	return &SidecarUsageAttributionResponse{
+		Window:      result.Window,
+		Bucket:      result.Bucket,
+		GeneratedAt: result.GeneratedAt,
+		Items:       mapSidecarUsageAttributionItems(result.Items),
+		Unresolved:  mapSidecarUsageAttributionItems(result.Unresolved),
+	}
+}
+
+func mapSidecarUsageAttributionItems(items []wailsapp.SidecarUsageAttributionItem) []SidecarUsageAttributionItem {
+	if len(items) == 0 {
+		return []SidecarUsageAttributionItem{}
+	}
+	out := make([]SidecarUsageAttributionItem, 0, len(items))
+	for _, item := range items {
+		out = append(out, SidecarUsageAttributionItem{
+			AttributionKey:    item.AttributionKey,
+			AttributionKind:   item.AttributionKind,
+			AccountKey:        item.AccountKey,
+			CredentialKey:     item.CredentialKey,
+			Provider:          item.Provider,
+			RequestedModels:   append([]string(nil), item.RequestedModels...),
+			RequestCount:      item.RequestCount,
+			FailedCount:       item.FailedCount,
+			LatencyAverageMs:  item.LatencyAverageMs,
+			InputTokens:       item.InputTokens,
+			CachedInputTokens: item.CachedInputTokens,
+			OutputTokens:      item.OutputTokens,
+			TotalTokens:       item.TotalTokens,
+			LastActivityAt:    item.LastActivityAt,
+			Buckets:           mapSidecarUsageAttributionBuckets(item.Buckets),
+		})
+	}
+	return out
+}
+
+func mapSidecarUsageAttributionBuckets(items []wailsapp.SidecarUsageAttributionBucket) []SidecarUsageAttributionBucket {
+	if len(items) == 0 {
+		return []SidecarUsageAttributionBucket{}
+	}
+	out := make([]SidecarUsageAttributionBucket, 0, len(items))
+	for _, item := range items {
+		out = append(out, SidecarUsageAttributionBucket{
+			Start:             item.Start,
+			RequestCount:      item.RequestCount,
+			FailedCount:       item.FailedCount,
+			InputTokens:       item.InputTokens,
+			CachedInputTokens: item.CachedInputTokens,
+			OutputTokens:      item.OutputTokens,
+			TotalTokens:       item.TotalTokens,
+		})
+	}
+	return out
+}
+
 func mapCodexFeatureConfigSnapshot(result *wailsapp.CodexFeatureConfigSnapshot) *CodexFeatureConfigSnapshot {
 	if result == nil {
 		return &CodexFeatureConfigSnapshot{

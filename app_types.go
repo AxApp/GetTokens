@@ -285,6 +285,48 @@ type UsageStatisticsResponse struct {
 	FailedRequests int64                  `json:"failedRequests,omitempty"`
 }
 
+type SidecarUsageAttributionInput struct {
+	Window            string `json:"window,omitempty"`
+	Bucket            string `json:"bucket,omitempty"`
+	IncludeUnresolved bool   `json:"includeUnresolved,omitempty"`
+}
+
+type SidecarUsageAttributionBucket struct {
+	Start             string `json:"start"`
+	RequestCount      int64  `json:"requestCount"`
+	FailedCount       int64  `json:"failedCount"`
+	InputTokens       int64  `json:"inputTokens"`
+	CachedInputTokens int64  `json:"cachedInputTokens"`
+	OutputTokens      int64  `json:"outputTokens"`
+	TotalTokens       int64  `json:"totalTokens"`
+}
+
+type SidecarUsageAttributionItem struct {
+	AttributionKey    string                          `json:"attributionKey"`
+	AttributionKind   string                          `json:"attributionKind"`
+	AccountKey        string                          `json:"accountKey"`
+	CredentialKey     string                          `json:"credentialKey,omitempty"`
+	Provider          string                          `json:"provider"`
+	RequestedModels   []string                        `json:"requestedModels"`
+	RequestCount      int64                           `json:"requestCount"`
+	FailedCount       int64                           `json:"failedCount"`
+	LatencyAverageMs  int64                           `json:"latencyAverageMs,omitempty"`
+	InputTokens       int64                           `json:"inputTokens"`
+	CachedInputTokens int64                           `json:"cachedInputTokens"`
+	OutputTokens      int64                           `json:"outputTokens"`
+	TotalTokens       int64                           `json:"totalTokens"`
+	LastActivityAt    string                          `json:"lastActivityAt,omitempty"`
+	Buckets           []SidecarUsageAttributionBucket `json:"buckets"`
+}
+
+type SidecarUsageAttributionResponse struct {
+	Window      string                        `json:"window"`
+	Bucket      string                        `json:"bucket"`
+	GeneratedAt string                        `json:"generatedAt"`
+	Items       []SidecarUsageAttributionItem `json:"items"`
+	Unresolved  []SidecarUsageAttributionItem `json:"unresolved,omitempty"`
+}
+
 type LocalProjectedUsageDetail struct {
 	Timestamp         string `json:"timestamp"`
 	Provider          string `json:"provider"`

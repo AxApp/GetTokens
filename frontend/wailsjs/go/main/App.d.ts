@@ -7,7 +7,7 @@ import {sidecar} from '../models';
 
 export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:string):Promise<main.ClaudeCodeLocalApplyResult>;
 
-export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string):Promise<main.RelayLocalApplyResult>;
+export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean):Promise<main.RelayLocalApplyResult>;
 
 export function ApplyUpdate():Promise<void>;
 
@@ -78,6 +78,8 @@ export function GetRelayServiceConfig():Promise<main.RelayServiceConfig>;
 export function GetReleaseLabel():Promise<string>;
 
 export function GetSidecarStatus():Promise<sidecar.Status>;
+
+export function GetSidecarUsageAttribution(arg1:main.SidecarUsageAttributionInput):Promise<main.SidecarUsageAttributionResponse>;
 
 export function GetUsageStatistics():Promise<main.UsageStatisticsResponse>;
 

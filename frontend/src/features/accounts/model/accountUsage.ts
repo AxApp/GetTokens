@@ -37,13 +37,66 @@ export interface StatusBarData {
 }
 
 export interface AccountUsageSummary {
+  source: 'none' | 'legacy' | 'attribution';
   hasData: boolean;
+  requestCount: number;
+  failedCount: number;
   success: number;
   failure: number;
   successRate: number | null;
   averageLatencyMs: number | null;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
   lastActivityAt: number | null;
+  attributionKey: string;
+  attributionKind: string;
+  provider: string;
+  requestedModels: string[];
+  trafficBuckets: AccountUsageTrafficBucket[];
   statusBar: StatusBarData;
+}
+
+export interface AccountUsageTrafficBucket {
+  start: string;
+  requestCount: number;
+  failedCount: number;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+}
+
+export interface AccountUsageAttributionBucket {
+  start: string;
+  requestCount: number;
+  failedCount?: number;
+  inputTokens?: number;
+  cachedInputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+}
+
+export interface AccountUsageAttributionItem {
+  attributionKey?: string;
+  accountKey: string;
+  provider?: string;
+  requestedModels?: string[];
+  requestCount: number;
+  failedCount?: number;
+  latencyAverageMs?: number;
+  inputTokens?: number;
+  cachedInputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  lastActivityAt?: string;
+  buckets?: AccountUsageAttributionBucket[];
+}
+
+export interface AccountUsageAttributionResponse {
+  items?: AccountUsageAttributionItem[];
+  unresolved?: AccountUsageAttributionItem[];
 }
 
 const EMPTY_STATUS_BAR: StatusBarData = {
@@ -371,13 +424,144 @@ export function resolveResponsiveStatusBarData(statusBar: StatusBarData, contain
 
 function buildEmptyAccountUsageSummary(): AccountUsageSummary {
   return {
+    source: 'none',
     hasData: false,
+    requestCount: 0,
+    failedCount: 0,
     success: 0,
     failure: 0,
     successRate: null,
     averageLatencyMs: null,
+    inputTokens: 0,
+    cachedInputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
     lastActivityAt: null,
+    attributionKey: '',
+    attributionKind: '',
+    provider: '',
+    requestedModels: [],
+    trafficBuckets: [],
     statusBar: EMPTY_STATUS_BAR,
+  };
+}
+
+function isAttributionResponse(payload: unknown): payload is AccountUsageAttributionResponse {
+  return isRecord(payload) && (Array.isArray(payload.items) || Array.isArray(payload.unresolved));
+}
+
+function inferAttributionBucketDurationMs(buckets: AccountUsageAttributionBucket[]) {
+  if (buckets.length < 2) {
+    return 60 * 60 * 1000;
+  }
+  const current = parseTimestampMs(buckets[buckets.length - 1]?.start);
+  const previous = parseTimestampMs(buckets[buckets.length - 2]?.start);
+  const duration = current - previous;
+  return Number.isFinite(duration) && duration > 0 ? duration : 60 * 60 * 1000;
+}
+
+function calculateStatusBarDataFromAttributionBuckets(
+  buckets: AccountUsageAttributionBucket[],
+): StatusBarData {
+  const blockCount = 20;
+  const relevantBuckets = buckets.slice(-blockCount);
+  const bucketDurationMs = inferAttributionBucketDurationMs(relevantBuckets);
+  const paddedBuckets: Array<AccountUsageAttributionBucket | null> = [
+    ...Array.from({ length: Math.max(0, blockCount - relevantBuckets.length) }, () => null),
+    ...relevantBuckets,
+  ];
+
+  const blocks: StatusBlockState[] = [];
+  const blockDetails: StatusBlockDetail[] = [];
+  let totalSuccess = 0;
+  let totalFailure = 0;
+
+  paddedBuckets.forEach((bucket) => {
+    const requestCount = Math.max(0, Number(bucket?.requestCount ?? 0));
+    const failure = Math.max(0, Number(bucket?.failedCount ?? 0));
+    const success = Math.max(0, requestCount - failure);
+    totalSuccess += success;
+    totalFailure += failure;
+    blocks.push(resolveStatusBlockState(success, failure));
+
+    const startTime = bucket ? parseTimestampMs(bucket.start) : 0;
+    blockDetails.push({
+      success,
+      failure,
+      rate: success + failure > 0 ? success / (success + failure) : -1,
+      startTime: Number.isFinite(startTime) ? startTime : 0,
+      endTime: Number.isFinite(startTime) ? startTime + bucketDurationMs : 0,
+    });
+  });
+
+  const total = totalSuccess + totalFailure;
+  return {
+    blocks,
+    blockDetails,
+    successRate: total > 0 ? (totalSuccess / total) * 100 : 100,
+    totalSuccess,
+    totalFailure,
+  };
+}
+
+function buildAccountUsageSummaryFromAttribution(
+  account: AccountRecord,
+  attribution: AccountUsageAttributionResponse,
+): AccountUsageSummary {
+  const item = attribution.items?.find((entry) => String(entry.accountKey || '').trim() === account.id);
+  if (!item) {
+    return buildEmptyAccountUsageSummary();
+  }
+
+  const requestCount = Math.max(0, Number(item.requestCount ?? 0));
+  const failedCount = Math.max(0, Number(item.failedCount ?? 0));
+  const success = Math.max(0, requestCount - failedCount);
+  const lastActivityAt = item.lastActivityAt ? parseTimestampMs(item.lastActivityAt) : Number.NaN;
+  const trafficBuckets = Array.isArray(item.buckets)
+    ? item.buckets.map((bucket) => ({
+        start: bucket.start,
+        requestCount: Math.max(0, Number(bucket.requestCount ?? 0)),
+        failedCount: Math.max(0, Number(bucket.failedCount ?? 0)),
+        inputTokens: Math.max(0, Number(bucket.inputTokens ?? 0)),
+        cachedInputTokens: Math.max(0, Number(bucket.cachedInputTokens ?? 0)),
+        outputTokens: Math.max(0, Number(bucket.outputTokens ?? 0)),
+        totalTokens: Math.max(
+          0,
+          Number(bucket.totalTokens ?? 0) ||
+            Number(bucket.inputTokens ?? 0) +
+              Number(bucket.cachedInputTokens ?? 0) +
+              Number(bucket.outputTokens ?? 0),
+        ),
+      }))
+    : [];
+
+  return {
+    source: 'attribution',
+    hasData: requestCount > 0,
+    requestCount,
+    failedCount,
+    success,
+    failure: failedCount,
+    successRate: requestCount > 0 ? (success / requestCount) * 100 : null,
+    averageLatencyMs:
+      typeof item.latencyAverageMs === 'number' && Number.isFinite(item.latencyAverageMs)
+        ? Math.round(item.latencyAverageMs)
+        : null,
+    inputTokens: Math.max(0, Number(item.inputTokens ?? 0)),
+    cachedInputTokens: Math.max(0, Number(item.cachedInputTokens ?? 0)),
+    outputTokens: Math.max(0, Number(item.outputTokens ?? 0)),
+    totalTokens: Math.max(0, Number(item.totalTokens ?? 0)),
+    lastActivityAt: Number.isFinite(lastActivityAt) ? lastActivityAt : null,
+    attributionKey: typeof item.attributionKey === 'string' ? item.attributionKey.trim() : '',
+    attributionKind: '',
+    provider: typeof item.provider === 'string' ? item.provider.trim() : String(account.provider || ''),
+    requestedModels: Array.isArray(item.requestedModels)
+      ? item.requestedModels
+          .map((value) => (typeof value === 'string' ? value.trim() : ''))
+          .filter((value) => value.length > 0)
+      : [],
+    trafficBuckets,
+    statusBar: calculateStatusBarDataFromAttributionBuckets(item.buckets ?? []),
   };
 }
 
@@ -402,6 +586,9 @@ function resolveAccountUsageDetails(account: AccountRecord, usageDetails: UsageD
 }
 
 export function buildAccountUsageSummary(account: AccountRecord, usageData: unknown, nowMs: number = Date.now()): AccountUsageSummary {
+  if (isAttributionResponse(usageData)) {
+    return buildAccountUsageSummaryFromAttribution(account, usageData);
+  }
   const usageDetails = resolveAccountUsageDetails(account, collectUsageDetails(usageData));
   if (usageDetails.length === 0) {
     return buildEmptyAccountUsageSummary();
@@ -433,12 +620,24 @@ export function buildAccountUsageSummary(account: AccountRecord, usageData: unkn
 
   const total = success + failure;
   return {
+    source: 'legacy',
     hasData: total > 0,
+    requestCount: total,
+    failedCount: failure,
     success,
     failure,
     successRate: total > 0 ? (success / total) * 100 : null,
     averageLatencyMs: latencySamples > 0 ? Math.round(latencyTotal / latencySamples) : null,
+    inputTokens: 0,
+    cachedInputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
     lastActivityAt,
+    attributionKey: '',
+    attributionKind: '',
+    provider: String(account.provider || ''),
+    requestedModels: [],
+    trafficBuckets: [],
     statusBar: calculateStatusBarData(usageDetails, nowMs),
   };
 }

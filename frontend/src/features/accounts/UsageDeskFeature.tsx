@@ -158,7 +158,7 @@ export default function UsageDeskFeature({
                     <div className="space-y-5">
                       <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
                       {loading ? (
-                        <StatePanel title="加载中" body="正在拉取 sidecar /usage 真实请求样本。" />
+                        <StatePanel title="加载中" body="正在拉取 sidecar 账号归因真实请求样本。" />
                       ) : loadError ? (
                         <StatePanel title="加载失败" body={loadError} tone="error" />
                       ) : (
@@ -172,9 +172,9 @@ export default function UsageDeskFeature({
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
                             status={
-                              <div className="flex items-center gap-3 text-[0.9375rem] font-black uppercase tracking-wider text-[var(--text-primary)]">
-                                <div className="h-3 w-3 bg-[var(--text-primary)]" />
-                                <span>数据源: Sidecar Usage</span>
+                                <div className="flex items-center gap-3 text-[0.9375rem] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                  <div className="h-3 w-3 bg-[var(--text-primary)]" />
+                                <span>数据源: Sidecar Attribution</span>
                                 <span className="opacity-40">/</span>
                                 <span>{observedDrilldownDayKey || '全部'}</span>
                                 {selectedChartPointKey && (
@@ -251,12 +251,12 @@ export default function UsageDeskFeature({
                               observedDrilldownDayKey
                                 ? observedSnapshot.minutePoints.map((point) => ({
                                     label: point.label,
-                                    value: point.success + point.failure,
+                                    value: point.requests,
                                     color: '#111111',
                                   }))
                                 : observedSnapshot.dailyPoints.map((point) => ({
                                     label: point.label,
-                                    value: point.success,
+                                    value: point.requests,
                                     color: '#111111',
                                     drilldownDayKey: point.dayKey,
                                   }))

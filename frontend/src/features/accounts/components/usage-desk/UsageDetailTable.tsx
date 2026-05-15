@@ -41,6 +41,7 @@ export function resolveUsageDetailColumns(rows: UsageDetailTableRow[]): UsageDet
       row.cachedInputTokens !== undefined ||
       row.outputTokens !== undefined,
   );
+  const hasNote = rows.some((row) => row.note !== undefined && row.note !== '');
 
   return hasProjectedBreakdown
     ? [
@@ -51,6 +52,7 @@ export function resolveUsageDetailColumns(rows: UsageDetailTableRow[]): UsageDet
         { key: 'inputTokens', header: '输入' },
         { key: 'cachedInputTokens', header: '缓存' },
         { key: 'outputTokens', header: '输出' },
+        ...(hasNote ? [{ key: 'note', header: '备注' } satisfies UsageDetailColumn] : []),
       ]
     : [
         { key: 'timeLabel', header: '时间' },

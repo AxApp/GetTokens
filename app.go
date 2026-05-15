@@ -252,6 +252,14 @@ func (a *App) GetUsageStatistics() (*UsageStatisticsResponse, error) {
 	}, nil
 }
 
+func (a *App) GetSidecarUsageAttribution(input SidecarUsageAttributionInput) (*SidecarUsageAttributionResponse, error) {
+	result, err := a.core.GetSidecarUsageAttribution(mapSidecarUsageAttributionInput(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapSidecarUsageAttributionResponse(result), nil
+}
+
 func (a *App) GetCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 	result, err := a.core.GetCodexLocalUsage()
 	if err != nil {
@@ -744,8 +752,8 @@ func (a *App) UpdateRelayRoutingConfig(config RelayRoutingConfig) (*RelayRouting
 	}, nil
 }
 
-func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string) (*RelayLocalApplyResult, error) {
-	result, err := a.core.ApplyRelayServiceConfigToLocal(apiKey, baseURL, model, reasoningEffort, providerID, providerName)
+func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) (*RelayLocalApplyResult, error) {
+	result, err := a.core.ApplyRelayServiceConfigToLocal(apiKey, baseURL, model, reasoningEffort, providerID, providerName, supportsWebsockets)
 	if err != nil {
 		return nil, err
 	}

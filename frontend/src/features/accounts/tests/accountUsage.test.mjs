@@ -222,3 +222,117 @@ test('buildAccountUsageSummaryMap returns per-account summaries', () => {
   assert.equal(summaries['auth-file:alpha'].hasData, true);
   assert.equal(summaries['auth-file:beta'].hasData, false);
 });
+
+test('buildAccountUsageSummary consumes sidecar attribution items for codex api key local-id', () => {
+  const summaries = buildAccountUsageSummaryMap(
+    [
+      {
+        id: 'codex-api-key:local-1',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'local-1',
+        status: 'ACTIVE',
+      },
+    ],
+    {
+      items: [
+        {
+          accountKey: 'codex-api-key:local-1',
+          attributionKey: 'auth-id:runtime-auth-1',
+          requestCount: 12,
+          failedCount: 3,
+          latencyAverageMs: 245,
+          inputTokens: 1200,
+          cachedInputTokens: 200,
+          outputTokens: 450,
+          totalTokens: 1850,
+          lastActivityAt: '2026-04-27T09:58:00.000Z',
+          buckets: [
+            {
+              start: '2026-04-27T09:00:00.000Z',
+              requestCount: 5,
+              failedCount: 1,
+              inputTokens: 500,
+              cachedInputTokens: 80,
+              outputTokens: 160,
+              totalTokens: 740,
+            },
+            {
+              start: '2026-04-27T10:00:00.000Z',
+              requestCount: 7,
+              failedCount: 2,
+              inputTokens: 700,
+              cachedInputTokens: 120,
+              outputTokens: 290,
+              totalTokens: 1110,
+            },
+          ],
+        },
+      ],
+      unresolved: [],
+    },
+    Date.parse('2026-04-27T10:30:00.000Z')
+  );
+
+  const summary = summaries['codex-api-key:local-1'];
+  assert.equal(summary.source, 'attribution');
+  assert.equal(summary.hasData, true);
+  assert.equal(summary.requestCount, 12);
+  assert.equal(summary.failedCount, 3);
+  assert.equal(summary.success, 9);
+  assert.equal(summary.failure, 3);
+  assert.equal(summary.averageLatencyMs, 245);
+  assert.equal(summary.inputTokens, 1200);
+  assert.equal(summary.cachedInputTokens, 200);
+  assert.equal(summary.outputTokens, 450);
+  assert.equal(summary.totalTokens, 1850);
+  assert.equal(summary.statusBar.totalSuccess, 9);
+  assert.equal(summary.statusBar.totalFailure, 3);
+});
+
+test('buildAccountUsageSummary consumes sidecar attribution items for openai-compatible provider account', () => {
+  const summaries = buildAccountUsageSummaryMap(
+    [
+      {
+        id: 'openai-compatible:MI',
+        provider: 'mi',
+        credentialSource: 'api-key',
+        displayName: '兼容 OpenAI · MI',
+        status: 'CONFIGURED',
+      },
+    ],
+    {
+      items: [
+        {
+          accountKey: 'openai-compatible:MI',
+          attributionKey: 'auth-id:openai-compatibility:mi:4a25ae6b9cc4',
+          provider: 'openai-compatible',
+          requestCount: 1,
+          failedCount: 0,
+          cachedInputTokens: 192,
+          totalTokens: 259,
+          requestedModels: ['gpt-5.4'],
+          lastActivityAt: '2026-04-27T09:58:00.000Z',
+          buckets: [
+            {
+              start: '2026-04-27T09:00:00.000Z',
+              requestCount: 1,
+              failedCount: 0,
+              cachedInputTokens: 192,
+              totalTokens: 259,
+            },
+          ],
+        },
+      ],
+      unresolved: [],
+    },
+    Date.parse('2026-04-27T10:30:00.000Z')
+  );
+
+  const summary = summaries['openai-compatible:MI'];
+  assert.equal(summary.source, 'attribution');
+  assert.equal(summary.hasData, true);
+  assert.equal(summary.requestCount, 1);
+  assert.equal(summary.cachedInputTokens, 192);
+  assert.equal(summary.totalTokens, 259);
+});

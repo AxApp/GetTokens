@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
   GetCodexLocalUsage,
+  GetSidecarUsageAttribution,
   GetUsageStatistics,
   RebuildCodexLocalUsage,
   RefreshCodexLocalUsage,
@@ -8,7 +9,7 @@ import {
 import { EventsOn } from '../../../../wailsjs/runtime/runtime';
 import { useDebug } from '../../../context/DebugContext';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../../types';
-import { hasWailsAppBindings } from '../../../utils/previewMode';
+import { hasPreviewMode, hasWailsAppBindings } from '../../../utils/previewMode';
 import {
   persistUsageDeskRange,
   persistUsageDeskSource,
@@ -32,6 +33,10 @@ import {
   type UsageDeskSource,
   resolveUsageDeskRangeDrilldownDayKey,
 } from '../model/usageDesk';
+import {
+  getUsageDeskPreviewObservedUsage,
+  getUsageDeskPreviewProjectedUsage,
+} from '../previewData';
 import { buildUsageDetailRowKey, resolveUsageDetailColumns, type UsageDetailTableRow } from '../components/usage-desk/UsageDetailTable';
 
 export const rangeOptions: UsageDeskRangeOption[] = ['7D', '14D', '30D', '全部'];
@@ -53,8 +58,41 @@ function applyRange<T extends UsageDeskDailyPoint | UsageDeskProjectedDailyPoint
   return points.slice(-limit);
 }
 
+function resolveObservedAttributionWindow(range: UsageDeskRangeOption): string {
+  switch (range) {
+    case '7D':
+      return '7d';
+    case '14D':
+      return '14d';
+    case '30D':
+      return '30d';
+    case '全部':
+      return 'all';
+    case 'TODAY':
+    default:
+      return '24h';
+  }
+}
+
+function resolveObservedAttributionBucket(resolution: UsageDeskResolution): string {
+  switch (resolution) {
+    case '1M':
+      return '1m';
+    case '5M':
+      return '5m';
+    case '15M':
+      return '15m';
+    case '30M':
+      return '30m';
+    case '60M':
+    default:
+      return '1h';
+  }
+}
+
 export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: UsageDeskWorkspaceID) {
   const { trackRequest } = useDebug();
+  const browserMode = hasPreviewMode('usage-codex') || !hasWailsAppBindings();
   const ready = sidecarStatus?.code === 'ready';
 
   const [source, setSource] = useState<UsageDeskSource>(() =>
@@ -116,6 +154,14 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     let mounted = true;
 
     async function loadObservedUsage() {
+      if (browserMode) {
+        if (!mounted) return;
+        setObservedUsageData(getUsageDeskPreviewObservedUsage(workspace));
+        setLoadError('');
+        setLoading(false);
+        return;
+      }
+
       if (!ready) {
         setObservedUsageData(null);
         setLoadError('');
@@ -125,6 +171,25 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
       setLoading(true);
       setLoadError('');
       try {
+        const attributionInput = {
+          window: resolveObservedAttributionWindow(range),
+          bucket: resolveObservedAttributionBucket(resolution),
+          includeUnresolved: true,
+        };
+        const attribution = await trackRequest<any>(
+          'GetSidecarUsageAttribution',
+          { args: [attributionInput] },
+          () => GetSidecarUsageAttribution(attributionInput),
+        );
+        const hasAttributionData =
+          (Array.isArray(attribution?.items) && attribution.items.length > 0) ||
+          (Array.isArray(attribution?.unresolved) && attribution.unresolved.length > 0);
+        if (!mounted) return;
+        if (hasAttributionData) {
+          setObservedUsageData(attribution);
+          return;
+        }
+
         const response = await trackRequest<any>('GetUsageStatistics', { args: [] }, () => GetUsageStatistics());
         if (!mounted) return;
         setObservedUsageData(response?.usage ?? response ?? null);
@@ -145,12 +210,22 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     return () => {
       mounted = false;
     };
-  }, [ready, trackRequest]);
+  }, [browserMode, ready, range, resolution, trackRequest, workspace]);
 
   useEffect(() => {
     let mounted = true;
 
     async function loadProjectedUsage() {
+      if (browserMode) {
+        if (!mounted) return;
+        setProjectedUsageData(getUsageDeskPreviewProjectedUsage(workspace));
+        setProjectedLoading(false);
+        setProjectedLoadError('');
+        setProjectedProgress(null);
+        setProjectedActionMessage('');
+        return;
+      }
+
       setProjectedLoading(true);
       setProjectedLoadError('');
       setProjectedProgress(null);
@@ -178,9 +253,18 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     return () => {
       mounted = false;
     };
-  }, [trackRequest]);
+  }, [browserMode, trackRequest, workspace]);
 
   const refreshProjectedUsage = async () => {
+    if (browserMode) {
+      setProjectedUsageData(getUsageDeskPreviewProjectedUsage(workspace));
+      setProjectedLoading(false);
+      setProjectedLoadError('');
+      setProjectedProgress(null);
+      setProjectedActionMessage('预览数据已刷新');
+      return;
+    }
+
     setProjectedLoading(true);
     setProjectedLoadError('');
     setProjectedProgress(null);
@@ -201,6 +285,15 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   };
 
   const rebuildProjectedUsage = async () => {
+    if (browserMode) {
+      setProjectedUsageData(getUsageDeskPreviewProjectedUsage(workspace));
+      setProjectedLoading(false);
+      setProjectedLoadError('');
+      setProjectedProgress(null);
+      setProjectedActionMessage('预览索引已重建');
+      return;
+    }
+
     setProjectedLoading(true);
     setProjectedLoadError('');
     setProjectedProgress(null);
@@ -278,9 +371,14 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     .map((point) => ({
       timeLabel: point.label,
       provider: 'observed',
-      metric: '成功 / 失败',
-      value: `${point.success} / ${point.failure}`,
-      note: `总请求 ${point.success + point.failure} 次`,
+      model: '--',
+      metric: '总请求',
+      value: formatUsageDeskChartValue(point.requests, 'count'),
+      note: point.failure > 0 ? `失败 ${formatUsageDeskChartValue(point.failure, 'count')}` : undefined,
+      requests: formatUsageDeskChartValue(point.requests, 'count'),
+      inputTokens: formatUsageDeskChartValue(point.inputTokens, 'tokens'),
+      cachedInputTokens: formatUsageDeskChartValue(point.cachedInputTokens, 'tokens'),
+      outputTokens: formatUsageDeskChartValue(point.outputTokens, 'tokens'),
       drilldownDayKey: point.dayKey,
     }));
 

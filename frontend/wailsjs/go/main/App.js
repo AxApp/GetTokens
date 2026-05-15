@@ -6,8 +6,8 @@ export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1, arg2, arg3) {
   return window['go']['main']['App']['ApplyClaudeCodeAPIKeyConfigToLocal'](arg1, arg2, arg3);
 }
 
-export function ApplyRelayServiceConfigToLocal(arg1, arg2, arg3, arg4, arg5, arg6) {
-  return window['go']['main']['App']['ApplyRelayServiceConfigToLocal'](arg1, arg2, arg3, arg4, arg5, arg6);
+export function ApplyRelayServiceConfigToLocal(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
+  return window['go']['main']['App']['ApplyRelayServiceConfigToLocal'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
 export function ApplyUpdate() {
@@ -148,6 +148,10 @@ export function GetReleaseLabel() {
 
 export function GetSidecarStatus() {
   return window['go']['main']['App']['GetSidecarStatus']();
+}
+
+export function GetSidecarUsageAttribution(arg1) {
+  return window['go']['main']['App']['GetSidecarUsageAttribution'](arg1);
 }
 
 export function GetUsageStatistics() {
