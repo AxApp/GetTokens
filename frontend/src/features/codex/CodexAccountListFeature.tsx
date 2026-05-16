@@ -16,11 +16,12 @@ import { main } from '../../../wailsjs/go/models';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
-import type { SidecarStatus } from '../../types';
+import type { AccountRecord, SidecarStatus } from '../../types';
 import { toErrorMessage } from '../../utils/error';
 import { buildCodexDetailFrameHash, clearCodexDetailFrameHash, readFrameHashState } from '../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import useAccountsQuotaState from '../accounts/hooks/useAccountsQuotaState';
+import useAccountsRateLimitState from '../accounts/hooks/useAccountsRateLimitState';
 import useAccountsUsageState from '../accounts/hooks/useAccountsUsageState';
 import { getAccountsPreviewCodexAccounts } from '../accounts/previewData';
 import { mapBackendAccountRecord } from '../accounts/model/accountPresentation';
@@ -83,6 +84,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const suppressNextDetailClickRef = useRef(false);
   const { codexQuotaByName, loadCodexQuotas } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
+  const { accountRateLimitByID, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
 
   const priorityUpdates = useMemo(() => buildCodexAccountPriorityUpdates(orderedRows), [orderedRows]);
   const detailRow = useMemo(
@@ -141,7 +143,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       const previewAccounts = getAccountsPreviewCodexAccounts();
       setOrderedRows(getCodexAccountListPreviewRows());
       void loadCodexQuotas(previewAccounts);
-      void loadAccountUsage([
+      const previewUsageAccounts: AccountRecord[] = [
         ...previewAccounts,
         {
           id: 'openai-compatible:deepseek',
@@ -158,7 +160,9 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           status: 'disabled',
           disabled: true,
         },
-      ]);
+      ];
+      void loadAccountUsage(previewUsageAccounts);
+      void loadAccountRateLimits(previewUsageAccounts);
       setMessage(messageOverride || t('codex.account_list_preview_loaded'));
       return;
     }
@@ -183,6 +187,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       });
       void loadCodexQuotas(accountRows);
       void loadAccountUsage(accountRows);
+      void loadAccountRateLimits(nextRows.map((row) => codexRowToAccountRecord(row)));
       setOrderedRows(nextRows);
       setMessage(messageOverride || t('codex.account_list_loaded'));
     } catch (error) {
@@ -195,7 +200,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
   useEffect(() => {
     void reload();
-  }, [browserMode, loadAccountUsage, loadCodexQuotas, ready]);
+  }, [browserMode, loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, ready]);
 
   useEffect(() => {
     if (routingProbeModel.trim()) {
@@ -684,7 +689,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
   return (
     <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CODEX_ACCOUNT_LIST">
-      <div className="mx-auto w-full max-w-6xl min-w-[72rem] space-y-8">
+      <div className="mx-auto w-full max-w-6xl min-w-0 space-y-8">
         <WorkspacePageHeader
           title={t('codex.account_list_title')}
           subtitle={t('codex.account_list_subtitle')}
@@ -730,6 +735,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           routePolicyRowStates={routePolicyRowStates}
           codexQuotaByName={codexQuotaByName}
           accountUsageByID={accountUsageByID}
+          accountRateLimitByID={accountRateLimitByID}
           refreshLabel={t('common.refresh')}
           loadingLabel={t('common.loading')}
           saveLabel={t('codex.account_list_save_order')}
@@ -783,4 +789,18 @@ function readAuthFileNameFromRowID(rowID: string) {
 function filterCodexAccountIDs(previous: string[], availableIDs: string[]) {
   const available = new Set(availableIDs);
   return normalizeCodexAccountIDList(previous).filter((id) => available.has(id));
+}
+
+function codexRowToAccountRecord(row: CodexAccountRow): AccountRecord {
+  return {
+    id: row.id,
+    provider: row.provider,
+    credentialSource: row.sourceKind === 'codex-auth-file' ? 'auth-file' : 'api-key',
+    displayName: row.label,
+    status: row.status,
+    disabled: row.disabled,
+    baseUrl: row.baseUrl,
+    quotaKey: row.quotaKey,
+    name: row.id.startsWith('auth-file:') ? row.id.slice('auth-file:'.length) : undefined,
+  };
 }
