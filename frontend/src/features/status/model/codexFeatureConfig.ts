@@ -364,6 +364,13 @@ function matchesQuery(item: CodexFeatureConfigItem, query: string) {
     .includes(normalized);
 }
 
+function isHiddenByCurrentFilter(item: CodexFeatureConfigItem, stageFilter: CodexFeatureStageFilter) {
+  if (!item.hiddenByDefault) {
+    return false;
+  }
+  return stageFilter !== item.stage;
+}
+
 export function selectCodexFeatureRows(
   snapshot: CodexFeatureConfigSnapshot,
   draft: CodexFeatureDraft,
@@ -374,6 +381,7 @@ export function selectCodexFeatureRows(
 
   return snapshot.items
     .filter((item) => matchesStageFilter(item, stageFilter))
+    .filter((item) => !isHiddenByCurrentFilter(item, stageFilter))
     .filter((item) => matchesQuery(item, query))
     .map((item) => {
       const draftValue = draft.values[item.key] ?? item.effectiveValue;
