@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Translator } from '../model/types';
 import {
   resolveProviderDetailModelOptions,
@@ -7,13 +8,17 @@ import {
   type ProviderRemoteModelsState,
   type ProviderVerifyState,
 } from '../model/openAICompatible';
+import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import RateLimitRulesSection from './RateLimitRulesSection';
 
 interface OpenAICompatibleDetailModalProps {
   t: Translator;
   draft: OpenAICompatibleProviderDraft;
   verifyState: ProviderVerifyState;
   remoteModelsState?: ProviderRemoteModelsState;
+  rateLimitStatus?: RateLimitState;
+  rateLimitStrategies?: RateLimitStrategyMeta[];
   error: string;
   saving: boolean;
   onClose: () => void;
@@ -22,6 +27,7 @@ interface OpenAICompatibleDetailModalProps {
   onVerify: () => void;
   onFetchModels: () => void;
   onApplyFetchedModels: () => void;
+  onRateLimitRulesChanged: () => void;
 }
 
 function formatLastVerifiedAt(timestamp: number | null) {
@@ -36,6 +42,8 @@ export default function OpenAICompatibleDetailModal({
   draft,
   verifyState,
   remoteModelsState,
+  rateLimitStatus,
+  rateLimitStrategies,
   error,
   saving,
   onClose,
@@ -44,7 +52,9 @@ export default function OpenAICompatibleDetailModal({
   onVerify,
   onFetchModels,
   onApplyFetchedModels,
+  onRateLimitRulesChanged,
 }: OpenAICompatibleDetailModalProps) {
+  const [headersExpanded, setHeadersExpanded] = useState(false);
   const selectedPreset = resolveOpenAICompatibleProviderPreset({
     name: draft.name,
     baseUrl: draft.baseUrl,
@@ -55,6 +65,9 @@ export default function OpenAICompatibleDetailModal({
   });
   const suggestedModels: OpenAICompatibleModelRow[] = suggestedModelOptions.models;
   const effectiveVerifyModel = draft.verifyModel || suggestedModels[0]?.name || '';
+  const rateLimitAccountName = draft.currentName || draft.name;
+  const rateLimitAccountKey = `openai-compatible:${rateLimitAccountName}`;
+  const rateLimitMatchKey = rateLimitStatus?.matchKey || `provider:${rateLimitAccountName.trim().toLowerCase()}`;
   const modelSourceLabel =
     suggestedModelOptions.source === 'remote'
       ? t('accounts.openai_provider_models_source_remote')
@@ -117,8 +130,7 @@ export default function OpenAICompatibleDetailModal({
         </header>
 
         <div className="min-h-0 flex-1 overflow-auto">
-          <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
-            <section className="min-h-0 px-6 py-6 xl:border-r-2 xl:border-[var(--border-color)]">
+            <section className="min-h-0 px-6 py-6">
             <div className="space-y-6">
               <label className="space-y-2">
                 <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
@@ -146,18 +158,29 @@ export default function OpenAICompatibleDetailModal({
               </label>
 
               <div className="space-y-2">
-                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <button
+                  type="button"
+                  onClick={() => setHeadersExpanded((prev) => !prev)}
+                  className="flex w-full items-center gap-2 text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+                >
+                  <span className="inline-grid h-3.5 w-3.5 place-items-center border border-[var(--border-color)] text-[0.5rem] leading-none">
+                    {draft.headersText || headersExpanded ? '−' : '+'}
+                  </span>
                   {t('accounts.openai_provider_headers')}
-                </div>
-                <textarea
-                  value={draft.headersText}
-                  onChange={(event) => onChange({ ...draft, headersText: event.target.value })}
-                  className="input-swiss min-h-32 w-full resize-y font-mono !text-[0.6875rem] leading-6"
-                  placeholder={'Authorization: Bearer sk-...\nHTTP-Referer: https://example.com\nX-Title: GetTokens'}
-                />
-                <div className="text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                  {t('accounts.openai_provider_headers_hint')}
-                </div>
+                </button>
+                {(draft.headersText || headersExpanded) ? (
+                  <>
+                    <textarea
+                      value={draft.headersText}
+                      onChange={(event) => onChange({ ...draft, headersText: event.target.value })}
+                      className="input-swiss min-h-32 w-full resize-y font-mono !text-[0.6875rem] leading-6"
+                      placeholder={'Authorization: Bearer sk-...\nHTTP-Referer: https://example.com\nX-Title: GetTokens'}
+                    />
+                    <div className="text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      {t('accounts.openai_provider_headers_hint')}
+                    </div>
+                  </>
+                ) : null}
               </div>
 
               <div className="space-y-3">
@@ -261,7 +284,7 @@ export default function OpenAICompatibleDetailModal({
             </div>
           </section>
 
-          <section className="min-h-0 space-y-6 bg-[var(--bg-surface)]/30 px-6 py-6">
+          <section className="min-h-0 space-y-6 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-6 py-6">
             <div className="space-y-4">
               <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_test_model')}
@@ -311,7 +334,14 @@ export default function OpenAICompatibleDetailModal({
               </div>
             </div>
           </section>
-          </div>
+          <RateLimitRulesSection
+            accountKey={rateLimitAccountKey}
+            matchKey={rateLimitMatchKey}
+            rateLimitStatus={rateLimitStatus}
+            rateLimitStrategies={rateLimitStrategies}
+            onRateLimitRulesChanged={onRateLimitRulesChanged}
+            t={t}
+          />
         </div>
 
         {error ? (
