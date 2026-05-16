@@ -327,6 +327,75 @@ type SidecarUsageAttributionResponse struct {
 	Unresolved  []SidecarUsageAttributionItem `json:"unresolved,omitempty"`
 }
 
+type RateLimitRulesInput struct {
+	AccountKey string `json:"accountKey,omitempty"`
+}
+
+type RateLimitStatusInput struct {
+	AccountKey string `json:"accountKey"`
+}
+
+type DeleteRateLimitRuleInput struct {
+	ID string `json:"id"`
+}
+
+type RateLimitEventsInput struct {
+	AccountKey string `json:"accountKey,omitempty"`
+	Limit      int    `json:"limit,omitempty"`
+}
+
+type RateLimitStrategyMeta struct {
+	ID               string   `json:"id"`
+	Name             string   `json:"name"`
+	SupportedWindows []string `json:"supportedWindows"`
+}
+
+type RateLimitRule struct {
+	ID         string `json:"id,omitempty"`
+	AccountKey string `json:"accountKey"`
+	MatchKey   string `json:"matchKey,omitempty"`
+	Strategy   string `json:"strategy"`
+	Window     string `json:"window"`
+	LimitValue int64  `json:"limitValue"`
+	Action     string `json:"action"`
+	Enabled    bool   `json:"enabled"`
+	Label      string `json:"label,omitempty"`
+	CreatedAt  int64  `json:"createdAt,omitempty"`
+	UpdatedAt  int64  `json:"updatedAt,omitempty"`
+}
+
+type RateLimitRuleState struct {
+	Rule         RateLimitRule `json:"rule"`
+	Exceeded     bool          `json:"exceeded"`
+	Reason       string        `json:"reason,omitempty"`
+	UsagePct     float64       `json:"usagePct"`
+	CurrentUsage int64         `json:"currentUsage"`
+}
+
+type RateLimitState struct {
+	AccountKey  string               `json:"accountKey"`
+	MatchKey    string               `json:"matchKey,omitempty"`
+	Blocked     bool                 `json:"blocked"`
+	BlockReason string               `json:"blockReason,omitempty"`
+	Rules       []RateLimitRuleState `json:"rules"`
+	UpdatedAt   string               `json:"updatedAt,omitempty"`
+}
+
+type RateLimitEvent struct {
+	ID          string `json:"id"`
+	AccountKey  string `json:"accountKey"`
+	MatchKey    string `json:"matchKey,omitempty"`
+	RuleID      string `json:"ruleID"`
+	Strategy    string `json:"strategy"`
+	Window      string `json:"window"`
+	Action      string `json:"action"`
+	UsageValue  int64  `json:"usageValue"`
+	LimitValue  int64  `json:"limitValue"`
+	Blocked     bool   `json:"blocked"`
+	Reason      string `json:"reason,omitempty"`
+	TriggeredAt int64  `json:"triggeredAt"`
+}
+
 type LocalProjectedUsageDetail struct {
 	Timestamp         string `json:"timestamp"`
 	Provider          string `json:"provider"`
@@ -563,6 +632,7 @@ type UpdateSessionProviderMapping struct {
 type UpdateSessionProvidersInput struct {
 	ProjectID string                         `json:"projectID"`
 	Mappings  []UpdateSessionProviderMapping `json:"mappings"`
+	Snapshot  *SessionManagementSnapshot     `json:"snapshot,omitempty"`
 }
 
 type SessionManagementSnapshot struct {

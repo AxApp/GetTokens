@@ -260,6 +260,66 @@ func (a *App) GetSidecarUsageAttribution(input SidecarUsageAttributionInput) (*S
 	return mapSidecarUsageAttributionResponse(result), nil
 }
 
+func (a *App) ListRateLimitStrategies() ([]RateLimitStrategyMeta, error) {
+	result, err := a.core.ListRateLimitStrategies()
+	if err != nil {
+		return nil, err
+	}
+	return mapRateLimitStrategies(result), nil
+}
+
+func (a *App) ListRateLimitRules(input RateLimitRulesInput) ([]RateLimitRule, error) {
+	result, err := a.core.ListRateLimitRules(input.AccountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapRateLimitRules(result), nil
+}
+
+func (a *App) CreateRateLimitRule(input RateLimitRule) ([]RateLimitRule, error) {
+	result, err := a.core.CreateRateLimitRule(mapRateLimitRuleToCore(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapRateLimitRules(result), nil
+}
+
+func (a *App) UpdateRateLimitRule(input RateLimitRule) ([]RateLimitRule, error) {
+	result, err := a.core.UpdateRateLimitRule(mapRateLimitRuleToCore(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapRateLimitRules(result), nil
+}
+
+func (a *App) DeleteRateLimitRule(input DeleteRateLimitRuleInput) error {
+	return a.core.DeleteRateLimitRule(input.ID)
+}
+
+func (a *App) GetAllRateLimitStatuses() ([]RateLimitState, error) {
+	result, err := a.core.GetAllRateLimitStatuses()
+	if err != nil {
+		return nil, err
+	}
+	return mapRateLimitStates(result), nil
+}
+
+func (a *App) GetRateLimitStatus(input RateLimitStatusInput) (*RateLimitState, error) {
+	result, err := a.core.GetRateLimitStatus(input.AccountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapRateLimitState(result), nil
+}
+
+func (a *App) ListRateLimitEvents(input RateLimitEventsInput) ([]RateLimitEvent, error) {
+	result, err := a.core.ListRateLimitEvents(input.AccountKey, input.Limit)
+	if err != nil {
+		return nil, err
+	}
+	return mapRateLimitEvents(result), nil
+}
+
 func (a *App) GetCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 	result, err := a.core.GetCodexLocalUsage()
 	if err != nil {
@@ -361,6 +421,7 @@ func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*S
 			}
 			return items
 		}(),
+		Snapshot: mapSessionManagementSnapshotToCore(input.Snapshot),
 	})
 	if err != nil {
 		return nil, err

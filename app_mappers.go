@@ -146,6 +146,131 @@ func mapSidecarUsageAttributionBuckets(items []wailsapp.SidecarUsageAttributionB
 	return out
 }
 
+func mapRateLimitStrategies(items []wailsapp.RateLimitStrategyMeta) []RateLimitStrategyMeta {
+	if len(items) == 0 {
+		return []RateLimitStrategyMeta{}
+	}
+	out := make([]RateLimitStrategyMeta, 0, len(items))
+	for _, item := range items {
+		out = append(out, RateLimitStrategyMeta{
+			ID:               item.ID,
+			Name:             item.Name,
+			SupportedWindows: append([]string(nil), item.SupportedWindows...),
+		})
+	}
+	return out
+}
+
+func mapRateLimitRuleToCore(input RateLimitRule) wailsapp.RateLimitRule {
+	return wailsapp.RateLimitRule{
+		ID:         input.ID,
+		AccountKey: input.AccountKey,
+		MatchKey:   input.MatchKey,
+		Strategy:   input.Strategy,
+		Window:     input.Window,
+		LimitValue: input.LimitValue,
+		Action:     input.Action,
+		Enabled:    input.Enabled,
+		Label:      input.Label,
+		CreatedAt:  input.CreatedAt,
+		UpdatedAt:  input.UpdatedAt,
+	}
+}
+
+func mapRateLimitRules(items []wailsapp.RateLimitRule) []RateLimitRule {
+	if len(items) == 0 {
+		return []RateLimitRule{}
+	}
+	out := make([]RateLimitRule, 0, len(items))
+	for _, item := range items {
+		out = append(out, mapRateLimitRule(item))
+	}
+	return out
+}
+
+func mapRateLimitRule(item wailsapp.RateLimitRule) RateLimitRule {
+	return RateLimitRule{
+		ID:         item.ID,
+		AccountKey: item.AccountKey,
+		MatchKey:   item.MatchKey,
+		Strategy:   item.Strategy,
+		Window:     item.Window,
+		LimitValue: item.LimitValue,
+		Action:     item.Action,
+		Enabled:    item.Enabled,
+		Label:      item.Label,
+		CreatedAt:  item.CreatedAt,
+		UpdatedAt:  item.UpdatedAt,
+	}
+}
+
+func mapRateLimitState(input *wailsapp.RateLimitState) *RateLimitState {
+	if input == nil {
+		return &RateLimitState{Rules: []RateLimitRuleState{}}
+	}
+	return &RateLimitState{
+		AccountKey:  input.AccountKey,
+		MatchKey:    input.MatchKey,
+		Blocked:     input.Blocked,
+		BlockReason: input.BlockReason,
+		Rules:       mapRateLimitRuleStates(input.Rules),
+		UpdatedAt:   input.UpdatedAt,
+	}
+}
+
+func mapRateLimitStates(items []wailsapp.RateLimitState) []RateLimitState {
+	if len(items) == 0 {
+		return []RateLimitState{}
+	}
+	out := make([]RateLimitState, 0, len(items))
+	for _, item := range items {
+		mapped := mapRateLimitState(&item)
+		out = append(out, *mapped)
+	}
+	return out
+}
+
+func mapRateLimitRuleStates(items []wailsapp.RateLimitRuleState) []RateLimitRuleState {
+	if len(items) == 0 {
+		return []RateLimitRuleState{}
+	}
+	out := make([]RateLimitRuleState, 0, len(items))
+	for _, item := range items {
+		out = append(out, RateLimitRuleState{
+			Rule:         mapRateLimitRule(item.Rule),
+			Exceeded:     item.Exceeded,
+			Reason:       item.Reason,
+			UsagePct:     item.UsagePct,
+			CurrentUsage: item.CurrentUsage,
+		})
+	}
+	return out
+}
+
+func mapRateLimitEvents(items []wailsapp.RateLimitEvent) []RateLimitEvent {
+	if len(items) == 0 {
+		return []RateLimitEvent{}
+	}
+	out := make([]RateLimitEvent, 0, len(items))
+	for _, item := range items {
+		out = append(out, RateLimitEvent{
+			ID:          item.ID,
+			AccountKey:  item.AccountKey,
+			MatchKey:    item.MatchKey,
+			RuleID:      item.RuleID,
+			Strategy:    item.Strategy,
+			Window:      item.Window,
+			Action:      item.Action,
+			UsageValue:  item.UsageValue,
+			LimitValue:  item.LimitValue,
+			Blocked:     item.Blocked,
+			Reason:      item.Reason,
+			TriggeredAt: item.TriggeredAt,
+		})
+	}
+	return out
+}
+
 func mapCodexFeatureConfigSnapshot(result *wailsapp.CodexFeatureConfigSnapshot) *CodexFeatureConfigSnapshot {
 	if result == nil {
 		return &CodexFeatureConfigSnapshot{
@@ -451,6 +576,60 @@ func mapSessionManagementSnapshot(result *wailsapp.SessionManagementSnapshot) *S
 		ArchivedSessionCount: result.ArchivedSessionCount,
 		LastScanAt:           result.LastScanAt,
 		ProviderCounts:       cloneProviderCountMap(result.ProviderCounts),
+		Projects:             projects,
+	}
+}
+
+func mapSessionManagementSnapshotToCore(input *SessionManagementSnapshot) *wailsapp.SessionManagementSnapshot {
+	if input == nil {
+		return nil
+	}
+
+	projects := make([]wailsapp.SessionManagementProjectRecord, 0, len(input.Projects))
+	for _, project := range input.Projects {
+		sessions := make([]wailsapp.SessionManagementSessionRecord, 0, len(project.Sessions))
+		for _, session := range project.Sessions {
+			sessions = append(sessions, wailsapp.SessionManagementSessionRecord{
+				ID:                  session.ID,
+				SessionID:           session.SessionID,
+				ProjectID:           session.ProjectID,
+				ProjectName:         session.ProjectName,
+				Title:               session.Title,
+				Status:              session.Status,
+				Archived:            session.Archived,
+				MessageCount:        session.MessageCount,
+				RoleSummary:         session.RoleSummary,
+				StartedAt:           session.StartedAt,
+				UpdatedAt:           session.UpdatedAt,
+				FileLabel:           session.FileLabel,
+				Summary:             session.Summary,
+				Preview:             session.Preview,
+				Topic:               session.Topic,
+				CurrentMessageLabel: session.CurrentMessageLabel,
+				Provider:            session.Provider,
+				Model:               session.Model,
+			})
+		}
+		projects = append(projects, wailsapp.SessionManagementProjectRecord{
+			ID:                   project.ID,
+			Name:                 project.Name,
+			ProviderCounts:       cloneProviderCountMap(project.ProviderCounts),
+			SessionCount:         project.SessionCount,
+			ActiveSessionCount:   project.ActiveSessionCount,
+			ArchivedSessionCount: project.ArchivedSessionCount,
+			LastActiveAt:         project.LastActiveAt,
+			ProviderSummary:      project.ProviderSummary,
+			Sessions:             sessions,
+		})
+	}
+
+	return &wailsapp.SessionManagementSnapshot{
+		ProjectCount:         input.ProjectCount,
+		SessionCount:         input.SessionCount,
+		ActiveSessionCount:   input.ActiveSessionCount,
+		ArchivedSessionCount: input.ArchivedSessionCount,
+		LastScanAt:           input.LastScanAt,
+		ProviderCounts:       cloneProviderCountMap(input.ProviderCounts),
 		Projects:             projects,
 	}
 }
