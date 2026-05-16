@@ -21,6 +21,43 @@ import {
   shouldUseSessionsPanelActionMenu,
 } from './sessionManagementUtils.ts';
 
+function createProviderMergeSnapshotFixture() {
+  return {
+    stats: {
+      projectCount: 1,
+      sessionCount: 1,
+      activeSessionCount: 1,
+      archivedSessionCount: 0,
+      lastScanAt: '2026-04-30 23:40',
+      providerSummary: 'gemini 1',
+    },
+    projects: [
+      {
+        id: 'gettokens',
+        name: 'GetTokens',
+        sessionCount: 1,
+        activeSessionCount: 1,
+        archivedSessionCount: 0,
+        lastActiveAt: '2026-04-30 23:40',
+        providerSummary: 'gemini 1',
+        sessions: [
+          {
+            id: 'sessions/2026/04/30/rollout-2026-04-30T23-40-00-gemini.jsonl',
+            title: '归并 provider',
+            status: 'active',
+            messageCount: 3,
+            roleSummary: 'user 1 / assistant 1',
+            updatedAt: '2026-04-30 23:40',
+            fileLabel: 'rollout-2026-04-30T23-40-00-gemini.jsonl',
+            summary: '准备归并 provider',
+            provider: 'gemini',
+          },
+        ],
+      },
+    ],
+  };
+}
+
 test('sessions panel switches actions into a menu only when panel width is constrained', () => {
   assert.equal(shouldUseSessionsPanelActionMenu(SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH - 1), true);
   assert.equal(shouldUseSessionsPanelActionMenu(SESSIONS_PANEL_ACTIONS_MENU_MAX_WIDTH), true);
@@ -283,7 +320,7 @@ test('localhost dev mode posts provider merge to http bridge', async () => {
 
   const snapshot = await updateCodexSessionProviders('gettokens', [
     { sourceProvider: 'gemini', targetProvider: 'openai' },
-  ]);
+  ], createProviderMergeSnapshotFixture());
 
   assert.equal(snapshot.projects[0].providerSummary, 'openai 1');
   assert.equal(fetchCalls[0].url, 'http://127.0.0.1:5173/__dev/session-management/provider-merge');
@@ -300,7 +337,7 @@ test('localhost dev mode posts provider merge to http bridge', async () => {
   globalThis.fetch = originalFetch;
 });
 
-test('localhost dev mode prefers http bridge even when Wails runtime bindings exist', async () => {
+test('localhost desktop mode prefers runtime bridge when Wails bindings exist', async () => {
   const originalFetch = globalThis.fetch;
   let runtimeCalled = false;
   globalThis.window = {
@@ -319,39 +356,104 @@ test('localhost dev mode prefers http bridge even when Wails runtime bindings ex
     },
   };
   globalThis.fetch = async (url) => {
-    if (String(url).includes('/__dev/session-management/snapshot')) {
-      return {
-        ok: true,
-        async json() {
-          return {
-            projectCount: 1,
-            sessionCount: 1,
-            activeSessionCount: 1,
-            archivedSessionCount: 0,
-            lastScanAt: '2026-04-30 23:41',
-            providerCounts: { openai: 1 },
-            projects: [
-              {
-                id: 'gettokens',
-                name: 'GetTokens',
-                sessionCount: 1,
-                activeSessionCount: 1,
-                archivedSessionCount: 0,
-                lastActiveAt: '2026-04-30 23:41',
-                providerCounts: { openai: 1 },
-                sessions: [],
-              },
-            ],
-          };
-        },
-      };
-    }
-    throw new Error(`unexpected fetch ${url}`);
+    throw new Error(`runtime bridge should skip dev fetch ${url}`);
   };
 
   const snapshot = await getCodexSessionManagementSnapshot();
-  assert.equal(snapshot.projects[0].name, 'GetTokens');
-  assert.equal(runtimeCalled, false);
+  assert.equal(snapshot.projects.length, 0);
+  assert.equal(runtimeCalled, true);
+
+  globalThis.fetch = originalFetch;
+});
+
+test('localhost desktop mode posts provider merge through runtime bridge when Wails binding exists', async () => {
+  const originalFetch = globalThis.fetch;
+  let runtimeInput = null;
+  globalThis.window = {
+    location: {
+      href: 'http://127.0.0.1:34115/#frame=session-management',
+    },
+    go: {
+      main: {
+        App: {
+          async UpdateCodexSessionProviders(input) {
+            runtimeInput = input;
+            return {
+              projectCount: 1,
+              sessionCount: 1,
+              activeSessionCount: 1,
+              archivedSessionCount: 0,
+              lastScanAt: '2026-04-30 23:41',
+              providerCounts: { openai: 1 },
+              projects: [
+                {
+                  id: 'gettokens',
+                  name: 'GetTokens',
+                  sessionCount: 1,
+                  activeSessionCount: 1,
+                  archivedSessionCount: 0,
+                  lastActiveAt: '2026-04-30 23:41',
+                  providerCounts: { openai: 1 },
+                  providerSummary: 'openai 1',
+                  sessions: [],
+                },
+              ],
+            };
+          },
+        },
+      },
+    },
+  };
+  globalThis.fetch = async (url) => {
+    throw new Error(`runtime bridge should skip dev fetch ${url}`);
+  };
+
+  const snapshot = await updateCodexSessionProviders('gettokens', [
+    { sourceProvider: 'gemini', targetProvider: 'openai' },
+  ], createProviderMergeSnapshotFixture());
+
+  assert.equal(snapshot.projects[0].providerSummary, 'openai 1');
+  assert.deepEqual(runtimeInput, {
+    projectID: 'gettokens',
+    mappings: [{ sourceProvider: 'gemini', targetProvider: 'openai' }],
+    snapshot: {
+      projectCount: 1,
+      sessionCount: 1,
+      activeSessionCount: 1,
+      archivedSessionCount: 0,
+      lastScanAt: '2026-04-30 23:40',
+      providerCounts: { gemini: 1 },
+      projects: [
+        {
+          id: 'gettokens',
+          name: 'GetTokens',
+          providerCounts: { gemini: 1 },
+          sessionCount: 1,
+          activeSessionCount: 1,
+          archivedSessionCount: 0,
+          lastActiveAt: '2026-04-30 23:40',
+          providerSummary: 'gemini 1',
+          sessions: [
+            {
+              id: 'sessions/2026/04/30/rollout-2026-04-30T23-40-00-gemini.jsonl',
+              sessionID: 'sessions/2026/04/30/rollout-2026-04-30T23-40-00-gemini.jsonl',
+              projectID: 'gettokens',
+              projectName: 'GetTokens',
+              title: '归并 provider',
+              status: 'active',
+              archived: false,
+              messageCount: 3,
+              roleSummary: 'user 1 / assistant 1',
+              updatedAt: '2026-04-30 23:40',
+              fileLabel: 'rollout-2026-04-30T23-40-00-gemini.jsonl',
+              summary: '准备归并 provider',
+              provider: 'gemini',
+            },
+          ],
+        },
+      ],
+    },
+  });
 
   globalThis.fetch = originalFetch;
 });

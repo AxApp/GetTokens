@@ -686,7 +686,7 @@ export function ProviderMergeModal({
             return (
               <div key={row.sourceKey} className="flex items-center gap-3 px-5 py-4">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[0.8125rem] font-black uppercase tracking-tight">
+                  <div className="truncate text-[0.8125rem] font-black normal-case tracking-tight">
                     {sourceLabel}
                   </div>
                   <div className="mt-0.5 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -743,9 +743,11 @@ export function ProviderMergeModal({
               type="button"
               onClick={onSave}
               disabled={saving}
-              className="btn-swiss text-[0.5625rem] disabled:opacity-50"
+              aria-busy={saving}
+              className="btn-swiss inline-flex items-center gap-1.5 text-[0.5625rem] disabled:opacity-50"
             >
-              {saving ? '保存中…' : '保存'}
+              {saving ? <RefreshCw className="h-3 w-3 animate-spin" strokeWidth={2.5} aria-hidden="true" /> : null}
+              <span>{saving ? '保存中…' : '保存'}</span>
             </button>
           </div>
         </div>

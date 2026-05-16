@@ -306,6 +306,17 @@ func TestUpdateCodexSessionProvidersRewritesSessionMetaAndRefreshesSnapshot(t *t
 		t.Fatalf("unexpected initial provider counts: %#v", snapshot.ProviderCounts)
 	}
 
+	laterPath := filepath.Join(sessionsDir, "rollout-2026-04-30T12-10-00-later.jsonl")
+	if err := os.WriteFile(laterPath, []byte(sessionFixture(
+		"2026-04-30T12:10:00.000Z",
+		"LaterProject",
+		"gemini",
+		"这个文件在缓存后出现",
+		"保存 provider 归并时不应该同步全量扫描吸收它",
+	)), 0600); err != nil {
+		t.Fatalf("write later rollout: %v", err)
+	}
+
 	updated, err := app.UpdateCodexSessionProviders(UpdateSessionProvidersInput{
 		ProjectID: "gettokens",
 		Mappings: []UpdateSessionProviderMapping{
@@ -324,6 +335,95 @@ func TestUpdateCodexSessionProvidersRewritesSessionMetaAndRefreshesSnapshot(t *t
 	}
 	if updated.Projects[0].ProviderSummary != "openai 2" {
 		t.Fatalf("project provider summary = %q, want openai 2", updated.Projects[0].ProviderSummary)
+	}
+	if updated.SessionCount != 2 {
+		t.Fatalf("updated session count = %d, want cached 2 without full refresh", updated.SessionCount)
+	}
+	for _, project := range updated.Projects {
+		if project.ID == "laterproject" {
+			t.Fatalf("provider merge should not absorb sessions added after cached snapshot: %#v", updated.Projects)
+		}
+	}
+
+	content, err := os.ReadFile(geminiPath)
+	if err != nil {
+		t.Fatalf("ReadFile rewritten rollout: %v", err)
+	}
+	if !strings.Contains(string(content), `"model_provider":"openai"`) {
+		t.Fatalf("rewritten rollout missing updated provider: %s", string(content))
+	}
+}
+
+func TestUpdateCodexSessionProvidersUsesProvidedSnapshotWhenCacheIsCold(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	sessionsDir := filepath.Join(codexHome, "sessions", "2026", "05", "16")
+	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
+		t.Fatalf("mkdir sessions dir: %v", err)
+	}
+
+	geminiPath := filepath.Join(sessionsDir, "rollout-2026-05-16T12-00-00-gemini.jsonl")
+	openaiPath := filepath.Join(sessionsDir, "rollout-2026-05-16T12-05-00-openai.jsonl")
+	if err := os.WriteFile(geminiPath, []byte(sessionFixture(
+		"2026-05-16T12:00:00.000Z",
+		"GetTokens",
+		"gemini",
+		"把缓存快照里的 gemini 会话归到 openai",
+		"保存时不应该先等待冷缓存全量扫描",
+	)), 0600); err != nil {
+		t.Fatalf("write gemini rollout: %v", err)
+	}
+	if err := os.WriteFile(openaiPath, []byte(sessionFixture(
+		"2026-05-16T12:05:00.000Z",
+		"GetTokens",
+		"openai",
+		"保留 openai 会话",
+		"保持不动",
+	)), 0600); err != nil {
+		t.Fatalf("write openai rollout: %v", err)
+	}
+
+	t.Setenv("CODEX_HOME", codexHome)
+	sourceApp := &App{}
+	snapshot, err := sourceApp.GetCodexSessionManagementSnapshot()
+	if err != nil {
+		t.Fatalf("GetCodexSessionManagementSnapshot returned error: %v", err)
+	}
+
+	laterPath := filepath.Join(sessionsDir, "rollout-2026-05-16T12-10-00-later.jsonl")
+	if err := os.WriteFile(laterPath, []byte(sessionFixture(
+		"2026-05-16T12:10:00.000Z",
+		"LaterProject",
+		"gemini",
+		"这个文件在前端缓存快照之后出现",
+		"冷缓存保存也不应该为了刷新而吸收它",
+	)), 0600); err != nil {
+		t.Fatalf("write later rollout: %v", err)
+	}
+
+	coldApp := &App{}
+	updated, err := coldApp.UpdateCodexSessionProviders(UpdateSessionProvidersInput{
+		ProjectID: "gettokens",
+		Mappings: []UpdateSessionProviderMapping{
+			{SourceProvider: "gemini", TargetProvider: "openai"},
+		},
+		Snapshot: snapshot,
+	})
+	if err != nil {
+		t.Fatalf("UpdateCodexSessionProviders returned error: %v", err)
+	}
+
+	if updated.ProviderCounts["openai"] != 2 {
+		t.Fatalf("updated providerCounts[openai] = %d, want 2", updated.ProviderCounts["openai"])
+	}
+	if updated.SessionCount != 2 {
+		t.Fatalf("updated session count = %d, want provided snapshot count 2", updated.SessionCount)
+	}
+	for _, project := range updated.Projects {
+		if project.ID == "laterproject" {
+			t.Fatalf("cold provider merge should use provided snapshot instead of full scan: %#v", updated.Projects)
+		}
 	}
 
 	content, err := os.ReadFile(geminiPath)

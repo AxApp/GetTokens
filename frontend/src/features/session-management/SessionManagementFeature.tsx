@@ -92,6 +92,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
     updateDraftValue,
     saveProviderMerge,
   } = useSessionManagementProviderMerge({
+    snapshot,
     projects,
     unknownProviderLabel: copy.unknownProvider,
     loadFailedMessage: copy.loadFailed,

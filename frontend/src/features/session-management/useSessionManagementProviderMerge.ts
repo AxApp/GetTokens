@@ -7,6 +7,7 @@ import { getProviderDisplayLabel } from './SessionManagementView.tsx';
 import { normalizeProviderInput, toErrorMessage } from './sessionManagementUtils.ts';
 
 interface UseSessionManagementProviderMergeOptions {
+  snapshot: SessionManagementSnapshot;
   projects: ProjectSummary[];
   unknownProviderLabel: string;
   loadFailedMessage: string;
@@ -14,6 +15,7 @@ interface UseSessionManagementProviderMergeOptions {
 }
 
 export function useSessionManagementProviderMerge({
+  snapshot,
   projects,
   unknownProviderLabel,
   loadFailedMessage,
@@ -117,7 +119,7 @@ export function useSessionManagementProviderMerge({
     setProviderSaving(true);
     setProviderEditorError(null);
     try {
-      const nextSnapshot = await updateCodexSessionProviders(editingProject.id, mappings);
+      const nextSnapshot = await updateCodexSessionProviders(editingProject.id, mappings, snapshot);
       persistSessionManagementSnapshot(nextSnapshot);
       onSnapshotUpdated(nextSnapshot);
       closeProviderEditor();
@@ -133,6 +135,7 @@ export function useSessionManagementProviderMerge({
     loadFailedMessage,
     onSnapshotUpdated,
     providerSaving,
+    snapshot,
     unknownProviderLabel,
   ]);
 

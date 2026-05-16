@@ -14,7 +14,45 @@ interface SessionManagementRuntimeApp {
   GetCodexSessionManagementSnapshot?: () => Promise<unknown>;
   RefreshCodexSessionManagementSnapshot?: () => Promise<unknown>;
   GetCodexSessionDetail?: (sessionID: string) => Promise<unknown>;
-  UpdateCodexSessionProviders?: (input: { projectID: string; mappings: Array<{ sourceProvider: string; targetProvider: string }> }) => Promise<unknown>;
+  UpdateCodexSessionProviders?: (input: {
+    projectID: string;
+    mappings: Array<{ sourceProvider: string; targetProvider: string }>;
+    snapshot?: RuntimeSessionManagementSnapshot;
+  }) => Promise<unknown>;
+}
+
+interface RuntimeSessionManagementSnapshot {
+  projectCount: number;
+  sessionCount: number;
+  activeSessionCount: number;
+  archivedSessionCount: number;
+  lastScanAt: string;
+  providerCounts: Record<string, number>;
+  projects: Array<{
+    id: string;
+    name: string;
+    providerCounts: Record<string, number>;
+    sessionCount: number;
+    activeSessionCount: number;
+    archivedSessionCount: number;
+    lastActiveAt: string;
+    providerSummary: string;
+    sessions: Array<{
+      id: string;
+      sessionID: string;
+      projectID: string;
+      projectName: string;
+      title: string;
+      status: string;
+      archived: boolean;
+      messageCount: number;
+      roleSummary: string;
+      updatedAt: string;
+      fileLabel: string;
+      summary: string;
+      provider: string;
+    }>;
+  }>;
 }
 
 declare global {
@@ -28,11 +66,21 @@ declare global {
 }
 
 function resolveRuntimeMethod<T extends keyof SessionManagementRuntimeApp>(methodName: T) {
+  const method = getRuntimeMethod(methodName);
+
+  if (!method) {
+    throw new Error(`当前运行时缺少 ${methodName} 绑定。`);
+  }
+
+  return method;
+}
+
+function getRuntimeMethod<T extends keyof SessionManagementRuntimeApp>(methodName: T) {
   const app = globalThis.window?.go?.main?.App;
   const method = app?.[methodName];
 
   if (typeof method !== 'function') {
-    throw new Error(`当前运行时缺少 ${methodName} 绑定。`);
+    return null;
   }
 
   return method.bind(app) as NonNullable<SessionManagementRuntimeApp[T]>;
@@ -141,16 +189,83 @@ async function updateDevProviders(projectID: string, mappings: Array<{ sourcePro
   throw lastError ?? new Error('session management provider merge unavailable');
 }
 
+function addProviderCount(counts: Record<string, number>, provider: string) {
+  const key = provider.trim();
+  if (!key || key === '—') {
+    return;
+  }
+  counts[key] = (counts[key] ?? 0) + 1;
+}
+
+function toRuntimeSessionManagementSnapshot(
+  snapshot?: SessionManagementSnapshot,
+): RuntimeSessionManagementSnapshot | undefined {
+  if (!snapshot) {
+    return undefined;
+  }
+
+  const providerCounts: Record<string, number> = {};
+  const projects = snapshot.projects.map((project) => {
+    const projectProviderCounts: Record<string, number> = {};
+    const sessions = project.sessions.map((session) => {
+      addProviderCount(providerCounts, session.provider);
+      addProviderCount(projectProviderCounts, session.provider);
+      return {
+        id: session.id,
+        sessionID: session.id,
+        projectID: project.id,
+        projectName: project.name,
+        title: session.title,
+        status: session.status,
+        archived: session.status === 'archived',
+        messageCount: session.messageCount,
+        roleSummary: session.roleSummary,
+        updatedAt: session.updatedAt,
+        fileLabel: session.fileLabel,
+        summary: session.summary,
+        provider: session.provider,
+      };
+    });
+
+    return {
+      id: project.id,
+      name: project.name,
+      providerCounts: projectProviderCounts,
+      sessionCount: project.sessionCount,
+      activeSessionCount: project.activeSessionCount,
+      archivedSessionCount: project.archivedSessionCount,
+      lastActiveAt: project.lastActiveAt,
+      providerSummary: project.providerSummary,
+      sessions,
+    };
+  });
+
+  return {
+    projectCount: snapshot.stats.projectCount,
+    sessionCount: snapshot.stats.sessionCount,
+    activeSessionCount: snapshot.stats.activeSessionCount,
+    archivedSessionCount: snapshot.stats.archivedSessionCount,
+    lastScanAt: snapshot.stats.lastScanAt,
+    providerCounts,
+    projects,
+  };
+}
+
 export async function getCodexSessionManagementSnapshot(): Promise<SessionManagementSnapshot> {
   if (hasSessionManagementPreviewMode()) {
     return getSessionManagementPreviewSnapshot();
+  }
+  const getSnapshot = getRuntimeMethod('GetCodexSessionManagementSnapshot');
+  if (getSnapshot) {
+    const raw = await getSnapshot();
+    return mapSessionManagementSnapshotResponse(raw);
   }
   if (canUseSessionManagementDevHTTP()) {
     return mapSessionManagementSnapshotResponse(await loadDevSnapshot(false));
   }
 
-  const getSnapshot = resolveRuntimeMethod('GetCodexSessionManagementSnapshot');
-  const raw = await getSnapshot();
+  const missingSnapshot = resolveRuntimeMethod('GetCodexSessionManagementSnapshot');
+  const raw = await missingSnapshot();
   return mapSessionManagementSnapshotResponse(raw);
 }
 
@@ -158,12 +273,17 @@ export async function refreshCodexSessionManagementSnapshot(): Promise<SessionMa
   if (hasSessionManagementPreviewMode()) {
     return getSessionManagementPreviewSnapshot();
   }
+  const refreshSnapshot = getRuntimeMethod('RefreshCodexSessionManagementSnapshot');
+  if (refreshSnapshot) {
+    const raw = await refreshSnapshot();
+    return mapSessionManagementSnapshotResponse(raw);
+  }
   if (canUseSessionManagementDevHTTP()) {
     return mapSessionManagementSnapshotResponse(await loadDevSnapshot(true));
   }
 
-  const refreshSnapshot = resolveRuntimeMethod('RefreshCodexSessionManagementSnapshot');
-  const raw = await refreshSnapshot();
+  const missingRefreshSnapshot = resolveRuntimeMethod('RefreshCodexSessionManagementSnapshot');
+  const raw = await missingRefreshSnapshot();
   return mapSessionManagementSnapshotResponse(raw);
 }
 
@@ -171,27 +291,39 @@ export async function getCodexSessionDetail(sessionID: string): Promise<SessionD
   if (hasSessionManagementPreviewMode()) {
     return getSessionManagementPreviewDetail(sessionID);
   }
+  const getDetail = getRuntimeMethod('GetCodexSessionDetail');
+  if (getDetail) {
+    const raw = await getDetail(sessionID);
+    return mapSessionDetailResponse(raw);
+  }
   if (canUseSessionManagementDevHTTP()) {
     return mapSessionDetailResponse(await loadDevDetail(sessionID));
   }
 
-  const getDetail = resolveRuntimeMethod('GetCodexSessionDetail');
-  const raw = await getDetail(sessionID);
+  const missingDetail = resolveRuntimeMethod('GetCodexSessionDetail');
+  const raw = await missingDetail(sessionID);
   return mapSessionDetailResponse(raw);
 }
 
 export async function updateCodexSessionProviders(
   projectID: string,
   mappings: Array<{ sourceProvider: string; targetProvider: string }>,
+  snapshot?: SessionManagementSnapshot,
 ): Promise<SessionManagementSnapshot> {
   if (hasSessionManagementPreviewMode()) {
     throw new Error('preview 模式不支持修改 provider');
+  }
+  const updateProviders = getRuntimeMethod('UpdateCodexSessionProviders');
+  const runtimeSnapshot = toRuntimeSessionManagementSnapshot(snapshot);
+  if (updateProviders) {
+    const raw = await updateProviders({ projectID, mappings, snapshot: runtimeSnapshot });
+    return mapSessionManagementSnapshotResponse(raw);
   }
   if (canUseSessionManagementDevHTTP()) {
     return mapSessionManagementSnapshotResponse(await updateDevProviders(projectID, mappings));
   }
 
-  const updateProviders = resolveRuntimeMethod('UpdateCodexSessionProviders');
-  const raw = await updateProviders({ projectID, mappings });
+  const missingUpdateProviders = resolveRuntimeMethod('UpdateCodexSessionProviders');
+  const raw = await missingUpdateProviders({ projectID, mappings, snapshot: runtimeSnapshot });
   return mapSessionManagementSnapshotResponse(raw);
 }

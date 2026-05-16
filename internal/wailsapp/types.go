@@ -116,4 +116,5 @@ type UpdateSessionProviderMapping struct {
 type UpdateSessionProvidersInput struct {
 	ProjectID string                         `json:"projectID"`
 	Mappings  []UpdateSessionProviderMapping `json:"mappings"`
+	Snapshot  *SessionManagementSnapshot     `json:"snapshot,omitempty"`
 }

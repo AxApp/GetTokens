@@ -235,9 +235,13 @@ func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*S
 		return nil, err
 	}
 
-	snapshot, err := a.loadCodexSessionManagementSnapshot()
-	if err != nil {
-		return nil, err
+	snapshot := cloneSessionManagementSnapshot(input.Snapshot)
+	if snapshot == nil {
+		var err error
+		snapshot, err = a.GetCodexSessionManagementSnapshot()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var project *SessionManagementProjectRecord
@@ -252,11 +256,13 @@ func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*S
 	}
 
 	updatedCount := 0
-	for _, session := range project.Sessions {
+	for index, session := range project.Sessions {
 		targetProvider, ok := mappings[strings.TrimSpace(session.Provider)]
 		if !ok || strings.TrimSpace(targetProvider) == strings.TrimSpace(session.Provider) {
 			continue
 		}
+		sourceProvider := strings.TrimSpace(session.Provider)
+		targetProvider = strings.TrimSpace(targetProvider)
 
 		absolutePath, err := resolveSessionAbsolutePath(codexHome, session.SessionID)
 		if err != nil {
@@ -265,19 +271,37 @@ func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*S
 		if err := rewriteSessionMetaProvider(absolutePath, targetProvider); err != nil {
 			return nil, err
 		}
+		project.Sessions[index].Provider = targetProvider
+		applySessionProviderCountChange(project.ProviderCounts, sourceProvider, targetProvider)
+		applySessionProviderCountChange(snapshot.ProviderCounts, sourceProvider, targetProvider)
 		updatedCount++
 	}
 
 	if updatedCount == 0 {
-		return a.GetCodexSessionManagementSnapshot()
+		return snapshot, nil
 	}
+	project.ProviderSummary = formatProviderSummary(project.ProviderCounts)
 
 	a.sessionMgmtMu.Lock()
-	a.sessionMgmt.cachedSnapshot = nil
-	a.sessionMgmt.cachedAt = time.Time{}
+	a.sessionMgmt.cachedSnapshot = cloneSessionManagementSnapshot(snapshot)
+	a.sessionMgmt.cachedAt = time.Now()
+	cached := cloneSessionManagementSnapshot(a.sessionMgmt.cachedSnapshot)
 	a.sessionMgmtMu.Unlock()
+	return cached, nil
+}
 
-	return a.refreshCodexSessionManagementSnapshot()
+func applySessionProviderCountChange(counts map[string]int, sourceProvider string, targetProvider string) {
+	sourceProvider = strings.TrimSpace(sourceProvider)
+	targetProvider = strings.TrimSpace(targetProvider)
+	if counts == nil || sourceProvider == "" || targetProvider == "" || sourceProvider == targetProvider {
+		return
+	}
+	if counts[sourceProvider] > 1 {
+		counts[sourceProvider]--
+	} else {
+		delete(counts, sourceProvider)
+	}
+	counts[targetProvider]++
 }
 
 func (a *App) refreshCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
