@@ -13,6 +13,7 @@ import {
 } from '../model/accountPresentation';
 import type { AccountRecord, CodexQuotaState, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
+import { rateLimitStateTone, type RateLimitState } from '../model/rateLimit';
 import AccountCardSkeleton from './AccountCardSkeleton';
 import AttributionCard, { type AttributionCardBadge, type AttributionCardEvidenceRow } from './AttributionCard';
 
@@ -21,6 +22,7 @@ interface AccountCardProps {
   account: AccountRecord;
   quotaState?: CodexQuotaState;
   usageSummary?: AccountUsageSummary;
+  rateLimitStatus?: RateLimitState;
   minHeight?: number;
   ready: boolean;
   isSelectionMode: boolean;
@@ -41,6 +43,7 @@ export default function AccountCard({
   account,
   quotaState,
   usageSummary,
+  rateLimitStatus,
   minHeight,
   ready,
   isSelectionMode,
@@ -69,8 +72,16 @@ export default function AccountCard({
       ? 'positive'
       : operationalState.tone === 'warning'
         ? 'warning'
-        : resolveAccountStatusTone(account);
-  const cardTone = statusTone === 'positive' ? 'positive' : statusTone === 'warning' ? 'warning' : 'critical';
+      : resolveAccountStatusTone(account);
+  const guardTone = rateLimitStateTone(rateLimitStatus);
+  const cardTone =
+    guardTone === 'critical'
+      ? 'critical'
+      : statusTone === 'positive'
+        ? 'positive'
+        : statusTone === 'warning' || guardTone === 'warning'
+          ? 'warning'
+          : 'critical';
   const badges: AttributionCardBadge[] = [
     {
       label: account.credentialSource === 'auth-file' ? t('accounts.source_auth_file') : t('accounts.source_api_key'),
@@ -81,6 +92,9 @@ export default function AccountCard({
   }
   if (account.disabled) {
     badges.push({ label: t('accounts.rotation_disabled_badge'), tone: 'critical' });
+  }
+  if (rateLimitStatus?.blocked) {
+    badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
   const evidenceRows: AttributionCardEvidenceRow[] = [
     {
@@ -200,6 +214,7 @@ export default function AccountCard({
       badges={badges}
       usageSummary={usageSummary}
       quotaDisplay={quotaDisplay}
+      rateLimitStatus={rateLimitStatus}
       evidenceRows={evidenceRows}
       tone={cardTone}
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}

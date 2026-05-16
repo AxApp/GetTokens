@@ -9,6 +9,7 @@ import {
   getUsageDeskPreviewObservedUsage,
   getUsageDeskPreviewProjectedUsage,
   getAccountsPreviewUsageByID,
+  getAccountsPreviewRateLimitByID,
 } from '../previewData.ts';
 
 test('accounts preview quota state only returns requested preview keys', () => {
@@ -32,6 +33,17 @@ test('accounts preview usage resolves codex api key attribution to local id', ()
   assert.equal(usageByID['codex-api-key:stable-001'].attributionKey, 'codex-api-key:stable-001');
   assert.equal(usageByID['openai-compatible:deepseek'].provider, 'deepseek');
   assert.equal(usageByID['openai-compatible:deepseek'].trafficBuckets.length, 8);
+});
+
+test('accounts preview rate limit exposes blocked guard state by account id', () => {
+  const stateByID = getAccountsPreviewRateLimitByID([
+    { id: 'codex-api-key:gray-canary' },
+    { id: 'codex-api-key:missing' },
+  ]);
+
+  assert.equal(stateByID['codex-api-key:gray-canary'].blocked, true);
+  assert.equal(stateByID['codex-api-key:gray-canary'].blockReason, '1h requests 已满');
+  assert.equal(stateByID['codex-api-key:missing'], undefined);
 });
 
 test('accounts preview providers remain available for aggregate workspace preview', () => {

@@ -9,8 +9,10 @@ import {
 import { buildAccountHealthMetaItems } from '../model/accountHealthMeta';
 import type { AccountRecord, TextInputEvent, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
+import { DEFAULT_RATE_LIMIT_STRATEGIES, type RateLimitState, type RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountHealthBar from './AccountHealthBar';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import RateLimitRulesSection from './RateLimitRulesSection';
 import { resolveAPIKeyModelMenuNames, type APIKeyModelMenuMode } from '../model/apiKeyModelCatalog';
 import { buildDefaultCodexQuotaCurl } from '../model/accountConfig';
 import type { CodexQuota } from '../../../types';
@@ -28,6 +30,8 @@ interface APIKeyVerifyState {
 interface ApiKeyDetailModalProps {
   account: AccountRecord;
   usageSummary?: AccountUsageSummary;
+  rateLimitStatus?: RateLimitState;
+  rateLimitStrategies?: RateLimitStrategyMeta[];
   verifyState: APIKeyVerifyState;
   modelNames?: string[];
   onClose: () => void;
@@ -35,6 +39,7 @@ interface ApiKeyDetailModalProps {
   onSaveConfig: (draft: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; quotaEnabled: boolean }) => Promise<void>;
   onVerify: (input: { apiKey: string; baseUrl: string; model: string }) => void;
   onTestQuotaCurl: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }) => Promise<CodexQuota>;
+  onRateLimitRulesChanged: () => void;
   t: Translator;
 }
 
@@ -54,6 +59,8 @@ function formatLastVerifiedAt(timestamp: number | null) {
 export default function ApiKeyDetailModal({
   account,
   usageSummary,
+  rateLimitStatus,
+  rateLimitStrategies = DEFAULT_RATE_LIMIT_STRATEGIES,
   verifyState,
   modelNames,
   onClose,
@@ -61,6 +68,7 @@ export default function ApiKeyDetailModal({
   onSaveConfig,
   onVerify,
   onTestQuotaCurl,
+  onRateLimitRulesChanged,
   t,
 }: ApiKeyDetailModalProps) {
   const [draftName, setDraftName] = useState(account.displayName);
@@ -504,6 +512,15 @@ export default function ApiKeyDetailModal({
                 </div>
               </div>
             </section>
+
+            <RateLimitRulesSection
+              accountKey={account.id}
+              matchKey={usageSummary?.attributionKey}
+              rateLimitStatus={rateLimitStatus}
+              rateLimitStrategies={rateLimitStrategies}
+              onRateLimitRulesChanged={onRateLimitRulesChanged}
+              t={t}
+            />
 
             <section className="bg-[var(--bg-surface)]/30 px-6 py-5">
               <div className="space-y-4">

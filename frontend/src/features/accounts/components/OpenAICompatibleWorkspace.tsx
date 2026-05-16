@@ -1,5 +1,6 @@
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { AccountUsageSummary } from '../model/accountUsage';
+import type { RateLimitState } from '../model/rateLimit';
 import type { Translator } from '../model/types';
 import type { OpenAICompatibleProvider, ProviderRemoteModelsState, ProviderVerifyState } from '../model/openAICompatible';
 import { buildProviderConfigSignature } from '../model/openAICompatible';
@@ -15,6 +16,7 @@ interface OpenAICompatibleWorkspaceProps {
   pendingDeleteName: string | null;
   pendingStatusName: string | null;
   accountUsageByID?: Record<string, AccountUsageSummary>;
+  accountRateLimitByID?: Record<string, RateLimitState>;
   onCreate: () => void;
   onRefresh: () => void;
   onOpenDetail: (provider: OpenAICompatibleProvider) => void;
@@ -33,6 +35,7 @@ export default function OpenAICompatibleWorkspace({
   pendingDeleteName,
   pendingStatusName,
   accountUsageByID = {},
+  accountRateLimitByID = {},
   onCreate,
   onRefresh,
   onOpenDetail,
@@ -121,6 +124,7 @@ export default function OpenAICompatibleWorkspace({
                   verifyState={verifyState}
                   effectiveModelCount={effectiveModelCount}
                   usageSummary={accountUsageByID[`openai-compatible:${provider.name}`]}
+                  rateLimitStatus={accountRateLimitByID[`openai-compatible:${provider.name}`]}
                   pendingDelete={pendingDeleteName === provider.name}
                   pendingStatus={pendingStatusName === provider.name}
                   onOpenDetail={onOpenDetail}

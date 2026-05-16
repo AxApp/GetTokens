@@ -1,6 +1,7 @@
 import type { AccountRecord, AuthFile } from '../../types';
 import type { AccountUsageSummary } from './model/accountUsage';
 import type { OpenAICompatibleProvider } from './model/openAICompatible';
+import type { RateLimitState } from './model/rateLimit';
 import type { CodexQuotaState } from './model/types';
 
 const NOW_MS = Date.parse('2026-05-15T14:00:00+08:00');
@@ -227,6 +228,63 @@ const PREVIEW_USAGE_BY_ID: Record<string, AccountUsageSummary> = {
   }),
 };
 
+const PREVIEW_RATE_LIMIT_BY_ID: Record<string, RateLimitState> = {
+  'codex-api-key:stable-001': previewRateLimitState({
+    accountKey: 'codex-api-key:stable-001',
+    updatedAt: '2026-05-15T14:00:00+08:00',
+    rules: [
+      {
+        id: 'rlr-preview-stable-token',
+        strategy: 'token-window',
+        window: '24h',
+        limitValue: 1000000,
+        currentUsage: 684000,
+        usagePct: 68.4,
+      },
+      {
+        id: 'rlr-preview-stable-request',
+        strategy: 'request-window',
+        window: '1h',
+        limitValue: 120,
+        currentUsage: 46,
+        usagePct: 38.3,
+      },
+    ],
+  }),
+  'codex-api-key:gray-canary': previewRateLimitState({
+    accountKey: 'codex-api-key:gray-canary',
+    blocked: true,
+    blockReason: '1h requests 已满',
+    updatedAt: '2026-05-15T14:00:00+08:00',
+    rules: [
+      {
+        id: 'rlr-preview-canary-request',
+        strategy: 'request-window',
+        window: '1h',
+        limitValue: 40,
+        currentUsage: 44,
+        usagePct: 110,
+        exceeded: true,
+        reason: '1h requests 已满',
+      },
+    ],
+  }),
+  'openai-compatible:deepseek': previewRateLimitState({
+    accountKey: 'openai-compatible:deepseek',
+    updatedAt: '2026-05-15T14:00:00+08:00',
+    rules: [
+      {
+        id: 'rlr-preview-deepseek-token',
+        strategy: 'token-window',
+        window: '24h',
+        limitValue: 800000,
+        currentUsage: 221000,
+        usagePct: 27.6,
+      },
+    ],
+  }),
+};
+
 export function getAccountsPreviewAuthFiles(): AuthFile[] {
   return PREVIEW_AUTH_FILES.map((account) => ({ ...account }));
 }
@@ -280,6 +338,16 @@ export function getAccountsPreviewUsageByID(accounts: Array<Pick<AccountRecord, 
     const summary = PREVIEW_USAGE_BY_ID[account.id];
     if (summary) {
       result[account.id] = cloneUsageSummary(summary);
+    }
+    return result;
+  }, {});
+}
+
+export function getAccountsPreviewRateLimitByID(accounts: Array<Pick<AccountRecord, 'id'>>): Record<string, RateLimitState> {
+  return accounts.reduce<Record<string, RateLimitState>>((result, account) => {
+    const state = PREVIEW_RATE_LIMIT_BY_ID[account.id];
+    if (state) {
+      result[account.id] = cloneRateLimitState(state);
     }
     return result;
   }, {});
@@ -484,6 +552,56 @@ function cloneUsageSummary(summary: AccountUsageSummary): AccountUsageSummary {
       blocks: [...summary.statusBar.blocks],
       blockDetails: summary.statusBar.blockDetails.map((detail) => ({ ...detail })),
     },
+  };
+}
+
+function cloneRateLimitState(state: RateLimitState): RateLimitState {
+  return {
+    ...state,
+    rules: state.rules.map((ruleState) => ({
+      ...ruleState,
+      rule: { ...ruleState.rule },
+    })),
+  };
+}
+
+function previewRateLimitState(input: {
+  accountKey: string;
+  blocked?: boolean;
+  blockReason?: string;
+  updatedAt: string;
+  rules: Array<{
+    id: string;
+    strategy: string;
+    window: string;
+    limitValue: number;
+    currentUsage: number;
+    usagePct: number;
+    exceeded?: boolean;
+    reason?: string;
+  }>;
+}): RateLimitState {
+  return {
+    accountKey: input.accountKey,
+    blocked: Boolean(input.blocked),
+    blockReason: input.blockReason || '',
+    updatedAt: input.updatedAt,
+    rules: input.rules.map((rule) => ({
+      exceeded: Boolean(rule.exceeded),
+      reason: rule.reason || '',
+      usagePct: rule.usagePct,
+      currentUsage: rule.currentUsage,
+      rule: {
+        id: rule.id,
+        accountKey: input.accountKey,
+        strategy: rule.strategy,
+        window: rule.window,
+        limitValue: rule.limitValue,
+        action: 'block',
+        enabled: true,
+        label: '',
+      },
+    })),
   };
 }
 

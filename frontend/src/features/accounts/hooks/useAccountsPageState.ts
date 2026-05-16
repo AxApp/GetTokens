@@ -45,6 +45,7 @@ import {
 import { getAccountsPreviewAPIKeyRecords, getAccountsPreviewAuthFiles } from '../previewData';
 import useAccountsActions from './useAccountsActions';
 import useAccountsQuotaState from './useAccountsQuotaState';
+import useAccountsRateLimitState from './useAccountsRateLimitState';
 import useAccountsUsageState from './useAccountsUsageState';
 import type {
   ApiKeyFormState,
@@ -132,6 +133,7 @@ export default function useAccountsPageState({
   } = useAccountSelectionState();
   const { codexQuotaByName, loadCodexQuotas, refreshCodexQuota } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
+  const { accountRateLimitByID, rateLimitStrategies, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
 
   const authFileRecords = useMemo(
     () => authFiles.map((account) => mapAuthFileToRecord(account)),
@@ -226,6 +228,7 @@ export default function useAccountsPageState({
       );
       void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
       void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
+      void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
       return;
     }
 
@@ -255,6 +258,7 @@ export default function useAccountsPageState({
       );
       void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
       void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
+      void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
     } catch (error) {
       console.error(error);
     } finally {
@@ -262,7 +266,7 @@ export default function useAccountsPageState({
         setLoading(false);
       }
     }
-  }, [loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
+  }, [loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, migrateLegacyAPIKeyLabels, ready, trackRequest]);
 
   const removeDeletedAccountLocally = useCallback(
     (account: AccountRecord) => {
@@ -571,6 +575,8 @@ export default function useAccountsPageState({
     pasteError,
     codexQuotaByName,
     accountUsageByID,
+    accountRateLimitByID,
+    rateLimitStrategies,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,
@@ -581,6 +587,7 @@ export default function useAccountsPageState({
     allFilteredSelected,
     loadAccounts,
     loadAccountUsage,
+    loadAccountRateLimits,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,

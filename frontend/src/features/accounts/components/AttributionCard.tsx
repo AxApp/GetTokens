@@ -1,6 +1,11 @@
 import type { CSSProperties, ReactNode } from 'react';
 import AccountCardFrame from './AccountCardFrame';
 import type { AccountUsageSummary } from '../model/accountUsage';
+import {
+  formatRateLimitMetric,
+  rateLimitRuleLabel,
+  type RateLimitState,
+} from '../model/rateLimit';
 import type { QuotaDisplay, Translator } from '../model/types';
 
 type AttributionCardTone = 'neutral' | 'positive' | 'warning' | 'critical';
@@ -26,6 +31,7 @@ interface AttributionCardProps {
   badges?: AttributionCardBadge[];
   usageSummary?: AccountUsageSummary;
   quotaDisplay?: QuotaDisplay;
+  rateLimitStatus?: RateLimitState;
   evidenceRows?: AttributionCardEvidenceRow[];
   tone?: AttributionCardTone;
   density?: AttributionCardDensity;
@@ -72,6 +78,7 @@ export default function AttributionCard({
   badges = [],
   usageSummary,
   quotaDisplay,
+  rateLimitStatus,
   evidenceRows = [],
   tone = 'neutral',
   density = 'full',
@@ -88,6 +95,7 @@ export default function AttributionCard({
   const accentBorderClass = CARD_TONE_CLASS[tone];
   const accentFillClass = CARD_FILL_CLASS[tone];
   const quotaWindows = quotaDisplay?.windows ?? [];
+  const rateLimitRules = rateLimitStatus?.rules ?? [];
   const flow = buildTrafficCurveState(usageSummary);
   const sourceLabel =
     usageSummary?.source === 'attribution'
@@ -253,6 +261,58 @@ export default function AttributionCard({
               </div>
             )}
           </section>
+
+          {rateLimitRules.length > 0 ? (
+            <section className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  ROUTE GUARD
+                </div>
+                <div
+                  className={`font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+                    rateLimitStatus?.blocked ? 'text-red-500' : 'text-[var(--text-muted)]'
+                  }`}
+                >
+                  {rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS'}
+                </div>
+              </div>
+              {rateLimitRules.map((ruleState) => {
+                const exceeded = ruleState.exceeded && ruleState.rule.action === 'block';
+                const fillClass = exceeded ? 'bg-red-500' : ruleState.exceeded ? 'bg-yellow-500' : 'bg-amber-600';
+                const textClass = exceeded ? 'text-red-500' : 'text-[var(--text-primary)]';
+                const pct = Math.min(100, Math.max(0, Number(ruleState.usagePct || 0)));
+                return (
+                  <div
+                    key={ruleState.rule.id || `${ruleState.rule.strategy}-${ruleState.rule.window}`}
+                    className="grid grid-cols-[5.5rem_minmax(0,1fr)_5rem] items-center gap-2"
+                  >
+                    <div className={`truncate font-mono text-[0.625rem] font-black uppercase tracking-[0.1em] ${textClass}`}>
+                      {rateLimitRuleLabel(ruleState.rule)}
+                    </div>
+                    <div
+                      className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)',
+                      }}
+                    >
+                      <div className={`absolute inset-y-0 left-0 ${fillClass}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className={`truncate text-right font-mono text-[0.625rem] font-black uppercase tracking-[0.06em] ${textClass}`}>
+                      {ruleState.exceeded && ruleState.reason
+                        ? ruleState.reason
+                        : `${formatRateLimitMetric(ruleState.currentUsage)}/${formatRateLimitMetric(ruleState.rule.limitValue)}`}
+                    </div>
+                  </div>
+                );
+              })}
+              {rateLimitStatus?.updatedAt ? (
+                <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  CACHE {new Date(rateLimitStatus.updatedAt).toLocaleString()}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
           <section className="grid gap-2 px-4 py-4">
             <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">

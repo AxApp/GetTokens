@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/url"
+	"strconv"
 )
 
 type OAuthStartResponse struct {
@@ -217,4 +218,133 @@ func (c *Client) GetAuthStatus(state string) (*OAuthStatusResponse, error) {
 		return nil, err
 	}
 	return &response, nil
+}
+
+func (c *Client) ListRateLimitStrategies() ([]RateLimitStrategyMeta, error) {
+	body, _, err := c.request("GET", "/v0/management/gettokens/rate-limit-strategies", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []RateLimitStrategyMeta `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []RateLimitStrategyMeta{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) ListRateLimitRules(accountKey string) ([]RateLimitRule, error) {
+	query := url.Values{}
+	if accountKey != "" {
+		query.Set("account_key", accountKey)
+	}
+	body, _, err := c.request("GET", "/v0/management/gettokens/rate-limit-rules", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	return decodeRateLimitRules(body)
+}
+
+func (c *Client) CreateRateLimitRule(rule RateLimitRule) ([]RateLimitRule, error) {
+	payload, err := json.Marshal(rule)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/gettokens/rate-limit-rules", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	return decodeRateLimitRules(body)
+}
+
+func (c *Client) UpdateRateLimitRule(rule RateLimitRule) ([]RateLimitRule, error) {
+	payload, err := json.Marshal(rule)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("PUT", "/v0/management/gettokens/rate-limit-rules/"+url.PathEscape(rule.ID), nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	return decodeRateLimitRules(body)
+}
+
+func (c *Client) DeleteRateLimitRule(id string) error {
+	_, _, err := c.request("DELETE", "/v0/management/gettokens/rate-limit-rules/"+url.PathEscape(id), nil, nil, "")
+	return err
+}
+
+func (c *Client) GetAllRateLimitStatuses() ([]RateLimitState, error) {
+	body, _, err := c.request("GET", "/v0/management/gettokens/rate-limit-status", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []RateLimitState `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []RateLimitState{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) GetRateLimitStatus(accountKey string) (*RateLimitState, error) {
+	query := url.Values{}
+	query.Set("account_key", accountKey)
+	body, _, err := c.request("GET", "/v0/management/gettokens/rate-limit-status", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response RateLimitState
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Rules == nil {
+		response.Rules = []RateLimitRuleState{}
+	}
+	return &response, nil
+}
+
+func (c *Client) ListRateLimitEvents(accountKey string, limit int) ([]RateLimitEvent, error) {
+	query := url.Values{}
+	if accountKey != "" {
+		query.Set("account_key", accountKey)
+	}
+	if limit > 0 {
+		query.Set("limit", strconv.Itoa(limit))
+	}
+	body, _, err := c.request("GET", "/v0/management/gettokens/rate-limit-events", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []RateLimitEvent `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []RateLimitEvent{}, nil
+	}
+	return response.Items, nil
+}
+
+func decodeRateLimitRules(body []byte) ([]RateLimitRule, error) {
+	var response struct {
+		Items []RateLimitRule `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []RateLimitRule{}, nil
+	}
+	return response.Items, nil
 }

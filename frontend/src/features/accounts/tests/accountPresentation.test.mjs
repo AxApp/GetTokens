@@ -15,6 +15,28 @@ import {
   resolveAccountStatusTone,
   resolveAccountSourceHeading,
 } from '../model/accountPresentation.ts';
+import { shouldLoadAccountsData } from '../model/accountRuntime.ts';
+import { formatRateLimitLimitDraftValue, parseRateLimitLimitDraftValue } from '../model/rateLimit.ts';
+
+test('shouldLoadAccountsData allows browser preview data without Wails bindings', () => {
+  assert.equal(shouldLoadAccountsData({ code: 'running' }, false), true);
+});
+
+test('shouldLoadAccountsData waits for ready sidecar when Wails bindings exist', () => {
+  assert.equal(shouldLoadAccountsData({ code: 'running' }, true), false);
+  assert.equal(shouldLoadAccountsData({ code: 'ready' }, true), true);
+});
+
+test('rate limit token-window draft limit is edited in millions', () => {
+  assert.equal(formatRateLimitLimitDraftValue({ strategy: 'token-window', limitValue: 1000000 }), '1');
+  assert.equal(formatRateLimitLimitDraftValue({ strategy: 'token-window', limitValue: 1500000 }), '1.5');
+  assert.equal(parseRateLimitLimitDraftValue('token-window', '1.5'), 1500000);
+});
+
+test('rate limit request-window draft limit keeps raw count units', () => {
+  assert.equal(formatRateLimitLimitDraftValue({ strategy: 'request-window', limitValue: 120 }), '120');
+  assert.equal(parseRateLimitLimitDraftValue('request-window', '120'), 120);
+});
 
 test('mapAuthFileToRecord keeps auth file status message', () => {
   const record = mapAuthFileToRecord({

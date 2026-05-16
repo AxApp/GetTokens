@@ -1,5 +1,6 @@
 import AttributionCard from './AttributionCard';
 import type { AccountUsageSummary } from '../model/accountUsage';
+import { rateLimitStateTone, type RateLimitState } from '../model/rateLimit';
 import type { Translator } from '../model/types';
 import type { OpenAICompatibleProvider, ProviderVerifyState } from '../model/openAICompatible';
 import { maskProviderAPIKey } from '../model/openAICompatible';
@@ -17,6 +18,7 @@ interface OpenAICompatibleProviderCardProps {
   verifyState: ProviderVerifyState;
   effectiveModelCount: number;
   usageSummary?: AccountUsageSummary;
+  rateLimitStatus?: RateLimitState;
   pendingDelete: boolean;
   pendingStatus: boolean;
   onOpenDetail: (provider: OpenAICompatibleProvider) => void;
@@ -30,15 +32,20 @@ export default function OpenAICompatibleProviderCard({
   verifyState,
   effectiveModelCount,
   usageSummary,
+  rateLimitStatus,
   pendingDelete,
   pendingStatus,
   onOpenDetail,
   onDelete,
   onToggleDisabled,
 }: OpenAICompatibleProviderCardProps) {
-  const tone = resolveOpenAICompatibleCardTone(provider, verifyState);
+  const guardTone = rateLimitStateTone(rateLimitStatus);
+  const tone = guardTone === 'critical' ? 'critical' : resolveOpenAICompatibleCardTone(provider, verifyState);
   const eyebrow = resolveOpenAICompatibleCardEyebrow(t, provider, verifyState);
   const badges = buildOpenAICompatibleCardBadges(t, provider);
+  if (rateLimitStatus?.blocked) {
+    badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
+  }
   const evidenceRows = buildOpenAICompatibleCardEvidenceRows(t, provider, verifyState, effectiveModelCount);
   const verifyMessage = resolveOpenAICompatibleVerifyMessage(t, verifyState);
 
@@ -51,6 +58,7 @@ export default function OpenAICompatibleProviderCard({
       badges={badges}
       evidenceRows={evidenceRows}
       usageSummary={usageSummary}
+      rateLimitStatus={rateLimitStatus}
       tone={tone}
       style={{ minHeight: '48rem' }}
       customBody={

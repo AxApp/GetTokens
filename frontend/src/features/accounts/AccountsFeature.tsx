@@ -24,6 +24,8 @@ import { isCodexAuthFile } from './model/accountPresentation';
 import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
 import { buildAccountDetailFrameHash, clearAccountDetailFrameHash } from '../../utils/pagePersistence';
+import { hasWailsAppBindings } from '../../utils/previewMode';
+import { shouldLoadAccountsData } from './model/accountRuntime';
 import type { AccountRecord } from './model/types';
 import type { OpenAICompatibleProvider } from './model/openAICompatible';
 
@@ -39,7 +41,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const headerActionsMenuRef = useRef<HTMLDivElement | null>(null);
 
-  const ready = sidecarStatus?.code === 'ready';
+  const ready = shouldLoadAccountsData(sidecarStatus, hasWailsAppBindings());
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
@@ -94,6 +96,8 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     pasteError,
     codexQuotaByName,
     accountUsageByID,
+    accountRateLimitByID,
+    rateLimitStrategies,
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,
@@ -104,6 +108,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     allFilteredSelected,
     loadAccounts,
     loadAccountUsage,
+    loadAccountRateLimits,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,
@@ -172,7 +177,8 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
       return;
     }
     void loadAccountUsage(usageAccounts);
-  }, [loadAccountUsage, ready, usageAccounts]);
+    void loadAccountRateLimits(usageAccounts);
+  }, [loadAccountRateLimits, loadAccountUsage, ready, usageAccounts]);
 
   async function reloadRotationAccounts() {
     await loadAccounts();
@@ -238,6 +244,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           pendingDeleteName={openAICompatibleState.pendingDeleteName}
           pendingStatusName={openAICompatibleState.pendingStatusName}
           accountUsageByID={accountUsageByID}
+          accountRateLimitByID={accountRateLimitByID}
           onCreate={openAICompatibleState.openCreateModal}
           onRefresh={() => void openAICompatibleState.loadProviders()}
           onOpenDetail={openOpenAICompatibleDetail}
@@ -262,6 +269,8 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           <OpenAICompatibleDetailModal
             t={t}
             draft={openAICompatibleState.detailDraft}
+            rateLimitStatus={accountRateLimitByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
+            rateLimitStrategies={rateLimitStrategies}
             verifyState={
               openAICompatibleState.verifyStates[openAICompatibleState.detailDraft.currentName] ?? {
                 model: openAICompatibleState.detailDraft.verifyModel,
@@ -279,6 +288,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
             onVerify={() => void openAICompatibleState.verifyDetail()}
             onFetchModels={() => void openAICompatibleState.fetchDetailModels()}
             onApplyFetchedModels={openAICompatibleState.applyFetchedModelsToDetailDraft}
+            onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
           />
         ) : null}
       </>
@@ -394,6 +404,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
                   groupCardHeight={groupCardHeights[group.id]}
                   codexQuotaByName={codexQuotaByName}
                   accountUsageByID={accountUsageByID}
+                  accountRateLimitByID={accountRateLimitByID}
                   ready={ready}
                   isSelectionMode={isSelectionMode}
                   selectedAccountIDSet={selectedAccountIDSet}
@@ -425,6 +436,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
               pendingDeleteName={openAICompatibleState.pendingDeleteName}
               pendingStatusName={openAICompatibleState.pendingStatusName}
               accountUsageByID={accountUsageByID}
+              accountRateLimitByID={accountRateLimitByID}
               onCreate={openAICompatibleState.openCreateModal}
               onRefresh={() => void openAICompatibleState.loadProviders()}
               onOpenDetail={openOpenAICompatibleDetail}
@@ -455,6 +467,8 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
         <ApiKeyDetailModal
           account={selectedAccount}
           usageSummary={accountUsageByID[selectedAccount.id]}
+          rateLimitStatus={accountRateLimitByID[selectedAccount.id]}
+          rateLimitStrategies={rateLimitStrategies}
           verifyState={apiKeyVerifyState}
           modelNames={relayModelNames}
           onClose={closeAccountDetail}
@@ -462,6 +476,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           onSaveConfig={(draft) => updateSelectedApiKeyConfig(draft)}
           onVerify={(input) => void verifySelectedApiKey(input)}
           onTestQuotaCurl={(input) => testSelectedApiKeyQuotaCurl(input)}
+          onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
           t={t}
         />
       ) : null}
