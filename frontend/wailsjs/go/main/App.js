@@ -30,6 +30,10 @@ export function CreateOpenAICompatibleProvider(arg1) {
   return window['go']['main']['App']['CreateOpenAICompatibleProvider'](arg1);
 }
 
+export function CreateRateLimitRule(arg1) {
+  return window['go']['main']['App']['CreateRateLimitRule'](arg1);
+}
+
 export function DeleteAuthFiles(arg1) {
   return window['go']['main']['App']['DeleteAuthFiles'](arg1);
 }
@@ -44,6 +48,10 @@ export function DeleteCodexBinaryVersion(arg1) {
 
 export function DeleteOpenAICompatibleProvider(arg1) {
   return window['go']['main']['App']['DeleteOpenAICompatibleProvider'](arg1);
+}
+
+export function DeleteRateLimitRule(arg1) {
+  return window['go']['main']['App']['DeleteRateLimitRule'](arg1);
 }
 
 export function DownloadAuthFile(arg1) {
@@ -72,6 +80,10 @@ export function FetchVendorStatusRSS(arg1) {
 
 export function FinalizeCodexOAuth(arg1) {
   return window['go']['main']['App']['FinalizeCodexOAuth'](arg1);
+}
+
+export function GetAllRateLimitStatuses() {
+  return window['go']['main']['App']['GetAllRateLimitStatuses']();
 }
 
 export function GetAuthFileModels(arg1) {
@@ -134,6 +146,10 @@ export function GetOAuthStatus(arg1) {
   return window['go']['main']['App']['GetOAuthStatus'](arg1);
 }
 
+export function GetRateLimitStatus(arg1) {
+  return window['go']['main']['App']['GetRateLimitStatus'](arg1);
+}
+
 export function GetRelayRoutingConfig() {
   return window['go']['main']['App']['GetRelayRoutingConfig']();
 }
@@ -184,6 +200,18 @@ export function ListOAuthModelAliases(arg1) {
 
 export function ListOpenAICompatibleProviders() {
   return window['go']['main']['App']['ListOpenAICompatibleProviders']();
+}
+
+export function ListRateLimitEvents(arg1) {
+  return window['go']['main']['App']['ListRateLimitEvents'](arg1);
+}
+
+export function ListRateLimitRules(arg1) {
+  return window['go']['main']['App']['ListRateLimitRules'](arg1);
+}
+
+export function ListRateLimitStrategies() {
+  return window['go']['main']['App']['ListRateLimitStrategies']();
 }
 
 export function ListRelaySupportedModels() {
@@ -300,6 +328,10 @@ export function UpdateOAuthModelAliases(arg1) {
 
 export function UpdateOpenAICompatibleProvider(arg1) {
   return window['go']['main']['App']['UpdateOpenAICompatibleProvider'](arg1);
+}
+
+export function UpdateRateLimitRule(arg1) {
+  return window['go']['main']['App']['UpdateRateLimitRule'](arg1);
 }
 
 export function UpdateRelayRoutingConfig(arg1) {

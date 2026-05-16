@@ -19,6 +19,8 @@ export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void
 
 export function CreateOpenAICompatibleProvider(arg1:main.CreateOpenAICompatibleProviderInput):Promise<void>;
 
+export function CreateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.RateLimitRule>>;
+
 export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
 
 export function DeleteCodexAPIKey(arg1:string):Promise<void>;
@@ -26,6 +28,8 @@ export function DeleteCodexAPIKey(arg1:string):Promise<void>;
 export function DeleteCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<codexbinary.DeleteVersionResult>;
 
 export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
+
+export function DeleteRateLimitRule(arg1:main.DeleteRateLimitRuleInput):Promise<void>;
 
 export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>;
 
@@ -40,6 +44,8 @@ export function FetchProxySubscription(arg1:main.FetchProxySubscriptionInput):Pr
 export function FetchVendorStatusRSS(arg1:string):Promise<string>;
 
 export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
+
+export function GetAllRateLimitStatuses():Promise<Array<main.RateLimitState>>;
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
 
@@ -71,6 +77,8 @@ export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsag
 
 export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;
 
+export function GetRateLimitStatus(arg1:main.RateLimitStatusInput):Promise<main.RateLimitState>;
+
 export function GetRelayRoutingConfig():Promise<main.RelayRoutingConfig>;
 
 export function GetRelayServiceConfig():Promise<main.RelayServiceConfig>;
@@ -96,6 +104,12 @@ export function ListLocalCodexProviderViews():Promise<Array<main.LocalCodexModel
 export function ListOAuthModelAliases(arg1:string):Promise<Array<main.OpenAICompatibleModel>>;
 
 export function ListOpenAICompatibleProviders():Promise<Array<main.OpenAICompatibleProvider>>;
+
+export function ListRateLimitEvents(arg1:main.RateLimitEventsInput):Promise<Array<main.RateLimitEvent>>;
+
+export function ListRateLimitRules(arg1:main.RateLimitRulesInput):Promise<Array<main.RateLimitRule>>;
+
+export function ListRateLimitStrategies():Promise<Array<main.RateLimitStrategyMeta>>;
 
 export function ListRelaySupportedModels():Promise<main.RelaySupportedModelsResult>;
 
@@ -154,6 +168,8 @@ export function UpdateLocalProjectedUsageSettings(arg1:main.LocalProjectedUsageS
 export function UpdateOAuthModelAliases(arg1:main.UpdateOAuthModelAliasesInput):Promise<void>;
 
 export function UpdateOpenAICompatibleProvider(arg1:main.UpdateOpenAICompatibleProviderInput):Promise<void>;
+
+export function UpdateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.RateLimitRule>>;
 
 export function UpdateRelayRoutingConfig(arg1:main.RelayRoutingConfig):Promise<main.RelayRoutingConfig>;
 

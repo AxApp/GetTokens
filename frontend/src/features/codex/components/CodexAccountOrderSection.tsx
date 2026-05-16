@@ -6,6 +6,7 @@ import {
   type CodexRoutePolicyRowState,
 } from '../model/codexAccountList';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
+import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { AccountOrderRow } from './CodexAccountOrderRow';
 import { shouldUseCodexOrderSectionActionMenu } from '../model/codexAccountOrderSectionLayout';
@@ -34,6 +35,7 @@ export function CodexAccountOrderSection({
   routePolicyRowStates,
   codexQuotaByName,
   accountUsageByID,
+  accountRateLimitByID,
   refreshLabel,
   loadingLabel,
   saveLabel,
@@ -68,6 +70,7 @@ export function CodexAccountOrderSection({
   routePolicyRowStates: Record<string, CodexRoutePolicyRowState>;
   codexQuotaByName: Record<string, CodexQuotaState>;
   accountUsageByID: Record<string, AccountUsageSummary>;
+  accountRateLimitByID: Record<string, RateLimitState>;
   refreshLabel: string;
   loadingLabel: string;
   saveLabel: string;
@@ -183,6 +186,7 @@ export function CodexAccountOrderSection({
             routePolicyState={routePolicyRowStates[row.id]}
             quotaState={row.quotaKey ? codexQuotaByName[row.quotaKey] : undefined}
             usageSummary={accountUsageByID[row.id]}
+            rateLimitStatus={accountRateLimitByID[row.id]}
             onPolicyModeChange={onPolicyModeChange}
           />
         ))}

@@ -1323,6 +1323,18 @@ export namespace main {
 	        this.apiKey = source["apiKey"];
 	    }
 	}
+	export class DeleteRateLimitRuleInput {
+	    id: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DeleteRateLimitRuleInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	    }
+	}
 	export class DownloadFileResponse {
 	    name: string;
 	    contentBase64: string;
@@ -1738,6 +1750,204 @@ export namespace main {
 	        this.latencyMs = source["latencyMs"];
 	        this.checkedAt = source["checkedAt"];
 	        this.message = source["message"];
+	    }
+	}
+	export class RateLimitEvent {
+	    id: string;
+	    accountKey: string;
+	    matchKey?: string;
+	    ruleID: string;
+	    strategy: string;
+	    window: string;
+	    action: string;
+	    usageValue: number;
+	    limitValue: number;
+	    blocked: boolean;
+	    reason?: string;
+	    triggeredAt: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitEvent(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.accountKey = source["accountKey"];
+	        this.matchKey = source["matchKey"];
+	        this.ruleID = source["ruleID"];
+	        this.strategy = source["strategy"];
+	        this.window = source["window"];
+	        this.action = source["action"];
+	        this.usageValue = source["usageValue"];
+	        this.limitValue = source["limitValue"];
+	        this.blocked = source["blocked"];
+	        this.reason = source["reason"];
+	        this.triggeredAt = source["triggeredAt"];
+	    }
+	}
+	export class RateLimitEventsInput {
+	    accountKey?: string;
+	    limit?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitEventsInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.limit = source["limit"];
+	    }
+	}
+	export class RateLimitRule {
+	    id?: string;
+	    accountKey: string;
+	    matchKey?: string;
+	    strategy: string;
+	    window: string;
+	    limitValue: number;
+	    action: string;
+	    enabled: boolean;
+	    label?: string;
+	    createdAt?: number;
+	    updatedAt?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitRule(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.accountKey = source["accountKey"];
+	        this.matchKey = source["matchKey"];
+	        this.strategy = source["strategy"];
+	        this.window = source["window"];
+	        this.limitValue = source["limitValue"];
+	        this.action = source["action"];
+	        this.enabled = source["enabled"];
+	        this.label = source["label"];
+	        this.createdAt = source["createdAt"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
+	export class RateLimitRuleState {
+	    rule: RateLimitRule;
+	    exceeded: boolean;
+	    reason?: string;
+	    usagePct: number;
+	    currentUsage: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitRuleState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rule = this.convertValues(source["rule"], RateLimitRule);
+	        this.exceeded = source["exceeded"];
+	        this.reason = source["reason"];
+	        this.usagePct = source["usagePct"];
+	        this.currentUsage = source["currentUsage"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class RateLimitRulesInput {
+	    accountKey?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitRulesInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	    }
+	}
+	export class RateLimitState {
+	    accountKey: string;
+	    matchKey?: string;
+	    blocked: boolean;
+	    blockReason?: string;
+	    rules: RateLimitRuleState[];
+	    updatedAt?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.matchKey = source["matchKey"];
+	        this.blocked = source["blocked"];
+	        this.blockReason = source["blockReason"];
+	        this.rules = this.convertValues(source["rules"], RateLimitRuleState);
+	        this.updatedAt = source["updatedAt"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class RateLimitStatusInput {
+	    accountKey: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitStatusInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	    }
+	}
+	export class RateLimitStrategyMeta {
+	    id: string;
+	    name: string;
+	    supportedWindows: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new RateLimitStrategyMeta(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.supportedWindows = source["supportedWindows"];
 	    }
 	}
 	export class RelayLocalApplyResult {
@@ -2581,6 +2791,7 @@ export namespace main {
 	export class UpdateSessionProvidersInput {
 	    projectID: string;
 	    mappings: UpdateSessionProviderMapping[];
+	    snapshot?: SessionManagementSnapshot;
 	
 	    static createFrom(source: any = {}) {
 	        return new UpdateSessionProvidersInput(source);
@@ -2590,6 +2801,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projectID = source["projectID"];
 	        this.mappings = this.convertValues(source["mappings"], UpdateSessionProviderMapping);
+	        this.snapshot = this.convertValues(source["snapshot"], SessionManagementSnapshot);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

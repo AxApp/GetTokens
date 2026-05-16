@@ -2,6 +2,7 @@ import { GripVertical } from 'lucide-react';
 import { type DragEvent, type MouseEvent } from 'react';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
+import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { buildQuotaDisplay } from '../../accounts/model/accountQuota';
 import AttributionCard, { type AttributionCardBadge, type AttributionCardEvidenceRow } from '../../accounts/components/AttributionCard';
@@ -66,6 +67,7 @@ export function AccountOrderRow({
   routePolicyState,
   quotaState,
   usageSummary,
+  rateLimitStatus,
   onPolicyModeChange,
 }: {
   row: CodexAccountRow;
@@ -85,6 +87,7 @@ export function AccountOrderRow({
   routePolicyState?: CodexRoutePolicyRowState;
   quotaState?: CodexQuotaState;
   usageSummary?: AccountUsageSummary;
+  rateLimitStatus?: RateLimitState;
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
 }) {
   const endpointLabel = buildEndpointLabel(row);
@@ -103,6 +106,9 @@ export function AccountOrderRow({
     badges.push({ label: t('codex.account_list_probe_landed'), tone: 'positive' });
   } else if (!row.requestable) {
     badges.push({ label: routePolicyModeLabel(t, 'blocked'), tone: 'critical' });
+  }
+  if (rateLimitStatus?.blocked) {
+    badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
   const evidenceRows: AttributionCardEvidenceRow[] = [
     { label: t('accounts.card_asset'), value: row.id, title: row.id },
@@ -140,6 +146,7 @@ export function AccountOrderRow({
         badges={badges}
         usageSummary={usageSummary}
         quotaDisplay={quotaDisplay}
+        rateLimitStatus={rateLimitStatus}
         evidenceRows={evidenceRows}
         tone={cardTone}
         density={density}
