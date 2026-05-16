@@ -51,8 +51,9 @@ GetTokens 当前已经存在两条彼此不同、但在产品语义上容易被�
 - [Nolon / Codex 用量统计深挖](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260428-nolon-codex-usage/README.md)
 
 ## 当前状态
-- 状态：in-progress
-- 最近更新：2026-04-29
+- 状态：archived-superseded
+- 最近更新：2026-05-16
+- 归档判定：本 space 的 dual-source 设计与风险结论已被 `20260514-sidecar-usage-account-attribution` 的 sidecar ledger / Usage Desk observed source 主线吸收；后续 usage 事实源变更优先进入账号归因或 rate-limit 主线，不再把本旧 space 视作当前开放需求。
 - 代码落地进度：
   - `Usage Desk` 已作为 `Accounts` 子 workspace 接入应用壳子
   - `ObservedRequestUsage` 已接上真实 `GetUsageStatistics`

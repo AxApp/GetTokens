@@ -51,7 +51,8 @@
 - [ApiKeyDetailModal](/Users/linhey/Desktop/linhay-open-sources/GetTokens/frontend/src/features/accounts/components/ApiKeyDetailModal.tsx)
 
 ## 当前状态
-- 状态：in_progress
-- 最近更新：2026-04-26
+- 状态：archived-implemented
+- 最近更新：2026-05-16
 - 补充：状态页新增“后端中转服务配置”卡片，直接读取 sidecar 顶层 `api-keys` 作为聚合服务自己的客户端 API KEY，并支持多 key 编辑、主机名展示、局域网地址选择，以及当前实际轮动配置观察
 - 补充：`codex` auth file 的导入链路已收敛为最小字段清洗，账号详情面板新增“清洗字段”按钮，便于用户直接查看 sidecar 实际可消费的 payload
+- 归档判定：本 space 作为 2026-04 遗留需求文档归档，不再计入当前未收口需求；后续 provider/config 相关新增能力需进入明确的新 space 或归入 `account-pool` / `rate-limit-middleware` 等当前主线。

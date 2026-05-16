@@ -52,8 +52,9 @@
 - [CodexIntradayUsageService.swift](/Users/linhey/Desktop/FlowUp-Libs/nolon/libs/Providers/Sources/ProviderUsage/CodexIntradayUsageService.swift)
 
 ## 当前状态
-- 状态：in-progress
-- 最近更新：2026-04-28
+- 状态：archived-research
+- 最近更新：2026-05-16
+- 归档判定：本 space 是 Nolon Codex usage 研究资料，已为 GetTokens usage 方向提供参考；当前真实请求量与账号归因主线已迁入 `20260514-sidecar-usage-account-attribution`，本研究不再作为当前未收口需求推进。
 
 ## 当前理解
 

@@ -128,8 +128,9 @@
 11. `docs-linhay/references/CLIProxyAPI/internal/api/handlers/management/config_basic.go`
 
 ## 当前状态
-- 状态：implemented-in-frontend
-- 最近更新：2026-04-30
+- 状态：archived-implemented-app-layer
+- 最近更新：2026-05-16
+- 归档判定：本 space 作为 2026-04 代理池前端与 app-layer 能力记录归档，不再计入当前未收口需求；后续若要把代理能力继续推进到 sidecar 级代理配置，应另起明确主线 space。
 
 ## 实施落地（2026-04-30）
 - `代理池` 已接入真实前端，作为与 `账号池` 同级的一级导航页进入应用。

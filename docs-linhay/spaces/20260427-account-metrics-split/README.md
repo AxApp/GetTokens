@@ -40,8 +40,9 @@
 - `docs-linhay/references/Cli-Proxy-API-Management-Center/src/features/authFiles/components/AuthFileCard.tsx`
 
 ## 当前状态
-- 状态：in-progress
-- 最近更新：2026-04-27
+- 状态：archived-superseded
+- 最近更新：2026-05-16
+- 归档判定：本 space 的账号卡片信息分层结论已被后续 `20260514-sidecar-usage-account-attribution` 的共享 `AttributionCard` 卡片体系吸收，不再作为当前独立未收口需求推进。
 
 ## 分层结论
 

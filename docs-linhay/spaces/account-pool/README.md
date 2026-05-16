@@ -322,6 +322,7 @@
 - [OpenAI-Compatible Debate](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260427-deepseek-provider-support/debate/20260427/accounts/20260427-openai-compatible-provider-support-v01.md)
 
 ## 当前状态
-- 状态：in-progress
-- 最近更新：2026-04-28
+- 状态：active-umbrella
+- 最近更新：2026-05-16
 - 最近变更：`openai-compatible` provider detail 已收口为单 `apiKey` provider 工作流；`codex` 继续承接 OAuth 与 quota 闭环，`openai-compatible` 改为 provider 级心智，但不暴露多 `apiKey entries` 编辑。
+- 判定：`account-pool` 是长期 umbrella space，不按单个未收口需求管理；具体新需求应进入独立 space，当前近期主线为 `20260515-rate-limit-middleware`，短线收尾为 `20260511-codex-binary-management`。

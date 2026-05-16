@@ -87,6 +87,7 @@ Sparkle 是 macOS 上成熟的原生更新框架，更适合 GetTokens 当前的
 - [GetTokens 发布准备指南](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/dev/20260426-release-prep-guide.md)
 
 ## 当前状态
-- 状态：in-progress
-- 最近更新：2026-04-27
+- 状态：archived-release-governance
+- 最近更新：2026-05-16
 - 最近变更：已完成 Sparkle space / 架构文档 / plist 注入脚本 / framework 下载与嵌入脚本 / darwin bridge / 设置页原生更新入口适配；`v0.1.10` 已完成首轮真实 Sparkle release 回归，release workflow 可在 `SPARKLE_ENABLE=1` 时生成并发布分架构 feed `appcast-arm64.xml` / `appcast-amd64.xml` 到 `sparkle-appcast` 分支。随后补上 `scripts/sync-macos-bundle-version.sh`，在 macOS release workflow 中把 `CFBundleShortVersionString` / `CFBundleVersion` 同步到真实 release tag，修复 Sparkle “当前最新版是 GetTokens 1.0.0” 的版本错位问题。
+- 归档判定：本 space 作为 2026-04 发布链 / Sparkle 接入记录归档；后续 release、notarization、Sparkle feed 或版本同步问题统一按 release governance 处理，不再把该旧 `in-progress` 视作当前产品需求缺口。

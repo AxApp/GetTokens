@@ -58,5 +58,6 @@
 
 ## 当前状态
 
-- 状态：handoff-ready
-- 最近更新：2026-04-29
+- 状态：archived-handoff
+- 最近更新：2026-05-16
+- 归档判定：本 space 是 Usage Desk 控制栏视觉精修交接稿，当前不作为独立开放需求排队；后续 Usage Desk 视觉改动如需重启，应进入新的实现 space 或并入当期主线。

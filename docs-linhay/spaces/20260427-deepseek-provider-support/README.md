@@ -46,8 +46,9 @@
 - [CLIProxyAPI config.example.yaml](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/references/CLIProxyAPI/config.example.yaml)
 
 ## 当前状态
-- 状态：in-progress
-- 最近更新：2026-04-27
+- 状态：archived-superseded
+- 最近更新：2026-05-16
+- 归档判定：本 space 的 DeepSeek / 其他厂商边界已收敛到 `openai-compatible provider` 正式心智，后续 provider 能力归入 `account-pool` 与 Codex 账号列表相关主线，不再作为当前独立未收口需求。
 
 ## 完全体需求补充
 

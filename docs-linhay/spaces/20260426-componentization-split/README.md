@@ -49,9 +49,10 @@
 - [供应商配置与一键复制配置](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260426-provider-config-setup/README.md)
 
 ## 当前状态
-- 状态：ready
-- 最近更新：2026-04-26
+- 状态：archived-implemented
+- 最近更新：2026-05-16
 - 补充：`accounts` 前端 Phase 1 已完成，目录已收敛到 `features/accounts/{components,hooks,model,tests}`，`pages/AccountsPage.tsx` 已回归路由包装层
 - 补充：Go 侧 Phase 2 已完成，`internal/accounts/codex_quota.go` 已按 `types / auth parser / client / builder / debug` 拆分为独立文件，并通过 `go test ./internal/accounts ./internal/wailsapp ./internal/sidecar`
 - 补充：Go 侧 Phase 3 已完成第一轮职责拆分，`internal/sidecar/manager.go` 已拆出 `config / port / process_support`，`internal/wailsapp/quota.go` 已拆出 `quota_support / quota_debug`
 - 补充：前端 Phase 4 已完成页面装配层迁移，`StatusPage.tsx` 与 `SettingsPage.tsx` 已收敛为路由包装，主实现迁入 `features/status/StatusFeature.tsx` 与 `features/settings/SettingsFeature.tsx`
+- 归档判定：本 space 的阶段性拆分已完成并沉淀为后续代码组织基线；新的大文件治理应跟随具体主线 space 处理，不再作为当前独立需求排队。
