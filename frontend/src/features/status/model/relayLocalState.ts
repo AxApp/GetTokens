@@ -31,12 +31,24 @@ export interface RelayProviderEditorState {
 }
 
 export type LocalCliTargetID = 'codex' | 'claude';
+export type CodexLocalAuthStrategy = 'replace_auth_with_apikey' | 'preserve_chatgpt_auth';
 
 export interface CodexLocalTargetDraft {
   relayKeyIndex: number;
   endpointID: string;
   model: string;
   providerID: string;
+}
+
+export interface LocalCodexAuthStateLike {
+  hasAuthFile?: boolean;
+  authMode?: string;
+  hasOpenAIAPIKey?: boolean;
+  hasTokens?: boolean;
+  accountEmail?: string;
+  planType?: string;
+  canPreserveChatGPTAuth?: boolean;
+  warnings?: string[];
 }
 
 export interface ClaudeCodeLocalApplyDraft {
@@ -59,6 +71,18 @@ export interface CodexLocalApplyDiffInput {
   providerID: string;
   providerName: string;
   supportsWebsockets: boolean;
+  authStrategy: CodexLocalAuthStrategy;
+}
+
+export interface CodexLocalApplyPreflightInput {
+  authStrategy: CodexLocalAuthStrategy;
+  providerID: string;
+  authState?: LocalCodexAuthStateLike | null;
+}
+
+export interface CodexLocalApplyPreflightResult {
+  canApply: boolean;
+  reason: 'ok' | 'missing_chatgpt_auth' | 'requires_custom_provider';
 }
 
 export interface ClaudeCodeSettingsDiffInput {
@@ -78,9 +102,11 @@ const relaySelectedModelStorageKey = 'gettokens.status.selected-relay-model';
 const relayProviderOptionsStorageKey = 'gettokens.status.relay-provider-options';
 const relaySelectedProviderStorageKey = 'gettokens.status.selected-relay-provider';
 const relaySelectedReasoningEffortStorageKey = 'gettokens.status.selected-relay-reasoning-effort';
+const codexLocalAuthStrategyStorageKey = 'gettokens.status.codex-local-auth-strategy';
 
 export const defaultRelayModelOptions = ['GT', 'gpt-5.4'];
 export const defaultRelayReasoningEffortOptions = [...RELAY_CODEX_REASONING_EFFORT_OPTIONS];
+export const defaultCodexLocalAuthStrategy: CodexLocalAuthStrategy = 'replace_auth_with_apikey';
 
 export function toRelayProviderOption(input: {
   providerID?: string;
@@ -123,15 +149,13 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
   const model = input.model.trim();
   const reasoningEffort = input.reasoningEffort.trim();
   const maskedKey = maskRelayKey(input.apiKey);
-  const customProviderLines = [
-    `+model_provider = ${quoteConfigString(providerID)}`,
-    '',
-    `+[model_providers.${providerID}]`,
-    `+name = ${quoteConfigString(providerName)}`,
-    `+base_url = ${quoteConfigString(baseUrl)}`,
-    '+requires_openai_auth = true',
-    '+wire_api = "responses"',
-  ];
+  const authStrategy = input.authStrategy || defaultCodexLocalAuthStrategy;
+  const customProviderLines = [`+model_provider = ${quoteConfigString(providerID)}`, '', `+[model_providers.${providerID}]`, `+name = ${quoteConfigString(providerName)}`, `+base_url = ${quoteConfigString(baseUrl)}`];
+  if (authStrategy === 'preserve_chatgpt_auth') {
+    customProviderLines.push(`+experimental_bearer_token = ${quoteConfigString(maskedKey)}`);
+    customProviderLines.push('-env_key = "OPENAI_API_KEY"');
+  }
+  customProviderLines.push('+requires_openai_auth = true', '+wire_api = "responses"');
   if (input.supportsWebsockets) {
     customProviderLines.push('+supports_websockets = true');
   }
@@ -142,15 +166,27 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
           '# openai provider identity preserved; model_provider is not forced unless already present',
         ]
       : customProviderLines;
+  const authLines =
+    authStrategy === 'preserve_chatgpt_auth'
+      ? [
+          '--- CODEX_HOME/auth.json',
+          '+++ CODEX_HOME/auth.json',
+          '@@ auth preserved @@',
+          '# preserved: existing ChatGPT login tokens stay in place',
+          '# preserved: auth_mode / tokens / account metadata are not rewritten',
+        ]
+      : [
+          '--- CODEX_HOME/auth.json',
+          '+++ CODEX_HOME/auth.json',
+          '@@ auth fields @@',
+          ' {',
+          '   "auth_mode": "apikey",',
+          `+"OPENAI_API_KEY": ${quoteConfigString(maskedKey)}`,
+          ' }',
+        ];
 
   return [
-    '--- CODEX_HOME/auth.json',
-    '+++ CODEX_HOME/auth.json',
-    '@@ auth fields @@',
-    ' {',
-    '   "auth_mode": "apikey",',
-    `+"OPENAI_API_KEY": ${quoteConfigString(maskedKey)}`,
-    ' }',
+    ...authLines,
     '',
     '--- CODEX_HOME/config.toml',
     '+++ CODEX_HOME/config.toml',
@@ -163,6 +199,18 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
     '# preserved: [mcp_servers.*] / [profiles.*] / unknown provider keys',
     '# preserved: user comments and unmanaged sections are not part of this patch',
   ].join('\n');
+}
+
+export function getCodexLocalApplyPreflight(input: CodexLocalApplyPreflightInput): CodexLocalApplyPreflightResult {
+  if (input.authStrategy === 'preserve_chatgpt_auth') {
+    if ((input.providerID || '').trim() === RELAY_CODEX_OPENAI_PROVIDER_ID) {
+      return { canApply: false, reason: 'requires_custom_provider' };
+    }
+    if (!input.authState?.canPreserveChatGPTAuth) {
+      return { canApply: false, reason: 'missing_chatgpt_auth' };
+    }
+  }
+  return { canApply: true, reason: 'ok' };
 }
 
 export function buildClaudeCodeSettingsDiff(input: ClaudeCodeSettingsDiffInput) {
@@ -478,6 +526,32 @@ export function saveSelectedRelayReasoningEffort(value: string) {
 
   try {
     window.localStorage.setItem(relaySelectedReasoningEffortStorageKey, value);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+export function loadCodexLocalAuthStrategy(): CodexLocalAuthStrategy {
+  if (typeof window === 'undefined') {
+    return defaultCodexLocalAuthStrategy;
+  }
+
+  try {
+    const raw = String(window.localStorage.getItem(codexLocalAuthStrategyStorageKey) || '').trim();
+    return raw === 'preserve_chatgpt_auth' ? 'preserve_chatgpt_auth' : defaultCodexLocalAuthStrategy;
+  } catch (error) {
+    console.error(error);
+    return defaultCodexLocalAuthStrategy;
+  }
+}
+
+export function saveCodexLocalAuthStrategy(value: CodexLocalAuthStrategy) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(codexLocalAuthStrategyStorageKey, value);
   } catch (error) {
     console.error(error);
   }

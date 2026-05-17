@@ -14,7 +14,9 @@ import {
   buildClaudeCodeSettingsDiff,
   buildCodexLocalApplyDiff,
   resolveUnifiedDiffLineTone,
+  type CodexLocalAuthStrategy,
   type ClaudeCodeLocalApplyDraft,
+  type LocalCodexAuthStateLike,
   type RelayModelEditorState,
 } from '../model/relayLocalState';
 import type { RelayResolvedModelOption } from '../model/relayModelCatalog';
@@ -36,6 +38,10 @@ interface StatusApplyLocalSectionProps {
   selectedEndpointBaseUrl: string;
   relayProviderOptions: RelayProviderOption[];
   selectedRelayProviderID: string;
+  codexLocalAuthStrategy: CodexLocalAuthStrategy;
+  localCodexAuthState: LocalCodexAuthStateLike | null;
+  codexLocalCanApply: boolean;
+  codexLocalApplyBlockedMessage: string;
   relayReasoningEffortOptions: string[];
   selectedRelayReasoningEffort: string;
   selectedRelayModel: string;
@@ -49,6 +55,7 @@ interface StatusApplyLocalSectionProps {
   onCopyEndpointBaseUrl: () => void;
   onOpenCreateRelayProviderEditor: () => void;
   onSelectRelayProviderID: (id: string) => void;
+  onSelectCodexLocalAuthStrategy: (value: CodexLocalAuthStrategy) => void;
   onDeleteRelayProviderOption: (id: string) => void;
   onSelectRelayReasoningEffort: (value: string) => void;
   onCommitRelayModelSelection: (value: string) => void;
@@ -73,6 +80,10 @@ export function StatusApplyLocalSection({
   selectedEndpointBaseUrl,
   relayProviderOptions,
   selectedRelayProviderID,
+  codexLocalAuthStrategy,
+  localCodexAuthState,
+  codexLocalCanApply,
+  codexLocalApplyBlockedMessage,
   relayReasoningEffortOptions,
   selectedRelayReasoningEffort,
   selectedRelayModel,
@@ -86,6 +97,7 @@ export function StatusApplyLocalSection({
   onCopyEndpointBaseUrl,
   onOpenCreateRelayProviderEditor,
   onSelectRelayProviderID,
+  onSelectCodexLocalAuthStrategy,
   onDeleteRelayProviderOption,
   onSelectRelayReasoningEffort,
   onCommitRelayModelSelection,
@@ -134,8 +146,10 @@ export function StatusApplyLocalSection({
         providerID: selectedRelayProvider.id,
         providerName: selectedRelayProvider.name,
         supportsWebsockets,
+        authStrategy: codexLocalAuthStrategy,
       }),
     [
+      codexLocalAuthStrategy,
       selectedEndpointBaseUrl,
       selectedRelayKey,
       selectedRelayModel,
@@ -179,6 +193,20 @@ export function StatusApplyLocalSection({
     value: provider.id,
     label: provider.name === provider.id ? provider.id : `${provider.name} / ${provider.id}`,
   }));
+  const codexLocalAuthStrategyOptions = [
+    { value: 'replace_auth_with_apikey', label: t('status.auth_strategy_replace_apikey') },
+    { value: 'preserve_chatgpt_auth', label: t('status.auth_strategy_preserve_chatgpt') },
+  ];
+  const codexLocalAuthSummary =
+    !localCodexAuthState || !localCodexAuthState.hasAuthFile
+      ? t('status.codex_local_auth_missing')
+      : localCodexAuthState.authMode === 'chatgpt'
+        ? t('status.codex_local_auth_chatgpt_ready')
+        : localCodexAuthState.authMode === 'chatgpt_auth_tokens'
+          ? t('status.codex_local_auth_chatgpt_tokens')
+          : localCodexAuthState.authMode === 'apikey'
+            ? t('status.codex_local_auth_apikey')
+            : t('status.codex_local_auth_unknown');
   const claudeModelOptions = Array.from(
     new Set([
       claudeDraft.model || 'claude-sonnet-4-5',
@@ -288,6 +316,41 @@ export function StatusApplyLocalSection({
                 </label>
               </div>
 
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <label className="grid gap-2">
+                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('status.auth_strategy_title')}
+                  </span>
+                  <select
+                    value={codexLocalAuthStrategy}
+                    onChange={(event) =>
+                      onSelectCodexLocalAuthStrategy(event.target.value as CodexLocalAuthStrategy)
+                    }
+                    className="select-swiss"
+                  >
+                    {codexLocalAuthStrategyOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="grid gap-2">
+                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('status.codex_local_auth_state_title')}
+                  </span>
+                  <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[0.6875rem] font-semibold text-[var(--text-primary)]">
+                    <div>{codexLocalAuthSummary}</div>
+                    {localCodexAuthState?.accountEmail ? (
+                      <div className="mt-1 font-mono text-[0.625rem] text-[var(--text-muted)]">
+                        {localCodexAuthState.accountEmail}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
                 <StatusModelPicker
                   t={t}
@@ -320,6 +383,13 @@ export function StatusApplyLocalSection({
                 </div>
               ) : null}
 
+              {codexLocalAuthStrategy === 'preserve_chatgpt_auth' ? (
+                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                  {codexLocalCanApply ? t('status.codex_local_preserve_hint') : codexLocalApplyBlockedMessage}
+                  {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
+                </div>
+              ) : null}
+
               {localApplyMessage ? (
                 <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
                   {localApplyMessage}
@@ -336,7 +406,7 @@ export function StatusApplyLocalSection({
                 <button
                   type="button"
                   onClick={onApplyRelayConfigToLocal}
-                  disabled={isApplyingToLocal || !isReady || !selectedRelayKey.trim()}
+                  disabled={isApplyingToLocal || !isReady || !selectedRelayKey.trim() || !codexLocalCanApply}
                   className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local_codex')}

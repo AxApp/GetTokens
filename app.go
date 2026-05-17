@@ -809,6 +809,47 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, mode
 	}, nil
 }
 
+func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalApplyResult, error) {
+	result, err := a.core.ApplyRelayServiceConfigToLocalV2(wailsapp.RelayLocalApplyInput{
+		APIKey:             input.APIKey,
+		BaseURL:            input.BaseURL,
+		Model:              input.Model,
+		ReasoningEffort:    input.ReasoningEffort,
+		ProviderID:         input.ProviderID,
+		ProviderName:       input.ProviderName,
+		SupportsWebsockets: input.SupportsWebsockets,
+		AuthStrategy:       input.AuthStrategy,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &RelayLocalApplyResult{
+		CodexHomePath: result.CodexHomePath,
+		AuthFilePath:  result.AuthFilePath,
+		ConfigPath:    result.ConfigPath,
+	}, nil
+}
+
+func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {
+	result, err := a.core.GetLocalCodexAuthState()
+	if err != nil {
+		return nil, err
+	}
+
+	return &LocalCodexAuthState{
+		AuthFilePath:           result.AuthFilePath,
+		HasAuthFile:            result.HasAuthFile,
+		AuthMode:               result.AuthMode,
+		HasOpenAIAPIKey:        result.HasOpenAIAPIKey,
+		HasTokens:              result.HasTokens,
+		AccountEmail:           result.AccountEmail,
+		PlanType:               result.PlanType,
+		CanPreserveChatGPTAuth: result.CanPreserveChatGPTAuth,
+		Warnings:               append([]string(nil), result.Warnings...),
+	}, nil
+}
+
 func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, model string) (*ClaudeCodeLocalApplyResult, error) {
 	result, err := a.core.ApplyClaudeCodeAPIKeyConfigToLocal(apiKey, baseURL, model)
 	if err != nil {

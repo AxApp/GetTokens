@@ -268,3 +268,194 @@ func TestApplyRelayServiceConfigToLocalPreservesExistingProviderSectionAndAuthFi
 		t.Fatalf("existing provider key order should be preserved: %s", configContent)
 	}
 }
+
+func TestGetLocalCodexAuthStateDetectsChatGPTTokens(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	authPath := filepath.Join(codexHome, "auth.json")
+	authBody := "{\n  \"tokens\": {\"access_token\": \"abc\"},\n  \"user\": {\"email\": \"dev@example.com\"}\n}\n"
+	if err := os.WriteFile(authPath, []byte(authBody), 0600); err != nil {
+		t.Fatalf("WriteFile auth.json: %v", err)
+	}
+
+	state, err := getLocalCodexAuthState()
+	if err != nil {
+		t.Fatalf("getLocalCodexAuthState returned error: %v", err)
+	}
+
+	if !state.HasAuthFile {
+		t.Fatalf("expected HasAuthFile to be true")
+	}
+	if state.AuthMode != "chatgpt_auth_tokens" {
+		t.Fatalf("AuthMode = %q, want chatgpt_auth_tokens", state.AuthMode)
+	}
+	if !state.HasTokens {
+		t.Fatalf("expected HasTokens to be true")
+	}
+	if state.HasOpenAIAPIKey {
+		t.Fatalf("expected HasOpenAIAPIKey to be false")
+	}
+	if !state.CanPreserveChatGPTAuth {
+		t.Fatalf("expected CanPreserveChatGPTAuth to be true")
+	}
+	if state.AccountEmail != "dev@example.com" {
+		t.Fatalf("AccountEmail = %q, want dev@example.com", state.AccountEmail)
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalV2PreserveChatGPTAuthKeepsAuthJSONAndWritesExperimentalBearerToken(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	authPath := filepath.Join(codexHome, "auth.json")
+	originalAuth := "{\n  \"auth_mode\": \"chatgpt\",\n  \"OPENAI_API_KEY\": null,\n  \"tokens\": {\"access_token\": \"chatgpt-token\"}\n}\n"
+	if err := os.WriteFile(authPath, []byte(originalAuth), 0600); err != nil {
+		t.Fatalf("WriteFile auth.json: %v", err)
+	}
+
+	configPath := filepath.Join(codexHome, "config.toml")
+	existingConfig := strings.Join([]string{
+		`model = "gpt-4.1"`,
+		``,
+		`[model_providers.gettokens]`,
+		`name = "Old Name"`,
+		`env_key = "OPENAI_API_KEY"`,
+		`wire_api = "chat_completions"`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(existingConfig), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	result, err := applyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:              "sk-relay-test",
+		BaseURL:             "http://127.0.0.1:8317/v1",
+		Model:               "gpt-5.5",
+		ReasoningEffort:     "xhigh",
+		ProviderID:          "gettokens",
+		ProviderName:        "GetTokens",
+		SupportsWebsockets:  true,
+		AuthStrategy:        relayLocalAuthStrategyPreserveChatGPTAuth,
+	})
+	if err != nil {
+		t.Fatalf("applyRelayServiceConfigToLocalV2 returned error: %v", err)
+	}
+
+	authBody, err := os.ReadFile(result.AuthFilePath)
+	if err != nil {
+		t.Fatalf("ReadFile auth.json: %v", err)
+	}
+	if string(authBody) != originalAuth {
+		t.Fatalf("auth.json should remain unchanged:\n%s", string(authBody))
+	}
+
+	configBody, err := os.ReadFile(result.ConfigPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	configContent := string(configBody)
+	if !strings.Contains(configContent, `experimental_bearer_token = "sk-relay-test"`) {
+		t.Fatalf("config.toml missing experimental_bearer_token: %s", configContent)
+	}
+	if strings.Contains(configContent, `env_key = "OPENAI_API_KEY"`) {
+		t.Fatalf("preserve mode should remove env_key to avoid overriding experimental_bearer_token: %s", configContent)
+	}
+	if !strings.Contains(configContent, `requires_openai_auth = true`) || !strings.Contains(configContent, `wire_api = "responses"`) {
+		t.Fatalf("config.toml missing required preserve-mode fields: %s", configContent)
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalV2PreserveChatGPTAuthRejectsBuiltinOpenAIProvider(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	authPath := filepath.Join(codexHome, "auth.json")
+	if err := os.WriteFile(authPath, []byte("{\n  \"auth_mode\": \"chatgpt\",\n  \"tokens\": {\"access_token\": \"abc\"}\n}\n"), 0600); err != nil {
+		t.Fatalf("WriteFile auth.json: %v", err)
+	}
+
+	_, err := applyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:           "sk-relay-test",
+		BaseURL:          "http://127.0.0.1:8317/v1",
+		Model:            "gpt-5.5",
+		ReasoningEffort:  "high",
+		ProviderID:       "openai",
+		ProviderName:     "OpenAI",
+		AuthStrategy:     relayLocalAuthStrategyPreserveChatGPTAuth,
+	})
+	if err == nil || !strings.Contains(err.Error(), "openai") {
+		t.Fatalf("expected openai provider rejection, got: %v", err)
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalV2PreserveChatGPTAuthRejectsMissingChatGPTAuth(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+
+	_, err := applyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:           "sk-relay-test",
+		BaseURL:          "http://127.0.0.1:8317/v1",
+		Model:            "gpt-5.5",
+		ReasoningEffort:  "high",
+		ProviderID:       "gettokens",
+		ProviderName:     "GetTokens",
+		AuthStrategy:     relayLocalAuthStrategyPreserveChatGPTAuth,
+	})
+	if err == nil || !strings.Contains(err.Error(), "ChatGPT") {
+		t.Fatalf("expected missing ChatGPT auth rejection, got: %v", err)
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalV2ReplaceAuthWithAPIKeyRemovesExperimentalBearerToken(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	configPath := filepath.Join(codexHome, "config.toml")
+	existingConfig := strings.Join([]string{
+		`model = "gpt-4.1"`,
+		``,
+		`[model_providers.gettokens]`,
+		`name = "Old Name"`,
+		`experimental_bearer_token = "stale-token"`,
+		`wire_api = "responses"`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(existingConfig), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	if _, err := applyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:           "sk-relay-test",
+		BaseURL:          "http://127.0.0.1:8317/v1",
+		Model:            "gpt-5.5",
+		ReasoningEffort:  "high",
+		ProviderID:       "gettokens",
+		ProviderName:     "GetTokens",
+		AuthStrategy:     relayLocalAuthStrategyReplaceAuthWithAPIKey,
+	}); err != nil {
+		t.Fatalf("applyRelayServiceConfigToLocalV2 returned error: %v", err)
+	}
+
+	configBody, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if strings.Contains(string(configBody), `experimental_bearer_token = "stale-token"`) {
+		t.Fatalf("replace_auth_with_apikey should remove stale experimental_bearer_token: %s", string(configBody))
+	}
+}

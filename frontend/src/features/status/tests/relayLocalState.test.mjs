@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   buildClaudeCodeSettingsDiff,
   buildCodexLocalApplyDiff,
+  getCodexLocalApplyPreflight,
   resolveUnifiedDiffLineTone,
   updateLocalCliTargetDraft,
 } from '../model/relayLocalState.ts';
@@ -16,6 +17,7 @@ test('buildCodexLocalApplyDiff includes Codex auth and config controlled fields'
     reasoningEffort: 'high',
     providerID: 'gettokens',
     providerName: 'GetTokens',
+    authStrategy: 'replace_auth_with_apikey',
   });
 
   assert.match(diff, /--- CODEX_HOME\/auth\.json/);
@@ -23,6 +25,24 @@ test('buildCodexLocalApplyDiff includes Codex auth and config controlled fields'
   assert.match(diff, /\+model = "gpt-5.4"/);
   assert.match(diff, /\+model_provider = "gettokens"/);
   assert.match(diff, /\+wire_api = "responses"/);
+});
+
+test('buildCodexLocalApplyDiff preserves ChatGPT auth and writes experimental bearer token in preserve mode', () => {
+  const diff = buildCodexLocalApplyDiff({
+    apiKey: 'sk-gettokens-1234567890abcdef',
+    baseUrl: 'http://127.0.0.1:8317/v1',
+    model: 'gpt-5.4',
+    reasoningEffort: 'high',
+    providerID: 'relay-bridge',
+    providerName: 'Relay Bridge',
+    supportsWebsockets: true,
+    authStrategy: 'preserve_chatgpt_auth',
+  });
+
+  assert.match(diff, /@@ auth preserved @@/);
+  assert.match(diff, /existing ChatGPT login tokens stay in place/);
+  assert.match(diff, /\+experimental_bearer_token = "sk-getto\.\.\.cdef"/);
+  assert.match(diff, /-env_key = "OPENAI_API_KEY"/);
 });
 
 test('buildClaudeCodeSettingsDiff previews only Claude Code settings env fields', () => {
@@ -69,6 +89,48 @@ test('updateLocalCliTargetDraft keeps Codex and Claude drafts isolated', () => {
   assert.equal(afterClaudeEdit.claude.baseUrl, 'http://localhost:8317/v1');
   assert.equal(initial.codex.model, 'gpt-5.4');
   assert.equal(initial.claude.baseUrl, 'http://127.0.0.1:8317/v1');
+});
+
+test('getCodexLocalApplyPreflight blocks preserve mode without ChatGPT auth or with builtin openai provider', () => {
+  assert.deepEqual(
+    getCodexLocalApplyPreflight({
+      authStrategy: 'preserve_chatgpt_auth',
+      providerID: 'gettokens',
+      authState: {
+        canPreserveChatGPTAuth: false,
+      },
+    }),
+    {
+      canApply: false,
+      reason: 'missing_chatgpt_auth',
+    }
+  );
+
+  assert.deepEqual(
+    getCodexLocalApplyPreflight({
+      authStrategy: 'preserve_chatgpt_auth',
+      providerID: 'openai',
+      authState: {
+        canPreserveChatGPTAuth: true,
+      },
+    }),
+    {
+      canApply: false,
+      reason: 'requires_custom_provider',
+    }
+  );
+
+  assert.deepEqual(
+    getCodexLocalApplyPreflight({
+      authStrategy: 'replace_auth_with_apikey',
+      providerID: 'openai',
+      authState: null,
+    }),
+    {
+      canApply: true,
+      reason: 'ok',
+    }
+  );
 });
 
 test('resolveUnifiedDiffLineTone marks only real add and remove lines as red or green', () => {

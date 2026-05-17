@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ApplyClaudeCodeAPIKeyConfigToLocal,
   ApplyRelayServiceConfigToLocal,
+  ApplyRelayServiceConfigToLocalV2,
+  GetLocalCodexAuthState,
   GetRelayServiceConfig,
   ListLocalCodexProviderViews,
   ListRelaySupportedModels,
@@ -22,6 +24,8 @@ import { RELAY_CODEX_OPENAI_PROVIDER_ID } from '../accounts/model/accountConfig'
 import {
   defaultRelayProviderOptions,
   defaultRelayReasoningEffortOptions,
+  getCodexLocalApplyPreflight,
+  loadCodexLocalAuthStrategy,
   loadLANAccessEnabled,
   loadRelayKeyAliases,
   loadRelayModelOptions,
@@ -29,6 +33,7 @@ import {
   loadSelectedRelayModel,
   loadSelectedRelayProvider,
   loadSelectedRelayReasoningEffort,
+  saveCodexLocalAuthStrategy,
   saveLANAccessEnabled,
   saveRelayKeyAliases,
   saveRelayModelOptions,
@@ -37,6 +42,7 @@ import {
   saveSelectedRelayProvider,
   saveSelectedRelayReasoningEffort,
   toRelayProviderOption,
+  type CodexLocalAuthStrategy,
   type ClaudeCodeLocalApplyDraft,
   type RelayKeyEditorState,
   type RelayProviderEditorState,
@@ -87,9 +93,13 @@ export default function StatusFeature({
   const [selectedRelayProviderID, setSelectedRelayProviderID] = useState<string>(() =>
     loadSelectedRelayProvider(loadRelayProviderOptions())
   );
+  const [codexLocalAuthStrategy, setCodexLocalAuthStrategy] = useState<CodexLocalAuthStrategy>(() =>
+    loadCodexLocalAuthStrategy()
+  );
   const [supportsWebsockets, setSupportsWebsockets] = useState(true);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
+  const [localCodexAuthState, setLocalCodexAuthState] = useState<main.LocalCodexAuthState | null>(null);
   const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [claudeApplyMessage, setClaudeApplyMessage] = useState('');
   const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
@@ -125,6 +135,53 @@ export default function StatusFeature({
     () => resolveRelayModelReasoningProfile(selectedRelayModel, resolvedRelayModels),
     [resolvedRelayModels, selectedRelayModel]
   );
+  const codexLocalPreflight = useMemo(
+    () =>
+      getCodexLocalApplyPreflight({
+        authStrategy: codexLocalAuthStrategy,
+        providerID: selectedRelayProvider.id,
+        authState: localCodexAuthState,
+      }),
+    [codexLocalAuthStrategy, localCodexAuthState, selectedRelayProvider.id]
+  );
+  const codexLocalApplyBlockedMessage = useMemo(() => {
+    switch (codexLocalPreflight.reason) {
+      case 'missing_chatgpt_auth':
+        return t('status.codex_local_preserve_requires_chatgpt');
+      case 'requires_custom_provider':
+        return t('status.codex_local_preserve_requires_custom_provider');
+      default:
+        return '';
+    }
+  }, [codexLocalPreflight.reason, t]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLocalCodexAuthState() {
+      try {
+        const result = await trackRequest('GetLocalCodexAuthState', { args: [] }, () => GetLocalCodexAuthState());
+        if (!cancelled) {
+          setLocalCodexAuthState(result);
+        }
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setLocalCodexAuthState(null);
+        }
+      }
+    }
+
+    void loadLocalCodexAuthState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [trackRequest]);
+
+  useEffect(() => {
+    saveCodexLocalAuthStrategy(codexLocalAuthStrategy);
+  }, [codexLocalAuthStrategy]);
 
   useEffect(() => {
     let cancelled = false;
@@ -551,11 +608,15 @@ export default function StatusFeature({
       setLocalApplyMessage(t('status.apply_local_missing_key'));
       return;
     }
+    if (!codexLocalPreflight.canApply) {
+      setLocalApplyMessage(codexLocalApplyBlockedMessage);
+      return;
+    }
 
     setIsApplyingToLocal(true);
     try {
       const result = await trackRequest(
-        'ApplyRelayServiceConfigToLocal',
+        'ApplyRelayServiceConfigToLocalV2',
         {
           apiKey: normalizedKey,
           baseURL: selectedEndpoint.baseUrl,
@@ -563,17 +624,19 @@ export default function StatusFeature({
           reasoningEffort: selectedRelayReasoningEffort,
           providerID: selectedRelayProvider.id,
           providerName: selectedRelayProvider.name,
+          authStrategy: codexLocalAuthStrategy,
         },
         () =>
-          ApplyRelayServiceConfigToLocal(
-            normalizedKey,
-            selectedEndpoint.baseUrl,
-            selectedRelayModel,
-            selectedRelayReasoningEffort,
-            selectedRelayProvider.id,
-            selectedRelayProvider.name,
-            supportsWebsockets
-          )
+          ApplyRelayServiceConfigToLocalV2({
+            apiKey: normalizedKey,
+            baseURL: selectedEndpoint.baseUrl,
+            model: selectedRelayModel,
+            reasoningEffort: selectedRelayReasoningEffort,
+            providerID: selectedRelayProvider.id,
+            providerName: selectedRelayProvider.name,
+            supportsWebsockets,
+            authStrategy: codexLocalAuthStrategy,
+          })
       );
       setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}`);
       try {
@@ -585,6 +648,10 @@ export default function StatusFeature({
         setRelayProviderOptions((prev) =>
           mergeRelayProviderCatalog(defaultRelayProviderOptions, prev, localProviders || [])
         );
+        const refreshedAuthState = await trackRequest('GetLocalCodexAuthState', { args: [] }, () =>
+          GetLocalCodexAuthState()
+        );
+        setLocalCodexAuthState(refreshedAuthState);
       } catch (refreshError) {
         console.error(refreshError);
       }
@@ -681,6 +748,10 @@ export default function StatusFeature({
             selectedEndpointBaseUrl={selectedEndpoint.baseUrl}
             relayProviderOptions={relayProviderOptions}
             selectedRelayProviderID={selectedRelayProviderID}
+            codexLocalAuthStrategy={codexLocalAuthStrategy}
+            localCodexAuthState={localCodexAuthState}
+            codexLocalCanApply={codexLocalPreflight.canApply}
+            codexLocalApplyBlockedMessage={codexLocalApplyBlockedMessage}
             relayReasoningEffortOptions={relayReasoningProfile.options}
             selectedRelayReasoningEffort={selectedRelayReasoningEffort}
             selectedRelayModel={selectedRelayModel}
@@ -694,6 +765,7 @@ export default function StatusFeature({
             onCopyEndpointBaseUrl={() => void copyText(selectedEndpoint.baseUrl, t('status.endpoint_copied'))}
             onOpenCreateRelayProviderEditor={openCreateRelayProviderEditor}
             onSelectRelayProviderID={setSelectedRelayProviderID}
+            onSelectCodexLocalAuthStrategy={setCodexLocalAuthStrategy}
             onDeleteRelayProviderOption={deleteRelayProviderOption}
             onSelectRelayReasoningEffort={setSelectedRelayReasoningEffort}
             onCommitRelayModelSelection={commitRelayModelSelection}
