@@ -2,6 +2,15 @@
 
 日期：2026-05-15
 
+## 2026-05-16 实现闭环
+
+- sidecar 已按 v5 落地：规则与事件复用 `usage-attribution-v1.sqlite`，评估层定时读取 attribution ledger，RoutePolicy 热路径只查内存 lookup map。
+- management API 已覆盖策略列表、规则 CRUD、状态查询与事件查询；规则变更后可在下一次评估 tick 内更新 routing deny 状态。
+- GetTokens Go/Wails 已补齐 client DTO、Wails facade、root `main.App` DTO/mapper 与绑定导出。
+- 前端已在账号卡共享 `AttributionCard`、账号详情 `Route Guard Rules`、Codex 顺序卡完整/缩略模式中接入状态展示与规则编辑。
+- 冒烟使用真实 Wails dev app 与本地 sidecar：对 `codex-api-key:26b1c3ff958f` 新增 `30d token-window limit=1 block` 测试规则，确认 `match_key=auth-id:codex:apikey:a6ba88c12cad`、status `blocked=true`、卡片显示 `ROUTE GUARD / 30D TOKENS 已满`。测试规则已在冒烟后清理。
+- 追加多场景验证：sidecar 自动化测试已覆盖 token-window、request-window、warn、窗口恢复、disabled/unconfigured、注册式新策略、CRUD/event；live sidecar API 使用 synthetic account 跑通 strategies、empty status、block、events、warn、recovery、disabled、delete cleanup。
+
 ## v4 → v5 的设计修正
 
 v4 在 `RoutePolicy.RewriteCandidates` 热路径上对每个候选账号逐条查 SQLite，不可接受。
@@ -449,91 +458,47 @@ serverOpts = append(serverOpts,
 ## Management API
 
 ```
-GET    /v0/management/gettokens/rate-limit/strategies
+GET    /v0/management/gettokens/rate-limit-strategies
         → [{ id, name, supported_windows }]
 
-GET    /v0/management/gettokens/rate-limit/rules
-POST   /v0/management/gettokens/rate-limit/rules
-PUT    /v0/management/gettokens/rate-limit/rules/:id
-DELETE /v0/management/gettokens/rate-limit/rules/:id
+GET    /v0/management/gettokens/rate-limit-rules
+POST   /v0/management/gettokens/rate-limit-rules
+PUT    /v0/management/gettokens/rate-limit-rules/:id
+DELETE /v0/management/gettokens/rate-limit-rules/:id
 
-GET    /v0/management/gettokens/rate-limit/status?account_key=<key>
+GET    /v0/management/gettokens/rate-limit-status?account_key=<key>
         → { account_key, blocked, block_reason, rules: [{rule, exceeded, reason, usage_pct}] }
 
-GET    /v0/management/gettokens/rate-limit/statuses
-        → [{ account_key, blocked, block_reason, rules: [...] }]  // 所有有规则的账号
+GET    /v0/management/gettokens/rate-limit-status
+        → { items: [{ account_key, blocked, block_reason, rules: [...] }] }  // 所有有规则的账号
 
-GET    /v0/management/gettokens/rate-limit/events?account_key=<key>&since=<unix_ms>&limit=20
-        → [{ rule_id, account_key, strategy, window, reason, blocked_at_unix_ms }]
-
-GET    /v0/management/gettokens/rate-limit/states/snapshot
-        → 当前内存中所有 RateLimitState 的快照 (用于前端首次加载)
+GET    /v0/management/gettokens/rate-limit-events?account_key=<key>&limit=20
+        → { items: [{ rule_id, account_key, strategy, window, reason, triggered_at }] }
 ```
 
 ## Go/Wails 端
 
 ### 新增文件
 
-- `internal/wailsapp/rate_limit_rules.go` — Wails 绑定 + StatusMessage 同步
+- `internal/wailsapp/rate_limit.go` — core Wails 绑定
+- `app.go` / `app_types.go` / `app_mappers.go` — root `main.App` 暴露给 Wails 前端的 DTO 与方法
 
 ### Wails 绑定
 
 ```go
-func (a *App) ListRateLimitStrategies() ([]StrategyMeta, error)
-func (a *App) ListRateLimitRules() ([]RateLimitRule, error)
-func (a *App) CreateRateLimitRule(input RateLimitRuleInput) (*RateLimitRule, error)
-func (a *App) UpdateRateLimitRule(input RateLimitRuleInput) (*RateLimitRule, error)
-func (a *App) DeleteRateLimitRule(id string) error
-func (a *App) GetRateLimitStatus(accountKey string) (*RateLimitState, error)
+func (a *App) ListRateLimitStrategies() ([]RateLimitStrategyMeta, error)
+func (a *App) ListRateLimitRules(input RateLimitRulesInput) ([]RateLimitRule, error)
+func (a *App) CreateRateLimitRule(input RateLimitRule) ([]RateLimitRule, error)
+func (a *App) UpdateRateLimitRule(input RateLimitRule) ([]RateLimitRule, error)
+func (a *App) DeleteRateLimitRule(input DeleteRateLimitRuleInput) error
+func (a *App) GetRateLimitStatus(input RateLimitStatusInput) (*RateLimitState, error)
 func (a *App) GetAllRateLimitStatuses() ([]RateLimitState, error)
+func (a *App) ListRateLimitEvents(input RateLimitEventsInput) ([]RateLimitEvent, error)
 ```
 
-### StatusMessage 同步
+### 前端同步
 
-与限流评估器同频（30s ticker），读 sidecar 内存缓存快照，对比驱动 `SetAccountDisabled`：
-
-```go
-func (a *App) startRateLimitStatusSync(ctx context.Context) {
-    var prevStates map[string]*RateLimitState
-
-    ticker := time.NewTicker(30 * time.Second)
-    defer ticker.Stop()
-
-    for {
-        select {
-        case <-ticker.C:
-            states, err := a.fetchAllRateLimitStates()
-            if err != nil {
-                continue
-            }
-
-            for accountKey, state := range states {
-                prev, existed := prevStates[accountKey]
-                if !existed || prev.Blocked != state.Blocked {
-                    if state.Blocked {
-                        a.SetAccountDisabled(accountKey, true, state.BlockReason)
-                    } else {
-                        a.SetAccountDisabled(accountKey, false, "")
-                    }
-                }
-            }
-
-            // 清理: 之前 disabled 但 state 已不存在的账号
-            if prevStates != nil {
-                for accountKey, prev := range prevStates {
-                    if _, ok := states[accountKey]; !ok && prev.Blocked {
-                        a.SetAccountDisabled(accountKey, false, "")
-                    }
-                }
-            }
-
-            prevStates = states
-        case <-ctx.Done():
-            return
-        }
-    }
-}
-```
+账号池进入 `ready` 后拉取 `GetAllRateLimitStatuses` 与 `ListRateLimitStrategies`，并每 30s 刷新一次。浏览器 preview 无 Wails bindings 时使用显式 preview 数据；真实 Wails 仍以 sidecar `ready` 为账号数据加载门槛。
 
 ## 能力边界总结
 
@@ -563,19 +528,15 @@ func (a *App) startRateLimitStatusSync(ctx context.Context) {
    - `cmd/server/main.go` 注册
    - **usage attribution plugin 零改动**（评估直接读 ledger 表, 不走事件回调）
 
-3. **Phase 3** — 并发限流 (本期)
-   - `ConcurrencyLimiter` + `usage.Plugin.HandleUsage` 回调中 `Decr`
+3. **Phase 3** — Go/Wails bridge (本期)
+   - `internal/cliproxyapi` client 接入 strategies / rules / status / events。
+   - root `main.App` 暴露 Wails DTO，前端通过生成 bindings 调用。
 
-4. **Phase 4** — StatusMessage 贯通 (本期 sidecar + Go/Wails)
-   - sidecar `PATCH /auth-files/status` 接受 `reason`
-   - `app_types.go` / `app_mappers.go` 加 `StatusMessage`
-   - `SetAccountDisabled(id, disabled, reason)` 签名变更
-   - Go/Wails poller: 读 `GET /states/snapshot` → 对比 → 写 StatusMessage
-
-5. **Phase 5** — 前端 (本期)
-   - `RateLimitRuleEditor`（策略列表从 `GET /strategies` 动态获取）
-   - 账号卡片限流进度条
-   - Usage Desk 限流观察源
+4. **Phase 4** — 前端 (本期)
+   - 账号池共享 `AttributionCard` 增加 `Route Guard` 状态。
+   - Codex API Key 与 OpenAI-compatible 详情复用 `Route Guard Rules` 规则编辑区。
+   - Codex 顺序卡完整 / 缩略模式都展示 blocked chip。
+   - Usage Desk 限流观察源本期不做，若后续新增必须作为第三个 source 数据面接入。
 
 ## 验证计划
 

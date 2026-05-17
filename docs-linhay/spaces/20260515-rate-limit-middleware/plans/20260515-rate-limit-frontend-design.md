@@ -2,6 +2,16 @@
 
 日期：2026-05-15
 
+## 2026-05-16 核对修正
+
+本文件原始插入点仍有参考价值，但设计稿已按 2026-05-15 之后的账号归因卡母版重做，当前实现依据以 `../rate-limit-design-v01.html` 和以下修正为准：
+
+1. `RateLimitSection` 不再按“旧账号卡新增一块进度条”理解，而是共享 `AttributionCard` 的 `Route Guard` 区域：位置在 quota 后、evidence 前，语义是 routing guard / DenyIDs，而不是平台 quota 的另一组窗口。
+2. `AccountCard`、`CodexAccountOrderRow`、`OpenAICompatibleProviderCard` 已统一到共享账号卡骨架，限流状态应作为区域配置和 badge 数据注入，不应复制独立卡片 JSX。
+3. Codex 请求顺序卡存在 `完整 / 缩略` 密度：缩略模式隐藏 traffic、usage、quota、evidence，但仍必须保留限流 blocked chip、route target、runtime、model mapping 和 route policy。
+4. `ApiKeyDetailModal` 的限流配置区命名为 `Route Guard Rules` 更准确，放在 `Management` 与 `Verification` 之间；保存规则后应触发 `EvaluateNow`，并在 UI 上展示 evaluator/cache 的最近更新时间。
+5. `UsageDeskFeature` 当前只有 `observed / projected` 两个 source。若首期继续包含 `rate-limit` source，需要同步扩展 `UsageDeskSource`、localStorage 持久化、preview data、表格视图和测试；不能只在现有页面里追加静态表。
+
 ## 现有组件架构回顾
 
 所有账号卡片共享 `AttributionCard` 组件（`frontend/src/features/accounts/components/AttributionCard.tsx`），其 section 结构为：

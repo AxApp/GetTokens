@@ -1,131 +1,209 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GetTokens Rate Limit Design v01</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GetTokens Rate Limit Middleware Design v01</title>
   <style>
     :root {
       color-scheme: light;
-      --canvas: oklch(0.955 0.006 92);
-      --surface: oklch(0.985 0.004 92);
-      --surface-step: oklch(0.92 0.006 92);
-      --ink: oklch(0.145 0.01 92);
-      --muted: oklch(0.43 0.012 92);
-      --faint: oklch(0.66 0.01 92);
-      --line: oklch(0.23 0.009 92);
-      --shadow: oklch(0.145 0.01 92);
-      --accent: oklch(0.69 0.145 73);
-      --accent-ink: oklch(0.2 0.04 73);
-      --amber: oklch(0.72 0.16 73);
-      --good: oklch(0.58 0.16 148);
-      --warn: oklch(0.74 0.15 82);
-      --bad: oklch(0.58 0.2 29);
-      --idle: oklch(0.78 0.007 92);
-      --radius-card: 0;
-      --font-ui: "Aptos", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
-      --font-mono: "SFMono-Regular", "Roboto Mono", "Consolas", monospace;
+      --bg: #e8ece6;
+      --paper: #f7f8f3;
+      --panel: #ffffff;
+      --step: #eef2ea;
+      --ink: #151815;
+      --muted: #62685f;
+      --line: #20261f;
+      --faint: #a9afa3;
+      --shadow: rgba(21, 24, 21, 0.22);
+      --good: #1f7a4d;
+      --warn: #b87911;
+      --amber: #d9931f;
+      --bad: #c73830;
+      --blue: #567688;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    [data-theme="dark"] {
+    :root[data-theme="dark"] {
       color-scheme: dark;
-      --canvas: oklch(0.13 0.008 92);
-      --surface: oklch(0.18 0.008 92);
-      --surface-step: oklch(0.245 0.008 92);
-      --ink: oklch(0.91 0.006 92);
-      --muted: oklch(0.69 0.008 92);
-      --faint: oklch(0.48 0.008 92);
-      --line: oklch(0.83 0.005 92);
-      --shadow: oklch(0.04 0.004 92);
-      --accent: oklch(0.73 0.14 73);
-      --accent-ink: oklch(0.18 0.04 73);
-      --amber: oklch(0.75 0.145 73);
-      --good: oklch(0.69 0.16 148);
-      --warn: oklch(0.78 0.15 82);
-      --bad: oklch(0.7 0.18 29);
-      --idle: oklch(0.32 0.006 92);
+      --bg: #171916;
+      --paper: #20231f;
+      --panel: #262a25;
+      --step: #1c1f1b;
+      --ink: #f0f3ec;
+      --muted: #a9b0a3;
+      --line: #d7ddcf;
+      --faint: #6f786a;
+      --shadow: rgba(0, 0, 0, 0.5);
+      --good: #5dbb7b;
+      --warn: #d3a43b;
+      --amber: #dda037;
+      --bad: #ef625d;
+      --blue: #8db3c4;
     }
 
     * { box-sizing: border-box; }
-    html {
-      min-height: 100%;
-      -webkit-font-smoothing: antialiased;
-      background: var(--canvas);
-      color: var(--ink);
-      font-family: var(--font-ui);
-    }
-    body {
-      min-width: 1240px;
-      min-height: 100vh;
-      margin: 0;
-      background:
-        linear-gradient(90deg, color-mix(in oklch, var(--line) 6%, transparent) 1px, transparent 1px),
-        linear-gradient(180deg, color-mix(in oklch, var(--line) 5%, transparent) 1px, transparent 1px),
-        var(--canvas);
-      background-size: 32px 32px;
-    }
-    .page { width: 1180px; margin: 0 auto; padding: 40px 0 72px; }
 
-    /* ---- Toolbar ---- */
-    .toolbar {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 24px;
-      align-items: end;
-      margin-bottom: 22px;
-      border-bottom: 3px solid var(--line);
-      padding-bottom: 18px;
-    }
-    .eyebrow {
-      margin: 0 0 8px;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    h1 {
-      max-width: 760px;
+    body {
       margin: 0;
-      font-size: 34px;
-      line-height: 0.95;
-      font-weight: 1000;
-      text-transform: uppercase;
-      text-wrap: balance;
+      min-width: 1180px;
+      background:
+        linear-gradient(to right, color-mix(in srgb, var(--line) 7%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in srgb, var(--line) 6%, transparent) 1px, transparent 1px),
+        var(--bg);
+      background-size: 48px 48px, 48px 48px, auto;
+      color: var(--ink);
+      font-family: var(--sans);
+      letter-spacing: 0;
     }
-    .controls {
+
+    button,
+    input,
+    select {
+      font: inherit;
+      color: inherit;
+    }
+
+    .page {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 28px 36px 56px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 420px;
+      gap: 24px;
+      align-items: stretch;
+      border: 3px solid var(--line);
+      background: var(--paper);
+      box-shadow: 10px 10px 0 var(--shadow);
+    }
+
+    .hero-main {
+      padding: 26px 28px;
+      border-right: 3px solid var(--line);
+    }
+
+    .eyebrow,
+    .section-label,
+    .metric-label,
+    .chip,
+    .tiny {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.2;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .eyebrow { letter-spacing: 0.2em; }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      margin-top: 10px;
+      max-width: 850px;
+      font-size: 48px;
+      line-height: 0.96;
+      font-weight: 950;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .hero-copy {
+      margin-top: 16px;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      font-weight: 700;
+    }
+
+    .hero-side {
+      display: grid;
+      grid-template-rows: repeat(3, 1fr);
+      background: var(--step);
+    }
+
+    .hero-state {
+      padding: 18px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .hero-state:last-child { border-bottom: 0; }
+
+    .hero-value {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .toolbar {
       display: flex;
       flex-wrap: wrap;
-      justify-content: flex-end;
-      gap: 8px;
+      gap: 10px;
+      margin: 22px 0 0;
     }
-    .theme-button {
-      min-height: 40px;
+
+    .btn {
+      min-height: 34px;
       border: 2px solid var(--line);
-      background: var(--surface);
-      box-shadow: 5px 5px 0 var(--shadow);
-      color: var(--ink);
-      padding: 0 14px;
-      font-family: var(--font-mono);
+      background: var(--panel);
+      padding: 7px 12px;
+      box-shadow: 3px 3px 0 var(--shadow);
+      font-family: var(--mono);
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
       cursor: pointer;
     }
 
-    /* ---- Sections ---- */
-    .section-title {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: end;
-      margin: 42px 0 18px;
-      border-top: 3px solid var(--line);
-      padding-top: 18px;
+    .btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--shadow);
     }
-    .section-title h3 { margin: 0; font-size: 24px; font-weight: 1000; text-transform: uppercase; }
-    .section-title p { margin: 7px 0 0; max-width: 760px; color: var(--muted); font-family: var(--font-mono); font-size: 10px; font-weight: 900; line-height: 1.55; text-transform: uppercase; }
 
-    /* ---- Grid ---- */
+    .btn.is-active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 18px;
+      margin: 34px 0 14px;
+      border-bottom: 3px solid var(--line);
+      padding-bottom: 10px;
+    }
+
+    .section-title h2 {
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 950;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .section-title p {
+      max-width: 680px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+      font-weight: 700;
+    }
+
     .grid-3 {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -133,756 +211,1009 @@
       align-items: stretch;
     }
 
-    /* ---- Card ---- */
-    .card {
-      position: relative;
+    .account-card {
       display: grid;
-      grid-template-rows: auto auto auto auto auto auto 1fr auto;
-      min-height: 492px;
-      border: 3px solid var(--line);
-      background: var(--surface);
-      box-shadow: 8px 8px 0 var(--shadow);
+      grid-template-rows: auto auto auto auto auto 1fr auto;
+      min-height: 842px;
+      border: 2px solid var(--line);
+      border-left-width: 7px;
+      background: var(--panel);
+      box-shadow: 7px 7px 0 var(--shadow);
       overflow: hidden;
     }
-    .card[data-state="active"] { --state-color: var(--good); }
-    .card[data-state="mixed"] { --state-color: var(--warn); }
-    .card[data-state="blocked"] { --state-color: var(--bad); }
-    .card[data-state="idle"] { --state-color: var(--idle); }
+
+    .account-card[data-tone="good"] { border-left-color: var(--good); }
+    .account-card[data-tone="warn"] { border-left-color: var(--warn); }
+    .account-card[data-tone="bad"] { border-left-color: var(--bad); }
+
+    .card-head {
+      min-height: 122px;
+      padding: 16px;
+      border-bottom: 3px solid var(--line);
+    }
 
     .route-tape {
-      display: grid;
-      grid-template-columns: 12px 1fr auto;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 3px solid var(--line);
-      background: color-mix(in oklch, var(--state-color) 20%, var(--surface));
-      padding: 10px 12px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    .state-mark {
-      width: 12px; height: 12px;
-      background: var(--state-color);
-      outline: 2px solid var(--line);
-    }
-    .route-tape strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    .identity {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 12px;
-      padding: 16px 16px 14px;
-      border-bottom: 1px dashed color-mix(in oklch, var(--line) 70%, transparent);
-    }
-    .identity h2 { margin: 0; font-size: 18px; line-height: 1.05; font-weight: 1000; text-transform: uppercase; overflow-wrap: anywhere; }
-    .identity .mail { display: block; margin-top: 7px; color: var(--muted); font-family: var(--font-mono); font-size: 11px; font-weight: 800; }
-
-    .chip-stack { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-    .chip {
-      display: inline-flex;
-      min-height: 24px;
-      align-items: center;
-      border: 2px solid var(--line);
-      background: var(--surface-step);
-      padding: 0 7px;
-      font-family: var(--font-mono);
-      font-size: 9px;
-      font-weight: 900;
-      text-transform: uppercase;
-      white-space: nowrap;
-    }
-    .chip.critical { background: var(--bad); color: white; }
-
-    /* ---- Quota Windows (blue) ---- */
-    .section-label {
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    .quota-block {
-      padding: 16px;
-      border-bottom: 1px dashed color-mix(in oklch, var(--line) 70%, transparent);
-    }
-    .quota-block + .quota-block { border-top: none; }
-    .quota-row {
-      display: grid;
-      grid-template-columns: 68px minmax(0, 1fr) 48px;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    .quota-row:last-child { margin-bottom: 0; }
-    .quota-row .window-label {
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .bar-track {
-      position: relative;
-      height: 16px;
-      overflow: hidden;
-      border: 1px solid var(--line);
-      background: var(--surface-step);
-    }
-    .bar-track.has-grid {
-      background-image: repeating-linear-gradient(to right, color-mix(in oklch, var(--line) 12%, transparent) 0 6px, transparent 6px 12px);
-    }
-    .bar-fill {
-      position: absolute;
-      inset: 0;
-      background: oklch(0.55 0.12 245);
-    }
-    .bar-fill.amber { background: var(--amber); }
-    .bar-fill.bad   { background: var(--bad); }
-    .bar-value {
-      text-align: right;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    .bar-value.over { color: var(--bad); }
-
-    /* ---- Evidence ---- */
-    .evidence {
-      padding: 16px;
-      border-bottom: 1px dashed color-mix(in oklch, var(--line) 70%, transparent);
-    }
-    .evidence dl {
-      display: grid;
-      grid-template-columns: 80px minmax(0, 1fr);
-      gap: 4px 12px;
-      margin: 0;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    .evidence dt { color: var(--muted); }
-    .evidence dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-    /* ---- Footer ---- */
-    .card-footer {
       display: flex;
-      justify-content: flex-end;
+      align-items: center;
+      justify-content: space-between;
       gap: 8px;
-      padding: 12px 14px;
-    }
-    .btn {
-      min-height: 32px;
-      border: 2px solid var(--line);
-      background: var(--surface);
-      box-shadow: 4px 4px 0 var(--shadow);
-      color: var(--ink);
-      padding: 0 12px;
-      font-family: var(--font-mono);
+      margin-bottom: 12px;
+      font-family: var(--mono);
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
-      cursor: pointer;
-    }
-
-    /* ---- Modal ---- */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: color-mix(in oklch, var(--canvas) 80%, transparent);
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
-      padding-top: 60px;
-      z-index: 100;
-    }
-    .modal {
-      width: 620px;
-      max-height: 85vh;
-      border: 3px solid var(--line);
-      background: var(--surface);
-      box-shadow: 12px 12px 0 var(--shadow);
-      display: grid;
-      grid-template-rows: auto auto 1fr auto;
-      overflow: hidden;
-    }
-    .modal-header {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 18px 14px;
-      border-bottom: 3px solid var(--line);
-    }
-    .modal-header h4 { margin: 0; font-size: 20px; font-weight: 1000; text-transform: uppercase; }
-    .modal-section-label {
-      padding: 14px 18px 6px;
       color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    .modal-body {
-      padding: 0 18px 18px;
-      overflow-y: auto;
-    }
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 8px;
-      border-top: 2px solid var(--line);
-      padding: 12px 18px;
     }
 
-    /* ---- Rule Editor Row ---- */
-    .rule-row {
+    .identity-line {
       display: grid;
       grid-template-columns: 1fr auto;
+      gap: 12px;
       align-items: start;
-      gap: 10px;
-      border: 2px solid var(--line);
-      background: var(--surface-step);
-      padding: 12px;
-      margin-bottom: 10px;
-    }
-    .rule-row.new-rule { border-style: dashed; background: transparent; }
-    .rule-controls {
-      display: grid;
-      grid-template-columns: auto auto auto auto;
-      align-items: center;
-      gap: 8px;
-    }
-    select, input[type="number"] {
-      min-height: 32px;
-      border: 2px solid var(--line);
-      background: var(--surface);
-      color: var(--ink);
-      padding: 0 8px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-    select { min-width: 110px; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23333' stroke-width='2'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 28px; }
-    [data-theme="dark"] select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%23ddd' stroke-width='2'/%3E%3C/svg%3E"); }
-    input[type="number"] { width: 100px; }
-    .rule-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .toggle {
-      width: 38px; height: 22px;
-      border: 2px solid var(--line);
-      background: var(--surface);
-      border-radius: 0;
-      cursor: pointer;
-      position: relative;
-    }
-    .toggle.on { background: var(--good); }
-    .toggle::after {
-      content: "";
-      position: absolute;
-      top: 2px; left: 2px;
-      width: 14px; height: 14px;
-      background: var(--ink);
-      transition: translate 120ms;
-    }
-    .toggle.on::after { translate: 16px; }
-    .btn-icon {
-      width: 32px; height: 32px;
-      border: 2px solid var(--line);
-      background: var(--surface);
-      color: var(--ink);
-      font-family: var(--font-mono);
-      font-size: 14px;
-      font-weight: 900;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .btn-add {
-      min-height: 36px;
-      width: 100%;
-      border: 2px dashed var(--line);
-      background: transparent;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 10px;
-      font-weight: 900;
-      text-transform: uppercase;
-      cursor: pointer;
     }
 
-    /* ---- Desk Table ---- */
-    .desk-table {
-      width: 100%;
-      border-collapse: collapse;
-      border: 3px solid var(--line);
-      background: var(--surface);
-      box-shadow: 8px 8px 0 var(--shadow);
+    .identity-line h3 {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 17px;
+      font-weight: 950;
+      line-height: 1.1;
+      text-transform: uppercase;
+      font-style: italic;
     }
-    .desk-table th {
-      text-align: left;
-      padding: 12px 14px;
-      border-bottom: 3px solid var(--line);
-      background: var(--surface-step);
-      font-family: var(--font-mono);
+
+    .identity-line p {
+      margin-top: 7px;
+      overflow-wrap: anywhere;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 5px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border: 1px solid var(--line);
+      background: var(--step);
+      padding: 5px 7px;
+      color: var(--muted);
+    }
+
+    .chip.good { border-color: var(--good); color: var(--good); background: color-mix(in srgb, var(--good) 9%, transparent); }
+    .chip.warn { border-color: var(--warn); color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+    .chip.bad { border-color: var(--bad); color: var(--bad); background: color-mix(in srgb, var(--bad) 9%, transparent); }
+
+    .traffic {
+      display: grid;
+      grid-template-columns: 90px minmax(0, 1fr);
+      gap: 14px;
+      min-height: 116px;
+      border-bottom: 1px dashed var(--line);
+      padding: 14px 16px;
+    }
+
+    .request-count {
+      align-self: end;
+      font-family: var(--mono);
+      font-size: 38px;
+      font-weight: 950;
+      line-height: 0.9;
+    }
+
+    .curve {
+      position: relative;
+      min-height: 78px;
+      border-left: 2px solid var(--line);
+      padding-left: 10px;
+    }
+
+    .curve-box {
+      height: 76px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(to right, color-mix(in srgb, var(--line) 10%, transparent) 1px, transparent 1px),
+        linear-gradient(to bottom, color-mix(in srgb, var(--line) 9%, transparent) 1px, transparent 1px),
+        var(--step);
+      background-size: 28px 100%, 100% 22px, auto;
+      overflow: hidden;
+    }
+
+    svg { display: block; width: 100%; height: 100%; }
+
+    .usage-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .usage-cell {
+      min-height: 70px;
+      padding: 12px 10px;
+      border-right: 1px solid var(--line);
+    }
+
+    .usage-cell:last-child { border-right: 0; }
+
+    .usage-value {
+      margin-top: 10px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .region {
+      padding: 14px 16px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .quota-region {
+      display: grid;
+      gap: 9px;
+      min-height: 114px;
+    }
+
+    .guard-region {
+      display: grid;
+      gap: 10px;
+      min-height: 152px;
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--amber) 13%, transparent), transparent 62%),
+        var(--panel);
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr) 80px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .bar-label,
+    .bar-value {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: var(--mono);
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
       color: var(--muted);
     }
-    .desk-table td {
-      padding: 12px 14px;
-      border-bottom: 1px dashed color-mix(in oklch, var(--line) 40%, transparent);
-      font-family: var(--font-mono);
+
+    .bar-value {
+      text-align: right;
+      color: var(--ink);
+    }
+
+    .track {
+      position: relative;
+      height: 16px;
+      border: 1px solid var(--line);
+      background:
+        repeating-linear-gradient(to right, color-mix(in srgb, var(--line) 14%, transparent) 0 8px, transparent 8px 14px),
+        var(--step);
+      overflow: hidden;
+    }
+
+    .fill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: var(--w);
+      background: var(--blue);
+    }
+
+    .fill.amber { background: var(--amber); }
+    .fill.bad { background: var(--bad); }
+    .fill.warn { background: var(--warn); }
+
+    .guard-summary {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 2px solid var(--line);
+      background: var(--paper);
+      padding: 10px;
+    }
+
+    .guard-summary strong {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .evidence {
+      display: grid;
+      gap: 8px;
+      min-height: 118px;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr);
+      gap: 8px;
+      align-items: baseline;
+      font-family: var(--mono);
       font-size: 10px;
       font-weight: 900;
       text-transform: uppercase;
     }
-    .desk-table tr.blocked { background: color-mix(in oklch, var(--bad) 8%, transparent); }
-    .desk-table tr.blocked td:first-child::before {
-      content: "● ";
-      color: var(--bad);
+
+    .kv span:first-child { color: var(--muted); }
+    .kv span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .codex-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 118px;
+      grid-template-rows: 72px 108px 112px;
+      min-height: 292px;
+      background: var(--step);
+      border-top: 2px solid var(--line);
     }
-    .mini-bar {
-      display: inline-block;
-      width: 120px;
-      height: 12px;
+
+    .codex-region {
+      padding: 12px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+    }
+
+    .codex-region:nth-child(2n) { border-right: 0; }
+    .codex-region.wide { grid-column: span 2; border-right: 0; }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 12px 16px 16px;
+      margin-top: auto;
+    }
+
+    .compact .traffic,
+    .compact .usage-strip,
+    .compact .quota-region,
+    .compact .evidence {
+      display: none;
+    }
+
+    .compact .account-card {
+      min-height: 492px;
+      grid-template-rows: auto auto 1fr auto;
+    }
+
+    .compact .guard-region {
+      min-height: 136px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .modal-board {
+      display: grid;
+      grid-template-columns: 420px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .modal {
+      border: 3px solid var(--line);
+      background: var(--panel);
+      box-shadow: 8px 8px 0 var(--shadow);
+      overflow: hidden;
+    }
+
+    .modal-header,
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .modal-footer {
+      border-top: 2px solid var(--line);
+      border-bottom: 0;
+    }
+
+    .modal-header h3 {
+      font-size: 17px;
+      font-weight: 950;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .modal-section {
+      padding: 16px 18px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .modal-section.guard {
+      background:
+        linear-gradient(90deg, color-mix(in srgb, var(--amber) 12%, transparent), transparent 64%),
+        var(--panel);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .form-line {
+      display: grid;
+      grid-template-columns: 164px 88px 112px 78px 54px;
+      gap: 8px;
+      align-items: center;
       border: 1px solid var(--line);
-      background: var(--surface-step);
+      background: var(--paper);
+      padding: 8px;
+    }
+
+    .form-line select,
+    .form-line input {
+      min-width: 0;
+      height: 32px;
+      border: 2px solid var(--line);
+      background: var(--panel);
+      padding: 0 8px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    .switch {
+      width: 42px;
+      height: 24px;
+      border: 2px solid var(--line);
+      background: var(--ink);
+      box-shadow: inset -18px 0 0 var(--amber);
+    }
+
+    .side-note {
+      border: 2px solid var(--line);
+      background: var(--paper);
+      padding: 14px;
+      box-shadow: 5px 5px 0 var(--shadow);
+    }
+
+    .side-note h3 {
+      font-size: 17px;
+      line-height: 1.15;
+      font-weight: 950;
+      text-transform: uppercase;
+      font-style: italic;
+    }
+
+    .side-note ul {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+      font-weight: 700;
+    }
+
+    .desk {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .desk-panel,
+    .table-panel {
+      border: 3px solid var(--line);
+      background: var(--panel);
+      box-shadow: 7px 7px 0 var(--shadow);
+    }
+
+    .desk-panel {
+      padding: 16px;
+    }
+
+    .desk-status {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .status-cell {
+      min-height: 80px;
+      border: 2px solid var(--line);
+      background: var(--paper);
+      padding: 10px;
+    }
+
+    .table-panel table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border-bottom: 1px dashed var(--line);
+      padding: 12px 14px;
+      text-align: left;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    th {
+      background: var(--step);
+      color: var(--muted);
+    }
+
+    tr.blocked td { background: color-mix(in srgb, var(--bad) 8%, transparent); }
+
+    .mini-track {
+      display: inline-block;
+      width: 150px;
+      height: 13px;
+      margin-right: 10px;
       vertical-align: middle;
-      margin-right: 8px;
+      border: 1px solid var(--line);
+      background: var(--step);
     }
-    .mini-bar-fill {
-      height: 100%;
+
+    .mini-fill {
       display: block;
+      height: 100%;
+      width: var(--w);
+      background: var(--amber);
     }
-    .mini-bar-fill.ok  { background: var(--amber); }
-    .mini-bar-fill.over { background: var(--bad); }
+
+    .mini-fill.bad { background: var(--bad); }
+
+    @media (max-width: 1220px) {
+      body { min-width: 1020px; }
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .page { padding-inline: 24px; }
+    }
   </style>
 </head>
 <body>
-<div class="page">
-
-  <!-- ============ HEADER ============ -->
-  <div class="toolbar">
-    <div>
-      <p class="eyebrow">GetTokens · Rate Limit Design v01</p>
-      <h1>Account Rate Limits</h1>
-    </div>
-    <div class="controls">
-      <button class="theme-button" onclick="document.documentElement.toggleAttribute('data-theme')">Dark Mode</button>
-    </div>
-  </div>
-
-  <!-- ============ SECTION 1: ACCOUNT CARDS ============ -->
-  <div class="section-title">
-    <div>
-      <h3>1. Account Cards with Rate Limits</h3>
-      <p>Card 2: 1h request limit exceeded (critical state). Card 3: 24h token limit warning. Card 1: both limits OK.</p>
-    </div>
-  </div>
-
-  <div class="grid-3">
-
-    <!-- Card 1: Normal — both limits OK -->
-    <div class="card" data-state="active">
-      <div class="route-tape">
-        <div class="state-mark"></div>
-        <strong>codex-api-key:sk-ny3m…a8x2</strong>
-        <span style="color:var(--good)">ACTIVE</span>
-      </div>
-      <div class="identity">
-        <div>
-          <h2>Company Codex Key</h2>
-          <span class="mail">api.openai.com/v1</span>
-        </div>
-        <div class="chip-stack">
-          <span class="chip">API KEY</span>
-          <span class="chip">CODEX</span>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-main">
+        <p class="eyebrow">GetTokens / Rate Limit Middleware / Redesign Checkpoint</p>
+        <h1>Local quota is a routing guard, not another quota badge.</h1>
+        <p class="hero-copy">
+          本稿按 2026-05-15 之后的账号归因卡母版重做：限流状态进入共享卡片区域，
+          Codex 请求顺序卡保留完整/缩略密度，规则编辑留在 API key 详情 modal，
+          Usage Desk 只展示从 sidecar rate-limit state 派生的观察面。
+        </p>
+        <div class="toolbar" aria-label="preview controls">
+          <button class="btn is-active" type="button" data-density="full">完整密度</button>
+          <button class="btn" type="button" data-density="compact">缩略密度</button>
+          <button class="btn" type="button" id="themeToggle">Dark Mode</button>
         </div>
       </div>
-
-      <!-- Codex Quota (blue, existing) -->
-      <div class="quota-block">
-        <div class="section-label" style="margin-bottom:10px">Quota · Team Plan</div>
-        <div class="quota-row">
-          <span class="window-label">5H</span>
-          <div class="bar-track has-grid"><div class="bar-fill" style="width:78%"></div></div>
-          <span class="bar-value">78%</span>
+      <aside class="hero-side">
+        <div class="hero-state">
+          <div class="metric-label">Decision</div>
+          <div class="hero-value" style="color:var(--amber)">V5</div>
+          <p class="tiny" style="margin-top:8px">memory cache + scheduled evaluator</p>
         </div>
-        <div class="quota-row">
-          <span class="window-label">7D</span>
-          <div class="bar-track has-grid"><div class="bar-fill" style="width:62%"></div></div>
-          <span class="bar-value">62%</span>
+        <div class="hero-state">
+          <div class="metric-label">Hot Path</div>
+          <div class="hero-value">O(1)</div>
+          <p class="tiny" style="margin-top:8px">route policy reads in-memory state only</p>
         </div>
-      </div>
-
-      <!-- Rate Limits (amber, NEW) -->
-      <div class="quota-block">
-        <div class="section-label" style="margin-bottom:10px">Rate Limits</div>
-        <div class="quota-row">
-          <span class="window-label">24H TOKENS</span>
-          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:32%"></div></div>
-          <span class="bar-value">320K/1M</span>
+        <div class="hero-state">
+          <div class="metric-label">Design Risk</div>
+          <div class="hero-value" style="color:var(--bad)">OLD CARD</div>
+          <p class="tiny" style="margin-top:8px">previous draft ignored shared AttributionCard regions</p>
         </div>
-        <div class="quota-row">
-          <span class="window-label">1H REQ</span>
-          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:45%"></div></div>
-          <span class="bar-value">45/100</span>
-        </div>
+      </aside>
+    </section>
+
+    <section class="section-title">
+      <div>
+        <p class="eyebrow">01 / Shared Account Card</p>
+        <h2>限流进入账号卡母版区域</h2>
       </div>
+      <p>三张卡保持同宽同高；限流显示为 Route Guard 区域，排在 quota 后、evidence 前。超限状态影响左 rail、chip、guard summary，但不挤压 traffic / usage / quota 固定区域。</p>
+    </section>
 
-      <div class="evidence">
-        <div class="section-label" style="margin-bottom:8px">Evidence</div>
-        <dl>
-          <dt>ASSET ID</dt><dd>codex-api-key:sk-ny3m…a8x2</dd>
-          <dt>SOURCE</dt><dd>ATTRIBUTION</dd>
-        </dl>
-      </div>
-
-      <div class="card-footer">
-        <button class="btn">Details</button>
-      </div>
-    </div>
-
-    <!-- Card 2: BLOCKED — 1h request limit exceeded -->
-    <div class="card" data-state="blocked">
-      <div class="route-tape">
-        <div class="state-mark"></div>
-        <strong>codex-api-key:sk-mk9p…c3d1</strong>
-        <span style="color:var(--bad)">BLOCKED</span>
-      </div>
-      <div class="identity">
-        <div>
-          <h2>Personal Key</h2>
-          <span class="mail">api.openai.com/v1</span>
-        </div>
-        <div class="chip-stack">
-          <span class="chip">API KEY</span>
-          <span class="chip critical">1H REQ 已满</span>
-        </div>
-      </div>
-
-      <div class="quota-block">
-        <div class="section-label" style="margin-bottom:10px">Quota · Plus Plan</div>
-        <div class="quota-row">
-          <span class="window-label">5H</span>
-          <div class="bar-track has-grid"><div class="bar-fill" style="width:15%"></div></div>
-          <span class="bar-value">15%</span>
-        </div>
-      </div>
-
-      <div class="quota-block">
-        <div class="section-label" style="margin-bottom:10px">Rate Limits</div>
-        <div class="quota-row">
-          <span class="window-label">24H TOKENS</span>
-          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:68%"></div></div>
-          <span class="bar-value">340K/500K</span>
-        </div>
-        <div class="quota-row">
-          <span class="window-label" style="color:var(--bad)">1H REQ</span>
-          <div class="bar-track has-grid"><div class="bar-fill bad" style="width:100%"></div></div>
-          <span class="bar-value over">100/100 已满</span>
-        </div>
-      </div>
-
-      <div class="evidence">
-        <div class="section-label" style="margin-bottom:8px">Evidence</div>
-        <dl>
-          <dt>ASSET ID</dt><dd>codex-api-key:sk-mk9p…c3d1</dd>
-          <dt>SOURCE</dt><dd>ATTRIBUTION</dd>
-          <dt>STATUS</dt><dd style="color:var(--bad)">1h requests: 100/100</dd>
-        </dl>
-      </div>
-
-      <div class="card-footer">
-        <button class="btn">Details</button>
-      </div>
-    </div>
-
-    <!-- Card 3: WARNING — 24h token limit warn (action=warn, still usable) -->
-    <div class="card" data-state="mixed">
-      <div class="route-tape">
-        <div class="state-mark"></div>
-        <strong>auth-file:auth.json</strong>
-        <span style="color:var(--warn)">WARN</span>
-      </div>
-      <div class="identity">
-        <div>
-          <h2>Team OAuth</h2>
-          <span class="mail">team@company.com</span>
-        </div>
-        <div class="chip-stack">
-          <span class="chip">AUTH FILE</span>
-          <span class="chip">CODEX</span>
-        </div>
-      </div>
-
-      <div class="quota-block">
-        <div class="section-label" style="margin-bottom:10px">Quota · Pro Plan</div>
-        <div class="quota-row">
-          <span class="window-label">5H</span>
-          <div class="bar-track has-grid"><div class="bar-fill" style="width:45%"></div></div>
-          <span class="bar-value">45%</span>
-        </div>
-        <div class="quota-row">
-          <span class="window-label">7D</span>
-          <div class="bar-track has-grid"><div class="bar-fill" style="width:37%"></div></div>
-          <span class="bar-value">37%</span>
-        </div>
-      </div>
-
-      <div class="quota-block">
-        <div class="section-label" style="margin-bottom:10px">Rate Limits</div>
-        <div class="quota-row">
-          <span class="window-label" style="color:var(--warn)">24H TOKENS</span>
-          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:92%"></div></div>
-          <span class="bar-value" style="color:var(--warn)">1.84M/2M</span>
-        </div>
-        <div class="quota-row">
-          <span class="window-label">1H REQ</span>
-          <div class="bar-track has-grid"><div class="bar-fill amber" style="width:12%"></div></div>
-          <span class="bar-value">12/200</span>
-        </div>
-      </div>
-
-      <div class="evidence">
-        <div class="section-label" style="margin-bottom:8px">Evidence</div>
-        <dl>
-          <dt>ASSET ID</dt><dd>auth-file:auth.json</dd>
-          <dt>SOURCE</dt><dd>ATTRIBUTION</dd>
-        </dl>
-      </div>
-
-      <div class="card-footer">
-        <button class="btn">Details</button>
-      </div>
-    </div>
-
-  </div>
-
-
-  <!-- ============ SECTION 2: RULE EDITOR IN DETAIL MODAL ============ -->
-  <div class="section-title">
-    <div>
-      <h3>2. Rate Limit Rule Editor</h3>
-      <p>Account detail modal · Rate Limits section · CRUD rules per account</p>
-    </div>
-  </div>
-
-  <div style="position:relative; min-height:460px; border:1px dashed var(--faint); display:flex; align-items:flex-start; justify-content:center; padding-top:24px;">
-    <!-- Inline modal mock (not fixed) -->
-    <div class="modal" style="position:relative; box-shadow:8px 8px 0 var(--shadow);">
-      <div class="modal-header">
-        <h4>codex-api-key:sk-ny3m…a8x2</h4>
-        <button class="btn-icon" style="width:36px;height:36px">✕</button>
-      </div>
-
-      <div class="modal-section-label">Management</div>
-      <div class="modal-body" style="border-bottom:1px dashed var(--faint);padding-bottom:10px;">
-        <div style="font-family:var(--font-mono);font-size:10px;font-weight:900;text-transform:uppercase;color:var(--faint);margin-bottom:8px;">
-          API Key · Base URL · Prefix · Quota Curl (existing)
-        </div>
-      </div>
-
-      <div class="modal-section-label">Rate Limits</div>
-      <div class="modal-body">
-
-        <!-- Rule 1: Token Window 24h -->
-        <div class="rule-row">
-          <div>
-            <div class="rule-controls">
-              <select><option selected>Token 窗口限流</option><option>请求窗口限流</option></select>
-              <select><option>1h</option><option>6h</option><option>12h</option><option selected>24h</option><option>7d</option><option>30d</option></select>
-              <input type="number" value="1000000" step="100000">
-              <select><option selected>Block</option><option>Warn</option></select>
+    <section class="grid-3" id="cardsPreview">
+      <article class="account-card" data-tone="good">
+        <header class="card-head">
+          <div class="route-tape">
+            <span>route guard / allowed</span>
+            <span style="color:var(--good)">ACTIVE</span>
+          </div>
+          <div class="identity-line">
+            <div>
+              <h3>Company Codex Key</h3>
+              <p>codex-api-key:26b1c3ff958f / api.openai.com/v1</p>
             </div>
-            <div class="rule-status">Current: 320K / 1M tokens (32%)</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;padding-top:2px;">
-            <button class="toggle on" aria-label="enabled"></button>
-            <button class="btn-icon" style="color:var(--bad)">✕</button>
-          </div>
-        </div>
-
-        <!-- Rule 2: Request Window 1h -->
-        <div class="rule-row">
-          <div>
-            <div class="rule-controls">
-              <select><option>Token 窗口限流</option><option selected>请求窗口限流</option></select>
-              <select><option selected>1h</option><option>6h</option><option>12h</option><option>24h</option></select>
-              <input type="number" value="100" step="10">
-              <select><option selected>Block</option><option>Warn</option></select>
+            <div class="chips">
+              <span class="chip">API KEY</span>
+              <span class="chip good">ATTRIBUTED</span>
             </div>
-            <div class="rule-status">Current: 45 / 100 requests (45%)</div>
           </div>
-          <div style="display:flex;align-items:center;gap:6px;padding-top:2px;">
-            <button class="toggle on" aria-label="enabled"></button>
-            <button class="btn-icon" style="color:var(--bad)">✕</button>
+        </header>
+
+        <section class="traffic">
+          <div>
+            <div class="metric-label">近期请求</div>
+            <div class="request-count">18</div>
+            <div class="tiny">ATTRIBUTION</div>
           </div>
+          <div class="curve">
+            <div class="curve-box">
+              <svg viewBox="0 0 320 88" aria-hidden="true">
+                <polyline points="10,62 54,48 98,52 142,34 186,40 230,25 274,34 310,26" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-dasharray="12 9">
+                  <animate attributeName="stroke-dashoffset" from="21" to="0" dur="1.8s" repeatCount="indefinite" />
+                </polyline>
+                <circle cx="230" cy="25" r="4" fill="var(--amber)" stroke="var(--line)" />
+                <circle cx="310" cy="26" r="5" fill="var(--blue)" stroke="var(--line)" />
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-strip">
+          <div class="usage-cell"><div class="metric-label">requests</div><div class="usage-value">18</div></div>
+          <div class="usage-cell"><div class="metric-label">tokens</div><div class="usage-value">42.8K</div></div>
+          <div class="usage-cell"><div class="metric-label">cached</div><div class="usage-value">11.2K</div></div>
+          <div class="usage-cell"><div class="metric-label">latency</div><div class="usage-value">742MS</div></div>
+        </section>
+
+        <section class="region quota-region">
+          <div class="section-label">Codex Plan Quota</div>
+          <div class="bar-row"><span class="bar-label">5H</span><span class="track"><span class="fill" style="--w:72%"></span></span><span class="bar-value">72%</span></div>
+          <div class="bar-row"><span class="bar-label">7D</span><span class="track"><span class="fill" style="--w:58%"></span></span><span class="bar-value">58%</span></div>
+        </section>
+
+        <section class="region guard-region">
+          <div class="guard-summary">
+            <div>
+              <div class="section-label">Route Guard</div>
+              <strong>2 rules / no block</strong>
+            </div>
+            <span class="chip good">PASS</span>
+          </div>
+          <div class="bar-row"><span class="bar-label">24H TOKENS</span><span class="track"><span class="fill amber" style="--w:36%"></span></span><span class="bar-value">360K/1M</span></div>
+          <div class="bar-row"><span class="bar-label">1H REQ</span><span class="track"><span class="fill amber" style="--w:45%"></span></span><span class="bar-value">45/100</span></div>
+        </section>
+
+        <section class="region evidence">
+          <div class="section-label">Evidence</div>
+          <div class="kv"><span>asset</span><span>codex-api-key:26b1c3ff958f</span></div>
+          <div class="kv"><span>state</span><span>sidecar rate-limit cache / 22s ago</span></div>
+          <div class="kv"><span>event</span><span>no recent block events</span></div>
+        </section>
+
+        <footer class="footer">
+          <button class="btn">Details</button>
+          <button class="btn">Refresh</button>
+        </footer>
+      </article>
+
+      <article class="account-card" data-tone="bad">
+        <header class="card-head">
+          <div class="route-tape">
+            <span>route guard / denied</span>
+            <span style="color:var(--bad)">BLOCKED</span>
+          </div>
+          <div class="identity-line">
+            <div>
+              <h3>Personal Key</h3>
+              <p>codex-api-key:stable-personal / api.openai.com/v1</p>
+            </div>
+            <div class="chips">
+              <span class="chip">API KEY</span>
+              <span class="chip bad">1H REQ FULL</span>
+            </div>
+          </div>
+        </header>
+
+        <section class="traffic">
+          <div>
+            <div class="metric-label">近期请求</div>
+            <div class="request-count">101</div>
+            <div class="tiny">ATTRIBUTION</div>
+          </div>
+          <div class="curve">
+            <div class="curve-box">
+              <svg viewBox="0 0 320 88" aria-hidden="true">
+                <polyline points="10,70 54,60 98,48 142,40 186,33 230,24 274,22 310,20" fill="none" stroke="var(--bad)" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="10 8">
+                  <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.5s" repeatCount="indefinite" />
+                </polyline>
+                <circle cx="310" cy="20" r="5" fill="var(--bad)" stroke="var(--line)" />
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-strip">
+          <div class="usage-cell"><div class="metric-label">requests</div><div class="usage-value">101</div></div>
+          <div class="usage-cell"><div class="metric-label">tokens</div><div class="usage-value">340K</div></div>
+          <div class="usage-cell"><div class="metric-label">cached</div><div class="usage-value">90K</div></div>
+          <div class="usage-cell"><div class="metric-label">latency</div><div class="usage-value">1.2S</div></div>
+        </section>
+
+        <section class="region quota-region">
+          <div class="section-label">Codex Plan Quota</div>
+          <div class="bar-row"><span class="bar-label">5H</span><span class="track"><span class="fill" style="--w:16%"></span></span><span class="bar-value">16%</span></div>
+          <div class="bar-row"><span class="bar-label">7D</span><span class="track"><span class="fill" style="--w:42%"></span></span><span class="bar-value">42%</span></div>
+        </section>
+
+        <section class="region guard-region">
+          <div class="guard-summary">
+            <div>
+              <div class="section-label">Route Guard</div>
+              <strong style="color:var(--bad)">blocked by request window</strong>
+            </div>
+            <span class="chip bad">DENY</span>
+          </div>
+          <div class="bar-row"><span class="bar-label">24H TOKENS</span><span class="track"><span class="fill amber" style="--w:68%"></span></span><span class="bar-value">340K/500K</span></div>
+          <div class="bar-row"><span class="bar-label" style="color:var(--bad)">1H REQ</span><span class="track"><span class="fill bad" style="--w:100%"></span></span><span class="bar-value" style="color:var(--bad)">100/100</span></div>
+        </section>
+
+        <section class="region evidence">
+          <div class="section-label">Evidence</div>
+          <div class="kv"><span>asset</span><span>codex-api-key:stable-personal</span></div>
+          <div class="kv"><span>state</span><span>cache updated 7s ago</span></div>
+          <div class="kv"><span>event</span><span>rate-limit-events:req-1h-full</span></div>
+        </section>
+
+        <footer class="footer">
+          <button class="btn">Details</button>
+          <button class="btn">Events</button>
+        </footer>
+      </article>
+
+      <article class="account-card" data-tone="warn">
+        <header class="card-head">
+          <div class="route-tape">
+            <span>route guard / warning</span>
+            <span style="color:var(--warn)">WARN</span>
+          </div>
+          <div class="identity-line">
+            <div>
+              <h3>Team OAuth</h3>
+              <p>auth-file:auth.json / chatgpt.com backend-api</p>
+            </div>
+            <div class="chips">
+              <span class="chip">AUTH FILE</span>
+              <span class="chip warn">24H 92%</span>
+            </div>
+          </div>
+        </header>
+
+        <section class="traffic">
+          <div>
+            <div class="metric-label">近期请求</div>
+            <div class="request-count">37</div>
+            <div class="tiny">ATTRIBUTION</div>
+          </div>
+          <div class="curve">
+            <div class="curve-box">
+              <svg viewBox="0 0 320 88" aria-hidden="true">
+                <polyline points="10,68 54,58 98,60 142,42 186,52 230,31 274,28 310,34" fill="none" stroke="var(--warn)" stroke-width="2" stroke-linecap="round" stroke-dasharray="12 9">
+                  <animate attributeName="stroke-dashoffset" from="21" to="0" dur="1.8s" repeatCount="indefinite" />
+                </polyline>
+                <circle cx="274" cy="28" r="4" fill="var(--amber)" stroke="var(--line)" />
+              </svg>
+            </div>
+          </div>
+        </section>
+
+        <section class="usage-strip">
+          <div class="usage-cell"><div class="metric-label">requests</div><div class="usage-value">37</div></div>
+          <div class="usage-cell"><div class="metric-label">tokens</div><div class="usage-value">1.84M</div></div>
+          <div class="usage-cell"><div class="metric-label">cached</div><div class="usage-value">410K</div></div>
+          <div class="usage-cell"><div class="metric-label">latency</div><div class="usage-value">912MS</div></div>
+        </section>
+
+        <section class="region quota-region">
+          <div class="section-label">Codex Plan Quota</div>
+          <div class="bar-row"><span class="bar-label">5H</span><span class="track"><span class="fill" style="--w:45%"></span></span><span class="bar-value">45%</span></div>
+          <div class="bar-row"><span class="bar-label">7D</span><span class="track"><span class="fill" style="--w:37%"></span></span><span class="bar-value">37%</span></div>
+        </section>
+
+        <section class="region guard-region">
+          <div class="guard-summary">
+            <div>
+              <div class="section-label">Route Guard</div>
+              <strong style="color:var(--warn)">warn only / still eligible</strong>
+            </div>
+            <span class="chip warn">WARN</span>
+          </div>
+          <div class="bar-row"><span class="bar-label" style="color:var(--warn)">24H TOKENS</span><span class="track"><span class="fill warn" style="--w:92%"></span></span><span class="bar-value" style="color:var(--warn)">1.84M/2M</span></div>
+          <div class="bar-row"><span class="bar-label">1H REQ</span><span class="track"><span class="fill amber" style="--w:12%"></span></span><span class="bar-value">12/200</span></div>
+        </section>
+
+        <section class="region evidence">
+          <div class="section-label">Evidence</div>
+          <div class="kv"><span>asset</span><span>auth-file:auth.json</span></div>
+          <div class="kv"><span>state</span><span>cache updated 22s ago</span></div>
+          <div class="kv"><span>event</span><span>warn action does not deny routing</span></div>
+        </section>
+
+        <footer class="footer">
+          <button class="btn">Details</button>
+          <button class="btn">Rules</button>
+        </footer>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <div>
+        <p class="eyebrow">02 / Codex Account List Variant</p>
+        <h2>顺序卡保留相同 guard 语义</h2>
+      </div>
+      <p>Codex 账号列表仍走共享卡片轨道。缩略模式隐藏归因流量、usage、quota、evidence，但必须保留路由排序、route policy、runtime 和限流 blocked chip。</p>
+    </section>
+
+    <section class="grid-3">
+      <article class="account-card" data-tone="bad">
+        <header class="card-head">
+          <div class="route-tape">
+            <span>order 01 / skipped by guard</span>
+            <span style="color:var(--bad)">DENY</span>
+          </div>
+          <div class="identity-line">
+            <div>
+              <h3>Personal Key</h3>
+              <p>codex-api-key:stable-personal</p>
+            </div>
+            <div class="chips">
+              <span class="chip">ORDER 01</span>
+              <span class="chip bad">1H REQ FULL</span>
+            </div>
+          </div>
+        </header>
+        <section class="region guard-region">
+          <div class="guard-summary">
+            <div>
+              <div class="section-label">Route Guard</div>
+              <strong style="color:var(--bad)">DenyIDs includes this account</strong>
+            </div>
+            <span class="chip bad">SKIPPED</span>
+          </div>
+          <div class="bar-row"><span class="bar-label">1H REQ</span><span class="track"><span class="fill bad" style="--w:100%"></span></span><span class="bar-value">100/100</span></div>
+        </section>
+        <section class="codex-body">
+          <div class="codex-region"><div class="section-label">Route Target</div><div class="usage-value">api.openai.com</div></div>
+          <div class="codex-region"><div class="section-label">Runtime</div><div class="usage-value" style="color:var(--bad)">disabled</div></div>
+          <div class="codex-region wide"><div class="section-label">Model Mapping</div><div class="usage-value">gpt-5.4 → gpt-5.4</div></div>
+          <div class="codex-region wide"><div class="section-label">Route Policy</div><div class="usage-value">default / rank preview excludes blocked account</div></div>
+        </section>
+        <footer class="footer"><button class="btn">Details</button><button class="btn">Policy</button></footer>
+      </article>
+
+      <article class="account-card" data-tone="good">
+        <header class="card-head">
+          <div class="route-tape">
+            <span>order 02 / next eligible</span>
+            <span style="color:var(--good)">ALLOW</span>
+          </div>
+          <div class="identity-line">
+            <div>
+              <h3>Company Key</h3>
+              <p>codex-api-key:26b1c3ff958f</p>
+            </div>
+            <div class="chips">
+              <span class="chip">ORDER 02</span>
+              <span class="chip good">PASS</span>
+            </div>
+          </div>
+        </header>
+        <section class="region guard-region">
+          <div class="guard-summary">
+            <div>
+              <div class="section-label">Route Guard</div>
+              <strong>candidate remains eligible</strong>
+            </div>
+            <span class="chip good">PASS</span>
+          </div>
+          <div class="bar-row"><span class="bar-label">24H TOKENS</span><span class="track"><span class="fill amber" style="--w:36%"></span></span><span class="bar-value">360K/1M</span></div>
+        </section>
+        <section class="codex-body">
+          <div class="codex-region"><div class="section-label">Route Target</div><div class="usage-value">api.openai.com</div></div>
+          <div class="codex-region"><div class="section-label">Runtime</div><div class="usage-value" style="color:var(--good)">enabled</div></div>
+          <div class="codex-region wide"><div class="section-label">Model Mapping</div><div class="usage-value">gpt-5.4-mini → gpt-5.4-mini</div></div>
+          <div class="codex-region wide"><div class="section-label">Route Policy</div><div class="usage-value">default / rank preview 01 after guard</div></div>
+        </section>
+        <footer class="footer"><button class="btn">Details</button><button class="btn">Policy</button></footer>
+      </article>
+
+      <div class="side-note">
+        <p class="eyebrow">Implementation boundary</p>
+        <h3>Rate limit state is not a new card type.</h3>
+        <ul>
+          <li>扩展 `AttributionCard` 的区域配置，而不是复制一张限流卡。</li>
+          <li>Codex full/compact 都要显示超限 chip；compact 只隐藏归因区域。</li>
+          <li>同一组卡片继续走三列轨道，禁止两张 Codex 卡被拉伸成半屏宽。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section-title">
+      <div>
+        <p class="eyebrow">03 / Detail Modal</p>
+        <h2>规则 CRUD 放在详情页的 Route Guard Section</h2>
+      </div>
+      <p>限流规则不是 API key 基础配置字段。它应该在 Management 与 Verification 之间形成独立 section，展示 evaluator 状态、规则行和当前窗口用量。</p>
+    </section>
+
+    <section class="modal-board">
+      <aside class="side-note">
+        <p class="eyebrow">Redesign notes</p>
+        <h3>Modal 必须回答三个问题</h3>
+        <ul>
+          <li>这条规则是否会让账号退出路由候选。</li>
+          <li>当前状态来自哪次 evaluator 快照，是否滞后。</li>
+          <li>保存后是否立即触发 EvaluateNow，而不是等下一个 30s tick。</li>
+        </ul>
+      </aside>
+
+      <article class="modal">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">codex api key / company key</p>
+            <h3>Credential detail</h3>
+          </div>
+          <button class="btn" type="button">Close</button>
+        </header>
+
+        <section class="modal-section">
+          <div class="section-label">Management</div>
+          <div class="form-grid">
+            <div class="kv"><span>api key</span><span>sk-proj-••••••••••••</span></div>
+            <div class="kv"><span>base url</span><span>https://api.openai.com/v1</span></div>
+            <div class="kv"><span>quota curl</span><span>enabled / template verified</span></div>
+          </div>
+        </section>
+
+        <section class="modal-section guard">
+          <div class="guard-summary">
+            <div>
+              <div class="section-label">Route Guard Rules</div>
+              <strong>EvaluateNow after save / cache updated 22s ago</strong>
+            </div>
+            <span class="chip good">READY</span>
+          </div>
+          <div class="form-grid">
+            <div class="form-line">
+              <select><option>Token Window</option></select>
+              <select><option>24h</option></select>
+              <input value="1000000" aria-label="token limit" />
+              <select><option>Block</option><option>Warn</option></select>
+              <button class="switch" aria-label="enabled"></button>
+            </div>
+            <div class="bar-row"><span class="bar-label">Current</span><span class="track"><span class="fill amber" style="--w:36%"></span></span><span class="bar-value">360K/1M</span></div>
+            <div class="form-line">
+              <select><option>Request Window</option></select>
+              <select><option>1h</option></select>
+              <input value="100" aria-label="request limit" />
+              <select><option>Block</option><option>Warn</option></select>
+              <button class="switch" aria-label="enabled"></button>
+            </div>
+            <div class="bar-row"><span class="bar-label">Current</span><span class="track"><span class="fill amber" style="--w:45%"></span></span><span class="bar-value">45/100</span></div>
+          </div>
+        </section>
+
+        <section class="modal-section">
+          <div class="section-label">Verification</div>
+          <div class="kv"><span>last test</span><span>gpt-5.4-mini / success / 742ms</span></div>
+        </section>
+
+        <footer class="modal-footer">
+          <button class="btn" type="button">Add Rule</button>
+          <div>
+            <button class="btn" type="button">Discard</button>
+            <button class="btn is-active" type="button">Save + Evaluate</button>
+          </div>
+        </footer>
+      </article>
+    </section>
+
+    <section class="section-title">
+      <div>
+        <p class="eyebrow">04 / Usage Desk</p>
+        <h2>限流观察源是第三张数据面</h2>
+      </div>
+      <p>现有代码只有真实请求量与本地投影用量。若首期保留限流观察源，需要新增 `rate-limit` source、持久化值、preview 数据、表格和测试；设计稿必须把这个成本展示出来。</p>
+    </section>
+
+    <section class="desk">
+      <aside class="desk-panel">
+        <p class="eyebrow">Source</p>
+        <div class="toolbar" style="margin-top:12px">
+          <button class="btn" type="button">真实请求量</button>
+          <button class="btn" type="button">本地投影用量</button>
+          <button class="btn is-active" type="button">限流状态</button>
         </div>
-
-        <button class="btn-add">+ Add Rule</button>
-      </div>
-
-      <div class="modal-footer">
-        <button class="btn" style="color:var(--muted)">Close</button>
-        <button class="btn" style="background:var(--ink);color:var(--surface);">Save Changes</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ============ SECTION 3: USAGE DESK — RATE LIMIT SOURCE ============ -->
-  <div class="section-title">
-    <div>
-      <h3>3. Usage Desk — Rate Limit Observation Source</h3>
-      <p>Source toggle: Observed / Projected / <strong style="color:var(--amber)">Rate Limits</strong>. All configured accounts with current limit status, sorted by blocked first.</p>
-    </div>
-  </div>
-
-  <table class="desk-table">
-    <thead>
-      <tr>
-        <th style="width:200px">Account</th>
-        <th style="width:100px">Strategy</th>
-        <th style="width:60px">Window</th>
-        <th>Usage</th>
-        <th style="width:70px">Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="blocked">
-        <td>Personal Key</td>
-        <td>请求窗口限流</td>
-        <td>1H</td>
-        <td>
-          <span class="mini-bar"><span class="mini-bar-fill over" style="width:100%"></span></span>
-          100/100
-        </td>
-        <td style="color:var(--bad)">BLOCKED</td>
-      </tr>
-      <tr class="blocked">
-        <td>Personal Key</td>
-        <td>Token 窗口限流</td>
-        <td>24H</td>
-        <td>
-          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:68%"></span></span>
-          340K/500K
-        </td>
-        <td style="color:var(--muted)">OK</td>
-      </tr>
-      <tr>
-        <td>Team OAuth</td>
-        <td>Token 窗口限流</td>
-        <td>24H</td>
-        <td>
-          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:92%"></span></span>
-          1.84M/2M
-        </td>
-        <td style="color:var(--warn)">WARN</td>
-      </tr>
-      <tr>
-        <td>Company Codex Key</td>
-        <td>Token 窗口限流</td>
-        <td>24H</td>
-        <td>
-          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:32%"></span></span>
-          320K/1M
-        </td>
-        <td style="color:var(--good)">OK</td>
-      </tr>
-      <tr>
-        <td>Company Codex Key</td>
-        <td>请求窗口限流</td>
-        <td>1H</td>
-        <td>
-          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:45%"></span></span>
-          45/100
-        </td>
-        <td style="color:var(--good)">OK</td>
-      </tr>
-      <tr>
-        <td>Team OAuth</td>
-        <td>请求窗口限流</td>
-        <td>1H</td>
-        <td>
-          <span class="mini-bar"><span class="mini-bar-fill ok" style="width:6%"></span></span>
-          12/200
-        </td>
-        <td style="color:var(--good)">OK</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div style="margin-top:7px;color:var(--muted);font-family:var(--font-mono);font-size:10px;font-weight:900;text-transform:uppercase;">
-    6 rules across 3 accounts · 1 blocked · 1 warning · Source: sidecar rate-limit states
-  </div>
-
-
-  <!-- ============ SECTION 4: CODE NOT SHOWN ============ -->
-  <div class="section-title">
-    <div>
-      <h3>4. Account Row — Blocked Chip</h3>
-      <p>CodexAccountOrderRow badges include blocked chip when rate-limit state is blocked. Compact mode hides card body but keeps badges visible.</p>
-    </div>
-  </div>
-
-  <div class="grid-3">
-    <!-- Normal row -->
-    <div class="card" data-state="active" style="min-height:auto;">
-      <div class="route-tape">
-        <div class="state-mark"></div>
-        <strong>codex-api-key:sk-ny3m…a8x2</strong>
-        <span style="color:var(--good)">ACTIVE</span>
-      </div>
-      <div class="identity">
-        <h2>Company Codex Key</h2>
-        <div class="chip-stack">
-          <span class="chip">RANK 01</span>
-          <span class="chip">API KEY</span>
+        <div class="desk-status">
+          <div class="status-cell"><div class="metric-label">blocked</div><div class="hero-value" style="color:var(--bad)">1</div></div>
+          <div class="status-cell"><div class="metric-label">warn</div><div class="hero-value" style="color:var(--warn)">1</div></div>
+          <div class="status-cell"><div class="metric-label">rules</div><div class="hero-value">6</div></div>
+          <div class="status-cell"><div class="metric-label">source</div><div class="usage-value">sidecar cache</div></div>
         </div>
-      </div>
-      <div class="card-footer">
-        <button class="btn">Details</button>
-      </div>
-    </div>
+      </aside>
 
-    <!-- Blocked row -->
-    <div class="card" data-state="blocked" style="min-height:auto;">
-      <div class="route-tape">
-        <div class="state-mark"></div>
-        <strong>codex-api-key:sk-mk9p…c3d1</strong>
-        <span style="color:var(--bad)">BLOCKED</span>
-      </div>
-      <div class="identity">
-        <h2>Personal Key</h2>
-        <div class="chip-stack">
-          <span class="chip">RANK 02</span>
-          <span class="chip">API KEY</span>
-          <span class="chip critical">1H REQ 已满</span>
-        </div>
-      </div>
-      <div class="card-footer">
-        <button class="btn">Details</button>
-      </div>
-    </div>
-  </div>
+      <article class="table-panel">
+        <table>
+          <thead>
+            <tr>
+              <th>Account</th>
+              <th>Guard</th>
+              <th>Window</th>
+              <th>Usage</th>
+              <th>Routing</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="blocked">
+              <td>Personal Key</td>
+              <td>request-window</td>
+              <td>1h</td>
+              <td><span class="mini-track"><span class="mini-fill bad" style="--w:100%"></span></span>100/100</td>
+              <td style="color:var(--bad)">DenyIDs</td>
+            </tr>
+            <tr>
+              <td>Team OAuth</td>
+              <td>token-window</td>
+              <td>24h</td>
+              <td><span class="mini-track"><span class="mini-fill" style="--w:92%"></span></span>1.84M/2M</td>
+              <td style="color:var(--warn)">Warn only</td>
+            </tr>
+            <tr>
+              <td>Company Key</td>
+              <td>token-window</td>
+              <td>24h</td>
+              <td><span class="mini-track"><span class="mini-fill" style="--w:36%"></span></span>360K/1M</td>
+              <td style="color:var(--good)">Eligible</td>
+            </tr>
+            <tr>
+              <td>Company Key</td>
+              <td>request-window</td>
+              <td>1h</td>
+              <td><span class="mini-track"><span class="mini-fill" style="--w:45%"></span></span>45/100</td>
+              <td style="color:var(--good)">Eligible</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+  </main>
 
-</div>
+  <script>
+    const root = document.documentElement;
+    const cardsPreview = document.getElementById('cardsPreview');
+    const densityButtons = Array.from(document.querySelectorAll('[data-density]'));
+    densityButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        densityButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+        cardsPreview.classList.toggle('compact', button.dataset.density === 'compact');
+      });
+    });
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      root.toggleAttribute('data-theme');
+    });
+  </script>
 </body>
 </html>

@@ -95,15 +95,16 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
 
 ## 设计稿入口
 
-- 本期设计稿：`（待产出）`
+- 本期设计稿：[rate-limit-design-v01.html](rate-limit-design-v01.html)
 - 约束：单期只保留一个 HTML 文件。
 - 端约束：桌面 Wails 工作台，不做移动端适配。
 
 设计方向：
-1. 限流进度条与既有 Codex 计划额度在同卡片内上下并列，使用 amber 色轨区分。
-2. 超限账号行显示策略 chip（如 `24h tokens 已满`），左侧状态 rail 红色。
-3. 限流规则配置区在账号详情 modal 内为独立 section，每条规则一行：策略下拉 / 窗口下拉 / 阈值输入 / 行为下拉 / 启用开关。
-4. Usage Desk 新增 `限流状态` 观察源，按超限状态排序。
+1. 限流状态进入当前共享 `AttributionCard` 母版，作为 `Route Guard` 区域放在 quota 后、evidence 前；它表达路由候选是否被剔除，而不是另一条平台 quota。
+2. 超限账号同时影响左侧状态 rail、guard summary 与策略 chip；Codex 顺序卡在完整 / 缩略模式下都必须保留超限 chip 和 route policy 语义。
+3. 限流规则配置区在账号详情 modal 内独立为 `Route Guard Rules` section，位于 `Management` 与 `Verification` 之间，并展示 evaluator 快照时间与保存后立即评估语义。
+4. Usage Desk 若新增 `限流状态` 观察源，必须作为第三个 source 数据面接入，而不是复用现有 `真实请求量 / 本地投影用量` 的文案。
+5. 设计稿已经按 2026-05-15 后的账号归因卡母版重做；旧稿中“仅在旧账号卡上插入 Rate Limits 进度条”的口径不再作为实现依据。
 
 ## Worktree 映射
 
@@ -113,6 +114,11 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
 ## 相关链接
 - 实施方案 v5：[plans/20260515-rate-limit-middleware-plan-v05.md](plans/20260515-rate-limit-middleware-plan-v05.md)（**当前方案：内存缓存 + 定时评估**）
 - 前端展示设计：[plans/20260515-rate-limit-frontend-design.md](plans/20260515-rate-limit-frontend-design.md)
+- 冒烟截图：[screenshots/20260516/rate-limit/20260516-rate-limit-route-guard-blocked-after-v03.png](screenshots/20260516/rate-limit/20260516-rate-limit-route-guard-blocked-after-v03.png)
+- 真实 Wails 复验截图：[screenshots/20260516/rate-limit/20260516-rate-limit-wails-route-guard-blocked-after-v04.png](screenshots/20260516/rate-limit/20260516-rate-limit-wails-route-guard-blocked-after-v04.png)
+- Wails 绑定保存复验截图：[screenshots/20260516/rate-limit/20260516-rate-limit-wails-binding-save-after-v05.png](screenshots/20260516/rate-limit/20260516-rate-limit-wails-binding-save-after-v05.png)
+- Wails 绑定删除复验截图：[screenshots/20260516/rate-limit/20260516-rate-limit-wails-binding-delete-after-v06.png](screenshots/20260516/rate-limit/20260516-rate-limit-wails-binding-delete-after-v06.png)
+- OpenAI-compatible 详情复验截图：[screenshots/20260516/rate-limit/20260516-rate-limit-openai-compatible-route-guard-detail-after-v01.png](screenshots/20260516/rate-limit/20260516-rate-limit-openai-compatible-route-guard-detail-after-v01.png)
 - CPA-Manager 参考分析：[reference/cpa-manager-analysis.md](reference/cpa-manager-analysis.md)
 - 历史方案 v4：[plans/20260515-rate-limit-middleware-plan-v04.md](plans/20260515-rate-limit-middleware-plan-v04.md)（已废弃：热路径查 DB）
 - 历史方案 v3（已废弃）：[plans/20260515-daily-quota-middleware-plan-v03.md](plans/20260515-daily-quota-middleware-plan-v03.md)
@@ -121,5 +127,18 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
 - Codex 账号列表：[20260511-codex-account-list-tab](../20260511-codex-account-list-tab/README.md)
 
 ## 当前状态
-- 状态：draft
-- 最近更新：2026-05-15
+- 状态：implemented-smoked
+- 最近更新：2026-05-16
+- 实现摘要：
+  - sidecar fork 已接入 `RateLimitStrategyRegistry`、`rate_limit_rules` / `rate_limit_events`、定时 `RateLimitEvaluator`、`rateLimitPolicy` 和 `/gettokens/rate-limit-*` management API。
+  - GetTokens Go/Wails 已暴露策略、规则、状态与事件查询/保存方法，root `main.App` 绑定已同步。
+  - 前端首期收敛在账号池、Codex 顺序卡与 OpenAI-compatible 账号：共享 `AttributionCard` 增加 `Route Guard` 区域，Codex API Key 与 OpenAI-compatible 详情均复用 `Route Guard Rules` 配置区。
+- 验收记录：
+  - 自动化：sidecar `go test ./...`、主仓库 `go test ./...`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit`、`npm --prefix frontend run build` 均已通过。
+  - 多场景回归：已补 sidecar 场景测试，覆盖 token-window 阻断、request-window 阻断、warn 只告警不 deny、窗口滑过恢复、disabled/unconfigured 放行、注册式新策略、CRUD/event。
+  - Live sidecar API：Wails dev `VERSION 2026.05.16.15` 使用最新 sidecar binary 重新启动；用 synthetic account `smoke-rate-limit:20260516:api` 验证 strategies、空状态、token block、event 记录、warn、窗口恢复、disabled、delete cleanup 全链路通过。
+  - 桌面冒烟：Wails dev app `VERSION 2026.05.16.15` 已启动，sidecar management API ready；通过 UI 新增 `token-window limit=1 block` 规则后，SQLite `match_key` 写入 `auth-id:codex:apikey:a6ba88c12cad`，status 返回 `blocked=true / 7d tokens 已满`，账号卡显示 `ROUTE GUARD` 阻断状态。
+  - Subagent 体验修复：浏览器预览发现账号池因只等待 Wails `ready` 而显示 `0 UNITS`，已改为无 Wails 绑定时加载 preview 数据；另修复 API Key 详情未透传 `rateLimitStatus` / `rateLimitStrategies` 导致 `Route Guard Rules` 空白的问题；最后一轮体验又补齐 preview 下规则保存/删除不再误触 Wails binding，而是本地更新并提示 `BROWSER PREVIEW ONLY`。
+  - 主控追加修复：真实 Wails 体验发现 `Route Guard Rules` 编辑中会被后台 `rateLimitStatus` 刷新覆盖 draft，已增加 dirty draft 保护；Subagent 第二轮发现 OpenAI-compatible 详情缺少 `Route Guard Rules`，已抽出共享规则编辑区并接入 provider 详情。
+  - 复验确认：账号池 preview、Codex API Key 详情、OpenAI-compatible 详情、Codex 顺序卡 blocked chip、真实 Wails UI 保存/刷新/blocked 状态均可见；本机测试规则已通过 management API 删除，`rules_len=0`、`blocked=false`，避免污染 dev 环境。
+  - 追加 Wails binding 复验：dev app `VERSION 2026.05.16.16` 通过 UI 新增 `ui-smoke-20260516` 规则，API 确认 `match_key=auth-id:codex:apikey:a6ba88c12cad`、`limit_value=1`；随后通过 UI 删除，API 查询该 label 数量为 `0`。
