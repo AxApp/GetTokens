@@ -23,8 +23,6 @@ function AppShell() {
   const {
     activePage,
     setActivePage,
-    activeAccountWorkspace,
-    setActiveAccountWorkspace,
     activeCodexWorkspace,
     setActiveCodexWorkspace,
   } = useAppNavigation();
@@ -76,9 +74,8 @@ function AppShell() {
         />
       );
     }
-    return <AccountsPage sidecarStatus={sidecarStatus} workspace={activeAccountWorkspace} />;
+    return <AccountsPage sidecarStatus={sidecarStatus} workspace="all" />;
   }, [
-    activeAccountWorkspace,
     activeCodexWorkspace,
     activePage,
     availableRelease,
@@ -98,8 +95,6 @@ function AppShell() {
       <Sidebar
         activePage={activePage}
         setActivePage={setActivePage}
-        activeAccountWorkspace={activeAccountWorkspace}
-        setActiveAccountWorkspace={setActiveAccountWorkspace}
         activeCodexWorkspace={activeCodexWorkspace}
         setActiveCodexWorkspace={setActiveCodexWorkspace}
         releaseLabel={releaseLabel}

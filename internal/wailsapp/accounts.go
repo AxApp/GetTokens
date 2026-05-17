@@ -16,47 +16,59 @@ func (a *App) managementClient() *cliproxyapi.Client {
 }
 
 func (a *App) ListAccounts() ([]accountsdomain.AccountRecord, error) {
+	var records []accountsdomain.AuthFileRecord
+
 	authFiles, err := a.ListAuthFiles()
 	if err != nil {
-		return nil, err
+		records = []accountsdomain.AuthFileRecord{}
+	} else {
+		records = make([]accountsdomain.AuthFileRecord, 0, len(authFiles.Files))
+		for _, file := range authFiles.Files {
+			if isReservedCodexAPIKeyAuthArtifact(file.Name) {
+				continue
+			}
+			records = append(records, accountsdomain.AuthFileRecord{
+				Name:          file.Name,
+				Type:          file.Type,
+				Provider:      file.Provider,
+				Priority:      file.Priority,
+				Email:         file.Email,
+				PlanType:      file.PlanType,
+				Size:          file.Size,
+				AuthIndex:     file.AuthIndex,
+				RuntimeOnly:   file.RuntimeOnly,
+				Disabled:      file.Disabled,
+				Unavailable:   file.Unavailable,
+				Status:        file.Status,
+				StatusMessage: file.StatusMessage,
+				LastRefresh:   file.LastRefresh,
+				Modified:      file.Modified,
+			})
+		}
 	}
 
 	codexKeys, err := a.loadCodexAPIKeys()
 	if err != nil {
-		return nil, err
+		codexKeys = []cliproxyapi.CodexAPIKey{}
 	}
 
-	records := make([]accountsdomain.AuthFileRecord, 0, len(authFiles.Files))
-	for _, file := range authFiles.Files {
-		if isReservedCodexAPIKeyAuthArtifact(file.Name) {
-			continue
+	accountRecords := accountsdomain.BuildAccountRecords(records, codexKeys)
+
+	openaiProviders, err := a.managementClient().ListOpenAICompatibleProviders()
+	if err == nil {
+		for _, provider := range openaiProviders {
+			accountRecords = append(accountRecords, accountsdomain.BuildOpenAICompatibleProviderAccountRecord(provider))
 		}
-		records = append(records, accountsdomain.AuthFileRecord{
-			Name:          file.Name,
-			Type:          file.Type,
-			Provider:      file.Provider,
-			Priority:      file.Priority,
-			Email:         file.Email,
-			PlanType:      file.PlanType,
-			Size:          file.Size,
-			AuthIndex:     file.AuthIndex,
-			RuntimeOnly:   file.RuntimeOnly,
-			Disabled:      file.Disabled,
-			Unavailable:   file.Unavailable,
-			Status:        file.Status,
-			StatusMessage: file.StatusMessage,
-			LastRefresh:   file.LastRefresh,
-			Modified:      file.Modified,
-		})
 	}
 
-	return accountsdomain.BuildAccountRecords(records, codexKeys), nil
+	return accountRecords, nil
 }
 
 type CreateCodexAPIKeyInput struct {
 	APIKey         string            `json:"apiKey"`
 	Label          string            `json:"label,omitempty"`
 	BaseURL        string            `json:"baseUrl"`
+	FormatBaseURLs map[string]string `json:"formatBaseUrls,omitempty"`
 	Priority       int               `json:"priority,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
 	ProxyURL       string            `json:"proxyUrl,omitempty"`
@@ -64,6 +76,8 @@ type CreateCodexAPIKeyInput struct {
 	ExcludedModels []string          `json:"excludedModels,omitempty"`
 	QuotaCurl      string            `json:"quotaCurl,omitempty"`
 	QuotaEnabled   bool              `json:"quotaEnabled,omitempty"`
+	BillingCurl    string            `json:"billingCurl,omitempty"`
+	BillingEnabled bool              `json:"billingEnabled,omitempty"`
 }
 
 type UpdateAccountPriorityInput struct {
@@ -91,12 +105,14 @@ type UpdateCodexAPIKeyLabelInput struct {
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID           string `json:"id"`
-	APIKey       string `json:"apiKey"`
-	BaseURL      string `json:"baseUrl"`
-	Prefix       string `json:"prefix,omitempty"`
-	QuotaCurl    string `json:"quotaCurl,omitempty"`
-	QuotaEnabled bool   `json:"quotaEnabled,omitempty"`
+	ID             string `json:"id"`
+	APIKey         string `json:"apiKey"`
+	BaseURL        string `json:"baseUrl"`
+	Prefix         string `json:"prefix,omitempty"`
+	QuotaCurl      string `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool   `json:"quotaEnabled,omitempty"`
+	BillingCurl    string `json:"billingCurl,omitempty"`
+	BillingEnabled bool   `json:"billingEnabled,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -125,6 +141,7 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		APIKey:         strings.TrimSpace(input.APIKey),
 		Label:          strings.TrimSpace(input.Label),
 		BaseURL:        strings.TrimSpace(input.BaseURL),
+		FormatBaseURLs: input.FormatBaseURLs,
 		Priority:       input.Priority,
 		Prefix:         strings.TrimSpace(input.Prefix),
 		ProxyURL:       strings.TrimSpace(input.ProxyURL),
@@ -132,12 +149,15 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		ExcludedModels: input.ExcludedModels,
 		QuotaCurl:      strings.TrimSpace(input.QuotaCurl),
 		QuotaEnabled:   input.QuotaEnabled && strings.TrimSpace(input.QuotaCurl) != "",
+		BillingCurl:    strings.TrimSpace(input.BillingCurl),
+		BillingEnabled: input.BillingEnabled && strings.TrimSpace(input.BillingCurl) != "",
 	})
 
 	if err := persistCodexAPIKeySet(items); err != nil {
 		return err
 	}
-	return a.syncStoredCodexAPIKeysToSidecar()
+	_ = a.syncStoredCodexAPIKeysToSidecar()
+	return nil
 }
 
 func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
@@ -197,6 +217,8 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 			existing.Prefix = nextPrefix
 			existing.QuotaCurl = strings.TrimSpace(input.QuotaCurl)
 			existing.QuotaEnabled = input.QuotaEnabled && existing.QuotaCurl != ""
+			existing.BillingCurl = strings.TrimSpace(input.BillingCurl)
+			existing.BillingEnabled = input.BillingEnabled && existing.BillingCurl != ""
 			found = true
 		} else if codexAPIKeyConfigIdentityFromInput(existing) == nextIdentity {
 			return errors.New("账号已存在")
@@ -344,12 +366,15 @@ func codexAPIKeysFromInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyapi.
 			Disabled:       item.Disabled,
 			Prefix:         item.Prefix,
 			BaseURL:        item.BaseURL,
+			FormatBaseURLs: item.FormatBaseURLs,
 			ProxyURL:       item.ProxyURL,
 			Models:         item.Models,
 			Headers:        item.Headers,
 			ExcludedModels: item.ExcludedModels,
 			QuotaCurl:      item.QuotaCurl,
 			QuotaEnabled:   item.QuotaEnabled,
+			BillingCurl:    item.BillingCurl,
+			BillingEnabled: item.BillingEnabled,
 		})
 	}
 	return keys
@@ -360,6 +385,8 @@ func sidecarCodexAPIKeyInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyap
 	for _, item := range items {
 		item.QuotaCurl = ""
 		item.QuotaEnabled = false
+		item.BillingCurl = ""
+		item.BillingEnabled = false
 		out = append(out, item)
 	}
 	return out

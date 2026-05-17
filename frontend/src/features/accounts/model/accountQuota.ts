@@ -1,4 +1,4 @@
-import type { AccountRecord, AuthFile, CodexQuota } from '../../../types';
+import type { AccountRecord, AuthFile, BillingDisplay, CodexQuota } from '../../../types';
 import type { CodexQuotaState, QuotaDisplay, QuotaWindowDisplay } from './types';
 
 export function supportsQuota(account: AccountRecord) {
@@ -6,11 +6,11 @@ export function supportsQuota(account: AccountRecord) {
   if (account.credentialSource === 'auth-file') {
     return provider === 'codex';
   }
+  const hasQuotaCurl = account.quotaEnabled && Boolean(String(account.quotaCurl || '').trim());
+  const hasBillingCurl = account.billingEnabled && Boolean(String(account.billingCurl || '').trim());
   return (
     account.credentialSource === 'api-key' &&
-    provider === 'codex' &&
-    Boolean(account.quotaEnabled) &&
-    Boolean(String(account.quotaCurl || '').trim())
+    (hasQuotaCurl || hasBillingCurl)
   );
 }
 
@@ -108,6 +108,20 @@ export function hasPositiveLongestQuota(account: AccountRecord, state?: CodexQuo
 
   const longestWindow = selectLongestQuotaWindow(quotaDisplay.windows);
   return typeof longestWindow?.remainingPercent === 'number' && longestWindow.remainingPercent > 0;
+}
+
+export function extractBilling(quota: CodexQuota): BillingDisplay | undefined {
+  const billing = (quota as any).billing;
+  if (!billing?.isAvailable || !billing.balanceInfos?.length) return undefined;
+  return {
+    isAvailable: billing.isAvailable,
+    balances: billing.balanceInfos.map((info: any) => ({
+      currency: info.currency ?? '',
+      totalBalance: info.totalBalance ?? '0',
+      grantedBalance: info.grantedBalance ?? '0',
+      toppedUpBalance: info.toppedUpBalance ?? '0',
+    })),
+  };
 }
 
 export function normalizePercent(value: number | null | undefined) {

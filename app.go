@@ -624,22 +624,7 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	windows := make([]CodexQuotaWindow, 0, len(result.Windows))
-	for _, window := range result.Windows {
-		windows = append(windows, CodexQuotaWindow{
-			ID:               window.ID,
-			Label:            window.Label,
-			RemainingPercent: window.RemainingPercent,
-			ResetLabel:       window.ResetLabel,
-			ResetAtUnix:      window.ResetAtUnix,
-		})
-	}
-
-	return &CodexQuotaResponse{
-		PlanType: result.PlanType,
-		Windows:  windows,
-	}, nil
+	return mapCodexQuotaResponse(result), nil
 }
 
 func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaResponse, error) {
@@ -652,22 +637,20 @@ func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*Co
 	if err != nil {
 		return nil, err
 	}
+	return mapCodexQuotaResponse(result), nil
+}
 
-	windows := make([]CodexQuotaWindow, 0, len(result.Windows))
-	for _, window := range result.Windows {
-		windows = append(windows, CodexQuotaWindow{
-			ID:               window.ID,
-			Label:            window.Label,
-			RemainingPercent: window.RemainingPercent,
-			ResetLabel:       window.ResetLabel,
-			ResetAtUnix:      window.ResetAtUnix,
-		})
+func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaBillingInfo, error) {
+	result, err := a.core.TestCodexAPIKeyBillingCurl(wailsapp.TestCodexAPIKeyQuotaCurlInput{
+		APIKey:    input.APIKey,
+		BaseURL:   input.BaseURL,
+		Prefix:    input.Prefix,
+		QuotaCurl: input.QuotaCurl,
+	})
+	if err != nil {
+		return nil, err
 	}
-
-	return &CodexQuotaResponse{
-		PlanType: result.PlanType,
-		Windows:  windows,
-	}, nil
+	return mapCodexQuotaBillingInfo(result), nil
 }
 
 func (a *App) ListAccounts() ([]AccountRecord, error) {

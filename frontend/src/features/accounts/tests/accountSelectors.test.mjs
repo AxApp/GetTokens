@@ -4,19 +4,13 @@ import assert from 'node:assert/strict';
 import {
   buildAccountsView,
   filterAccounts,
-  groupAccountsByPlan,
+  groupAccountsByVendor,
 } from '../model/accountSelectors.ts';
 import { defaultAccountsFilterState } from '../model/accountFilters.ts';
 
-const t = (key) =>
-  ({
-    accounts: {
-      plan_group_api_key: 'API KEY',
-      plan_group_none: 'NONE',
-    },
-  })[key.split('.')[0]]?.[key.split('.')[1]] ?? key;
+const t = (key) => key;
 
-test('filterAccounts applies source filter and text query across key fields', () => {
+test('filterAccounts applies text query across key fields', () => {
   const accounts = [
     {
       id: 'auth-file:alpha',
@@ -46,7 +40,6 @@ test('filterAccounts applies source filter and text query across key fields', ()
       searchTerm: 'relay',
       filters: {
         ...defaultAccountsFilterState,
-        source: 'api-key',
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -228,7 +221,7 @@ test('filterAccounts keeps only unavailable or unusable accounts when errorsOnly
   );
 });
 
-test('groupAccountsByPlan keeps api keys in API KEY bucket and sorts plan groups by rank', () => {
+test('groupAccountsByVendor groups by normalized provider', () => {
   const accounts = [
     {
       id: 'auth-file:free',
@@ -257,11 +250,11 @@ test('groupAccountsByPlan keeps api keys in API KEY bucket and sorts plan groups
     },
   ];
 
-  const groups = groupAccountsByPlan(accounts, {}, t);
+  const groups = groupAccountsByVendor(accounts);
 
   assert.deepEqual(
     groups.map((group) => group.label),
-    ['PRO', 'FREE', 'API KEY']
+    ['CODEX', 'OPENAI']
   );
 });
 
@@ -299,7 +292,7 @@ test('buildAccountsView sorts, filters, groups, and resolves selection state tog
   assert.deepEqual(view.filteredAccounts.map((item) => item.id), ['auth-file:alpha', 'api-key:beta']);
   assert.equal(view.selectedAccounts.length, 1);
   assert.equal(view.allFilteredSelected, false);
-  assert.deepEqual(view.groupedAccounts.map((group) => group.label), ['PRO', 'API KEY']);
+  assert.deepEqual(view.groupedAccounts.map((group) => group.label), ['CODEX', 'OPENAI']);
 });
 
 test('buildAccountsView sorts api keys by priority before display name', () => {

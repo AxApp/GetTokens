@@ -26,6 +26,7 @@ import {
   readUploadFiles,
   resolvePastedAuthFileName,
 } from '../model/accountTransfer';
+import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import type { ApiKeyFormState, TrackRequest, Translator } from '../model/types';
 
 interface UseAccountsActionsArgs {
@@ -381,7 +382,7 @@ export default function useAccountsActions({
   );
 
   const updateSelectedApiKeyConfig = useCallback(
-    async (draft: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; quotaEnabled: boolean }) => {
+    async (draft: ApiKeyConfigDraft) => {
       if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
         return;
       }
@@ -390,6 +391,7 @@ export default function useAccountsActions({
       const nextBaseURL = draft.baseUrl.trim();
       const nextPrefix = draft.prefix.trim();
       const nextQuotaCurl = draft.quotaCurl.trim();
+      const nextBillingCurl = draft.billingCurl.trim();
       if (!nextAPIKey) {
         setDeleteError(`SAVE ERROR: ${t('accounts.api_key_required')}`);
         return;
@@ -408,6 +410,8 @@ export default function useAccountsActions({
                 prefix: nextPrefix,
                 quotaCurl: nextQuotaCurl,
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+                billingCurl: nextBillingCurl,
+                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
               })
             )
         );
@@ -421,6 +425,8 @@ export default function useAccountsActions({
                 prefix: nextPrefix,
                 quotaCurl: nextQuotaCurl,
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+                billingCurl: nextBillingCurl,
+                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
               }
             : prev
         );

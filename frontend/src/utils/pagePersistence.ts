@@ -19,7 +19,7 @@ const appPages: ReadonlySet<AppPage> = new Set([
   'settings',
   'debug',
 ]);
-const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all', 'codex', 'openai-compatible']);
+const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all']);
 const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'feature-config',
   'binary-management',

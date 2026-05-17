@@ -13,6 +13,7 @@ type CodexAPIKey struct {
 	Disabled       bool              `json:"disabled,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
 	BaseURL        string            `json:"base-url"`
+	FormatBaseURLs map[string]string `json:"format-base-urls,omitempty"`
 	Websockets     bool              `json:"websockets,omitempty"`
 	ProxyURL       string            `json:"proxy-url,omitempty"`
 	Models         []CodexModel      `json:"models,omitempty"`
@@ -21,6 +22,8 @@ type CodexAPIKey struct {
 	AuthIndex      string            `json:"auth-index,omitempty"`
 	QuotaCurl      string            `json:"quota-curl,omitempty"`
 	QuotaEnabled   bool              `json:"quota-enabled,omitempty"`
+	BillingCurl    string            `json:"billing-curl,omitempty"`
+	BillingEnabled bool              `json:"billing-enabled,omitempty"`
 }
 
 type CodexAPIKeysResponse struct {
@@ -35,12 +38,15 @@ type CodexAPIKeyInput struct {
 	Disabled       bool              `json:"disabled,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
 	BaseURL        string            `json:"base-url"`
+	FormatBaseURLs map[string]string `json:"format-base-urls,omitempty"`
 	ProxyURL       string            `json:"proxy-url,omitempty"`
 	Models         []CodexModel      `json:"models,omitempty"`
 	Headers        map[string]string `json:"headers,omitempty"`
 	ExcludedModels []string          `json:"excluded-models,omitempty"`
 	QuotaCurl      string            `json:"quota-curl,omitempty"`
 	QuotaEnabled   bool              `json:"quota-enabled,omitempty"`
+	BillingCurl    string            `json:"billing-curl,omitempty"`
+	BillingEnabled bool              `json:"billing-enabled,omitempty"`
 }
 
 type CodexAPIKeyPatch struct {

@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 )
 
 func TestGitHubRepoUsesPublishedReleaseRepository(t *testing.T) {
@@ -49,5 +51,44 @@ func TestFetchVendorStatusRSSErrorOnNon2xx(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "vendor status rss returned 502") {
 		t.Fatalf("FetchVendorStatusRSS error = %q, want status code message", err.Error())
+	}
+}
+
+func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {
+	result := mapCodexQuotaResponse(&wailsapp.CodexQuotaResponse{
+		PlanType: "metered",
+		Windows: []wailsapp.CodexQuotaWindow{
+			{
+				ID:         "weekly",
+				Label:      "7D",
+				ResetLabel: "tomorrow",
+			},
+		},
+		Billing: &wailsapp.CodexQuotaBillingInfo{
+			IsAvailable: true,
+			BalanceInfos: []wailsapp.CodexQuotaBillingBalanceInfo{
+				{
+					Currency:       "USD",
+					TotalBalance:   "12.34",
+					GrantedBalance: "5.67",
+				},
+			},
+		},
+	})
+
+	if result == nil {
+		t.Fatal("mapCodexQuotaResponse returned nil")
+	}
+	if result.Billing == nil {
+		t.Fatal("mapCodexQuotaResponse billing = nil, want preserved billing")
+	}
+	if !result.Billing.IsAvailable {
+		t.Fatal("mapCodexQuotaResponse billing availability = false, want true")
+	}
+	if got := len(result.Billing.BalanceInfos); got != 1 {
+		t.Fatalf("mapCodexQuotaResponse billing entries = %d, want 1", got)
+	}
+	if got := result.Billing.BalanceInfos[0].Currency; got != "USD" {
+		t.Fatalf("mapCodexQuotaResponse currency = %q, want %q", got, "USD")
 	}
 }

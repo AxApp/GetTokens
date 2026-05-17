@@ -56,8 +56,21 @@ type CodexQuotaWindow struct {
 }
 
 type CodexQuotaResponse struct {
-	PlanType string             `json:"planType,omitempty"`
-	Windows  []CodexQuotaWindow `json:"windows"`
+	PlanType string                    `json:"planType,omitempty"`
+	Windows  []CodexQuotaWindow        `json:"windows"`
+	Billing  *CodexQuotaBillingInfo    `json:"billing,omitempty"`
+}
+
+type CodexQuotaBillingInfo struct {
+	IsAvailable  bool                          `json:"isAvailable"`
+	BalanceInfos []CodexQuotaBillingBalanceInfo `json:"balanceInfos"`
+}
+
+type CodexQuotaBillingBalanceInfo struct {
+	Currency        string `json:"currency"`
+	TotalBalance    string `json:"totalBalance"`
+	GrantedBalance  string `json:"grantedBalance"`
+	ToppedUpBalance string `json:"toppedUpBalance"`
 }
 
 type AccountRecord struct {
@@ -81,12 +94,17 @@ type AccountRecord struct {
 	QuotaCurl        string      `json:"quotaCurl,omitempty"`
 	QuotaEnabled     bool        `json:"quotaEnabled,omitempty"`
 	LocalOnly        bool        `json:"localOnly,omitempty"`
+	SupportedFormats []string          `json:"supportedFormats,omitempty"`
+	FormatBaseURLs   map[string]string `json:"formatBaseUrls,omitempty"`
+	BillingCurl      string            `json:"billingCurl,omitempty"`
+	BillingEnabled   bool              `json:"billingEnabled,omitempty"`
 }
 
 type CreateCodexAPIKeyInput struct {
 	APIKey         string            `json:"apiKey"`
 	Label          string            `json:"label,omitempty"`
 	BaseURL        string            `json:"baseUrl"`
+	FormatBaseURLs map[string]string `json:"formatBaseUrls,omitempty"`
 	Priority       int               `json:"priority,omitempty"`
 	Prefix         string            `json:"prefix,omitempty"`
 	ProxyURL       string            `json:"proxyUrl,omitempty"`
@@ -94,6 +112,8 @@ type CreateCodexAPIKeyInput struct {
 	ExcludedModels []string          `json:"excludedModels,omitempty"`
 	QuotaCurl      string            `json:"quotaCurl,omitempty"`
 	QuotaEnabled   bool              `json:"quotaEnabled,omitempty"`
+	BillingCurl    string            `json:"billingCurl,omitempty"`
+	BillingEnabled bool              `json:"billingEnabled,omitempty"`
 }
 
 type UpdateCodexAPIKeyPriorityInput struct {
@@ -107,12 +127,14 @@ type UpdateCodexAPIKeyLabelInput struct {
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID           string `json:"id"`
-	APIKey       string `json:"apiKey"`
-	BaseURL      string `json:"baseUrl"`
-	Prefix       string `json:"prefix,omitempty"`
-	QuotaCurl    string `json:"quotaCurl,omitempty"`
-	QuotaEnabled bool   `json:"quotaEnabled,omitempty"`
+	ID             string `json:"id"`
+	APIKey         string `json:"apiKey"`
+	BaseURL        string `json:"baseUrl"`
+	Prefix         string `json:"prefix,omitempty"`
+	QuotaCurl      string `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool   `json:"quotaEnabled,omitempty"`
+	BillingCurl    string `json:"billingCurl,omitempty"`
+	BillingEnabled bool   `json:"billingEnabled,omitempty"`
 }
 
 type TestCodexAPIKeyQuotaCurlInput struct {
@@ -271,6 +293,29 @@ type RelayLocalApplyResult struct {
 	CodexHomePath string `json:"codexHomePath"`
 	AuthFilePath  string `json:"authFilePath"`
 	ConfigPath    string `json:"configPath"`
+}
+
+type RelayLocalApplyInput struct {
+	APIKey             string `json:"apiKey"`
+	BaseURL            string `json:"baseURL"`
+	Model              string `json:"model"`
+	ReasoningEffort    string `json:"reasoningEffort"`
+	ProviderID         string `json:"providerID"`
+	ProviderName       string `json:"providerName"`
+	SupportsWebsockets bool   `json:"supportsWebsockets"`
+	AuthStrategy       string `json:"authStrategy"`
+}
+
+type LocalCodexAuthState struct {
+	AuthFilePath           string   `json:"authFilePath"`
+	HasAuthFile            bool     `json:"hasAuthFile"`
+	AuthMode               string   `json:"authMode"`
+	HasOpenAIAPIKey        bool     `json:"hasOpenAIAPIKey"`
+	HasTokens              bool     `json:"hasTokens"`
+	AccountEmail           string   `json:"accountEmail,omitempty"`
+	PlanType               string   `json:"planType,omitempty"`
+	CanPreserveChatGPTAuth bool     `json:"canPreserveChatGPTAuth"`
+	Warnings               []string `json:"warnings,omitempty"`
 }
 
 type ClaudeCodeLocalApplyResult struct {

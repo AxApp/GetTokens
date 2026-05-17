@@ -14,6 +14,31 @@ const (
 	CredentialSourceAPIKey   = "api-key"
 )
 
+const (
+	APIFmtAnthropic       = "anthropic"
+	APIFmtOpenAIChat      = "openai_chat"
+	APIFmtOpenAIResponses = "openai_responses"
+	APIFmtGeminiNative    = "gemini_native"
+)
+
+func resolveDefaultFormats(provider string) []string {
+	switch strings.ToLower(strings.TrimSpace(provider)) {
+	case "deepseek", "zhipu", "glm", "kimi", "moonshot",
+		"stepfun", "minimax", "doubao", "longcat", "xiaomimimo", "mimo",
+		"bailian", "dashscope", "modelscope", "ling", "bailing",
+		"siliconflow", "openrouter", "therouter":
+		return []string{APIFmtAnthropic, APIFmtOpenAIChat}
+	case "gemini", "google":
+		return []string{APIFmtGeminiNative}
+	case "copilot", "github":
+		return []string{APIFmtOpenAIChat}
+	case "codex", "openai":
+		return []string{APIFmtAnthropic, APIFmtOpenAIResponses}
+	default:
+		return []string{APIFmtAnthropic}
+	}
+}
+
 type AuthFileRecord struct {
 	Name          string
 	Type          string
@@ -54,6 +79,10 @@ type AccountRecord struct {
 	QuotaCurl        string      `json:"quotaCurl,omitempty"`
 	QuotaEnabled     bool        `json:"quotaEnabled,omitempty"`
 	LocalOnly        bool        `json:"localOnly,omitempty"`
+	SupportedFormats []string          `json:"supportedFormats,omitempty"`
+	FormatBaseURLs   map[string]string `json:"formatBaseUrls,omitempty"`
+	BillingCurl      string            `json:"billingCurl,omitempty"`
+	BillingEnabled   bool              `json:"billingEnabled,omitempty"`
 }
 
 func BuildAccountRecords(authFiles []AuthFileRecord, codexKeys []cliproxyapi.CodexAPIKey) []AccountRecord {
@@ -108,6 +137,7 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 		KeySuffix:        APIKeySuffix(apiKey),
 		BaseURL:          baseURL,
 		Prefix:           prefix,
+		SupportedFormats: resolveDefaultFormats(name),
 	}
 }
 
@@ -149,6 +179,7 @@ func BuildAuthFileAccountRecord(file AuthFileRecord) AccountRecord {
 		AuthIndex:        file.AuthIndex,
 		QuotaKey:         strings.TrimSpace(file.Name),
 		LocalOnly:        file.RuntimeOnly,
+		SupportedFormats: resolveDefaultFormats(provider),
 	}
 }
 
@@ -189,6 +220,10 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		QuotaKey:         codexAPIKeyQuotaKey(key),
 		QuotaCurl:        strings.TrimSpace(key.QuotaCurl),
 		QuotaEnabled:     key.QuotaEnabled,
+		SupportedFormats: resolveDefaultFormats("codex"),
+		FormatBaseURLs:   cloneStringMap(key.FormatBaseURLs),
+		BillingCurl:      strings.TrimSpace(key.BillingCurl),
+		BillingEnabled:   key.BillingEnabled && strings.TrimSpace(key.BillingCurl) != "",
 	}
 }
 
@@ -265,4 +300,15 @@ func NormalizeBaseURL(raw string) string {
 
 func NormalizePrefix(raw string) string {
 	return strings.Trim(strings.TrimSpace(raw), "/")
+}
+
+func cloneStringMap(source map[string]string) map[string]string {
+	if len(source) == 0 {
+		return nil
+	}
+	cloned := make(map[string]string, len(source))
+	for k, v := range source {
+		cloned[k] = v
+	}
+	return cloned
 }

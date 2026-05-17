@@ -593,6 +593,10 @@ export namespace main {
 	    quotaCurl?: string;
 	    quotaEnabled?: boolean;
 	    localOnly?: boolean;
+	    supportedFormats?: string[];
+	    formatBaseUrls?: Record<string, string>;
+	    billingCurl?: string;
+	    billingEnabled?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new AccountRecord(source);
@@ -620,6 +624,10 @@ export namespace main {
 	        this.quotaCurl = source["quotaCurl"];
 	        this.quotaEnabled = source["quotaEnabled"];
 	        this.localOnly = source["localOnly"];
+	        this.supportedFormats = source["supportedFormats"];
+	        this.formatBaseUrls = source["formatBaseUrls"];
+	        this.billingCurl = source["billingCurl"];
+	        this.billingEnabled = source["billingEnabled"];
 	    }
 	}
 	export class AuthFileItem {
@@ -1080,6 +1088,56 @@ export namespace main {
 		}
 	}
 	
+	export class CodexQuotaBillingBalanceInfo {
+	    currency: string;
+	    totalBalance: string;
+	    grantedBalance: string;
+	    toppedUpBalance: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaBillingBalanceInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currency = source["currency"];
+	        this.totalBalance = source["totalBalance"];
+	        this.grantedBalance = source["grantedBalance"];
+	        this.toppedUpBalance = source["toppedUpBalance"];
+	    }
+	}
+	export class CodexQuotaBillingInfo {
+	    isAvailable: boolean;
+	    balanceInfos: CodexQuotaBillingBalanceInfo[];
+	
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaBillingInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.isAvailable = source["isAvailable"];
+	        this.balanceInfos = this.convertValues(source["balanceInfos"], CodexQuotaBillingBalanceInfo);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class CodexQuotaWindow {
 	    id: string;
 	    label: string;
@@ -1103,6 +1161,7 @@ export namespace main {
 	export class CodexQuotaResponse {
 	    planType?: string;
 	    windows: CodexQuotaWindow[];
+	    billing?: CodexQuotaBillingInfo;
 	
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaResponse(source);
@@ -1112,6 +1171,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.planType = source["planType"];
 	        this.windows = this.convertValues(source["windows"], CodexQuotaWindow);
+	        this.billing = this.convertValues(source["billing"], CodexQuotaBillingInfo);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1279,6 +1339,7 @@ export namespace main {
 	    apiKey: string;
 	    label?: string;
 	    baseUrl: string;
+	    formatBaseUrls?: Record<string, string>;
 	    priority?: number;
 	    prefix?: string;
 	    proxyUrl?: string;
@@ -1286,6 +1347,8 @@ export namespace main {
 	    excludedModels?: string[];
 	    quotaCurl?: string;
 	    quotaEnabled?: boolean;
+	    billingCurl?: string;
+	    billingEnabled?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new CreateCodexAPIKeyInput(source);
@@ -1296,6 +1359,7 @@ export namespace main {
 	        this.apiKey = source["apiKey"];
 	        this.label = source["label"];
 	        this.baseUrl = source["baseUrl"];
+	        this.formatBaseUrls = source["formatBaseUrls"];
 	        this.priority = source["priority"];
 	        this.prefix = source["prefix"];
 	        this.proxyUrl = source["proxyUrl"];
@@ -1303,6 +1367,8 @@ export namespace main {
 	        this.excludedModels = source["excludedModels"];
 	        this.quotaCurl = source["quotaCurl"];
 	        this.quotaEnabled = source["quotaEnabled"];
+	        this.billingCurl = source["billingCurl"];
+	        this.billingEnabled = source["billingEnabled"];
 	    }
 	}
 	export class CreateOpenAICompatibleProviderInput {
@@ -1477,6 +1543,34 @@ export namespace main {
 	        this.path = source["path"];
 	        this.content = source["content"];
 	        this.previewable = source["previewable"];
+	    }
+	}
+	export class LocalCodexAuthState {
+	    authFilePath: string;
+	    hasAuthFile: boolean;
+	    authMode: string;
+	    hasOpenAIAPIKey: boolean;
+	    hasTokens: boolean;
+	    accountEmail?: string;
+	    planType?: string;
+	    canPreserveChatGPTAuth: boolean;
+	    warnings?: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalCodexAuthState(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.authFilePath = source["authFilePath"];
+	        this.hasAuthFile = source["hasAuthFile"];
+	        this.authMode = source["authMode"];
+	        this.hasOpenAIAPIKey = source["hasOpenAIAPIKey"];
+	        this.hasTokens = source["hasTokens"];
+	        this.accountEmail = source["accountEmail"];
+	        this.planType = source["planType"];
+	        this.canPreserveChatGPTAuth = source["canPreserveChatGPTAuth"];
+	        this.warnings = source["warnings"];
 	    }
 	}
 	export class LocalCodexModelProviderView {
@@ -1948,6 +2042,32 @@ export namespace main {
 	        this.id = source["id"];
 	        this.name = source["name"];
 	        this.supportedWindows = source["supportedWindows"];
+	    }
+	}
+	export class RelayLocalApplyInput {
+	    apiKey: string;
+	    baseURL: string;
+	    model: string;
+	    reasoningEffort: string;
+	    providerID: string;
+	    providerName: string;
+	    supportsWebsockets: boolean;
+	    authStrategy: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RelayLocalApplyInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.apiKey = source["apiKey"];
+	        this.baseURL = source["baseURL"];
+	        this.model = source["model"];
+	        this.reasoningEffort = source["reasoningEffort"];
+	        this.providerID = source["providerID"];
+	        this.providerName = source["providerName"];
+	        this.supportsWebsockets = source["supportsWebsockets"];
+	        this.authStrategy = source["authStrategy"];
 	    }
 	}
 	export class RelayLocalApplyResult {
@@ -2655,6 +2775,8 @@ export namespace main {
 	    prefix?: string;
 	    quotaCurl?: string;
 	    quotaEnabled?: boolean;
+	    billingCurl?: string;
+	    billingEnabled?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyConfigInput(source);
@@ -2668,6 +2790,8 @@ export namespace main {
 	        this.prefix = source["prefix"];
 	        this.quotaCurl = source["quotaCurl"];
 	        this.quotaEnabled = source["quotaEnabled"];
+	        this.billingCurl = source["billingCurl"];
+	        this.billingEnabled = source["billingEnabled"];
 	    }
 	}
 	export class UpdateCodexAPIKeyLabelInput {

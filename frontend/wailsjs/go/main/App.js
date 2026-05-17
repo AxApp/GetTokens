@@ -10,6 +10,10 @@ export function ApplyRelayServiceConfigToLocal(arg1, arg2, arg3, arg4, arg5, arg
   return window['go']['main']['App']['ApplyRelayServiceConfigToLocal'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
+export function ApplyRelayServiceConfigToLocalV2(arg1) {
+  return window['go']['main']['App']['ApplyRelayServiceConfigToLocalV2'](arg1);
+}
+
 export function ApplyUpdate() {
   return window['go']['main']['App']['ApplyUpdate']();
 }
@@ -136,6 +140,10 @@ export function GetCodexSkillFilePreview(arg1) {
 
 export function GetCodexSkillsSnapshot() {
   return window['go']['main']['App']['GetCodexSkillsSnapshot']();
+}
+
+export function GetLocalCodexAuthState() {
+  return window['go']['main']['App']['GetLocalCodexAuthState']();
 }
 
 export function GetLocalProjectedUsageSettings() {
@@ -292,6 +300,10 @@ export function SetAuthFileStatus(arg1, arg2) {
 
 export function StartCodexOAuth() {
   return window['go']['main']['App']['StartCodexOAuth']();
+}
+
+export function TestCodexAPIKeyBillingCurl(arg1) {
+  return window['go']['main']['App']['TestCodexAPIKeyBillingCurl'](arg1);
 }
 
 export function TestCodexAPIKeyQuotaCurl(arg1) {

@@ -9,6 +9,8 @@ export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:
 
 export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean):Promise<main.RelayLocalApplyResult>;
 
+export function ApplyRelayServiceConfigToLocalV2(arg1:main.RelayLocalApplyInput):Promise<main.RelayLocalApplyResult>;
+
 export function ApplyUpdate():Promise<void>;
 
 export function CanApplyUpdate():Promise<boolean>;
@@ -72,6 +74,8 @@ export function GetCodexSessionManagementSnapshot():Promise<main.SessionManageme
 export function GetCodexSkillFilePreview(arg1:main.GetCodexSkillFilePreviewInput):Promise<main.GetCodexSkillFilePreviewResult>;
 
 export function GetCodexSkillsSnapshot():Promise<main.CodexSkillsSnapshot>;
+
+export function GetLocalCodexAuthState():Promise<main.LocalCodexAuthState>;
 
 export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsageSettings>;
 
@@ -150,6 +154,8 @@ export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
+
+export function TestCodexAPIKeyBillingCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput):Promise<main.CodexQuotaBillingInfo>;
 
 export function TestCodexAPIKeyQuotaCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput):Promise<main.CodexQuotaResponse>;
 

@@ -279,9 +279,26 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 			ResetAtUnix:      window.ResetAtUnix,
 		})
 	}
+	var billing *CodexQuotaBillingInfo
+	if quota.Billing != nil {
+		infos := make([]CodexQuotaBillingBalanceInfo, 0, len(quota.Billing.BalanceInfos))
+		for _, info := range quota.Billing.BalanceInfos {
+			infos = append(infos, CodexQuotaBillingBalanceInfo{
+				Currency:        info.Currency,
+				TotalBalance:    info.TotalBalance,
+				GrantedBalance:  info.GrantedBalance,
+				ToppedUpBalance: info.ToppedUpBalance,
+			})
+		}
+		billing = &CodexQuotaBillingInfo{
+			IsAvailable:  quota.Billing.IsAvailable,
+			BalanceInfos: infos,
+		}
+	}
 	return &CodexQuotaResponse{
 		PlanType: quota.PlanType,
 		Windows:  windows,
+		Billing:  billing,
 	}, nil
 }
 
@@ -303,6 +320,78 @@ func parseDebugResponse(body string) interface{} {
 		return payload
 	}
 	return trimmed
+}
+
+func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaBillingInfo, error) {
+	source := cliproxyAPIKeyQuotaSource{
+		APIKey:       strings.TrimSpace(input.APIKey),
+		BaseURL:      strings.TrimSpace(input.BaseURL),
+		Prefix:       strings.TrimSpace(input.Prefix),
+		QuotaCurl:    strings.TrimSpace(input.QuotaCurl),
+		QuotaEnabled: true,
+	}
+	if source.APIKey == "" {
+		return nil, errors.New("api key 不能为空")
+	}
+	if source.QuotaCurl == "" {
+		return nil, errors.New("billing curl 不能为空")
+	}
+
+	curlRequest, err := accountsdomain.BuildCodexQuotaCurlRequest(accountsdomain.CodexQuotaCurlInput{
+		Curl:    source.QuotaCurl,
+		APIKey:  source.APIKey,
+		BaseURL: source.BaseURL,
+		Prefix:  source.Prefix,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	var body io.Reader
+	if strings.TrimSpace(curlRequest.Body) != "" {
+		body = strings.NewReader(curlRequest.Body)
+	}
+	req, err := http.NewRequestWithContext(ctx, curlRequest.Method, curlRequest.URL, body)
+	if err != nil {
+		return nil, err
+	}
+	for key, value := range curlRequest.Headers {
+		req.Header.Set(key, value)
+	}
+
+	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	billing := accountsdomain.TryParseBillingResponse(responseBody)
+	if billing == nil {
+		return nil, errors.New("无法解析计费信息，响应格式不支持")
+	}
+
+	infos := make([]CodexQuotaBillingBalanceInfo, 0, len(billing.BalanceInfos))
+	for _, info := range billing.BalanceInfos {
+		infos = append(infos, CodexQuotaBillingBalanceInfo{
+			Currency:        info.Currency,
+			TotalBalance:    info.TotalBalance,
+			GrantedBalance:  info.GrantedBalance,
+			ToppedUpBalance: info.ToppedUpBalance,
+		})
+	}
+	return &CodexQuotaBillingInfo{
+		IsAvailable:  billing.IsAvailable,
+		BalanceInfos: infos,
+	}, nil
 }
 
 func toJSONString(value interface{}) string {

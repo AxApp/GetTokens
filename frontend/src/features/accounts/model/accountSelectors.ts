@@ -4,8 +4,6 @@ import { buildQuotaDisplay, hasPositiveLongestQuota } from './accountQuota.ts';
 import {
   compareAccountRecords,
   isAccountUnavailable,
-  planGroupRank,
-  resolvePlanGroupLabel,
 } from './accountPresentation.ts';
 
 interface FilterAccountsArgs {
@@ -27,10 +25,6 @@ interface BuildAccountsViewArgs {
 export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters, codexQuotaByName }: FilterAccountsArgs) {
   const query = searchTerm.trim().toLowerCase();
   return accounts.filter((account) => {
-    if (filters.source !== 'all' && account.credentialSource !== filters.source) {
-      return false;
-    }
-
     if (filters.hasLongestQuota && !hasPositiveLongestQuota(account, codexQuotaByName[account.quotaKey || ''])) {
       return false;
     }
@@ -57,17 +51,18 @@ export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters,
   });
 }
 
-export function groupAccountsByPlan(
+function normalizeProviderKey(provider: string): string {
+  return provider.trim().toLowerCase();
+}
+
+export function groupAccountsByVendor(
   accounts: AccountRecord[],
-  codexQuotaByName: Record<string, CodexQuotaState>,
-  t: Translator
 ): AccountGroup[] {
   const groups = new Map<string, AccountGroup>();
 
   for (const account of accounts) {
-    const quotaDisplay = buildQuotaDisplay(account, codexQuotaByName[account.quotaKey || '']);
-    const label = resolvePlanGroupLabel(account, quotaDisplay, t);
-    const id = label.toLowerCase();
+    const providerKey = normalizeProviderKey(account.provider);
+    const id = providerKey || 'unknown';
     const existing = groups.get(id);
     if (existing) {
       existing.accounts.push(account);
@@ -75,18 +70,15 @@ export function groupAccountsByPlan(
     }
     groups.set(id, {
       id,
-      label,
-      rank: planGroupRank(label),
+      label: account.provider.toUpperCase() || 'UNKNOWN',
+      rank: 0,
       accounts: [account],
     });
   }
 
-  return [...groups.values()].sort((left, right) => {
-    if (left.rank !== right.rank) {
-      return left.rank - right.rank;
-    }
-    return left.label.localeCompare(right.label, undefined, { sensitivity: 'base' });
-  });
+  return [...groups.values()].sort((left, right) =>
+    left.id.localeCompare(right.id, undefined, { sensitivity: 'base' }),
+  );
 }
 
 export function buildAccountsView({
@@ -100,7 +92,7 @@ export function buildAccountsView({
 }: BuildAccountsViewArgs) {
   const accounts = [...authFileRecords, ...apiKeyRecords].sort(compareAccountRecords);
   const filteredAccounts = filterAccounts(accounts, { searchTerm, filters, codexQuotaByName });
-  const groupedAccounts = groupAccountsByPlan(filteredAccounts, codexQuotaByName, t);
+  const groupedAccounts = groupAccountsByVendor(filteredAccounts);
   const selectedAccountIDSet = new Set(selectedAccountIDs);
   const selectedAccounts = accounts.filter((account) => selectedAccountIDSet.has(account.id));
   const allFilteredSelected =

@@ -1,25 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FetchOpenAICompatibleProviderModels, ListRelaySupportedModels, VerifyOpenAICompatibleProvider } from '../../../wailsjs/go/main/App';
+import { CreateCodexAPIKey, FetchOpenAICompatibleProviderModels, ListRelaySupportedModels, VerifyOpenAICompatibleProvider } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
-import AccountDetailModal from '../../components/biz/AccountDetailModal';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
-import type { AccountWorkspace, SidecarStatus } from '../../types';
+import type { SidecarStatus } from '../../types';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountRotationModal from './components/AccountRotationModal';
 import AccountGroupSection from './components/AccountGroupSection';
 import AccountsHeader from './components/AccountsHeader';
 import AccountsToolbar from './components/AccountsToolbar';
 import ApiKeyComposeModal from './components/ApiKeyComposeModal';
-import ApiKeyDetailModal from './components/ApiKeyDetailModal';
 import CodexOAuthModal from './components/CodexOAuthModal';
 import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeModal';
 import OpenAICompatibleDetailModal from './components/OpenAICompatibleDetailModal';
-import OpenAICompatibleWorkspace from './components/OpenAICompatibleWorkspace';
 import PasteAuthModal from './components/PasteAuthModal';
+import UnifiedComposeModal, { type UnifiedComposeFormState } from './components/UnifiedComposeModal';
+import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
 import useAccountsPageState from './hooks/useAccountsPageState';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
-import { mapOpenAICompatibleProviderToRotationAccount } from './model/accountRotation';
 import { isCodexAuthFile } from './model/accountPresentation';
 import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
@@ -28,13 +26,15 @@ import { hasWailsAppBindings } from '../../utils/previewMode';
 import { shouldLoadAccountsData } from './model/accountRuntime';
 import type { AccountRecord } from './model/types';
 import type { OpenAICompatibleProvider } from './model/openAICompatible';
+import type { VendorPreset } from './model/vendorPresets';
+import { emptyApiKeyForm } from './model/accountConfig';
 
 interface AccountsFeatureProps {
   sidecarStatus: SidecarStatus;
-  workspace: AccountWorkspace;
+  workspace?: string;
 }
 
-export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFeatureProps) {
+export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
   const pageRef = useRef<HTMLDivElement | null>(null);
@@ -42,6 +42,15 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
   const headerActionsMenuRef = useRef<HTMLDivElement | null>(null);
 
   const ready = shouldLoadAccountsData(sidecarStatus, hasWailsAppBindings());
+
+  const [isUnifiedComposeOpen, setIsUnifiedComposeOpen] = useState(false);
+  const [unifiedComposeForm, setUnifiedComposeForm] = useState<UnifiedComposeFormState>({
+    ...emptyApiKeyForm,
+    formatBaseUrls: {},
+    billingCurl: '',
+    billingEnabled: false,
+  });
+  const [unifiedComposeError, setUnifiedComposeError] = useState('');
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
@@ -113,6 +122,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     cancelCodexOAuth,
     verifySelectedApiKey,
     testSelectedApiKeyQuotaCurl,
+    testSelectedApiKeyBillingCurl,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
@@ -161,16 +171,9 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
   }, [loadRelayModelNames, selectedAccount?.credentialSource, selectedAccount?.id]);
 
   const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs);
-  const isAggregateWorkspace = workspace === 'all';
-  const providerUsageAccounts = useMemo(
-    () => openAICompatibleState.providers.map((provider) => mapOpenAICompatibleProviderToRotationAccount(provider)),
-    [openAICompatibleState.providers],
-  );
-  const usageAccounts = useMemo(() => [...accounts, ...providerUsageAccounts], [accounts, providerUsageAccounts]);
-  const rotationAccounts = [
-    ...accounts,
-    ...providerUsageAccounts,
-  ];
+  const isAggregateWorkspace = true;
+  const usageAccounts = useMemo(() => accounts, [accounts]);
+  const rotationAccounts = accounts;
 
   useEffect(() => {
     if (!ready) {
@@ -218,6 +221,81 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     clearAccountDetailInHash();
   }, [clearAccountDetailInHash, setSelectedAccount]);
 
+  const openUnifiedCompose = useCallback(() => {
+    setUnifiedComposeError('');
+    setUnifiedComposeForm({ ...emptyApiKeyForm, formatBaseUrls: {}, billingCurl: '', billingEnabled: false });
+    setIsUnifiedComposeOpen(true);
+  }, []);
+
+  const handlePresetApply = useCallback(
+    (preset: VendorPreset) => {
+      const formatBaseUrls: Record<string, string> = {};
+      for (const fmt of preset.supportedFormats) {
+        const presetUrl = preset.formatBaseUrls?.[fmt] ?? preset.baseUrl;
+        if (presetUrl) formatBaseUrls[fmt] = presetUrl;
+      }
+      const quotaCurl = preset.quotaCurlTemplate
+        ?? `curl -sS "${preset.baseUrl}/usage" -H "Authorization: Bearer {{apiKey}}"`;
+      setUnifiedComposeForm((prev) => ({
+        ...prev,
+        label: preset.name,
+        baseUrl: preset.baseUrl,
+        formatBaseUrls,
+        quotaCurl,
+        quotaEnabled: true,
+        billingCurl: preset.billingCurlTemplate ?? prev.billingCurl,
+        billingEnabled: Boolean(preset.billingCurlTemplate),
+      }));
+      setUnifiedComposeError('');
+    },
+    [],
+  );
+
+  const handleUnifiedComposeSubmit = useCallback(async () => {
+    const apiKey = unifiedComposeForm.apiKey.trim();
+    if (!apiKey) {
+      setUnifiedComposeError('API Key is required');
+      return;
+    }
+    const baseUrl = unifiedComposeForm.baseUrl.trim();
+    if (!baseUrl) {
+      setUnifiedComposeError('Base URL is required');
+      return;
+    }
+
+    const formatBaseUrls: Record<string, string> = {};
+    for (const [fmt, url] of Object.entries(unifiedComposeForm.formatBaseUrls)) {
+      const trimmed = (url as string).trim();
+      if (trimmed) formatBaseUrls[fmt] = trimmed;
+    }
+
+    try {
+      await trackRequest(
+        'CreateCodexAPIKey',
+        { baseUrl },
+        () =>
+          CreateCodexAPIKey({
+            apiKey,
+            label: unifiedComposeForm.label.trim(),
+            baseUrl,
+            formatBaseUrls: Object.keys(formatBaseUrls).length > 0 ? formatBaseUrls : undefined,
+            priority: 0,
+            prefix: '',
+            quotaCurl: unifiedComposeForm.quotaCurl.trim(),
+            quotaEnabled: Boolean(unifiedComposeForm.quotaEnabled && unifiedComposeForm.quotaCurl.trim()),
+            billingCurl: unifiedComposeForm.billingCurl?.trim() ?? '',
+            billingEnabled: Boolean(unifiedComposeForm.billingEnabled && (unifiedComposeForm.billingCurl?.trim() ?? '')),
+          }),
+      );
+      setIsUnifiedComposeOpen(false);
+      setUnifiedComposeForm({ ...emptyApiKeyForm, formatBaseUrls: {}, billingCurl: '', billingEnabled: false });
+      setUnifiedComposeError('');
+      await loadAccounts();
+    } catch (err) {
+      setUnifiedComposeError(err instanceof Error ? err.message : String(err));
+    }
+  }, [unifiedComposeForm, trackRequest, loadAccounts]);
+
   const openOpenAICompatibleDetail = useCallback(
     (provider: OpenAICompatibleProvider) => {
       openAICompatibleState.openDetailModal(provider);
@@ -231,70 +309,6 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
     clearAccountDetailInHash();
   }, [clearAccountDetailInHash, openAICompatibleState]);
 
-  if (workspace === 'openai-compatible') {
-    return (
-      <>
-        <OpenAICompatibleWorkspace
-          t={t}
-          ready={ready}
-          loading={openAICompatibleState.loading}
-          providers={openAICompatibleState.providers}
-          verifyStates={openAICompatibleState.verifyStates}
-          remoteModelsStates={openAICompatibleState.remoteModelsStates}
-          pendingDeleteName={openAICompatibleState.pendingDeleteName}
-          pendingStatusName={openAICompatibleState.pendingStatusName}
-          accountUsageByID={accountUsageByID}
-          accountRateLimitByID={accountRateLimitByID}
-          onCreate={openAICompatibleState.openCreateModal}
-          onRefresh={() => void openAICompatibleState.loadProviders()}
-          onOpenDetail={openOpenAICompatibleDetail}
-          onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
-          onToggleDisabled={(provider) => void openAICompatibleState.toggleProviderDisabled(provider)}
-        />
-
-        {openAICompatibleState.isCreateModalOpen ? (
-          <OpenAICompatibleComposeModal
-            t={t}
-            form={openAICompatibleState.form}
-            selectedPresetID={openAICompatibleState.selectedPresetID}
-            error={openAICompatibleState.formError}
-            onClose={() => openAICompatibleState.setIsCreateModalOpen(false)}
-            onChange={openAICompatibleState.setForm}
-            onPresetChange={openAICompatibleState.applyCreatePreset}
-            onSubmit={() => void openAICompatibleState.submitCreate()}
-          />
-        ) : null}
-
-        {openAICompatibleState.detailDraft ? (
-          <OpenAICompatibleDetailModal
-            t={t}
-            draft={openAICompatibleState.detailDraft}
-            rateLimitStatus={accountRateLimitByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
-            rateLimitStrategies={rateLimitStrategies}
-            verifyState={
-              openAICompatibleState.verifyStates[openAICompatibleState.detailDraft.currentName] ?? {
-                model: openAICompatibleState.detailDraft.verifyModel,
-                status: 'idle',
-                message: '',
-                lastVerifiedAt: null,
-              }
-            }
-            remoteModelsState={openAICompatibleState.remoteModelsStates[openAICompatibleState.detailDraft.currentName]}
-            error={openAICompatibleState.detailError}
-            saving={openAICompatibleState.detailSaving}
-            onClose={closeOpenAICompatibleDetail}
-            onChange={openAICompatibleState.setDetailDraft}
-            onSave={() => void openAICompatibleState.saveDetail()}
-            onVerify={() => void openAICompatibleState.verifyDetail()}
-            onFetchModels={() => void openAICompatibleState.fetchDetailModels()}
-            onApplyFetchedModels={openAICompatibleState.applyFetchedModelsToDetailDraft}
-            onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
-          />
-        ) : null}
-      </>
-    );
-  }
-
   return (
     <>
       <div
@@ -305,7 +319,7 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
         <div className="mx-auto max-w-6xl space-y-8 pb-32">
           <AccountsHeader
             t={t}
-            accountCount={isAggregateWorkspace ? accounts.length + openAICompatibleState.providers.length : accounts.length}
+            accountCount={accounts.length}
             ready={ready}
             loading={loading}
             isHeaderActionsMenuOpen={isHeaderActionsMenuOpen}
@@ -323,12 +337,11 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
               openApiKeyModal();
               setIsHeaderActionsMenuOpen(false);
             }}
-            onOpenRotationModal={isAggregateWorkspace
-              ? () => {
-                  setIsRotationModalOpen(true);
-                  setIsHeaderActionsMenuOpen(false);
-                }
-              : undefined}
+            onOpenUnifiedCompose={openUnifiedCompose}
+            onOpenRotationModal={() => {
+              setIsRotationModalOpen(true);
+              setIsHeaderActionsMenuOpen(false);
+            }}
             onStartCodexOAuth={() => {
               void startCodexOAuth();
               setIsHeaderActionsMenuOpen(false);
@@ -425,47 +438,10 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
             </div>
           )}
 
-          {isAggregateWorkspace ? (
-            <OpenAICompatibleWorkspace
-              t={t}
-              ready={ready}
-              loading={openAICompatibleState.loading}
-              providers={openAICompatibleState.providers}
-              verifyStates={openAICompatibleState.verifyStates}
-              remoteModelsStates={openAICompatibleState.remoteModelsStates}
-              pendingDeleteName={openAICompatibleState.pendingDeleteName}
-              pendingStatusName={openAICompatibleState.pendingStatusName}
-              accountUsageByID={accountUsageByID}
-              accountRateLimitByID={accountRateLimitByID}
-              onCreate={openAICompatibleState.openCreateModal}
-              onRefresh={() => void openAICompatibleState.loadProviders()}
-              onOpenDetail={openOpenAICompatibleDetail}
-              onDelete={(name) => void openAICompatibleState.deleteProvider(name)}
-              onToggleDisabled={(provider) => void openAICompatibleState.toggleProviderDisabled(provider)}
-              embedded
-            />
-          ) : null}
-        </div>
-      </div>
-
-      {selectedAccount?.credentialSource === 'auth-file' && selectedAccount.rawAuthFile ? (
-        <AccountDetailModal
-          account={selectedAccount.rawAuthFile}
-          usageSummary={accountUsageByID[selectedAccount.id]}
-          canStartReauth={isCodexAuthFile(selectedAccount)}
-          isReauthing={oauthPendingAccountID === selectedAccount.id}
-          onClose={closeAccountDetail}
-          onStartReauth={() => {
-            const targetAccount = selectedAccount;
-            void startCodexOAuth(targetAccount);
-          }}
-          onCancelReauth={cancelCodexOAuth}
-        />
-      ) : null}
-
-      {selectedAccount?.credentialSource === 'api-key' ? (
-        <ApiKeyDetailModal
+      {selectedAccount ? (
+        <UnifiedAccountDetailModal
           account={selectedAccount}
+          quotaState={selectedAccount.quotaKey ? codexQuotaByName[selectedAccount.quotaKey] : undefined}
           usageSummary={accountUsageByID[selectedAccount.id]}
           rateLimitStatus={accountRateLimitByID[selectedAccount.id]}
           rateLimitStrategies={rateLimitStrategies}
@@ -473,11 +449,41 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           modelNames={relayModelNames}
           onClose={closeAccountDetail}
           onRename={renameSelectedApiKey}
-          onSaveConfig={(draft) => updateSelectedApiKeyConfig(draft)}
-          onVerify={(input) => void verifySelectedApiKey(input)}
-          onTestQuotaCurl={(input) => testSelectedApiKeyQuotaCurl(input)}
+          onSaveConfig={selectedAccount.credentialSource === 'api-key' ? (draft) => updateSelectedApiKeyConfig(draft) : undefined}
+          onVerify={selectedAccount.credentialSource === 'api-key' ? (input) => void verifySelectedApiKey(input) : undefined}
+          onTestQuotaCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyQuotaCurl(input) : undefined}
+          onTestBillingCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyBillingCurl(input) : undefined}
           onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
+          onStartReauth={isCodexAuthFile(selectedAccount) ? () => { void startCodexOAuth(selectedAccount); } : undefined}
+          onCancelReauth={cancelCodexOAuth}
+          isReauthing={oauthPendingAccountID === selectedAccount.id}
+        />
+      ) : null}
+
+      {openAICompatibleState.detailDraft ? (
+        <OpenAICompatibleDetailModal
           t={t}
+          draft={openAICompatibleState.detailDraft}
+          rateLimitStatus={accountRateLimitByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
+          rateLimitStrategies={rateLimitStrategies}
+          verifyState={
+            openAICompatibleState.verifyStates[openAICompatibleState.detailDraft.currentName] ?? {
+              model: openAICompatibleState.detailDraft.verifyModel,
+              status: 'idle',
+              message: '',
+              lastVerifiedAt: null,
+            }
+          }
+          remoteModelsState={openAICompatibleState.remoteModelsStates[openAICompatibleState.detailDraft.currentName]}
+          error={openAICompatibleState.detailError}
+          saving={openAICompatibleState.detailSaving}
+          onClose={closeOpenAICompatibleDetail}
+          onChange={openAICompatibleState.setDetailDraft}
+          onSave={() => void openAICompatibleState.saveDetail()}
+          onVerify={() => void openAICompatibleState.verifyDetail()}
+          onFetchModels={() => void openAICompatibleState.fetchDetailModels()}
+          onApplyFetchedModels={openAICompatibleState.applyFetchedModelsToDetailDraft}
+          onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
         />
       ) : null}
 
@@ -510,6 +516,38 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
             );
             return { success: result.success, message: result.message ?? '' };
           }}
+        />
+      ) : null}
+
+      {isUnifiedComposeOpen ? (
+        <UnifiedComposeModal
+          t={t}
+          form={unifiedComposeForm}
+          error={unifiedComposeError}
+          onClose={() => {
+            setIsUnifiedComposeOpen(false);
+            setUnifiedComposeError('');
+          }}
+          onFormChange={(field, value) => {
+            setUnifiedComposeForm((prev) => ({ ...prev, [field]: value }));
+            setUnifiedComposeError('');
+          }}
+          onFormatBaseUrlChange={(format, value) => {
+            setUnifiedComposeForm((prev) => ({
+              ...prev,
+              formatBaseUrls: { ...prev.formatBaseUrls, [format]: value },
+            }));
+            setUnifiedComposeError('');
+          }}
+          onBillingCurlChange={(value) => {
+            setUnifiedComposeForm((prev) => ({
+              ...prev,
+              billingCurl: value,
+              billingEnabled: value.trim().length > 0,
+            }));
+          }}
+          onPresetApply={handlePresetApply}
+          onSubmit={() => void handleUnifiedComposeSubmit()}
         />
       ) : null}
 
@@ -546,6 +584,8 @@ export default function AccountsFeature({ sidecarStatus, workspace }: AccountsFe
           onOpenInBrowser={openOAuthDialogInBrowser}
         />
       ) : null}
+        </div>
+      </div>
     </>
   );
 }

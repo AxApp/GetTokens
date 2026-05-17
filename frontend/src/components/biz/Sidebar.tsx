@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
-import type { AccountWorkspace, AppPage, CodexWorkspace } from '../../types';
+import type { AppPage, CodexWorkspace } from '../../types';
 import { formatSidebarVersion } from '../../utils/version';
 import {
   getSidebarContentMotionState,
@@ -25,17 +25,10 @@ const navItems = [
 interface SidebarProps {
   activePage: AppPage;
   setActivePage: (page: AppPage) => void;
-  activeAccountWorkspace: AccountWorkspace;
-  setActiveAccountWorkspace: (workspace: AccountWorkspace) => void;
   activeCodexWorkspace: CodexWorkspace;
   setActiveCodexWorkspace: (workspace: CodexWorkspace) => void;
   releaseLabel: string;
 }
-
-const accountWorkspaceItems = [
-  { id: 'codex', label: 'nav.accounts_codex' },
-  { id: 'openai-compatible', label: 'nav.accounts_openai_compatible' },
-] as const satisfies ReadonlyArray<{ id: AccountWorkspace; label: string }>;
 
 const codexWorkspaceItems = [
   { id: 'feature-config', label: 'nav.codex_feature_config' },
@@ -51,8 +44,6 @@ const codexWorkspaceItems = [
 export default function Sidebar({
   activePage,
   setActivePage,
-  activeAccountWorkspace,
-  setActiveAccountWorkspace,
   activeCodexWorkspace,
   setActiveCodexWorkspace,
   releaseLabel,
@@ -232,39 +223,6 @@ export default function Sidebar({
                 </span>
               ) : null}
             </button>
-            {item.id === 'accounts' ? (
-              <div
-                className={getSubmenuWrapperClassName(accountsMotionState)}
-                data-sidebar-submenu-placement={submenuPlacement}
-                data-sidebar-submenu-state={accountsMotionState}
-                aria-hidden={!accountsOpen}
-              >
-                <div className={submenuInnerClassName}>
-                  <div className={submenuPanelClassName}>
-                    <div className="space-y-2 pl-0">
-                      {accountWorkspaceItems.map((workspace) => (
-                        <button
-                          key={workspace.id}
-                          onClick={() => {
-                            setActivePage('accounts');
-                            setHoveredSection(null);
-                            setPinnedSection('accounts');
-                            setActiveAccountWorkspace(workspace.id);
-                          }}
-                          className={`w-full border px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.2em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
-                            activeAccountWorkspace === workspace.id
-                              ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
-                              : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
-                          }`}
-                        >
-                          {t(workspace.label)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : null}
             {item.id === 'codex' ? (
               <div
                 className={getSubmenuWrapperClassName(codexMotionState)}

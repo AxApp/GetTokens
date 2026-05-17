@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { AccountsFilterState, AccountsFilterSource, Translator } from '../model/types';
+import type { AccountsFilterState, Translator } from '../model/types';
 
 interface AccountsToolbarProps {
   t: Translator;
@@ -50,13 +50,6 @@ export default function AccountsToolbar({
     };
   }, [isMenuOpen]);
 
-  function updateSource(source: AccountsFilterSource) {
-    onFiltersChange({
-      ...filters,
-      source,
-    });
-  }
-
   function toggleFilter(key: 'hasLongestQuota' | 'errorsOnly') {
     onFiltersChange({
       ...filters,
@@ -84,32 +77,6 @@ export default function AccountsToolbar({
             {isMenuOpen ? (
               <div className="absolute left-0 top-full z-20 mt-3 flex min-w-[260px] flex-col gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[8px_8px_0_var(--shadow-color)]">
                 <div className="space-y-2">
-                  <p className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('accounts.filter_group_source')}
-                  </p>
-                  <div className="flex flex-col gap-2">
-                    {(['all', 'auth-file', 'api-key'] as const).map((source) => (
-                      <label
-                        key={source}
-                        className="flex cursor-pointer items-center gap-2 text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
-                      >
-                        <input
-                          type="radio"
-                          name="accounts-source-filter"
-                          checked={filters.source === source}
-                          onChange={() => updateSource(source)}
-                          className="h-3.5 w-3.5 accent-[var(--text-primary)]"
-                        />
-                        {source === 'all'
-                          ? t('accounts.filter_all')
-                          : source === 'auth-file'
-                            ? t('accounts.source_auth_file')
-                            : t('accounts.source_api_key')}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-2 border-t border-dashed border-[var(--border-color)] pt-4">
                   <p className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_status')}
                   </p>
@@ -163,15 +130,7 @@ export default function AccountsToolbar({
 }
 
 function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState) {
-  const parts = [];
-
-  if (filters.source === 'all') {
-    parts.push(t('accounts.filter_all'));
-  } else if (filters.source === 'auth-file') {
-    parts.push(t('accounts.source_auth_file'));
-  } else {
-    parts.push(t('accounts.source_api_key'));
-  }
+  const parts: string[] = [];
 
   if (filters.hasLongestQuota) {
     parts.push(t('accounts.filter_longest_quota'));
@@ -180,5 +139,8 @@ function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState) {
     parts.push(t('accounts.errors_only'));
   }
 
+  if (parts.length === 0) {
+    return t('accounts.display_filters');
+  }
   return `${t('accounts.display_filters')} · ${parts.join(' · ')}`;
 }

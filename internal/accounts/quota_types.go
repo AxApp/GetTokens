@@ -19,6 +19,19 @@ type CodexQuotaWindow struct {
 type CodexQuotaResponse struct {
 	PlanType string
 	Windows  []CodexQuotaWindow
+	Billing  *CodexQuotaBilling `json:"-"`
+}
+
+type CodexQuotaBilling struct {
+	IsAvailable     bool                    `json:"isAvailable"`
+	BalanceInfos    []CodexQuotaBalanceInfo `json:"balanceInfos"`
+}
+
+type CodexQuotaBalanceInfo struct {
+	Currency        string `json:"currency"`
+	TotalBalance    string `json:"totalBalance"`
+	GrantedBalance  string `json:"grantedBalance"`
+	ToppedUpBalance string `json:"toppedUpBalance"`
 }
 
 type CodexQuotaRequestInfo struct {

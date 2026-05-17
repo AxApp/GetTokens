@@ -1,7 +1,43 @@
 import type { main } from '../../../../wailsjs/go/models';
-import type { AccountRecord, AuthFile, CredentialSource } from '../../../types';
+import type { AccountRecord, ApiFormat, AuthFile, CredentialSource } from '../../../types';
 import type { AccountUsageSummary } from './accountUsage';
 import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
+
+function resolveSupportedFormats(provider: string): ApiFormat[] {
+  switch (provider.trim().toLowerCase()) {
+    case 'codex':
+    case 'openai':
+      return ['anthropic', 'openai_responses'];
+    case 'deepseek':
+    case 'zhipu':
+    case 'glm':
+    case 'kimi':
+    case 'moonshot':
+    case 'stepfun':
+    case 'minimax':
+    case 'doubao':
+    case 'longcat':
+    case 'xiaomimimo':
+    case 'mimo':
+    case 'bailian':
+    case 'dashscope':
+    case 'modelscope':
+    case 'bailing':
+    case 'ling':
+    case 'siliconflow':
+    case 'openrouter':
+    case 'therouter':
+      return ['anthropic', 'openai_chat'];
+    case 'gemini':
+    case 'google':
+      return ['gemini_native'];
+    case 'copilot':
+    case 'github':
+      return ['openai_chat'];
+    default:
+      return ['anthropic'];
+  }
+}
 
 export function compareAccountRecords(left: AccountRecord, right: AccountRecord) {
   if (left.credentialSource === 'api-key' && right.credentialSource === 'api-key') {
@@ -59,16 +95,70 @@ export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
     authIndex: account.authIndex,
     quotaKey: account.name,
     rawAuthFile: account,
+    supportedFormats: resolveSupportedFormats(provider),
   };
+}
+
+export function resolveLoadedAuthFileRecords(files: AuthFile[], mappedAccounts: AccountRecord[]) {
+  if (files.length > 0) {
+    return files.map((account) => mapAuthFileToRecord(account));
+  }
+  return mappedAccounts.filter((account) => account.credentialSource === 'auth-file');
+}
+
+export function resolveLoadedAccountIDs(authFileRecords: AccountRecord[], apiKeyAccounts: AccountRecord[]) {
+  return [...authFileRecords.map((account) => account.id), ...apiKeyAccounts.map((account) => account.id)];
 }
 
 export function mapBackendAccountRecord(account: main.AccountRecord): AccountRecord {
   const credentialSource = account.credentialSource === 'api-key' ? 'api-key' : 'auth-file';
+  let supportedFormats = (account.supportedFormats || []) as AccountRecord['supportedFormats'];
+
+  // If backend returned codex defaults but base URL matches a known vendor, override
+  if (credentialSource === 'api-key' && account.provider === 'codex') {
+    const inferredProvider = inferProviderFromBaseURL(account.baseUrl);
+    if (inferredProvider) {
+      account.provider = inferredProvider;
+      supportedFormats = resolveSupportedFormats(inferredProvider) as AccountRecord['supportedFormats'];
+    }
+  }
 
   return {
     ...account,
     credentialSource,
+    supportedFormats,
+    formatBaseUrls: (account.formatBaseUrls || {}) as AccountRecord['formatBaseUrls'],
   };
+}
+
+function inferProviderFromBaseURL(baseUrl?: string): string | null {
+  if (!baseUrl) return null;
+  const normalized = baseUrl.toLowerCase();
+  if (normalized.includes('deepseek')) return 'deepseek';
+  if (normalized.includes('bigmodel') || normalized.includes('zhipu')) return 'zhipu';
+  if (normalized.includes('moonshot') || normalized.includes('kimi')) return 'kimi';
+  if (normalized.includes('stepfun')) return 'stepfun';
+  if (normalized.includes('dashscope') || normalized.includes('bailian')) return 'bailian';
+  if (normalized.includes('minimax') || normalized.includes('minimaxi')) return 'minimax';
+  if (normalized.includes('volces') || normalized.includes('doubao')) return 'doubao';
+  if (normalized.includes('longcat')) return 'longcat';
+  if (normalized.includes('xiaomimimo') || normalized.includes('mimo')) return 'xiaomimimo';
+  if (normalized.includes('tbox')) return 'bailing';
+  if (normalized.includes('openrouter')) return 'openrouter';
+  if (normalized.includes('siliconflow')) return 'siliconflow';
+  if (normalized.includes('novita')) return 'novita';
+  if (normalized.includes('openai.com')) return 'openai';
+  if (normalized.includes('groq')) return 'groq';
+  if (normalized.includes('together')) return 'together';
+  if (normalized.includes('nvidia')) return 'nvidia';
+  if (normalized.includes('copilot') || normalized.includes('githubcopilot')) return 'copilot';
+  if (normalized.includes('generativelanguage') || normalized.includes('googleapis')) return 'gemini';
+  if (normalized.includes('aihubmix')) return 'aihubmix';
+  if (normalized.includes('shengsuanyun')) return 'shengsuanyun';
+  if (normalized.includes('modelscope')) return 'modelscope';
+  if (normalized.includes('modelverse') || normalized.includes('compshare')) return 'compshare';
+  if (normalized.includes('therouter')) return 'therouter';
+  return null;
 }
 
 export function resolveAccountFailureReason(account: AccountRecord) {

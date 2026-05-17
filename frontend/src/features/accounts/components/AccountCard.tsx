@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Copy, FileText, MoreVertical, Trash2 } from 'lucide-react';
 import { DownloadAuthFile } from '../../../../wailsjs/go/main/App';
-import { buildQuotaDisplay, supportsQuota } from '../model/accountQuota';
+import { buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
 import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import {
@@ -63,6 +63,7 @@ export default function AccountCard({
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
   const copyResetTimerRef = useRef<number | null>(null);
   const quotaDisplay = buildQuotaDisplay(account, quotaState);
+  const billing = quotaState?.quota ? extractBilling(quotaState.quota) : undefined;
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account);
   const canReauth = isCodexReauthEligible(account);
@@ -82,13 +83,22 @@ export default function AccountCard({
         : statusTone === 'warning' || guardTone === 'warning'
           ? 'warning'
           : 'critical';
-  const badges: AttributionCardBadge[] = [
-    {
-      label: account.credentialSource === 'auth-file' ? t('accounts.source_auth_file') : t('accounts.source_api_key'),
-    },
-  ];
-  if (account.provider) {
-    badges.push({ label: String(account.provider).toUpperCase() });
+  const badges: AttributionCardBadge[] = [];
+  const formats = account.supportedFormats && account.supportedFormats.length > 0
+    ? account.supportedFormats
+    : ['anthropic'];
+  for (const fmt of formats) {
+    badges.push({
+      label: fmt === 'anthropic'
+        ? 'ANTHROPIC'
+        : fmt === 'openai_chat'
+          ? 'OPENAI CHAT'
+          : fmt === 'openai_responses'
+            ? 'OPENAI RESPONSES'
+            : fmt === 'gemini_native'
+              ? 'GEMINI'
+              : fmt.toUpperCase(),
+    });
   }
   if (account.disabled) {
     badges.push({ label: t('accounts.rotation_disabled_badge'), tone: 'critical' });
@@ -96,6 +106,9 @@ export default function AccountCard({
   if (rateLimitStatus?.blocked) {
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
+  const formatBaseUrls = account.formatBaseUrls;
+  const hasFormatEndpoints = formatBaseUrls && Object.keys(formatBaseUrls).length > 0;
+
   const evidenceRows: AttributionCardEvidenceRow[] = [
     {
       label: t('accounts.card_asset'),
@@ -116,6 +129,15 @@ export default function AccountCard({
       value: formatLastActivity(usageSummary?.lastActivityAt ?? null),
     },
   ];
+  if (hasFormatEndpoints) {
+    for (const [fmt, url] of Object.entries(formatBaseUrls)) {
+      evidenceRows.push({
+        label: `ENDPOINT · ${fmt.toUpperCase()}`,
+        value: url as string,
+        title: url as string,
+      });
+    }
+  }
   if (usageSummary?.attributionKey) {
     evidenceRows.splice(2, 0, {
       label: t('accounts.card_attribution_key'),
@@ -214,6 +236,7 @@ export default function AccountCard({
       badges={badges}
       usageSummary={usageSummary}
       quotaDisplay={quotaDisplay}
+      billing={billing}
       rateLimitStatus={rateLimitStatus}
       evidenceRows={evidenceRows}
       tone={cardTone}

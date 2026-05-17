@@ -107,22 +107,23 @@ test('persistActivePage writes the selected page to storage', () => {
   assert.deepEqual(writes, [[ACTIVE_PAGE_STORAGE_KEY, 'session-management']]);
 });
 
-test('isAccountWorkspace only accepts known account subpages', () => {
+test('isAccountWorkspace only accepts all', () => {
   assert.equal(isAccountWorkspace('all'), true);
-  assert.equal(isAccountWorkspace('codex'), true);
-  assert.equal(isAccountWorkspace('openai-compatible'), true);
+  assert.equal(isAccountWorkspace('codex'), false);
+  assert.equal(isAccountWorkspace('openai-compatible'), false);
   assert.equal(isAccountWorkspace('unknown'), false);
   assert.equal(isAccountWorkspace(null), false);
 });
 
-test('resolveInitialAccountWorkspace falls back to all for invalid values', () => {
+test('resolveInitialAccountWorkspace falls back to all for non-all values', () => {
   assert.equal(resolveInitialAccountWorkspace('all'), 'all');
-  assert.equal(resolveInitialAccountWorkspace('openai-compatible'), 'openai-compatible');
+  assert.equal(resolveInitialAccountWorkspace('openai-compatible'), 'all');
+  assert.equal(resolveInitialAccountWorkspace('codex'), 'all');
   assert.equal(resolveInitialAccountWorkspace('unknown'), 'all');
   assert.equal(resolveInitialAccountWorkspace(null), 'all');
 });
 
-test('readStoredAccountWorkspace restores the last valid workspace from storage', () => {
+test('readStoredAccountWorkspace restores all for legacy stored values', () => {
   const storage = {
     getItem(key) {
       assert.equal(key, ACCOUNT_WORKSPACE_STORAGE_KEY);
@@ -130,7 +131,7 @@ test('readStoredAccountWorkspace restores the last valid workspace from storage'
     },
   };
 
-  assert.equal(readStoredAccountWorkspace(storage), 'openai-compatible');
+  assert.equal(readStoredAccountWorkspace(storage), 'all');
 });
 
 test('persistAccountWorkspace writes the selected workspace to storage', () => {
@@ -141,9 +142,9 @@ test('persistAccountWorkspace writes the selected workspace to storage', () => {
     },
   };
 
-  persistAccountWorkspace(storage, 'codex');
+  persistAccountWorkspace(storage, 'all');
 
-  assert.deepEqual(writes, [[ACCOUNT_WORKSPACE_STORAGE_KEY, 'codex']]);
+  assert.deepEqual(writes, [[ACCOUNT_WORKSPACE_STORAGE_KEY, 'all']]);
 });
 
 test('isCodexWorkspace only accepts known codex subpages', () => {
@@ -363,14 +364,14 @@ test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=settings'), { page: 'settings' });
 });
 
-test('readFrameHashState parses accounts workspace and falls back to all', () => {
+test('readFrameHashState parses accounts workspace and falls back to all for legacy', () => {
   assert.deepEqual(readFrameHashState('#frame=accounts&workspace=codex'), {
     page: 'accounts',
-    workspace: 'codex',
+    workspace: 'all',
   });
   assert.deepEqual(readFrameHashState('#frame=accounts&workspace=codex&detail=api-key%3Alocal-1'), {
     page: 'accounts',
-    workspace: 'codex',
+    workspace: 'all',
     accountDetailID: 'api-key:local-1',
   });
   assert.deepEqual(readFrameHashState('#frame=accounts'), {

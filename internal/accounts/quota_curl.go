@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -113,12 +114,57 @@ func BuildCodexQuotaCurlRequest(input CodexQuotaCurlInput) (*CodexQuotaCurlReque
 func BuildCodexQuotaResponseFromUsagePayload(usagePayloadBody []byte, fallbackPlanType string) (*CodexQuotaResponse, error) {
 	var payload codexUsagePayload
 	if err := json.Unmarshal(usagePayloadBody, &payload); err != nil {
+		// Not a Codex usage response — try billing format
+		if billing := tryBuildBilling(usagePayloadBody); billing != nil {
+			return &CodexQuotaResponse{
+				PlanType: fallbackPlanType,
+				Windows:  nil,
+				Billing:  billing,
+			}, nil
+		}
 		return nil, fmt.Errorf("codex 额度响应解析失败: %w", err)
 	}
-	return &CodexQuotaResponse{
+
+	quota := &CodexQuotaResponse{
 		PlanType: normalizePlanType(firstNonEmpty(payload.PlanType, payload.PlanTypeCamel, fallbackPlanType)),
 		Windows:  buildCodexQuotaWindows(&payload),
-	}, nil
+	}
+
+	if billing := tryBuildBilling(usagePayloadBody); billing != nil {
+		quota.Billing = billing
+	}
+
+	return quota, nil
+}
+
+type deepseekBalancePayload struct {
+	IsAvailable  bool `json:"is_available"`
+	BalanceInfos []struct {
+		Currency       string `json:"currency"`
+		TotalBalance   string `json:"total_balance"`
+		GrantedBalance string `json:"granted_balance"`
+		ToppedUpBalance string `json:"topped_up_balance"`
+	} `json:"balance_infos"`
+}
+
+func tryBuildBilling(body []byte) *CodexQuotaBilling {
+	var ds deepseekBalancePayload
+	if err := json.Unmarshal(body, &ds); err != nil || len(ds.BalanceInfos) == 0 {
+		return nil
+	}
+	infos := make([]CodexQuotaBalanceInfo, 0, len(ds.BalanceInfos))
+	for _, info := range ds.BalanceInfos {
+		infos = append(infos, CodexQuotaBalanceInfo{
+			Currency:        info.Currency,
+			TotalBalance:    info.TotalBalance,
+			GrantedBalance:  info.GrantedBalance,
+			ToppedUpBalance: info.ToppedUpBalance,
+		})
+	}
+	return &CodexQuotaBilling{
+		IsAvailable:  ds.IsAvailable,
+		BalanceInfos: infos,
+	}
 }
 
 func RedactCodexQuotaCurlHeaders(headers map[string]string) map[string]string {
@@ -266,4 +312,112 @@ func splitCurlCommand(value string) ([]string, error) {
 	}
 	flush()
 	return tokens, nil
+}
+
+// TryParseBillingResponse attempts to parse a billing/balance API response.
+// Supports DeepSeek, OpenRouter, OpenAI, SiliconFlow, and generic {total, balance} formats.
+func TryParseBillingResponse(body []byte) *CodexQuotaBilling {
+	// Format 1: DeepSeek — {"is_available": true, "balance_infos": [...]}
+	if billing := tryBuildBilling(body); billing != nil {
+		return billing
+	}
+
+	// Format 2: OpenRouter / SiliconFlow — {"data": {"total_credits": ..., "total_usage": ...}}
+	var or struct {
+		Data struct {
+			TotalCredits float64 `json:"total_credits"`
+			TotalUsage   float64 `json:"total_usage"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(body, &or); err == nil && or.Data.TotalCredits > 0 {
+		remaining := or.Data.TotalCredits - or.Data.TotalUsage
+		return &CodexQuotaBilling{
+			IsAvailable: true,
+			BalanceInfos: []CodexQuotaBalanceInfo{{
+				Currency:        "USD",
+				TotalBalance:    fmt.Sprintf("%.2f", or.Data.TotalCredits),
+				GrantedBalance:  fmt.Sprintf("%.2f", remaining),
+				ToppedUpBalance: fmt.Sprintf("%.2f", or.Data.TotalCredits),
+			}},
+		}
+	}
+
+	// Format 3: OpenAI — {"total_granted": ..., "total_used": ..., "total_available": ...}
+	var oai struct {
+		TotalGranted   float64 `json:"total_granted"`
+		TotalUsed      float64 `json:"total_used"`
+		TotalAvailable float64 `json:"total_available"`
+		HardLimitUSD   float64 `json:"hard_limit_usd"`
+		SoftLimitUSD   float64 `json:"soft_limit_usd"`
+	}
+	if err := json.Unmarshal(body, &oai); err == nil && (oai.TotalGranted > 0 || oai.HardLimitUSD > 0) {
+		granted := oai.HardLimitUSD
+		if granted == 0 {
+			granted = oai.SoftLimitUSD
+		}
+		if granted == 0 {
+			granted = oai.TotalGranted
+		}
+		used := oai.TotalUsed
+		if used == 0 {
+			used = granted - oai.TotalAvailable
+		}
+		return &CodexQuotaBilling{
+			IsAvailable: true,
+			BalanceInfos: []CodexQuotaBalanceInfo{{
+				Currency:        "USD",
+				TotalBalance:    fmt.Sprintf("%.2f", granted),
+				GrantedBalance:  fmt.Sprintf("%.2f", oai.TotalAvailable),
+				ToppedUpBalance: fmt.Sprintf("%.2f", granted),
+			}},
+		}
+	}
+
+	// Format 4: Generic — {"total_balance": ..., "balance": ...} or {"balance": ...}
+	var generic struct {
+		TotalBalance   interface{} `json:"total_balance"`
+		Balance        interface{} `json:"balance"`
+		RemainingCredits interface{} `json:"remaining_credits"`
+		Currency       string      `json:"currency"`
+	}
+	if err := json.Unmarshal(body, &generic); err == nil {
+		balance := firstFloatFromInterface(generic.TotalBalance, generic.Balance, generic.RemainingCredits)
+		if balance > 0 {
+			currency := generic.Currency
+			if currency == "" {
+				currency = "USD"
+			}
+			return &CodexQuotaBilling{
+				IsAvailable: true,
+				BalanceInfos: []CodexQuotaBalanceInfo{{
+					Currency:        currency,
+					TotalBalance:    fmt.Sprintf("%.2f", balance),
+					GrantedBalance:  fmt.Sprintf("%.2f", balance),
+					ToppedUpBalance: fmt.Sprintf("%.2f", balance),
+				}},
+			}
+		}
+	}
+
+	return nil
+}
+
+func firstFloatFromInterface(values ...interface{}) float64 {
+	for _, v := range values {
+		switch val := v.(type) {
+		case float64:
+			if val > 0 {
+				return val
+			}
+		case string:
+			if f, err := strconv.ParseFloat(val, 64); err == nil && f > 0 {
+				return f
+			}
+		case json.Number:
+			if f, err := val.Float64(); err == nil && f > 0 {
+				return f
+			}
+		}
+	}
+	return 0
 }

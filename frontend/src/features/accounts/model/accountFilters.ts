@@ -1,16 +1,11 @@
-import type { AccountsFilterSource, AccountsFilterState } from './types';
+import type { AccountsFilterState } from './types';
 
 export const ACCOUNTS_FILTERS_STORAGE_KEY = 'gettokens.accountsFilters';
 
 export const defaultAccountsFilterState: AccountsFilterState = {
-  source: 'all',
   hasLongestQuota: false,
   errorsOnly: false,
 };
-
-export function isAccountsFilterSource(value: string | null | undefined): value is AccountsFilterSource {
-  return value === 'all' || value === 'auth-file' || value === 'api-key';
-}
 
 export function resolveAccountsFilterState(value: unknown): AccountsFilterState {
   if (!value || typeof value !== 'object') {
@@ -18,15 +13,11 @@ export function resolveAccountsFilterState(value: unknown): AccountsFilterState 
   }
 
   const candidate = value as Partial<AccountsFilterState>;
-  if (!isAccountsFilterSource(candidate.source)) {
-    return defaultAccountsFilterState;
-  }
   if (typeof candidate.hasLongestQuota !== 'boolean' || typeof candidate.errorsOnly !== 'boolean') {
     return defaultAccountsFilterState;
   }
 
   return {
-    source: candidate.source,
     hasLongestQuota: candidate.hasLongestQuota,
     errorsOnly: candidate.errorsOnly,
   };

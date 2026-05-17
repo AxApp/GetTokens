@@ -58,10 +58,9 @@ export interface AccountGroup {
   accounts: AccountRecord[];
 }
 
-export type AccountsFilterSource = 'all' | CredentialSource;
+export type AccountsFilterSource = CredentialSource;
 
 export interface AccountsFilterState {
-  source: AccountsFilterSource;
   hasLongestQuota: boolean;
   errorsOnly: boolean;
 }

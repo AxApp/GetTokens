@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import type {
-  AccountWorkspace,
   AppPage,
   CodexWorkspace,
   SessionManagementWorkspace,
@@ -10,13 +9,11 @@ import {
   ACTIVE_PAGE_STORAGE_KEY,
   buildFrameHash,
   codexWorkspaceFromUsageDeskWorkspace,
-  persistAccountWorkspace,
   persistActivePage,
   persistCodexWorkspace,
   persistSessionManagementWorkspace,
   persistUsageDeskWorkspace,
   readFrameHashState,
-  readStoredAccountWorkspace,
   readStoredActivePage,
   readStoredCodexWorkspace,
   readStoredSessionManagementWorkspace,
@@ -28,15 +25,6 @@ export function useAppNavigation() {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
     return hashState?.page ?? readStoredActivePage(storage);
-  });
-  const [activeAccountWorkspace, setActiveAccountWorkspace] = useState<AccountWorkspace>(() => {
-    const storage = typeof window === 'undefined' ? null : window.localStorage;
-    const storedWorkspace = readStoredAccountWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
-    if (hashState?.page === 'accounts') {
-      return hashState.workspace ?? 'all';
-    }
-    return storedWorkspace;
   });
   const [activeCodexWorkspace, setActiveCodexWorkspace] = useState<CodexWorkspace>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
@@ -80,10 +68,6 @@ export function useAppNavigation() {
   }, [activePage]);
 
   useEffect(() => {
-    persistAccountWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeAccountWorkspace);
-  }, [activeAccountWorkspace]);
-
-  useEffect(() => {
     persistCodexWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeCodexWorkspace);
   }, [activeCodexWorkspace]);
 
@@ -108,14 +92,13 @@ export function useAppNavigation() {
     if (shouldPreserveDetailHash(
       hashState,
       activePage,
-      activeAccountWorkspace,
       activeCodexWorkspace,
     )) {
       detailID = hashState?.accountDetailID ?? null;
     }
     const nextHash = buildFrameHash(
       activePage,
-      activeAccountWorkspace,
+      'all' as const,
       activeCodexWorkspace,
       activeSessionManagementWorkspace,
       activeUsageDeskWorkspace,
@@ -125,7 +108,6 @@ export function useAppNavigation() {
       window.location.hash = nextHash;
     }
   }, [
-    activeAccountWorkspace,
     activeCodexWorkspace,
     activePage,
     activeSessionManagementWorkspace,
@@ -144,9 +126,6 @@ export function useAppNavigation() {
       }
 
       setActivePage(hashState.page);
-      if (hashState.page === 'accounts') {
-        setActiveAccountWorkspace(hashState.workspace ?? 'all');
-      }
       if (hashState.page === 'codex') {
         setActiveCodexWorkspace(hashState.codexWorkspace ?? 'feature-config');
       }
@@ -167,8 +146,6 @@ export function useAppNavigation() {
   return {
     activePage,
     setActivePage,
-    activeAccountWorkspace,
-    setActiveAccountWorkspace,
     activeCodexWorkspace,
     setActiveCodexWorkspace,
     activeSessionManagementWorkspace,
@@ -181,14 +158,13 @@ export function useAppNavigation() {
 function shouldPreserveDetailHash(
   hashState: ReturnType<typeof readFrameHashState>,
   activePage: AppPage,
-  activeAccountWorkspace: AccountWorkspace,
   activeCodexWorkspace: CodexWorkspace,
 ) {
   if (!hashState?.accountDetailID || hashState.page !== activePage) {
     return false;
   }
   if (activePage === 'accounts') {
-    return (hashState.workspace ?? 'all') === activeAccountWorkspace;
+    return true;
   }
   if (activePage === 'codex') {
     return (hashState.codexWorkspace ?? 'feature-config') === activeCodexWorkspace;

@@ -134,6 +134,9 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 		if account.Disabled || !codexRoutingRecordRequestable(account.Status) {
 			continue
 		}
+		if strings.HasPrefix(account.ID, "openai-compatible:") {
+			continue
+		}
 		if account.CredentialSource == accountsdomain.CredentialSourceAuthFile {
 			name := strings.TrimSpace(account.Name)
 			if name == "" && strings.HasPrefix(account.ID, "auth-file:") {

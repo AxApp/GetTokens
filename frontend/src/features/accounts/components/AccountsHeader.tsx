@@ -17,6 +17,7 @@ interface AccountsHeaderProps {
   onOpenRotationModal?: () => void;
   onStartCodexOAuth: () => void;
   onRefresh: () => void;
+  onOpenUnifiedCompose?: () => void;
 }
 
 export default function AccountsHeader({
@@ -34,6 +35,7 @@ export default function AccountsHeader({
   onOpenRotationModal,
   onStartCodexOAuth,
   onRefresh,
+  onOpenUnifiedCompose,
 }: AccountsHeaderProps) {
   const headerImportActions = (
     <>
@@ -85,6 +87,14 @@ export default function AccountsHeader({
         }
         actions={
           <>
+            {onOpenUnifiedCompose ? (
+              <button
+                onClick={onOpenUnifiedCompose}
+                className="btn-swiss whitespace-nowrap bg-[var(--text-primary)] !text-[var(--bg-main)]"
+              >
+                + ADD ACCOUNT
+              </button>
+            ) : null}
             <button
               onClick={onRefresh}
               className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"

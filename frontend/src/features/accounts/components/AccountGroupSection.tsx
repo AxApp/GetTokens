@@ -1,4 +1,3 @@
-import { groupProviderLabel } from '../model/accountPresentation';
 import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
@@ -48,14 +47,9 @@ export default function AccountGroupSection({
   return (
     <section className="space-y-4">
       <div className="flex items-end justify-between gap-4 border-b-2 border-[var(--border-color)] pb-4">
-        <div className="space-y-1">
-          <span className="block text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            {groupProviderLabel(group.accounts)}
-          </span>
-          <h3 className="text-[1.75rem] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
-            {group.label}
-          </h3>
-        </div>
+        <h3 className="text-[1.75rem] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
+          {group.label}
+        </h3>
         <p className="mb-1 text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
           {group.accounts.length} {t('accounts.plan_group_meta')}
         </p>

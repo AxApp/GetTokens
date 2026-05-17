@@ -10,7 +10,7 @@ export type AppPage =
   | 'usage-desk'
   | 'settings'
   | 'debug';
-export type AccountWorkspace = 'all' | 'codex' | 'openai-compatible';
+export type AccountWorkspace = 'all';
 export type CodexWorkspace =
   | 'feature-config'
   | 'binary-management'
@@ -36,7 +36,14 @@ export type AuthFile = main.AuthFileItem & {
   planType?: string;
 };
 export type CodexQuota = main.CodexQuotaResponse;
+
+export interface BillingDisplay {
+  isAvailable: boolean;
+  balances: { currency: string; totalBalance: string; grantedBalance: string; toppedUpBalance: string }[];
+}
 export type CredentialSource = 'auth-file' | 'api-key';
+
+export type ApiFormat = 'anthropic' | 'openai_chat' | 'openai_responses' | 'gemini_native';
 
 export interface AccountRecord {
   id: string;
@@ -60,6 +67,10 @@ export interface AccountRecord {
   quotaCurl?: string;
   quotaEnabled?: boolean;
   localOnly?: boolean;
+  supportedFormats?: ApiFormat[];
+  formatBaseUrls?: Partial<Record<ApiFormat, string>>;
+  billingCurl?: string;
+  billingEnabled?: boolean;
   rawAuthFile?: AuthFile;
 }
 

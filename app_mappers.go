@@ -22,6 +22,10 @@ func mapRelayServiceAPIKeyItems(items []wailsapp.RelayServiceAPIKeyItem) []Relay
 }
 
 func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
+	formats := record.SupportedFormats
+	if len(formats) == 0 {
+		formats = nil
+	}
 	return AccountRecord{
 		ID:               record.ID,
 		Provider:         record.Provider,
@@ -43,6 +47,54 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		QuotaCurl:        record.QuotaCurl,
 		QuotaEnabled:     record.QuotaEnabled,
 		LocalOnly:        record.LocalOnly,
+		SupportedFormats: formats,
+		FormatBaseURLs:   record.FormatBaseURLs,
+		BillingCurl:      record.BillingCurl,
+		BillingEnabled:   record.BillingEnabled,
+	}
+}
+
+func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaResponse {
+	if result == nil {
+		return &CodexQuotaResponse{}
+	}
+
+	windows := make([]CodexQuotaWindow, 0, len(result.Windows))
+	for _, window := range result.Windows {
+		windows = append(windows, CodexQuotaWindow{
+			ID:               window.ID,
+			Label:            window.Label,
+			RemainingPercent: window.RemainingPercent,
+			ResetLabel:       window.ResetLabel,
+			ResetAtUnix:      window.ResetAtUnix,
+		})
+	}
+
+	return &CodexQuotaResponse{
+		PlanType: result.PlanType,
+		Windows:  windows,
+		Billing:  mapCodexQuotaBillingInfo(result.Billing),
+	}
+}
+
+func mapCodexQuotaBillingInfo(result *wailsapp.CodexQuotaBillingInfo) *CodexQuotaBillingInfo {
+	if result == nil {
+		return nil
+	}
+
+	infos := make([]CodexQuotaBillingBalanceInfo, 0, len(result.BalanceInfos))
+	for _, info := range result.BalanceInfos {
+		infos = append(infos, CodexQuotaBillingBalanceInfo{
+			Currency:        info.Currency,
+			TotalBalance:    info.TotalBalance,
+			GrantedBalance:  info.GrantedBalance,
+			ToppedUpBalance: info.ToppedUpBalance,
+		})
+	}
+
+	return &CodexQuotaBillingInfo{
+		IsAvailable:  result.IsAvailable,
+		BalanceInfos: infos,
 	}
 }
 

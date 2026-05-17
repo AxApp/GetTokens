@@ -7,6 +7,7 @@ import {
   isCodexReauthEligible,
   mapBackendAccountRecord,
   mapAuthFileToRecord,
+  resolveLoadedAccountIDs,
   resolveAccountAPIKeyPlainNotice,
   resolveAccountConfigurationWorkspaceHeading,
   resolveAccountFailureReason,
@@ -14,6 +15,7 @@ import {
   resolveAccountProviderConfigHeading,
   resolveAccountStatusTone,
   resolveAccountSourceHeading,
+  resolveLoadedAuthFileRecords,
 } from '../model/accountPresentation.ts';
 import { shouldLoadAccountsData } from '../model/accountRuntime.ts';
 import { formatRateLimitLimitDraftValue, parseRateLimitLimitDraftValue } from '../model/rateLimit.ts';
@@ -63,6 +65,55 @@ test('mapBackendAccountRecord keeps backend display name for api keys', () => {
   });
 
   assert.equal(record.displayName, 'PRIMARY PROD KEY');
+});
+
+test('mapBackendAccountRecord infers provider and formats from known base url', () => {
+  const record = mapBackendAccountRecord({
+    id: 'codex-api-key:deepseek',
+    provider: 'codex',
+    credentialSource: 'api-key',
+    displayName: 'DEEPSEEK KEY',
+    status: 'ACTIVE',
+    apiKey: 'sk-test',
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: '',
+  });
+
+  assert.equal(record.provider, 'deepseek');
+  assert.deepEqual(record.supportedFormats, ['anthropic', 'openai_chat']);
+});
+
+test('resolveLoadedAuthFileRecords falls back to ListAccounts auth-file records when auth files are unavailable', () => {
+  const authFileRecords = resolveLoadedAuthFileRecords([], [
+    {
+      id: 'auth-file:codex-pro.json',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'codex-pro.json',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'codex-api-key:stable-001',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Stable 001',
+      status: 'CONFIGURED',
+    },
+  ]);
+
+  assert.deepEqual(authFileRecords.map((account) => account.id), ['auth-file:codex-pro.json']);
+  assert.deepEqual(
+    resolveLoadedAccountIDs(authFileRecords, [
+      {
+        id: 'codex-api-key:stable-001',
+        provider: 'openai',
+        credentialSource: 'api-key',
+        displayName: 'Stable 001',
+        status: 'CONFIGURED',
+      },
+    ]),
+    ['auth-file:codex-pro.json', 'codex-api-key:stable-001']
+  );
 });
 
 test('resolveAccountFailureReason only returns message for failed statuses', () => {

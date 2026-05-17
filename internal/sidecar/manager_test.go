@@ -43,6 +43,22 @@ func TestResolveSidecarProfileFromPrefersEnvAndDevExecutable(t *testing.T) {
 	}
 }
 
+func TestResolveSidecarProfileFromExecutableDetectsWailsDevAppBundle(t *testing.T) {
+	if got := resolveSidecarProfileFromExecutable(
+		"/Users/linhey/Desktop/linhay-open-sources/GetTokens/build/bin/GetTokens.app/Contents/MacOS/GetTokens",
+		"",
+	); got != "dev" {
+		t.Fatalf("profile from dev app bundle = %q, want dev", got)
+	}
+
+	if got := resolveSidecarProfileFromExecutable(
+		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",
+		"",
+	); got != "prod" {
+		t.Fatalf("profile from installed app bundle = %q, want prod", got)
+	}
+}
+
 func TestProfileSpecificPortAndConfigDir(t *testing.T) {
 	if got := preferredPortForProfile("dev"); got != devPort {
 		t.Fatalf("dev port = %d, want %d", got, devPort)

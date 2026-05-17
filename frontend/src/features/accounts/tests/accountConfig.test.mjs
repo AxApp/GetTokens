@@ -4,31 +4,37 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import {
-  buildAPIKeyLabelStorageKey,
-  buildDefaultCodexQuotaCurl,
-  buildCodexAPIKeyVerifyInput,
-  buildRelayCodexAuthJSONSnippet,
-  buildRelayCodexConfigTomlSnippet,
-  buildManagedAuthJSONSnippet,
-  buildManagedConfigTomlSnippet,
-  normalizeBaseUrl,
-  normalizePrefix,
+  buildApiKeyConfigDraft,
+  buildBillingCurlTemplate,
+  hasApiKeyConfigChanges,
+  listApiKeyConfigMissingFields,
+} from '../model/accountDetailConfig.ts';
+import {
+  buildAPIKeyLabelStorageKey as buildAPIKeyLabelStorageKeyFromConfig,
+  buildDefaultCodexQuotaCurl as buildDefaultCodexQuotaCurlFromConfig,
+  buildCodexAPIKeyVerifyInput as buildCodexAPIKeyVerifyInputFromConfig,
+  buildRelayCodexAuthJSONSnippet as buildRelayCodexAuthJSONSnippetFromConfig,
+  buildRelayCodexConfigTomlSnippet as buildRelayCodexConfigTomlSnippetFromConfig,
+  buildManagedAuthJSONSnippet as buildManagedAuthJSONSnippetFromConfig,
+  buildManagedConfigTomlSnippet as buildManagedConfigTomlSnippetFromConfig,
+  normalizeBaseUrl as normalizeBaseUrlFromConfig,
+  normalizePrefix as normalizePrefixFromConfig,
 } from '../model/accountConfig.ts';
 
 const wailsModelsPath = fileURLToPath(new URL('../../../../wailsjs/go/models.ts', import.meta.url));
 const wailsAppBindingsPath = fileURLToPath(new URL('../../../../wailsjs/go/main/App.js', import.meta.url));
 
 test('normalizeBaseUrl trims and removes trailing slashes', () => {
-  assert.equal(normalizeBaseUrl(' https://api.example.com/v1/// '), 'https://api.example.com/v1');
+  assert.equal(normalizeBaseUrlFromConfig(' https://api.example.com/v1/// '), 'https://api.example.com/v1');
 });
 
 test('normalizePrefix trims leading and trailing slashes', () => {
-  assert.equal(normalizePrefix(' /openai-compatible/ '), 'openai-compatible');
+  assert.equal(normalizePrefixFromConfig(' /openai-compatible/ '), 'openai-compatible');
 });
 
 test('buildAPIKeyLabelStorageKey normalizes url and prefix before serializing', () => {
   assert.equal(
-    buildAPIKeyLabelStorageKey(' sk-123 ', 'https://api.example.com/v1///', '/relay/'),
+    buildAPIKeyLabelStorageKeyFromConfig(' sk-123 ', 'https://api.example.com/v1///', '/relay/'),
     JSON.stringify({
       apiKey: 'sk-123',
       baseUrl: 'https://api.example.com/v1',
@@ -39,14 +45,14 @@ test('buildAPIKeyLabelStorageKey normalizes url and prefix before serializing', 
 
 test('buildDefaultCodexQuotaCurl creates a safe editable quota template', () => {
   assert.equal(
-    buildDefaultCodexQuotaCurl(' https://api.example.com/v1/ '),
+    buildDefaultCodexQuotaCurlFromConfig(' https://api.example.com/v1/ '),
     'curl -sS "https://api.example.com/v1/api/codex/usage" -H "Authorization: Bearer {{apiKey}}" -H "Accept: application/json"'
   );
 });
 
 test('buildManagedAuthJSONSnippet fills placeholders and normalized base url', () => {
   assert.equal(
-    buildManagedAuthJSONSnippet({
+    buildManagedAuthJSONSnippetFromConfig({
       apiKey: ' ',
       baseUrl: ' https://api.example.com/v1/// ',
     }),
@@ -63,7 +69,7 @@ test('buildManagedAuthJSONSnippet fills placeholders and normalized base url', (
 });
 
 test('buildManagedConfigTomlSnippet derives provider id from prefix when available', () => {
-  const snippet = buildManagedConfigTomlSnippet({
+  const snippet = buildManagedConfigTomlSnippetFromConfig({
     baseUrl: 'https://api.example.com/v1/',
     prefix: '/OpenAI Compatible/',
   });
@@ -75,7 +81,7 @@ test('buildManagedConfigTomlSnippet derives provider id from prefix when availab
 
 test('buildRelayCodexAuthJSONSnippet only keeps the fields codex actually uses', () => {
   assert.equal(
-    buildRelayCodexAuthJSONSnippet({
+    buildRelayCodexAuthJSONSnippetFromConfig({
       apiKey: ' sk-service-key ',
       model: ' GT ',
     }),
@@ -92,7 +98,7 @@ test('buildRelayCodexAuthJSONSnippet only keeps the fields codex actually uses',
 });
 
 test('buildRelayCodexConfigTomlSnippet writes a custom codex provider config', () => {
-  const snippet = buildRelayCodexConfigTomlSnippet({
+  const snippet = buildRelayCodexConfigTomlSnippetFromConfig({
     baseUrl: ' http://127.0.0.1:8317/v1/ ',
     model: ' gpt-5.5 ',
     reasoningEffort: ' xhigh ',
@@ -117,7 +123,7 @@ test('buildRelayCodexConfigTomlSnippet writes a custom codex provider config', (
 });
 
 test('buildRelayCodexConfigTomlSnippet keeps openai provider continuity when selected', () => {
-  const snippet = buildRelayCodexConfigTomlSnippet({
+  const snippet = buildRelayCodexConfigTomlSnippetFromConfig({
     baseUrl: ' http://127.0.0.1:8317/v1/ ',
     model: ' gpt-5.4 ',
     reasoningEffort: ' low ',
@@ -133,7 +139,7 @@ test('buildRelayCodexConfigTomlSnippet keeps openai provider continuity when sel
 
 test('buildCodexAPIKeyVerifyInput trims values and normalizes base url', () => {
   assert.deepEqual(
-    buildCodexAPIKeyVerifyInput({
+    buildCodexAPIKeyVerifyInputFromConfig({
       apiKey: ' sk-test ',
       baseUrl: ' https://api.openai.com/v1/ ',
       model: ' gpt-4.1-mini ',
@@ -146,6 +152,77 @@ test('buildCodexAPIKeyVerifyInput trims values and normalizes base url', () => {
   );
 });
 
+test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', () => {
+  assert.deepEqual(
+    buildApiKeyConfigDraft({
+      apiKey: 'sk-test',
+      baseUrl: 'https://api.deepseek.com/v1',
+      prefix: '/relay/',
+      quotaCurl: 'quota',
+      quotaEnabled: true,
+      billingCurl: 'billing',
+      billingEnabled: true,
+    }),
+    {
+      apiKey: 'sk-test',
+      baseUrl: 'https://api.deepseek.com/v1',
+      prefix: '/relay/',
+      quotaCurl: 'quota',
+      quotaEnabled: true,
+      billingCurl: 'billing',
+      billingEnabled: true,
+    },
+  );
+});
+
+test('hasApiKeyConfigChanges detects billing edits', () => {
+  const account = {
+    apiKey: 'sk-test',
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+    billingCurl: '',
+    billingEnabled: false,
+  };
+
+  assert.equal(hasApiKeyConfigChanges(account, buildApiKeyConfigDraft(account)), false);
+  assert.equal(
+    hasApiKeyConfigChanges(account, {
+      ...buildApiKeyConfigDraft(account),
+      billingCurl: 'curl -sS "https://api.deepseek.com/user/balance"',
+      billingEnabled: true,
+    }),
+    true,
+  );
+});
+
+test('listApiKeyConfigMissingFields reports required credentials fields only', () => {
+  assert.deepEqual(
+    listApiKeyConfigMissingFields({
+      apiKey: ' ',
+      baseUrl: '',
+      prefix: '',
+      quotaCurl: '',
+      quotaEnabled: false,
+      billingCurl: '',
+      billingEnabled: false,
+    }),
+    ['API Key', 'Base URL'],
+  );
+});
+
+test('buildBillingCurlTemplate resolves known vendor presets', () => {
+  assert.equal(
+    buildBillingCurlTemplate({
+      displayName: 'DeepSeek',
+      provider: 'codex',
+      baseUrl: 'https://api.deepseek.com/v1',
+    }),
+    'curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"',
+  );
+});
+
 test('generated Wails account models preserve quota curl fields', () => {
   const source = readFileSync(wailsModelsPath, 'utf8');
 
@@ -153,10 +230,15 @@ test('generated Wails account models preserve quota curl fields', () => {
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class TestCodexAPIKeyQuotaCurlInput[\s\S]*quotaCurl: string;/);
+  assert.match(source, /export class AccountRecord[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
+  assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
+  assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
+  assert.match(source, /export class CodexQuotaResponse[\s\S]*billing\?: CodexQuotaBillingInfo;/);
 });
 
 test('generated Wails app bindings expose quota curl draft test method', () => {
   const source = readFileSync(wailsAppBindingsPath, 'utf8');
 
   assert.match(source, /export function TestCodexAPIKeyQuotaCurl\(arg1\)/);
+  assert.match(source, /export function TestCodexAPIKeyBillingCurl\(arg1\)/);
 });

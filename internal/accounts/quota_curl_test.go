@@ -115,3 +115,67 @@ func TestRedactCodexQuotaCurlURLMasksAPIKeyPlaceholderValue(t *testing.T) {
 		t.Fatalf("redacted url = %q", got)
 	}
 }
+
+func TestTryParseBillingResponse(t *testing.T) {
+	t.Run("deepseek payload", func(t *testing.T) {
+		billing := TryParseBillingResponse([]byte(`{
+			"is_available": true,
+			"balance_infos": [{
+				"currency": "CNY",
+				"total_balance": "25.50",
+				"granted_balance": "12.25",
+				"topped_up_balance": "13.25"
+			}]
+		}`))
+		if billing == nil {
+			t.Fatal("billing = nil")
+		}
+		if !billing.IsAvailable {
+			t.Fatal("IsAvailable = false, want true")
+		}
+		if len(billing.BalanceInfos) != 1 {
+			t.Fatalf("BalanceInfos len = %d, want 1", len(billing.BalanceInfos))
+		}
+		if got := billing.BalanceInfos[0].Currency; got != "CNY" {
+			t.Fatalf("Currency = %q, want CNY", got)
+		}
+		if got := billing.BalanceInfos[0].GrantedBalance; got != "12.25" {
+			t.Fatalf("GrantedBalance = %q, want 12.25", got)
+		}
+	})
+
+	t.Run("openrouter payload", func(t *testing.T) {
+		billing := TryParseBillingResponse([]byte(`{
+			"data": {
+				"total_credits": 100.5,
+				"total_usage": 40.25
+			}
+		}`))
+		if billing == nil {
+			t.Fatal("billing = nil")
+		}
+		if got := billing.BalanceInfos[0].TotalBalance; got != "100.50" {
+			t.Fatalf("TotalBalance = %q, want 100.50", got)
+		}
+		if got := billing.BalanceInfos[0].GrantedBalance; got != "60.25" {
+			t.Fatalf("GrantedBalance = %q, want 60.25", got)
+		}
+	})
+
+	t.Run("openai payload", func(t *testing.T) {
+		billing := TryParseBillingResponse([]byte(`{
+			"hard_limit_usd": 120,
+			"total_used": 35.75,
+			"total_available": 84.25
+		}`))
+		if billing == nil {
+			t.Fatal("billing = nil")
+		}
+		if got := billing.BalanceInfos[0].TotalBalance; got != "120.00" {
+			t.Fatalf("TotalBalance = %q, want 120.00", got)
+		}
+		if got := billing.BalanceInfos[0].GrantedBalance; got != "84.25" {
+			t.Fatalf("GrantedBalance = %q, want 84.25", got)
+		}
+	})
+}

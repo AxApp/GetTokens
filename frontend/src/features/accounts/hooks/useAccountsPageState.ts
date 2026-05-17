@@ -5,6 +5,7 @@ import {
   ListAccounts,
   ListAuthFiles,
   StartCodexOAuth,
+  TestCodexAPIKeyBillingCurl,
   TestCodexAPIKeyQuotaCurl,
   UpdateCodexAPIKeyLabel,
   VerifyOpenAICompatibleProvider,
@@ -41,6 +42,8 @@ import {
   isCodexReauthEligible,
   mapAuthFileToRecord,
   mapBackendAccountRecord,
+  resolveLoadedAccountIDs,
+  resolveLoadedAuthFileRecords,
 } from '../model/accountPresentation';
 import { getAccountsPreviewAPIKeyRecords, getAccountsPreviewAuthFiles } from '../previewData';
 import useAccountsActions from './useAccountsActions';
@@ -101,6 +104,7 @@ export default function useAccountsPageState({
   headerActionsMenuRef,
 }: UseAccountsPageStateArgs) {
   const [authFiles, setAuthFiles] = useState<AuthFile[]>([]);
+  const [derivedAuthFileRecords, setDerivedAuthFileRecords] = useState<AccountRecord[]>([]);
   const [apiKeyRecords, setApiKeyRecords] = useState<AccountRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -136,8 +140,8 @@ export default function useAccountsPageState({
   const { accountRateLimitByID, rateLimitStrategies, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
 
   const authFileRecords = useMemo(
-    () => authFiles.map((account) => mapAuthFileToRecord(account)),
-    [authFiles]
+    () => (authFiles.length > 0 ? authFiles.map((account) => mapAuthFileToRecord(account)) : derivedAuthFileRecords),
+    [authFiles, derivedAuthFileRecords]
   );
 
   const {
@@ -216,15 +220,13 @@ export default function useAccountsPageState({
     if (!hasWailsAppBindings()) {
       const files = getAccountsPreviewAuthFiles();
       const apiKeyAccounts = getAccountsPreviewAPIKeyRecords();
-      const nextAuthFileRecords = files.map((account) => mapAuthFileToRecord(account));
+      const nextAuthFileRecords = resolveLoadedAuthFileRecords(files, []);
       setAuthFiles(files);
+      setDerivedAuthFileRecords([]);
       setApiKeyRecords(apiKeyAccounts);
       setPendingDeleteID(null);
       setSelectedAccountIDs((prev) =>
-        filterSelectedAccountIDs(prev, [
-          ...files.map((file) => `auth-file:${file.name}`),
-          ...apiKeyAccounts.map((account) => account.id),
-        ])
+        filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
       );
       void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
       void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
@@ -237,24 +239,24 @@ export default function useAccountsPageState({
       setLoading(true);
     }
     try {
-      const [authFileResponse, rawAccountResponse] = await Promise.all([
-        trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles()),
-        trackRequest('ListAccounts', { args: [] }, () => ListAccounts()),
-      ]);
+      let authFileResponse: { files: any[] } = { files: [] };
+      try {
+        authFileResponse = await trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles());
+      } catch {
+        // sidecar unavailable — auth files will be empty, keys still load
+      }
+      const rawAccountResponse = await trackRequest('ListAccounts', { args: [] }, () => ListAccounts());
       const accountResponse = await migrateLegacyAPIKeyLabels(rawAccountResponse || []);
-      const files = authFileResponse.files || [];
-      const apiKeyAccounts = (accountResponse || [])
-        .map((account) => mapBackendAccountRecord(account))
-        .filter((account) => account.credentialSource === 'api-key');
-      const nextAuthFileRecords = files.map((account) => mapAuthFileToRecord(account));
+      const files = authFileResponse?.files || [];
+      const mappedAccounts = (accountResponse || []).map((account) => mapBackendAccountRecord(account));
+      const apiKeyAccounts = mappedAccounts.filter((account) => account.credentialSource === 'api-key');
+      const nextAuthFileRecords = resolveLoadedAuthFileRecords(files, mappedAccounts);
       setAuthFiles(files);
+      setDerivedAuthFileRecords(files.length === 0 ? nextAuthFileRecords : []);
       setApiKeyRecords(apiKeyAccounts);
       setPendingDeleteID(null);
       setSelectedAccountIDs((prev) =>
-        filterSelectedAccountIDs(prev, [
-          ...files.map((file) => `auth-file:${file.name}`),
-          ...apiKeyAccounts.map((account) => account.id),
-        ])
+        filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
       );
       void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
       void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
@@ -271,6 +273,7 @@ export default function useAccountsPageState({
   const removeDeletedAccountLocally = useCallback(
     (account: AccountRecord) => {
       setAuthFiles((prev) => removeDeletedAuthFile(prev, account));
+      setDerivedAuthFileRecords((prev) => prev.filter((item) => item.id !== account.id));
       setApiKeyRecords((prev) => removeDeletedAPIKeyRecord(prev, account));
       setSelectedAccount((prev) => (shouldClearDeletedSelectedAccount(prev, account) ? null : prev));
       setSelectedAccountIDs((prev) => prev.filter((id) => id !== account.id));
@@ -509,6 +512,23 @@ export default function useAccountsPageState({
     [selectedAccount?.id, trackRequest],
   );
 
+  const testSelectedApiKeyBillingCurl = useCallback(
+    async (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => {
+      const nextInput = {
+        apiKey: input.apiKey.trim(),
+        baseUrl: input.baseUrl.trim(),
+        prefix: input.prefix.trim(),
+        quotaCurl: input.billingCurl.trim(),
+      };
+      return trackRequest(
+        'TestCodexAPIKeyBillingCurl',
+        { id: selectedAccount?.id, baseUrl: nextInput.baseUrl },
+        () => TestCodexAPIKeyBillingCurl(main.TestCodexAPIKeyQuotaCurlInput.createFrom(nextInput)),
+      );
+    },
+    [selectedAccount?.id, trackRequest],
+  );
+
   const {
     deleteAccount,
     uploadAccounts,
@@ -592,6 +612,7 @@ export default function useAccountsPageState({
     cancelCodexOAuth,
     verifySelectedApiKey,
     testSelectedApiKeyQuotaCurl,
+    testSelectedApiKeyBillingCurl,
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,

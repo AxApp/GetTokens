@@ -13,11 +13,27 @@ const (
 
 func resolveSidecarProfile() string {
 	envValue := strings.TrimSpace(os.Getenv("GETTOKENS_APP_PROFILE"))
-	exeName := ""
+	exePath := ""
 	if exe, err := os.Executable(); err == nil {
-		exeName = filepath.Base(exe)
+		exePath = exe
 	}
-	return resolveSidecarProfileFrom(exeName, envValue)
+	return resolveSidecarProfileFromExecutable(exePath, envValue)
+}
+
+func resolveSidecarProfileFromExecutable(exePath string, envValue string) string {
+	exeName := ""
+	if trimmed := strings.TrimSpace(exePath); trimmed != "" {
+		exeName = filepath.Base(trimmed)
+	}
+	if profile := resolveSidecarProfileFrom(exeName, envValue); profile != "prod" {
+		return profile
+	}
+
+	normalizedPath := filepath.ToSlash(strings.ToLower(strings.TrimSpace(exePath)))
+	if strings.Contains(normalizedPath, "/build/bin/gettokens.app/contents/macos/gettokens") {
+		return "dev"
+	}
+	return "prod"
 }
 
 func resolveSidecarProfileFrom(exeName string, envValue string) string {
