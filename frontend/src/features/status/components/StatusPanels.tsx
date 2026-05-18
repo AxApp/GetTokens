@@ -13,6 +13,8 @@ import type {
 import {
   buildClaudeCodeSettingsDiff,
   buildCodexLocalApplyDiff,
+  getCodexLocalApplyPreflight,
+  resolveCodexLocalApplyState,
   resolveUnifiedDiffLineTone,
   type CodexLocalAuthStrategy,
   type ClaudeCodeLocalApplyDraft,
@@ -159,6 +161,34 @@ export function StatusApplyLocalSection({
       supportsWebsockets,
     ]
   );
+  const codexLocalPreflight = useMemo(
+    () =>
+      getCodexLocalApplyPreflight({
+        authStrategy: codexLocalAuthStrategy,
+        providerID: selectedRelayProvider.id,
+        authState: localCodexAuthState,
+      }),
+    [codexLocalAuthStrategy, localCodexAuthState, selectedRelayProvider.id]
+  );
+  const codexLocalApplyState = useMemo(
+    () =>
+      resolveCodexLocalApplyState({
+        isApplyingToLocal,
+        isReady,
+        selectedRelayKey,
+        selectedProviderID: selectedRelayProvider.id,
+        providerOptions: relayProviderOptions,
+        preflight: codexLocalPreflight,
+      }),
+    [
+      codexLocalPreflight,
+      isApplyingToLocal,
+      isReady,
+      relayProviderOptions,
+      selectedRelayKey,
+      selectedRelayProvider.id,
+    ]
+  );
   const claudeDiff = useMemo(
     () =>
       buildClaudeCodeSettingsDiff({
@@ -207,6 +237,19 @@ export function StatusApplyLocalSection({
           : localCodexAuthState.authMode === 'apikey'
             ? t('status.codex_local_auth_apikey')
             : t('status.codex_local_auth_unknown');
+  const codexLocalApplyGuidance =
+    codexLocalApplyState.disabledReason === 'service_not_ready'
+      ? t('status.codex_local_apply_blocked_not_ready')
+      : codexLocalApplyState.disabledReason === 'missing_relay_key'
+        ? t('status.codex_local_apply_blocked_missing_key')
+        : codexLocalApplyState.disabledReason === 'requires_custom_provider'
+          ? codexLocalApplyBlockedMessage || t('status.codex_local_preserve_requires_custom_provider')
+          : codexLocalApplyState.disabledReason === 'missing_chatgpt_auth'
+            ? codexLocalApplyBlockedMessage || t('status.codex_local_preserve_requires_chatgpt')
+            : '';
+  const codexLocalRecoveryProvider = relayProviderOptions.find(
+    (provider) => provider.id === codexLocalApplyState.nextProviderID
+  );
   const claudeModelOptions = Array.from(
     new Set([
       claudeDraft.model || 'claude-sonnet-4-5',
@@ -383,10 +426,54 @@ export function StatusApplyLocalSection({
                 </div>
               ) : null}
 
-              {codexLocalAuthStrategy === 'preserve_chatgpt_auth' ? (
+              {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
                 <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
-                  {codexLocalCanApply ? t('status.codex_local_preserve_hint') : codexLocalApplyBlockedMessage}
+                  {t('status.codex_local_preserve_hint')}
                   {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
+                </div>
+              ) : null}
+
+              {codexLocalApplyGuidance ? (
+                <div className="grid gap-3 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                  <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                    {codexLocalApplyGuidance}
+                    {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
+                  </div>
+                  {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
+                    <button
+                      type="button"
+                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      onClick={onOpenCreateRelayKeyEditor}
+                    >
+                      {t('status.codex_local_recovery_create_key')}
+                    </button>
+                  ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
+                    <button
+                      type="button"
+                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
+                    >
+                      {t('status.codex_local_recovery_use_apikey')}
+                    </button>
+                  ) : codexLocalApplyState.recoveryAction === 'switch_to_custom_provider' &&
+                    codexLocalApplyState.nextProviderID ? (
+                    <button
+                      type="button"
+                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
+                    >
+                      {t('status.codex_local_recovery_switch_provider')}{' '}
+                      {codexLocalRecoveryProvider?.name || codexLocalApplyState.nextProviderID}
+                    </button>
+                  ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
+                    <button
+                      type="button"
+                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      onClick={onOpenCreateRelayProviderEditor}
+                    >
+                      {t('status.codex_local_recovery_create_provider')}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -406,7 +493,7 @@ export function StatusApplyLocalSection({
                 <button
                   type="button"
                   onClick={onApplyRelayConfigToLocal}
-                  disabled={isApplyingToLocal || !isReady || !selectedRelayKey.trim() || !codexLocalCanApply}
+                  disabled={!codexLocalApplyState.canApply}
                   className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local_codex')}

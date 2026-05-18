@@ -85,6 +85,36 @@ export interface CodexLocalApplyPreflightResult {
   reason: 'ok' | 'missing_chatgpt_auth' | 'requires_custom_provider';
 }
 
+export type CodexLocalApplyDisabledReason =
+  | 'none'
+  | 'applying'
+  | 'service_not_ready'
+  | 'missing_relay_key'
+  | Exclude<CodexLocalApplyPreflightResult['reason'], 'ok'>;
+
+export type CodexLocalApplyRecoveryAction =
+  | 'none'
+  | 'create_relay_key'
+  | 'switch_auth_to_apikey'
+  | 'switch_to_custom_provider'
+  | 'create_provider';
+
+export interface CodexLocalApplyState {
+  canApply: boolean;
+  disabledReason: CodexLocalApplyDisabledReason;
+  recoveryAction: CodexLocalApplyRecoveryAction;
+  nextProviderID?: string;
+}
+
+export interface CodexLocalApplyStateInput {
+  isApplyingToLocal: boolean;
+  isReady: boolean;
+  selectedRelayKey: string;
+  selectedProviderID: string;
+  providerOptions: RelayProviderOption[];
+  preflight: CodexLocalApplyPreflightResult;
+}
+
 export interface ClaudeCodeSettingsDiffInput {
   apiKey: string;
   baseUrl: string;
@@ -211,6 +241,47 @@ export function getCodexLocalApplyPreflight(input: CodexLocalApplyPreflightInput
     }
   }
   return { canApply: true, reason: 'ok' };
+}
+
+export function resolveCodexLocalApplyState(input: CodexLocalApplyStateInput): CodexLocalApplyState {
+  if (input.isApplyingToLocal) {
+    return { canApply: false, disabledReason: 'applying', recoveryAction: 'none' };
+  }
+  if (!input.isReady) {
+    return { canApply: false, disabledReason: 'service_not_ready', recoveryAction: 'none' };
+  }
+  if (!input.selectedRelayKey.trim()) {
+    return { canApply: false, disabledReason: 'missing_relay_key', recoveryAction: 'create_relay_key' };
+  }
+  if (!input.preflight.canApply) {
+    if (input.preflight.reason === 'missing_chatgpt_auth') {
+      return {
+        canApply: false,
+        disabledReason: input.preflight.reason,
+        recoveryAction: 'switch_auth_to_apikey',
+      };
+    }
+    if (input.preflight.reason === 'requires_custom_provider') {
+      const nextProvider = input.providerOptions.find(
+        (provider) =>
+          provider.id.trim() &&
+          provider.id.trim() !== RELAY_CODEX_OPENAI_PROVIDER_ID &&
+          provider.id.trim() !== input.selectedProviderID.trim()
+      );
+      return {
+        canApply: false,
+        disabledReason: input.preflight.reason,
+        recoveryAction: nextProvider ? 'switch_to_custom_provider' : 'create_provider',
+        nextProviderID: nextProvider?.id,
+      };
+    }
+    return {
+      canApply: false,
+      disabledReason: input.preflight.reason as Exclude<CodexLocalApplyPreflightResult['reason'], 'ok'>,
+      recoveryAction: 'none',
+    };
+  }
+  return { canApply: true, disabledReason: 'none', recoveryAction: 'none' };
 }
 
 export function buildClaudeCodeSettingsDiff(input: ClaudeCodeSettingsDiffInput) {

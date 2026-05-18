@@ -5,6 +5,7 @@ import {
   buildClaudeCodeSettingsDiff,
   buildCodexLocalApplyDiff,
   getCodexLocalApplyPreflight,
+  resolveCodexLocalApplyState,
   resolveUnifiedDiffLineTone,
   updateLocalCliTargetDraft,
 } from '../model/relayLocalState.ts';
@@ -129,6 +130,60 @@ test('getCodexLocalApplyPreflight blocks preserve mode without ChatGPT auth or w
     {
       canApply: true,
       reason: 'ok',
+    }
+  );
+});
+
+test('resolveCodexLocalApplyState returns actionable recovery for disabled Codex local apply states', () => {
+  assert.deepEqual(
+    resolveCodexLocalApplyState({
+      isApplyingToLocal: false,
+      isReady: true,
+      selectedRelayKey: '   ',
+      selectedProviderID: 'openai',
+      providerOptions: [],
+      preflight: { canApply: true, reason: 'ok' },
+    }),
+    {
+      canApply: false,
+      disabledReason: 'missing_relay_key',
+      recoveryAction: 'create_relay_key',
+    }
+  );
+
+  assert.deepEqual(
+    resolveCodexLocalApplyState({
+      isApplyingToLocal: false,
+      isReady: true,
+      selectedRelayKey: 'sk-relay',
+      selectedProviderID: 'openai',
+      providerOptions: [
+        { id: 'openai', name: 'OpenAI' },
+        { id: 'gettokens', name: 'GetTokens' },
+      ],
+      preflight: { canApply: false, reason: 'requires_custom_provider' },
+    }),
+    {
+      canApply: false,
+      disabledReason: 'requires_custom_provider',
+      recoveryAction: 'switch_to_custom_provider',
+      nextProviderID: 'gettokens',
+    }
+  );
+
+  assert.deepEqual(
+    resolveCodexLocalApplyState({
+      isApplyingToLocal: false,
+      isReady: true,
+      selectedRelayKey: 'sk-relay',
+      selectedProviderID: 'gettokens',
+      providerOptions: [{ id: 'gettokens', name: 'GetTokens' }],
+      preflight: { canApply: false, reason: 'missing_chatgpt_auth' },
+    }),
+    {
+      canApply: false,
+      disabledReason: 'missing_chatgpt_auth',
+      recoveryAction: 'switch_auth_to_apikey',
     }
   );
 });
