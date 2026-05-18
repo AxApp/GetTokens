@@ -10,6 +10,7 @@ import {
 } from '../model/openAICompatible';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import AccountProxyRouteSection from './AccountProxyRouteSection';
 import RateLimitRulesSection from './RateLimitRulesSection';
 
 interface OpenAICompatibleDetailModalProps {
@@ -55,6 +56,7 @@ export default function OpenAICompatibleDetailModal({
   onRateLimitRulesChanged,
 }: OpenAICompatibleDetailModalProps) {
   const [headersExpanded, setHeadersExpanded] = useState(false);
+  const [proxyRouteError, setProxyRouteError] = useState('');
   const selectedPreset = resolveOpenAICompatibleProviderPreset({
     name: draft.name,
     baseUrl: draft.baseUrl,
@@ -156,6 +158,12 @@ export default function OpenAICompatibleDetailModal({
                   placeholder={selectedPreset?.apiKeyPlaceholder || 'sk-...'}
                 />
               </label>
+
+              <AccountProxyRouteSection
+                proxyUrl={draft.proxyUrl}
+                onProxyUrlChange={(nextProxyURL) => onChange({ ...draft, proxyUrl: nextProxyURL })}
+                onValidityChange={setProxyRouteError}
+              />
 
               <div className="space-y-2">
                 <button
@@ -352,10 +360,10 @@ export default function OpenAICompatibleDetailModal({
 
         <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-[0.5625rem] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
-            {verifyState.message || t('accounts.openai_provider_test_idle')}
+            {proxyRouteError || verifyState.message || t('accounts.openai_provider_test_idle')}
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={onSave} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]" disabled={saving}>
+            <button onClick={onSave} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]" disabled={saving || Boolean(proxyRouteError)}>
               {saving ? t('common.loading') : t('common.save')}
             </button>
             <button onClick={onClose} className="btn-swiss">

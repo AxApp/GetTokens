@@ -47,6 +47,7 @@ export interface OpenAICompatibleProviderDraft extends OpenAICompatibleProviderF
   headersText: string;
   models: OpenAICompatibleModelRow[];
   verifyModel: string;
+  proxyUrl: string;
 }
 
 export interface ProviderDetailModelOptions {
@@ -236,6 +237,7 @@ export function buildOpenAICompatibleProviderDraft(
     headersText: buildHeadersText(provider.headers),
     models,
     verifyModel: verifyState?.model || models[0]?.name || preset?.models[0]?.name || '',
+    proxyUrl: provider.proxyUrl || '',
   };
 }
 

@@ -162,6 +162,7 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       quotaEnabled: true,
       billingCurl: 'billing',
       billingEnabled: true,
+      proxyUrl: 'socks5://127.0.0.1:7890',
     }),
     {
       apiKey: 'sk-test',
@@ -171,6 +172,7 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       quotaEnabled: true,
       billingCurl: 'billing',
       billingEnabled: true,
+      proxyUrl: 'socks5://127.0.0.1:7890',
     },
   );
 });
@@ -184,6 +186,7 @@ test('hasApiKeyConfigChanges detects billing edits', () => {
     quotaEnabled: false,
     billingCurl: '',
     billingEnabled: false,
+    proxyUrl: '',
   };
 
   assert.equal(hasApiKeyConfigChanges(account, buildApiKeyConfigDraft(account)), false);
@@ -192,6 +195,27 @@ test('hasApiKeyConfigChanges detects billing edits', () => {
       ...buildApiKeyConfigDraft(account),
       billingCurl: 'curl -sS "https://api.deepseek.com/user/balance"',
       billingEnabled: true,
+    }),
+    true,
+  );
+});
+
+test('hasApiKeyConfigChanges detects proxy route edits', () => {
+  const account = {
+    apiKey: 'sk-test',
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+    billingCurl: '',
+    billingEnabled: false,
+    proxyUrl: '',
+  };
+
+  assert.equal(
+    hasApiKeyConfigChanges(account, {
+      ...buildApiKeyConfigDraft(account),
+      proxyUrl: 'direct',
     }),
     true,
   );
@@ -207,6 +231,7 @@ test('listApiKeyConfigMissingFields reports required credentials fields only', (
       quotaEnabled: false,
       billingCurl: '',
       billingEnabled: false,
+      proxyUrl: '',
     }),
     ['API Key', 'Base URL'],
   );

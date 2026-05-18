@@ -74,6 +74,7 @@ type AccountRecord struct {
 	KeySuffix        string      `json:"keySuffix,omitempty"`
 	BaseURL          string      `json:"baseUrl,omitempty"`
 	Prefix           string      `json:"prefix,omitempty"`
+	ProxyURL         string      `json:"proxyUrl,omitempty"`
 	AuthIndex        interface{} `json:"authIndex,omitempty"`
 	QuotaKey         string      `json:"quotaKey,omitempty"`
 	QuotaCurl        string      `json:"quotaCurl,omitempty"`
@@ -116,10 +117,12 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 	prefix := NormalizePrefix(provider.Prefix)
 
 	apiKey := ""
+	proxyURL := ""
 	for _, entry := range provider.APIKeyEntries {
 		trimmed := strings.TrimSpace(entry.APIKey)
 		if trimmed != "" {
 			apiKey = trimmed
+			proxyURL = strings.TrimSpace(entry.ProxyURL)
 			break
 		}
 	}
@@ -137,6 +140,7 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 		KeySuffix:        APIKeySuffix(apiKey),
 		BaseURL:          baseURL,
 		Prefix:           prefix,
+		ProxyURL:         proxyURL,
 		SupportedFormats: resolveDefaultFormats(name),
 	}
 }
@@ -216,6 +220,7 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		KeySuffix:        suffix,
 		BaseURL:          baseURL,
 		Prefix:           prefix,
+		ProxyURL:         strings.TrimSpace(key.ProxyURL),
 		AuthIndex:        strings.TrimSpace(key.AuthIndex),
 		QuotaKey:         codexAPIKeyQuotaKey(key),
 		QuotaCurl:        strings.TrimSpace(key.QuotaCurl),

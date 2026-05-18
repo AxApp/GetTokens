@@ -26,6 +26,7 @@ import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import type { CodexQuotaState } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import AccountProxyRouteSection from './AccountProxyRouteSection';
 import { BillingBalance } from './CardSections';
 import RateLimitRulesSection from './RateLimitRulesSection';
 
@@ -63,6 +64,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   const isApiKey = account.credentialSource === 'api-key';
   const isAuthFile = account.credentialSource === 'auth-file';
   const [configDraft, setConfigDraft] = useState<ApiKeyConfigDraft>(() => buildApiKeyConfigDraft(account));
+  const [proxyRouteError, setProxyRouteError] = useState('');
   const [savingConfig, setSavingConfig] = useState(false);
 
   useEffect(() => {
@@ -79,6 +81,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     account.quotaEnabled,
     account.billingCurl,
     account.billingEnabled,
+    account.proxyUrl,
     isApiKey,
   ]);
 
@@ -87,8 +90,17 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     [account, configDraft, isApiKey],
   );
   const missingFields = useMemo(
-    () => (isApiKey ? listApiKeyConfigMissingFields(configDraft) : []),
-    [configDraft, isApiKey],
+    () => {
+      if (!isApiKey) {
+        return [];
+      }
+      const fields = listApiKeyConfigMissingFields(configDraft);
+      if (proxyRouteError) {
+        fields.push(proxyRouteError);
+      }
+      return fields;
+    },
+    [configDraft, isApiKey, proxyRouteError],
   );
   const liveBilling = useMemo(
     () => (quotaState?.quota ? extractBilling(quotaState.quota) : undefined),
@@ -130,6 +142,12 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           />
         ) : null}
         {isAuthFile ? <AuthFileContentSection account={account} /> : null}
+        <AccountProxyRouteSection
+          proxyUrl={isApiKey ? configDraft.proxyUrl : account.proxyUrl}
+          readonlyReason={isApiKey ? undefined : tReadonlyProxyReason(account)}
+          onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
+          onValidityChange={setProxyRouteError}
+        />
         <RateLimitSection {...props} />
         {isApiKey ? (
           <VerifySection
@@ -161,6 +179,13 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       </div>
     </AccountDetailModalFrame>
   );
+}
+
+function tReadonlyProxyReason(account: AccountRecord) {
+  if (account.credentialSource === 'auth-file') {
+    return 'AUTH FILE 暂不支持账号级出口写入；当前请求仍按全局或 sidecar 默认出口处理。';
+  }
+  return '当前账号类型暂不支持账号级出口配置。';
 }
 
 function DetailHeader({

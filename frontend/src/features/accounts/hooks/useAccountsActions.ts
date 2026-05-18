@@ -413,6 +413,7 @@ export default function useAccountsActions({
       const nextPrefix = draft.prefix.trim();
       const nextQuotaCurl = draft.quotaCurl.trim();
       const nextBillingCurl = draft.billingCurl.trim();
+      const nextProxyURL = draft.proxyUrl.trim();
       if (!nextAPIKey) {
         setDeleteError(`SAVE ERROR: ${t('accounts.api_key_required')}`);
         return;
@@ -433,6 +434,7 @@ export default function useAccountsActions({
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                proxyUrl: nextProxyURL,
               })
             )
         );
@@ -448,6 +450,7 @@ export default function useAccountsActions({
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                proxyUrl: nextProxyURL,
               }
             : prev
         );

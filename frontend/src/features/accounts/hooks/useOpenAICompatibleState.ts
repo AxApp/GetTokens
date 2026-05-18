@@ -238,6 +238,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
             prefix: '',
             apiKey: detailDraft.apiKey,
             apiKeys: [detailDraft.apiKey],
+            proxyUrl: detailDraft.proxyUrl.trim(),
             headers: parseHeadersText(detailDraft.headersText),
             models: normalizeProviderModels(detailDraft.models),
           }),

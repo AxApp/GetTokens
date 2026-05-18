@@ -707,6 +707,7 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 			Disabled:   item.Disabled,
 			BaseURL:    item.BaseURL,
 			Prefix:     item.Prefix,
+			ProxyURL:   item.ProxyURL,
 			APIKey:     item.APIKey,
 			APIKeys:    append([]string(nil), item.APIKeys...),
 			Models:     mapOpenAICompatibleModels(item.Models),
@@ -924,12 +925,15 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 
 func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error {
 	return a.core.UpdateCodexAPIKeyConfig(wailsapp.UpdateCodexAPIKeyConfigInput{
-		ID:           input.ID,
-		APIKey:       input.APIKey,
-		BaseURL:      input.BaseURL,
-		Prefix:       input.Prefix,
-		QuotaCurl:    input.QuotaCurl,
-		QuotaEnabled: input.QuotaEnabled,
+		ID:             input.ID,
+		APIKey:         input.APIKey,
+		BaseURL:        input.BaseURL,
+		Prefix:         input.Prefix,
+		ProxyURL:       input.ProxyURL,
+		QuotaCurl:      input.QuotaCurl,
+		QuotaEnabled:   input.QuotaEnabled,
+		BillingCurl:    input.BillingCurl,
+		BillingEnabled: input.BillingEnabled,
 	})
 }
 
@@ -952,6 +956,7 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		Name:        input.Name,
 		BaseURL:     input.BaseURL,
 		Prefix:      input.Prefix,
+		ProxyURL:    input.ProxyURL,
 		APIKey:      input.APIKey,
 		APIKeys:     append([]string(nil), input.APIKeys...),
 		Headers:     input.Headers,

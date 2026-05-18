@@ -279,6 +279,50 @@ func TestUpdateOpenAICompatibleProviderReplacesFirstKeyEntryAndAllowsRename(t *t
 	}
 }
 
+func TestUpdateOpenAICompatibleProviderUpdatesPrimaryProxyURL(t *testing.T) {
+	nextProxyURL := "socks5://127.0.0.1:7890"
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/openai-compatibility" {
+					return []byte(`{"openai-compatibility":[{"name":"deepseek","base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-old","proxy-url":"http://proxy.local"},{"api-key":"sk-backup","proxy-url":"http://backup.local"}]}]}`), 200, nil
+				}
+				if method == http.MethodPut && path == "/v0/management/openai-compatibility" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					var items []cliproxyapi.OpenAICompatibleProvider
+					if err := json.Unmarshal(payload, &items); err != nil {
+						t.Fatalf("unmarshal payload: %v", err)
+					}
+					got := items[0]
+					if got.APIKeyEntries[0].ProxyURL != nextProxyURL {
+						t.Fatalf("primary proxy url = %q, want %q", got.APIKeyEntries[0].ProxyURL, nextProxyURL)
+					}
+					if got.APIKeyEntries[1].ProxyURL != "http://backup.local" {
+						t.Fatalf("backup proxy url = %q, want preserved backup proxy", got.APIKeyEntries[1].ProxyURL)
+					}
+					return nil, 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 404, nil
+			})
+		},
+	}
+
+	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+		CurrentName: "deepseek",
+		Name:        "deepseek",
+		BaseURL:     "https://api.deepseek.com/v1",
+		APIKeys:     []string{"sk-new", "sk-backup"},
+		ProxyURL:    &nextProxyURL,
+	})
+	if err != nil {
+		t.Fatalf("UpdateOpenAICompatibleProvider returned error: %v", err)
+	}
+}
+
 func TestUpdateOpenAICompatibleProviderKeepsMultipleAliasesForOneRealModel(t *testing.T) {
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {

@@ -109,6 +109,7 @@ type UpdateCodexAPIKeyConfigInput struct {
 	APIKey         string `json:"apiKey"`
 	BaseURL        string `json:"baseUrl"`
 	Prefix         string `json:"prefix,omitempty"`
+	ProxyURL       string `json:"proxyUrl,omitempty"`
 	QuotaCurl      string `json:"quotaCurl,omitempty"`
 	QuotaEnabled   bool   `json:"quotaEnabled,omitempty"`
 	BillingCurl    string `json:"billingCurl,omitempty"`
@@ -215,6 +216,7 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 			existing.APIKey = nextAPIKey
 			existing.BaseURL = nextBaseURL
 			existing.Prefix = nextPrefix
+			existing.ProxyURL = strings.TrimSpace(input.ProxyURL)
 			existing.QuotaCurl = strings.TrimSpace(input.QuotaCurl)
 			existing.QuotaEnabled = input.QuotaEnabled && existing.QuotaCurl != ""
 			existing.BillingCurl = strings.TrimSpace(input.BillingCurl)

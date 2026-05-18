@@ -184,6 +184,7 @@ test('buildOpenAICompatibleProviderDraft keeps editable provider basics and veri
         name: 'deepseek',
         baseUrl: 'https://api.deepseek.com/v1',
         apiKey: 'sk-test',
+        proxyUrl: 'http://proxy.local',
         models: [{ name: 'deepseek-chat', alias: 'chat' }],
       },
     ),
@@ -195,6 +196,7 @@ test('buildOpenAICompatibleProviderDraft keeps editable provider basics and veri
       headersText: '',
       models: [{ name: 'deepseek-chat', alias: 'chat' }],
       verifyModel: 'deepseek-chat',
+      proxyUrl: 'http://proxy.local',
     },
   );
 });

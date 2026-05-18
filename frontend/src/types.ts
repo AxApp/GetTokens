@@ -62,6 +62,7 @@ export interface AccountRecord {
   keySuffix?: string;
   baseUrl?: string;
   prefix?: string;
+  proxyUrl?: string;
   authIndex?: unknown;
   quotaKey?: string;
   quotaCurl?: string;

@@ -42,6 +42,7 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		KeySuffix:        record.KeySuffix,
 		BaseURL:          record.BaseURL,
 		Prefix:           record.Prefix,
+		ProxyURL:         record.ProxyURL,
 		AuthIndex:        record.AuthIndex,
 		QuotaKey:         record.QuotaKey,
 		QuotaCurl:        record.QuotaCurl,

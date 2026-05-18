@@ -588,6 +588,7 @@ export namespace main {
 	    keySuffix?: string;
 	    baseUrl?: string;
 	    prefix?: string;
+	    proxyUrl?: string;
 	    authIndex?: any;
 	    quotaKey?: string;
 	    quotaCurl?: string;
@@ -619,6 +620,7 @@ export namespace main {
 	        this.keySuffix = source["keySuffix"];
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
+	        this.proxyUrl = source["proxyUrl"];
 	        this.authIndex = source["authIndex"];
 	        this.quotaKey = source["quotaKey"];
 	        this.quotaCurl = source["quotaCurl"];
@@ -1730,6 +1732,7 @@ export namespace main {
 	    disabled?: boolean;
 	    baseUrl: string;
 	    prefix?: string;
+	    proxyUrl?: string;
 	    apiKey: string;
 	    apiKeys?: string[];
 	    models?: OpenAICompatibleModel[];
@@ -1749,6 +1752,7 @@ export namespace main {
 	        this.disabled = source["disabled"];
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
+	        this.proxyUrl = source["proxyUrl"];
 	        this.apiKey = source["apiKey"];
 	        this.apiKeys = source["apiKeys"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
@@ -2815,6 +2819,7 @@ export namespace main {
 	    apiKey: string;
 	    baseUrl: string;
 	    prefix?: string;
+	    proxyUrl?: string;
 	    quotaCurl?: string;
 	    quotaEnabled?: boolean;
 	    billingCurl?: string;
@@ -2830,6 +2835,7 @@ export namespace main {
 	        this.apiKey = source["apiKey"];
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
+	        this.proxyUrl = source["proxyUrl"];
 	        this.quotaCurl = source["quotaCurl"];
 	        this.quotaEnabled = source["quotaEnabled"];
 	        this.billingCurl = source["billingCurl"];
@@ -2901,6 +2907,7 @@ export namespace main {
 	    name: string;
 	    baseUrl: string;
 	    prefix?: string;
+	    proxyUrl?: string;
 	    apiKey: string;
 	    apiKeys?: string[];
 	    headers?: Record<string, string>;
@@ -2916,6 +2923,7 @@ export namespace main {
 	        this.name = source["name"];
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
+	        this.proxyUrl = source["proxyUrl"];
 	        this.apiKey = source["apiKey"];
 	        this.apiKeys = source["apiKeys"];
 	        this.headers = source["headers"];
@@ -3102,4 +3110,3 @@ export namespace updater {
 	}
 
 }
-

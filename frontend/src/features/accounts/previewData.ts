@@ -52,6 +52,7 @@ const PREVIEW_API_KEY_ACCOUNTS: AccountRecord[] = [
     keySuffix: '8D31',
     baseUrl: 'https://api.openai.com/v1',
     prefix: 'stable-001',
+    proxyUrl: 'direct',
     quotaKey: 'codex-api-key:stable-001',
     quotaEnabled: true,
     quotaCurl: 'curl -s https://api.openai.com/dashboard/billing/usage',
@@ -67,6 +68,7 @@ const PREVIEW_API_KEY_ACCOUNTS: AccountRecord[] = [
     keySuffix: '3F19',
     baseUrl: 'https://api.openai.com/v1',
     prefix: 'gray-canary',
+    proxyUrl: 'socks5://127.0.0.1:7890',
     quotaKey: 'codex-api-key:gray-canary',
     quotaEnabled: true,
     quotaCurl: 'curl -s https://api.openai.com/dashboard/billing/usage',
@@ -79,6 +81,7 @@ const PREVIEW_OPENAI_COMPATIBLE_PROVIDERS: OpenAICompatibleProvider[] = [
     priority: 10,
     baseUrl: 'https://api.deepseek.com/v1',
     apiKey: 'sk-preview-deepseek',
+    proxyUrl: 'socks5://127.0.0.1:7890',
     keyCount: 1,
     modelCount: 2,
     models: [
@@ -290,7 +293,24 @@ export function getAccountsPreviewAuthFiles(): AuthFile[] {
 }
 
 export function getAccountsPreviewAPIKeyRecords(): AccountRecord[] {
-  return PREVIEW_API_KEY_ACCOUNTS.map((account) => ({ ...account }));
+  return [
+    ...PREVIEW_API_KEY_ACCOUNTS.map((account) => ({ ...account })),
+    ...PREVIEW_OPENAI_COMPATIBLE_PROVIDERS.map((provider): AccountRecord => ({
+      id: `openai-compatible:${provider.name}`,
+      provider: provider.name,
+      credentialSource: 'api-key' as const,
+      displayName: `OPENAI-COMPATIBLE · ${provider.name.toUpperCase()}`,
+      status: provider.disabled ? 'disabled' : 'configured',
+      priority: provider.priority,
+      disabled: provider.disabled,
+      apiKey: provider.apiKey,
+      keySuffix: provider.apiKey.slice(-4).toUpperCase(),
+      baseUrl: provider.baseUrl,
+      prefix: provider.prefix || '',
+      proxyUrl: provider.proxyUrl || '',
+      supportedFormats: ['openai_chat', 'openai_responses'],
+    })),
+  ];
 }
 
 export function getAccountsPreviewCodexAccounts(): AccountRecord[] {

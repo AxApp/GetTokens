@@ -56,13 +56,13 @@ type CodexQuotaWindow struct {
 }
 
 type CodexQuotaResponse struct {
-	PlanType string                    `json:"planType,omitempty"`
-	Windows  []CodexQuotaWindow        `json:"windows"`
-	Billing  *CodexQuotaBillingInfo    `json:"billing,omitempty"`
+	PlanType string                 `json:"planType,omitempty"`
+	Windows  []CodexQuotaWindow     `json:"windows"`
+	Billing  *CodexQuotaBillingInfo `json:"billing,omitempty"`
 }
 
 type CodexQuotaBillingInfo struct {
-	IsAvailable  bool                          `json:"isAvailable"`
+	IsAvailable  bool                           `json:"isAvailable"`
 	BalanceInfos []CodexQuotaBillingBalanceInfo `json:"balanceInfos"`
 }
 
@@ -74,26 +74,27 @@ type CodexQuotaBillingBalanceInfo struct {
 }
 
 type AccountRecord struct {
-	ID               string      `json:"id"`
-	Provider         string      `json:"provider"`
-	CredentialSource string      `json:"credentialSource"`
-	DisplayName      string      `json:"displayName"`
-	Status           string      `json:"status"`
-	Priority         int         `json:"priority,omitempty"`
-	Disabled         bool        `json:"disabled,omitempty"`
-	Email            string      `json:"email,omitempty"`
-	PlanType         string      `json:"planType,omitempty"`
-	Name             string      `json:"name,omitempty"`
-	APIKey           string      `json:"apiKey,omitempty"`
-	KeyFingerprint   string      `json:"keyFingerprint,omitempty"`
-	KeySuffix        string      `json:"keySuffix,omitempty"`
-	BaseURL          string      `json:"baseUrl,omitempty"`
-	Prefix           string      `json:"prefix,omitempty"`
-	AuthIndex        interface{} `json:"authIndex,omitempty"`
-	QuotaKey         string      `json:"quotaKey,omitempty"`
-	QuotaCurl        string      `json:"quotaCurl,omitempty"`
-	QuotaEnabled     bool        `json:"quotaEnabled,omitempty"`
-	LocalOnly        bool        `json:"localOnly,omitempty"`
+	ID               string            `json:"id"`
+	Provider         string            `json:"provider"`
+	CredentialSource string            `json:"credentialSource"`
+	DisplayName      string            `json:"displayName"`
+	Status           string            `json:"status"`
+	Priority         int               `json:"priority,omitempty"`
+	Disabled         bool              `json:"disabled,omitempty"`
+	Email            string            `json:"email,omitempty"`
+	PlanType         string            `json:"planType,omitempty"`
+	Name             string            `json:"name,omitempty"`
+	APIKey           string            `json:"apiKey,omitempty"`
+	KeyFingerprint   string            `json:"keyFingerprint,omitempty"`
+	KeySuffix        string            `json:"keySuffix,omitempty"`
+	BaseURL          string            `json:"baseUrl,omitempty"`
+	Prefix           string            `json:"prefix,omitempty"`
+	ProxyURL         string            `json:"proxyUrl,omitempty"`
+	AuthIndex        interface{}       `json:"authIndex,omitempty"`
+	QuotaKey         string            `json:"quotaKey,omitempty"`
+	QuotaCurl        string            `json:"quotaCurl,omitempty"`
+	QuotaEnabled     bool              `json:"quotaEnabled,omitempty"`
+	LocalOnly        bool              `json:"localOnly,omitempty"`
 	SupportedFormats []string          `json:"supportedFormats,omitempty"`
 	FormatBaseURLs   map[string]string `json:"formatBaseUrls,omitempty"`
 	BillingCurl      string            `json:"billingCurl,omitempty"`
@@ -131,6 +132,7 @@ type UpdateCodexAPIKeyConfigInput struct {
 	APIKey         string `json:"apiKey"`
 	BaseURL        string `json:"baseUrl"`
 	Prefix         string `json:"prefix,omitempty"`
+	ProxyURL       string `json:"proxyUrl,omitempty"`
 	QuotaCurl      string `json:"quotaCurl,omitempty"`
 	QuotaEnabled   bool   `json:"quotaEnabled,omitempty"`
 	BillingCurl    string `json:"billingCurl,omitempty"`
@@ -188,6 +190,7 @@ type OpenAICompatibleProvider struct {
 	Disabled   bool                    `json:"disabled,omitempty"`
 	BaseURL    string                  `json:"baseUrl"`
 	Prefix     string                  `json:"prefix,omitempty"`
+	ProxyURL   string                  `json:"proxyUrl,omitempty"`
 	APIKey     string                  `json:"apiKey"`
 	APIKeys    []string                `json:"apiKeys,omitempty"`
 	Models     []OpenAICompatibleModel `json:"models,omitempty"`
@@ -216,6 +219,7 @@ type UpdateOpenAICompatibleProviderInput struct {
 	Name        string                  `json:"name"`
 	BaseURL     string                  `json:"baseUrl"`
 	Prefix      string                  `json:"prefix,omitempty"`
+	ProxyURL    *string                 `json:"proxyUrl,omitempty"`
 	APIKey      string                  `json:"apiKey"`
 	APIKeys     []string                `json:"apiKeys,omitempty"`
 	Headers     map[string]string       `json:"headers,omitempty"`

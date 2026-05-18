@@ -16,6 +16,7 @@ type OpenAICompatibleProvider struct {
 	Disabled   bool                    `json:"disabled,omitempty"`
 	BaseURL    string                  `json:"baseUrl"`
 	Prefix     string                  `json:"prefix,omitempty"`
+	ProxyURL   string                  `json:"proxyUrl,omitempty"`
 	APIKey     string                  `json:"apiKey"`
 	APIKeys    []string                `json:"apiKeys,omitempty"`
 	Models     []OpenAICompatibleModel `json:"models,omitempty"`
@@ -44,6 +45,7 @@ type UpdateOpenAICompatibleProviderInput struct {
 	Name        string                  `json:"name"`
 	BaseURL     string                  `json:"baseUrl"`
 	Prefix      string                  `json:"prefix,omitempty"`
+	ProxyURL    *string                 `json:"proxyUrl,omitempty"`
 	APIKey      string                  `json:"apiKey"`
 	APIKeys     []string                `json:"apiKeys,omitempty"`
 	Headers     map[string]string       `json:"headers,omitempty"`
@@ -86,10 +88,12 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 	providers := make([]OpenAICompatibleProvider, 0, len(items))
 	for _, item := range items {
 		apiKey := ""
+		proxyURL := ""
 		apiKeys := make([]string, 0, len(item.APIKeyEntries))
 		models := make([]OpenAICompatibleModel, 0, len(item.Models))
 		if len(item.APIKeyEntries) > 0 {
 			apiKey = strings.TrimSpace(item.APIKeyEntries[0].APIKey)
+			proxyURL = strings.TrimSpace(item.APIKeyEntries[0].ProxyURL)
 		}
 		for _, entry := range item.APIKeyEntries {
 			trimmedAPIKey := strings.TrimSpace(entry.APIKey)
@@ -114,6 +118,7 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 			Disabled:   item.Disabled,
 			BaseURL:    strings.TrimSpace(item.BaseURL),
 			Prefix:     strings.TrimSpace(item.Prefix),
+			ProxyURL:   proxyURL,
 			APIKey:     apiKey,
 			APIKeys:    apiKeys,
 			Models:     models,
@@ -230,7 +235,9 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 	target.APIKeyEntries = make([]cliproxyapi.OpenAICompatibleAPIKeyEntry, 0, len(apiKeys))
 	for index, item := range apiKeys {
 		entry := cliproxyapi.OpenAICompatibleAPIKeyEntry{APIKey: item}
-		if index < len(current[targetIndex].APIKeyEntries) {
+		if index == 0 && input.ProxyURL != nil {
+			entry.ProxyURL = strings.TrimSpace(*input.ProxyURL)
+		} else if index < len(current[targetIndex].APIKeyEntries) {
 			entry.ProxyURL = strings.TrimSpace(current[targetIndex].APIKeyEntries[index].ProxyURL)
 		}
 		target.APIKeyEntries = append(target.APIKeyEntries, entry)

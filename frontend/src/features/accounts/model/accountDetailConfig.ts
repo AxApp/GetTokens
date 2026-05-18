@@ -11,11 +11,21 @@ export interface ApiKeyConfigDraft {
   quotaEnabled: boolean;
   billingCurl: string;
   billingEnabled: boolean;
+  proxyUrl: string;
 }
 
 type ConfigSource = Pick<
   AccountRecord,
-  'displayName' | 'provider' | 'apiKey' | 'baseUrl' | 'prefix' | 'quotaCurl' | 'quotaEnabled' | 'billingCurl' | 'billingEnabled'
+  | 'displayName'
+  | 'provider'
+  | 'apiKey'
+  | 'baseUrl'
+  | 'prefix'
+  | 'quotaCurl'
+  | 'quotaEnabled'
+  | 'billingCurl'
+  | 'billingEnabled'
+  | 'proxyUrl'
 >;
 
 export function buildApiKeyConfigDraft(account: ConfigSource): ApiKeyConfigDraft {
@@ -27,6 +37,7 @@ export function buildApiKeyConfigDraft(account: ConfigSource): ApiKeyConfigDraft
     quotaEnabled: account.quotaEnabled ?? false,
     billingCurl: account.billingCurl ?? '',
     billingEnabled: account.billingEnabled ?? false,
+    proxyUrl: account.proxyUrl ?? '',
   };
 }
 
@@ -38,7 +49,8 @@ export function hasApiKeyConfigChanges(account: ConfigSource, draft: ApiKeyConfi
     || current.quotaCurl !== draft.quotaCurl
     || current.quotaEnabled !== draft.quotaEnabled
     || current.billingCurl !== draft.billingCurl
-    || current.billingEnabled !== draft.billingEnabled;
+    || current.billingEnabled !== draft.billingEnabled
+    || current.proxyUrl !== draft.proxyUrl;
 }
 
 export function listApiKeyConfigMissingFields(draft: ApiKeyConfigDraft) {

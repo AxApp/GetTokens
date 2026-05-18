@@ -277,6 +277,55 @@ func TestUpdateCodexAPIKeyConfigPersistsQuotaCurl(t *testing.T) {
 	}
 }
 
+func TestUpdateCodexAPIKeyConfigPersistsProxyURL(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	item := cliproxyapi.CodexAPIKeyInput{
+		LocalID:  "codex-api-key:stable-001",
+		APIKey:   "sk-test-1111",
+		BaseURL:  "https://api.openai.com/v1",
+		ProxyURL: "direct",
+	}
+	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
+		t.Fatalf("persistCodexAPIKeySet: %v", err)
+	}
+
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method != "PUT" || path != "/v0/management/codex-api-key" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read body: %v", err)
+				}
+				if !strings.Contains(string(payload), `"proxy-url":"socks5://127.0.0.1:7890"`) {
+					t.Fatalf("proxy url not synced to sidecar: %s", payload)
+				}
+				return nil, 200, nil
+			})
+		},
+	}
+
+	if err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
+		ID:       "codex-api-key:stable-001",
+		APIKey:   "sk-test-1111",
+		BaseURL:  "https://api.openai.com/v1",
+		ProxyURL: "socks5://127.0.0.1:7890",
+	}); err != nil {
+		t.Fatalf("UpdateCodexAPIKeyConfig: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if got := items[0].ProxyURL; got != "socks5://127.0.0.1:7890" {
+		t.Fatalf("ProxyURL = %q, want socks5://127.0.0.1:7890", got)
+	}
+}
+
 func TestDeleteCodexAPIKeyAcceptsDerivedConfigIDForStableLocalRecord(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
