@@ -850,8 +850,17 @@ func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {
 	}, nil
 }
 
-func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, model string) (*ClaudeCodeLocalApplyResult, error) {
-	result, err := a.core.ApplyClaudeCodeAPIKeyConfigToLocal(apiKey, baseURL, model)
+func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions) (*ClaudeCodeLocalApplyResult, error) {
+	result, err := a.core.ApplyClaudeCodeAPIKeyConfigToLocal(apiKey, baseURL, wailsapp.ClaudeCodeLocalApplyOptions{
+		Model:                      options.Model,
+		DefaultHaikuModel:          options.DefaultHaikuModel,
+		DefaultSonnetModel:         options.DefaultSonnetModel,
+		DefaultOpusModel:           options.DefaultOpusModel,
+		SmallFastModel:             options.SmallFastModel,
+		MaxOutputTokens:            options.MaxOutputTokens,
+		APITimeoutMS:               options.APITimeoutMS,
+		DisableNonEssentialTraffic: options.DisableNonEssentialTraffic,
+	})
 	if err != nil {
 		return nil, err
 	}

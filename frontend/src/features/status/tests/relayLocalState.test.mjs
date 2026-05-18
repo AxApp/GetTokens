@@ -51,12 +51,26 @@ test('buildClaudeCodeSettingsDiff previews only Claude Code settings env fields'
     apiKey: 'sk-gettokens-1234567890abcdef',
     baseUrl: 'http://127.0.0.1:8317/v1',
     model: 'claude-sonnet-4-5',
+    defaultHaikuModel: 'claude-haiku-4-5',
+    defaultSonnetModel: 'claude-sonnet-4-5',
+    defaultOpusModel: 'claude-opus-4-5',
+    smallFastModel: 'claude-haiku-4-5',
+    maxOutputTokens: '6000',
+    apiTimeoutMs: '600000',
+    disableNonEssentialTraffic: true,
   });
 
   assert.match(diff, /--- ~\/\.claude\/settings\.json/);
   assert.match(diff, /\+\s+"ANTHROPIC_API_KEY": "sk-getto\.\.\.cdef"/);
   assert.match(diff, /\+\s+"ANTHROPIC_BASE_URL": "http:\/\/127\.0\.0\.1:8317\/v1"/);
   assert.match(diff, /\+\s+"ANTHROPIC_MODEL": "claude-sonnet-4-5"/);
+  assert.match(diff, /\+\s+"ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5"/);
+  assert.match(diff, /\+\s+"ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-5"/);
+  assert.match(diff, /\+\s+"ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-5"/);
+  assert.match(diff, /\+\s+"ANTHROPIC_SMALL_FAST_MODEL": "claude-haiku-4-5"/);
+  assert.match(diff, /\+\s+"CLAUDE_CODE_MAX_OUTPUT_TOKENS": "6000"/);
+  assert.match(diff, /\+\s+"API_TIMEOUT_MS": "600000"/);
+  assert.match(diff, /\+\s+"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"/);
   assert.match(diff, /ANTHROPIC_AUTH_TOKEN/);
   assert.match(diff, /permissions \/ hooks \/ statusLine/);
 });
@@ -73,6 +87,13 @@ test('updateLocalCliTargetDraft keeps Codex and Claude drafts isolated', () => {
       relayKeyIndex: 1,
       baseUrl: 'http://127.0.0.1:8317/v1',
       model: 'claude-sonnet-4-5',
+      defaultHaikuModel: 'claude-haiku-4-5',
+      defaultSonnetModel: 'claude-sonnet-4-5',
+      defaultOpusModel: 'claude-opus-4-5',
+      smallFastModel: 'claude-haiku-4-5',
+      maxOutputTokens: '',
+      apiTimeoutMs: '',
+      disableNonEssentialTraffic: false,
       authField: 'ANTHROPIC_API_KEY',
     },
   };

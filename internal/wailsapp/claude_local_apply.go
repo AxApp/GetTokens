@@ -13,7 +13,7 @@ const (
 	claudeCodeSettingsFileName = "settings.json"
 )
 
-func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, model string) (*ClaudeCodeLocalApplyResult, error) {
+func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions) (*ClaudeCodeLocalApplyResult, error) {
 	normalizedAPIKey := strings.TrimSpace(apiKey)
 	if normalizedAPIKey == "" {
 		return nil, errors.New("缺少 API KEY")
@@ -24,10 +24,23 @@ func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, 
 		return nil, errors.New("缺少 BASE URL")
 	}
 
-	return applyClaudeCodeAPIKeyConfigToLocal(normalizedAPIKey, normalizedBaseURL, strings.TrimSpace(model))
+	return applyClaudeCodeAPIKeyConfigToLocal(normalizedAPIKey, normalizedBaseURL, normalizeClaudeCodeLocalApplyOptions(options))
 }
 
-func applyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, model string) (*ClaudeCodeLocalApplyResult, error) {
+func normalizeClaudeCodeLocalApplyOptions(options ClaudeCodeLocalApplyOptions) ClaudeCodeLocalApplyOptions {
+	return ClaudeCodeLocalApplyOptions{
+		Model:                      strings.TrimSpace(options.Model),
+		DefaultHaikuModel:          strings.TrimSpace(options.DefaultHaikuModel),
+		DefaultSonnetModel:         strings.TrimSpace(options.DefaultSonnetModel),
+		DefaultOpusModel:           strings.TrimSpace(options.DefaultOpusModel),
+		SmallFastModel:             strings.TrimSpace(options.SmallFastModel),
+		MaxOutputTokens:            strings.TrimSpace(options.MaxOutputTokens),
+		APITimeoutMS:               strings.TrimSpace(options.APITimeoutMS),
+		DisableNonEssentialTraffic: options.DisableNonEssentialTraffic,
+	}
+}
+
+func applyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions) (*ClaudeCodeLocalApplyResult, error) {
 	claudeConfigDir, err := resolveClaudeConfigDirPath()
 	if err != nil {
 		return nil, err
@@ -46,7 +59,7 @@ func applyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, model str
 		Conflicts:           []string{},
 	}
 
-	nextBody, err := buildClaudeCodeSettingsJSON(existing, apiKey, baseURL, model, result)
+	nextBody, err := buildClaudeCodeSettingsJSON(existing, apiKey, baseURL, options, result)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +85,10 @@ func resolveClaudeConfigDirPath() (string, error) {
 	return filepath.Join(home, ".claude"), nil
 }
 
-func buildClaudeCodeSettingsJSON(existing string, apiKey string, baseURL string, model string, result *ClaudeCodeLocalApplyResult) ([]byte, error) {
+func buildClaudeCodeSettingsJSON(existing string, apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions, result *ClaudeCodeLocalApplyResult) ([]byte, error) {
 	if strings.TrimSpace(existing) == "" {
 		payload := map[string]any{
-			"env": buildClaudeCodeEnvPayload(map[string]any{}, apiKey, baseURL, model, result),
+			"env": buildClaudeCodeEnvPayload(map[string]any{}, apiKey, baseURL, options, result),
 		}
 		body, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
@@ -95,7 +108,7 @@ func buildClaudeCodeSettingsJSON(existing string, apiKey string, baseURL string,
 			return nil, fmt.Errorf("现有 Claude Code settings.json 的 env 不是对象，已停止写入以避免覆盖: %w", err)
 		}
 	}
-	envPayload = buildClaudeCodeEnvPayload(envPayload, apiKey, baseURL, model, result)
+	envPayload = buildClaudeCodeEnvPayload(envPayload, apiKey, baseURL, options, result)
 
 	envBody, err := json.MarshalIndent(envPayload, "  ", "  ")
 	if err != nil {
@@ -117,7 +130,7 @@ func buildClaudeCodeSettingsJSON(existing string, apiKey string, baseURL string,
 	return []byte(ensureTrailingNewline(patched)), nil
 }
 
-func buildClaudeCodeEnvPayload(env map[string]any, apiKey string, baseURL string, model string, result *ClaudeCodeLocalApplyResult) map[string]any {
+func buildClaudeCodeEnvPayload(env map[string]any, apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions, result *ClaudeCodeLocalApplyResult) map[string]any {
 	if token, ok := env["ANTHROPIC_AUTH_TOKEN"]; ok && strings.TrimSpace(fmt.Sprint(token)) != "" {
 		warning := "检测到 ANTHROPIC_AUTH_TOKEN，已保留该字段；Claude Code 可能优先使用 auth token"
 		result.Warnings = append(result.Warnings, warning)
@@ -126,12 +139,27 @@ func buildClaudeCodeEnvPayload(env map[string]any, apiKey string, baseURL string
 
 	env["ANTHROPIC_API_KEY"] = apiKey
 	env["ANTHROPIC_BASE_URL"] = baseURL
-	if model != "" {
-		env["ANTHROPIC_MODEL"] = model
+	setClaudeCodeEnvString(env, "ANTHROPIC_MODEL", options.Model)
+	setClaudeCodeEnvString(env, "ANTHROPIC_DEFAULT_HAIKU_MODEL", options.DefaultHaikuModel)
+	setClaudeCodeEnvString(env, "ANTHROPIC_DEFAULT_SONNET_MODEL", options.DefaultSonnetModel)
+	setClaudeCodeEnvString(env, "ANTHROPIC_DEFAULT_OPUS_MODEL", options.DefaultOpusModel)
+	setClaudeCodeEnvString(env, "ANTHROPIC_SMALL_FAST_MODEL", options.SmallFastModel)
+	setClaudeCodeEnvString(env, "CLAUDE_CODE_MAX_OUTPUT_TOKENS", options.MaxOutputTokens)
+	setClaudeCodeEnvString(env, "API_TIMEOUT_MS", options.APITimeoutMS)
+	if options.DisableNonEssentialTraffic {
+		env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
 	} else {
-		delete(env, "ANTHROPIC_MODEL")
+		delete(env, "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")
 	}
 	return env
+}
+
+func setClaudeCodeEnvString(env map[string]any, key string, value string) {
+	if value == "" {
+		delete(env, key)
+		return
+	}
+	env[key] = value
 }
 
 func replaceClaudeCodeEnvObject(existing string, envBody string) (string, error) {

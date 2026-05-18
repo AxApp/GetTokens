@@ -5,7 +5,7 @@ import {updater} from '../models';
 import {codexbinary} from '../models';
 import {sidecar} from '../models';
 
-export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:string):Promise<main.ClaudeCodeLocalApplyResult>;
+export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:main.ClaudeCodeLocalApplyOptions):Promise<main.ClaudeCodeLocalApplyResult>;
 
 export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean):Promise<main.RelayLocalApplyResult>;
 

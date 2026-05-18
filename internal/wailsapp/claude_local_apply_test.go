@@ -14,7 +14,7 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalUsesCLAUDECONFIGDIROverride(t *testin
 	t.Setenv("HOME", t.TempDir())
 
 	app := &App{}
-	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-test", "http://127.0.0.1:8317", "")
+	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-test", "http://127.0.0.1:8317", ClaudeCodeLocalApplyOptions{})
 	if err != nil {
 		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
 	}
@@ -36,7 +36,7 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalDefaultsToHomeClaudeSettings(t *testi
 	t.Setenv("HOME", home)
 
 	app := &App{}
-	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-test", "http://127.0.0.1:8317", "")
+	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-test", "http://127.0.0.1:8317", ClaudeCodeLocalApplyOptions{})
 	if err != nil {
 		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalCreatesNewSettingsFile(t *testing.T) 
 	t.Setenv("HOME", t.TempDir())
 
 	app := &App{}
-	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-test", "http://127.0.0.1:8317/", "")
+	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-test", "http://127.0.0.1:8317/", ClaudeCodeLocalApplyOptions{})
 	if err != nil {
 		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
 	}
@@ -117,7 +117,17 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesTopLevelAndEnvFields(t *test
 	}
 
 	app := &App{}
-	if _, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317/v1", "claude-sonnet-test"); err != nil {
+	options := ClaudeCodeLocalApplyOptions{
+		Model:                      "claude-sonnet-test",
+		DefaultHaikuModel:          "claude-haiku-test",
+		DefaultSonnetModel:         "claude-sonnet-test",
+		DefaultOpusModel:           "claude-opus-test",
+		SmallFastModel:             "claude-haiku-test",
+		MaxOutputTokens:            "6000",
+		APITimeoutMS:               "600000",
+		DisableNonEssentialTraffic: true,
+	}
+	if _, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317/v1", options); err != nil {
 		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
 	}
 
@@ -142,6 +152,13 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesTopLevelAndEnvFields(t *test
 		`"ANTHROPIC_API_KEY": "sk-ant-new"`,
 		`"ANTHROPIC_BASE_URL": "http://127.0.0.1:8317/v1"`,
 		`"ANTHROPIC_MODEL": "claude-sonnet-test"`,
+		`"ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-test"`,
+		`"ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-test"`,
+		`"ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-test"`,
+		`"ANTHROPIC_SMALL_FAST_MODEL": "claude-haiku-test"`,
+		`"CLAUDE_CODE_MAX_OUTPUT_TOKENS": "6000"`,
+		`"API_TIMEOUT_MS": "600000"`,
+		`"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"`,
 	} {
 		if !strings.Contains(content, expected) {
 			t.Fatalf("settings.json missing preserved or patched content %q:\n%s", expected, content)
@@ -164,7 +181,7 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesAuthTokenAndReturnsWarning(t
 	}
 
 	app := &App{}
-	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317", "")
+	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317", ClaudeCodeLocalApplyOptions{})
 	if err != nil {
 		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
 	}
@@ -204,7 +221,7 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalRejectsInvalidJSON(t *testing.T) {
 	}
 
 	app := &App{}
-	if _, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317", "claude-sonnet-test"); err == nil {
+	if _, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317", ClaudeCodeLocalApplyOptions{Model: "claude-sonnet-test"}); err == nil {
 		t.Fatalf("expected invalid JSON error")
 	}
 

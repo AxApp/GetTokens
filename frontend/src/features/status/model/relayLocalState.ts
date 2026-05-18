@@ -55,6 +55,13 @@ export interface ClaudeCodeLocalApplyDraft {
   relayKeyIndex: number;
   baseUrl: string;
   model: string;
+  defaultHaikuModel: string;
+  defaultSonnetModel: string;
+  defaultOpusModel: string;
+  smallFastModel: string;
+  maxOutputTokens: string;
+  apiTimeoutMs: string;
+  disableNonEssentialTraffic: boolean;
   authField: 'ANTHROPIC_API_KEY';
 }
 
@@ -119,6 +126,13 @@ export interface ClaudeCodeSettingsDiffInput {
   apiKey: string;
   baseUrl: string;
   model: string;
+  defaultHaikuModel?: string;
+  defaultSonnetModel?: string;
+  defaultOpusModel?: string;
+  smallFastModel?: string;
+  maxOutputTokens?: string;
+  apiTimeoutMs?: string;
+  disableNonEssentialTraffic?: boolean;
   targetPath?: string;
   authField?: 'ANTHROPIC_API_KEY';
 }
@@ -290,14 +304,23 @@ export function buildClaudeCodeSettingsDiff(input: ClaudeCodeSettingsDiffInput) 
   const maskedKey = maskRelayKey(input.apiKey);
   const baseUrl = input.baseUrl.trim();
   const model = input.model.trim();
-  const envLines = [
-    `+    "${authField}": ${quoteConfigString(maskedKey)},`,
-    `+    "ANTHROPIC_BASE_URL": ${quoteConfigString(baseUrl)}${model ? ',' : ''}`,
-  ];
+  const envItems = [
+    [authField, maskedKey],
+    ['ANTHROPIC_BASE_URL', baseUrl],
+    ['ANTHROPIC_MODEL', model],
+    ['ANTHROPIC_DEFAULT_HAIKU_MODEL', input.defaultHaikuModel?.trim() || ''],
+    ['ANTHROPIC_DEFAULT_SONNET_MODEL', input.defaultSonnetModel?.trim() || ''],
+    ['ANTHROPIC_DEFAULT_OPUS_MODEL', input.defaultOpusModel?.trim() || ''],
+    ['ANTHROPIC_SMALL_FAST_MODEL', input.smallFastModel?.trim() || ''],
+    ['CLAUDE_CODE_MAX_OUTPUT_TOKENS', input.maxOutputTokens?.trim() || ''],
+    ['API_TIMEOUT_MS', input.apiTimeoutMs?.trim() || ''],
+    ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', input.disableNonEssentialTraffic ? '1' : ''],
+  ].filter(([, value]) => value) as [string, string][];
 
-  if (model) {
-    envLines.push(`+    "ANTHROPIC_MODEL": ${quoteConfigString(model)}`);
-  }
+  const envLines = envItems.map(([key, value], index) => {
+    const comma = index === envItems.length - 1 ? '' : ',';
+    return `+    "${key}": ${quoteConfigString(value)}${comma}`;
+  });
 
   return [
     `--- ${targetPath}`,

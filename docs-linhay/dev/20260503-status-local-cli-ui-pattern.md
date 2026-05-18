@@ -12,6 +12,7 @@
 4. 本地 CLI 配置区只保留可操作控件和右侧 diff；固定值、受控字段列表、说明性提示优先移除，除非它直接阻止用户误操作。
 5. 右侧 diff 继续由 `StatusSnippetPanel` 承载，增删行用红绿标识。
 6. Codex 写入语义是 `CODEX_HOME/auth.json` 字段 merge 与 `CODEX_HOME/config.toml` 受控 key patch；Claude Code 写入语义是 `settings.json` 的受控 `env` 字段 patch。两者都不能覆盖 MCP、profiles、agents、permissions、hooks、statusLine 或未知字段。
+7. Claude Code local apply 不应停留在 `API_KEY / BASE_URL / MODEL` 三字段；至少覆盖模型族路由字段 `ANTHROPIC_DEFAULT_HAIKU_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_SMALL_FAST_MODEL`，以及常见厂商预设 env `CLAUDE_CODE_MAX_OUTPUT_TOKENS`、`API_TIMEOUT_MS`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
 
 ## 当前落点
 

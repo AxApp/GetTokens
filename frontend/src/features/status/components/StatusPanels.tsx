@@ -109,14 +109,23 @@ export function StatusApplyLocalSection({
   onToggleSupportsWebsockets,
 }: StatusApplyLocalSectionProps) {
   type LocalCliPanelTarget = 'codex' | 'claude';
+  type ClaudeCodeModelField = 'model' | 'defaultHaikuModel' | 'defaultSonnetModel' | 'defaultOpusModel' | 'smallFastModel';
+  type ModelEditorTarget = { target: 'codex' } | { target: 'claude'; field: ClaudeCodeModelField };
 
   const [activeTarget, setActiveTarget] = useState<LocalCliPanelTarget>('codex');
-  const [modelEditorTarget, setModelEditorTarget] = useState<LocalCliPanelTarget | null>(null);
+  const [modelEditorTarget, setModelEditorTarget] = useState<ModelEditorTarget | null>(null);
   const [modelEditor, setModelEditor] = useState<RelayModelEditorState | null>(null);
   const [claudeDraft, setClaudeDraft] = useState<ClaudeCodeLocalApplyDraft>(() => ({
     relayKeyIndex: selectedKeyIndex,
     baseUrl: selectedEndpointBaseUrl,
     model: selectedRelayModel.startsWith('claude') ? selectedRelayModel : 'claude-sonnet-4-5',
+    defaultHaikuModel: 'claude-haiku-4-5',
+    defaultSonnetModel: selectedRelayModel.startsWith('claude') ? selectedRelayModel : 'claude-sonnet-4-5',
+    defaultOpusModel: 'claude-opus-4-5',
+    smallFastModel: 'claude-haiku-4-5',
+    maxOutputTokens: '',
+    apiTimeoutMs: '',
+    disableNonEssentialTraffic: false,
     authField: 'ANTHROPIC_API_KEY',
   }));
   const selectedRelayKey = relayKeyItems[selectedKeyIndex]?.value || '';
@@ -195,9 +204,28 @@ export function StatusApplyLocalSection({
         apiKey: selectedClaudeRelayKey,
         baseUrl: selectedEndpointBaseUrl,
         model: claudeDraft.model,
+        defaultHaikuModel: claudeDraft.defaultHaikuModel,
+        defaultSonnetModel: claudeDraft.defaultSonnetModel,
+        defaultOpusModel: claudeDraft.defaultOpusModel,
+        smallFastModel: claudeDraft.smallFastModel,
+        maxOutputTokens: claudeDraft.maxOutputTokens,
+        apiTimeoutMs: claudeDraft.apiTimeoutMs,
+        disableNonEssentialTraffic: claudeDraft.disableNonEssentialTraffic,
         authField: claudeDraft.authField,
       }),
-    [claudeDraft.authField, claudeDraft.model, selectedEndpointBaseUrl, selectedClaudeRelayKey]
+    [
+      claudeDraft.apiTimeoutMs,
+      claudeDraft.authField,
+      claudeDraft.defaultHaikuModel,
+      claudeDraft.defaultOpusModel,
+      claudeDraft.defaultSonnetModel,
+      claudeDraft.disableNonEssentialTraffic,
+      claudeDraft.maxOutputTokens,
+      claudeDraft.model,
+      claudeDraft.smallFastModel,
+      selectedEndpointBaseUrl,
+      selectedClaudeRelayKey,
+    ]
   );
 
   useEffect(() => {
@@ -253,9 +281,14 @@ export function StatusApplyLocalSection({
   const claudeModelOptions = Array.from(
     new Set([
       claudeDraft.model || 'claude-sonnet-4-5',
+      claudeDraft.defaultHaikuModel,
+      claudeDraft.defaultSonnetModel,
+      claudeDraft.defaultOpusModel,
+      claudeDraft.smallFastModel,
       'claude-sonnet-4-5',
       'claude-opus-4-5',
       'claude-haiku-4-5',
+      ...sortedRelayModels.map((model) => model.name).filter((name) => name.toLowerCase().includes('claude')),
     ].filter(Boolean))
   );
 
@@ -272,7 +305,7 @@ export function StatusApplyLocalSection({
           },
         ];
 
-  function openModelEditor(target: LocalCliPanelTarget, value: string) {
+  function openModelEditor(target: ModelEditorTarget, value: string) {
     setModelEditorTarget(target);
     setModelEditor({
       value,
@@ -291,10 +324,10 @@ export function StatusApplyLocalSection({
       return;
     }
 
-    if (modelEditorTarget === 'codex') {
+    if (modelEditorTarget.target === 'codex') {
       onCommitRelayModelSelection(nextModel);
     } else {
-      updateClaudeDraft({ model: nextModel });
+      updateClaudeDraft({ [modelEditorTarget.field]: nextModel } as Partial<ClaudeCodeLocalApplyDraft>);
     }
     setModelEditor(null);
     setModelEditorTarget(null);
@@ -400,7 +433,7 @@ export function StatusApplyLocalSection({
                   value={selectedRelayModel}
                   options={relayModelSelectOptionNames}
                   onSelect={onCommitRelayModelSelection}
-                  onCreate={() => openModelEditor('codex', selectedRelayModel)}
+                  onCreate={() => openModelEditor({ target: 'codex' }, selectedRelayModel)}
                 />
 
                 <label className="grid gap-2">
@@ -529,11 +562,108 @@ export function StatusApplyLocalSection({
               <div className="grid gap-3">
                 <StatusModelPicker
                   t={t}
+                  title={t('status.model_name_title')}
                   value={claudeDraft.model || claudeModelOptions[0]}
                   options={claudeModelOptions}
                   onSelect={(value) => updateClaudeDraft({ model: value })}
-                  onCreate={() => openModelEditor('claude', claudeDraft.model || claudeModelOptions[0])}
+                  onCreate={() =>
+                    openModelEditor({ target: 'claude', field: 'model' }, claudeDraft.model || claudeModelOptions[0])
+                  }
                 />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <StatusModelPicker
+                  t={t}
+                  title={t('status.claude_default_haiku_model')}
+                  value={claudeDraft.defaultHaikuModel || 'claude-haiku-4-5'}
+                  options={claudeModelOptions}
+                  onSelect={(value) => updateClaudeDraft({ defaultHaikuModel: value })}
+                  onCreate={() =>
+                    openModelEditor(
+                      { target: 'claude', field: 'defaultHaikuModel' },
+                      claudeDraft.defaultHaikuModel || 'claude-haiku-4-5'
+                    )
+                  }
+                />
+                <StatusModelPicker
+                  t={t}
+                  title={t('status.claude_default_sonnet_model')}
+                  value={claudeDraft.defaultSonnetModel || 'claude-sonnet-4-5'}
+                  options={claudeModelOptions}
+                  onSelect={(value) => updateClaudeDraft({ defaultSonnetModel: value })}
+                  onCreate={() =>
+                    openModelEditor(
+                      { target: 'claude', field: 'defaultSonnetModel' },
+                      claudeDraft.defaultSonnetModel || 'claude-sonnet-4-5'
+                    )
+                  }
+                />
+                <StatusModelPicker
+                  t={t}
+                  title={t('status.claude_default_opus_model')}
+                  value={claudeDraft.defaultOpusModel || 'claude-opus-4-5'}
+                  options={claudeModelOptions}
+                  onSelect={(value) => updateClaudeDraft({ defaultOpusModel: value })}
+                  onCreate={() =>
+                    openModelEditor(
+                      { target: 'claude', field: 'defaultOpusModel' },
+                      claudeDraft.defaultOpusModel || 'claude-opus-4-5'
+                    )
+                  }
+                />
+                <StatusModelPicker
+                  t={t}
+                  title={t('status.claude_small_fast_model')}
+                  value={claudeDraft.smallFastModel || 'claude-haiku-4-5'}
+                  options={claudeModelOptions}
+                  onSelect={(value) => updateClaudeDraft({ smallFastModel: value })}
+                  onCreate={() =>
+                    openModelEditor(
+                      { target: 'claude', field: 'smallFastModel' },
+                      claudeDraft.smallFastModel || 'claude-haiku-4-5'
+                    )
+                  }
+                />
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+                <label className="grid gap-2">
+                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('status.claude_max_output_tokens')}
+                  </span>
+                  <input
+                    value={claudeDraft.maxOutputTokens}
+                    onChange={(event) => updateClaudeDraft({ maxOutputTokens: event.target.value })}
+                    className="input-swiss w-full"
+                    inputMode="numeric"
+                    placeholder="6000"
+                  />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('status.claude_api_timeout_ms')}
+                  </span>
+                  <input
+                    value={claudeDraft.apiTimeoutMs}
+                    onChange={(event) => updateClaudeDraft({ apiTimeoutMs: event.target.value })}
+                    className="input-swiss w-full"
+                    inputMode="numeric"
+                    placeholder="600000"
+                  />
+                </label>
+                <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
+                  <span className="text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                    {t('status.claude_disable_nonessential_traffic')}
+                  </span>
+                  <ToggleSwitch
+                    label={t('status.claude_disable_nonessential_traffic')}
+                    checked={claudeDraft.disableNonEssentialTraffic}
+                    disabled={isApplyingClaude}
+                    className="h-8 w-14"
+                    onChange={(checked) => updateClaudeDraft({ disableNonEssentialTraffic: checked })}
+                  />
+                </div>
               </div>
 
               {claudeApplyMessage ? (
@@ -690,6 +820,7 @@ function StatusEndpointPicker({
 
 interface StatusModelPickerProps {
   t: (key: string) => string;
+  title?: string;
   value: string;
   options: string[];
   onSelect: (value: string) => void;
@@ -698,6 +829,7 @@ interface StatusModelPickerProps {
 
 function StatusModelPicker({
   t,
+  title,
   value,
   options,
   onSelect,
@@ -707,7 +839,7 @@ function StatusModelPicker({
 
   return (
     <ActionSelect
-      title={t('status.model_name_title')}
+      title={title || t('status.model_name_title')}
       value={value}
       options={selectOptions.map((model) => ({ value: model, label: model }))}
       onSelect={onSelect}

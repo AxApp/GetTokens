@@ -677,9 +677,28 @@ export default function StatusFeature({
         {
           apiKey: normalizedKey,
           baseURL: draft.baseUrl,
-          model: draft.model,
+          options: {
+            model: draft.model,
+            defaultHaikuModel: draft.defaultHaikuModel,
+            defaultSonnetModel: draft.defaultSonnetModel,
+            defaultOpusModel: draft.defaultOpusModel,
+            smallFastModel: draft.smallFastModel,
+            maxOutputTokens: draft.maxOutputTokens,
+            apiTimeoutMs: draft.apiTimeoutMs,
+            disableNonEssentialTraffic: draft.disableNonEssentialTraffic,
+          },
         },
-        () => ApplyClaudeCodeAPIKeyConfigToLocal(normalizedKey, draft.baseUrl, draft.model)
+        () =>
+          ApplyClaudeCodeAPIKeyConfigToLocal(normalizedKey, draft.baseUrl, {
+            model: draft.model,
+            defaultHaikuModel: draft.defaultHaikuModel,
+            defaultSonnetModel: draft.defaultSonnetModel,
+            defaultOpusModel: draft.defaultOpusModel,
+            smallFastModel: draft.smallFastModel,
+            maxOutputTokens: draft.maxOutputTokens,
+            apiTimeoutMs: draft.apiTimeoutMs,
+            disableNonEssentialTraffic: draft.disableNonEssentialTraffic,
+          })
       );
       const warningSuffix = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
       setClaudeApplyMessage(`${t('status.apply_local_claude_done')}: ${result.settingsPath}${warningSuffix}`);

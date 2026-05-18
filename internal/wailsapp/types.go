@@ -110,6 +110,17 @@ type ClaudeCodeLocalApplyResult struct {
 	Conflicts           []string `json:"conflicts,omitempty"`
 }
 
+type ClaudeCodeLocalApplyOptions struct {
+	Model                      string `json:"model,omitempty"`
+	DefaultHaikuModel          string `json:"defaultHaikuModel,omitempty"`
+	DefaultSonnetModel         string `json:"defaultSonnetModel,omitempty"`
+	DefaultOpusModel           string `json:"defaultOpusModel,omitempty"`
+	SmallFastModel             string `json:"smallFastModel,omitempty"`
+	MaxOutputTokens            string `json:"maxOutputTokens,omitempty"`
+	APITimeoutMS               string `json:"apiTimeoutMs,omitempty"`
+	DisableNonEssentialTraffic bool   `json:"disableNonEssentialTraffic,omitempty"`
+}
+
 type LocalProjectedUsageDetail struct {
 	Timestamp         string `json:"timestamp"`
 	Provider          string `json:"provider"`

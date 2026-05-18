@@ -700,6 +700,32 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class ClaudeCodeLocalApplyOptions {
+	    model?: string;
+	    defaultHaikuModel?: string;
+	    defaultSonnetModel?: string;
+	    defaultOpusModel?: string;
+	    smallFastModel?: string;
+	    maxOutputTokens?: string;
+	    apiTimeoutMs?: string;
+	    disableNonEssentialTraffic?: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ClaudeCodeLocalApplyOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.model = source["model"];
+	        this.defaultHaikuModel = source["defaultHaikuModel"];
+	        this.defaultSonnetModel = source["defaultSonnetModel"];
+	        this.defaultOpusModel = source["defaultOpusModel"];
+	        this.smallFastModel = source["smallFastModel"];
+	        this.maxOutputTokens = source["maxOutputTokens"];
+	        this.apiTimeoutMs = source["apiTimeoutMs"];
+	        this.disableNonEssentialTraffic = source["disableNonEssentialTraffic"];
+	    }
+	}
 	export class ClaudeCodeLocalApplyResult {
 	    claudeConfigDirPath: string;
 	    settingsPath: string;
