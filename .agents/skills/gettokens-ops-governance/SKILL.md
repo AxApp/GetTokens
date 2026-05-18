@@ -12,6 +12,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Readiness**: Sidecar `ready` status is required for account data flow. UI mount success does not guarantee data flow.
 - **Verification**: Only claim a fix is live after verifying it in the actual desktop app window, not just the browser.
 - **Binding Boundary**: Wails binds the root `main.App`, not `internal/wailsapp.App`. Any new Wails-facing method or DTO added under `internal/wailsapp` must also be exposed through root-level `app.go`, `app_types.go`, and mappers as needed before regenerating bindings; otherwise `wails dev` will remove the frontend export.
+- **Startup Config Apply**: If a setting writes sidecar `config.yaml` while the sidecar is not yet `ready`, persist the local config first and mark the change as pending. The next `ready` callback must apply the latest config through the management API and clear the pending marker only after a successful response; failures should keep the marker for the next ready retry.
 
 ### 1.1 Browser Preview & Screenshot Loop
 - **When to use**:
@@ -83,6 +84,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Trigger**: When asked to "整理" or after a pattern-heavy session.
 - **Goal**: Extract durable workflows and failure modes into skills. Avoid copying transient guesses or chat fluff.
 - **Output**: Create/update skills in `.agents/skills/` and record the decision in project memory.
+- **Do Not Over-promote**: Feature-domain verification workflows, such as CLIProxyAPI fork checks or Proxyman capture procedures, should normally live in the relevant domain skill and dev docs. Promote to `AGENTS.md` only when the rule becomes repo-wide governance.
 
 ## 6. Release Governance
 - **Scope**: Current release scope is macOS only.

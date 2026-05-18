@@ -167,6 +167,34 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Remotes**: `origin` (AxApp), `linhay` (legacy fork backup), `upstream` (router-for-me).
 - **Workflow**: Sync upstream -> patch maintenance branch -> rebuild sidecar -> replace binary in `GetTokens.app`.
 - **Binary**: Sidecar binary lives at `build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api`.
+- **Fork Commit Order**: When the fork changes, commit inside `docs-linhay/references/CLIProxyAPI` first, then commit the parent repository gitlink and rebuilt sidecar artifacts. Do not leave the parent pointing at an uncommitted fork state.
+- **Rebuild Command**: After fork changes that affect runtime behavior, rebuild the local sidecar with `./scripts/ensure-sidecar.sh darwin arm64` before desktop or Proxyman acceptance.
+- **System Proxy Coverage**: `use-system-proxy` must cover every sidecar egress path that can reach external services, not only the default HTTP transport. Include standard HTTP requests, management `api-call`, Codex WebSocket upstream connections, and Claude/uTLS-specific transports.
+- **Proxy Priority**: Keep the runtime proxy order explicit: account-level `proxy-url` > global `proxy-url` > request/context roundtripper > `use-system-proxy` > direct. A configured `direct` route must bypass system proxy.
+
+### 8.1 System Proxy / Proxyman Verification
+- **When to use**: Use this flow when debugging whether local sidecar traffic can be captured by Proxyman or another macOS system proxy.
+- **Proxy discovery**:
+  - `proxyman-cli proxy-host` should report the active Proxyman host/port.
+  - `scutil --proxy` should show matching HTTP and HTTPS proxy settings, usually `127.0.0.1:9090` in local testing.
+- **A/B acceptance**:
+  1. Clear Proxyman state with `proxyman-cli clear-session`.
+  2. Apply sidecar config with `use-system-proxy: false`.
+  3. Send a real HTTPS request through sidecar management `api-call`.
+  4. Export a domain-filtered HAR with `proxyman-cli export-log --mode domains --domains <domain> --format har`.
+  5. The OFF run should export no sidecar CONNECT entry for that domain.
+  6. Repeat after applying `use-system-proxy: true`.
+  7. The ON run must contain a `CONNECT` entry whose `_clientName` is `cli-proxy-api`.
+- **Probe request**:
+  ```bash
+  curl -sS -X POST \
+    -H 'Authorization: Bearer gettokens-local-management-key' \
+    -H 'Content-Type: application/json' \
+    --data '{"method":"GET","url":"https://www.example.com/?gettokens_proxy_probe=on"}' \
+    http://127.0.0.1:18317/v0/management/api-call
+  ```
+- **HAR evidence**: Treat `_clientName=cli-proxy-api`, `method=CONNECT`, `status=200`, and `_clientBundlePath` pointing at the current `build/bin/cli-proxy-api` as the practical capture proof.
+- **Cleanup**: Restore the dev sidecar config after the A/B run so later tests do not inherit a temporary proxy mode.
 
 ## 9. Build Metadata & Version Boundary
 - **Rule**: Keep `Version` for updater comparison and release/tag semantics. Do not reuse it for UI-only date labels.
