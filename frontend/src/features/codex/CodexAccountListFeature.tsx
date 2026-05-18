@@ -1,4 +1,5 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Terminal } from 'lucide-react';
 import {
   FetchOpenAICompatibleProviderModels,
   GetAuthFileModels,
@@ -79,6 +80,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const [routingProbeAttempts, setRoutingProbeAttempts] = useState<CodexRoutingProbeAttemptView[]>([]);
   const [routingProbeRequestedAttempts, setRoutingProbeRequestedAttempts] = useState(1);
   const [routingProbeRunning, setRoutingProbeRunning] = useState(false);
+  const [routeProbeOpen, setRouteProbeOpen] = useState(false);
   const [detailRowID, setDetailRowID] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   const [orderDirty, setOrderDirty] = useState(false);
@@ -714,23 +716,16 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           title={t('codex.account_list_title')}
           subtitle={t('codex.account_list_subtitle')}
           align="center"
-        />
-
-        <RouteProbeCard
-          t={t}
-          routingProbeModel={routingProbeModel}
-          routingProbeModelOptions={routingProbeModelOptions}
-          routingProbeRunning={routingProbeRunning}
-          routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
-          allowFallback={routePolicyAllowFallback}
-          routePolicyPreviewRows={routePolicyPreviewRows}
-          routingProbeStreamLines={routingProbeStreamLines}
-          latestUsedFallback={latestRoutingProbeUsedFallback}
-          onFallbackChange={() => setRoutePolicyAllowFallback((prev) => !prev)}
-          onModelChange={setRoutingProbeModel}
-          onProbeOnce={() => void runRoutingProbe(1)}
-          onProbeSeries={() => void runRoutingProbe(3)}
-          onReset={resetRoutePolicy}
+          actions={
+            <button
+              type="button"
+              onClick={() => setRouteProbeOpen(true)}
+              className="btn-swiss flex min-h-10 items-center gap-2 !px-3 !py-2 !text-[0.625rem]"
+            >
+              <Terminal className="h-3.5 w-3.5" strokeWidth={4} />
+              {t('codex.account_list_probe_open')}
+            </button>
+          }
         />
 
         <CodexAccountOrderSection
@@ -774,6 +769,25 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onPolicyModeChange={setRoutePolicyMode}
         />
       </div>
+      {routeProbeOpen ? (
+        <RouteProbeCard
+          t={t}
+          routingProbeModel={routingProbeModel}
+          routingProbeModelOptions={routingProbeModelOptions}
+          routingProbeRunning={routingProbeRunning}
+          routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
+          allowFallback={routePolicyAllowFallback}
+          routePolicyPreviewRows={routePolicyPreviewRows}
+          routingProbeStreamLines={routingProbeStreamLines}
+          latestUsedFallback={latestRoutingProbeUsedFallback}
+          onClose={() => setRouteProbeOpen(false)}
+          onFallbackChange={() => setRoutePolicyAllowFallback((prev) => !prev)}
+          onModelChange={setRoutingProbeModel}
+          onProbeOnce={() => void runRoutingProbe(1)}
+          onProbeSeries={() => void runRoutingProbe(3)}
+          onReset={resetRoutePolicy}
+        />
+      ) : null}
       {detailRowWithModels ? (
         <CodexAccountDetailModal
           row={detailRowWithModels}

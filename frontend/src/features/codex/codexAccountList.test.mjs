@@ -24,6 +24,9 @@ import {
 import {
   CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY,
   CODEX_ORDER_SECTION_ACTION_MENU_GAP,
+  DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
+  DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+  filterCodexAccountOrderRows,
   parseCodexAccountOrderDisplayMode,
   shouldUseCodexOrderSectionActionMenu,
 } from './model/codexAccountOrderSectionLayout.ts';
@@ -205,11 +208,31 @@ test('shouldUseCodexOrderSectionActionMenu collapses controls only when inline w
 
 test('parseCodexAccountOrderDisplayMode supports persisted list sorting mode', () => {
   assert.equal(CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY, 'gettokens.codex.account-order-display-mode');
+  assert.equal(DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE, 'compact');
   assert.equal(parseCodexAccountOrderDisplayMode('compact'), 'compact');
   assert.equal(parseCodexAccountOrderDisplayMode('list'), 'list');
   assert.equal(parseCodexAccountOrderDisplayMode('full'), 'full');
-  assert.equal(parseCodexAccountOrderDisplayMode('unknown'), 'full');
-  assert.equal(parseCodexAccountOrderDisplayMode(null), 'full');
+  assert.equal(parseCodexAccountOrderDisplayMode('unknown'), 'compact');
+  assert.equal(parseCodexAccountOrderDisplayMode(null), 'compact');
+});
+
+test('filterCodexAccountOrderRows hides blocked accounts without reordering visible rows', () => {
+  const rows = [
+    { id: 'auth-file:a.json', requestable: true },
+    { id: 'auth-file:disabled.json', requestable: false },
+    { id: 'openai-compatible:mi', requestable: true },
+  ];
+
+  assert.equal(DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, 'all');
+  assert.deepEqual(filterCodexAccountOrderRows(rows, 'all').map((row) => row.id), [
+    'auth-file:a.json',
+    'auth-file:disabled.json',
+    'openai-compatible:mi',
+  ]);
+  assert.deepEqual(filterCodexAccountOrderRows(rows, 'requestable').map((row) => row.id), [
+    'auth-file:a.json',
+    'openai-compatible:mi',
+  ]);
 });
 
 test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {

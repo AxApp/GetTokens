@@ -11,8 +11,12 @@ import type { CodexQuotaState } from '../../accounts/model/types';
 import { AccountOrderRow } from './CodexAccountOrderRow';
 import {
   CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY,
+  DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
+  DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+  filterCodexAccountOrderRows,
   parseCodexAccountOrderDisplayMode,
   shouldUseCodexOrderSectionActionMenu,
+  type CodexAccountOrderFilter,
   type CodexAccountOrderDisplayMode,
 } from '../model/codexAccountOrderSectionLayout';
 
@@ -92,11 +96,14 @@ export function CodexAccountOrderSection({
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
 }) {
   const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => readInitialDensity());
+  const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(DEFAULT_CODEX_ACCOUNT_ORDER_FILTER);
   const [useActionMenu, setUseActionMenu] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionAreaRef = useRef<HTMLDivElement | null>(null);
   const actionMeasureRef = useRef<HTMLDivElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
+  const visibleRows = filterCodexAccountOrderRows(rows, accountFilter);
+  const rowOrderIndexByID = new Map(rows.map((row, index) => [row.id, index]));
 
   useEffect(() => {
     function updateActionLayout() {
@@ -124,7 +131,7 @@ export function CodexAccountOrderSection({
       observer.disconnect();
       window.removeEventListener('resize', updateActionLayout);
     };
-  }, [loading, loadingLabel, refreshLabel, saving]);
+  }, [accountFilter, loading, loadingLabel, refreshLabel, saving]);
 
   useEffect(() => {
     if (!useActionMenu) {
@@ -164,17 +171,19 @@ export function CodexAccountOrderSection({
     content = <EmptyState>{loadingLabel}</EmptyState>;
   } else if (rows.length === 0) {
     content = <EmptyState>{emptyLabel}</EmptyState>;
+  } else if (visibleRows.length === 0) {
+    content = <EmptyState>{t('codex.account_list_filter_empty')}</EmptyState>;
   } else {
     content = (
       <div className={density === 'list'
         ? 'grid gap-3 p-4'
         : 'grid auto-rows-fr gap-4 p-4 xl:auto-rows-auto xl:grid-cols-3 xl:gap-x-4 xl:gap-y-4'}
       >
-        {rows.map((row, index) => (
+        {visibleRows.map((row) => (
           <AccountOrderRow
             key={row.id}
             row={row}
-            index={index}
+            index={rowOrderIndexByID.get(row.id) ?? 0}
             density={density}
             dragged={draggedID === row.id}
             pending={pendingToggleID === row.id}
@@ -214,6 +223,7 @@ export function CodexAccountOrderSection({
             <div ref={actionMeasureRef} aria-hidden="true" className="pointer-events-none absolute invisible left-0 top-0">
               <InlineActionControls
                 density={density}
+                accountFilter={accountFilter}
                 disabled={!ready}
                 loading={loading}
                 saving={saving}
@@ -222,6 +232,7 @@ export function CodexAccountOrderSection({
                 loadingLabel={loadingLabel}
                 t={t}
                 onReload={onReload}
+                onAccountFilterChange={setAccountFilter}
                 onDensityChange={(nextDensity) => updateDensity(nextDensity, setDensity)}
               />
             </div>
@@ -244,6 +255,7 @@ export function CodexAccountOrderSection({
                   <div className="absolute right-0 top-[calc(100%+0.75rem)] z-20 min-w-[17rem] border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[6px_6px_0_var(--shadow-color)]">
                     <InlineActionControls
                       density={density}
+                      accountFilter={accountFilter}
                       disabled={!ready}
                       loading={loading}
                       saving={saving}
@@ -256,6 +268,10 @@ export function CodexAccountOrderSection({
                         setIsActionMenuOpen(false);
                         onReload();
                       }}
+                      onAccountFilterChange={(nextFilter) => {
+                        setAccountFilter(nextFilter);
+                        setIsActionMenuOpen(false);
+                      }}
                       onDensityChange={(nextDensity) => {
                         updateDensity(nextDensity, setDensity);
                         setIsActionMenuOpen(false);
@@ -267,6 +283,7 @@ export function CodexAccountOrderSection({
             ) : (
               <InlineActionControls
                 density={density}
+                accountFilter={accountFilter}
                 disabled={!ready}
                 loading={loading}
                 saving={saving}
@@ -275,6 +292,7 @@ export function CodexAccountOrderSection({
                 loadingLabel={loadingLabel}
                 t={t}
                 onReload={onReload}
+                onAccountFilterChange={setAccountFilter}
                 onDensityChange={(nextDensity) => updateDensity(nextDensity, setDensity)}
               />
             )}
@@ -300,7 +318,7 @@ export function CodexAccountOrderSection({
 
 function readInitialDensity(): CodexAccountOrderDisplayMode {
   if (typeof window === 'undefined') {
-    return 'full';
+    return DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE;
   }
   const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
   const params = new URLSearchParams(hash);
@@ -311,7 +329,7 @@ function readInitialDensity(): CodexAccountOrderDisplayMode {
   try {
     return parseCodexAccountOrderDisplayMode(window.localStorage.getItem(CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY));
   } catch {
-    return 'full';
+    return DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE;
   }
 }
 
@@ -330,7 +348,7 @@ function updateDensity(
   }
   const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
   const params = new URLSearchParams(hash);
-  if (density !== 'full') {
+  if (density !== DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE) {
     params.set('density', density);
   } else {
     params.delete('density');
@@ -340,6 +358,7 @@ function updateDensity(
 
 function InlineActionControls({
   density,
+  accountFilter,
   disabled,
   loading,
   saving,
@@ -349,9 +368,11 @@ function InlineActionControls({
   stacked = false,
   t,
   onReload,
+  onAccountFilterChange,
   onDensityChange,
 }: {
   density: CodexAccountOrderDisplayMode;
+  accountFilter: CodexAccountOrderFilter;
   disabled: boolean;
   loading: boolean;
   saving: boolean;
@@ -361,6 +382,7 @@ function InlineActionControls({
   stacked?: boolean;
   t: (key: string) => string;
   onReload: () => void;
+  onAccountFilterChange: (filter: CodexAccountOrderFilter) => void;
   onDensityChange: (density: CodexAccountOrderDisplayMode) => void;
 }) {
   return (
@@ -389,6 +411,26 @@ function InlineActionControls({
         </DensityButton>
         <DensityButton active={density === 'list'} onClick={() => onDensityChange('list')}>
           {t('codex.account_list_density_list')}
+        </DensityButton>
+      </div>
+      <div
+        className={`grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] ${
+          stacked ? 'w-full grid-cols-2' : 'shrink-0 grid-cols-[max-content_max-content]'
+        }`}
+        data-account-card-ignore-click="true"
+      >
+        <DensityButton
+          active={accountFilter === 'all'}
+          bordered
+          onClick={() => onAccountFilterChange('all')}
+        >
+          {t('codex.account_list_filter_all')}
+        </DensityButton>
+        <DensityButton
+          active={accountFilter === 'requestable'}
+          onClick={() => onAccountFilterChange('requestable')}
+        >
+          {t('codex.account_list_filter_requestable')}
         </DensityButton>
       </div>
     </div>

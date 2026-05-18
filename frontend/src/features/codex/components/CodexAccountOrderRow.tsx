@@ -5,7 +5,16 @@ import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
 import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { buildQuotaDisplay } from '../../accounts/model/accountQuota';
-import AttributionCard, { type AttributionCardBadge, type AttributionCardEvidenceRow } from '../../accounts/components/AttributionCard';
+import AttributionCard, {
+  type AttributionCardBadge,
+  type AttributionCardEvidenceRow,
+} from '../../accounts/components/AttributionCard';
+import {
+  ATTRIBUTION_CARD_BADGE_TONE_CLASS,
+  ATTRIBUTION_CARD_TONE_BORDER_CLASS,
+  ATTRIBUTION_CARD_TONE_FILL_CLASS,
+  type AttributionCardTone,
+} from '../../accounts/components/attributionCardTone';
 import { buildEndpointLabel, routePolicyModeLabel, sourceKindLabel } from './codexAccountPresentation';
 import {
   type CodexAccountRow,
@@ -97,10 +106,15 @@ export function AccountOrderRow({
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
   const policyMuted = Boolean(routePolicyState && !routePolicyState.participates);
   const policyRankLabel = routePolicyState?.participates
-    ? `${t('codex.account_list_policy_rank')} ${String(routePolicyState.previewRank).padStart(2, '0')}`
+    ? t('codex.account_list_policy_rank')
     : t('codex.account_list_policy_skipped');
   const quotaDisplay = buildQuotaDisplay(buildQuotaSummaryAccount(row), quotaState);
   const cardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'neutral') : 'critical';
+  const accentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[cardTone];
+  const listTone: AttributionCardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'positive') : 'critical';
+  const listAccentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[listTone];
+  const listRailFillClass = ATTRIBUTION_CARD_TONE_FILL_CLASS[listTone];
+  const listStatusClass = ATTRIBUTION_CARD_BADGE_TONE_CLASS[listTone];
   const badges: AttributionCardBadge[] = [
     { label: `ORDER ${String(index + 1).padStart(2, '0')}` },
     { label: sourceKindLabel(t, row.sourceKind) },
@@ -145,9 +159,7 @@ export function AccountOrderRow({
         <button
           type="button"
           onClick={onOpenDetail}
-          className={`grid min-h-[4.25rem] w-full grid-cols-[4rem_minmax(0,1fr)_9rem] items-stretch overflow-hidden border-2 border-l-[6px] border-[var(--border-color)] bg-[var(--bg-main)] text-left shadow-[4px_4px_0_var(--shadow-color)] transition hover:-translate-y-0.5 hover:bg-[var(--bg-surface)] active:translate-y-0 ${
-            row.requestable ? (probeHit ? 'border-l-green-600' : policyMuted ? 'border-l-yellow-500' : 'border-l-[var(--border-color)]') : 'border-l-red-500'
-          } ${
+          className={`grid min-h-[4.25rem] w-full grid-cols-[5.25rem_minmax(0,1fr)_9rem] items-stretch overflow-hidden border-2 border-l-[8px] border-[var(--border-color)] bg-[var(--bg-main)] text-left shadow-[4px_4px_0_var(--shadow-color)] transition hover:-translate-y-0.5 hover:bg-[var(--bg-surface)] active:translate-y-0 ${listAccentBorderClass} ${
             policyMuted && !probeHit ? 'opacity-75 grayscale' : ''
           }`}
         >
@@ -156,12 +168,15 @@ export function AccountOrderRow({
             onClick={(event) => event.stopPropagation()}
             onDragStart={() => onDragStart(row.id)}
             onDragEnd={onDragEnd}
-            className="flex cursor-grab flex-col items-center justify-center gap-1 border-r-2 border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)] active:cursor-grabbing"
+            className="grid cursor-grab grid-cols-[0.5rem_minmax(0,1fr)] border-r-2 border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)] active:cursor-grabbing"
             title={t('accounts.rotation_drag_badge')}
           >
-            <GripVertical className="h-4 w-4" strokeWidth={3} />
-            <span className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.08em]">
-              {String(index + 1).padStart(2, '0')}
+            <span className={listRailFillClass} aria-hidden="true" />
+            <span className="flex min-w-0 items-center justify-center gap-2 px-2">
+              <span className="font-mono text-sm font-black leading-none tracking-normal text-[var(--text-primary)]">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <GripVertical className="h-4 w-4 shrink-0" strokeWidth={3} />
             </span>
           </span>
           <span className="grid min-w-0 content-center gap-1.5 px-3 py-2">
@@ -185,11 +200,7 @@ export function AccountOrderRow({
           <span className="flex min-w-0 items-center justify-end border-l-2 border-[var(--border-color)] px-3 py-2">
             <span
               className={`max-w-full truncate whitespace-nowrap border px-2 py-1 text-right font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
-                row.requestable
-                  ? probeHit
-                    ? 'border-green-600 bg-green-600/10 text-green-700'
-                    : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)]'
-                  : 'border-red-500 bg-red-500/10 text-red-500'
+                listStatusClass
               }`}
             >
               {row.requestable ? policyRankLabel : routePolicyModeLabel(t, 'blocked')}

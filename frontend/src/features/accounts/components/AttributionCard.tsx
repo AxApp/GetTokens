@@ -9,8 +9,13 @@ import {
 import type { BillingDisplay } from '../../../types';
 import type { QuotaDisplay, Translator } from '../model/types';
 import { QuotaBars, BillingBalance, UsageMetrics, RateLimitGuard, EvidenceSection, UnsupportedQuotaPlaceholder } from './CardSections';
+import {
+  ATTRIBUTION_CARD_BADGE_TONE_CLASS,
+  ATTRIBUTION_CARD_TONE_BORDER_CLASS,
+  ATTRIBUTION_CARD_TONE_FILL_CLASS,
+  type AttributionCardTone,
+} from './attributionCardTone';
 
-type AttributionCardTone = 'neutral' | 'positive' | 'warning' | 'critical';
 type AttributionCardDensity = 'full' | 'compact';
 
 export interface AttributionCardBadge {
@@ -48,27 +53,6 @@ interface AttributionCardProps {
   onOpen: () => void;
 }
 
-const CARD_TONE_CLASS: Record<AttributionCardTone, string> = {
-  neutral: 'border-l-[var(--border-color)]',
-  positive: 'border-l-green-600',
-  warning: 'border-l-yellow-500',
-  critical: 'border-l-red-500',
-};
-
-const CARD_FILL_CLASS: Record<AttributionCardTone, string> = {
-  neutral: 'bg-[var(--text-primary)]',
-  positive: 'bg-green-600',
-  warning: 'bg-yellow-500',
-  critical: 'bg-red-500',
-};
-
-const BADGE_TONE_CLASS: Record<AttributionCardTone, string> = {
-  neutral: 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)]',
-  positive: 'border-green-600 bg-green-600/10 text-green-700',
-  warning: 'border-yellow-500 bg-yellow-500/10 text-yellow-700',
-  critical: 'border-red-500 bg-red-500/10 text-red-500',
-};
-
 const FLOW_LINE = '12,46 50,28 92,34 134,18 176,52 218,38 260,24 302,30';
 const FLOW_BASE = '12,58 50,44 92,48 134,34 176,60 218,50 260,42 302,40';
 
@@ -96,8 +80,8 @@ export default function AttributionCard({
   onOpen,
 }: AttributionCardProps) {
   const showAttribution = density !== 'compact';
-  const accentBorderClass = CARD_TONE_CLASS[tone];
-  const accentFillClass = CARD_FILL_CLASS[tone];
+  const accentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[tone];
+  const accentFillClass = ATTRIBUTION_CARD_TONE_FILL_CLASS[tone];
   const quotaWindows = quotaDisplay?.windows ?? [];
   const rateLimitRules = rateLimitStatus?.rules ?? [];
   const flow = buildTrafficCurveState(usageSummary);
@@ -145,7 +129,7 @@ export default function AttributionCard({
                 <span
                   key={`${badge.label}-${badge.tone || 'neutral'}`}
                   className={`border px-2 py-1 font-mono text-[0.5625rem] font-black uppercase tracking-[0.14em] ${
-                    BADGE_TONE_CLASS[badge.tone || 'neutral']
+                    ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']
                   }`}
                 >
                   {badge.label}
