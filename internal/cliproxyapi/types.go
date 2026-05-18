@@ -39,6 +39,7 @@ type CodexAPIKeyInput struct {
 	Prefix         string            `json:"prefix,omitempty"`
 	BaseURL        string            `json:"base-url"`
 	FormatBaseURLs map[string]string `json:"format-base-urls,omitempty"`
+	Websockets     bool              `json:"websockets,omitempty"`
 	ProxyURL       string            `json:"proxy-url,omitempty"`
 	Models         []CodexModel      `json:"models,omitempty"`
 	Headers        map[string]string `json:"headers,omitempty"`

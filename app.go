@@ -906,6 +906,7 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		APIKey:         input.APIKey,
 		Label:          input.Label,
 		BaseURL:        input.BaseURL,
+		FormatBaseURLs: input.FormatBaseURLs,
 		Priority:       input.Priority,
 		Prefix:         input.Prefix,
 		ProxyURL:       input.ProxyURL,
@@ -913,6 +914,8 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		ExcludedModels: input.ExcludedModels,
 		QuotaCurl:      input.QuotaCurl,
 		QuotaEnabled:   input.QuotaEnabled,
+		BillingCurl:    input.BillingCurl,
+		BillingEnabled: input.BillingEnabled,
 	})
 }
 

@@ -369,6 +369,7 @@ func codexAPIKeysFromInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyapi.
 			Prefix:         item.Prefix,
 			BaseURL:        item.BaseURL,
 			FormatBaseURLs: item.FormatBaseURLs,
+			Websockets:     item.Websockets,
 			ProxyURL:       item.ProxyURL,
 			Models:         item.Models,
 			Headers:        item.Headers,
@@ -389,6 +390,7 @@ func sidecarCodexAPIKeyInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyap
 		item.QuotaEnabled = false
 		item.BillingCurl = ""
 		item.BillingEnabled = false
+		item.Websockets = true
 		out = append(out, item)
 	}
 	return out

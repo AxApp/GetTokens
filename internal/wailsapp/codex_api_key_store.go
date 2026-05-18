@@ -237,6 +237,7 @@ func codexAPIKeyInputFromKey(item cliproxyapi.CodexAPIKey) cliproxyapi.CodexAPIK
 		Disabled:       item.Disabled,
 		Prefix:         item.Prefix,
 		BaseURL:        item.BaseURL,
+		Websockets:     item.Websockets,
 		ProxyURL:       item.ProxyURL,
 		Models:         item.Models,
 		Headers:        item.Headers,
