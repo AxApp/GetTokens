@@ -478,6 +478,12 @@ type LocalProjectedUsageSettings struct {
 	RefreshIntervalMinutes int `json:"refreshIntervalMinutes"`
 }
 
+type SidecarProxySettings struct {
+	UseSystemProxy          bool   `json:"useSystemProxy"`
+	ConfigPath              string `json:"configPath"`
+	AppliedToRunningSidecar bool   `json:"appliedToRunningSidecar"`
+}
+
 type CodexFeatureDefinition struct {
 	Key            string `json:"key"`
 	Description    string `json:"description,omitempty"`

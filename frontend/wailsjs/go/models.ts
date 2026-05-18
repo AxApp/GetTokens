@@ -2626,6 +2626,22 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class SidecarProxySettings {
+	    useSystemProxy: boolean;
+	    configPath: string;
+	    appliedToRunningSidecar: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new SidecarProxySettings(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.useSystemProxy = source["useSystemProxy"];
+	        this.configPath = source["configPath"];
+	        this.appliedToRunningSidecar = source["appliedToRunningSidecar"];
+	    }
+	}
 	export class SidecarUsageAttributionBucket {
 	    start: string;
 	    requestCount: number;

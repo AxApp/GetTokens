@@ -451,6 +451,33 @@ func (a *App) UpdateLocalProjectedUsageSettings(input LocalProjectedUsageSetting
 	}, nil
 }
 
+func (a *App) GetSidecarProxySettings() (*SidecarProxySettings, error) {
+	result, err := a.core.GetSidecarProxySettings()
+	if err != nil {
+		return nil, err
+	}
+	return &SidecarProxySettings{
+		UseSystemProxy:          result.UseSystemProxy,
+		ConfigPath:              result.ConfigPath,
+		AppliedToRunningSidecar: result.AppliedToRunningSidecar,
+	}, nil
+}
+
+func (a *App) UpdateSidecarProxySettings(input SidecarProxySettings) (*SidecarProxySettings, error) {
+	result, err := a.core.UpdateSidecarProxySettings(wailsapp.SidecarProxySettings{
+		UseSystemProxy: input.UseSystemProxy,
+		ConfigPath:     input.ConfigPath,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &SidecarProxySettings{
+		UseSystemProxy:          result.UseSystemProxy,
+		ConfigPath:              result.ConfigPath,
+		AppliedToRunningSidecar: result.AppliedToRunningSidecar,
+	}, nil
+}
+
 func (a *App) GetCodexFeatureConfig() (*CodexFeatureConfigSnapshot, error) {
 	result, err := a.core.GetCodexFeatureConfig()
 	if err != nil {

@@ -17,6 +17,7 @@ type sidecarConfig struct {
 	Port                   int      `yaml:"port"`
 	AuthDir                string   `yaml:"auth-dir"`
 	APIKeys                []string `yaml:"api-keys"`
+	UseSystemProxy         bool     `yaml:"use-system-proxy"`
 	UsageStatisticsEnabled bool     `yaml:"usage-statistics-enabled"`
 	RemoteManagement       struct {
 		AllowRemote bool   `yaml:"allow-remote"`
@@ -88,6 +89,96 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 		return "", err
 	}
 	return cfg.APIKeys[0], nil
+}
+
+func readUseSystemProxy(path string) (bool, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	var document yaml.Node
+	if err := yaml.Unmarshal(data, &document); err != nil {
+		return false, err
+	}
+	root := yamlDocumentRoot(&document)
+	if root == nil {
+		return false, nil
+	}
+	return readMappingBool(root, "use-system-proxy"), nil
+}
+
+func writeUseSystemProxy(path string, enabled bool) error {
+	var document yaml.Node
+	data, err := os.ReadFile(path)
+	if err == nil {
+		if unmarshalErr := yaml.Unmarshal(data, &document); unmarshalErr != nil {
+			return unmarshalErr
+		}
+	} else if os.IsNotExist(err) {
+		document = yaml.Node{
+			Kind: yaml.DocumentNode,
+			Content: []*yaml.Node{{
+				Kind: yaml.MappingNode,
+			}},
+		}
+	} else {
+		return err
+	}
+
+	root := yamlDocumentRoot(&document)
+	if root == nil {
+		document = yaml.Node{
+			Kind: yaml.DocumentNode,
+			Content: []*yaml.Node{{
+				Kind: yaml.MappingNode,
+			}},
+		}
+		root = document.Content[0]
+	}
+	upsertMappingScalar(root, "use-system-proxy", fmt.Sprintf("%t", enabled), "!!bool")
+
+	var buf bytes.Buffer
+	encoder := yaml.NewEncoder(&buf)
+	encoder.SetIndent(2)
+	if err := encoder.Encode(&document); err != nil {
+		_ = encoder.Close()
+		return err
+	}
+	if err := encoder.Close(); err != nil {
+		return err
+	}
+	return os.WriteFile(path, buf.Bytes(), 0600)
+}
+
+func yamlDocumentRoot(document *yaml.Node) *yaml.Node {
+	if document == nil || document.Kind != yaml.DocumentNode || len(document.Content) == 0 || document.Content[0] == nil {
+		return nil
+	}
+	if document.Content[0].Kind != yaml.MappingNode {
+		return nil
+	}
+	return document.Content[0]
+}
+
+func readMappingBool(parent *yaml.Node, key string) bool {
+	if parent == nil || parent.Kind != yaml.MappingNode {
+		return false
+	}
+	for index := 0; index+1 < len(parent.Content); index += 2 {
+		keyNode := parent.Content[index]
+		if keyNode == nil || keyNode.Value != key {
+			continue
+		}
+		valueNode := parent.Content[index+1]
+		if valueNode == nil {
+			return false
+		}
+		return strings.EqualFold(strings.TrimSpace(valueNode.Value), "true") || strings.TrimSpace(valueNode.Value) == "1"
+	}
+	return false
 }
 
 func ensureMappingNode(parent *yaml.Node, key string) *yaml.Node {

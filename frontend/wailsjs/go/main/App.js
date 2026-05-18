@@ -170,6 +170,10 @@ export function GetReleaseLabel() {
   return window['go']['main']['App']['GetReleaseLabel']();
 }
 
+export function GetSidecarProxySettings() {
+  return window['go']['main']['App']['GetSidecarProxySettings']();
+}
+
 export function GetSidecarStatus() {
   return window['go']['main']['App']['GetSidecarStatus']();
 }
@@ -356,6 +360,10 @@ export function UpdateRelayServiceAPIKey(arg1) {
 
 export function UpdateRelayServiceAPIKeys(arg1) {
   return window['go']['main']['App']['UpdateRelayServiceAPIKeys'](arg1);
+}
+
+export function UpdateSidecarProxySettings(arg1) {
+  return window['go']['main']['App']['UpdateSidecarProxySettings'](arg1);
 }
 
 export function UploadAuthFiles(arg1) {

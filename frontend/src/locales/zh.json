@@ -943,7 +943,15 @@
     "local_usage_refresh_loading": "正在读取当前刷新策略…",
     "local_usage_refresh_saving": "正在保存刷新策略…",
     "local_usage_refresh_saved": "后台刷新间隔已更新",
-    "local_usage_refresh_failed": "后台刷新间隔保存失败"
+    "local_usage_refresh_failed": "后台刷新间隔保存失败",
+    "network_proxy": "网络代理",
+    "system_proxy": "跟随系统代理",
+    "system_proxy_hint": "开启后，sidecar 在没有账号级或全局 proxy-url 时会读取系统 HTTP/HTTPS 代理；显式 direct 仍会直连。",
+    "system_proxy_loading": "正在读取 sidecar 代理策略…",
+    "system_proxy_saving": "正在保存 sidecar 代理策略…",
+    "system_proxy_saved_live": "系统代理策略已保存，并已应用到运行中的 sidecar。",
+    "system_proxy_saved_restart": "系统代理策略已保存；sidecar 下次启动后生效。",
+    "system_proxy_failed": "系统代理策略保存失败"
   },
   "debug": {
     "title": "调试面板",

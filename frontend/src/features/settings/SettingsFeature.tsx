@@ -3,10 +3,13 @@ import {
   ApplyUpdate,
   CheckUpdate,
   GetLocalProjectedUsageSettings,
+  GetSidecarProxySettings,
   UpdateLocalProjectedUsageSettings,
+  UpdateSidecarProxySettings,
 } from '../../../wailsjs/go/main/App';
 import { BrowserOpenURL, Quit } from '../../../wailsjs/runtime/runtime';
 import SegmentedControl from '../../components/ui/SegmentedControl';
+import ToggleSwitch from '../../components/ui/ToggleSwitch';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
@@ -76,6 +79,11 @@ export default function SettingsFeature({
   const [localUsageMessage, setLocalUsageMessage] = useState('');
   const [isLoadingLocalUsageSettings, setIsLoadingLocalUsageSettings] = useState(true);
   const [isSavingLocalUsageSettings, setIsSavingLocalUsageSettings] = useState(false);
+  const [useSystemProxy, setUseSystemProxy] = useState(false);
+  const [sidecarProxyConfigPath, setSidecarProxyConfigPath] = useState('');
+  const [sidecarProxyMessage, setSidecarProxyMessage] = useState('');
+  const [isLoadingSidecarProxySettings, setIsLoadingSidecarProxySettings] = useState(true);
+  const [isSavingSidecarProxySettings, setIsSavingSidecarProxySettings] = useState(false);
   const currentVersionLabel = formatAppVersion(version);
   const latestReleaseLabel = availableRelease ? formatAppVersion(availableRelease.version) : '—';
   const textScaleOptions: ReadonlyArray<SegmentedOption<typeof textScale>> = [
@@ -86,6 +94,7 @@ export default function SettingsFeature({
   const settingsSectionTabs: ReadonlyArray<{ id: SettingsSectionID; label: string; shortLabel: string }> = [
     { id: 'appearance', label: t('settings.appearance'), shortLabel: locale === 'zh' ? '外观' : 'LOOK' },
     { id: 'local_usage_refresh', label: t('settings.local_usage_refresh'), shortLabel: locale === 'zh' ? '刷新' : 'SYNC' },
+    { id: 'network_proxy', label: t('settings.network_proxy'), shortLabel: locale === 'zh' ? '代理' : 'NET' },
     { id: 'updates', label: t('settings.updates'), shortLabel: locale === 'zh' ? '更新' : 'UPD' },
   ];
 
@@ -114,6 +123,38 @@ export default function SettingsFeature({
     }
 
     void loadLocalUsageSettings();
+
+    return () => {
+      mounted = false;
+    };
+  }, [t, trackRequest]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSidecarProxySettings() {
+      setIsLoadingSidecarProxySettings(true);
+      setSidecarProxyMessage('');
+      try {
+        const settings = await trackRequest<any>(
+          'GetSidecarProxySettings',
+          { args: [] },
+          () => GetSidecarProxySettings(),
+        );
+        if (!mounted) return;
+        setUseSystemProxy(Boolean(settings?.useSystemProxy));
+        setSidecarProxyConfigPath(settings?.configPath ?? '');
+      } catch (error) {
+        if (!mounted) return;
+        setSidecarProxyMessage(`${t('settings.system_proxy_failed')}: ${toErrorMessage(error)}`);
+      } finally {
+        if (mounted) {
+          setIsLoadingSidecarProxySettings(false);
+        }
+      }
+    }
+
+    void loadSidecarProxySettings();
 
     return () => {
       mounted = false;
@@ -200,6 +241,31 @@ export default function SettingsFeature({
       setLocalUsageMessage(`${t('settings.local_usage_refresh_failed')}: ${toErrorMessage(error)}`);
     } finally {
       setIsSavingLocalUsageSettings(false);
+    }
+  }
+
+  async function handleUseSystemProxyChange(checked: boolean) {
+    setUseSystemProxy(checked);
+    setIsSavingSidecarProxySettings(true);
+    setSidecarProxyMessage('');
+    try {
+      const settings = await trackRequest<any>(
+        'UpdateSidecarProxySettings',
+        { useSystemProxy: checked },
+        () => UpdateSidecarProxySettings({ useSystemProxy: checked, configPath: sidecarProxyConfigPath, appliedToRunningSidecar: false }),
+      );
+      setUseSystemProxy(Boolean(settings?.useSystemProxy));
+      setSidecarProxyConfigPath(settings?.configPath ?? sidecarProxyConfigPath);
+      setSidecarProxyMessage(
+        settings?.appliedToRunningSidecar
+          ? t('settings.system_proxy_saved_live')
+          : t('settings.system_proxy_saved_restart'),
+      );
+    } catch (error) {
+      setUseSystemProxy(!checked);
+      setSidecarProxyMessage(`${t('settings.system_proxy_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setIsSavingSidecarProxySettings(false);
     }
   }
 
@@ -350,6 +416,63 @@ export default function SettingsFeature({
                     style={bodyTextStyle}
                   >
                     {localUsageMessage}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </section>
+
+          <section ref={(element) => setSectionRef('network_proxy', element)} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span
+                className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono font-black uppercase text-[var(--bg-main)]"
+                style={sectionBadgeStyle}
+              >
+                {getSettingsSectionBadge('network_proxy')}
+              </span>
+              <h3 className="font-black uppercase italic tracking-tighter text-[var(--text-primary)]" style={sectionTitleStyle}>
+                {t('settings.network_proxy')}
+              </h3>
+            </div>
+
+            <div className="card-swiss !p-0 divide-y-2 divide-[var(--border-color)]">
+              <div className="space-y-3 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
+                      {t('settings.system_proxy')}
+                    </label>
+                    <div className="mt-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
+                      {isLoadingSidecarProxySettings
+                        ? t('settings.system_proxy_loading')
+                        : isSavingSidecarProxySettings
+                          ? t('settings.system_proxy_saving')
+                          : t('settings.system_proxy_hint')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
+                      SIDECAR_SYSTEM_PROXY
+                    </span>
+                    <ToggleSwitch
+                      label={t('settings.system_proxy')}
+                      checked={useSystemProxy}
+                      disabled={isLoadingSidecarProxySettings || isSavingSidecarProxySettings}
+                      onChange={(checked) => void handleUseSystemProxyChange(checked)}
+                    />
+                  </div>
+                </div>
+                {sidecarProxyConfigPath ? (
+                  <div className="break-all font-mono font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
+                    {sidecarProxyConfigPath}
+                  </div>
+                ) : null}
+                {sidecarProxyMessage ? (
+                  <div
+                    className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]"
+                    style={bodyTextStyle}
+                  >
+                    {sidecarProxyMessage}
                   </div>
                 ) : null}
               </div>

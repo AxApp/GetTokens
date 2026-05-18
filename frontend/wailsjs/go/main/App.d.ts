@@ -89,6 +89,8 @@ export function GetRelayServiceConfig():Promise<main.RelayServiceConfig>;
 
 export function GetReleaseLabel():Promise<string>;
 
+export function GetSidecarProxySettings():Promise<main.SidecarProxySettings>;
+
 export function GetSidecarStatus():Promise<sidecar.Status>;
 
 export function GetSidecarUsageAttribution(arg1:main.SidecarUsageAttributionInput):Promise<main.SidecarUsageAttributionResponse>;
@@ -182,6 +184,8 @@ export function UpdateRelayRoutingConfig(arg1:main.RelayRoutingConfig):Promise<m
 export function UpdateRelayServiceAPIKey(arg1:string):Promise<main.RelayServiceConfig>;
 
 export function UpdateRelayServiceAPIKeys(arg1:Array<string>):Promise<main.RelayServiceConfig>;
+
+export function UpdateSidecarProxySettings(arg1:main.SidecarProxySettings):Promise<main.SidecarProxySettings>;
 
 export function UploadAuthFiles(arg1:Array<main.UploadFilePayload>):Promise<void>;
 

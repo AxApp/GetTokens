@@ -182,6 +182,33 @@ func (m *Manager) SetCurrentServiceAPIKey(apiKey string) {
 	m.serviceAPIKey = strings.TrimSpace(apiKey)
 }
 
+func (m *Manager) ConfigFilePath() (string, error) {
+	configDir, err := ensureConfigDir(m.profile)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(configDir, "config.yaml"), nil
+}
+
+func (m *Manager) UseSystemProxy() (bool, error) {
+	configFile, err := m.ConfigFilePath()
+	if err != nil {
+		return false, err
+	}
+	return readUseSystemProxy(configFile)
+}
+
+func (m *Manager) SetUseSystemProxy(enabled bool) (string, error) {
+	configFile, err := m.ConfigFilePath()
+	if err != nil {
+		return "", err
+	}
+	if err := writeUseSystemProxy(configFile, enabled); err != nil {
+		return "", err
+	}
+	return configFile, nil
+}
+
 func (m *Manager) setStatus(s Status, notify func(Status)) {
 	m.mu.Lock()
 	if s.StartedAtUnix == 0 && s.Code != StatusStopped {

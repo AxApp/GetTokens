@@ -106,12 +106,52 @@ func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	assertContains(t, content, "host: \"\"")
 	assertContains(t, content, "port: 9317")
 	assertContains(t, content, "auth-dir: "+dir)
+	assertContains(t, content, "use-system-proxy: false")
 	assertContains(t, content, "usage-statistics-enabled: true")
 	assertContains(t, content, "remote-management:")
 	assertContains(t, content, "allow-remote: false")
 	assertContains(t, content, "secret-key: "+ManagementKey)
 	assertContains(t, content, "api-keys:")
 	assertContains(t, content, "- "+apiKey)
+}
+
+func TestUseSystemProxyConfigRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	original := "host: \"\"\nport: 8317\napi-keys:\n  - relay-key\n"
+	if err := os.WriteFile(path, []byte(original), 0600); err != nil {
+		t.Fatalf("seed config: %v", err)
+	}
+
+	if err := writeUseSystemProxy(path, true); err != nil {
+		t.Fatalf("writeUseSystemProxy(true): %v", err)
+	}
+	enabled, err := readUseSystemProxy(path)
+	if err != nil {
+		t.Fatalf("readUseSystemProxy: %v", err)
+	}
+	if !enabled {
+		t.Fatal("enabled = false, want true")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read config: %v", err)
+	}
+	content := string(data)
+	assertContains(t, content, "api-keys:")
+	assertContains(t, content, "- relay-key")
+	assertContains(t, content, "use-system-proxy: true")
+
+	if err := writeUseSystemProxy(path, false); err != nil {
+		t.Fatalf("writeUseSystemProxy(false): %v", err)
+	}
+	enabled, err = readUseSystemProxy(path)
+	if err != nil {
+		t.Fatalf("readUseSystemProxy after false: %v", err)
+	}
+	if enabled {
+		t.Fatal("enabled = true, want false")
+	}
 }
 
 func TestWriteConfigPreservesCodexAPIKeys(t *testing.T) {
