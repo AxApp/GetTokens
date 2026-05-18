@@ -110,6 +110,12 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **CI Hygiene**:
   - Keep GitHub Actions dependencies on Node 24 compatible major versions to avoid Node 20 deprecation warnings.
   - When a release run fails, inspect the exact failed job logs before changing tag strategy or packaging assumptions.
+- **Distributable DMG Acceptance**:
+  - A GitHub Release page or uploaded DMG asset is not enough to claim distribution readiness.
+  - Download the official release assets and verify `checksums.txt` with `shasum -a 256 -c`.
+  - Run `spctl -a -t open --context context:primary-signature -v` and `xcrun stapler validate` on both Apple Silicon and Intel DMGs.
+  - Mount both DMGs and verify the bundled `.app` with `codesign -dv --verbose=4`, executable architecture, `CFBundleShortVersionString`, `CFBundleVersion`, and per-arch `SUFeedURL`.
+  - Only claim "可分发 DMG 已发布" after the DMG-level Gatekeeper, stapler, app signature, architecture, and bundle metadata checks all pass.
 
 ## Acceptance Checklist
 - App launches with latest code and reaches `ready` state.

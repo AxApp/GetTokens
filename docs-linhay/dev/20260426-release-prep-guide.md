@@ -1,123 +1,243 @@
-# GetTokens 发布准备指南
+# GetTokens macOS 可分发 DMG 发布手册
 
-## 目标版本
-当前首发版本建议采用 `v0.1.0`，原因：
+本文件是 GetTokens 当前 macOS Release 的主发布手册。发布目标不是“GitHub Release 页面存在”，而是两份可分发 DMG 均已通过 checksum、Gatekeeper、公证票据、签名链、架构和版本信息验收。
 
-1. 仓库当前还没有任何 git tag。
-2. `frontend/package.json` 版本号已是 `0.1.0`。
-3. 当前功能集合更接近首个公开可用版本，而不是后续增量 patch。
+## 适用范围
 
-## 发布资产分层
-当前阶段先只支持 macOS release，资产分成两类：
+当前正式发布范围只覆盖 macOS：
 
-1. 用户下载安装包
-   - macOS Apple Silicon: `GetTokens_macOS_AppleSilicon.dmg`
-   - macOS Intel: `GetTokens_macOS_Intel.dmg`
-2. 自动升级资产
-   - macOS Apple Silicon: `GetTokens_macOS_AppleSilicon.tar.gz`
-   - macOS Intel: `GetTokens_macOS_Intel.tar.gz`
+1. Apple Silicon 安装包：`GetTokens_macOS_AppleSilicon.dmg`
+2. Apple Silicon updater asset：`GetTokens_macOS_AppleSilicon.tar.gz`
+3. Intel 安装包：`GetTokens_macOS_Intel.dmg`
+4. Intel updater asset：`GetTokens_macOS_Intel.tar.gz`
+5. 校验文件：`checksums.txt`
 
-说明：
-- macOS 保留 `tar.gz` 资产用于检测最新版本和统一校验链，但签名发布包不做 bundle 内原地替换，设置页会跳转到 release 页面安装。
-- 原因是 Apple 对签名 bundle 的 seal 有要求；修改 `.app` 主可执行文件会破坏签名边界。参见 Apple Technical Note TN2206。
+`tar.gz` 资产用于更新检测和 Sparkle 实验链路；用户可分发安装物以 DMG 为准。
+
+## 发布前边界
+
+1. 不复用已失败、已创建或已被 CI 消费过的 tag；失败后直接 bump 到下一个 patch tag。
+2. `frontend/package.json`、`frontend/package-lock.json`、`frontend/package.json.md5` 必须与目标版本同步。
+3. 发布 tag 是 release workflow 的唯一触发源，格式为 `vX.Y.Z`。
+4. 本轮发布相关变更必须已提交；工作区内无关脏文件不得被误 stage。
+5. macOS 可分发验收必须覆盖 DMG 本身，不只验收 GitHub Release asset 是否存在。
+
+## 标准发布流程
+
+### 1. 本地预检
+
+```bash
+git status --short --branch
+go test ./...
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+docs-linhay/scripts/check-docs.sh
+```
+
+若某项无法运行，必须在发布记录中写明原因、影响范围和剩余风险。
+
+### 2. 版本同步
+
+同步以下文件中的版本号：
+
+1. `frontend/package.json`
+2. `frontend/package-lock.json`
+3. `frontend/package.json.md5`
+
+`package.json.md5` 需要在 `package.json` 改完后重新计算，不能手写猜测。
+
+### 3. 提交、打 tag、推送
+
+```bash
+git add frontend/package.json frontend/package-lock.json frontend/package.json.md5
+git commit -m "chore: bump version to X.Y.Z"
+git tag vX.Y.Z
+git push origin <branch>
+git push origin vX.Y.Z
+```
+
+tag 推送后 GitHub Actions 会触发 release workflow。不要在同一个失败 tag 上反复删 tag 重跑；这会让发布记录、资产和缓存状态变得不可追踪。
+
+### 4. 监控 CI
+
+```bash
+gh run list --workflow Release --limit 5
+gh run view <run-id> --json status,conclusion,url
+gh run watch <run-id>
+```
+
+CI 失败时先看失败 job 的日志，再改脚本或版本策略：
+
+```bash
+gh run view <run-id> --log-failed
+```
+
+## Release workflow 契约
+
+`.github/workflows/release.yml` 当前承担以下职责：
+
+1. 只响应 `v*` tag。
+2. 使用 Node 24 构建前端，避免 GitHub Actions Node 20 deprecation。
+3. `arm64` 与 `amd64` 分开在 macOS runner 构建，不再合并为 universal DMG。
+4. 通过 `scripts/build-sidecar.sh` 从维护中的 `CLIProxyAPI` fork 源码构建 sidecar，不下载上游 release 二进制。
+5. `wails build` 后显式把新构建的 `cli-proxy-api` 覆盖进 `GetTokens.app/Contents/MacOS/cli-proxy-api`。
+6. 在签名前同步 bundle 版本，保证 `CFBundleShortVersionString` 和 `CFBundleVersion` 与 tag 一致。
+7. 先签名、公证、staple `.app`，再生成、签名、公证、staple `.dmg`。
+8. 从已签名且 stapled 的 `.app` 生成 updater `tar.gz`。
+9. 生成 `checksums.txt` 并发布五类 release assets。
+10. 若启用 Sparkle，则按架构生成并发布 `appcast-arm64.xml` 和 `appcast-amd64.xml`。
 
 ## sidecar 构建边界
-发布前必须先从仓库内维护的 `docs-linhay/references/CLIProxyAPI` 源码构建 sidecar，不能直接下载上游 release 二进制。
 
-原因：
-
-1. `CLIProxyAPI` 已经进入 fork 维护态，行为修复首先落在 fork 源码，而不是等 fork release。
-2. fork release 可能滞后，直接下载 release 无法保证包含本轮补丁。
-3. 对拆分架构发布，`arm64` 与 `amd64` 的 sidecar 和 app bundle 必须分别按目标架构构建，不能再复用 `universal` 产物。
-
-对应脚本：
-- `scripts/build-sidecar.sh <goos> <goarch> <output-dir>`
-
-补充：
-
-1. 本地开发默认优先使用 `docs-linhay/references/CLIProxyAPI`
-2. CI runner 若没有该目录，脚本会自动 clone `https://github.com/AxApp/CLIProxyAPI.git`
-3. 默认构建分支为 `gettokens/wham-token-fix`，可通过 `CLI_PROXY_SOURCE_REF` 覆盖
-
-示例：
+发布前必须从仓库维护的 fork 源码构建 sidecar：
 
 ```bash
 ./scripts/build-sidecar.sh darwin arm64 build/bin
 ./scripts/build-sidecar.sh darwin amd64 build/bin
 ```
 
-## macOS 签名与公证
-macOS release 现在按以下顺序处理：
+约束：
 
-0. 从 `docs-linhay/references/CLIProxyAPI` 源码按目标架构构建 sidecar，写入 `build/bin/cli-proxy-api`
-1. 执行 `wails build`
-2. 用 `build/bin/cli-proxy-api` 显式覆盖 `build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api`，确保 app bundle 内 sidecar 与当前目标架构一致
-3. 使用 `Developer ID Application` 证书对 `GetTokens.app` 做 hardened runtime 签名
-4. 使用 `notarytool` 提交 `.app` 的 zip 包并等待公证完成
-5. 对 `.app` 执行 `stapler staple`
-6. 基于已 stapled 的 `.app` 生成 DMG
-7. 对 DMG 重新签名后再次提交 notarization
-8. 对 DMG 执行 `stapler staple`
-9. 最后再从签名后的 `.app` 中提取 updater 原始可执行文件，打成 `tar.gz`
+1. 本地优先使用 `docs-linhay/references/CLIProxyAPI`。
+2. CI 中该目录不存在时，脚本会 clone `https://github.com/AxApp/CLIProxyAPI.git`。
+3. 默认构建分支为 `gettokens/wham-token-fix`，必要时通过 `CLI_PROXY_SOURCE_REF` 覆盖。
+4. app bundle 内 sidecar 必须与当前构建目标架构一致。
 
-对应脚本：
-- [scripts/build-sidecar.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/build-sidecar.sh)
-- [scripts/sign-notarize-macos-release.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/sign-notarize-macos-release.sh)
-- [scripts/package-updater-asset.sh](/Users/linhey/Desktop/linhay-open-sources/GetTokens/scripts/package-updater-asset.sh)
+## 签名与公证配置
 
-`sign-notarize-macos-release.sh` 分成两个模式：
-1. `app <path>`：签名、notarize、staple `.app`
-2. `dmg <path>`：签名、notarize、staple `.dmg`
-
-## GitHub Secrets
-CI release workflow 需要以下 secrets：
+CI release workflow 需要以下 secrets / variables：
 
 1. `MACOS_SIGNING_IDENTITY`
-   示例：`Developer ID Application: HAN LIN (3L8RM3MDLS)`
 2. `MACOS_DEVELOPER_ID_P12_BASE64`
-   Developer ID Application 证书导出的 `.p12` 内容做 base64 后存入
 3. `MACOS_DEVELOPER_ID_P12_PASSWORD`
-   上述 `.p12` 的导出密码
 4. `MACOS_NOTARY_KEY_ID`
-   App Store Connect API Key 的 key id
 5. `MACOS_NOTARY_ISSUER_ID`
-   App Store Connect API Key 的 issuer id
 6. `MACOS_NOTARY_API_KEY_BASE64`
-   `AuthKey_<KEY_ID>.p8` 文件内容做 base64 后存入
-7. `SPARKLE_PUBLIC_ED_KEY`（可选，Sparkle 实验链路）
-8. `SPARKLE_PRIVATE_ED_KEY`（可选，Sparkle 实验链路）
-   用于 `generate_appcast` 在 CI 中对 `appcast.xml` 做 EdDSA 签名
-9. `SPARKLE_APPCAST_BRANCH`（GitHub Actions variable，推荐固定为 `sparkle-appcast`）
+7. `SPARKLE_PUBLIC_ED_KEY`，可选
+8. `SPARKLE_PRIVATE_ED_KEY`，可选
+9. `SPARKLE_ENABLE`，GitHub Actions variable，可选
+10. `SPARKLE_APPCAST_BRANCH`，GitHub Actions variable，默认 `sparkle-appcast`
 
-补充：
+常见误区：
 
-1. 只有在 GitHub Actions variable `SPARKLE_ENABLE=1` 时，release workflow 才会尝试写入 Sparkle metadata、嵌入 `Sparkle.framework`、生成并发布 Sparkle feed
-2. `SPARKLE_APPCAST_BRANCH` 默认为 `sparkle-appcast`，workflow 会把最新 feed 推到该分支，再由 `raw.githubusercontent.com` 提供稳定 feed URL
-3. Sparkle feed 当前按架构拆分：
-   - arm64: `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-arm64.xml`
-   - amd64: `https://raw.githubusercontent.com/AxApp/GetTokens/sparkle-appcast/appcast-amd64.xml`
-4. 未启用时，现有 GitHub Release + DMG 发布链路保持不变
+1. 本地 keychain 里有 Developer ID 证书，不代表本地 `notarytool` 鉴权可用。
+2. `notarytool` 返回 401 通常是 key id、issuer id、`.p8` 或 profile 配置不匹配；不要把它误判为签名证书问题。
+3. 本地缺少 `supacode-notary` 不阻塞 CI 发布；CI secrets 配齐时以 GitHub workflow 为准。
+4. `xcrun notarytool history` 使用 API key 时必须同时提供 key id、issuer id 和 `.p8`，不能只拿本地证书推断。
 
-## 原则
-1. 自动升级资产必须可直接解压出目标可执行文件，不能是安装器。
-2. 自动升级比较继续使用语义化版本 tag，例如 `v0.1.0`。
-3. UI 展示版本时间使用 `ReleaseLabel`，不和 `Version` 混用。
-4. macOS updater 资产名称必须按目标架构区分，避免 `arm64` / `amd64` 互相误命中。
-5. macOS release workflow 必须先把源码构建出来的目标架构 sidecar 回填进 `.app`，再 notarize `.app`，然后从已 stapled 的 `.app` 生成 DMG，最后再 notarize DMG。
-6. 未启用 Sparkle 时，已签名 macOS `.app` 只支持“检查更新 + 跳转 release 页面”；启用 Sparkle 后，更新入口会切到原生更新 UI。
+## 发布后验收
 
-## 建议发布步骤
-1. 确认工作区只包含本次准备发布的变更。
-2. 运行前端类型检查、Go 测试、文档校验。
-3. 从 fork 源码构建 sidecar，并确认当前目标架构下 `build/bin/cli-proxy-api` 与 app bundle 内 sidecar 一致。
-4. 合并到干净提交后创建 tag，例如：`v0.1.3`。
-5. 推送 tag 触发 GitHub Actions release workflow。
-6. 在生成的 release 页面检查：
-   - 安装包资产存在
-   - updater 资产存在
-   - `checksums.txt` 包含全部资产
-   - 若启用 Sparkle：`sparkle-appcast` 分支上的 `appcast-arm64.xml` / `appcast-amd64.xml` 已更新，且 `SUFeedURL` 指向对应架构的 raw URL
-   - macOS DMG 已经 stapled，`xcrun stapler validate` 通过
-7. 使用非 dev 构建验证：
-   - `CheckUpdate` 能发现新版本
-   - macOS: 设置页能打开对应 release 页面，下载安装后进入新版本
+发布后必须下载 GitHub Release 上的正式资产做验收，不使用本地 build 目录替代。
+
+### 1. 确认 release 与资产
+
+```bash
+gh release view vX.Y.Z --json url,assets,publishedAt
+```
+
+必须看到五类资产均存在：
+
+1. `GetTokens_macOS_AppleSilicon.dmg`
+2. `GetTokens_macOS_AppleSilicon.tar.gz`
+3. `GetTokens_macOS_Intel.dmg`
+4. `GetTokens_macOS_Intel.tar.gz`
+5. `checksums.txt`
+
+### 2. 下载并校验 checksum
+
+```bash
+mkdir -p /tmp/gettokens-vX.Y.Z-verify
+gh release download vX.Y.Z --dir /tmp/gettokens-vX.Y.Z-verify
+cd /tmp/gettokens-vX.Y.Z-verify
+shasum -a 256 -c checksums.txt
+```
+
+checksum 只证明上传后的字节完整性，不证明 DMG 可被 Gatekeeper 接受。
+
+### 3. 验收 DMG 公证状态
+
+分别对 Apple Silicon 和 Intel DMG 执行：
+
+```bash
+spctl -a -t open --context context:primary-signature -v GetTokens_macOS_AppleSilicon.dmg
+xcrun stapler validate GetTokens_macOS_AppleSilicon.dmg
+
+spctl -a -t open --context context:primary-signature -v GetTokens_macOS_Intel.dmg
+xcrun stapler validate GetTokens_macOS_Intel.dmg
+```
+
+验收标准：
+
+1. `spctl` 显示 `accepted`
+2. `spctl` 来源包含 `Notarized Developer ID`
+3. `stapler validate` 成功
+
+### 4. 挂载 DMG 验收 app bundle
+
+```bash
+mkdir -p /tmp/gettokens-arm64 /tmp/gettokens-amd64
+hdiutil attach -nobrowse -readonly -mountpoint /tmp/gettokens-arm64 GetTokens_macOS_AppleSilicon.dmg
+hdiutil attach -nobrowse -readonly -mountpoint /tmp/gettokens-amd64 GetTokens_macOS_Intel.dmg
+
+codesign -dv --verbose=4 /tmp/gettokens-arm64/GetTokens.app
+codesign -dv --verbose=4 /tmp/gettokens-amd64/GetTokens.app
+
+file /tmp/gettokens-arm64/GetTokens.app/Contents/MacOS/GetTokens
+file /tmp/gettokens-amd64/GetTokens.app/Contents/MacOS/GetTokens
+
+plutil -p /tmp/gettokens-arm64/GetTokens.app/Contents/Info.plist
+plutil -p /tmp/gettokens-amd64/GetTokens.app/Contents/Info.plist
+
+hdiutil detach /tmp/gettokens-arm64
+hdiutil detach /tmp/gettokens-amd64
+```
+
+验收标准：
+
+1. `codesign` 显示 `Developer ID Application: HAN LIN (3L8RM3MDLS)`。
+2. `codesign` 显示 `Timestamp`。
+3. `codesign` 显示 `Notarization Ticket=stapled`。
+4. Apple Silicon 主可执行文件为 `arm64`。
+5. Intel 主可执行文件为 `x86_64`。
+6. `CFBundleShortVersionString` 与 `CFBundleVersion` 等于目标版本。
+7. `SUFeedURL` 指向匹配架构的 appcast：
+   - arm64: `appcast-arm64.xml`
+   - amd64: `appcast-amd64.xml`
+
+## Sparkle 约束
+
+1. `SPARKLE_ENABLE=1` 时才启用 Sparkle metadata、framework 嵌入和 appcast 发布。
+2. appcast 必须按架构拆分，不能在相同 bundle version 下合并成一个 feed。
+3. `SUFeedURL` 必须与当前构建架构匹配。
+4. `generate_appcast` 在 CI 中必须写入显式 staged 输出路径，不能假设它会覆盖 seed file。
+
+## 可分发完成定义
+
+只有同时满足以下条件，才能对外宣称“已发布可分发 DMG”：
+
+1. Release workflow 成功。
+2. GitHub Release 资产齐全。
+3. `checksums.txt` 校验通过。
+4. 两个 DMG 的 `spctl` 均 accepted。
+5. 两个 DMG 的 `stapler validate` 均通过。
+6. 两个 DMG 内的 `.app` 签名链、timestamp、公证票据均正确。
+7. 两个 `.app` 的架构、版本号和 `SUFeedURL` 均正确。
+8. 发布结论已写入 `docs-linhay/memory/YYYY-MM-DD.md` 并执行 `qmd update && qmd embed`。
+
+## 已验证参考版本
+
+`v1.0.9` 是当前已跑通的可分发 DMG 发布样例：
+
+1. GitHub Actions run：`26009770548`
+2. Release：`https://github.com/AxApp/GetTokens/releases/tag/v1.0.9`
+3. Apple Silicon DMG sha256：`d93fc49b054661b2f7a8e57f7f91a9f1e37b2c3f08fbea2800fe8817f588fa30`
+4. Intel DMG sha256：`454b9b3c95cdd2d3e99c9f678743a76a36209971be3a23e5a649d781de83491f`
+5. 验收结论：checksum、`spctl`、`stapler validate`、`codesign`、架构、bundle version、`SUFeedURL` 均通过。
+
+## 失败处理原则
+
+1. release run 失败后先看失败 job 日志，不凭猜测改脚本。
+2. tag 已被消费或 release 已创建后，不复用同一个 tag，直接 bump patch。
+3. 只看到 `checksums.txt` 通过不能代表可分发，必须继续做 Gatekeeper 与 stapler 验收。
+4. 只看到 `.app` 已公证不能代表 DMG 可分发，DMG 本身也必须签名、公证和 staple。
+5. 工作区存在无关脏文件时，只 stage 本轮发布相关文件；不要用 `git add -A` 混入临时文件。

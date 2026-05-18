@@ -108,9 +108,9 @@ The current release workflow produces the following asset types:
 
 ## 参考文档 | Related Docs
 
-- 发布准备指南 / Release prep guide:
+- macOS 可分发 DMG 发布手册 / macOS distributable DMG release guide:
   `docs-linhay/dev/20260426-release-prep-guide.md`
+- Sparkle 更新架构 / Sparkle updater architecture:
+  `docs-linhay/dev/20260427-macos-sparkle-updater-architecture.md`
 - 版本边界说明 / Release label vs version boundary:
   `docs-linhay/dev/20260426-release-label-version-boundary.md`
-- Release 工作空间 / Release workspace:
-  `docs-linhay/spaces/20260426-release-prep/README.md`

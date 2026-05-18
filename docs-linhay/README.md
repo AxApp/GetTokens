@@ -60,6 +60,10 @@ git worktree add ../GetTokens-worktrees/20260429-network-proxy -b feat/20260429-
 qmd update && qmd embed
 ```
 
+5. macOS 可分发 DMG 发布
+
+发布前先读 `docs-linhay/dev/20260426-release-prep-guide.md`。发布完成后必须下载 GitHub Release 正式资产，并完成 checksum、`spctl`、`xcrun stapler validate`、`codesign`、架构、bundle version 与 `SUFeedURL` 验收；只看到 release 页面或资产存在不能算发布完成。
+
 ## 命名规则
 
 1. `space-key` 使用英文 slug，优先使用 `<YYYYMMDD>-<topic>` 或稳定功能名。
