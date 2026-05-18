@@ -31,7 +31,7 @@
 1. Given 用户进入 `Codex`，When 点击 `账号列表`，Then 页面展示 Codex 可请求账号总数、可用数量和 openai-compatible 数量。
 2. Given 账号池中存在 Codex OAuth auth-file、Codex API Key 和 openai-compatible provider，When 打开账号列表，Then 三类账号都出现在同一请求顺序列表中。
 3. Given 某账号被禁用或状态异常，When 查看列表，Then 该账号保留在顺序中但标记为不可请求。
-4. Given 用户拖动账号调整顺序并保存，When 保存成功，Then 通过 `UpdateAccountPriority` 写回优先级，刷新后仍按新顺序展示。
+4. Given 用户拖动账号调整顺序，When 放下账号行，Then 页面自动通过 `UpdateAccountPriority` 写回优先级，刷新后仍按新顺序展示，不再需要额外点击保存按钮。
 5. Given openai-compatible provider 配置了模型 `{ alias, name }`，When 查看该账号详情，Then 模型映射显示为 `name -> alias || name`；当 alias 为空时显示 `name -> name`，并可新增、删除、保存映射。
 6. Given sidecar 未 ready，When 打开账号列表，Then 页面显示等待 sidecar ready 的状态，不发起账号加载。
 7. Given 在普通浏览器环境打开 `#frame=codex&workspace=account-list`，When 页面缺少 Wails runtime，Then 加载稳定预览账号并支持本地排序/启停交互，不抛出 Wails 绑定错误。
@@ -131,7 +131,9 @@
 29. 账号行策略控件常驻验收：用户要求 `AccountOrderRow` 编辑模式内容固定显示，并让 Gemini 重新设计账号行。已按 Gemini 的“四段式行结构”方案重构为 `拖拽/顺位 | 账号身份与请求出口 | 路由策略 | 启停开关`，移除 `routePolicyEditing` 与路由探测卡片中的无效 `编辑策略` 开关；默认/允许/排除、策略上移/下移在每行常驻显示。已验证 `npm run typecheck`、`npm run test:unit -- src/features/codex/codexAccountList.test.mjs`；Chrome DevTools 打开 `http://localhost:34115/#frame=codex&workspace=account-list` 确认点击 `排除` 只刷新候选顺序且不打开详情，点击账号主体仍打开详情，控制台无 error。截图归档：`screenshots/20260513/codex/20260513-codex-account-list-row-policy-always-visible-after-v01.png`。
 30. 路由策略顺序收敛验收：用户要求移除账号行内策略上/下移，只保留拖拽顺序作为测试顺序来源。已移除 `AccountOrderRow` 内策略上/下移按钮、`routePolicyOrderIDs` 独立状态和 `syncCodexRoutePolicyOrderForBaseOrderChange` helper；`ProbeCodexAccountRouting` 的 `orderAccountIDs` 现在直接来自当前拖拽排序后的可请求账号列表。已验证 `npm run typecheck`、`npm run test:unit -- src/features/codex/codexAccountList.test.mjs`；因 `localhost:34115` 与 `localhost:5173` 当前被 TritonKit 占用，本轮临时启动 `http://127.0.0.1:5174/#frame=codex&workspace=account-list` 验收，确认行内只剩默认/允许/排除控件，点击 `排除` 不打开详情且候选顺序按列表顺序过滤刷新。截图归档：`screenshots/20260514/codex/20260514-codex-account-list-drag-order-only-after-v01.png`。
 31. 收尾整理：本期施工结束后进入结构整理，已将原大体量 `CodexAccountListFeature.tsx` 拆为页面 controller、组件层和模型层：UI 组件放入 `frontend/src/features/codex/components/`，模型映射与路由策略分别放入 `frontend/src/features/codex/model/codexModelMappings.ts`、`frontend/src/features/codex/model/codexRoutePolicy.ts`。同时新增项目级 skill `.agents/skills/gettokens-codex-account-list/SKILL.md`，并在 `AGENTS.md` 只补充 skill 路由规则。已验证 `npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit -- src/features/codex/codexAccountList.test.mjs`、`go test ./internal/wailsapp -run 'TestListOAuthModelAliases|TestUpdateOAuthModelAliases|TestProbeCodexAccountRouting|TestDetectCodexRoutingProbeHit|TestSidecarRelayRequest'`；临时启动 `http://127.0.0.1:5175/#frame=codex&workspace=account-list`，确认探测卡、账号行、详情 modal 与模型 combobox 均正常渲染。截图归档：`screenshots/20260514/codex/20260514-codex-account-list-refactor-after-v01.png`。整理方案记录在 `../../dev/20260514-codex-account-list-refactor-session.md`。
+32. 请求顺序列表模式与自动保存验收：用户要求账号排序区上下卡片间距收紧、新增列表模式、显示模式持久化，并且改变排序即保存。已移除额外“保存顺序”按钮，拖拽放下后自动保存；请求顺序显示模式扩展为 `完整 / 缩略 / 列表`，选择会写入 `localStorage` 并同步到 `density` hash；列表模式改为真正单行排序行，仅保留拖拽柄、顺位、账号、来源、出口和状态，方便高密度排序。已验证 `npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit -- src/features/codex/codexAccountList.test.mjs`；临时启动 `http://127.0.0.1:5174/#frame=codex&workspace=account-list`，刷新后列表模式仍恢复，初始加载不再误报未保存。控制台仅有既有 `favicon.ico` 404。
+33. 请求顺序列表行二次排版验收：用户反馈 `AccountOrderRow` 列表模式行内排版仍然混乱。已将列表行从多列平铺改为 `拖拽/序号 rail | 账号身份区 | 路由状态区` 三段式结构：左侧 rail 固定宽度并承载拖拽柄和序号，中间身份区按账号名与 `来源 + 出口` 两层展示，右侧状态区独立分隔，减少来源、endpoint、状态互相抢宽。已验证 `npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit -- src/features/codex/codexAccountList.test.mjs`；浏览器预览 `http://127.0.0.1:5173/#frame=codex&workspace=account-list&density=list` 下首行布局为 `64px / 862px / 144px`，控制台无 error。截图归档：`../../screenshots/20260518/codex/20260518-codex-account-list-row-layout-after-v01.png`。
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-05-14
+- 最近更新：2026-05-18

@@ -21,7 +21,12 @@ import {
   summarizeCodexRoutingProbeAttempt,
   buildCodexAccountPriorityUpdates,
 } from './model/codexAccountList.ts';
-import { CODEX_ORDER_SECTION_ACTION_MENU_GAP, shouldUseCodexOrderSectionActionMenu } from './model/codexAccountOrderSectionLayout.ts';
+import {
+  CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY,
+  CODEX_ORDER_SECTION_ACTION_MENU_GAP,
+  parseCodexAccountOrderDisplayMode,
+  shouldUseCodexOrderSectionActionMenu,
+} from './model/codexAccountOrderSectionLayout.ts';
 import { getCodexAccountListPreviewRows } from './previewData.ts';
 
 test('buildCodexAccountRows merges codex auth files, codex api keys, and openai-compatible providers by priority', () => {
@@ -196,6 +201,15 @@ test('shouldUseCodexOrderSectionActionMenu collapses controls only when inline w
     shouldUseCodexOrderSectionActionMenu(320 + CODEX_ORDER_SECTION_ACTION_MENU_GAP - 1, 320),
     true,
   );
+});
+
+test('parseCodexAccountOrderDisplayMode supports persisted list sorting mode', () => {
+  assert.equal(CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY, 'gettokens.codex.account-order-display-mode');
+  assert.equal(parseCodexAccountOrderDisplayMode('compact'), 'compact');
+  assert.equal(parseCodexAccountOrderDisplayMode('list'), 'list');
+  assert.equal(parseCodexAccountOrderDisplayMode('full'), 'full');
+  assert.equal(parseCodexAccountOrderDisplayMode('unknown'), 'full');
+  assert.equal(parseCodexAccountOrderDisplayMode(null), 'full');
 });
 
 test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {

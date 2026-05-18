@@ -9,7 +9,12 @@ import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
 import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { AccountOrderRow } from './CodexAccountOrderRow';
-import { shouldUseCodexOrderSectionActionMenu } from '../model/codexAccountOrderSectionLayout';
+import {
+  CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY,
+  parseCodexAccountOrderDisplayMode,
+  shouldUseCodexOrderSectionActionMenu,
+  type CodexAccountOrderDisplayMode,
+} from '../model/codexAccountOrderSectionLayout';
 
 function EmptyState({ children }: { children: string }) {
   return (
@@ -38,14 +43,12 @@ export function CodexAccountOrderSection({
   accountRateLimitByID,
   refreshLabel,
   loadingLabel,
-  saveLabel,
   savingLabel,
   unsavedLabel,
   emptyLabel,
   waitingLabel,
   t,
   onReload,
-  onSaveOrder,
   onDragStart,
   onDragOver,
   onDragEnter,
@@ -73,14 +76,12 @@ export function CodexAccountOrderSection({
   accountRateLimitByID: Record<string, RateLimitState>;
   refreshLabel: string;
   loadingLabel: string;
-  saveLabel: string;
   savingLabel: string;
   unsavedLabel: string;
   emptyLabel: string;
   waitingLabel: string;
   t: (key: string) => string;
   onReload: () => void;
-  onSaveOrder: () => void;
   onDragStart: (id: string) => void;
   onDragOver: (event: DragEvent) => void;
   onDragEnter: (id: string) => void;
@@ -90,7 +91,7 @@ export function CodexAccountOrderSection({
   onToggle: (row: CodexAccountRow) => void;
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
 }) {
-  const [density, setDensity] = useState<'full' | 'compact'>(() => readInitialDensity());
+  const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => readInitialDensity());
   const [useActionMenu, setUseActionMenu] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionAreaRef = useRef<HTMLDivElement | null>(null);
@@ -123,7 +124,7 @@ export function CodexAccountOrderSection({
       observer.disconnect();
       window.removeEventListener('resize', updateActionLayout);
     };
-  }, [loading, loadingLabel, refreshLabel, saveLabel, saving, savingLabel]);
+  }, [loading, loadingLabel, refreshLabel, saving]);
 
   useEffect(() => {
     if (!useActionMenu) {
@@ -165,7 +166,10 @@ export function CodexAccountOrderSection({
     content = <EmptyState>{emptyLabel}</EmptyState>;
   } else {
     content = (
-      <div className="grid auto-rows-fr gap-4 p-4 xl:auto-rows-auto xl:grid-cols-3 xl:gap-x-4 xl:gap-y-0">
+      <div className={density === 'list'
+        ? 'grid gap-3 p-4'
+        : 'grid auto-rows-fr gap-4 p-4 xl:auto-rows-auto xl:grid-cols-3 xl:gap-x-4 xl:gap-y-4'}
+      >
         {rows.map((row, index) => (
           <AccountOrderRow
             key={row.id}
@@ -213,15 +217,11 @@ export function CodexAccountOrderSection({
                 disabled={!ready}
                 loading={loading}
                 saving={saving}
-                orderChanged={orderChanged}
                 routingProbeRunning={routingProbeRunning}
                 refreshLabel={refreshLabel}
                 loadingLabel={loadingLabel}
-                saveLabel={saveLabel}
-                savingLabel={savingLabel}
                 t={t}
                 onReload={onReload}
-                onSaveOrder={onSaveOrder}
                 onDensityChange={(nextDensity) => updateDensity(nextDensity, setDensity)}
               />
             </div>
@@ -247,21 +247,14 @@ export function CodexAccountOrderSection({
                       disabled={!ready}
                       loading={loading}
                       saving={saving}
-                      orderChanged={orderChanged}
                       routingProbeRunning={routingProbeRunning}
                       refreshLabel={refreshLabel}
                       loadingLabel={loadingLabel}
-                      saveLabel={saveLabel}
-                      savingLabel={savingLabel}
                       stacked
                       t={t}
                       onReload={() => {
                         setIsActionMenuOpen(false);
                         onReload();
-                      }}
-                      onSaveOrder={() => {
-                        setIsActionMenuOpen(false);
-                        onSaveOrder();
                       }}
                       onDensityChange={(nextDensity) => {
                         updateDensity(nextDensity, setDensity);
@@ -277,22 +270,18 @@ export function CodexAccountOrderSection({
                 disabled={!ready}
                 loading={loading}
                 saving={saving}
-                orderChanged={orderChanged}
                 routingProbeRunning={routingProbeRunning}
                 refreshLabel={refreshLabel}
                 loadingLabel={loadingLabel}
-                saveLabel={saveLabel}
-                savingLabel={savingLabel}
                 t={t}
                 onReload={onReload}
-                onSaveOrder={onSaveOrder}
                 onDensityChange={(nextDensity) => updateDensity(nextDensity, setDensity)}
               />
             )}
           </div>
-          {orderChanged ? (
-            <div className="text-[0.5625rem] font-black uppercase tracking-wide text-[var(--accent-red)]">
-              {unsavedLabel}
+          {saving || orderChanged ? (
+            <div className={`text-[0.5625rem] font-black uppercase tracking-wide ${saving ? 'text-[var(--text-muted)]' : 'text-[var(--accent-red)]'}`}>
+              {saving ? savingLabel : unsavedLabel}
             </div>
           ) : null}
         </div>
@@ -309,26 +298,39 @@ export function CodexAccountOrderSection({
   );
 }
 
-function readInitialDensity(): 'full' | 'compact' {
+function readInitialDensity(): CodexAccountOrderDisplayMode {
   if (typeof window === 'undefined') {
     return 'full';
   }
   const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
   const params = new URLSearchParams(hash);
-  return params.get('density') === 'compact' ? 'compact' : 'full';
+  const hashDensity = params.get('density');
+  if (hashDensity) {
+    return parseCodexAccountOrderDisplayMode(hashDensity);
+  }
+  try {
+    return parseCodexAccountOrderDisplayMode(window.localStorage.getItem(CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY));
+  } catch {
+    return 'full';
+  }
 }
 
 function updateDensity(
-  density: 'full' | 'compact',
-  setDensity: (value: 'full' | 'compact') => void,
+  density: CodexAccountOrderDisplayMode,
+  setDensity: (value: CodexAccountOrderDisplayMode) => void,
 ) {
   setDensity(density);
   if (typeof window === 'undefined') {
     return;
   }
+  try {
+    window.localStorage.setItem(CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY, density);
+  } catch {
+    // Ignore storage failures; the hash still keeps the current session shareable.
+  }
   const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
   const params = new URLSearchParams(hash);
-  if (density === 'compact') {
+  if (density !== 'full') {
     params.set('density', density);
   } else {
     params.delete('density');
@@ -341,33 +343,25 @@ function InlineActionControls({
   disabled,
   loading,
   saving,
-  orderChanged,
   routingProbeRunning,
   refreshLabel,
   loadingLabel,
-  saveLabel,
-  savingLabel,
   stacked = false,
   t,
   onReload,
-  onSaveOrder,
   onDensityChange,
 }: {
-  density: 'full' | 'compact';
+  density: CodexAccountOrderDisplayMode;
   disabled: boolean;
   loading: boolean;
   saving: boolean;
-  orderChanged: boolean;
   routingProbeRunning: boolean;
   refreshLabel: string;
   loadingLabel: string;
-  saveLabel: string;
-  savingLabel: string;
   stacked?: boolean;
   t: (key: string) => string;
   onReload: () => void;
-  onSaveOrder: () => void;
-  onDensityChange: (density: 'full' | 'compact') => void;
+  onDensityChange: (density: CodexAccountOrderDisplayMode) => void;
 }) {
   return (
     <div className={`flex ${stacked ? 'w-full flex-col items-stretch gap-2' : 'flex-nowrap items-center gap-2'}`}>
@@ -381,27 +375,20 @@ function InlineActionControls({
       >
         {loading ? loadingLabel : refreshLabel}
       </button>
-      <button
-        type="button"
-        onClick={onSaveOrder}
-        disabled={disabled || saving || routingProbeRunning || !orderChanged}
-        className={`btn-swiss !min-h-10 bg-[var(--text-primary)] !px-3 !py-2 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50 ${
-          stacked ? 'w-full justify-center' : 'shrink-0'
-        }`}
-      >
-        {saving ? savingLabel : saveLabel}
-      </button>
       <div
         className={`grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] ${
-          stacked ? 'w-full grid-cols-2' : 'shrink-0 grid-cols-2'
+          stacked ? 'w-full grid-cols-3' : 'shrink-0 grid-cols-3'
         }`}
         data-account-card-ignore-click="true"
       >
         <DensityButton active={density === 'full'} bordered onClick={() => onDensityChange('full')}>
           {t('codex.account_list_density_full')}
         </DensityButton>
-        <DensityButton active={density === 'compact'} onClick={() => onDensityChange('compact')}>
+        <DensityButton active={density === 'compact'} bordered onClick={() => onDensityChange('compact')}>
           {t('codex.account_list_density_compact')}
+        </DensityButton>
+        <DensityButton active={density === 'list'} onClick={() => onDensityChange('list')}>
+          {t('codex.account_list_density_list')}
         </DensityButton>
       </div>
     </div>

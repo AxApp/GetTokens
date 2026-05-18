@@ -105,6 +105,7 @@
     "account_list_probe_idle": "No test has run yet",
     "account_list_density_full": "Full",
     "account_list_density_compact": "Compact",
+    "account_list_density_list": "List",
     "account_list_waiting_ready": "Waiting for sidecar ready before loading accounts",
     "account_list_browser_hint": "Browser mode uses preview accounts. The desktop app reads real Wails data.",
     "account_list_empty": "No requestable Codex accounts yet",

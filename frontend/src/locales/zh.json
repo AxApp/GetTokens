@@ -105,6 +105,7 @@
     "account_list_probe_idle": "尚未发起测试",
     "account_list_density_full": "完整",
     "account_list_density_compact": "缩略",
+    "account_list_density_list": "列表",
     "account_list_waiting_ready": "等待 sidecar ready 后加载账号",
     "account_list_browser_hint": "浏览器环境使用预览账号；桌面环境会读取真实 Wails 数据",
     "account_list_empty": "当前没有 Codex 可请求账号",

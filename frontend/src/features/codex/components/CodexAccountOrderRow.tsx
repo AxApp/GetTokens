@@ -12,6 +12,7 @@ import {
   type CodexRoutePolicyRowMode,
   type CodexRoutePolicyRowState,
 } from '../model/codexAccountList';
+import type { CodexAccountOrderDisplayMode } from '../model/codexAccountOrderSectionLayout';
 
 function RoutePolicyModeControl({
   id,
@@ -72,7 +73,7 @@ export function AccountOrderRow({
 }: {
   row: CodexAccountRow;
   index: number;
-  density: 'full' | 'compact';
+  density: CodexAccountOrderDisplayMode;
   dragged: boolean;
   pending: boolean;
   t: (key: string) => string;
@@ -90,6 +91,8 @@ export function AccountOrderRow({
   rateLimitStatus?: RateLimitState;
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
 }) {
+  const cardDensity = density === 'full' ? 'full' : 'compact';
+  const showSortingListBody = density !== 'list';
   const endpointLabel = buildEndpointLabel(row);
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
   const policyMuted = Boolean(routePolicyState && !routePolicyState.participates);
@@ -131,12 +134,78 @@ export function AccountOrderRow({
     event.stopPropagation();
   }
 
+  if (density === 'list') {
+    return (
+      <div
+        onDragOver={onDragOver}
+        onDragEnter={() => onDragEnter(row.id)}
+        onDrop={onDrop}
+        className={`${dragged ? 'opacity-40 grayscale' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--text-primary)]' : ''}`.trim()}
+      >
+        <button
+          type="button"
+          onClick={onOpenDetail}
+          className={`grid min-h-[4.25rem] w-full grid-cols-[4rem_minmax(0,1fr)_9rem] items-stretch overflow-hidden border-2 border-l-[6px] border-[var(--border-color)] bg-[var(--bg-main)] text-left shadow-[4px_4px_0_var(--shadow-color)] transition hover:-translate-y-0.5 hover:bg-[var(--bg-surface)] active:translate-y-0 ${
+            row.requestable ? (probeHit ? 'border-l-green-600' : policyMuted ? 'border-l-yellow-500' : 'border-l-[var(--border-color)]') : 'border-l-red-500'
+          } ${
+            policyMuted && !probeHit ? 'opacity-75 grayscale' : ''
+          }`}
+        >
+          <span
+            draggable
+            onClick={(event) => event.stopPropagation()}
+            onDragStart={() => onDragStart(row.id)}
+            onDragEnd={onDragEnd}
+            className="flex cursor-grab flex-col items-center justify-center gap-1 border-r-2 border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)] active:cursor-grabbing"
+            title={t('accounts.rotation_drag_badge')}
+          >
+            <GripVertical className="h-4 w-4" strokeWidth={3} />
+            <span className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.08em]">
+              {String(index + 1).padStart(2, '0')}
+            </span>
+          </span>
+          <span className="grid min-w-0 content-center gap-1.5 px-3 py-2">
+            <span className="flex min-w-0 items-baseline gap-2">
+              <span className="shrink-0 font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                {`ORDER ${String(index + 1).padStart(2, '0')}`}
+              </span>
+              <span className="min-w-0 truncate text-[0.875rem] font-black leading-tight text-[var(--text-primary)]">
+                {row.label}
+              </span>
+            </span>
+            <span className="grid min-w-0 grid-cols-[8.25rem_minmax(0,1fr)] items-center gap-2">
+              <span className="min-w-0 truncate border border-[var(--border-color)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-center font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                {sourceKindLabel(t, row.sourceKind)}
+              </span>
+              <span className="min-w-0 truncate font-mono text-[0.5625rem] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
+                {endpointLabel || row.provider}
+              </span>
+            </span>
+          </span>
+          <span className="flex min-w-0 items-center justify-end border-l-2 border-[var(--border-color)] px-3 py-2">
+            <span
+              className={`max-w-full truncate whitespace-nowrap border px-2 py-1 text-right font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+                row.requestable
+                  ? probeHit
+                    ? 'border-green-600 bg-green-600/10 text-green-700'
+                    : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)]'
+                  : 'border-red-500 bg-red-500/10 text-red-500'
+              }`}
+            >
+              {row.requestable ? policyRankLabel : routePolicyModeLabel(t, 'blocked')}
+            </span>
+          </span>
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div
       onDragOver={onDragOver}
       onDragEnter={() => onDragEnter(row.id)}
       onDrop={onDrop}
-      className={`${density !== 'compact' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid]' : ''} ${dragged ? 'opacity-40 grayscale' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--text-primary)]' : ''}`.trim()}
+      className={`${density === 'full' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid]' : ''} ${dragged ? 'opacity-40 grayscale' : probeHit ? 'outline outline-2 outline-offset-2 outline-[var(--text-primary)]' : ''}`.trim()}
     >
       <AttributionCard
         t={t}
@@ -149,9 +218,9 @@ export function AccountOrderRow({
         rateLimitStatus={rateLimitStatus}
         evidenceRows={evidenceRows}
         tone={cardTone}
-        density={density}
-        className={`${density !== 'compact' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid] xl:h-auto' : ''} ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
-        style={density === 'compact' ? { minHeight: '28rem' } : { minHeight: '48rem' }}
+        density={cardDensity}
+        className={`${density === 'full' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid] xl:h-auto' : ''} ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
+        style={density === 'full' ? { minHeight: '48rem' } : density === 'compact' ? { minHeight: '28rem' } : undefined}
         leadingAction={
           <div
             draggable
@@ -167,7 +236,7 @@ export function AccountOrderRow({
             </span>
           </div>
         }
-        customBody={
+        customBody={showSortingListBody ? (
           <div
             className="grid min-h-[15rem] grid-cols-[minmax(0,1fr)_7rem] grid-rows-[4.75rem_minmax(0,1fr)_auto] bg-[var(--bg-surface)]"
             data-account-card-ignore-click="true"
@@ -245,7 +314,7 @@ export function AccountOrderRow({
               )}
             </div>
           </div>
-        }
+        ) : undefined}
         interactive
         onOpen={onOpenDetail}
       />

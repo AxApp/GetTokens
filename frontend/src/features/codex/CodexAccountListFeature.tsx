@@ -81,6 +81,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const [routingProbeRunning, setRoutingProbeRunning] = useState(false);
   const [detailRowID, setDetailRowID] = useState<string | null>(null);
   const [message, setMessage] = useState('');
+  const [orderDirty, setOrderDirty] = useState(false);
+  const [autoSaveOrderRequested, setAutoSaveOrderRequested] = useState(false);
   const suppressNextDetailClickRef = useRef(false);
   const { codexQuotaByName, loadCodexQuotas } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
@@ -100,7 +102,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       modelMappings: authFileModelMappings[detailRow.id] || detailRow.modelMappings,
     };
   }, [authFileModelMappings, detailRow]);
-  const orderChanged = priorityUpdates.length > 0;
+  const orderChanged = orderDirty;
   const routingProbeModelOptions = useMemo(() => buildCodexRoutingProbeModelOptions(orderedRows), [orderedRows]);
   const requestableRows = useMemo(() => orderedRows.filter((row) => row.requestable), [orderedRows]);
   const requestableOrderIDs = useMemo(() => requestableRows.map((row) => row.id), [requestableRows]);
@@ -142,6 +144,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     if (browserMode) {
       const previewAccounts = getAccountsPreviewCodexAccounts();
       setOrderedRows(getCodexAccountListPreviewRows());
+      setOrderDirty(false);
       void loadCodexQuotas(previewAccounts);
       const previewUsageAccounts: AccountRecord[] = [
         ...previewAccounts,
@@ -189,6 +192,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       void loadAccountUsage(accountRows);
       void loadAccountRateLimits(nextRows.map((row) => codexRowToAccountRecord(row)));
       setOrderedRows(nextRows);
+      setOrderDirty(false);
       setMessage(messageOverride || t('codex.account_list_loaded'));
     } catch (error) {
       console.error(error);
@@ -379,6 +383,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       return;
     }
     suppressNextDetailClickRef.current = true;
+    setOrderDirty(true);
     setOrderedRows((prev) => reorderCodexAccountRows(prev, draggedID, targetID));
     setMessage(t('codex.account_list_unsaved'));
   }
@@ -386,6 +391,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   function handleDrop() {
     suppressNextDetailClickRef.current = true;
     setDraggedID(null);
+    setAutoSaveOrderRequested(true);
   }
 
   function handleDragEnd() {
@@ -451,12 +457,13 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   }, []);
 
   async function saveOrder() {
-    if (!ready || !orderChanged) {
+    if (!ready || !orderChanged || saving) {
       return;
     }
 
     if (browserMode) {
       setOrderedRows((prev) => applyCodexAccountPriorities(prev));
+      setOrderDirty(false);
       setMessage(t('codex.account_list_preview_saved'));
       return;
     }
@@ -467,6 +474,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       for (const update of priorityUpdates) {
         await trackRequest('UpdateAccountPriority', update, () => UpdateAccountPriority(update));
       }
+      setOrderDirty(false);
       await reload(t('codex.account_list_saved'));
     } catch (error) {
       console.error(error);
@@ -475,6 +483,18 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       setSaving(false);
     }
   }
+
+  useEffect(() => {
+    if (!autoSaveOrderRequested || draggedID || saving) {
+      return;
+    }
+    if (!orderChanged) {
+      setAutoSaveOrderRequested(false);
+      return;
+    }
+    setAutoSaveOrderRequested(false);
+    void saveOrder();
+  }, [autoSaveOrderRequested, draggedID, orderChanged, priorityUpdates, saving]);
 
   async function runRoutingProbe(attempts: number) {
     const model = routingProbeModel.trim();
@@ -738,14 +758,12 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           accountRateLimitByID={accountRateLimitByID}
           refreshLabel={t('common.refresh')}
           loadingLabel={t('common.loading')}
-          saveLabel={t('codex.account_list_save_order')}
           savingLabel={t('codex.account_list_saving')}
           unsavedLabel={t('codex.account_list_unsaved')}
           emptyLabel={t('codex.account_list_empty')}
           waitingLabel={t('codex.account_list_waiting_ready')}
           t={t}
           onReload={() => void reload()}
-          onSaveOrder={() => void saveOrder()}
           onDragStart={handleDragStart}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}
