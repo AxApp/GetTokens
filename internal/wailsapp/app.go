@@ -15,19 +15,21 @@ import (
 )
 
 type App struct {
-	ctx            context.Context
-	sidecar        *sidecar.Manager
-	updater        *updater.Updater
-	version        string
-	releaseLabel   string
-	sidecarRequest sidecarRequestFunc
-	relayRequest   sidecarRelayRequestFunc
-	managementAPI  func() *cliproxyapi.Client
-	localUsageMu   sync.RWMutex
-	localUsage     localUsageRuntimeState
-	sessionMgmtMu  sync.RWMutex
-	sessionMgmt    sessionManagementRuntimeState
-	codexBinary    *codexbinary.Service
+	ctx                      context.Context
+	sidecar                  *sidecar.Manager
+	updater                  *updater.Updater
+	version                  string
+	releaseLabel             string
+	sidecarRequest           sidecarRequestFunc
+	relayRequest             sidecarRelayRequestFunc
+	managementAPI            func() *cliproxyapi.Client
+	sidecarProxyMu           sync.Mutex
+	sidecarProxyPendingApply bool
+	localUsageMu             sync.RWMutex
+	localUsage               localUsageRuntimeState
+	sessionMgmtMu            sync.RWMutex
+	sessionMgmt              sessionManagementRuntimeState
+	codexBinary              *codexbinary.Service
 }
 
 type localUsageRuntimeState struct {

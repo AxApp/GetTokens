@@ -31,14 +31,13 @@ func (a *App) UpdateSidecarProxySettings(input SidecarProxySettings) (*SidecarPr
 	applied := false
 	status := a.sidecar.CurrentStatus()
 	if status.Code == sidecar.StatusReady {
-		body, readErr := os.ReadFile(configPath)
-		if readErr != nil {
-			return nil, readErr
-		}
-		if _, _, putErr := a.SidecarRequest("PUT", ManagementAPIPrefix+"/config.yaml", nil, bytes.NewReader(body), "application/x-yaml"); putErr != nil {
+		if putErr := a.applySidecarConfigYAML(configPath); putErr != nil {
 			return nil, putErr
 		}
 		applied = true
+		a.setSidecarProxyPendingApply(false)
+	} else {
+		a.setSidecarProxyPendingApply(true)
 	}
 
 	return &SidecarProxySettings{
@@ -46,4 +45,43 @@ func (a *App) UpdateSidecarProxySettings(input SidecarProxySettings) (*SidecarPr
 		ConfigPath:              configPath,
 		AppliedToRunningSidecar: applied,
 	}, nil
+}
+
+func (a *App) applyPendingSidecarProxySettings() error {
+	if !a.takeSidecarProxyPendingApply() {
+		return nil
+	}
+	configPath, err := a.sidecar.ConfigFilePath()
+	if err != nil {
+		a.setSidecarProxyPendingApply(true)
+		return err
+	}
+	if err := a.applySidecarConfigYAML(configPath); err != nil {
+		a.setSidecarProxyPendingApply(true)
+		return err
+	}
+	return nil
+}
+
+func (a *App) applySidecarConfigYAML(configPath string) error {
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+	_, _, err = a.SidecarRequest("PUT", ManagementAPIPrefix+"/config.yaml", nil, bytes.NewReader(body), "application/x-yaml")
+	return err
+}
+
+func (a *App) setSidecarProxyPendingApply(pending bool) {
+	a.sidecarProxyMu.Lock()
+	a.sidecarProxyPendingApply = pending
+	a.sidecarProxyMu.Unlock()
+}
+
+func (a *App) takeSidecarProxyPendingApply() bool {
+	a.sidecarProxyMu.Lock()
+	defer a.sidecarProxyMu.Unlock()
+	pending := a.sidecarProxyPendingApply
+	a.sidecarProxyPendingApply = false
+	return pending
 }

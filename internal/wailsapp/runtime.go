@@ -24,6 +24,11 @@ func (a *App) Startup(ctx context.Context) {
 		a.sidecar.Start(ctx, func(status sidecar.Status) {
 			if status.Code == sidecar.StatusReady {
 				go func() {
+					if err := a.applyPendingSidecarProxySettings(); err != nil {
+						log.Printf("apply pending sidecar proxy settings failed: %v", err)
+					}
+				}()
+				go func() {
 					if err := a.syncStoredCodexAPIKeysToSidecar(); err != nil {
 						log.Printf("sync codex api keys to sidecar failed: %v", err)
 					}
