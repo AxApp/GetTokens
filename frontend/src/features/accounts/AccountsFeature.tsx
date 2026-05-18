@@ -25,6 +25,10 @@ import { buildAccountDetailFrameHash, clearAccountDetailFrameHash } from '../../
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import { shouldLoadAccountsData } from './model/accountRuntime';
 import type { AccountRecord } from './model/types';
+import {
+  ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
+  shouldScheduleAccountUsageRefresh,
+} from './model/accountUsage';
 import type { OpenAICompatibleProvider } from './model/openAICompatible';
 import type { VendorPreset } from './model/vendorPresets';
 import { emptyApiKeyForm } from './model/accountConfig';
@@ -183,6 +187,27 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     void loadAccountRateLimits(usageAccounts);
   }, [loadAccountRateLimits, loadAccountUsage, ready, usageAccounts]);
 
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !shouldScheduleAccountUsageRefresh({
+        ready,
+        hasRuntimeBindings: hasWailsAppBindings(),
+        accounts: usageAccounts,
+      })
+    ) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void loadAccountUsage(usageAccounts);
+    }, ACCOUNT_USAGE_REFRESH_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [loadAccountUsage, ready, usageAccounts]);
+
   async function reloadRotationAccounts() {
     await loadAccounts();
     await openAICompatibleState.loadProviders();
@@ -210,10 +235,21 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
 
   const openAccountDetail = useCallback(
     (account: AccountRecord) => {
+      if (account.id.startsWith('openai-compatible:')) {
+        const providerName = account.id.slice('openai-compatible:'.length).trim().toLowerCase();
+        const provider = openAICompatibleState.providers.find(
+          (item) => item.name.trim().toLowerCase() === providerName || item.name.trim().toLowerCase() === account.provider.trim().toLowerCase(),
+        );
+        if (provider) {
+          openAICompatibleState.openDetailModal(provider);
+          markAccountDetailInHash(account.id);
+          return;
+        }
+      }
       setSelectedAccount(account);
       markAccountDetailInHash(account.id);
     },
-    [markAccountDetailInHash, setSelectedAccount],
+    [markAccountDetailInHash, openAICompatibleState, setSelectedAccount],
   );
 
   const closeAccountDetail = useCallback(() => {
@@ -449,7 +485,9 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           modelNames={relayModelNames}
           onClose={closeAccountDetail}
           onRename={renameSelectedApiKey}
-          onSaveConfig={selectedAccount.credentialSource === 'api-key' ? (draft) => updateSelectedApiKeyConfig(draft) : undefined}
+          onSaveConfig={selectedAccount.credentialSource === 'api-key' && selectedAccount.id.startsWith('codex-api-key:')
+            ? (draft) => updateSelectedApiKeyConfig(draft)
+            : undefined}
           onVerify={selectedAccount.credentialSource === 'api-key' ? (input) => void verifySelectedApiKey(input) : undefined}
           onTestQuotaCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyQuotaCurl(input) : undefined}
           onTestBillingCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyBillingCurl(input) : undefined}

@@ -57,13 +57,13 @@ type CodexQuotaWindow struct {
 }
 
 type CodexQuotaResponse struct {
-	PlanType string                    `json:"planType,omitempty"`
-	Windows  []CodexQuotaWindow        `json:"windows"`
-	Billing  *CodexQuotaBillingInfo    `json:"billing,omitempty"`
+	PlanType string                 `json:"planType,omitempty"`
+	Windows  []CodexQuotaWindow     `json:"windows"`
+	Billing  *CodexQuotaBillingInfo `json:"billing,omitempty"`
 }
 
 type CodexQuotaBillingInfo struct {
-	IsAvailable  bool                          `json:"isAvailable"`
+	IsAvailable  bool                           `json:"isAvailable"`
 	BalanceInfos []CodexQuotaBillingBalanceInfo `json:"balanceInfos"`
 }
 
@@ -92,15 +92,15 @@ type RelayLocalApplyInput struct {
 }
 
 type LocalCodexAuthState struct {
-	AuthFilePath            string   `json:"authFilePath"`
-	HasAuthFile             bool     `json:"hasAuthFile"`
-	AuthMode                string   `json:"authMode"`
-	HasOpenAIAPIKey         bool     `json:"hasOpenAIAPIKey"`
-	HasTokens               bool     `json:"hasTokens"`
-	AccountEmail            string   `json:"accountEmail,omitempty"`
-	PlanType                string   `json:"planType,omitempty"`
-	CanPreserveChatGPTAuth  bool     `json:"canPreserveChatGPTAuth"`
-	Warnings                []string `json:"warnings,omitempty"`
+	AuthFilePath           string   `json:"authFilePath"`
+	HasAuthFile            bool     `json:"hasAuthFile"`
+	AuthMode               string   `json:"authMode"`
+	HasOpenAIAPIKey        bool     `json:"hasOpenAIAPIKey"`
+	HasTokens              bool     `json:"hasTokens"`
+	AccountEmail           string   `json:"accountEmail,omitempty"`
+	PlanType               string   `json:"planType,omitempty"`
+	CanPreserveChatGPTAuth bool     `json:"canPreserveChatGPTAuth"`
+	Warnings               []string `json:"warnings,omitempty"`
 }
 
 type ClaudeCodeLocalApplyResult struct {

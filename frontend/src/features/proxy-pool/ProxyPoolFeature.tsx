@@ -341,7 +341,8 @@ export default function ProxyPoolFeature() {
 
   function submitCompose() {
     try {
-      setNodes((current) => upsertProxyNode(current, composeDraft));
+      const nextNodes = upsertProxyNode(nodes, composeDraft);
+      setNodes(nextNodes);
       setFeedback(editingID ? '已更新该本地代理节点。' : '已新增一条本地代理节点。');
       closeComposeModal();
     } catch (error) {

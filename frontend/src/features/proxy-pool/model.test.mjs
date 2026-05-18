@@ -296,6 +296,44 @@ test('upsertProxyNode creates a new local node from draft fields', () => {
   assert.equal(nextNodes[0].lastCheckedAt, '2026-04-30 11:06');
 });
 
+test('upsertProxyNode accepts a complete proxy url in the address field', () => {
+  const nextNodes = upsertProxyNode([], {
+    name: 'Proxyman Local',
+    group: '主用组',
+    protocol: 'SOCKS5',
+    host: 'http://127.0.0.1:9090',
+    port: '1080',
+    latencyMs: '20',
+    availabilityRate: '100',
+    status: 'available',
+    note: '',
+  }, new Date(2026, 4, 18, 17, 42, 0));
+
+  assert.equal(nextNodes.length, 1);
+  assert.equal(nextNodes[0].protocol, 'HTTP');
+  assert.equal(nextNodes[0].host, '127.0.0.1');
+  assert.equal(nextNodes[0].port, 9090);
+  assert.equal(buildProxyURLFromNode(nextNodes[0]), 'http://127.0.0.1:9090');
+});
+
+test('upsertProxyNode accepts host and port shorthand in the address field', () => {
+  const nextNodes = upsertProxyNode([], {
+    name: 'Local Socks',
+    group: '主用组',
+    protocol: 'SOCKS5',
+    host: '127.0.0.1:7890',
+    port: '',
+    latencyMs: '20',
+    availabilityRate: '100',
+    status: 'available',
+    note: '',
+  }, new Date(2026, 4, 18, 17, 44, 0));
+
+  assert.equal(nextNodes[0].protocol, 'SOCKS5');
+  assert.equal(nextNodes[0].host, '127.0.0.1');
+  assert.equal(nextNodes[0].port, 7890);
+});
+
 test('upsertProxyNode updates an existing node when draft carries id', () => {
   const [first, ...rest] = createInitialProxyNodes();
   const nextNodes = upsertProxyNode([first, ...rest], {

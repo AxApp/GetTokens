@@ -26,6 +26,10 @@ import useAccountsRateLimitState from '../accounts/hooks/useAccountsRateLimitSta
 import useAccountsUsageState from '../accounts/hooks/useAccountsUsageState';
 import { getAccountsPreviewCodexAccounts } from '../accounts/previewData';
 import { mapBackendAccountRecord } from '../accounts/model/accountPresentation';
+import {
+  ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
+  shouldScheduleAccountUsageRefresh,
+} from '../accounts/model/accountUsage';
 import { CodexAccountDetailModal, CodexAccountOrderSection, RouteProbeCard } from './components/CodexAccountListView';
 import { getCodexAccountListPreviewAuthFileModelOptions, getCodexAccountListPreviewRows } from './previewData';
 import {
@@ -125,6 +129,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     () => buildCodexRoutePolicyRowStates(orderedRows, routePolicyDraft),
     [orderedRows, routePolicyDraft],
   );
+  const usageRefreshAccounts = useMemo(
+    () => orderedRows.map((row) => codexRowToAccountRecord(row)),
+    [orderedRows],
+  );
   const routingProbeStreamLines = useMemo(
     () =>
       buildCodexRoutingProbeStreamLines(routePolicyPreviewRows, routingProbeAttempts, {
@@ -190,9 +198,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         accounts: accountRows,
         providers: nextProviders,
       });
+      const nextUsageAccounts = nextRows.map((row) => codexRowToAccountRecord(row));
       void loadCodexQuotas(accountRows);
-      void loadAccountUsage(accountRows);
-      void loadAccountRateLimits(nextRows.map((row) => codexRowToAccountRecord(row)));
+      void loadAccountUsage(nextUsageAccounts);
+      void loadAccountRateLimits(nextUsageAccounts);
       setOrderedRows(nextRows);
       setOrderDirty(false);
       setMessage(messageOverride || t('codex.account_list_loaded'));
@@ -207,6 +216,27 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   useEffect(() => {
     void reload();
   }, [browserMode, loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, ready]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !shouldScheduleAccountUsageRefresh({
+        ready,
+        hasRuntimeBindings: !browserMode,
+        accounts: usageRefreshAccounts,
+      })
+    ) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      void loadAccountUsage(usageRefreshAccounts);
+    }, ACCOUNT_USAGE_REFRESH_INTERVAL_MS);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [browserMode, loadAccountUsage, ready, usageRefreshAccounts]);
 
   useEffect(() => {
     if (routingProbeModel.trim()) {

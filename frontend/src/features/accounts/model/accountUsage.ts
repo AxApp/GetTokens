@@ -99,6 +99,8 @@ export interface AccountUsageAttributionResponse {
   unresolved?: AccountUsageAttributionItem[];
 }
 
+export const ACCOUNT_USAGE_REFRESH_INTERVAL_MS = 15_000;
+
 const EMPTY_STATUS_BAR: StatusBarData = {
   blocks: Array.from({ length: 20 }, () => 'idle'),
   blockDetails: Array.from({ length: 20 }, () => ({
@@ -237,6 +239,14 @@ function parseTimestampMs(value: unknown) {
   }
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+export function shouldScheduleAccountUsageRefresh(input: {
+  ready: boolean;
+  hasRuntimeBindings: boolean;
+  accounts: AccountRecord[];
+}) {
+  return input.ready && input.hasRuntimeBindings && input.accounts.length > 0;
 }
 
 export function collectUsageDetails(usageData: unknown): UsageDetail[] {

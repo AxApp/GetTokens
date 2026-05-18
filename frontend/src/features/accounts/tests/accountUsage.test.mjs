@@ -5,6 +5,7 @@ import {
   buildAccountUsageSummary,
   buildAccountUsageSummaryMap,
   buildCandidateUsageSourceIds,
+  shouldScheduleAccountUsageRefresh,
   calculateStatusBarData,
   collectUsageDetails,
   normalizeUsageSourceId,
@@ -335,4 +336,49 @@ test('buildAccountUsageSummary consumes sidecar attribution items for openai-com
   assert.equal(summary.requestCount, 1);
   assert.equal(summary.cachedInputTokens, 192);
   assert.equal(summary.totalTokens, 259);
+});
+
+test('shouldScheduleAccountUsageRefresh only polls live account cards', () => {
+  const accounts = [
+    {
+      id: 'codex-api-key:local-1',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'local-1',
+      status: 'ACTIVE',
+    },
+  ];
+
+  assert.equal(
+    shouldScheduleAccountUsageRefresh({
+      ready: true,
+      hasRuntimeBindings: true,
+      accounts,
+    }),
+    true
+  );
+  assert.equal(
+    shouldScheduleAccountUsageRefresh({
+      ready: false,
+      hasRuntimeBindings: true,
+      accounts,
+    }),
+    false
+  );
+  assert.equal(
+    shouldScheduleAccountUsageRefresh({
+      ready: true,
+      hasRuntimeBindings: false,
+      accounts,
+    }),
+    false
+  );
+  assert.equal(
+    shouldScheduleAccountUsageRefresh({
+      ready: true,
+      hasRuntimeBindings: true,
+      accounts: [],
+    }),
+    false
+  );
 });

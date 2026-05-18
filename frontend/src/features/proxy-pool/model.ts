@@ -736,11 +736,6 @@ function buildProxyNodeFromDraft(draft: ProxyNodeDraft, now: Date): ProxyNodeRec
     throw new Error('节点名称不能为空。');
   }
 
-  const host = draft.host.trim();
-  if (!host) {
-    throw new Error('代理地址不能为空。');
-  }
-
   if (!proxyNodeGroups.includes(draft.group as (typeof proxyNodeGroups)[number])) {
     throw new Error('代理分组不合法。');
   }
@@ -749,10 +744,7 @@ function buildProxyNodeFromDraft(draft: ProxyNodeDraft, now: Date): ProxyNodeRec
     throw new Error('代理协议不合法。');
   }
 
-  const port = Number.parseInt(draft.port, 10);
-  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-    throw new Error('端口必须是 1 到 65535 之间的整数。');
-  }
+  const endpoint = normalizeProxyEndpointFromDraft(draft);
 
   const latencyMs = Number.parseInt(draft.latencyMs, 10);
   if (!Number.isInteger(latencyMs) || latencyMs < 0) {
@@ -765,20 +757,91 @@ function buildProxyNodeFromDraft(draft: ProxyNodeDraft, now: Date): ProxyNodeRec
   }
 
   return {
-    id: draft.id ?? buildProxyNodeID(name, draft.protocol, host, port),
+    id: draft.id ?? buildProxyNodeID(name, endpoint.protocol, endpoint.host, endpoint.port),
     name,
     group: draft.group,
-    protocol: draft.protocol,
+    protocol: endpoint.protocol,
     sourceLabel: draft.sourceLabel?.trim() || '手动维护',
     sourceURL: draft.sourceURL?.trim() || '',
-    host,
-    port,
+    host: endpoint.host,
+    port: endpoint.port,
     latencyMs,
     availabilityRate,
     lastCheckedAt: formatTimestamp(now),
     status: draft.status,
     note: draft.note.trim() || (draft.status === 'available' ? '本地新增节点，待后续复测。' : '本地新增节点，建议先复测。'),
   };
+}
+
+function normalizeProxyEndpointFromDraft(draft: ProxyNodeDraft): {
+  protocol: ProxyNodeProtocol;
+  host: string;
+  port: number;
+} {
+  const rawHost = draft.host.trim();
+  if (!rawHost) {
+    throw new Error('代理地址不能为空。');
+  }
+
+  if (shouldParseInlineProxyEndpoint(rawHost)) {
+    const parsed = parseProxyEndpoint(rawHost, draft.protocol);
+    return parsed;
+  }
+
+  const port = parseProxyPort(draft.port);
+  return {
+    protocol: draft.protocol,
+    host: rawHost,
+    port,
+  };
+}
+
+function shouldParseInlineProxyEndpoint(value: string): boolean {
+  if (value.includes('://')) {
+    return true;
+  }
+
+  if (value.startsWith('[')) {
+    return /\]:\d+$/.test(value);
+  }
+
+  return value.split(':').length === 2 && /:\d+$/.test(value);
+}
+
+function parseProxyEndpoint(raw: string, fallbackProtocol: ProxyNodeProtocol) {
+  const normalizedInput = raw.includes('://') ? raw : `${fallbackProtocol.toLowerCase()}://${raw}`;
+  let parsed: URL;
+
+  try {
+    parsed = new URL(normalizedInput);
+  } catch {
+    throw new Error('代理地址不合法，请使用 scheme://host:port 或 host:port。');
+  }
+
+  const protocol = parsed.protocol.replace(/:$/, '').toUpperCase();
+  if (!proxyNodeProtocols.includes(protocol as ProxyNodeProtocol)) {
+    throw new Error('代理协议不合法。');
+  }
+
+  const host = parsed.hostname.trim();
+  const port = parseProxyPort(parsed.port);
+  if (!host) {
+    throw new Error('代理地址不能为空。');
+  }
+
+  return {
+    protocol: protocol as ProxyNodeProtocol,
+    host,
+    port,
+  };
+}
+
+function parseProxyPort(raw: string): number {
+  const port = Number.parseInt(raw, 10);
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error('端口必须是 1 到 65535 之间的整数。');
+  }
+  return port;
 }
 
 function buildProxyNodeID(name: string, protocol: ProxyNodeProtocol, host: string, port: number) {
