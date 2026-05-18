@@ -1,5 +1,35 @@
 import type { AccountRecord, AuthFile } from '../../../types';
 
+export type AccountDeleteRequest =
+  | { type: 'auth-file'; name: string }
+  | { type: 'codex-api-key'; id: string }
+  | { type: 'openai-compatible-provider'; name: string }
+  | { type: 'missing-auth-file-name' }
+  | { type: 'missing-openai-compatible-name' };
+
+const OPENAI_COMPATIBLE_ACCOUNT_PREFIX = 'openai-compatible:';
+
+export function resolveAccountDeleteRequest(
+  account: Pick<AccountRecord, 'credentialSource' | 'id' | 'name' | 'provider'>,
+): AccountDeleteRequest {
+  if (account.id.startsWith(OPENAI_COMPATIBLE_ACCOUNT_PREFIX)) {
+    const name = account.id.slice(OPENAI_COMPATIBLE_ACCOUNT_PREFIX.length).trim() || account.provider.trim();
+    return name
+      ? { type: 'openai-compatible-provider', name }
+      : { type: 'missing-openai-compatible-name' };
+  }
+
+  if (account.credentialSource === 'api-key') {
+    return { type: 'codex-api-key', id: account.id };
+  }
+
+  if (!account.name) {
+    return { type: 'missing-auth-file-name' };
+  }
+
+  return { type: 'auth-file', name: account.name };
+}
+
 export function removeDeletedAuthFile(files: AuthFile[], deletedAccount: Pick<AccountRecord, 'credentialSource' | 'name'>): AuthFile[] {
   if (deletedAccount.credentialSource !== 'auth-file' || !deletedAccount.name) {
     return files;

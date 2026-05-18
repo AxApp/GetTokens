@@ -3,6 +3,7 @@ import {
   CreateCodexAPIKey,
   DeleteAuthFiles,
   DeleteCodexAPIKey,
+  DeleteOpenAICompatibleProvider,
   DownloadAuthFile,
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
@@ -27,6 +28,7 @@ import {
   resolvePastedAuthFileName,
 } from '../model/accountTransfer';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
+import { resolveAccountDeleteRequest } from '../model/accountDelete';
 import type { ApiKeyFormState, TrackRequest, Translator } from '../model/types';
 
 interface UseAccountsActionsArgs {
@@ -77,10 +79,13 @@ export default function useAccountsActions({
   const deleteAccount = useCallback(
     async (account: AccountRecord) => {
       setDeleteError('');
+      const deleteRequest = resolveAccountDeleteRequest(account);
 
-      if (account.credentialSource === 'api-key') {
+      if (deleteRequest.type === 'openai-compatible-provider') {
         try {
-          await trackRequest('DeleteCodexAPIKey', { id: account.id }, () => DeleteCodexAPIKey(account.id));
+          await trackRequest('DeleteOpenAICompatibleProvider', { name: deleteRequest.name }, () =>
+            DeleteOpenAICompatibleProvider(deleteRequest.name)
+          );
           setPendingDeleteID(null);
           if (selectedAccount?.id === account.id) {
             setSelectedAccount(null);
@@ -94,13 +99,29 @@ export default function useAccountsActions({
         return;
       }
 
-      if (!account.name) {
+      if (deleteRequest.type === 'codex-api-key') {
+        try {
+          await trackRequest('DeleteCodexAPIKey', { id: deleteRequest.id }, () => DeleteCodexAPIKey(deleteRequest.id));
+          setPendingDeleteID(null);
+          if (selectedAccount?.id === account.id) {
+            setSelectedAccount(null);
+          }
+          removeDeletedAccountLocally(account);
+          await loadAccounts({ showLoading: false });
+        } catch (error) {
+          console.error(error);
+          setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
+        }
+        return;
+      }
+
+      if (deleteRequest.type === 'missing-auth-file-name' || deleteRequest.type === 'missing-openai-compatible-name') {
         setDeleteError(`DELETE ERROR: ${t('accounts.delete_missing_name')}`);
         return;
       }
 
       try {
-        await trackRequest('DeleteAuthFiles', { names: [account.name] }, () => DeleteAuthFiles([account.name!]));
+        await trackRequest('DeleteAuthFiles', { names: [deleteRequest.name] }, () => DeleteAuthFiles([deleteRequest.name]));
         setPendingDeleteID(null);
         removeDeletedAccountLocally(account);
         await loadAccounts({ showLoading: false });
