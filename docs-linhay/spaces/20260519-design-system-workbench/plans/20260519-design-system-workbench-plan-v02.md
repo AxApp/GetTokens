@@ -447,6 +447,20 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - preset selected
    - validation error
 5. 本批只用固定 mock 回调和 form，不触碰真实创建或 Wails 边界。
+
+### 第十五批：API Key Compose
+本批复用 Account Modals story，继续收 Codex API key 新增弹窗。
+
+1. 继续更新 `frontend/src/features/accounts/components/AccountModalComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/Account Modals`。
+3. 本批 admitted 文件：
+   - `ApiKeyComposeModal.tsx`
+4. `Overview` 新增 API key compose 状态：
+   - empty form
+   - filled quota form
+   - fetching models
+   - verify error
+5. 本批只用固定 form 和 probe callback mock，不触碰真实创建、模型请求或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

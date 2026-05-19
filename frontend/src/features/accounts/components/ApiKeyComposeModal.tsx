@@ -24,6 +24,9 @@ interface ApiKeyComposeModalProps {
   onSubmit: () => void;
   onFetchModels?: (input: { baseUrl: string; apiKey: string }) => Promise<{ models: string[]; message: string }>;
   onVerify?: (input: { baseUrl: string; apiKey: string; model: string }) => Promise<{ success: boolean; message: string }>;
+  initialFetchModelsState?: FetchModelsState;
+  initialVerifyModel?: string;
+  initialVerifyState?: ProbeVerifyState;
 }
 
 export default function ApiKeyComposeModal({
@@ -35,16 +38,19 @@ export default function ApiKeyComposeModal({
   onSubmit,
   onFetchModels,
   onVerify,
+  initialFetchModelsState,
+  initialVerifyModel,
+  initialVerifyState,
 }: ApiKeyComposeModalProps) {
   const [fetchModelsState, setFetchModelsState] = useState<FetchModelsState>({
-    status: 'idle',
-    models: [],
-    message: '',
+    status: initialFetchModelsState?.status ?? 'idle',
+    models: initialFetchModelsState?.models ?? [],
+    message: initialFetchModelsState?.message ?? '',
   });
-  const [verifyModel, setVerifyModel] = useState(DEFAULT_PROBE_MODEL);
+  const [verifyModel, setVerifyModel] = useState(initialVerifyModel ?? DEFAULT_PROBE_MODEL);
   const [verifyState, setVerifyState] = useState<ProbeVerifyState>({
-    status: 'idle',
-    message: '',
+    status: initialVerifyState?.status ?? 'idle',
+    message: initialVerifyState?.message ?? '',
   });
 
   const probeEnabled = form.apiKey.trim().length > 0;

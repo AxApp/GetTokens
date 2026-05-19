@@ -2,7 +2,9 @@ import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
+import type { ApiKeyFormState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import ApiKeyComposeModal from './ApiKeyComposeModal';
 import PasteAuthModal from './PasteAuthModal';
 
 const meta = {
@@ -186,6 +188,71 @@ const pastedAuthContent = JSON.stringify(
   2,
 );
 
+const apiKeyForms: Record<'empty' | 'filled' | 'error', ApiKeyFormState> = {
+  empty: {
+    label: '',
+    apiKey: '',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+  },
+  filled: {
+    label: 'codex-preview',
+    apiKey: 'sk-preview-openai',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: 'codex-',
+    quotaCurl: 'curl -sS "https://example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"',
+    quotaEnabled: true,
+  },
+  error: {
+    label: 'team-router',
+    apiKey: 'sk-preview-router',
+    baseUrl: 'https://router.internal/v1',
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+  },
+};
+
+function ApiKeyComposeSample({
+  label,
+  formKey,
+  error = '',
+  probe = 'none',
+}: {
+  label: string;
+  formKey: keyof typeof apiKeyForms;
+  error?: string;
+  probe?: 'none' | 'ready' | 'loading' | 'verify-error';
+}) {
+  const { t } = useI18n();
+  const withProbe = probe !== 'none';
+  return (
+    <ModalViewport label={label}>
+      <ApiKeyComposeModal
+        t={t}
+        form={apiKeyForms[formKey]}
+        error={error}
+        onClose={() => undefined}
+        onChange={() => undefined}
+        onSubmit={() => undefined}
+        onFetchModels={withProbe ? async () => ({ models: ['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2'], message: '3 models' }) : undefined}
+        onVerify={withProbe ? async () => ({ success: probe !== 'verify-error', message: probe === 'verify-error' ? '401 unauthorized' : 'probe ok' }) : undefined}
+        initialFetchModelsState={
+          probe === 'loading'
+            ? { status: 'loading', models: [], message: '' }
+            : probe === 'verify-error'
+              ? { status: 'success', models: ['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2'], message: '3 models' }
+              : undefined
+        }
+        initialVerifyModel={probe === 'verify-error' ? 'gpt-5.4-mini' : undefined}
+        initialVerifyState={probe === 'verify-error' ? { status: 'error', message: '401 unauthorized' } : undefined}
+      />
+    </ModalViewport>
+  );
+}
+
 function AccountModalsOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
@@ -214,6 +281,21 @@ function AccountModalsOverview() {
           <PasteAuthSample label="DS-PASTE-ERROR" content="{ broken auth payload" error="JSON 解析失败：缺少结束括号" />
         </div>
       </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">API key compose states</h3>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <ApiKeyComposeSample label="DS-API-KEY-EMPTY" formKey="empty" />
+          <ApiKeyComposeSample label="DS-API-KEY-FILLED-QUOTA" formKey="filled" probe="ready" />
+          <ApiKeyComposeSample label="DS-API-KEY-FETCHING" formKey="filled" probe="loading" />
+          <ApiKeyComposeSample
+            label="DS-API-KEY-VERIFY-ERROR"
+            formKey="error"
+            probe="verify-error"
+            error="API KEY 探测失败，请确认 Base URL 和模型权限。"
+          />
+        </div>
+      </section>
     </div>
   );
 }
@@ -236,4 +318,8 @@ export const Error: Story = {
 
 export const PasteAuth: Story = {
   render: () => <PasteAuthSample label="DS-PASTE-READY" content={pastedAuthContent} />,
+};
+
+export const ApiKeyCompose: Story = {
+  render: () => <ApiKeyComposeSample label="DS-API-KEY-FILLED-QUOTA" formKey="filled" probe="ready" />,
 };
