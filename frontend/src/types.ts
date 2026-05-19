@@ -9,6 +9,7 @@ export type AppPage =
   | 'codex'
   | 'usage-desk'
   | 'settings'
+  | 'design-system'
   | 'debug';
 export type AccountWorkspace = 'all';
 export type CodexWorkspace =

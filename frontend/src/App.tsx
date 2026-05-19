@@ -13,6 +13,7 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 const CodexPage = lazy(() => import('./pages/CodexPage'));
 const DebugPage = lazy(() => import('./pages/DebugPage'));
+const DesignSystemPage = lazy(() => import('./pages/DesignSystemPage'));
 const ProxyPoolPage = lazy(() => import('./pages/ProxyPoolPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const StatusPage = lazy(() => import('./pages/StatusPage'));
@@ -55,6 +56,9 @@ function AppShell() {
     }
     if (activePage === 'debug') {
       return <DebugPage />;
+    }
+    if (activePage === 'design-system') {
+      return <DesignSystemPage />;
     }
     if (activePage === 'proxy-pool') {
       return <ProxyPoolPage />;

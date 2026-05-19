@@ -1,0 +1,121 @@
+import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
+import { useI18n } from '../../context/I18nContext';
+import {
+  DESIGN_SYSTEM_SCREENSHOT_PATH,
+  DESIGN_SYSTEM_STORYBOOK_COMMAND,
+  DESIGN_SYSTEM_STORYBOOK_URL,
+  designSystemStoryGroups,
+  getDesignSystemStoryStats,
+} from './storyCatalog';
+
+export default function DesignSystemEntryFeature() {
+  const { t } = useI18n();
+  const stats = getDesignSystemStoryStats();
+
+  return (
+    <div className="h-full overflow-auto bg-[var(--bg-surface)] p-8 text-[var(--text-primary)]">
+      <div className="mx-auto flex max-w-6xl flex-col gap-8">
+        <WorkspacePageHeader
+          title={t('design_system.title')}
+          subtitle={t('design_system.subtitle')}
+          actions={
+            <a
+              className="btn-swiss bg-[var(--border-color)] !text-[var(--bg-main)]"
+              href={DESIGN_SYSTEM_STORYBOOK_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('design_system.open_storybook')}
+            </a>
+          }
+        />
+
+        <section className="grid gap-4 md:grid-cols-[minmax(0,1fr)_18rem]">
+          <div className="card-swiss grid gap-5">
+            <div>
+              <div className="text-[0.625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+                {t('design_system.primary_entry')}
+              </div>
+              <div className="mt-2 text-2xl font-black uppercase italic tracking-normal">
+                Storybook
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <InfoRow label={t('design_system.command')} value={DESIGN_SYSTEM_STORYBOOK_COMMAND} />
+              <InfoRow label={t('design_system.url')} value={DESIGN_SYSTEM_STORYBOOK_URL} />
+              <InfoRow label={t('design_system.screenshot_path')} value={DESIGN_SYSTEM_SCREENSHOT_PATH} />
+            </div>
+          </div>
+
+          <aside className="card-swiss grid content-start gap-4">
+            <div className="text-[0.625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+              {t('design_system.coverage')}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Metric label={t('design_system.groups')} value={stats.groupCount} />
+              <Metric label={t('design_system.stories')} value={stats.storyCount} />
+            </div>
+          </aside>
+        </section>
+
+        <section className="grid gap-4">
+          {designSystemStoryGroups.map((group) => (
+            <div key={group.id} className="card-swiss !p-0">
+              <div className="border-b-2 border-[var(--border-color)] px-5 py-4">
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h3 className="text-xl font-black uppercase italic tracking-normal">{group.title}</h3>
+                    <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-normal text-[var(--text-muted)]">
+                      {group.description}
+                    </p>
+                  </div>
+                  <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[0.5625rem] font-black">
+                    {group.stories.length} {t('design_system.items')}
+                  </span>
+                </div>
+              </div>
+              <div className="divide-y-2 divide-[var(--border-color)]">
+                {group.stories.map((story) => (
+                  <div key={story.id} className="grid gap-2 px-5 py-4 md:grid-cols-[13rem_minmax(0,1fr)] md:items-center">
+                    <div className="font-black uppercase italic tracking-normal">{story.title}</div>
+                    <div className="min-w-0">
+                      <div className="truncate font-mono text-[0.625rem] font-bold text-[var(--text-muted)]">
+                        {story.storybookTitle}
+                      </div>
+                      <div className="mt-1 truncate font-mono text-[0.5625rem] text-[var(--text-muted)]/70">
+                        {story.path}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+      <div className="text-[0.5625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+        {label}
+      </div>
+      <code className="break-all font-mono text-[0.6875rem] font-bold">{value}</code>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+      <div className="font-mono text-2xl font-black">{value}</div>
+      <div className="mt-1 text-[0.5625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+        {label}
+      </div>
+    </div>
+  );
+}

@@ -17,6 +17,7 @@ const appPages: ReadonlySet<AppPage> = new Set([
   'codex',
   'usage-desk',
   'settings',
+  'design-system',
   'debug',
 ]);
 const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all']);

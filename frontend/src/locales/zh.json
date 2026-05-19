@@ -38,9 +38,23 @@
     "accounts_codex": "codex",
     "accounts_openai_compatible": "openai-compatible",
     "settings": "应用设置",
+    "design_system": "设计系统",
     "debug": "调试面板",
     "collapse_sidebar": "收起侧边栏",
     "expand_sidebar": "展开侧边栏"
+  },
+  "design_system": {
+    "title": "设计系统",
+    "subtitle": "Storybook 组件工作台 / Token / 状态回归",
+    "open_storybook": "打开 Storybook",
+    "primary_entry": "主工作台",
+    "command": "启动命令",
+    "url": "默认地址",
+    "screenshot_path": "截图路径",
+    "coverage": "覆盖矩阵",
+    "groups": "分组",
+    "stories": "Stories",
+    "items": "项"
   },
   "codex": {
     "title": "Codex",

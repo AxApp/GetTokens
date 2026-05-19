@@ -55,6 +55,7 @@ test('isAppPage only accepts known sidebar pages', () => {
   assert.equal(isAppPage('codex'), true);
   assert.equal(isAppPage('usage-desk'), true);
   assert.equal(isAppPage('settings'), true);
+  assert.equal(isAppPage('design-system'), true);
   assert.equal(isAppPage('debug'), true);
   assert.equal(isAppPage('unknown'), false);
   assert.equal(isAppPage(null), false);
@@ -62,6 +63,7 @@ test('isAppPage only accepts known sidebar pages', () => {
 
 test('resolveInitialActivePage falls back to accounts for invalid values', () => {
   assert.equal(resolveInitialActivePage('settings'), 'settings');
+  assert.equal(resolveInitialActivePage('design-system'), 'design-system');
   assert.equal(resolveInitialActivePage('session-management'), 'codex');
   assert.equal(resolveInitialActivePage('vendor-status'), 'codex');
   assert.equal(resolveInitialActivePage('proxy-pool'), 'proxy-pool');
@@ -105,6 +107,19 @@ test('persistActivePage writes the selected page to storage', () => {
   persistActivePage(storage, 'session-management');
 
   assert.deepEqual(writes, [[ACTIVE_PAGE_STORAGE_KEY, 'session-management']]);
+});
+
+test('persistActivePage writes design system route to storage', () => {
+  const writes = [];
+  const storage = {
+    setItem(key, value) {
+      writes.push([key, value]);
+    },
+  };
+
+  persistActivePage(storage, 'design-system');
+
+  assert.deepEqual(writes, [[ACTIVE_PAGE_STORAGE_KEY, 'design-system']]);
 });
 
 test('isAccountWorkspace only accepts all', () => {
@@ -362,6 +377,7 @@ test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=codex'), { page: 'codex', codexWorkspace: 'feature-config' });
   assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'codex', codexWorkspace: 'usage-codex' });
   assert.deepEqual(readFrameHashState('#frame=settings'), { page: 'settings' });
+  assert.deepEqual(readFrameHashState('#frame=design-system'), { page: 'design-system' });
 });
 
 test('readFrameHashState parses accounts workspace and falls back to all for legacy', () => {
@@ -505,6 +521,7 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   );
   assert.equal(buildFrameHash('vendor-status', 'all', 'feature-config', 'codex', 'codex'), '#frame=vendor-status');
   assert.equal(buildFrameHash('proxy-pool', 'all', 'feature-config', 'codex', 'codex'), '#frame=proxy-pool');
+  assert.equal(buildFrameHash('design-system', 'all', 'feature-config', 'codex', 'codex'), '#frame=design-system');
   assert.equal(buildFrameHash('codex', 'all', 'feature-config', 'codex', 'codex'), '#frame=codex');
   assert.equal(
     buildFrameHash('codex', 'all', 'usage-codex', 'codex', 'codex'),

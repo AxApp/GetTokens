@@ -138,6 +138,16 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Themes**: Support `system`, `light`, and `dark`. Ensure `--bg-main` and `--bg-surface` are distinct in dark mode.
 - **l10n**: Add new copy to both `zh.json` and `en.json`. Default is Chinese.
 - **Controls**: Use segmented controls for discrete settings.
+- **Professional Tooling Bias**: When a mature, domain-standard frontend tool directly solves a design-system, component-workbench, accessibility, visual-regression, or interaction-preview problem, recommend it explicitly even if it is outside the user's stated vocabulary. Do not default to self-building a weaker internal version just because it avoids a new tool.
+- **Storybook Baseline**: For GetTokens design-system work, Storybook is the default primary component workbench. Use `@storybook/react-vite` for the current React + Vite stack. Keep any in-app `design-system` route as a discovery/entry page unless a later requirement explicitly needs production-embedded component previews.
+- **Storybook Scope**:
+  - Stories must render real components, not copied static HTML.
+  - Stories must use mock data and must not call Wails bindings or sidecar APIs.
+  - Load `frontend/src/style.css` and the relevant providers in Storybook preview so CSS variables, theme behavior, text scale, and localization are visible.
+  - Start with `frontend/src/components/ui` and token stories before pulling in business-heavy account/Codex components.
+  - Component stories must include an `Overview` story that shows key states in one page for design review and screenshot regression; keep single-state stories for isolated interaction debugging.
+  - Component examples that are officially admitted into the design system must be wrapped with `DesignSystemStoryFrame`; this gives them the shared DS admission border in Storybook and makes non-admitted business compositions visually distinct.
+  - Keep Storybook dependency and generated config isolated to the frontend dev toolchain; it must not affect Wails runtime behavior.
 - **Complex Workflow Screens**: When a flow/configuration page starts feeling complex, reduce the information architecture before adding more components:
   - put the final route/result summary first
   - keep the expanded editor to the fewest decision zones users must act on

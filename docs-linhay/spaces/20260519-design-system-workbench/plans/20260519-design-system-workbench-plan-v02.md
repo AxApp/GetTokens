@@ -1,0 +1,217 @@
+# Design System Workbench Plan v02
+
+## 需求边界
+本期要交付 Storybook 版设计系统工作台，并保留 GetTokens 应用内 `design-system` 入口。Storybook 负责组件预览、Docs、Controls、主题验证和截图回归；应用内入口负责发现、说明和链接。
+
+## 当前基线
+1. 前端栈为 React 18 + Vite 5 + Tailwind 3 + TypeScript。
+2. 当前没有 Storybook 依赖。
+3. 基础组件集中在 `frontend/src/components/ui/`。
+4. 全局样式和 token 在 `frontend/src/style.css`。
+5. 应用导航仍由 `AppPage`、`pagePersistence`、`Sidebar` 和 hash frame 驱动。
+6. 技术细节以 [Technical Design v02](20260519-design-system-workbench-technical-design-v02.md) 为准。
+
+## BDD 场景
+### 场景 1：Storybook 可启动
+Given 已安装 Storybook 依赖
+When 运行 `npm --prefix frontend run storybook`
+Then 能在 `http://127.0.0.1:6006` 打开 GetTokens Design System。
+
+### 场景 2：基础组件有 stories
+Given 用户打开 Storybook
+When 查看 `Design System/Components`
+Then 能看到 `SegmentedControl`、`ToggleSwitch`、`ActionSelect`、`Combobox`、`WorkspacePageHeader`、`PageLoadingFallback`。
+
+### 场景 3：token 与主题生效
+Given Storybook preview 已加载 `style.css`
+When 打开 token stories 或切换主题
+Then 组件使用 GetTokens 的 CSS variables
+And 不出现默认 Storybook 视觉替代真实组件样式。
+
+### 场景 4：应用内入口可发现
+Given 用户打开 GetTokens
+When 点击 Sidebar 的设计系统入口
+Then 页面展示 Storybook 启动命令、默认地址、覆盖矩阵和截图路径。
+
+### 场景 5：无 Wails 运行时也可预览
+Given 用户只启动 Storybook
+When 浏览基础组件 stories
+Then stories 不调用 `window.go.main.App`
+And 可正常展示 mock 数据。
+
+## 实施步骤
+### 阶段 1：Storybook 初始化
+1. 在 `frontend/` 下执行 Storybook 初始化，使用 React/Vite 框架。
+2. 检查生成的 `frontend/.storybook/main.ts` 和 `preview.ts`。
+3. 将 `preview.ts` 接入 `frontend/src/style.css` 和必要 provider。
+4. 保留最小官方 addons，避免一次性引入过多生态插件。
+
+### 阶段 2：应用内入口
+1. `AppPage` 增加 `design-system`。
+2. `pagePersistence` 支持 `design-system` 读写和 `#frame=design-system`。
+3. `App.tsx` 新增 `DesignSystemPage` lazy import。
+4. `Sidebar` 增加设计系统入口。
+5. 新建 `DesignSystemEntryFeature`，展示 Storybook 命令、地址、覆盖矩阵和截图路径。
+6. `zh.json` / `en.json` 增加导航文案。
+
+### 阶段 3：第一批 stories
+1. 基础组件 stories：
+   - `SegmentedControl`
+   - `ToggleSwitch`
+   - `ActionSelect`
+   - `Combobox`
+   - `WorkspacePageHeader`
+   - `PageLoadingFallback`
+2. Token stories：
+   - colors
+   - typography
+   - spacing / border / shadow
+3. Primitive stories：
+   - `btn-swiss`
+   - `card-swiss`
+   - `input-swiss`
+   - `select-swiss`
+4. Overlay placeholder stories：
+   - Dialog
+   - Popover
+   - Dropdown
+   - Tooltip
+
+### 阶段 4：测试与截图
+1. 补 `pagePersistence` 红灯测试。
+2. 新增 `storyCatalog.test.mjs`，验证 story catalog。
+3. 运行：
+   - `node --test frontend/src/utils/pagePersistence.test.mjs frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run test:unit`
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build`
+   - `npm --prefix frontend run build-storybook`
+4. 用浏览器打开 Storybook 并截图归档。
+
+## 设计原则
+1. Storybook 是真实设计系统工作台，不再自研完整预览器。
+2. stories 必须渲染真实组件，不复制静态 HTML。
+3. 每个 story 使用 mock 数据，不调用 Wails / sidecar。
+4. 视觉延续 GetTokens 的 Swiss-industrial workbench，不使用 Storybook 默认组件视觉替代产品组件。
+5. 组件进入业务页面前，先在 Storybook 中补齐状态样本。
+
+## 待确认
+1. Storybook 端口已固定为 `6006`，便于应用内入口说明和截图脚本复用。
+2. 应用内 `design-system` 入口本期先常驻 Sidebar；后续如有发行顾虑再加开发开关。
+3. 账号卡片、Codex 行等业务组件暂不纳入第一批 stories；第二批再按业务组件稳定度推进。
+
+## 执行结果
+### 已完成
+1. Storybook 已接入 `frontend/.storybook/`，preview 加载 `frontend/src/style.css` 并提供主题 / 字号 globals。
+2. `frontend/package.json` 已新增：
+   - `storybook`: `storybook dev -p 6006`
+   - `build-storybook`: `storybook build`
+3. 应用内入口已完成：
+   - `AppPage = design-system`
+   - `#frame=design-system`
+   - Sidebar `设计系统`
+   - `DesignSystemEntryFeature`
+   - `storyCatalog`
+4. 第一批 stories 已完成：
+   - `SegmentedControl`
+   - `ToggleSwitch`
+   - `ActionSelect`
+   - `Combobox`
+   - `WorkspacePageHeader`
+   - `PageLoadingFallback`
+   - `ColorTokens`
+   - `TypographyTokens`
+   - `SwissPrimitives`
+
+### 验证结果
+1. 红灯路径已执行并在实现前失败：
+   - `node --test frontend/src/utils/pagePersistence.test.mjs frontend/src/features/design-system/storyCatalog.test.mjs`
+2. 当前绿灯验证通过：
+   - `node --test frontend/src/utils/pagePersistence.test.mjs frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run test:unit`（307 passed）
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build`
+   - `npm --prefix frontend run build-storybook`
+3. 浏览器验收通过：
+   - Storybook 可在 `http://127.0.0.1:6006` 打开。
+   - `Design System/Tokens/Colors` 渲染 CSS token。
+   - toolbar 暴露 `GetTokens theme mode` 与 `GetTokens text scale`。
+   - 应用内 `http://127.0.0.1:5173/#frame=design-system` 可打开并展示覆盖矩阵。
+
+### 截图归档
+1. `docs-linhay/spaces/20260519-design-system-workbench/screenshots/20260519/design-system/20260519-design-system-storybook-web-after-v01.png`
+2. `docs-linhay/spaces/20260519-design-system-workbench/screenshots/20260519/design-system/20260519-design-system-app-route-web-after-v01.png`
+
+### 非阻塞记录
+1. `build-storybook` 输出 Storybook 大 chunk 警告，构建成功，暂不为首期工作台做 chunk 拆分。
+2. 浏览器 dev 验收里 `favicon.ico` 返回 404，属于既有 Vite dev server 静态资源缺口，不影响 `design-system` 页面。
+
+## 本地化补充
+### 需求
+Storybook 需要支持中文本地化，至少保证 GetTokens 组件预览内容可在中文和英文之间切换。
+
+### 实施
+1. 新增 `frontend/src/features/design-system/storybookGlobals.ts`，集中维护 Storybook locale toolbar 选项和默认回退规则。
+2. `frontend/.storybook/preview.tsx` 增加 `locale` global：
+   - 默认 `zh`
+   - toolbar 显示 `中文` / `English`
+   - 切换时调用 GetTokens `I18nProvider` 的 `setLocale`
+   - 同步 iframe `document.documentElement.lang`
+3. 首批 stories 的示例文案改为读取 `useI18n().locale`，覆盖中文和英文示例。
+
+### 验证
+1. `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+2. `npm --prefix frontend run typecheck`
+3. `npm --prefix frontend run build-storybook`
+4. 浏览器验证：
+   - `globals=locale:zh` 显示中文示例文案。
+   - `globals=locale:en` 显示英文示例文案。
+
+### 边界
+Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetTokens preview iframe 内的组件内容、语言状态与 `lang` 属性。
+
+## Story 状态总览补充
+### 需求
+用户指出 `Design System/Components/ActionSelect` 里的多个状态不应只能分散在不同 story 页面。设计系统用于批量修改和回归，因此复杂组件需要一屏展示关键状态。
+
+### 实施
+1. `frontend/src/components/ui/ActionSelect.stories.tsx` 新增 `Overview` story，并放在该组件 story 列表首位。
+2. `Overview` 同屏展示：
+   - `Create Only`
+   - `Create And Delete`
+   - `Long Content`
+   - `Disabled`
+3. 单状态 stories 继续保留，用于隔离调试和交互检查。
+
+### 后续规则
+后续为复杂基础组件补 stories 时，默认同时提供：
+1. `Overview`：一页状态矩阵，服务设计回归。
+2. 独立状态 stories：服务交互调试、Docs 和截图精确定位。
+
+### 推广结果
+`Overview` 状态矩阵已推广到首批所有组件 stories：
+
+1. `ActionSelect`
+2. `Combobox`
+3. `PageLoadingFallback`
+4. `SegmentedControl`
+5. `ToggleSwitch`
+6. `WorkspacePageHeader`
+
+测试门禁已补齐：`storyCatalog.test.mjs` 会读取 `components` 分组里的 story 文件，确认每个文件都导出 `Overview`。
+
+## 设计系统准入边框
+### 需求
+用户希望能在设计系统内快速区分哪些组件已经正式进入设计系统，哪些只是普通业务拼装或尚未纳入系统的样例。
+
+### 实施
+1. 新增 `frontend/src/features/design-system/DesignSystemStoryFrame.tsx`。
+2. 所有已纳入设计系统的 component story 示例必须用 `DesignSystemStoryFrame` 包裹。
+3. `DesignSystemStoryFrame` 提供统一标识：
+   - 红色虚线边框
+   - `DS` 角标
+   - `data-design-system-component="true"`
+4. `storyCatalog.test.mjs` 新增检查，确保 `components` 分组里的 story 文件使用 `DesignSystemStoryFrame`。
+
+### 边界
+该标识只用于 Storybook / 设计系统工作台，不进入真实产品运行时组件，避免污染业务页面外观。
