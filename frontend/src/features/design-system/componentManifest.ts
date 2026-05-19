@@ -29,6 +29,8 @@ const accountsHeaderStoryPath = 'frontend/src/features/accounts/components/Accou
 const accountsHeaderStorybookTitle = 'Design System/Feature Components/Accounts Header';
 const accountsToolbarStoryPath = 'frontend/src/features/accounts/components/AccountsToolbarComponents.stories.tsx';
 const accountsToolbarStorybookTitle = 'Design System/Feature Components/Accounts Toolbar';
+const accountsListStoryPath = 'frontend/src/features/accounts/components/AccountsListComponents.stories.tsx';
+const accountsListStorybookTitle = 'Design System/Feature Components/Accounts List';
 const accountGroupSectionStoryPath = 'frontend/src/features/accounts/components/AccountGroupSectionComponents.stories.tsx';
 const accountGroupSectionStorybookTitle = 'Design System/Feature Components/Account Group Sections';
 const accountProxyRouteStoryPath = 'frontend/src/features/accounts/components/AccountProxyRouteSection.stories.tsx';
@@ -215,6 +217,21 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['default', 'filters-open', 'empty-selection', 'bulk-selection'],
     mockDataSources: ['storybook account toolbar filters/search/display mode/selection mock'],
+  },
+  {
+    id: 'accounts-list-workbench-view',
+    componentName: 'AccountsListWorkbenchView',
+    sourcePath: 'frontend/src/features/accounts/components/AccountsListWorkbenchView.tsx',
+    ownerFeature: 'accounts',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: '账号列表整体已拆成无 Wails 的组合 view，并通过 Accounts List story 收编页头、工具栏、分组和账号卡片联动状态。',
+    matchedPatterns: ['WorkspacePageHeader', 'SegmentedControl', 'AccountCardFrame'],
+    storyPath: accountsListStoryPath,
+    storybookTitle: accountsListStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['full-list', 'compact-list', 'selection-list', 'filtered-empty'],
+    mockDataSources: ['storybook account groups, account cards, filters, display mode and selection mock'],
   },
   {
     id: 'accounts-api-key-compose-modal',

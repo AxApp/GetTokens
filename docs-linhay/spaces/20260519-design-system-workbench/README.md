@@ -197,6 +197,20 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - `WorkspacePageHeader`
 4. Storybook 没有 `data-design-system-highlight="project"` 根作用域，因此设计系统内部仍不显示可见框选或角标。
 
+## 2026-05-19 账号卡片与账号列表收编
+1. 账号卡片已通过 `Design System/Feature Components/Account Cards` 收编完整卡、交互外壳、归因卡、指标段、健康条和骨架屏。
+2. 新增无 Wails 依赖的 `AccountsListWorkbenchView`，把账号页头、工具栏、账号分组和真实账号卡片组合为可复用的账号列表设计系统组件。
+3. 新增 `Design System/Feature Components/Accounts List`，同屏覆盖：
+   - full 密度账号列表
+   - compact 密度账号列表
+   - list 密度 + 批量选择
+   - 搜索 / 筛选后的空列表
+4. `componentManifest.ts` 已把 `AccountsListWorkbenchView` 标记为 admitted；`storyCatalog.ts` 已加入 `accounts-list-components`。
+5. 验证通过：
+   - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build-storybook`
+
 ## 2026-05-19 Feature Components 第一批收编
 1. 新增 `Design System/Feature Components/Debug Panel`，把调试面板里已经提取且不依赖 Wails 的组件纳入设计系统：
    - `DebugHeader`

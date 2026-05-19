@@ -159,6 +159,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/accounts/components/AccountsToolbarComponents.stories.tsx',
       },
       {
+        id: 'accounts-list-components',
+        title: 'Accounts List Components',
+        storybookTitle: 'Design System/Feature Components/Accounts List',
+        path: 'frontend/src/features/accounts/components/AccountsListComponents.stories.tsx',
+      },
+      {
         id: 'account-group-section-components',
         title: 'Account Group Section Components',
         storybookTitle: 'Design System/Feature Components/Account Group Sections',
