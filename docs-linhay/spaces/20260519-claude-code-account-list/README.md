@@ -15,7 +15,7 @@
 6. 和现有 `应用到 Claude Code` local apply 打通：用户能从 Claude Code 账号列表理解当前 relay 入口、可请求候选、模型字段和本地 `settings.json` env 写入之间的关系。
 
 ## 范围
-- 新增或扩展 Claude Code 工作区入口，推荐 URL 形态为 `#frame=codex&workspace=claude-account-list` 或后续统一 CLI 工作区下的等价入口；最终命名在实现前以导航方案确定。
+- 新增 Claude 顶级工作区入口，URL 形态为 `#frame=claude&workspace=account-list`；Claude 在侧边栏与 Codex 同级，不作为 Codex 子菜单。
 - 前端复用 Codex 账号列表的分层模式：
   - feature controller 负责 Wails/browser 数据加载、顺序保存、探测调度、modal/hash 同步。
   - UI 组件复用账号归因卡、请求顺序列表、路由探测 modal 的现有模式。
@@ -33,7 +33,7 @@
   - OAuth/auth-file 账号优先复用 sidecar `oauth-model-alias`，Claude Code 侧 channel 以 `claude` 为默认目标；若实现发现 provider-specific channel 更准确，需要在实现文档中写明映射规则。
   - 默认不展示或保存同名 `model -> model` 映射；没有显式映射时保持原模型名透传。
   - 保存时按 `name + alias` 去重，允许同一个真实模型映射到多个 Claude Code alias。
-  - 模型输入使用项目自定义 combobox，真实模型候选来自账号远端模型或预设，Claude Code alias 候选来自 local apply/model catalog/常用 Claude 模型集合。
+  - 模型输入使用项目自定义 combobox，真实模型选项来自账号远端模型、官方 profile、旧预设迁移提示或已保存映射；Claude Code alias 选项来自 local apply/model catalog/常用 Claude 模型集合。
 - 默认模型 profile / 映射表进入本期范围：
   - 厂商默认值不是硬编码兜底，而是带来源、更新时间和可信度的 `ProviderDefaultModelProfile`。
   - 来源优先级固定为：官网/官方文档最新配置 > 本地参考项目 `cc-switch` 的 Claude provider preset > GetTokens `vendorPresets` / `modelSuggestions` > 远端 `/models` 动态发现 > 用户手工输入。
@@ -75,17 +75,53 @@
 5. P2 再补非 Anthropic 格式转换扩展：只有当非 Anthropic 账号需要参与 Claude Code 候选时，再定义转换入口和跨格式映射 UI。
 
 ## 待确认问题
-- 导航形态：是新增独立 `Claude Code` 工作区，还是继续放在现有 Codex/CLI 工作区下作为 Claude Code 子页面。
+- Claude 顶级工作区后续是否继续扩展 Skills、MCP、hooks、permissions 或 CLAUDE.md 管理；本期只落账号列表。
 - 路由探测 endpoint：实现时需要以 sidecar 当前 Claude Code relay 接入路径为准，确认使用 `/v1/messages`、provider-scoped Anthropic path，还是 local apply 已写入的 relay base URL。
 - route id 覆盖：Codex 探测已覆盖 `auth-file:<name>`、`codex-api-key:<id>`、`openai-compatible:<name>`；Claude Code 需补齐 Anthropic OAuth/auth-file、统一 API key 多格式端点和 openai-compatible 的 route id 映射。
 - 账号模型目录：Claude Code 模型候选应优先来自账号 `modelSuggestions` / relay model catalog 里的 Claude 模型，还是从实际 Anthropic `/models` 能力拉取。
 - 模型映射保存入口：API key / openai-compatible 可复用 `models[]` 字段；OAuth/auth-file 是否直接复用 `UpdateOAuthModelAliases(channel=claude)`，还是需要新增更明确的 Claude-facing Wails 方法。
 - 是否需要“应用到 Claude Code”快捷入口常驻在本页面顶部，还是只链接到 Status 页已有 local apply 面板。
+- 官方默认模型 profile 的维护入口：[official-model-profiles.md](./plans/official-model-profiles.md)。
 
 ## 设计稿入口
 
 - 本期设计稿：`（未产出）`
 - 约束：单期只保留一个 HTML 文件；若存在多稿对比，也必须收敛在同一个 HTML 文件内。
+
+## 设计系统入口
+
+- Storybook：`Design System/业务组件/Claude Code 账号列表`
+- Story 文件：`frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.stories.tsx`
+- 纯展示组件：`frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.tsx`
+- 覆盖状态：`ready`、`source-conflict`、`disabled-blocked`、`profile-draft`
+- 业务语义：只用 mock 数据展示 Anthropic 格式账号筛选、请求顺序、官方默认 profile、模型映射草稿和路由探测；不依赖 Wails、sidecar 或真实网络请求。
+
+## 2026-05-20 落地实现
+
+- 新增 Claude 顶级工作区：`#frame=claude&workspace=account-list`，侧边栏中 Claude 与 Codex 同级，子项为 `账号列表`。
+- 旧入口 `#frame=codex&workspace=claude-account-list` 自动迁移到 Claude 顶级工作区，避免历史链接失效。
+- 新增模型层：`frontend/src/features/claude-code/model/claudeCodeAccountList.ts`，覆盖 Anthropic 格式筛选、`formatBaseUrls.anthropic || baseUrl`、禁用保留顺序、模型映射去重、官方默认 profile 和 mapping draft。
+- 新增页面入口：`frontend/src/features/claude-code/ClaudeCodeAccountListFeature.tsx`，桌面端读取 `ListAccounts`，浏览器端使用稳定 preview 数据；页面复用 Codex 请求顺序、账号详情和路由探测组件。
+- 真实交互已接入：
+  - 拖拽排序写回 `UpdateAccountPriority`。
+  - 启停写回 `SetAccountDisabled`。
+  - OAuth/auth-file 映射写回 `UpdateOAuthModelAliases(channel="claude")`。
+  - openai-compatible 映射写回 `UpdateOpenAICompatibleProvider(models)`。
+  - codex-api-key 映射写回 `UpdateCodexAPIKeyConfig(models)`。
+- 后端新增 `ProbeClaudeCodeAccountRouting`，通过 Anthropic Messages 最小请求 `POST /v1/messages` 执行路由探测，并复用 `X-GetTokens-Route-*` 策略 header 和 recent request 使用量归因识别命中账号。
+- `AccountRecord` 已透出 `apiKeys`、`headers`、`models`，API key 与 openai-compatible 账号详情可以读取并保存模型映射。
+- 新增测试：`frontend/src/features/claude-code/claudeCodeAccountList.test.mjs`，并纳入 `npm --prefix frontend run test:unit`。
+- 新增后端测试：`internal/wailsapp/claude_code_routing_probe_test.go` 覆盖 `/v1/messages` 请求、route policy header、Anthropic 格式筛选和 model 必填；`internal/wailsapp/accounts_test.go` 覆盖 `UpdateCodexAPIKeyConfig(models)` 持久化与 sidecar 同步。
+- 浏览器 smoke：`http://127.0.0.1:5173/#frame=claude&workspace=account-list` 已验证 preview 正常渲染、路由探测弹层可打开、preview 探测可显示命中账号，页面错误为空；旧 Codex hash 会自动迁移。
+- Smoke 截图：
+  - `docs-linhay/spaces/20260519-claude-code-account-list/screenshots/20260520/claude-code/20260520-claude-code-account-list-top-nav-after-v01.png`
+  - `docs-linhay/spaces/20260519-claude-code-account-list/screenshots/20260520/claude-code/20260520-claude-code-account-list-web-preview-after-v02.png`
+  - `docs-linhay/spaces/20260519-claude-code-account-list/screenshots/20260520/claude-code/20260520-claude-code-account-list-route-probe-after-v02.png`
+- 已通过验证：
+  - `go test ./...`
+  - `npm --prefix frontend run typecheck`
+  - `npm --prefix frontend run test:unit`
+  - `npm --prefix frontend run build`
 
 ## Worktree 映射
 
@@ -111,5 +147,5 @@
 - [Xiaomi MiMo Claude Code 官方文档](https://platform.xiaomimimo.com/docs/zh-CN/integration/claudecode)
 
 ## 当前状态
-- 状态：requirements-drafted
-- 最近更新：2026-05-19
+- 状态：implementation-complete-smoked
+- 最近更新：2026-05-20

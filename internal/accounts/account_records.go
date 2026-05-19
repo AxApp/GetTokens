@@ -58,32 +58,35 @@ type AuthFileRecord struct {
 }
 
 type AccountRecord struct {
-	ID               string      `json:"id"`
-	Provider         string      `json:"provider"`
-	CredentialSource string      `json:"credentialSource"`
-	DisplayName      string      `json:"displayName"`
-	Status           string      `json:"status"`
-	StatusMessage    string      `json:"statusMessage,omitempty"`
-	Priority         int         `json:"priority,omitempty"`
-	Disabled         bool        `json:"disabled,omitempty"`
-	Email            string      `json:"email,omitempty"`
-	PlanType         string      `json:"planType,omitempty"`
-	Name             string      `json:"name,omitempty"`
-	APIKey           string      `json:"apiKey,omitempty"`
-	KeyFingerprint   string      `json:"keyFingerprint,omitempty"`
-	KeySuffix        string      `json:"keySuffix,omitempty"`
-	BaseURL          string      `json:"baseUrl,omitempty"`
-	Prefix           string      `json:"prefix,omitempty"`
-	ProxyURL         string      `json:"proxyUrl,omitempty"`
-	AuthIndex        interface{} `json:"authIndex,omitempty"`
-	QuotaKey         string      `json:"quotaKey,omitempty"`
-	QuotaCurl        string      `json:"quotaCurl,omitempty"`
-	QuotaEnabled     bool        `json:"quotaEnabled,omitempty"`
-	LocalOnly        bool        `json:"localOnly,omitempty"`
-	SupportedFormats []string          `json:"supportedFormats,omitempty"`
-	FormatBaseURLs   map[string]string `json:"formatBaseUrls,omitempty"`
-	BillingCurl      string            `json:"billingCurl,omitempty"`
-	BillingEnabled   bool              `json:"billingEnabled,omitempty"`
+	ID               string                   `json:"id"`
+	Provider         string                   `json:"provider"`
+	CredentialSource string                   `json:"credentialSource"`
+	DisplayName      string                   `json:"displayName"`
+	Status           string                   `json:"status"`
+	StatusMessage    string                   `json:"statusMessage,omitempty"`
+	Priority         int                      `json:"priority,omitempty"`
+	Disabled         bool                     `json:"disabled,omitempty"`
+	Email            string                   `json:"email,omitempty"`
+	PlanType         string                   `json:"planType,omitempty"`
+	Name             string                   `json:"name,omitempty"`
+	APIKey           string                   `json:"apiKey,omitempty"`
+	APIKeys          []string                 `json:"apiKeys,omitempty"`
+	Headers          map[string]string        `json:"headers,omitempty"`
+	Models           []cliproxyapi.CodexModel `json:"models,omitempty"`
+	KeyFingerprint   string                   `json:"keyFingerprint,omitempty"`
+	KeySuffix        string                   `json:"keySuffix,omitempty"`
+	BaseURL          string                   `json:"baseUrl,omitempty"`
+	Prefix           string                   `json:"prefix,omitempty"`
+	ProxyURL         string                   `json:"proxyUrl,omitempty"`
+	AuthIndex        interface{}              `json:"authIndex,omitempty"`
+	QuotaKey         string                   `json:"quotaKey,omitempty"`
+	QuotaCurl        string                   `json:"quotaCurl,omitempty"`
+	QuotaEnabled     bool                     `json:"quotaEnabled,omitempty"`
+	LocalOnly        bool                     `json:"localOnly,omitempty"`
+	SupportedFormats []string                 `json:"supportedFormats,omitempty"`
+	FormatBaseURLs   map[string]string        `json:"formatBaseUrls,omitempty"`
+	BillingCurl      string                   `json:"billingCurl,omitempty"`
+	BillingEnabled   bool                     `json:"billingEnabled,omitempty"`
 }
 
 func BuildAccountRecords(authFiles []AuthFileRecord, codexKeys []cliproxyapi.CodexAPIKey) []AccountRecord {
@@ -118,12 +121,15 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 
 	apiKey := ""
 	proxyURL := ""
+	apiKeys := make([]string, 0, len(provider.APIKeyEntries))
 	for _, entry := range provider.APIKeyEntries {
 		trimmed := strings.TrimSpace(entry.APIKey)
 		if trimmed != "" {
+			apiKeys = append(apiKeys, trimmed)
+		}
+		if trimmed != "" && apiKey == "" {
 			apiKey = trimmed
 			proxyURL = strings.TrimSpace(entry.ProxyURL)
-			break
 		}
 	}
 
@@ -136,6 +142,9 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 		Priority:         provider.Priority,
 		Disabled:         provider.Disabled,
 		APIKey:           apiKey,
+		APIKeys:          apiKeys,
+		Headers:          cloneStringMap(provider.Headers),
+		Models:           openAICompatibleModelsToCodexModels(provider.Models),
 		KeyFingerprint:   APIKeyFingerprint(apiKey),
 		KeySuffix:        APIKeySuffix(apiKey),
 		BaseURL:          baseURL,
@@ -216,6 +225,9 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		Priority:         key.Priority,
 		Disabled:         key.Disabled,
 		APIKey:           strings.TrimSpace(key.APIKey),
+		APIKeys:          normalizeStringList([]string{key.APIKey}),
+		Headers:          cloneStringMap(key.Headers),
+		Models:           cloneCodexModels(key.Models),
 		KeyFingerprint:   fingerprint,
 		KeySuffix:        suffix,
 		BaseURL:          baseURL,
@@ -230,6 +242,53 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		BillingCurl:      strings.TrimSpace(key.BillingCurl),
 		BillingEnabled:   key.BillingEnabled && strings.TrimSpace(key.BillingCurl) != "",
 	}
+}
+
+func cloneCodexModels(items []cliproxyapi.CodexModel) []cliproxyapi.CodexModel {
+	out := make([]cliproxyapi.CodexModel, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		name := strings.TrimSpace(item.Name)
+		alias := strings.TrimSpace(item.Alias)
+		if name == "" {
+			continue
+		}
+		key := name + "\x00" + alias
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, cliproxyapi.CodexModel{Name: name, Alias: alias})
+	}
+	return out
+}
+
+func openAICompatibleModelsToCodexModels(items []cliproxyapi.OpenAICompatibleModel) []cliproxyapi.CodexModel {
+	out := make([]cliproxyapi.CodexModel, 0, len(items))
+	for _, item := range items {
+		out = append(out, cliproxyapi.CodexModel{
+			Name:  item.Name,
+			Alias: item.Alias,
+		})
+	}
+	return cloneCodexModels(out)
+}
+
+func normalizeStringList(items []string) []string {
+	out := make([]string, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		trimmed := strings.TrimSpace(item)
+		if trimmed == "" {
+			continue
+		}
+		if _, ok := seen[trimmed]; ok {
+			continue
+		}
+		seen[trimmed] = struct{}{}
+		out = append(out, trimmed)
+	}
+	return out
 }
 
 func codexAPIKeyQuotaKey(key cliproxyapi.CodexAPIKey) string {

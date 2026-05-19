@@ -129,6 +129,8 @@ export function OpenCodexSkillInFinder(arg1:main.OpenCodexSkillInFinderInput):Pr
 
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
 
+export function ProbeClaudeCodeAccountRouting(arg1:main.ProbeClaudeCodeAccountRoutingInput):Promise<main.ClaudeCodeAccountRoutingProbeResult>;
+
 export function ProbeCodexAccountRouting(arg1:main.ProbeCodexAccountRoutingInput):Promise<main.CodexAccountRoutingProbeResult>;
 
 export function ProbeProxyNode(arg1:main.ProbeProxyNodeInput):Promise<main.ProbeProxyNodeResult>;

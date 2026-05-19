@@ -189,6 +189,40 @@ func (a *App) ProbeCodexAccountRouting(input ProbeCodexAccountRoutingInput) (*Co
 	}, nil
 }
 
+func (a *App) ProbeClaudeCodeAccountRouting(input ProbeClaudeCodeAccountRoutingInput) (*ClaudeCodeAccountRoutingProbeResult, error) {
+	result, err := a.core.ProbeClaudeCodeAccountRouting(wailsapp.ProbeClaudeCodeAccountRoutingInput{
+		Model:           input.Model,
+		Attempts:        input.Attempts,
+		AllowAccountIDs: append([]string(nil), input.AllowAccountIDs...),
+		DenyAccountIDs:  append([]string(nil), input.DenyAccountIDs...),
+		OrderAccountIDs: append([]string(nil), input.OrderAccountIDs...),
+		AllowFallback:   input.AllowFallback,
+	})
+	if err != nil {
+		return nil, err
+	}
+	attempts := make([]ClaudeCodeAccountRoutingProbeAttempt, 0, len(result.Attempts))
+	for _, attempt := range result.Attempts {
+		attempts = append(attempts, ClaudeCodeAccountRoutingProbeAttempt{
+			Index:        attempt.Index,
+			Success:      attempt.Success,
+			StatusCode:   attempt.StatusCode,
+			AccountID:    attempt.AccountID,
+			AccountLabel: attempt.AccountLabel,
+			Provider:     attempt.Provider,
+			Message:      attempt.Message,
+			Evidence:     attempt.Evidence,
+			ResponseBody: attempt.ResponseBody,
+			StartedAt:    attempt.StartedAt,
+			FinishedAt:   attempt.FinishedAt,
+		})
+	}
+	return &ClaudeCodeAccountRoutingProbeResult{
+		Model:    result.Model,
+		Attempts: attempts,
+	}, nil
+}
+
 func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 	payload := make([]wailsapp.UploadFilePayload, 0, len(files))
 	for _, file := range files {
@@ -956,6 +990,7 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		Prefix:         input.Prefix,
 		ProxyURL:       input.ProxyURL,
 		Headers:        input.Headers,
+		Models:         mapOpenAICompatibleModelsToWails(input.Models),
 		ExcludedModels: input.ExcludedModels,
 		QuotaCurl:      input.QuotaCurl,
 		QuotaEnabled:   input.QuotaEnabled,
@@ -978,6 +1013,7 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 		BaseURL:        input.BaseURL,
 		Prefix:         input.Prefix,
 		ProxyURL:       input.ProxyURL,
+		Models:         mapOpenAICompatibleModelsToWails(input.Models),
 		QuotaCurl:      input.QuotaCurl,
 		QuotaEnabled:   input.QuotaEnabled,
 		BillingCurl:    input.BillingCurl,

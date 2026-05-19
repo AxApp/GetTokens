@@ -74,47 +74,51 @@ type CodexQuotaBillingBalanceInfo struct {
 }
 
 type AccountRecord struct {
-	ID               string            `json:"id"`
-	Provider         string            `json:"provider"`
-	CredentialSource string            `json:"credentialSource"`
-	DisplayName      string            `json:"displayName"`
-	Status           string            `json:"status"`
-	Priority         int               `json:"priority,omitempty"`
-	Disabled         bool              `json:"disabled,omitempty"`
-	Email            string            `json:"email,omitempty"`
-	PlanType         string            `json:"planType,omitempty"`
-	Name             string            `json:"name,omitempty"`
-	APIKey           string            `json:"apiKey,omitempty"`
-	KeyFingerprint   string            `json:"keyFingerprint,omitempty"`
-	KeySuffix        string            `json:"keySuffix,omitempty"`
-	BaseURL          string            `json:"baseUrl,omitempty"`
-	Prefix           string            `json:"prefix,omitempty"`
-	ProxyURL         string            `json:"proxyUrl,omitempty"`
-	AuthIndex        interface{}       `json:"authIndex,omitempty"`
-	QuotaKey         string            `json:"quotaKey,omitempty"`
-	QuotaCurl        string            `json:"quotaCurl,omitempty"`
-	QuotaEnabled     bool              `json:"quotaEnabled,omitempty"`
-	LocalOnly        bool              `json:"localOnly,omitempty"`
-	SupportedFormats []string          `json:"supportedFormats,omitempty"`
-	FormatBaseURLs   map[string]string `json:"formatBaseUrls,omitempty"`
-	BillingCurl      string            `json:"billingCurl,omitempty"`
-	BillingEnabled   bool              `json:"billingEnabled,omitempty"`
+	ID               string                  `json:"id"`
+	Provider         string                  `json:"provider"`
+	CredentialSource string                  `json:"credentialSource"`
+	DisplayName      string                  `json:"displayName"`
+	Status           string                  `json:"status"`
+	Priority         int                     `json:"priority,omitempty"`
+	Disabled         bool                    `json:"disabled,omitempty"`
+	Email            string                  `json:"email,omitempty"`
+	PlanType         string                  `json:"planType,omitempty"`
+	Name             string                  `json:"name,omitempty"`
+	APIKey           string                  `json:"apiKey,omitempty"`
+	APIKeys          []string                `json:"apiKeys,omitempty"`
+	Headers          map[string]string       `json:"headers,omitempty"`
+	Models           []OpenAICompatibleModel `json:"models,omitempty"`
+	KeyFingerprint   string                  `json:"keyFingerprint,omitempty"`
+	KeySuffix        string                  `json:"keySuffix,omitempty"`
+	BaseURL          string                  `json:"baseUrl,omitempty"`
+	Prefix           string                  `json:"prefix,omitempty"`
+	ProxyURL         string                  `json:"proxyUrl,omitempty"`
+	AuthIndex        interface{}             `json:"authIndex,omitempty"`
+	QuotaKey         string                  `json:"quotaKey,omitempty"`
+	QuotaCurl        string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled     bool                    `json:"quotaEnabled,omitempty"`
+	LocalOnly        bool                    `json:"localOnly,omitempty"`
+	SupportedFormats []string                `json:"supportedFormats,omitempty"`
+	FormatBaseURLs   map[string]string       `json:"formatBaseUrls,omitempty"`
+	BillingCurl      string                  `json:"billingCurl,omitempty"`
+	BillingEnabled   bool                    `json:"billingEnabled,omitempty"`
 }
 
 type CreateCodexAPIKeyInput struct {
-	APIKey         string            `json:"apiKey"`
-	Label          string            `json:"label,omitempty"`
-	BaseURL        string            `json:"baseUrl"`
-	FormatBaseURLs map[string]string `json:"formatBaseUrls,omitempty"`
-	Priority       int               `json:"priority,omitempty"`
-	Prefix         string            `json:"prefix,omitempty"`
-	ProxyURL       string            `json:"proxyUrl,omitempty"`
-	Headers        map[string]string `json:"headers,omitempty"`
-	ExcludedModels []string          `json:"excludedModels,omitempty"`
-	QuotaCurl      string            `json:"quotaCurl,omitempty"`
-	QuotaEnabled   bool              `json:"quotaEnabled,omitempty"`
-	BillingCurl    string            `json:"billingCurl,omitempty"`
-	BillingEnabled bool              `json:"billingEnabled,omitempty"`
+	APIKey         string                  `json:"apiKey"`
+	Label          string                  `json:"label,omitempty"`
+	BaseURL        string                  `json:"baseUrl"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
+	Priority       int                     `json:"priority,omitempty"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	ProxyURL       string                  `json:"proxyUrl,omitempty"`
+	Headers        map[string]string       `json:"headers,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
+	ExcludedModels []string                `json:"excludedModels,omitempty"`
+	QuotaCurl      string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl    string                  `json:"billingCurl,omitempty"`
+	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 }
 
 type UpdateCodexAPIKeyPriorityInput struct {
@@ -128,15 +132,16 @@ type UpdateCodexAPIKeyLabelInput struct {
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID             string `json:"id"`
-	APIKey         string `json:"apiKey"`
-	BaseURL        string `json:"baseUrl"`
-	Prefix         string `json:"prefix,omitempty"`
-	ProxyURL       string `json:"proxyUrl,omitempty"`
-	QuotaCurl      string `json:"quotaCurl,omitempty"`
-	QuotaEnabled   bool   `json:"quotaEnabled,omitempty"`
-	BillingCurl    string `json:"billingCurl,omitempty"`
-	BillingEnabled bool   `json:"billingEnabled,omitempty"`
+	ID             string                  `json:"id"`
+	APIKey         string                  `json:"apiKey"`
+	BaseURL        string                  `json:"baseUrl"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	ProxyURL       string                  `json:"proxyUrl,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
+	QuotaCurl      string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl    string                  `json:"billingCurl,omitempty"`
+	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 }
 
 type TestCodexAPIKeyQuotaCurlInput struct {
@@ -160,6 +165,15 @@ type ProbeCodexAccountRoutingInput struct {
 	AllowFallback   bool     `json:"allowFallback,omitempty"`
 }
 
+type ProbeClaudeCodeAccountRoutingInput struct {
+	Model           string   `json:"model"`
+	Attempts        int      `json:"attempts,omitempty"`
+	AllowAccountIDs []string `json:"allowAccountIDs,omitempty"`
+	DenyAccountIDs  []string `json:"denyAccountIDs,omitempty"`
+	OrderAccountIDs []string `json:"orderAccountIDs,omitempty"`
+	AllowFallback   bool     `json:"allowFallback,omitempty"`
+}
+
 type UpdateOAuthModelAliasesInput struct {
 	Channel string                  `json:"channel"`
 	Models  []OpenAICompatibleModel `json:"models,omitempty"`
@@ -171,6 +185,25 @@ type CodexAccountRoutingProbeResult struct {
 }
 
 type CodexAccountRoutingProbeAttempt struct {
+	Index        int    `json:"index"`
+	Success      bool   `json:"success"`
+	StatusCode   int    `json:"statusCode,omitempty"`
+	AccountID    string `json:"accountID,omitempty"`
+	AccountLabel string `json:"accountLabel,omitempty"`
+	Provider     string `json:"provider,omitempty"`
+	Message      string `json:"message,omitempty"`
+	Evidence     string `json:"evidence,omitempty"`
+	ResponseBody string `json:"responseBody,omitempty"`
+	StartedAt    string `json:"startedAt,omitempty"`
+	FinishedAt   string `json:"finishedAt,omitempty"`
+}
+
+type ClaudeCodeAccountRoutingProbeResult struct {
+	Model    string                                 `json:"model"`
+	Attempts []ClaudeCodeAccountRoutingProbeAttempt `json:"attempts"`
+}
+
+type ClaudeCodeAccountRoutingProbeAttempt struct {
 	Index        int    `json:"index"`
 	Success      bool   `json:"success"`
 	StatusCode   int    `json:"statusCode,omitempty"`

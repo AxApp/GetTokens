@@ -2,6 +2,7 @@ package main
 
 import (
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 )
 
@@ -38,6 +39,9 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		PlanType:         record.PlanType,
 		Name:             record.Name,
 		APIKey:           record.APIKey,
+		APIKeys:          append([]string(nil), record.APIKeys...),
+		Headers:          cloneStringMap(record.Headers),
+		Models:           mapAccountRecordModels(record.Models),
 		KeyFingerprint:   record.KeyFingerprint,
 		KeySuffix:        record.KeySuffix,
 		BaseURL:          record.BaseURL,
@@ -53,6 +57,28 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		BillingCurl:      record.BillingCurl,
 		BillingEnabled:   record.BillingEnabled,
 	}
+}
+
+func mapAccountRecordModels(items []cliproxyapi.CodexModel) []OpenAICompatibleModel {
+	out := make([]OpenAICompatibleModel, 0, len(items))
+	for _, item := range items {
+		out = append(out, OpenAICompatibleModel{
+			Name:  item.Name,
+			Alias: item.Alias,
+		})
+	}
+	return out
+}
+
+func cloneStringMap(items map[string]string) map[string]string {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(items))
+	for key, value := range items {
+		out[key] = value
+	}
+	return out
 }
 
 func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaResponse {

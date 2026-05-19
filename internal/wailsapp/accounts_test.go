@@ -326,6 +326,59 @@ func TestUpdateCodexAPIKeyConfigPersistsProxyURL(t *testing.T) {
 	}
 }
 
+func TestUpdateCodexAPIKeyConfigPersistsModels(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	item := cliproxyapi.CodexAPIKeyInput{
+		LocalID: "codex-api-key:stable-001",
+		APIKey:  "sk-test-1111",
+		BaseURL: "https://api.openai.com/v1",
+	}
+	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
+		t.Fatalf("persistCodexAPIKeySet: %v", err)
+	}
+
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method != "PUT" || path != "/v0/management/codex-api-key" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read body: %v", err)
+				}
+				if !strings.Contains(string(payload), `"models":[{"name":"mimo-v2.5-pro","alias":"claude-sonnet-4-6"}]`) {
+					t.Fatalf("models not synced to sidecar: %s", payload)
+				}
+				return nil, 200, nil
+			})
+		},
+	}
+
+	if err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
+		ID:      "codex-api-key:stable-001",
+		APIKey:  "sk-test-1111",
+		BaseURL: "https://api.openai.com/v1",
+		Models: []OpenAICompatibleModel{
+			{Name: "mimo-v2.5-pro", Alias: "claude-sonnet-4-6"},
+		},
+	}); err != nil {
+		t.Fatalf("UpdateCodexAPIKeyConfig: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if len(items) != 1 || len(items[0].Models) != 1 {
+		t.Fatalf("expected one persisted model, got %#v", items)
+	}
+	if got := items[0].Models[0]; got.Name != "mimo-v2.5-pro" || got.Alias != "claude-sonnet-4-6" {
+		t.Fatalf("unexpected model: %#v", got)
+	}
+}
+
 func TestDeleteCodexAPIKeyAcceptsDerivedConfigIDForStableLocalRecord(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

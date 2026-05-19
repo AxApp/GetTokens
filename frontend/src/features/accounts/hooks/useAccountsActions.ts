@@ -214,7 +214,7 @@ export default function useAccountsActions({
         'CreateCodexAPIKey',
         { baseUrl: trimmedBaseURL },
         () =>
-          CreateCodexAPIKey({
+          CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom({
             apiKey,
             label: trimmedLabel,
             baseUrl: trimmedBaseURL,
@@ -222,7 +222,7 @@ export default function useAccountsActions({
             prefix: trimmedPrefix,
             quotaCurl: trimmedQuotaCurl,
             quotaEnabled: Boolean(apiKeyForm.quotaEnabled && trimmedQuotaCurl),
-          })
+          }))
       );
       setIsApiKeyModalOpen(false);
       setApiKeyForm(emptyApiKeyForm);
@@ -269,13 +269,13 @@ export default function useAccountsActions({
           'CreateCodexAPIKey',
           { baseUrl: copiedAccount.baseUrl, source: 'account-card-paste' },
           () =>
-            CreateCodexAPIKey({
+            CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom({
               apiKey: copiedAccount.apiKey,
               label: copiedAccount.label,
               baseUrl: copiedAccount.baseUrl,
               priority: lowestPriority - 1,
               prefix: copiedAccount.prefix,
-            })
+            }))
         );
         setIsPasteModalOpen(false);
         setPasteContent('');

@@ -242,6 +242,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx',
       },
       {
+        id: 'claude-code-account-list-components',
+        title: 'Claude Code 账号列表组件',
+        storybookTitle: 'Design System/业务组件/Claude Code 账号列表',
+        path: 'frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.stories.tsx',
+      },
+      {
         id: 'account-rotation-components',
         title: '账号轮换组件',
         storybookTitle: 'Design System/业务组件/账号轮换',

@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react';
 import type {
   AppPage,
+  ClaudeWorkspace,
   CodexWorkspace,
   SessionManagementWorkspace,
   UsageDeskWorkspace as UsageDeskWorkspaceID,
 } from '../types';
 import {
   ACTIVE_PAGE_STORAGE_KEY,
+  CODEX_WORKSPACE_STORAGE_KEY,
   buildFrameHash,
   codexWorkspaceFromUsageDeskWorkspace,
+  isLegacyClaudeCodexWorkspace,
   persistActivePage,
+  persistClaudeWorkspace,
   persistCodexWorkspace,
   persistSessionManagementWorkspace,
   persistUsageDeskWorkspace,
   readFrameHashState,
   readStoredActivePage,
+  readStoredClaudeWorkspace,
   readStoredCodexWorkspace,
   readStoredSessionManagementWorkspace,
   readStoredUsageDeskWorkspace,
@@ -24,6 +29,9 @@ export function useAppNavigation() {
   const [activePage, setActivePage] = useState<AppPage>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    if (!hashState && isLegacyClaudeCodexWorkspace(storage?.getItem(CODEX_WORKSPACE_STORAGE_KEY))) {
+      return 'claude';
+    }
     return hashState?.page ?? readStoredActivePage(storage);
   });
   const [activeCodexWorkspace, setActiveCodexWorkspace] = useState<CodexWorkspace>(() => {
@@ -41,6 +49,15 @@ export function useAppNavigation() {
     }
     if (storage?.getItem(ACTIVE_PAGE_STORAGE_KEY) === 'usage-desk') {
       return codexWorkspaceFromUsageDeskWorkspace(readStoredUsageDeskWorkspace(storage));
+    }
+    return storedWorkspace;
+  });
+  const [activeClaudeWorkspace, setActiveClaudeWorkspace] = useState<ClaudeWorkspace>(() => {
+    const storage = typeof window === 'undefined' ? null : window.localStorage;
+    const storedWorkspace = readStoredClaudeWorkspace(storage);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    if (hashState?.page === 'claude') {
+      return hashState.claudeWorkspace ?? 'account-list';
     }
     return storedWorkspace;
   });
@@ -70,6 +87,10 @@ export function useAppNavigation() {
   useEffect(() => {
     persistCodexWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeCodexWorkspace);
   }, [activeCodexWorkspace]);
+
+  useEffect(() => {
+    persistClaudeWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeClaudeWorkspace);
+  }, [activeClaudeWorkspace]);
 
   useEffect(() => {
     persistSessionManagementWorkspace(
@@ -109,6 +130,7 @@ export function useAppNavigation() {
       window.location.hash = nextHash;
     }
   }, [
+    activeClaudeWorkspace,
     activeCodexWorkspace,
     activePage,
     activeSessionManagementWorkspace,
@@ -126,9 +148,17 @@ export function useAppNavigation() {
         return;
       }
 
+      const canonicalHash = buildCanonicalFrameHashFromState(hashState);
+      if (window.location.hash !== canonicalHash) {
+        window.location.hash = canonicalHash;
+      }
+
       setActivePage(hashState.page);
       if (hashState.page === 'codex') {
         setActiveCodexWorkspace(hashState.codexWorkspace ?? 'feature-config');
+      }
+      if (hashState.page === 'claude') {
+        setActiveClaudeWorkspace(hashState.claudeWorkspace ?? 'account-list');
       }
       if (hashState.page === 'session-management') {
         setActiveSessionManagementWorkspace(hashState.sessionManagementWorkspace ?? 'codex');
@@ -149,11 +179,25 @@ export function useAppNavigation() {
     setActivePage,
     activeCodexWorkspace,
     setActiveCodexWorkspace,
+    activeClaudeWorkspace,
+    setActiveClaudeWorkspace,
     activeSessionManagementWorkspace,
     setActiveSessionManagementWorkspace,
     activeUsageDeskWorkspace,
     setActiveUsageDeskWorkspace,
   };
+}
+
+function buildCanonicalFrameHashFromState(hashState: NonNullable<ReturnType<typeof readFrameHashState>>): string {
+  return buildFrameHash(
+    hashState.page,
+    hashState.workspace ?? 'all',
+    hashState.codexWorkspace ?? 'feature-config',
+    hashState.sessionManagementWorkspace ?? 'codex',
+    hashState.usageDeskWorkspace ?? 'codex',
+    hashState.accountDetailID ?? null,
+    { density: hashState.page === 'accounts' ? readCurrentHashParam('density') : null },
+  );
 }
 
 function readCurrentHashParam(key: string): string | null {

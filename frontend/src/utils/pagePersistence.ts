@@ -1,8 +1,16 @@
-import type { AccountWorkspace, AppPage, CodexWorkspace, SessionManagementWorkspace, UsageDeskWorkspace } from '../types';
+import type {
+  AccountWorkspace,
+  AppPage,
+  ClaudeWorkspace,
+  CodexWorkspace,
+  SessionManagementWorkspace,
+  UsageDeskWorkspace,
+} from '../types';
 
 export const ACTIVE_PAGE_STORAGE_KEY = 'gettokens.activePage';
 export const ACCOUNT_WORKSPACE_STORAGE_KEY = 'gettokens.accounts.workspace';
 export const CODEX_WORKSPACE_STORAGE_KEY = 'gettokens.codex.workspace';
+export const CLAUDE_WORKSPACE_STORAGE_KEY = 'gettokens.claude.workspace';
 export const SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY = 'gettokens.sessionManagement.workspace';
 export const USAGE_DESK_WORKSPACE_STORAGE_KEY = 'gettokens.usageDesk.workspace';
 export const USAGE_DESK_SOURCE_STORAGE_KEY = 'gettokens.usageDesk.source';
@@ -15,6 +23,7 @@ const appPages: ReadonlySet<AppPage> = new Set([
   'vendor-status',
   'proxy-pool',
   'codex',
+  'claude',
   'usage-desk',
   'settings',
   'design-system',
@@ -31,6 +40,7 @@ const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'vendor-status',
   'usage-codex',
 ]);
+const claudeWorkspaces: ReadonlySet<ClaudeWorkspace> = new Set(['account-list']);
 const sessionManagementWorkspaces: ReadonlySet<SessionManagementWorkspace> = new Set(['codex']);
 const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', 'gemini']);
 const usageDeskSources = new Set(['observed', 'projected'] as const);
@@ -44,6 +54,7 @@ export interface FrameHashState {
   workspace?: AccountWorkspace;
   accountDetailID?: string;
   codexWorkspace?: CodexWorkspace;
+  claudeWorkspace?: ClaudeWorkspace;
   sessionManagementWorkspace?: SessionManagementWorkspace;
   usageDeskWorkspace?: UsageDeskWorkspace;
 }
@@ -62,6 +73,14 @@ export function isAccountWorkspace(value: string | null | undefined): value is A
 
 export function isCodexWorkspace(value: string | null | undefined): value is CodexWorkspace {
   return typeof value === 'string' && codexWorkspaces.has(value as CodexWorkspace);
+}
+
+export function isClaudeWorkspace(value: string | null | undefined): value is ClaudeWorkspace {
+  return typeof value === 'string' && claudeWorkspaces.has(value as ClaudeWorkspace);
+}
+
+export function isLegacyClaudeCodexWorkspace(value: string | null | undefined): boolean {
+  return value === 'claude-account-list';
 }
 
 export function isSessionManagementWorkspace(value: string | null | undefined): value is SessionManagementWorkspace {
@@ -118,6 +137,19 @@ export function readStoredCodexWorkspace(
   storage: Pick<Storage, 'getItem'> | null | undefined,
 ): CodexWorkspace {
   return resolveInitialCodexWorkspace(storage?.getItem(CODEX_WORKSPACE_STORAGE_KEY));
+}
+
+export function resolveInitialClaudeWorkspace(
+  storageValue: string | null | undefined,
+  fallback: ClaudeWorkspace = 'account-list',
+): ClaudeWorkspace {
+  return isClaudeWorkspace(storageValue) ? storageValue : fallback;
+}
+
+export function readStoredClaudeWorkspace(
+  storage: Pick<Storage, 'getItem'> | null | undefined,
+): ClaudeWorkspace {
+  return resolveInitialClaudeWorkspace(storage?.getItem(CLAUDE_WORKSPACE_STORAGE_KEY));
 }
 
 export function resolveInitialSessionManagementWorkspace(
@@ -197,6 +229,13 @@ export function persistCodexWorkspace(
   storage?.setItem(CODEX_WORKSPACE_STORAGE_KEY, workspace);
 }
 
+export function persistClaudeWorkspace(
+  storage: Pick<Storage, 'setItem'> | null | undefined,
+  workspace: ClaudeWorkspace,
+): void {
+  storage?.setItem(CLAUDE_WORKSPACE_STORAGE_KEY, workspace);
+}
+
 export function persistSessionManagementWorkspace(
   storage: Pick<Storage, 'setItem'> | null | undefined,
   workspace: SessionManagementWorkspace,
@@ -266,6 +305,12 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
 
   if (page === 'codex') {
     const workspace = params.get('workspace');
+    if (isLegacyClaudeCodexWorkspace(workspace)) {
+      return {
+        page: 'claude',
+        claudeWorkspace: 'account-list',
+      };
+    }
     const detail = params.get('detail');
     const state: FrameHashState = {
       page,
@@ -275,6 +320,14 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
       state.accountDetailID = detail;
     }
     return state;
+  }
+
+  if (page === 'claude') {
+    const workspace = params.get('workspace');
+    return {
+      page,
+      claudeWorkspace: isClaudeWorkspace(workspace) ? workspace : 'account-list',
+    };
   }
 
   if (page === 'usage-desk') {
@@ -307,6 +360,9 @@ export function buildFrameHash(
   }
   if (page === 'codex' && codexWorkspace !== 'feature-config') {
     params.set('workspace', codexWorkspace);
+  }
+  if (page === 'claude') {
+    params.set('workspace', 'account-list');
   }
   if (page === 'session-management' && sessionManagementWorkspace !== 'codex') {
     params.set('workspace', sessionManagementWorkspace);

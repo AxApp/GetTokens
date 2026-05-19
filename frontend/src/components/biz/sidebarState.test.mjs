@@ -13,6 +13,7 @@ import {
 test('sidebar only opens nested navigation for hoverable section pages', () => {
   assert.equal(resolveHoveredSidebarSection('accounts'), 'accounts');
   assert.equal(resolveHoveredSidebarSection('codex'), 'codex');
+  assert.equal(resolveHoveredSidebarSection('claude'), 'claude');
   assert.equal(resolveHoveredSidebarSection('settings'), null);
   assert.equal(resolveHoveredSidebarSection('debug'), null);
 });
@@ -30,6 +31,7 @@ test('content motion state follows collapsed sidebar state', () => {
 test('pinned sidebar section stays open after hover leaves', () => {
   assert.equal(getOpenSidebarSection('accounts', null), 'accounts');
   assert.equal(getOpenSidebarSection('codex', 'accounts'), 'codex');
+  assert.equal(getOpenSidebarSection('claude', 'codex'), 'claude');
   assert.equal(getOpenSidebarSection(null, 'accounts'), 'accounts');
   assert.equal(getOpenSidebarSection(null, null), null);
 });

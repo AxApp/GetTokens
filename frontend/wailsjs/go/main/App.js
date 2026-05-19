@@ -250,6 +250,10 @@ export function PreviewCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['PreviewCodexFeatureConfig'](arg1);
 }
 
+export function ProbeClaudeCodeAccountRouting(arg1) {
+  return window['go']['main']['App']['ProbeClaudeCodeAccountRouting'](arg1);
+}
+
 export function ProbeCodexAccountRouting(arg1) {
   return window['go']['main']['App']['ProbeCodexAccountRouting'](arg1);
 }

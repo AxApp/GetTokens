@@ -89,6 +89,8 @@ Claude Code 账号列表必须支持模型映射，并且不能只做展示。
 - `ProviderDefaultModelProfile`：来自官网或参考项目的厂商默认 Claude Code 模型字段，记录 main / haiku / sonnet / opus / base URL / 来源 / 检查日期。
 - `RelayModelMappingDraft`：由 profile 生成的可编辑草稿，保存时仍走 sidecar 现有 `models[].name + alias` 或 `oauth-model-alias[channel=claude]`。
 
+官方默认值、官方可切换模型和旧预设差异统一维护在 [official-model-profiles.md](./official-model-profiles.md)。本文件只保留建模和实现规则。
+
 默认 profile 的来源优先级：
 
 1. 官网/官方文档最新 Claude Code 配置。
@@ -101,22 +103,8 @@ Claude Code 账号列表必须支持模型映射，并且不能只做展示。
 
 - 默认 profile 只能生成草稿或填充 local apply，不能静默覆盖用户已保存映射。
 - 用户确认套用时，按 `name + alias` 去重，允许同一个真实模型生成多个 Claude alias。
-- 如果官网和本地预设不一致，UI 必须显示 source badge 和 diff；未核实官网的厂商默认值标记为 `preset-fallback`。
-- Claude Code 官方文档已经支持 `ANTHROPIC_CUSTOM_MODEL_OPTION` 和网关 `/v1/models` discovery，因此静态默认表只是首屏体验，不是最终模型目录真相。
-
-### 官网与参考项目核对表（2026-05-19）
-
-| 厂商 | 官网/官方文档当前默认 | 本地参考/预设 | 需求处理 |
-|------|----------------------|---------------|----------|
-| Anthropic | Claude Code 支持 `opus` / `sonnet` / `haiku` 族选择，`ANTHROPIC_DEFAULT_*_MODEL` 可 pin 具体模型；官方示例出现 `claude-opus-4-7`、`claude-sonnet-4-5`，网关场景支持 `/v1/models` discovery。 | GetTokens `vendorPresets` 建议 `claude-sonnet-4-6`、`claude-opus-4-7`、`claude-haiku-4-5`。 | 官方模型目录和 relay `/models` 优先；本地建议只作为 alias 候选。 |
-| DeepSeek | 中文官方 Claude Code 文档推荐 `ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic`，main/sonnet/opus 为 `deepseek-v4-pro[1m]`，haiku 为 `deepseek-v4-flash`，并给出 `CLAUDE_CODE_SUBAGENT_MODEL=deepseek-v4-flash` 与 `CLAUDE_CODE_EFFORT_LEVEL=max`。 | `cc-switch` 与 GetTokens 当前为 `deepseek-v4-pro` / `deepseek-v4-flash`，缺少 `[1m]` 变体和 subagent/effort 字段。 | profile 保留官网 `[1m]` 主模型，同时把无 `[1m]` 作为 preset fallback / 可选候选；subagent/effort 作为 local apply 扩展字段候选，不写入 relay 映射。 |
-| 阿里云百炼 | 官方 Claude Code / Token Plan 文档已推荐 `qwen3.6-plus`，haiku 为 `qwen3.6-flash`；Token Plan、Coding Plan、按量付费有不同 base URL，如 `token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic`、`coding.dashscope.aliyuncs.com/apps/anthropic`、`dashscope.aliyuncs.com/apps/anthropic`。用户补充的控制台文档入口为 `url=2949529` 与 `url=3031966`。 | `cc-switch` Bailian/Bailian For Coding 只填 base URL，GetTokens 仍有 `qwen3.5-plus` / `qwen3.5-flash` 建议。 | 需要更新默认 profile 到 `qwen3.6-*`，并按 base URL 区分百炼 Token Plan / Coding Plan / Pay-as-you-go。控制台 hash 链接作为官方来源保留，但实现时应优先使用可公开抓取的 help 页面或后台文档 API 校准。 |
-| Kimi / Moonshot | Moonshot agent-support 文档展示 Claude Code 配置为 `kimi-k2.5`；页面导航同时有 K2.6 quickstart，但本次未确认 K2.6 的 Claude Code env 示例。 | `cc-switch` 与 GetTokens 当前为 `kimi-k2.6`，OpenAI-compatible 旧预设有 `kimi-k2.5`。 | 标记为 source-conflict：实现时先用官网 agent-support 的 `kimi-k2.5`，保留 `kimi-k2.6` 作为 preset candidate，后续若找到 K2.6 Claude Code 官方页再提升。 |
-| MiniMax | 官方 coding tools 文档推荐国际 `https://api.minimax.io/anthropic`、中国 `https://api.minimaxi.com/anthropic`，main/haiku/sonnet/opus 均为 `MiniMax-M2.7`。 | `cc-switch` 与 GetTokens 均为 `MiniMax-M2.7`。 | 官网与预设一致，可作为 high-confidence 默认 profile。 |
-| 火山方舟 Doubao | 官方 Claude Code 文档推荐 `https://ark.cn-beijing.volces.com/api/coding`，`ANTHROPIC_MODEL` 可填具体 `Model_Name` 或 `ark-code-latest`；列出 `doubao-seed-2.0-code`、`doubao-seed-2.0-pro`、`doubao-seed-2.0-lite`、`doubao-seed-code`。 | `cc-switch` 与 GetTokens 当前为 `doubao-seed-2-0-code-preview-latest`。 | 不把本地 `preview-latest` 当官网默认；profile 默认提供 `ark-code-latest` / 具体模型候选，真实模型优先从远端或用户选择。 |
-| Xiaomi MiMo | 官方 Claude Code 文档推荐 Anthropic 兼容 `https://api.xiaomimimo.com/anthropic`；Token Plan 可使用专属 Base URL。CLI 与 VS Code 示例均把 main/haiku/sonnet/opus 配为 `mimo-v2.5-pro`，并说明可使用 `mimo-v2.5-pro[1m]` 扩展上下文。Token Plan 总览还列出可手动切换到 `mimo-v2.5-pro`、`mimo-v2.5`、`mimo-v2.5-tts` 等小写模型。 | GetTokens 当前 MiMo preset 是 `mimo-v2-pro`，且已配置 `https://api.xiaomimimo.com/anthropic`；`cc-switch` 本次未见 MiMo Claude provider 默认项。 | 新增 high-confidence MiMo profile：默认 `mimo-v2.5-pro`，候选包含 `mimo-v2.5-pro[1m]`、`mimo-v2.5`、`mimo-v2.5-tts`；同时标记 GetTokens 现有 `mimo-v2-pro` 需要更新。 |
-| Zhipu / Z.ai | Z.ai 模型页显示 GLM 当前有 `glm-5.1`、`glm-5`、`glm-5-turbo` 等；本次未确认官方 Claude Code env 页。 | `cc-switch` 与 GetTokens 当前为 `glm-5`。 | 保持 `glm-5` preset fallback；不自动升级到 `glm-5.1`，除非找到官方 Claude Code 配置或远端 `/models` 验证账号可用。 |
-| StepFun / ModelScope / KAT-Coder / Longcat / BaiLing / SiliconFlow | 本次未确认到比参考项目更权威的 Claude Code env 官方页。 | `cc-switch` 给出默认值：`step-3.5-flash-2603`、`ZhipuAI/GLM-5`、`KAT-Coder-Pro V1` / `KAT-Coder-Air V1`、`LongCat-Flash-Chat`、`Ling-2.5-1T`、`Pro/MiniMaxAI/MiniMax-M2.7`。 | 全部标记为 `preset-fallback`，UI 显示“来自参考项目，建议用远端模型刷新确认”。 |
+- 如果官网和本地预设不一致，UI 必须显示 source badge 和 diff；已给出官网来源的厂商以官网默认值为准，旧预设只进入迁移提示，不参与默认值决策。
+- Claude Code 官方文档已经支持 `ANTHROPIC_CUSTOM_MODEL_OPTION` 和网关 `/v1/models` discovery，因此静态默认 profile 只负责官方默认值与首屏填充，不是最终模型目录真相。
 
 ### 默认 profile 数据形状建议
 
@@ -136,12 +124,13 @@ type ProviderDefaultModelProfile = {
     sonnet?: string;
     opus?: string;
   };
-  candidates?: string[];
+  officialAlternatives?: string[];
+  legacyPresetValues?: string[];
   notes?: string[];
 };
 ```
 
-从 profile 生成 relay 映射草稿时，默认 alias 不应固定写死为某一代 Claude 模型，而应来自当前 local apply / Claude Code alias 候选。例如用户选择把 `sonnet` alias 固定为 `claude-sonnet-4-6` 时，DeepSeek 草稿生成：
+从 profile 生成 relay 映射草稿时，默认 alias 不应固定写死为某一代 Claude 模型，而应来自当前 local apply / Claude Code alias 选项。例如用户选择把 `sonnet` alias 固定为 `claude-sonnet-4-6` 时，DeepSeek 草稿生成：
 
 | 真实上游模型 `name` | Claude Code alias |
 |---------------------|-------------------|
@@ -220,7 +209,8 @@ Given Kimi 账号命中本地预设 `kimi-k2.6`
 And 官网 agent-support 文档当前展示 `kimi-k2.5`
 When 用户打开模型映射编辑器
 Then 页面显示 source-conflict 提示
-And 默认只把两者都加入候选，不自动覆盖已有映射
+And 默认值以官网 `kimi-k2.5` 为准
+And `kimi-k2.6` 只作为旧预设差异提示，不自动写入映射
 
 ## 技术风险
 
@@ -229,7 +219,7 @@ And 默认只把两者都加入候选，不自动覆盖已有映射
 - `formatBaseUrls.anthropic` 与 `baseUrl` 的优先级必须前后一致，否则 UI 显示出口和实际请求出口可能不一致。
 - 模型映射的展示方向和运行时方向相反，UI copy 必须明确，避免用户误以为 `alias` 是上游真实模型。
 - 默认模型 profile 与 relay 映射不是同一层数据；实现时不能把 `ANTHROPIC_DEFAULT_*_MODEL` 直接误写成所有账号的持久 alias。
-- 厂商官网变化快，静态 profile 必须展示 `checkedAt` 和 source，并允许远端 `/models` 刷新覆盖候选。
+- 厂商官网变化快，静态 profile 必须展示 `checkedAt` 和 source；远端 `/models` 只能刷新可切换模型集合，不能覆盖官网默认值或用户已保存映射。
 - 账号使用量归因当前已有 Claude Code billing header 解析能力，但本期是否能实时用于探测证据，需要在实现时验证 sidecar recent request 数据结构。
 - 如果未来要把 `openai_responses` 或 `gemini_native` 账号纳入 Claude Code，需要先定义 translator 能力和模型映射，不能在账号列表里只靠 UI 标签放行。
 
@@ -240,3 +230,41 @@ And 默认只把两者都加入候选，不自动覆盖已有映射
 - 后端探测测试：新增 Wails probe 后跑 `go test ./internal/wailsapp -run 'TestProbeClaudeCodeAccountRouting|TestDetectClaudeCodeRoutingProbeHit|TestListOAuthModelAliases|TestUpdateOAuthModelAliases'`。
 - 浏览器 preview：打开目标 hash，验证无 Wails runtime 也能展示稳定账号、排序、启停、模型映射保存和 preview-only 探测。
 - 涉及真实 sidecar 探测后，补 Wails 桌面验收与截图归档到本 space。
+
+## 2026-05-20 设计系统收编
+
+- 新增 `ClaudeCodeAccountListWorkbench` 纯展示组件，用固定 mock 覆盖 Claude Code 账号列表首屏业务信息。
+- Storybook 入口为 `Design System/业务组件/Claude Code 账号列表`，统一放入设计系统 `feature-components` catalog。
+- 已在 `componentManifest.ts` 登记为 admitted 业务组件，要求覆盖 `ready`、`source-conflict`、`disabled-blocked`、`profile-draft`。
+- 设计系统展示坚持官方默认 profile 语义：官网默认值是权威默认；其他模型只标记为“官方可切换模型”，不再写成默认候选。
+- 已验证 `node --test frontend/src/features/design-system/storyCatalog.test.mjs` 与 `npm --prefix frontend run typecheck` 通过。
+
+## 2026-05-20 实现切片与冒烟
+
+- 已落地 Claude 顶级 workspace，入口为 `#frame=claude&workspace=account-list`；旧 `#frame=codex&workspace=claude-account-list` 自动迁移。
+- 已实现 `buildClaudeCodeAccountRows`、`buildClaudeCodeModelMappings`、`normalizeClaudeCodeModelMappingsForProvider`、`buildClaudeCodeProfileMappingDraft` 等模型函数。
+- 当前页面已能在浏览器 preview 中展示 4 个 Anthropic 格式账号、3 个可请求账号、1 个禁用保留账号、7 条显式模型映射和 4 个官方默认 profile。
+- 当前桌面端读取边界为 `ListAccounts` + `AccountRecord.supportedFormats`，并已接入 `UpdateAccountPriority`、`SetAccountDisabled`、模型映射保存和真实 Anthropic Messages 探测。
+- 模型映射保存路径：
+  - OAuth/auth-file：`UpdateOAuthModelAliases(channel="claude")`。
+  - openai-compatible：`UpdateOpenAICompatibleProvider(models)`。
+  - codex-api-key：`UpdateCodexAPIKeyConfig(models)`，后端已补 `Models []OpenAICompatibleModel` 并持久化到本地 codex api key store，再同步 sidecar。
+- 路由探测路径：
+  - 新增 Wails 方法 `ProbeClaudeCodeAccountRouting`。
+  - 请求形态为 `POST /v1/messages`，body 包含 `model`、`max_tokens: 1` 和最小 user message。
+  - 候选只取 `supportedFormats` 包含 `anthropic` 且运行态可请求的账号；禁用或阻塞账号保留列表排序但不进入 probe 候选。
+  - route policy 复用 `X-GetTokens-Route-Allow`、`X-GetTokens-Route-Deny`、`X-GetTokens-Route-Order`、`X-GetTokens-Route-Fallback`。
+  - route id 映射：auth-file 使用文件名；codex-api-key 使用 `buildStableRouteAuthID("codex:apikey", apiKey, formatBaseUrls.anthropic || baseUrl)`；openai-compatible 使用 `buildStableRouteAuthID("openai-compatibility:"+provider, apiKey, formatBaseUrls.anthropic || baseUrl, proxyURL)`。
+- `AccountRecord` 已补 `apiKeys`、`headers`、`models`，用于前端详情页读取 API key / openai-compatible 的已保存模型映射和远端模型查询参数。
+- 路由探测弹层复用 Codex 组件，并补了命中状态展示：已有命中后顶部状态栏显示最近命中账号，不再停留在 idle 文案。
+- 已跑验证：
+  - `go test ./...`
+  - `node --test frontend/src/features/claude-code/claudeCodeAccountList.test.mjs`
+  - `npm --prefix frontend run test:unit`
+  - `npm --prefix frontend run typecheck`
+  - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+  - `npm --prefix frontend run build`
+  - `agent-browser` smoke：页面文本包含 `Claude Code 账号列表`、`DeepSeek Claude Code`、`路由探测`；preview 探测可显示 `DeepSeek Claude Code · HTTP 200 · browser preview`，浏览器错误为空。
+- Smoke 截图归档：
+  - `docs-linhay/spaces/20260519-claude-code-account-list/screenshots/20260520/claude-code/20260520-claude-code-account-list-web-preview-after-v02.png`
+  - `docs-linhay/spaces/20260519-claude-code-account-list/screenshots/20260520/claude-code/20260520-claude-code-account-list-route-probe-after-v02.png`

@@ -1,6 +1,6 @@
 import type { AppPage } from '../../types';
 
-export type SidebarSection = Extract<AppPage, 'accounts' | 'codex'>;
+export type SidebarSection = Extract<AppPage, 'accounts' | 'codex' | 'claude'>;
 export type SidebarContentMotionState = 'expanded' | 'collapsed';
 export type SidebarSubmenuPlacement = 'right' | 'bottom';
 export type SidebarSubmenuMotionState =
@@ -10,7 +10,7 @@ export type SidebarSubmenuMotionState =
   | 'closed-bottom';
 
 export function isSidebarSectionPage(page: AppPage): page is SidebarSection {
-  return page === 'accounts' || page === 'codex';
+  return page === 'accounts' || page === 'codex' || page === 'claude';
 }
 
 export function resolveHoveredSidebarSection(page: AppPage): SidebarSection | null {

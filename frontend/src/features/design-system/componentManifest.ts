@@ -53,6 +53,8 @@ const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/Sta
 const statusSnippetPanelStorybookTitle = 'Design System/业务组件/状态页片段面板';
 const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx';
 const usageDeskStorybookTitle = 'Design System/业务组件/用量工作台';
+const claudeCodeAccountListStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.stories.tsx';
+const claudeCodeAccountListStorybookTitle = 'Design System/业务组件/Claude Code 账号列表';
 const codexRouteProbeStoryPath = 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx';
 const codexRouteProbeStorybookTitle = 'Design System/业务组件/Codex 路由探测';
 const codexAccountOrderStoryPath = 'frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx';
@@ -577,6 +579,21 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['stable-filter', 'all-filter', 'empty'],
     mockDataSources: ['codexBinaryPreviewSnapshot'],
+  },
+  {
+    id: 'claude-code-account-list-workbench',
+    componentName: 'ClaudeCodeAccountListWorkbench',
+    sourcePath: 'frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.tsx',
+    ownerFeature: 'claude-code',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Claude Code 账号列表业务工作台已通过 Claude Code Account List story 收编，覆盖 Anthropic 格式筛选、请求顺序、官方默认 profile、模型映射草稿、禁用阻塞和路由探测 mock。',
+    matchedPatterns: ['CodexAccountOrderSection', 'CodexRouteProbeCard', 'WorkspacePageHeader'],
+    storyPath: claudeCodeAccountListStoryPath,
+    storybookTitle: claudeCodeAccountListStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'source-conflict', 'disabled-blocked', 'profile-draft'],
+    mockDataSources: ['storybook claude code account rows/profile/mapping/probe mock'],
   },
   {
     id: 'codex-account-detail-modal',

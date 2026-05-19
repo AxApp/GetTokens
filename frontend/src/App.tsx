@@ -12,6 +12,7 @@ import { useAppBootstrap } from './hooks/useAppBootstrap';
 import { useAppNavigation } from './hooks/useAppNavigation';
 
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
+const ClaudePage = lazy(() => import('./pages/ClaudePage'));
 const CodexPage = lazy(() => import('./pages/CodexPage'));
 const DebugPage = lazy(() => import('./pages/DebugPage'));
 const DesignSystemPage = lazy(() => import('./pages/DesignSystemPage'));
@@ -27,6 +28,8 @@ function AppShell() {
     setActivePage,
     activeCodexWorkspace,
     setActiveCodexWorkspace,
+    activeClaudeWorkspace,
+    setActiveClaudeWorkspace,
   } = useAppNavigation();
 
   const {
@@ -95,6 +98,9 @@ function AppShell() {
     if (activePage === 'codex') {
       return <CodexPage workspace={activeCodexWorkspace} sidecarStatus={sidecarStatus} />;
     }
+    if (activePage === 'claude') {
+      return <ClaudePage workspace={activeClaudeWorkspace} sidecarStatus={sidecarStatus} />;
+    }
     if (activePage === 'settings') {
       return (
         <SettingsPage
@@ -110,6 +116,7 @@ function AppShell() {
     return <AccountsPage workspace="all" />;
   }, [
     activeCodexWorkspace,
+    activeClaudeWorkspace,
     activePage,
     availableRelease,
     canApplyUpdate,
@@ -132,6 +139,8 @@ function AppShell() {
           setActivePage={setActivePage}
           activeCodexWorkspace={activeCodexWorkspace}
           setActiveCodexWorkspace={setActiveCodexWorkspace}
+          activeClaudeWorkspace={activeClaudeWorkspace}
+          setActiveClaudeWorkspace={setActiveClaudeWorkspace}
           releaseLabel={releaseLabel}
         />
         <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">

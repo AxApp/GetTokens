@@ -7,6 +7,7 @@ export type AppPage =
   | 'vendor-status'
   | 'proxy-pool'
   | 'codex'
+  | 'claude'
   | 'usage-desk'
   | 'settings'
   | 'design-system'
@@ -21,6 +22,7 @@ export type CodexWorkspace =
   | 'session-management'
   | 'vendor-status'
   | 'usage-codex';
+export type ClaudeWorkspace = 'account-list';
 export type SessionManagementWorkspace = 'codex';
 export type UsageDeskWorkspace = 'codex' | 'gemini';
 
@@ -59,6 +61,8 @@ export interface AccountRecord {
   planType?: string;
   name?: string;
   apiKey?: string;
+  apiKeys?: string[];
+  headers?: Record<string, string>;
   keyFingerprint?: string;
   keySuffix?: string;
   baseUrl?: string;
@@ -71,6 +75,7 @@ export interface AccountRecord {
   localOnly?: boolean;
   supportedFormats?: ApiFormat[];
   formatBaseUrls?: Partial<Record<ApiFormat, string>>;
+  models?: Array<{ name: string; alias?: string }>;
   billingCurl?: string;
   billingEnabled?: boolean;
   rawAuthFile?: AuthFile;

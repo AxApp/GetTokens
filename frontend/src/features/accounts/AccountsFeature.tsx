@@ -334,7 +334,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         'CreateCodexAPIKey',
         { baseUrl },
         () =>
-          CreateCodexAPIKey({
+          CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom({
             apiKey,
             label: unifiedComposeForm.label.trim(),
             baseUrl,
@@ -345,7 +345,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             quotaEnabled: Boolean(unifiedComposeForm.quotaEnabled && unifiedComposeForm.quotaCurl.trim()),
             billingCurl: unifiedComposeForm.billingCurl?.trim() ?? '',
             billingEnabled: Boolean(unifiedComposeForm.billingEnabled && (unifiedComposeForm.billingCurl?.trim() ?? '')),
-          }),
+          })),
       );
       setIsUnifiedComposeOpen(false);
       setUnifiedComposeForm({ ...emptyApiKeyForm, formatBaseUrls: {}, billingCurl: '', billingEnabled: false });

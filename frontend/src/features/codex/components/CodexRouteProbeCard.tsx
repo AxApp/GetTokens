@@ -60,10 +60,13 @@ export function RouteProbeCard({
   }, [onClose]);
 
   const resolvedModel = routingProbeModel.trim() || DEFAULT_CODEX_ROUTING_PROBE_MODEL;
+  const latestHitLine = [...routingProbeStreamLines].reverse().find((line) => line.marker.startsWith('#') && line.status === 'hit');
   const statusLabel = routingProbeRunning
     ? t('codex.account_list_probe_running')
     : latestUsedFallback
       ? t('codex.account_list_probe_fallback_hit')
+      : latestHitLine
+        ? latestHitLine.label
       : t('codex.account_list_probe_idle');
 
   return (

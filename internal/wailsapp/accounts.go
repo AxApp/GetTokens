@@ -65,19 +65,20 @@ func (a *App) ListAccounts() ([]accountsdomain.AccountRecord, error) {
 }
 
 type CreateCodexAPIKeyInput struct {
-	APIKey         string            `json:"apiKey"`
-	Label          string            `json:"label,omitempty"`
-	BaseURL        string            `json:"baseUrl"`
-	FormatBaseURLs map[string]string `json:"formatBaseUrls,omitempty"`
-	Priority       int               `json:"priority,omitempty"`
-	Prefix         string            `json:"prefix,omitempty"`
-	ProxyURL       string            `json:"proxyUrl,omitempty"`
-	Headers        map[string]string `json:"headers,omitempty"`
-	ExcludedModels []string          `json:"excludedModels,omitempty"`
-	QuotaCurl      string            `json:"quotaCurl,omitempty"`
-	QuotaEnabled   bool              `json:"quotaEnabled,omitempty"`
-	BillingCurl    string            `json:"billingCurl,omitempty"`
-	BillingEnabled bool              `json:"billingEnabled,omitempty"`
+	APIKey         string                  `json:"apiKey"`
+	Label          string                  `json:"label,omitempty"`
+	BaseURL        string                  `json:"baseUrl"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
+	Priority       int                     `json:"priority,omitempty"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	ProxyURL       string                  `json:"proxyUrl,omitempty"`
+	Headers        map[string]string       `json:"headers,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
+	ExcludedModels []string                `json:"excludedModels,omitempty"`
+	QuotaCurl      string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl    string                  `json:"billingCurl,omitempty"`
+	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 }
 
 type UpdateAccountPriorityInput struct {
@@ -105,15 +106,16 @@ type UpdateCodexAPIKeyLabelInput struct {
 }
 
 type UpdateCodexAPIKeyConfigInput struct {
-	ID             string `json:"id"`
-	APIKey         string `json:"apiKey"`
-	BaseURL        string `json:"baseUrl"`
-	Prefix         string `json:"prefix,omitempty"`
-	ProxyURL       string `json:"proxyUrl,omitempty"`
-	QuotaCurl      string `json:"quotaCurl,omitempty"`
-	QuotaEnabled   bool   `json:"quotaEnabled,omitempty"`
-	BillingCurl    string `json:"billingCurl,omitempty"`
-	BillingEnabled bool   `json:"billingEnabled,omitempty"`
+	ID             string                  `json:"id"`
+	APIKey         string                  `json:"apiKey"`
+	BaseURL        string                  `json:"baseUrl"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	ProxyURL       string                  `json:"proxyUrl,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
+	QuotaCurl      string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl    string                  `json:"billingCurl,omitempty"`
+	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -147,6 +149,7 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		Prefix:         strings.TrimSpace(input.Prefix),
 		ProxyURL:       strings.TrimSpace(input.ProxyURL),
 		Headers:        input.Headers,
+		Models:         codexModelsFromOpenAICompatibleModels(input.Models),
 		ExcludedModels: input.ExcludedModels,
 		QuotaCurl:      strings.TrimSpace(input.QuotaCurl),
 		QuotaEnabled:   input.QuotaEnabled && strings.TrimSpace(input.QuotaCurl) != "",
@@ -217,6 +220,7 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 			existing.BaseURL = nextBaseURL
 			existing.Prefix = nextPrefix
 			existing.ProxyURL = strings.TrimSpace(input.ProxyURL)
+			existing.Models = codexModelsFromOpenAICompatibleModels(input.Models)
 			existing.QuotaCurl = strings.TrimSpace(input.QuotaCurl)
 			existing.QuotaEnabled = input.QuotaEnabled && existing.QuotaCurl != ""
 			existing.BillingCurl = strings.TrimSpace(input.BillingCurl)
@@ -392,6 +396,18 @@ func sidecarCodexAPIKeyInputs(items []cliproxyapi.CodexAPIKeyInput) []cliproxyap
 		item.BillingEnabled = false
 		item.Websockets = true
 		out = append(out, item)
+	}
+	return out
+}
+
+func codexModelsFromOpenAICompatibleModels(items []OpenAICompatibleModel) []cliproxyapi.CodexModel {
+	models := normalizeProviderModels(items)
+	out := make([]cliproxyapi.CodexModel, 0, len(models))
+	for _, model := range models {
+		out = append(out, cliproxyapi.CodexModel{
+			Name:  model.Name,
+			Alias: model.Alias,
+		})
 	}
 	return out
 }
