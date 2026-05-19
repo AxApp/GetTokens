@@ -58,11 +58,11 @@ export default function AccountRotationModal({
               {t('accounts.rotation_title')}
             </h2>
             <div className="mt-1 flex items-center gap-3">
-              <span className="text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-widest text-[var(--text-muted)]">
                 {orderedAccounts.length} {t('accounts.rotation_subtitle')}
               </span>
               <span className="h-1 w-1 rounded-full bg-[var(--border-color)]" />
-              <span className="text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-primary)]">
+              <span className="text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-widest text-[var(--text-primary)]">
                 {routingMessage}
               </span>
             </div>
@@ -75,10 +75,10 @@ export default function AccountRotationModal({
         <div className="flex-1 space-y-10 overflow-auto p-8">
           <section className="space-y-6">
             <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] pb-3">
-              <h3 className="text-[0.6875rem] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
+              <h3 className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
                 {t('accounts.rotation_priority')}
               </h3>
-              <p className="text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <p className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
                 {t('accounts.rotation_priority_hint')}
               </p>
             </div>
@@ -104,7 +104,7 @@ export default function AccountRotationModal({
 
           <section className="space-y-6">
             <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] pb-3">
-              <h3 className="text-[0.6875rem] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
+              <h3 className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
                 {t('status.routing_config')}
               </h3>
             </div>
@@ -118,14 +118,14 @@ export default function AccountRotationModal({
                 strategyMenuRef={strategyMenuRef}
               />
             ) : (
-              <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
                 {t('status.routing_missing')}
               </div>
             )}
           </section>
 
           {saveMessage ? (
-            <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+            <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
               {saveMessage}
             </div>
           ) : null}

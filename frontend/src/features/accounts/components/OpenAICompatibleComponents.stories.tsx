@@ -20,7 +20,7 @@ import OpenAICompatibleWorkspace from './OpenAICompatibleWorkspace';
 import type { RateLimitRulesAPI } from './RateLimitRulesSection';
 
 const meta = {
-  title: 'Design System/Feature Components/OpenAI Compatible',
+  title: 'Design System/业务组件/OpenAI 兼容',
   parameters: {
     layout: 'fullscreen',
   },
@@ -279,7 +279,7 @@ function OpenAICompatibleOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">OpenAI Compatible</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">OpenAI 兼容</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           把 OpenAI-compatible provider 卡片纳入设计系统，用固定 provider、验证结果、usage 和限流 mock 覆盖可用、错误、禁用、空模型、pending 和限流状态。
         </p>

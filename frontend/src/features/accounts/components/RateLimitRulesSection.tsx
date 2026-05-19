@@ -174,26 +174,26 @@ export default function RateLimitRulesSection({
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-dashed border-[var(--border-color)] pb-3">
           <div>
-            <h3 id="rate-limit-rules-title" className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <h3 id="rate-limit-rules-title" className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t('accounts.rate_limit_rules_title')}
             </h3>
-            <div className="mt-1 text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
               {t('accounts.rate_limit_cache')} {rateLimitStatus?.updatedAt ? new Date(rateLimitStatus.updatedAt).toLocaleString() : '—'}
             </div>
           </div>
-          <button type="button" onClick={addRateLimitRule} className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]">
+          <button type="button" onClick={addRateLimitRule} className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
             {t('accounts.rate_limit_add_rule')}
           </button>
         </div>
 
         {rateLimitMessage ? (
-          <div className="border-2 border-red-500 bg-red-500/10 px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.12em] text-red-500">
+          <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
             {rateLimitMessage}
           </div>
         ) : null}
 
         {ruleDrafts.length === 0 ? (
-          <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-4 text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-4 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
             {t('accounts.rate_limit_no_local_rule')}
           </div>
         ) : (
@@ -223,7 +223,7 @@ export default function RateLimitRulesSection({
                             window: nextStrategy?.supportedWindows?.[0] || draft.window || '24h',
                           });
                         }}
-                        className="input-swiss h-full !py-1.5 !text-[0.625rem]"
+                        className="input-swiss h-full !py-1.5 !text-[length:var(--font-size-ui-sm)]"
                       >
                         {rateLimitStrategies.map((item) => (
                           <option key={item.id} value={item.id}>
@@ -237,7 +237,7 @@ export default function RateLimitRulesSection({
                         id={`${ruleDomID}-window`}
                         value={draft.window}
                         onChange={(event) => updateRateLimitDraft(index, { window: event.target.value })}
-                        className="input-swiss h-full !py-1.5 !text-[0.625rem]"
+                        className="input-swiss h-full !py-1.5 !text-[length:var(--font-size-ui-sm)]"
                       >
                         {windows.map((window) => (
                           <option key={window} value={window}>
@@ -259,9 +259,9 @@ export default function RateLimitRulesSection({
                               limitValue: parseRateLimitLimitDraftValue(draft.strategy, event.target.value),
                             })
                           }
-                          className="min-w-0 flex-1 bg-transparent px-2 py-1.5 font-mono text-[0.625rem] font-black uppercase text-[var(--text-primary)] outline-none"
+                          className="min-w-0 flex-1 bg-transparent px-2 py-1.5 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)] outline-none"
                         />
-                        <span className="flex items-center border-l border-[var(--border-color)] px-2 text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                        <span className="flex items-center border-l border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
                           {draft.strategy === 'token-window' ? 'M' : t('accounts.rate_limit_count_unit')}
                         </span>
                       </div>
@@ -271,7 +271,7 @@ export default function RateLimitRulesSection({
                         id={`${ruleDomID}-action`}
                         value={draft.action}
                         onChange={(event) => updateRateLimitDraft(index, { action: event.target.value })}
-                        className="input-swiss h-full !py-1.5 !text-[0.625rem]"
+                        className="input-swiss h-full !py-1.5 !text-[length:var(--font-size-ui-sm)]"
                       >
                         <option value="block">{t('accounts.rate_limit_action_block')}</option>
                         <option value="warn">{t('accounts.rate_limit_action_warn')}</option>
@@ -282,7 +282,7 @@ export default function RateLimitRulesSection({
                     <input
                       value={draft.label || ''}
                       onChange={(event: TextInputEvent) => updateRateLimitDraft(index, { label: event.target.value })}
-                      className="input-swiss !py-1.5 !text-[0.625rem]"
+                      className="input-swiss !py-1.5 !text-[length:var(--font-size-ui-sm)]"
                       aria-label={t('accounts.rate_limit_label')}
                       placeholder={rateLimitRuleLabel(draft)}
                     />
@@ -293,13 +293,13 @@ export default function RateLimitRulesSection({
                         onChange={(checked) => updateRateLimitDraft(index, { enabled: checked })}
                         className="!min-h-0 scale-75"
                       />
-                      <button type="button" onClick={() => void saveRateLimitRule(index)} className="btn-swiss !px-2 !py-1 !text-[0.5rem]" disabled={busy}>
+                      <button type="button" onClick={() => void saveRateLimitRule(index)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]" disabled={busy}>
                         {busy ? '...' : t('common.save')}
                       </button>
                       <button
                         type="button"
                         onClick={() => void deleteRateLimitRule(index)}
-                        className="btn-swiss !px-2 !py-1 !text-[0.5rem] !text-red-500"
+                        className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)]"
                         disabled={busy}
                       >
                         {t('common.delete')}
@@ -308,8 +308,8 @@ export default function RateLimitRulesSection({
                   </div>
                   {ruleState ? (
                     <div
-                      className={`font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
-                        ruleState.exceeded ? 'text-red-500' : 'text-[var(--text-muted)]'
+                      className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
+                        ruleState.exceeded ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
                       }`}
                     >
                       {`${formatRateLimitMetric(ruleState.currentUsage)} / ${formatRateLimitMetric(ruleState.rule.limitValue)} (${Math.round(ruleState.usagePct)}%)`}

@@ -91,7 +91,7 @@ export default function UnifiedComposeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -99,7 +99,7 @@ export default function UnifiedComposeModal({
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             ADD ACCOUNT
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -120,7 +120,7 @@ export default function UnifiedComposeModal({
               <div className="space-y-6">
                 {Array.from(presetsByCategory.entries()).map(([category, items]) => (
                   <div key={category}>
-                    <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">
+                    <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">
                       {CATEGORY_LABELS[category]}
                     </div>
                     <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
@@ -130,14 +130,14 @@ export default function UnifiedComposeModal({
                           onClick={() => handleSelectPreset(preset)}
                           className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3 text-left transition-[border-color,box-shadow] hover:border-[var(--text-primary)] hover:shadow-[4px_4px_0_var(--shadow-color)]"
                         >
-                          <div className="text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
                             {preset.name}
                           </div>
                           <div className="mt-1 flex flex-wrap gap-1">
                             {preset.supportedFormats.map((fmt) => (
                               <span
                                 key={fmt}
-                                className="border border-[var(--border-color)] px-1 text-[0.4375rem] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]"
+                                className="border border-[var(--border-color)] px-1 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]"
                               >
                                 {formatLabel(fmt)}
                               </span>
@@ -155,10 +155,10 @@ export default function UnifiedComposeModal({
               <div className="flex items-center justify-between gap-3">
                 {selectedPreset ? (
                   <div className="flex items-center gap-3">
-                    <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                    <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
                       {selectedPreset.name}
                     </span>
-                    <button onClick={handleBackToPresets} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
+                    <button onClick={handleBackToPresets} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
                       Change
                     </button>
                   </div>
@@ -167,7 +167,7 @@ export default function UnifiedComposeModal({
 
               {selectedPreset && selectedPreset.supportedFormats.length > 0 ? (
                 <div className="space-y-3">
-                  <span className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                     Endpoints — one for each format
                   </span>
                   {selectedPreset.supportedFormats.map((fmt, i) => {
@@ -175,23 +175,23 @@ export default function UnifiedComposeModal({
                     return (
                       <div key={fmt} className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <span className="border border-green-600/40 bg-green-600/5 px-2 py-0.5 text-[0.5625rem] font-black uppercase tracking-[0.12em] text-green-600">
+                          <span className="border border-[color:color-mix(in_srgb,var(--color-status-success)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-status-success)_5%,transparent)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-success)]">
                             {formatLabel(fmt)}
                           </span>
-                          <span className="text-[0.4375rem] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                          <span className="text-[length:var(--font-size-ui-3xs)] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
                             {fmt === 'anthropic' ? 'Claude Code' : fmt === 'openai_chat' ? 'Codex / OpenAI' : fmt === 'openai_responses' ? 'OpenAI Responses' : 'Gemini CLI'}
                           </span>
                         </div>
                         <input
                           value={form.formatBaseUrls[fmt] ?? ''}
                           onChange={(e: TextInputEvent) => onFormatBaseUrlChange(fmt, e.target.value)}
-                          className="input-swiss w-full font-mono !text-[0.5625rem]"
+                          className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
                           placeholder={fmtBaseUrl}
                         />
                       </div>
                     );
                   })}
-                  <p className="text-[0.5rem] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  <p className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     {selectedPreset.supportedFormats.includes('anthropic') && selectedPreset.supportedFormats.includes('openai_chat')
                       ? '双端点原生支持，中继按格式自动路由，零转换开销。'
                       : '厂商端点原生支持，中继直接透传。'}
@@ -200,7 +200,7 @@ export default function UnifiedComposeModal({
               ) : null}
 
               <label className="space-y-2">
-                <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   Label
                 </span>
                 <input
@@ -213,7 +213,7 @@ export default function UnifiedComposeModal({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     API Key
                   </span>
                   <input
@@ -225,7 +225,7 @@ export default function UnifiedComposeModal({
                   />
                 </label>
                 <label className="space-y-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     Base URL (primary)
                   </span>
                   <input
@@ -238,7 +238,7 @@ export default function UnifiedComposeModal({
               </div>
 
               <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-4 py-4 space-y-3">
-                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                   Advanced
                 </div>
                 <label className="flex items-center gap-2">
@@ -247,18 +247,18 @@ export default function UnifiedComposeModal({
                     checked={form.quotaEnabled}
                     onChange={(e) => onFormChange('quotaEnabled', e.target.checked)}
                   />
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     Quota Tracking
                   </span>
                 </label>
                 <label className="space-y-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     Quota cURL
                   </span>
                   <textarea
                     value={form.quotaCurl}
                     onChange={(e) => onFormChange('quotaCurl', e.target.value)}
-                    className="input-swiss min-h-20 w-full resize-y font-mono !text-[0.5625rem]"
+                    className="input-swiss min-h-20 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
                     placeholder='curl -sS "https://api.example.com/usage" -H "Authorization: Bearer {{apiKey}}"'
                   />
                 </label>
@@ -266,17 +266,17 @@ export default function UnifiedComposeModal({
 
               {selectedPreset?.billingCurlTemplate ? (
                 <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-4 py-4 space-y-3">
-                  <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                     Billing
                   </div>
                   <label className="space-y-2">
-                    <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       Balance cURL
                     </span>
                     <textarea
                       value={form.billingCurl}
                       onChange={(e) => onBillingCurlChange(e.target.value)}
-                      className="input-swiss min-h-16 w-full resize-y font-mono !text-[0.5625rem]"
+                      className="input-swiss min-h-16 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
                       placeholder={selectedPreset.billingCurlTemplate}
                     />
                   </label>
@@ -286,7 +286,7 @@ export default function UnifiedComposeModal({
           )}
 
           {error ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {error}
             </div>
           ) : null}

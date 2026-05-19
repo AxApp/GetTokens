@@ -33,7 +33,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['claude-sonnet-4-6', 'claude-opus-4-7', 'claude-haiku-4-5'],
     category: 'official',
     icon: 'anthropic',
-    iconColor: '#D4915D',
+    iconColor: 'var(--color-provider-anthropic)',
   },
   // ==================== Chinese Vendors (Anthropic-compatible) ====================
   {
@@ -52,7 +52,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['deepseek-v4-pro', 'deepseek-v4-flash'],
     category: 'cn_official',
     icon: 'deepseek',
-    iconColor: '#1E88E5',
+    iconColor: 'var(--color-provider-deepseek)',
     websiteUrl: 'https://platform.deepseek.com',
   },
   {
@@ -69,7 +69,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['glm-5', 'glm-4.7', 'glm-4.5-flash'],
     category: 'cn_official',
     icon: 'zhipu',
-    iconColor: '#0F62FE',
+    iconColor: 'var(--color-provider-zhipu)',
     websiteUrl: 'https://open.bigmodel.cn',
   },
   {
@@ -86,7 +86,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['kimi-k2.6', 'kimi-k2.5'],
     category: 'cn_official',
     icon: 'kimi',
-    iconColor: '#6366F1',
+    iconColor: 'var(--color-provider-kimi)',
     websiteUrl: 'https://platform.moonshot.cn',
   },
   {
@@ -103,7 +103,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['step-3.5-flash-2603'],
     category: 'cn_official',
     icon: 'stepfun',
-    iconColor: '#16D6D2',
+    iconColor: 'var(--color-provider-stepfun)',
     websiteUrl: 'https://platform.stepfun.com',
   },
   {
@@ -120,7 +120,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['qwen3.5-plus', 'qwen3.5-flash'],
     category: 'cn_official',
     icon: 'bailian',
-    iconColor: '#624AFF',
+    iconColor: 'var(--color-provider-bailian)',
     websiteUrl: 'https://bailian.console.aliyun.com',
   },
   {
@@ -137,7 +137,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['MiniMax-M2.7'],
     category: 'cn_official',
     icon: 'minimax',
-    iconColor: '#FF6B6B',
+    iconColor: 'var(--color-provider-minimax)',
     websiteUrl: 'https://platform.minimaxi.com',
   },
   {
@@ -154,7 +154,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['doubao-seed-2-0-code-preview-latest'],
     category: 'cn_official',
     icon: 'doubao',
-    iconColor: '#3370FF',
+    iconColor: 'var(--color-provider-doubao)',
     websiteUrl: 'https://www.volcengine.com/product/doubao',
   },
   {
@@ -171,7 +171,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['LongCat-Flash-Chat'],
     category: 'cn_official',
     icon: 'longcat',
-    iconColor: '#29E154',
+    iconColor: 'var(--color-provider-longcat)',
     websiteUrl: 'https://longcat.chat/platform',
   },
   {
@@ -189,7 +189,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['mimo-v2-pro'],
     category: 'cn_official',
     icon: 'xiaomimimo',
-    iconColor: '#000000',
+    iconColor: 'var(--color-provider-xiaomimimo)',
     websiteUrl: 'https://platform.xiaomimimo.com',
   },
   {
@@ -217,7 +217,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.7'],
     category: 'aggregator',
     icon: 'openrouter',
-    iconColor: '#6566F1',
+    iconColor: 'var(--color-provider-openrouter)',
     websiteUrl: 'https://openrouter.ai',
   },
   {
@@ -230,7 +230,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['Pro/MiniMaxAI/MiniMax-M2.7'],
     category: 'aggregator',
     icon: 'siliconflow',
-    iconColor: '#6E29F6',
+    iconColor: 'var(--color-provider-siliconflow)',
     websiteUrl: 'https://siliconflow.cn',
   },
   {
@@ -243,7 +243,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: [],
     category: 'aggregator',
     icon: 'aihubmix',
-    iconColor: '#006FFB',
+    iconColor: 'var(--color-provider-aihubmix)',
     websiteUrl: 'https://aihubmix.com',
   },
   {
@@ -268,7 +268,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['ZhipuAI/GLM-5'],
     category: 'aggregator',
     icon: 'modelscope',
-    iconColor: '#624AFF',
+    iconColor: 'var(--color-provider-bailian)',
     websiteUrl: 'https://modelscope.cn',
   },
   {
@@ -281,7 +281,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: [],
     category: 'aggregator',
     icon: 'ucloud',
-    iconColor: '#000000',
+    iconColor: 'var(--color-provider-compshare)',
     websiteUrl: 'https://www.compshare.cn',
   },
   {
@@ -324,7 +324,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['gpt-5.4', 'gpt-5.2'],
     category: 'official',
     icon: 'openai',
-    iconColor: '#000000',
+    iconColor: 'var(--color-provider-openai)',
     websiteUrl: 'https://platform.openai.com',
   },
   {
@@ -360,7 +360,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['moonshotai/kimi-k2.5'],
     category: 'aggregator',
     icon: 'nvidia',
-    iconColor: '#76B900',
+    iconColor: 'var(--color-provider-nvidia)',
     websiteUrl: 'https://build.nvidia.com',
   },
   // ==================== Non-Anthropic / Need Format Conversion ====================
@@ -374,7 +374,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['gemini-3.1-pro', 'gemini-3-flash'],
     category: 'official',
     icon: 'gemini',
-    iconColor: '#4285F4',
+    iconColor: 'var(--color-provider-gemini)',
     websiteUrl: 'https://ai.google.dev',
   },
   {
@@ -387,7 +387,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['claude-sonnet-4.6'],
     category: 'third_party',
     icon: 'github',
-    iconColor: '#000000',
+    iconColor: 'var(--color-provider-github)',
     websiteUrl: 'https://github.com/features/copilot',
   },
   // ==================== Cloud Providers ====================
@@ -401,7 +401,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: ['global.anthropic.claude-sonnet-4-6', 'global.anthropic.claude-opus-4-7'],
     category: 'cloud_provider',
     icon: 'aws',
-    iconColor: '#FF9900',
+    iconColor: 'var(--color-provider-aws)',
     websiteUrl: 'https://aws.amazon.com/bedrock/',
   },
   // ==================== Partners ====================
@@ -439,7 +439,7 @@ export const vendorPresets: VendorPreset[] = [
     modelSuggestions: [],
     category: 'third_party',
     icon: 'aigocode',
-    iconColor: '#5B7FFF',
+    iconColor: 'var(--color-provider-aigocode)',
     websiteUrl: 'https://aigocode.com',
   },
   {

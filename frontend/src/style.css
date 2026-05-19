@@ -9,19 +9,95 @@
     --border-color: #000000;
     --text-primary: #000000;
     --text-muted: #666666;
+    --text-secondary: var(--text-muted);
     --bg-muted: #f0f0f0;
     --accent-red: #ff0000;
+    --accent-green: var(--color-status-success);
+    --accent-yellow: var(--color-status-warning);
     --shadow-color: #e5e5e5;
+    --shadow-inset-color: color-mix(in srgb, var(--border-color) 10%, transparent);
+    --text-on-accent: #ffffff;
+    --overlay-scrim-60: rgb(0 0 0 / 0.6);
+    --overlay-scrim-70: rgb(0 0 0 / 0.7);
+    --overlay-scrim-80: rgb(0 0 0 / 0.8);
+    --overlay-scrim-85: rgb(0 0 0 / 0.85);
+    --color-status-success: #16a34a;
+    --color-status-success-soft: #10b981;
+    --color-status-success-bar: #33c49f;
+    --color-status-warning: #eab308;
+    --color-status-warning-soft: #d4a017;
+    --color-status-warning-bar: #ffbe2e;
+    --color-status-danger: #ef4444;
+    --color-status-danger-soft: #d92d20;
+    --color-status-danger-bar: #ff6b57;
+    --color-chart-primary: #111111;
+    --color-chart-primary-area: #2f2f2f;
+    --color-chart-secondary: #7a7a7a;
+    --color-chart-secondary-area: #9a9a9a;
+    --color-chart-blue: #1f6feb;
+    --color-chart-peak: #f59e0b;
+    --color-chart-attribution: #567688;
+    --color-chart-grid: color-mix(in srgb, var(--border-color) 12%, transparent);
+    --color-chart-grid-subtle: color-mix(in srgb, var(--border-color) 8%, transparent);
+    --color-chart-grid-strong: color-mix(in srgb, var(--border-color) 20%, transparent);
+    --color-chart-empty-overlay-from: color-mix(in srgb, var(--bg-main) 72%, transparent);
+    --color-chart-empty-overlay-to: color-mix(in srgb, var(--bg-main) 88%, transparent);
+    --color-swiss-gray-300: #d4d4d4;
+    --color-swiss-gray-400: #a3a3a3;
+    --color-swiss-gray-500: #737373;
+    --color-swiss-gray-600: #525252;
+    --color-swiss-gray-700: #404040;
+    --color-swiss-gray-800: #262626;
+    --color-swiss-gray-900: #171717;
+    --color-swiss-gray-950: #0a0a0c;
+    --color-provider-aihubmix: #006ffb;
+    --color-provider-aigocode: #5b7fff;
+    --color-provider-anthropic: #d4915d;
+    --color-provider-aws: #ff9900;
+    --color-provider-bailian: #624aff;
+    --color-provider-compshare: #000000;
+    --color-provider-deepseek: #1e88e5;
+    --color-provider-doubao: #3370ff;
+    --color-provider-gemini: #4285f4;
+    --color-provider-github: #000000;
+    --color-provider-kimi: #6366f1;
+    --color-provider-longcat: #29e154;
+    --color-provider-minimax: #ff6b6b;
+    --color-provider-modelscope: #624aff;
+    --color-provider-nvidia: #76b900;
+    --color-provider-openai: #000000;
+    --color-provider-openrouter: #6566f1;
+    --color-provider-siliconflow: #6e29f6;
+    --color-provider-stepfun: #16d6d2;
+    --color-provider-xiaomimimo: #000000;
+    --color-provider-zhipu: #0f62fe;
+    --font-family-ui: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    --font-family-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
     --gt-text-scale-factor: 1;
+    --font-size-ui-3xs: 0.4375rem;
     --font-size-ui-2xs: 0.5rem;
     --font-size-ui-xs: 0.5625rem;
     --font-size-ui-sm: 0.625rem;
+    --font-size-ui-sm-plus: 0.65rem;
+    --font-size-ui-md-compact: 0.6875rem;
     --font-size-ui-md: 0.75rem;
+    --font-size-ui-lg-compact: 0.8125rem;
     --font-size-ui-lg: 0.875rem;
+    --font-size-ui-xl: 0.9375rem;
+    --font-size-ui-xl-plus: 0.95rem;
+    --font-size-ui-2xl: 1rem;
+    --font-size-ui-3xl: 1.125rem;
+    --font-size-ui-4xl: 1.375rem;
+    --font-size-ui-5xl: 1.625rem;
+    --font-size-ui-6xl: 1.75rem;
+    --font-size-ui-display: 2.5rem;
     --line-height-ui-tight: 1.2;
     --line-height-ui-normal: 1.4;
     --line-height-ui-relaxed: 1.6;
-    --gt-control-segmented-font-size: 0.5625rem;
+    --line-height-ui-none: 1;
+    --line-height-ui-snug: 1.375;
+    --line-height-ui-loose: 1.8;
+    --gt-control-segmented-font-size: var(--font-size-ui-xs);
     --gt-control-segmented-min-height: 2.125rem;
     --gt-control-segmented-padding-inline: 0.625rem;
     --gt-control-segmented-indicator-height: 0.1875rem;
@@ -39,9 +115,18 @@
     --border-color: #ffffff;
     --text-primary: #ffffff;
     --text-muted: #888888;
+    --text-secondary: var(--text-muted);
     --bg-muted: #222222;
     --accent-red: #ff3333;
     --shadow-color: #222222;
+    --color-chart-primary: #ffffff;
+    --color-chart-primary-area: #d4d4d4;
+    --color-chart-secondary: #a3a3a3;
+    --color-chart-secondary-area: #737373;
+    --color-provider-compshare: #ffffff;
+    --color-provider-github: #ffffff;
+    --color-provider-openai: #ffffff;
+    --color-provider-xiaomimimo: #ffffff;
   }
 
   html {
@@ -50,7 +135,7 @@
 
   body {
     @apply bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors duration-200;
-    font-family: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+    font-family: var(--font-family-ui);
     font-size: var(--font-size-ui-lg);
     line-height: var(--line-height-ui-normal);
   }
@@ -68,7 +153,7 @@
     background-color: var(--bg-main);
     color: var(--text-primary);
     font-weight: 700;
-    font-size: 0.75rem;
+    font-size: var(--font-size-ui-md);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     box-shadow: 4px 4px 0px 0px var(--shadow-color);
@@ -235,7 +320,7 @@
     border-radius: 2px;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    font-size: 0.875rem;
+    font-size: var(--font-size-ui-lg);
   }
 
   .select-swiss {
@@ -246,7 +331,7 @@
     border-radius: 2px;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    font-size: 0.875rem;
+    font-size: var(--font-size-ui-lg);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -304,8 +389,8 @@
     background: var(--accent-red);
     color: var(--bg-main);
     cursor: copy;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
-    font-size: 0.5625rem;
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-ui-xs);
     font-weight: 900;
     letter-spacing: 0;
     line-height: 1;
@@ -318,8 +403,8 @@
 
   [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='true']::before {
     content: attr(data-design-system-component-name) ' / COPIED';
-    background: #16a34a;
-    border-color: #16a34a;
+    background: var(--color-status-success);
+    border-color: var(--color-status-success);
   }
 
   [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='error']::before {

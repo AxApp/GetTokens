@@ -87,7 +87,7 @@ export default function OpenAICompatibleProviderCard({
               />
             </div>
             <div className="grid grid-cols-[4.5rem_minmax(0,1fr)] items-start gap-3 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-3">
-              <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 {t('accounts.ui_models')}
               </div>
               <div className="grid gap-2">
@@ -97,16 +97,16 @@ export default function OpenAICompatibleProviderCard({
                       key={`${model.name}-${model.alias || index}`}
                       className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2"
                     >
-                      <code className="truncate font-mono text-[0.625rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                      <code className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
                         {model.name}
                       </code>
-                      <b className="truncate font-mono text-[0.625rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                      <b className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
                         {model.alias || model.name}
                       </b>
                     </div>
                   ))
                 ) : (
-                  <div className="font-mono text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
                     {t('accounts.ui_no_data_available')}
                   </div>
                 )}
@@ -114,19 +114,19 @@ export default function OpenAICompatibleProviderCard({
             </div>
             <div className="border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                   {t('accounts.openai_provider_test_summary')}
                 </div>
-                <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
                   {verifyState.model || '—'}
                 </div>
               </div>
               <div
-                className={`mt-2 text-[0.625rem] font-black uppercase tracking-[0.04em] ${
+                className={`mt-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.04em] ${
                   verifyState.status === 'success'
-                    ? 'text-green-700'
+                    ? 'text-[var(--color-status-success)]'
                     : verifyState.status === 'error'
-                      ? 'text-red-500'
+                      ? 'text-[var(--color-status-danger)]'
                       : 'text-[var(--text-primary)]'
                 }`}
               >
@@ -143,13 +143,13 @@ export default function OpenAICompatibleProviderCard({
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
-          <button type="button" onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
+          <button type="button" onClick={() => onOpenDetail(provider)} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
             {t('accounts.openai_provider_manage')}
           </button>
           <button
             type="button"
             onClick={() => onToggleDisabled(provider)}
-            className="btn-swiss !py-1.5 !text-[0.5625rem]"
+            className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
             disabled={pendingStatus}
           >
             {pendingStatus ? t('common.loading') : provider.disabled ? t('common.enable') : t('common.disable')}
@@ -157,7 +157,7 @@ export default function OpenAICompatibleProviderCard({
           <button
             type="button"
             onClick={() => onDelete(provider.name)}
-            className="btn-swiss !py-1.5 !text-[0.5625rem] !text-red-500"
+            className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
             disabled={pendingDelete}
           >
             {pendingDelete ? t('common.loading') : t('common.delete')}
@@ -173,9 +173,9 @@ export default function OpenAICompatibleProviderCard({
 function RegionHead({ label, value, wrap = false }: { label: string; value: string; wrap?: boolean }) {
   return (
     <div className="grid gap-2">
-      <span className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</span>
+      <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</span>
       <b
-        className={`${wrap ? 'break-all' : 'truncate'} font-mono text-[0.6875rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]`}
+        className={`${wrap ? 'break-all' : 'truncate'} font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]`}
       >
         {value}
       </b>
@@ -186,8 +186,8 @@ function RegionHead({ label, value, wrap = false }: { label: string; value: stri
 function MetricPanel({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-3">
-      <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
-      <div className={`mt-2 ${mono ? 'font-mono' : ''} text-[0.625rem] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]`}>
+      <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</div>
+      <div className={`mt-2 ${mono ? 'font-mono' : ''} text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]`}>
         {value}
       </div>
     </div>

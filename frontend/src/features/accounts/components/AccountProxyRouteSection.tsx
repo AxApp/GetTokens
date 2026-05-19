@@ -137,20 +137,20 @@ export default function AccountProxyRouteSection({
     <section className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('accounts.proxy_route_title')}
           </h3>
-          <div className="mt-1 text-[0.5625rem] font-mono text-[var(--text-muted)]">
+          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-mono text-[var(--text-muted)]">
             {summary.proxyUrl || t('accounts.proxy_route_inherit_hint')}
           </div>
         </div>
-        <div className="border-2 border-[var(--border-color)] px-3 py-1 text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+        <div className="border-2 border-[var(--border-color)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
           {summary.label}
         </div>
       </div>
 
       {isReadonly ? (
-        <div className="border-2 border-dashed border-[var(--border-color)] px-4 py-3 text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+        <div className="border-2 border-dashed border-[var(--border-color)] px-4 py-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
           {readonlyReason}
         </div>
       ) : (
@@ -161,7 +161,7 @@ export default function AccountProxyRouteSection({
                 key={mode}
                 type="button"
                 onClick={() => changeMode(mode)}
-                className={`min-h-9 border-r-2 border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.12em] last:border-r-0 ${
+                className={`min-h-9 border-r-2 border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] last:border-r-0 ${
                   draft.mode === mode
                     ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
                     : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
@@ -182,7 +182,7 @@ export default function AccountProxyRouteSection({
                 value={draft.proxyUrl}
                 onChange={(event) => selectProxy(event.target.value)}
                 disabled={proxyOptions.length === 0 && !hasDetachedCurrentURL}
-                className="input-swiss w-full font-mono !text-[0.5625rem]"
+                className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
               >
                 {draft.proxyUrl ? null : <option value="">{t('accounts.proxy_route_select_placeholder')}</option>}
                 {hasDetachedCurrentURL ? (
@@ -197,7 +197,7 @@ export default function AccountProxyRouteSection({
                 ))}
               </select>
               {proxyOptions.length === 0 && !draft.proxyUrl ? (
-                <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
                   {t('accounts.proxy_route_no_nodes')}
                 </div>
               ) : null}

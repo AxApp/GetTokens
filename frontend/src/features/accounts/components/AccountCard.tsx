@@ -260,7 +260,7 @@ export default function AccountCard({
       topActions={
         <div className="flex shrink-0 flex-col items-end gap-2">
           {isSelectionMode ? (
-            <label className="flex cursor-pointer items-center gap-2 text-[0.5625rem] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
+            <label className="flex cursor-pointer items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)]">
               <input
                 type="checkbox"
                 checked={isSelected}
@@ -292,7 +292,7 @@ export default function AccountCard({
                     type="button"
                     role="menuitem"
                     onClick={() => void copyText(buildAccountCardCopyText(account))}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
                   >
                     <Copy size={14} strokeWidth={3} />
                     {t('common.copy')}
@@ -301,7 +301,7 @@ export default function AccountCard({
                     type="button"
                     role="menuitem"
                     onClick={() => void copyAccountContent()}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
                   >
                     <FileText size={14} strokeWidth={3} />
                     {t('common.copy_content')}
@@ -315,8 +315,8 @@ export default function AccountCard({
                         onToggleDisabled(account);
                       }}
                       disabled={!ready || isStatusPending}
-                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50 ${
-                        account.disabled ? 'text-[var(--text-primary)]' : 'text-amber-700 dark:text-amber-300'
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50 ${
+                        account.disabled ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-warning)] dark:text-[var(--color-status-warning)]'
                       }`}
                     >
                       <Power size={14} strokeWidth={3} />
@@ -330,15 +330,15 @@ export default function AccountCard({
                       setIsActionMenuOpen(false);
                       onRequestDelete(account.id);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] text-red-500 hover:bg-[var(--bg-surface)]"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
                   >
                     <Trash2 size={14} strokeWidth={3} />
                     {t('accounts.card_delete')}
                   </button>
                   {copyState !== 'idle' ? (
                     <div
-                      className={`border-t border-dashed border-[var(--border-color)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
-                        copyState === 'success' ? 'text-green-600' : 'text-red-500'
+                      className={`border-t border-dashed border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
+                        copyState === 'success' ? 'text-[var(--color-status-success)]' : 'text-[var(--color-status-danger)]'
                       }`}
                     >
                       {copyState === 'success' ? t('accounts.copy_done') : t('accounts.copy_failed')}
@@ -358,17 +358,17 @@ export default function AccountCard({
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}
           >
-            <div className="shrink-0 text-[0.5625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="shrink-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {t('common.confirm_delete')}
             </div>
             <div className="flex gap-2">
-              <button type="button" onClick={onCancelDelete} className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
+              <button type="button" onClick={onCancelDelete} className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]">
                 {t('common.cancel')}
               </button>
               <button
                 type="button"
                 onClick={() => onConfirmDelete(account)}
-                className="btn-swiss !px-3 !py-1 !text-[0.5625rem] !text-red-500"
+                className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
               >
                 {t('common.delete')}
               </button>
@@ -381,14 +381,14 @@ export default function AccountCard({
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}
           >
-            <button type="button" onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[0.5625rem]">
+            <button type="button" onClick={() => onOpenDetails(account)} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
               {t('common.details')}
             </button>
             {supportsQuota(account) ? (
               <button
                 type="button"
                 onClick={() => onRefreshQuota(account)}
-                className="btn-swiss !py-1.5 !text-[0.5625rem]"
+                className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                 disabled={!ready || quotaState?.status === 'loading'}
               >
                 {t('accounts.refresh_quota')}
@@ -398,7 +398,7 @@ export default function AccountCard({
               <button
                 type="button"
                 onClick={() => onStartReauth(account)}
-                className="btn-swiss !py-1.5 !text-[0.5625rem]"
+                className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                 disabled={isOAuthPending}
               >
                 {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}

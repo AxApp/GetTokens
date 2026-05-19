@@ -107,7 +107,7 @@ export default function UsageDeskFeature({
         <WorkspacePageHeader
           title={pageTitle}
           subtitle={pageDescription}
-          subtitleClassName="mt-1 max-w-3xl text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]"
+          subtitleClassName="mt-1 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-widest text-[var(--text-muted)]"
           actions={
             <>
               <button
@@ -131,10 +131,10 @@ export default function UsageDeskFeature({
               <section className="card-swiss !p-5">
                 <div className="flex flex-col gap-4 border-b-2 border-dashed border-[var(--border-color)] pb-4 xl:flex-row xl:items-end xl:justify-between">
                   <div>
-                    <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">模块 01</div>
+                    <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">模块 01</div>
                     <h3 className="mt-2 text-2xl font-black uppercase italic tracking-tight text-[var(--text-primary)]">gemini 用量分析</h3>
                   </div>
-                  <p className="max-w-2xl text-[0.6875rem] leading-6 text-[var(--text-muted)]">
+                  <p className="max-w-2xl text-[length:var(--font-size-ui-md-compact)] leading-6 text-[var(--text-muted)]">
                     `gemini` 保留为独立页面，不和 `codex` 混在同一块里。当前这页先只承接页面边界，后续再接入 gemini 自己的 usage 真源。
                   </p>
                 </div>
@@ -180,7 +180,7 @@ export default function UsageDeskFeature({
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
                             status={
-                                <div className="flex items-center gap-3 text-[0.9375rem] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                <div className="flex items-center gap-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                   <div className="h-3 w-3 bg-[var(--text-primary)]" />
                                 <span>数据源: Sidecar Attribution</span>
                                 <span className="opacity-40">/</span>
@@ -204,7 +204,7 @@ export default function UsageDeskFeature({
                                         <button
                                           key={option}
                                           onClick={() => handleRangeSelect(option)}
-                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                             range === option ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -222,7 +222,7 @@ export default function UsageDeskFeature({
                                         <button
                                           key={opt}
                                           onClick={() => setResolution(opt)}
-                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                             resolution === opt ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -237,7 +237,7 @@ export default function UsageDeskFeature({
                                   <div className="flex items-center border-2 border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     <button
                                       onClick={() => handleViewScaleChange('daily')}
-                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                         viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -245,7 +245,7 @@ export default function UsageDeskFeature({
                                     </button>
                                     <button
                                       onClick={() => handleViewScaleChange('minute')}
-                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                         viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -260,19 +260,19 @@ export default function UsageDeskFeature({
                                 ? observedSnapshot.minutePoints.map((point) => ({
                                     label: point.label,
                                     value: point.requests,
-                                    color: '#111111',
+                                    color: 'var(--color-chart-primary)',
                                   }))
                                 : observedSnapshot.dailyPoints.map((point) => ({
                                     label: point.label,
                                     value: point.requests,
-                                    color: '#111111',
+                                    color: 'var(--color-chart-primary)',
                                     drilldownDayKey: point.dayKey,
                                   }))
                             }
                             secondary={
                               observedDrilldownDayKey
                                 ? undefined
-                                : observedSnapshot.dailyPoints.map((point) => ({ label: point.label, value: point.failure, color: '#7a7a7a' }))
+                                : observedSnapshot.dailyPoints.map((point) => ({ label: point.label, value: point.failure, color: 'var(--color-chart-secondary)' }))
                             }
                           />
                         </div>
@@ -326,7 +326,7 @@ export default function UsageDeskFeature({
                             status={
                               <>
                                 <div className="flex items-center gap-6">
-                                  <div className="flex items-center gap-3 text-[0.9375rem] font-black uppercase tracking-wider text-[var(--text-primary)]">
+                                  <div className="flex items-center gap-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                     <div className="h-3 w-3 bg-[var(--text-primary)]" />
                                     <span>本地投影索引</span>
                                     <span className="opacity-40">/</span>
@@ -339,19 +339,19 @@ export default function UsageDeskFeature({
                                     )}
                                   </div>
                                   {projectedActionMessage && (
-                                    <div className="text-[0.8125rem] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
+                                    <div className="text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] px-2 bg-[var(--bg-surface)] border-2 border-[var(--border-color)]">
                                       {projectedActionMessage}
                                     </div>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                  <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     刷新索引
                                   </button>
-                                  <button onClick={() => void rebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading || !selectedDayKey}>
+                                  <button onClick={() => void rebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading || !selectedDayKey}>
                                     重建当日
                                   </button>
-                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
+                                  <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[length:var(--font-size-ui-lg-compact)] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     重建索引
                                   </button>
                                 </div>
@@ -368,7 +368,7 @@ export default function UsageDeskFeature({
                                         <button
                                           key={option}
                                           onClick={() => handleRangeSelect(option)}
-                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                             range === option ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -386,7 +386,7 @@ export default function UsageDeskFeature({
                                         <button
                                           key={opt}
                                           onClick={() => setResolution(opt)}
-                                          className={`px-5 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                          className={`px-5 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                             resolution === opt ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -408,7 +408,7 @@ export default function UsageDeskFeature({
                                         <button
                                           key={option.id}
                                           onClick={() => handleProjectedSurfaceViewChange(option.id)}
-                                          className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                          className={`px-4 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                             active ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                           }`}
                                         >
@@ -421,7 +421,7 @@ export default function UsageDeskFeature({
                                   <div className="flex items-center border-2 border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     <button
                                       onClick={() => setProjectedChartMetric('tokens')}
-                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                         projectedChartMetric === 'tokens' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >
@@ -429,7 +429,7 @@ export default function UsageDeskFeature({
                                     </button>
                                     <button
                                       onClick={() => setProjectedChartMetric('requests')}
-                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                      className={`px-4 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black uppercase transition-colors ${
                                         projectedChartMetric === 'requests' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
                                       }`}
                                     >

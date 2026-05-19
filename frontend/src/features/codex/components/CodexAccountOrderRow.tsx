@@ -46,7 +46,7 @@ function RoutePolicyModeControl({
           key={option.id}
           type="button"
           onClick={() => onChange(id, option.id)}
-          className={`min-h-9 border-r-2 border-[var(--border-color)] px-2 text-[0.5625rem] font-black uppercase tracking-wide last:border-r-0 ${
+          className={`min-h-9 border-r-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide last:border-r-0 ${
             mode === option.id
               ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
               : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
@@ -181,25 +181,25 @@ export function AccountOrderRow({
           </span>
           <span className="grid min-w-0 content-center gap-1.5 px-3 py-2">
             <span className="flex min-w-0 items-baseline gap-2">
-              <span className="shrink-0 font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <span className="shrink-0 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {`ORDER ${String(index + 1).padStart(2, '0')}`}
               </span>
-              <span className="min-w-0 truncate text-[0.875rem] font-black leading-tight text-[var(--text-primary)]">
+              <span className="min-w-0 truncate text-[length:var(--font-size-ui-lg)] font-black leading-tight text-[var(--text-primary)]">
                 {row.label}
               </span>
             </span>
             <span className="grid min-w-0 grid-cols-[8.25rem_minmax(0,1fr)] items-center gap-2">
-              <span className="min-w-0 truncate border border-[var(--border-color)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-center font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <span className="min-w-0 truncate border border-[var(--border-color)] bg-[var(--bg-surface)] px-1.5 py-0.5 text-center font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {sourceKindLabel(t, row.sourceKind)}
               </span>
-              <span className="min-w-0 truncate font-mono text-[0.5625rem] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
+              <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
                 {endpointLabel || row.provider}
               </span>
             </span>
           </span>
           <span className="flex min-w-0 items-center justify-end border-l-2 border-[var(--border-color)] px-3 py-2">
             <span
-              className={`max-w-full truncate whitespace-nowrap border px-2 py-1 text-right font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+              className={`max-w-full truncate whitespace-nowrap border px-2 py-1 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
                 listStatusClass
               }`}
             >
@@ -242,7 +242,7 @@ export function AccountOrderRow({
             title={t('accounts.rotation_drag_badge')}
           >
             <GripVertical className="h-4 w-4" strokeWidth={3} />
-            <span className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em]">
+            <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em]">
               {t('accounts.rotation_drag_badge')}
             </span>
           </div>
@@ -285,16 +285,16 @@ export function AccountOrderRow({
                       key={`${mapping.realModel}-${mapping.codexModel || mappingIndex}`}
                       className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2"
                     >
-                      <code className="truncate font-mono text-[0.625rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                      <code className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
                         {mapping.realModel}
                       </code>
-                      <b className="truncate font-mono text-[0.625rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                      <b className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
                         {mapping.codexModel || mapping.realModel}
                       </b>
                     </div>
                   ))
                 ) : (
-                  <div className="font-mono text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
                     {t('accounts.ui_no_data_available')}
                   </div>
                 )}
@@ -303,7 +303,7 @@ export function AccountOrderRow({
 
             <div className="col-span-2 px-3 py-3">
               <div className="mb-2">
-                <span className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                   {t('codex.account_list_policy_title')}
                 </span>
               </div>
@@ -319,7 +319,7 @@ export function AccountOrderRow({
                   onChange={onPolicyModeChange}
                 />
               ) : (
-                <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
                   {blockedLabel || routePolicyModeLabel(t, 'blocked')}
                 </div>
               )}
@@ -350,8 +350,8 @@ function buildQuotaSummaryAccount(row: CodexAccountRow) {
 function RegionHead({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-2">
-      <span className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</span>
-      <b className="truncate font-mono text-[0.6875rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+      <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</span>
+      <b className="truncate font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
         {value}
       </b>
     </div>

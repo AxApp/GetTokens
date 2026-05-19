@@ -5,7 +5,7 @@ import type { CodexAccountRow } from '../model/codexAccountList';
 import { RouteProbeCard } from './CodexRouteProbeCard';
 
 const meta = {
-  title: 'Design System/Feature Components/Codex Route Probe',
+  title: 'Design System/业务组件/Codex 路由探测',
   parameters: {
     layout: 'fullscreen',
   },

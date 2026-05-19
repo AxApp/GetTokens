@@ -20,10 +20,10 @@ export default function AccountGroupSectionView({
   return (
     <section className="space-y-4">
       <div className="flex items-end justify-between gap-4 border-b-2 border-[var(--border-color)] pb-4">
-        <h3 className="text-[1.75rem] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
+        <h3 className="text-[length:var(--font-size-ui-6xl)] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
           {group.label}
         </h3>
-        <p className="mb-1 text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <p className="mb-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
           {group.accounts.length} {t('accounts.plan_group_meta')}
         </p>
       </div>

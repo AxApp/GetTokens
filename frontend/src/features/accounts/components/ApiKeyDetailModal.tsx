@@ -45,8 +45,8 @@ interface ApiKeyDetailModalProps {
 }
 
 function formatVerifyTone(status: APIKeyVerifyState['status']) {
-  if (status === 'success') return 'border-green-600 bg-green-600/10 text-green-700';
-  if (status === 'error') return 'border-red-500 bg-red-500/10 text-red-500';
+  if (status === 'success') return 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]';
+  if (status === 'error') return 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]';
   return 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]';
 }
 
@@ -204,9 +204,9 @@ export default function ApiKeyDetailModal({
 
   const messageTone =
     verifyState.status === 'success'
-      ? 'text-green-600'
+      ? 'text-[var(--color-status-success)]'
       : verifyState.status === 'error'
-        ? 'text-red-500'
+        ? 'text-[var(--color-status-danger)]'
         : 'text-[var(--text-muted)]';
 
   async function copyText(
@@ -291,7 +291,7 @@ export default function ApiKeyDetailModal({
         <header className="shrink-0 border-b-2 border-[var(--border-color)] px-6 py-5">
           <div className="flex flex-col gap-3">
             <div>
-              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {sourceHeading}
               </div>
               {isEditingName ? (
@@ -299,13 +299,13 @@ export default function ApiKeyDetailModal({
                   <input
                     value={draftName}
                     onChange={(event: TextInputEvent) => setDraftName(event.target.value)}
-                    className="input-swiss min-w-[16rem] flex-1 !py-1.5 !text-[0.75rem] !font-black !uppercase !italic tracking-tight"
+                    className="input-swiss min-w-[16rem] flex-1 !py-1.5 !text-[length:var(--font-size-ui-md)] !font-black !uppercase !italic tracking-tight"
                     placeholder={t('accounts.api_key_label_placeholder')}
                   />
-                  <button onClick={saveName} className="btn-swiss shrink-0 !py-1.5 !text-[0.5625rem]">
+                  <button onClick={saveName} className="btn-swiss shrink-0 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                     {t('common.save')}
                   </button>
-                  <button onClick={cancelEditingName} className="btn-swiss shrink-0 !py-1.5 !text-[0.5625rem]">
+                  <button onClick={cancelEditingName} className="btn-swiss shrink-0 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                     {t('common.cancel')}
                   </button>
                 </div>
@@ -323,7 +323,7 @@ export default function ApiKeyDetailModal({
                   </button>
                 </div>
               )}
-              <div className="mt-2 flex items-center justify-between gap-4 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="mt-2 flex items-center justify-between gap-4 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 <div className="flex min-w-0 items-center gap-2">
                   <span>{providerConfigHeading}</span>
                   <span className="text-[var(--border-color)]">/</span>
@@ -351,8 +351,8 @@ export default function ApiKeyDetailModal({
                 <div className="mb-3 grid gap-2 md:grid-cols-3">
                   {healthMetaItems.map((item) => (
                     <div key={item.label} className="border border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2">
-                      <div className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{item.label}</div>
-                      <div className="mt-1 text-[0.6875rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{item.value}</div>
+                      <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{item.label}</div>
+                      <div className="mt-1 text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{item.value}</div>
                     </div>
                   ))}
                 </div>
@@ -367,17 +367,17 @@ export default function ApiKeyDetailModal({
             <section className="border-b-2 border-[var(--border-color)] px-6 py-5">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-dashed border-[var(--border-color)] pb-3">
-                  <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                     MANAGEMENT
                   </div>
-                  <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     {missingFieldsMessage}
                   </div>
                 </div>
 
                 <div className="space-y-3">
                     <label className="space-y-1.5">
-                      <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         API KEY
                       </span>
                       <div className="relative">
@@ -386,13 +386,13 @@ export default function ApiKeyDetailModal({
                           onChange={(event: TextInputEvent) =>
                             setConfigDraft((prev) => ({ ...prev, apiKey: event.target.value }))
                           }
-                          className="input-swiss w-full pr-16 !py-1.5 !text-[0.6875rem]"
+                          className="input-swiss w-full pr-16 !py-1.5 !text-[length:var(--font-size-ui-md-compact)]"
                           type="text"
                           placeholder="sk-..."
                         />
                         <button
                           onClick={() => void copyText('apiKey', configDraft.apiKey)}
-                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[length:var(--font-size-ui-2xs)] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
                         >
                           复制
                         </button>
@@ -400,7 +400,7 @@ export default function ApiKeyDetailModal({
                     </label>
 
                     <label className="space-y-1.5">
-                      <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         BASE URL
                       </span>
                       <div className="relative">
@@ -409,12 +409,12 @@ export default function ApiKeyDetailModal({
                           onChange={(event: TextInputEvent) =>
                             setConfigDraft((prev) => ({ ...prev, baseUrl: event.target.value }))
                           }
-                          className="input-swiss w-full pr-16 !py-1.5 !text-[0.6875rem]"
+                          className="input-swiss w-full pr-16 !py-1.5 !text-[length:var(--font-size-ui-md-compact)]"
                           placeholder="https://api.openai.com/v1"
                         />
                         <button
                           onClick={() => void copyText('baseUrl', configDraft.baseUrl)}
-                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[length:var(--font-size-ui-2xs)] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
                         >
                           复制
                         </button>
@@ -422,7 +422,7 @@ export default function ApiKeyDetailModal({
                     </label>
 
                     <label className="space-y-1.5">
-                      <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         PREFIX
                       </span>
                       <input
@@ -430,7 +430,7 @@ export default function ApiKeyDetailModal({
                         onChange={(event: TextInputEvent) =>
                           setConfigDraft((prev) => ({ ...prev, prefix: event.target.value }))
                         }
-                        className="input-swiss w-full !py-1.5 !text-[0.6875rem]"
+                        className="input-swiss w-full !py-1.5 !text-[length:var(--font-size-ui-md-compact)]"
                         placeholder="/v1"
                       />
                     </label>
@@ -443,17 +443,17 @@ export default function ApiKeyDetailModal({
                             setConfigDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))
                           }
                         />
-                        <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                           {t('accounts.quota_curl_enabled')}
                         </span>
                       </label>
                       <label className="space-y-1.5">
-                        <span className="flex items-center justify-between gap-3 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                        <span className="flex items-center justify-between gap-3 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                           <span>{t('accounts.quota_curl')}</span>
                           <span className="flex shrink-0 items-center gap-2">
                             <button
                               type="button"
-                              className="btn-swiss !px-2 !py-0.5 !text-[0.5rem]"
+                              className="btn-swiss !px-2 !py-0.5 !text-[length:var(--font-size-ui-2xs)]"
                               onClick={() => void testQuotaCurl()}
                               disabled={quotaTestState.status === 'loading' || !configDraft.quotaCurl.trim()}
                             >
@@ -465,7 +465,7 @@ export default function ApiKeyDetailModal({
                             </button>
                             <button
                               type="button"
-                              className="btn-swiss !px-2 !py-0.5 !text-[0.5rem]"
+                              className="btn-swiss !px-2 !py-0.5 !text-[length:var(--font-size-ui-2xs)]"
                               onClick={() =>
                                 setConfigDraft((prev) => ({
                                   ...prev,
@@ -483,23 +483,23 @@ export default function ApiKeyDetailModal({
                           onChange={(event: TextInputEvent) =>
                             setConfigDraft((prev) => ({ ...prev, quotaCurl: event.target.value }))
                           }
-                          className="input-swiss min-h-28 w-full resize-y font-mono !text-[0.625rem]"
+                          className="input-swiss min-h-28 w-full resize-y font-mono !text-[length:var(--font-size-ui-sm)]"
                           placeholder='curl -sS "https://example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"'
                         />
                       </label>
                       {quotaTestState.status !== 'idle' ? (
                         <div
-                          className={`border-2 px-3 py-2 text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+                          className={`border-2 px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
                             quotaTestState.status === 'success'
-                              ? 'border-green-600 bg-green-600/10 text-green-700'
+                              ? 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]'
                               : quotaTestState.status === 'error'
-                                ? 'border-red-500 bg-red-500/10 text-red-500'
+                                ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]'
                                 : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)]'
                           }`}
                         >
                           <div>{quotaTestState.message || t('accounts.quota_curl_test_running')}</div>
                           {quotaTestState.status === 'success' && quotaTestState.quota?.windows?.length ? (
-                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[0.5rem] text-[var(--text-primary)]">
+                            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[length:var(--font-size-ui-2xs)] text-[var(--text-primary)]">
                               <span>{quotaTestState.quota.planType || '—'}</span>
                               {quotaTestState.quota.windows.slice(0, 2).map((window) => (
                                 <span key={window.id}>
@@ -528,26 +528,26 @@ export default function ApiKeyDetailModal({
             <section className="bg-[var(--bg-surface)]/30 px-6 py-5">
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-dashed border-[var(--border-color)] pb-3">
-                  <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                     {workspaceHeading}
                   </div>
-                  <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     {providerLabel(account)}
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                    <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                    <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                       {t('accounts.api_key_verify_summary')}
                     </div>
-                    <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {t('accounts.api_key_verify_last_verified')} {formatLastVerifiedAt(verifyState.lastVerifiedAt)}
                     </div>
                   </div>
 
                   <label className="space-y-1.5">
-                    <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                       {t('accounts.api_key_verify_model')}
                     </span>
                     <div ref={modelMenuRef} className="relative">
@@ -560,7 +560,7 @@ export default function ApiKeyDetailModal({
                               setModelMenuMode('browse');
                               setIsModelMenuOpen((prev) => !prev);
                             }}
-                            className="absolute left-2 top-1/2 -translate-y-1/2 text-[0.5rem] font-black tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 text-[length:var(--font-size-ui-2xs)] font-black tracking-[0.2em] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                             aria-label="Select model"
                           >
                             ▼
@@ -579,7 +579,7 @@ export default function ApiKeyDetailModal({
                               setIsModelMenuOpen(true);
                             }
                           }}
-                          className={`input-swiss w-full pr-24 !py-1.5 !text-[0.6875rem] ${hasModelNames ? 'pl-7' : ''}`}
+                          className={`input-swiss w-full pr-24 !py-1.5 !text-[length:var(--font-size-ui-md-compact)] ${hasModelNames ? 'pl-7' : ''}`}
                           placeholder={DEFAULT_CODEX_API_KEY_VERIFY_MODEL}
                         />
                         <button
@@ -590,7 +590,7 @@ export default function ApiKeyDetailModal({
                               model: verifyModel,
                             })
                           }
-                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[0.5rem] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
+                          className="btn-swiss absolute right-2 top-1/2 !px-2 !py-0.5 !text-[length:var(--font-size-ui-2xs)] -translate-y-1/2 hover:!translate-x-0 hover:!-translate-y-[calc(50%+1px)] hover:!shadow-[2px_2px_0_var(--shadow-color)]"
                           disabled={verifyState.status === 'loading'}
                         >
                           {verifyState.status === 'loading' ? (
@@ -616,7 +616,7 @@ export default function ApiKeyDetailModal({
                                   setModelMenuMode('browse');
                                   setIsModelMenuOpen(false);
                                 }}
-                                className={`flex w-full items-center border-2 px-2.5 py-1.5 text-left text-[0.5625rem] font-black uppercase tracking-[0.12em] transition-transform ${
+                                className={`flex w-full items-center border-2 px-2.5 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-transform ${
                                   verifyModel === name
                                     ? 'border-[var(--text-primary)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
                                     : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)] hover:translate-x-[-1px] hover:translate-y-[-1px]'
@@ -634,10 +634,10 @@ export default function ApiKeyDetailModal({
                   </label>
 
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                    <div className={`text-[0.625rem] font-black uppercase tracking-tight ${messageTone}`}>
+                    <div className={`text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-tight ${messageTone}`}>
                       {verifyState.message || t('accounts.api_key_verify_idle')}
                     </div>
-                    <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {verifyState.model || '—'}
                     </div>
                   </div>
@@ -648,7 +648,7 @@ export default function ApiKeyDetailModal({
         </div>
 
         <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
             {missingFieldsMessage}
           </div>
           <div className="flex items-center gap-2">

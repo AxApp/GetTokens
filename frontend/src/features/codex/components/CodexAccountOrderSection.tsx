@@ -23,7 +23,7 @@ import {
 
 function EmptyState({ children }: { children: string }) {
   return (
-    <div className="border-t-2 border-[var(--border-color)] px-8 py-14 text-center text-[0.75rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+    <div className="border-t-2 border-[var(--border-color)] px-8 py-14 text-center text-[length:var(--font-size-ui-md)] font-black uppercase tracking-wide text-[var(--text-muted)]">
       {children}
     </div>
   );
@@ -216,7 +216,7 @@ export function CodexAccountOrderSection({
           <h2 className="text-xl font-black uppercase leading-none tracking-normal text-[var(--text-primary)]">
             {title}
           </h2>
-          <p className="mt-2 max-w-3xl text-[0.625rem] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+          <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-wide text-[var(--text-muted)]">
             {hint}
           </p>
         </div>
@@ -243,7 +243,7 @@ export function CodexAccountOrderSection({
                 <button
                   type="button"
                   onClick={() => setIsActionMenuOpen((prev) => !prev)}
-                  className="btn-swiss !min-h-10 !px-3 !py-2 !text-[0.625rem]"
+                  className="btn-swiss !min-h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
                   aria-expanded={isActionMenuOpen}
                   aria-label={t('common.more_actions')}
                   title={t('common.more_actions')}
@@ -300,7 +300,7 @@ export function CodexAccountOrderSection({
             )}
           </div>
           {saving || orderChanged ? (
-            <div className={`text-[0.5625rem] font-black uppercase tracking-wide ${saving ? 'text-[var(--text-muted)]' : 'text-[var(--accent-red)]'}`}>
+            <div className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${saving ? 'text-[var(--text-muted)]' : 'text-[var(--accent-red)]'}`}>
               {saving ? savingLabel : unsavedLabel}
             </div>
           ) : null}
@@ -308,7 +308,7 @@ export function CodexAccountOrderSection({
       </header>
 
       {message ? (
-        <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3 font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+        <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
           {message}
         </div>
       ) : null}
@@ -393,7 +393,7 @@ function InlineActionControls({
         type="button"
         onClick={onReload}
         disabled={disabled || loading || saving || routingProbeRunning}
-        className={`btn-swiss !min-h-10 !px-3 !py-2 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`btn-swiss !min-h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50 ${
           stacked ? 'w-full justify-center' : 'shrink-0'
         }`}
       >
@@ -454,7 +454,7 @@ function DensityButton({
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-9 px-3 text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+      className={`min-h-9 px-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
         bordered ? 'border-r border-[var(--border-color)]' : ''
       } ${
         active

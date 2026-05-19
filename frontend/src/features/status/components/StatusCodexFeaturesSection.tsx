@@ -76,25 +76,25 @@ export default function StatusCodexFeaturesSection({
     <section className="relative overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
       <div className="grid gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div className="min-w-0">
-          <div className="text-[0.625rem] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
+          <div className="text-[length:var(--font-size-ui-sm)] font-black italic uppercase tracking-widest text-[var(--text-primary)]">
             {t('status.codex_features_title')}
           </div>
-          <div className="mt-1 break-all font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+          <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
             {snapshot?.configPath || t('status.codex_features_unavailable')}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
             {visibleCount}/{totalCount} {t('status.codex_features_visible')}
           </div>
-          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
             {dirtyCount} {t('status.codex_features_changed')}
           </div>
           <button
             type="button"
             onClick={onReload}
             disabled={isBusy}
-            className="btn-swiss !px-3 !py-1 !text-[0.5625rem] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? t('status.codex_features_loading') : t('common.refresh')}
           </button>
@@ -108,7 +108,7 @@ export default function StatusCodexFeaturesSection({
               key={filter}
               type="button"
               onClick={() => onChangeStageFilter(filter)}
-              className={`border-2 px-2.5 py-1.5 text-[0.5625rem] font-black uppercase tracking-[0.18em] ${
+              className={`border-2 px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] ${
                 stageFilter === filter
                   ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                   : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
@@ -127,7 +127,7 @@ export default function StatusCodexFeaturesSection({
       </div>
 
       {message ? (
-        <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+        <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
           {message}
         </div>
       ) : null}
@@ -141,35 +141,35 @@ export default function StatusCodexFeaturesSection({
             }`}
           >
             <div className="min-w-0">
-              <div className="break-all font-mono text-[0.75rem] font-black tracking-wide text-[var(--text-primary)]">
+              <div className="break-all font-mono text-[length:var(--font-size-ui-md)] font-black tracking-wide text-[var(--text-primary)]">
                 {row.key}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[0.625rem] font-bold tracking-wide text-[var(--text-muted)]">
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-bold tracking-wide text-[var(--text-muted)]">
                 <span
-                  className={`inline-flex shrink-0 border-2 px-2 py-0.5 text-[0.5625rem] font-black tracking-[0.14em] ${
+                  className={`inline-flex shrink-0 border-2 px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] ${
                     row.stage === 'unknown' || row.stage === 'unsupported' || row.stage === 'removed'
-                      ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-red-600'
+                      ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--color-status-danger)]'
                       : 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                   }`}
                 >
                   {t(`status.codex_features_stage_${row.stage}`)}
                 </span>
                 {row.hiddenByDefault ? (
-                  <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[0.5625rem] font-black tracking-[0.14em] text-[var(--text-muted)]">
+                  <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] text-[var(--text-muted)]">
                     {t('status.codex_features_hidden_default')}
                   </span>
                 ) : null}
                 <span className="min-w-0">{resolveCodexFeatureDescription(t, row)}</span>
               </div>
               {row.legacyAliases.length > 0 ? (
-                <div className="mt-2 inline-flex max-w-full border-2 border-dashed border-[var(--border-color)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+                <div className="mt-2 inline-flex max-w-full border-2 border-dashed border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
                   <span className="truncate">
                     {t('status.codex_features_legacy_alias')}: {row.legacyAliases.join(', ')}
                   </span>
                 </div>
               ) : null}
               {row.unsupported ? (
-                <div className="mt-2 text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
                   {t('status.codex_features_unsupported_hint')}
                 </div>
               ) : null}
@@ -186,7 +186,7 @@ export default function StatusCodexFeaturesSection({
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className="px-4 py-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {isLoading ? t('status.codex_features_loading') : t('status.codex_features_empty')}
           </div>
         ) : null}
@@ -194,14 +194,14 @@ export default function StatusCodexFeaturesSection({
 
       {preview ? (
         <div className="border-t-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-          <div className="text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+          <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
             {t('status.codex_features_preview_title')}: {preview.summary}
           </div>
           <div className="mt-3 grid gap-2 md:grid-cols-2">
             {preview.changes.map((change) => (
               <div
                 key={`${change.key}-${change.kind}`}
-                className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]"
+                className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]"
               >
                 <span className="font-mono">{change.key}</span>
                 <span className="text-[var(--text-muted)]"> / {change.kind} / </span>
@@ -213,7 +213,7 @@ export default function StatusCodexFeaturesSection({
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
-        <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+        <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
           {t('status.codex_features_save_hint')}
         </div>
         <div className="flex flex-wrap gap-2">
@@ -221,7 +221,7 @@ export default function StatusCodexFeaturesSection({
             type="button"
             onClick={onReset}
             disabled={isBusy || !snapshot}
-            className="btn-swiss !px-3 !py-1.5 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t('status.codex_features_reset')}
           </button>
@@ -229,7 +229,7 @@ export default function StatusCodexFeaturesSection({
             type="button"
             onClick={onPreview}
             disabled={isBusy || dirtyCount === 0}
-            className="btn-swiss !px-3 !py-1.5 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t('status.codex_features_preview')}
           </button>
@@ -237,7 +237,7 @@ export default function StatusCodexFeaturesSection({
             type="button"
             onClick={onSave}
             disabled={isBusy || dirtyCount === 0}
-            className="btn-swiss bg-[var(--border-color)] !px-3 !py-1.5 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss bg-[var(--border-color)] !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSaving ? t('status.codex_features_saving') : t('common.save')}
           </button>

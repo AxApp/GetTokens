@@ -5,7 +5,7 @@ import DesignSystemStoryFrame from '../../features/design-system/DesignSystemSto
 import { Combobox } from './Combobox';
 
 const meta = {
-  title: 'Design System/Components/Combobox',
+  title: 'Design System/通用组件/组合框',
   parameters: {
     layout: 'centered',
   },

@@ -92,7 +92,7 @@ export default function OpenAICompatibleWorkspace({
           <div className="text-lg font-black uppercase italic tracking-tight text-[var(--text-primary)]">
             {t('accounts.openai_provider_empty')}
           </div>
-          <p className="mt-3 text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <p className="mt-3 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('accounts.openai_provider_empty_hint')}
           </p>
         </div>

@@ -12,12 +12,12 @@ export function StatePanel({ title, body, tone = 'default' }: { title: string; b
     <div
       className={`border-2 px-4 py-4 ${
         tone === 'error'
-          ? 'border-red-500 bg-red-500/10 text-red-500'
+          ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]'
           : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
       }`}
     >
-      <div className="text-[0.625rem] font-black uppercase tracking-[0.18em]">{title}</div>
-      <div className={`mt-2 text-[0.6875rem] leading-6 ${tone === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>{body}</div>
+      <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em]">{title}</div>
+      <div className={`mt-2 text-[length:var(--font-size-ui-md-compact)] leading-6 ${tone === 'error' ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'}`}>{body}</div>
     </div>
   );
 }
@@ -25,9 +25,9 @@ export function StatePanel({ title, body, tone = 'default' }: { title: string; b
 export function InfoCard({ title, highlight, body }: { title: string; highlight: string; body: string }) {
   return (
     <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-4 shadow-[4px_4px_0_var(--shadow-color)]">
-      <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{title}</div>
-      <div className="mt-3 text-[1.375rem] font-black uppercase italic tracking-tight text-[var(--text-primary)]">{highlight}</div>
-      <p className="mt-3 text-[0.6875rem] leading-6 text-[var(--text-muted)]">{body}</p>
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">{title}</div>
+      <div className="mt-3 text-[length:var(--font-size-ui-4xl)] font-black uppercase italic tracking-tight text-[var(--text-primary)]">{highlight}</div>
+      <p className="mt-3 text-[length:var(--font-size-ui-md-compact)] leading-6 text-[var(--text-muted)]">{body}</p>
     </div>
   );
 }
@@ -45,10 +45,10 @@ export function UsageSessionDrilldownPanel({
     <section className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden' : 'border-2 border-[var(--border-color)]'} bg-[var(--bg-main)]`}>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-[var(--border-color)] px-4 py-3">
         <div>
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">LOCAL SESSIONS</div>
-          <h3 className="mt-1 text-[0.9375rem] font-black uppercase text-[var(--text-primary)]">{title}</h3>
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">LOCAL SESSIONS</div>
+          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-black uppercase text-[var(--text-primary)]">{title}</h3>
         </div>
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[0.6875rem] font-black text-[var(--text-primary)]">
+        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
           {new Intl.NumberFormat('zh-CN').format(rows.length)} 个会话
         </div>
       </div>
@@ -61,7 +61,7 @@ export function UsageSessionDrilldownPanel({
                 {usageDeskSessionDrilldownColumnLabels.map((label) => (
                   <th
                     key={label}
-                    className="sticky top-0 z-10 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-left text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                    className="sticky top-0 z-10 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
                   >
                     {label}
                   </th>
@@ -73,7 +73,7 @@ export function UsageSessionDrilldownPanel({
                 const sourceLabel = buildSessionSourceLabel(row.projectName);
                 return (
                   <tr key={row.sessionID} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
-                    <td className="max-w-[300px] px-3 py-1.5 text-[0.6875rem] leading-4 text-[var(--text-primary)]" title={row.sessionID}>
+                    <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] leading-4 text-[var(--text-primary)]" title={row.sessionID}>
                       <div className="truncate font-black">{sourceLabel}</div>
                     </td>
                     <SessionUsageCell value={row.model || '--'} />
@@ -89,7 +89,7 @@ export function UsageSessionDrilldownPanel({
           </table>
         </div>
       ) : (
-        <div className="px-4 py-5 text-[0.6875rem] font-bold leading-6 text-[var(--text-muted)]">
+        <div className="px-4 py-5 text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 text-[var(--text-muted)]">
           当前用量没有可关联会话。
         </div>
       )}
@@ -110,10 +110,10 @@ export function UsageProjectDrilldownPanel({
     <section className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden' : 'border-2 border-[var(--border-color)]'} bg-[var(--bg-main)]`}>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-[var(--border-color)] px-4 py-3">
         <div>
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">PROJECT TOTALS</div>
-          <h3 className="mt-1 text-[0.9375rem] font-black uppercase text-[var(--text-primary)]">{title}</h3>
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">PROJECT TOTALS</div>
+          <h3 className="mt-1 text-[length:var(--font-size-ui-xl)] font-black uppercase text-[var(--text-primary)]">{title}</h3>
         </div>
-        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[0.6875rem] font-black text-[var(--text-primary)]">
+        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
           {new Intl.NumberFormat('zh-CN').format(rows.length)} 个项目
         </div>
       </div>
@@ -126,7 +126,7 @@ export function UsageProjectDrilldownPanel({
                 {usageDeskProjectDrilldownColumnLabels.map((label) => (
                   <th
                     key={label}
-                    className="sticky top-0 z-10 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-left text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                    className="sticky top-0 z-10 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
                   >
                     {label}
                   </th>
@@ -136,7 +136,7 @@ export function UsageProjectDrilldownPanel({
             <tbody>
               {rows.map((project) => (
                 <tr key={project.projectName} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
-                  <td className="max-w-[300px] px-3 py-1.5 text-[0.6875rem] font-black leading-4 text-[var(--text-primary)]">
+                  <td className="max-w-[300px] px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-4 text-[var(--text-primary)]">
                     <div className="truncate">{project.projectName}</div>
                   </td>
                   <ProjectUsageCell value={formatUsageDeskChartValue(project.sessions, 'count').replace('次', '个')} />
@@ -152,7 +152,7 @@ export function UsageProjectDrilldownPanel({
           </table>
         </div>
       ) : (
-        <div className="px-4 py-5 text-[0.6875rem] font-bold leading-6 text-[var(--text-muted)]">
+        <div className="px-4 py-5 text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 text-[var(--text-muted)]">
           当前用量没有可聚合项目。
         </div>
       )}
@@ -162,7 +162,7 @@ export function UsageProjectDrilldownPanel({
 
 function SessionUsageCell({ value }: { value: string }) {
   return (
-    <td className="px-3 py-1.5 text-[0.6875rem] font-black leading-4 text-[var(--text-primary)]">
+    <td className="px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-4 text-[var(--text-primary)]">
       <div className="truncate">{value}</div>
     </td>
   );
@@ -170,7 +170,7 @@ function SessionUsageCell({ value }: { value: string }) {
 
 function ProjectUsageCell({ value }: { value: string }) {
   return (
-    <td className="px-3 py-1.5 text-[0.6875rem] font-black leading-4 text-[var(--text-primary)]">
+    <td className="px-3 py-1.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-4 text-[var(--text-primary)]">
       <div className="truncate">{value}</div>
     </td>
   );

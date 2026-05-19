@@ -42,7 +42,7 @@ export function RotationConfigSection({
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-          <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {t('status.routing_strategy')}
           </span>
           <div ref={strategyMenuRef} className="relative">
@@ -57,7 +57,7 @@ export function RotationConfigSection({
                 {routingStrategyOptions.find((option) => option.value === routingDraft.strategy)?.label ||
                   routingDraft.strategy}
               </span>
-              <span className="shrink-0 text-[0.625rem] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
+              <span className="shrink-0 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.2em] text-[var(--text-primary)]">
                 ▼
               </span>
             </button>
@@ -77,7 +77,7 @@ export function RotationConfigSection({
                           setRoutingDraft((prev) => (prev ? { ...prev, strategy: option.value } : prev));
                           setIsStrategyMenuOpen(false);
                         }}
-                        className={`flex w-full items-center justify-between border-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.12em] transition-transform ${
+                        className={`flex w-full items-center justify-between border-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] transition-transform ${
                           isSelected
                             ? 'border-[var(--text-primary)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
                             : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-muted)] hover:translate-x-[-1px] hover:translate-y-[-1px]'
@@ -86,7 +86,7 @@ export function RotationConfigSection({
                         aria-selected={isSelected}
                       >
                         <span>{option.label}</span>
-                        {isSelected ? <span className="text-[0.5rem] tracking-[0.18em]">ACTIVE</span> : null}
+                        {isSelected ? <span className="text-[length:var(--font-size-ui-2xs)] tracking-[0.18em]">ACTIVE</span> : null}
                       </button>
                     );
                   })}
@@ -97,7 +97,7 @@ export function RotationConfigSection({
         </label>
 
         <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-          <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {t('status.routing_session_affinity_ttl')}
           </span>
           <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
@@ -106,14 +106,14 @@ export function RotationConfigSection({
               onChange={(event) =>
                 setRoutingDraft((prev) => (prev ? { ...prev, sessionAffinityTTL: event.target.value } : prev))
               }
-              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[0.75rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
               placeholder="1h"
             />
           </div>
         </label>
 
         <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-          <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {t('status.routing_request_retry')}
           </span>
           <div className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
@@ -124,18 +124,18 @@ export function RotationConfigSection({
                   prev ? { ...prev, requestRetry: Number.parseInt(event.target.value || '0', 10) || 0 } : prev
                 )
               }
-              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[0.75rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
               inputMode="numeric"
               placeholder="2"
             />
-            <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               req
             </span>
           </div>
         </label>
 
         <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-          <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {t('status.routing_max_retry_credentials')}
           </span>
           <div className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
@@ -151,18 +151,18 @@ export function RotationConfigSection({
                     : prev
                 )
               }
-              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[0.75rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
               inputMode="numeric"
               placeholder="3"
             />
-            <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               keys
             </span>
           </div>
         </label>
 
         <label className="space-y-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 md:col-span-2 xl:col-span-1">
-          <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {t('status.routing_max_retry_interval')}
           </span>
           <div className="flex items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1.5">
@@ -173,11 +173,11 @@ export function RotationConfigSection({
                   prev ? { ...prev, maxRetryInterval: Number.parseInt(event.target.value || '0', 10) || 0 } : prev
                 )
               }
-              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[0.75rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
+              className="w-full border-0 bg-transparent px-1 py-1 font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]/80"
               inputMode="numeric"
               placeholder="30"
             />
-            <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="shrink-0 border-l-2 border-[var(--border-color)] pl-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               sec
             </span>
           </div>
@@ -191,10 +191,10 @@ export function RotationConfigSection({
             className="flex min-h-[76px] items-center justify-between gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4"
           >
             <div className="space-y-1">
-              <span className="block text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="block text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('common.status')}
               </span>
-              <span className="block text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+              <span className="block text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
                 {label}
               </span>
             </div>

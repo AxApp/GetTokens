@@ -68,14 +68,14 @@ export function UsageChartCard({
           />
         )}
         {/* 凹陷感内阴影叠加层 */}
-        <div className="pointer-events-none absolute inset-0 shadow-[inset_0_12px_16px_-8px_rgba(0,0,0,0.1),inset_0_-12px_16px_-8px_rgba(0,0,0,0.1)]" />
+        <div className="pointer-events-none absolute inset-0 shadow-[inset_0_12px_16px_-8px_var(--shadow-inset-color),inset_0_-12px_16px_-8px_var(--shadow-inset-color)]" />
       </div>
 
       {(summaryItems.length > 0 || footerExtra) && (
         <footer className="flex flex-wrap items-center gap-x-8 gap-y-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
           {summaryItems.map((item, idx) => (
             <div key={idx} className="flex flex-col gap-1">
-               <span className="text-[0.6875rem] font-black uppercase tracking-tight text-[var(--text-primary)]">{item}</span>
+               <span className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-tight text-[var(--text-primary)]">{item}</span>
             </div>
           ))}
           {footerExtra && <div className="ml-auto">{footerExtra}</div>}
@@ -118,10 +118,10 @@ function ChartSurface({
   const allValues = [...primary, ...(secondary ?? [])].map((point) => point.value);
   const valueScale = buildUsageDeskChartValueScale(allValues);
   const curveAnimation = resolveUsageDeskCurveAnimationConfig(curveMotion, pointCount);
-  const primaryTone = '#111111';
-  const primaryAreaTone = '#2f2f2f';
-  const secondaryTone = '#7a7a7a';
-  const secondaryAreaTone = '#9a9a9a';
+  const primaryTone = 'var(--color-chart-primary)';
+  const primaryAreaTone = 'var(--color-chart-primary-area)';
+  const secondaryTone = 'var(--color-chart-secondary)';
+  const secondaryAreaTone = 'var(--color-chart-secondary-area)';
 
   const buildChartCoords = (points: Array<{ value: number }>) =>
     points.map((point, index) => ({
@@ -197,7 +197,7 @@ function ChartSurface({
             height: `${chartHeight}px`,
             width: `${chartWidth}px`,
             backgroundImage:
-              'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(0,0,0,0.12) calc(25% - 1px), rgba(0,0,0,0.12) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(0,0,0,0.12) calc(50% - 1px), rgba(0,0,0,0.12) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(0,0,0,0.12) calc(75% - 1px), rgba(0,0,0,0.12) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(0,0,0,0.08) 55px, rgba(0,0,0,0.08) 56px)',
+              'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid-subtle) 55px, var(--color-chart-grid-subtle) 56px)',
           }}
         >
           <style>{`
@@ -248,7 +248,7 @@ function ChartSurface({
                 y1={12}
                 x2={selectedPrimaryX}
                 y2={chartHeight - 8}
-                stroke="#111111"
+                stroke="var(--color-chart-primary)"
                 strokeOpacity="0.35"
                 strokeWidth="1.5"
                 strokeDasharray="6 6"
@@ -377,7 +377,7 @@ function ChartPoint({
       {/* 1. 数值标签 (不占用空间) */}
       <div
         className={`absolute whitespace-nowrap text-center transition-all pointer-events-none ${labelPosition === 'top' ? 'bottom-full mb-3' : 'top-full mt-3'}`}
-        style={{ color, fontSize: selected ? '12px' : '11px', fontWeight: selected ? 900 : 800 }}
+        style={{ color, fontSize: selected ? 'var(--font-size-ui-md)' : 'var(--font-size-ui-md-compact)', fontWeight: selected ? 900 : 800 }}
       >
         {label}
       </div>
@@ -388,7 +388,7 @@ function ChartPoint({
           <div className="absolute h-8 w-8 rounded-full bg-[var(--text-primary)] opacity-10 animate-pulse" />
         )}
         <div
-          className={`rounded-full border-2 border-white shadow-sm transition-transform ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
+          className={`rounded-full border-2 border-[var(--bg-main)] shadow-sm transition-transform ${selected ? (small ? 'h-3 w-3' : 'h-3.5 w-3.5 scale-110') : (small ? 'h-2 w-2' : 'h-2.5 w-2.5')}`}
           style={{ backgroundColor: color }}
         />
       </div>
@@ -398,7 +398,7 @@ function ChartPoint({
         className="absolute whitespace-nowrap font-black transition-all -translate-x-1/2 pointer-events-none"
         style={{
           top: `${helperY - y}px`,
-          fontSize: '10px',
+          fontSize: 'var(--font-size-ui-sm)',
           color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
           opacity: selected ? 1 : 0.6
         }}
@@ -427,12 +427,12 @@ export function EmptyChartPlaceholder({
       style={{
         height: `${chartHeight}px`,
         backgroundImage:
-          'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), rgba(0,0,0,0.2) calc(25% - 1px), rgba(0,0,0,0.2) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), rgba(0,0,0,0.2) calc(50% - 1px), rgba(0,0,0,0.2) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), rgba(0,0,0,0.2) calc(75% - 1px), rgba(0,0,0,0.2) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, rgba(0,0,0,0.12) 55px, rgba(0,0,0,0.12) 56px)',
+          'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid-strong) calc(25% - 1px), var(--color-chart-grid-strong) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid-strong) calc(50% - 1px), var(--color-chart-grid-strong) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid-strong) calc(75% - 1px), var(--color-chart-grid-strong) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid) 55px, var(--color-chart-grid) 56px)',
       }}
     >
-      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0.88))] px-6 text-center">
-        <div className="text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">{title}</div>
-        <p className="max-w-md text-[0.6875rem] font-bold leading-6 text-[var(--text-muted)]">{body}</p>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[linear-gradient(180deg,var(--color-chart-empty-overlay-from),var(--color-chart-empty-overlay-to))] px-6 text-center">
+        <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">{title}</div>
+        <p className="max-w-md text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 text-[var(--text-muted)]">{body}</p>
       </div>
     </div>
   );

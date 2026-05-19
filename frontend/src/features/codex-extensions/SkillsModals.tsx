@@ -25,10 +25,10 @@ export function SuccessHud({ title, detail }: { title: string; detail: string })
           <CheckCircle2 className="codex-success-hud-icon h-6 w-6 text-[var(--text-primary)]" />
         </div>
         <div className="min-w-0">
-          <div className="font-mono text-[0.75rem] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+          <div className="font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
             {title}
           </div>
-          <div className="mt-1 truncate font-mono text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
             {detail}
           </div>
         </div>
@@ -53,7 +53,7 @@ export function GitSkillInstallModal({
 } & TProps) {
   return (
     <div
-      className="scrollbar-stable fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+      className="scrollbar-stable fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[var(--overlay-scrim-80)] p-3 backdrop-blur-sm sm:p-6"
       data-collaboration-id="MODAL_CODEX_SKILL_GIT_INSTALL"
       onClick={onClose}
     >
@@ -69,18 +69,18 @@ export function GitSkillInstallModal({
             <div className="font-mono text-xl font-black italic tracking-tighter text-[var(--text-primary)]">
               {t('codex_extensions.add_skill')}
             </div>
-            <div className="mt-1 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
               {t('codex_extensions.git_source')}
             </div>
           </div>
-          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
             {t('common.close')}
           </button>
         </header>
 
         <main className="scrollbar-stable min-h-0 flex-1 overflow-auto p-5">
           <label className="grid gap-2">
-            <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('codex_extensions.git_source')}
             </span>
             <input value={gitSource} onChange={(event) => onChange(event.target.value)} className="input-swiss w-full font-mono" />
@@ -97,7 +97,7 @@ export function GitSkillInstallModal({
                 <GitSourceValue label={t('codex_extensions.git_path')} value={parsedGitSource.path} />
               </div>
             ) : (
-              <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--accent-red)]">
+              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
                 {t('codex_extensions.git_hint')}
               </div>
             )}
@@ -105,14 +105,14 @@ export function GitSkillInstallModal({
         </main>
 
         <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4">
-          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
             {t('common.cancel')}
           </button>
           <button
             type="button"
             onClick={onInstall}
             disabled={!parsedGitSource}
-            className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="h-3.5 w-3.5" />
             {t('codex_extensions.install_update')}
@@ -225,7 +225,7 @@ export function SkillPreviewModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-black/80 px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10" onClick={onClose}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[var(--overlay-scrim-80)] px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10" onClick={onClose}>
         <div
           role="dialog"
           aria-modal="true"
@@ -238,7 +238,7 @@ export function SkillPreviewModal({
               <div className="font-mono text-xl font-black italic tracking-tighter text-[var(--text-primary)]">
                 {skill.name}
               </div>
-              <div className="mt-1 break-all text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
                 {skill.rootPath}
               </div>
             </div>
@@ -248,7 +248,7 @@ export function SkillPreviewModal({
               disabled={loading}
               onChange={onToggle}
             />
-            <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+            <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
               {t('common.close')}
             </button>
           </header>
@@ -258,7 +258,7 @@ export function SkillPreviewModal({
               <MetaLine label={t('codex_extensions.source')} value={skill.origin || '-'} />
               <MetaLine label={t('codex_extensions.root')} value={skill.rootLabel || '-'} />
               <MetaLine label={t('codex_extensions.version')} value={skill.versionLabel || '-'} />
-              <div className="mt-5 text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="mt-5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('codex_extensions.files')}
               </div>
               <div className="mt-2 divide-y divide-[var(--border-color)] border-2 border-[var(--border-color)]">
@@ -271,10 +271,10 @@ export function SkillPreviewModal({
                       selectedFile?.path === file.path ? 'bg-[var(--border-color)] text-[var(--bg-main)]' : 'hover:bg-[var(--bg-surface)]'
                     }`}
                   >
-                    <div className={`break-all font-mono text-[0.625rem] font-black ${selectedFile?.path === file.path ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}>
+                    <div className={`break-all font-mono text-[length:var(--font-size-ui-sm)] font-black ${selectedFile?.path === file.path ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}>
                       {file.path}
                     </div>
-                    <div className={`mt-0.5 text-[0.5rem] font-black uppercase tracking-[0.14em] ${selectedFile?.path === file.path ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'}`}>
+                    <div className={`mt-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] ${selectedFile?.path === file.path ? 'text-[var(--bg-main)]' : 'text-[var(--text-muted)]'}`}>
                       {file.kind} / {file.previewable || file.path === 'SKILL.md' ? t('codex_extensions.file_previewable') : t('codex_extensions.file_not_previewable')}
                     </div>
                   </button>
@@ -284,17 +284,17 @@ export function SkillPreviewModal({
 
             <main className="min-h-0 overflow-hidden p-4">
               <div className="flex h-full min-h-0 flex-col">
-                <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2 text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="mb-3 flex min-w-0 shrink-0 items-center gap-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   <Eye className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{selectedFile?.path || t('codex_extensions.skill_preview')}</span>
                 </div>
-                <div className="scrollbar-stable min-h-0 flex-1 overflow-y-auto break-words border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-[0.75rem] font-bold leading-relaxed text-[var(--text-primary)] [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--border-color)] [&_blockquote]:pl-3 [&_code]:font-mono [&_code]:font-black [&_h1]:mb-4 [&_h1]:font-mono [&_h1]:text-xl [&_h1]:font-black [&_h1]:italic [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:font-mono [&_h2]:text-base [&_h2]:font-black [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-mono [&_h3]:font-black [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:mb-4 [&_pre]:overflow-auto [&_pre]:border-2 [&_pre]:border-[var(--border-color)] [&_pre]:bg-[var(--bg-main)] [&_pre]:p-3 [&_ul]:list-disc">
+                <div className="scrollbar-stable min-h-0 flex-1 overflow-y-auto break-words border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-4 text-[length:var(--font-size-ui-md)] font-bold leading-relaxed text-[var(--text-primary)] [&_blockquote]:border-l-2 [&_blockquote]:border-[var(--border-color)] [&_blockquote]:pl-3 [&_code]:font-mono [&_code]:font-black [&_h1]:mb-4 [&_h1]:font-mono [&_h1]:text-xl [&_h1]:font-black [&_h1]:italic [&_h2]:mb-3 [&_h2]:mt-5 [&_h2]:font-mono [&_h2]:text-base [&_h2]:font-black [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-mono [&_h3]:font-black [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_pre]:mb-4 [&_pre]:overflow-auto [&_pre]:border-2 [&_pre]:border-[var(--border-color)] [&_pre]:bg-[var(--bg-main)] [&_pre]:p-3 [&_ul]:list-disc">
                   {filePreviewLoading ? (
-                    <div className="flex min-h-full items-center justify-center text-center text-[0.625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {t('common.loading')}
                     </div>
                   ) : filePreviewError ? (
-                    <div className="flex min-h-full items-center justify-center px-4 text-center text-[0.625rem] font-black uppercase tracking-[0.16em] text-red-500">
+                    <div className="flex min-h-full items-center justify-center px-4 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--color-status-danger)]">
                       {filePreviewError}
                     </div>
                   ) : canPreviewSelectedFile ? (
@@ -303,12 +303,12 @@ export function SkillPreviewModal({
                         {selectedFile?.path === 'SKILL.md' ? stripSkillFrontmatter(selectedFileContent) : selectedFileContent}
                       </ReactMarkdown>
                     ) : (
-                      <pre className="whitespace-pre-wrap break-words font-mono text-[0.6875rem] font-black leading-relaxed">
+                      <pre className="whitespace-pre-wrap break-words font-mono text-[length:var(--font-size-ui-md-compact)] font-black leading-relaxed">
                         {selectedFileContent}
                       </pre>
                     )
                   ) : (
-                    <div className="flex min-h-full items-center justify-center text-center text-[0.625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <div className="flex min-h-full items-center justify-center text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       {t('codex_extensions.file_preview_unavailable')}
                     </div>
                   )}
@@ -317,7 +317,7 @@ export function SkillPreviewModal({
             </main>
           </div>
           <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
-            <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {canRemove
                 ? t('codex_extensions.skill_remove_hint')
                 : skill.sourceKind === 'system'
@@ -325,7 +325,7 @@ export function SkillPreviewModal({
                   : t('codex_extensions.skill_remove_desktop_required')}
             </div>
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button type="button" onClick={onOpenFinder} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+              <button type="button" onClick={onOpenFinder} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
                 <FolderOpen className="h-3.5 w-3.5" />
                 {t('codex_extensions.open_in_finder')}
               </button>
@@ -333,7 +333,7 @@ export function SkillPreviewModal({
                 type="button"
                 disabled={!canRemove || loading}
                 onClick={() => setRemoveAlertOpen(true)}
-                className="btn-swiss !px-3 !py-2 !text-[0.625rem] !text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--color-status-danger)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {t('codex_extensions.remove_skill')}
@@ -343,7 +343,7 @@ export function SkillPreviewModal({
         </div>
       </div>
       {removeAlertOpen ? (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4" onClick={() => setRemoveAlertOpen(false)}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[var(--overlay-scrim-85)] p-4" onClick={() => setRemoveAlertOpen(false)}>
           <div
             role="alertdialog"
             aria-modal="true"
@@ -353,12 +353,12 @@ export function SkillPreviewModal({
             onClick={(event) => event.stopPropagation()}
           >
             <header className="flex items-start gap-3 border-b-2 border-[var(--accent-red)] bg-[var(--bg-surface)] p-4">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--color-status-danger)]" />
               <div className="min-w-0">
                 <div id="codex-skill-remove-alert-title" className="font-mono text-base font-black italic text-[var(--text-primary)]">
                   {t('codex_extensions.skill_remove_alert_title')}
                 </div>
-                <div id="codex-skill-remove-alert-body" className="mt-1 break-all text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                <div id="codex-skill-remove-alert-body" className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
                   {skill.rootPath}
                 </div>
               </div>
@@ -367,12 +367,12 @@ export function SkillPreviewModal({
               <p className="text-sm font-bold leading-relaxed text-[var(--text-primary)]">
                 {t('codex_extensions.skill_remove_confirm')}
               </p>
-              <p className="break-all font-mono text-[0.6875rem] font-black text-[var(--text-muted)]">
+              <p className="break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-muted)]">
                 {skill.id}
               </p>
             </div>
             <footer className="flex flex-wrap justify-end gap-2 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-              <button type="button" onClick={() => setRemoveAlertOpen(false)} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+              <button type="button" onClick={() => setRemoveAlertOpen(false)} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
                 {t('common.cancel')}
               </button>
               <button
@@ -382,7 +382,7 @@ export function SkillPreviewModal({
                   setRemoveAlertOpen(false);
                   onRemove();
                 }}
-                className="btn-swiss !px-3 !py-2 !text-[0.625rem] !text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--color-status-danger)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 {t('common.delete')}
@@ -398,10 +398,10 @@ export function SkillPreviewModal({
 function GitSourceValue({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1 py-2 md:grid-cols-[8rem_minmax(0,1fr)] md:gap-3">
-      <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="min-w-0 break-all font-mono text-[0.625rem] font-black text-[var(--text-primary)]">
+      <div className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
         {value || '-'}
       </div>
     </div>
@@ -411,8 +411,8 @@ function GitSourceValue({ label, value }: { label: string; value: string }) {
 function MetaLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="mb-3 min-w-0">
-      <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
-      <div className="mt-1 break-all font-mono text-[0.6875rem] font-black text-[var(--text-primary)]">{value}</div>
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</div>
+      <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">{value}</div>
     </div>
   );
 }

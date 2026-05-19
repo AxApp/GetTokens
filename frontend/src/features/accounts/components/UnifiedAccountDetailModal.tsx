@@ -275,14 +275,14 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
           {viewMode === 'sanitized' ? 'Sanitized Content' : 'Raw Content'}
         </h3>
         <div className="flex items-center gap-2">
-          <button onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
+          <button onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
             {sanitizing ? '...' : viewMode === 'sanitized' ? 'Show Raw' : 'Sanitize'}
           </button>
-          <button onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
+          <button onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
             {copyState === 'success' ? 'Copied!' : copyState === 'error' ? 'Error' : 'Copy'}
           </button>
         </div>
@@ -299,7 +299,7 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') void handleCopy();
           }}
-          className="max-h-64 cursor-pointer select-all overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 font-mono text-[0.5rem] leading-relaxed text-[var(--text-primary)]"
+          className="max-h-64 cursor-pointer select-all overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 font-mono text-[length:var(--font-size-ui-2xs)] leading-relaxed text-[var(--text-primary)]"
           tabIndex={0}
         >
           {displayed || '(empty)'}
@@ -335,17 +335,17 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
 
   return (
     <section className="space-y-3">
-      <h3 className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
         Compatible Models
       </h3>
       {loading ? (
         <div className="h-4 w-1/3 animate-pulse bg-[var(--border-color)]" />
       ) : models.length === 0 ? (
-        <div className="text-[0.5rem] text-[var(--text-muted)]">No models data</div>
+        <div className="text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">No models data</div>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {models.map((model, index) => (
-            <span key={index} className="border border-[var(--border-color)] px-2 py-0.5 text-[0.5rem] font-black uppercase text-[var(--text-primary)]">
+            <span key={index} className="border border-[var(--border-color)] px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-primary)]">
               {model.name ?? model.display_name ?? `Model ${index + 1}`}
             </span>
           ))}

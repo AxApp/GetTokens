@@ -56,12 +56,12 @@ function loadVendorStatusRSS() {
 
 function statusToneClasses(status: VendorStatusKind) {
   if (status === 'major_outage' || status === 'partial_outage') {
-    return 'text-[#d92d20]';
+    return 'text-[var(--color-status-danger-soft)]';
   }
   if (status === 'degraded_performance' || status === 'maintenance') {
-    return 'text-[#d4a017]';
+    return 'text-[var(--color-status-warning-soft)]';
   }
-  return 'text-[#10b981]';
+  return 'text-[var(--color-status-success-soft)]';
 }
 
 function StatusIcon({ status, className = 'h-6 w-6' }: { status: VendorStatusKind; className?: string }) {
@@ -73,12 +73,12 @@ function StatusIcon({ status, className = 'h-6 w-6' }: { status: VendorStatusKin
 
 function statusSegmentClasses(status: VendorStatusKind) {
   if (status === 'major_outage' || status === 'partial_outage') {
-    return 'bg-[#ff6b57]';
+    return 'bg-[var(--color-status-danger-bar)]';
   }
   if (status === 'degraded_performance' || status === 'maintenance') {
-    return 'bg-[#ffbe2e]';
+    return 'bg-[var(--color-status-warning-bar)]';
   }
-  return 'bg-[#33c49f]';
+  return 'bg-[var(--color-status-success-bar)]';
 }
 
 function openExternalURL(url: string) {
@@ -115,7 +115,7 @@ function HeroIncidentCard({
             {t('vendor_status.hero_no_incident')}
           </p>
           <div className="mt-5">
-            <a href={publicUrl} target="_blank" rel="noreferrer" className="btn-swiss w-fit !px-3 !py-2 !text-[0.5625rem]">
+            <a href={publicUrl} target="_blank" rel="noreferrer" className="btn-swiss w-fit !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
               {t('vendor_status.open_official_status')}
             </a>
           </div>
@@ -142,10 +142,10 @@ function HeroIncidentCard({
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--text-primary)]" />
           <div className="min-w-0">
             <h4 className="text-lg font-black uppercase tracking-tight text-[var(--text-primary)]">{incident.title}</h4>
-            <p className="mt-4 whitespace-pre-line text-[0.95rem] leading-8 text-[var(--text-primary)]">
+            <p className="mt-4 whitespace-pre-line text-[length:var(--font-size-ui-xl-plus)] leading-8 text-[var(--text-primary)]">
               {incident.body || t('vendor_status.hero_incident_fallback')}
             </p>
-            <p className="mt-6 text-[0.625rem] font-bold uppercase tracking-[0.24em] text-[var(--text-muted)]">
+            <p className="mt-6 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.24em] text-[var(--text-muted)]">
               {incident.publishedLabel}
             </p>
           </div>
@@ -170,19 +170,19 @@ function SystemStatusRow({
   const expandedRows = expanded ? group.components : [];
 
   return (
-    <div className="grid gap-3 border-t border-[rgba(0,0,0,0.12)] px-5 py-5 first:border-t-0 md:grid-cols-[minmax(0,1fr)_10rem] md:items-start">
+    <div className="grid gap-3 border-t border-[color:var(--color-chart-grid)] px-5 py-5 first:border-t-0 md:grid-cols-[minmax(0,1fr)_10rem] md:items-start">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-3">
           <span className={statusToneClasses(group.status)}>
             <StatusIcon status={group.status} className="h-5 w-5" />
           </span>
-          <h4 className="text-[1.625rem] font-semibold tracking-tight text-[var(--text-primary)] md:text-[1rem]">{group.name}</h4>
+          <h4 className="text-[length:var(--font-size-ui-5xl)] font-semibold tracking-tight text-[var(--text-primary)] md:text-[length:var(--font-size-ui-2xl)]">{group.name}</h4>
           {canExpand ? (
             <button
               type="button"
               onClick={() => setExpanded((current) => !current)}
               aria-expanded={expanded}
-              className="inline-flex items-center gap-1.5 text-[0.9rem] font-medium tracking-tight text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] md:text-[0.8rem]"
+              className="inline-flex items-center gap-1.5 text-[length:var(--font-size-ui-lg)] font-medium tracking-tight text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] md:text-[length:var(--font-size-ui-lg-compact)]"
             >
               <span>{componentCountLabel}</span>
               <svg
@@ -196,13 +196,13 @@ function SystemStatusRow({
               </svg>
             </button>
           ) : (
-            <span className="text-[0.9rem] font-medium tracking-tight text-[var(--text-muted)] md:text-[0.8rem]">
+            <span className="text-[length:var(--font-size-ui-lg)] font-medium tracking-tight text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg-compact)]">
               {componentCountLabel}
             </span>
           )}
         </div>
         {expanded ? (
-          <div className="mt-3 border-t border-[rgba(0,0,0,0.08)]">
+          <div className="mt-3 border-t border-[color:var(--color-chart-grid-subtle)]">
             {expandedRows.map((component, index) => (
               <ExpandedComponentRow
                 key={component.id}
@@ -224,7 +224,7 @@ function SystemStatusRow({
         )}
       </div>
       <div className="text-left md:text-right">
-        <p className="text-[0.95rem] font-medium tracking-tight text-[#8f8f97] md:text-[0.9rem]">{group.uptimeLabel}</p>
+        <p className="text-[length:var(--font-size-ui-xl-plus)] font-medium tracking-tight text-[var(--text-muted)] md:text-[length:var(--font-size-ui-lg)]">{group.uptimeLabel}</p>
       </div>
     </div>
   );
@@ -238,15 +238,15 @@ function ExpandedComponentRow({
   isFirst: boolean;
 }) {
   return (
-    <div className={`px-0 py-4 ${isFirst ? '' : 'border-t border-[rgba(0,0,0,0.08)]'}`}>
+    <div className={`px-0 py-4 ${isFirst ? '' : 'border-t border-[color:var(--color-chart-grid-subtle)]'}`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
           <span className={statusToneClasses(component.status)}>
             <StatusIcon status={component.status} className="h-4.5 w-4.5" />
           </span>
-          <h5 className="truncate text-[1rem] font-medium tracking-tight text-[var(--text-primary)] md:text-[0.95rem]">{component.name}</h5>
+          <h5 className="truncate text-[length:var(--font-size-ui-2xl)] font-medium tracking-tight text-[var(--text-primary)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.name}</h5>
         </div>
-        <p className="shrink-0 text-[1rem] font-medium tracking-tight text-[#8f8f97] md:text-[0.95rem]">{component.uptimeLabel}</p>
+        <p className="shrink-0 text-[length:var(--font-size-ui-2xl)] font-medium tracking-tight text-[var(--text-muted)] md:text-[length:var(--font-size-ui-xl-plus)]">{component.uptimeLabel}</p>
       </div>
       <div className="mt-3 flex gap-[4px] overflow-hidden">
         {component.segments.map((segment) => (
@@ -380,7 +380,7 @@ export default function VendorStatusFeature() {
               <button
                 type="button"
                 onClick={() => setRefreshToken((current) => current + 1)}
-                className="btn-swiss !px-3 !py-2 !text-[0.5625rem]"
+                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 {t('vendor_status.refresh')}
@@ -389,7 +389,7 @@ export default function VendorStatusFeature() {
                 href={data?.subscribeUrl || 'https://status.openai.com/'}
                 target="_blank"
                 rel="noreferrer"
-                className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[0.5625rem] !text-[var(--bg-main)]"
+                className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)]"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 {t('vendor_status.subscribe')}
@@ -397,7 +397,7 @@ export default function VendorStatusFeature() {
               <button
                 type="button"
                 onClick={() => openExternalURL(data?.publicUrl || 'https://status.openai.com/')}
-                className="btn-swiss !px-3 !py-2 !text-[0.5625rem]"
+                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
               >
                 <ExternalLink className="h-3.5 w-3.5" />
                 {t('vendor_status.open_official_status')}
@@ -405,7 +405,7 @@ export default function VendorStatusFeature() {
               <button
                 type="button"
                 onClick={() => openExternalURL(data?.historyUrl || historyURL)}
-                className="btn-swiss !px-3 !py-2 !text-[0.5625rem]"
+                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
               >
                 <History className="h-3.5 w-3.5" />
                 {t('vendor_status.view_history')}
@@ -425,7 +425,7 @@ export default function VendorStatusFeature() {
           <section className="card-swiss border-[2px] border-[var(--border-color)] bg-[var(--bg-main)] !p-6">
             <p className="text-sm font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">{t('vendor_status.fetch_failed')}</p>
             <p className="mt-3 text-sm leading-7 text-[var(--text-primary)]">{state.errorMessage}</p>
-            <p className="mt-3 text-[0.625rem] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <p className="mt-3 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t('vendor_status.fetch_failed_hint')}
             </p>
           </section>
@@ -433,7 +433,7 @@ export default function VendorStatusFeature() {
 
         {data ? (
           <>
-            <div className="grid gap-3 text-[0.625rem] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)] md:grid-cols-3">
+            <div className="grid gap-3 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)] md:grid-cols-3">
               <span>{data.vendorName} · {sourceLabel}</span>
               <span className="md:text-center">{t('vendor_status.feed_updated')} {data.feedUpdatedLabel}</span>
               <span className="md:text-right">{t('vendor_status.last_sync')} {data.lastSyncLabel}</span>
@@ -444,7 +444,7 @@ export default function VendorStatusFeature() {
             <section className="card-swiss !p-0">
               <div className="flex flex-col gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-5 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
-                  <p className="text-[0.5rem] font-black uppercase tracking-[0.28em] text-[var(--text-muted)]">
+                  <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.28em] text-[var(--text-muted)]">
                     {t('vendor_status.live_uptime_matrix')}
                   </p>
                   <h3 className="mt-2 text-2xl font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -452,10 +452,10 @@ export default function VendorStatusFeature() {
                   </h3>
                 </div>
                 <div className="text-left md:text-right">
-                  <p className="text-[0.75rem] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                  <p className="text-[length:var(--font-size-ui-md)] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]">
                     {data.historyRangeLabel}
                   </p>
-                  <p className="mt-2 text-[0.5625rem] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                  <p className="mt-2 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]">
                     {locale === 'zh'
                       ? `当前 ${data.activeIncidentCount} 个进行中事件`
                       : `${data.activeIncidentCount} active incident${data.activeIncidentCount === 1 ? '' : 's'}`}

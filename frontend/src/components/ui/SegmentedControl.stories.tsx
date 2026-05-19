@@ -5,7 +5,7 @@ import DesignSystemStoryFrame from '../../features/design-system/DesignSystemSto
 import SegmentedControl from './SegmentedControl';
 
 const meta = {
-  title: 'Design System/Components/SegmentedControl',
+  title: 'Design System/通用组件/分段控制',
   parameters: {
     layout: 'centered',
   },

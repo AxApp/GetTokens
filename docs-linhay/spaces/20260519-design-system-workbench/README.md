@@ -596,6 +596,45 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - live billing
 3. `UnifiedAccountDetailModal` 继续保留 auth file 原文读取、内容清洗和兼容模型读取等 Wails 运行时区块；本批只把 API key 详情页中可 mock、可复用的展示 / 编辑 section 纳入设计系统。
 
+## 2026-05-19 Storybook 中文优先显示
+1. `frontend/.storybook/preview.tsx` 增加 `initialGlobals`，默认语言固定为 `zh`，主题和文字缩放工具栏改为中文选项。
+2. 设计系统 Storybook 标题从英文目录改为中文目录，保留 `Design System` 根节点：
+   - `Design System/通用组件/...`
+   - `Design System/业务组件/...`
+   - `Design System/基础样式/...`
+   - `Design System/令牌/...`
+3. 设计系统 catalog 展示标题与描述改为中文；账号详情 section 中的凭据、验证、额度、余额和保存动作改为中文文案。
+4. Storybook 框架自身的 `Stories`、`Controls`、`Actions`、`Get started` 等内置 UI 仍由 Storybook 控制，暂不在项目侧硬改。
+
+## 2026-05-19 颜色系统页补全
+1. `Design System/令牌/颜色` 原先只展示 8 个核心 CSS token，不足以表达项目当前完整颜色系统。
+2. 现已扩展为分组清单：
+   - 主题 token：`--bg-main`、`--bg-surface`、`--bg-muted`、`--border-color`、`--text-primary`、`--text-muted`、`--accent-red`、`--shadow-color`，同时展示浅色 / 深色主题解析值。
+   - 语义状态色：成功、警告、错误与 Vendor Status 状态色。
+   - 图表与数据色：Usage Desk、AttributionCard 和投影图表使用的固定色。
+   - 供应商图标色：从 `vendorPresets` 动态读取 iconColor，覆盖 preset 品牌识别色。
+3. 页面说明明确区分“CSS token”和“尚未 token 化的固定色”，作为后续颜色治理入口。
+
+## 2026-05-19 OpenAI 兼容卡片请求数单位
+1. 用户反馈 `Design System/业务组件/OpenAI 兼容` 的卡片里“近期请求”长数字显示不下。
+2. `AttributionCard` 的请求数格式从完整千分位数字改为紧凑单位：
+   - `>= 1,000` 显示为 `K`
+   - `>= 1,000,000` 显示为 `M`
+   - `>= 1,000,000,000` 显示为 `B`
+3. Storybook 验收中 `1,864` 已显示为 `1.9K`，避免窄卡片布局被长数字撑开。
+
+## 2026-05-19 颜色与字体 token 收拢
+1. 用户要求把项目内颜色 / 字体全部收拢到设计系统内。本轮将 `frontend/src/style.css` 作为唯一 token 源头：
+   - 颜色：主题色、状态色、图表色、遮罩色、供应商图标色、Swiss 灰阶均有 `--color-*` / `--overlay-*` / `--text-*` token。
+   - 字体：字族、字号、行高均有 `--font-*` / `--line-height-*` token。
+2. `frontend/tailwind.config.js` 已把常用 `font-mono`、`text-xs` 到 `text-4xl`、Swiss 灰阶、状态色和图表色映射到 CSS token。
+3. 业务代码中的裸 hex / rgb、Tailwind 红绿黄蓝灰状态色、`bg-black` 遮罩、`text-white`、裸 rem 字号、非 token 字体族已替换为 token 引用。后续新增 UI 不应再直接写颜色或字号字面量。
+4. `Design System/令牌/颜色` 已改为 token 化清单，不再把状态色 / 图表色标记为“尚未 token 化”；`Design System/令牌/字体` 已补齐字族、字号、行高和 Tailwind 映射说明。
+5. 验证通过：
+   - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build-storybook`
+
 ## 场景收敛规则
 1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。
 2. 对已经在同类组件中验证过的 loading、disabled、empty、error 行为，不重复为每个组件铺满；仅在该组件有独特布局或行为差异时新增状态。

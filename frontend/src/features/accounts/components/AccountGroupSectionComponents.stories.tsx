@@ -11,7 +11,7 @@ import AccountCardFrame from './AccountCardFrame';
 import AccountGroupSectionView from './AccountGroupSectionView';
 
 const meta = {
-  title: 'Design System/Feature Components/Account Group Sections',
+  title: 'Design System/业务组件/账号分组',
   parameters: {
     layout: 'fullscreen',
   },
@@ -116,19 +116,19 @@ function MockAccountCard({ account, displayMode }: { account: AccountRecord; dis
           <p className="truncate text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
             {account.displayName}
           </p>
-          <p className="mt-1 truncate text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <p className="mt-1 truncate text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
             {account.email || account.keyFingerprint || account.id}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="border border-[var(--border-color)] px-2 py-1 text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <span className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
             {account.provider}
           </span>
-          <span className="border border-[var(--border-color)] px-2 py-1 text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <span className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
             {account.planType}
           </span>
           {account.disabled ? (
-            <span className="border border-red-500 bg-red-500/10 px-2 py-1 text-[0.5rem] font-black uppercase tracking-[0.14em] text-red-500">
+            <span className="border border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--color-status-danger)]">
               Disabled
             </span>
           ) : null}
@@ -161,7 +161,7 @@ function AccountGroupSectionSample({
         displayMode={displayMode}
         renderAccount={(account) => <MockAccountCard key={account.id} account={account} displayMode={displayMode} />}
         emptyContent={
-          <div className="border-2 border-dashed border-[var(--border-color)] p-8 text-center text-[0.625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="border-2 border-dashed border-[var(--border-color)] p-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
             No accounts in this group
           </div>
         }
@@ -216,7 +216,7 @@ function AccountGroupSectionOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Account Group Sections</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号分组</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           账号分组容器拆成无 Wails 的纯 view 后进入设计系统，用 mock 卡片覆盖完整、紧凑、列表和空分组布局。
         </p>

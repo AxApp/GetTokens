@@ -42,7 +42,7 @@ export default function DebugEntryCard({
             />
           </label>
           <div className="space-y-1">
-            <div className="text-[0.5rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {entry.transport} / {entry.startedAt}
             </div>
             <div className="text-sm font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
@@ -51,13 +51,13 @@ export default function DebugEntryCard({
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <div className="text-right text-[0.5625rem] font-black uppercase tracking-widest">
+          <div className="text-right text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest">
             <div
               className={
                 entry.status === 'success'
-                  ? 'text-green-600'
+                  ? 'text-[var(--color-status-success)]'
                   : entry.status === 'error'
-                    ? 'text-red-500'
+                    ? 'text-[var(--color-status-danger)]'
                     : 'text-[var(--text-muted)]'
               }
             >
@@ -74,24 +74,24 @@ export default function DebugEntryCard({
       {entry.isExpanded ? (
         <div className="grid flex-grow grid-cols-1 overflow-y-auto gap-0 md:grid-cols-2">
           <div className="border-b-2 border-[var(--border-color)] p-5 md:border-b-0 md:border-r-2">
-            <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
+            <div className="mb-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
               {t('debug.request')}
             </div>
-            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
+            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
               {entry.requestText}
             </pre>
           </div>
           <div className="p-5">
-            <div className="mb-3 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
+            <div className="mb-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
               {entry.status === 'error' ? t('debug.response_error') : t('debug.response')}
             </div>
-            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
+            <pre className="overflow-auto whitespace-pre-wrap break-all font-mono text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
               {entry.responseText}
             </pre>
           </div>
         </div>
       ) : (
-        <div className="px-6 py-4 text-[0.5625rem] font-black uppercase tracking-widest text-[var(--text-muted)]">
+        <div className="px-6 py-4 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-widest text-[var(--text-muted)]">
           {t('debug.collapsed_hint')}
         </div>
       )}

@@ -4,7 +4,7 @@ import DesignSystemStoryFrame from '../../features/design-system/DesignSystemSto
 import PageLoadingFallback from './PageLoadingFallback';
 
 const meta = {
-  title: 'Design System/Components/PageLoadingFallback',
+  title: 'Design System/通用组件/页面加载态',
   parameters: {
     layout: 'fullscreen',
   },

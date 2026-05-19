@@ -5,7 +5,7 @@ import DesignSystemStoryFrame from '../../features/design-system/DesignSystemSto
 import ToggleSwitch from './ToggleSwitch';
 
 const meta = {
-  title: 'Design System/Components/ToggleSwitch',
+  title: 'Design System/通用组件/开关',
   parameters: {
     layout: 'centered',
   },
@@ -26,7 +26,7 @@ function SwitchSample({ disabled = false, initial = false }: { disabled?: boolea
           disabled={disabled}
           onChange={setChecked}
         />
-        <span className="font-mono text-[0.625rem] font-black uppercase tracking-normal">
+        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal">
           {checked ? (locale === 'zh' ? '开' : 'ON') : locale === 'zh' ? '关' : 'OFF'}
         </span>
       </div>

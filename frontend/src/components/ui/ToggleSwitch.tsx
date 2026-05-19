@@ -39,7 +39,7 @@ export default function ToggleSwitch({
     >
       <span
         className={`relative h-7 w-14 shrink-0 overflow-hidden border-2 border-[var(--border-color)] transition-colors duration-200 ease-out ${
-          checked ? 'bg-green-600' : 'bg-[var(--bg-surface)]'
+          checked ? 'bg-[var(--color-status-success)]' : 'bg-[var(--bg-surface)]'
         }`}
       >
         <span

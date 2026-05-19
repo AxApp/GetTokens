@@ -243,7 +243,7 @@ export default function Sidebar({
                             setPinnedSection('codex');
                             setActiveCodexWorkspace(workspace.id);
                           }}
-                          className={`w-full border px-3 py-2 text-left text-[0.6875rem] font-black tracking-[0.08em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
+                          className={`w-full border px-3 py-2 text-left text-[length:var(--font-size-ui-md-compact)] font-black tracking-[0.08em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
                             activePage === 'codex' && activeCodexWorkspace === workspace.id
                               ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                               : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
@@ -264,7 +264,7 @@ export default function Sidebar({
       <div className={`border-t-2 border-[var(--border-color)] transition-[padding] duration-200 ease-out ${isCollapsed ? 'p-3' : 'p-6'}`}>
         <div className="grid place-items-center">
           <div
-            className={`col-start-1 row-start-1 text-[0.5625rem] font-bold uppercase tracking-tighter text-[var(--text-muted)] transition-[opacity,transform] duration-200 ease-out ${versionTextClassName}`}
+            className={`col-start-1 row-start-1 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-tighter text-[var(--text-muted)] transition-[opacity,transform] duration-200 ease-out ${versionTextClassName}`}
             aria-hidden={isCollapsed}
           >
             VERSION {sidebarVersion}

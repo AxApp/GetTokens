@@ -105,7 +105,7 @@ export function AccountDetailHeader({
 
   return (
     <div className="space-y-3">
-      <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
         {account.credentialSource === 'auth-file' ? 'AUTH FILE' : 'API KEY'}
       </div>
 
@@ -132,12 +132,12 @@ export function AccountDetailHeader({
             </button>
           )}
           <span
-            className={`border px-2 py-0.5 text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+            className={`border px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
               operationalState.tone === 'positive'
-                ? 'border-green-600 text-green-600'
+                ? 'border-[var(--color-status-success)] text-[var(--color-status-success)]'
                 : operationalState.tone === 'warning'
-                  ? 'border-yellow-500 text-yellow-500'
-                  : 'border-red-500 text-red-500'
+                  ? 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]'
+                  : 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
             }`}
           >
             {operationalState.label}
@@ -145,19 +145,19 @@ export function AccountDetailHeader({
         </div>
 
         {canReauth ? (
-          <button onClick={isReauthing ? onCancelReauth : onStartReauth} className="btn-swiss whitespace-nowrap !text-[0.5625rem]">
+          <button onClick={isReauthing ? onCancelReauth : onStartReauth} className="btn-swiss whitespace-nowrap !text-[length:var(--font-size-ui-xs)]">
             {isReauthing ? t('accounts.cancel_reauth') : t('accounts.reauth')}
           </button>
         ) : null}
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
           {account.provider.toUpperCase()}
         </span>
         <div className="flex flex-wrap gap-1.5">
           {formats.map((fmt) => (
-            <span key={fmt} className="border border-[var(--border-color)] px-2 py-0.5 text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            <span key={fmt} className="border border-[var(--border-color)] px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
               {formatLabel(fmt)}
             </span>
           ))}
@@ -165,7 +165,7 @@ export function AccountDetailHeader({
       </div>
 
       {account.baseUrl ? (
-        <div className="truncate text-[0.5625rem] font-mono text-[var(--text-muted)]">
+        <div className="truncate text-[length:var(--font-size-ui-xs)] font-mono text-[var(--text-muted)]">
           {account.baseUrl}
         </div>
       ) : null}
@@ -173,7 +173,7 @@ export function AccountDetailHeader({
       {account.formatBaseUrls && Object.keys(account.formatBaseUrls).length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {Object.entries(account.formatBaseUrls).map(([fmt, url]) => (
-            <div key={fmt} className="text-[0.5rem] font-mono text-[var(--text-muted)]">
+            <div key={fmt} className="text-[length:var(--font-size-ui-2xs)] font-mono text-[var(--text-muted)]">
               <span className="font-black uppercase text-[var(--text-primary)]">{formatLabel(fmt as ApiFormat)}:</span>{' '}
               <span className="truncate">{String(url)}</span>
             </div>
@@ -190,42 +190,42 @@ export function AccountCredentialsSection({
 }: AccountCredentialsSectionProps) {
   return (
     <section className="space-y-4">
-      <h3 className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        Credentials
+      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        凭据
       </h3>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1.5">
-          <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">API Key</span>
+          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">API 密钥</span>
           <div className="flex gap-2">
             <input
               value={draft.apiKey}
               onChange={(event) => setDraft((prev) => ({ ...prev, apiKey: event.target.value }))}
               className="input-swiss flex-1 font-mono"
             />
-            <button onClick={() => void navigator.clipboard.writeText(draft.apiKey)} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
-              Copy
+            <button onClick={() => void navigator.clipboard.writeText(draft.apiKey)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+              复制
             </button>
           </div>
         </label>
 
         <label className="space-y-1.5">
-          <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Base URL</span>
+          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">基础 URL</span>
           <div className="flex gap-2">
             <input
               value={draft.baseUrl}
               onChange={(event) => setDraft((prev) => ({ ...prev, baseUrl: event.target.value }))}
               className="input-swiss flex-1 font-mono"
             />
-            <button onClick={() => void navigator.clipboard.writeText(draft.baseUrl)} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
-              Copy
+            <button onClick={() => void navigator.clipboard.writeText(draft.baseUrl)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+              复制
             </button>
           </div>
         </label>
       </div>
 
       <label className="space-y-1.5">
-        <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Prefix</span>
+        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">前缀</span>
         <input
           value={draft.prefix}
           onChange={(event) => setDraft((prev) => ({ ...prev, prefix: event.target.value }))}
@@ -281,13 +281,13 @@ export function AccountVerifySection({
 
   return (
     <section className="space-y-3">
-      <h3 className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        Verify Connection
+      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        验证连接
       </h3>
 
       {vs.lastVerifiedAt ? (
-        <div className="text-[0.5rem] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-          Last verified: {new Date(vs.lastVerifiedAt).toLocaleString()}
+        <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          上次验证：{new Date(vs.lastVerifiedAt).toLocaleString()}
         </div>
       ) : null}
 
@@ -301,11 +301,11 @@ export function AccountVerifySection({
                 setModelMenuMode('custom');
               }}
               onFocus={() => setIsModelMenuOpen(true)}
-              className="input-swiss flex-1 font-mono !text-[0.5625rem]"
+              className="input-swiss flex-1 font-mono !text-[length:var(--font-size-ui-xs)]"
               placeholder={DEFAULT_VERIFY_MODEL}
             />
             {modelNames && modelNames.length > 0 ? (
-              <button onClick={() => setIsModelMenuOpen((prev) => !prev)} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
+              <button onClick={() => setIsModelMenuOpen((prev) => !prev)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
                 ▼
               </button>
             ) : null}
@@ -319,7 +319,7 @@ export function AccountVerifySection({
                     setVerifyModel(name);
                     setIsModelMenuOpen(false);
                   }}
-                  className={`block w-full px-3 py-1.5 text-left text-[0.5625rem] font-black uppercase tracking-[0.12em] transition-colors ${
+                  className={`block w-full px-3 py-1.5 text-left text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-colors ${
                     verifyModel === name
                       ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
                       : 'text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
@@ -335,15 +335,15 @@ export function AccountVerifySection({
         <button
           onClick={() => onVerify?.({ apiKey: draft.apiKey, baseUrl: draft.baseUrl, model: verifyModel })}
           disabled={vs.status === 'loading'}
-          className="btn-swiss whitespace-nowrap !text-[0.5625rem]"
+          className="btn-swiss whitespace-nowrap !text-[length:var(--font-size-ui-xs)]"
         >
-          {vs.status === 'loading' ? 'Verifying...' : 'Verify'}
+          {vs.status === 'loading' ? '验证中...' : '验证'}
         </button>
       </div>
 
       {vs.status !== 'idle' ? (
-        <div className={`text-[0.5625rem] font-black uppercase tracking-wide ${
-          vs.status === 'success' ? 'text-green-600' : vs.status === 'error' ? 'text-red-500' : 'text-[var(--text-muted)]'
+        <div className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
+          vs.status === 'success' ? 'text-[var(--color-status-success)]' : vs.status === 'error' ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
         }`}>
           {vs.message}
         </div>
@@ -392,12 +392,12 @@ export function AccountQuotaSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-          Quota Tracking
+        <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          额度追踪
         </h3>
         {liveWindows.length > 0 ? (
-          <span className="text-[0.5rem] font-black uppercase tracking-[0.12em] text-green-600">
-            Live {liveWindows.length} windows
+          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-success)]">
+            实时 {liveWindows.length} 个窗口
           </span>
         ) : null}
       </div>
@@ -408,13 +408,13 @@ export function AccountQuotaSection({
           checked={draft.quotaEnabled}
           onChange={(event) => setDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))}
         />
-        <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Enable</span>
+        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用</span>
       </label>
 
       <textarea
         value={draft.quotaCurl}
         onChange={(event) => setDraft((prev) => ({ ...prev, quotaCurl: event.target.value }))}
-        className="input-swiss min-h-20 w-full resize-y font-mono !text-[0.5625rem]"
+        className="input-swiss min-h-20 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
         placeholder='curl -sS "https://api.example.com/usage" -H "Authorization: Bearer {{apiKey}}"'
       />
 
@@ -429,22 +429,22 @@ export function AccountQuotaSection({
             }),
             quotaEnabled: true,
           }))}
-          className="btn-swiss !text-[0.5rem]"
+          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
         >
-          Use Template
+          使用模板
         </button>
-        <button onClick={runQuotaTest} disabled={testStatus === 'loading' || !draft.quotaCurl.trim()} className="btn-swiss !text-[0.5rem]">
-          {testStatus === 'loading' ? 'Testing...' : 'Test'}
+        <button onClick={runQuotaTest} disabled={testStatus === 'loading' || !draft.quotaCurl.trim()} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+          {testStatus === 'loading' ? '测试中...' : '测试'}
         </button>
       </div>
 
       {testStatus === 'success' && testResult ? (
-        <div className="text-[0.5625rem] font-black uppercase text-green-600">
+        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-success)]">
           OK - {testResult.planType ?? 'quota'} {testResult.windows?.length ? `${testResult.windows.length} windows` : ''}
         </div>
       ) : null}
       {testStatus === 'error' ? (
-        <div className="text-[0.5625rem] font-black uppercase text-red-500">{testMessage}</div>
+        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
       ) : null}
     </section>
   );
@@ -490,7 +490,7 @@ export function AccountBillingSection({
       setTestBilling(nextBilling);
       setTestStatus('success');
       if (!nextBilling) {
-        setTestMessage('Billing endpoint returned no balance data');
+        setTestMessage('余额接口未返回余额数据');
       }
     } catch (error) {
       setTestMessage(toErrorMessage(error));
@@ -501,12 +501,12 @@ export function AccountBillingSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-          Balance
+        <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          余额
         </h3>
         {liveBilling ? (
-          <span className="text-[0.5rem] font-black uppercase tracking-[0.12em] text-green-600">
-            Live billing ready
+          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-success)]">
+            实时余额已就绪
           </span>
         ) : null}
       </div>
@@ -516,8 +516,8 @@ export function AccountBillingSection({
           <BillingBalance billing={liveBilling} />
         </div>
       ) : (
-        <div className="border-2 border-dashed border-[var(--border-color)] px-4 py-3 text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
-          No balance data is currently available for this account.
+        <div className="border-2 border-dashed border-[var(--border-color)] px-4 py-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          当前账号暂无余额数据。
         </div>
       )}
 
@@ -527,13 +527,13 @@ export function AccountBillingSection({
           checked={draft.billingEnabled}
           onChange={(event) => setDraft((prev) => ({ ...prev, billingEnabled: event.target.checked }))}
         />
-        <span className="text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">Enable Billing</span>
+        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用余额</span>
       </label>
 
       <textarea
         value={draft.billingCurl}
         onChange={(event) => setDraft((prev) => ({ ...prev, billingCurl: event.target.value }))}
-        className="input-swiss min-h-20 w-full resize-y font-mono !text-[0.5625rem]"
+        className="input-swiss min-h-20 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
         placeholder={billingTemplate || 'curl -sS "https://api.example.com/billing" -H "Authorization: Bearer {{apiKey}}"'}
       />
 
@@ -541,13 +541,13 @@ export function AccountBillingSection({
         {billingTemplate ? (
           <button
             onClick={() => setDraft((prev) => ({ ...prev, billingCurl: billingTemplate, billingEnabled: true }))}
-            className="btn-swiss !text-[0.5rem]"
+            className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
           >
-            Use Vendor Template
+            使用供应商模板
           </button>
         ) : null}
-        <button onClick={runBillingTest} disabled={testStatus === 'loading' || !draft.billingCurl.trim()} className="btn-swiss !text-[0.5rem]">
-          {testStatus === 'loading' ? 'Testing...' : 'Test Billing'}
+        <button onClick={runBillingTest} disabled={testStatus === 'loading' || !draft.billingCurl.trim()} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+          {testStatus === 'loading' ? '测试中...' : '测试余额'}
         </button>
       </div>
 
@@ -557,10 +557,10 @@ export function AccountBillingSection({
         </div>
       ) : null}
       {testStatus === 'success' && testMessage ? (
-        <div className="text-[0.5625rem] font-black uppercase text-[var(--text-muted)]">{testMessage}</div>
+        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">{testMessage}</div>
       ) : null}
       {testStatus === 'error' ? (
-        <div className="text-[0.5625rem] font-black uppercase text-red-500">{testMessage}</div>
+        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
       ) : null}
     </section>
   );
@@ -578,24 +578,24 @@ export function AccountDetailFooter({
 
   return (
     <>
-      <div className="text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
         {isApiKey && missingFields.length > 0
-          ? `Missing: ${missingFields.join(', ')}`
+          ? `缺少：${missingFields.join(', ')}`
           : isApiKey && configDirty
-            ? 'Unsaved account config changes'
+            ? '账号配置有未保存改动'
             : ''}
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={onClose} className="btn-swiss text-[0.5625rem]">
+        <button onClick={onClose} className="btn-swiss text-[length:var(--font-size-ui-xs)]">
           {t('common.close')}
         </button>
         {isApiKey ? (
           <button
             onClick={onSaveConfig}
             disabled={!configDirty || missingFields.length > 0 || savingConfig}
-            className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] !text-[0.5625rem]"
+            className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] !text-[length:var(--font-size-ui-xs)]"
           >
-            {savingConfig ? 'Saving...' : 'Save Changes'}
+            {savingConfig ? '保存中...' : '保存改动'}
           </button>
         ) : null}
       </div>

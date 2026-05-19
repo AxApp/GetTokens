@@ -6,7 +6,7 @@ import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import AccountsHeader from './AccountsHeader';
 
 const meta = {
-  title: 'Design System/Feature Components/Accounts Header',
+  title: 'Design System/业务组件/账号页头',
   parameters: {
     layout: 'fullscreen',
   },
@@ -78,7 +78,7 @@ function AccountsHeaderOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Accounts Header</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号页头</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           账号页头进入设计系统后，用固定 mock 检查 WorkspacePageHeader、刷新按钮、导入菜单和统一新增入口。
         </p>

@@ -268,12 +268,12 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
       <WorkspacePageHeader
         title={t('session_management.title')}
         subtitle={copy.headerSubtitleLine(stats)}
-        subtitleClassName="mt-3 truncate whitespace-nowrap text-[0.625rem] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]"
+        subtitleClassName="mt-3 truncate whitespace-nowrap text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]"
         actionsClassName="flex items-center gap-3 self-start"
         actions={
           <>
             {snapshotRefreshing ? (
-              <div className="text-[0.625rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                 {copy.refreshing}
               </div>
             ) : null}
@@ -344,7 +344,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
 
       {compactLayout && compactSessionsOpen ? (
         <div
-          className="fixed inset-0 z-40 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:p-6"
+          className="fixed inset-0 z-40 flex items-end justify-center bg-[var(--overlay-scrim-60)] p-4 backdrop-blur-sm sm:p-6"
           onClick={() => setCompactSessionsOpen(false)}
         >
           <div

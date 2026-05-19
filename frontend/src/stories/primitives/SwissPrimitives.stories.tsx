@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useI18n } from '../../context/I18nContext';
 
 const meta = {
-  title: 'Design System/Primitives/Swiss Primitives',
+  title: 'Design System/基础样式/瑞士风基础样式',
   parameters: {
     layout: 'fullscreen',
   },
@@ -61,13 +61,13 @@ function ControlsAndSurfacesSample() {
           ].map(([tone, zhTone]) => (
             <span
               key={tone}
-              className={`border-2 px-2 py-1 font-mono text-[0.5625rem] font-black uppercase ${
+              className={`border-2 px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase ${
                 tone === 'danger'
                   ? 'border-[var(--accent-red)] text-[var(--accent-red)]'
                   : tone === 'success'
-                    ? 'border-green-700 text-green-700'
+                    ? 'border-[var(--color-status-success)] text-[var(--color-status-success)]'
                     : tone === 'warning'
-                      ? 'border-yellow-600 text-yellow-700'
+                      ? 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]'
                       : 'border-[var(--border-color)] text-[var(--text-primary)]'
               }`}
             >

@@ -14,7 +14,7 @@ import CodexBinarySummaryPanel from './CodexBinarySummaryPanel';
 import CodexBinaryVersionList from './CodexBinaryVersionList';
 
 const meta = {
-  title: 'Design System/Feature Components/Codex Binary',
+  title: 'Design System/业务组件/Codex 二进制',
   parameters: {
     layout: 'fullscreen',
   },
@@ -252,7 +252,7 @@ function CodexBinaryOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Codex Binary Components</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">Codex 二进制组件</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           {zh
             ? '把 Codex 二进制管理里的摘要面板、版本列表和可展开版本行纳入设计系统，统一检查托管 PATH、下载进度、筛选和 release notes。'

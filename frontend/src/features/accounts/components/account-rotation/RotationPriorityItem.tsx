@@ -58,12 +58,12 @@ export function RotationPriorityItem({
               {resolveAccountPrimaryLabel(account)}
             </span>
             <span
-              className={`text-[0.5rem] font-black uppercase tracking-[0.18em] ${resolveAccountStatusTone(account)}`}
+              className={`text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] ${resolveAccountStatusTone(account)}`}
             >
               {account.disabled ? t('common.disabled') : t('common.active')}
             </span>
           </div>
-          <div className="text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-widest text-[var(--text-muted)]">
             PRIORITY {account.priority || 0} / {buildRotationParticipationSummary(account, codexQuota, t)}
           </div>
         </div>
@@ -72,7 +72,7 @@ export function RotationPriorityItem({
       <button
         onClick={() => onToggleDisabled(account)}
         disabled={isPending || !ready || !canToggleRotationAccountDisabled(account)}
-        className={`btn-swiss !px-3 !py-1 text-[0.625rem] ${
+        className={`btn-swiss !px-3 !py-1 text-[length:var(--font-size-ui-sm)] ${
           account.disabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
         }`}
       >

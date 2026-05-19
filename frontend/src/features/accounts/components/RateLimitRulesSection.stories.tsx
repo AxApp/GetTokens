@@ -6,7 +6,7 @@ import type { RateLimitRule, RateLimitState } from '../model/rateLimit';
 import RateLimitRulesSection, { type RateLimitRulesAPI } from './RateLimitRulesSection';
 
 const meta = {
-  title: 'Design System/Feature Components/Rate Limit Rules',
+  title: 'Design System/业务组件/限流规则',
   parameters: {
     layout: 'fullscreen',
   },
@@ -117,7 +117,7 @@ function RateLimitRulesOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Rate Limit Rules</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">限流规则</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           路由守卫规则编辑区块进入设计系统后，用 mock CRUD API 覆盖规则列表、空规则和评估超限状态。
         </p>

@@ -61,19 +61,19 @@ export default function CodexBinaryVersionCell({
                 Codex {row.version}
               </div>
               {row.isSelected ? (
-                <span className="inline-flex items-center gap-1 bg-[var(--accent-green)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.08em] text-white">
+                <span className="inline-flex items-center gap-1 bg-[var(--accent-green)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-on-accent)]">
                   <CheckCircle2 className="h-3 w-3" />
                   {t('codex_binary.active')}
                 </span>
               ) : null}
               {row.isRollback ? (
-                <span className="bg-[var(--accent-yellow)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                <span className="bg-[var(--accent-yellow)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
                   {t('codex_binary.rollback_available')}
                 </span>
               ) : null}
             </div>
             {shouldShowAssetSize ? (
-              <div className="mt-1 text-[0.625rem] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                 {t('codex_binary.file_size')}: {assetSize || t('codex_binary.file_size_unknown')}
               </div>
             ) : null}
@@ -104,7 +104,7 @@ export default function CodexBinaryVersionCell({
 
       {row.task ? (
         <div className="border-t-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3">
-          <div className="mb-1 flex justify-between text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <div className="mb-1 flex justify-between text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
             <span>{t(`codex_binary.phase_${row.task.phase}`)}</span>
             <span>{taskSize ? `${progress}% · ${taskSize}` : `${progress}%`}</span>
           </div>
@@ -121,7 +121,7 @@ export default function CodexBinaryVersionCell({
           {notesState?.notes ? (
             <div className="prose prose-sm max-w-none text-[var(--text-primary)] prose-headings:text-[var(--text-primary)] prose-a:text-[var(--accent-red)]">
               <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{notesState.notes.bodyMarkdown || t('codex_binary.notes_empty')}</ReactMarkdown>
-              <div className="mt-3 text-[0.65rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              <div className="mt-3 text-[length:var(--font-size-ui-sm-plus)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
                 {notesState.notes.source === 'cache' ? t('codex_binary.notes_from_cache') : t('codex_binary.notes_from_remote')}
               </div>
             </div>
@@ -200,7 +200,7 @@ function MenuAction({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center gap-2 px-2.5 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.06em] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-45 ${danger ? 'text-[var(--accent-red)]' : 'text-[var(--text-primary)]'}`}
+      className={`flex w-full items-center gap-2 px-2.5 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-45 ${danger ? 'text-[var(--accent-red)]' : 'text-[var(--text-primary)]'}`}
     >
       {icon}
       {label}
@@ -210,7 +210,7 @@ function MenuAction({
 
 function StaticActionState({ icon, label }: { icon?: ReactNode; label: string }) {
   return (
-    <div className="flex min-h-9 min-w-0 items-center justify-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-center text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)] sm:min-w-[10.5rem]">
+    <div className="flex min-h-9 min-w-0 items-center justify-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)] sm:min-w-[10.5rem]">
       {icon}
       {label}
     </div>
@@ -247,7 +247,7 @@ function CellButton({
         onClick?.();
       }}
       disabled={disabled}
-      className={`btn-swiss min-h-9 w-full min-w-0 whitespace-nowrap !px-3 !py-2 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[10.5rem] ${toneClass}`}
+      className={`btn-swiss min-h-9 w-full min-w-0 whitespace-nowrap !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-55 sm:min-w-[10.5rem] ${toneClass}`}
     >
       {icon}
       {label}

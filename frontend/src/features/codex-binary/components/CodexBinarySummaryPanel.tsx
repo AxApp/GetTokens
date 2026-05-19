@@ -44,7 +44,7 @@ export default function CodexBinarySummaryPanel({
               type="button"
               onClick={onEnableManagedPath}
               disabled={managedBusy}
-              className="btn-swiss whitespace-nowrap bg-[var(--text-primary)] !px-2.5 !py-1.5 !text-[0.5625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-swiss whitespace-nowrap bg-[var(--text-primary)] !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ShieldCheck className="h-3.5 w-3.5" />
               {managedBusy ? t('codex_binary.managing') : t('codex_binary.enable_managed')}
@@ -54,7 +54,7 @@ export default function CodexBinarySummaryPanel({
             type="button"
             onClick={onRefresh}
             disabled={loading}
-            className="btn-swiss whitespace-nowrap !px-2.5 !py-1.5 !text-[0.5625rem] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss whitespace-nowrap !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
             {t('codex_binary.refresh')}
@@ -62,7 +62,7 @@ export default function CodexBinarySummaryPanel({
         </div>
       </div>
       {snapshot?.managedConfig ? (
-        <div className="mt-2 grid gap-x-5 gap-y-1 border-t border-[var(--border-color)] pt-2 text-[0.5625rem] font-semibold text-[var(--text-muted)] md:grid-cols-3">
+        <div className="mt-2 grid gap-x-5 gap-y-1 border-t border-[var(--border-color)] pt-2 text-[length:var(--font-size-ui-xs)] font-semibold text-[var(--text-muted)] md:grid-cols-3">
           <ManagedMeta label={t('codex_binary.managed_bin_dir')} value={snapshot.managedConfig.binDir} />
           <ManagedMeta label={t('codex_binary.resolved_codex_path')} value={snapshot.managedConfig.resolvedCodexPath || t('codex_binary.resolved_codex_missing')} />
           <ManagedMeta label={t('codex_binary.managed_profile_target')} value={snapshot.managedConfig.profilePath || t('codex_binary.managed_profile_unknown')} strong />
@@ -74,8 +74,8 @@ export default function CodexBinarySummaryPanel({
 }
 
 function StatusPill({ severity, text }: { severity: string; text: string }) {
-  const color = severity === 'ok' ? 'bg-[var(--accent-green)] text-white' : severity === 'error' ? 'bg-[var(--accent-red)] text-white' : 'bg-[var(--accent-yellow)] text-[var(--text-primary)]';
-  return <span className={`inline-flex items-center px-2 py-1 text-[0.5625rem] font-black ${color}`}>{text}</span>;
+  const color = severity === 'ok' ? 'bg-[var(--accent-green)] text-[var(--text-on-accent)]' : severity === 'error' ? 'bg-[var(--accent-red)] text-[var(--text-on-accent)]' : 'bg-[var(--accent-yellow)] text-[var(--text-primary)]';
+  return <span className={`inline-flex items-center px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black ${color}`}>{text}</span>;
 }
 
 function ManagedMeta({ label, value, strong }: { label: string; value: string; strong?: boolean }) {

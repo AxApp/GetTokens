@@ -372,7 +372,7 @@ export function StatusApplyLocalSection({
                 />
 
                 <label className="grid gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('status.reasoning_effort_title')}
                   </span>
                   <select
@@ -391,7 +391,7 @@ export function StatusApplyLocalSection({
 
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <label className="grid gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('status.auth_strategy_title')}
                   </span>
                   <select
@@ -410,13 +410,13 @@ export function StatusApplyLocalSection({
                 </label>
 
                 <div className="grid gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('status.codex_local_auth_state_title')}
                   </span>
-                  <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[0.6875rem] font-semibold text-[var(--text-primary)]">
+                  <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
                     <div>{codexLocalAuthSummary}</div>
                     {localCodexAuthState?.accountEmail ? (
-                      <div className="mt-1 font-mono text-[0.625rem] text-[var(--text-muted)]">
+                      <div className="mt-1 font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-muted)]">
                         {localCodexAuthState.accountEmail}
                       </div>
                     ) : null}
@@ -434,7 +434,7 @@ export function StatusApplyLocalSection({
                 />
 
                 <label className="grid gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('status.local_cli_wire_api')}
                   </span>
                   <input value="responses" readOnly className="input-swiss w-full" />
@@ -443,7 +443,7 @@ export function StatusApplyLocalSection({
 
               {selectedRelayProvider.id !== 'openai' ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-[0.875rem] font-bold uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                  <span className="text-[length:var(--font-size-ui-lg)] font-bold uppercase tracking-[0.08em] text-[var(--text-primary)]">
                     supports_websockets
                   </span>
                   <ToggleSwitch
@@ -457,7 +457,7 @@ export function StatusApplyLocalSection({
               ) : null}
 
               {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
                   {t('status.codex_local_preserve_hint')}
                   {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
                 </div>
@@ -465,14 +465,14 @@ export function StatusApplyLocalSection({
 
               {codexLocalApplyGuidance ? (
                 <div className="grid gap-3 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                  <div className="text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                  <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
                     {codexLocalApplyGuidance}
                     {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
                   </div>
                   {codexLocalApplyState.recoveryAction === 'create_relay_key' ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                       onClick={onOpenCreateRelayKeyEditor}
                     >
                       {t('status.codex_local_recovery_create_key')}
@@ -480,7 +480,7 @@ export function StatusApplyLocalSection({
                   ) : codexLocalApplyState.recoveryAction === 'switch_auth_to_apikey' ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                       onClick={() => onSelectCodexLocalAuthStrategy('replace_auth_with_apikey')}
                     >
                       {t('status.codex_local_recovery_use_apikey')}
@@ -489,7 +489,7 @@ export function StatusApplyLocalSection({
                     codexLocalApplyState.nextProviderID ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                       onClick={() => onSelectRelayProviderID(codexLocalApplyState.nextProviderID || '')}
                     >
                       {t('status.codex_local_recovery_switch_provider')}{' '}
@@ -498,7 +498,7 @@ export function StatusApplyLocalSection({
                   ) : codexLocalApplyState.recoveryAction === 'create_provider' ? (
                     <button
                       type="button"
-                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                       onClick={onOpenCreateRelayProviderEditor}
                     >
                       {t('status.codex_local_recovery_create_provider')}
@@ -508,7 +508,7 @@ export function StatusApplyLocalSection({
               ) : null}
 
               {localApplyMessage ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
                   {localApplyMessage}
                 </div>
               ) : null}
@@ -524,7 +524,7 @@ export function StatusApplyLocalSection({
                   type="button"
                   onClick={onApplyRelayConfigToLocal}
                   disabled={!codexLocalApplyState.canApply}
-                  className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isApplyingToLocal ? t('status.applying_local') : t('status.apply_local_codex')}
                 </button>
@@ -626,7 +626,7 @@ export function StatusApplyLocalSection({
 
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
                 <label className="grid gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('status.claude_max_output_tokens')}
                   </span>
                   <input
@@ -638,7 +638,7 @@ export function StatusApplyLocalSection({
                   />
                 </label>
                 <label className="grid gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('status.claude_api_timeout_ms')}
                   </span>
                   <input
@@ -650,7 +650,7 @@ export function StatusApplyLocalSection({
                   />
                 </label>
                 <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
-                  <span className="text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                  <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
                   </span>
                   <ToggleSwitch
@@ -664,7 +664,7 @@ export function StatusApplyLocalSection({
               </div>
 
               {claudeApplyMessage ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
                   {claudeApplyMessage}
                 </div>
               ) : null}
@@ -680,7 +680,7 @@ export function StatusApplyLocalSection({
                   type="button"
                   onClick={() => onApplyClaude({ ...claudeDraft, baseUrl: selectedEndpointBaseUrl })}
                   disabled={isApplyingClaude || !isReady || !selectedClaudeRelayKey.trim()}
-                  className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-swiss bg-[var(--border-color)] !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isApplyingClaude ? t('status.applying_local') : t('status.apply_local_claude')}
                 </button>
@@ -764,13 +764,13 @@ function StatusEndpointPicker({
   return (
     <div className="grid gap-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
           {t('status.endpoint_title')}
         </span>
         <button
           type="button"
           onClick={onToggleLANAccess}
-          className={`btn-swiss !px-2.5 !py-1.5 !text-[0.625rem] ${
+          className={`btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-sm)] ${
             isLANAccessEnabled ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''
           }`}
         >
@@ -792,7 +792,7 @@ function StatusEndpointPicker({
               key={endpoint.id}
               type="button"
               onClick={() => onSelectEndpointID(endpoint.id)}
-              className={`border-2 px-2.5 py-1.5 text-[0.5625rem] font-black uppercase tracking-[0.18em] ${
+              className={`border-2 px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] ${
                 isSelected
                   ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                   : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
@@ -804,10 +804,10 @@ function StatusEndpointPicker({
         })}
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-        <span className="truncate font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+        <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
           {selectedEndpointBaseUrl}
         </span>
-        <button type="button" onClick={onCopyEndpointBaseUrl} className="btn-swiss !px-2 !py-1 !text-[0.5625rem]">
+        <button type="button" onClick={onCopyEndpointBaseUrl} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-xs)]">
           {t('common.copy')}
         </button>
       </div>

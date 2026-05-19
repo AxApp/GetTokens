@@ -9,14 +9,14 @@ export const ATTRIBUTION_CARD_TONE_BORDER_CLASS: Record<AttributionCardTone, str
 
 export const ATTRIBUTION_CARD_TONE_FILL_CLASS: Record<AttributionCardTone, string> = {
   neutral: 'bg-[var(--text-primary)]',
-  positive: 'bg-green-600',
-  warning: 'bg-yellow-500',
-  critical: 'bg-red-500',
+  positive: 'bg-[var(--color-status-success)]',
+  warning: 'bg-[var(--color-status-warning)]',
+  critical: 'bg-[var(--color-status-danger)]',
 };
 
 export const ATTRIBUTION_CARD_BADGE_TONE_CLASS: Record<AttributionCardTone, string> = {
   neutral: 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-muted)]',
-  positive: 'border-green-600 bg-green-600/10 text-green-700',
-  warning: 'border-yellow-500 bg-yellow-500/10 text-yellow-700',
-  critical: 'border-red-500 bg-red-500/10 text-red-500',
+  positive: 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]',
+  warning: 'border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] text-[var(--color-status-warning)]',
+  critical: 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]',
 };

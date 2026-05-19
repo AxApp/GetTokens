@@ -53,6 +53,11 @@ function StorybookRuntime({
 }
 
 const preview: Preview = {
+  initialGlobals: {
+    locale: 'zh',
+    themeMode: 'system',
+    textScale: 'default',
+  },
   parameters: {
     controls: {
       matchers: {
@@ -66,7 +71,7 @@ const preview: Preview = {
   },
   globalTypes: {
     locale: {
-      description: 'GetTokens preview language',
+      description: 'GetTokens 预览语言',
       defaultValue: 'zh',
       toolbar: {
         title: '语言',
@@ -75,28 +80,28 @@ const preview: Preview = {
       },
     },
     themeMode: {
-      description: 'GetTokens theme mode',
+      description: 'GetTokens 主题模式',
       defaultValue: 'system',
       toolbar: {
-        title: 'Theme',
+        title: '主题',
         icon: 'mirror',
         items: [
-          { value: 'system', title: 'System' },
-          { value: 'light', title: 'Light' },
-          { value: 'dark', title: 'Dark' },
+          { value: 'system', title: '跟随系统' },
+          { value: 'light', title: '浅色' },
+          { value: 'dark', title: '深色' },
         ],
       },
     },
     textScale: {
-      description: 'GetTokens text scale',
+      description: 'GetTokens 文字缩放',
       defaultValue: 'default',
       toolbar: {
-        title: 'Text',
+        title: '文字',
         icon: 'paragraph',
         items: [
-          { value: 'default', title: 'Default' },
-          { value: 'large', title: 'Large' },
-          { value: 'x-large', title: 'XLarge' },
+          { value: 'default', title: '默认' },
+          { value: 'large', title: '大号' },
+          { value: 'x-large', title: '超大' },
         ],
       },
     },

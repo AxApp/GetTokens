@@ -10,7 +10,7 @@ import type {
 import StatusCodexFeaturesSection from './StatusCodexFeaturesSection';
 
 const meta = {
-  title: 'Design System/Feature Components/Status Codex Features',
+  title: 'Design System/业务组件/状态页 Codex 功能',
   parameters: {
     layout: 'fullscreen',
   },
@@ -220,7 +220,7 @@ function StatusCodexFeaturesOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Status Codex Features</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页 Codex 功能</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           Codex feature 开关列表进入设计系统后，用固定 snapshot、row 和 preview mock 覆盖配置型列表、筛选、空态和保存状态。
         </p>

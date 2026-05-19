@@ -113,16 +113,16 @@ export default function AttributionCard({
           <div className="grid min-w-0 gap-2">
             <div className="flex min-w-0 items-center gap-2">
               <span className={`h-3 w-3 shrink-0 ${accentFillClass}`} />
-              <h3 className="truncate text-[0.875rem] font-black uppercase leading-tight tracking-normal text-[var(--text-primary)]">
+              <h3 className="truncate text-[length:var(--font-size-ui-lg)] font-black uppercase leading-tight tracking-normal text-[var(--text-primary)]">
                 {title}
               </h3>
               {eyebrow ? (
-                <span className="shrink-0 border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                <span className="shrink-0 border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                   {eyebrow}
                 </span>
               ) : null}
             </div>
-            <div className="min-w-0 truncate font-mono text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+            <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
               {failureReason || subtitle || '—'}
             </div>
             {badges.length > 0 ? (
@@ -130,7 +130,7 @@ export default function AttributionCard({
                 {badges.slice(0, 4).map((badge) => (
                   <span
                     key={`${badge.label}-${badge.tone || 'neutral'}`}
-                    className={`border px-1.5 py-0.5 font-mono text-[0.5rem] font-black uppercase tracking-[0.1em] ${
+                    className={`border px-1.5 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] ${
                       ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']
                     }`}
                   >
@@ -138,7 +138,7 @@ export default function AttributionCard({
                   </span>
                 ))}
                 {badges.length > 4 ? (
-                  <span className="border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[0.5rem] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                  <span className="border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
                     +{badges.length - 4}
                   </span>
                 ) : null}
@@ -171,24 +171,24 @@ export default function AttributionCard({
         {leadingAction ? <div className="shrink-0">{leadingAction}</div> : null}
         <div className="min-w-0 flex-1 space-y-3">
           {eyebrow ? (
-            <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {eyebrow}
             </div>
           ) : null}
           <div className="space-y-2">
             <div className="flex min-w-0 items-center gap-2">
               <div className={`h-2.5 w-2.5 shrink-0 ${accentFillClass}`} />
-              <h3 className="truncate text-[0.95rem] font-black leading-tight tracking-[0.02em] text-[var(--text-primary)]">
+              <h3 className="truncate text-[length:var(--font-size-ui-xl-plus)] font-black leading-tight tracking-[0.02em] text-[var(--text-primary)]">
                 {title}
               </h3>
             </div>
             {subtitle ? (
-              <div className="break-all font-mono text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              <div className="break-all font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
                 {subtitle}
               </div>
             ) : null}
             {failureReason ? (
-              <div className="text-[0.625rem] font-black leading-relaxed text-red-500">{failureReason}</div>
+              <div className="text-[length:var(--font-size-ui-sm)] font-black leading-relaxed text-[var(--color-status-danger)]">{failureReason}</div>
             ) : null}
           </div>
           {badges.length > 0 ? (
@@ -196,7 +196,7 @@ export default function AttributionCard({
               {badges.map((badge) => (
                 <span
                   key={`${badge.label}-${badge.tone || 'neutral'}`}
-                  className={`border px-2 py-1 font-mono text-[0.5625rem] font-black uppercase tracking-[0.14em] ${
+                  className={`border px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] ${
                     ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']
                   }`}
                 >
@@ -213,13 +213,13 @@ export default function AttributionCard({
         <>
           <section className="account-card-traffic grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-3">
             <div className="flex min-h-[6rem] flex-col justify-between">
-              <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.recent_requests')}
               </div>
-              <div className="font-mono text-[2.5rem] font-black leading-none text-[var(--text-primary)]">
+              <div className="font-mono text-[length:var(--font-size-ui-display)] font-black leading-none text-[var(--text-primary)]">
                 {formatCountMetric(usageSummary?.requestCount ?? 0)}
               </div>
-              <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {sourceLabel}
               </div>
             </div>
@@ -250,7 +250,7 @@ export default function AttributionCard({
                   <path
                     d={flow.path}
                     fill="none"
-                    stroke="rgb(86 118 136)"
+                    stroke="var(--color-chart-attribution)"
                     strokeWidth="1.9"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -264,8 +264,8 @@ export default function AttributionCard({
                       cx={point.x}
                       cy={point.y}
                       r={point.kind === 'latest' ? 4.8 : point.kind === 'peak' ? 4.2 : 3.4}
-                      fill={point.kind === 'latest' ? 'rgb(86 118 136)' : point.kind === 'peak' ? 'rgb(245 158 11)' : 'white'}
-                      stroke={point.kind === 'peak' ? 'rgb(17 24 39)' : 'rgb(86 118 136)'}
+                      fill={point.kind === 'latest' ? 'var(--color-chart-attribution)' : point.kind === 'peak' ? 'var(--color-chart-peak)' : 'var(--bg-main)'}
+                      stroke={point.kind === 'peak' ? 'var(--color-chart-primary)' : 'var(--color-chart-attribution)'}
                       strokeWidth="1.3"
                     />
                   ))}
@@ -310,10 +310,10 @@ export default function AttributionCard({
 function ListMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0 border-r border-[var(--border-color)] px-2 py-2 last:border-r-0">
-      <div className="truncate font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-1 truncate font-mono text-[0.625rem] font-black uppercase tracking-normal text-[var(--text-primary)]">
+      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-primary)]">
         {value}
       </div>
     </div>
@@ -323,10 +323,10 @@ function ListMetric({ label, value }: { label: string; value: string }) {
 function FlowHeadCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-1 truncate font-mono text-[0.6875rem] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
+      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
         {value}
       </div>
     </div>
@@ -336,10 +336,10 @@ function FlowHeadCell({ label, value }: { label: string; value: string }) {
 function UsageCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-h-[4.5rem] border-r border-[var(--border-color)] px-3 py-3 last:border-r-0">
-      <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-2 font-mono text-[0.8125rem] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
+      <div className="mt-2 font-mono text-[length:var(--font-size-ui-lg-compact)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
         {value}
       </div>
     </div>
@@ -401,6 +401,15 @@ function buildTrafficCurveState(summary?: AccountUsageSummary) {
 
 function formatCountMetric(value: number) {
   const normalized = Math.max(0, Number(value || 0));
+  if (normalized >= 1000000000) {
+    return `${trimDecimal(normalized / 1000000000)}B`;
+  }
+  if (normalized >= 1000000) {
+    return `${trimDecimal(normalized / 1000000)}M`;
+  }
+  if (normalized >= 1000) {
+    return `${trimDecimal(normalized / 1000)}K`;
+  }
   return new Intl.NumberFormat('zh-CN').format(normalized);
 }
 

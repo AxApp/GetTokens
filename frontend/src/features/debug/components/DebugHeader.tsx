@@ -29,7 +29,7 @@ export default function DebugHeader({
         <h2 className="text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
           {t('debug.title')}
         </h2>
-        <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-widest text-[var(--text-muted)]">
+        <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-widest text-[var(--text-muted)]">
           {t('debug.subtitle')} / {count} UNITS
         </p>
       </div>

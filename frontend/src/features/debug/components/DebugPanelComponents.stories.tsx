@@ -7,7 +7,7 @@ import DebugEntryCard from './DebugEntryCard';
 import DebugHeader from './DebugHeader';
 
 const meta = {
-  title: 'Design System/Feature Components/Debug Panel',
+  title: 'Design System/业务组件/调试面板',
   parameters: {
     layout: 'fullscreen',
   },
@@ -124,7 +124,7 @@ function DebugPanelOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Debug Panel Components</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">调试面板组件</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           {zh
             ? '把调试面板中已经提取的业务组件纳入设计系统，统一检查工具栏、日志卡片、错误态、折叠态和空状态。'

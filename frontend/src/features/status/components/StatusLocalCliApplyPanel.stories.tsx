@@ -7,7 +7,7 @@ import type { RelayProviderOption } from '../model/relayProviderCatalog';
 import { StatusApplyLocalSection } from './StatusPanels';
 
 const meta = {
-  title: 'Design System/Feature Components/Status Local CLI Apply',
+  title: 'Design System/业务组件/状态页本地 CLI 应用',
   parameters: {
     layout: 'fullscreen',
   },
@@ -238,7 +238,7 @@ function StatusLocalCliApplyOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Status Local CLI Apply</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页本地 CLI 应用</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           把本地 Codex / Claude Code 配置应用面板纳入设计系统，用固定 relay key、endpoint、provider、auth state 和 diff mock 覆盖关键分支。
         </p>

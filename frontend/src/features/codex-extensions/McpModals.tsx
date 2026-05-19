@@ -84,7 +84,7 @@ export function McpServerEditorModal({
 
   return (
     <div
-      className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-black/80 px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10"
+      className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-[var(--overlay-scrim-80)] px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10"
       data-collaboration-id="MODAL_CODEX_MCP_SERVER_EDITOR"
       onClick={onClose}
     >
@@ -100,7 +100,7 @@ export function McpServerEditorModal({
             <div className="font-mono text-xl font-black italic tracking-tighter text-[var(--text-primary)]">
               {draft.label}
             </div>
-            <div className="mt-1 break-all text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            <div className="mt-1 break-all text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
               {draft.sourcePath || '-'}
             </div>
           </div>
@@ -109,7 +109,7 @@ export function McpServerEditorModal({
             checked={draft.enabled}
             onChange={(checked) => onPatch({ enabled: checked, status: checked ? draft.status : 'disabled' })}
           />
-          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+          <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
             {t('common.close')}
           </button>
         </header>
@@ -123,7 +123,7 @@ export function McpServerEditorModal({
               <div className="grid gap-4 md:grid-cols-2">
                 <Field label={t('codex_extensions.server_id')} value={draft.id} onChange={(value) => onPatch({ id: value, label: value })} />
                 <label className="grid gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('common.type')}
                   </span>
                   <select
@@ -191,7 +191,7 @@ export function McpServerEditorModal({
                   {draft.toolTimeoutSec?.trim() ? <Field label={t('codex_extensions.tool_timeout_sec')} value={draft.toolTimeoutSec || ''} onChange={(value) => onPatch({ toolTimeoutSec: value })} /> : null}
                   {draft.defaultToolsApprovalMode?.trim() ? (
                     <label className="grid gap-2">
-                      <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                         {t('codex_extensions.default_tools_approval_mode')}
                       </span>
                       <select
@@ -228,38 +228,38 @@ export function McpServerEditorModal({
                 type="button"
                 onClick={onSave}
                 disabled={preview.length === 0 || loading}
-                className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Save className="h-3.5 w-3.5" />
                 {t('common.save')}
               </button>
-              <button type="button" onClick={onReset} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+              <button type="button" onClick={onReset} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
                 {t('common.cancel')}
               </button>
             </div>
           </main>
           <aside className="border-t-2 border-[var(--border-color)] p-4 xl:border-l-2 xl:border-t-0">
-            <div className="mb-3 text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="mb-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('codex_extensions.mcp_current_values')}
             </div>
-            <pre className="scrollbar-stable max-h-[28rem] overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 text-[0.625rem] leading-relaxed text-[var(--text-primary)]">
+            <pre className="scrollbar-stable max-h-[28rem] overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 text-[length:var(--font-size-ui-sm)] leading-relaxed text-[var(--text-primary)]">
               <code className="whitespace-pre font-mono font-black">{currentValueToml}</code>
             </pre>
 
-            <div className="mb-3 mt-6 flex items-center gap-2 border-t-2 border-[var(--border-color)] pt-4 text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="mb-3 mt-6 flex items-center gap-2 border-t-2 border-[var(--border-color)] pt-4 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               <GitBranch className="h-3.5 w-3.5" />
               {t('codex_extensions.change_preview')}
             </div>
             <div className="divide-y-2 divide-[var(--border-color)] border-t-2 border-[var(--border-color)]">
               {preview.length > 0 ? preview.map((change) => (
                 <div key={change.key} className="py-2">
-                  <div className="font-mono text-[0.625rem] font-black text-[var(--text-primary)]">{change.key}</div>
-                  <div className="mt-1 break-all text-[0.5625rem] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">{change.key}</div>
+                  <div className="mt-1 break-all text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-wide text-[var(--text-muted)]">
                     {change.before} -&gt; {change.after}
                   </div>
                 </div>
               )) : (
-                <div className="py-8 text-center text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="py-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   {t('codex_extensions.no_changes')}
                 </div>
               )}
@@ -293,7 +293,7 @@ export function ConfigTomlEditorModal({
 } & TProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 backdrop-blur-sm sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-3 backdrop-blur-sm sm:p-6"
       data-collaboration-id="MODAL_CODEX_CONFIG_TOML_EDITOR"
       onClick={onClose}
     >
@@ -303,10 +303,10 @@ export function ConfigTomlEditorModal({
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b-2 border-[var(--border-color)] px-5 py-4">
           <div className="min-w-0">
-            <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t('codex_extensions.config_editor_title')}
             </div>
-            <div className="mt-1 break-all font-mono text-[0.6875rem] font-black text-[var(--text-primary)]">
+            <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
               {configPath}
             </div>
           </div>
@@ -322,7 +322,7 @@ export function ConfigTomlEditorModal({
 
         <div className="min-h-0 flex-1 p-4">
           {loading ? (
-            <div className="flex min-h-[24rem] items-center justify-center text-[0.75rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <div className="flex min-h-[24rem] items-center justify-center text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('common.loading')}
             </div>
           ) : (
@@ -330,25 +330,25 @@ export function ConfigTomlEditorModal({
               value={content}
               onChange={(event) => onChange(event.target.value)}
               spellCheck={false}
-              className="scrollbar-stable input-swiss min-h-[24rem] w-full resize-none overflow-auto font-mono !text-[0.75rem] leading-relaxed"
+              className="scrollbar-stable input-swiss min-h-[24rem] w-full resize-none overflow-auto font-mono !text-[length:var(--font-size-ui-md)] leading-relaxed"
               placeholder={t('codex_extensions.config_editor_placeholder')}
             />
           )}
         </div>
 
         <footer className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {dirty ? t('codex_extensions.config_dirty') : t('codex_extensions.config_clean')}
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[0.625rem]">
+            <button type="button" onClick={onClose} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]">
               {t('common.cancel')}
             </button>
             <button
               type="button"
               onClick={onSave}
               disabled={!dirty || loading || saving}
-              className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[0.625rem] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-swiss bg-[var(--text-primary)] !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] !text-[var(--bg-main)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Save className="h-3.5 w-3.5" />
               {saving ? t('common.loading') : t('common.save')}
@@ -365,7 +365,7 @@ export function McpStatusBadge({ status }: { status: McpServerRecord['status'] }
   const isDisabled = status === 'disabled';
   return (
     <div
-      className={`border-2 px-2 py-1 font-mono text-[0.5625rem] font-black uppercase tracking-[0.16em] ${
+      className={`border-2 px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] ${
         isReady
           ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
           : isDisabled
@@ -382,11 +382,11 @@ function McpEditorSection({ title, meta, children }: { title: string; meta?: str
   return (
     <section className="grid gap-4 p-4 lg:grid-cols-[9rem_minmax(0,1fr)]">
       <div className="min-w-0">
-        <div className="font-mono text-[0.625rem] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-primary)]">
           {title}
         </div>
         {meta ? (
-          <div className="mt-1 break-all text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <div className="mt-1 break-all text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
             {meta}
           </div>
         ) : null}
@@ -399,7 +399,7 @@ function McpEditorSection({ title, meta, children }: { title: string; meta?: str
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="grid gap-2">
-      <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </span>
       <input value={value} onChange={(event) => onChange(event.target.value)} className="input-swiss w-full font-mono" />
@@ -410,11 +410,11 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 function ToggleField({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) {
   return (
     <div className="grid gap-2">
-      <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </div>
       <div className="input-swiss flex h-10 items-center justify-between gap-3 !py-1">
-        <span className="font-mono text-[0.6875rem] font-black text-[var(--text-primary)]">
+        <span className="font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
           {String(checked)}
         </span>
         <ToggleSwitch
@@ -431,7 +431,7 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
 function TextareaField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
     <label className="grid gap-2">
-      <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         {label}
       </span>
       <textarea

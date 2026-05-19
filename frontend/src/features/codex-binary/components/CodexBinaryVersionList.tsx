@@ -47,7 +47,7 @@ export default function CodexBinaryVersionList({
   return (
     <section className="space-y-3">
       <div className="flex flex-col gap-2 px-0.5 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-[0.625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
           {t('codex_binary.release_filter')}
         </div>
         <SegmentedControl options={releaseFilterOptions} value={releaseFilter} onChange={onReleaseFilterChange} />

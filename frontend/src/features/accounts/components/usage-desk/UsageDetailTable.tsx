@@ -80,7 +80,7 @@ export function UsageDetailTable({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="border-b-2 border-[var(--border-color)] px-3 py-3 text-left text-[0.625rem] font-black tracking-[0.12em] text-[var(--text-primary)]"
+                className="border-b-2 border-[var(--border-color)] px-3 py-3 text-left text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]"
               >
                 {column.header}
               </th>
@@ -132,7 +132,7 @@ function UsageDetailRow({
       {cells.map((cell, index) => (
         <td
           key={`${row.timeLabel}-${index}`}
-          className={`px-3 py-3 text-[0.6875rem] font-bold leading-6 ${selected ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}
+          className={`px-3 py-3 text-[length:var(--font-size-ui-md-compact)] font-bold leading-6 ${selected ? 'text-[var(--bg-main)]' : 'text-[var(--text-primary)]'}`}
         >
           {cell}
         </td>

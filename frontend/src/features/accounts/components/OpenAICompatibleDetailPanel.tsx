@@ -71,9 +71,9 @@ export default function OpenAICompatibleDetailPanel({
 
   const messageTone =
     verifyState.status === 'success'
-      ? 'text-green-600'
+      ? 'text-[var(--color-status-success)]'
       : verifyState.status === 'error'
-        ? 'text-red-500'
+        ? 'text-[var(--color-status-danger)]'
         : 'text-[var(--text-muted)]';
 
   return (
@@ -81,11 +81,11 @@ export default function OpenAICompatibleDetailPanel({
       <header className="shrink-0 border-b-2 border-[var(--border-color)] px-6 py-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t('accounts.ui_openai_account_badge')}
             </div>
             <div className="space-y-3">
-              <h3 className="text-[0.75rem] font-black uppercase italic tracking-[0.08em] text-[var(--text-primary)]">
+              <h3 className="text-[length:var(--font-size-ui-md)] font-black uppercase italic tracking-[0.08em] text-[var(--text-primary)]">
                 {t('accounts.openai_provider_name')}
               </h3>
               <input
@@ -99,21 +99,21 @@ export default function OpenAICompatibleDetailPanel({
 
           <div className="w-full max-w-sm space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                 {t('accounts.openai_provider_test_summary')}
               </div>
-              <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 {verifyState.model || '—'}
               </div>
             </div>
-            <div className={`text-[0.625rem] font-black uppercase tracking-tight ${messageTone}`}>
+            <div className={`text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-tight ${messageTone}`}>
               {verifyState.message || t('accounts.openai_provider_test_idle')}
             </div>
-            <div className="flex items-center justify-between gap-4 text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="flex items-center justify-between gap-4 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               <span>{t('accounts.openai_provider_current_name')}</span>
               <span className="break-all text-right text-[var(--text-primary)]">{draft.currentName}</span>
             </div>
-            <div className="flex items-center justify-between gap-4 text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="flex items-center justify-between gap-4 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               <span>{t('accounts.openai_provider_last_verified')}</span>
               <span className="break-all text-right text-[var(--text-primary)]">{formatLastVerifiedAt(verifyState.lastVerifiedAt)}</span>
             </div>
@@ -125,7 +125,7 @@ export default function OpenAICompatibleDetailPanel({
         <section className="min-h-0 px-6 py-6">
           <div className="space-y-6">
             <label className="space-y-2">
-              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.ui_base_url')}
               </div>
               <input
@@ -137,7 +137,7 @@ export default function OpenAICompatibleDetailPanel({
             </label>
 
             <label className="space-y-2">
-              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.ui_api_key')}
               </div>
               <input
@@ -159,9 +159,9 @@ export default function OpenAICompatibleDetailPanel({
               <button
                 type="button"
                 onClick={() => setHeadersExpanded((prev) => !prev)}
-                className="flex w-full items-center gap-2 text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
+                className="flex w-full items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
               >
-                <span className="inline-grid h-3.5 w-3.5 place-items-center border border-[var(--border-color)] text-[0.5rem] leading-none">
+                <span className="inline-grid h-3.5 w-3.5 place-items-center border border-[var(--border-color)] text-[length:var(--font-size-ui-2xs)] leading-none">
                   {draft.headersText || headersExpanded ? '−' : '+'}
                 </span>
                 {t('accounts.openai_provider_headers')}
@@ -171,10 +171,10 @@ export default function OpenAICompatibleDetailPanel({
                   <textarea
                     value={draft.headersText}
                     onChange={(event) => onChange({ ...draft, headersText: event.target.value })}
-                    className="input-swiss min-h-32 w-full resize-y font-mono !text-[0.6875rem] leading-6"
+                    className="input-swiss min-h-32 w-full resize-y font-mono !text-[length:var(--font-size-ui-md-compact)] leading-6"
                     placeholder={'Authorization: Bearer sk-...\nHTTP-Referer: https://example.com\nX-Title: GetTokens'}
                   />
-                  <div className="text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
                     {t('accounts.openai_provider_headers_hint')}
                   </div>
                 </>
@@ -183,18 +183,18 @@ export default function OpenAICompatibleDetailPanel({
 
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                   {t('accounts.openai_provider_models')}
                 </div>
                 <div className="flex items-center gap-2">
                   {remoteModelsState?.status === 'success' && remoteModelsState.models.length > 0 ? (
-                    <button onClick={onApplyFetchedModels} className="btn-swiss !py-1.5 !text-[0.5625rem]">
+                    <button onClick={onApplyFetchedModels} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                       {t('accounts.openai_provider_models_apply_remote')}
                     </button>
                   ) : null}
                   <button
                     onClick={onFetchModels}
-                    className="btn-swiss !py-1.5 !text-[0.5625rem]"
+                    className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                     disabled={remoteModelsState?.status === 'loading'}
                   >
                     {remoteModelsState?.status === 'loading'
@@ -205,14 +205,14 @@ export default function OpenAICompatibleDetailPanel({
               </div>
               <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-[0.5rem] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
                     {t('accounts.openai_provider_models_source')}
                   </div>
-                  <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                     {modelSourceLabel}
                   </div>
                 </div>
-                <div className="text-[0.625rem] font-black uppercase tracking-tight text-[var(--text-primary)]">
+                <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-tight text-[var(--text-primary)]">
                   {remoteModelsState?.message ||
                     (suggestedModelOptions.source === 'remote'
                       ? t('accounts.openai_provider_models_fetch_success')
@@ -264,7 +264,7 @@ export default function OpenAICompatibleDetailPanel({
                           verifyModel: nextVerifyModel,
                         });
                       }}
-                      className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem] !text-red-500"
+                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
                       disabled={draft.models.length === 1}
                     >
                       {t('common.delete')}
@@ -273,7 +273,7 @@ export default function OpenAICompatibleDetailPanel({
                 ))}
                 <button
                   onClick={() => onChange({ ...draft, models: [...draft.models, { name: '', alias: '' }] })}
-                  className="btn-swiss !py-1.5 !text-[0.5625rem]"
+                  className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                 >
                   {t('accounts.openai_provider_add_model')}
                 </button>
@@ -284,7 +284,7 @@ export default function OpenAICompatibleDetailPanel({
 
         <section className="min-h-0 space-y-6 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-6 py-6">
           <div className="space-y-4">
-            <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {t('accounts.openai_provider_test_model')}
             </div>
             {suggestedModels.some((item) => item.name.trim()) ? (
@@ -297,7 +297,7 @@ export default function OpenAICompatibleDetailPanel({
                       <button
                         key={`${item.name}:${item.alias}`}
                         onClick={() => onChange({ ...draft, verifyModel: modelName })}
-                        className={`border-2 px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.12em] transition-colors ${
+                        className={`border-2 px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-colors ${
                           effectiveVerifyModel === modelName
                             ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                             : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-primary)]'
@@ -319,7 +319,7 @@ export default function OpenAICompatibleDetailPanel({
               />
               <button
                 onClick={onVerify}
-                className="btn-swiss !py-2 !text-[0.5625rem] whitespace-nowrap"
+                className="btn-swiss !py-2 !text-[length:var(--font-size-ui-xs)] whitespace-nowrap"
                 disabled={verifyState.status === 'loading'}
               >
                 {verifyState.status === 'loading'
@@ -327,7 +327,7 @@ export default function OpenAICompatibleDetailPanel({
                   : t('accounts.openai_provider_test')}
               </button>
             </div>
-            <div className="text-[0.5rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
               {t('accounts.openai_provider_test_model_hint')}
             </div>
           </div>
@@ -337,13 +337,13 @@ export default function OpenAICompatibleDetailPanel({
       </div>
 
       {error ? (
-        <div className="mx-6 mb-4 shrink-0 border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+        <div className="mx-6 mb-4 shrink-0 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
           {error}
         </div>
       ) : null}
 
       <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-[0.5625rem] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
+        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
           {proxyRouteError || verifyState.message || t('accounts.openai_provider_test_idle')}
         </div>
         <div className="flex items-center gap-2">

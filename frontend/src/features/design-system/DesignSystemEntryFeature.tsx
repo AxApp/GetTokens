@@ -68,7 +68,7 @@ export default function DesignSystemEntryFeature() {
         <section className="grid gap-4 md:grid-cols-[minmax(0,1fr)_18rem]">
           <div className="card-swiss grid gap-5">
             <div>
-              <div className="text-[0.625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-muted)]">
                 {t('design_system.primary_entry')}
               </div>
               <div className="mt-2 text-2xl font-black uppercase italic tracking-normal">
@@ -84,7 +84,7 @@ export default function DesignSystemEntryFeature() {
           </div>
 
           <aside className="card-swiss grid content-start gap-4">
-            <div className="text-[0.625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal text-[var(--text-muted)]">
               {t('design_system.coverage')}
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -101,11 +101,11 @@ export default function DesignSystemEntryFeature() {
                 <div className="flex flex-wrap items-end justify-between gap-3">
                   <div>
                     <h3 className="text-xl font-black uppercase italic tracking-normal">{group.title}</h3>
-                    <p className="mt-1 text-[0.625rem] font-bold uppercase tracking-normal text-[var(--text-muted)]">
+                    <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-normal text-[var(--text-muted)]">
                       {group.description}
                     </p>
                   </div>
-                  <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[0.5625rem] font-black">
+                  <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black">
                     {group.stories.length} {t('design_system.items')}
                   </span>
                 </div>
@@ -115,10 +115,10 @@ export default function DesignSystemEntryFeature() {
                   <div key={story.id} className="grid gap-2 px-5 py-4 md:grid-cols-[13rem_minmax(0,1fr)] md:items-center">
                     <div className="font-black uppercase italic tracking-normal">{story.title}</div>
                     <div className="min-w-0">
-                      <div className="truncate font-mono text-[0.625rem] font-bold text-[var(--text-muted)]">
+                      <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
                         {story.storybookTitle}
                       </div>
-                      <div className="mt-1 truncate font-mono text-[0.5625rem] text-[var(--text-muted)]/70">
+                      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]/70">
                         {story.path}
                       </div>
                     </div>
@@ -136,10 +136,10 @@ export default function DesignSystemEntryFeature() {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="text-[0.5625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-normal text-[var(--text-muted)]">
         {label}
       </div>
-      <code className="break-all font-mono text-[0.6875rem] font-bold">{value}</code>
+      <code className="break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-bold">{value}</code>
     </div>
   );
 }
@@ -148,7 +148,7 @@ function Metric({ label, value }: { label: string; value: number }) {
   return (
     <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
       <div className="font-mono text-2xl font-black">{value}</div>
-      <div className="mt-1 text-[0.5625rem] font-black uppercase tracking-normal text-[var(--text-muted)]">
+      <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-normal text-[var(--text-muted)]">
         {label}
       </div>
     </div>

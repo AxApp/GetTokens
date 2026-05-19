@@ -12,7 +12,7 @@ import { AccountOrderRow } from './CodexAccountOrderRow';
 import { CodexAccountOrderSection } from './CodexAccountOrderSection';
 
 const meta = {
-  title: 'Design System/Feature Components/Codex Account Order',
+  title: 'Design System/业务组件/Codex 账号顺序',
   parameters: {
     layout: 'fullscreen',
   },

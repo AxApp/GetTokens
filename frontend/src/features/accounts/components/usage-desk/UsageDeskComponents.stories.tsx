@@ -19,7 +19,7 @@ import {
 } from './UsageDeskPanels';
 
 const meta = {
-  title: 'Design System/Feature Components/Usage Desk',
+  title: 'Design System/业务组件/用量工作台',
   parameters: {
     layout: 'fullscreen',
   },
@@ -29,23 +29,23 @@ export default meta;
 type Story = StoryObj;
 
 const dailyTokenPoints = [
-  { label: '05-13', value: 184000, color: '#111111', drilldownDayKey: '2026-05-13' },
-  { label: '05-14', value: 226000, color: '#111111', drilldownDayKey: '2026-05-14' },
-  { label: '05-15', value: 198000, color: '#111111', drilldownDayKey: '2026-05-15' },
-  { label: '05-16', value: 314000, color: '#111111', drilldownDayKey: '2026-05-16' },
-  { label: '05-17', value: 286000, color: '#111111', drilldownDayKey: '2026-05-17' },
-  { label: '05-18', value: 418000, color: '#111111', drilldownDayKey: '2026-05-18' },
-  { label: '05-19', value: 352000, color: '#111111', drilldownDayKey: '2026-05-19' },
+  { label: '05-13', value: 184000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-13' },
+  { label: '05-14', value: 226000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-14' },
+  { label: '05-15', value: 198000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-15' },
+  { label: '05-16', value: 314000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-16' },
+  { label: '05-17', value: 286000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-17' },
+  { label: '05-18', value: 418000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-18' },
+  { label: '05-19', value: 352000, color: 'var(--color-chart-primary)', drilldownDayKey: '2026-05-19' },
 ];
 
 const projectedTokenPoints = [
-  { label: '05-13', value: 132000, color: '#777777' },
-  { label: '05-14', value: 188000, color: '#777777' },
-  { label: '05-15', value: 176000, color: '#777777' },
-  { label: '05-16', value: 274000, color: '#777777' },
-  { label: '05-17', value: 242000, color: '#777777' },
-  { label: '05-18', value: 365000, color: '#777777' },
-  { label: '05-19', value: 318000, color: '#777777' },
+  { label: '05-13', value: 132000, color: 'var(--color-chart-secondary)' },
+  { label: '05-14', value: 188000, color: 'var(--color-chart-secondary)' },
+  { label: '05-15', value: 176000, color: 'var(--color-chart-secondary)' },
+  { label: '05-16', value: 274000, color: 'var(--color-chart-secondary)' },
+  { label: '05-17', value: 242000, color: 'var(--color-chart-secondary)' },
+  { label: '05-18', value: 365000, color: 'var(--color-chart-secondary)' },
+  { label: '05-19', value: 318000, color: 'var(--color-chart-secondary)' },
 ];
 
 const minuteRows: UsageDetailTableRow[] = [
@@ -144,10 +144,10 @@ function ChartSample({
         summaryItems={['7D TOKENS 1.98M', 'REQUESTS 184', 'CACHE HIT 32%']}
         controls={
           <div className="flex w-full flex-wrap gap-2 p-3">
-            <button type="button" className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
+            <button type="button" className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]">
               7D
             </button>
-            <button type="button" className="btn-swiss bg-[var(--text-primary)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)]">
+            <button type="button" className="btn-swiss bg-[var(--text-primary)] !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)]">
               TOKENS
             </button>
           </div>
@@ -158,16 +158,16 @@ function ChartSample({
         onSelectPoint={(key) => setSelectedPointKey(key)}
         status={
           <>
-            <span className="font-mono text-[0.625rem] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+            <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
               Usage curve
             </span>
-            <span className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               mock data
             </span>
           </>
         }
         footerExtra={
-          <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[0.5625rem] font-black uppercase">
+          <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase">
             selected {selectedPointKey}
           </span>
         }
@@ -215,7 +215,7 @@ function UsageDeskOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Usage Desk Components</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">用量工作台组件</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           把 Usage Desk 中已经提取的图表、明细表、信息卡和会话下钻面板纳入设计系统，用固定 mock 数据检查曲线、空态、选中行和高密度指标布局。
         </p>

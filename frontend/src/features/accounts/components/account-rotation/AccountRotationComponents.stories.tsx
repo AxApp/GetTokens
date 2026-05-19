@@ -6,7 +6,7 @@ import { RotationConfigSection } from './RotationConfigSection';
 import { RotationPriorityItem } from './RotationPriorityItem';
 
 const meta = {
-  title: 'Design System/Feature Components/Account Rotation',
+  title: 'Design System/业务组件/账号轮换',
   parameters: {
     layout: 'fullscreen',
   },
@@ -122,7 +122,7 @@ function AccountRotationOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Account Rotation</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号轮换</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           把账号轮换里的优先级条目和 routing 配置表单纳入设计系统，用固定账号和 routing draft 检查拖拽态、禁用态、pending 态和策略菜单。
         </p>

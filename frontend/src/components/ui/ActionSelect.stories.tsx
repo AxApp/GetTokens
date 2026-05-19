@@ -5,7 +5,7 @@ import DesignSystemStoryFrame from '../../features/design-system/DesignSystemSto
 import ActionSelect from './ActionSelect';
 
 const meta = {
-  title: 'Design System/Components/ActionSelect',
+  title: 'Design System/通用组件/操作选择',
   parameters: {
     layout: 'centered',
   },

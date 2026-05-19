@@ -87,13 +87,13 @@ export default function ApiKeyComposeModal({
   const showProbeSection = Boolean(onFetchModels || onVerify);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm" onClick={onClose}>
       <div
         className="flex w-full max-w-xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('accounts.source_api_key')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -103,7 +103,7 @@ export default function ApiKeyComposeModal({
         <div className="space-y-4 overflow-y-auto p-6">
           <div className="grid gap-4">
             <label className="space-y-2">
-              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.api_key_label')}
               </span>
               <input
@@ -114,7 +114,7 @@ export default function ApiKeyComposeModal({
               />
             </label>
             <label className="space-y-2">
-              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.api_key_value')}
               </span>
               <input
@@ -126,7 +126,7 @@ export default function ApiKeyComposeModal({
               />
             </label>
             <label className="space-y-2">
-              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Base URL
               </span>
               <input
@@ -142,12 +142,12 @@ export default function ApiKeyComposeModal({
                 checked={form.quotaEnabled}
                 onChange={(event) => onChange('quotaEnabled', event.target.checked)}
               />
-              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.quota_curl_enabled')}
               </span>
             </label>
             <label className="space-y-2">
-              <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.quota_curl')}
               </span>
               <textarea
@@ -161,7 +161,7 @@ export default function ApiKeyComposeModal({
 
           {showProbeSection ? (
             <div className="space-y-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-4 py-4">
-              <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 {t('accounts.api_key_probe')}
               </div>
 
@@ -172,7 +172,7 @@ export default function ApiKeyComposeModal({
                       type="button"
                       onClick={() => void handleFetchModels()}
                       disabled={!probeEnabled || fetchModelsState.status === 'loading'}
-                      className="btn-swiss !py-1.5 !text-[0.5625rem]"
+                      className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                     >
                       {fetchModelsState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
@@ -185,11 +185,11 @@ export default function ApiKeyComposeModal({
                     </button>
                     {fetchModelsState.status !== 'idle' ? (
                       <span
-                        className={`text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+                        className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
                           fetchModelsState.status === 'success'
-                            ? 'text-green-600'
+                            ? 'text-[var(--color-status-success)]'
                             : fetchModelsState.status === 'error'
-                              ? 'text-red-500'
+                              ? 'text-[var(--color-status-danger)]'
                               : 'text-[var(--text-muted)]'
                         }`}
                       >
@@ -208,7 +208,7 @@ export default function ApiKeyComposeModal({
                           key={name}
                           type="button"
                           onClick={() => setVerifyModel(name)}
-                          className={`border px-2 py-0.5 text-[0.5rem] font-black uppercase tracking-[0.12em] transition-colors ${
+                          className={`border px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] transition-colors ${
                             verifyModel === name
                               ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                               : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-primary)]'
@@ -218,7 +218,7 @@ export default function ApiKeyComposeModal({
                         </button>
                       ))}
                       {fetchModelsState.models.length > 12 ? (
-                        <span className="self-center text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        <span className="self-center text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                           +{fetchModelsState.models.length - 12}
                         </span>
                       ) : null}
@@ -246,7 +246,7 @@ export default function ApiKeyComposeModal({
                       type="button"
                       onClick={() => void handleVerify()}
                       disabled={!probeEnabled || !verifyModel.trim() || verifyState.status === 'loading'}
-                      className="btn-swiss whitespace-nowrap !py-2 !text-[0.5625rem]"
+                      className="btn-swiss whitespace-nowrap !py-2 !text-[length:var(--font-size-ui-xs)]"
                     >
                       {verifyState.status === 'loading' ? (
                         <span className="flex items-center gap-1.5">
@@ -260,11 +260,11 @@ export default function ApiKeyComposeModal({
                   </div>
                   {verifyState.status !== 'idle' ? (
                     <div
-                      className={`text-[0.5625rem] font-black uppercase tracking-wide ${
+                      className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
                         verifyState.status === 'success'
-                          ? 'text-green-600'
+                          ? 'text-[var(--color-status-success)]'
                           : verifyState.status === 'error'
-                            ? 'text-red-500'
+                            ? 'text-[var(--color-status-danger)]'
                             : 'text-[var(--text-muted)]'
                       }`}
                     >
@@ -277,7 +277,7 @@ export default function ApiKeyComposeModal({
           ) : null}
 
           {error ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {error}
             </div>
           ) : null}

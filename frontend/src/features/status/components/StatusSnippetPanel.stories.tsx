@@ -4,7 +4,7 @@ import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import StatusSnippetPanel from './StatusSnippetPanel';
 
 const meta = {
-  title: 'Design System/Feature Components/Status Snippet Panel',
+  title: 'Design System/业务组件/状态页片段面板',
   parameters: {
     layout: 'fullscreen',
   },
@@ -53,7 +53,7 @@ function SnippetSample({
         onCopy={copy ? () => undefined : undefined}
         headerAction={
           action ? (
-            <button type="button" className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
+            <button type="button" className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]">
               Preview
             </button>
           ) : undefined
@@ -70,7 +70,7 @@ function StatusSnippetPanelOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Status Snippet Panel</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页片段面板</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           {zh
             ? '把 Status 页里用于展示配置片段和 diff 的代码面板拆成独立组件并纳入设计系统，统一检查复制按钮、额外操作、diff 着色和长行横向滚动。'

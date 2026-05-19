@@ -10,7 +10,7 @@ import AccountCard from './AccountCard';
 import AccountsListWorkbenchView from './AccountsListWorkbenchView';
 
 const meta = {
-  title: 'Design System/Feature Components/Accounts List',
+  title: 'Design System/业务组件/账号列表',
   parameters: {
     layout: 'fullscreen',
   },
@@ -336,7 +336,7 @@ function AccountsListSample({
               <p className="text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
                 No matching accounts
               </p>
-              <p className="mt-2 text-[0.625rem] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 Search and filters are preserved while the list renders an empty group.
               </p>
             </div>
@@ -351,7 +351,7 @@ function AccountsListOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Accounts List</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号列表</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           账号列表整体进入设计系统：页头、搜索筛选、密度切换、分组容器和真实账号卡片用同一组 mock 组合验收。
         </p>

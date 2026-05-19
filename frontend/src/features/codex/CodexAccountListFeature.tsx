@@ -750,7 +750,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
             <button
               type="button"
               onClick={() => setRouteProbeOpen(true)}
-              className="btn-swiss flex min-h-10 items-center gap-2 !px-3 !py-2 !text-[0.625rem]"
+              className="btn-swiss flex min-h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
             >
               <Terminal className="h-3.5 w-3.5" strokeWidth={4} />
               {t('codex.account_list_probe_open')}

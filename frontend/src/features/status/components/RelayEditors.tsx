@@ -22,7 +22,7 @@ export function RelayKeyEditorModal({
 }: RelayKeyEditorModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -30,7 +30,7 @@ export function RelayKeyEditorModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('status.service_api_keys')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -39,7 +39,7 @@ export function RelayKeyEditorModal({
         </header>
         <div className="space-y-4 p-6">
           <label className="space-y-2">
-            <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('status.service_key_name_label')}
             </span>
             <input
@@ -50,7 +50,7 @@ export function RelayKeyEditorModal({
             />
           </label>
           <label className="space-y-2">
-            <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('status.service_key_value_label')}
             </span>
             <div className="relative">
@@ -66,7 +66,7 @@ export function RelayKeyEditorModal({
                 <button
                   type="button"
                   onClick={() => onChange({ ...editor, apiKey: generateRandomRelayKey(), error: '' })}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-primary)] active:scale-95"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-primary)] active:scale-95"
                 >
                   {t('status.service_key_value_generate')}
                 </button>
@@ -74,7 +74,7 @@ export function RelayKeyEditorModal({
             </div>
           </label>
           {editor.error ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {editor.error}
             </div>
           ) : null}
@@ -109,7 +109,7 @@ export function RelayProviderEditorModal({
 }: RelayProviderEditorModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -117,7 +117,7 @@ export function RelayProviderEditorModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('status.provider_title')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -126,7 +126,7 @@ export function RelayProviderEditorModal({
         </header>
         <div className="space-y-4 p-6">
           <label className="space-y-2">
-            <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('status.provider_id_label')}
             </span>
             <input
@@ -137,7 +137,7 @@ export function RelayProviderEditorModal({
             />
           </label>
           <label className="space-y-2">
-            <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('status.provider_name_label')}
             </span>
             <input
@@ -148,7 +148,7 @@ export function RelayProviderEditorModal({
             />
           </label>
           {editor.error ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {editor.error}
             </div>
           ) : null}
@@ -183,7 +183,7 @@ export function RelayModelEditorModal({
 }: RelayModelEditorModalProps) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-8 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-8 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
@@ -191,7 +191,7 @@ export function RelayModelEditorModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             {t('status.model_name_title')}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
@@ -200,7 +200,7 @@ export function RelayModelEditorModal({
         </header>
         <div className="space-y-4 p-6">
           <label className="space-y-2">
-            <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               {t('status.model_name_label')}
             </span>
             <input
@@ -211,7 +211,7 @@ export function RelayModelEditorModal({
             />
           </label>
           {editor.error ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {editor.error}
             </div>
           ) : null}

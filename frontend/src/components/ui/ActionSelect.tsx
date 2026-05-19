@@ -32,7 +32,7 @@ export default function ActionSelect({
       data-design-system-component-name="ActionSelect"
       className="grid gap-2"
     >
-      <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         {title}
       </span>
       <div className="relative min-w-0">
@@ -53,7 +53,7 @@ export default function ActionSelect({
             type="button"
             onClick={onCreate}
             disabled={createDisabled}
-            className="btn-swiss !px-2 !py-0.5 !text-[0.5625rem] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss !px-2 !py-0.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             +
           </button>
@@ -62,7 +62,7 @@ export default function ActionSelect({
               type="button"
               onClick={onDelete}
               disabled={deleteDisabled}
-              className="btn-swiss !px-2 !py-0.5 !text-[0.5625rem] disabled:cursor-not-allowed disabled:opacity-50"
+              className="btn-swiss !px-2 !py-0.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               ×
             </button>

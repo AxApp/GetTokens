@@ -6,7 +6,7 @@ import { buildProxyURLFromNode } from '../../proxy-pool/model';
 import AccountProxyRouteSection from './AccountProxyRouteSection';
 
 const meta = {
-  title: 'Design System/Feature Components/Account Proxy Route',
+  title: 'Design System/业务组件/账号代理出口',
   parameters: {
     layout: 'fullscreen',
   },
@@ -92,7 +92,7 @@ function AccountProxyRouteOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Account Proxy Route</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号代理出口</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           账号详情里的出口选择区块进入设计系统后，用注入的 proxy nodes mock 覆盖继承、直连、自定义、无节点和只读状态。
         </p>

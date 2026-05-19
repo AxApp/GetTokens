@@ -439,23 +439,23 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           />
 
           {deleteError ? (
-            <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {deleteError}
             </div>
           ) : null}
           {oauthBanner ? (
             <div
-              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide ${
+              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
                 oauthBanner.tone === 'error'
-                  ? 'border-red-500 bg-red-500/10 text-red-500'
+                  ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]'
                   : oauthBanner.tone === 'success'
-                    ? 'border-green-600 bg-green-600/10 text-green-700'
+                    ? 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]'
                     : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
               }`}
             >
               <span>{oauthBanner.message}</span>
               {!isOAuthPending ? (
-                <button onClick={() => setOAuthBanner(null)} className="btn-swiss !px-2 !py-1 !text-[0.5rem]">
+                <button onClick={() => setOAuthBanner(null)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
                   {t('common.close')}
                 </button>
               ) : null}

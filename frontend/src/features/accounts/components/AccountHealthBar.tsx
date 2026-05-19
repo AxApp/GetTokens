@@ -8,11 +8,11 @@ interface AccountHealthBarProps {
 function blockClass(block: AccountUsageSummary['statusBar']['blocks'][number]) {
   switch (block) {
     case 'success':
-      return 'bg-green-600';
+      return 'bg-[var(--color-status-success)]';
     case 'failure':
-      return 'bg-red-500';
+      return 'bg-[var(--color-status-danger)]';
     case 'mixed':
-      return 'bg-yellow-500';
+      return 'bg-[var(--color-status-warning)]';
     default:
       return 'bg-[var(--border-color)] opacity-40';
   }

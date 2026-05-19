@@ -20,7 +20,7 @@ export function FormatBadges({ account }: FormatBadgesProps) {
       {formats.map((fmt) => (
         <span
           key={fmt}
-          className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]"
+          className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]"
         >
           {formatLabel(fmt)}
         </span>
@@ -44,7 +44,7 @@ export function QuotaBars({ quotaDisplay, accentFillClass }: QuotaBarsProps) {
     <div className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
       {windows.map((window) => (
         <div key={window.id} className="account-card-quota-row grid items-center gap-2">
-          <div className="font-mono text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
             {window.label}
           </div>
           <div
@@ -62,7 +62,7 @@ export function QuotaBars({ quotaDisplay, accentFillClass }: QuotaBarsProps) {
               />
             ) : null}
           </div>
-          <div className="text-right font-mono text-[0.625rem] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+          <div className="text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
             {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
           </div>
         </div>
@@ -82,11 +82,11 @@ export function BillingBalance({ billing }: BillingBalanceProps) {
 
   return (
     <div className="space-y-2 border-b border-dashed border-[var(--border-color)] px-4 py-3">
-      <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         BALANCE
       </div>
       {billing.balances.map((b, i) => (
-        <div key={i} className="account-card-billing-grid grid gap-2 text-[0.5625rem]">
+        <div key={i} className="account-card-billing-grid grid gap-2 text-[length:var(--font-size-ui-xs)]">
           <div className="flex items-center justify-between border border-[var(--border-color)] px-2 py-1">
             <span className="font-mono font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">Total</span>
             <span className="font-mono font-black text-[var(--text-primary)]">{b.totalBalance} {b.currency}</span>
@@ -130,10 +130,10 @@ function formatLatencyMetric(ms: number | null | undefined) {
 function UsageCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-r border-dashed border-[var(--border-color)] px-3 py-3 last:border-r-0">
-      <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-1 font-mono text-[0.75rem] font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
+      <div className="mt-1 font-mono text-[length:var(--font-size-ui-md)] font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
         {value}
       </div>
     </div>
@@ -166,28 +166,28 @@ export function RateLimitGuard({ rateLimitStatus }: RateLimitGuardProps) {
   return (
     <section className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
           ROUTE GUARD
         </div>
-        <div className={`font-mono text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
-          rateLimitStatus?.blocked ? 'text-red-500' : 'text-[var(--text-muted)]'
+        <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
+          rateLimitStatus?.blocked ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
         }`}>
           {rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS'}
         </div>
       </div>
       {rules.map((ruleState) => {
         const exceeded = ruleState.exceeded && ruleState.rule.action === 'block';
-        const fillClass = exceeded ? 'bg-red-500' : ruleState.exceeded ? 'bg-yellow-500' : 'bg-amber-600';
+        const fillClass = exceeded ? 'bg-[var(--color-status-danger)]' : ruleState.exceeded ? 'bg-[var(--color-status-warning)]' : 'bg-[var(--color-status-warning)]';
         const pct = Math.min(100, Math.max(0, Number(ruleState.usagePct || 0)));
         return (
           <div key={ruleState.rule.id} className="account-card-rate-limit-row grid items-center gap-2">
-            <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
               {ruleState.rule.strategy} · {ruleState.rule.window}
             </div>
             <div className="relative h-3 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]">
               <div className={`absolute inset-y-0 left-0 ${fillClass}`} style={{ width: `${pct}%` }} />
             </div>
-            <div className="text-right font-mono text-[0.5rem] font-black tabular-nums text-[var(--text-primary)]">
+            <div className="text-right font-mono text-[length:var(--font-size-ui-2xs)] font-black tabular-nums text-[var(--text-primary)]">
               {pct}%
             </div>
           </div>
@@ -214,17 +214,17 @@ export function EvidenceSection({ rows }: EvidenceSectionProps) {
 
   return (
     <section className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
-      <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         EVIDENCE
       </div>
       <div className="account-card-evidence-grid grid gap-x-4 gap-y-1.5">
         {rows.map((row, i) => (
           <div key={i} className="contents">
-            <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
               {row.label}
             </div>
             <div
-              className="font-mono text-[0.5625rem] font-bold uppercase tracking-[0.04em] text-[var(--text-primary)] truncate"
+              className="font-mono text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.04em] text-[var(--text-primary)] truncate"
               title={row.title ?? row.value}
             >
               {row.value}
@@ -250,7 +250,7 @@ export function UnsupportedQuotaPlaceholder({ quotaDisplay, billing, t }: Unsupp
 
   return (
     <section className="border-b border-dashed border-[var(--border-color)] px-4 py-4">
-      <div className="font-mono text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
         {quotaDisplay?.status === 'loading' ? t('accounts.quota_syncing') : t('accounts.quota_unsupported')}
       </div>
     </section>

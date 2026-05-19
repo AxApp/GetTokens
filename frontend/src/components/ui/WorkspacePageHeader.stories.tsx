@@ -4,7 +4,7 @@ import DesignSystemStoryFrame from '../../features/design-system/DesignSystemSto
 import WorkspacePageHeader from './WorkspacePageHeader';
 
 const meta = {
-  title: 'Design System/Components/WorkspacePageHeader',
+  title: 'Design System/通用组件/工作区页头',
   parameters: {
     layout: 'fullscreen',
   },

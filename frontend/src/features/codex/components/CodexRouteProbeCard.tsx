@@ -68,7 +68,7 @@ export function RouteProbeCard({
 
   return (
     <div
-      className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-black/80 px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10"
+      className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-[var(--overlay-scrim-80)] px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10"
       data-collaboration-id="MODAL_CODEX_ROUTE_PROBE"
       onClick={onClose}
     >
@@ -78,13 +78,13 @@ export function RouteProbeCard({
       >
         <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4">
           <div className="min-w-0">
-            <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               {t('codex.account_list_probe_terminal')}
             </div>
             <h3 className="mt-2 text-xl font-black uppercase italic leading-none tracking-tighter text-[var(--text-primary)]">
               {t('codex.account_list_probe_open')}
             </h3>
-            <p className="mt-2 max-w-3xl text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-muted)]">
               {t('codex.account_list_policy_headline')}
             </p>
           </div>
@@ -180,10 +180,10 @@ function ProbeMetric({
 }) {
   return (
     <div className={`min-w-0 px-3 py-2 ${last ? '' : 'border-r-2 border-[var(--border-color)]'}`}>
-      <div className="truncate text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+      <div className="truncate text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className={`mt-1 truncate font-mono text-[0.625rem] font-black uppercase tracking-wide ${
+      <div className={`mt-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
         tone === 'critical' ? 'text-[var(--accent-red)]' : 'text-[var(--text-primary)]'
       }`}>
         {value}
@@ -220,7 +220,7 @@ function ProbeControlPanel({
   return (
     <div className="grid content-start gap-5">
       <div className="border-b-2 border-[var(--border-color)] pb-4">
-        <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
           {t('codex.account_list_policy_title')}
         </div>
         <div className="mt-2 text-lg font-black uppercase italic leading-none tracking-tighter text-[var(--text-primary)]">
@@ -229,7 +229,7 @@ function ProbeControlPanel({
       </div>
 
       <label className="grid gap-2">
-        <span className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
           {t('codex.account_list_probe_model')}
         </span>
         <ModelCombobox
@@ -245,7 +245,7 @@ function ProbeControlPanel({
           type="button"
           onClick={onProbeOnce}
           disabled={routingProbeDisabled}
-          className="btn-swiss flex min-h-11 w-full items-center justify-center gap-2 !px-3 !py-2 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
+          className="btn-swiss flex min-h-11 w-full items-center justify-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Play className="h-3.5 w-3.5" strokeWidth={4} />
           {routingProbeRunning ? t('codex.account_list_probe_running') : t('codex.account_list_probe_once')}
@@ -255,7 +255,7 @@ function ProbeControlPanel({
             type="button"
             onClick={onProbeSeries}
             disabled={routingProbeDisabled}
-            className="btn-swiss min-h-10 !px-3 !py-2 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss min-h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t('codex.account_list_probe_series')}
           </button>
@@ -263,7 +263,7 @@ function ProbeControlPanel({
             type="button"
             onClick={onReset}
             disabled={routingProbeRunning}
-            className="btn-swiss flex min-h-10 items-center justify-center gap-2 !px-3 !py-2 !text-[0.625rem] disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-swiss flex min-h-10 items-center justify-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <RotateCcw className="h-3.5 w-3.5" strokeWidth={4} />
             {t('common.reset')}
@@ -273,15 +273,15 @@ function ProbeControlPanel({
 
       <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
         <div className="border-b-2 border-[var(--border-color)] px-3 py-2">
-          <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
             {t('codex.account_list_policy_fallback_scope')}
           </div>
-          <div className="mt-1 text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+          <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
             {t('codex.account_list_policy_fallback')}
           </div>
         </div>
         <div className="flex items-center justify-between gap-3 px-3 py-3">
-          <span className="min-w-0 text-[0.5rem] font-bold uppercase leading-snug tracking-wide text-[var(--text-muted)]">
+          <span className="min-w-0 text-[length:var(--font-size-ui-2xs)] font-bold uppercase leading-snug tracking-wide text-[var(--text-muted)]">
             {t('codex.account_list_policy_fallback_hint')}
           </span>
           <ToggleSwitch checked={allowFallback} label={t('codex.account_list_policy_fallback')} onChange={onFallbackChange} />
@@ -296,20 +296,20 @@ function RouteProbeCandidateQueue({ rows, t }: { rows: CodexAccountRow[]; t: (ke
     <section className="min-w-0 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)]">
       <div className="flex items-end justify-between gap-4 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-3">
         <div className="min-w-0">
-          <div className="text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
             {t('codex.account_list_policy_preview')}
           </div>
           <div className="mt-1 text-base font-black uppercase italic leading-none tracking-tighter text-[var(--text-primary)]">
             {t('codex.account_list_policy_order')}
           </div>
         </div>
-        <div className="shrink-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 font-mono text-[0.625rem] font-black uppercase tracking-wide text-[var(--text-primary)]">
+        <div className="shrink-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
           {String(rows.length).padStart(2, '0')}
         </div>
       </div>
       <div className="max-h-[19rem] overflow-auto p-3">
         {rows.length === 0 ? (
-          <div className="border-2 border-[var(--accent-red)] bg-red-500/10 px-3 py-4 text-center text-[0.625rem] font-black uppercase tracking-wide text-[var(--accent-red)]">
+          <div className="border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-3 py-4 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
             {t('codex.account_list_probe_no_account')}
           </div>
         ) : (
@@ -319,19 +319,19 @@ function RouteProbeCandidateQueue({ rows, t }: { rows: CodexAccountRow[]; t: (ke
                 key={row.id}
                 className="grid min-h-12 grid-cols-[3rem_minmax(0,1fr)_max-content] items-stretch border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
               >
-                <div className="flex items-center justify-center border-r-2 border-[var(--border-color)] bg-[var(--text-primary)] font-mono text-[0.75rem] font-black text-[var(--bg-main)]">
+                <div className="flex items-center justify-center border-r-2 border-[var(--border-color)] bg-[var(--text-primary)] font-mono text-[length:var(--font-size-ui-md)] font-black text-[var(--bg-main)]">
                   {String(index + 1).padStart(2, '0')}
                 </div>
                 <div className="grid min-w-0 content-center gap-1 px-3 py-2">
-                  <div className="truncate text-[0.75rem] font-black leading-tight text-[var(--text-primary)]">
+                  <div className="truncate text-[length:var(--font-size-ui-md)] font-black leading-tight text-[var(--text-primary)]">
                     {row.label}
                   </div>
-                  <div className="truncate font-mono text-[0.5625rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
                     {buildEndpointLabel(row) || row.provider}
                   </div>
                 </div>
                 <div className="flex items-center border-l-2 border-[var(--border-color)] px-2 py-2">
-                  <span className="whitespace-nowrap border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[0.5rem] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  <span className="whitespace-nowrap border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
                     {sourceKindLabel(t, row.sourceKind)}
                   </span>
                 </div>
@@ -362,19 +362,19 @@ function RouteProbeTerminal({
   return (
     <section className="min-w-0 bg-[var(--bg-main)] p-5">
       <div className="flex items-center justify-between gap-3 border-b-2 border-[var(--border-color)] pb-3">
-        <div className="flex items-center gap-2 text-[0.5rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        <div className="flex items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
           <Terminal className="h-3.5 w-3.5" strokeWidth={3} />
           {t('codex.account_list_probe_terminal')}
         </div>
         {latestUsedFallback ? (
-          <div className="border-2 border-[var(--accent-red)] bg-red-500/10 px-2 py-1 text-[0.5625rem] font-black uppercase tracking-wide text-[var(--accent-red)]">
+          <div className="border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--accent-red)]">
             {t('codex.account_list_probe_fallback_hit')}
           </div>
         ) : null}
       </div>
-      <div className="max-h-[22rem] min-h-[13rem] overflow-auto bg-[var(--bg-main)] py-3 font-mono text-[0.6875rem] font-black leading-6 text-[var(--text-primary)]">
+      <div className="max-h-[22rem] min-h-[13rem] overflow-auto bg-[var(--bg-main)] py-3 font-mono text-[length:var(--font-size-ui-md-compact)] font-black leading-6 text-[var(--text-primary)]">
         {lines.length === 0 ? (
-          <div className="border border-dashed border-[var(--border-color)] px-3 py-4 text-[0.625rem] uppercase tracking-wide text-[var(--text-muted)]">
+          <div className="border border-dashed border-[var(--border-color)] px-3 py-4 text-[length:var(--font-size-ui-sm)] uppercase tracking-wide text-[var(--text-muted)]">
             {t('codex.account_list_probe_idle')}
           </div>
         ) : (
@@ -384,7 +384,7 @@ function RouteProbeTerminal({
               <span className="min-w-0">
                 <span className="break-all">{line.label}</span>
                 {line.detail ? (
-                  <span className={`ml-2 break-all text-[0.625rem] ${line.status === 'command' ? 'text-[var(--text-muted)]' : routeProbeLineTone(line.status)}`}>
+                  <span className={`ml-2 break-all text-[length:var(--font-size-ui-sm)] ${line.status === 'command' ? 'text-[var(--text-muted)]' : routeProbeLineTone(line.status)}`}>
                     · {line.detail}
                   </span>
                 ) : null}

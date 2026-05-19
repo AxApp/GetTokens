@@ -15,7 +15,7 @@ import {
 } from './RelayEditors';
 
 const meta = {
-  title: 'Design System/Feature Components/Status Relay Editors',
+  title: 'Design System/业务组件/状态页 Relay 编辑器',
   parameters: {
     layout: 'fullscreen',
   },
@@ -173,7 +173,7 @@ function StatusRelayEditorsOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Status Relay Editors</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">状态页 Relay 编辑器</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           {zh
             ? '把 Status 页中用于 Relay key、provider 和 model 的编辑弹窗纳入设计系统，统一检查 modal shell、表单密度、错误态和禁用输入。'

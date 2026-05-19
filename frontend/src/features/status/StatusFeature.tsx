@@ -730,7 +730,7 @@ export default function StatusFeature({
             <span className="flex items-center gap-2">
               <span
                 className={`h-2.5 w-2.5 shrink-0 border border-[var(--border-color)] ${
-                  sidecarStatus.code === 'ready' ? 'bg-green-600' : 'bg-red-600'
+                  sidecarStatus.code === 'ready' ? 'bg-[var(--color-status-success)]' : 'bg-[var(--color-status-danger)]'
                 }`}
               ></span>
               <span className="font-mono tracking-[0.04em] text-[var(--text-primary)]">{healthz}</span>
@@ -742,8 +742,8 @@ export default function StatusFeature({
             <div
               className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black uppercase tracking-widest ${
                 sidecarStatus.code === 'ready' && !healthzHasError
-                  ? 'border-black bg-white text-black'
-                  : 'border-red-600 bg-white text-red-600'
+                  ? 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
+                  : 'border-[var(--color-status-danger)] bg-[var(--bg-main)] text-[var(--color-status-danger)]'
               }`}
             >
               {statusHeadline}

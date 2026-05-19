@@ -128,7 +128,7 @@ export function Combobox({
               role="option"
               aria-selected={option === value}
               title={option}
-              className={`block w-full min-w-0 border-2 px-2.5 py-1.5 font-mono text-[0.625rem] font-bold normal-case tracking-normal transition-transform ${
+              className={`block w-full min-w-0 border-2 px-2.5 py-1.5 font-mono text-[length:var(--font-size-ui-sm)] font-bold normal-case tracking-normal transition-transform ${
                 align === 'right' ? 'text-right' : 'text-left'
               } ${
                 option === value
@@ -177,7 +177,7 @@ export function Combobox({
             setOpen(true);
           }
         }}
-        className={`input-swiss w-full min-w-0 !px-2 !py-1.5 !pr-8 !text-[0.625rem] disabled:opacity-50 ${
+        className={`input-swiss w-full min-w-0 !px-2 !py-1.5 !pr-8 !text-[length:var(--font-size-ui-sm)] disabled:opacity-50 ${
           align === 'right' ? 'text-right' : ''
         }`}
       />

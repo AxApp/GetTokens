@@ -20,7 +20,7 @@ import {
 } from './CardSections';
 
 const meta = {
-  title: 'Design System/Feature Components/Account Cards',
+  title: 'Design System/业务组件/账号卡片',
   parameters: {
     layout: 'fullscreen',
   },
@@ -312,7 +312,7 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
         <div className="grid min-h-[9rem] gap-3 p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 Interactive card shell
               </div>
               <h3 className="mt-2 text-lg font-black uppercase italic tracking-normal text-[var(--text-primary)]">
@@ -321,7 +321,7 @@ function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
             </div>
             <button
               type="button"
-              className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[0.625rem] font-black uppercase tracking-normal"
+              className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-normal"
               onClick={(event) => event.stopPropagation()}
             >
               Nested Action
@@ -341,7 +341,7 @@ function HealthBarSample({ summary = healthyUsageSummary }: { summary?: AccountU
     <DesignSystemStoryFrame label="DS-HEALTH">
       <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <div className="flex items-end justify-between gap-3">
-          <div className="font-mono text-[0.625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
             Request health
           </div>
           <div className="font-mono text-sm font-black tabular-nums text-[var(--text-primary)]">
@@ -399,7 +399,7 @@ function CardSectionsSample() {
   return (
     <DesignSystemStoryFrame label="DS-SECTIONS">
       <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <QuotaBars quotaDisplay={quotaDisplay} accentFillClass="bg-green-600" />
+        <QuotaBars quotaDisplay={quotaDisplay} accentFillClass="bg-[var(--color-status-success)]" />
         <BillingBalance billing={billing} />
         <UsageMetrics usageSummary={healthyUsageSummary} t={t} />
         <RateLimitGuard rateLimitStatus={rateLimitStatus} />
@@ -434,7 +434,7 @@ function AccountCardsOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Account Card Components</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号卡片组件</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           {zh
             ? '把账号卡片体系里的完整账号卡、基础外壳、归因卡、指标段、健康条和加载骨架纳入设计系统，用固定 mock 数据检查密度、失败态、限流和额度展示。'

@@ -550,11 +550,11 @@ export default function ProxyPoolFeature() {
                 className="hidden"
                 onChange={handleImportFileChange}
               />
-              <button type="button" onClick={openCreateModal} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
+              <button type="button" onClick={openCreateModal} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
                 新增代理
               </button>
               <div ref={headerMenuRef} className="relative">
-                <button type="button" onClick={() => setIsHeaderMenuOpen((prev) => !prev)} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
+                <button type="button" onClick={() => setIsHeaderMenuOpen((prev) => !prev)} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
                   更多操作
                 </button>
                 {isHeaderMenuOpen ? (
@@ -623,7 +623,7 @@ export default function ProxyPoolFeature() {
               </div>
               <div className="flex flex-col gap-2">
                 <div className="flex flex-col gap-2">
-                  <span className="text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">测速网址</span>
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">测速网址</span>
                   <input
                     type="text"
                     list="proxy-probe-target-history"
@@ -643,7 +643,7 @@ export default function ProxyPoolFeature() {
                 </div>
                 {probeTargetHistory.length > 0 ? (
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">历史</span>
+                    <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">历史</span>
                     {probeTargetHistory.slice(0, 5).map((url) => (
                       <button
                         key={url}
@@ -652,7 +652,7 @@ export default function ProxyPoolFeature() {
                           setProbeTargetURL(url);
                           setProbeTargetHistory((current) => rememberProxyProbeTargetURL(current, url));
                         }}
-                        className="border border-[var(--border-color)] px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.14em] text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
+                        className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)]"
                       >
                         {url}
                       </button>
@@ -661,31 +661,31 @@ export default function ProxyPoolFeature() {
                 ) : null}
               </div>
               {isSelectionMode ? (
-                <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-color)] pt-4 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <div className="flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-color)] pt-4 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                   <span className="mr-2">{selectedCount > 0 ? `已选 ${selectedCount}` : '选择模式'}</span>
-                  <button type="button" onClick={toggleSelectCurrentPage} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                  <button type="button" onClick={toggleSelectCurrentPage} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                     {allCurrentPageSelected ? '取消当前页' : '全选当前页'}
                   </button>
-                  <button type="button" onClick={toggleSelectAllFiltered} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                  <button type="button" onClick={toggleSelectAllFiltered} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                     {allFilteredSelected ? '取消当前筛选' : '全选当前筛选'}
                   </button>
                   {selectedCount > 0 ? (
                     <>
-                      <button type="button" onClick={handleSelectedRetest} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                      <button type="button" onClick={handleSelectedRetest} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                         测速
                       </button>
-                      <button type="button" onClick={exportSelectedNodes} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                      <button type="button" onClick={exportSelectedNodes} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                         导出
                       </button>
-                      <button type="button" onClick={clearSelection} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                      <button type="button" onClick={clearSelection} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                         清空
                       </button>
-                      <button type="button" onClick={handleBatchDelete} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem] !text-red-500">
+                      <button type="button" onClick={handleBatchDelete} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]">
                         删除
                       </button>
                     </>
                   ) : null}
-                  <button type="button" onClick={disableSelectionMode} className="btn-swiss !px-2.5 !py-1.5 !text-[0.5625rem]">
+                  <button type="button" onClick={disableSelectionMode} className="btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                     结束选择
                   </button>
                 </div>
@@ -723,7 +723,7 @@ export default function ProxyPoolFeature() {
               <tbody>
                 {filteredNodes.length === 0 ? (
                   <tr>
-                    <td colSpan={isSelectionMode ? 8 : 7} className="px-4 py-16 text-center text-[0.6875rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                    <td colSpan={isSelectionMode ? 8 : 7} className="px-4 py-16 text-center text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
                       当前筛选结果为空
                     </td>
                   </tr>
@@ -747,7 +747,7 @@ export default function ProxyPoolFeature() {
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-3">
-            <div className="flex flex-wrap items-center gap-3 text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="flex flex-wrap items-center gap-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               <span>
                 第 {pagination.page} / {pagination.pageCount} 页
               </span>
@@ -757,7 +757,7 @@ export default function ProxyPoolFeature() {
               <select
                 value={pageSize}
                 onChange={(event) => setPageSize(Number(event.target.value))}
-                className="input-swiss min-w-[96px] !py-1.5 !text-[0.5625rem]"
+                className="input-swiss min-w-[96px] !py-1.5 !text-[length:var(--font-size-ui-xs)]"
               >
                 {proxyPoolPageSizeOptions.map((size) => (
                   <option key={size} value={size}>
@@ -771,7 +771,7 @@ export default function ProxyPoolFeature() {
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
-                className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                 disabled={pagination.page <= 1}
               >
                 上一页
@@ -779,7 +779,7 @@ export default function ProxyPoolFeature() {
               <button
                 type="button"
                 onClick={() => setPage((current) => Math.min(pagination.pageCount, current + 1))}
-                className="btn-swiss !px-3 !py-1.5 !text-[0.5625rem]"
+                className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                 disabled={pagination.page >= pagination.pageCount}
               >
                 下一页
@@ -877,10 +877,10 @@ function StatusAvailabilityPill({
   return (
     <div
       className={`inline-flex min-w-[64px] items-center justify-center border px-2.5 py-1.5 text-center ${
-        isAvailable ? 'border-[var(--border-color)] text-[var(--text-primary)]' : 'border-red-500 text-red-500'
+        isAvailable ? 'border-[var(--border-color)] text-[var(--text-primary)]' : 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
       }`}
     >
-      <span className="text-[0.6875rem] font-black">{availabilityRate}%</span>
+      <span className="text-[length:var(--font-size-ui-md-compact)] font-black">{availabilityRate}%</span>
     </div>
   );
 }
@@ -919,17 +919,17 @@ function ProxyNodeRow({
         <td className="w-[88px] px-3 py-5 align-middle">
           <StatusAvailabilityPill status={node.status} availabilityRate={node.availabilityRate} />
         </td>
-      <td className="w-[88px] px-3 py-5 align-middle font-mono text-[0.6875rem] font-black uppercase text-[var(--text-primary)] whitespace-nowrap">{node.protocol}</td>
+      <td className="w-[88px] px-3 py-5 align-middle font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase text-[var(--text-primary)] whitespace-nowrap">{node.protocol}</td>
       <td
-        className="w-[180px] max-w-[180px] px-3 py-5 align-middle font-mono text-[0.6875rem] font-bold text-[var(--text-primary)] break-words"
+        className="w-[180px] max-w-[180px] px-3 py-5 align-middle font-mono text-[length:var(--font-size-ui-md-compact)] font-bold text-[var(--text-primary)] break-words"
         title={`${node.host}:${node.port}`}
       >
         {node.host}:{node.port}
       </td>
-      <td className="w-[96px] px-3 py-5 align-middle text-[0.6875rem] font-bold text-[var(--text-primary)] whitespace-nowrap">{node.latencyMs} ms</td>
-      <td className="w-[112px] px-3 py-5 align-middle text-[0.625rem] font-bold text-[var(--text-primary)] whitespace-nowrap">{formatRelativeProxyCheckedTime(node.lastCheckedAt)}</td>
+      <td className="w-[96px] px-3 py-5 align-middle text-[length:var(--font-size-ui-md-compact)] font-bold text-[var(--text-primary)] whitespace-nowrap">{node.latencyMs} ms</td>
+      <td className="w-[112px] px-3 py-5 align-middle text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)] whitespace-nowrap">{formatRelativeProxyCheckedTime(node.lastCheckedAt)}</td>
       <td className="min-w-[180px] px-3 py-5 align-middle">
-        <div className="truncate text-[0.6875rem] font-bold text-[var(--text-primary)]" title={node.sourceLabel || '未标记'}>
+        <div className="truncate text-[length:var(--font-size-ui-md-compact)] font-bold text-[var(--text-primary)]" title={node.sourceLabel || '未标记'}>
           {node.sourceLabel || '未标记'}
         </div>
       </td>
@@ -978,7 +978,7 @@ function ProxyNodeActionsMenu({
         type="button"
         aria-label="更多操作"
         onClick={() => setOpen((current) => !current)}
-        className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[0.875rem] font-black text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)] active:scale-95"
+        className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)] transition hover:bg-[var(--bg-surface)] active:scale-95"
       >
         ⋮
       </button>
@@ -1023,13 +1023,13 @@ function ProxyNodeComposeModal({
   onSubmit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
       <div
         className="flex w-full max-w-4xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Proxy Node</div>
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Proxy Node</div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
             {isEditing ? '编辑本地代理节点' : '新增本地代理节点'}
           </h3>
@@ -1090,12 +1090,12 @@ function ProxyNodeComposeModal({
             <textarea
               value={draft.note}
               onChange={(event) => onChange('note', event.target.value)}
-              className="input-swiss min-h-28 w-full resize-y !text-[0.75rem] leading-6"
+              className="input-swiss min-h-28 w-full resize-y !text-[length:var(--font-size-ui-md)] leading-6"
               placeholder="补充这条本地节点的用途、风险或说明。"
             />
           </FormField>
           {error ? (
-            <div className="md:col-span-2 border-2 border-red-500 bg-red-500/10 px-4 py-3 text-[0.625rem] font-black uppercase tracking-wide text-red-500">
+            <div className="md:col-span-2 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
               {error}
             </div>
           ) : null}
@@ -1133,13 +1133,13 @@ function ProxyPoolImportModal({
   onSubmit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
       <div
         className="flex w-full max-w-3xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Import</div>
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Import</div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">导入本地代理列表</h3>
         </header>
         <div className="space-y-4 p-6">
@@ -1162,10 +1162,10 @@ function ProxyPoolImportModal({
             </FormField>
           </div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={onOpenFilePicker} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
+            <button onClick={onOpenFilePicker} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
               读取本地 JSON 文件
             </button>
-            <div className="text-[0.625rem] font-bold leading-6 text-[var(--text-muted)]">
+            <div className="text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-muted)]">
               支持粘贴导出的 JSON 数组，也支持逐行填写 `scheme://host:port` 或 `host:port`。重复 ID 会在导入时自动覆盖。
             </div>
           </div>
@@ -1176,7 +1176,7 @@ function ProxyPoolImportModal({
             className="input-swiss h-72 w-full resize-none font-mono text-xs leading-6"
             placeholder={'[{"id":"proxy-sha-01","name":"上海 Alpha",...}]\n或\nsocks5://127.0.0.1:1080\n10.0.0.8:8080'}
           />
-          {error ? <div className="text-[0.625rem] font-black uppercase tracking-wide text-red-500">{error}</div> : null}
+          {error ? <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">{error}</div> : null}
         </div>
         <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
           <button onClick={onClose} className="btn-swiss">
@@ -1209,13 +1209,13 @@ function ProxyPoolSubscriptionModal({
   onSubmit: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
       <div
         className="flex w-full max-w-3xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Subscription</div>
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Subscription</div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">导入代理订阅</h3>
         </header>
         <div className="grid gap-4 p-6">
@@ -1236,10 +1236,10 @@ function ProxyPoolSubscriptionModal({
               placeholder="例如：hookzof/socks5_list"
             />
           </FormField>
-          <div className="text-[0.625rem] font-bold leading-6 text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-sm)] font-bold leading-6 text-[var(--text-muted)]">
             当前支持拉取纯文本订阅，每行一条 `scheme://host:port` 或 `host:port`。导入后的所有节点都会打上这个来源标签。
           </div>
-          {error ? <div className="text-[0.625rem] font-black uppercase tracking-wide text-red-500">{error}</div> : null}
+          {error ? <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">{error}</div> : null}
         </div>
         <footer className="flex items-center justify-between border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4">
           <button onClick={onClose} className="btn-swiss">
@@ -1268,29 +1268,29 @@ function ProxyPoolSubscriptionManagerModal({
   onDeleteSource: (source: ProxySubscriptionSourceRecord, deleteNodes: boolean) => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-6 backdrop-blur-sm" onClick={onClose}>
       <div
         className="flex w-full max-w-4xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-[var(--border-color)] px-6 py-4">
           <div className="min-w-0">
-            <div className="text-[0.5625rem] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Subscriptions</div>
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">Subscriptions</div>
             <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">订阅源管理</h3>
-            <p className="mt-2 text-[0.625rem] font-bold leading-5 text-[var(--text-muted)]">
+            <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-bold leading-5 text-[var(--text-muted)]">
               管理本地订阅源，集中查看同步状态，并执行刷新或删除。
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{sources.length} 个订阅源</span>
-            <button onClick={onRefreshAll} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{sources.length} 个订阅源</span>
+            <button onClick={onRefreshAll} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
               刷新全部
             </button>
           </div>
         </header>
         <div className="max-h-[70vh] overflow-auto p-4 md:p-6">
           {sources.length === 0 ? (
-            <div className="py-16 text-center text-[0.6875rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            <div className="py-16 text-center text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
               当前没有已保存的订阅源
             </div>
           ) : (
@@ -1303,18 +1303,18 @@ function ProxyPoolSubscriptionManagerModal({
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-[0.75rem] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{source.label}</h4>
+                            <h4 className="text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">{source.label}</h4>
                             <span
-                              className={`border px-2 py-1 text-[0.5625rem] font-black uppercase tracking-[0.14em] ${
+                              className={`border px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] ${
                                 isHealthy
                                   ? 'border-[var(--border-color)] text-[var(--text-primary)]'
-                                  : 'border-red-500 text-red-500'
+                                  : 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
                               }`}
                             >
                               {isHealthy ? '正常' : '异常'}
                             </span>
                           </div>
-                          <p className="mt-2 break-all font-mono text-[0.625rem] leading-5 text-[var(--text-muted)]">{source.url}</p>
+                          <p className="mt-2 break-all font-mono text-[length:var(--font-size-ui-sm)] leading-5 text-[var(--text-muted)]">{source.url}</p>
                         </div>
                         <div className="flex flex-wrap gap-2 md:justify-end">
                           <ActionButton onClick={() => onRefresh(source)}>刷新</ActionButton>
@@ -1326,18 +1326,18 @@ function ProxyPoolSubscriptionManagerModal({
                           </ActionButton>
                         </div>
                       </div>
-                      <div className="grid gap-2 text-[0.625rem] font-bold text-[var(--text-muted)] md:grid-cols-3">
+                      <div className="grid gap-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)] md:grid-cols-3">
                         <div className="border-t border-dashed border-[var(--border-color)] pt-3">
-                          <div className="text-[0.5625rem] font-black uppercase tracking-[0.14em]">最近同步</div>
-                          <div className="mt-1 text-[0.6875rem] text-[var(--text-primary)]">{formatTableTime(source.lastSyncedAt)}</div>
+                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">最近同步</div>
+                          <div className="mt-1 text-[length:var(--font-size-ui-md-compact)] text-[var(--text-primary)]">{formatTableTime(source.lastSyncedAt)}</div>
                         </div>
                         <div className="border-t border-dashed border-[var(--border-color)] pt-3">
-                          <div className="text-[0.5625rem] font-black uppercase tracking-[0.14em]">上次导入</div>
-                          <div className="mt-1 text-[0.6875rem] text-[var(--text-primary)]">{source.lastImportCount} 条</div>
+                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">上次导入</div>
+                          <div className="mt-1 text-[length:var(--font-size-ui-md-compact)] text-[var(--text-primary)]">{source.lastImportCount} 条</div>
                         </div>
                         <div className="border-t border-dashed border-[var(--border-color)] pt-3">
-                          <div className="text-[0.5625rem] font-black uppercase tracking-[0.14em]">状态详情</div>
-                          <div className={`mt-1 text-[0.6875rem] ${isHealthy ? 'text-[var(--text-primary)]' : 'text-red-500'}`}>
+                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">状态详情</div>
+                          <div className={`mt-1 text-[length:var(--font-size-ui-md-compact)] ${isHealthy ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-danger)]'}`}>
                             {isHealthy ? '最近一次同步正常' : source.lastError}
                           </div>
                         </div>
@@ -1362,7 +1362,7 @@ function ProxyPoolSubscriptionManagerModal({
 function TableHead({ children, compact = false, className = '' }: { children: ReactNode; compact?: boolean; className?: string }) {
   return (
     <th
-      className={`${compact ? 'w-10 px-2' : 'px-3'} ${className} border-b-2 border-[var(--border-color)] py-3 text-left text-[0.625rem] font-black tracking-[0.12em] text-[var(--text-primary)]`}
+      className={`${compact ? 'w-10 px-2' : 'px-3'} ${className} border-b-2 border-[var(--border-color)] py-3 text-left text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]`}
     >
       {children}
     </th>
@@ -1419,7 +1419,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`btn-swiss inline-flex h-8 items-center justify-start text-left !px-2.5 !py-1.5 !text-[0.5625rem] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-red-500' : ''} ${className}`}
+      className={`btn-swiss inline-flex h-8 items-center justify-start text-left !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'danger' ? '!text-[var(--color-status-danger)]' : ''} ${className}`}
     >
       {children}
     </button>
@@ -1441,8 +1441,8 @@ function MenuActionButton({
       onClick={onClick}
       className="flex w-full flex-col items-start gap-1 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-left transition-transform hover:translate-x-[-1px] hover:translate-y-[-1px]"
     >
-      <span className="text-[0.625rem] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">{label}</span>
-      <span className="text-[0.5625rem] font-bold leading-5 text-[var(--text-muted)]">{description}</span>
+      <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">{label}</span>
+      <span className="text-[length:var(--font-size-ui-xs)] font-bold leading-5 text-[var(--text-muted)]">{description}</span>
     </button>
   );
 }
@@ -1458,7 +1458,7 @@ function FormField({
 }) {
   return (
     <label className={`space-y-2 ${className}`}>
-      <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</span>
+      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">{label}</span>
       {children}
     </label>
   );

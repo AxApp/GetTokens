@@ -18,7 +18,7 @@ export default function WorkspacePageHeader({
   align = 'end',
   className = '',
   titleClassName = 'text-4xl font-black uppercase italic tracking-tighter text-[var(--text-primary)]',
-  subtitleClassName = 'mt-2 max-w-[min(42rem,70vw)] truncate whitespace-nowrap text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]',
+  subtitleClassName = 'mt-2 max-w-[min(42rem,70vw)] truncate whitespace-nowrap text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]',
   actionsClassName = 'flex items-center justify-end gap-3',
 }: WorkspacePageHeaderProps) {
   return (

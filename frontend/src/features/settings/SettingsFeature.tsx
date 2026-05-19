@@ -408,7 +408,7 @@ export default function SettingsFeature({
               aria-label={section.label}
               title={section.label}
             >
-              <span className="block text-[0.5rem] leading-none tracking-[0.12em]">
+              <span className="block text-[length:var(--font-size-ui-2xs)] leading-none tracking-[0.12em]">
                 {section.shortLabel}
               </span>
             </button>

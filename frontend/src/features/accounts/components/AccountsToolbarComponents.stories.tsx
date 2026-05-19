@@ -8,7 +8,7 @@ import type { AccountsFilterState } from '../model/types';
 import AccountsToolbar from './AccountsToolbar';
 
 const meta = {
-  title: 'Design System/Feature Components/Accounts Toolbar',
+  title: 'Design System/业务组件/账号工具栏',
   parameters: {
     layout: 'fullscreen',
   },
@@ -103,7 +103,7 @@ function AccountsToolbarOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">Accounts Toolbar</h2>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">账号工具栏</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           账号工作台搜索、筛选、密度切换和批量选择工具栏进入设计系统，用固定状态覆盖普通态、筛选菜单和批量操作栏。
         </p>
