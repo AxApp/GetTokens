@@ -434,6 +434,19 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - filled / ready
    - invalid JSON error
 5. 本批只用固定 mock 回调和粘贴内容，不触碰真实导入、解析或 Wails 边界。
+
+### 第十四批：OpenAI Compatible Compose
+本批复用 OpenAI Compatible story，继续收 OpenAI-compatible provider 新增表单。
+
+1. 继续更新 `frontend/src/features/accounts/components/OpenAICompatibleComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/OpenAI Compatible`。
+3. 本批 admitted 文件：
+   - `OpenAICompatibleComposeModal.tsx`
+4. `Overview` 新增 compose modal 状态：
+   - empty custom form
+   - preset selected
+   - validation error
+5. 本批只用固定 mock 回调和 form，不触碰真实创建或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

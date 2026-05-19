@@ -362,3 +362,12 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - filled / ready
    - invalid JSON error
 3. 本批只验证受控 textarea、错误条和 footer action 布局，不触碰真实导入、解析或 Wails 边界。
+
+## 2026-05-19 第十四批 Feature Components：OpenAI Compatible Compose
+1. 复用 `Design System/Feature Components/OpenAI Compatible`，继续收编 OpenAI-compatible provider 新增表单：
+   - `OpenAICompatibleComposeModal`
+2. 新增 compose modal 状态矩阵，使用固定 form mock 覆盖：
+   - empty custom form
+   - preset selected
+   - validation error
+3. 本批只验证 preset select、基础输入区、API key 输入和错误条布局，不触碰真实创建或 Wails 边界。

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ReactNode } from 'react';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { AccountUsageSummary } from '../model/accountUsage';
@@ -6,9 +7,11 @@ import type { RateLimitState } from '../model/rateLimit';
 import {
   buildProviderConfigSignature,
   type OpenAICompatibleProvider,
+  type OpenAICompatibleProviderFormState,
   type ProviderRemoteModelsState,
   type ProviderVerifyState,
 } from '../model/openAICompatible';
+import OpenAICompatibleComposeModal from './OpenAICompatibleComposeModal';
 import OpenAICompatibleProviderCard from './OpenAICompatibleProviderCard';
 import OpenAICompatibleWorkspace from './OpenAICompatibleWorkspace';
 
@@ -21,6 +24,16 @@ const meta = {
 
 export default meta;
 type Story = StoryObj;
+
+function ModalViewport({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <DesignSystemStoryFrame label={label}>
+      <div className="relative h-[34rem] min-w-0 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] [transform:translateZ(0)]">
+        {children}
+      </div>
+    </DesignSystemStoryFrame>
+  );
+}
 
 function provider(input: Omit<OpenAICompatibleProvider, 'convertValues'>): OpenAICompatibleProvider {
   return {
@@ -69,6 +82,24 @@ const providers = {
     modelCount: 0,
     models: [],
   }),
+};
+
+const composeForms: Record<'empty' | 'preset' | 'error', OpenAICompatibleProviderFormState> = {
+  empty: {
+    name: '',
+    baseUrl: '',
+    apiKey: '',
+  },
+  preset: {
+    name: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    apiKey: 'sk-preview-deepseek',
+  },
+  error: {
+    name: 'custom-router',
+    baseUrl: 'https://router.internal/v1',
+    apiKey: '',
+  },
 };
 
 const verifyStates: Record<keyof typeof providers, ProviderVerifyState> = {
@@ -242,7 +273,44 @@ function OpenAICompatibleOverview() {
           </div>
         </div>
       </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Compose modal states</h3>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <ComposeModalSample label="DS-COMPOSE-EMPTY" formKey="empty" />
+          <ComposeModalSample label="DS-COMPOSE-PRESET" formKey="preset" selectedPresetID="deepseek" />
+          <ComposeModalSample label="DS-COMPOSE-ERROR" formKey="error" error="API KEY 不能为空" />
+        </div>
+      </section>
     </div>
+  );
+}
+
+function ComposeModalSample({
+  label,
+  formKey,
+  selectedPresetID = '',
+  error = '',
+}: {
+  label: string;
+  formKey: keyof typeof composeForms;
+  selectedPresetID?: string;
+  error?: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <ModalViewport label={label}>
+      <OpenAICompatibleComposeModal
+        t={t}
+        form={composeForms[formKey]}
+        selectedPresetID={selectedPresetID}
+        error={error}
+        onClose={() => undefined}
+        onChange={() => undefined}
+        onPresetChange={() => undefined}
+        onSubmit={() => undefined}
+      />
+    </ModalViewport>
   );
 }
 
@@ -319,4 +387,8 @@ export const Disabled: Story = {
 
 export const Workspace: Story = {
   render: () => <WorkspaceSample label="DS-WORKSPACE-GRID" />,
+};
+
+export const Compose: Story = {
+  render: () => <ComposeModalSample label="DS-COMPOSE-PRESET" formKey="preset" selectedPresetID="deepseek" />,
 };
