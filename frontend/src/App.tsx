@@ -50,6 +50,34 @@ function AppShell() {
     applyTextScaleVariables(document.documentElement.style, textScale);
   }, [textScale]);
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
+    function handleDesignSystemComponentLabelClick(event: MouseEvent) {
+      const target = event.target instanceof Element ? event.target : null;
+      const component = target?.closest<HTMLElement>("[data-design-system-component='true']");
+      if (!component) {
+        return;
+      }
+
+      const componentName = component.dataset.designSystemComponentName?.trim();
+      if (!componentName || !isDesignSystemComponentLabelHit(event, component)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      void copyDesignSystemComponentName(component, componentName);
+    }
+
+    document.addEventListener('click', handleDesignSystemComponentLabelClick, true);
+    return () => {
+      document.removeEventListener('click', handleDesignSystemComponentLabelClick, true);
+    };
+  }, []);
+
   const page = useMemo(() => {
     if (activePage === 'status') {
       return <StatusPage sidecarStatus={sidecarStatus} version={version} />;
@@ -109,6 +137,36 @@ function AppShell() {
       </main>
     </div>
   );
+}
+
+function isDesignSystemComponentLabelHit(event: MouseEvent, component: HTMLElement) {
+  const rect = component.getBoundingClientRect();
+  const labelTop = rect.top - 24;
+  const labelBottom = rect.top + 2;
+  const labelLeft = rect.left - 4;
+  const labelRight = Math.min(rect.right + 4, rect.left + 220);
+
+  return (
+    event.clientX >= labelLeft &&
+    event.clientX <= labelRight &&
+    event.clientY >= labelTop &&
+    event.clientY <= labelBottom
+  );
+}
+
+async function copyDesignSystemComponentName(component: HTMLElement, componentName: string) {
+  try {
+    await navigator.clipboard.writeText(componentName);
+    component.dataset.designSystemComponentCopied = 'true';
+    window.setTimeout(() => {
+      delete component.dataset.designSystemComponentCopied;
+    }, 1100);
+  } catch {
+    component.dataset.designSystemComponentCopied = 'error';
+    window.setTimeout(() => {
+      delete component.dataset.designSystemComponentCopied;
+    }, 1400);
+  }
 }
 
 export default function App() {

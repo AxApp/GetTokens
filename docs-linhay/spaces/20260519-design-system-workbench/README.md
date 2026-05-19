@@ -219,6 +219,15 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
    - `npm --prefix frontend run typecheck`
 
+## 2026-05-19 项目页面设计组件名称标签
+1. dev 项目页面中，带 `data-design-system-component-name` 的设计组件红色描边左上方会显示组件名。
+2. 点击组件名标签区域会复制组件名，并短暂显示 `COPIED`；复制失败时显示 `COPY FAILED`。
+3. 点击判定限制在标签区域，避免点击组件本体时干扰业务交互。
+4. Storybook 内部仍不挂 `data-design-system-highlight="project"`，因此不显示项目页的红色描边和名称标签。
+5. 验证通过：
+   - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+
 ## 2026-05-19 Feature Components 第一批收编
 1. 新增 `Design System/Feature Components/Debug Panel`，把调试面板里已经提取且不依赖 Wails 的组件纳入设计系统：
    - `DebugHeader`

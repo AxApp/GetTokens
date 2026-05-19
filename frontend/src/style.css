@@ -287,8 +287,45 @@
   }
 
   [data-design-system-highlight='project'] [data-design-system-component='true'] {
+    position: relative;
     outline: 2px solid var(--accent-red);
     outline-offset: 2px;
+  }
+
+  [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-name]::before {
+    content: attr(data-design-system-component-name);
+    position: absolute;
+    left: -2px;
+    top: -1.45rem;
+    z-index: 40;
+    max-width: min(13rem, calc(100vw - 2rem));
+    overflow: hidden;
+    border: 2px solid var(--accent-red);
+    background: var(--accent-red);
+    color: var(--bg-main);
+    cursor: copy;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    font-size: 0.5625rem;
+    font-weight: 900;
+    letter-spacing: 0;
+    line-height: 1;
+    padding: 0.25rem 0.35rem;
+    pointer-events: auto;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='true']::before {
+    content: attr(data-design-system-component-name) ' / COPIED';
+    background: #16a34a;
+    border-color: #16a34a;
+  }
+
+  [data-design-system-highlight='project'] [data-design-system-component='true'][data-design-system-component-copied='error']::before {
+    content: attr(data-design-system-component-name) ' / COPY FAILED';
+    background: var(--accent-red);
+    border-color: var(--accent-red);
   }
 }
 

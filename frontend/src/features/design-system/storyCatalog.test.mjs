@@ -167,7 +167,12 @@ test('runtime design system components expose project highlight markers', async 
   const styleSource = await readFile(new URL('../../style.css', import.meta.url), 'utf8');
 
   assert.match(appSource, /data-design-system-highlight=\{import\.meta\.env\.DEV \? 'project' : undefined\}/);
+  assert.match(appSource, /copyDesignSystemComponentName/);
+  assert.match(appSource, /isDesignSystemComponentLabelHit/);
   assert.match(styleSource, /\[data-design-system-highlight='project'\] \[data-design-system-component='true'\]/);
+  assert.match(styleSource, /content: attr\(data-design-system-component-name\)/);
+  assert.match(styleSource, /cursor: copy/);
+  assert.match(styleSource, /data-design-system-component-copied='true'/);
 
   for (const sourcePath of runtimeDesignSystemComponentPaths) {
     const source = await readFile(new URL(sourcePath.replace('frontend/src/', '../../'), import.meta.url), 'utf8');
