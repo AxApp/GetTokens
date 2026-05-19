@@ -33,6 +33,8 @@ const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/Sta
 const statusSnippetPanelStorybookTitle = 'Design System/Feature Components/Status Snippet Panel';
 const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx';
 const usageDeskStorybookTitle = 'Design System/Feature Components/Usage Desk';
+const codexRouteProbeStoryPath = 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx';
+const codexRouteProbeStorybookTitle = 'Design System/Feature Components/Codex Route Probe';
 
 export const designSystemComponentManifest = [
   {
@@ -496,12 +498,15 @@ export const designSystemComponentManifest = [
     componentName: 'CodexRouteProbeCard',
     sourcePath: 'frontend/src/features/codex/components/CodexRouteProbeCard.tsx',
     ownerFeature: 'codex',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '路由探测工作台为纯 props，可用 mock 日志和候选队列收编。',
+    decisionReason: 'Codex 路由探测工作台已通过 Codex Route Probe story 收编，覆盖 idle、running、fallback 和空候选队列。',
     matchedPatterns: ['ToggleSwitch', 'Combobox', 'DebugPanel'],
-    suggestedDesignComponent: 'RouteProbeWorkbenchModal',
+    storyPath: codexRouteProbeStoryPath,
+    storybookTitle: codexRouteProbeStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['idle', 'running', 'failed'],
+    mockDataSources: ['storybook codex route probe row/log mock'],
   },
   {
     id: 'codex-model-combobox',

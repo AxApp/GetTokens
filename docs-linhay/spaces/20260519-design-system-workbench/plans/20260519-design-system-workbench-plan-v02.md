@@ -343,6 +343,20 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - 错误条
    - 无 footer 状态
 5. `UnifiedAccountDetailModal`、`ApiKeyDetailModal`、`OpenAICompatibleDetailModal` 继续 deferred，等待下载、保存、验证、规则编辑等运行时边界拆出纯 view。
+
+### 第八批：Codex Route Probe
+本批先收 Codex account-list 里的独立 route probe workbench，不提前收排序 row / section。
+
+1. 已新增 `frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Codex Route Probe`。
+3. 本批 admitted 文件：
+   - `CodexRouteProbeCard.tsx`
+4. `Overview` 同屏覆盖：
+   - idle candidate queue
+   - running disabled controls
+   - fallback hit terminal
+   - empty candidates
+5. `CodexAccountOrderRow`、`CodexAccountOrderSection` 继续保持 candidate，下一批围绕密度、列表和拖拽状态单独处理。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

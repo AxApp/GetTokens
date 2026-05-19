@@ -295,3 +295,13 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - 错误条
    - 无 footer 状态
 3. 具体详情弹窗如 `UnifiedAccountDetailModal`、`ApiKeyDetailModal`、`OpenAICompatibleDetailModal` 仍保留 `deferred`，因为它们包含下载、保存、验证或规则编辑等运行时边界。
+
+## 2026-05-19 第八批 Feature Components：Codex Route Probe
+1. 新增 `Design System/Feature Components/Codex Route Probe`，收编 Codex 账号列表中的路由探测工作台：
+   - `RouteProbeCard`
+2. 新 story 使用固定候选账号队列和终端日志 mock，同屏覆盖：
+   - idle 队列
+   - running 禁用态
+   - fallback 命中
+   - 空候选队列
+3. `CodexAccountOrderRow` 和 `CodexAccountOrderSection` 仍保持 `candidate`，后续单独处理密度、列表和拖拽状态。
