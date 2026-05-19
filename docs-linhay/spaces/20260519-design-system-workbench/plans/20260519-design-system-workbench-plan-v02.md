@@ -421,6 +421,19 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - grid providers
    - embedded section
 5. 本批只用固定 mock 回调和数据，不触碰真实 provider 加载、创建、删除、验证或 Wails 边界。
+
+### 第十三批：Paste Auth Modal
+本批复用 Account Modals story，继续收粘贴导入 auth 文件弹窗。
+
+1. 继续更新 `frontend/src/features/accounts/components/AccountModalComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/Account Modals`。
+3. 本批 admitted 文件：
+   - `PasteAuthModal.tsx`
+4. `Overview` 新增 paste auth 状态：
+   - empty textarea
+   - filled / ready
+   - invalid JSON error
+5. 本批只用固定 mock 回调和粘贴内容，不触碰真实导入、解析或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

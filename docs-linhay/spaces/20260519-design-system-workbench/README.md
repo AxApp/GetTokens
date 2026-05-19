@@ -353,3 +353,12 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - grid providers
    - embedded section
 3. 本批不触碰真实 provider 加载、创建、删除、验证或 Wails 边界。
+
+## 2026-05-19 第十三批 Feature Components：Paste Auth Modal
+1. 复用 `Design System/Feature Components/Account Modals`，继续收编粘贴导入 auth 文件弹窗：
+   - `PasteAuthModal`
+2. 新增 paste auth 状态矩阵，使用固定粘贴内容 mock 覆盖：
+   - empty textarea
+   - filled / ready
+   - invalid JSON error
+3. 本批只验证受控 textarea、错误条和 footer action 布局，不触碰真实导入、解析或 Wails 边界。

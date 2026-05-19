@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import PasteAuthModal from './PasteAuthModal';
 
 const meta = {
   title: 'Design System/Feature Components/Account Modals',
@@ -148,6 +150,42 @@ function ModalSample({
   );
 }
 
+function PasteAuthSample({
+  content = '',
+  error = '',
+  label,
+}: {
+  content?: string;
+  error?: string;
+  label: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <ModalViewport label={label}>
+      <PasteAuthModal
+        t={t}
+        pasteContent={content}
+        pasteError={error}
+        onClose={() => undefined}
+        onChange={() => undefined}
+        onSubmit={() => undefined}
+      />
+    </ModalViewport>
+  );
+}
+
+const pastedAuthContent = JSON.stringify(
+  {
+    type: 'codex',
+    email: 'team-codex@example.com',
+    access_token: 'preview-access-token',
+    refresh_token: 'preview-refresh-token',
+    account_id: 'acct_preview',
+  },
+  null,
+  2,
+);
+
 function AccountModalsOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
@@ -165,6 +203,15 @@ function AccountModalsOverview() {
           <ModalSample long />
           <ModalSample error />
           <ModalSample footer={false} />
+        </div>
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Paste auth states</h3>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <PasteAuthSample label="DS-PASTE-EMPTY" />
+          <PasteAuthSample label="DS-PASTE-READY" content={pastedAuthContent} />
+          <PasteAuthSample label="DS-PASTE-ERROR" content="{ broken auth payload" error="JSON 解析失败：缺少结束括号" />
         </div>
       </section>
     </div>
@@ -185,4 +232,8 @@ export const LongContent: Story = {
 
 export const Error: Story = {
   render: () => <ModalSample error />,
+};
+
+export const PasteAuth: Story = {
+  render: () => <PasteAuthSample label="DS-PASTE-READY" content={pastedAuthContent} />,
 };
