@@ -14,9 +14,38 @@ export interface DesignSystemStoryGroup {
 
 export const DESIGN_SYSTEM_STORYBOOK_PORT = 6006;
 export const DESIGN_SYSTEM_STORYBOOK_URL = `http://127.0.0.1:${DESIGN_SYSTEM_STORYBOOK_PORT}`;
+export const DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH = '/__dev/design-system/storybook/open';
 export const DESIGN_SYSTEM_STORYBOOK_COMMAND = 'npm --prefix frontend run storybook';
 export const DESIGN_SYSTEM_SCREENSHOT_PATH =
   'docs-linhay/spaces/20260519-design-system-workbench/screenshots/20260519/design-system/20260519-design-system-storybook-web-after-v01.png';
+
+export function resolveDesignSystemStorybookOpenURL(input?: {
+  dev?: boolean;
+  origin?: string;
+}) {
+  const dev = input?.dev ?? ((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV === true);
+  if (!dev) {
+    return DESIGN_SYSTEM_STORYBOOK_URL;
+  }
+
+  return `${resolveDesignSystemDevServerOrigin(input?.origin)}${DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH}`;
+}
+
+function resolveDesignSystemDevServerOrigin(origin = '') {
+  if (!origin) {
+    return '';
+  }
+
+  try {
+    const url = new URL(origin);
+    if (url.protocol === 'wails:' && url.port) {
+      return `http://127.0.0.1:${url.port}`;
+    }
+    return url.origin;
+  } catch {
+    return origin;
+  }
+}
 
 export const designSystemStoryGroups = [
   {

@@ -1,16 +1,32 @@
+import type { MouseEvent } from 'react';
+import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
+import { hasWailsRuntime } from '../../utils/previewMode';
 import {
   DESIGN_SYSTEM_SCREENSHOT_PATH,
   DESIGN_SYSTEM_STORYBOOK_COMMAND,
   DESIGN_SYSTEM_STORYBOOK_URL,
   designSystemStoryGroups,
   getDesignSystemStoryStats,
+  resolveDesignSystemStorybookOpenURL,
 } from './storyCatalog';
 
 export default function DesignSystemEntryFeature() {
   const { t } = useI18n();
   const stats = getDesignSystemStoryStats();
+  const storybookOpenURL = resolveDesignSystemStorybookOpenURL({
+    origin: typeof window === 'undefined' ? undefined : window.location.origin,
+  });
+
+  function openStorybook(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    if (hasWailsRuntime()) {
+      BrowserOpenURL(storybookOpenURL);
+      return;
+    }
+    window.open(storybookOpenURL, '_blank', 'noopener,noreferrer');
+  }
 
   return (
     <div className="h-full overflow-auto bg-[var(--bg-surface)] p-8 text-[var(--text-primary)]">
@@ -21,7 +37,8 @@ export default function DesignSystemEntryFeature() {
           actions={
             <a
               className="btn-swiss bg-[var(--border-color)] !text-[var(--bg-main)]"
-              href={DESIGN_SYSTEM_STORYBOOK_URL}
+              href={storybookOpenURL}
+              onClick={openStorybook}
               target="_blank"
               rel="noreferrer"
             >

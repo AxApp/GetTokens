@@ -9,9 +9,12 @@ import {
   getAdmittedDesignSystemComponentManifest,
 } from './componentManifest.ts';
 import {
+  DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH,
+  DESIGN_SYSTEM_STORYBOOK_URL,
   designSystemStoryGroups,
   flattenDesignSystemStories,
   getDesignSystemStoryStats,
+  resolveDesignSystemStorybookOpenURL,
 } from './storyCatalog.ts';
 import { resolveStorybookLocale, storybookLocaleOptions } from './storybookGlobals.ts';
 
@@ -95,6 +98,19 @@ test('storybook locale globals default to Chinese and accept English', () => {
   assert.equal(resolveStorybookLocale('en'), 'en');
   assert.equal(resolveStorybookLocale('fr'), 'zh');
   assert.equal(resolveStorybookLocale(undefined), 'zh');
+});
+
+test('design system storybook open url uses dev bridge only in dev mode', () => {
+  assert.equal(resolveDesignSystemStorybookOpenURL({ dev: false }), DESIGN_SYSTEM_STORYBOOK_URL);
+  assert.equal(resolveDesignSystemStorybookOpenURL({ dev: true }), DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH);
+  assert.equal(
+    resolveDesignSystemStorybookOpenURL({ dev: true, origin: 'http://127.0.0.1:34115' }),
+    `http://127.0.0.1:34115${DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH}`,
+  );
+  assert.equal(
+    resolveDesignSystemStorybookOpenURL({ dev: true, origin: 'wails://wails.localhost:34115' }),
+    `http://127.0.0.1:34115${DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH}`,
+  );
 });
 
 test('component stories expose an overview state matrix', async () => {
