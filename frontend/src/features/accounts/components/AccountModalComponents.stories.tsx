@@ -5,6 +5,7 @@ import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { ApiKeyFormState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
+import CodexOAuthModal from './CodexOAuthModal';
 import PasteAuthModal from './PasteAuthModal';
 
 const meta = {
@@ -253,6 +254,31 @@ function ApiKeyComposeSample({
   );
 }
 
+function OAuthSample({
+  label,
+  existingName = null,
+  copyState = 'idle',
+}: {
+  label: string;
+  existingName?: string | null;
+  copyState?: 'idle' | 'success' | 'error';
+}) {
+  const { t } = useI18n();
+  return (
+    <ModalViewport label={label}>
+      <CodexOAuthModal
+        t={t}
+        existingName={existingName}
+        url="https://chatgpt.com/oauth/authorize?client_id=gettokens-preview&redirect_uri=http%3A%2F%2F127.0.0.1%3A1455%2Fcallback&state=preview"
+        initialCopyState={copyState}
+        onCopyUrl={() => undefined}
+        onClose={() => undefined}
+        onOpenInBrowser={() => undefined}
+      />
+    </ModalViewport>
+  );
+}
+
 function AccountModalsOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
@@ -296,6 +322,15 @@ function AccountModalsOverview() {
           />
         </div>
       </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Codex OAuth states</h3>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <OAuthSample label="DS-OAUTH-READY" />
+          <OAuthSample label="DS-OAUTH-EXISTING" existingName="team-codex@example.com" copyState="success" />
+          <OAuthSample label="DS-OAUTH-COPY-ERROR" copyState="error" />
+        </div>
+      </section>
     </div>
   );
 }
@@ -322,4 +357,8 @@ export const PasteAuth: Story = {
 
 export const ApiKeyCompose: Story = {
   render: () => <ApiKeyComposeSample label="DS-API-KEY-FILLED-QUOTA" formKey="filled" probe="ready" />,
+};
+
+export const CodexOAuth: Story = {
+  render: () => <OAuthSample label="DS-OAUTH-READY" />,
 };

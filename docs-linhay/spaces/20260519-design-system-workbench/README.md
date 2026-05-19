@@ -416,3 +416,12 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - empty
    - unsupported/readOnly
 3. 本批只验证配置列表、stage filter、搜索空态、ToggleSwitch 和保存区布局，不触碰真实读取、预览、保存或 Wails 边界。
+
+## 2026-05-19 第十九批 Feature Components：Codex OAuth Modal
+1. 复用 `Design System/Feature Components/Account Modals`，继续收编 Codex OAuth 登录链接弹窗：
+   - `CodexOAuthModal`
+2. 新增 OAuth 状态矩阵，使用固定 URL 和 copy state mock 覆盖：
+   - ready
+   - existing account / copy success
+   - copy error
+3. 本批只验证 URL 展示、复制反馈和打开浏览器 action 布局；复制动作通过 `onCopyUrl` mock 隔离，不触碰真实 clipboard、OAuth 或 Wails 边界。

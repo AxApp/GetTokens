@@ -8,6 +8,8 @@ interface CodexOAuthModalProps {
   url: string;
   onClose: () => void;
   onOpenInBrowser: () => void;
+  onCopyUrl?: (url: string) => Promise<void> | void;
+  initialCopyState?: 'idle' | 'success' | 'error';
 }
 
 export default function CodexOAuthModal({
@@ -16,12 +18,18 @@ export default function CodexOAuthModal({
   url,
   onClose,
   onOpenInBrowser,
+  onCopyUrl,
+  initialCopyState = 'idle',
 }: CodexOAuthModalProps) {
-  const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
+  const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>(initialCopyState);
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(url);
+      if (onCopyUrl) {
+        await onCopyUrl(url);
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
       setCopyState('success');
     } catch {
       setCopyState('error');

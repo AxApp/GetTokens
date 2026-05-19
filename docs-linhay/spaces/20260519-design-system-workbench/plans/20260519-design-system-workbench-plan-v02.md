@@ -509,6 +509,19 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - empty
    - unsupported / readOnly
 6. 本批只用固定 snapshot、rows 和 preview mock，不触碰真实读取、预览、保存或 Wails 边界。
+
+### 第十九批：Codex OAuth Modal
+本批复用 Account Modals story，继续收 Codex OAuth 登录链接弹窗。
+
+1. 继续更新 `frontend/src/features/accounts/components/AccountModalComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/Account Modals`。
+3. 本批 admitted 文件：
+   - `CodexOAuthModal.tsx`
+4. `Overview` 新增 OAuth 状态：
+   - ready
+   - existing account / copy success
+   - copy error
+5. 本批给组件补充可选 `onCopyUrl` 与 `initialCopyState`，Storybook 使用 mock 隔离真实 clipboard；不触碰真实 OAuth 或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary
