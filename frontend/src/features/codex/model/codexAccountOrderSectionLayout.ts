@@ -35,3 +35,13 @@ export function filterCodexAccountOrderRows<T extends { requestable?: boolean }>
   }
   return rows;
 }
+
+export function getCodexAccountOrderGridClass(density: CodexAccountOrderDisplayMode) {
+  if (density === 'list') {
+    return 'grid gap-3 p-4';
+  }
+  if (density === 'full') {
+    return 'codex-account-order-card-grid-full grid auto-rows-fr gap-4 p-4 xl:auto-rows-auto xl:gap-x-4 xl:gap-y-4';
+  }
+  return 'codex-account-order-card-grid-compact grid auto-rows-fr gap-4 p-4';
+}

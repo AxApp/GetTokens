@@ -94,6 +94,14 @@
     box-shadow: 4px 4px 0px 0px var(--shadow-color);
   }
 
+  .codex-account-order-card-grid-full {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  }
+
+  .codex-account-order-card-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 288px), 1fr));
+  }
+
   .input-swiss {
     padding: 0.5rem 0.75rem;
     border: 2px solid var(--border-color);

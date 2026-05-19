@@ -14,6 +14,7 @@ import {
   DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
   filterCodexAccountOrderRows,
+  getCodexAccountOrderGridClass,
   parseCodexAccountOrderDisplayMode,
   shouldUseCodexOrderSectionActionMenu,
   type CodexAccountOrderFilter,
@@ -175,10 +176,7 @@ export function CodexAccountOrderSection({
     content = <EmptyState>{t('codex.account_list_filter_empty')}</EmptyState>;
   } else {
     content = (
-      <div className={density === 'list'
-        ? 'grid gap-3 p-4'
-        : 'grid auto-rows-fr gap-4 p-4 xl:auto-rows-auto xl:grid-cols-3 xl:gap-x-4 xl:gap-y-4'}
-      >
+      <div className={getCodexAccountOrderGridClass(density)}>
         {visibleRows.map((row) => (
           <AccountOrderRow
             key={row.id}

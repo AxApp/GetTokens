@@ -27,6 +27,7 @@ import {
   DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
   filterCodexAccountOrderRows,
+  getCodexAccountOrderGridClass,
   parseCodexAccountOrderDisplayMode,
   shouldUseCodexOrderSectionActionMenu,
 } from './model/codexAccountOrderSectionLayout.ts';
@@ -233,6 +234,14 @@ test('filterCodexAccountOrderRows hides blocked accounts without reordering visi
     'auth-file:a.json',
     'openai-compatible:mi',
   ]);
+});
+
+test('getCodexAccountOrderGridClass keeps list single-column and card modes adaptive', () => {
+  assert.equal(getCodexAccountOrderGridClass('list'), 'grid gap-3 p-4');
+  assert.match(getCodexAccountOrderGridClass('compact'), /codex-account-order-card-grid-compact/);
+  assert.match(getCodexAccountOrderGridClass('full'), /codex-account-order-card-grid-full/);
+  assert.doesNotMatch(getCodexAccountOrderGridClass('compact'), /xl:grid-cols-3/);
+  assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /xl:grid-cols-3/);
 });
 
 test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {
