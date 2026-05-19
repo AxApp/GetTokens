@@ -9,7 +9,7 @@ import {
   previewCodexFeatureConfig,
   saveCodexFeatureConfig,
 } from '../status/api/codexFeatures';
-import { StatusCodexFeaturesSection } from '../status/components/StatusPanels';
+import StatusCodexFeaturesSection from '../status/components/StatusCodexFeaturesSection';
 import {
   buildCodexFeatureChangeInput,
   buildCodexFeatureDraft,

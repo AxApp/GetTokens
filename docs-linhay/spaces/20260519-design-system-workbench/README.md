@@ -404,3 +404,15 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - loading
    - empty
 3. 本批只验证列表容器、密度切换、筛选、保存提示和空态布局，不触碰真实拖拽保存、路由探测或 Wails 边界。
+
+## 2026-05-19 第十八批 Feature Components：Status Codex Features
+1. 从 `StatusPanels.tsx` 拆出 Codex feature 配置列表，并新增 `Design System/Feature Components/Status Codex Features`：
+   - `StatusCodexFeaturesSection`
+2. 新 story 使用固定 snapshot、rows 和 preview mock 覆盖：
+   - ready
+   - dirty preview
+   - saving
+   - loading
+   - empty
+   - unsupported/readOnly
+3. 本批只验证配置列表、stage filter、搜索空态、ToggleSwitch 和保存区布局，不触碰真实读取、预览、保存或 Wails 边界。

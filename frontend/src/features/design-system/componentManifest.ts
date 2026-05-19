@@ -35,6 +35,8 @@ const accountRotationStoryPath = 'frontend/src/features/accounts/components/acco
 const accountRotationStorybookTitle = 'Design System/Feature Components/Account Rotation';
 const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx';
 const statusRelayEditorsStorybookTitle = 'Design System/Feature Components/Status Relay Editors';
+const statusCodexFeaturesStoryPath = 'frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx';
+const statusCodexFeaturesStorybookTitle = 'Design System/Feature Components/Status Codex Features';
 const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx';
 const statusSnippetPanelStorybookTitle = 'Design System/Feature Components/Status Snippet Panel';
 const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx';
@@ -616,6 +618,21 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['key-editor', 'provider-editor', 'model-editor'],
     mockDataSources: ['storybook relay editor state mock'],
+  },
+  {
+    id: 'status-codex-features-section',
+    componentName: 'StatusCodexFeaturesSection',
+    sourcePath: 'frontend/src/features/status/components/StatusCodexFeaturesSection.tsx',
+    ownerFeature: 'status',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Codex feature 配置列表已拆出并通过 Status Codex Features story 收编，覆盖 ready、dirty preview、saving、loading、empty 和 unsupported/readOnly 状态。',
+    matchedPatterns: ['ToggleSwitch', 'SegmentedControl', 'DebugPanel list'],
+    storyPath: statusCodexFeaturesStoryPath,
+    storybookTitle: statusCodexFeaturesStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'dirty-preview', 'saving', 'loading', 'empty', 'unsupported-readonly'],
+    mockDataSources: ['storybook codex feature snapshot/rows/preview mock'],
   },
   {
     id: 'status-panels',

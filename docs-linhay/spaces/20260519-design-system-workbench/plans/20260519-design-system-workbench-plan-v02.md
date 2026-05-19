@@ -492,6 +492,23 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - loading
    - empty
 5. 本批只用固定 rows 和 handler mock，不触碰真实拖拽保存、路由探测或 Wails 边界。
+
+### 第十八批：Status Codex Features
+本批从 StatusPanels 拆出 Codex feature 配置列表并单独收编。
+
+1. 新增 `frontend/src/features/status/components/StatusCodexFeaturesSection.tsx`。
+2. 新增 `frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx`。
+3. Storybook 路径为 `Design System/Feature Components/Status Codex Features`。
+4. 本批 admitted 文件：
+   - `StatusCodexFeaturesSection.tsx`
+5. `Overview` 同屏覆盖：
+   - ready
+   - dirty preview
+   - saving
+   - loading
+   - empty
+   - unsupported / readOnly
+6. 本批只用固定 snapshot、rows 和 preview mock，不触碰真实读取、预览、保存或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary
