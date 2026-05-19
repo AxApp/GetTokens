@@ -102,6 +102,14 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Logic**: CLIProxyAPI injects token via `auth_index` for target `chatgpt.com/backend-api/wham/usage`.
 - **Debugging**: Verify both Wails debug events and CLIProxyAPI token resolution.
 - **Time**: Relative reset countdown must use raw unix seconds (`resetAtUnix`). Do not re-parse `resetLabel` for countdown logic, because display labels lose seconds and drift into false `0s`.
+- **Quota Curl Template Boundary**:
+  - Treat user-provided quota curl as a structured HTTP request template, not as a shell command to execute.
+  - Keep shell operators blocked: pipes, redirects, multi-command separators, backticks, and `$()` remain parse errors.
+  - Support known HTTP-shaping options directly: URL, method, headers, body, and cookie.
+  - For unsupported but safe curl options, ignore the option and still attempt the request. Do not fail fast solely because the option is unknown.
+  - Record ignored options on the parsed request. If the request succeeds, stay silent and allow save. If the request fails or the response cannot be parsed, append the ignored-option hint to the user-facing error so the user can debug the copied curl.
+  - When saving an enabled quota curl from the account detail UI, preflight the current draft with `TestCodexAPIKeyQuotaCurl` before `UpdateCodexAPIKeyConfig`; save only after the test succeeds.
+  - Do not promise full curl compatibility. Cookie jar files, `.netrc`, file upload, config files, proxy/TLS runtime behavior, and other curl-native features need explicit support before they are considered effective.
 - **Filter Semantics**:
   - “Only with longest quota” applies only to `auth-file + codex` assets.
   - If a quota has one window, that window is the longest window.
