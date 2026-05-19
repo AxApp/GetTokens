@@ -33,6 +33,8 @@ export default function ToggleSwitch({
       onClick={handleClick}
       disabled={disabled}
       title={label}
+      data-design-system-component="true"
+      data-design-system-component-name="ToggleSwitch"
       className={`flex min-h-[2.25rem] items-center justify-center transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
       <span

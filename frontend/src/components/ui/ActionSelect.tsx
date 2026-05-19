@@ -27,7 +27,11 @@ export default function ActionSelect({
   deleteDisabled = false,
 }: ActionSelectProps) {
   return (
-    <label className="grid gap-2">
+    <label
+      data-design-system-component="true"
+      data-design-system-component-name="ActionSelect"
+      className="grid gap-2"
+    >
       <span className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         {title}
       </span>

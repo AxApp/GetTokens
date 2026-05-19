@@ -214,6 +214,12 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
 ### 边界
 设计系统内部只保留数据属性，不绘制边框或角标；可见圈定只用于真实项目页面里的识别或标注场景，避免污染设计系统组件本身的视觉判断。
 
+### 项目页面圈定补充
+1. 真实项目页面需要由运行时组件本身暴露 `data-design-system-component="true"`，不能只依赖 Storybook wrapper。
+2. App 根节点在 dev 环境挂 `data-design-system-highlight="project"`，配合全局 CSS 给该作用域下的设计组件绘制红色 outline。
+3. 首批覆盖 `components/ui` 中已进入设计系统的基础组件：`ActionSelect`、`Combobox`、`PageLoadingFallback`、`SegmentedControl`、`ToggleSwitch`、`WorkspacePageHeader`。
+4. `storyCatalog.test.mjs` 增加运行时标记门禁：上述组件必须带 `data-design-system-component` 与 `data-design-system-component-name`，App 与 CSS 必须保留 project highlight 作用域。
+
 ## Feature Components 收编推进
 ### 本轮目标
 在 `components/ui` 全部进入 Storybook 后，开始收编已经从业务页提取出来、但仍属于 feature 目录的低耦合组件。第一批避开账号池当前并行改动，选择不依赖 Wails / sidecar 的 Debug 面板组件。

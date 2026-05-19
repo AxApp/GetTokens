@@ -20,6 +20,14 @@ import { resolveStorybookLocale, storybookLocaleOptions } from './storybookGloba
 
 const admittedComponentGroupIds = ['components', 'feature-components'];
 const featureComponentsRoot = new URL('../', import.meta.url);
+const runtimeDesignSystemComponentPaths = [
+  'frontend/src/components/ui/ActionSelect.tsx',
+  'frontend/src/components/ui/Combobox.tsx',
+  'frontend/src/components/ui/PageLoadingFallback.tsx',
+  'frontend/src/components/ui/SegmentedControl.tsx',
+  'frontend/src/components/ui/ToggleSwitch.tsx',
+  'frontend/src/components/ui/WorkspacePageHeader.tsx',
+];
 
 async function listFeatureComponentSourcePaths(directoryURL = featureComponentsRoot) {
   const directory = fileURLToPath(directoryURL);
@@ -138,6 +146,24 @@ test('component stories mark admitted design system components', async () => {
 
       assert.match(source, /DesignSystemStoryFrame/, `${story.path} must wrap examples with DesignSystemStoryFrame`);
     }
+  }
+});
+
+test('runtime design system components expose project highlight markers', async () => {
+  const appSource = await readFile(new URL('../../App.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../style.css', import.meta.url), 'utf8');
+
+  assert.match(appSource, /data-design-system-highlight=\{import\.meta\.env\.DEV \? 'project' : undefined\}/);
+  assert.match(styleSource, /\[data-design-system-highlight='project'\] \[data-design-system-component='true'\]/);
+
+  for (const sourcePath of runtimeDesignSystemComponentPaths) {
+    const source = await readFile(new URL(sourcePath.replace('frontend/src/', '../../'), import.meta.url), 'utf8');
+    assert.match(source, /data-design-system-component="true"/, `${sourcePath} must expose a project highlight marker`);
+    assert.match(
+      source,
+      /data-design-system-component-name=/,
+      `${sourcePath} must identify the marked design component`,
+    );
   }
 });
 

@@ -94,6 +94,7 @@ function AppShell() {
     <div
       className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]"
       data-collaboration-id="MAIN_FRAME"
+      data-design-system-highlight={import.meta.env.DEV ? 'project' : undefined}
       data-text-scale={getTextScaleAttributeValue(textScale)}
     >
       <Sidebar

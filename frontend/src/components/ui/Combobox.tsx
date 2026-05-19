@@ -144,7 +144,12 @@ export function Combobox({
     ) : null;
 
   return (
-    <div ref={rootRef} className={`relative min-w-0 ${className}`}>
+    <div
+      ref={rootRef}
+      data-design-system-component="true"
+      data-design-system-component-name="Combobox"
+      className={`relative min-w-0 ${className}`}
+    >
       <input
         value={value}
         disabled={disabled}

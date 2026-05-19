@@ -285,6 +285,11 @@
   .scrollbar-stable-both {
     scrollbar-gutter: stable both-edges;
   }
+
+  [data-design-system-highlight='project'] [data-design-system-component='true'] {
+    outline: 2px solid var(--accent-red);
+    outline-offset: 2px;
+  }
 }
 
 @keyframes codex-success-hud-in {

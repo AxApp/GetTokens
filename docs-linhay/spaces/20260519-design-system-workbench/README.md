@@ -185,6 +185,18 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 4. `storyCatalog.test.mjs` 已增加门禁：`components` 分组里的每个 story 文件必须使用 `DesignSystemStoryFrame`。
 5. 边界：圈定设计组件只用于真实项目页面里的识别或标注场景，设计系统内部不做可见框选。
 
+## 2026-05-19 项目页面设计组件圈定
+1. 根因纠正：此前只给 Storybook wrapper 加了 `data-design-system-component`，真实项目页面里的设计组件实例没有运行时标记，因此项目内不会圈红。
+2. App dev 运行时在主框架根节点挂 `data-design-system-highlight="project"`，只在真实项目页面启用红色 outline。
+3. 首批运行时基础设计组件已加 `data-design-system-component="true"` 与 `data-design-system-component-name`：
+   - `ActionSelect`
+   - `Combobox`
+   - `PageLoadingFallback`
+   - `SegmentedControl`
+   - `ToggleSwitch`
+   - `WorkspacePageHeader`
+4. Storybook 没有 `data-design-system-highlight="project"` 根作用域，因此设计系统内部仍不显示可见框选或角标。
+
 ## 2026-05-19 Feature Components 第一批收编
 1. 新增 `Design System/Feature Components/Debug Panel`，把调试面板里已经提取且不依赖 Wails 的组件纳入设计系统：
    - `DebugHeader`
