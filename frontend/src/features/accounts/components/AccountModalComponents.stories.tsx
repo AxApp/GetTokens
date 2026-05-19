@@ -1,12 +1,20 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useI18n } from '../../../context/I18nContext';
-import type { CodexQuota } from '../../../types';
+import type { BillingDisplay, CodexQuota } from '../../../types';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { AccountRecord, ApiKeyFormState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import {
+  AccountBillingSection,
+  AccountCredentialsSection,
+  AccountDetailFooter,
+  AccountDetailHeader,
+  AccountQuotaSection,
+  AccountVerifySection,
+} from './AccountDetailSections';
 import ApiKeyDetailModal, { type APIKeyVerifyState } from './ApiKeyDetailModal';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
 import CodexOAuthModal from './CodexOAuthModal';
@@ -440,6 +448,109 @@ function ApiKeyDetailSample({
   );
 }
 
+const apiKeyDetailBilling: BillingDisplay = {
+  isAvailable: true,
+  balances: [
+    {
+      currency: 'USD',
+      totalBalance: '120.00',
+      grantedBalance: '80.00',
+      toppedUpBalance: '40.00',
+    },
+  ],
+};
+
+function AccountDetailSectionsSample({
+  label,
+  saving = false,
+  missing = false,
+}: {
+  label: string;
+  saving?: boolean;
+  missing?: boolean;
+}) {
+  const [draft, setDraft] = useState({
+    apiKey: apiKeyDetailAccount.apiKey ?? '',
+    baseUrl: missing ? '' : apiKeyDetailAccount.baseUrl ?? '',
+    prefix: apiKeyDetailAccount.prefix ?? '',
+    quotaCurl: apiKeyDetailAccount.quotaCurl ?? '',
+    quotaEnabled: Boolean(apiKeyDetailAccount.quotaEnabled),
+    billingCurl: 'curl -sS "https://example.com/api/billing" -H "Authorization: Bearer {{apiKey}}"',
+    billingEnabled: true,
+    proxyUrl: '',
+  });
+  const missingFields = missing ? ['Base URL'] : [];
+
+  return (
+    <ModalViewport label={label}>
+      <AccountDetailModalFrame
+        onClose={() => undefined}
+        header={
+          <AccountDetailHeader
+            account={apiKeyDetailAccount}
+            usageSummary={apiKeyUsageSummary}
+            onRename={() => undefined}
+          />
+        }
+        footer={
+          <AccountDetailFooter
+            isApiKey
+            configDirty
+            missingFields={missingFields}
+            savingConfig={saving}
+            onClose={() => undefined}
+            onSaveConfig={() => undefined}
+          />
+        }
+      >
+        <div className="space-y-6 p-6">
+          <AccountCredentialsSection draft={draft} setDraft={setDraft} />
+          <AccountVerifySection
+            draft={draft}
+            verifyState={apiKeyVerifyStates.success}
+            modelNames={['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2']}
+            onVerify={() => undefined}
+          />
+          <AccountQuotaSection
+            account={apiKeyDetailAccount}
+            draft={draft}
+            setDraft={setDraft}
+            onTestQuotaCurl={async () => ({
+              planType: 'Pro',
+              windows: [
+                {
+                  id: 'five-hour',
+                  label: '5H WINDOW',
+                  remainingPercent: 64,
+                  usedLabel: '36%',
+                  resetLabel: '02:10:00',
+                },
+              ],
+            })}
+          />
+          <AccountBillingSection
+            account={apiKeyDetailAccount}
+            draft={draft}
+            setDraft={setDraft}
+            liveBilling={apiKeyDetailBilling}
+            onTestBillingCurl={async () => ({
+              isAvailable: true,
+              balanceInfos: [
+                {
+                  currency: 'USD',
+                  totalBalance: '120.00',
+                  grantedBalance: '80.00',
+                  toppedUpBalance: '40.00',
+                },
+              ],
+            })}
+          />
+        </div>
+      </AccountDetailModalFrame>
+    </ModalViewport>
+  );
+}
+
 function UnifiedComposeSample({
   label,
   formKey,
@@ -554,6 +665,14 @@ function AccountModalsOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Unified account detail sections</h3>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <AccountDetailSectionsSample label="DS-ACCOUNT-DETAIL-SECTIONS-READY" />
+          <AccountDetailSectionsSample label="DS-ACCOUNT-DETAIL-SECTIONS-MISSING" missing saving />
+        </div>
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Unified compose states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <UnifiedComposeSample label="DS-UNIFIED-PRESET-LIST" formKey="empty" />
@@ -610,6 +729,10 @@ export const ApiKeyCompose: Story = {
 
 export const ApiKeyDetail: Story = {
   render: () => <ApiKeyDetailSample label="DS-API-KEY-DETAIL-SUCCESS" />,
+};
+
+export const AccountDetailSections: Story = {
+  render: () => <AccountDetailSectionsSample label="DS-ACCOUNT-DETAIL-SECTIONS-READY" />,
 };
 
 export const CodexOAuth: Story = {

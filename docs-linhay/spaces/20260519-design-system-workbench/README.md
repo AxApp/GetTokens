@@ -581,6 +581,21 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - `npm --prefix frontend run typecheck`
    - `npm --prefix frontend run build-storybook`
 
+## 2026-05-19 第三十一批 Feature Components：Unified Account Detail Sections
+1. 从 `UnifiedAccountDetailModal` 抽出无 Wails 的账号详情页 section，并复用 `Design System/Feature Components/Account Modals` 收编：
+   - `AccountDetailHeader`
+   - `AccountCredentialsSection`
+   - `AccountVerifySection`
+   - `AccountQuotaSection`
+   - `AccountBillingSection`
+   - `AccountDetailFooter`
+2. 新 story 覆盖：
+   - ready
+   - missing fields
+   - saving footer
+   - live billing
+3. `UnifiedAccountDetailModal` 继续保留 auth file 原文读取、内容清洗和兼容模型读取等 Wails 运行时区块；本批只把 API key 详情页中可 mock、可复用的展示 / 编辑 section 纳入设计系统。
+
 ## 场景收敛规则
 1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。
 2. 对已经在同类组件中验证过的 loading、disabled、empty、error 行为，不重复为每个组件铺满；仅在该组件有独特布局或行为差异时新增状态。
