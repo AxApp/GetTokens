@@ -9,6 +9,7 @@ import (
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 	"github.com/linhay/gettokens/internal/codexbinary"
+	"github.com/linhay/gettokens/internal/menubar"
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/updater"
@@ -30,6 +31,7 @@ type App struct {
 	sessionMgmtMu            sync.RWMutex
 	sessionMgmt              sessionManagementRuntimeState
 	codexBinary              *codexbinary.Service
+	menuBar                  *menubar.Controller
 }
 
 type localUsageRuntimeState struct {
@@ -55,6 +57,7 @@ func New(version string, releaseLabel string, repo string) *App {
 		version:      version,
 		releaseLabel: releaseLabel,
 		codexBinary:  codexbinary.NewService(codexbinary.ServiceOptions{}),
+		menuBar:      menubar.NewController(),
 	}
 }
 

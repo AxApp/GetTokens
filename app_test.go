@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
+	"github.com/wailsapp/wails/v2/pkg/menu"
 )
 
 func TestGitHubRepoUsesPublishedReleaseRepository(t *testing.T) {
@@ -52,6 +53,62 @@ func TestFetchVendorStatusRSSErrorOnNon2xx(t *testing.T) {
 	if !strings.Contains(err.Error(), "vendor status rss returned 502") {
 		t.Fatalf("FetchVendorStatusRSS error = %q, want status code message", err.Error())
 	}
+}
+
+func TestBuildApplicationMenuIncludesUpdateEntry(t *testing.T) {
+	appMenu := buildApplicationMenuWithUpdateAction(func() {})
+	updateItem := findMenuItemByLabel(appMenu, macOSCheckForUpdatesMenuLabel)
+
+	if updateItem == nil {
+		t.Fatalf("application menu does not include %q", macOSCheckForUpdatesMenuLabel)
+	}
+	if updateItem.Disabled {
+		t.Fatalf("%q menu item is disabled", macOSCheckForUpdatesMenuLabel)
+	}
+	if updateItem.Click == nil {
+		t.Fatalf("%q menu item has no click action", macOSCheckForUpdatesMenuLabel)
+	}
+}
+
+func TestApplicationMenuUpdateEntryUsesSharedUpdateAction(t *testing.T) {
+	called := false
+	appMenu := buildApplicationMenuWithUpdateAction(func() {
+		called = true
+	})
+	updateItem := findMenuItemByLabel(appMenu, macOSCheckForUpdatesMenuLabel)
+	if updateItem == nil {
+		t.Fatalf("application menu does not include %q", macOSCheckForUpdatesMenuLabel)
+	}
+
+	updateItem.Click(&menu.CallbackData{MenuItem: updateItem})
+
+	if !called {
+		t.Fatalf("%q click did not call update action", macOSCheckForUpdatesMenuLabel)
+	}
+}
+
+func findMenuItemByLabel(appMenu *menu.Menu, label string) *menu.MenuItem {
+	for _, item := range appMenu.Items {
+		if found := findMenuItemByLabelInItem(item, label); found != nil {
+			return found
+		}
+	}
+	return nil
+}
+
+func findMenuItemByLabelInItem(item *menu.MenuItem, label string) *menu.MenuItem {
+	if item.Label == label {
+		return item
+	}
+	if item.SubMenu == nil {
+		return nil
+	}
+	for _, child := range item.SubMenu.Items {
+		if found := findMenuItemByLabelInItem(child, label); found != nil {
+			return found
+		}
+	}
+	return nil
 }
 
 func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {

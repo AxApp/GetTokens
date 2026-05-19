@@ -632,6 +632,28 @@ export namespace main {
 	        this.billingEnabled = source["billingEnabled"];
 	    }
 	}
+	export class AppRuntimeSettings {
+	    launchAtLogin: boolean;
+	    launchAtLoginSupported: boolean;
+	    launchAgentPath?: string;
+	    closeAction: string;
+	    menuBarResident: boolean;
+	    configPath?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new AppRuntimeSettings(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.launchAtLogin = source["launchAtLogin"];
+	        this.launchAtLoginSupported = source["launchAtLoginSupported"];
+	        this.launchAgentPath = source["launchAgentPath"];
+	        this.closeAction = source["closeAction"];
+	        this.menuBarResident = source["menuBarResident"];
+	        this.configPath = source["configPath"];
+	    }
+	}
 	export class AuthFileItem {
 	    name: string;
 	    type?: string;

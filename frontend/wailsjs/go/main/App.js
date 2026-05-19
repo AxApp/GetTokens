@@ -90,6 +90,10 @@ export function GetAllRateLimitStatuses() {
   return window['go']['main']['App']['GetAllRateLimitStatuses']();
 }
 
+export function GetAppRuntimeSettings() {
+  return window['go']['main']['App']['GetAppRuntimeSettings']();
+}
+
 export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
 }
@@ -316,6 +320,10 @@ export function TestCodexAPIKeyQuotaCurl(arg1) {
 
 export function UpdateAccountPriority(arg1) {
   return window['go']['main']['App']['UpdateAccountPriority'](arg1);
+}
+
+export function UpdateAppRuntimeSettings(arg1) {
+  return window['go']['main']['App']['UpdateAppRuntimeSettings'](arg1);
 }
 
 export function UpdateCodexAPIKeyConfig(arg1) {

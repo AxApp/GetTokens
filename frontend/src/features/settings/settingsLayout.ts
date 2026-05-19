@@ -1,5 +1,6 @@
 export const settingsSectionOrder = [
   'appearance',
+  'app_lifecycle',
   'local_usage_refresh',
   'network_proxy',
   'updates',

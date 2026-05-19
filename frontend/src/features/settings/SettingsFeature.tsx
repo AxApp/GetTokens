@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ApplyUpdate,
   CheckUpdate,
+  GetAppRuntimeSettings,
   GetLocalProjectedUsageSettings,
   GetSidecarProxySettings,
+  UpdateAppRuntimeSettings,
   UpdateLocalProjectedUsageSettings,
   UpdateSidecarProxySettings,
 } from '../../../wailsjs/go/main/App';
@@ -27,6 +29,7 @@ import {
 } from './settingsTextScale';
 import { getSettingsSectionBadge, type SettingsSectionID } from './settingsLayout';
 import { toErrorMessage } from '../../utils/error';
+import { hasWailsAppBindings } from '../../utils/previewMode';
 import { formatAppVersion } from '../../utils/version';
 import type { LocaleCode, ReleaseInfo, SegmentedOption, ThemeMode } from '../../types';
 
@@ -39,6 +42,13 @@ const themes: ReadonlyArray<SegmentedOption<ThemeMode>> = [
 const languages: ReadonlyArray<SegmentedOption<LocaleCode>> = [
   { id: 'zh', label: '简体中文' },
   { id: 'en', label: 'ENGLISH' },
+];
+
+type AppCloseAction = 'quit_app_and_service' | 'keep_service_in_menu_bar';
+
+const closeActionOptions: ReadonlyArray<SegmentedOption<AppCloseAction>> = [
+  { id: 'quit_app_and_service', label: 'QUIT' },
+  { id: 'keep_service_in_menu_bar', label: 'MENUBAR' },
 ];
 
 const sectionBadgeStyle = { fontSize: 'var(--gt-settings-section-badge-size, 8px)' } as const;
@@ -84,6 +94,13 @@ export default function SettingsFeature({
   const [sidecarProxyMessage, setSidecarProxyMessage] = useState('');
   const [isLoadingSidecarProxySettings, setIsLoadingSidecarProxySettings] = useState(true);
   const [isSavingSidecarProxySettings, setIsSavingSidecarProxySettings] = useState(false);
+  const [launchAtLogin, setLaunchAtLogin] = useState(false);
+  const [launchAtLoginSupported, setLaunchAtLoginSupported] = useState(false);
+  const [closeAction, setCloseAction] = useState<AppCloseAction>('quit_app_and_service');
+  const [menuBarResident, setMenuBarResident] = useState(false);
+  const [appRuntimeMessage, setAppRuntimeMessage] = useState('');
+  const [isLoadingAppRuntimeSettings, setIsLoadingAppRuntimeSettings] = useState(true);
+  const [isSavingAppRuntimeSettings, setIsSavingAppRuntimeSettings] = useState(false);
   const currentVersionLabel = formatAppVersion(version);
   const latestReleaseLabel = availableRelease ? formatAppVersion(availableRelease.version) : '—';
   const textScaleOptions: ReadonlyArray<SegmentedOption<typeof textScale>> = [
@@ -93,10 +110,54 @@ export default function SettingsFeature({
   ];
   const settingsSectionTabs: ReadonlyArray<{ id: SettingsSectionID; label: string; shortLabel: string }> = [
     { id: 'appearance', label: t('settings.appearance'), shortLabel: locale === 'zh' ? '外观' : 'LOOK' },
+    { id: 'app_lifecycle', label: t('settings.app_lifecycle'), shortLabel: locale === 'zh' ? '启动' : 'RUN' },
     { id: 'local_usage_refresh', label: t('settings.local_usage_refresh'), shortLabel: locale === 'zh' ? '刷新' : 'SYNC' },
     { id: 'network_proxy', label: t('settings.network_proxy'), shortLabel: locale === 'zh' ? '代理' : 'NET' },
     { id: 'updates', label: t('settings.updates'), shortLabel: locale === 'zh' ? '更新' : 'UPD' },
   ];
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAppRuntimeSettings() {
+      setIsLoadingAppRuntimeSettings(true);
+      setAppRuntimeMessage('');
+      if (!hasWailsAppBindings()) {
+        setLaunchAtLogin(false);
+        setLaunchAtLoginSupported(false);
+        setCloseAction('quit_app_and_service');
+        setMenuBarResident(false);
+        setAppRuntimeMessage(t('settings.app_lifecycle_preview'));
+        setIsLoadingAppRuntimeSettings(false);
+        return;
+      }
+      try {
+        const settings = await trackRequest<any>(
+          'GetAppRuntimeSettings',
+          { args: [] },
+          () => GetAppRuntimeSettings(),
+        );
+        if (!mounted) return;
+        setLaunchAtLogin(Boolean(settings?.launchAtLogin));
+        setLaunchAtLoginSupported(Boolean(settings?.launchAtLoginSupported));
+        setCloseAction(settings?.closeAction === 'keep_service_in_menu_bar' ? 'keep_service_in_menu_bar' : 'quit_app_and_service');
+        setMenuBarResident(Boolean(settings?.menuBarResident));
+      } catch (error) {
+        if (!mounted) return;
+        setAppRuntimeMessage(`${t('settings.app_lifecycle_failed')}: ${toErrorMessage(error)}`);
+      } finally {
+        if (mounted) {
+          setIsLoadingAppRuntimeSettings(false);
+        }
+      }
+    }
+
+    void loadAppRuntimeSettings();
+
+    return () => {
+      mounted = false;
+    };
+  }, [t, trackRequest]);
 
   useEffect(() => {
     let mounted = true;
@@ -269,6 +330,48 @@ export default function SettingsFeature({
     }
   }
 
+  async function saveAppRuntimeSettings(nextLaunchAtLogin: boolean, nextCloseAction: AppCloseAction) {
+    const previousLaunchAtLogin = launchAtLogin;
+    const previousCloseAction = closeAction;
+    const previousMenuBarResident = menuBarResident;
+
+    setLaunchAtLogin(nextLaunchAtLogin);
+    setCloseAction(nextCloseAction);
+    setMenuBarResident(nextCloseAction === 'keep_service_in_menu_bar');
+    setIsSavingAppRuntimeSettings(true);
+    setAppRuntimeMessage('');
+    if (!hasWailsAppBindings()) {
+      setAppRuntimeMessage(t('settings.app_lifecycle_preview_saved'));
+      setIsSavingAppRuntimeSettings(false);
+      return;
+    }
+    try {
+      const settings = await trackRequest<any>(
+        'UpdateAppRuntimeSettings',
+        { launchAtLogin: nextLaunchAtLogin, closeAction: nextCloseAction },
+        () =>
+          UpdateAppRuntimeSettings({
+            launchAtLogin: nextLaunchAtLogin,
+            launchAtLoginSupported,
+            closeAction: nextCloseAction,
+            menuBarResident: nextCloseAction === 'keep_service_in_menu_bar',
+          }),
+      );
+      setLaunchAtLogin(Boolean(settings?.launchAtLogin));
+      setLaunchAtLoginSupported(Boolean(settings?.launchAtLoginSupported));
+      setCloseAction(settings?.closeAction === 'keep_service_in_menu_bar' ? 'keep_service_in_menu_bar' : 'quit_app_and_service');
+      setMenuBarResident(Boolean(settings?.menuBarResident));
+      setAppRuntimeMessage(t('settings.app_lifecycle_saved'));
+    } catch (error) {
+      setLaunchAtLogin(previousLaunchAtLogin);
+      setCloseAction(previousCloseAction);
+      setMenuBarResident(previousMenuBarResident);
+      setAppRuntimeMessage(`${t('settings.app_lifecycle_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setIsSavingAppRuntimeSettings(false);
+    }
+  }
+
   function setSectionRef(sectionID: SettingsSectionID, element: HTMLElement | null) {
     sectionRefs.current[sectionID] = element;
   }
@@ -371,6 +474,104 @@ export default function SettingsFeature({
                 <div className="font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
                   {t('settings.text_scale_hint')}
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section ref={(element) => setSectionRef('app_lifecycle', element)} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <span
+                className="bg-[var(--border-color)] px-1.5 py-0.5 font-mono font-black uppercase text-[var(--bg-main)]"
+                style={sectionBadgeStyle}
+              >
+                {getSettingsSectionBadge('app_lifecycle')}
+              </span>
+              <h3 className="font-black uppercase italic tracking-tighter text-[var(--text-primary)]" style={sectionTitleStyle}>
+                {t('settings.app_lifecycle')}
+              </h3>
+            </div>
+
+            <div className="card-swiss !p-0 divide-y-2 divide-[var(--border-color)]">
+              <div className="space-y-3 p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
+                      {t('settings.launch_at_login')}
+                    </label>
+                    <div className="mt-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
+                      {isLoadingAppRuntimeSettings
+                        ? t('settings.app_lifecycle_loading')
+                        : launchAtLoginSupported
+                          ? t('settings.launch_at_login_hint')
+                          : t('settings.launch_at_login_unsupported')}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
+                      LOGIN_ITEM
+                    </span>
+                    <ToggleSwitch
+                      label={t('settings.launch_at_login')}
+                      checked={launchAtLogin}
+                      disabled={isLoadingAppRuntimeSettings || isSavingAppRuntimeSettings || !launchAtLoginSupported}
+                      onChange={(checked) => void saveAppRuntimeSettings(checked, closeAction)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 p-5">
+                <div className="flex items-center justify-between">
+                  <label className="font-black uppercase italic tracking-widest text-[var(--text-muted)]" style={fieldLabelStyle}>
+                    {t('settings.close_action')}
+                  </label>
+                  <span className="font-mono font-bold italic opacity-30 text-[var(--text-muted)]" style={fieldMetaStyle}>
+                    CLOSE_BEHAVIOR
+                  </span>
+                </div>
+                <SegmentedControl
+                  options={[
+                    { ...closeActionOptions[0], label: t('settings.close_action_quit') },
+                    { ...closeActionOptions[1], label: t('settings.close_action_menubar') },
+                  ]}
+                  value={closeAction}
+                  onChange={(value) => void saveAppRuntimeSettings(launchAtLogin, value)}
+                />
+                <div className="font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={bodyTextStyle}>
+                  {isSavingAppRuntimeSettings
+                    ? t('settings.app_lifecycle_saving')
+                    : closeAction === 'keep_service_in_menu_bar'
+                      ? t('settings.close_action_menubar_hint')
+                      : t('settings.close_action_quit_hint')}
+                </div>
+                <div className="grid gap-3 border-t border-dashed border-[var(--border-color)] pt-3 sm:grid-cols-2">
+                  <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
+                    <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
+                      {t('settings.menu_bar_resident')}
+                    </div>
+                    <div className="mt-1 font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
+                      {menuBarResident ? t('settings.enabled') : t('settings.disabled')}
+                    </div>
+                  </div>
+                  <div className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
+                    <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
+                      {t('settings.service_on_close')}
+                    </div>
+                    <div className="mt-1 font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
+                      {closeAction === 'keep_service_in_menu_bar'
+                        ? t('settings.service_on_close_keep')
+                        : t('settings.service_on_close_stop')}
+                    </div>
+                  </div>
+                </div>
+                {appRuntimeMessage ? (
+                  <div
+                    className="border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]"
+                    style={bodyTextStyle}
+                  >
+                    {appRuntimeMessage}
+                  </div>
+                ) : null}
               </div>
             </div>
           </section>

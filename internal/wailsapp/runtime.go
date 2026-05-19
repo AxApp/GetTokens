@@ -13,6 +13,11 @@ import (
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
 	a.startLocalUsageRefreshLoop(ctx)
+	if settings, err := loadAppRuntimeSettings(); err == nil {
+		a.applyMenuBarResident(settings)
+	} else {
+		log.Printf("load app runtime settings failed: %v", err)
+	}
 
 	if usesNativeUpdaterUI() {
 		if err := sparkle.Start(); err != nil {
@@ -22,6 +27,7 @@ func (a *App) Startup(ctx context.Context) {
 
 	go func() {
 		a.sidecar.Start(ctx, func(status sidecar.Status) {
+			a.updateMenuBarStatus(status)
 			if status.Code == sidecar.StatusReady {
 				go func() {
 					if err := a.applyPendingSidecarProxySettings(); err != nil {
@@ -50,7 +56,22 @@ func (a *App) Startup(ctx context.Context) {
 }
 
 func (a *App) Shutdown() {
+	a.menuBar.Stop()
 	a.sidecar.Stop()
+}
+
+func (a *App) BeforeClose(ctx context.Context) bool {
+	settings, err := loadAppRuntimeSettings()
+	if err != nil {
+		log.Printf("load app runtime settings before close failed: %v", err)
+		return false
+	}
+	if !a.shouldPreventCloseForRuntimeSettings(settings) {
+		return false
+	}
+	a.applyMenuBarResident(settings)
+	wailsRuntime.WindowHide(ctx)
+	return true
 }
 
 func (a *App) GetSidecarStatus() sidecar.Status {

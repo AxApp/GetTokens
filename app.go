@@ -40,6 +40,10 @@ func (a *App) shutdown(ctx context.Context) {
 	a.core.Shutdown()
 }
 
+func (a *App) beforeClose(ctx context.Context) bool {
+	return a.core.BeforeClose(ctx)
+}
+
 func (a *App) GetSidecarStatus() sidecar.Status {
 	return a.core.GetSidecarStatus()
 }
@@ -475,6 +479,39 @@ func (a *App) UpdateSidecarProxySettings(input SidecarProxySettings) (*SidecarPr
 		UseSystemProxy:          result.UseSystemProxy,
 		ConfigPath:              result.ConfigPath,
 		AppliedToRunningSidecar: result.AppliedToRunningSidecar,
+	}, nil
+}
+
+func (a *App) GetAppRuntimeSettings() (*AppRuntimeSettings, error) {
+	result, err := a.core.GetAppRuntimeSettings()
+	if err != nil {
+		return nil, err
+	}
+	return &AppRuntimeSettings{
+		LaunchAtLogin:          result.LaunchAtLogin,
+		LaunchAtLoginSupported: result.LaunchAtLoginSupported,
+		LaunchAgentPath:        result.LaunchAgentPath,
+		CloseAction:            result.CloseAction,
+		MenuBarResident:        result.MenuBarResident,
+		ConfigPath:             result.ConfigPath,
+	}, nil
+}
+
+func (a *App) UpdateAppRuntimeSettings(input AppRuntimeSettings) (*AppRuntimeSettings, error) {
+	result, err := a.core.UpdateAppRuntimeSettings(wailsapp.AppRuntimeSettings{
+		LaunchAtLogin: input.LaunchAtLogin,
+		CloseAction:   input.CloseAction,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &AppRuntimeSettings{
+		LaunchAtLogin:          result.LaunchAtLogin,
+		LaunchAtLoginSupported: result.LaunchAtLoginSupported,
+		LaunchAgentPath:        result.LaunchAgentPath,
+		CloseAction:            result.CloseAction,
+		MenuBarResident:        result.MenuBarResident,
+		ConfigPath:             result.ConfigPath,
 	}, nil
 }
 

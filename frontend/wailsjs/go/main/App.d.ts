@@ -49,6 +49,8 @@ export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<vo
 
 export function GetAllRateLimitStatuses():Promise<Array<main.RateLimitState>>;
 
+export function GetAppRuntimeSettings():Promise<main.AppRuntimeSettings>;
+
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
 
 export function GetCodexBinaryDoctor():Promise<codexbinary.DoctorSummary>;
@@ -162,6 +164,8 @@ export function TestCodexAPIKeyBillingCurl(arg1:main.TestCodexAPIKeyQuotaCurlInp
 export function TestCodexAPIKeyQuotaCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput):Promise<main.CodexQuotaResponse>;
 
 export function UpdateAccountPriority(arg1:main.UpdateAccountPriorityInput):Promise<void>;
+
+export function UpdateAppRuntimeSettings(arg1:main.AppRuntimeSettings):Promise<main.AppRuntimeSettings>;
 
 export function UpdateCodexAPIKeyConfig(arg1:main.UpdateCodexAPIKeyConfigInput):Promise<void>;
 

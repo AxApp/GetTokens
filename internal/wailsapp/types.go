@@ -161,6 +161,15 @@ type SidecarProxySettings struct {
 	AppliedToRunningSidecar bool   `json:"appliedToRunningSidecar"`
 }
 
+type AppRuntimeSettings struct {
+	LaunchAtLogin          bool   `json:"launchAtLogin"`
+	LaunchAtLoginSupported bool   `json:"launchAtLoginSupported"`
+	LaunchAgentPath        string `json:"launchAgentPath,omitempty"`
+	CloseAction            string `json:"closeAction"`
+	MenuBarResident        bool   `json:"menuBarResident"`
+	ConfigPath             string `json:"configPath,omitempty"`
+}
+
 type UpdateSessionProviderMapping struct {
 	SourceProvider string `json:"sourceProvider"`
 	TargetProvider string `json:"targetProvider"`
