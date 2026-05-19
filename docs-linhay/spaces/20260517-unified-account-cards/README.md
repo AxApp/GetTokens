@@ -225,6 +225,55 @@
    - 详情弹窗中，同一账号已显示实时余额区块和 billing 编辑区
    - 截图归档：[20260518-accounts-detail-billing-after-v02.png](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260517-unified-account-cards/screenshots/20260518/accounts/20260518-accounts-detail-billing-after-v02.png)
 
+## 账号列表密度模式（2026-05-19）
+
+1. 账号池聚合页参考 Codex 账号列表补齐 `完整 / 缩略 / 列表` 三种密度模式。
+2. 默认保持原有完整卡片模式；缩略模式复用 `AttributionCard` 的紧凑展示，隐藏 traffic / quota / evidence 等重信息区；列表模式改为单列横向行，保留账号标题、状态、格式徽章、近期请求、累计 token、额度摘要与账号操作菜单。
+3. 密度状态持久化到 `localStorage` 的 `gettokens.accounts.display-mode`，并同步到 hash 的 `density=compact|list`；回到完整模式时移除默认 `density` 参数。
+4. 验证通过：
+   - `cd frontend && node --test src/features/accounts/tests/accountListLayout.test.mjs`
+   - `cd frontend && npm run typecheck`
+   - `cd frontend && npm run test:unit`
+   - Playwright browser preview：`http://127.0.0.1:5174/#frame=accounts` 切换缩略和列表模式，确认桌面布局可读；控制台仅有既存 `favicon.ico` 404。
+5. 验收截图：
+   - [20260519-accounts-display-mode-compact-after-v01.png](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/screenshots/20260519/accounts/20260519-accounts-display-mode-compact-after-v01.png)
+   - [20260519-accounts-display-mode-list-after-v01.png](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/screenshots/20260519/accounts/20260519-accounts-display-mode-list-after-v01.png)
+
+## 账号卡片窄宽自适应修复（2026-05-19）
+
+1. 修复正式版侧栏占宽后账号卡片仍按视口断点强制两列的问题：账号组网格改为 `auto-fit + minmax(min(100%, ...), 1fr)`，让卡片按实际可用宽度降级为单列。
+2. `AccountCardFrame` 增加 `w-full min-w-0 max-w-full`，并解除卡片根节点 `overflow-hidden` 对内部弹层和重排内容的裁剪。
+3. 卡片内部固定网格改为语义类 + container query：
+   - traffic、quota、usage、rate-limit、billing、evidence 在窄卡片下自动降列；
+   - footer action grid 在更窄容器下单列显示，避免按钮文案被截断；
+   - 全卡片子元素默认 `min-width: 0`，长文本走 truncate/换行策略。
+4. `useGroupCardHeights` 只在完整模式且实际渲染为多列时同步等高；单列、缩略和列表模式都会清掉等高，避免窄宽切换后继承异常 `min-height`。
+5. 验证：
+   - `cd frontend && node --test src/features/accounts/tests/accountCardLayout.test.mjs`
+   - `cd frontend && npm run test:unit`
+   - `cd frontend && npm run build`
+   - Playwright：`900x900` 下 full 模式首组网格为 `556px` 单列、无横向溢出、卡片 `min-height: 0px`；`1452x900` 下首组保持 `348px 348px 348px` 三列并仅在多列时等高。
+   - `cd frontend && npm run typecheck` 当前被未纳入本轮的 Storybook story 类型错误阻塞，错误集中在 `frontend/src/components/ui/*.stories.tsx` 缺少 `args` 和一个 segmented control 泛型不匹配。
+6. 验收截图：
+   - [20260519-accounts-card-layout-full-web-after-v01.png](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260517-unified-account-cards/screenshots/20260519/accounts/20260519-accounts-card-layout-full-web-after-v01.png)
+
+## 账号卡片启用/禁用入口（2026-05-19）
+
+1. 账号卡右上角操作菜单新增统一启用/禁用入口：
+   - 当前启用账号显示 `禁用账户`
+   - 当前禁用账号显示 `激活账户`
+2. 入口复用后端统一 `SetAccountDisabled`，保持与轮换管理一致的语义：禁用账号保留顺序和记录，但不参与请求。
+3. 前端增加 `pendingStatusAccountID`，保存期间禁用菜单项并显示 loading 文案，避免重复提交。
+4. 本地状态会同步 patch 当前列表和详情选中账号，再轻量 reload 真实账号列表。
+5. 验证：
+   - `cd frontend && node --test src/features/accounts/tests/accountCardInteractions.test.mjs src/features/accounts/tests/accountRotation.test.mjs`
+   - `cd frontend && npm run typecheck`
+   - `cd frontend && npm run build`
+   - Playwright：账号卡菜单中启用账号显示 `禁用账户`，已禁用账号显示 `激活账户`，控制台无新增错误。
+   - `cd frontend && npm run test:unit` 当前有 2 个未纳入本轮的 settings layout 断言失败：`app_lifecycle` section 已不在当前设置分组中，但测试仍期望它存在。
+6. 验收截图：
+   - [20260519-accounts-card-disable-menu-web-after-v01.png](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260517-unified-account-cards/screenshots/20260519/accounts/20260519-accounts-card-disable-menu-web-after-v01.png)
+
 ## 验证方式
 
 ```bash

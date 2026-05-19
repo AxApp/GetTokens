@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Copy, FileText, MoreVertical, Trash2 } from 'lucide-react';
-import { DownloadAuthFile } from '../../../../wailsjs/go/main/App';
+import { Copy, FileText, MoreVertical, Power, Trash2 } from 'lucide-react';
 import { buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
 import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
@@ -14,6 +13,8 @@ import {
 import type { AccountRecord, CodexQuotaState, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import { rateLimitStateTone, type RateLimitState } from '../model/rateLimit';
+import type { AccountListDisplayMode } from '../model/accountListLayout';
+import { canToggleRotationAccountDisabled } from '../model/accountRotation';
 import AccountCardSkeleton from './AccountCardSkeleton';
 import AttributionCard, { type AttributionCardBadge, type AttributionCardEvidenceRow } from './AttributionCard';
 
@@ -24,18 +25,22 @@ interface AccountCardProps {
   usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
   minHeight?: number;
+  density?: AccountListDisplayMode;
   ready: boolean;
   isSelectionMode: boolean;
   isSelected: boolean;
   isPendingDelete: boolean;
   isOAuthPending: boolean;
+  isStatusPending: boolean;
   onToggleSelection: (accountID: string) => void;
   onOpenDetails: (account: AccountRecord) => void;
   onRefreshQuota: (account: AccountRecord) => void;
   onStartReauth: (account: AccountRecord) => void;
+  onToggleDisabled: (account: AccountRecord) => void;
   onRequestDelete: (accountID: string) => void;
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
+  downloadAuthFile?: (accountName: string) => Promise<{ contentBase64: string }>;
 }
 
 export default function AccountCard({
@@ -45,18 +50,22 @@ export default function AccountCard({
   usageSummary,
   rateLimitStatus,
   minHeight,
+  density = 'full',
   ready,
   isSelectionMode,
   isSelected,
   isPendingDelete,
   isOAuthPending,
+  isStatusPending,
   onToggleSelection,
   onOpenDetails,
   onRefreshQuota,
   onStartReauth,
+  onToggleDisabled,
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
+  downloadAuthFile,
 }: AccountCardProps) {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
@@ -108,6 +117,7 @@ export default function AccountCard({
   }
   const formatBaseUrls = account.formatBaseUrls;
   const hasFormatEndpoints = formatBaseUrls && Object.keys(formatBaseUrls).length > 0;
+  const canToggleDisabled = canToggleRotationAccountDisabled(account);
 
   const evidenceRows: AttributionCardEvidenceRow[] = [
     {
@@ -205,22 +215,26 @@ export default function AccountCard({
       return;
     }
 
-    try {
-      const response = await DownloadAuthFile(account.name);
-      const rawContent = decodeBase64Utf8(response.contentBase64);
-      await copyText(buildAccountCardContentText(account, parseMaybeJSON(rawContent)));
-    } catch {
-      await copyText(buildAccountCardContentText(account));
+    if (downloadAuthFile) {
+      try {
+        const response = await downloadAuthFile(account.name);
+        const rawContent = decodeBase64Utf8(response.contentBase64);
+        await copyText(buildAccountCardContentText(account, parseMaybeJSON(rawContent)));
+        return;
+      } catch {
+        // Fall back to the card summary when the runtime auth file is unavailable.
+      }
     }
+    await copyText(buildAccountCardContentText(account));
   }
 
   const actionColumnClass = supportsQuota(account)
     ? canReauth
-      ? 'grid-cols-3'
-      : 'grid-cols-2'
+      ? 'account-card-action-grid-3'
+      : 'account-card-action-grid-2'
     : canReauth
-      ? 'grid-cols-2'
-      : 'grid-cols-1';
+      ? 'account-card-action-grid-2'
+      : 'account-card-action-grid-1';
 
   if (quotaDisplay.status === 'loading') {
     return <AccountCardSkeleton />;
@@ -240,6 +254,7 @@ export default function AccountCard({
       rateLimitStatus={rateLimitStatus}
       evidenceRows={evidenceRows}
       tone={cardTone}
+      density={density}
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
       interactive={!isSelectionMode && !isPendingDelete}
       topActions={
@@ -291,6 +306,23 @@ export default function AccountCard({
                     <FileText size={14} strokeWidth={3} />
                     {t('common.copy_content')}
                   </button>
+                  {canToggleDisabled ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        onToggleDisabled(account);
+                      }}
+                      disabled={!ready || isStatusPending}
+                      className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[0.625rem] font-black uppercase tracking-[0.08em] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50 ${
+                        account.disabled ? 'text-[var(--text-primary)]' : 'text-amber-700 dark:text-amber-300'
+                      }`}
+                    >
+                      <Power size={14} strokeWidth={3} />
+                      {isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable')}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     role="menuitem"
@@ -342,9 +374,9 @@ export default function AccountCard({
               </button>
             </div>
           </div>
-        ) : (
+        ) : density === 'list' ? undefined : (
           <div
-            className={`grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}
+            className={`account-card-action-grid grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}
             data-account-card-ignore-click="true"
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}

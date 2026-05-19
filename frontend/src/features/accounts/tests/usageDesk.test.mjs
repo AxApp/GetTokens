@@ -16,6 +16,9 @@ import {
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
   resolveUsageDeskRangeDrilldownDayKey,
+  shouldOpenUsageDeskProjectedSessionSurface,
+  usageDeskSessionDrilldownColumnLabels,
+  usageDeskProjectedSurfaceViewOptions,
 } from '../model/usageDesk.ts';
 
 test('buildUsageDeskChartPointStyle keeps hit area centered on the plotted coordinate', () => {
@@ -43,6 +46,23 @@ test('buildUsageDeskChartValueScale compresses extreme outliers without changing
   assert.ok(scale.ratio(16) > 0.18);
   assert.ok(scale.ratio(16) < 0.5);
   assert.equal(scale.ratio(0), 0);
+});
+
+test('projected surface view options include a local sessions mode', () => {
+  assert.deepEqual(
+    usageDeskProjectedSurfaceViewOptions.map((option) => option.id),
+    ['daily', 'minute', 'sessions'],
+  );
+});
+
+test('session drilldown columns keep table order stable', () => {
+  assert.deepEqual(Array.from(usageDeskSessionDrilldownColumnLabels), ['会话来源', '模型', '请求', 'Token', '输入', '缓存', '输出']);
+});
+
+test('projected usage row selection opens session surface only for local projected data', () => {
+  assert.equal(shouldOpenUsageDeskProjectedSessionSurface('projected', '2026-04-28'), true);
+  assert.equal(shouldOpenUsageDeskProjectedSessionSurface('projected', '   '), false);
+  assert.equal(shouldOpenUsageDeskProjectedSessionSurface('observed', '2026-04-28'), false);
 });
 
 test('resolveUsageDeskCurveAnimationConfig keeps realtime motion bounded', () => {
@@ -278,6 +298,8 @@ test('collectUsageDeskProjectedDetails keeps provider and token fields from loca
       {
         timestamp: '2026-04-28T06:20:00.000Z',
         provider: 'codex',
+        sessionID: 'sessions/2026/04/28/rollout-a.jsonl',
+        projectName: 'GetTokens',
         sourceKind: 'local_projected',
         model: 'gpt-5-codex',
         inputTokens: 4800,
@@ -290,6 +312,8 @@ test('collectUsageDeskProjectedDetails keeps provider and token fields from loca
 
   assert.equal(details.length, 1);
   assert.equal(details[0].provider, 'codex');
+  assert.equal(details[0].sessionID, 'sessions/2026/04/28/rollout-a.jsonl');
+  assert.equal(details[0].projectName, 'GetTokens');
   assert.equal(details[0].model, 'gpt-5-codex');
   assert.equal(details[0].inputTokens, 4800);
   assert.equal(details[0].cachedInputTokens, 1200);
@@ -322,6 +346,8 @@ test('buildUsageDeskProjectedSnapshot aggregates total tokens and minute rows an
       {
         timestamp: '2026-04-28T06:20:00.000Z',
         provider: 'codex',
+        sessionID: 'sessions/2026/04/28/rollout-a.jsonl',
+        projectName: 'GetTokens',
         sourceKind: 'local_projected',
         model: 'gpt-5-codex',
         inputTokens: 300,
@@ -355,12 +381,42 @@ test('buildUsageDeskProjectedSnapshot aggregates total tokens and minute rows an
   assert.equal(snapshot.minuteRows[0].note, undefined);
 });
 
+test('buildUsageDeskProjectedSummaryItems separates cached input from non-cached estimate', () => {
+  const summary = buildUsageDeskProjectedSummaryItems({
+    drilldownDayKey: null,
+    dailyPoints: [],
+    visibleDailyPoints: [
+      {
+        dayKey: '2026-04-28',
+        label: '04-28',
+        model: 'gpt-5-codex',
+        requests: 2,
+        totalTokens: 600,
+        inputTokens: 500,
+        cachedInputTokens: 460,
+        outputTokens: 100,
+      },
+    ],
+  });
+
+  assert.deepEqual(summary, [
+    '请求 2 次',
+    'Token(含缓存) 600',
+    '非缓存估算 140',
+    '输入 500',
+    '缓存 460',
+    '输出 100',
+  ]);
+});
+
 test('buildUsageDeskProjectedSnapshot merges multiple details from the same minute into one table row', () => {
   const snapshot = buildUsageDeskProjectedSnapshot({
     details: [
       {
         timestamp: '2026-04-28T06:20:00.000Z',
         provider: 'codex',
+        sessionID: 'sessions/2026/04/28/rollout-a.jsonl',
+        projectName: 'GetTokens',
         sourceKind: 'local_projected',
         model: 'gpt-5-codex',
         inputTokens: 300,
@@ -396,6 +452,8 @@ test('buildUsageDeskProjectedSnapshot marks additional day-level models behind t
       {
         timestamp: '2026-04-28T06:20:00.000Z',
         provider: 'codex',
+        sessionID: 'sessions/2026/04/28/rollout-a.jsonl',
+        projectName: 'GetTokens',
         sourceKind: 'local_projected',
         model: 'gpt-5-codex',
         inputTokens: 300,
@@ -406,6 +464,7 @@ test('buildUsageDeskProjectedSnapshot marks additional day-level models behind t
       {
         timestamp: '2026-04-28T07:20:20.000Z',
         provider: 'codex',
+        sessionID: 'sessions/2026/04/28/rollout-b.jsonl',
         sourceKind: 'local_projected',
         model: 'o3',
         inputTokens: 50,
@@ -426,6 +485,8 @@ test('buildUsageDeskProjectedSnapshot shows the dominant model and marks additio
       {
         timestamp: '2026-04-28T06:20:00.000Z',
         provider: 'codex',
+        sessionID: 'sessions/2026/04/28/rollout-a.jsonl',
+        projectName: 'GetTokens',
         sourceKind: 'local_projected',
         model: 'gpt-5-codex',
         inputTokens: 300,
@@ -436,6 +497,7 @@ test('buildUsageDeskProjectedSnapshot shows the dominant model and marks additio
       {
         timestamp: '2026-04-28T06:20:20.000Z',
         provider: 'codex',
+        sessionID: 'sessions/2026/04/28/rollout-b.jsonl',
         sourceKind: 'local_projected',
         model: 'o3',
         inputTokens: 50,
@@ -456,6 +518,34 @@ test('buildUsageDeskProjectedSnapshot shows the dominant model and marks additio
   assert.equal(snapshot.minuteRows[0].inputTokens, '350');
   assert.equal(snapshot.minuteRows[0].cachedInputTokens, '140');
   assert.equal(snapshot.minuteRows[0].outputTokens, '70');
+  assert.deepEqual(
+    snapshot.sessionUsageByBucket['2026-04-28|14:20'].map((session) => ({
+      sessionID: session.sessionID,
+      fileLabel: session.fileLabel,
+      projectName: session.projectName,
+      model: session.model,
+      totalTokens: session.totalTokens,
+      requests: session.requests,
+    })),
+    [
+      {
+        sessionID: 'sessions/2026/04/28/rollout-a.jsonl',
+        fileLabel: 'rollout-a.jsonl',
+        projectName: 'GetTokens',
+        model: 'gpt-5-codex',
+        totalTokens: 360,
+        requests: 1,
+      },
+      {
+        sessionID: 'sessions/2026/04/28/rollout-b.jsonl',
+        fileLabel: 'rollout-b.jsonl',
+        projectName: '',
+        model: 'o3',
+        totalTokens: 60,
+        requests: 1,
+      },
+    ],
+  );
 });
 
 test('buildUsageDeskProjectedSnapshot formats minute-row values with chinese compact units', () => {
@@ -572,7 +662,7 @@ test('buildUsageDeskProjectedSummaryItems uses the full selected day in minute v
           ]
         : [],
     }),
-    ['全天请求 2 次', '全天 Token 480', '全天输入 400', '全天缓存 130', '全天输出 80'],
+    ['全天请求 2 次', '全天 Token(含缓存) 480', '全天非缓存估算 350', '全天输入 400', '全天缓存 130', '全天输出 80'],
   );
 });
 

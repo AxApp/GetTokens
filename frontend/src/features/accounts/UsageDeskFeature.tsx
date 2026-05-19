@@ -6,9 +6,10 @@ import {
   resolutionOptions,
   useUsageDeskFeature,
 } from './hooks/useUsageDeskFeature';
+import { usageDeskProjectedSurfaceViewOptions } from './model/usageDesk';
 import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
-import { InfoCard, StatePanel } from './components/usage-desk/UsageDeskPanels';
+import { InfoCard, StatePanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
 
 export default function UsageDeskFeature({
   sidecarStatus,
@@ -32,6 +33,7 @@ export default function UsageDeskFeature({
     projectedProgress,
     projectedChartMetric,
     setProjectedChartMetric,
+    projectedSurfaceView,
     selectedDetailRowKey,
     selectedChartPointKey,
     detailTransitionActive,
@@ -48,11 +50,14 @@ export default function UsageDeskFeature({
     projectedSummaryItems,
     projectedChartUnit,
     projectedPrimaryChartPoints,
+    selectedProjectedSessionUsages,
+    selectedProjectedSessionUsageLabel,
     activeDetailRows,
     activeDetailColumns,
     handleDetailRowSelect,
     handleChartPointSelect,
     handleViewScaleChange,
+    handleProjectedSurfaceViewChange,
     handleRangeSelect,
   } = useUsageDeskFeature(sidecarStatus, workspace);
 
@@ -300,6 +305,15 @@ export default function UsageDeskFeature({
                             selectedPointKey={selectedChartPointKey}
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
+                            surfaceContent={
+                              projectedSurfaceView === 'sessions' ? (
+                                <UsageSessionDrilldownPanel
+                                  title={selectedProjectedSessionUsageLabel || '本地会话'}
+                                  rows={selectedProjectedSessionUsages}
+                                  embedded
+                                />
+                              ) : undefined
+                            }
                             status={
                               <>
                                 <div className="flex items-center gap-6">
@@ -373,22 +387,23 @@ export default function UsageDeskFeature({
 
                                 <div className="flex items-center gap-6 ml-auto">
                                   <div className="flex items-center border-2 border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
-                                    <button
-                                      onClick={() => handleViewScaleChange('daily')}
-                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
-                                        viewScale === 'daily' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
-                                      }`}
-                                    >
-                                      天级趋势
-                                    </button>
-                                    <button
-                                      onClick={() => handleViewScaleChange('minute')}
-                                      className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
-                                        viewScale === 'minute' ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
-                                      }`}
-                                    >
-                                      分钟明细
-                                    </button>
+                                    {usageDeskProjectedSurfaceViewOptions.map((option) => {
+                                      const active =
+                                        option.id === 'sessions'
+                                          ? projectedSurfaceView === 'sessions'
+                                          : projectedSurfaceView === 'chart' && viewScale === option.id;
+                                      return (
+                                        <button
+                                          key={option.id}
+                                          onClick={() => handleProjectedSurfaceViewChange(option.id)}
+                                          className={`px-4 py-1.5 text-[0.6875rem] font-black uppercase transition-colors ${
+                                            active ? 'bg-[var(--text-primary)] text-[var(--bg-main)]' : 'text-[var(--text-primary)] opacity-40 hover:opacity-100'
+                                          }`}
+                                        >
+                                          {option.label}
+                                        </button>
+                                      );
+                                    })}
                                   </div>
 
                                   <div className="flex items-center border-2 border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
@@ -419,12 +434,12 @@ export default function UsageDeskFeature({
                       </div>
 
                       {!projectedLoading && !projectedLoadError && projectedSnapshot.hasData ? (
-                        <UsageDetailTable
-                          rows={projectedDrilldownDayKey ? projectedSnapshot.minuteRows : activeDetailRows}
-                          columns={activeDetailColumns}
-                          selectedRowKey={selectedDetailRowKey}
-                          onSelectRow={handleDetailRowSelect}
-                        />
+                          <UsageDetailTable
+                            rows={projectedDrilldownDayKey ? projectedSnapshot.minuteRows : activeDetailRows}
+                            columns={activeDetailColumns}
+                            selectedRowKey={selectedDetailRowKey}
+                            onSelectRow={handleDetailRowSelect}
+                          />
                       ) : null}
 
                   </div>

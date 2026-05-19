@@ -16,7 +16,7 @@ import {
   type AttributionCardTone,
 } from './attributionCardTone';
 
-type AttributionCardDensity = 'full' | 'compact';
+type AttributionCardDensity = 'full' | 'compact' | 'list';
 
 export interface AttributionCardBadge {
   label: string;
@@ -91,6 +91,74 @@ export default function AttributionCard({
       : usageSummary?.source === 'legacy'
         ? 'LEGACY'
         : 'NONE';
+  const firstQuotaWindow = quotaWindows[0];
+
+  if (density === 'list') {
+    const quotaValue = firstQuotaWindow
+      ? firstQuotaWindow.remainingPercent === null
+        ? '--'
+        : `${firstQuotaWindow.remainingPercent}%`
+      : quotaDisplay?.status === 'unsupported'
+        ? t('accounts.quota_unsupported')
+        : '—';
+
+    return (
+      <AccountCardFrame
+        className={`min-h-[5rem] border-l-[8px] p-0 ${accentBorderClass} ${className}`}
+        style={style}
+        interactive={interactive}
+        onOpen={onOpen}
+      >
+        <div className="account-card-list-row grid gap-3 px-3 py-3">
+          <div className="grid min-w-0 gap-2">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className={`h-3 w-3 shrink-0 ${accentFillClass}`} />
+              <h3 className="truncate text-[0.875rem] font-black uppercase leading-tight tracking-normal text-[var(--text-primary)]">
+                {title}
+              </h3>
+              {eyebrow ? (
+                <span className="shrink-0 border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                  {eyebrow}
+                </span>
+              ) : null}
+            </div>
+            <div className="min-w-0 truncate font-mono text-[0.5625rem] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              {failureReason || subtitle || '—'}
+            </div>
+            {badges.length > 0 ? (
+              <div className="flex min-w-0 flex-wrap gap-1">
+                {badges.slice(0, 4).map((badge) => (
+                  <span
+                    key={`${badge.label}-${badge.tone || 'neutral'}`}
+                    className={`border px-1.5 py-0.5 font-mono text-[0.5rem] font-black uppercase tracking-[0.1em] ${
+                      ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']
+                    }`}
+                  >
+                    {badge.label}
+                  </span>
+                ))}
+                {badges.length > 4 ? (
+                  <span className="border border-[var(--border-color)] px-1.5 py-0.5 font-mono text-[0.5rem] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                    +{badges.length - 4}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="account-card-list-metrics grid min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+            <ListMetric label={t('accounts.recent_requests')} value={formatCountMetric(usageSummary?.requestCount ?? 0)} />
+            <ListMetric label={t('accounts.total_tokens')} value={formatTokenMetric(usageSummary?.totalTokens ?? 0)} />
+            <ListMetric label={firstQuotaWindow?.label || t('accounts.quota_remaining')} value={quotaValue} />
+          </div>
+
+          {topActions ? <div className="account-card-list-actions justify-self-start">{topActions}</div> : null}
+        </div>
+        {customBody ? <div className="border-t-2 border-[var(--border-color)]">{customBody}</div> : null}
+        {footer ? <div className="px-3 pb-3">{footer}</div> : null}
+      </AccountCardFrame>
+    );
+  }
 
   return (
     <AccountCardFrame
@@ -99,7 +167,7 @@ export default function AttributionCard({
       interactive={interactive}
       onOpen={onOpen}
     >
-      <div className="flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
+      <div className="account-card-header flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
         {leadingAction ? <div className="shrink-0">{leadingAction}</div> : null}
         <div className="min-w-0 flex-1 space-y-3">
           {eyebrow ? (
@@ -138,12 +206,12 @@ export default function AttributionCard({
             </div>
           ) : null}
         </div>
-        {topActions ? <div className="shrink-0">{topActions}</div> : null}
+        {topActions ? <div className="account-card-top-actions shrink-0">{topActions}</div> : null}
       </div>
 
       {showAttribution ? (
         <>
-          <section className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-3">
+          <section className="account-card-traffic grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-3">
             <div className="flex min-h-[6rem] flex-col justify-between">
               <div className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.recent_requests')}
@@ -156,8 +224,8 @@ export default function AttributionCard({
               </div>
             </div>
 
-            <div className="min-w-0 border-l-2 border-[var(--border-color)] pl-3">
-              <div className="mb-1 grid grid-cols-3 gap-2">
+            <div className="account-card-traffic-chart min-w-0 border-l-2 border-[var(--border-color)] pl-3">
+              <div className="account-card-flow-head mb-1 grid gap-2">
                 <FlowHeadCell label={t('accounts.attribution_window')} value={formatTokenMetric(flow.windowTokens)} />
                 <FlowHeadCell label={t('accounts.attribution_peak')} value={formatTokenMetric(flow.peakTokens)} />
                 <FlowHeadCell label={t('accounts.attribution_now')} value={formatTokenMetric(flow.currentTokens)} />
@@ -236,6 +304,19 @@ export default function AttributionCard({
       {customBody ? <div className="shrink-0 border-t-2 border-[var(--border-color)]">{customBody}</div> : null}
       {footer ? <div className="mt-auto px-4 pb-4">{footer}</div> : null}
     </AccountCardFrame>
+  );
+}
+
+function ListMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 border-r border-[var(--border-color)] px-2 py-2 last:border-r-0">
+      <div className="truncate font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        {label}
+      </div>
+      <div className="mt-1 truncate font-mono text-[0.625rem] font-black uppercase tracking-normal text-[var(--text-primary)]">
+        {value}
+      </div>
+    </div>
   );
 }
 

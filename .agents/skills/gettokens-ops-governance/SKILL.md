@@ -18,6 +18,10 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **When to use**:
   - The page is a Wails surface, but most layout or interaction acceptance can be checked in a browser.
   - The page depends on runtime bindings, yet you still need stable screenshots or quick iteration without a live desktop shell.
+- **Display discipline**:
+  - Browser acceptance for local preview pages must default to headless automation. Do not open or move a visible browser window onto the user's active display for routine screenshots, DOM checks, or interaction verification.
+  - Prefer Playwright/agent-browser headless runs, DOM assertions, and saved screenshots over visible `browser_navigate` sessions when checking localhost or preview URLs.
+  - If a visible browser is genuinely required, ask first or place it on a non-active external display. Never steal focus from the user's active monitor during normal verification.
 - **Default pattern**:
   1. Add an explicit preview entry such as `?preview=<page-key>` or a dedicated frame hash.
   2. In preview mode, avoid hard dependency on `window.go.main.App`; provide stable preview data instead of crashing.

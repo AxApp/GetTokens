@@ -110,6 +110,8 @@ func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse
 			Timestamp:         detail.Timestamp,
 			Provider:          detail.Provider,
 			SourceKind:        detail.SourceKind,
+			SessionID:         detail.SessionID,
+			ProjectName:       detail.ProjectName,
 			Model:             detail.Model,
 			InputTokens:       detail.InputTokens,
 			CachedInputTokens: detail.CachedInputTokens,

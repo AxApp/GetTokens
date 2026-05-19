@@ -94,12 +94,139 @@
     box-shadow: 4px 4px 0px 0px var(--shadow-color);
   }
 
+  [data-account-card] {
+    container-type: inline-size;
+  }
+
+  [data-account-card] * {
+    min-width: 0;
+  }
+
+  .account-card-grid-full {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  }
+
+  .account-card-grid-compact {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 288px), 1fr));
+  }
+
   .codex-account-order-card-grid-full {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   }
 
   .codex-account-order-card-grid-compact {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 288px), 1fr));
+  }
+
+  .account-card-list-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-card-list-metrics,
+  .account-card-flow-head {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .account-card-traffic {
+    grid-template-columns: minmax(5.75rem, 0.32fr) minmax(0, 1fr);
+  }
+
+  .account-card-usage-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .account-card-billing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-card-quota-row {
+    grid-template-columns: 4.25rem minmax(0, 1fr) 2.75rem;
+  }
+
+  .account-card-rate-limit-row {
+    grid-template-columns: 5rem minmax(0, 1fr) 2.25rem;
+  }
+
+  .account-card-evidence-grid {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .account-card-action-grid-1 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account-card-action-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-card-action-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @container (min-width: 46rem) {
+    .account-card-list-row {
+      align-items: center;
+      grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.45fr) auto;
+    }
+
+    .account-card-list-actions {
+      justify-self: end;
+    }
+  }
+
+  @container (max-width: 320px) {
+    .account-card-header {
+      flex-wrap: wrap;
+    }
+
+    .account-card-top-actions {
+      width: 100%;
+    }
+
+    .account-card-traffic {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .account-card-traffic-chart {
+      border-left: 0;
+      border-top: 2px solid var(--border-color);
+      padding-left: 0;
+      padding-top: 0.75rem;
+    }
+
+    .account-card-list-metrics,
+    .account-card-flow-head {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .account-card-usage-metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .account-card-billing-grid,
+    .account-card-evidence-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .account-card-quota-row {
+      grid-template-columns: 3.5rem minmax(0, 1fr) 2.25rem;
+    }
+
+    .account-card-rate-limit-row {
+      grid-template-columns: 4rem minmax(0, 1fr) 2.25rem;
+    }
+
+    .account-card-action-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @container (max-width: 288px) {
+    .account-card-usage-metrics,
+    .account-card-quota-row,
+    .account-card-rate-limit-row {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   .input-swiss {

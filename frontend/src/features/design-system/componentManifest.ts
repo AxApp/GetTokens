@@ -27,6 +27,14 @@ const accountModalStoryPath = 'frontend/src/features/accounts/components/Account
 const accountModalStorybookTitle = 'Design System/Feature Components/Account Modals';
 const accountsHeaderStoryPath = 'frontend/src/features/accounts/components/AccountsHeaderComponents.stories.tsx';
 const accountsHeaderStorybookTitle = 'Design System/Feature Components/Accounts Header';
+const accountsToolbarStoryPath = 'frontend/src/features/accounts/components/AccountsToolbarComponents.stories.tsx';
+const accountsToolbarStorybookTitle = 'Design System/Feature Components/Accounts Toolbar';
+const accountGroupSectionStoryPath = 'frontend/src/features/accounts/components/AccountGroupSectionComponents.stories.tsx';
+const accountGroupSectionStorybookTitle = 'Design System/Feature Components/Account Group Sections';
+const accountProxyRouteStoryPath = 'frontend/src/features/accounts/components/AccountProxyRouteSection.stories.tsx';
+const accountProxyRouteStorybookTitle = 'Design System/Feature Components/Account Proxy Route';
+const rateLimitRulesStoryPath = 'frontend/src/features/accounts/components/RateLimitRulesSection.stories.tsx';
+const rateLimitRulesStorybookTitle = 'Design System/Feature Components/Rate Limit Rules';
 const accountCardStoryPath = 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx';
 const accountCardStorybookTitle = 'Design System/Feature Components/Account Cards';
 const openAICompatibleStoryPath = 'frontend/src/features/accounts/components/OpenAICompatibleComponents.stories.tsx';
@@ -37,6 +45,8 @@ const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/Sta
 const statusRelayEditorsStorybookTitle = 'Design System/Feature Components/Status Relay Editors';
 const statusCodexFeaturesStoryPath = 'frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx';
 const statusCodexFeaturesStorybookTitle = 'Design System/Feature Components/Status Codex Features';
+const statusLocalCliApplyStoryPath = 'frontend/src/features/status/components/StatusLocalCliApplyPanel.stories.tsx';
+const statusLocalCliApplyStorybookTitle = 'Design System/Feature Components/Status Local CLI Apply';
 const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx';
 const statusSnippetPanelStorybookTitle = 'Design System/Feature Components/Status Snippet Panel';
 const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx';
@@ -52,12 +62,15 @@ export const designSystemComponentManifest = [
     componentName: 'AccountCard',
     sourcePath: 'frontend/src/features/accounts/components/AccountCard.tsx',
     ownerFeature: 'accounts',
-    status: 'deferred',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '账号卡片可渲染但包含下载 auth file 等 Wails 入口，先收编更纯的 Attribution/CardSections 后再拆交互边界。',
+    decisionReason: '完整账号卡已通过 Account Cards story 收编，auth file 下载依赖已由 runtime wrapper 通过 downloadAuthFile prop 注入。',
     matchedPatterns: ['DebugPanel EntryCard'],
-    suggestedDesignComponent: 'AccountAttributionCard',
-    revisitTrigger: 'AccountCard 的 Wails 操作入口可由 props/mock 边界隔离后复查。',
+    storyPath: accountCardStoryPath,
+    storybookTitle: accountCardStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'selection-selected', 'pending-delete', 'list-blocked'],
+    mockDataSources: ['storybook AccountRecord/usage/rate-limit mock', 'storybook downloadAuthFile mock'],
   },
   {
     id: 'accounts-account-card-frame',
@@ -109,12 +122,27 @@ export const designSystemComponentManifest = [
     componentName: 'AccountGroupSection',
     sourcePath: 'frontend/src/features/accounts/components/AccountGroupSection.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'deferred',
     tier: 'feature-component',
-    decisionReason: '分组标题和卡片网格可 mock，但会组合账号卡，排在卡片基础构件之后。',
+    decisionReason: '业务 wrapper 继续组合 AccountCard 并注入 Wails auth file 下载函数；设计系统已收编无 Wails 的 AccountGroupSectionView。',
     matchedPatterns: ['DebugPanel grouped list'],
     suggestedDesignComponent: 'GroupedCardSection',
-    requiredStates: ['grid', 'list', 'empty'],
+    revisitTrigger: 'AccountGroupSection 的 runtime-only downloadAuthFile 注入迁移到页面 controller 或纯 wrapper 边界后复查。',
+  },
+  {
+    id: 'accounts-account-group-section-view',
+    componentName: 'AccountGroupSectionView',
+    sourcePath: 'frontend/src/features/accounts/components/AccountGroupSectionView.tsx',
+    ownerFeature: 'accounts',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: '账号分组标题和响应式卡片网格已拆成无 Wails 的纯 view，并通过 Account Group Sections story 收编。',
+    matchedPatterns: ['DebugPanel grouped list', 'AccountCardFrame'],
+    storyPath: accountGroupSectionStoryPath,
+    storybookTitle: accountGroupSectionStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['full-grid', 'compact-grid', 'list', 'empty'],
+    mockDataSources: ['storybook account group and mock card renderer'],
   },
   {
     id: 'accounts-account-health-bar',
@@ -136,12 +164,15 @@ export const designSystemComponentManifest = [
     componentName: 'AccountProxyRouteSection',
     sourcePath: 'frontend/src/features/accounts/components/AccountProxyRouteSection.tsx',
     ownerFeature: 'accounts',
-    status: 'deferred',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '会读取 localStorage 中 proxy-pool 数据，需先抽出纯 selector view 或固定 preview 数据。',
+    decisionReason: '账号代理出口选择区块已支持注入 proxy nodes，并通过 Account Proxy Route story 收编。',
     matchedPatterns: ['SegmentedControl', 'Combobox'],
-    suggestedDesignComponent: 'ProxyRouteSelector',
-    revisitTrigger: 'proxy 节点来源可由 props 注入后复查。',
+    storyPath: accountProxyRouteStoryPath,
+    storybookTitle: accountProxyRouteStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['inherit', 'direct', 'custom', 'detached-current-url', 'no-nodes', 'readonly'],
+    mockDataSources: ['storybook injected proxy node mock'],
   },
   {
     id: 'accounts-account-rotation-modal',
@@ -175,12 +206,15 @@ export const designSystemComponentManifest = [
     componentName: 'AccountsToolbar',
     sourcePath: 'frontend/src/features/accounts/components/AccountsToolbar.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '搜索、筛选和密度切换是可复用工作台工具栏模式。',
+    decisionReason: '账号工作台搜索、筛选、密度切换和批量选择工具栏已通过 Accounts Toolbar story 收编。',
     matchedPatterns: ['SegmentedControl'],
-    suggestedDesignComponent: 'FilterMenuToolbar',
-    requiredStates: ['empty-selection', 'bulk-selection', 'filters-open'],
+    storyPath: accountsToolbarStoryPath,
+    storybookTitle: accountsToolbarStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['default', 'filters-open', 'empty-selection', 'bulk-selection'],
+    mockDataSources: ['storybook account toolbar filters/search/display mode/selection mock'],
   },
   {
     id: 'accounts-api-key-compose-modal',
@@ -274,12 +308,15 @@ export const designSystemComponentManifest = [
     componentName: 'OpenAICompatibleDetailModal',
     sourcePath: 'frontend/src/features/accounts/components/OpenAICompatibleDetailModal.tsx',
     ownerFeature: 'accounts',
-    status: 'deferred',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '运行时 modal 仍组合 RateLimitRulesSection；先收编无 Wails 的 OpenAICompatibleDetailPanel 展示层。',
+    decisionReason: 'OpenAI-compatible 完整详情弹窗已通过 RateLimitRulesAPI mock 隔离规则 CRUD，并在 OpenAI Compatible story 收编。',
     matchedPatterns: ['Combobox', 'ToggleSwitch'],
-    suggestedDesignComponent: 'ProviderDetailDialog',
-    revisitTrigger: '限流规则编辑器可 mock 或改为 props 注入后复查完整 modal。',
+    storyPath: openAICompatibleStoryPath,
+    storybookTitle: openAICompatibleStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['rate-limit-composed'],
+    mockDataSources: ['storybook provider detail draft', 'storybook rate-limit status and CRUD API mock'],
   },
   {
     id: 'accounts-openai-compatible-detail-panel',
@@ -346,12 +383,15 @@ export const designSystemComponentManifest = [
     componentName: 'RateLimitRulesSection',
     sourcePath: 'frontend/src/features/accounts/components/RateLimitRulesSection.tsx',
     ownerFeature: 'accounts',
-    status: 'deferred',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '直接 import Wails rate-limit API，需固定 browser fallback 或拆纯规则列表。',
+    decisionReason: '路由守卫规则编辑区块已通过可注入 RateLimitRulesAPI 隔离运行时 CRUD，并通过 Rate Limit Rules story 收编。',
     matchedPatterns: ['ToggleSwitch'],
-    suggestedDesignComponent: 'RuleEditorList',
-    revisitTrigger: '规则编辑数据层抽离后复查。',
+    storyPath: rateLimitRulesStoryPath,
+    storybookTitle: rateLimitRulesStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['active-rules', 'empty-rules', 'preview-fallback'],
+    mockDataSources: ['storybook rate limit status and CRUD API mock'],
   },
   {
     id: 'accounts-unified-account-detail-modal',
@@ -659,16 +699,19 @@ export const designSystemComponentManifest = [
     mockDataSources: ['storybook codex feature snapshot/rows/preview mock'],
   },
   {
-    id: 'status-panels',
-    componentName: 'StatusPanels',
+    id: 'status-local-cli-apply-section',
+    componentName: 'StatusApplyLocalSection',
     sourcePath: 'frontend/src/features/status/components/StatusPanels.tsx',
     ownerFeature: 'status',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '包含多个纯 props 面板但状态复杂；StatusSnippetPanel 已拆出收编，剩余 Codex feature list 和 local apply 面板继续分批处理。',
+    decisionReason: '本地 Codex / Claude Code 配置应用区块已通过 Status Local CLI Apply story 收编，覆盖 ready、blocked、preserve auth、applying 和 Claude ready。',
     matchedPatterns: ['SegmentedControl', 'ActionSelect', 'ToggleSwitch', 'DebugPanel details'],
-    suggestedDesignComponent: 'LocalCliApplyPanel',
-    requiredStates: ['ready', 'blocked', 'saving', 'diff'],
+    storyPath: statusLocalCliApplyStoryPath,
+    storybookTitle: statusLocalCliApplyStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['codex-ready', 'codex-blocked', 'codex-preserve-auth', 'codex-applying', 'claude-ready'],
+    mockDataSources: ['storybook relay key, endpoint, provider, model, auth state and diff mock'],
   },
   {
     id: 'status-snippet-panel',

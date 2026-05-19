@@ -74,6 +74,8 @@ export interface UsageDeskProjectedDetail {
   timestamp: string;
   provider: string;
   sourceKind: string;
+  sessionID: string;
+  projectName: string;
   model: string;
   inputTokens: number;
   cachedInputTokens: number;
@@ -97,6 +99,19 @@ export interface UsageDeskProjectedMinutePoint {
   label: string;
   requests: number;
   totalTokens: number;
+}
+
+export interface UsageDeskProjectedSessionUsage {
+  sessionID: string;
+  fileLabel: string;
+  projectName: string;
+  model: string;
+  requests: number;
+  totalTokens: number;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  latestTimestamp: string;
 }
 
 type UsageDeskDominantModelState = {
@@ -151,6 +166,8 @@ export interface UsageDeskProjectedSnapshot {
   dailyPoints: UsageDeskProjectedDailyPoint[];
   minutePoints: UsageDeskProjectedMinutePoint[];
   minuteRows: UsageDeskMinuteRow[];
+  sessionUsageByDayKey: Record<string, UsageDeskProjectedSessionUsage[]>;
+  sessionUsageByBucket: Record<string, UsageDeskProjectedSessionUsage[]>;
 }
 
 export interface UsageDeskProjectedStats {
@@ -162,6 +179,19 @@ export interface UsageDeskProjectedStats {
 }
 
 export type UsageDeskChartUnit = 'count' | 'tokens';
+export type UsageDeskProjectedSurfaceView = 'daily' | 'minute' | 'sessions';
+
+export const usageDeskProjectedSurfaceViewOptions: Array<{ id: UsageDeskProjectedSurfaceView; label: string }> = [
+  { id: 'daily', label: '天级趋势' },
+  { id: 'minute', label: '分钟明细' },
+  { id: 'sessions', label: '会话列表' },
+];
+
+export const usageDeskSessionDrilldownColumnLabels = ['会话来源', '模型', '请求', 'Token', '输入', '缓存', '输出'] as const;
+
+export function shouldOpenUsageDeskProjectedSessionSurface(source: UsageDeskSource, rowKey: string): boolean {
+  return source === 'projected' && rowKey.trim().length > 0;
+}
 export type UsageDeskRangeOption = 'TODAY' | '7D' | '14D' | '30D' | '全部';
 export type UsageDeskResolution = '1M' | '5M' | '15M' | '30M' | '60M';
 export type UsageDeskCurveMotion = 'standard' | 'realtime';
@@ -281,9 +311,11 @@ export function buildUsageDeskProjectedSummaryItems({
   if (drilldownDayKey) {
     const dayPoint = dailyPoints.find((point) => point.dayKey === drilldownDayKey);
     if (!dayPoint) return [];
+    const nonCachedTokens = Math.max(0, dayPoint.inputTokens - dayPoint.cachedInputTokens) + dayPoint.outputTokens;
     return [
       `全天请求 ${formatUsageDeskChartValue(dayPoint.requests, 'count')}`,
-      `全天 Token ${formatUsageDeskChartValue(dayPoint.totalTokens, 'tokens')}`,
+      `全天 Token(含缓存) ${formatUsageDeskChartValue(dayPoint.totalTokens, 'tokens')}`,
+      `全天非缓存估算 ${formatUsageDeskChartValue(nonCachedTokens, 'tokens')}`,
       `全天输入 ${formatUsageDeskChartValue(dayPoint.inputTokens, 'tokens')}`,
       `全天缓存 ${formatUsageDeskChartValue(dayPoint.cachedInputTokens, 'tokens')}`,
       `全天输出 ${formatUsageDeskChartValue(dayPoint.outputTokens, 'tokens')}`,
@@ -295,9 +327,11 @@ export function buildUsageDeskProjectedSummaryItems({
   const inputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.inputTokens, 0);
   const cachedInputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.cachedInputTokens, 0);
   const outputTokens = visibleDailyPoints.reduce((sum, point) => sum + point.outputTokens, 0);
+  const nonCachedTokens = Math.max(0, inputTokens - cachedInputTokens) + outputTokens;
   return [
     `请求 ${formatUsageDeskChartValue(requests, 'count')}`,
-    `Token ${formatUsageDeskChartValue(totalTokens, 'tokens')}`,
+    `Token(含缓存) ${formatUsageDeskChartValue(totalTokens, 'tokens')}`,
+    `非缓存估算 ${formatUsageDeskChartValue(nonCachedTokens, 'tokens')}`,
     `输入 ${formatUsageDeskChartValue(inputTokens, 'tokens')}`,
     `缓存 ${formatUsageDeskChartValue(cachedInputTokens, 'tokens')}`,
     `输出 ${formatUsageDeskChartValue(outputTokens, 'tokens')}`,
@@ -471,6 +505,16 @@ function formatRequestedModelsLabel(models: unknown): string {
     return '';
   }
   return normalized.length > 1 ? `${normalized[0]},*` : normalized[0];
+}
+
+export function buildUsageDeskProjectedSessionBucketKey(dayKey: string, timeLabel: string): string {
+  return `${dayKey}|${timeLabel}`;
+}
+
+function formatUsageDeskSessionFileLabel(sessionID: string): string {
+  const normalized = sessionID.trim().replace(/\\/g, '/');
+  const parts = normalized.split('/').filter(Boolean);
+  return parts[parts.length - 1] || normalized || '--';
 }
 
 function collectObservedDetailsFromAttributionItem(
@@ -788,6 +832,13 @@ export function collectUsageDeskProjectedDetails(payload: unknown): UsageDeskPro
       timestamp: typeof detail.timestamp === 'string' ? detail.timestamp : '',
       provider: typeof detail.provider === 'string' ? detail.provider : 'codex',
       sourceKind: typeof detail.sourceKind === 'string' ? detail.sourceKind : 'local_projected',
+      sessionID:
+        typeof detail.sessionID === 'string'
+          ? detail.sessionID
+          : typeof detail.rolloutPath === 'string'
+            ? detail.rolloutPath
+            : '',
+      projectName: typeof detail.projectName === 'string' ? detail.projectName : '',
       model: typeof detail.model === 'string' ? detail.model : '',
       inputTokens: typeof detail.inputTokens === 'number' ? detail.inputTokens : 0,
       cachedInputTokens: typeof detail.cachedInputTokens === 'number' ? detail.cachedInputTokens : 0,
@@ -810,13 +861,20 @@ export function buildUsageDeskProjectedSnapshot(
       totalRequests: 0,
       totalTokens: 0,
       availableDayKeys: [],
-      selectedDayKey: null,
-      dailyPoints: [],
-      minutePoints: [],
-      minuteRows: [],
-    };
-  }
+        selectedDayKey: null,
+        dailyPoints: [],
+        minutePoints: [],
+        minuteRows: [],
+        sessionUsageByDayKey: {},
+        sessionUsageByBucket: {},
+      };
+    }
 
+  type SessionUsageDraft = UsageDeskProjectedSessionUsage & {
+    dominantModelState: UsageDeskDominantModelState;
+  };
+  const sessionUsageByDayDraft = new Map<string, Map<string, SessionUsageDraft>>();
+  const sessionUsageByBucketDraft = new Map<string, Map<string, SessionUsageDraft>>();
   const dailyMap = new Map<
     string,
     UsageDeskProjectedDailyPoint & {
@@ -825,6 +883,47 @@ export function buildUsageDeskProjectedSnapshot(
   >();
   let totalRequests = 0;
   let totalTokens = 0;
+
+  function pushProjectedSessionUsage(
+    target: Map<string, Map<string, SessionUsageDraft>>,
+    bucketKey: string,
+    detail: UsageDeskProjectedDetail,
+    tokens: number,
+  ) {
+    const sessionID = detail.sessionID.trim();
+    if (!sessionID) {
+      return;
+    }
+    const bucket = target.get(bucketKey) ?? new Map<string, SessionUsageDraft>();
+    const session = bucket.get(sessionID) ?? {
+      sessionID,
+      fileLabel: formatUsageDeskSessionFileLabel(sessionID),
+      projectName: detail.projectName.trim(),
+      model: '',
+      dominantModelState: createDominantModelState(detail.model),
+      requests: 0,
+      totalTokens: 0,
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      latestTimestamp: '',
+    };
+    pushDominantModel(session.dominantModelState, detail.model, Math.max(1, tokens || detail.requestCount));
+    if (!session.projectName && detail.projectName.trim()) {
+      session.projectName = detail.projectName.trim();
+    }
+    session.model = formatDominantModel(session.dominantModelState);
+    session.requests += detail.requestCount;
+    session.totalTokens += tokens;
+    session.inputTokens += detail.inputTokens;
+    session.cachedInputTokens += detail.cachedInputTokens;
+    session.outputTokens += detail.outputTokens;
+    if (!session.latestTimestamp || Date.parse(detail.timestamp) > Date.parse(session.latestTimestamp)) {
+      session.latestTimestamp = detail.timestamp;
+    }
+    bucket.set(sessionID, session);
+    target.set(bucketKey, bucket);
+  }
 
   details.forEach((detail) => {
     const date = parseTimestamp(detail.timestamp);
@@ -852,6 +951,14 @@ export function buildUsageDeskProjectedSnapshot(
     totalRequests += detail.requestCount;
     totalTokens += tokens;
     dailyMap.set(dayKey, point);
+
+    pushProjectedSessionUsage(sessionUsageByDayDraft, dayKey, detail, tokens);
+    pushProjectedSessionUsage(
+      sessionUsageByBucketDraft,
+      buildUsageDeskProjectedSessionBucketKey(dayKey, buildMinuteLabel(date, resolution)),
+      detail,
+      tokens,
+    );
   });
 
   const availableDayKeys = Array.from(dailyMap.keys()).sort();
@@ -928,6 +1035,26 @@ export function buildUsageDeskProjectedSnapshot(
       outputTokens: formatUsageDeskChartValue(row.outputTokens, 'tokens'),
     }));
 
+  const materializeSessionUsage = (
+    source: Map<string, Map<string, SessionUsageDraft>>,
+  ): Record<string, UsageDeskProjectedSessionUsage[]> => {
+    const result: Record<string, UsageDeskProjectedSessionUsage[]> = {};
+    source.forEach((sessions, bucketKey) => {
+      result[bucketKey] = Array.from(sessions.values())
+        .map(({ dominantModelState: _dominantModelState, ...session }) => session)
+        .sort((left, right) => {
+          if (right.totalTokens !== left.totalTokens) {
+            return right.totalTokens - left.totalTokens;
+          }
+          if (right.latestTimestamp !== left.latestTimestamp) {
+            return right.latestTimestamp.localeCompare(left.latestTimestamp);
+          }
+          return left.sessionID.localeCompare(right.sessionID);
+        });
+    });
+    return result;
+  };
+
   return {
     hasData: true,
     totalRequests,
@@ -937,6 +1064,8 @@ export function buildUsageDeskProjectedSnapshot(
     dailyPoints: availableDayKeys.map((dayKey) => dailyMap.get(dayKey)!),
     minutePoints: Array.from(minuteMap.values()).sort((a, b) => a.minuteKey.localeCompare(b.minuteKey)),
     minuteRows,
+    sessionUsageByDayKey: materializeSessionUsage(sessionUsageByDayDraft),
+    sessionUsageByBucket: materializeSessionUsage(sessionUsageByBucketDraft),
   };
 }
 

@@ -19,6 +19,8 @@ import type { RelayResolvedModelOption } from '../model/relayModelCatalog';
 import { sortRelayModelCatalogByNameDesc } from '../model/relayModelCatalog';
 import type { RelayProviderOption } from '../model/relayProviderCatalog';
 
+type LocalCliPanelTarget = 'codex' | 'claude';
+
 interface StatusApplyLocalSectionProps {
   t: (key: string) => string;
   localApplyMessage: string;
@@ -59,6 +61,7 @@ interface StatusApplyLocalSectionProps {
   relayKeyDisplayName: (value: string, index: number) => string;
   supportsWebsockets: boolean;
   onToggleSupportsWebsockets: () => void;
+  initialActiveTarget?: LocalCliPanelTarget;
 }
 
 export function StatusApplyLocalSection({
@@ -101,12 +104,12 @@ export function StatusApplyLocalSection({
   relayKeyDisplayName,
   supportsWebsockets,
   onToggleSupportsWebsockets,
+  initialActiveTarget = 'codex',
 }: StatusApplyLocalSectionProps) {
-  type LocalCliPanelTarget = 'codex' | 'claude';
   type ClaudeCodeModelField = 'model' | 'defaultHaikuModel' | 'defaultSonnetModel' | 'defaultOpusModel' | 'smallFastModel';
   type ModelEditorTarget = { target: 'codex' } | { target: 'claude'; field: ClaudeCodeModelField };
 
-  const [activeTarget, setActiveTarget] = useState<LocalCliPanelTarget>('codex');
+  const [activeTarget, setActiveTarget] = useState<LocalCliPanelTarget>(initialActiveTarget);
   const [modelEditorTarget, setModelEditorTarget] = useState<ModelEditorTarget | null>(null);
   const [modelEditor, setModelEditor] = useState<RelayModelEditorState | null>(null);
   const [claudeDraft, setClaudeDraft] = useState<ClaudeCodeLocalApplyDraft>(() => ({

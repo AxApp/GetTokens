@@ -4,7 +4,8 @@ import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { BillingDisplay } from '../../../types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
-import type { QuotaDisplay, Translator } from '../model/types';
+import type { AccountRecord, QuotaDisplay, Translator } from '../model/types';
+import AccountCard from './AccountCard';
 import AccountCardFrame from './AccountCardFrame';
 import AccountCardSkeleton from './AccountCardSkeleton';
 import AccountHealthBar from './AccountHealthBar';
@@ -223,6 +224,84 @@ const rateLimitStatus: RateLimitState = {
   ],
 };
 
+const accountCardRecord: AccountRecord = {
+  id: 'account-card-primary',
+  provider: 'openai',
+  credentialSource: 'auth-file',
+  displayName: 'Codex Primary Workbench',
+  status: 'active',
+  email: 'team-codex@example.com',
+  planType: 'Pro',
+  name: 'team-codex-auth.json',
+  baseUrl: 'https://api.openai.com/v1',
+  supportedFormats: ['openai_chat', 'openai_responses'],
+};
+
+const disabledAccountCardRecord: AccountRecord = {
+  ...accountCardRecord,
+  id: 'account-card-disabled',
+  credentialSource: 'api-key',
+  displayName: 'Relay Backup Disabled',
+  email: '',
+  keyFingerprint: 'sk-...93FA',
+  disabled: true,
+  supportedFormats: ['openai_chat'],
+};
+
+function AccountCardSample({
+  label,
+  account = accountCardRecord,
+  density = 'full',
+  selection = false,
+  selected = false,
+  pendingDelete = false,
+  blocked = false,
+}: {
+  label: string;
+  account?: AccountRecord;
+  density?: 'full' | 'compact' | 'list';
+  selection?: boolean;
+  selected?: boolean;
+  pendingDelete?: boolean;
+  blocked?: boolean;
+}) {
+  const { t } = useI18n();
+  const blockedRateLimit = blocked
+    ? {
+        ...rateLimitStatus,
+        blocked: true,
+        blockReason: '1H REQUEST LIMIT',
+      }
+    : rateLimitStatus;
+
+  return (
+    <DesignSystemStoryFrame label={label}>
+      <AccountCard
+        t={t}
+        account={account}
+        usageSummary={blocked ? failedUsageSummary : healthyUsageSummary}
+        rateLimitStatus={blockedRateLimit}
+        density={density}
+        ready
+        isSelectionMode={selection}
+        isSelected={selected}
+        isPendingDelete={pendingDelete}
+        isOAuthPending={false}
+        isStatusPending={false}
+        onToggleSelection={() => undefined}
+        onOpenDetails={() => undefined}
+        onRefreshQuota={() => undefined}
+        onStartReauth={() => undefined}
+        onToggleDisabled={() => undefined}
+        onRequestDelete={() => undefined}
+        onCancelDelete={() => undefined}
+        onConfirmDelete={() => undefined}
+        downloadAuthFile={async () => ({ contentBase64: 'eyJ0eXBlIjoic3Rvcnlib29rIn0=' })}
+      />
+    </DesignSystemStoryFrame>
+  );
+}
+
 function AccountCardFrameSample({ selected = false }: { selected?: boolean }) {
   return (
     <DesignSystemStoryFrame label="DS-FRAME">
@@ -358,10 +437,20 @@ function AccountCardsOverview() {
         <h2 className="text-2xl font-black uppercase italic tracking-normal">Account Card Components</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           {zh
-            ? '把账号卡片体系里的基础外壳、归因卡、指标段、健康条和加载骨架纳入设计系统，用固定 mock 数据检查密度、失败态、限流和额度展示。'
-            : 'Admitted account card shell, attribution card, metric sections, health bar, and loading skeleton with fixed mock data for density, failure, rate-limit, and quota states.'}
+            ? '把账号卡片体系里的完整账号卡、基础外壳、归因卡、指标段、健康条和加载骨架纳入设计系统，用固定 mock 数据检查密度、失败态、限流和额度展示。'
+            : 'Admitted full account card, shell, attribution card, metric sections, health bar, and loading skeleton with fixed mock data for density, failure, rate-limit, and quota states.'}
         </p>
       </div>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '完整账号卡' : 'Full account card'}</h3>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <AccountCardSample label="DS-ACCOUNT-CARD-READY" />
+          <AccountCardSample label="DS-ACCOUNT-CARD-SELECTION" selection selected />
+          <AccountCardSample label="DS-ACCOUNT-CARD-PENDING-DELETE" pendingDelete />
+          <AccountCardSample label="DS-ACCOUNT-CARD-LIST-BLOCKED" account={disabledAccountCardRecord} density="list" blocked />
+        </div>
+      </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '交互外壳' : 'Interactive shell'}</h3>
@@ -402,6 +491,10 @@ function AccountCardsOverview() {
 
 export const Overview: Story = {
   render: () => <AccountCardsOverview />,
+};
+
+export const FullAccountCard: Story = {
+  render: () => <AccountCardSample label="DS-ACCOUNT-CARD-READY" />,
 };
 
 export const AttributionHealthy: Story = {

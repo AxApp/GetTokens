@@ -7,7 +7,7 @@ import type {
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
 import OpenAICompatibleDetailPanel from './OpenAICompatibleDetailPanel';
-import RateLimitRulesSection from './RateLimitRulesSection';
+import RateLimitRulesSection, { type RateLimitRulesAPI } from './RateLimitRulesSection';
 
 interface OpenAICompatibleDetailModalProps {
   t: Translator;
@@ -16,6 +16,7 @@ interface OpenAICompatibleDetailModalProps {
   remoteModelsState?: ProviderRemoteModelsState;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
+  rateLimitRulesAPI?: RateLimitRulesAPI;
   error: string;
   saving: boolean;
   onClose: () => void;
@@ -34,6 +35,7 @@ export default function OpenAICompatibleDetailModal({
   remoteModelsState,
   rateLimitStatus,
   rateLimitStrategies,
+  rateLimitRulesAPI,
   error,
   saving,
   onClose,
@@ -69,6 +71,7 @@ export default function OpenAICompatibleDetailModal({
             matchKey={rateLimitMatchKey}
             rateLimitStatus={rateLimitStatus}
             rateLimitStrategies={rateLimitStrategies}
+            rateLimitRulesAPI={rateLimitRulesAPI}
             onRateLimitRulesChanged={onRateLimitRulesChanged}
             t={t}
           />

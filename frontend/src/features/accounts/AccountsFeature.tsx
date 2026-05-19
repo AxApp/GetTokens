@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { CreateCodexAPIKey, FetchOpenAICompatibleProviderModels, ListRelaySupportedModels, VerifyOpenAICompatibleProvider } from '../../../wailsjs/go/main/App';
+import {
+  CreateCodexAPIKey,
+  CreateRateLimitRule,
+  DeleteRateLimitRule,
+  FetchOpenAICompatibleProviderModels,
+  ListRateLimitRules,
+  ListRelaySupportedModels,
+  UpdateRateLimitRule,
+  VerifyOpenAICompatibleProvider,
+} from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
@@ -25,6 +34,13 @@ import { buildAccountDetailFrameHash, clearAccountDetailFrameHash } from '../../
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import { shouldLoadAccountsData } from './model/accountRuntime';
 import type { AccountRecord } from './model/types';
+import {
+  ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY,
+  DEFAULT_ACCOUNT_LIST_DISPLAY_MODE,
+  buildAccountListDisplayModeHash,
+  parseAccountListDisplayMode,
+  type AccountListDisplayMode,
+} from './model/accountListLayout';
 import {
   ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
   shouldScheduleAccountUsageRefresh,
@@ -55,6 +71,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     billingEnabled: false,
   });
   const [unifiedComposeError, setUnifiedComposeError] = useState('');
+  const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() => readInitialDisplayMode());
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
@@ -114,6 +131,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     isSelectionMode,
     selectedAccountIDs,
     isHeaderActionsMenuOpen,
+    pendingStatusAccountID,
     accounts,
     filteredAccounts,
     groupedAccounts,
@@ -152,6 +170,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     toggleAccountSelection,
     toggleSelectAllFiltered,
     toggleSelectionMode,
+    toggleAccountDisabled,
     exportSelectedAccounts,
     deleteAccount,
     renameSelectedApiKey,
@@ -174,7 +193,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     };
   }, [loadRelayModelNames, selectedAccount?.credentialSource, selectedAccount?.id]);
 
-  const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs);
+  const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs, displayMode);
   const isAggregateWorkspace = true;
   const usageAccounts = useMemo(() => accounts, [accounts]);
   const rotationAccounts = accounts;
@@ -212,6 +231,19 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     await loadAccounts();
     await openAICompatibleState.loadProviders();
   }
+
+  const updateDisplayMode = useCallback((nextMode: AccountListDisplayMode) => {
+    setDisplayMode(nextMode);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY, nextMode);
+    } catch {
+      // The current hash still reflects the active session if storage is unavailable.
+    }
+    window.location.hash = buildAccountListDisplayModeHash(window.location.hash, nextMode);
+  }, []);
 
   const markAccountDetailInHash = useCallback((detailID: string) => {
     if (typeof window === 'undefined') {
@@ -392,11 +424,13 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
             isSelectionMode={isSelectionMode}
             allFilteredSelected={allFilteredSelected}
             selectedAccountCount={selectedAccountIDs.length}
+            displayMode={displayMode}
             onSearchChange={(value) => {
               setSearchTerm(value);
               setPendingDeleteID(null);
             }}
             onFiltersChange={setFilters}
+            onDisplayModeChange={updateDisplayMode}
             onToggleSelectionMode={toggleSelectionMode}
             onToggleSelectAllFiltered={toggleSelectAllFiltered}
             onClearSelection={() => setSelectedAccountIDs([])}
@@ -428,13 +462,13 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           ) : null}
 
           {!ready ? (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            <div className="account-card-grid-full grid gap-8">
               {[...Array(6)].map((_, i) => (
                 <AccountCardSkeleton key={`ready-${i}`} />
               ))}
             </div>
           ) : loading ? (
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+            <div className="account-card-grid-full grid gap-8">
               {[...Array(6)].map((_, i) => (
                 <AccountCardSkeleton key={i} />
               ))}
@@ -459,10 +493,13 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
                   selectedAccountIDSet={selectedAccountIDSet}
                   pendingDeleteID={pendingDeleteID}
                   oauthPendingAccountID={oauthPendingAccountID}
+                  pendingStatusAccountID={pendingStatusAccountID}
+                  displayMode={displayMode}
                   onToggleSelection={toggleAccountSelection}
                   onOpenDetails={openAccountDetail}
                   onRefreshQuota={(account) => void refreshCodexQuota(account)}
                   onStartReauth={(account) => void startCodexOAuth(account)}
+                  onToggleDisabled={(account) => void toggleAccountDisabled(account)}
                   onRequestDelete={(accountID) => {
                     setDeleteError('');
                     setPendingDeleteID(accountID);
@@ -504,6 +541,12 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
           draft={openAICompatibleState.detailDraft}
           rateLimitStatus={accountRateLimitByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
           rateLimitStrategies={rateLimitStrategies}
+          rateLimitRulesAPI={{
+            list: ListRateLimitRules,
+            create: CreateRateLimitRule,
+            update: UpdateRateLimitRule,
+            delete: DeleteRateLimitRule,
+          }}
           verifyState={
             openAICompatibleState.verifyStates[openAICompatibleState.detailDraft.currentName] ?? {
               model: openAICompatibleState.detailDraft.verifyModel,
@@ -626,4 +669,21 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
       </div>
     </>
   );
+}
+
+function readInitialDisplayMode(): AccountListDisplayMode {
+  if (typeof window === 'undefined') {
+    return DEFAULT_ACCOUNT_LIST_DISPLAY_MODE;
+  }
+  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+  const params = new URLSearchParams(hash);
+  const hashDensity = params.get('density');
+  if (hashDensity) {
+    return parseAccountListDisplayMode(hashDensity);
+  }
+  try {
+    return parseAccountListDisplayMode(window.localStorage.getItem(ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY));
+  } catch {
+    return DEFAULT_ACCOUNT_LIST_DISPLAY_MODE;
+  }
 }

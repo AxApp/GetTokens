@@ -1,12 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import {
-  CreateRateLimitRule,
-  DeleteRateLimitRule,
-  ListRateLimitRules,
-  UpdateRateLimitRule,
-} from '../../../../wailsjs/go/main/App';
 import { toErrorMessage } from '../../../utils/error';
-import { hasWailsAppBindings } from '../../../utils/previewMode';
 import {
   DEFAULT_RATE_LIMIT_STRATEGIES,
   formatRateLimitLimitDraftValue,
@@ -25,8 +18,16 @@ interface RateLimitRulesSectionProps {
   matchKey?: string;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
+  rateLimitRulesAPI?: RateLimitRulesAPI;
   onRateLimitRulesChanged: () => void;
   t: Translator;
+}
+
+export interface RateLimitRulesAPI {
+  list: (input: { accountKey: string }) => Promise<RateLimitRule[] | null | undefined>;
+  create: (rule: RateLimitRule) => Promise<RateLimitRule[] | null | undefined>;
+  update: (rule: RateLimitRule) => Promise<RateLimitRule[] | null | undefined>;
+  delete: (input: { id: string }) => Promise<unknown>;
 }
 
 export default function RateLimitRulesSection({
@@ -34,6 +35,7 @@ export default function RateLimitRulesSection({
   matchKey,
   rateLimitStatus,
   rateLimitStrategies = DEFAULT_RATE_LIMIT_STRATEGIES,
+  rateLimitRulesAPI,
   onRateLimitRulesChanged,
   t,
 }: RateLimitRulesSectionProps) {
@@ -53,12 +55,12 @@ export default function RateLimitRulesSection({
         return;
       }
       setRateLimitMessage('');
-      if (!hasWailsAppBindings()) {
+      if (!rateLimitRulesAPI) {
         setRuleDrafts((rateLimitStatus?.rules ?? []).map((item) => normalizeRateLimitRuleDraft(item.rule, accountKey)));
         return;
       }
       try {
-        const rules = await ListRateLimitRules({ accountKey });
+        const rules = await rateLimitRulesAPI.list({ accountKey });
         if (!cancelled) {
           setRuleDrafts((rules ?? []).map((rule) => normalizeRateLimitRuleDraft(rule as RateLimitRule, accountKey)));
         }
@@ -73,7 +75,7 @@ export default function RateLimitRulesSection({
     return () => {
       cancelled = true;
     };
-  }, [accountKey, rateLimitStatus]);
+  }, [accountKey, rateLimitRulesAPI, rateLimitStatus]);
 
   function addRateLimitRule() {
     const strategy = rateLimitStrategies[0] || DEFAULT_RATE_LIMIT_STRATEGIES[0];
@@ -112,7 +114,7 @@ export default function RateLimitRulesSection({
     const key = draft.id || `new-${index}`;
     setSavingRuleID(key);
     setRateLimitMessage('');
-    if (!hasWailsAppBindings()) {
+    if (!rateLimitRulesAPI) {
       hasDirtyDraftRef.current = false;
       setRuleDrafts((prev) =>
         prev.map((item, itemIndex) =>
@@ -129,7 +131,7 @@ export default function RateLimitRulesSection({
       return;
     }
     try {
-      const rules = draft.id ? await UpdateRateLimitRule(draft) : await CreateRateLimitRule(draft);
+      const rules = draft.id ? await rateLimitRulesAPI.update(draft) : await rateLimitRulesAPI.create(draft);
       hasDirtyDraftRef.current = false;
       setRuleDrafts((rules ?? []).map((rule) => normalizeRateLimitRuleDraft(rule as RateLimitRule, accountKey)));
       onRateLimitRulesChanged();
@@ -142,7 +144,7 @@ export default function RateLimitRulesSection({
 
   async function deleteRateLimitRule(index: number) {
     const draft = ruleDrafts[index];
-    if (!hasWailsAppBindings()) {
+    if (!rateLimitRulesAPI) {
       setRuleDrafts((prev) => prev.filter((_, draftIndex) => draftIndex !== index));
       hasDirtyDraftRef.current = false;
       setRateLimitMessage(t('accounts.rate_limit_preview_only'));
@@ -156,7 +158,7 @@ export default function RateLimitRulesSection({
     setSavingRuleID(draft.id);
     setRateLimitMessage('');
     try {
-      await DeleteRateLimitRule({ id: draft.id });
+      await rateLimitRulesAPI.delete({ id: draft.id });
       hasDirtyDraftRef.current = false;
       setRuleDrafts((prev) => prev.filter((_, draftIndex) => draftIndex !== index));
       onRateLimitRulesChanged();

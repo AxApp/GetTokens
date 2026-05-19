@@ -1,7 +1,10 @@
 import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
+import type { AccountListDisplayMode } from '../model/accountListLayout';
+import { DownloadAuthFile } from '../../../../wailsjs/go/main/App';
 import AccountCard from './AccountCard';
+import AccountGroupSectionView from './AccountGroupSectionView';
 
 interface AccountGroupSectionProps {
   t: Translator;
@@ -15,10 +18,13 @@ interface AccountGroupSectionProps {
   selectedAccountIDSet: Set<string>;
   pendingDeleteID: string | null;
   oauthPendingAccountID: string | null;
+  pendingStatusAccountID: string | null;
+  displayMode: AccountListDisplayMode;
   onToggleSelection: (accountID: string) => void;
   onOpenDetails: (account: AccountRecord) => void;
   onRefreshQuota: (account: AccountRecord) => void;
   onStartReauth: (account: AccountRecord) => void;
+  onToggleDisabled: (account: AccountRecord) => void;
   onRequestDelete: (accountID: string) => void;
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
@@ -36,50 +42,49 @@ export default function AccountGroupSection({
   selectedAccountIDSet,
   pendingDeleteID,
   oauthPendingAccountID,
+  pendingStatusAccountID,
+  displayMode,
   onToggleSelection,
   onOpenDetails,
   onRefreshQuota,
   onStartReauth,
+  onToggleDisabled,
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
 }: AccountGroupSectionProps) {
   return (
-    <section className="space-y-4">
-      <div className="flex items-end justify-between gap-4 border-b-2 border-[var(--border-color)] pb-4">
-        <h3 className="text-[1.75rem] font-black uppercase leading-none tracking-[-0.04em] text-[var(--text-primary)]">
-          {group.label}
-        </h3>
-        <p className="mb-1 text-[0.625rem] font-bold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-          {group.accounts.length} {t('accounts.plan_group_meta')}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3" data-plan-group-grid={group.id}>
-        {group.accounts.map((account) => (
-          <AccountCard
-            key={account.id}
-            t={t}
-            account={account}
-            quotaState={codexQuotaByName[account.quotaKey || '']}
-            usageSummary={accountUsageByID[account.id]}
-            rateLimitStatus={accountRateLimitByID[account.id]}
-            minHeight={groupCardHeight}
-            ready={ready}
-            isSelectionMode={isSelectionMode}
-            isSelected={selectedAccountIDSet.has(account.id)}
-            isPendingDelete={pendingDeleteID === account.id}
-            isOAuthPending={oauthPendingAccountID === account.id}
-            onToggleSelection={onToggleSelection}
-            onOpenDetails={onOpenDetails}
-            onRefreshQuota={onRefreshQuota}
-            onStartReauth={onStartReauth}
-            onRequestDelete={onRequestDelete}
-            onCancelDelete={onCancelDelete}
-            onConfirmDelete={onConfirmDelete}
-          />
-        ))}
-      </div>
-    </section>
+    <AccountGroupSectionView
+      t={t}
+      group={group}
+      displayMode={displayMode}
+      renderAccount={(account) => (
+        <AccountCard
+          key={account.id}
+          t={t}
+          account={account}
+          quotaState={codexQuotaByName[account.quotaKey || '']}
+          usageSummary={accountUsageByID[account.id]}
+          rateLimitStatus={accountRateLimitByID[account.id]}
+          minHeight={displayMode === 'full' ? groupCardHeight : undefined}
+          density={displayMode}
+          ready={ready}
+          isSelectionMode={isSelectionMode}
+          isSelected={selectedAccountIDSet.has(account.id)}
+          isPendingDelete={pendingDeleteID === account.id}
+          isOAuthPending={oauthPendingAccountID === account.id}
+          isStatusPending={pendingStatusAccountID === account.id}
+          onToggleSelection={onToggleSelection}
+          onOpenDetails={onOpenDetails}
+          onRefreshQuota={onRefreshQuota}
+          onStartReauth={onStartReauth}
+          onToggleDisabled={onToggleDisabled}
+          onRequestDelete={onRequestDelete}
+          onCancelDelete={onCancelDelete}
+          onConfirmDelete={onConfirmDelete}
+          downloadAuthFile={DownloadAuthFile}
+        />
+      )}
+    />
   );
 }

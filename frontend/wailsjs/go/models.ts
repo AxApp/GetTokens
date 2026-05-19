@@ -1641,6 +1641,8 @@ export namespace main {
 	    timestamp: string;
 	    provider: string;
 	    sourceKind: string;
+	    sessionID?: string;
+	    projectName?: string;
 	    model?: string;
 	    inputTokens: number;
 	    cachedInputTokens: number;
@@ -1656,6 +1658,8 @@ export namespace main {
 	        this.timestamp = source["timestamp"];
 	        this.provider = source["provider"];
 	        this.sourceKind = source["sourceKind"];
+	        this.sessionID = source["sessionID"];
+	        this.projectName = source["projectName"];
 	        this.model = source["model"];
 	        this.inputTokens = source["inputTokens"];
 	        this.cachedInputTokens = source["cachedInputTokens"];

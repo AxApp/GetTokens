@@ -66,6 +66,7 @@ type localUsageSnapshot struct {
 type localUsageParseResult struct {
 	MinuteBuckets  map[localUsageMinuteBucketKey]codexTokenUsageMinute
 	LastModel      string
+	ProjectName    string
 	PreviousTotals *codexTokenUsage
 	ParsedBytes    int64
 }
@@ -77,6 +78,7 @@ type localUsageIndexEntry struct {
 	SizeBytes            int64
 	ParsedBytes          int64
 	LastModel            string
+	ProjectName          string
 	PreviousInputTokens  int64
 	PreviousCachedTokens int64
 	PreviousOutputTokens int64
@@ -408,12 +410,23 @@ func loadLocalUsageEntry(db *sql.DB, absolutePath string, rolloutPath string) ([
 		if err != nil {
 			return nil, "", err
 		}
+		if strings.TrimSpace(cached.ProjectName) == "" {
+			projectName, projectErr := parseCodexLocalUsageProjectName(absolutePath, rolloutPath)
+			if projectErr == nil && strings.TrimSpace(projectName) != "" {
+				_ = updateLocalUsageEntryProjectName(db, rolloutPath, projectName)
+				for index := range details {
+					details[index].ProjectName = projectName
+				}
+			}
+		}
 		return details, localUsageSourceCacheHit, nil
 	case cached != nil && canUseLocalUsageDeltaAppend(*cached, absolutePath, modifiedUnixMs, sizeBytes):
 		parseResult, err := parseCodexLocalUsageFile(
 			absolutePath,
+			rolloutPath,
 			cached.ParsedBytes,
 			cached.LastModel,
+			cached.ProjectName,
 			&codexTokenUsage{
 				InputTokens:       cached.PreviousInputTokens,
 				CachedInputTokens: cached.PreviousCachedTokens,
@@ -432,7 +445,7 @@ func loadLocalUsageEntry(db *sql.DB, absolutePath string, rolloutPath string) ([
 		}
 		fallthrough
 	default:
-		parseResult, err := parseCodexLocalUsageFile(absolutePath, 0, "", nil)
+		parseResult, err := parseCodexLocalUsageFile(absolutePath, rolloutPath, 0, "", "", nil)
 		if err != nil {
 			return nil, "", err
 		}
@@ -454,7 +467,7 @@ func canUseLocalUsageDeltaAppend(cached localUsageIndexEntry, absolutePath strin
 		modifiedUnixMs >= cached.ModifiedUnixMs
 }
 
-func parseCodexLocalUsageFile(path string, offset int64, currentModel string, previousTotals *codexTokenUsage) (*localUsageParseResult, error) {
+func parseCodexLocalUsageFile(path string, relativePath string, offset int64, currentModel string, currentProjectName string, previousTotals *codexTokenUsage) (*localUsageParseResult, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -467,7 +480,7 @@ func parseCodexLocalUsageFile(path string, offset int64, currentModel string, pr
 		}
 	}
 
-	result, err := parseCodexLocalUsageStream(file, currentModel, previousTotals)
+	result, err := parseCodexLocalUsageStream(file, currentModel, currentProjectName, relativePath, previousTotals)
 	if err != nil {
 		return nil, err
 	}
@@ -480,10 +493,16 @@ func parseCodexLocalUsageFile(path string, offset int64, currentModel string, pr
 	return result, nil
 }
 
-func parseCodexLocalUsageStream(reader io.Reader, currentModel string, previousTotals *codexTokenUsage) (*localUsageParseResult, error) {
+func parseCodexLocalUsageStream(reader io.Reader, currentModel string, currentProjectName string, relativePath string, previousTotals *codexTokenUsage) (*localUsageParseResult, error) {
 	minuteBuckets := make(map[localUsageMinuteBucketKey]codexTokenUsageMinute)
 	activeModel := currentModel
 	activeTotals := cloneCodexTokenUsage(previousTotals)
+	projectName := strings.TrimSpace(currentProjectName)
+	if projectName == "" {
+		projectName = fallbackProjectName(relativePath)
+	}
+	var meta sessionMetaEnvelope
+	currentCWD := ""
 
 	lineReader := bufio.NewReaderSize(reader, 1024*64)
 	for {
@@ -499,6 +518,7 @@ func parseCodexLocalUsageStream(reader io.Reader, currentModel string, previousT
 				}
 			}
 
+			projectName = updateLocalUsageProjectNameFromLine(line, relativePath, projectName, &meta, &currentCWD)
 			nextModel, nextTotals, minuteKey, delta, parseErr := parseCodexLocalUsageLine(line, activeModel, activeTotals)
 			if parseErr != nil {
 				return nil, parseErr
@@ -530,8 +550,69 @@ func parseCodexLocalUsageStream(reader io.Reader, currentModel string, previousT
 	return &localUsageParseResult{
 		MinuteBuckets:  minuteBuckets,
 		LastModel:      activeModel,
+		ProjectName:    projectName,
 		PreviousTotals: activeTotals,
 	}, nil
+}
+
+func parseCodexLocalUsageProjectName(path string, relativePath string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	projectName := fallbackProjectName(relativePath)
+	var meta sessionMetaEnvelope
+	currentCWD := ""
+	lineReader := bufio.NewReaderSize(file, 1024*64)
+	for {
+		line, err := lineReader.ReadBytes('\n')
+		if len(line) > 0 {
+			line = bytes.TrimSpace(line)
+			if len(line) > 0 {
+				projectName = updateLocalUsageProjectNameFromLine(line, relativePath, projectName, &meta, &currentCWD)
+			}
+		}
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return "", err
+		}
+	}
+	return projectName, nil
+}
+
+func updateLocalUsageProjectNameFromLine(line []byte, relativePath string, currentProjectName string, meta *sessionMetaEnvelope, currentCWD *string) string {
+	var envelope struct {
+		Type    string          `json:"type"`
+		Payload json.RawMessage `json:"payload"`
+	}
+	if err := json.Unmarshal(line, &envelope); err != nil {
+		return currentProjectName
+	}
+	switch envelope.Type {
+	case "session_meta":
+		var nextMeta sessionMetaEnvelope
+		if err := json.Unmarshal(envelope.Payload, &nextMeta); err != nil {
+			return currentProjectName
+		}
+		*meta = nextMeta
+		return deriveProjectName(*meta, *currentCWD, relativePath)
+	case "turn_context":
+		var turnContext turnContextEnvelope
+		if err := json.Unmarshal(envelope.Payload, &turnContext); err != nil {
+			return currentProjectName
+		}
+		if strings.TrimSpace(turnContext.Cwd) == "" {
+			return currentProjectName
+		}
+		*currentCWD = turnContext.Cwd
+		return deriveProjectName(*meta, *currentCWD, relativePath)
+	default:
+		return currentProjectName
+	}
 }
 
 func parseCodexLocalUsageLine(line []byte, currentModel string, previousTotals *codexTokenUsage) (string, *codexTokenUsage, string, *codexTokenUsage, error) {
@@ -615,6 +696,7 @@ CREATE TABLE IF NOT EXISTS usage_entries (
   size_bytes INTEGER NOT NULL,
   parsed_bytes INTEGER NOT NULL,
   last_model TEXT NOT NULL DEFAULT '',
+  project_name TEXT NOT NULL DEFAULT '',
   previous_input_tokens INTEGER NOT NULL DEFAULT 0,
   previous_cached_tokens INTEGER NOT NULL DEFAULT 0,
   previous_output_tokens INTEGER NOT NULL DEFAULT 0
@@ -634,12 +716,23 @@ CREATE TABLE IF NOT EXISTS ` + localUsageMinutesTableName + ` (
 CREATE INDEX IF NOT EXISTS idx_session_usage_minutes_rollout_timestamp
 ON ` + localUsageMinutesTableName + ` (rollout_path, minute_start_timestamp);
 `)
-	return err
+	if err != nil {
+		return err
+	}
+	return ensureLocalUsageIndexColumn(db, "usage_entries", "project_name", "TEXT NOT NULL DEFAULT ''")
+}
+
+func ensureLocalUsageIndexColumn(db *sql.DB, table string, column string, definition string) error {
+	_, err := db.Exec(`ALTER TABLE ` + table + ` ADD COLUMN ` + column + ` ` + definition)
+	if err != nil && !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
+		return err
+	}
+	return nil
 }
 
 func loadLocalUsageIndexEntry(db *sql.DB, rolloutPath string) (*localUsageIndexEntry, error) {
 	row := db.QueryRow(`
-SELECT rollout_path, absolute_path, modified_unix_ms, size_bytes, parsed_bytes, last_model,
+SELECT rollout_path, absolute_path, modified_unix_ms, size_bytes, parsed_bytes, last_model, project_name,
        previous_input_tokens, previous_cached_tokens, previous_output_tokens
 FROM usage_entries
 WHERE rollout_path = ?`,
@@ -654,6 +747,7 @@ WHERE rollout_path = ?`,
 		&entry.SizeBytes,
 		&entry.ParsedBytes,
 		&entry.LastModel,
+		&entry.ProjectName,
 		&entry.PreviousInputTokens,
 		&entry.PreviousCachedTokens,
 		&entry.PreviousOutputTokens,
@@ -669,10 +763,12 @@ WHERE rollout_path = ?`,
 
 func loadLocalUsageDetails(db *sql.DB, rolloutPath string) ([]LocalProjectedUsageDetail, error) {
 	rows, err := db.Query(`
-SELECT minute_start_timestamp, model, input_tokens, cached_input_tokens, output_tokens, request_count
-FROM `+localUsageMinutesTableName+`
-WHERE rollout_path = ?
-ORDER BY minute_start_timestamp ASC, model ASC`,
+SELECT minutes.minute_start_timestamp, minutes.model, minutes.input_tokens, minutes.cached_input_tokens,
+       minutes.output_tokens, minutes.request_count, entries.project_name
+FROM `+localUsageMinutesTableName+` AS minutes
+JOIN usage_entries AS entries ON entries.rollout_path = minutes.rollout_path
+WHERE minutes.rollout_path = ?
+ORDER BY minutes.minute_start_timestamp ASC, minutes.model ASC`,
 		rolloutPath,
 	)
 	if err != nil {
@@ -690,11 +786,13 @@ ORDER BY minute_start_timestamp ASC, model ASC`,
 			&detail.CachedInputTokens,
 			&detail.OutputTokens,
 			&detail.RequestCount,
+			&detail.ProjectName,
 		); err != nil {
 			return nil, err
 		}
 		detail.Provider = localProjectedProvider
 		detail.SourceKind = localProjectedSourceKind
+		detail.SessionID = rolloutPath
 		details = append(details, detail)
 	}
 	return details, rows.Err()
@@ -713,14 +811,15 @@ func replaceLocalUsageEntry(db *sql.DB, rolloutPath string, absolutePath string,
 	if _, err := tx.Exec(`
 INSERT INTO usage_entries (
   rollout_path, absolute_path, modified_unix_ms, size_bytes, parsed_bytes, last_model,
-  previous_input_tokens, previous_cached_tokens, previous_output_tokens
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  project_name, previous_input_tokens, previous_cached_tokens, previous_output_tokens
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(rollout_path) DO UPDATE SET
   absolute_path = excluded.absolute_path,
   modified_unix_ms = excluded.modified_unix_ms,
   size_bytes = excluded.size_bytes,
   parsed_bytes = excluded.parsed_bytes,
   last_model = excluded.last_model,
+  project_name = excluded.project_name,
   previous_input_tokens = excluded.previous_input_tokens,
   previous_cached_tokens = excluded.previous_cached_tokens,
   previous_output_tokens = excluded.previous_output_tokens`,
@@ -730,6 +829,7 @@ ON CONFLICT(rollout_path) DO UPDATE SET
 		sizeBytes,
 		parseResult.ParsedBytes,
 		parseResult.LastModel,
+		parseResult.ProjectName,
 		tokenUsageField(parseResult.PreviousTotals, func(v *codexTokenUsage) int64 { return v.InputTokens }),
 		tokenUsageField(parseResult.PreviousTotals, func(v *codexTokenUsage) int64 { return v.CachedInputTokens }),
 		tokenUsageField(parseResult.PreviousTotals, func(v *codexTokenUsage) int64 { return v.OutputTokens }),
@@ -752,7 +852,7 @@ func appendLocalUsageEntry(db *sql.DB, rolloutPath string, absolutePath string, 
 	}
 	if _, err := tx.Exec(`
 UPDATE usage_entries
-SET absolute_path = ?, modified_unix_ms = ?, size_bytes = ?, parsed_bytes = ?, last_model = ?,
+SET absolute_path = ?, modified_unix_ms = ?, size_bytes = ?, parsed_bytes = ?, last_model = ?, project_name = ?,
     previous_input_tokens = ?, previous_cached_tokens = ?, previous_output_tokens = ?
 WHERE rollout_path = ?`,
 		absolutePath,
@@ -760,6 +860,7 @@ WHERE rollout_path = ?`,
 		sizeBytes,
 		parseResult.ParsedBytes,
 		parseResult.LastModel,
+		parseResult.ProjectName,
 		tokenUsageField(parseResult.PreviousTotals, func(v *codexTokenUsage) int64 { return v.InputTokens }),
 		tokenUsageField(parseResult.PreviousTotals, func(v *codexTokenUsage) int64 { return v.CachedInputTokens }),
 		tokenUsageField(parseResult.PreviousTotals, func(v *codexTokenUsage) int64 { return v.OutputTokens }),
@@ -769,6 +870,11 @@ WHERE rollout_path = ?`,
 	}
 
 	return tx.Commit()
+}
+
+func updateLocalUsageEntryProjectName(db *sql.DB, rolloutPath string, projectName string) error {
+	_, err := db.Exec(`UPDATE usage_entries SET project_name = ? WHERE rollout_path = ?`, projectName, rolloutPath)
+	return err
 }
 
 func replaceLocalUsageMinutes(tx *sql.Tx, rolloutPath string, minuteBuckets map[localUsageMinuteBucketKey]codexTokenUsageMinute) error {

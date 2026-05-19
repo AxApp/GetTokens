@@ -125,6 +125,7 @@ export default function useAccountsPageState({
   const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
   const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
   const [oauthDialog, setOAuthDialog] = useState<OAuthDialogState>(null);
+  const [pendingStatusAccountID, setPendingStatusAccountID] = useState<string | null>(null);
   const [apiKeyVerifyStateByID, setAPIKeyVerifyStateByID] = useState<Record<string, APIKeyVerifyState>>({});
   const legacyAPIKeyLabelsRef = useRef<Record<string, string>>(loadAPIKeyLabels());
   const {
@@ -279,6 +280,31 @@ export default function useAccountsPageState({
       setSelectedAccountIDs((prev) => prev.filter((id) => id !== account.id));
     },
     [setSelectedAccountIDs],
+  );
+
+  const patchAccountDisabledLocally = useCallback(
+    (account: AccountRecord, disabled: boolean) => {
+      const nextStatus = disabled
+        ? 'disabled'
+        : account.status === 'disabled' || account.status === 'DISABLED'
+          ? 'configured'
+          : account.status;
+      setAuthFiles((prev) =>
+        prev.map((item) =>
+          account.credentialSource === 'auth-file' && item.name === account.name
+            ? { ...item, disabled, status: nextStatus }
+            : item
+        )
+      );
+      setDerivedAuthFileRecords((prev) =>
+        prev.map((item) => (item.id === account.id ? { ...item, disabled, status: nextStatus } : item))
+      );
+      setApiKeyRecords((prev) =>
+        prev.map((item) => (item.id === account.id ? { ...item, disabled, status: nextStatus } : item))
+      );
+      setSelectedAccount((prev) => (prev?.id === account.id ? { ...prev, disabled, status: nextStatus } : prev));
+    },
+    [],
   );
 
   useEffect(() => {
@@ -530,6 +556,7 @@ export default function useAccountsPageState({
   );
 
   const {
+    toggleAccountDisabled,
     deleteAccount,
     uploadAccounts,
     openApiKeyModal,
@@ -540,6 +567,7 @@ export default function useAccountsPageState({
     updateSelectedApiKeyPriority,
     updateSelectedApiKeyConfig,
   } = useAccountsActions({
+    ready,
     t,
     trackRequest,
     apiKeyForm,
@@ -559,8 +587,21 @@ export default function useAccountsPageState({
     setSearchTerm,
     setSelectedAccountIDs,
     removeDeletedAccountLocally,
+    patchAccountDisabledLocally,
     loadAccounts,
   });
+
+  const toggleAccountDisabledFromCard = useCallback(
+    async (account: AccountRecord) => {
+      setPendingStatusAccountID(account.id);
+      try {
+        await toggleAccountDisabled(account);
+      } finally {
+        setPendingStatusAccountID(null);
+      }
+    },
+    [toggleAccountDisabled],
+  );
 
   function closeHeaderActionsMenu() {
     setIsHeaderActionsMenuOpen(false);
@@ -572,6 +613,7 @@ export default function useAccountsPageState({
     filters,
     selectedAccount,
     pendingDeleteID,
+    pendingStatusAccountID,
     deleteError,
     apiKeyFormError,
     oauthBanner,
@@ -638,6 +680,7 @@ export default function useAccountsPageState({
     toggleAccountSelection,
     toggleSelectAllFiltered,
     toggleSelectionMode,
+    toggleAccountDisabled: toggleAccountDisabledFromCard,
     exportSelectedAccounts,
     deleteAccount,
     renameSelectedApiKey,

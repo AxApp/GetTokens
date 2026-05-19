@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountsFilterState, Translator } from '../model/types';
 
 interface AccountsToolbarProps {
@@ -8,12 +9,15 @@ interface AccountsToolbarProps {
   isSelectionMode: boolean;
   allFilteredSelected: boolean;
   selectedAccountCount: number;
+  displayMode: AccountListDisplayMode;
   onSearchChange: (value: string) => void;
   onFiltersChange: (value: AccountsFilterState) => void;
+  onDisplayModeChange: (value: AccountListDisplayMode) => void;
   onToggleSelectionMode: () => void;
   onToggleSelectAllFiltered: () => void;
   onClearSelection: () => void;
   onExportSelected: () => void;
+  initialFiltersMenuOpen?: boolean;
 }
 
 export default function AccountsToolbar({
@@ -23,14 +27,17 @@ export default function AccountsToolbar({
   isSelectionMode,
   allFilteredSelected,
   selectedAccountCount,
+  displayMode,
   onSearchChange,
   onFiltersChange,
+  onDisplayModeChange,
   onToggleSelectionMode,
   onToggleSelectAllFiltered,
   onClearSelection,
   onExportSelected,
+  initialFiltersMenuOpen = false,
 }: AccountsToolbarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(initialFiltersMenuOpen);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -102,7 +109,21 @@ export default function AccountsToolbar({
               </div>
             ) : null}
           </div>
-          <div className="flex items-center justify-end">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div
+              className="grid shrink-0 grid-cols-3 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+              data-account-card-ignore-click="true"
+            >
+              <DisplayModeButton active={displayMode === 'full'} bordered onClick={() => onDisplayModeChange('full')}>
+                {t('accounts.display_mode_full')}
+              </DisplayModeButton>
+              <DisplayModeButton active={displayMode === 'compact'} bordered onClick={() => onDisplayModeChange('compact')}>
+                {t('accounts.display_mode_compact')}
+              </DisplayModeButton>
+              <DisplayModeButton active={displayMode === 'list'} onClick={() => onDisplayModeChange('list')}>
+                {t('accounts.display_mode_list')}
+              </DisplayModeButton>
+            </div>
             <button onClick={onToggleSelectionMode} className="btn-swiss !px-3 !py-2 !text-[0.5625rem]">
               {isSelectionMode ? t('accounts.unselect_all') : t('accounts.selection_mode')}
             </button>
@@ -126,6 +147,34 @@ export default function AccountsToolbar({
         ) : null}
       </div>
     </section>
+  );
+}
+
+function DisplayModeButton({
+  active,
+  bordered = false,
+  children,
+  onClick,
+}: {
+  active: boolean;
+  bordered?: boolean;
+  children: ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-9 px-3 text-[0.5625rem] font-black uppercase tracking-[0.12em] ${
+        bordered ? 'border-r border-[var(--border-color)]' : ''
+      } ${
+        active
+          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+          : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 

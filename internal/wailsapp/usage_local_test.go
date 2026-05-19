@@ -18,6 +18,7 @@ func TestGetCodexLocalUsageAggregatesTokenCountDeltas(t *testing.T) {
 
 	rolloutPath := filepath.Join(sessionsDir, "rollout-2026-04-28T10-00-00.jsonl")
 	payload := "" +
+		"{\"timestamp\":\"2026-04-28T09:59:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"cwd\":\"/Users/linhey/Desktop/linhay-open-sources/GetTokens\",\"git\":{\"repository_url\":\"git@github.com:linhay/GetTokens.git\"}}}\n" +
 		"{\"timestamp\":\"2026-04-28T10:00:00.000Z\",\"type\":\"turn_context\",\"payload\":{\"model\":\"gpt-5-codex\"}}\n" +
 		"{\"timestamp\":\"2026-04-28T10:01:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":120,\"output_tokens\":20}}}}\n" +
 		"{\"timestamp\":\"2026-04-28T10:02:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":100,\"output_tokens\":20}}}}\n" +
@@ -52,6 +53,12 @@ func TestGetCodexLocalUsageAggregatesTokenCountDeltas(t *testing.T) {
 	}
 
 	first := result.Details[0]
+	if first.SessionID != "sessions/2026/04/28/rollout-2026-04-28T10-00-00.jsonl" {
+		t.Fatalf("first session id = %q, want rollout relative path", first.SessionID)
+	}
+	if first.ProjectName != "GetTokens" {
+		t.Fatalf("first project name = %q, want GetTokens", first.ProjectName)
+	}
 	if first.InputTokens != 100 || first.CachedInputTokens != 100 || first.OutputTokens != 20 {
 		t.Fatalf("unexpected first detail: %#v", first)
 	}
@@ -158,6 +165,9 @@ func TestGetCodexLocalUsageIncludesArchivedSessions(t *testing.T) {
 	}
 	if result.Details[0].Timestamp != "2026-04-20T10:01:00Z" {
 		t.Fatalf("first timestamp = %q, want archived minute first", result.Details[0].Timestamp)
+	}
+	if result.Details[0].SessionID != "archived_sessions/rollout-2026-04-20T10-00-00.jsonl" {
+		t.Fatalf("first session id = %q, want archived rollout relative path", result.Details[0].SessionID)
 	}
 	if result.Details[1].Timestamp != "2026-04-28T10:01:00Z" {
 		t.Fatalf("second timestamp = %q, want live minute second", result.Details[1].Timestamp)

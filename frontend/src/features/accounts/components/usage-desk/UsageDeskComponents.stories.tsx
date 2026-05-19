@@ -94,6 +94,7 @@ const sessionRows: UsageDeskProjectedSessionUsage[] = [
   {
     sessionID: 'session-20260519-a',
     fileLabel: 'codex-design-system.md',
+    projectName: 'GetTokens',
     model: 'gpt-5.2',
     requests: 14,
     totalTokens: 84500,
@@ -105,6 +106,7 @@ const sessionRows: UsageDeskProjectedSessionUsage[] = [
   {
     sessionID: 'session-20260519-b',
     fileLabel: 'storybook-regression.md',
+    projectName: 'GetTokens',
     model: 'gpt-5.2-mini',
     requests: 6,
     totalTokens: 27200,

@@ -529,6 +529,18 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   );
   assert.equal(buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex'), '#frame=accounts');
   assert.equal(
+    buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex', null, { density: 'list' }),
+    '#frame=accounts&density=list',
+  );
+  assert.equal(
+    buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex', null, { density: 'compact' }),
+    '#frame=accounts&density=compact',
+  );
+  assert.equal(
+    buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex', null, { density: 'full' }),
+    '#frame=accounts',
+  );
+  assert.equal(
     buildFrameHash('accounts', 'openai-compatible', 'feature-config', 'codex', 'codex'),
     '#frame=accounts&workspace=openai-compatible',
   );

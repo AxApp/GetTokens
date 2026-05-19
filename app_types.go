@@ -460,6 +460,8 @@ type LocalProjectedUsageDetail struct {
 	Timestamp         string `json:"timestamp"`
 	Provider          string `json:"provider"`
 	SourceKind        string `json:"sourceKind"`
+	SessionID         string `json:"sessionID,omitempty"`
+	ProjectName       string `json:"projectName,omitempty"`
 	Model             string `json:"model,omitempty"`
 	InputTokens       int64  `json:"inputTokens"`
 	CachedInputTokens int64  `json:"cachedInputTokens"`

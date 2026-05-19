@@ -14,6 +14,7 @@ import {
 
 interface AccountProxyRouteSectionProps {
   proxyUrl?: string;
+  proxyNodes?: ProxyNodeRecord[];
   readonlyReason?: string;
   onProxyUrlChange?: (proxyUrl: string) => void;
   onValidityChange?: (message: string) => void;
@@ -32,12 +33,14 @@ function getProxyNodeURL(node: ProxyNodeRecord) {
 
 export default function AccountProxyRouteSection({
   proxyUrl,
+  proxyNodes: injectedProxyNodes,
   readonlyReason,
   onProxyUrlChange,
   onValidityChange,
 }: AccountProxyRouteSectionProps) {
   const { t } = useI18n();
-  const [proxyNodes, setProxyNodes] = useState<ProxyNodeRecord[]>(() => readProxyNodes());
+  const [storedProxyNodes, setStoredProxyNodes] = useState<ProxyNodeRecord[]>(() => injectedProxyNodes ?? readProxyNodes());
+  const proxyNodes = injectedProxyNodes ?? storedProxyNodes;
   const [draft, setDraft] = useState<AccountProxyRouteDraft>(() =>
     buildAccountProxyRouteDraft({ id: 'account-proxy-route', proxyUrl }, proxyNodes),
   );
@@ -47,8 +50,16 @@ export default function AccountProxyRouteSection({
   }, [proxyNodes, proxyUrl]);
 
   useEffect(() => {
+    if (injectedProxyNodes) {
+      setStoredProxyNodes(injectedProxyNodes);
+      return;
+    }
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     function refreshProxyNodes() {
-      setProxyNodes(readProxyNodes());
+      setStoredProxyNodes(readProxyNodes());
     }
     window.addEventListener('storage', refreshProxyNodes);
     window.addEventListener('focus', refreshProxyNodes);
@@ -56,7 +67,7 @@ export default function AccountProxyRouteSection({
       window.removeEventListener('storage', refreshProxyNodes);
       window.removeEventListener('focus', refreshProxyNodes);
     };
-  }, []);
+  }, [injectedProxyNodes]);
 
   const proxyOptions = useMemo(
     () =>

@@ -19,16 +19,20 @@ import {
 import {
   buildUsageDeskChartPointStyle,
   buildUsageDeskObservedSummaryItems,
+  buildUsageDeskProjectedSessionBucketKey,
   buildUsageDeskObservedSnapshot,
   buildUsageDeskProjectedSnapshot,
   buildUsageDeskProjectedSummaryItems,
   formatUsageDeskChartValue,
   resolveUsageDeskChartSelectionKey,
   resolveUsageDeskLinkedRowKey,
+  shouldOpenUsageDeskProjectedSessionSurface,
   type UsageDeskDailyPoint,
   type UsageDeskChartUnit,
   type UsageDeskMinuteRow,
   type UsageDeskProjectedDailyPoint,
+  type UsageDeskProjectedSessionUsage,
+  type UsageDeskProjectedSurfaceView,
   type UsageDeskRangeOption,
   type UsageDeskSource,
   resolveUsageDeskRangeDrilldownDayKey,
@@ -114,6 +118,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const [projectedActionMessage, setProjectedActionMessage] = useState('');
   const [projectedProgress, setProjectedProgress] = useState<LocalUsageProgressEvent | null>(null);
   const [projectedChartMetric, setProjectedChartMetric] = useState<ProjectedChartMetric>('tokens');
+  const [projectedSurfaceView, setProjectedSurfaceView] = useState<'chart' | 'sessions'>('chart');
   const [selectedDetailRowKey, setSelectedDetailRowKey] = useState('');
   const [selectedChartPointKey, setSelectedChartPointKey] = useState('');
   const [detailTransitionActive, setDetailTransitionActive] = useState(false);
@@ -408,6 +413,38 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
 
   const activeDetailColumns = useMemo(() => resolveUsageDetailColumns(activeDetailRows), [activeDetailRows]);
 
+  const selectedProjectedSessionUsages = useMemo<UsageDeskProjectedSessionUsage[]>(() => {
+    if (source !== 'projected' || !selectedDetailRowKey) {
+      return [];
+    }
+    const selectedRow = activeDetailRows.find((row) => buildUsageDetailRowKey(row) === selectedDetailRowKey);
+    if (!selectedRow) {
+      return [];
+    }
+
+    if (projectedDrilldownDayKey) {
+      const bucketKey = buildUsageDeskProjectedSessionBucketKey(projectedDrilldownDayKey, selectedRow.timeLabel);
+      return projectedSnapshot.sessionUsageByBucket[bucketKey] ?? [];
+    }
+
+    const dayKey = 'drilldownDayKey' in selectedRow ? selectedRow.drilldownDayKey : undefined;
+    return dayKey ? (projectedSnapshot.sessionUsageByDayKey[dayKey] ?? []) : [];
+  }, [activeDetailRows, projectedDrilldownDayKey, projectedSnapshot.sessionUsageByBucket, projectedSnapshot.sessionUsageByDayKey, selectedDetailRowKey, source]);
+
+  const selectedProjectedSessionUsageLabel = useMemo(() => {
+    if (source !== 'projected') {
+      return '';
+    }
+    const selectedRow = activeDetailRows.find((row) => buildUsageDetailRowKey(row) === selectedDetailRowKey);
+    if (!selectedRow) {
+      return projectedDrilldownDayKey ? `本地会话 / ${projectedDrilldownDayKey}` : '本地会话';
+    }
+    if (projectedDrilldownDayKey) {
+      return `本地会话 / ${projectedDrilldownDayKey} ${selectedRow.timeLabel}`;
+    }
+    return `本地会话 / ${selectedRow.timeLabel}`;
+  }, [activeDetailRows, projectedDrilldownDayKey, selectedDetailRowKey, source]);
+
   useEffect(() => {
     const firstRow = activeDetailRows[0] ?? null;
     const firstRowKey = firstRow ? buildUsageDetailRowKey(firstRow) : '';
@@ -472,6 +509,9 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   function handleDetailRowSelect(rowKey: string, chartPointKey: string) {
     setSelectedDetailRowKey(rowKey);
     setSelectedChartPointKey(chartPointKey);
+    if (shouldOpenUsageDeskProjectedSessionSurface(source, rowKey)) {
+      setProjectedSurfaceView('sessions');
+    }
   }
 
   function handleChartPointSelect(chartSelectionKey: string) {
@@ -488,6 +528,15 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
       setSelectedChartPointKey(selectedDayKey);
     }
     setViewScale(nextScale);
+  }
+
+  function handleProjectedSurfaceViewChange(nextView: UsageDeskProjectedSurfaceView) {
+    if (nextView === 'sessions') {
+      setProjectedSurfaceView('sessions');
+      return;
+    }
+    setProjectedSurfaceView('chart');
+    handleViewScaleChange(nextView);
   }
 
   function handleRangeSelect(option: UsageDeskRangeOption) {
@@ -526,6 +575,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     projectedProgress,
     projectedChartMetric,
     setProjectedChartMetric,
+    projectedSurfaceView,
     selectedDetailRowKey,
     selectedChartPointKey,
     detailTransitionActive,
@@ -544,11 +594,14 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     projectedSummaryItems,
     projectedChartUnit,
     projectedPrimaryChartPoints,
+    selectedProjectedSessionUsages,
+    selectedProjectedSessionUsageLabel,
     activeDetailRows,
     activeDetailColumns,
     handleDetailRowSelect,
     handleChartPointSelect,
     handleViewScaleChange,
+    handleProjectedSurfaceViewChange,
     handleRangeSelect,
   };
 }

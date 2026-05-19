@@ -19,6 +19,7 @@ export function UsageChartCard({
   selectedPointKey,
   onSelectPoint,
   status,
+  surfaceContent,
   footerExtra,
   curveMotion = 'standard',
 }: {
@@ -32,6 +33,7 @@ export function UsageChartCard({
   selectedPointKey: string;
   onSelectPoint: (chartSelectionKey: string, drilldownDayKey?: string) => void;
   status?: ReactNode;
+  surfaceContent?: ReactNode;
   footerExtra?: ReactNode;
   curveMotion?: UsageDeskCurveMotion;
 }) {
@@ -53,16 +55,18 @@ export function UsageChartCard({
       ) : null}
 
       <div className="relative">
-        <ChartSurface
-          primary={primary}
-          secondary={secondary}
-          unit={unit}
-          compactProgress={compactProgress}
-          selectedPointKey={selectedPointKey}
-          onSelectPoint={onSelectPoint}
-          rangeAnimationVersion={rangeAnimationVersion}
-          curveMotion={curveMotion}
-        />
+        {surfaceContent ?? (
+          <ChartSurface
+            primary={primary}
+            secondary={secondary}
+            unit={unit}
+            compactProgress={compactProgress}
+            selectedPointKey={selectedPointKey}
+            onSelectPoint={onSelectPoint}
+            rangeAnimationVersion={rangeAnimationVersion}
+            curveMotion={curveMotion}
+          />
+        )}
         {/* 凹陷感内阴影叠加层 */}
         <div className="pointer-events-none absolute inset-0 shadow-[inset_0_12px_16px_-8px_rgba(0,0,0,0.1),inset_0_-12px_16px_-8px_rgba(0,0,0,0.1)]" />
       </div>

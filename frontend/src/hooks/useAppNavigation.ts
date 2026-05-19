@@ -103,6 +103,7 @@ export function useAppNavigation() {
       activeSessionManagementWorkspace,
       activeUsageDeskWorkspace,
       detailID,
+      { density: activePage === 'accounts' ? readCurrentHashParam('density') : null },
     );
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
@@ -153,6 +154,14 @@ export function useAppNavigation() {
     activeUsageDeskWorkspace,
     setActiveUsageDeskWorkspace,
   };
+}
+
+function readCurrentHashParam(key: string): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const normalized = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+  return new URLSearchParams(normalized).get(key);
 }
 
 function shouldPreserveDetailHash(

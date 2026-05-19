@@ -294,7 +294,7 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - 长内容滚动
    - 错误条
    - 无 footer 状态
-3. 具体详情弹窗如 `UnifiedAccountDetailModal`、`ApiKeyDetailModal`、`OpenAICompatibleDetailModal` 仍保留 `deferred`，因为它们包含下载、保存、验证或规则编辑等运行时边界。
+3. 具体详情弹窗如 `UnifiedAccountDetailModal`、`ApiKeyDetailModal` 仍保留 `deferred`，因为它们包含下载、保存、验证等运行时边界；`OpenAICompatibleDetailModal` 后续在 `RateLimitRulesSection` 支持 mock API 后已复查收编。
 
 ## 2026-05-19 第八批 Feature Components：Codex Route Probe
 1. 新增 `Design System/Feature Components/Codex Route Probe`，收编 Codex 账号列表中的路由探测工作台：
@@ -451,7 +451,82 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - ready remote models
    - validation error
    - fetching models
-3. 本批只验证 provider 详情字段、proxy route、headers、模型候选和验证 footer；完整 modal 仍保留 `RateLimitRulesSection` 组合，等待限流规则编辑器完成 mock / props 边界后再复查。
+3. 本批只验证 provider 详情字段、proxy route、headers、模型候选和验证 footer；完整 modal 当时仍保留 `RateLimitRulesSection` 组合，后续在第二十九批复查收编。
+
+## 2026-05-19 第二十三批 Feature Components：Status Local CLI Apply
+1. 新增 `Design System/Feature Components/Status Local CLI Apply`，收编 Status 页本地 CLI 配置应用区块：
+   - `StatusApplyLocalSection`
+2. 新 story 使用固定 relay key、endpoint、provider、model、auth state 和 diff mock 覆盖：
+   - codex ready
+   - codex blocked
+   - codex preserve ChatGPT auth
+   - codex applying
+   - claude ready
+3. 为 `StatusApplyLocalSection` 增加可选 `initialActiveTarget`，只用于 Storybook 固定展示 Codex / Claude 标签页初始态，不改变业务默认值。
+4. 本批只验证本地配置表单、认证策略、endpoint/provider/model 选择和 diff 面板布局，不触碰真实写入 Codex / Claude Code 配置或 Wails 边界。
+
+## 2026-05-19 第二十四批 Feature Components：Accounts Toolbar
+1. 新增 `Design System/Feature Components/Accounts Toolbar`，收编账号工作台搜索 / 筛选 / 密度 / 批量选择工具栏：
+   - `AccountsToolbar`
+2. 新 story 使用固定 search term、filter state、display mode 和 selection state mock 覆盖：
+   - default
+   - filters open
+   - empty selection
+   - bulk selection
+3. 为 `AccountsToolbar` 增加可选 `initialFiltersMenuOpen`，只用于 Storybook 固定展示筛选菜单打开态，不改变业务默认值。
+4. 本批只验证工具栏布局、筛选浮层、密度切换和批量操作栏，不触碰账号加载、导出实现或 Wails 边界。
+
+## 2026-05-19 第二十五批 Feature Components：Account Group Sections
+1. 从 `AccountGroupSection` 拆出无 Wails 的分组容器 view，并新增 `Design System/Feature Components/Account Group Sections`：
+   - `AccountGroupSectionView`
+2. 新 story 使用固定 account group 和 mock card renderer 覆盖：
+   - full grid
+   - compact grid
+   - list
+   - empty
+3. `AccountGroupSection` 继续作为业务 wrapper 组合真实 `AccountCard`，暂不直接收编；Storybook 只使用纯 view，避免引入 Wails `DownloadAuthFile`。
+4. 本批只验证分组标题、数量 meta、响应式 grid/list 容器和空分组布局，不触碰真实账号卡 action、auth 下载或 Wails 边界。
+
+## 2026-05-19 第二十六批 Feature Components：Account Proxy Route
+1. 新增 `Design System/Feature Components/Account Proxy Route`，收编账号详情里的代理出口选择区块：
+   - `AccountProxyRouteSection`
+2. 为 `AccountProxyRouteSection` 增加可选 `proxyNodes` 注入；业务默认仍读取 proxy-pool localStorage，Storybook 使用固定 proxy node mock。
+3. 新 story 覆盖：
+   - inherit
+   - direct
+   - custom
+   - detached current URL
+   - no nodes
+   - readonly
+4. 本批只验证模式切换、当前出口摘要、代理节点 select、无节点提示和只读说明，不触碰真实 proxy-pool 存储或账号保存边界。
+
+## 2026-05-19 第二十七批 Feature Components：Account Card
+1. 复用 `Design System/Feature Components/Account Cards`，继续收编完整账号卡：
+   - `AccountCard`
+2. `AccountCard` 不再直接 import Wails `DownloadAuthFile`，改为可选 `downloadAuthFile` prop；业务 wrapper `AccountGroupSection` 负责注入真实 Wails 函数，Storybook 使用 mock。
+3. `Overview` 新增完整账号卡状态：
+   - ready
+   - selection selected
+   - pending delete
+   - list blocked
+4. 本批只验证账号卡整体组合、菜单边界、选择态、删除确认和列表限流态；真实 auth file 下载仍停留在业务 wrapper 注入层。
+
+## 2026-05-19 第二十八批 Feature Components：Rate Limit Rules
+1. 新增 `Design System/Feature Components/Rate Limit Rules`，收编路由守卫规则编辑区块：
+   - `RateLimitRulesSection`
+2. `RateLimitRulesSection` 不再直接 import Wails rate-limit CRUD，改为可选 `RateLimitRulesAPI` 注入；运行时详情弹窗继续注入真实 Wails API，Storybook 使用 mock API。
+3. 新 story 覆盖：
+   - active rules
+   - empty rules
+   - preview fallback
+4. 本批只验证规则表单、策略 / 窗口 / 限额 / action 输入、启用开关、保存删除按钮和评估用量行，不触碰真实路由守卫持久化。
+
+## 2026-05-19 第二十九批 Feature Components：OpenAI Compatible Detail Modal
+1. 复用 `Design System/Feature Components/OpenAI Compatible`，在 `RateLimitRulesSection` 已支持 `RateLimitRulesAPI` 注入后复查并收编完整详情弹窗：
+   - `OpenAICompatibleDetailModal`
+2. `Overview` 已包含完整 modal 场景：
+   - rate-limit composed
+3. 本批只验证详情弹窗 shell、provider detail panel 与规则编辑区块的组合态；真实 provider 保存、验证、远端模型拉取和规则持久化仍由运行时父组件注入。
 
 ## 场景收敛规则
 1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。

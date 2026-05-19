@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Pencil } from 'lucide-react';
 import {
+  CreateRateLimitRule,
+  DeleteRateLimitRule,
+  ListRateLimitRules,
+  UpdateRateLimitRule,
+} from '../../../../wailsjs/go/main/App';
+import {
   providerLabel,
   resolveAccountConfigurationWorkspaceHeading,
   resolveAccountProviderConfigHeading,
@@ -518,6 +524,12 @@ export default function ApiKeyDetailModal({
               matchKey={usageSummary?.attributionKey}
               rateLimitStatus={rateLimitStatus}
               rateLimitStrategies={rateLimitStrategies}
+              rateLimitRulesAPI={{
+                list: ListRateLimitRules,
+                create: CreateRateLimitRule,
+                update: UpdateRateLimitRule,
+                delete: DeleteRateLimitRule,
+              }}
               onRateLimitRulesChanged={onRateLimitRulesChanged}
               t={t}
             />

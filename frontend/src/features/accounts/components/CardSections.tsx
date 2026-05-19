@@ -43,7 +43,7 @@ export function QuotaBars({ quotaDisplay, accentFillClass }: QuotaBarsProps) {
   return (
     <div className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
       {windows.map((window) => (
-        <div key={window.id} className="grid grid-cols-[4.25rem_minmax(0,1fr)_2.75rem] items-center gap-2">
+        <div key={window.id} className="account-card-quota-row grid items-center gap-2">
           <div className="font-mono text-[0.625rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
             {window.label}
           </div>
@@ -86,7 +86,7 @@ export function BillingBalance({ billing }: BillingBalanceProps) {
         BALANCE
       </div>
       {billing.balances.map((b, i) => (
-        <div key={i} className="grid grid-cols-2 gap-2 text-[0.5625rem]">
+        <div key={i} className="account-card-billing-grid grid gap-2 text-[0.5625rem]">
           <div className="flex items-center justify-between border border-[var(--border-color)] px-2 py-1">
             <span className="font-mono font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">Total</span>
             <span className="font-mono font-black text-[var(--text-primary)]">{b.totalBalance} {b.currency}</span>
@@ -144,7 +144,7 @@ export function UsageMetrics({ usageSummary, t }: UsageMetricsProps) {
   if (!usageSummary) return null;
 
   return (
-    <section className="grid grid-cols-4 border-b border-dashed border-[var(--border-color)]">
+    <section className="account-card-usage-metrics grid border-b border-dashed border-[var(--border-color)]">
       <UsageCell label={t('accounts.recent_requests')} value={formatCountMetric(usageSummary.requestCount ?? 0)} />
       <UsageCell label={t('accounts.total_tokens')} value={formatTokenMetric(usageSummary.totalTokens ?? 0)} />
       <UsageCell label="CACHED" value={formatTokenMetric(usageSummary.cachedInputTokens ?? 0)} />
@@ -180,7 +180,7 @@ export function RateLimitGuard({ rateLimitStatus }: RateLimitGuardProps) {
         const fillClass = exceeded ? 'bg-red-500' : ruleState.exceeded ? 'bg-yellow-500' : 'bg-amber-600';
         const pct = Math.min(100, Math.max(0, Number(ruleState.usagePct || 0)));
         return (
-          <div key={ruleState.rule.id} className="grid grid-cols-[5rem_minmax(0,1fr)_2.25rem] items-center gap-2">
+          <div key={ruleState.rule.id} className="account-card-rate-limit-row grid items-center gap-2">
             <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
               {ruleState.rule.strategy} · {ruleState.rule.window}
             </div>
@@ -217,7 +217,7 @@ export function EvidenceSection({ rows }: EvidenceSectionProps) {
       <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         EVIDENCE
       </div>
-      <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+      <div className="account-card-evidence-grid grid gap-x-4 gap-y-1.5">
         {rows.map((row, i) => (
           <div key={i} className="contents">
             <div className="font-mono text-[0.5rem] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">

@@ -343,7 +343,7 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - 长内容滚动
    - 错误条
    - 无 footer 状态
-5. `UnifiedAccountDetailModal`、`ApiKeyDetailModal`、`OpenAICompatibleDetailModal` 继续 deferred，等待下载、保存、验证、规则编辑等运行时边界拆出纯 view。
+5. `UnifiedAccountDetailModal`、`ApiKeyDetailModal` 继续 deferred，等待下载、保存、验证等运行时边界拆出纯 view；`OpenAICompatibleDetailModal` 后续在规则编辑器支持 mock API 后复查收编。
 
 ### 第八批：Codex Route Probe
 本批先收 Codex account-list 里的独立 route probe workbench，不提前收排序 row / section。
@@ -554,7 +554,7 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
 本批不直接收完整运行时 modal，而是先拆出无 Wails 的 provider 详情主体展示层。
 
 1. 新增 `frontend/src/features/accounts/components/OpenAICompatibleDetailPanel.tsx`。
-2. `OpenAICompatibleDetailModal.tsx` 继续负责 `AccountDetailModalFrame` 和 `RateLimitRulesSection` 运行时组合。
+2. `OpenAICompatibleDetailModal.tsx` 继续负责 `AccountDetailModalFrame` 和 `RateLimitRulesSection` 组合；完整 modal 后续在规则编辑器支持 mock API 后复查收编。
 3. Storybook 路径仍为 `Design System/Feature Components/OpenAI Compatible`。
 4. 本批 admitted 文件：
    - `OpenAICompatibleDetailPanel.tsx`
@@ -563,6 +563,116 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - validation error
    - fetching models
 6. 本批只用固定 provider draft、verify state 和 remote model state mock；不触碰真实验证、远端模型拉取、限流规则 CRUD 或 Wails 边界。
+
+### 第二十三批：Status Local CLI Apply
+本批收编 Status 页本地 Codex / Claude Code 配置应用区块。该组件仍保留在 `StatusPanels.tsx` 中，但 manifest 准入粒度明确到导出组件，避免误判整个文件都已完成拆分。
+
+1. 新增 `frontend/src/features/status/components/StatusLocalCliApplyPanel.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Status Local CLI Apply`。
+3. 本批 admitted 组件：
+   - `StatusApplyLocalSection`
+4. `Overview` 同屏覆盖：
+   - codex ready
+   - codex blocked
+   - codex preserve ChatGPT auth
+   - codex applying
+   - claude ready
+5. 为 `StatusApplyLocalSection` 增加可选 `initialActiveTarget`，Storybook 可固定展示 Claude 标签页；业务默认仍为 Codex。
+6. 本批只用固定 relay key、endpoint、provider、model、auth state 和 diff mock，不触碰真实本地配置写入或 Wails 边界。
+
+### 第二十四批：Accounts Toolbar
+本批收编账号工作台的搜索、筛选、密度切换和批量选择工具栏。
+
+1. 新增 `frontend/src/features/accounts/components/AccountsToolbarComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Accounts Toolbar`。
+3. 本批 admitted 组件：
+   - `AccountsToolbar`
+4. `Overview` 同屏覆盖：
+   - default
+   - filters open
+   - empty selection
+   - bulk selection
+5. 为 `AccountsToolbar` 增加可选 `initialFiltersMenuOpen`，Storybook 可固定展示筛选菜单；业务默认仍为关闭。
+6. 本批只用固定 search term、filter state、display mode 和 selection state mock，不触碰真实账号加载、导出或 Wails 边界。
+
+### AccountGroupSection 复查结果
+`AccountGroupSection` 暂不收编。虽然分组标题和 grid/list 容器本身可 mock，但当前组件直接 import `AccountCard`，而 `AccountCard` 会 import Wails `DownloadAuthFile`。后续需要先抽出纯 group view 或 renderAccount 边界，再用 mock 卡片覆盖 grid、list、empty 状态。
+
+### 第二十五批：Account Group Sections
+本批按上面的复查结论先抽出纯 view，而不是把业务 wrapper 直接纳入 Storybook。
+
+1. 新增 `frontend/src/features/accounts/components/AccountGroupSectionView.tsx`。
+2. `AccountGroupSection.tsx` 继续负责把真实 `AccountCard` 作为 `renderAccount` 传入 view。
+3. 新增 `frontend/src/features/accounts/components/AccountGroupSectionComponents.stories.tsx`。
+4. Storybook 路径为 `Design System/Feature Components/Account Group Sections`。
+5. 本批 admitted 组件：
+   - `AccountGroupSectionView`
+6. `Overview` 同屏覆盖：
+   - full grid
+   - compact grid
+   - list
+   - empty
+7. 本批只用固定 account group 和 mock card renderer，不触碰真实账号卡 action、auth 下载或 Wails 边界。
+
+### 第二十六批：Account Proxy Route
+本批收编账号详情中的代理出口选择区块，先把 proxy-pool 节点来源改为可注入，避免 Storybook 读取真实 localStorage。
+
+1. `AccountProxyRouteSection` 新增可选 `proxyNodes` prop。
+2. 业务路径未传 `proxyNodes` 时继续读取 proxy-pool localStorage，并监听 storage/focus 刷新。
+3. 新增 `frontend/src/features/accounts/components/AccountProxyRouteSection.stories.tsx`。
+4. Storybook 路径为 `Design System/Feature Components/Account Proxy Route`。
+5. 本批 admitted 组件：
+   - `AccountProxyRouteSection`
+6. `Overview` 同屏覆盖：
+   - inherit
+   - direct
+   - custom
+   - detached current URL
+   - no nodes
+   - readonly
+7. 本批只用固定 proxy node mock，不触碰真实 proxy-pool 存储或账号保存边界。
+
+### 第二十七批：Account Card
+本批在已收编 AccountCardFrame / AttributionCard / CardSections 的基础上，继续收编完整账号卡组合。
+
+1. `AccountCard` 移除直接 Wails import，新增可选 `downloadAuthFile` prop。
+2. `AccountGroupSection` 作为业务 wrapper 继续注入真实 `DownloadAuthFile`。
+3. `frontend/src/features/accounts/components/AccountCardComponents.stories.tsx` 新增完整账号卡状态矩阵。
+4. Storybook 路径仍为 `Design System/Feature Components/Account Cards`。
+5. 本批 admitted 组件：
+   - `AccountCard`
+6. `Overview` 新增状态：
+   - ready
+   - selection selected
+   - pending delete
+   - list blocked
+7. 本批只用固定 AccountRecord、usage、rate-limit 和 downloadAuthFile mock；不触碰真实 auth file 下载或账号 action handler。
+
+### 第二十八批：Rate Limit Rules
+本批收编路由守卫规则编辑区块，将 Wails CRUD 从组件内部 import 改为由运行时父组件注入。
+
+1. `RateLimitRulesSection` 新增可选 `RateLimitRulesAPI`。
+2. `ApiKeyDetailModal`、`OpenAICompatibleDetailModal`、`UnifiedAccountDetailModal` 继续注入真实 Wails rate-limit CRUD。
+3. 新增 `frontend/src/features/accounts/components/RateLimitRulesSection.stories.tsx`。
+4. Storybook 路径为 `Design System/Feature Components/Rate Limit Rules`。
+5. 本批 admitted 组件：
+   - `RateLimitRulesSection`
+6. `Overview` 同屏覆盖：
+   - active rules
+   - empty rules
+   - preview fallback
+7. 本批只用固定 rate-limit status 和 CRUD API mock，不触碰真实路由守卫持久化。
+
+### 第二十九批：OpenAI Compatible Detail Modal
+本批复查第二十二批暂缓的完整 OpenAI-compatible provider 详情弹窗。前置条件已由第二十八批完成：`RateLimitRulesSection` 可通过 `RateLimitRulesAPI` 注入 mock CRUD。
+
+1. `OpenAICompatibleDetailModal` 从 deferred 改为 admitted。
+2. Storybook 路径仍为 `Design System/Feature Components/OpenAI Compatible`。
+3. 本批 admitted 组件：
+   - `OpenAICompatibleDetailModal`
+4. `Overview` 已包含完整 modal 状态：
+   - rate-limit composed
+5. 本批只用固定 provider draft、verify state、remote model state、rate-limit status 和 CRUD API mock；不触碰真实 provider 保存、验证、远端模型拉取或规则持久化。
 
 ### 场景收敛规则
 后续收编组件时，优先保留能代表视觉或交互分支的最小状态集合；同类 loading / disabled / empty / error 已在基础模式覆盖时，不为每个组件重复铺场景。若多个业务动作共享同一视觉模式，归并到同一个设计系统场景并在文档中说明适用范围。

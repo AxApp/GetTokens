@@ -5,6 +5,7 @@ import {
   DeleteCodexAPIKey,
   DeleteOpenAICompatibleProvider,
   DownloadAuthFile,
+  SetAccountDisabled,
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
   UpdateCodexAPIKeyPriority,
@@ -29,9 +30,11 @@ import {
 } from '../model/accountTransfer';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
+import { canToggleRotationAccountDisabled } from '../model/accountRotation';
 import type { ApiKeyFormState, TrackRequest, Translator } from '../model/types';
 
 interface UseAccountsActionsArgs {
+  ready: boolean;
   t: Translator;
   trackRequest: TrackRequest;
   apiKeyForm: ApiKeyFormState;
@@ -51,10 +54,12 @@ interface UseAccountsActionsArgs {
   setSearchTerm: Dispatch<SetStateAction<string>>;
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
   removeDeletedAccountLocally: (account: AccountRecord) => void;
+  patchAccountDisabledLocally: (account: AccountRecord, disabled: boolean) => void;
   loadAccounts: (options?: { showLoading?: boolean }) => Promise<void>;
 }
 
 export default function useAccountsActions({
+  ready,
   t,
   trackRequest,
   apiKeyForm,
@@ -74,8 +79,30 @@ export default function useAccountsActions({
   setSearchTerm,
   setSelectedAccountIDs,
   removeDeletedAccountLocally,
+  patchAccountDisabledLocally,
   loadAccounts,
 }: UseAccountsActionsArgs) {
+  const toggleAccountDisabled = useCallback(
+    async (account: AccountRecord) => {
+      if (!ready || !canToggleRotationAccountDisabled(account)) {
+        return;
+      }
+
+      const nextDisabled = !account.disabled;
+      try {
+        await trackRequest('SetAccountDisabled', { id: account.id, disabled: nextDisabled }, () =>
+          SetAccountDisabled(account.id, nextDisabled)
+        );
+        patchAccountDisabledLocally(account, nextDisabled);
+        await loadAccounts({ showLoading: false });
+      } catch (error) {
+        console.error(error);
+        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
+      }
+    },
+    [loadAccounts, patchAccountDisabledLocally, ready, setDeleteError, trackRequest],
+  );
+
   const deleteAccount = useCallback(
     async (account: AccountRecord) => {
       setDeleteError('');
@@ -465,6 +492,7 @@ export default function useAccountsActions({
   );
 
   return {
+    toggleAccountDisabled,
     deleteAccount,
     uploadAccounts,
     openApiKeyModal,

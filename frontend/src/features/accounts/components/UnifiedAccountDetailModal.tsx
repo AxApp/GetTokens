@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
-import { DownloadAuthFile, GetAuthFileModels, NormalizeAuthFileContent } from '../../../../wailsjs/go/main/App';
+import {
+  CreateRateLimitRule,
+  DeleteRateLimitRule,
+  DownloadAuthFile,
+  GetAuthFileModels,
+  ListRateLimitRules,
+  NormalizeAuthFileContent,
+  UpdateRateLimitRule,
+} from '../../../../wailsjs/go/main/App';
 import { useDebug } from '../../../context/DebugContext';
 import { useI18n } from '../../../context/I18nContext';
 import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
@@ -371,6 +379,12 @@ function RateLimitSection({
       matchKey={usageSummary?.attributionKey}
       rateLimitStatus={rateLimitStatus}
       rateLimitStrategies={rateLimitStrategies ?? []}
+      rateLimitRulesAPI={{
+        list: ListRateLimitRules,
+        create: CreateRateLimitRule,
+        update: UpdateRateLimitRule,
+        delete: DeleteRateLimitRule,
+      }}
       onRateLimitRulesChanged={onRateLimitRulesChanged ?? (() => {})}
       t={t}
     />

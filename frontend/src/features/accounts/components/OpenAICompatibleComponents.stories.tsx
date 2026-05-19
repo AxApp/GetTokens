@@ -13,9 +13,11 @@ import {
   type ProviderVerifyState,
 } from '../model/openAICompatible';
 import OpenAICompatibleComposeModal from './OpenAICompatibleComposeModal';
+import OpenAICompatibleDetailModal from './OpenAICompatibleDetailModal';
 import OpenAICompatibleDetailPanel from './OpenAICompatibleDetailPanel';
 import OpenAICompatibleProviderCard from './OpenAICompatibleProviderCard';
 import OpenAICompatibleWorkspace from './OpenAICompatibleWorkspace';
+import type { RateLimitRulesAPI } from './RateLimitRulesSection';
 
 const meta = {
   title: 'Design System/Feature Components/OpenAI Compatible',
@@ -229,6 +231,13 @@ const rateLimitBlocked: RateLimitState = {
   ],
 };
 
+const rateLimitRulesAPI: RateLimitRulesAPI = {
+  list: async () => rateLimitBlocked.rules.map((item) => item.rule),
+  create: async (rule) => [...rateLimitBlocked.rules.map((item) => item.rule), { ...rule, id: 'created-rule' }],
+  update: async (rule) => rateLimitBlocked.rules.map((item) => (item.rule.id === rule.id ? rule : item.rule)),
+  delete: async () => undefined,
+};
+
 function ProviderCardSample({
   providerKey = 'verified',
   label,
@@ -309,6 +318,11 @@ function OpenAICompatibleOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Detail modal state</h3>
+        <DetailModalSample label="DS-DETAIL-MODAL-RATE-LIMIT" />
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Compose modal states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ComposeModalSample label="DS-COMPOSE-EMPTY" formKey="empty" />
@@ -327,6 +341,31 @@ const loadingRemoteModelsState: ProviderRemoteModelsState = {
   lastFetchedAt: null,
   configSignature: buildProviderConfigSignature(providers.verified),
 };
+
+function DetailModalSample({ label }: { label: string }) {
+  const { t } = useI18n();
+  return (
+    <ModalViewport label={label}>
+      <OpenAICompatibleDetailModal
+        t={t}
+        draft={detailDrafts.ready}
+        verifyState={signedVerifyState('verified')}
+        remoteModelsState={signedRemoteModelsState('verified')}
+        rateLimitStatus={rateLimitBlocked}
+        rateLimitRulesAPI={rateLimitRulesAPI}
+        error=""
+        saving={false}
+        onClose={() => undefined}
+        onChange={() => undefined}
+        onSave={() => undefined}
+        onVerify={() => undefined}
+        onFetchModels={() => undefined}
+        onApplyFetchedModels={() => undefined}
+        onRateLimitRulesChanged={() => undefined}
+      />
+    </ModalViewport>
+  );
+}
 
 function DetailPanelSample({
   label,
@@ -472,4 +511,8 @@ export const Compose: Story = {
 
 export const DetailPanel: Story = {
   render: () => <DetailPanelSample label="DS-DETAIL-READY" draftKey="ready" remoteState={signedRemoteModelsState('verified')} />,
+};
+
+export const DetailModal: Story = {
+  render: () => <DetailModalSample label="DS-DETAIL-MODAL-RATE-LIMIT" />,
 };

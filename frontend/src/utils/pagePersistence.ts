@@ -48,6 +48,10 @@ export interface FrameHashState {
   usageDeskWorkspace?: UsageDeskWorkspace;
 }
 
+interface FrameHashOptions {
+  density?: string | null;
+}
+
 export function isAppPage(value: string | null | undefined): value is AppPage {
   return typeof value === 'string' && appPages.has(value as AppPage);
 }
@@ -291,11 +295,15 @@ export function buildFrameHash(
   sessionManagementWorkspace: SessionManagementWorkspace,
   usageDeskWorkspace: UsageDeskWorkspace,
   detailID?: string | null,
+  options?: FrameHashOptions,
 ): string {
   const params = new URLSearchParams();
   params.set('frame', page);
   if (page === 'accounts' && accountWorkspace !== 'all') {
     params.set('workspace', accountWorkspace);
+  }
+  if (page === 'accounts' && (options?.density === 'compact' || options?.density === 'list')) {
+    params.set('density', options.density);
   }
   if (page === 'codex' && codexWorkspace !== 'feature-config') {
     params.set('workspace', codexWorkspace);

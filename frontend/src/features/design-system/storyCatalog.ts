@@ -124,6 +124,30 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/accounts/components/AccountsHeaderComponents.stories.tsx',
       },
       {
+        id: 'accounts-toolbar-components',
+        title: 'Accounts Toolbar Components',
+        storybookTitle: 'Design System/Feature Components/Accounts Toolbar',
+        path: 'frontend/src/features/accounts/components/AccountsToolbarComponents.stories.tsx',
+      },
+      {
+        id: 'account-group-section-components',
+        title: 'Account Group Section Components',
+        storybookTitle: 'Design System/Feature Components/Account Group Sections',
+        path: 'frontend/src/features/accounts/components/AccountGroupSectionComponents.stories.tsx',
+      },
+      {
+        id: 'account-proxy-route',
+        title: 'Account Proxy Route',
+        storybookTitle: 'Design System/Feature Components/Account Proxy Route',
+        path: 'frontend/src/features/accounts/components/AccountProxyRouteSection.stories.tsx',
+      },
+      {
+        id: 'rate-limit-rules',
+        title: 'Rate Limit Rules',
+        storybookTitle: 'Design System/Feature Components/Rate Limit Rules',
+        path: 'frontend/src/features/accounts/components/RateLimitRulesSection.stories.tsx',
+      },
+      {
         id: 'openai-compatible-components',
         title: 'OpenAI Compatible Components',
         storybookTitle: 'Design System/Feature Components/OpenAI Compatible',
@@ -140,6 +164,12 @@ export const designSystemStoryGroups = [
         title: 'Status Codex Features',
         storybookTitle: 'Design System/Feature Components/Status Codex Features',
         path: 'frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx',
+      },
+      {
+        id: 'status-local-cli-apply',
+        title: 'Status Local CLI Apply',
+        storybookTitle: 'Design System/Feature Components/Status Local CLI Apply',
+        path: 'frontend/src/features/status/components/StatusLocalCliApplyPanel.stories.tsx',
       },
       {
         id: 'status-snippet-panel',

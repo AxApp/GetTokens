@@ -684,6 +684,7 @@ function previewProjectedDetail(input: {
   hour: number;
   minute: number;
   model: string;
+  sessionID?: string;
   inputTokens: number;
   cachedInputTokens: number;
   outputTokens: number;
@@ -695,6 +696,8 @@ function previewProjectedDetail(input: {
     timestamp: timestamp.toISOString(),
     provider: 'codex',
     sourceKind: 'local_projected',
+    sessionID: input.sessionID ?? `sessions/2026/05/preview-${input.daysAgo}-${input.hour}-${input.minute}.jsonl`,
+    projectName: 'GetTokens',
     model: input.model,
     inputTokens: input.inputTokens,
     cachedInputTokens: input.cachedInputTokens,
