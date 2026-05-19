@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { DragEvent } from 'react';
+import type { DragEvent, ReactNode } from 'react';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
@@ -7,6 +7,7 @@ import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import type { CodexAccountRow, CodexRoutePolicyRowState } from '../model/codexAccountList';
 import type { CodexAccountOrderDisplayMode } from '../model/codexAccountOrderSectionLayout';
+import { CodexAccountDetailModal } from './CodexAccountDetailModal';
 import { AccountOrderRow } from './CodexAccountOrderRow';
 import { CodexAccountOrderSection } from './CodexAccountOrderSection';
 
@@ -286,6 +287,53 @@ function SectionSample({
   );
 }
 
+function DetailModalViewport({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <DesignSystemStoryFrame label={label}>
+      <div className="relative h-[38rem] min-w-0 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] [transform:translateZ(0)]">
+        {children}
+      </div>
+    </DesignSystemStoryFrame>
+  );
+}
+
+function DetailSample({
+  label,
+  row = rows[2],
+  savingMappings = false,
+  loadingModelMappings = false,
+  modelMappingError = '',
+  loadingModelOptions = false,
+  modelOptionError = '',
+}: {
+  label: string;
+  row?: CodexAccountRow;
+  savingMappings?: boolean;
+  loadingModelMappings?: boolean;
+  modelMappingError?: string;
+  loadingModelOptions?: boolean;
+  modelOptionError?: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <DetailModalViewport label={label}>
+      <CodexAccountDetailModal
+        row={row}
+        t={t}
+        savingMappings={savingMappings}
+        loadingModelMappings={loadingModelMappings}
+        modelMappingError={modelMappingError}
+        modelOptions={rows.flatMap((item) => item.modelMappings)}
+        codexModelOptions={rows[0].modelMappings}
+        loadingModelOptions={loadingModelOptions}
+        modelOptionError={modelOptionError}
+        onClose={() => undefined}
+        onSaveModelMappings={() => Promise.resolve()}
+      />
+    </DetailModalViewport>
+  );
+}
+
 function CodexAccountOrderOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
@@ -326,6 +374,15 @@ function CodexAccountOrderOverview() {
           </div>
         </div>
       </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Detail modal states</h3>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <DetailSample label="DS-DETAIL-MAPPED" row={rows[2]} />
+          <DetailSample label="DS-DETAIL-EMPTY" row={rows[3]} />
+          <DetailSample label="DS-DETAIL-SAVING" row={rows[2]} savingMappings loadingModelOptions />
+        </div>
+      </section>
     </div>
   );
 }
@@ -348,4 +405,8 @@ export const List: Story = {
 
 export const Section: Story = {
   render: () => <SectionSample label="DS-SECTION-COMPACT" density="compact" message="policy preview / 4 accounts" />,
+};
+
+export const Detail: Story = {
+  render: () => <DetailSample label="DS-DETAIL-MAPPED" row={rows[2]} />,
 };

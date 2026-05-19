@@ -435,6 +435,15 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - validation error
 3. 本批只验证 preset 选择、端点输入、API key / quota / billing 区块和错误条布局；不额外展开重复的 loading/disabled 场景，不触碰真实创建或 Wails 边界。
 
+## 2026-05-19 第二十一批 Feature Components：Codex Account Detail Modal
+1. 复用 `Design System/Feature Components/Codex Account Order`，继续收编 Codex 账号详情弹窗：
+   - `CodexAccountDetailModal`
+2. 新增 detail modal 状态矩阵，按场景收敛规则只保留：
+   - mapped
+   - empty models
+   - saving
+3. 本批只验证详情字段、模型映射 Combobox、空映射说明和保存中按钮状态；用 story 容器隔离 fixed modal，不触碰真实模型保存、Codex runtime 或 Wails 边界。
+
 ## 场景收敛规则
 1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。
 2. 对已经在同类组件中验证过的 loading、disabled、empty、error 行为，不重复为每个组件铺满；仅在该组件有独特布局或行为差异时新增状态。

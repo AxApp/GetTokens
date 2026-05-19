@@ -537,6 +537,19 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - validation error
 5. 本批给组件补充可选初始 step / preset / search props，Storybook 使用固定 form 和 preset mock；不触碰真实创建或 Wails 边界。
 
+### 第二十一批：Codex Account Detail Modal
+本批复用 Codex Account Order story，继续收 Codex 账号详情弹窗。
+
+1. 继续更新 `frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/Codex Account Order`。
+3. 本批 admitted 文件：
+   - `CodexAccountDetailModal.tsx`
+4. `Overview` 新增 detail modal 状态，并按场景收敛原则只保留：
+   - mapped
+   - empty models
+   - saving
+5. 本批只用固定 row、model mapping 和 handler mock；通过 story viewport 隔离 fixed modal，不触碰真实模型保存、Codex runtime 或 Wails 边界。
+
 ### 场景收敛规则
 后续收编组件时，优先保留能代表视觉或交互分支的最小状态集合；同类 loading / disabled / empty / error 已在基础模式覆盖时，不为每个组件重复铺场景。若多个业务动作共享同一视觉模式，归并到同一个设计系统场景并在文档中说明适用范围。
 
