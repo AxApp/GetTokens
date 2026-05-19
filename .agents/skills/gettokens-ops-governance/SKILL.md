@@ -32,6 +32,31 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Keep the screenshot script near docs, not inside ad-hoc shell history.
   - Reuse one stable output path per acceptance baseline instead of scattering `final/latest/temp` files.
 
+### 1.2 macOS Runtime Residency & App Lifecycle Settings
+- **When to use**:
+  - Settings adds or changes desktop lifecycle capabilities such as login item, close-window behavior, background service residency, status item, or app update entry points.
+  - A Wails feature touches both frontend settings state and macOS native runtime behavior.
+- **BDD/TDD baseline**:
+  1. Write the user-facing scenarios first: login startup on/off, close app quits service, close app keeps service, status item recovery, status item quit, and update action reuse.
+  2. Add focused failing tests before implementation. Cover Go runtime settings persistence / LaunchAgent intent / close policy, and frontend layout or state derivation for the settings page.
+  3. Keep implementation minimal until those tests pass, then only refactor with tests still green.
+- **Residency contract**:
+  - If "close window keeps service running" is supported, the app must provide a macOS status item or equivalent native recovery path before the window disappears.
+  - The status item must expose at least service status, reopen window, check update when applicable, and quit. A background service without visible recovery or quit control is not an acceptable end state.
+  - The quit action must be explicit and must not be confused with closing the main window.
+- **Wails binding contract**:
+  - Any new runtime settings DTO or method implemented under `internal/wailsapp` must be mirrored through root `app.go` / `app_types.go` before regenerating `frontend/wailsjs`.
+  - After binding generation, confirm the frontend imports are real generated exports, not preview-only shims.
+- **Preview contract**:
+  - Browser preview may be used for settings layout, copy, density, and screenshot review.
+  - Preview mode must not hard-crash when Wails runtime is absent; provide explicit fallback data or no-op handlers for preview.
+  - Preview screenshots do not replace real desktop validation for login item, close-window behavior, status item, or native updater actions.
+- **Acceptance checklist**:
+  - Run the relevant Go tests plus `go test ./...` when runtime behavior changes.
+  - Run the focused frontend unit tests for settings layout/state, then typecheck/build if bindings or shared frontend types changed.
+  - Verify the real macOS desktop app for top menu/status item presence and close/quit behavior.
+  - Archive before/after or final screenshots under the matching `space` path, separating browser-preview settings shots from desktop menu/status item shots.
+
 ## 2. Space Governance (`docs-linhay/spaces/`)
 - **Structure**: Each space must have `README.md`, `plans/`, `screenshots/`, and `debate/`.
 - **Naming**: Use English slugs. Prefer `YYYYMMDD-<topic>` for short tasks or stable feature names for milestones.
