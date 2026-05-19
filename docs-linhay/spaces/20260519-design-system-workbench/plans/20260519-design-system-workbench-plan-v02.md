@@ -392,6 +392,21 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - disabled / blocked
    - rate-limit blocked
 5. `CodexAccountOrderSection` 继续保持 candidate，下一批先处理预览环境固定或纯 view 抽离，再覆盖 ready/loading/empty/filter/action menu 状态。
+
+### 第十一批：OpenAI Compatible
+本批先收 OpenAI-compatible provider card，不直接收整个 workspace。
+
+1. 已新增 `frontend/src/features/accounts/components/OpenAICompatibleComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/OpenAI Compatible`。
+3. 本批 admitted 文件：
+   - `OpenAICompatibleProviderCard.tsx`
+4. `Overview` 同屏覆盖：
+   - verified / ready
+   - verify error
+   - disabled / no models
+   - pending delete / pending status
+   - rate-limit blocked
+5. `OpenAICompatibleWorkspace` 继续保持 candidate，下一批再处理 workspace 组合态。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

@@ -27,6 +27,8 @@ const accountModalStoryPath = 'frontend/src/features/accounts/components/Account
 const accountModalStorybookTitle = 'Design System/Feature Components/Account Modals';
 const accountCardStoryPath = 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx';
 const accountCardStorybookTitle = 'Design System/Feature Components/Account Cards';
+const openAICompatibleStoryPath = 'frontend/src/features/accounts/components/OpenAICompatibleComponents.stories.tsx';
+const openAICompatibleStorybookTitle = 'Design System/Feature Components/OpenAI Compatible';
 const accountRotationStoryPath = 'frontend/src/features/accounts/components/account-rotation/AccountRotationComponents.stories.tsx';
 const accountRotationStorybookTitle = 'Design System/Feature Components/Account Rotation';
 const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx';
@@ -268,12 +270,15 @@ export const designSystemComponentManifest = [
     componentName: 'OpenAICompatibleProviderCard',
     sourcePath: 'frontend/src/features/accounts/components/OpenAICompatibleProviderCard.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: 'provider 卡片为纯 props，能验证账号卡体系是否统一。',
+    decisionReason: 'OpenAI-compatible provider 卡片已通过 OpenAI Compatible story 收编，覆盖验证成功、验证错误、禁用、pending 和 rate-limit blocked。',
     matchedPatterns: ['DebugPanel EntryCard'],
-    suggestedDesignComponent: 'ProviderTelemetryCard',
-    requiredStates: ['ready', 'error', 'disabled'],
+    storyPath: openAICompatibleStoryPath,
+    storybookTitle: openAICompatibleStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'error', 'disabled', 'pending', 'rate-limit-blocked'],
+    mockDataSources: ['storybook openai-compatible provider/verify/usage/rate-limit mock'],
   },
   {
     id: 'accounts-openai-compatible-workspace',

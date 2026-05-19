@@ -332,3 +332,14 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - disabled / blocked 态
    - rate-limit blocked 态
 3. `CodexAccountOrderSection` 仍保持 `candidate`，因为它会读写 `localStorage/hash` 并依赖 action menu 尺寸测量；后续需固定预览环境或抽出纯 view 后再收编。
+
+## 2026-05-19 第十一批 Feature Components：OpenAI Compatible
+1. 新增 `Design System/Feature Components/OpenAI Compatible`，先收编 OpenAI-compatible provider 的纯展示卡：
+   - `OpenAICompatibleProviderCard`
+2. 新 story 使用固定 provider、verify state、usage 和 rate-limit mock，同屏覆盖：
+   - verified / ready
+   - verify error
+   - disabled / no models
+   - pending delete / pending status
+   - rate-limit blocked
+3. `OpenAICompatibleWorkspace` 仍保持 `candidate`，等待 provider card 稳定后再收组合级 loading / empty / grid / embedded 状态。

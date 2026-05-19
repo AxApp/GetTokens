@@ -118,6 +118,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx',
       },
       {
+        id: 'openai-compatible-components',
+        title: 'OpenAI Compatible Components',
+        storybookTitle: 'Design System/Feature Components/OpenAI Compatible',
+        path: 'frontend/src/features/accounts/components/OpenAICompatibleComponents.stories.tsx',
+      },
+      {
         id: 'status-relay-editors',
         title: 'Status Relay Editors',
         storybookTitle: 'Design System/Feature Components/Status Relay Editors',
