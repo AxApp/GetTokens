@@ -100,8 +100,9 @@ gh run view <run-id> --log-failed
 
 1. 本地优先使用 `docs-linhay/references/CLIProxyAPI`。
 2. CI 中该目录不存在时，脚本会 clone `https://github.com/AxApp/CLIProxyAPI.git`。
-3. 默认构建分支为 `gettokens/wham-token-fix`，必要时通过 `CLI_PROXY_SOURCE_REF` 覆盖。
+3. 默认构建分支为 `gettokens/sidecar`，必要时通过 `CLI_PROXY_SOURCE_REF` 覆盖。旧分支名 `gettokens/wham-token-fix` 已从 active fork 删除，不再作为新流程入口。
 4. app bundle 内 sidecar 必须与当前构建目标架构一致。
+5. 这里的 `AxApp/CLIProxyAPI` 是 GetTokens 维护 fork，只用于承载本项目补丁和 release 构建；canonical upstream 仍是 `router-for-me/CLIProxyAPI`。需要同步上游时从 `upstream=router-for-me/CLIProxyAPI` 合并，再推回维护 fork。
 
 ## 签名与公证配置
 

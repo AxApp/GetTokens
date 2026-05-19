@@ -177,8 +177,15 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Status Surface Verification Rule**: For browser-checkable Wails surfaces such as `#frame=status` or `#frame=session-management`, use `bb-browser` to verify the real rendered interaction and keep acceptance screenshots under `docs-linhay/screenshots/<date>/<module>/` when the fix is visual or interaction-sensitive.
 
 ## 8. CLIProxyAPI Fork Maintenance
-- **Remotes**: `origin` (AxApp), `linhay` (legacy fork backup), `upstream` (router-for-me).
-- **Workflow**: Sync upstream -> patch maintenance branch -> rebuild sidecar -> replace binary in `GetTokens.app`.
+- **Canonical Upstream**: The desired upstream source of truth is `router-for-me/CLIProxyAPI`. Treat it as the project to track for upstream sync, compatibility checks, and release-tag comparison.
+- **Remotes**: `upstream` = `router-for-me/CLIProxyAPI` (canonical upstream), `origin` = `AxApp/CLIProxyAPI` (maintained GetTokens fork), `linhay` = legacy fork backup.
+- **GitHub Fork Lineage**: As of 2026-05-19, `AxApp/CLIProxyAPI` was rebuilt as a fresh fork of `router-for-me/CLIProxyAPI`; GitHub reports `parent=router-for-me/CLIProxyAPI` and `source=router-for-me/CLIProxyAPI`.
+- **Legacy Backup**: The previous fork, whose immediate GitHub parent was `linhay/CLIProxyAPI`, was renamed to `AxApp/CLIProxyAPI-legacy-20260519`. Treat it as a backup only, not as the active release/build source.
+- **Fork Boundary**: `AxApp/CLIProxyAPI#gettokens/sidecar` carries GetTokens runtime patches and is the source used for release sidecar builds. The older `gettokens/wham-token-fix` branch name was a historical artifact and has been removed from the active fork.
+- **Codex Compatibility Ingress**: For OpenAI root-path compatibility needed by Codex-style clients, prefer centralized ingress normalization such as `/models` -> `/v1/models` and `/responses*` -> `/v1/responses*`. Do not scatter duplicate route handlers when a NoRoute rewrite can preserve the existing middleware and handler chain.
+- **Responses Tool Conversion**: The generic Responses-to-Chat converter should accept both flat `function` tool payloads and nested `tools[].function` payloads, and skip invalid function tools without a name.
+- **Reasoning Content Boundary**: Do not inject `reasoning_content` globally in the generic OpenAI Responses converter. Provider-specific response quirks belong in provider normalizers/executors such as the existing Kimi pattern.
+- **Workflow**: Sync from canonical upstream -> patch maintenance branch -> rebuild sidecar -> replace binary in `GetTokens.app`.
 - **Binary**: Sidecar binary lives at `build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api`.
 - **Fork Commit Order**: When the fork changes, commit inside `docs-linhay/references/CLIProxyAPI` first, then commit the parent repository gitlink and rebuilt sidecar artifacts. Do not leave the parent pointing at an uncommitted fork state.
 - **Rebuild Command**: After fork changes that affect runtime behavior, rebuild the local sidecar with `./scripts/ensure-sidecar.sh darwin arm64` before desktop or Proxyman acceptance.
