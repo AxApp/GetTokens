@@ -269,3 +269,19 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - unified diff 着色
    - 长行横向滚动
 3. `StatusPanels.tsx` 继续保持 `candidate`，后续拆分 Codex feature list 和 local apply 面板后再复查。
+
+## 2026-05-19 第六批 Feature Components：Usage Desk
+1. 新增 `Design System/Feature Components/Usage Desk`，收编 Usage Desk 已提取的纯展示组件：
+   - `UsageChartCard` / `EmptyChartPlaceholder`
+   - `UsageDetailTable`
+   - `StatePanel`
+   - `InfoCard`
+   - `UsageSessionDrilldownPanel`
+2. 新 story 使用固定 mock 用量数据，同屏覆盖：
+   - 双曲线 usage chart
+   - 图表选中点和 footer 状态
+   - 图表空态
+   - projected 明细表和选中行
+   - totals info cards
+   - session drilldown 列表和空会话状态
+3. 本批只收编 `components/usage-desk/` 下的展示组件，不触碰 Usage Desk 的数据加载、Wails 绑定或现有业务状态。

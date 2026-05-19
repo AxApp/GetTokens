@@ -1,0 +1,256 @@
+import { useMemo, useState } from 'react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import DesignSystemStoryFrame from '../../../design-system/DesignSystemStoryFrame';
+import type { UsageDeskChartUnit, UsageDeskProjectedSessionUsage } from '../../model/usageDesk';
+import {
+  EmptyChartPlaceholder,
+  UsageChartCard,
+} from './UsageDeskChart';
+import {
+  buildUsageDetailRowKey,
+  resolveUsageDetailColumns,
+  UsageDetailTable,
+  type UsageDetailTableRow,
+} from './UsageDetailTable';
+import {
+  InfoCard,
+  StatePanel,
+  UsageSessionDrilldownPanel,
+} from './UsageDeskPanels';
+
+const meta = {
+  title: 'Design System/Feature Components/Usage Desk',
+  parameters: {
+    layout: 'fullscreen',
+  },
+} satisfies Meta;
+
+export default meta;
+type Story = StoryObj;
+
+const dailyTokenPoints = [
+  { label: '05-13', value: 184000, color: '#111111', drilldownDayKey: '2026-05-13' },
+  { label: '05-14', value: 226000, color: '#111111', drilldownDayKey: '2026-05-14' },
+  { label: '05-15', value: 198000, color: '#111111', drilldownDayKey: '2026-05-15' },
+  { label: '05-16', value: 314000, color: '#111111', drilldownDayKey: '2026-05-16' },
+  { label: '05-17', value: 286000, color: '#111111', drilldownDayKey: '2026-05-17' },
+  { label: '05-18', value: 418000, color: '#111111', drilldownDayKey: '2026-05-18' },
+  { label: '05-19', value: 352000, color: '#111111', drilldownDayKey: '2026-05-19' },
+];
+
+const projectedTokenPoints = [
+  { label: '05-13', value: 132000, color: '#777777' },
+  { label: '05-14', value: 188000, color: '#777777' },
+  { label: '05-15', value: 176000, color: '#777777' },
+  { label: '05-16', value: 274000, color: '#777777' },
+  { label: '05-17', value: 242000, color: '#777777' },
+  { label: '05-18', value: 365000, color: '#777777' },
+  { label: '05-19', value: 318000, color: '#777777' },
+];
+
+const minuteRows: UsageDetailTableRow[] = [
+  {
+    timeLabel: '22:10',
+    provider: 'codex',
+    model: 'gpt-5.2',
+    metric: 'tokens',
+    value: '48.2K',
+    requests: '12',
+    inputTokens: '31.4K',
+    cachedInputTokens: '9.8K',
+    outputTokens: '7.0K',
+    note: 'local session',
+    drilldownDayKey: '2026-05-19',
+  },
+  {
+    timeLabel: '22:20',
+    provider: 'codex',
+    model: 'gpt-5.2-mini',
+    metric: 'tokens',
+    value: '32.7K',
+    requests: '8',
+    inputTokens: '18.6K',
+    cachedInputTokens: '7.1K',
+    outputTokens: '7.0K',
+    note: 'background task',
+    drilldownDayKey: '2026-05-19',
+  },
+  {
+    timeLabel: '22:30',
+    provider: 'codex',
+    model: 'gpt-5.2',
+    metric: 'tokens',
+    value: '61.5K',
+    requests: '15',
+    inputTokens: '39.2K',
+    cachedInputTokens: '12.3K',
+    outputTokens: '10.0K',
+    note: 'selected bucket',
+    drilldownDayKey: '2026-05-19',
+  },
+];
+
+const sessionRows: UsageDeskProjectedSessionUsage[] = [
+  {
+    sessionID: 'session-20260519-a',
+    fileLabel: 'codex-design-system.md',
+    model: 'gpt-5.2',
+    requests: 14,
+    totalTokens: 84500,
+    inputTokens: 52100,
+    cachedInputTokens: 18800,
+    outputTokens: 13600,
+    latestTimestamp: '2026-05-19T22:32:00+08:00',
+  },
+  {
+    sessionID: 'session-20260519-b',
+    fileLabel: 'storybook-regression.md',
+    model: 'gpt-5.2-mini',
+    requests: 6,
+    totalTokens: 27200,
+    inputTokens: 16100,
+    cachedInputTokens: 5400,
+    outputTokens: 5700,
+    latestTimestamp: '2026-05-19T22:26:00+08:00',
+  },
+];
+
+function ChartSample({
+  unit = 'tokens',
+  empty = false,
+}: {
+  unit?: UsageDeskChartUnit;
+  empty?: boolean;
+}) {
+  const [selectedPointKey, setSelectedPointKey] = useState('05-18');
+
+  if (empty) {
+    return (
+      <DesignSystemStoryFrame label="DS-EMPTY">
+        <EmptyChartPlaceholder
+          title="NO USAGE DATA"
+          body="This state keeps the grid context visible while explaining why the chart has no measurable series."
+        />
+      </DesignSystemStoryFrame>
+    );
+  }
+
+  return (
+    <DesignSystemStoryFrame label="DS-CHART">
+      <UsageChartCard
+        unit={unit}
+        summaryItems={['7D TOKENS 1.98M', 'REQUESTS 184', 'CACHE HIT 32%']}
+        controls={
+          <div className="flex w-full flex-wrap gap-2 p-3">
+            <button type="button" className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
+              7D
+            </button>
+            <button type="button" className="btn-swiss bg-[var(--text-primary)] !px-3 !py-1 !text-[0.5625rem] !text-[var(--bg-main)]">
+              TOKENS
+            </button>
+          </div>
+        }
+        primary={dailyTokenPoints}
+        secondary={projectedTokenPoints}
+        selectedPointKey={selectedPointKey}
+        onSelectPoint={(key) => setSelectedPointKey(key)}
+        status={
+          <>
+            <span className="font-mono text-[0.625rem] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
+              Usage curve
+            </span>
+            <span className="font-mono text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              mock data
+            </span>
+          </>
+        }
+        footerExtra={
+          <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[0.5625rem] font-black uppercase">
+            selected {selectedPointKey}
+          </span>
+        }
+      />
+    </DesignSystemStoryFrame>
+  );
+}
+
+function TableSample({ empty = false }: { empty?: boolean }) {
+  const rows = empty ? [] : minuteRows;
+  const columns = useMemo(() => resolveUsageDetailColumns(rows), [rows]);
+  const [selectedRowKey, setSelectedRowKey] = useState(rows[2] ? buildUsageDetailRowKey(rows[2]) : '');
+
+  return (
+    <DesignSystemStoryFrame label="DS-TABLE">
+      <UsageDetailTable
+        rows={rows}
+        columns={columns}
+        selectedRowKey={selectedRowKey}
+        onSelectRow={(rowKey) => setSelectedRowKey(rowKey)}
+      />
+    </DesignSystemStoryFrame>
+  );
+}
+
+function PanelsSample({ emptySessions = false }: { emptySessions?: boolean }) {
+  return (
+    <DesignSystemStoryFrame label="DS-PANEL">
+      <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-3">
+          <InfoCard title="TOTAL TOKENS" highlight="1.98M" body="Projected local usage across selected workspaces." />
+          <InfoCard title="REQUESTS" highlight="184" body="Minute buckets preserve the current drilldown selection." />
+          <StatePanel title="SYNC STATE" body="The current view is using stable preview data." />
+        </div>
+        <UsageSessionDrilldownPanel
+          title="2026-05-19 22:30"
+          rows={emptySessions ? [] : sessionRows}
+        />
+      </div>
+    </DesignSystemStoryFrame>
+  );
+}
+
+function UsageDeskOverview() {
+  return (
+    <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
+      <div>
+        <h2 className="text-2xl font-black uppercase italic tracking-normal">Usage Desk Components</h2>
+        <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
+          把 Usage Desk 中已经提取的图表、明细表、信息卡和会话下钻面板纳入设计系统，用固定 mock 数据检查曲线、空态、选中行和高密度指标布局。
+        </p>
+      </div>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">图表状态</h3>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,0.55fr)]">
+          <ChartSample />
+          <ChartSample empty />
+        </div>
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">明细表与面板</h3>
+        <div className="grid gap-4">
+          <TableSample />
+          <PanelsSample />
+          <PanelsSample emptySessions />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export const Overview: Story = {
+  render: () => <UsageDeskOverview />,
+};
+
+export const Chart: Story = {
+  render: () => <ChartSample />,
+};
+
+export const Table: Story = {
+  render: () => <TableSample />,
+};
+
+export const Panels: Story = {
+  render: () => <PanelsSample />,
+};

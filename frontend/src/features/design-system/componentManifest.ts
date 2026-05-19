@@ -29,6 +29,8 @@ const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/Sta
 const statusRelayEditorsStorybookTitle = 'Design System/Feature Components/Status Relay Editors';
 const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx';
 const statusSnippetPanelStorybookTitle = 'Design System/Feature Components/Status Snippet Panel';
+const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx';
+const usageDeskStorybookTitle = 'Design System/Feature Components/Usage Desk';
 
 export const designSystemComponentManifest = [
   {
@@ -351,36 +353,45 @@ export const designSystemComponentManifest = [
     componentName: 'UsageDeskChart',
     sourcePath: 'frontend/src/features/accounts/components/usage-desk/UsageDeskChart.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: 'usage chart 为纯 props 且视觉敏感，适合独立截图回归。',
+    decisionReason: 'Usage Desk 图表已通过 Usage Desk story 收编，覆盖双曲线、选中点、控件区和空态。',
     matchedPatterns: ['DebugPanel state matrix'],
-    suggestedDesignComponent: 'UsageCurveChart',
+    storyPath: usageDeskStoryPath,
+    storybookTitle: usageDeskStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['observed', 'projected', 'empty'],
+    mockDataSources: ['storybook usage chart point mock'],
   },
   {
     id: 'accounts-usage-desk-panels',
     componentName: 'UsageDeskPanels',
     sourcePath: 'frontend/src/features/accounts/components/usage-desk/UsageDeskPanels.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: 'usage 状态面板和 session drilldown 为纯 props，可用 mock 数据收编。',
+    decisionReason: 'Usage Desk 信息面板和 session drilldown 已通过 Usage Desk story 收编，覆盖 totals、session rows 和空会话。',
     matchedPatterns: ['DebugPanel Empty', 'DebugPanel EntryCard'],
-    suggestedDesignComponent: 'UsageStatePanel',
+    storyPath: usageDeskStoryPath,
+    storybookTitle: usageDeskStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['totals', 'session-drilldown', 'empty'],
+    mockDataSources: ['storybook usage session mock'],
   },
   {
     id: 'accounts-usage-detail-table',
     componentName: 'UsageDetailTable',
     sourcePath: 'frontend/src/features/accounts/components/usage-desk/UsageDetailTable.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '可选中明细表为纯 props，适合表格/选中状态矩阵。',
+    decisionReason: 'Usage 明细表已通过 Usage Desk story 收编，覆盖 projected columns、选中行和空表。',
     matchedPatterns: ['DebugPanel log table'],
-    suggestedDesignComponent: 'SelectableMetricTable',
+    storyPath: usageDeskStoryPath,
+    storybookTitle: usageDeskStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['daily', 'selected', 'empty'],
+    mockDataSources: ['storybook usage minute row mock'],
   },
   {
     id: 'codex-binary-summary-panel',

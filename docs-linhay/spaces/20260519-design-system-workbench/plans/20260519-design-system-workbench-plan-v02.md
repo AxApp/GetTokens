@@ -311,6 +311,24 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - unified diff add/remove/hunk 着色
    - 长行横向滚动
 5. `StatusPanels.tsx` 仍保持 candidate，剩余 local apply / Codex feature list 后续继续拆分收编。
+
+### 第六批：Usage Desk
+本批收编账号域下 Usage Desk 已提取的纯展示组件，但不碰数据加载和 Wails 运行时边界。
+
+1. 已新增 `frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Usage Desk`。
+3. 本批 admitted 文件：
+   - `UsageDeskChart.tsx`
+   - `UsageDetailTable.tsx`
+   - `UsageDeskPanels.tsx`
+4. `Overview` 同屏覆盖：
+   - 双曲线 chart
+   - chart 空态
+   - selected point / footer 状态
+   - projected minute table 和选中行
+   - info cards
+   - session drilldown rows / empty rows
+5. 后续仍需处理账号域更重的弹窗、规则编辑器和完整 workspace 组合组件。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

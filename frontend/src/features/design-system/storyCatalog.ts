@@ -129,6 +129,12 @@ export const designSystemStoryGroups = [
         storybookTitle: 'Design System/Feature Components/Status Snippet Panel',
         path: 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx',
       },
+      {
+        id: 'usage-desk-components',
+        title: 'Usage Desk Components',
+        storybookTitle: 'Design System/Feature Components/Usage Desk',
+        path: 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx',
+      },
     ],
   },
 ] as const satisfies readonly DesignSystemStoryGroup[];
