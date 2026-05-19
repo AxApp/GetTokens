@@ -57,6 +57,7 @@ import type {
   TrackRequest,
   Translator,
 } from '../model/types';
+import { shouldEnsureAccountSnapshot } from '../model/accountSnapshot';
 
 type OAuthFlowState =
   | {
@@ -97,6 +98,8 @@ interface UseAccountsPageStateArgs {
   headerActionsMenuRef: MutableRefObject<HTMLDivElement | null>;
 }
 
+export type AccountsPageState = ReturnType<typeof useAccountsPageState>;
+
 export default function useAccountsPageState({
   ready,
   t,
@@ -107,6 +110,7 @@ export default function useAccountsPageState({
   const [derivedAuthFileRecords, setDerivedAuthFileRecords] = useState<AccountRecord[]>([]);
   const [apiKeyRecords, setApiKeyRecords] = useState<AccountRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState<AccountsFilterState>(() =>
     typeof window === 'undefined' ? defaultAccountsFilterState : readStoredAccountsFilterState(window.localStorage)
@@ -225,6 +229,7 @@ export default function useAccountsPageState({
       setAuthFiles(files);
       setDerivedAuthFileRecords([]);
       setApiKeyRecords(apiKeyAccounts);
+      setAccountsLoaded(true);
       setPendingDeleteID(null);
       setSelectedAccountIDs((prev) =>
         filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
@@ -255,6 +260,7 @@ export default function useAccountsPageState({
       setAuthFiles(files);
       setDerivedAuthFileRecords(files.length === 0 ? nextAuthFileRecords : []);
       setApiKeyRecords(apiKeyAccounts);
+      setAccountsLoaded(true);
       setPendingDeleteID(null);
       setSelectedAccountIDs((prev) =>
         filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
@@ -308,10 +314,10 @@ export default function useAccountsPageState({
   );
 
   useEffect(() => {
-    if (ready) {
+    if (shouldEnsureAccountSnapshot({ ready, loaded: accountsLoaded, loading })) {
       void loadAccounts();
     }
-  }, [ready, loadAccounts]);
+  }, [accountsLoaded, loading, ready, loadAccounts]);
 
   useEffect(() => {
     if (!oauthFlow) {

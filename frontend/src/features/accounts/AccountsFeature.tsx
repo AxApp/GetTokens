@@ -13,7 +13,6 @@ import {
 import { main } from '../../../wailsjs/go/models';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
-import type { SidecarStatus } from '../../types';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountRotationModal from './components/AccountRotationModal';
 import AccountGroupSection from './components/AccountGroupSection';
@@ -26,14 +25,13 @@ import OpenAICompatibleDetailModal from './components/OpenAICompatibleDetailModa
 import PasteAuthModal from './components/PasteAuthModal';
 import UnifiedComposeModal, { type UnifiedComposeFormState } from './components/UnifiedComposeModal';
 import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
-import useAccountsPageState from './hooks/useAccountsPageState';
+import { useAccountsPageStateContext } from './AccountsPageStateProvider';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
 import { isCodexAuthFile } from './model/accountPresentation';
 import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
 import { buildAccountDetailFrameHash, clearAccountDetailFrameHash } from '../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../utils/previewMode';
-import { shouldLoadAccountsData } from './model/accountRuntime';
 import type { AccountRecord } from './model/types';
 import {
   ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY,
@@ -51,61 +49,14 @@ import type { VendorPreset } from './model/vendorPresets';
 import { emptyApiKeyForm } from './model/accountConfig';
 
 interface AccountsFeatureProps {
-  sidecarStatus: SidecarStatus;
   workspace?: string;
 }
 
-export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps) {
+export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
   const pageRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const headerActionsMenuRef = useRef<HTMLDivElement | null>(null);
-
-  const ready = shouldLoadAccountsData(sidecarStatus, hasWailsAppBindings());
-
-  const [isUnifiedComposeOpen, setIsUnifiedComposeOpen] = useState(false);
-  const [unifiedComposeForm, setUnifiedComposeForm] = useState<UnifiedComposeFormState>({
-    ...emptyApiKeyForm,
-    formatBaseUrls: {},
-    billingCurl: '',
-    billingEnabled: false,
-  });
-  const [unifiedComposeError, setUnifiedComposeError] = useState('');
-  const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() => readInitialDisplayMode());
-
-  const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
-  const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
-    if (!ready) {
-      setRelayModelNames([]);
-      return;
-    }
-    try {
-      const result = await ListRelaySupportedModels();
-      if (isCancelled()) return;
-      const models = result?.models || [];
-      setRelayModelNames(models.map((m) => m.name).filter(Boolean));
-    } catch {
-      if (!isCancelled()) setRelayModelNames([]);
-    }
-  }, [ready]);
-
-  const openAICompatibleState = useOpenAICompatibleState({
-    ready,
-    t,
-    trackRequest,
-  });
-  const relayModelProviderSignature = useMemo(
-    () => buildRelayModelProviderSignature(openAICompatibleState.providers),
-    [openAICompatibleState.providers],
-  );
-  useEffect(() => {
-    let cancelled = false;
-    void loadRelayModelNames(() => cancelled);
-    return () => {
-      cancelled = true;
-    };
-  }, [loadRelayModelNames, relayModelProviderSignature]);
   const {
     loading,
     searchTerm,
@@ -177,12 +128,52 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
     updateSelectedApiKeyConfig,
-  } = useAccountsPageState({
+    ready,
+    headerActionsMenuRef,
+  } = useAccountsPageStateContext();
+
+  const [isUnifiedComposeOpen, setIsUnifiedComposeOpen] = useState(false);
+  const [unifiedComposeForm, setUnifiedComposeForm] = useState<UnifiedComposeFormState>({
+    ...emptyApiKeyForm,
+    formatBaseUrls: {},
+    billingCurl: '',
+    billingEnabled: false,
+  });
+  const [unifiedComposeError, setUnifiedComposeError] = useState('');
+  const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() => readInitialDisplayMode());
+
+  const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
+  const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
+    if (!ready) {
+      setRelayModelNames([]);
+      return;
+    }
+    try {
+      const result = await ListRelaySupportedModels();
+      if (isCancelled()) return;
+      const models = result?.models || [];
+      setRelayModelNames(models.map((m) => m.name).filter(Boolean));
+    } catch {
+      if (!isCancelled()) setRelayModelNames([]);
+    }
+  }, [ready]);
+
+  const openAICompatibleState = useOpenAICompatibleState({
     ready,
     t,
     trackRequest,
-    headerActionsMenuRef,
   });
+  const relayModelProviderSignature = useMemo(
+    () => buildRelayModelProviderSignature(openAICompatibleState.providers),
+    [openAICompatibleState.providers],
+  );
+  useEffect(() => {
+    let cancelled = false;
+    void loadRelayModelNames(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadRelayModelNames, relayModelProviderSignature]);
   useEffect(() => {
     if (selectedAccount?.credentialSource !== 'api-key') {
       return;

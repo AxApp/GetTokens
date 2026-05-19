@@ -7,6 +7,7 @@ import { TextScaleProvider, useTextScale } from './context/TextScaleContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { getTextScaleAttributeValue } from './context/textScale';
 import { applyTextScaleVariables } from './features/settings/settingsTextScale';
+import { AccountsPageStateProvider } from './features/accounts/AccountsPageStateProvider';
 import { useAppBootstrap } from './hooks/useAppBootstrap';
 import { useAppNavigation } from './hooks/useAppNavigation';
 
@@ -106,7 +107,7 @@ function AppShell() {
         />
       );
     }
-    return <AccountsPage sidecarStatus={sidecarStatus} workspace="all" />;
+    return <AccountsPage workspace="all" />;
   }, [
     activeCodexWorkspace,
     activePage,
@@ -119,23 +120,25 @@ function AppShell() {
   ]);
 
   return (
-    <div
-      className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]"
-      data-collaboration-id="MAIN_FRAME"
-      data-design-system-highlight={import.meta.env.DEV ? 'project' : undefined}
-      data-text-scale={getTextScaleAttributeValue(textScale)}
-    >
-      <Sidebar
-        activePage={activePage}
-        setActivePage={setActivePage}
-        activeCodexWorkspace={activeCodexWorkspace}
-        setActiveCodexWorkspace={setActiveCodexWorkspace}
-        releaseLabel={releaseLabel}
-      />
-      <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">
-        <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>
-      </main>
-    </div>
+    <AccountsPageStateProvider sidecarStatus={sidecarStatus}>
+      <div
+        className="flex h-screen w-screen overflow-hidden bg-[var(--bg-main)] selection:bg-[var(--border-color)] selection:text-[var(--bg-main)]"
+        data-collaboration-id="MAIN_FRAME"
+        data-design-system-highlight={import.meta.env.DEV ? 'project' : undefined}
+        data-text-scale={getTextScaleAttributeValue(textScale)}
+      >
+        <Sidebar
+          activePage={activePage}
+          setActivePage={setActivePage}
+          activeCodexWorkspace={activeCodexWorkspace}
+          setActiveCodexWorkspace={setActiveCodexWorkspace}
+          releaseLabel={releaseLabel}
+        />
+        <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">
+          <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>
+        </main>
+      </div>
+    </AccountsPageStateProvider>
   );
 }
 
