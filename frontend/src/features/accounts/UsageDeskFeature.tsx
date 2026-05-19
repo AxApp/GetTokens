@@ -9,7 +9,7 @@ import {
 import { usageDeskProjectedSurfaceViewOptions } from './model/usageDesk';
 import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
-import { InfoCard, StatePanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
+import { InfoCard, StatePanel, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
 
 export default function UsageDeskFeature({
   sidecarStatus,
@@ -52,6 +52,7 @@ export default function UsageDeskFeature({
     projectedSummaryItems,
     projectedChartUnit,
     projectedPrimaryChartPoints,
+    selectedProjectedProjectUsages,
     selectedProjectedSessionUsages,
     selectedProjectedSessionUsageLabel,
     activeDetailRows,
@@ -308,7 +309,13 @@ export default function UsageDeskFeature({
                             onSelectPoint={handleChartPointSelect}
                             curveMotion="realtime"
                             surfaceContent={
-                              projectedSurfaceView === 'sessions' ? (
+                              projectedSurfaceView === 'projects' ? (
+                                <UsageProjectDrilldownPanel
+                                  title={selectedProjectedSessionUsageLabel.replace('本地会话', '项目汇总') || '项目汇总'}
+                                  rows={selectedProjectedProjectUsages}
+                                  embedded
+                                />
+                              ) : projectedSurfaceView === 'sessions' ? (
                                 <UsageSessionDrilldownPanel
                                   title={selectedProjectedSessionUsageLabel || '本地会话'}
                                   rows={selectedProjectedSessionUsages}
@@ -394,8 +401,8 @@ export default function UsageDeskFeature({
                                   <div className="flex items-center border-2 border-[var(--border-color)] p-0.5 bg-[var(--bg-surface)]">
                                     {usageDeskProjectedSurfaceViewOptions.map((option) => {
                                       const active =
-                                        option.id === 'sessions'
-                                          ? projectedSurfaceView === 'sessions'
+                                        option.id === 'projects' || option.id === 'sessions'
+                                          ? projectedSurfaceView === option.id
                                           : projectedSurfaceView === 'chart' && viewScale === option.id;
                                       return (
                                         <button

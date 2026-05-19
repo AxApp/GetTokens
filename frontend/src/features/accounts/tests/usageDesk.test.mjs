@@ -53,7 +53,7 @@ test('buildUsageDeskChartValueScale compresses extreme outliers without changing
 test('projected surface view options include a local sessions mode', () => {
   assert.deepEqual(
     usageDeskProjectedSurfaceViewOptions.map((option) => option.id),
-    ['daily', 'minute', 'sessions'],
+    ['daily', 'minute', 'projects', 'sessions'],
   );
 });
 

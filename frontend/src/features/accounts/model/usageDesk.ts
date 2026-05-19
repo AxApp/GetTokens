@@ -191,11 +191,12 @@ export interface UsageDeskProjectedStats {
 }
 
 export type UsageDeskChartUnit = 'count' | 'tokens';
-export type UsageDeskProjectedSurfaceView = 'daily' | 'minute' | 'sessions';
+export type UsageDeskProjectedSurfaceView = 'daily' | 'minute' | 'projects' | 'sessions';
 
 export const usageDeskProjectedSurfaceViewOptions: Array<{ id: UsageDeskProjectedSurfaceView; label: string }> = [
   { id: 'daily', label: '天级趋势' },
   { id: 'minute', label: '分钟明细' },
+  { id: 'projects', label: '项目汇总' },
   { id: 'sessions', label: '会话列表' },
 ];
 

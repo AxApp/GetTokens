@@ -1,9 +1,9 @@
 import { type ReactNode } from 'react';
 import {
-  buildUsageDeskProjectedProjectUsageRows,
   formatUsageDeskChartValue,
   usageDeskProjectDrilldownColumnLabels,
   usageDeskSessionDrilldownColumnLabels,
+  type UsageDeskProjectedProjectUsage,
   type UsageDeskProjectedSessionUsage,
 } from '../../model/usageDesk';
 
@@ -41,8 +41,6 @@ export function UsageSessionDrilldownPanel({
   rows: UsageDeskProjectedSessionUsage[];
   embedded?: boolean;
 }) {
-  const projectRows = buildUsageDeskProjectedProjectUsageRows(rows);
-
   return (
     <section className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden' : 'border-2 border-[var(--border-color)]'} bg-[var(--bg-main)]`}>
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-[var(--border-color)] px-4 py-3">
@@ -57,45 +55,6 @@ export function UsageSessionDrilldownPanel({
 
       {rows.length > 0 ? (
         <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
-          <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-            <div className="flex items-center justify-between gap-3 px-3 py-2">
-              <div className="text-[0.5625rem] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">PROJECT TOTALS</div>
-              <div className="text-[0.625rem] font-black text-[var(--text-primary)]">
-                {new Intl.NumberFormat('zh-CN').format(projectRows.length)} 个项目
-              </div>
-            </div>
-            <table className="w-full min-w-[920px] border-collapse">
-              <thead>
-                <tr>
-                  {usageDeskProjectDrilldownColumnLabels.map((label) => (
-                    <th
-                      key={label}
-                      className="border-y border-dashed border-[var(--border-color)] px-3 py-1 text-left text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {projectRows.map((project) => (
-                  <tr key={project.projectName} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
-                    <td className="max-w-[300px] px-3 py-1.5 text-[0.6875rem] font-black leading-4 text-[var(--text-primary)]">
-                      <div className="truncate">{project.projectName}</div>
-                    </td>
-                    <ProjectUsageCell value={formatUsageDeskChartValue(project.sessions, 'count').replace('次', '个')} />
-                    <ProjectUsageCell value={project.model || '--'} />
-                    <ProjectUsageCell value={formatUsageDeskChartValue(project.requests, 'count')} />
-                    <ProjectUsageCell value={formatUsageDeskChartValue(project.totalTokens, 'tokens')} />
-                    <ProjectUsageCell value={formatUsageDeskChartValue(project.inputTokens, 'tokens')} />
-                    <ProjectUsageCell value={formatUsageDeskChartValue(project.cachedInputTokens, 'tokens')} />
-                    <ProjectUsageCell value={formatUsageDeskChartValue(project.outputTokens, 'tokens')} />
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
           <table className="w-full min-w-[920px] border-collapse">
             <thead>
               <tr className="bg-[var(--bg-surface)]">
@@ -132,6 +91,69 @@ export function UsageSessionDrilldownPanel({
       ) : (
         <div className="px-4 py-5 text-[0.6875rem] font-bold leading-6 text-[var(--text-muted)]">
           当前用量没有可关联会话。
+        </div>
+      )}
+    </section>
+  );
+}
+
+export function UsageProjectDrilldownPanel({
+  title,
+  rows,
+  embedded = false,
+}: {
+  title: string;
+  rows: UsageDeskProjectedProjectUsage[];
+  embedded?: boolean;
+}) {
+  return (
+    <section className={`${embedded ? 'flex h-[280px] flex-col overflow-hidden' : 'border-2 border-[var(--border-color)]'} bg-[var(--bg-main)]`}>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b-2 border-dashed border-[var(--border-color)] px-4 py-3">
+        <div>
+          <div className="text-[0.5625rem] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">PROJECT TOTALS</div>
+          <h3 className="mt-1 text-[0.9375rem] font-black uppercase text-[var(--text-primary)]">{title}</h3>
+        </div>
+        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1 text-[0.6875rem] font-black text-[var(--text-primary)]">
+          {new Intl.NumberFormat('zh-CN').format(rows.length)} 个项目
+        </div>
+      </div>
+
+      {rows.length > 0 ? (
+        <div className={`${embedded ? 'flex-1 overflow-auto' : 'overflow-x-auto'}`}>
+          <table className="w-full min-w-[920px] border-collapse">
+            <thead>
+              <tr className="bg-[var(--bg-surface)]">
+                {usageDeskProjectDrilldownColumnLabels.map((label) => (
+                  <th
+                    key={label}
+                    className="sticky top-0 z-10 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-1.5 text-left text-[0.5625rem] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]"
+                  >
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((project) => (
+                <tr key={project.projectName} className="border-t border-dashed border-[var(--border-color)] first:border-t-0">
+                  <td className="max-w-[300px] px-3 py-1.5 text-[0.6875rem] font-black leading-4 text-[var(--text-primary)]">
+                    <div className="truncate">{project.projectName}</div>
+                  </td>
+                  <ProjectUsageCell value={formatUsageDeskChartValue(project.sessions, 'count').replace('次', '个')} />
+                  <ProjectUsageCell value={project.model || '--'} />
+                  <ProjectUsageCell value={formatUsageDeskChartValue(project.requests, 'count')} />
+                  <ProjectUsageCell value={formatUsageDeskChartValue(project.totalTokens, 'tokens')} />
+                  <ProjectUsageCell value={formatUsageDeskChartValue(project.inputTokens, 'tokens')} />
+                  <ProjectUsageCell value={formatUsageDeskChartValue(project.cachedInputTokens, 'tokens')} />
+                  <ProjectUsageCell value={formatUsageDeskChartValue(project.outputTokens, 'tokens')} />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="px-4 py-5 text-[0.6875rem] font-bold leading-6 text-[var(--text-muted)]">
+          当前用量没有可聚合项目。
         </div>
       )}
     </section>

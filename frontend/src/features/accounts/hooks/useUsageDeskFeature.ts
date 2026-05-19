@@ -20,6 +20,7 @@ import {
 import {
   buildUsageDeskChartPointStyle,
   buildUsageDeskObservedSummaryItems,
+  buildUsageDeskProjectedProjectUsageRows,
   buildUsageDeskProjectedSessionBucketKey,
   buildUsageDeskObservedSnapshot,
   buildUsageDeskProjectedSnapshot,
@@ -32,6 +33,7 @@ import {
   type UsageDeskChartUnit,
   type UsageDeskMinuteRow,
   type UsageDeskProjectedDailyPoint,
+  type UsageDeskProjectedProjectUsage,
   type UsageDeskProjectedSessionUsage,
   type UsageDeskProjectedSurfaceView,
   type UsageDeskRangeOption,
@@ -119,7 +121,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const [projectedActionMessage, setProjectedActionMessage] = useState('');
   const [projectedProgress, setProjectedProgress] = useState<LocalUsageProgressEvent | null>(null);
   const [projectedChartMetric, setProjectedChartMetric] = useState<ProjectedChartMetric>('tokens');
-  const [projectedSurfaceView, setProjectedSurfaceView] = useState<'chart' | 'sessions'>('chart');
+  const [projectedSurfaceView, setProjectedSurfaceView] = useState<'chart' | 'projects' | 'sessions'>('chart');
   const [selectedDetailRowKey, setSelectedDetailRowKey] = useState('');
   const [selectedChartPointKey, setSelectedChartPointKey] = useState('');
   const [detailTransitionActive, setDetailTransitionActive] = useState(false);
@@ -467,6 +469,11 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     return dayKey ? (projectedSnapshot.sessionUsageByDayKey[dayKey] ?? []) : [];
   }, [activeDetailRows, projectedDrilldownDayKey, projectedSnapshot.sessionUsageByBucket, projectedSnapshot.sessionUsageByDayKey, selectedDetailRowKey, source]);
 
+  const selectedProjectedProjectUsages = useMemo<UsageDeskProjectedProjectUsage[]>(
+    () => buildUsageDeskProjectedProjectUsageRows(selectedProjectedSessionUsages),
+    [selectedProjectedSessionUsages],
+  );
+
   const selectedProjectedSessionUsageLabel = useMemo(() => {
     if (source !== 'projected') {
       return '';
@@ -567,6 +574,10 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   }
 
   function handleProjectedSurfaceViewChange(nextView: UsageDeskProjectedSurfaceView) {
+    if (nextView === 'projects') {
+      setProjectedSurfaceView('projects');
+      return;
+    }
     if (nextView === 'sessions') {
       setProjectedSurfaceView('sessions');
       return;
@@ -631,6 +642,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     projectedSummaryItems,
     projectedChartUnit,
     projectedPrimaryChartPoints,
+    selectedProjectedProjectUsages,
     selectedProjectedSessionUsages,
     selectedProjectedSessionUsageLabel,
     activeDetailRows,

@@ -143,9 +143,11 @@ And 不通过时间范围猜测 session 归因。
    - 会话表第一列只显示项目归属名，缺失时显示 `未知项目`；session 路径只保留在 hover title。
    - 无头浏览器复测通过：`会话列表` surface 中本地会话表第一列显示 `GetTokens`，可见内容不再出现 `sessions/...jsonl` 或 `Codex 本地会话`；截图归档到 `.../20260519-usage-desk-local-session-project-name-after-v06.png`。
 8. 项目聚合维度：
-   - `UsageSessionDrilldownPanel` 在会话明细表上方新增 `PROJECT TOTALS` 聚合区，按 `projectName || 未知项目` 分组，把同项目会话的请求数、Token、输入、缓存、输出累加。
-   - 项目聚合行同时显示会话数量和主导模型；逐会话明细表仍保留在下方，方便从项目总量继续追到具体 session。
+   - `UsageDeskFeature` 的 chart surface 切换新增 `项目汇总` 选项，与 `天级趋势 / 分钟明细 / 会话列表` 并列。
+   - `项目汇总` surface 使用 `UsageProjectDrilldownPanel`，按 `projectName || 未知项目` 分组，把同项目会话的请求数、Token、输入、缓存、输出累加。
+   - `会话列表` surface 继续只显示逐会话明细；项目聚合行显示会话数量和主导模型，方便先看项目总量再切回会话定位具体 session。
    - 无头浏览器复测通过：预览数据中 2 个 `GetTokens` 会话被合并成 1 条项目聚合行，截图归档到 `.../20260519-usage-desk-local-session-project-aggregate-after-v07.png`。
+   - 追加修正：项目聚合不再内嵌在 `会话列表` 内，而是作为独立 `项目汇总` surface 选项；无头浏览器确认按钮可见、点击后标题为 `项目汇总 / 05-15`，截图归档到 `.../20260519-usage-desk-local-project-surface-option-after-v08.png`。
 
 ## 截图
 1. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-drilldown-after-v02.png`
@@ -154,6 +156,7 @@ And 不通过时间范围猜测 session 归因。
 4. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-compact-source-after-v05.png`
 5. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-project-name-after-v06.png`
 6. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-project-aggregate-after-v07.png`
+7. `screenshots/20260519/usage-desk/20260519-usage-desk-local-project-surface-option-after-v08.png`
 
 ## 调研代码索引
 - 用量表格入口：`frontend/src/features/accounts/components/usage-desk/UsageDetailTable.tsx`
