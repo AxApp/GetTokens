@@ -147,6 +147,9 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Start with `frontend/src/components/ui` and token stories before pulling in business-heavy account/Codex components.
   - Component stories must include an `Overview` story that shows key states in one page for design review and screenshot regression; keep single-state stories for isolated interaction debugging.
   - Component examples that are officially admitted into the design system must be wrapped with `DesignSystemStoryFrame`; this gives them the shared DS admission border in Storybook and makes non-admitted business compositions visually distinct.
+  - Feature component收编必须循环执行：发现未纳入组件 -> 匹配现有设计系统组件/模式 -> 匹配不到则抽象或新建设计组件 -> 写 mock story + `Overview` + `DesignSystemStoryFrame` -> 运行 catalog/typecheck/Storybook 验收。
+  - 每个 `frontend/src/features/*/components/**/*.tsx` 文件必须在 `componentManifest.ts` 中有收编决策：`admitted`、`candidate`、`deferred` 或 `excluded`。不得让新组件“沉默缺席”。
+  - `admitted` feature component 必须同步进入 `storyCatalog.ts` 的 `feature-components` 分组，并记录 story path、Storybook title、mock data source 和 required states。
   - Keep Storybook dependency and generated config isolated to the frontend dev toolchain; it must not affect Wails runtime behavior.
 - **Complex Workflow Screens**: When a flow/configuration page starts feeling complex, reduce the information architecture before adding more components:
   - put the final route/result summary first

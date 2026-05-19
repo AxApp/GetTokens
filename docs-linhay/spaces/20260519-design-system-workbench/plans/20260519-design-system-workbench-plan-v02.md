@@ -215,3 +215,84 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
 
 ### 边界
 该标识只用于 Storybook / 设计系统工作台，不进入真实产品运行时组件，避免污染业务页面外观。
+
+## Feature Components 收编推进
+### 本轮目标
+在 `components/ui` 全部进入 Storybook 后，开始收编已经从业务页提取出来、但仍属于 feature 目录的低耦合组件。第一批避开账号池当前并行改动，选择不依赖 Wails / sidecar 的 Debug 面板组件。
+
+### 收编循环
+后续按用户确认的固定循环推进：
+
+1. 发现新的未纳入组件。
+2. 匹配已有设计系统组件或模式。
+3. 未匹配到则抽象或新建设计组件。
+4. 写 mock story、`Overview` 状态矩阵和 `DesignSystemStoryFrame`。
+5. 更新 `componentManifest.ts`、`storyCatalog.ts` 和测试门禁。
+6. 运行 catalog/typecheck/Storybook build，并用浏览器确认真实渲染。
+
+### 实施
+1. 新增 `frontend/src/features/debug/components/DebugPanelComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Debug Panel`。
+3. `Overview` 同屏展示：
+   - `DebugHeader` 普通态
+   - `DebugHeader` 全选 / 复制成功态
+   - `DebugEntryCard` 成功展开态
+   - `DebugEntryCard` 错误展开态
+   - `DebugEntryCard` 折叠态
+   - `DebugEmptyState`
+4. 所有已收编示例均使用 `DesignSystemStoryFrame`，保持 DS 准入边框。
+5. `storyCatalog.ts` 新增 `feature-components` 分组。
+6. `storyCatalog.test.mjs` 的准入门禁从 `components` 扩展到 `components` + `feature-components`。
+
+### 验证
+1. `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+2. `npm --prefix frontend run typecheck`
+3. `npm --prefix frontend run build-storybook`
+4. 浏览器确认 `Debug Panel / Overview` 可渲染，iframe 内存在 6 个 `data-design-system-component="true"` 节点，样式均为 `3px dashed rgb(255, 0, 0)`。
+
+### Manifest 门禁
+1. 新增 `frontend/src/features/design-system/componentManifest.ts`。
+2. `storyCatalog.test.mjs` 会扫描 `frontend/src/features/*/components/**/*.tsx`，要求每个非 story 组件文件都有 manifest 条目。
+3. manifest status：
+   - `admitted`：已收编，必须有 story/catalog/mock/required states。
+   - `candidate`：已发现，必须写 required states。
+   - `deferred`：暂缓，必须写 revisit trigger。
+   - `excluded`：不单独收编，必须有稳定理由。
+
+### 第三批：Account Cards
+本批继续沿用 feature component 收编循环，并用 subagent 做只读盘点、主线程负责集成和验收。
+
+1. 已新增 `frontend/src/features/accounts/components/AccountCardComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Account Cards`。
+3. 本批 admitted 组件：
+   - `AccountCardFrame`
+   - `AccountCardSkeleton`
+   - `AccountHealthBar`
+   - `AttributionCard`
+   - `CardSections`
+4. `Overview` 同屏覆盖：
+   - 账号卡外壳默认 / 选中 / 嵌套 action
+   - 归因卡健康 / 失败 / 紧凑 / 列表密度
+   - quota / billing / usage / rate-limit / evidence 指标段
+   - 健康条健康与失败混合状态
+   - 加载骨架
+5. 下一批候选：
+   - `UsageDeskChart`
+   - `UsageDetailTable`
+   - `UsageDeskPanels`
+   - `StatusSnippetPanel`
+   - `RelayEditors`
+4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
+
+### 第二批：Codex Binary
+1. 新增 `frontend/src/features/codex-binary/components/CodexBinaryComponents.stories.tsx`。
+2. 收编组件：
+   - `CodexBinarySummaryPanel`
+   - `CodexBinaryVersionList`
+   - `CodexBinaryVersionCell`
+3. 复用已有模式：
+   - 摘要面板匹配 `WorkspacePageHeader` 的 summary/action 模式。
+   - 版本筛选匹配 `SegmentedControl`。
+   - 可展开版本行匹配 DebugPanel 的展开详情模式。
+4. 使用现有 `codexBinaryPreviewSnapshot` / `codexBinaryPreviewNotes` 作为 mock data，不触发 Wails。
+5. 浏览器确认 `Codex Binary / Overview` 可渲染，iframe 内存在 4 个 `data-design-system-component="true"` 节点，样式均为 `3px dashed rgb(255, 0, 0)`。

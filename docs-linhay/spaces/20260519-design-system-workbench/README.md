@@ -186,3 +186,63 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 4. `storyCatalog.test.mjs` 已增加门禁：`components` 分组里的每个 story 文件必须使用 `DesignSystemStoryFrame`。
 5. 边界：该边框只用于 Storybook / 设计系统预览，不改真实业务运行时组件外观。
 6. 截图：`screenshots/20260519/design-system/20260519-design-system-admitted-border-zh-after-v01.png`
+
+## 2026-05-19 Feature Components 第一批收编
+1. 新增 `Design System/Feature Components/Debug Panel`，把调试面板里已经提取且不依赖 Wails 的组件纳入设计系统：
+   - `DebugHeader`
+   - `DebugEntryCard`
+   - `DebugEmptyState`
+2. 新 story 使用 mock 请求 / 响应数据，同屏覆盖：
+   - 工具栏普通态 / 全选成功态
+   - 成功日志卡片
+   - 错误日志卡片
+   - 折叠日志卡片
+   - 空状态
+3. `storyCatalog.test.mjs` 的门禁已扩展到 `components` 与 `feature-components` 两个分组，要求每个收编 story 都导出 `Overview` 且使用 `DesignSystemStoryFrame`。
+4. 验证通过：
+   - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build-storybook`
+5. 浏览器验收 URL：`http://127.0.0.1:6006/?path=/story/design-system-feature-components-debug-panel--overview`
+6. 截图：`screenshots/20260519/design-system/20260519-design-system-debug-panel-overview-after-v01.png`
+
+## 2026-05-19 收编 Manifest 与第二批 Feature Components
+1. 新增 `frontend/src/features/design-system/componentManifest.ts`，把 feature 组件收编状态显式记录为：
+   - `admitted`：已进入设计系统并有 Storybook / catalog / mock 数据
+   - `candidate`：已发现，可用现有设计模式或新设计组件收编
+   - `deferred`：暂缓，需拆 Wails / localStorage / 页面 controller 边界
+   - `excluded`：不单独收编，通常是已有组件的薄包装或页面私有实现
+2. `storyCatalog.test.mjs` 新增 manifest 门禁：
+   - 扫描 `frontend/src/features/*/components/**/*.tsx`
+   - 每个非 story 组件文件必须有 manifest 决策
+   - `admitted` 项必须同步到 `feature-components` catalog
+   - admitted story 禁止导入 Wails / `window.go` / sidecar / 真实请求
+3. 第二批收编 `Design System/Feature Components/Codex Binary`，覆盖：
+   - `CodexBinarySummaryPanel`
+   - `CodexBinaryVersionList`
+   - `CodexBinaryVersionCell`
+4. 新 story 使用 `codexBinaryPreviewSnapshot` / `codexBinaryPreviewNotes` mock 数据，同屏覆盖托管 PATH、doctor error、版本筛选、下载进度、release notes 和空列表。
+5. 验证通过：
+   - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build-storybook`
+6. 浏览器验收 URL：`http://127.0.0.1:6006/?path=/story/design-system-feature-components-codex-binary--overview`
+7. 截图：`screenshots/20260519/design-system/20260519-design-system-codex-binary-overview-after-v01.png`
+
+## 2026-05-19 第三批 Feature Components：Account Cards
+1. 按“发现未纳入组件 -> 匹配已有模式 -> 写 mock story -> 更新 manifest/catalog/test”的流程，新增 `Design System/Feature Components/Account Cards`。
+2. 本批只收编纯展示或可 mock 的账号卡基础构件，不改账号页业务实现：
+   - `AccountCardFrame`
+   - `AccountCardSkeleton`
+   - `AccountHealthBar`
+   - `AttributionCard`
+   - `CardSections`
+3. 新 story 使用固定 mock 数据，同屏覆盖：
+   - 账号卡交互外壳默认态 / 选中态 / 嵌套 action 边界
+   - 归因卡健康态 / 失败态 / 紧凑态 / 列表态
+   - quota、billing、usage、rate-limit、evidence 指标段
+   - 健康条健康 / 混合失败状态
+   - 加载骨架
+4. 暂缓项：
+   - `AccountCard`、详情弹窗和规则编辑器仍包含 Wails / 下载 / 真实保存路径，继续保留 `deferred`。
+   - `UsageDeskChart`、`UsageDetailTable`、`Status RelayEditors` 作为下一批候选。

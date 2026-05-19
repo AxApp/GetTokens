@@ -94,6 +94,31 @@ export const designSystemStoryGroups = [
       },
     ],
   },
+  {
+    id: 'feature-components',
+    title: 'Feature Components',
+    description: 'Extracted feature-level components admitted into the design system with mock data.',
+    stories: [
+      {
+        id: 'debug-panel-components',
+        title: 'Debug Panel Components',
+        storybookTitle: 'Design System/Feature Components/Debug Panel',
+        path: 'frontend/src/features/debug/components/DebugPanelComponents.stories.tsx',
+      },
+      {
+        id: 'codex-binary-components',
+        title: 'Codex Binary Components',
+        storybookTitle: 'Design System/Feature Components/Codex Binary',
+        path: 'frontend/src/features/codex-binary/components/CodexBinaryComponents.stories.tsx',
+      },
+      {
+        id: 'account-card-components',
+        title: 'Account Card Components',
+        storybookTitle: 'Design System/Feature Components/Account Cards',
+        path: 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx',
+      },
+    ],
+  },
 ] as const satisfies readonly DesignSystemStoryGroup[];
 
 export function flattenDesignSystemStories(
