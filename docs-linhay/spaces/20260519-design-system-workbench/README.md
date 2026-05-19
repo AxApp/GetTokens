@@ -318,3 +318,17 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - routing 配置默认态
    - 策略菜单展开态
 3. 轮换弹窗整体 `AccountRotationModal` 仍保持 `deferred`，等待保存 / 加载等运行时边界拆出纯 view。
+
+## 2026-05-19 第十批 Feature Components：Codex Account Order
+1. 新增 `Design System/Feature Components/Codex Account Order`，先收编 Codex 账号请求顺序中的纯 props 排序行：
+   - `AccountOrderRow`
+2. 新 story 使用固定 row、policy、quota、usage 和 rate-limit mock，同屏覆盖：
+   - full density
+   - compact density
+   - list density
+   - dragging 态
+   - probe hit 态
+   - policy skipped 态
+   - disabled / blocked 态
+   - rate-limit blocked 态
+3. `CodexAccountOrderSection` 仍保持 `candidate`，因为它会读写 `localStorage/hash` 并依赖 action menu 尺寸测量；后续需固定预览环境或抽出纯 view 后再收编。

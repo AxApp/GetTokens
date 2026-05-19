@@ -374,6 +374,24 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - routing 配置默认态
    - strategy menu 展开态
 5. `AccountRotationModal` 继续 deferred，等待加载、保存和真实 routing 配置边界拆出纯 view。
+
+### 第十批：Codex Account Order
+本批先收 Codex account-list 里的排序 row，不直接收带 `localStorage/hash` 和 action menu 测量的整个 section。
+
+1. 已新增 `frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Codex Account Order`。
+3. 本批 admitted 文件：
+   - `CodexAccountOrderRow.tsx`
+4. `Overview` 同屏覆盖：
+   - full density
+   - compact density
+   - list density
+   - dragging
+   - probe hit
+   - policy skipped
+   - disabled / blocked
+   - rate-limit blocked
+5. `CodexAccountOrderSection` 继续保持 candidate，下一批先处理预览环境固定或纯 view 抽离，再覆盖 ready/loading/empty/filter/action menu 状态。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

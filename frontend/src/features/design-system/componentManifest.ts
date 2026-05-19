@@ -37,6 +37,8 @@ const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk
 const usageDeskStorybookTitle = 'Design System/Feature Components/Usage Desk';
 const codexRouteProbeStoryPath = 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx';
 const codexRouteProbeStorybookTitle = 'Design System/Feature Components/Codex Route Probe';
+const codexAccountOrderStoryPath = 'frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx';
+const codexAccountOrderStorybookTitle = 'Design System/Feature Components/Codex Account Order';
 
 export const designSystemComponentManifest = [
   {
@@ -482,12 +484,15 @@ export const designSystemComponentManifest = [
     componentName: 'CodexAccountOrderRow',
     sourcePath: 'frontend/src/features/codex/components/CodexAccountOrderRow.tsx',
     ownerFeature: 'codex',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '纯 props 排序行，适合高密度条目和密度模式回归。',
+    decisionReason: 'Codex 账号请求顺序行已通过 Codex Account Order story 收编，覆盖 full/compact/list、拖拽、probe hit、policy skipped、disabled 和 rate-limit blocked。',
     matchedPatterns: ['ToggleSwitch', 'DebugPanel EntryCard'],
-    suggestedDesignComponent: 'SortableAccountOrderRow',
-    requiredStates: ['full', 'compact', 'list', 'disabled'],
+    storyPath: codexAccountOrderStoryPath,
+    storybookTitle: codexAccountOrderStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['full', 'compact', 'list', 'dragged', 'probe-hit', 'policy-skipped', 'disabled', 'rate-limit-blocked'],
+    mockDataSources: ['storybook codex account row/policy/quota/usage/rate-limit mock'],
   },
   {
     id: 'codex-account-order-section',
