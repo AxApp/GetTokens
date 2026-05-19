@@ -137,5 +137,6 @@ And 账号详情 UI 接入需等设计系统边界稳定后再开独立实施项
 - 实施计划：[20260519 Account Detail Runtime Observability Plan v01](plans/20260519-account-detail-runtime-observability-plan-v01.md)
 
 ## 当前状态
-- 状态：draft
+- 状态：backlog
+- 说明：已完成需求边界和数据契约设计，后续有空再进入实现；当前不介入设计系统重构中的账号详情前端。
 - 最近更新：2026-05-19
