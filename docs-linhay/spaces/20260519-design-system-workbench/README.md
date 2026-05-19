@@ -444,6 +444,15 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - saving
 3. 本批只验证详情字段、模型映射 Combobox、空映射说明和保存中按钮状态；用 story 容器隔离 fixed modal，不触碰真实模型保存、Codex runtime 或 Wails 边界。
 
+## 2026-05-19 第二十二批 Feature Components：OpenAI Compatible Detail Panel
+1. 从运行时 `OpenAICompatibleDetailModal` 中拆出无 Wails 展示层，并复用 `Design System/Feature Components/OpenAI Compatible` 收编：
+   - `OpenAICompatibleDetailPanel`
+2. 新增 detail panel 状态矩阵，按场景收敛规则只保留：
+   - ready remote models
+   - validation error
+   - fetching models
+3. 本批只验证 provider 详情字段、proxy route、headers、模型候选和验证 footer；完整 modal 仍保留 `RateLimitRulesSection` 组合，等待限流规则编辑器完成 mock / props 边界后再复查。
+
 ## 场景收敛规则
 1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。
 2. 对已经在同类组件中验证过的 loading、disabled、empty、error 行为，不重复为每个组件铺满；仅在该组件有独特布局或行为差异时新增状态。

@@ -7,11 +7,13 @@ import type { RateLimitState } from '../model/rateLimit';
 import {
   buildProviderConfigSignature,
   type OpenAICompatibleProvider,
+  type OpenAICompatibleProviderDraft,
   type OpenAICompatibleProviderFormState,
   type ProviderRemoteModelsState,
   type ProviderVerifyState,
 } from '../model/openAICompatible';
 import OpenAICompatibleComposeModal from './OpenAICompatibleComposeModal';
+import OpenAICompatibleDetailPanel from './OpenAICompatibleDetailPanel';
 import OpenAICompatibleProviderCard from './OpenAICompatibleProviderCard';
 import OpenAICompatibleWorkspace from './OpenAICompatibleWorkspace';
 
@@ -120,6 +122,29 @@ const verifyStates: Record<keyof typeof providers, ProviderVerifyState> = {
     status: 'idle',
     message: '',
     lastVerifiedAt: null,
+  },
+};
+
+const detailDrafts: Record<'ready' | 'error', OpenAICompatibleProviderDraft> = {
+  ready: {
+    currentName: providers.verified.name,
+    name: providers.verified.name,
+    baseUrl: providers.verified.baseUrl,
+    apiKey: providers.verified.apiKey,
+    headersText: 'HTTP-Referer: https://gettokens.local\nX-Title: GetTokens',
+    models: (providers.verified.models || []).map((model) => ({ name: model.name, alias: model.alias || '' })),
+    verifyModel: providers.verified.models?.[0]?.name || '',
+    proxyUrl: providers.verified.proxyUrl || '',
+  },
+  error: {
+    currentName: providers.error.name,
+    name: providers.error.name,
+    baseUrl: providers.error.baseUrl,
+    apiKey: '',
+    headersText: '',
+    models: (providers.error.models || [{ name: '', alias: '' }]).map((model) => ({ name: model.name, alias: model.alias || '' })),
+    verifyModel: providers.error.models?.[0]?.name || '',
+    proxyUrl: '',
   },
 };
 
@@ -275,6 +300,15 @@ function OpenAICompatibleOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Detail panel states</h3>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <DetailPanelSample label="DS-DETAIL-READY" draftKey="ready" remoteState={signedRemoteModelsState('verified')} />
+          <DetailPanelSample label="DS-DETAIL-ERROR" draftKey="error" error="API KEY 不能为空" />
+          <DetailPanelSample label="DS-DETAIL-FETCHING" draftKey="ready" remoteState={loadingRemoteModelsState} />
+        </div>
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Compose modal states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <ComposeModalSample label="DS-COMPOSE-EMPTY" formKey="empty" />
@@ -283,6 +317,49 @@ function OpenAICompatibleOverview() {
         </div>
       </section>
     </div>
+  );
+}
+
+const loadingRemoteModelsState: ProviderRemoteModelsState = {
+  status: 'loading',
+  message: 'fetching remote models',
+  models: [],
+  lastFetchedAt: null,
+  configSignature: buildProviderConfigSignature(providers.verified),
+};
+
+function DetailPanelSample({
+  label,
+  draftKey,
+  remoteState,
+  error = '',
+}: {
+  label: string;
+  draftKey: keyof typeof detailDrafts;
+  remoteState?: ProviderRemoteModelsState;
+  error?: string;
+}) {
+  const { t } = useI18n();
+  const draft = detailDrafts[draftKey];
+  return (
+    <ModalViewport label={label}>
+      <div className="flex h-full flex-col bg-[var(--bg-main)]">
+        <OpenAICompatibleDetailPanel
+          t={t}
+          draft={draft}
+          verifyState={draftKey === 'error' ? signedVerifyState('error') : signedVerifyState('verified')}
+          remoteModelsState={remoteState}
+          error={error}
+          saving={remoteState?.status === 'loading'}
+          onClose={() => undefined}
+          onChange={() => undefined}
+          onSave={() => undefined}
+          onVerify={() => undefined}
+          onFetchModels={() => undefined}
+          onApplyFetchedModels={() => undefined}
+        />
+      </div>
+    </ModalViewport>
   );
 }
 
@@ -391,4 +468,8 @@ export const Workspace: Story = {
 
 export const Compose: Story = {
   render: () => <ComposeModalSample label="DS-COMPOSE-PRESET" formKey="preset" selectedPresetID="deepseek" />,
+};
+
+export const DetailPanel: Story = {
+  render: () => <DetailPanelSample label="DS-DETAIL-READY" draftKey="ready" remoteState={signedRemoteModelsState('verified')} />,
 };

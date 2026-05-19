@@ -550,6 +550,20 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - saving
 5. 本批只用固定 row、model mapping 和 handler mock；通过 story viewport 隔离 fixed modal，不触碰真实模型保存、Codex runtime 或 Wails 边界。
 
+### 第二十二批：OpenAI Compatible Detail Panel
+本批不直接收完整运行时 modal，而是先拆出无 Wails 的 provider 详情主体展示层。
+
+1. 新增 `frontend/src/features/accounts/components/OpenAICompatibleDetailPanel.tsx`。
+2. `OpenAICompatibleDetailModal.tsx` 继续负责 `AccountDetailModalFrame` 和 `RateLimitRulesSection` 运行时组合。
+3. Storybook 路径仍为 `Design System/Feature Components/OpenAI Compatible`。
+4. 本批 admitted 文件：
+   - `OpenAICompatibleDetailPanel.tsx`
+5. `Overview` 新增 detail panel 状态，并按场景收敛原则只保留：
+   - ready remote models
+   - validation error
+   - fetching models
+6. 本批只用固定 provider draft、verify state 和 remote model state mock；不触碰真实验证、远端模型拉取、限流规则 CRUD 或 Wails 边界。
+
 ### 场景收敛规则
 后续收编组件时，优先保留能代表视觉或交互分支的最小状态集合；同类 loading / disabled / empty / error 已在基础模式覆盖时，不为每个组件重复铺场景。若多个业务动作共享同一视觉模式，归并到同一个设计系统场景并在文档中说明适用范围。
 
