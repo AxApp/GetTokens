@@ -123,6 +123,10 @@ func (a *App) RebuildCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 	return a.refreshCodexLocalUsage(true, true)
 }
 
+func (a *App) RebuildCodexLocalUsageDay(dayKey string) (*LocalProjectedUsageResponse, error) {
+	return a.refreshCodexLocalUsageDay(dayKey, true)
+}
+
 func (a *App) loadCodexLocalUsage(forceRebuild bool) (*LocalProjectedUsageResponse, error) {
 	codexHome, err := resolveCodexHomePath()
 	if err != nil {
@@ -156,6 +160,38 @@ func (a *App) refreshCodexLocalUsage(forceRebuild bool, emitUpdated bool) (*Loca
 	a.localUsageMu.Unlock()
 
 	response, err := a.loadCodexLocalUsage(forceRebuild)
+
+	a.localUsageMu.Lock()
+	a.localUsage.refreshRunning = false
+	if err != nil {
+		a.localUsageMu.Unlock()
+		return nil, err
+	}
+	a.localUsage.cachedResponse = cloneLocalProjectedUsageResponse(response)
+	a.localUsage.cachedAt = time.Now()
+	a.localUsage.lastRefreshAt = a.localUsage.cachedAt
+	cached := cloneLocalProjectedUsageResponse(a.localUsage.cachedResponse)
+	a.localUsageMu.Unlock()
+	if emitUpdated {
+		a.emitLocalUsageUpdated(cached)
+	}
+	return cached, nil
+}
+
+func (a *App) refreshCodexLocalUsageDay(dayKey string, emitUpdated bool) (*LocalProjectedUsageResponse, error) {
+	a.localUsageMu.Lock()
+	if a.localUsage.refreshRunning {
+		a.localUsageMu.Unlock()
+		return a.waitForLocalUsageRefresh(false, emitUpdated)
+	}
+	a.localUsage.refreshRunning = true
+	a.localUsageMu.Unlock()
+
+	codexHome, err := resolveCodexHomePath()
+	var response *LocalProjectedUsageResponse
+	if err == nil {
+		response, err = a.loadCodexLocalUsageDay(codexHome, dayKey)
+	}
 
 	a.localUsageMu.Lock()
 	a.localUsage.refreshRunning = false
@@ -262,7 +298,7 @@ func collectCodexLocalUsageDetailsFromHome(codexHome string) ([]LocalProjectedUs
 	return snapshot.Details, snapshot.ScannedFiles, nil
 }
 
-func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebuild bool) (*localUsageSnapshot, error) {
+func collectLocalUsageRolloutPaths(codexHome string) ([]string, bool, error) {
 	rolloutPaths := make([]string, 0, 64)
 	rolloutRoots := []string{
 		filepath.Join(codexHome, "sessions"),
@@ -274,7 +310,7 @@ func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebu
 			if os.IsNotExist(err) {
 				continue
 			}
-			return nil, err
+			return nil, false, err
 		}
 		foundAnyRoot = true
 		if err := filepath.WalkDir(rolloutRoot, func(path string, d os.DirEntry, err error) error {
@@ -289,14 +325,21 @@ func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebu
 			}
 			return nil
 		}); err != nil {
-			return nil, err
+			return nil, false, err
 		}
+	}
+	sort.Strings(rolloutPaths)
+	return rolloutPaths, foundAnyRoot, nil
+}
+
+func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebuild bool) (*localUsageSnapshot, error) {
+	rolloutPaths, foundAnyRoot, err := collectLocalUsageRolloutPaths(codexHome)
+	if err != nil {
+		return nil, err
 	}
 	if !foundAnyRoot {
 		return &localUsageSnapshot{}, nil
 	}
-
-	sort.Strings(rolloutPaths)
 
 	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
 		Phase:          "scan_inventory",
@@ -379,6 +422,132 @@ func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebu
 		TotalFiles:     len(rolloutPaths),
 	})
 
+	return snapshot, nil
+}
+
+func (a *App) loadCodexLocalUsageDay(codexHome string, dayKey string) (*LocalProjectedUsageResponse, error) {
+	snapshot, err := a.collectCodexLocalUsageSnapshotForDay(codexHome, dayKey)
+	if err != nil {
+		return nil, err
+	}
+	return &LocalProjectedUsageResponse{
+		Provider:         localProjectedProvider,
+		SourceKind:       localProjectedSourceKind,
+		ScannedFiles:     snapshot.ScannedFiles,
+		CacheHitFiles:    snapshot.CacheHitFiles,
+		DeltaAppendFiles: snapshot.DeltaAppendFiles,
+		FullRebuildFiles: snapshot.FullRebuildFiles,
+		FileMissingFiles: snapshot.FileMissingFiles,
+		Details:          snapshot.Details,
+	}, nil
+}
+
+func (a *App) collectCodexLocalUsageSnapshotForDay(codexHome string, dayKey string) (*localUsageSnapshot, error) {
+	dayStart, dayEnd, localDay, err := parseLocalUsageDayWindow(dayKey)
+	if err != nil {
+		return nil, err
+	}
+	rolloutPaths, foundAnyRoot, err := collectLocalUsageRolloutPaths(codexHome)
+	if err != nil {
+		return nil, err
+	}
+	if !foundAnyRoot {
+		return &localUsageSnapshot{}, nil
+	}
+
+	db, err := openLocalUsageIndexDB()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	if err := ensureLocalUsageIndexSchema(db); err != nil {
+		return nil, err
+	}
+
+	absoluteByRelative := make(map[string]string, len(rolloutPaths))
+	candidates := make(map[string]string)
+	pathDateKeys := map[string]struct{}{
+		localDay.Format("2006/01/02"): {},
+	}
+	for _, absolutePath := range rolloutPaths {
+		relativePath, err := filepath.Rel(codexHome, absolutePath)
+		if err != nil {
+			return nil, err
+		}
+		relativePath = filepath.ToSlash(relativePath)
+		absoluteByRelative[relativePath] = absolutePath
+		if localUsageRolloutPathMatchesDates(relativePath, pathDateKeys) {
+			candidates[relativePath] = absolutePath
+		}
+	}
+
+	indexedRollouts, err := loadLocalUsageRolloutPathsForWindow(db, dayStart, dayEnd)
+	if err != nil {
+		return nil, err
+	}
+	for _, rolloutPath := range indexedRollouts {
+		if absolutePath, ok := absoluteByRelative[rolloutPath]; ok {
+			candidates[rolloutPath] = absolutePath
+		} else if err := deleteLocalUsageEntry(db, rolloutPath); err != nil {
+			return nil, err
+		}
+	}
+
+	candidatePaths := make([]string, 0, len(candidates))
+	for rolloutPath := range candidates {
+		candidatePaths = append(candidatePaths, rolloutPath)
+	}
+	sort.Strings(candidatePaths)
+
+	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+		Phase:          "scan_inventory",
+		ProcessedFiles: 0,
+		TotalFiles:     len(candidatePaths),
+	})
+
+	snapshot := &localUsageSnapshot{
+		ScannedFiles: len(candidatePaths),
+	}
+	for index, rolloutPath := range candidatePaths {
+		absolutePath := candidates[rolloutPath]
+		parseResult, err := parseCodexLocalUsageFile(absolutePath, rolloutPath, 0, "", "", nil)
+		if err != nil {
+			return nil, err
+		}
+		info, err := os.Stat(absolutePath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				if err := deleteLocalUsageEntry(db, rolloutPath); err != nil {
+					return nil, err
+				}
+				snapshot.FileMissingFiles++
+				continue
+			}
+			return nil, err
+		}
+		if err := replaceLocalUsageEntry(db, rolloutPath, absolutePath, info.ModTime().UnixMilli(), info.Size(), parseResult); err != nil {
+			return nil, err
+		}
+		snapshot.FullRebuildFiles++
+		a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+			Phase:          "reconcile_rollouts",
+			CurrentFile:    relativeLocalUsageProgressPath(codexHome, absolutePath),
+			ProcessedFiles: index + 1,
+			TotalFiles:     len(candidatePaths),
+			Source:         localUsageSourceFullRebuild,
+		})
+	}
+
+	details, err := loadAllLocalUsageDetails(db)
+	if err != nil {
+		return nil, err
+	}
+	snapshot.Details = details
+	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+		Phase:          "finished",
+		ProcessedFiles: len(candidatePaths),
+		TotalFiles:     len(candidatePaths),
+	})
 	return snapshot, nil
 }
 
@@ -503,6 +672,7 @@ func parseCodexLocalUsageStream(reader io.Reader, currentModel string, currentPr
 	}
 	var meta sessionMetaEnvelope
 	currentCWD := ""
+	replayGuard := localUsageReplayGuard{}
 
 	lineReader := bufio.NewReaderSize(reader, 1024*64)
 	for {
@@ -519,13 +689,14 @@ func parseCodexLocalUsageStream(reader io.Reader, currentModel string, currentPr
 			}
 
 			projectName = updateLocalUsageProjectNameFromLine(line, relativePath, projectName, &meta, &currentCWD)
+			replayGuard.observeLine(line)
 			nextModel, nextTotals, minuteKey, delta, parseErr := parseCodexLocalUsageLine(line, activeModel, activeTotals)
 			if parseErr != nil {
 				return nil, parseErr
 			}
 			activeModel = nextModel
 			activeTotals = nextTotals
-			if delta != nil {
+			if delta != nil && !replayGuard.shouldSuppressTokenCount(line) {
 				bucketKey := localUsageMinuteBucketKey{
 					MinuteStartTimestamp: minuteKey,
 					Model:                activeModel,
@@ -553,6 +724,84 @@ func parseCodexLocalUsageStream(reader io.Reader, currentModel string, currentPr
 		ProjectName:    projectName,
 		PreviousTotals: activeTotals,
 	}, nil
+}
+
+type localUsageReplayGuard struct {
+	firstSessionSeen          bool
+	firstSessionID            string
+	firstSessionSecond        string
+	forkedHistory             bool
+	sawCopiedSessionMetaStart bool
+}
+
+func (guard *localUsageReplayGuard) observeLine(line []byte) {
+	var envelope struct {
+		Type      string          `json:"type"`
+		Timestamp string          `json:"timestamp"`
+		Payload   json.RawMessage `json:"payload"`
+	}
+	if err := json.Unmarshal(line, &envelope); err != nil {
+		return
+	}
+	if envelope.Type != "session_meta" {
+		return
+	}
+	var meta sessionMetaEnvelope
+	if err := json.Unmarshal(envelope.Payload, &meta); err != nil {
+		return
+	}
+	second, err := normalizeSecondTimestamp(envelope.Timestamp)
+	if err != nil {
+		return
+	}
+	if !guard.firstSessionSeen {
+		guard.firstSessionSeen = true
+		guard.firstSessionID = strings.TrimSpace(meta.ID)
+		guard.firstSessionSecond = second
+		guard.forkedHistory = sessionMetaCarriesForkedHistory(meta)
+		return
+	}
+	if !guard.forkedHistory || second != guard.firstSessionSecond {
+		return
+	}
+	nextID := strings.TrimSpace(meta.ID)
+	if nextID != "" && nextID != guard.firstSessionID {
+		guard.sawCopiedSessionMetaStart = true
+	}
+}
+
+func (guard localUsageReplayGuard) shouldSuppressTokenCount(line []byte) bool {
+	if !guard.forkedHistory || !guard.sawCopiedSessionMetaStart || guard.firstSessionSecond == "" {
+		return false
+	}
+	var envelope struct {
+		Type      string `json:"type"`
+		Timestamp string `json:"timestamp"`
+		Payload   struct {
+			Type string `json:"type"`
+		} `json:"payload"`
+	}
+	if err := json.Unmarshal(line, &envelope); err != nil {
+		return false
+	}
+	if envelope.Type != "event_msg" || envelope.Payload.Type != "token_count" {
+		return false
+	}
+	second, err := normalizeSecondTimestamp(envelope.Timestamp)
+	if err != nil {
+		return false
+	}
+	return second == guard.firstSessionSecond
+}
+
+func sessionMetaCarriesForkedHistory(meta sessionMetaEnvelope) bool {
+	if strings.TrimSpace(meta.ForkedFromID) != "" {
+		return true
+	}
+	if strings.EqualFold(strings.TrimSpace(meta.ThreadSource), "subagent") {
+		return true
+	}
+	return bytes.Contains(meta.Source, []byte(`"subagent"`))
 }
 
 func parseCodexLocalUsageProjectName(path string, relativePath string) (string, error) {
@@ -677,6 +926,34 @@ func normalizeMinuteTimestamp(raw string) (string, error) {
 	return parsed.UTC().Truncate(time.Minute).Format(time.RFC3339), nil
 }
 
+func normalizeSecondTimestamp(raw string) (string, error) {
+	parsed, err := time.Parse(time.RFC3339Nano, raw)
+	if err != nil {
+		return "", err
+	}
+	return parsed.UTC().Truncate(time.Second).Format(time.RFC3339), nil
+}
+
+func parseLocalUsageDayWindow(dayKey string) (string, string, time.Time, error) {
+	localDay, err := time.ParseInLocation("2006-01-02", strings.TrimSpace(dayKey), time.Local)
+	if err != nil {
+		return "", "", time.Time{}, err
+	}
+	start := localDay.UTC().Format(time.RFC3339)
+	end := localDay.AddDate(0, 0, 1).UTC().Format(time.RFC3339)
+	return start, end, localDay, nil
+}
+
+func localUsageRolloutPathMatchesDates(relativePath string, dateKeys map[string]struct{}) bool {
+	normalized := filepath.ToSlash(relativePath)
+	for dateKey := range dateKeys {
+		if strings.Contains(normalized, "sessions/"+dateKey+"/") {
+			return true
+		}
+	}
+	return false
+}
+
 func openLocalUsageIndexDB() (*sql.DB, error) {
 	path, err := codexLocalUsageIndexPath()
 	if err != nil {
@@ -796,6 +1073,65 @@ ORDER BY minutes.minute_start_timestamp ASC, minutes.model ASC`,
 		details = append(details, detail)
 	}
 	return details, rows.Err()
+}
+
+func loadAllLocalUsageDetails(db *sql.DB) ([]LocalProjectedUsageDetail, error) {
+	rows, err := db.Query(`
+SELECT minutes.rollout_path, minutes.minute_start_timestamp, minutes.model, minutes.input_tokens, minutes.cached_input_tokens,
+       minutes.output_tokens, minutes.request_count, entries.project_name
+FROM ` + localUsageMinutesTableName + ` AS minutes
+JOIN usage_entries AS entries ON entries.rollout_path = minutes.rollout_path
+ORDER BY minutes.minute_start_timestamp ASC, minutes.model ASC, minutes.rollout_path ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	details := make([]LocalProjectedUsageDetail, 0, 256)
+	for rows.Next() {
+		var detail LocalProjectedUsageDetail
+		if err := rows.Scan(
+			&detail.SessionID,
+			&detail.Timestamp,
+			&detail.Model,
+			&detail.InputTokens,
+			&detail.CachedInputTokens,
+			&detail.OutputTokens,
+			&detail.RequestCount,
+			&detail.ProjectName,
+		); err != nil {
+			return nil, err
+		}
+		detail.Provider = localProjectedProvider
+		detail.SourceKind = localProjectedSourceKind
+		details = append(details, detail)
+	}
+	return details, rows.Err()
+}
+
+func loadLocalUsageRolloutPathsForWindow(db *sql.DB, startTimestamp string, endTimestamp string) ([]string, error) {
+	rows, err := db.Query(`
+SELECT DISTINCT rollout_path
+FROM `+localUsageMinutesTableName+`
+WHERE minute_start_timestamp >= ? AND minute_start_timestamp < ?
+ORDER BY rollout_path ASC`,
+		startTimestamp,
+		endTimestamp,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rolloutPaths []string
+	for rows.Next() {
+		var rolloutPath string
+		if err := rows.Scan(&rolloutPath); err != nil {
+			return nil, err
+		}
+		rolloutPaths = append(rolloutPaths, rolloutPath)
+	}
+	return rolloutPaths, rows.Err()
 }
 
 func replaceLocalUsageEntry(db *sql.DB, rolloutPath string, absolutePath string, modifiedUnixMs int64, sizeBytes int64, parseResult *localUsageParseResult) error {

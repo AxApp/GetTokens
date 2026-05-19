@@ -123,6 +123,44 @@ func TestGetCodexLocalUsageSplitsSameMinuteByModel(t *testing.T) {
 	}
 }
 
+func TestGetCodexLocalUsageSkipsForkedStartupTokenReplay(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	sessionsDir := filepath.Join(codexHome, "sessions", "2026", "04", "28")
+	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
+		t.Fatalf("mkdir sessions dir: %v", err)
+	}
+
+	rolloutPath := filepath.Join(sessionsDir, "rollout-2026-04-28T10-00-00.jsonl")
+	payload := "" +
+		"{\"timestamp\":\"2026-04-28T10:00:00.000Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"child-thread\",\"forked_from_id\":\"parent-thread\",\"timestamp\":\"2026-04-28T10:00:00.000Z\",\"cwd\":\"/tmp/GetTokens\",\"source\":{\"subagent\":{\"thread_spawn\":{\"parent_thread_id\":\"parent-thread\"}}},\"thread_source\":\"subagent\"}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:00:00.010Z\",\"type\":\"session_meta\",\"payload\":{\"id\":\"parent-thread\",\"timestamp\":\"2026-04-28T09:00:00.000Z\",\"cwd\":\"/tmp/GetTokens\",\"source\":\"cli\",\"thread_source\":\"user\"}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:00:00.020Z\",\"type\":\"turn_context\",\"payload\":{\"model\":\"gpt-5-codex\"}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:00:00.030Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":1000,\"cached_input_tokens\":800,\"output_tokens\":100}}}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:00:00.040Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":2000,\"cached_input_tokens\":1600,\"output_tokens\":180}}}}\n" +
+		"{\"timestamp\":\"2026-04-28T10:00:45.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":2250,\"cached_input_tokens\":1780,\"output_tokens\":230}}}}\n"
+	if err := os.WriteFile(rolloutPath, []byte(payload), 0600); err != nil {
+		t.Fatalf("write rollout: %v", err)
+	}
+
+	t.Setenv("CODEX_HOME", codexHome)
+
+	app := &App{}
+	result, err := app.GetCodexLocalUsage()
+	if err != nil {
+		t.Fatalf("GetCodexLocalUsage returned error: %v", err)
+	}
+
+	if len(result.Details) != 1 {
+		t.Fatalf("details len = %d, want only the real post-startup request", len(result.Details))
+	}
+	detail := result.Details[0]
+	if detail.InputTokens != 250 || detail.CachedInputTokens != 180 || detail.OutputTokens != 50 || detail.RequestCount != 1 {
+		t.Fatalf("unexpected fork replay filtered detail: %#v", detail)
+	}
+}
+
 func TestGetCodexLocalUsageIncludesArchivedSessions(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -290,6 +328,68 @@ func TestRebuildCodexLocalUsageForcesFullRebuild(t *testing.T) {
 	}
 	if second.CacheHitFiles != 0 {
 		t.Fatalf("second cache hit files = %d, want 0", second.CacheHitFiles)
+	}
+}
+
+func TestRebuildCodexLocalUsageDayOnlyRebuildsCandidateDay(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	firstDir := filepath.Join(codexHome, "sessions", "2026", "04", "27")
+	secondDir := filepath.Join(codexHome, "sessions", "2026", "04", "28")
+	if err := os.MkdirAll(firstDir, 0755); err != nil {
+		t.Fatalf("mkdir first dir: %v", err)
+	}
+	if err := os.MkdirAll(secondDir, 0755); err != nil {
+		t.Fatalf("mkdir second dir: %v", err)
+	}
+
+	firstPath := filepath.Join(firstDir, "rollout-2026-04-27T10-00-00.jsonl")
+	firstPayload := "" +
+		"{\"timestamp\":\"2026-04-27T10:01:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":40,\"cached_input_tokens\":8,\"output_tokens\":5}}}}\n"
+	if err := os.WriteFile(firstPath, []byte(firstPayload), 0600); err != nil {
+		t.Fatalf("write first rollout: %v", err)
+	}
+
+	secondPath := filepath.Join(secondDir, "rollout-2026-04-28T10-00-00.jsonl")
+	secondPayload := "" +
+		"{\"timestamp\":\"2026-04-28T10:01:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":100,\"cached_input_tokens\":20,\"output_tokens\":10}}}}\n"
+	if err := os.WriteFile(secondPath, []byte(secondPayload), 0600); err != nil {
+		t.Fatalf("write second rollout: %v", err)
+	}
+
+	t.Setenv("CODEX_HOME", codexHome)
+	app := &App{}
+
+	initial, err := app.GetCodexLocalUsage()
+	if err != nil {
+		t.Fatalf("GetCodexLocalUsage returned error: %v", err)
+	}
+	if initial.FullRebuildFiles != 2 {
+		t.Fatalf("initial full rebuild files = %d, want 2", initial.FullRebuildFiles)
+	}
+
+	updatedSecondPayload := "" +
+		"{\"timestamp\":\"2026-04-28T10:01:00.000Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"token_count\",\"info\":{\"total_token_usage\":{\"input_tokens\":180,\"cached_input_tokens\":50,\"output_tokens\":25}}}}\n"
+	if err := os.WriteFile(secondPath, []byte(updatedSecondPayload), 0600); err != nil {
+		t.Fatalf("rewrite second rollout: %v", err)
+	}
+
+	rebuilt, err := app.RebuildCodexLocalUsageDay("2026-04-28")
+	if err != nil {
+		t.Fatalf("RebuildCodexLocalUsageDay returned error: %v", err)
+	}
+	if rebuilt.FullRebuildFiles != 1 {
+		t.Fatalf("day full rebuild files = %d, want 1", rebuilt.FullRebuildFiles)
+	}
+	if len(rebuilt.Details) != 2 {
+		t.Fatalf("details len = %d, want both indexed days", len(rebuilt.Details))
+	}
+	if rebuilt.Details[0].Timestamp != "2026-04-27T10:01:00Z" || rebuilt.Details[0].InputTokens != 40 {
+		t.Fatalf("unexpected retained previous day detail: %#v", rebuilt.Details[0])
+	}
+	if rebuilt.Details[1].Timestamp != "2026-04-28T10:01:00Z" || rebuilt.Details[1].InputTokens != 180 || rebuilt.Details[1].OutputTokens != 25 {
+		t.Fatalf("unexpected rebuilt target day detail: %#v", rebuilt.Details[1])
 	}
 }
 

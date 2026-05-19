@@ -348,6 +348,14 @@ func (a *App) RebuildCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
 	return mapLocalProjectedUsageResponse(result), nil
 }
 
+func (a *App) RebuildCodexLocalUsageDay(dayKey string) (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.RebuildCodexLocalUsageDay(dayKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
+}
+
 func (a *App) GetCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
 	result, err := a.core.GetCodexSessionManagementSnapshot()
 	if err != nil {

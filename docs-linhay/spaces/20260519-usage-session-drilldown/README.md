@@ -141,12 +141,19 @@ And 不通过时间范围猜测 session 归因。
    - 后端 `LocalProjectedUsageDetail` 新增 `projectName`，从 Codex session JSONL 的 `session_meta.cwd` / `turn_context.cwd` / git repository 推导项目名。
    - SQLite 本地 usage index 增加 `project_name` 缓存列；旧索引 cache hit 时会轻量回填项目名。
    - 会话表第一列只显示项目归属名，缺失时显示 `未知项目`；session 路径只保留在 hover title。
+   - 无头浏览器复测通过：`会话列表` surface 中本地会话表第一列显示 `GetTokens`，可见内容不再出现 `sessions/...jsonl` 或 `Codex 本地会话`；截图归档到 `.../20260519-usage-desk-local-session-project-name-after-v06.png`。
+8. 项目聚合维度：
+   - `UsageSessionDrilldownPanel` 在会话明细表上方新增 `PROJECT TOTALS` 聚合区，按 `projectName || 未知项目` 分组，把同项目会话的请求数、Token、输入、缓存、输出累加。
+   - 项目聚合行同时显示会话数量和主导模型；逐会话明细表仍保留在下方，方便从项目总量继续追到具体 session。
+   - 无头浏览器复测通过：预览数据中 2 个 `GetTokens` 会话被合并成 1 条项目聚合行，截图归档到 `.../20260519-usage-desk-local-session-project-aggregate-after-v07.png`。
 
 ## 截图
 1. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-drilldown-after-v02.png`
 2. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-chart-surface-after-v03.png`
 3. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-table-surface-after-v04.png`
 4. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-compact-source-after-v05.png`
+5. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-project-name-after-v06.png`
+6. `screenshots/20260519/usage-desk/20260519-usage-desk-local-session-project-aggregate-after-v07.png`
 
 ## 调研代码索引
 - 用量表格入口：`frontend/src/features/accounts/components/usage-desk/UsageDetailTable.tsx`

@@ -25,6 +25,7 @@ export default function UsageDeskFeature({
     viewScale,
     resolution,
     setResolution,
+    selectedDayKey,
     loading,
     projectedLoading,
     loadError,
@@ -42,6 +43,7 @@ export default function UsageDeskFeature({
     scrollContainerRef,
     refreshProjectedUsage,
     rebuildProjectedUsage,
+    rebuildProjectedUsageDay,
     observedSnapshot,
     projectedSnapshot,
     observedDrilldownDayKey,
@@ -338,6 +340,9 @@ export default function UsageDeskFeature({
                                 <div className="flex items-center gap-2">
                                   <button onClick={() => void refreshProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     刷新索引
+                                  </button>
+                                  <button onClick={() => void rebuildProjectedUsageDay(projectedDrilldownDayKey || selectedDayKey)} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading || !selectedDayKey}>
+                                    重建当日
                                   </button>
                                   <button onClick={() => void rebuildProjectedUsage()} className="border-2 border-[var(--border-color)] px-4 py-1.5 text-[0.8125rem] font-black uppercase text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors disabled:opacity-30" disabled={projectedLoading}>
                                     重建索引

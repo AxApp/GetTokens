@@ -4,6 +4,7 @@ import {
   GetSidecarUsageAttribution,
   GetUsageStatistics,
   RebuildCodexLocalUsage,
+  RebuildCodexLocalUsageDay,
   RefreshCodexLocalUsage,
 } from '../../../../wailsjs/go/main/App';
 import { EventsOn } from '../../../../wailsjs/runtime/runtime';
@@ -318,6 +319,41 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     }
   };
 
+  const rebuildProjectedUsageDay = async (dayKey?: string | null) => {
+    const targetDayKey = dayKey?.trim();
+    if (!targetDayKey) {
+      return rebuildProjectedUsage();
+    }
+    if (browserMode) {
+      setProjectedUsageData(getUsageDeskPreviewProjectedUsage(workspace));
+      setProjectedLoading(false);
+      setProjectedLoadError('');
+      setProjectedProgress(null);
+      setProjectedActionMessage(`预览索引已重建 ${targetDayKey}`);
+      return;
+    }
+
+    setProjectedLoading(true);
+    setProjectedLoadError('');
+    setProjectedProgress(null);
+    setProjectedActionMessage(`正在重建 ${targetDayKey}…`);
+    try {
+      const response = await trackRequest<any>('RebuildCodexLocalUsageDay', { args: [targetDayKey] }, () =>
+        RebuildCodexLocalUsageDay(targetDayKey),
+      );
+      setProjectedUsageData(response ?? null);
+      setProjectedProgress(null);
+      setProjectedActionMessage(`${targetDayKey} 已重建`);
+    } catch (error) {
+      console.error(error);
+      setProjectedLoadError('本地投影用量单日重建失败');
+      setProjectedProgress(null);
+      setProjectedActionMessage('');
+    } finally {
+      setProjectedLoading(false);
+    }
+  };
+
   const observedSnapshot = useMemo(
     () => buildUsageDeskObservedSnapshot(observedUsageData, selectedDayKey, resolution),
     [observedUsageData, selectedDayKey, resolution],
@@ -584,6 +620,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     scrollContainerRef,
     refreshProjectedUsage,
     rebuildProjectedUsage,
+    rebuildProjectedUsageDay,
     observedSnapshot,
     projectedSnapshot,
     visibleDailyPoints,

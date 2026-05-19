@@ -262,6 +262,10 @@ export function RebuildCodexLocalUsage() {
   return window['go']['main']['App']['RebuildCodexLocalUsage']();
 }
 
+export function RebuildCodexLocalUsageDay(arg1) {
+  return window['go']['main']['App']['RebuildCodexLocalUsageDay'](arg1);
+}
+
 export function RefreshCodexBinaryAvailable() {
   return window['go']['main']['App']['RefreshCodexBinaryAvailable']();
 }

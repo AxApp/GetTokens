@@ -102,9 +102,13 @@ type SessionManagementMessageRecord struct {
 }
 
 type sessionMetaEnvelope struct {
-	ID            string `json:"id"`
-	Cwd           string `json:"cwd"`
-	ModelProvider string `json:"model_provider"`
+	ID            string          `json:"id"`
+	ForkedFromID  string          `json:"forked_from_id"`
+	Timestamp     string          `json:"timestamp"`
+	Cwd           string          `json:"cwd"`
+	Source        json.RawMessage `json:"source"`
+	ThreadSource  string          `json:"thread_source"`
+	ModelProvider string          `json:"model_provider"`
 	Git           struct {
 		RepositoryURL string `json:"repository_url"`
 	} `json:"git"`

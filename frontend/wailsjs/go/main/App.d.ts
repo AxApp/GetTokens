@@ -135,6 +135,8 @@ export function ProbeProxyNode(arg1:main.ProbeProxyNodeInput):Promise<main.Probe
 
 export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
+export function RebuildCodexLocalUsageDay(arg1:string):Promise<main.LocalProjectedUsageResponse>;
+
 export function RefreshCodexBinaryAvailable():Promise<codexbinary.Snapshot>;
 
 export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;

@@ -114,6 +114,18 @@ export interface UsageDeskProjectedSessionUsage {
   latestTimestamp: string;
 }
 
+export interface UsageDeskProjectedProjectUsage {
+  projectName: string;
+  sessions: number;
+  model: string;
+  requests: number;
+  totalTokens: number;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+  latestTimestamp: string;
+}
+
 type UsageDeskDominantModelState = {
   modelTokens: Map<string, number>;
   dominantModel: string;
@@ -188,6 +200,7 @@ export const usageDeskProjectedSurfaceViewOptions: Array<{ id: UsageDeskProjecte
 ];
 
 export const usageDeskSessionDrilldownColumnLabels = ['会话来源', '模型', '请求', 'Token', '输入', '缓存', '输出'] as const;
+export const usageDeskProjectDrilldownColumnLabels = ['项目', '会话', '模型', '请求', 'Token', '输入', '缓存', '输出'] as const;
 
 export function shouldOpenUsageDeskProjectedSessionSurface(source: UsageDeskSource, rowKey: string): boolean {
   return source === 'projected' && rowKey.trim().length > 0;
@@ -515,6 +528,55 @@ function formatUsageDeskSessionFileLabel(sessionID: string): string {
   const normalized = sessionID.trim().replace(/\\/g, '/');
   const parts = normalized.split('/').filter(Boolean);
   return parts[parts.length - 1] || normalized || '--';
+}
+
+export function buildUsageDeskProjectedProjectUsageRows(
+  rows: UsageDeskProjectedSessionUsage[],
+): UsageDeskProjectedProjectUsage[] {
+  type ProjectUsageDraft = UsageDeskProjectedProjectUsage & {
+    dominantModelState: UsageDeskDominantModelState;
+  };
+  const projectMap = new Map<string, ProjectUsageDraft>();
+
+  rows.forEach((row) => {
+    const projectName = row.projectName.trim() || '未知项目';
+    const draft = projectMap.get(projectName) ?? {
+      projectName,
+      sessions: 0,
+      model: '',
+      dominantModelState: createDominantModelState(row.model),
+      requests: 0,
+      totalTokens: 0,
+      inputTokens: 0,
+      cachedInputTokens: 0,
+      outputTokens: 0,
+      latestTimestamp: '',
+    };
+    pushDominantModel(draft.dominantModelState, row.model, Math.max(1, row.totalTokens || row.requests));
+    draft.model = formatDominantModel(draft.dominantModelState);
+    draft.sessions += 1;
+    draft.requests += row.requests;
+    draft.totalTokens += row.totalTokens;
+    draft.inputTokens += row.inputTokens;
+    draft.cachedInputTokens += row.cachedInputTokens;
+    draft.outputTokens += row.outputTokens;
+    if (!draft.latestTimestamp || row.latestTimestamp.localeCompare(draft.latestTimestamp) > 0) {
+      draft.latestTimestamp = row.latestTimestamp;
+    }
+    projectMap.set(projectName, draft);
+  });
+
+  return Array.from(projectMap.values())
+    .map(({ dominantModelState: _dominantModelState, ...row }) => row)
+    .sort((left, right) => {
+      if (right.totalTokens !== left.totalTokens) {
+        return right.totalTokens - left.totalTokens;
+      }
+      if (right.sessions !== left.sessions) {
+        return right.sessions - left.sessions;
+      }
+      return left.projectName.localeCompare(right.projectName);
+    });
 }
 
 function collectObservedDetailsFromAttributionItem(

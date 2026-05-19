@@ -7,6 +7,7 @@ import {
   buildUsageDeskObservedSummaryItems,
   buildUsageDeskObservedSnapshot,
   buildUsageDeskProjectedSnapshot,
+  buildUsageDeskProjectedProjectUsageRows,
   buildUsageDeskProjectedSummaryItems,
   collectUsageDeskObservedDetails,
   collectUsageDeskProjectedDetails,
@@ -17,6 +18,7 @@ import {
   resolveUsageDeskLinkedRowKey,
   resolveUsageDeskRangeDrilldownDayKey,
   shouldOpenUsageDeskProjectedSessionSurface,
+  usageDeskProjectDrilldownColumnLabels,
   usageDeskSessionDrilldownColumnLabels,
   usageDeskProjectedSurfaceViewOptions,
 } from '../model/usageDesk.ts';
@@ -57,6 +59,10 @@ test('projected surface view options include a local sessions mode', () => {
 
 test('session drilldown columns keep table order stable', () => {
   assert.deepEqual(Array.from(usageDeskSessionDrilldownColumnLabels), ['会话来源', '模型', '请求', 'Token', '输入', '缓存', '输出']);
+});
+
+test('project drilldown columns keep aggregate table order stable', () => {
+  assert.deepEqual(Array.from(usageDeskProjectDrilldownColumnLabels), ['项目', '会话', '模型', '请求', 'Token', '输入', '缓存', '输出']);
 });
 
 test('projected usage row selection opens session surface only for local projected data', () => {
@@ -543,6 +549,82 @@ test('buildUsageDeskProjectedSnapshot shows the dominant model and marks additio
         model: 'o3',
         totalTokens: 60,
         requests: 1,
+      },
+    ],
+  );
+});
+
+test('buildUsageDeskProjectedProjectUsageRows aggregates sessions by project', () => {
+  const projectRows = buildUsageDeskProjectedProjectUsageRows([
+    {
+      sessionID: 'sessions/2026/04/28/rollout-a.jsonl',
+      fileLabel: 'rollout-a.jsonl',
+      projectName: 'GetTokens',
+      model: 'gpt-5-codex',
+      requests: 1,
+      totalTokens: 360,
+      inputTokens: 300,
+      cachedInputTokens: 120,
+      outputTokens: 60,
+      latestTimestamp: '2026-04-28T06:20:00.000Z',
+    },
+    {
+      sessionID: 'sessions/2026/04/28/rollout-b.jsonl',
+      fileLabel: 'rollout-b.jsonl',
+      projectName: 'GetTokens',
+      model: 'o3',
+      requests: 2,
+      totalTokens: 180,
+      inputTokens: 150,
+      cachedInputTokens: 40,
+      outputTokens: 30,
+      latestTimestamp: '2026-04-28T06:21:00.000Z',
+    },
+    {
+      sessionID: 'sessions/2026/04/28/rollout-c.jsonl',
+      fileLabel: 'rollout-c.jsonl',
+      projectName: '',
+      model: 'gpt-5-codex',
+      requests: 1,
+      totalTokens: 90,
+      inputTokens: 70,
+      cachedInputTokens: 20,
+      outputTokens: 20,
+      latestTimestamp: '2026-04-28T06:19:00.000Z',
+    },
+  ]);
+
+  assert.deepEqual(
+    projectRows.map((project) => ({
+      projectName: project.projectName,
+      sessions: project.sessions,
+      model: project.model,
+      requests: project.requests,
+      totalTokens: project.totalTokens,
+      inputTokens: project.inputTokens,
+      cachedInputTokens: project.cachedInputTokens,
+      outputTokens: project.outputTokens,
+    })),
+    [
+      {
+        projectName: 'GetTokens',
+        sessions: 2,
+        model: 'gpt-5-codex,*',
+        requests: 3,
+        totalTokens: 540,
+        inputTokens: 450,
+        cachedInputTokens: 160,
+        outputTokens: 90,
+      },
+      {
+        projectName: '未知项目',
+        sessions: 1,
+        model: 'gpt-5-codex',
+        requests: 1,
+        totalTokens: 90,
+        inputTokens: 70,
+        cachedInputTokens: 20,
+        outputTokens: 20,
       },
     ],
   );
