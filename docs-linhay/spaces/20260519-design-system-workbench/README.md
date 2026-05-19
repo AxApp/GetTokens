@@ -343,3 +343,13 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - pending delete / pending status
    - rate-limit blocked
 3. `OpenAICompatibleWorkspace` 仍保持 `candidate`，等待 provider card 稳定后再收组合级 loading / empty / grid / embedded 状态。
+
+## 2026-05-19 第十二批 Feature Components：OpenAI Compatible Workspace
+1. 复用 `Design System/Feature Components/OpenAI Compatible`，继续收编 OpenAI-compatible workspace 组合视图：
+   - `OpenAICompatibleWorkspace`
+2. 新增 workspace 状态矩阵，使用固定 provider、verify state 和 remote models mock 覆盖：
+   - loading / not ready
+   - empty providers
+   - grid providers
+   - embedded section
+3. 本批不触碰真实 provider 加载、创建、删除、验证或 Wails 边界。

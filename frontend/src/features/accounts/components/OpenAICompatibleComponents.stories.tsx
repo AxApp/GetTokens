@@ -3,8 +3,14 @@ import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
-import type { OpenAICompatibleProvider, ProviderVerifyState } from '../model/openAICompatible';
+import {
+  buildProviderConfigSignature,
+  type OpenAICompatibleProvider,
+  type ProviderRemoteModelsState,
+  type ProviderVerifyState,
+} from '../model/openAICompatible';
 import OpenAICompatibleProviderCard from './OpenAICompatibleProviderCard';
+import OpenAICompatibleWorkspace from './OpenAICompatibleWorkspace';
 
 const meta = {
   title: 'Design System/Feature Components/OpenAI Compatible',
@@ -85,6 +91,29 @@ const verifyStates: Record<keyof typeof providers, ProviderVerifyState> = {
     lastVerifiedAt: null,
   },
 };
+
+function signedVerifyState(providerKey: keyof typeof providers): ProviderVerifyState {
+  return {
+    ...verifyStates[providerKey],
+    configSignature: buildProviderConfigSignature(providers[providerKey]),
+  };
+}
+
+function signedRemoteModelsState(
+  providerKey: keyof typeof providers,
+): ProviderRemoteModelsState {
+  const models = (providers[providerKey].models || []).map((model) => ({
+    name: model.name,
+    alias: model.alias || '',
+  }));
+  return {
+    status: models.length > 0 ? 'success' : 'idle',
+    message: models.length > 0 ? 'remote model cache ready' : '',
+    models,
+    lastFetchedAt: models.length > 0 ? 1779145200000 : null,
+    configSignature: buildProviderConfigSignature(providers[providerKey]),
+  };
+}
 
 const usageSummary: AccountUsageSummary = {
   source: 'attribution',
@@ -201,7 +230,74 @@ function OpenAICompatibleOverview() {
           <ProviderCardSample label="DS-RATE" rateLimitStatus={rateLimitBlocked} />
         </div>
       </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Workspace states</h3>
+        <div className="grid gap-4">
+          <WorkspaceSample label="DS-WORKSPACE-GRID" />
+          <div className="grid gap-4 xl:grid-cols-3">
+            <WorkspaceSample label="DS-WORKSPACE-LOADING" ready={false} loading />
+            <WorkspaceSample label="DS-WORKSPACE-EMPTY" providers={[]} />
+            <WorkspaceSample label="DS-WORKSPACE-EMBEDDED" embedded />
+          </div>
+        </div>
+      </section>
     </div>
+  );
+}
+
+function WorkspaceSample({
+  label,
+  ready = true,
+  loading = false,
+  providers: sampleProviders = [providers.verified, providers.error, providers.disabled],
+  embedded = false,
+}: {
+  label: string;
+  ready?: boolean;
+  loading?: boolean;
+  providers?: OpenAICompatibleProvider[];
+  embedded?: boolean;
+}) {
+  const { t } = useI18n();
+  const verifyStatesByName: Record<string, ProviderVerifyState> = {
+    [providers.verified.name]: signedVerifyState('verified'),
+    [providers.error.name]: signedVerifyState('error'),
+    [providers.disabled.name]: signedVerifyState('disabled'),
+  };
+  const remoteModelsStatesByName: Record<string, ProviderRemoteModelsState> = {
+    [providers.verified.name]: signedRemoteModelsState('verified'),
+    [providers.error.name]: signedRemoteModelsState('error'),
+    [providers.disabled.name]: signedRemoteModelsState('disabled'),
+  };
+
+  return (
+    <DesignSystemStoryFrame label={label}>
+      <div className={embedded ? 'max-h-[44rem] overflow-auto bg-[var(--bg-surface)] p-5' : 'h-[44rem] overflow-hidden'}>
+        <OpenAICompatibleWorkspace
+          t={t}
+          ready={ready}
+          loading={loading}
+          providers={sampleProviders}
+          verifyStates={verifyStatesByName}
+          remoteModelsStates={remoteModelsStatesByName}
+          pendingDeleteName={providers.verified.name}
+          pendingStatusName={providers.verified.name}
+          accountUsageByID={{
+            [`openai-compatible:${providers.verified.name}`]: usageSummary,
+          }}
+          accountRateLimitByID={{
+            [`openai-compatible:${providers.error.name}`]: rateLimitBlocked,
+          }}
+          onCreate={() => undefined}
+          onRefresh={() => undefined}
+          onOpenDetail={() => undefined}
+          onDelete={() => undefined}
+          onToggleDisabled={() => undefined}
+          embedded={embedded}
+        />
+      </div>
+    </DesignSystemStoryFrame>
   );
 }
 
@@ -219,4 +315,8 @@ export const Error: Story = {
 
 export const Disabled: Story = {
   render: () => <ProviderCardSample label="DS-DISABLED" providerKey="disabled" />,
+};
+
+export const Workspace: Story = {
+  render: () => <WorkspaceSample label="DS-WORKSPACE-GRID" />,
 };

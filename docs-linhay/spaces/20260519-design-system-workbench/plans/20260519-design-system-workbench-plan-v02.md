@@ -407,6 +407,20 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - pending delete / pending status
    - rate-limit blocked
 5. `OpenAICompatibleWorkspace` 继续保持 candidate，下一批再处理 workspace 组合态。
+
+### 第十二批：OpenAI Compatible Workspace
+本批复用 OpenAI Compatible story，继续收 OpenAI-compatible workspace 组合视图。
+
+1. 继续更新 `frontend/src/features/accounts/components/OpenAICompatibleComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/OpenAI Compatible`。
+3. 本批 admitted 文件：
+   - `OpenAICompatibleWorkspace.tsx`
+4. `Overview` 新增 workspace 状态：
+   - loading / not ready
+   - empty providers
+   - grid providers
+   - embedded section
+5. 本批只用固定 mock 回调和数据，不触碰真实 provider 加载、创建、删除、验证或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary
