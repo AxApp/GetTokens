@@ -357,6 +357,23 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - fallback hit terminal
    - empty candidates
 5. `CodexAccountOrderRow`、`CodexAccountOrderSection` 继续保持 candidate，下一批围绕密度、列表和拖拽状态单独处理。
+
+### 第九批：Account Rotation
+本批收账号轮换弹窗中已拆出的 row / config 组件，不直接收整个 `AccountRotationModal`。
+
+1. 已新增 `frontend/src/features/accounts/components/account-rotation/AccountRotationComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Account Rotation`。
+3. 本批 admitted 文件：
+   - `RotationPriorityItem.tsx`
+   - `RotationConfigSection.tsx`
+4. `Overview` 同屏覆盖：
+   - 普通优先级列表
+   - 拖拽态
+   - pending / ready=false 态
+   - disabled 账号
+   - routing 配置默认态
+   - strategy menu 展开态
+5. `AccountRotationModal` 继续 deferred，等待加载、保存和真实 routing 配置边界拆出纯 view。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

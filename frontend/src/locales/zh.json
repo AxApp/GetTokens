@@ -8,6 +8,8 @@
     "details": "详细参数",
     "enable": "激活账户",
     "disable": "禁用账户",
+    "active": "已启用",
+    "disabled": "已禁用",
     "close": "关闭面板",
     "save": "保存更改",
     "cancel": "放弃操作",

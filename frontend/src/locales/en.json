@@ -8,6 +8,8 @@
     "details": "Details",
     "enable": "Enable",
     "disable": "Disable",
+    "active": "Active",
+    "disabled": "Disabled",
     "close": "Close",
     "save": "Save",
     "cancel": "Cancel",

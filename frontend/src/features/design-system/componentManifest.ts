@@ -27,6 +27,8 @@ const accountModalStoryPath = 'frontend/src/features/accounts/components/Account
 const accountModalStorybookTitle = 'Design System/Feature Components/Account Modals';
 const accountCardStoryPath = 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx';
 const accountCardStorybookTitle = 'Design System/Feature Components/Account Cards';
+const accountRotationStoryPath = 'frontend/src/features/accounts/components/account-rotation/AccountRotationComponents.stories.tsx';
+const accountRotationStorybookTitle = 'Design System/Feature Components/Account Rotation';
 const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx';
 const statusRelayEditorsStorybookTitle = 'Design System/Feature Components/Status Relay Editors';
 const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx';
@@ -336,24 +338,30 @@ export const designSystemComponentManifest = [
     componentName: 'RotationConfigSection',
     sourcePath: 'frontend/src/features/accounts/components/account-rotation/RotationConfigSection.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: 'routing 表单无直接 Wails 调用，可用 mock routingDraft 收编。',
+    decisionReason: '账号轮换 routing 配置表单已通过 Account Rotation story 收编，覆盖默认值和策略菜单展开态。',
     matchedPatterns: ['Combobox', 'ToggleSwitch'],
-    suggestedDesignComponent: 'RoutingConfigForm',
+    storyPath: accountRotationStoryPath,
+    storybookTitle: accountRotationStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['priority', 'random', 'disabled'],
+    mockDataSources: ['storybook relay routing draft mock'],
   },
   {
     id: 'accounts-rotation-priority-item',
     componentName: 'RotationPriorityItem',
     sourcePath: 'frontend/src/features/accounts/components/account-rotation/RotationPriorityItem.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '可拖拽优先级项为纯 props，适合高密度条目模式。',
+    decisionReason: '账号轮换优先级项已通过 Account Rotation story 收编，覆盖普通、拖拽、pending 和 disabled 账号状态。',
     matchedPatterns: ['DebugPanel EntryCard'],
-    suggestedDesignComponent: 'DraggablePriorityItem',
+    storyPath: accountRotationStoryPath,
+    storybookTitle: accountRotationStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['normal', 'dragging', 'disabled'],
+    mockDataSources: ['storybook AccountRecord rotation mock'],
   },
   {
     id: 'accounts-usage-desk-chart',

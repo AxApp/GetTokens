@@ -147,6 +147,12 @@ export const designSystemStoryGroups = [
         storybookTitle: 'Design System/Feature Components/Codex Route Probe',
         path: 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx',
       },
+      {
+        id: 'account-rotation-components',
+        title: 'Account Rotation Components',
+        storybookTitle: 'Design System/Feature Components/Account Rotation',
+        path: 'frontend/src/features/accounts/components/account-rotation/AccountRotationComponents.stories.tsx',
+      },
     ],
   },
 ] as const satisfies readonly DesignSystemStoryGroup[];

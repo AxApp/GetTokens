@@ -305,3 +305,16 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - fallback 命中
    - 空候选队列
 3. `CodexAccountOrderRow` 和 `CodexAccountOrderSection` 仍保持 `candidate`，后续单独处理密度、列表和拖拽状态。
+
+## 2026-05-19 第九批 Feature Components：Account Rotation
+1. 新增 `Design System/Feature Components/Account Rotation`，收编账号轮换弹窗中已拆出的纯展示 / 表单组件：
+   - `RotationPriorityItem`
+   - `RotationConfigSection`
+2. 新 story 使用固定账号和 routing draft mock，同屏覆盖：
+   - 普通优先级列表
+   - 拖拽态
+   - pending / ready=false 态
+   - disabled 账号
+   - routing 配置默认态
+   - 策略菜单展开态
+3. 轮换弹窗整体 `AccountRotationModal` 仍保持 `deferred`，等待保存 / 加载等运行时边界拆出纯 view。
