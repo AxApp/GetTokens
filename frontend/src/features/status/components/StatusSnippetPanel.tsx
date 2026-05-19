@@ -1,0 +1,65 @@
+import type { ReactNode } from 'react';
+import { resolveUnifiedDiffLineTone } from '../model/relayLocalState';
+
+interface StatusSnippetPanelProps {
+  title: string;
+  content: string;
+  onCopy?: () => void;
+  headerAction?: ReactNode;
+  preClassName?: string;
+}
+
+export default function StatusSnippetPanel({
+  title,
+  content,
+  onCopy,
+  headerAction,
+  preClassName = '',
+}: StatusSnippetPanelProps) {
+  const lines = content.split('\n');
+
+  function lineClassName(line: string) {
+    const tone = resolveUnifiedDiffLineTone(line);
+    switch (tone) {
+      case 'add':
+        return 'border-l-4 border-green-600 bg-green-600/10 pl-2 text-green-700';
+      case 'remove':
+        return 'border-l-4 border-red-600 bg-red-600/10 pl-2 text-red-700';
+      case 'hunk':
+        return 'text-[var(--text-muted)]';
+      case 'file':
+        return 'font-black text-[var(--text-primary)]';
+      case 'meta':
+        return 'text-[var(--text-muted)]';
+      default:
+        return 'text-[var(--text-primary)]';
+    }
+  }
+
+  return (
+    <div className="overflow-hidden border-2 border-[var(--border-color)]">
+      <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+        <div className="font-mono text-[0.625rem] font-black uppercase tracking-widest text-[var(--text-primary)]">
+          {title}
+        </div>
+        {onCopy || headerAction ? (
+          <div className="flex items-center gap-2">
+            {onCopy ? (
+              <button onClick={onCopy} className="btn-swiss !px-3 !py-1 !text-[0.5625rem]">
+                复制
+              </button>
+            ) : null}
+            {headerAction}
+          </div>
+        ) : null}
+      </div>
+      <pre className={`overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 ${preClassName}`}>
+        {lines.map((line, index) => (
+          <code key={`${index}-${line}`} className={`block min-h-6 whitespace-pre ${lineClassName(line)}`}>
+            {line || ' '}
+          </code>
+        ))}
+      </pre>
+    </div>
+  );
+}

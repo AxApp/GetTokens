@@ -297,6 +297,20 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - Provider 编辑和错误态
    - Model 编辑错误态
 5. `StatusPanels.tsx` 继续保持 candidate，因为该文件包含多个未完全收编的导出组件；后续应拆 `StatusSnippetPanel` / Codex feature list，再决定是否整体 admitted。
+
+### 第五批：Status Snippet Panel
+本批先处理 `StatusPanels.tsx` 中已稳定复用的代码片段展示块，通过拆文件让 manifest 准入粒度保持真实。
+
+1. 已新增 `frontend/src/features/status/components/StatusSnippetPanel.tsx`，并让 `StatusPanels.tsx` 复用该独立组件。
+2. 已新增 `frontend/src/features/status/components/StatusSnippetPanel.stories.tsx`。
+3. Storybook 路径为 `Design System/Feature Components/Status Snippet Panel`。
+4. `Overview` 同屏覆盖：
+   - 普通配置片段
+   - 无复制按钮状态
+   - header action
+   - unified diff add/remove/hunk 着色
+   - 长行横向滚动
+5. `StatusPanels.tsx` 仍保持 candidate，剩余 local apply / Codex feature list 后续继续拆分收编。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

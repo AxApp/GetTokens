@@ -259,3 +259,13 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - Provider 编辑态 / 校验错误态
    - Model 编辑错误态
 3. `StatusPanels.tsx` 暂不标为 admitted；其中 `StatusSnippetPanel` 和 Codex feature list 仍是下一批候选，避免只收其中一个导出却把整个大文件误判为已准入。
+
+## 2026-05-19 第五批 Feature Components：Status Snippet Panel
+1. 从 `StatusPanels.tsx` 拆出 `StatusSnippetPanel.tsx`，让配置片段 / diff 面板拥有独立文件边界和独立 manifest 准入。
+2. 新增 `Design System/Feature Components/Status Snippet Panel`，覆盖：
+   - 普通配置片段
+   - 无复制按钮状态
+   - header action 状态
+   - unified diff 着色
+   - 长行横向滚动
+3. `StatusPanels.tsx` 继续保持 `candidate`，后续拆分 Codex feature list 和 local apply 面板后再复查。

@@ -123,6 +123,12 @@ export const designSystemStoryGroups = [
         storybookTitle: 'Design System/Feature Components/Status Relay Editors',
         path: 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx',
       },
+      {
+        id: 'status-snippet-panel',
+        title: 'Status Snippet Panel',
+        storybookTitle: 'Design System/Feature Components/Status Snippet Panel',
+        path: 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx',
+      },
     ],
   },
 ] as const satisfies readonly DesignSystemStoryGroup[];

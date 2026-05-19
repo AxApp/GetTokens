@@ -27,6 +27,8 @@ const accountCardStoryPath = 'frontend/src/features/accounts/components/AccountC
 const accountCardStorybookTitle = 'Design System/Feature Components/Account Cards';
 const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx';
 const statusRelayEditorsStorybookTitle = 'Design System/Feature Components/Status Relay Editors';
+const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx';
+const statusSnippetPanelStorybookTitle = 'Design System/Feature Components/Status Snippet Panel';
 
 export const designSystemComponentManifest = [
   {
@@ -563,10 +565,25 @@ export const designSystemComponentManifest = [
     ownerFeature: 'status',
     status: 'candidate',
     tier: 'feature-component',
-    decisionReason: '包含多个纯 props 面板，但状态复杂，按 Snippet、Feature toggle、Picker 分批收编。',
+    decisionReason: '包含多个纯 props 面板但状态复杂；StatusSnippetPanel 已拆出收编，剩余 Codex feature list 和 local apply 面板继续分批处理。',
     matchedPatterns: ['SegmentedControl', 'ActionSelect', 'ToggleSwitch', 'DebugPanel details'],
     suggestedDesignComponent: 'LocalCliApplyPanel',
     requiredStates: ['ready', 'blocked', 'saving', 'diff'],
+  },
+  {
+    id: 'status-snippet-panel',
+    componentName: 'StatusSnippetPanel',
+    sourcePath: 'frontend/src/features/status/components/StatusSnippetPanel.tsx',
+    ownerFeature: 'status',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Status 配置片段面板已拆成独立组件并通过 Status Snippet Panel story 收编，覆盖普通配置、diff、长行和 header action。',
+    matchedPatterns: ['DebugPanel details'],
+    storyPath: statusSnippetPanelStoryPath,
+    storybookTitle: statusSnippetPanelStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['plain', 'diff', 'long-line', 'header-action'],
+    mockDataSources: ['storybook local config snippet mock'],
   },
 ] as const satisfies readonly DesignSystemComponentManifestEntry[];
 
