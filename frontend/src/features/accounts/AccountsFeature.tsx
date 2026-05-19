@@ -3,6 +3,7 @@ import {
   CreateCodexAPIKey,
   CreateRateLimitRule,
   DeleteRateLimitRule,
+  DownloadAuthFile,
   FetchOpenAICompatibleProviderModels,
   ListRateLimitRules,
   ListRelaySupportedModels,
@@ -506,6 +507,7 @@ export default function AccountsFeature({ sidecarStatus }: AccountsFeatureProps)
                   }}
                   onCancelDelete={() => setPendingDeleteID(null)}
                   onConfirmDelete={(account) => void deleteAccount(account)}
+                  downloadAuthFile={DownloadAuthFile}
                 />
               ))}
             </div>

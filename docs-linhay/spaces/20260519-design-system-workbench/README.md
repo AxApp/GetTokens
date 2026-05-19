@@ -552,6 +552,18 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - rate-limit composed
 3. 本批只验证详情弹窗 shell、provider detail panel 与规则编辑区块的组合态；真实 provider 保存、验证、远端模型拉取和规则持久化仍由运行时父组件注入。
 
+## 2026-05-19 第三十批 Feature Components：Account Wrapper And API Key Detail
+1. 复查上一批 deferred 账号组件，继续收编：
+   - `AccountGroupSection`
+   - `ApiKeyDetailModal`
+2. `AccountGroupSection` 不再直接 import Wails `DownloadAuthFile`，改为由 `AccountsFeature` 注入；Storybook 使用 mock 下载函数验证真实 wrapper + `AccountCard` 组合态。
+3. `ApiKeyDetailModal` 不再直接 import Wails rate-limit CRUD，改为可选 `RateLimitRulesAPI` 注入；Storybook 使用 mock API 验证配置、验证结果、quota curl 和规则编辑组合态。
+4. 本批只验证业务 wrapper 与详情弹窗的视觉 / 状态组合，不触碰真实账号保存、quota 请求、auth file 下载或限流规则持久化。
+5. 验证通过：
+   - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build-storybook`
+
 ## 场景收敛规则
 1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。
 2. 对已经在同类组件中验证过的 loading、disabled、empty、error 行为，不重复为每个组件铺满；仅在该组件有独特布局或行为差异时新增状态。

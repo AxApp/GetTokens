@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Loader2, Pencil } from 'lucide-react';
 import {
-  CreateRateLimitRule,
-  DeleteRateLimitRule,
-  ListRateLimitRules,
-  UpdateRateLimitRule,
-} from '../../../../wailsjs/go/main/App';
-import {
   providerLabel,
   resolveAccountConfigurationWorkspaceHeading,
   resolveAccountProviderConfigHeading,
@@ -18,7 +12,7 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import { DEFAULT_RATE_LIMIT_STRATEGIES, type RateLimitState, type RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountHealthBar from './AccountHealthBar';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
-import RateLimitRulesSection from './RateLimitRulesSection';
+import RateLimitRulesSection, { type RateLimitRulesAPI } from './RateLimitRulesSection';
 import { resolveAPIKeyModelMenuNames, type APIKeyModelMenuMode } from '../model/apiKeyModelCatalog';
 import { buildDefaultCodexQuotaCurl } from '../model/accountConfig';
 import type { CodexQuota } from '../../../types';
@@ -26,7 +20,7 @@ import { toErrorMessage } from '../../../utils/error';
 
 const DEFAULT_CODEX_API_KEY_VERIFY_MODEL = 'gpt-5.4-mini';
 
-interface APIKeyVerifyState {
+export interface APIKeyVerifyState {
   model: string;
   status: 'idle' | 'loading' | 'success' | 'error';
   message: string;
@@ -40,6 +34,7 @@ interface ApiKeyDetailModalProps {
   rateLimitStrategies?: RateLimitStrategyMeta[];
   verifyState: APIKeyVerifyState;
   modelNames?: string[];
+  rateLimitRulesAPI?: RateLimitRulesAPI;
   onClose: () => void;
   onRename: (nextName: string) => void;
   onSaveConfig: (draft: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; quotaEnabled: boolean }) => Promise<void>;
@@ -69,6 +64,7 @@ export default function ApiKeyDetailModal({
   rateLimitStrategies = DEFAULT_RATE_LIMIT_STRATEGIES,
   verifyState,
   modelNames,
+  rateLimitRulesAPI,
   onClose,
   onRename,
   onSaveConfig,
@@ -524,12 +520,7 @@ export default function ApiKeyDetailModal({
               matchKey={usageSummary?.attributionKey}
               rateLimitStatus={rateLimitStatus}
               rateLimitStrategies={rateLimitStrategies}
-              rateLimitRulesAPI={{
-                list: ListRateLimitRules,
-                create: CreateRateLimitRule,
-                update: UpdateRateLimitRule,
-                delete: DeleteRateLimitRule,
-              }}
+              rateLimitRulesAPI={rateLimitRulesAPI}
               onRateLimitRulesChanged={onRateLimitRulesChanged}
               t={t}
             />

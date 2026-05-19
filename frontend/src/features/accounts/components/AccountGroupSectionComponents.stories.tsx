@@ -3,7 +3,10 @@ import type { ReactNode } from 'react';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
+import type { AccountUsageSummary } from '../model/accountUsage';
+import type { RateLimitState } from '../model/rateLimit';
 import type { AccountRecord } from '../model/types';
+import AccountGroupSection from './AccountGroupSection';
 import AccountCardFrame from './AccountCardFrame';
 import AccountGroupSectionView from './AccountGroupSectionView';
 
@@ -47,6 +50,47 @@ const accountRecords: AccountRecord[] = [
     planType: 'Enterprise',
   },
 ];
+
+const usageSummary: AccountUsageSummary = {
+  source: 'attribution',
+  hasData: true,
+  requestCount: 320,
+  failedCount: 3,
+  success: 317,
+  failure: 3,
+  successRate: 99,
+  averageLatencyMs: 188,
+  inputTokens: 142000,
+  cachedInputTokens: 36000,
+  outputTokens: 42000,
+  totalTokens: 184000,
+  lastActivityAt: 1779145200000,
+  attributionKey: 'account-group-story',
+  attributionKind: 'auth-file',
+  provider: 'openai',
+  requestedModels: ['gpt-5.2'],
+  trafficBuckets: [],
+  statusBar: {
+    blocks: ['success', 'success', 'mixed', 'success', 'idle', 'idle'],
+    blockDetails: [
+      { success: 9, failure: 0, rate: 1, startTime: 0, endTime: 1 },
+      { success: 8, failure: 0, rate: 1, startTime: 1, endTime: 2 },
+      { success: 6, failure: 1, rate: 0.86, startTime: 2, endTime: 3 },
+      { success: 10, failure: 0, rate: 1, startTime: 3, endTime: 4 },
+      { success: 0, failure: 0, rate: -1, startTime: 4, endTime: 5 },
+      { success: 0, failure: 0, rate: -1, startTime: 5, endTime: 6 },
+    ],
+    successRate: 99,
+    totalSuccess: 33,
+    totalFailure: 1,
+  },
+};
+
+const rateLimitStatus: RateLimitState = {
+  accountKey: 'acct-team-primary',
+  blocked: false,
+  rules: [],
+};
 
 function GroupViewport({
   label,
@@ -126,6 +170,48 @@ function AccountGroupSectionSample({
   );
 }
 
+function AccountGroupSectionWrapperSample({
+  label,
+  displayMode = 'full',
+}: {
+  label: string;
+  displayMode?: AccountListDisplayMode;
+}) {
+  const { t } = useI18n();
+  return (
+    <GroupViewport label={label}>
+      <AccountGroupSection
+        t={t}
+        group={{
+          id: `wrapper-${displayMode}`,
+          label: 'Runtime Wrapper',
+          rank: 1,
+          accounts: accountRecords,
+        }}
+        codexQuotaByName={{}}
+        accountUsageByID={Object.fromEntries(accountRecords.map((account) => [account.id, usageSummary]))}
+        accountRateLimitByID={Object.fromEntries(accountRecords.map((account) => [account.id, rateLimitStatus]))}
+        ready
+        isSelectionMode={displayMode === 'list'}
+        selectedAccountIDSet={new Set(['acct-team-primary'])}
+        pendingDeleteID={null}
+        oauthPendingAccountID={null}
+        pendingStatusAccountID={null}
+        displayMode={displayMode}
+        onToggleSelection={() => undefined}
+        onOpenDetails={() => undefined}
+        onRefreshQuota={() => undefined}
+        onStartReauth={() => undefined}
+        onToggleDisabled={() => undefined}
+        onRequestDelete={() => undefined}
+        onCancelDelete={() => undefined}
+        onConfirmDelete={() => undefined}
+        downloadAuthFile={async () => ({ contentBase64: 'eyJ0eXBlIjoic3RvcnkifQ=' })}
+      />
+    </GroupViewport>
+  );
+}
+
 function AccountGroupSectionOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
@@ -143,6 +229,7 @@ function AccountGroupSectionOverview() {
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-COMPACT" displayMode="compact" />
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-LIST" displayMode="list" />
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-EMPTY" accounts={[]} />
+          <AccountGroupSectionWrapperSample label="DS-ACCOUNT-GROUP-WRAPPER" />
         </div>
       </section>
     </div>
@@ -159,4 +246,8 @@ export const Full: Story = {
 
 export const List: Story = {
   render: () => <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-LIST" displayMode="list" />,
+};
+
+export const RuntimeWrapper: Story = {
+  render: () => <AccountGroupSectionWrapperSample label="DS-ACCOUNT-GROUP-WRAPPER" />,
 };

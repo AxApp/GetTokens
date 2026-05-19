@@ -2,7 +2,6 @@ import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from '.
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
-import { DownloadAuthFile } from '../../../../wailsjs/go/main/App';
 import AccountCard from './AccountCard';
 import AccountGroupSectionView from './AccountGroupSectionView';
 
@@ -28,6 +27,7 @@ interface AccountGroupSectionProps {
   onRequestDelete: (accountID: string) => void;
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
+  downloadAuthFile?: (accountName: string) => Promise<{ contentBase64: string }>;
 }
 
 export default function AccountGroupSection({
@@ -52,6 +52,7 @@ export default function AccountGroupSection({
   onRequestDelete,
   onCancelDelete,
   onConfirmDelete,
+  downloadAuthFile,
 }: AccountGroupSectionProps) {
   return (
     <AccountGroupSectionView
@@ -82,7 +83,7 @@ export default function AccountGroupSection({
           onRequestDelete={onRequestDelete}
           onCancelDelete={onCancelDelete}
           onConfirmDelete={onConfirmDelete}
-          downloadAuthFile={DownloadAuthFile}
+          downloadAuthFile={downloadAuthFile}
         />
       )}
     />

@@ -1,12 +1,17 @@
 import type { ReactNode } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useI18n } from '../../../context/I18nContext';
+import type { CodexQuota } from '../../../types';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
-import type { ApiKeyFormState } from '../model/types';
+import type { AccountUsageSummary } from '../model/accountUsage';
+import type { RateLimitState } from '../model/rateLimit';
+import type { AccountRecord, ApiKeyFormState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import ApiKeyDetailModal, { type APIKeyVerifyState } from './ApiKeyDetailModal';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
 import CodexOAuthModal from './CodexOAuthModal';
 import PasteAuthModal from './PasteAuthModal';
+import type { RateLimitRulesAPI } from './RateLimitRulesSection';
 import UnifiedComposeModal, { type UnifiedComposeFormState } from './UnifiedComposeModal';
 
 const meta = {
@@ -217,6 +222,107 @@ const apiKeyForms: Record<'empty' | 'filled' | 'error', ApiKeyFormState> = {
   },
 };
 
+const apiKeyDetailAccount: AccountRecord = {
+  id: 'codex-api-key-preview',
+  provider: 'openai',
+  credentialSource: 'api-key',
+  displayName: 'Codex API Key Preview',
+  status: 'active',
+  apiKey: 'sk-preview-openai',
+  keyFingerprint: 'sk-...93FA',
+  baseUrl: 'https://api.openai.com/v1',
+  prefix: 'codex-preview',
+  quotaCurl: 'curl -sS "https://example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"',
+  quotaEnabled: true,
+  planType: 'Pro',
+  supportedFormats: ['openai_chat', 'openai_responses'],
+};
+
+const apiKeyUsageSummary: AccountUsageSummary = {
+  source: 'attribution',
+  hasData: true,
+  requestCount: 748,
+  failedCount: 8,
+  success: 740,
+  failure: 8,
+  successRate: 98.9,
+  averageLatencyMs: 226,
+  inputTokens: 364000,
+  cachedInputTokens: 94000,
+  outputTokens: 108000,
+  totalTokens: 472000,
+  lastActivityAt: 1779145200000,
+  attributionKey: 'codex-api-key-preview',
+  attributionKind: 'api-key',
+  provider: 'openai',
+  requestedModels: ['gpt-5.4-mini', 'gpt-5.2'],
+  trafficBuckets: [],
+  statusBar: {
+    blocks: ['success', 'success', 'mixed', 'success', 'failure', 'idle'],
+    blockDetails: [
+      { success: 12, failure: 0, rate: 1, startTime: 0, endTime: 1 },
+      { success: 10, failure: 0, rate: 1, startTime: 1, endTime: 2 },
+      { success: 7, failure: 1, rate: 0.88, startTime: 2, endTime: 3 },
+      { success: 13, failure: 0, rate: 1, startTime: 3, endTime: 4 },
+      { success: 0, failure: 3, rate: 0, startTime: 4, endTime: 5 },
+      { success: 0, failure: 0, rate: -1, startTime: 5, endTime: 6 },
+    ],
+    successRate: 98,
+    totalSuccess: 42,
+    totalFailure: 4,
+  },
+};
+
+const apiKeyRateLimitStatus: RateLimitState = {
+  accountKey: 'codex-api-key-preview',
+  matchKey: 'codex-api-key-preview',
+  blocked: false,
+  rules: [
+    {
+      exceeded: false,
+      usagePct: 44,
+      currentUsage: 440000,
+      rule: {
+        id: 'story-token-24h',
+        accountKey: 'codex-api-key-preview',
+        strategy: 'token-window',
+        window: '24h',
+        limitValue: 1000000,
+        action: 'warn',
+        enabled: true,
+      },
+    },
+  ],
+};
+
+const apiKeyVerifyStates: Record<'idle' | 'success' | 'error', APIKeyVerifyState> = {
+  idle: {
+    model: 'gpt-5.4-mini',
+    status: 'idle',
+    message: '',
+    lastVerifiedAt: null,
+  },
+  success: {
+    model: 'gpt-5.4-mini',
+    status: 'success',
+    message: 'Probe completed with 200 OK.',
+    lastVerifiedAt: 1779145200000,
+  },
+  error: {
+    model: 'gpt-5.4-mini',
+    status: 'error',
+    message: '401 unauthorized',
+    lastVerifiedAt: 1779141600000,
+  },
+};
+
+const previewRateLimitRulesAPI: RateLimitRulesAPI = {
+  list: async () => apiKeyRateLimitStatus.rules.map((item) => item.rule),
+  create: async (rule) => [rule],
+  update: async (rule) => [rule],
+  delete: async () => undefined,
+};
+
 const unifiedComposeForms: Record<'empty' | 'deepseek' | 'error', UnifiedComposeFormState> = {
   empty: {
     label: '',
@@ -289,6 +395,46 @@ function ApiKeyComposeSample({
         }
         initialVerifyModel={probe === 'verify-error' ? 'gpt-5.4-mini' : undefined}
         initialVerifyState={probe === 'verify-error' ? { status: 'error', message: '401 unauthorized' } : undefined}
+      />
+    </ModalViewport>
+  );
+}
+
+function ApiKeyDetailSample({
+  label,
+  verifyStateKey = 'success',
+}: {
+  label: string;
+  verifyStateKey?: keyof typeof apiKeyVerifyStates;
+}) {
+  const { t } = useI18n();
+  return (
+    <ModalViewport label={label}>
+      <ApiKeyDetailModal
+        t={t}
+        account={apiKeyDetailAccount}
+        usageSummary={apiKeyUsageSummary}
+        rateLimitStatus={apiKeyRateLimitStatus}
+        verifyState={apiKeyVerifyStates[verifyStateKey]}
+        modelNames={['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2']}
+        rateLimitRulesAPI={previewRateLimitRulesAPI}
+        onClose={() => undefined}
+        onRename={() => undefined}
+        onSaveConfig={async () => undefined}
+        onVerify={() => undefined}
+        onTestQuotaCurl={async () => ({
+          planType: 'Pro',
+          windows: [
+            {
+              id: 'five-hour',
+              label: '5H WINDOW',
+              remainingPercent: 64,
+              usedLabel: '36%',
+              resetLabel: '02:10:00',
+            },
+          ],
+        } as unknown as CodexQuota)}
+        onRateLimitRulesChanged={() => undefined}
       />
     </ModalViewport>
   );
@@ -400,6 +546,14 @@ function AccountModalsOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">API key detail states</h3>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <ApiKeyDetailSample label="DS-API-KEY-DETAIL-SUCCESS" />
+          <ApiKeyDetailSample label="DS-API-KEY-DETAIL-VERIFY-ERROR" verifyStateKey="error" />
+        </div>
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Unified compose states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <UnifiedComposeSample label="DS-UNIFIED-PRESET-LIST" formKey="empty" />
@@ -452,6 +606,10 @@ export const PasteAuth: Story = {
 
 export const ApiKeyCompose: Story = {
   render: () => <ApiKeyComposeSample label="DS-API-KEY-FILLED-QUOTA" formKey="filled" probe="ready" />,
+};
+
+export const ApiKeyDetail: Story = {
+  render: () => <ApiKeyDetailSample label="DS-API-KEY-DETAIL-SUCCESS" />,
 };
 
 export const CodexOAuth: Story = {
