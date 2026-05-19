@@ -381,3 +381,14 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - fetching models
    - verify error
 3. 本批只验证表单、quota curl、模型探测区和错误条布局，不触碰真实创建、模型请求或 Wails 边界。
+
+## 2026-05-19 第十六批 Feature Components：Accounts Header
+1. 新增 `Design System/Feature Components/Accounts Header`，收编账号工作台页头：
+   - `AccountsHeader`
+2. 新 story 使用固定 refs 和 callback mock 覆盖：
+   - default
+   - loading refresh
+   - menu open
+   - not ready
+   - unified compose action
+3. 本批只验证页头、刷新按钮、导入菜单和统一新增入口布局，不触碰真实文件上传、OAuth 或 Wails 边界。

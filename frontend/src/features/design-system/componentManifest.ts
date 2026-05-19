@@ -25,6 +25,8 @@ const codexBinaryStoryPath = 'frontend/src/features/codex-binary/components/Code
 const codexBinaryStorybookTitle = 'Design System/Feature Components/Codex Binary';
 const accountModalStoryPath = 'frontend/src/features/accounts/components/AccountModalComponents.stories.tsx';
 const accountModalStorybookTitle = 'Design System/Feature Components/Account Modals';
+const accountsHeaderStoryPath = 'frontend/src/features/accounts/components/AccountsHeaderComponents.stories.tsx';
+const accountsHeaderStorybookTitle = 'Design System/Feature Components/Accounts Header';
 const accountCardStoryPath = 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx';
 const accountCardStorybookTitle = 'Design System/Feature Components/Account Cards';
 const openAICompatibleStoryPath = 'frontend/src/features/accounts/components/OpenAICompatibleComponents.stories.tsx';
@@ -156,12 +158,15 @@ export const designSystemComponentManifest = [
     componentName: 'AccountsHeader',
     sourcePath: 'frontend/src/features/accounts/components/AccountsHeader.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '账号页头可匹配 WorkspacePageHeader，但上传 input 和动作菜单需要 mock。',
+    decisionReason: '账号页头已通过 Accounts Header story 收编，覆盖默认、刷新中、菜单展开、未就绪和统一新增入口。',
     matchedPatterns: ['WorkspacePageHeader'],
-    suggestedDesignComponent: 'WorkspaceActionMenu',
-    requiredStates: ['default', 'loading', 'with-actions'],
+    storyPath: accountsHeaderStoryPath,
+    storybookTitle: accountsHeaderStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['default', 'loading', 'menu-open', 'not-ready', 'unified-compose'],
+    mockDataSources: ['storybook accounts header refs and callbacks mock'],
   },
   {
     id: 'accounts-accounts-toolbar',

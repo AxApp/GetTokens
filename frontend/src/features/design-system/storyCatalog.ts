@@ -118,6 +118,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx',
       },
       {
+        id: 'accounts-header-components',
+        title: 'Accounts Header Components',
+        storybookTitle: 'Design System/Feature Components/Accounts Header',
+        path: 'frontend/src/features/accounts/components/AccountsHeaderComponents.stories.tsx',
+      },
+      {
         id: 'openai-compatible-components',
         title: 'OpenAI Compatible Components',
         storybookTitle: 'Design System/Feature Components/OpenAI Compatible',

@@ -461,6 +461,21 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - fetching models
    - verify error
 5. 本批只用固定 form 和 probe callback mock，不触碰真实创建、模型请求或 Wails 边界。
+
+### 第十六批：Accounts Header
+本批新增 Accounts Header story，收账号工作台页头。
+
+1. 新增 `frontend/src/features/accounts/components/AccountsHeaderComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Accounts Header`。
+3. 本批 admitted 文件：
+   - `AccountsHeader.tsx`
+4. `Overview` 同屏覆盖：
+   - default
+   - loading refresh
+   - menu open
+   - not ready
+   - unified compose action
+5. 本批只用固定 refs 和 callback mock，不触碰真实文件上传、OAuth 或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary
