@@ -94,7 +94,17 @@ jobs:
 
       # ── Wails ────────────────────────────────────────────────────────────
       - name: Install Wails
-        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if go install github.com/wailsapp/wails/v2/cmd/wails@v2.12.0; then
+              exit 0
+            fi
+            if [[ "${attempt}" -lt 3 ]]; then
+              sleep $((attempt * 20))
+            fi
+          done
+          exit 1
 
       # ── Build sidecar from fork source ───────────────────────────────────
       - name: Build CLIProxyAPI sidecar from source
