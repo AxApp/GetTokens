@@ -329,6 +329,20 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - info cards
    - session drilldown rows / empty rows
 5. 后续仍需处理账号域更重的弹窗、规则编辑器和完整 workspace 组合组件。
+
+### 第七批：Account Modals
+本批只收账号详情 modal shell，不提前收具体账号详情业务弹窗。
+
+1. 已新增 `frontend/src/features/accounts/components/AccountModalComponents.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Account Modals`。
+3. 本批 admitted 文件：
+   - `AccountDetailModalFrame.tsx`
+4. `Overview` 同屏覆盖：
+   - 默认 header / body / footer
+   - 长内容滚动
+   - 错误条
+   - 无 footer 状态
+5. `UnifiedAccountDetailModal`、`ApiKeyDetailModal`、`OpenAICompatibleDetailModal` 继续 deferred，等待下载、保存、验证、规则编辑等运行时边界拆出纯 view。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

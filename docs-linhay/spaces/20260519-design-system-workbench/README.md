@@ -285,3 +285,13 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - totals info cards
    - session drilldown 列表和空会话状态
 3. 本批只收编 `components/usage-desk/` 下的展示组件，不触碰 Usage Desk 的数据加载、Wails 绑定或现有业务状态。
+
+## 2026-05-19 第七批 Feature Components：Account Modals
+1. 新增 `Design System/Feature Components/Account Modals`，先收编账号详情弹窗的基础 shell：
+   - `AccountDetailModalFrame`
+2. 新 story 使用固定账号详情 mock 内容，同屏覆盖：
+   - 默认 header + body + footer
+   - 长内容滚动
+   - 错误条
+   - 无 footer 状态
+3. 具体详情弹窗如 `UnifiedAccountDetailModal`、`ApiKeyDetailModal`、`OpenAICompatibleDetailModal` 仍保留 `deferred`，因为它们包含下载、保存、验证或规则编辑等运行时边界。

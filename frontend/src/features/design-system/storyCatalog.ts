@@ -135,6 +135,12 @@ export const designSystemStoryGroups = [
         storybookTitle: 'Design System/Feature Components/Usage Desk',
         path: 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx',
       },
+      {
+        id: 'account-modal-components',
+        title: 'Account Modal Components',
+        storybookTitle: 'Design System/Feature Components/Account Modals',
+        path: 'frontend/src/features/accounts/components/AccountModalComponents.stories.tsx',
+      },
     ],
   },
 ] as const satisfies readonly DesignSystemStoryGroup[];

@@ -23,6 +23,8 @@ const debugPanelStoryPath = 'frontend/src/features/debug/components/DebugPanelCo
 const debugPanelStorybookTitle = 'Design System/Feature Components/Debug Panel';
 const codexBinaryStoryPath = 'frontend/src/features/codex-binary/components/CodexBinaryComponents.stories.tsx';
 const codexBinaryStorybookTitle = 'Design System/Feature Components/Codex Binary';
+const accountModalStoryPath = 'frontend/src/features/accounts/components/AccountModalComponents.stories.tsx';
+const accountModalStorybookTitle = 'Design System/Feature Components/Account Modals';
 const accountCardStoryPath = 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx';
 const accountCardStorybookTitle = 'Design System/Feature Components/Account Cards';
 const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx';
@@ -80,12 +82,15 @@ export const designSystemComponentManifest = [
     componentName: 'AccountDetailModalFrame',
     sourcePath: 'frontend/src/features/accounts/components/AccountDetailModalFrame.tsx',
     ownerFeature: 'accounts',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '统一详情弹窗框架为纯 shell，适合沉淀为 modal 设计模式。',
+    decisionReason: '账号详情弹窗 shell 已通过 Account Modals story 收编，覆盖 header、滚动内容、错误条和 footer action。',
     matchedPatterns: ['DebugPanel details'],
-    suggestedDesignComponent: 'ModalShell',
+    storyPath: accountModalStoryPath,
+    storybookTitle: accountModalStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['default', 'long-content'],
+    mockDataSources: ['storybook account modal content mock'],
   },
   {
     id: 'accounts-account-group-section',
