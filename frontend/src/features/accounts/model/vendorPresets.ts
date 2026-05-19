@@ -180,6 +180,7 @@ export const vendorPresets: VendorPreset[] = [
     apiFormat: 'openai_chat',
     supportedFormats: ['openai_chat', 'anthropic'],
     baseUrl: 'https://api.xiaomimimo.com/v1',
+    quotaCurlTemplate: 'curl -sS "https://platform.xiaomimimo.com/api/v1/tokenPlan/usage" -H "accept: */*" -H "accept-language: zh" -H "content-type: application/json" -b "<PASTE_PLATFORM_COOKIE>" -H "referer: https://platform.xiaomimimo.com/console/plan-manage" -H "x-timezone: Asia/Shanghai"',
     formatBaseUrls: {
       openai_chat: 'https://api.xiaomimimo.com/v1',
       anthropic: 'https://api.xiaomimimo.com/anthropic',

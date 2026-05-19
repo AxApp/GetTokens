@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   buildApiKeyConfigDraft,
   buildBillingCurlTemplate,
+  buildQuotaCurlTemplate,
   hasApiKeyConfigChanges,
   listApiKeyConfigMissingFields,
 } from '../model/accountDetailConfig.ts';
@@ -246,6 +247,18 @@ test('buildBillingCurlTemplate resolves known vendor presets', () => {
     }),
     'curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"',
   );
+});
+
+test('buildQuotaCurlTemplate resolves Xiaomi MiMo token plan usage preset without secrets', () => {
+  const template = buildQuotaCurlTemplate({
+    displayName: 'Xiaomi MiMo',
+    provider: 'codex',
+    baseUrl: 'https://api.xiaomimimo.com/v1',
+  });
+
+  assert.match(template, /https:\/\/platform\.xiaomimimo\.com\/api\/v1\/tokenPlan\/usage/);
+  assert.match(template, /<PASTE_PLATFORM_COOKIE>/);
+  assert.doesNotMatch(template, /api-platform_serviceToken=/);
 });
 
 test('generated Wails account models preserve quota curl fields', () => {

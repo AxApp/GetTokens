@@ -45,6 +45,36 @@ func TestBuildCodexQuotaCurlRequestParsesBackslashLineContinuations(t *testing.T
 	}
 }
 
+func TestBuildCodexQuotaCurlRequestParsesCookieOption(t *testing.T) {
+	req, err := BuildCodexQuotaCurlRequest(CodexQuotaCurlInput{
+		Curl:   `curl -b "session={{apiKey}}; locale=zh-CN" "https://codex.example.com/api/codex/usage"`,
+		APIKey: "sk-live",
+	})
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaCurlRequest: %v", err)
+	}
+
+	if req.Headers["Cookie"] != "session=sk-live; locale=zh-CN" {
+		t.Fatalf("Cookie = %q", req.Headers["Cookie"])
+	}
+}
+
+func TestBuildCodexQuotaCurlRequestAppendsCookieOptionToCookieHeader(t *testing.T) {
+	req, err := BuildCodexQuotaCurlRequest(CodexQuotaCurlInput{
+		Curl: `curl "https://codex.example.com/api/codex/usage" -H "cookie: existing=1" --cookie "session=sk-live"`,
+	})
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaCurlRequest: %v", err)
+	}
+
+	if req.Headers["cookie"] != "existing=1; session=sk-live" {
+		t.Fatalf("cookie = %q", req.Headers["cookie"])
+	}
+	if _, ok := req.Headers["Cookie"]; ok {
+		t.Fatalf("Cookie header should have reused existing lower-case key")
+	}
+}
+
 func TestBuildCodexQuotaCurlRequestRejectsShellFeatures(t *testing.T) {
 	for _, curl := range []string{
 		`curl https://codex.example.com/api/codex/usage | jq .`,
@@ -84,6 +114,59 @@ func TestBuildCodexQuotaResponseFromUsagePayloadMatchesAuthFileShape(t *testing.
 	}
 	if got := *result.Windows[1].RemainingPercent; got != 96 {
 		t.Fatalf("weekly remaining = %d, want 96", got)
+	}
+}
+
+func TestBuildCodexQuotaResponseFromUsagePayloadParsesXiaomiMiMoTokenPlanUsage(t *testing.T) {
+	result, err := BuildCodexQuotaResponseFromUsagePayload([]byte(`{
+		"code": 0,
+		"message": "",
+		"data": {
+			"monthUsage": {
+				"percent": 40,
+				"items": [{
+					"name": "month_total_token",
+					"used": 400,
+					"limit": 1000,
+					"percent": 40
+				}]
+			},
+			"usage": {
+				"percent": 12.5,
+				"items": [{
+					"name": "plan_total_token",
+					"used": 125,
+					"limit": 1000,
+					"percent": 12.5
+				}, {
+					"name": "compensation_total_token",
+					"used": 0,
+					"limit": 0,
+					"percent": 0
+				}]
+			}
+		}
+	}`), "")
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaResponseFromUsagePayload: %v", err)
+	}
+	if result.PlanType != "xiaomimimo" {
+		t.Fatalf("PlanType = %q, want xiaomimimo", result.PlanType)
+	}
+	if len(result.Windows) != 2 {
+		t.Fatalf("windows = %#v", result.Windows)
+	}
+	if result.Windows[0].ID != "mimo-plan-total-token" || result.Windows[0].Label != "PLAN" {
+		t.Fatalf("plan window = %#v", result.Windows[0])
+	}
+	if got := *result.Windows[0].RemainingPercent; got != 88 {
+		t.Fatalf("plan remaining = %d, want 88", got)
+	}
+	if result.Windows[1].ID != "mimo-month-total-token" || result.Windows[1].Label != "MONTH" {
+		t.Fatalf("month window = %#v", result.Windows[1])
+	}
+	if got := *result.Windows[1].RemainingPercent; got != 60 {
+		t.Fatalf("month remaining = %d, want 60", got)
 	}
 }
 

@@ -19,7 +19,7 @@
    - 支持启用 / 禁用该额度配置。
    - 支持编辑、测试请求、刷新额度。
 2. curl 请求能力：
-   - 支持常见 `curl` 参数：URL、method、header、body。
+   - 支持常见 `curl` 参数：URL、method、header、body、cookie。
    - 支持 `Authorization` 等敏感头脱敏展示。
    - 支持占位符替换，至少覆盖当前账号 API key，例如 `{{apiKey}}`。
 3. 响应归一：
@@ -112,7 +112,7 @@ And 未配置、加载失败、无窗口的 codex-api-key 不满足该筛选
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-05-05
+- 最近更新：2026-05-19
 
 ## 实现记录
 - 后端新增 curl 模板解析，不执行 shell，仅支持单条 curl 的 URL、method、header、body，并拒绝管道、重定向、多命令、反引号和 `$()` 等 shell 语法。
@@ -124,8 +124,14 @@ And 未配置、加载失败、无窗口的 codex-api-key 不满足该筛选
 - 修复 Wails 绑定根层遗漏：Wails 实际绑定的是根包 `main.App`，已在 `app.go / app_types.go / app_mappers.go` 转发 `TestCodexAPIKeyQuotaCurl` 和 quota 字段，避免 `wails dev` 重新生成 bindings 后丢失导出。
 - 修复旧半保存数据迁移：若本地 store 已有 `quota-curl` 但缺少 `quota-enabled`，加载时按启用处理；显式写了 `quota-enabled:false` 的配置仍保持禁用。
 - curl parser 支持浏览器复制 curl 常见的反斜杠换行格式，避免多行 `curl ... \` + `-H ...` 被解析成错误 URL。
+- curl parser 支持 `-b / --cookie`，按结构化请求写入 `Cookie` header；该能力仍不执行 shell，也不承诺完整模拟 curl 的 cookie jar / 文件读取语义。
+- Xiaomi MiMo 预设新增订阅额度模板，指向 `https://platform.xiaomimimo.com/api/v1/tokenPlan/usage`，模板只保留 `<PASTE_PLATFORM_COOKIE>` 占位，不把真实 Cookie 固化到仓库。
+- 后端新增 MiMo `tokenPlan/usage` 响应归一：`data.usage.items[].plan_total_token` 映射为 `PLAN` 窗口，`data.monthUsage.items[].month_total_token` 映射为 `MONTH` 窗口，按 `percent` 或 `used / limit` 计算剩余百分比。
 
 ## 验证记录
+- 2026-05-19：用用户提供的真实请求确认 MiMo 响应形状为 `code/data.monthUsage/data.usage`，未将真实 Cookie 写入代码或文档。
+- 2026-05-19：新增 MiMo payload 归一与前端模板无密钥回归测试；`go test ./internal/accounts`、`go test ./internal/wailsapp -run 'Test.*Quota|Test.*CodexAPIKey'`、`go test ./...`、`cd frontend && npm run test:unit -- src/features/accounts/tests/accountConfig.test.mjs` 通过。
+- 2026-05-19：补齐 `-b / --cookie` 回归测试；`go test ./internal/accounts`、`go test ./internal/wailsapp -run 'Test.*Quota|Test.*CodexAPIKey'` 通过。
 - `go test ./...`：通过
 - `cd frontend && npm run test:unit`：通过，包含生成绑定导出回归
 - `cd frontend && npm run typecheck`：通过
