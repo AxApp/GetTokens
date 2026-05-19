@@ -17,10 +17,11 @@ type CodexQuotaCurlInput struct {
 }
 
 type CodexQuotaCurlRequest struct {
-	Method  string
-	URL     string
-	Headers map[string]string
-	Body    string
+	Method         string
+	URL            string
+	Headers        map[string]string
+	Body           string
+	IgnoredOptions []string
 }
 
 func BuildCodexQuotaCurlRequest(input CodexQuotaCurlInput) (*CodexQuotaCurlRequest, error) {
@@ -97,9 +98,12 @@ func BuildCodexQuotaCurlRequest(input CodexQuotaCurlInput) (*CodexQuotaCurlReque
 			index = next
 		default:
 			if strings.HasPrefix(token, "-") {
-				return nil, fmt.Errorf("quota curl 暂不支持参数: %s", token)
+				next, ignored := ignoreUnsupportedCurlOption(tokens, index)
+				request.IgnoredOptions = append(request.IgnoredOptions, ignored)
+				index = next
+				continue
 			}
-			if request.URL == "" {
+			if request.URL == "" || (!isHTTPURL(request.URL) && isHTTPURL(token)) {
 				request.URL = applyCodexQuotaCurlPlaceholders(token, input)
 			}
 		}
@@ -109,13 +113,20 @@ func BuildCodexQuotaCurlRequest(input CodexQuotaCurlInput) (*CodexQuotaCurlReque
 	if request.URL == "" {
 		return nil, errors.New("quota curl 缺少 URL")
 	}
-	if !strings.HasPrefix(request.URL, "http://") && !strings.HasPrefix(request.URL, "https://") {
+	if !isHTTPURL(request.URL) {
 		return nil, errors.New("quota curl URL 必须是 http 或 https")
 	}
 	if request.Method == "" {
 		request.Method = http.MethodGet
 	}
 	return request, nil
+}
+
+func CodexQuotaCurlIgnoredOptionsHint(options []string) string {
+	if len(options) == 0 {
+		return ""
+	}
+	return "已忽略暂不支持的 curl 参数: " + strings.Join(uniqueStrings(options), ", ")
 }
 
 func BuildCodexQuotaResponseFromUsagePayload(usagePayloadBody []byte, fallbackPlanType string) (*CodexQuotaResponse, error) {
@@ -341,6 +352,83 @@ func findCodexQuotaCurlHeaderKey(headers map[string]string, target string) strin
 		}
 	}
 	return ""
+}
+
+func ignoreUnsupportedCurlOption(tokens []string, index int) (int, string) {
+	token := tokens[index]
+	if strings.Contains(token, "=") || curlOptionHasNoSeparateValue(token) {
+		return index, token
+	}
+	next := index + 1
+	if next < len(tokens) && !strings.HasPrefix(tokens[next], "-") && curlOptionLikelyHasValue(token) {
+		return next, token + " " + tokens[next]
+	}
+	return index, token
+}
+
+func curlOptionHasNoSeparateValue(token string) bool {
+	switch token {
+	case "-4", "--ipv4",
+		"-6", "--ipv6",
+		"-f", "--fail", "--fail-with-body",
+		"-g", "--globoff",
+		"-I", "--head",
+		"-k", "--insecure",
+		"-L", "--location",
+		"-v", "--verbose",
+		"--http1.0", "--http1.1", "--http2", "--http2-prior-knowledge", "--http3",
+		"--no-progress-meter", "--progress-bar":
+		return true
+	default:
+		return false
+	}
+}
+
+func curlOptionLikelyHasValue(token string) bool {
+	switch token {
+	case "-A", "--user-agent",
+		"-c", "--cookie-jar",
+		"-e", "--referer",
+		"-m", "--max-time",
+		"-o", "--output",
+		"-u", "--user",
+		"-x", "--proxy",
+		"--cacert", "--capath",
+		"--cert", "--cert-type",
+		"--connect-timeout", "--connect-to",
+		"--dns-interface", "--dns-ipv4-addr", "--dns-ipv6-addr", "--dns-servers",
+		"--form", "--form-string",
+		"--interface",
+		"--key", "--key-type",
+		"--limit-rate",
+		"--local-port",
+		"--max-filesize",
+		"--proto", "--proto-default", "--proto-redir",
+		"--rate", "--request-target",
+		"--resolve",
+		"--retry", "--retry-delay", "--retry-max-time":
+		return true
+	default:
+		return false
+	}
+}
+
+func isHTTPURL(value string) bool {
+	return strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://")
+}
+
+func uniqueStrings(values []string) []string {
+	seen := map[string]bool{}
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" || seen[trimmed] {
+			continue
+		}
+		seen[trimmed] = true
+		result = append(result, trimmed)
+	}
+	return result
 }
 
 func nextCurlValue(tokens []string, index int) (string, int, error) {

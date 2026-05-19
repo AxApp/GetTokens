@@ -75,6 +75,36 @@ func TestBuildCodexQuotaCurlRequestAppendsCookieOptionToCookieHeader(t *testing.
 	}
 }
 
+func TestBuildCodexQuotaCurlRequestIgnoresUnsupportedOptions(t *testing.T) {
+	req, err := BuildCodexQuotaCurlRequest(CodexQuotaCurlInput{
+		Curl: `curl --http2 --connect-timeout 5 -A "quota-checker" "https://codex.example.com/api/codex/usage"`,
+	})
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaCurlRequest: %v", err)
+	}
+
+	if req.URL != "https://codex.example.com/api/codex/usage" {
+		t.Fatalf("URL = %q", req.URL)
+	}
+	wantIgnored := []string{"--http2", "--connect-timeout 5", "-A quota-checker"}
+	if len(req.IgnoredOptions) != len(wantIgnored) {
+		t.Fatalf("IgnoredOptions = %#v, want %#v", req.IgnoredOptions, wantIgnored)
+	}
+	for index, want := range wantIgnored {
+		if req.IgnoredOptions[index] != want {
+			t.Fatalf("IgnoredOptions[%d] = %q, want %q", index, req.IgnoredOptions[index], want)
+		}
+	}
+}
+
+func TestCodexQuotaCurlIgnoredOptionsHint(t *testing.T) {
+	got := CodexQuotaCurlIgnoredOptionsHint([]string{"--http2", "--http2", "-A quota-checker"})
+	want := "已忽略暂不支持的 curl 参数: --http2, -A quota-checker"
+	if got != want {
+		t.Fatalf("hint = %q, want %q", got, want)
+	}
+}
+
 func TestBuildCodexQuotaCurlRequestRejectsShellFeatures(t *testing.T) {
 	for _, curl := range []string{
 		`curl https://codex.example.com/api/codex/usage | jq .`,

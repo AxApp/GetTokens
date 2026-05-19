@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -222,7 +223,7 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 			EndedAt:    time.Now(),
 			DurationMs: time.Since(startedAt).Milliseconds(),
 		})
-		return nil, err
+		return nil, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
 	}
 	defer resp.Body.Close()
 
@@ -258,14 +259,14 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		debugRecord.Error = "codex api key 额度请求失败"
 		a.emitCodexQuotaDebugRecord(debugRecord)
-		return nil, errors.New("codex api key 额度请求失败")
+		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("codex api key 额度请求失败"), curlRequest.IgnoredOptions)
 	}
 
 	quota, err := accountsdomain.BuildCodexQuotaResponseFromUsagePayload(responseBody, "")
 	if err != nil {
 		debugRecord.Error = err.Error()
 		a.emitCodexQuotaDebugRecord(debugRecord)
-		return nil, err
+		return nil, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
 	}
 	a.emitCodexQuotaDebugRecord(debugRecord)
 
@@ -300,6 +301,16 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 		Windows:  windows,
 		Billing:  billing,
 	}, nil
+}
+
+func codexQuotaCurlErrorWithIgnoredOptions(err error, ignoredOptions []string) error {
+	if err == nil {
+		return nil
+	}
+	if hint := accountsdomain.CodexQuotaCurlIgnoredOptionsHint(ignoredOptions); hint != "" {
+		return fmt.Errorf("%w。%s", err, hint)
+	}
+	return err
 }
 
 type cliproxyAPIKeyQuotaSource struct {
@@ -365,7 +376,7 @@ func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*
 
 	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
 	if err != nil {
-		return nil, err
+		return nil, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
 	}
 	defer resp.Body.Close()
 
@@ -376,7 +387,7 @@ func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*
 
 	billing := accountsdomain.TryParseBillingResponse(responseBody)
 	if billing == nil {
-		return nil, errors.New("无法解析计费信息，响应格式不支持")
+		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("无法解析计费信息，响应格式不支持"), curlRequest.IgnoredOptions)
 	}
 
 	infos := make([]CodexQuotaBillingBalanceInfo, 0, len(billing.BalanceInfos))

@@ -24,6 +24,7 @@ import {
 
 const wailsModelsPath = fileURLToPath(new URL('../../../../wailsjs/go/models.ts', import.meta.url));
 const wailsAppBindingsPath = fileURLToPath(new URL('../../../../wailsjs/go/main/App.js', import.meta.url));
+const accountsActionsPath = fileURLToPath(new URL('../hooks/useAccountsActions.ts', import.meta.url));
 
 test('normalizeBaseUrl trims and removes trailing slashes', () => {
   assert.equal(normalizeBaseUrlFromConfig(' https://api.example.com/v1/// '), 'https://api.example.com/v1');
@@ -279,4 +280,15 @@ test('generated Wails app bindings expose quota curl draft test method', () => {
 
   assert.match(source, /export function TestCodexAPIKeyQuotaCurl\(arg1\)/);
   assert.match(source, /export function TestCodexAPIKeyBillingCurl\(arg1\)/);
+});
+
+test('api key config save preflights enabled quota curl before persisting', () => {
+  const source = readFileSync(accountsActionsPath, 'utf8');
+  const testIndex = source.indexOf("'TestCodexAPIKeyQuotaCurl'");
+  const updateIndex = source.indexOf("'UpdateCodexAPIKeyConfig'");
+
+  assert.ok(testIndex >= 0, 'save action should test enabled quota curl');
+  assert.ok(updateIndex >= 0, 'save action should persist api key config');
+  assert.ok(testIndex < updateIndex, 'quota curl test should run before config update');
+  assert.match(source, /if \(draft\.quotaEnabled && nextQuotaCurl\)/);
 });

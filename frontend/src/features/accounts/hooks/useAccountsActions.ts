@@ -6,6 +6,7 @@ import {
   DeleteOpenAICompatibleProvider,
   DownloadAuthFile,
   SetAccountDisabled,
+  TestCodexAPIKeyQuotaCurl,
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
   UpdateCodexAPIKeyPriority,
@@ -447,6 +448,22 @@ export default function useAccountsActions({
       }
 
       try {
+        if (draft.quotaEnabled && nextQuotaCurl) {
+          await trackRequest(
+            'TestCodexAPIKeyQuotaCurl',
+            { id: selectedAccount.id, baseUrl: nextBaseURL },
+            () =>
+              TestCodexAPIKeyQuotaCurl(
+                main.TestCodexAPIKeyQuotaCurlInput.createFrom({
+                  apiKey: nextAPIKey,
+                  baseUrl: nextBaseURL,
+                  prefix: nextPrefix,
+                  quotaCurl: nextQuotaCurl,
+                })
+              )
+          );
+        }
+
         await trackRequest(
           'UpdateCodexAPIKeyConfig',
           { id: selectedAccount.id, baseUrl: nextBaseURL },
