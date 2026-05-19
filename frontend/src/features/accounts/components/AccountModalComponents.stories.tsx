@@ -7,6 +7,7 @@ import AccountDetailModalFrame from './AccountDetailModalFrame';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
 import CodexOAuthModal from './CodexOAuthModal';
 import PasteAuthModal from './PasteAuthModal';
+import UnifiedComposeModal, { type UnifiedComposeFormState } from './UnifiedComposeModal';
 
 const meta = {
   title: 'Design System/Feature Components/Account Modals',
@@ -216,6 +217,45 @@ const apiKeyForms: Record<'empty' | 'filled' | 'error', ApiKeyFormState> = {
   },
 };
 
+const unifiedComposeForms: Record<'empty' | 'deepseek' | 'error', UnifiedComposeFormState> = {
+  empty: {
+    label: '',
+    apiKey: '',
+    baseUrl: '',
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+    formatBaseUrls: {},
+    billingCurl: '',
+    billingEnabled: false,
+  },
+  deepseek: {
+    label: 'DeepSeek Team',
+    apiKey: 'sk-preview-deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: '',
+    quotaCurl: 'curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"',
+    quotaEnabled: true,
+    formatBaseUrls: {
+      openai_chat: 'https://api.deepseek.com/v1',
+      openai_responses: 'https://api.deepseek.com/v1',
+    },
+    billingCurl: 'curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"',
+    billingEnabled: true,
+  },
+  error: {
+    label: 'Custom Router',
+    apiKey: '',
+    baseUrl: 'https://router.internal/v1',
+    prefix: '',
+    quotaCurl: '',
+    quotaEnabled: false,
+    formatBaseUrls: {},
+    billingCurl: '',
+    billingEnabled: false,
+  },
+};
+
 function ApiKeyComposeSample({
   label,
   formKey,
@@ -249,6 +289,42 @@ function ApiKeyComposeSample({
         }
         initialVerifyModel={probe === 'verify-error' ? 'gpt-5.4-mini' : undefined}
         initialVerifyState={probe === 'verify-error' ? { status: 'error', message: '401 unauthorized' } : undefined}
+      />
+    </ModalViewport>
+  );
+}
+
+function UnifiedComposeSample({
+  label,
+  formKey,
+  showPresets = true,
+  selectedPresetID = '',
+  presetSearch = '',
+  error = '',
+}: {
+  label: string;
+  formKey: keyof typeof unifiedComposeForms;
+  showPresets?: boolean;
+  selectedPresetID?: string;
+  presetSearch?: string;
+  error?: string;
+}) {
+  const { t } = useI18n();
+  return (
+    <ModalViewport label={label}>
+      <UnifiedComposeModal
+        t={t}
+        form={unifiedComposeForms[formKey]}
+        error={error}
+        initialShowPresets={showPresets}
+        initialSelectedPresetID={selectedPresetID}
+        initialPresetSearch={presetSearch}
+        onClose={() => undefined}
+        onFormChange={() => undefined}
+        onFormatBaseUrlChange={() => undefined}
+        onBillingCurlChange={() => undefined}
+        onPresetApply={() => undefined}
+        onSubmit={() => undefined}
       />
     </ModalViewport>
   );
@@ -324,6 +400,25 @@ function AccountModalsOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Unified compose states</h3>
+        <div className="grid gap-4 xl:grid-cols-3">
+          <UnifiedComposeSample label="DS-UNIFIED-PRESET-LIST" formKey="empty" />
+          <UnifiedComposeSample
+            label="DS-UNIFIED-FORM-STEP"
+            formKey="deepseek"
+            showPresets={false}
+            selectedPresetID="deepseek"
+          />
+          <UnifiedComposeSample
+            label="DS-UNIFIED-ERROR"
+            formKey="error"
+            showPresets={false}
+            error="API KEY is required"
+          />
+        </div>
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">Codex OAuth states</h3>
         <div className="grid gap-4 xl:grid-cols-3">
           <OAuthSample label="DS-OAUTH-READY" />
@@ -361,4 +456,8 @@ export const ApiKeyCompose: Story = {
 
 export const CodexOAuth: Story = {
   render: () => <OAuthSample label="DS-OAUTH-READY" />,
+};
+
+export const UnifiedCompose: Story = {
+  render: () => <UnifiedComposeSample label="DS-UNIFIED-FORM-STEP" formKey="deepseek" showPresets={false} selectedPresetID="deepseek" />,
 };

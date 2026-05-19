@@ -35,6 +35,9 @@ interface UnifiedComposeModalProps {
   onBillingCurlChange: (value: string) => void;
   onPresetApply: (preset: VendorPreset) => void;
   onSubmit: () => void;
+  initialShowPresets?: boolean;
+  initialSelectedPresetID?: string;
+  initialPresetSearch?: string;
 }
 
 export default function UnifiedComposeModal({
@@ -47,11 +50,14 @@ export default function UnifiedComposeModal({
   onBillingCurlChange,
   onPresetApply,
   onSubmit,
+  initialShowPresets = true,
+  initialSelectedPresetID = '',
+  initialPresetSearch = '',
 }: UnifiedComposeModalProps) {
   const presets = getVendorPresets();
-  const [presetSearch, setPresetSearch] = useState('');
-  const [showPresets, setShowPresets] = useState(true);
-  const [selectedPresetID, setSelectedPresetID] = useState('');
+  const [presetSearch, setPresetSearch] = useState(initialPresetSearch);
+  const [showPresets, setShowPresets] = useState(initialShowPresets);
+  const [selectedPresetID, setSelectedPresetID] = useState(initialSelectedPresetID);
 
   const selectedPreset = selectedPresetID ? getVendorPreset(selectedPresetID) : undefined;
 

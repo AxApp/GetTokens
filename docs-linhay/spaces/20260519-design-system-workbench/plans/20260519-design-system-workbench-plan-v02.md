@@ -258,6 +258,7 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - `candidate`：已发现，必须写 required states。
    - `deferred`：暂缓，必须写 revisit trigger。
    - `excluded`：不单独收编，必须有稳定理由。
+4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第三批：Account Cards
 本批继续沿用 feature component 收编循环，并用 subagent 做只读盘点、主线程负责集成和验收。
@@ -522,7 +523,22 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - existing account / copy success
    - copy error
 5. 本批给组件补充可选 `onCopyUrl` 与 `initialCopyState`，Storybook 使用 mock 隔离真实 clipboard；不触碰真实 OAuth 或 Wails 边界。
-4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
+
+### 第二十批：Unified Compose Modal
+本批复用 Account Modals story，继续收统一新增账号两步弹窗。
+
+1. 继续更新 `frontend/src/features/accounts/components/AccountModalComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/Account Modals`。
+3. 本批 admitted 文件：
+   - `UnifiedComposeModal.tsx`
+4. `Overview` 新增 unified compose 状态，并按场景收敛原则只保留：
+   - preset list
+   - provider form step
+   - validation error
+5. 本批给组件补充可选初始 step / preset / search props，Storybook 使用固定 form 和 preset mock；不触碰真实创建或 Wails 边界。
+
+### 场景收敛规则
+后续收编组件时，优先保留能代表视觉或交互分支的最小状态集合；同类 loading / disabled / empty / error 已在基础模式覆盖时，不为每个组件重复铺场景。若多个业务动作共享同一视觉模式，归并到同一个设计系统场景并在文档中说明适用范围。
 
 ### 第二批：Codex Binary
 1. 新增 `frontend/src/features/codex-binary/components/CodexBinaryComponents.stories.tsx`。

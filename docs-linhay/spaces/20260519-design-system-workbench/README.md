@@ -425,3 +425,17 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - existing account / copy success
    - copy error
 3. 本批只验证 URL 展示、复制反馈和打开浏览器 action 布局；复制动作通过 `onCopyUrl` mock 隔离，不触碰真实 clipboard、OAuth 或 Wails 边界。
+
+## 2026-05-19 第二十批 Feature Components：Unified Compose Modal
+1. 复用 `Design System/Feature Components/Account Modals`，继续收编统一新增账号两步弹窗：
+   - `UnifiedComposeModal`
+2. 新增 unified compose 状态矩阵，收敛为三个代表性分支：
+   - preset list
+   - provider form step
+   - validation error
+3. 本批只验证 preset 选择、端点输入、API key / quota / billing 区块和错误条布局；不额外展开重复的 loading/disabled 场景，不触碰真实创建或 Wails 边界。
+
+## 场景收敛规则
+1. 后续收编组件时，状态矩阵默认只保留能代表视觉或交互分支的最小集合。
+2. 对已经在同类组件中验证过的 loading、disabled、empty、error 行为，不重复为每个组件铺满；仅在该组件有独特布局或行为差异时新增状态。
+3. 若多个业务动作共用同一视觉模式，优先归并到一个设计系统场景，再用文档说明适用范围。
