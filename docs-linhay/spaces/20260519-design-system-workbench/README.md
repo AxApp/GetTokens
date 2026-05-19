@@ -246,3 +246,16 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 4. 暂缓项：
    - `AccountCard`、详情弹窗和规则编辑器仍包含 Wails / 下载 / 真实保存路径，继续保留 `deferred`。
    - `UsageDeskChart`、`UsageDetailTable`、`Status RelayEditors` 作为下一批候选。
+
+## 2026-05-19 第四批 Feature Components：Status Relay Editors
+1. 新增 `Design System/Feature Components/Status Relay Editors`，收编 Status 页中已提取的 Relay 编辑弹窗：
+   - `RelayKeyEditorModal`
+   - `RelayProviderEditorModal`
+   - `RelayModelEditorModal`
+2. 新 story 使用本地 editor state mock，不调用真实运行时，覆盖：
+   - Key 创建态
+   - Key 重命名态
+   - Key 重名错误态
+   - Provider 编辑态 / 校验错误态
+   - Model 编辑错误态
+3. `StatusPanels.tsx` 暂不标为 admitted；其中 `StatusSnippetPanel` 和 Codex feature list 仍是下一批候选，避免只收其中一个导出却把整个大文件误判为已准入。

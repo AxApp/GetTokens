@@ -117,6 +117,12 @@ export const designSystemStoryGroups = [
         storybookTitle: 'Design System/Feature Components/Account Cards',
         path: 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx',
       },
+      {
+        id: 'status-relay-editors',
+        title: 'Status Relay Editors',
+        storybookTitle: 'Design System/Feature Components/Status Relay Editors',
+        path: 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx',
+      },
     ],
   },
 ] as const satisfies readonly DesignSystemStoryGroup[];

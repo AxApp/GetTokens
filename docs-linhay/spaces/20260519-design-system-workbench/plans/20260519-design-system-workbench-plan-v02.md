@@ -282,6 +282,21 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - `UsageDeskPanels`
    - `StatusSnippetPanel`
    - `RelayEditors`
+
+### 第四批：Status Relay Editors
+本批选择 Status 页里已从页面控制器提取出来的纯 props modal，继续避免触碰运行时配置保存逻辑。
+
+1. 已新增 `frontend/src/features/status/components/StatusRelayEditors.stories.tsx`。
+2. Storybook 路径为 `Design System/Feature Components/Status Relay Editors`。
+3. 本批 admitted 文件：
+   - `frontend/src/features/status/components/RelayEditors.tsx`
+4. `Overview` 同屏覆盖：
+   - Relay key 创建
+   - Relay key 重命名
+   - Relay key 错误态
+   - Provider 编辑和错误态
+   - Model 编辑错误态
+5. `StatusPanels.tsx` 继续保持 candidate，因为该文件包含多个未完全收编的导出组件；后续应拆 `StatusSnippetPanel` / Codex feature list，再决定是否整体 admitted。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

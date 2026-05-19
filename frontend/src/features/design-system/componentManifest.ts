@@ -25,6 +25,8 @@ const codexBinaryStoryPath = 'frontend/src/features/codex-binary/components/Code
 const codexBinaryStorybookTitle = 'Design System/Feature Components/Codex Binary';
 const accountCardStoryPath = 'frontend/src/features/accounts/components/AccountCardComponents.stories.tsx';
 const accountCardStorybookTitle = 'Design System/Feature Components/Account Cards';
+const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/StatusRelayEditors.stories.tsx';
+const statusRelayEditorsStorybookTitle = 'Design System/Feature Components/Status Relay Editors';
 
 export const designSystemComponentManifest = [
   {
@@ -544,12 +546,15 @@ export const designSystemComponentManifest = [
     componentName: 'RelayEditors',
     sourcePath: 'frontend/src/features/status/components/RelayEditors.tsx',
     ownerFeature: 'status',
-    status: 'candidate',
+    status: 'admitted',
     tier: 'feature-component',
-    decisionReason: 'Relay key/provider/model editor modals 均为纯 props，适合沉淀 form modal 模式。',
+    decisionReason: 'Relay key/provider/model editor modals 已通过 Status Relay Editors story 收编，覆盖创建、重命名、错误和模型输入状态。',
     matchedPatterns: ['DesignSystemStoryFrame'],
-    suggestedDesignComponent: 'SwissFormModal',
+    storyPath: statusRelayEditorsStoryPath,
+    storybookTitle: statusRelayEditorsStorybookTitle,
+    catalogGroupId: 'feature-components',
     requiredStates: ['key-editor', 'provider-editor', 'model-editor'],
+    mockDataSources: ['storybook relay editor state mock'],
   },
   {
     id: 'status-panels',
