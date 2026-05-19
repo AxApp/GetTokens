@@ -15,6 +15,7 @@ import {
   flattenDesignSystemStories,
   getDesignSystemStoryStats,
   resolveDesignSystemStorybookOpenURL,
+  resolveDesignSystemWebOpenURL,
 } from './storyCatalog.ts';
 import { resolveStorybookLocale, storybookLocaleOptions } from './storybookGlobals.ts';
 
@@ -118,6 +119,18 @@ test('design system storybook open url uses dev bridge only in dev mode', () => 
   assert.equal(
     resolveDesignSystemStorybookOpenURL({ dev: true, origin: 'wails://wails.localhost:34115' }),
     `http://127.0.0.1:34115${DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH}`,
+  );
+});
+
+test('design system web open url normalizes Wails dev origin', () => {
+  assert.equal(resolveDesignSystemWebOpenURL(), '/#frame=design-system');
+  assert.equal(
+    resolveDesignSystemWebOpenURL({ origin: 'http://127.0.0.1:34115' }),
+    'http://127.0.0.1:34115/#frame=design-system',
+  );
+  assert.equal(
+    resolveDesignSystemWebOpenURL({ origin: 'wails://wails.localhost:34115' }),
+    'http://127.0.0.1:34115/#frame=design-system',
   );
 });
 

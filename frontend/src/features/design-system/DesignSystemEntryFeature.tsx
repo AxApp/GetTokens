@@ -10,6 +10,7 @@ import {
   designSystemStoryGroups,
   getDesignSystemStoryStats,
   resolveDesignSystemStorybookOpenURL,
+  resolveDesignSystemWebOpenURL,
 } from './storyCatalog';
 
 export default function DesignSystemEntryFeature() {
@@ -18,14 +19,18 @@ export default function DesignSystemEntryFeature() {
   const storybookOpenURL = resolveDesignSystemStorybookOpenURL({
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
+  const webOpenURL = resolveDesignSystemWebOpenURL({
+    origin: typeof window === 'undefined' ? undefined : window.location.origin,
+  });
+  const showDevWebOpen = import.meta.env.DEV;
 
-  function openStorybook(event: MouseEvent<HTMLAnchorElement>) {
+  function openExternalURL(event: MouseEvent<HTMLAnchorElement>, url: string) {
     event.preventDefault();
     if (hasWailsRuntime()) {
-      BrowserOpenURL(storybookOpenURL);
+      BrowserOpenURL(url);
       return;
     }
-    window.open(storybookOpenURL, '_blank', 'noopener,noreferrer');
+    window.open(url, '_blank', 'noopener,noreferrer');
   }
 
   return (
@@ -35,15 +40,28 @@ export default function DesignSystemEntryFeature() {
           title={t('design_system.title')}
           subtitle={t('design_system.subtitle')}
           actions={
-            <a
-              className="btn-swiss bg-[var(--border-color)] !text-[var(--bg-main)]"
-              href={storybookOpenURL}
-              onClick={openStorybook}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t('design_system.open_storybook')}
-            </a>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <a
+                className="btn-swiss bg-[var(--border-color)] !text-[var(--bg-main)]"
+                href={storybookOpenURL}
+                onClick={(event) => openExternalURL(event, storybookOpenURL)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t('design_system.open_storybook')}
+              </a>
+              {showDevWebOpen ? (
+                <a
+                  className="btn-swiss"
+                  href={webOpenURL}
+                  onClick={(event) => openExternalURL(event, webOpenURL)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t('design_system.open_web')}
+                </a>
+              ) : null}
+            </div>
           }
         />
 

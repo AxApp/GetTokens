@@ -15,6 +15,7 @@ export interface DesignSystemStoryGroup {
 export const DESIGN_SYSTEM_STORYBOOK_PORT = 6006;
 export const DESIGN_SYSTEM_STORYBOOK_URL = `http://127.0.0.1:${DESIGN_SYSTEM_STORYBOOK_PORT}`;
 export const DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH = '/__dev/design-system/storybook/open';
+export const DESIGN_SYSTEM_WEB_FRAME_HASH = '#frame=design-system';
 export const DESIGN_SYSTEM_STORYBOOK_COMMAND = 'npm --prefix frontend run storybook';
 export const DESIGN_SYSTEM_SCREENSHOT_PATH =
   'docs-linhay/spaces/20260519-design-system-workbench/screenshots/20260519/design-system/20260519-design-system-storybook-web-after-v01.png';
@@ -29,6 +30,16 @@ export function resolveDesignSystemStorybookOpenURL(input?: {
   }
 
   return `${resolveDesignSystemDevServerOrigin(input?.origin)}${DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH}`;
+}
+
+export function resolveDesignSystemWebOpenURL(input?: {
+  origin?: string;
+}) {
+  const origin = resolveDesignSystemDevServerOrigin(input?.origin);
+  if (!origin) {
+    return `/${DESIGN_SYSTEM_WEB_FRAME_HASH}`;
+  }
+  return `${origin}/${DESIGN_SYSTEM_WEB_FRAME_HASH}`;
 }
 
 function resolveDesignSystemDevServerOrigin(origin = '') {

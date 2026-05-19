@@ -49,6 +49,7 @@
     "title": "设计系统",
     "subtitle": "Storybook 组件工作台 / Token / 状态回归",
     "open_storybook": "打开 Storybook",
+    "open_web": "打开 Web",
     "primary_entry": "主工作台",
     "command": "启动命令",
     "url": "默认地址",

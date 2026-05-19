@@ -49,6 +49,7 @@
     "title": "Design System",
     "subtitle": "Storybook component workbench / tokens / state regression",
     "open_storybook": "Open Storybook",
+    "open_web": "Open Web",
     "primary_entry": "Primary Workbench",
     "command": "Command",
     "url": "Default URL",

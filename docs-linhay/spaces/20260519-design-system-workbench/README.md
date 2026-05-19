@@ -211,6 +211,14 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - `npm --prefix frontend run typecheck`
    - `npm --prefix frontend run build-storybook`
 
+## 2026-05-19 设计系统入口 Dev Web 按钮
+1. 设计系统入口页头在 dev 环境下新增 `打开 Web` 按钮，放在 `打开 Storybook` 旁边。
+2. Wails dev 下会把 `wails://wails.localhost:<port>` 规范化为 `http://127.0.0.1:<port>/#frame=design-system`，避免系统浏览器无法识别 `wails://` scheme。
+3. 非 dev 环境不展示该按钮；Storybook 按钮的原有 dev bridge 行为保持不变。
+4. 验证通过：
+   - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+
 ## 2026-05-19 Feature Components 第一批收编
 1. 新增 `Design System/Feature Components/Debug Panel`，把调试面板里已经提取且不依赖 Wails 的组件纳入设计系统：
    - `DebugHeader`
