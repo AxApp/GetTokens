@@ -200,21 +200,19 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
 
 测试门禁已补齐：`storyCatalog.test.mjs` 会读取 `components` 分组里的 story 文件，确认每个文件都导出 `Overview`。
 
-## 设计系统准入边框
+## 设计系统准入标记
 ### 需求
-用户希望能在设计系统内快速区分哪些组件已经正式进入设计系统，哪些只是普通业务拼装或尚未纳入系统的样例。
+用户希望能在项目业务页面里快速区分哪些组件已经正式进入设计系统，哪些只是普通业务拼装或尚未纳入系统的样例；设计系统内部不需要可见框选。
 
 ### 实施
 1. 新增 `frontend/src/features/design-system/DesignSystemStoryFrame.tsx`。
 2. 所有已纳入设计系统的 component story 示例必须用 `DesignSystemStoryFrame` 包裹。
 3. `DesignSystemStoryFrame` 提供统一标识：
-   - 红色虚线边框
-   - `DS` 角标
    - `data-design-system-component="true"`
 4. `storyCatalog.test.mjs` 新增检查，确保 `components` 分组里的 story 文件使用 `DesignSystemStoryFrame`。
 
 ### 边界
-该标识只用于 Storybook / 设计系统工作台，不进入真实产品运行时组件，避免污染业务页面外观。
+设计系统内部只保留数据属性，不绘制边框或角标；可见圈定只用于真实项目页面里的识别或标注场景，避免污染设计系统组件本身的视觉判断。
 
 ## Feature Components 收编推进
 ### 本轮目标
@@ -226,7 +224,7 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
 1. 发现新的未纳入组件。
 2. 匹配已有设计系统组件或模式。
 3. 未匹配到则抽象或新建设计组件。
-4. 写 mock story、`Overview` 状态矩阵和 `DesignSystemStoryFrame`。
+4. 写 mock story、`Overview` 状态矩阵和带数据标记的 `DesignSystemStoryFrame`。
 5. 更新 `componentManifest.ts`、`storyCatalog.ts` 和测试门禁。
 6. 运行 catalog/typecheck/Storybook build，并用浏览器确认真实渲染。
 
@@ -240,7 +238,7 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - `DebugEntryCard` 错误展开态
    - `DebugEntryCard` 折叠态
    - `DebugEmptyState`
-4. 所有已收编示例均使用 `DesignSystemStoryFrame`，保持 DS 准入边框。
+4. 所有已收编示例均使用 `DesignSystemStoryFrame`，保持 DS 准入数据标记。
 5. `storyCatalog.ts` 新增 `feature-components` 分组。
 6. `storyCatalog.test.mjs` 的准入门禁从 `components` 扩展到 `components` + `feature-components`。
 
@@ -248,7 +246,7 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
 1. `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
 2. `npm --prefix frontend run typecheck`
 3. `npm --prefix frontend run build-storybook`
-4. 浏览器确认 `Debug Panel / Overview` 可渲染，iframe 内存在 6 个 `data-design-system-component="true"` 节点，样式均为 `3px dashed rgb(255, 0, 0)`。
+4. 浏览器确认 `Debug Panel / Overview` 可渲染，iframe 内存在 6 个 `data-design-system-component="true"` 节点，且设计系统预览内没有额外准入边框或角标。
 
 ### Manifest 门禁
 1. 新增 `frontend/src/features/design-system/componentManifest.ts`。
@@ -688,4 +686,4 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - 版本筛选匹配 `SegmentedControl`。
    - 可展开版本行匹配 DebugPanel 的展开详情模式。
 4. 使用现有 `codexBinaryPreviewSnapshot` / `codexBinaryPreviewNotes` 作为 mock data，不触发 Wails。
-5. 浏览器确认 `Codex Binary / Overview` 可渲染，iframe 内存在 4 个 `data-design-system-component="true"` 节点，样式均为 `3px dashed rgb(255, 0, 0)`。
+5. 浏览器确认 `Codex Binary / Overview` 可渲染，iframe 内存在 4 个 `data-design-system-component="true"` 节点，且设计系统预览内没有额外准入边框或角标。

@@ -176,16 +176,14 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 3. 规则已同步到 `gettokens-domain-engineering` skill 的 Storybook Scope：组件 stories 必须有 `Overview` 状态矩阵，单状态 stories 保留用于隔离调试。
 4. 截图：`screenshots/20260519/design-system/20260519-design-system-components-overview-zh-after-v01.png`
 
-## 2026-05-19 设计系统准入边框
+## 2026-05-19 设计系统准入标记
 1. 为已纳入设计系统的组件新增统一准入标记：`DesignSystemStoryFrame`。
-2. 标记样式：
-   - 红色虚线外边框
-   - 右上角 `DS` 标签
-   - `data-design-system-component="true"` 属性，方便后续截图或自动化检查
+2. 标记方式：
+   - 保留 `data-design-system-component="true"` 属性，方便后续截图或自动化检查
+   - 不在设计系统预览内绘制额外边框或角标，避免把“准入标记”误读为组件真实视觉
 3. 首批 component stories 已全部套用该标记，覆盖 `Overview` 和单状态 stories。
 4. `storyCatalog.test.mjs` 已增加门禁：`components` 分组里的每个 story 文件必须使用 `DesignSystemStoryFrame`。
-5. 边界：该边框只用于 Storybook / 设计系统预览，不改真实业务运行时组件外观。
-6. 截图：`screenshots/20260519/design-system/20260519-design-system-admitted-border-zh-after-v01.png`
+5. 边界：圈定设计组件只用于真实项目页面里的识别或标注场景，设计系统内部不做可见框选。
 
 ## 2026-05-19 Feature Components 第一批收编
 1. 新增 `Design System/Feature Components/Debug Panel`，把调试面板里已经提取且不依赖 Wails 的组件纳入设计系统：

@@ -146,7 +146,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Load `frontend/src/style.css` and the relevant providers in Storybook preview so CSS variables, theme behavior, text scale, and localization are visible.
   - Start with `frontend/src/components/ui` and token stories before pulling in business-heavy account/Codex components.
   - Component stories must include an `Overview` story that shows key states in one page for design review and screenshot regression; keep single-state stories for isolated interaction debugging.
-  - Component examples that are officially admitted into the design system must be wrapped with `DesignSystemStoryFrame`; this gives them the shared DS admission border in Storybook and makes non-admitted business compositions visually distinct.
+  - Component examples that are officially admitted into the design system must be wrapped with `DesignSystemStoryFrame`; this keeps the `data-design-system-component="true"` automation marker without drawing an admission border or corner label inside Storybook. Visible component framing belongs to project/product-page identification flows, not to the design system preview itself.
   - Feature component收编必须循环执行：发现未纳入组件 -> 匹配现有设计系统组件/模式 -> 匹配不到则抽象或新建设计组件 -> 写 mock story + `Overview` + `DesignSystemStoryFrame` -> 运行 catalog/typecheck/Storybook 验收。
   - 每个 `frontend/src/features/*/components/**/*.tsx` 文件必须在 `componentManifest.ts` 中有收编决策：`admitted`、`candidate`、`deferred` 或 `excluded`。不得让新组件“沉默缺席”。
   - `admitted` feature component 必须同步进入 `storyCatalog.ts` 的 `feature-components` 分组，并记录 story path、Storybook title、mock data source 和 required states。
