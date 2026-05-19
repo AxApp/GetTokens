@@ -392,3 +392,15 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
    - not ready
    - unified compose action
 3. 本批只验证页头、刷新按钮、导入菜单和统一新增入口布局，不触碰真实文件上传、OAuth 或 Wails 边界。
+
+## 2026-05-19 第十七批 Feature Components：Codex Account Order Section
+1. 复用 `Design System/Feature Components/Codex Account Order`，继续收编 Codex 请求顺序列表容器：
+   - `CodexAccountOrderSection`
+2. 新增 section 状态矩阵，使用固定 row、policy、quota、usage 和 rate-limit mock 覆盖：
+   - compact
+   - full unsaved
+   - list saving
+   - waiting
+   - loading
+   - empty
+3. 本批只验证列表容器、密度切换、筛选、保存提示和空态布局，不触碰真实拖拽保存、路由探测或 Wails 边界。

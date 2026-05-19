@@ -62,6 +62,8 @@ export function CodexAccountOrderSection({
   onOpenDetail,
   onToggle,
   onPolicyModeChange,
+  initialDensity,
+  initialAccountFilter,
 }: {
   title: string;
   hint: string;
@@ -95,9 +97,11 @@ export function CodexAccountOrderSection({
   onOpenDetail: (id: string) => void;
   onToggle: (row: CodexAccountRow) => void;
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
+  initialDensity?: CodexAccountOrderDisplayMode;
+  initialAccountFilter?: CodexAccountOrderFilter;
 }) {
-  const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => readInitialDensity());
-  const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(DEFAULT_CODEX_ACCOUNT_ORDER_FILTER);
+  const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => initialDensity ?? readInitialDensity());
+  const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(initialAccountFilter ?? DEFAULT_CODEX_ACCOUNT_ORDER_FILTER);
   const [useActionMenu, setUseActionMenu] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionAreaRef = useRef<HTMLDivElement | null>(null);

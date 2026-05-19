@@ -476,6 +476,22 @@ Storybook 管理界面文案仍由 Storybook 自身控制；本期只保证 GetT
    - not ready
    - unified compose action
 5. 本批只用固定 refs 和 callback mock，不触碰真实文件上传、OAuth 或 Wails 边界。
+
+### 第十七批：Codex Account Order Section
+本批复用 Codex Account Order story，继续收 Codex 请求顺序列表容器。
+
+1. 继续更新 `frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx`。
+2. Storybook 路径仍为 `Design System/Feature Components/Codex Account Order`。
+3. 本批 admitted 文件：
+   - `CodexAccountOrderSection.tsx`
+4. `Overview` 新增 section 状态：
+   - compact
+   - full unsaved
+   - list saving
+   - waiting
+   - loading
+   - empty
+5. 本批只用固定 rows 和 handler mock，不触碰真实拖拽保存、路由探测或 Wails 边界。
 4. admitted story 必须在 `feature-components` catalog 中存在，并且 story 文件不能导入 Wails / `window.go` / sidecar / 真实请求。
 
 ### 第二批：Codex Binary

@@ -8,6 +8,7 @@ import type { CodexQuotaState } from '../../accounts/model/types';
 import type { CodexAccountRow, CodexRoutePolicyRowState } from '../model/codexAccountList';
 import type { CodexAccountOrderDisplayMode } from '../model/codexAccountOrderSectionLayout';
 import { AccountOrderRow } from './CodexAccountOrderRow';
+import { CodexAccountOrderSection } from './CodexAccountOrderSection';
 
 const meta = {
   title: 'Design System/Feature Components/Codex Account Order',
@@ -213,6 +214,78 @@ function RowSample({
   );
 }
 
+function SectionSample({
+  label,
+  sampleRows = rows,
+  ready = true,
+  loading = false,
+  saving = false,
+  routingProbeRunning = false,
+  orderChanged = false,
+  density = 'compact',
+  message = '',
+}: {
+  label: string;
+  sampleRows?: CodexAccountRow[];
+  ready?: boolean;
+  loading?: boolean;
+  saving?: boolean;
+  routingProbeRunning?: boolean;
+  orderChanged?: boolean;
+  density?: CodexAccountOrderDisplayMode;
+  message?: string;
+}) {
+  const { t } = useI18n();
+  const storyT = (key: string) => (key === 'common.more_actions' ? '更多操作' : t(key));
+  return (
+    <DesignSystemStoryFrame label={label}>
+      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+        <CodexAccountOrderSection
+          title="Codex Request Order"
+          hint="固定排序队列用于检查 section header、密度切换、筛选、空态和保存提示。"
+          message={message}
+          ready={ready}
+          loading={loading}
+          saving={saving}
+          routingProbeRunning={routingProbeRunning}
+          orderChanged={orderChanged}
+          rows={sampleRows}
+          draggedID={null}
+          pendingToggleID={saving ? rows[1]?.id ?? null : null}
+          latestRoutingProbeAccountID={routingProbeRunning ? rows[0]?.id ?? '' : ''}
+          routePolicyRowStates={routePolicyStates}
+          codexQuotaByName={{ 'team-codex': quotaState, 'disabled-backup': quotaState }}
+          accountUsageByID={{
+            [rows[0].id]: usageSummary,
+            [rows[1].id]: usageSummary,
+            [rows[2].id]: usageSummary,
+          }}
+          accountRateLimitByID={{
+            [rows[1].id]: rateLimitBlocked,
+          }}
+          refreshLabel="刷新顺序"
+          loadingLabel="加载中"
+          savingLabel="保存中"
+          unsavedLabel="存在未保存排序"
+          emptyLabel="暂无可排序账号"
+          waitingLabel="等待服务 ready"
+          t={storyT}
+          onReload={() => undefined}
+          onDragStart={() => undefined}
+          onDragOver={noopDragEvent}
+          onDragEnter={() => undefined}
+          onDragEnd={() => undefined}
+          onDrop={() => undefined}
+          onOpenDetail={() => undefined}
+          onToggle={() => undefined}
+          onPolicyModeChange={() => undefined}
+          initialDensity={density}
+        />
+      </div>
+    </DesignSystemStoryFrame>
+  );
+}
+
 function CodexAccountOrderOverview() {
   return (
     <div className="grid w-full gap-5 bg-[var(--bg-surface)] p-6">
@@ -239,6 +312,20 @@ function CodexAccountOrderOverview() {
           </div>
         </div>
       </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">Section states</h3>
+        <div className="grid gap-4">
+          <SectionSample label="DS-SECTION-COMPACT" density="compact" message="policy preview / 4 accounts" />
+          <SectionSample label="DS-SECTION-FULL-UNSAVED" density="full" orderChanged message="manual order changed" />
+          <SectionSample label="DS-SECTION-LIST-SAVING" density="list" saving routingProbeRunning />
+          <div className="grid gap-4 xl:grid-cols-3">
+            <SectionSample label="DS-SECTION-WAITING" ready={false} sampleRows={[]} />
+            <SectionSample label="DS-SECTION-LOADING" loading sampleRows={[]} />
+            <SectionSample label="DS-SECTION-EMPTY" sampleRows={[]} />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -257,4 +344,8 @@ export const Compact: Story = {
 
 export const List: Story = {
   render: () => <RowSample label="DS-LIST" density="list" probeHit />,
+};
+
+export const Section: Story = {
+  render: () => <SectionSample label="DS-SECTION-COMPACT" density="compact" message="policy preview / 4 accounts" />,
 };
