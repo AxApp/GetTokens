@@ -23,8 +23,8 @@ function PageLoadingFallbackOverview() {
         <h2 className="text-2xl font-black uppercase italic tracking-normal">PageLoadingFallback</h2>
         <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--text-muted)]">
           {zh
-            ? '同屏检查不同容器高度下的居中加载态。'
-            : 'Centered loading state across several container heights.'}
+            ? '同屏检查不同容器高度下的动画加载态。'
+            : 'Animated loading state across several container heights.'}
         </p>
       </div>
 

@@ -11,6 +11,53 @@
   }
 }
 
+@keyframes page-loading-scan {
+  0% {
+    transform: translateX(-105%);
+  }
+  100% {
+    transform: translateX(305%);
+  }
+}
+
+@keyframes page-loading-step {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scaleY(0.55);
+  }
+  45% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes page-loading-rail {
+  0%,
+  100% {
+    opacity: 0.18;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes page-loading-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes page-loading-pulse {
+  0%,
+  100% {
+    transform: scale(0.72);
+  }
+  50% {
+    transform: scale(1);
+  }
+}
+
 @layer base {
   :root {
     --bg-main: #ffffff;
@@ -424,6 +471,131 @@
     content: attr(data-design-system-component-name) ' / COPY FAILED';
     background: var(--accent-red);
     border-color: var(--accent-red);
+  }
+
+  .page-loading-panel {
+    min-height: 5.75rem;
+  }
+
+  .page-loading-rail-cell {
+    border-bottom: 2px solid var(--bg-main);
+    animation: page-loading-rail 1.2s steps(2, end) infinite;
+  }
+
+  .page-loading-rail-cell:nth-of-type(2) {
+    animation-delay: 0.15s;
+  }
+
+  .page-loading-rail-cell:nth-of-type(3) {
+    animation-delay: 0.3s;
+  }
+
+  .page-loading-rail-cell:nth-of-type(4) {
+    animation-delay: 0.45s;
+    border-bottom: 0;
+  }
+
+  .page-loading-orbit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    width: 2.35rem;
+    height: 2.35rem;
+    transform: translate(-50%, -50%);
+  }
+
+  .page-loading-planet {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    width: 0.5rem;
+    height: 0.5rem;
+    border: 1px solid var(--bg-main);
+    background: var(--bg-main);
+    transform: translate(-50%, -50%);
+  }
+
+  .page-loading-orbit-line {
+    position: absolute;
+    border: 1px solid var(--bg-main);
+    border-left-color: transparent;
+    border-radius: 9999px;
+    opacity: 0.92;
+    animation: page-loading-orbit-spin 1.15s linear infinite;
+  }
+
+  .page-loading-orbit-line::after {
+    position: absolute;
+    content: '';
+    top: 0.12rem;
+    right: 0.18rem;
+    width: 0.22rem;
+    height: 0.22rem;
+    background: var(--bg-main);
+  }
+
+  .page-loading-orbit-line-a {
+    inset: 0.1rem;
+  }
+
+  .page-loading-orbit-line-b {
+    inset: 0.42rem;
+    opacity: 0.68;
+    animation-direction: reverse;
+    animation-duration: 1.65s;
+  }
+
+  .page-loading-scan {
+    animation: page-loading-scan 1.05s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+  }
+
+  .page-loading-grid {
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent 0 12px,
+      color-mix(in srgb, var(--border-color) 24%, transparent) 12px 14px
+    );
+  }
+
+  .page-loading-step {
+    transform-origin: bottom;
+    animation: page-loading-step 1s steps(2, end) infinite;
+  }
+
+  .page-loading-step:nth-child(2) {
+    animation-delay: 0.12s;
+  }
+
+  .page-loading-step:nth-child(3) {
+    animation-delay: 0.24s;
+  }
+
+  .page-loading-step:nth-child(4) {
+    animation-delay: 0.36s;
+  }
+
+  .page-loading-step:nth-child(5) {
+    animation-delay: 0.48s;
+  }
+
+  .page-loading-pulse {
+    animation: page-loading-pulse 0.9s steps(2, end) infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .page-loading-rail-cell,
+    .page-loading-orbit-line,
+    .page-loading-scan,
+    .page-loading-step,
+    .page-loading-pulse {
+      animation: none;
+    }
+
+    .page-loading-scan {
+      transform: translateX(100%);
+    }
   }
 }
 
