@@ -16,6 +16,7 @@ import {
   clearAccountDetailFrameHash,
   clearCodexDetailFrameHash,
   isAccountWorkspace,
+  isDeveloperAppPage,
   isAppPage,
   isClaudeWorkspace,
   isCodexWorkspace,
@@ -68,6 +69,16 @@ test('isAppPage only accepts known sidebar pages', () => {
   assert.equal(isAppPage(null), false);
 });
 
+test('developer pages are rejected when developer tools are disabled', () => {
+  const productionOptions = { includeDeveloperPages: false };
+
+  assert.equal(isDeveloperAppPage('design-system'), true);
+  assert.equal(isDeveloperAppPage('debug'), true);
+  assert.equal(isAppPage('accounts', productionOptions), true);
+  assert.equal(isAppPage('design-system', productionOptions), false);
+  assert.equal(isAppPage('debug', productionOptions), false);
+});
+
 test('resolveInitialActivePage falls back to accounts for invalid values', () => {
   assert.equal(resolveInitialActivePage('settings'), 'settings');
   assert.equal(resolveInitialActivePage('design-system'), 'design-system');
@@ -79,6 +90,14 @@ test('resolveInitialActivePage falls back to accounts for invalid values', () =>
   assert.equal(resolveInitialActivePage('claude'), 'claude');
   assert.equal(resolveInitialActivePage('unknown'), 'accounts');
   assert.equal(resolveInitialActivePage(null), 'accounts');
+});
+
+test('resolveInitialActivePage falls back from developer pages in production', () => {
+  const productionOptions = { includeDeveloperPages: false };
+
+  assert.equal(resolveInitialActivePage('design-system', 'accounts', productionOptions), 'accounts');
+  assert.equal(resolveInitialActivePage('debug', 'accounts', productionOptions), 'accounts');
+  assert.equal(resolveInitialActivePage('settings', 'accounts', productionOptions), 'settings');
 });
 
 test('readStoredActivePage restores the last valid page from storage', () => {
@@ -102,6 +121,17 @@ test('readStoredActivePage falls back when storage is unavailable or invalid', (
     }),
     'accounts',
   );
+});
+
+test('readStoredActivePage ignores persisted developer pages in production', () => {
+  const storage = {
+    getItem(key) {
+      assert.equal(key, ACTIVE_PAGE_STORAGE_KEY);
+      return 'debug';
+    },
+  };
+
+  assert.equal(readStoredActivePage(storage, { includeDeveloperPages: false }), 'accounts');
 });
 
 test('persistActivePage writes the selected page to storage', () => {
@@ -433,6 +463,14 @@ test('readFrameHashState parses top-level frame pages', () => {
   assert.deepEqual(readFrameHashState('#frame=usage-desk'), { page: 'codex', codexWorkspace: 'usage-codex' });
   assert.deepEqual(readFrameHashState('#frame=settings'), { page: 'settings' });
   assert.deepEqual(readFrameHashState('#frame=design-system'), { page: 'design-system' });
+});
+
+test('readFrameHashState rejects developer frames in production', () => {
+  const productionOptions = { includeDeveloperPages: false };
+
+  assert.equal(readFrameHashState('#frame=design-system', productionOptions), null);
+  assert.equal(readFrameHashState('#frame=debug', productionOptions), null);
+  assert.deepEqual(readFrameHashState('#frame=settings', productionOptions), { page: 'settings' });
 });
 
 test('readFrameHashState parses accounts workspace and falls back to all for legacy', () => {

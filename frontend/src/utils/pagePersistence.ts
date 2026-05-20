@@ -16,7 +16,11 @@ export const USAGE_DESK_WORKSPACE_STORAGE_KEY = 'gettokens.usageDesk.workspace';
 export const USAGE_DESK_SOURCE_STORAGE_KEY = 'gettokens.usageDesk.source';
 export const USAGE_DESK_RANGE_STORAGE_KEY = 'gettokens.usageDesk.range';
 
-const appPages: ReadonlySet<AppPage> = new Set([
+interface PageAvailabilityOptions {
+  includeDeveloperPages?: boolean;
+}
+
+const productionAppPages: ReadonlySet<AppPage> = new Set([
   'status',
   'accounts',
   'session-management',
@@ -26,6 +30,8 @@ const appPages: ReadonlySet<AppPage> = new Set([
   'claude',
   'usage-desk',
   'settings',
+]);
+const developerAppPages: ReadonlySet<AppPage> = new Set([
   'design-system',
   'debug',
 ]);
@@ -63,8 +69,18 @@ interface FrameHashOptions {
   density?: string | null;
 }
 
-export function isAppPage(value: string | null | undefined): value is AppPage {
-  return typeof value === 'string' && appPages.has(value as AppPage);
+export function isDeveloperAppPage(value: string | null | undefined): value is AppPage {
+  return typeof value === 'string' && developerAppPages.has(value as AppPage);
+}
+
+export function isAppPage(value: string | null | undefined, options: PageAvailabilityOptions = { includeDeveloperPages: true }): value is AppPage {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  if (productionAppPages.has(value as AppPage)) {
+    return true;
+  }
+  return options.includeDeveloperPages !== false && developerAppPages.has(value as AppPage);
 }
 
 export function isAccountWorkspace(value: string | null | undefined): value is AccountWorkspace {
@@ -102,15 +118,19 @@ export function isUsageDeskRangeStorageValue(value: string | null | undefined): 
 export function resolveInitialActivePage(
   storageValue: string | null | undefined,
   fallback: AppPage = 'accounts',
+  options: PageAvailabilityOptions = { includeDeveloperPages: true },
 ): AppPage {
   if (storageValue === 'session-management' || storageValue === 'vendor-status' || storageValue === 'usage-desk') {
     return 'codex';
   }
-  return isAppPage(storageValue) ? storageValue : fallback;
+  return isAppPage(storageValue, options) ? storageValue : fallback;
 }
 
-export function readStoredActivePage(storage: Pick<Storage, 'getItem'> | null | undefined): AppPage {
-  return resolveInitialActivePage(storage?.getItem(ACTIVE_PAGE_STORAGE_KEY));
+export function readStoredActivePage(
+  storage: Pick<Storage, 'getItem'> | null | undefined,
+  options: PageAvailabilityOptions = { includeDeveloperPages: true },
+): AppPage {
+  return resolveInitialActivePage(storage?.getItem(ACTIVE_PAGE_STORAGE_KEY), 'accounts', options);
 }
 
 export function resolveInitialAccountWorkspace(
@@ -264,7 +284,10 @@ export function persistUsageDeskRange(
   storage?.setItem(USAGE_DESK_RANGE_STORAGE_KEY, range);
 }
 
-export function readFrameHashState(hash: string | null | undefined): FrameHashState | null {
+export function readFrameHashState(
+  hash: string | null | undefined,
+  options: PageAvailabilityOptions = { includeDeveloperPages: true },
+): FrameHashState | null {
   if (typeof hash !== 'string' || hash.length === 0) {
     return null;
   }
@@ -272,7 +295,7 @@ export function readFrameHashState(hash: string | null | undefined): FrameHashSt
   const normalized = hash.startsWith('#') ? hash.slice(1) : hash;
   const params = new URLSearchParams(normalized);
   const page = params.get('frame');
-  if (!isAppPage(page)) {
+  if (!isAppPage(page, options)) {
     return null;
   }
 

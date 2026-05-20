@@ -9,6 +9,17 @@ import {
   getSidebarToggleTranslationKey,
   resolveHoveredSidebarSection,
 } from './sidebarState.ts';
+import { getSidebarNavItems } from './sidebarNav.ts';
+
+test('sidebar hides developer-only entries outside dev tools mode', () => {
+  const productionIDs = getSidebarNavItems(false).map((item) => item.id);
+  const developmentIDs = getSidebarNavItems(true).map((item) => item.id);
+
+  assert.equal(productionIDs.includes('design-system'), false);
+  assert.equal(productionIDs.includes('debug'), false);
+  assert.equal(developmentIDs.includes('design-system'), true);
+  assert.equal(developmentIDs.includes('debug'), true);
+});
 
 test('sidebar only opens nested navigation for hoverable section pages', () => {
   assert.equal(resolveHoveredSidebarSection('accounts'), 'accounts');

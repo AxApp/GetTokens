@@ -17,7 +17,7 @@ const (
 	AppCloseActionKeepServiceInMenuBar = "keep_service_in_menu_bar"
 
 	gettokensLaunchAgentLabel = "com.linhay.gettokens.login"
-	gettokensLoginItemArg     = "--gettokens-login-item"
+	GetTokensLoginItemArg     = "--gettokens-login-item"
 )
 
 func defaultAppRuntimeSettings() AppRuntimeSettings {
@@ -141,6 +141,14 @@ func (a *App) shouldPreventCloseForRuntimeSettings(settings AppRuntimeSettings) 
 	return normalizeAppRuntimeSettings(&settings).CloseAction == AppCloseActionKeepServiceInMenuBar
 }
 
+func LoginItemLaunchStartHidden() bool {
+	settings, err := loadAppRuntimeSettings()
+	if err != nil {
+		return false
+	}
+	return normalizeAppRuntimeSettings(&settings).CloseAction == AppCloseActionKeepServiceInMenuBar
+}
+
 func launchAtLoginSupported() bool {
 	if runtime.GOOS != "darwin" {
 		return false
@@ -254,6 +262,6 @@ func buildLaunchAgentPlist(appPath string) ([]byte, error) {
     <true/>
   </dict>
 </plist>
-`, gettokensLaunchAgentLabel, escapedAppPath, gettokensLoginItemArg)
+`, gettokensLaunchAgentLabel, escapedAppPath, GetTokensLoginItemArg)
 	return []byte(body), nil
 }

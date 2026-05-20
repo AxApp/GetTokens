@@ -41,6 +41,7 @@ function AppShell() {
     canApplyUpdate,
     usesNativeUpdaterUI,
   } = useAppBootstrap();
+  const showDeveloperTools = import.meta.env.DEV;
 
   useEffect(() => {
     const isDark =
@@ -83,6 +84,9 @@ function AppShell() {
   }, []);
 
   const page = useMemo(() => {
+    if (!showDeveloperTools && (activePage === 'debug' || activePage === 'design-system')) {
+      return <AccountsPage workspace="all" />;
+    }
     if (activePage === 'status') {
       return <StatusPage sidecarStatus={sidecarStatus} version={version} />;
     }
@@ -121,6 +125,7 @@ function AppShell() {
     availableRelease,
     canApplyUpdate,
     releaseLabel,
+    showDeveloperTools,
     sidecarStatus,
     usesNativeUpdaterUI,
     version,
@@ -142,6 +147,7 @@ function AppShell() {
           activeClaudeWorkspace={activeClaudeWorkspace}
           setActiveClaudeWorkspace={setActiveClaudeWorkspace}
           releaseLabel={releaseLabel}
+          showDeveloperTools={showDeveloperTools}
         />
         <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">
           <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>

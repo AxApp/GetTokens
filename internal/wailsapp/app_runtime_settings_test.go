@@ -101,6 +101,27 @@ func TestAppRuntimeSettingsWritesLaunchAgent(t *testing.T) {
 	}
 }
 
+func TestLoginItemLaunchStartHiddenFollowsCloseAction(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	if LoginItemLaunchStartHidden() {
+		t.Fatal("LoginItemLaunchStartHidden() = true for default settings, want false")
+	}
+
+	app := New("", "", "")
+	if _, err := app.UpdateAppRuntimeSettings(AppRuntimeSettings{
+		LaunchAtLogin: false,
+		CloseAction:   AppCloseActionKeepServiceInMenuBar,
+	}); err != nil {
+		t.Fatalf("UpdateAppRuntimeSettings() error = %v", err)
+	}
+
+	if !LoginItemLaunchStartHidden() {
+		t.Fatal("LoginItemLaunchStartHidden() = false for menu bar residency, want true")
+	}
+}
+
 func TestShouldPreventCloseForRuntimeSettings(t *testing.T) {
 	app := New("", "", "")
 

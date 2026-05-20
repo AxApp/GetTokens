@@ -3,7 +3,9 @@ package main
 import (
 	"embed"
 	"log"
+	"os"
 
+	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -14,6 +16,9 @@ import (
 var assets embed.FS
 
 func main() {
+	var loginItemLaunch bool
+	os.Args, loginItemLaunch = consumeLoginItemArg(os.Args)
+
 	app := NewApp()
 
 	err := wails.Run(&options.App{
@@ -22,6 +27,7 @@ func main() {
 		Height:           800,
 		MinWidth:         800,
 		MinHeight:        600,
+		StartHidden:      loginItemLaunch && wailsapp.LoginItemLaunchStartHidden(),
 		BackgroundColour: &options.RGBA{R: 18, G: 18, B: 18, A: 1},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
@@ -46,4 +52,17 @@ func main() {
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
+}
+
+func consumeLoginItemArg(args []string) ([]string, bool) {
+	filtered := make([]string, 0, len(args))
+	found := false
+	for _, arg := range args {
+		if arg == wailsapp.GetTokensLoginItemArg {
+			found = true
+			continue
+		}
+		filtered = append(filtered, arg)
+	}
+	return filtered, found
 }

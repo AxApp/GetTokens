@@ -87,6 +87,49 @@ func TestApplicationMenuUpdateEntryUsesSharedUpdateAction(t *testing.T) {
 	}
 }
 
+func TestConsumeLoginItemArgRemovesCustomArgBeforeWailsParsesFlags(t *testing.T) {
+	args, found := consumeLoginItemArg([]string{
+		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",
+		"-loglevel",
+		"Info",
+		wailsapp.GetTokensLoginItemArg,
+		"-assetdir",
+		"frontend/dist",
+	})
+
+	if !found {
+		t.Fatal("consumeLoginItemArg found = false, want true")
+	}
+	if strings.Contains(strings.Join(args, " "), wailsapp.GetTokensLoginItemArg) {
+		t.Fatalf("consumeLoginItemArg did not remove %q from %v", wailsapp.GetTokensLoginItemArg, args)
+	}
+	want := []string{
+		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",
+		"-loglevel",
+		"Info",
+		"-assetdir",
+		"frontend/dist",
+	}
+	if strings.Join(args, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("consumeLoginItemArg args = %v, want %v", args, want)
+	}
+}
+
+func TestConsumeLoginItemArgReportsMissingArg(t *testing.T) {
+	args, found := consumeLoginItemArg([]string{
+		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",
+		"-loglevel",
+		"Info",
+	})
+
+	if found {
+		t.Fatal("consumeLoginItemArg found = true, want false")
+	}
+	if strings.Join(args, "\x00") != "/Applications/GetTokens.app/Contents/MacOS/GetTokens\x00-loglevel\x00Info" {
+		t.Fatalf("consumeLoginItemArg changed args unexpectedly: %v", args)
+	}
+}
+
 func findMenuItemByLabel(appMenu *menu.Menu, label string) *menu.MenuItem {
 	for _, item := range appMenu.Items {
 		if found := findMenuItemByLabelInItem(item, label); found != nil {

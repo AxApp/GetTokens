@@ -26,18 +26,19 @@ import {
 } from '../utils/pagePersistence';
 
 export function useAppNavigation() {
+  const pageAvailabilityOptions = { includeDeveloperPages: import.meta.env.DEV };
   const [activePage, setActivePage] = useState<AppPage>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash, pageAvailabilityOptions);
     if (!hashState && isLegacyClaudeCodexWorkspace(storage?.getItem(CODEX_WORKSPACE_STORAGE_KEY))) {
       return 'claude';
     }
-    return hashState?.page ?? readStoredActivePage(storage);
+    return hashState?.page ?? readStoredActivePage(storage, pageAvailabilityOptions);
   });
   const [activeCodexWorkspace, setActiveCodexWorkspace] = useState<CodexWorkspace>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const storedWorkspace = readStoredCodexWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash, pageAvailabilityOptions);
     if (hashState?.page === 'codex') {
       return hashState.codexWorkspace ?? 'feature-config';
     }
@@ -55,7 +56,7 @@ export function useAppNavigation() {
   const [activeClaudeWorkspace, setActiveClaudeWorkspace] = useState<ClaudeWorkspace>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const storedWorkspace = readStoredClaudeWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash, pageAvailabilityOptions);
     if (hashState?.page === 'claude') {
       return hashState.claudeWorkspace ?? 'account-list';
     }
@@ -64,7 +65,7 @@ export function useAppNavigation() {
   const [activeSessionManagementWorkspace, setActiveSessionManagementWorkspace] = useState<SessionManagementWorkspace>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const storedWorkspace = readStoredSessionManagementWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash, pageAvailabilityOptions);
     if (hashState?.page === 'session-management') {
       return hashState.sessionManagementWorkspace ?? 'codex';
     }
@@ -73,7 +74,7 @@ export function useAppNavigation() {
   const [activeUsageDeskWorkspace, setActiveUsageDeskWorkspace] = useState<UsageDeskWorkspaceID>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const storedWorkspace = readStoredUsageDeskWorkspace(storage);
-    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash, pageAvailabilityOptions);
     if (hashState?.page === 'usage-desk') {
       return hashState.usageDeskWorkspace ?? 'codex';
     }
@@ -108,7 +109,7 @@ export function useAppNavigation() {
       return;
     }
 
-    const hashState = readFrameHashState(window.location.hash);
+    const hashState = readFrameHashState(window.location.hash, pageAvailabilityOptions);
     let detailID: string | null = null;
     if (shouldPreserveDetailHash(
       hashState,
@@ -143,7 +144,7 @@ export function useAppNavigation() {
     }
 
     const onHashChange = () => {
-      const hashState = readFrameHashState(window.location.hash);
+      const hashState = readFrameHashState(window.location.hash, pageAvailabilityOptions);
       if (!hashState) {
         return;
       }
