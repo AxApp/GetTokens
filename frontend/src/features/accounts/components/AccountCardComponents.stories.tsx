@@ -177,6 +177,11 @@ const loadingQuotaDisplay: QuotaDisplay = {
   windows: [],
 };
 
+const refreshingQuotaDisplay: QuotaDisplay = {
+  ...quotaDisplay,
+  refreshing: true,
+};
+
 const billing: BillingDisplay = {
   isAvailable: true,
   balances: [
@@ -400,6 +405,7 @@ function CardSectionsSample() {
     <DesignSystemStoryFrame label="DS-SECTIONS">
       <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
         <QuotaBars quotaDisplay={quotaDisplay} accentFillClass="bg-[var(--color-status-success)]" />
+        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" />
         <BillingBalance billing={billing} />
         <UsageMetrics usageSummary={healthyUsageSummary} t={t} />
         <RateLimitGuard rateLimitStatus={rateLimitStatus} />
@@ -438,7 +444,7 @@ function AccountCardsOverview() {
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
           {zh
             ? '把账号卡片体系里的完整账号卡、基础外壳、归因卡、指标段、健康条和加载骨架纳入设计系统，用固定 mock 数据检查密度、失败态、限流和额度展示。'
-            : 'Admitted full account card, shell, attribution card, metric sections, health bar, and loading skeleton with fixed mock data for density, failure, rate-limit, and quota states.'}
+            : 'Admitted full account card, shell, attribution card, metric sections, health bar, and loading skeleton with fixed mock data for density, failure, rate-limit, and quota states including in-row quota refresh.'}
         </p>
       </div>
 
@@ -507,6 +513,16 @@ export const AttributionFailed: Story = {
 
 export const CardSections: Story = {
   render: () => <CardSectionsSample />,
+};
+
+export const QuotaBarsRefreshing: Story = {
+  render: () => (
+    <DesignSystemStoryFrame label="DS-QUOTA-REFRESHING">
+      <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" />
+      </div>
+    </DesignSystemStoryFrame>
+  ),
 };
 
 export const HealthBar: Story = {

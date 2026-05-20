@@ -6,9 +6,80 @@ import {
   filterAccounts,
   groupAccountsByVendor,
 } from '../model/accountSelectors.ts';
+import {
+  beginQuotaRefreshState,
+  buildQuotaDisplay,
+  failQuotaRefreshState,
+} from '../model/accountQuota.ts';
 import { defaultAccountsFilterState } from '../model/accountFilters.ts';
 
 const t = (key) => key;
+
+const quotaAccount = {
+  id: 'auth-file:quota',
+  provider: 'codex',
+  credentialSource: 'auth-file',
+  displayName: 'Quota Account',
+  status: 'ACTIVE',
+  quotaKey: 'quota',
+};
+
+const quotaState = {
+  status: 'success',
+  quota: {
+    planType: 'plus',
+    windows: [
+      { id: 'five-hour', label: '5H', remainingPercent: 72, resetLabel: '05/20 18:00', resetAtUnix: 1 },
+      { id: 'weekly', label: '7D', remainingPercent: 31, resetLabel: '05/27 18:00', resetAtUnix: 2 },
+    ],
+  },
+};
+
+test('quota refresh keeps existing windows visible while marking internal refresh state', () => {
+  const refreshingState = beginQuotaRefreshState(quotaState);
+  const quotaDisplay = buildQuotaDisplay(quotaAccount, refreshingState);
+
+  assert.equal(refreshingState.status, 'success');
+  assert.equal(refreshingState.refreshing, true);
+  assert.equal(quotaDisplay.status, 'success');
+  assert.equal(quotaDisplay.refreshing, true);
+  assert.deepEqual(
+    quotaDisplay.windows.map((window) => [window.id, window.remainingPercent]),
+    [
+      ['five-hour', 72],
+      ['weekly', 31],
+    ],
+  );
+});
+
+test('quota refresh falls back to full loading only before the first quota payload exists', () => {
+  const refreshingState = beginQuotaRefreshState(undefined);
+  const quotaDisplay = buildQuotaDisplay(quotaAccount, refreshingState);
+
+  assert.deepEqual(refreshingState, { status: 'loading' });
+  assert.deepEqual(quotaDisplay, {
+    status: 'loading',
+    planType: '',
+    windows: [],
+  });
+});
+
+test('failed quota refresh preserves the last successful quota payload', () => {
+  const refreshingState = beginQuotaRefreshState(quotaState);
+  const failedState = failQuotaRefreshState(refreshingState);
+  const quotaDisplay = buildQuotaDisplay(quotaAccount, failedState);
+
+  assert.equal(failedState.status, 'success');
+  assert.equal(failedState.refreshing, false);
+  assert.equal(quotaDisplay.status, 'success');
+  assert.deepEqual(
+    quotaDisplay.windows.map((window) => [window.id, window.remainingPercent]),
+    [
+      ['five-hour', 72],
+      ['weekly', 31],
+    ],
+  );
+});
 
 test('filterAccounts applies text query across key fields', () => {
   const accounts = [

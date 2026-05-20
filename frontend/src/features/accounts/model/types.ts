@@ -15,6 +15,7 @@ export interface TextInputEvent {
 export interface CodexQuotaState {
   status: 'loading' | 'success' | 'error';
   quota?: CodexQuota;
+  refreshing?: boolean;
 }
 
 export interface QuotaWindowDisplay {
@@ -30,6 +31,7 @@ export interface QuotaDisplay {
   status: 'unsupported' | 'loading' | 'error' | 'empty' | 'success';
   planType: string;
   windows: QuotaWindowDisplay[];
+  refreshing?: boolean;
 }
 
 export interface AccountStabilitySummary {

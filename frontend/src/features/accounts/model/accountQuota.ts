@@ -30,7 +30,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
     };
   }
 
-  if (!state || state.status === 'loading') {
+  if (!state || (state.status === 'loading' && !state.quota)) {
     return {
       status: 'loading',
       planType: '',
@@ -38,7 +38,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
     };
   }
 
-  if (state.status === 'error' || !state.quota) {
+  if (!state.quota) {
     return {
       status: 'error',
       planType: '',
@@ -46,6 +46,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
     };
   }
 
+  const refreshing = state.refreshing || state.status === 'loading';
   const windows = selectQuotaWindows(state.quota).map((window) => {
     const remainingPercent = normalizePercent(window.remainingPercent);
     const usedPercent = remainingPercent === null ? null : Math.max(0, 100 - remainingPercent);
@@ -65,6 +66,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
       status: 'empty',
       planType: state.quota.planType || '',
       windows: [],
+      refreshing,
     };
   }
 
@@ -72,7 +74,31 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
     status: 'success',
     planType: state.quota.planType || '',
     windows,
+    refreshing,
   };
+}
+
+export function beginQuotaRefreshState(current?: CodexQuotaState): CodexQuotaState {
+  if (current?.quota) {
+    return {
+      ...current,
+      refreshing: true,
+    };
+  }
+
+  return { status: 'loading' };
+}
+
+export function failQuotaRefreshState(current?: CodexQuotaState): CodexQuotaState {
+  if (current?.quota) {
+    return {
+      ...current,
+      status: 'success',
+      refreshing: false,
+    };
+  }
+
+  return { status: 'error' };
 }
 
 export function selectQuotaWindows(quota: CodexQuota) {

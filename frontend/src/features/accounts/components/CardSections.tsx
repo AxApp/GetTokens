@@ -39,9 +39,14 @@ interface QuotaBarsProps {
 export function QuotaBars({ quotaDisplay, accentFillClass }: QuotaBarsProps) {
   const windows = quotaDisplay.windows ?? [];
   if (windows.length === 0) return null;
+  const refreshing = quotaDisplay.refreshing === true;
 
   return (
-    <div className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
+    <div
+      className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4"
+      aria-busy={refreshing}
+      data-quota-refreshing={refreshing ? 'true' : undefined}
+    >
       {windows.map((window) => (
         <div key={window.id} className="account-card-quota-row grid items-center gap-2">
           <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
@@ -59,6 +64,12 @@ export function QuotaBars({ quotaDisplay, accentFillClass }: QuotaBarsProps) {
               <div
                 className={`absolute inset-y-0 left-0 ${accentFillClass}`}
                 style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
+              />
+            ) : null}
+            {refreshing ? (
+              <div
+                className="account-card-quota-refresh-skeleton absolute inset-0 pointer-events-none"
+                aria-hidden="true"
               />
             ) : null}
           </div>

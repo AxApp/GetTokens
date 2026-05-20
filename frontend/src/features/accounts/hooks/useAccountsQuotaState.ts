@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { GetCodexQuota } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
-import { supportsQuota } from '../model/accountQuota';
+import { beginQuotaRefreshState, failQuotaRefreshState, supportsQuota } from '../model/accountQuota';
 import { getAccountsPreviewQuotaStateByKey } from '../previewData';
 import type { CodexQuotaState, TrackRequest } from '../model/types';
 
@@ -77,7 +77,7 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
 
       setCodexQuotaByName((prev) => ({
         ...prev,
-        [account.quotaKey!]: { status: 'loading' },
+        [account.quotaKey!]: beginQuotaRefreshState(prev[account.quotaKey!]),
       }));
 
       try {
@@ -92,7 +92,7 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
         console.error(error);
         setCodexQuotaByName((prev) => ({
           ...prev,
-          [account.quotaKey!]: { status: 'error' },
+          [account.quotaKey!]: failQuotaRefreshState(prev[account.quotaKey!]),
         }));
       }
     },

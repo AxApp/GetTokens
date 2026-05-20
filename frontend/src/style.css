@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes account-card-quota-refresh-sweep {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 32px 0;
+  }
+}
+
 @layer base {
   :root {
     --bg-main: #ffffff;
@@ -230,6 +239,20 @@
 
   .account-card-rate-limit-row {
     grid-template-columns: 5rem minmax(0, 1fr) 2.25rem;
+  }
+
+  .account-card-quota-refresh-skeleton {
+    background-image:
+      repeating-linear-gradient(
+        115deg,
+        color-mix(in srgb, var(--bg-main) 0%, transparent) 0 7px,
+        color-mix(in srgb, var(--bg-main) 60%, transparent) 7px 12px,
+        color-mix(in srgb, var(--border-color) 18%, transparent) 12px 15px,
+        color-mix(in srgb, var(--bg-main) 0%, transparent) 15px 24px
+      );
+    background-size: 32px 100%;
+    animation: account-card-quota-refresh-sweep 0.85s linear infinite;
+    opacity: 0.72;
   }
 
   .account-card-evidence-grid {
