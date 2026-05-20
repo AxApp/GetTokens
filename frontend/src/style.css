@@ -231,7 +231,7 @@
     --line-height-ui-none: 1;
     --line-height-ui-snug: 1.375;
     --line-height-ui-loose: 1.8;
-    --gt-control-segmented-font-size: var(--font-size-ui-xs);
+    --gt-control-segmented-font-size: var(--font-size-ui-md-compact);
     --gt-control-segmented-min-height: 2.125rem;
     --gt-control-segmented-padding-inline: 0.625rem;
     --gt-control-segmented-indicator-height: 0.1875rem;

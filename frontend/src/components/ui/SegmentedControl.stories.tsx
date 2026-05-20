@@ -44,20 +44,6 @@ function useSegmentedSamples() {
   return { density, locale, themes };
 }
 
-function StatefulSegmentedControl({ variant }: { variant: 'theme' | 'density' }) {
-  const { density, themes } = useSegmentedSamples();
-  const options = variant === 'theme' ? themes : density;
-  const [value, setValue] = useState<string>(options[0].id);
-
-  return (
-    <DesignSystemStoryFrame>
-      <div className="w-96 max-w-full">
-        <SegmentedControl options={options} value={value} onChange={setValue} />
-      </div>
-    </DesignSystemStoryFrame>
-  );
-}
-
 function SegmentedOverview() {
   const { density, locale, themes } = useSegmentedSamples();
   const [themeValue, setThemeValue] = useState('system');
@@ -68,38 +54,50 @@ function SegmentedOverview() {
   return (
     <div className="grid w-full max-w-5xl gap-4 bg-[var(--bg-surface)] p-6">
       <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">SegmentedControl</h2>
+        <h2 className="text-2xl font-black uppercase tracking-normal">SegmentedControl</h2>
         <p className="mt-2 max-w-2xl text-sm font-bold text-[var(--text-muted)]">
           {zh
-            ? '一页查看短标签、长标签和当前选中态，便于检查主题和字号变化。'
-            : 'Short labels, long labels, and selected states on one page for theme and text-scale review.'}
+            ? '同一基础样式下检查短标签、长标签、窄容器和当前选中态，便于回归主题和字号变化。'
+            : 'One base style checked across short labels, long labels, narrow width, and selected states for theme and text-scale review.'}
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '主题模式' : 'Theme Mode'}</h3>
-          <DesignSystemStoryFrame>
-            <SegmentedControl options={themes} value={themeValue} onChange={setThemeValue} />
-          </DesignSystemStoryFrame>
-        </section>
+      <section className="grid gap-4 border-[1px] border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase tracking-normal">{zh ? '基础样式' : 'Base Style'}</h3>
 
-        <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '密度模式' : 'Density Mode'}</h3>
-          <DesignSystemStoryFrame>
-            <SegmentedControl options={density} value={densityValue} onChange={setDensityValue} />
-          </DesignSystemStoryFrame>
-        </section>
+        <div className="grid gap-4">
+          <div className="grid gap-2 md:grid-cols-[7rem_minmax(0,1fr)] md:items-center">
+            <span className="font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-normal text-[var(--text-muted)]">
+              {zh ? '短标签' : 'Short'}
+            </span>
+            <DesignSystemStoryFrame>
+              <SegmentedControl options={themes} value={themeValue} onChange={setThemeValue} />
+            </DesignSystemStoryFrame>
+          </div>
 
-        <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:col-span-2">
-          <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '长标签压力' : 'Long Label Pressure'}</h3>
-          <DesignSystemStoryFrame>
-            <div className="max-w-xl">
-              <SegmentedControl options={density} value={longValue} onChange={setLongValue} />
-            </div>
-          </DesignSystemStoryFrame>
-        </section>
-      </div>
+          <div className="grid gap-2 md:grid-cols-[7rem_minmax(0,1fr)] md:items-center">
+            <span className="font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-normal text-[var(--text-muted)]">
+              {zh ? '长标签' : 'Long'}
+            </span>
+            <DesignSystemStoryFrame>
+              <div className="max-w-xl">
+                <SegmentedControl options={density} value={longValue} onChange={setLongValue} />
+              </div>
+            </DesignSystemStoryFrame>
+          </div>
+
+          <div className="grid gap-2 md:grid-cols-[7rem_minmax(0,1fr)] md:items-center">
+            <span className="font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-normal text-[var(--text-muted)]">
+              {zh ? '窄容器' : 'Narrow'}
+            </span>
+            <DesignSystemStoryFrame>
+              <div className="w-56 max-w-full">
+                <SegmentedControl options={density} value={densityValue} onChange={setDensityValue} />
+              </div>
+            </DesignSystemStoryFrame>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
@@ -109,12 +107,4 @@ export const Overview: Story = {
     layout: 'fullscreen',
   },
   render: () => <SegmentedOverview />,
-};
-
-export const ThemeMode: Story = {
-  render: () => <StatefulSegmentedControl variant="theme" />,
-};
-
-export const LongLabels: Story = {
-  render: () => <StatefulSegmentedControl variant="density" />,
 };
