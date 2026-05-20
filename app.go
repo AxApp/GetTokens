@@ -937,14 +937,15 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, mode
 
 func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalApplyResult, error) {
 	result, err := a.core.ApplyRelayServiceConfigToLocalV2(wailsapp.RelayLocalApplyInput{
-		APIKey:             input.APIKey,
-		BaseURL:            input.BaseURL,
-		Model:              input.Model,
-		ReasoningEffort:    input.ReasoningEffort,
-		ProviderID:         input.ProviderID,
-		ProviderName:       input.ProviderName,
-		SupportsWebsockets: input.SupportsWebsockets,
-		AuthStrategy:       input.AuthStrategy,
+		APIKey:                input.APIKey,
+		AuthFileContentBase64: input.AuthFileContentBase64,
+		BaseURL:               input.BaseURL,
+		Model:                 input.Model,
+		ReasoningEffort:       input.ReasoningEffort,
+		ProviderID:            input.ProviderID,
+		ProviderName:          input.ProviderName,
+		SupportsWebsockets:    input.SupportsWebsockets,
+		AuthStrategy:          input.AuthStrategy,
 	})
 	if err != nil {
 		return nil, err

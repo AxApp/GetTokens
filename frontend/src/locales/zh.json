@@ -127,6 +127,8 @@
     "account_list_density_full": "完整",
     "account_list_density_compact": "缩略",
     "account_list_density_list": "列表",
+    "account_list_control_view": "视图",
+    "account_list_control_scope": "范围",
     "account_list_filter_all": "全部",
     "account_list_filter_requestable": "隐藏阻塞",
     "account_list_filter_empty": "当前筛选下没有可请求账号",

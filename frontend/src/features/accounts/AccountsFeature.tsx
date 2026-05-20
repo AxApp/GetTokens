@@ -55,6 +55,7 @@ import {
   ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
   shouldScheduleAccountUsageRefresh,
 } from './model/accountUsage';
+import { shouldShowAccountSkeletons } from './model/accountSnapshot';
 import type { OpenAICompatibleProvider } from './model/openAICompatible';
 import type { VendorPreset } from './model/vendorPresets';
 import { emptyApiKeyForm } from './model/accountConfig';
@@ -71,6 +72,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const {
     loading,
+    accountsLoaded,
     searchTerm,
     filters,
     selectedAccount,
@@ -530,7 +532,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       return;
     }
     const relayKey = String(relayKeyItems[draft.source.relayKeyIndex]?.value || '').trim();
-    if (!relayKey) {
+    const codexUsesOAuthAuthFile = draft.target === 'codex' && draft.codex.authStrategy === 'replace_auth_with_oauth';
+    if (!relayKey && !codexUsesOAuthAuthFile) {
       setLocalCliApplyMessage('缺少 GetTokens relay key，不能写入本机 CLI 配置。');
       return;
     }
@@ -538,10 +541,25 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setIsApplyingLocalCli(true);
     try {
       if (draft.target === 'codex') {
+        let authFileContentBase64 = '';
+        if (draft.codex.authStrategy === 'replace_auth_with_oauth') {
+          const authFileName = String(draft.codex.authFileName || '').trim();
+          if (!authFileName) {
+            setLocalCliApplyMessage('OAuth 账号缺少 auth-file 名称，不能写入 Codex OAuth 配置。');
+            return;
+          }
+          const authFile = await trackRequest(
+            'DownloadAuthFile',
+            { name: authFileName, target: 'codex-oauth-local-apply' },
+            () => DownloadAuthFile(authFileName),
+          );
+          authFileContentBase64 = authFile.contentBase64 || '';
+        }
         const result = await trackRequest(
           'ApplyRelayServiceConfigToLocalV2',
           {
             apiKey: relayKey,
+            authFileName: draft.codex.authFileName,
             baseURL: draft.codex.baseUrl,
             model: draft.codex.model,
             reasoningEffort: draft.codex.reasoningEffort,
@@ -552,6 +570,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           () =>
             ApplyRelayServiceConfigToLocalV2({
               apiKey: relayKey,
+              authFileContentBase64,
               baseURL: draft.codex.baseUrl,
               model: draft.codex.model,
               reasoningEffort: draft.codex.reasoningEffort,
@@ -610,6 +629,12 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       setIsApplyingLocalCli(false);
     }
   }
+
+  const showAccountSkeletons = shouldShowAccountSkeletons({
+    ready,
+    loaded: accountsLoaded,
+    accountCount: accounts.length,
+  });
 
   return (
     <>
@@ -695,13 +720,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             </div>
           ) : null}
 
-          {!ready ? (
-            <div className="account-card-grid-full grid gap-8">
-              {[...Array(6)].map((_, i) => (
-                <AccountCardSkeleton key={`ready-${i}`} />
-              ))}
-            </div>
-          ) : loading ? (
+          {showAccountSkeletons ? (
             <div className="account-card-grid-full grid gap-8">
               {[...Array(6)].map((_, i) => (
                 <AccountCardSkeleton key={i} />

@@ -3,7 +3,7 @@
 ## 背景
 - 账号池已经完成统一账号卡片、多格式端点和厂商预设：`AccountRecord` 可携带 `supportedFormats`、`formatBaseUrls`、`models`，`vendorPresets` 可描述厂商的默认端点、模型建议和格式能力。
 - Codex / Claude Code 已分别具备本地配置写入能力：
-  - Codex local apply 支持两种模式：API Key 模式会写入 `CODEX_HOME/auth.json` 与 `CODEX_HOME/config.toml` 的受控字段；保留 ChatGPT 登录态模式只读取校验 `auth.json`，实际只 patch `config.toml` 的 custom provider 字段。
+  - Codex local apply 支持三类语义：API Key 模式写入 `CODEX_HOME/auth.json` 与 `CODEX_HOME/config.toml`；账号 OAuth / auth-file 模式写入所选账号的 OAuth `auth.json` 并让 Codex 走 ChatGPT/Codex OAuth backend；Status 页的保留 ChatGPT 登录态模式只读取校验本机 `auth.json`，实际只 patch `config.toml` 的 custom provider 字段。
   - Claude Code local apply 写入 `~/.claude/settings.json` 的受控 `env` 字段，覆盖 `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL`、模型族字段和常用运行参数。
 - 账号卡右上角操作菜单位于 `frontend/src/features/accounts/components/AccountCard.tsx` 的 actions menu 区域。当前菜单已有复制、复制内容、启停、删除等动作，但还没有把“已识别模板的账号”直接带入 Codex / Claude Code 配置流程。
 - 用户提出：如果账号存在应用模板，应支持直接映射 Codex / Claude Code 配置。本期先开 space 讨论需求边界和细节，不直接进入实现。
@@ -62,11 +62,11 @@
 6. Given 用户点击 `应用到 Codex`，When 进入配置确认流程，Then 当前 Codex local apply 草稿包含正确的 relay key、base URL、provider id/name、model 和 auth strategy 建议。
 7. Given 用户点击 `应用到 Claude Code`，When 进入配置确认流程，Then 当前 Claude Code local apply 草稿包含正确的 relay key、`ANTHROPIC_BASE_URL`、`ANTHROPIC_MODEL` 和可用的模型族字段建议。
 8. Given 模板同时官方支持 Codex 与 Claude Code，When 用户分别应用到 Codex 和 Claude Code，Then Codex 使用 Codex 目标格式规则，Claude Code 使用 `formatBaseUrls.anthropic || baseUrl`，两者互不污染。
-9. Given 用户已有本地 Codex ChatGPT 登录态且选择保留模式，When 从账号模板生成 Codex 草稿，Then 仍需通过既有 preflight 校验，不因来自账号卡而绕过 `requires_custom_provider` / `missing_chatgpt_auth` 限制。
-10. Given 用户选择 Codex 保留 ChatGPT 登录态模式，When 查看确认页，Then 页面必须明确 `CODEX_HOME/auth.json` 只读校验且原样保留，真实写入只落到 `config.toml` 的 custom provider、`experimental_bearer_token`、`requires_openai_auth` 和 `wire_api = "responses"`。
-11. Given 单个 Codex 账号进入应用确认页，When 用户查看确认页，Then 应用模式必须由账号来源固定决定；API Key 账号只展示 API Key 写入方案，OAuth / auth-file 账号只展示 OAuth 保留方案，不允许在同一个账号确认页中切换 API Key 与 OAuth。
+9. Given 用户已有本地 Codex ChatGPT 登录态且在 Status 页选择保留模式，When 执行 Status local apply，Then 仍需通过既有 preflight 校验，不因账号卡需求而绕过 `requires_custom_provider` / `missing_chatgpt_auth` 限制。
+10. Given 用户从 OAuth / auth-file 账号点击 `应用到 Codex`，When 查看确认页，Then 页面必须展示 `CODEX_HOME/auth.json` 将写入所选账号的 OAuth tokens，`CODEX_HOME/config.toml` 将移除会让 Codex 走 API key / relay token 的 provider token 字段，并让请求进入 ChatGPT/Codex OAuth backend。
+11. Given 单个 Codex 账号进入应用确认页，When 用户查看确认页，Then 应用模式必须由账号来源固定决定；API Key 账号只展示 API Key 写入方案，OAuth / auth-file 账号只展示 OAuth 写入方案，不允许在同一个账号确认页中切换 API Key 与 OAuth。
 12. Given 用户已有 Codex `config.toml` 且 root `model_provider` 指向某个 provider，When 从账号卡生成 Codex 草稿，Then 确认页必须展示当前 provider，并默认 patch `[model_providers.<current>]`；不得默认改成 `gettokens` 或按账号新建 provider。
-13. Given 用户当前 `model_provider = "openai"` 且选择 OAuth / preserve 模式，When 生成 Codex 草稿，Then 不能静默复用内置 `openai` provider；必须阻塞或引导用户选择已有 custom provider / 创建 custom provider。
+13. Given 用户当前 `model_provider = "openai"` 且账号为 OAuth / auth-file，When 生成 Codex 草稿，Then 可以复用内置 `openai` provider，但必须移除既有 `openai_base_url` override，让 Codex 根据 `auth_mode=chatgpt` 使用 ChatGPT/Codex backend。
 14. Given 用户已有 Claude Code `settings.json` 中的 `permissions`、`hooks`、`statusLine` 或未知字段，When 最终执行 apply，Then 只 patch 受控 `env` 字段并保留其他内容。
 15. Given 用户在确认页修改模型或 provider，When 返回账号卡或刷新页面，Then 不把临时修改反写到账号模板；模板只提供默认草稿。
 16. Given 用户点击账号卡 `应用到 Codex` 或 `应用到 Claude Code`，When 系统生成配置草稿，Then 必须先打开新的确认页面或确认面板；用户未确认前不得写入本机 CLI 配置。
@@ -116,12 +116,15 @@ interface AccountLocalCliMapping {
 1. 先要求应用模板显式支持 Codex，再优先匹配 `openai_responses`，其次 `openai_chat`。
 2. P0 仍写入 GetTokens relay 入口，不直接写上游账号 API Key。
 3. 源码校准依据为 OpenAI Codex `codex-rs/login/src/auth/storage.rs`、`codex-rs/model-provider/src/auth.rs`、`codex-rs/model-provider-info/src/lib.rs`：
-   - `auth.json` 是 Codex 一方读取 API key / ChatGPT tokens 的结构化文件，API Key 模式必须写 `auth_mode=apikey` 与 `OPENAI_API_KEY`，否则没有全局 auth 可用。
+   - `auth.json` 是 Codex 一方读取 API key / ChatGPT tokens 的结构化文件；API Key 模式必须写 `auth_mode=apikey` 与 `OPENAI_API_KEY`，OAuth / auth-file 账号必须写 `auth_mode=chatgpt` 与所选账号的 `tokens`。
+   - Codex 读取 `auth.json` 时先解析 `auth_mode`，再 fallback 到 `OPENAI_API_KEY`：`auth_mode=apikey` 只读 `OPENAI_API_KEY`，`auth_mode=chatgpt` / `chatgptAuthTokens` 走 `tokens`；只有缺失 `auth_mode` 时，存在 `OPENAI_API_KEY` 才 fallback 为 API Key 模式。
+   - API Key 模式对齐 Codex CLI `login_with_api_key` 行为：写入时重建最小 `auth.json`，只保留 `auth_mode` 与 `OPENAI_API_KEY`；必须清理旧 OAuth `tokens`、`last_refresh`、`agent_identity`、`user` 等字段，避免同一文件同时表现为 API key 与 OAuth。
    - provider auth 会先取 provider 的 `env_key` API key，再取 `experimental_bearer_token`，最后才回退到 `auth.json` 的 OpenAI / ChatGPT auth。
+   - `auth_mode=chatgpt` 且 provider 没有 base URL override 时，Codex 会使用 `https://chatgpt.com/backend-api/codex`，这是账号 OAuth 应用到 Codex 的目标请求路径。
    - `wire_api = "chat"` 已被源码拒绝，custom provider 应写 `wire_api = "responses"`。
 4. `providerID` 默认来自用户当前 `config.toml` 的 root `model_provider`；不要按模板 slug 生成 `gettokens-<templateID>`，也不要默认改成固定 `gettokens`。
-   - 保留 ChatGPT 登录态模式下，`auth.json` 是只读 preflight 输入，不是写入目标；`config.toml` 必须使用非 `openai` 的 custom provider。
-   - custom provider 写入 `experimental_bearer_token = <relay key>`，并移除同 provider 下的 `env_key`，避免 Codex 优先读取环境变量覆盖 provider bearer。
+   - 账号 OAuth / auth-file 模式下，`auth.json` 是写入目标，来源为用户选中的账号 auth-file；`config.toml` 的 custom provider 应移除 `env_key` 与 `experimental_bearer_token`，并把 `base_url` 指向 ChatGPT/Codex backend，避免 Codex 继续走 API key / relay token。
+   - Status 页保留 ChatGPT 登录态模式下，`auth.json` 是只读 preflight 输入，不是写入目标；`config.toml` 必须使用非 `openai` 的 custom provider，并写入 `experimental_bearer_token = <relay key>`。
    - 不同账号切换时优先更新当前 provider section 下的 `base_url` / `experimental_bearer_token` / 受控字段；root `model_provider` 只在用户明确选择或当前配置不可用于目标模式时才变化。
    - 如果当前 root `model_provider` 缺失，API Key 模式可按既有 local apply 默认策略写入；OAuth / preserve 模式必须选择或创建一个 custom provider，不能静默使用内置 `openai`。
 5. `model` 默认来自账号显式映射 alias 或模板第一个 Codex 可用模型；没有可靠建议时回退当前 Status local apply 已选模型。
@@ -175,7 +178,7 @@ interface AccountLocalCliMapping {
 - 体验调整：确认页从“来源/配置/受控字段”多面板改为文件预览器布局，左侧只列将改动的文件，右侧只展示选中文件 diff。
 - Codex 设计稿：同一 story 增加两个 Codex 账号样例，模式由账号来源固定，不在弹页内提供 API Key / OAuth 切换：
   - `OpenAI API Key Relay`：API Key 账号，确认页左侧文件列表包含 `CODEX_HOME/auth.json` 与 `CODEX_HOME/config.toml`，右侧分别预览 `OPENAI_API_KEY` 与 provider/model 配置 diff；设计稿模拟当前用户 provider 为 `team-codex-relay`，root `model_provider` 只读展示，不作为本次改动。
-  - `OpenAI Codex OAuth`：OAuth / auth-file 账号，确认页只展示固定的保留 ChatGPT 登录态方案；`CODEX_HOME/auth.json` 只读校验，实际写当前 `[model_providers.team-codex-relay]` 的 custom provider + `experimental_bearer_token`。
+  - `OpenAI Codex OAuth`：OAuth / auth-file 账号，确认页只展示固定的 OAuth 写入方案；左侧文件列表包含 `CODEX_HOME/auth.json` 与 `CODEX_HOME/config.toml`，右侧预览 `auth_mode=chatgpt`、所选账号 tokens、移除 `OPENAI_API_KEY` / provider token 字段，并让 provider 指向 ChatGPT/Codex backend。
 - 截图归档：
   - `screenshots/20260520/account-card/20260520-account-card-template-menu-after-v01.png`
   - `screenshots/20260520/account-card/20260520-account-card-template-confirm-after-v02.png`

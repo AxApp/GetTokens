@@ -69,4 +69,4 @@
 3. OpenRouter / Kimi / TheRouter 等需要在实现前再补一轮具体页面校准，避免把“支持 OpenAI-compatible”误判成“支持 Codex 应用模板”。
 4. `needs-verification` 厂商只能在 UI 中作为 preset / endpoint 预填，不应自动生成或展示本地 CLI 应用动作按钮。
 5. 后续实现 resolver 时，应新增类似 `localCliTemplateTargets` 的显式字段，值由本表或后续厂商文档维护，而不是从 `supportedFormats` 反推。
-6. Codex 源码校准结论：API Key 默认模式必须写 `CODEX_HOME/auth.json` 的 `auth_mode=apikey` 与 `OPENAI_API_KEY`，同时写 `CODEX_HOME/config.toml` 的 provider/model；保留 ChatGPT 登录态模式只在已有 tokens 可保留时成立，不改写 `auth.json`，只写 custom provider 的 `experimental_bearer_token` 等配置。
+6. Codex 源码校准结论：API Key 默认模式必须写 `CODEX_HOME/auth.json` 的 `auth_mode=apikey` 与 `OPENAI_API_KEY`，同时写 `CODEX_HOME/config.toml` 的 provider/model；账号 OAuth / auth-file 模式必须写所选账号的 `auth_mode=chatgpt` 与 `tokens` 到 `CODEX_HOME/auth.json`，并移除会覆盖 OAuth 的 `OPENAI_API_KEY`、`env_key`、`experimental_bearer_token`。内置 `openai` provider 在 ChatGPT auth 下不能保留 `openai_base_url` override；custom provider 应指向 `https://chatgpt.com/backend-api/codex`。Status 页保留 ChatGPT 登录态模式仍是不改写 `auth.json`、只写 custom provider 的 `experimental_bearer_token`。

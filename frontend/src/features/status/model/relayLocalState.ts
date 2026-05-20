@@ -1,4 +1,5 @@
 import {
+  CODEX_CHATGPT_BACKEND_BASE_URL,
   normalizeRelayProviderOption,
   RELAY_CODEX_DEFAULT_REASONING_EFFORT,
   RELAY_CODEX_OPENAI_PROVIDER_ID,
@@ -31,7 +32,7 @@ export interface RelayProviderEditorState {
 }
 
 export type LocalCliTargetID = 'codex' | 'claude';
-export type CodexLocalAuthStrategy = 'replace_auth_with_apikey' | 'preserve_chatgpt_auth';
+export type CodexLocalAuthStrategy = 'replace_auth_with_apikey' | 'preserve_chatgpt_auth' | 'replace_auth_with_oauth';
 
 export interface CodexLocalTargetDraft {
   relayKeyIndex: number;
@@ -194,16 +195,20 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
   const reasoningEffort = input.reasoningEffort.trim();
   const maskedKey = maskRelayKey(input.apiKey);
   const authStrategy = input.authStrategy || defaultCodexLocalAuthStrategy;
+  const providerBaseUrl = authStrategy === 'replace_auth_with_oauth' ? CODEX_CHATGPT_BACKEND_BASE_URL : baseUrl;
   const customProviderLines = [
     ` model_provider = ${quoteConfigString(providerID)} # current user provider preserved unless explicitly switched`,
     '',
     `+[model_providers.${providerID}]`,
     `+name = ${quoteConfigString(providerName)}`,
-    `+base_url = ${quoteConfigString(baseUrl)}`,
+    `+base_url = ${quoteConfigString(providerBaseUrl)}`,
   ];
   if (authStrategy === 'preserve_chatgpt_auth') {
     customProviderLines.push(`+experimental_bearer_token = ${quoteConfigString(maskedKey)}`);
     customProviderLines.push('-env_key = "OPENAI_API_KEY"');
+  } else if (authStrategy === 'replace_auth_with_oauth') {
+    customProviderLines.push('-env_key = "OPENAI_API_KEY"');
+    customProviderLines.push('-experimental_bearer_token = "<previous token>"');
   }
   customProviderLines.push('+requires_openai_auth = true', '+wire_api = "responses"');
   if (input.supportsWebsockets) {
@@ -211,10 +216,16 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
   }
   const providerLines =
     providerID === RELAY_CODEX_OPENAI_PROVIDER_ID
-      ? [
-          `+openai_base_url = ${quoteConfigString(baseUrl)}`,
-          '# openai provider identity preserved; model_provider is not forced unless already present',
-        ]
+      ? authStrategy === 'replace_auth_with_oauth'
+        ? [
+            '-openai_base_url = "<previous override if present>"',
+            '# built-in openai provider uses ChatGPT Codex backend when auth_mode=chatgpt',
+            '# model_provider is not forced unless already present',
+          ]
+        : [
+            `+openai_base_url = ${quoteConfigString(baseUrl)}`,
+            '# openai provider identity preserved; model_provider is not forced unless already present',
+          ]
       : customProviderLines;
   const authLines =
     authStrategy === 'preserve_chatgpt_auth'
@@ -224,14 +235,30 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
           '# preserved: existing ChatGPT login tokens stay in place',
           '# preserved: auth_mode / OPENAI_API_KEY / tokens / account metadata are not rewritten',
         ]
+      : authStrategy === 'replace_auth_with_oauth'
+        ? [
+            '--- CODEX_HOME/auth.json',
+            '+++ CODEX_HOME/auth.json',
+            '@@ oauth auth fields @@',
+            ' {',
+            '+"auth_mode": "chatgpt",',
+            '+"tokens": "<selected OAuth account tokens>"',
+            '-"OPENAI_API_KEY": "<previous api key if present>"',
+            ' }',
+          ]
       : [
           '--- CODEX_HOME/auth.json',
           '+++ CODEX_HOME/auth.json',
           '@@ auth fields @@',
           ' {',
-          '   "auth_mode": "apikey",',
+          '+"auth_mode": "apikey",',
           `+"OPENAI_API_KEY": ${quoteConfigString(maskedKey)}`,
+          '-"tokens": "<previous OAuth tokens if present>"',
+          '-"last_refresh": "<previous OAuth refresh timestamp if present>"',
+          '-"agent_identity": "<previous agent identity if present>"',
+          '-"user": "<previous ChatGPT account metadata if present>"',
           ' }',
+          '# API key mode rewrites auth.json to Codex CLI minimal fields only',
         ];
 
   return [

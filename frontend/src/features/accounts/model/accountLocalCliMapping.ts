@@ -1,5 +1,6 @@
 import type { ApiFormat } from '../../../types';
 import type { LocalCodexAuthStateLike } from '../../status/model/relayLocalState.ts';
+import { CODEX_CHATGPT_BACKEND_BASE_URL } from './accountConfig.ts';
 import type { AccountRecord } from './types.ts';
 import { normalizeBaseURL, resolveVendorPresetID } from './vendorPresetHelpers.ts';
 import { getVendorPreset, getVendorPresets, type VendorPreset } from './vendorPresets.ts';
@@ -18,6 +19,7 @@ export type AccountLocalCliWarningCode =
   | 'preview-mode'
   | 'preserve-chatgpt-auth-requires-custom-provider'
   | 'preserve-chatgpt-auth-missing-local-auth'
+  | 'missing-oauth-auth-file'
   | 'current-provider-missing'
   | 'model-derived-from-template'
   | 'model-family-partial';
@@ -99,7 +101,8 @@ export type AccountCliApplyDraft =
         providerName: string;
         reasoningEffort: string;
         supportsWebsockets: boolean;
-        authStrategy: 'replace_auth_with_apikey' | 'preserve_chatgpt_auth';
+        authStrategy: 'replace_auth_with_apikey' | 'preserve_chatgpt_auth' | 'replace_auth_with_oauth';
+        authFileName?: string;
       };
     }
   | {
@@ -285,15 +288,16 @@ function buildCodexDraft(
 ): AccountCliApplyDraft {
   const providerState = normalizeCodexProviderState(input.currentCodexProviderState);
   const authStrategy = input.account.credentialSource === 'auth-file'
-    ? 'preserve_chatgpt_auth'
+    ? 'replace_auth_with_oauth'
     : 'replace_auth_with_apikey';
+  const authFileName = resolveAuthFileName(input.account);
 
-  if (authStrategy === 'preserve_chatgpt_auth') {
-    if (providerState.currentProviderID === openAIProviderID) {
+  if (authStrategy === 'replace_auth_with_oauth') {
+    if (!authFileName) {
       warnings.push({
-        code: 'preserve-chatgpt-auth-requires-custom-provider',
+        code: 'missing-oauth-auth-file',
         severity: 'blocking',
-        message: '当前 model_provider=openai，OAuth 保留模式不能静默复用内置 OpenAI provider。',
+        message: 'OAuth 账号缺少可写入 Codex auth.json 的 auth-file 名称。',
       });
     }
     if (providerState.currentProviderID !== openAIProviderID && !providerState.currentProviderExists) {
@@ -301,13 +305,6 @@ function buildCodexDraft(
         code: 'current-provider-missing',
         severity: 'blocking',
         message: `当前 model_provider=${providerState.currentProviderID} 缺少 provider section，需要先选择或创建 custom provider。`,
-      });
-    }
-    if (!input.localCodexAuthState?.canPreserveChatGPTAuth) {
-      warnings.push({
-        code: 'preserve-chatgpt-auth-missing-local-auth',
-        severity: 'blocking',
-        message: '本机 Codex auth.json 没有可保留的 ChatGPT 登录态，不能执行 OAuth 保留模式。',
       });
     }
   }
@@ -318,15 +315,28 @@ function buildCodexDraft(
     codex: {
       relayKeyIndex: input.relayKeyIndex,
       endpointID: input.relayEndpoint.id,
-      baseUrl: input.relayEndpoint.baseUrl,
+      baseUrl: authStrategy === 'replace_auth_with_oauth' ? CODEX_CHATGPT_BACKEND_BASE_URL : input.relayEndpoint.baseUrl,
       model,
       providerID: providerState.currentProviderID,
       providerName: providerState.currentProviderName,
       reasoningEffort: input.selectedReasoningEffort?.trim() || 'medium',
       supportsWebsockets: input.supportsWebsockets ?? true,
       authStrategy,
+      authFileName,
     },
   };
+}
+
+function resolveAuthFileName(account: AccountRecord): string {
+  const explicitName = String(account.name || '').trim();
+  if (explicitName) {
+    return explicitName;
+  }
+  const id = String(account.id || '').trim();
+  if (id.startsWith('auth-file:')) {
+    return id.slice('auth-file:'.length).trim();
+  }
+  return '';
 }
 
 function buildClaudeDraft(

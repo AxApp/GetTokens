@@ -4,6 +4,7 @@ export const RELAY_CODEX_PROVIDER_NAME = 'GetTokens';
 export const RELAY_CODEX_DEFAULT_MODEL = 'gpt-5.4';
 export const RELAY_CODEX_DEFAULT_REASONING_EFFORT = 'high';
 export const RELAY_CODEX_OPENAI_PROVIDER_ID = 'openai';
+export const CODEX_CHATGPT_BACKEND_BASE_URL = 'https://chatgpt.com/backend-api/codex';
 export const RELAY_CODEX_REASONING_EFFORT_OPTIONS = ['none', 'minimal', 'low', 'medium', 'high', 'xhigh'] as const;
 
 export const emptyApiKeyForm = {
@@ -122,12 +123,10 @@ export function buildManagedAuthJSONSnippet(
   }
 ) {
   const apiKey = String(draft.apiKey || '').trim() || '<FILL_API_KEY>';
-  const baseUrl = normalizeBaseUrl(String(draft.baseUrl || '')) || '<FILL_BASE_URL>';
 
   const payload: Record<string, unknown> = {
     auth_mode: 'apikey',
     OPENAI_API_KEY: apiKey,
-    base_url: baseUrl,
   };
 
   return JSON.stringify(payload, null, 2);
@@ -160,17 +159,14 @@ export function buildManagedConfigTomlSnippet(
 export function buildRelayCodexAuthJSONSnippet(
   draft: {
     apiKey?: string;
-    model?: string;
   }
 ) {
   const apiKey = String(draft.apiKey || '').trim() || '<YOUR_API_KEY>';
-  const model = String(draft.model || '').trim() || RELAY_CODEX_DEFAULT_MODEL;
 
   return JSON.stringify(
     {
       auth_mode: 'apikey',
       OPENAI_API_KEY: apiKey,
-      model,
     },
     null,
     2

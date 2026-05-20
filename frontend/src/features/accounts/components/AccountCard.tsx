@@ -15,7 +15,6 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import { rateLimitStateTone, type RateLimitState } from '../model/rateLimit';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import { canToggleRotationAccountDisabled } from '../model/accountRotation';
-import AccountCardSkeleton from './AccountCardSkeleton';
 import AttributionCard, { type AttributionCardBadge } from './AttributionCard';
 
 interface AccountCardProps {
@@ -209,10 +208,6 @@ export default function AccountCard({
     : canReauth
       ? 'account-card-action-grid-2'
       : 'account-card-action-grid-1';
-
-  if (quotaDisplay.status === 'loading') {
-    return <AccountCardSkeleton />;
-  }
 
   return (
     <AttributionCard

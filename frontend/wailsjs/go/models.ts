@@ -2271,6 +2271,7 @@ export namespace main {
 	}
 	export class RelayLocalApplyInput {
 	    apiKey: string;
+	    authFileContentBase64?: string;
 	    baseURL: string;
 	    model: string;
 	    reasoningEffort: string;
@@ -2286,6 +2287,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
+	        this.authFileContentBase64 = source["authFileContentBase64"];
 	        this.baseURL = source["baseURL"];
 	        this.model = source["model"];
 	        this.reasoningEffort = source["reasoningEffort"];

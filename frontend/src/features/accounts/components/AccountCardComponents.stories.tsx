@@ -405,7 +405,7 @@ function AccountCardTemplateApplySample() {
   const [previewTarget, setPreviewTarget] = useState<TemplatePreviewTarget>('claude');
   const [selectedFileID, setSelectedFileID] = useState('claude-settings');
   const codexAuthStrategy: CodexLocalAuthStrategy =
-    previewTarget === 'codex-oauth' ? 'preserve_chatgpt_auth' : 'replace_auth_with_apikey';
+    previewTarget === 'codex-oauth' ? 'replace_auth_with_oauth' : 'replace_auth_with_apikey';
   const claudeDiff = buildClaudeCodeSettingsDiff({
     ...templateClaudeDraft,
     apiKey: 'sk-relay-preview-primary',
@@ -435,14 +435,11 @@ function AccountCardTemplateApplySample() {
     previewTarget !== 'claude'
       ? [
           ...(codexAuthStrategy === 'replace_auth_with_apikey'
+            || codexAuthStrategy === 'replace_auth_with_oauth'
             ? [
                 {
                   id: 'codex-auth',
                   path: 'CODEX_HOME/auth.json',
-                  target: 'Codex',
-                  status: '将修改',
-                  changedFields: ['auth_mode', 'OPENAI_API_KEY'],
-                  preservedFields: ['tokens / account metadata 之外的未知字段按 JSON merge 保留'],
                   diff: codexAuthDiff,
                 },
               ]
@@ -450,22 +447,6 @@ function AccountCardTemplateApplySample() {
           {
             id: 'codex-config',
             path: 'CODEX_HOME/config.toml',
-            target: 'Codex',
-            status: '将修改',
-            changedFields:
-              codexAuthStrategy === 'preserve_chatgpt_auth'
-                ? ['model', 'model_reasoning_effort', 'experimental_bearer_token', 'wire_api']
-                : ['model', 'model_reasoning_effort', 'base_url', 'wire_api'],
-            preservedFields:
-              codexAuthStrategy === 'preserve_chatgpt_auth'
-                ? [
-                    `model_provider = "${currentCodexProviderID}"`,
-                    'CODEX_HOME/auth.json',
-                    'mcp_servers',
-                    'profiles',
-                    'unknown provider keys',
-                  ]
-                : [`model_provider = "${currentCodexProviderID}"`, 'mcp_servers', 'profiles', 'unknown provider keys'],
             diff: codexConfigDiff,
           },
         ]
@@ -473,10 +454,6 @@ function AccountCardTemplateApplySample() {
           {
             id: 'claude-settings',
             path: '~/.claude/settings.json',
-            target: 'Claude Code',
-            status: '将修改',
-            changedFields: ['ANTHROPIC_API_KEY', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_MODEL', 'DEFAULT_*'],
-            preservedFields: ['permissions', 'hooks', 'statusLine', 'MCP', 'HTTP_PROXY'],
             diff: claudeDiff,
           },
         ];
@@ -488,7 +465,7 @@ function AccountCardTemplateApplySample() {
         ? 'OpenAI OAuth -> Codex'
         : 'DeepSeek -> Claude Code';
   const codexModeLabel =
-    codexAuthStrategy === 'replace_auth_with_apikey' ? '写入 API Key auth.json' : '保留 ChatGPT 登录态';
+    codexAuthStrategy === 'replace_auth_with_apikey' ? '写入 API Key auth.json' : '写入 OAuth auth.json';
 
   return (
     <DesignSystemStoryFrame label="DS-ACCOUNT-CARD-TEMPLATE-APPLY">
@@ -595,7 +572,7 @@ function AccountCardTemplateApplySample() {
                   detail: 'OAuth 模板已验证',
                   onSelect: () => {
                     setPreviewTarget('codex-oauth');
-                    setSelectedFileID('codex-config');
+                    setSelectedFileID('codex-auth');
                     setResult('等待确认 / 未写入');
                     setConfirmOpen(true);
                   },
@@ -641,8 +618,8 @@ function AccountCardTemplateApplySample() {
                 </button>
               </div>
 
-              <div className="grid min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
-                <div className="grid content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:max-h-[calc(100vh-11rem)] lg:border-b-0 lg:border-r-2">
+              <div className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
+                <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:border-b-0 lg:border-r-2">
                   <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     文件列表
                   </div>
@@ -652,58 +629,26 @@ function AccountCardTemplateApplySample() {
                         key={file.id}
                         type="button"
                         onClick={() => setSelectedFileID(file.id)}
-                        className={`grid gap-2 border-2 px-3 py-3 text-left active:scale-[0.99] ${
+                        className={`grid border-2 px-3 py-3 text-left active:scale-[0.99] ${
                           selectedFileID === file.id
                             ? 'border-[var(--border-color)] bg-[var(--bg-surface)] shadow-[4px_4px_0_var(--shadow-color)]'
                             : 'border-[var(--border-muted)] bg-[var(--bg-main)] hover:bg-[var(--bg-surface)]'
                         }`}
                       >
-                        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                        <span className="break-all font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
                           {file.path}
-                        </span>
-                        <span className="flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                          <span>{file.target}</span>
-                          <span className="border border-[var(--border-color)] px-1.5 py-0.5 text-[var(--color-status-warning)]">
-                            {file.status}
-                          </span>
                         </span>
                       </button>
                     ))}
                   </div>
-                  <div className="grid gap-2 border-2 border-dashed border-[var(--color-status-warning)] bg-[var(--bg-surface)] p-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--color-status-warning)]">
-                    {previewTarget !== 'claude' ? (
-                      codexAuthStrategy === 'replace_auth_with_apikey' ? (
-                        <>
-                          <span>{codexModeLabel}</span>
-                          <span>读取当前 model_provider={currentCodexProviderID}；只 patch 该 provider 的受控字段。</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>{codexModeLabel}</span>
-                          <span>读取当前 model_provider={currentCodexProviderID}；auth.json 只读校验。</span>
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <span>DeepSeek 官方模板当前只适配 Claude Code。</span>
-                        <span>未验证目标不展示 Codex 按钮。</span>
-                      </>
-                    )}
-                  </div>
-                  <div className="grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
-                    <span className="font-mono font-black uppercase tracking-[0.16em]">改动字段</span>
-                    <span>{selectedFile.changedFields.join(' / ')}</span>
-                    <span className="font-mono font-black uppercase tracking-[0.16em]">保留字段</span>
-                    <span>{selectedFile.preservedFields.join(' / ')}</span>
-                  </div>
                 </div>
 
-                <div className="min-w-0 overflow-auto p-4 lg:max-h-[calc(100vh-11rem)]">
+                <div className="min-h-0 min-w-0 overflow-auto p-4">
                   <StatusSnippetPanel
                     title={`文件改动 / ${selectedFile.path}`}
                     content={selectedFile.diff}
                     onCopy={() => setResult('Diff copied / preview')}
-                    preClassName="max-h-[calc(100vh-18rem)]"
+                    preClassName="max-h-[31.5rem]"
                   />
                 </div>
               </div>

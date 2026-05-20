@@ -245,13 +245,12 @@ export default function useAccountsPageState({
       setLoading(true);
     }
     try {
-      let authFileResponse: { files: any[] } = { files: [] };
-      try {
-        authFileResponse = await trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles());
-      } catch {
+      const authFileResponsePromise = trackRequest('ListAuthFiles', { args: [] }, () => ListAuthFiles()).catch(() => {
         // sidecar unavailable — auth files will be empty, keys still load
-      }
-      const rawAccountResponse = await trackRequest('ListAccounts', { args: [] }, () => ListAccounts());
+        return { files: [] };
+      });
+      const accountResponsePromise = trackRequest('ListAccounts', { args: [] }, () => ListAccounts());
+      const [authFileResponse, rawAccountResponse] = await Promise.all([authFileResponsePromise, accountResponsePromise]);
       const accountResponse = await migrateLegacyAPIKeyLabels(rawAccountResponse || []);
       const files = authFileResponse?.files || [];
       const mappedAccounts = (accountResponse || []).map((account) => mapBackendAccountRecord(account));
@@ -615,6 +614,7 @@ export default function useAccountsPageState({
 
   return {
     loading,
+    accountsLoaded,
     searchTerm,
     filters,
     selectedAccount,

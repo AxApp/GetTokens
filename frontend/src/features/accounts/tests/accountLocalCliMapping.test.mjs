@@ -84,12 +84,13 @@ test('OpenAI API key account generates Codex API key draft', () => {
   assert.equal(actions[0].draft.codex.reasoningEffort, 'xhigh');
 });
 
-test('OpenAI auth-file account generates fixed preserve ChatGPT auth draft', () => {
+test('OpenAI auth-file account generates fixed OAuth auth draft', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
       id: 'auth-file:codex-team.json',
       provider: 'codex',
       credentialSource: 'auth-file',
+      name: 'codex-team.json',
       displayName: 'codex-team.json',
       status: 'ACTIVE',
       supportedFormats: ['openai_responses'],
@@ -103,16 +104,19 @@ test('OpenAI auth-file account generates fixed preserve ChatGPT auth draft', () 
 
   assert.equal(actions.length, 1);
   assert.equal(actions[0].draft.target, 'codex');
-  assert.equal(actions[0].draft.codex.authStrategy, 'preserve_chatgpt_auth');
+  assert.equal(actions[0].draft.codex.authStrategy, 'replace_auth_with_oauth');
+  assert.equal(actions[0].draft.codex.authFileName, 'codex-team.json');
   assert.equal(actions[0].draft.codex.providerID, 'team-codex-relay');
+  assert.equal(actions[0].draft.codex.baseUrl, 'https://chatgpt.com/backend-api/codex');
 });
 
-test('Codex preserve draft with builtin openai provider returns blocking warning', () => {
+test('Codex OAuth auth-file draft can use builtin openai provider without preserve warning', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
       id: 'auth-file:codex-team.json',
       provider: 'codex',
       credentialSource: 'auth-file',
+      name: 'codex-team.json',
       displayName: 'codex-team.json',
       status: 'ACTIVE',
       supportedFormats: ['openai_responses'],
@@ -134,10 +138,55 @@ test('Codex preserve draft with builtin openai provider returns blocking warning
   assert.equal(actions[0].enabled, true);
   assert.equal(actions[0].draft.target, 'codex');
   assert.equal(actions[0].draft.codex.providerID, 'openai');
-  assert.ok(actions[0].warnings.some((warning) =>
-    warning.code === 'preserve-chatgpt-auth-requires-custom-provider' &&
+  assert.equal(actions[0].draft.codex.authStrategy, 'replace_auth_with_oauth');
+  assert.equal(actions[0].warnings.some((warning) => warning.severity === 'blocking'), false);
+});
+
+test('Codex OAuth auth-file draft falls back to auth-file id name', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      id: 'auth-file:codex-team.json',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'codex-team.json',
+      status: 'ACTIVE',
+      supportedFormats: ['openai_responses'],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].draft.target, 'codex');
+  assert.equal(actions[0].draft.codex.authStrategy, 'replace_auth_with_oauth');
+  assert.equal(actions[0].draft.codex.authFileName, 'codex-team.json');
+});
+
+test('Codex OAuth auth-file draft blocks when auth-file name cannot be resolved', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      id: 'codex-oauth:missing-name',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Missing file name',
+      status: 'ACTIVE',
+      supportedFormats: ['openai_responses'],
+    }),
+    relayKeyItems,
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].warnings.some((warning) =>
+    warning.code === 'missing-oauth-auth-file' &&
     warning.severity === 'blocking'
-  ));
+  ), true);
 });
 
 test('Claude draft uses relay endpoint instead of upstream anthropic format URL', () => {

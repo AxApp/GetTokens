@@ -38,8 +38,8 @@ export default function StatusSnippetPanel({
   }
 
   return (
-    <div className="overflow-hidden border-2 border-[var(--border-color)]">
-      <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+    <div className="min-h-0 overflow-hidden">
+      <div className="flex items-center justify-between border-b-2 border-[var(--border-color)] px-1 pb-2">
         <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-widest text-[var(--text-primary)]">
           {title}
         </div>

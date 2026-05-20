@@ -1,6 +1,7 @@
 package wailsapp
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,13 +12,15 @@ import (
 )
 
 const (
-	relayCodexOpenAIProviderID = "openai"
-	relayCodexProviderID       = "gettokens"
-	relayCodexProviderName     = "GetTokens"
-	relayCodexDefaultModel     = "gpt-5.4"
-	relayCodexDefaultReasoning = "high"
-	relayLocalAuthStrategyReplaceAuthWithAPIKey  = "replace_auth_with_apikey"
-	relayLocalAuthStrategyPreserveChatGPTAuth    = "preserve_chatgpt_auth"
+	relayCodexOpenAIProviderID                  = "openai"
+	relayCodexProviderID                        = "gettokens"
+	relayCodexProviderName                      = "GetTokens"
+	relayCodexDefaultModel                      = "gpt-5.4"
+	relayCodexDefaultReasoning                  = "high"
+	relayCodexChatGPTBackendBaseURL             = "https://chatgpt.com/backend-api/codex"
+	relayLocalAuthStrategyReplaceAuthWithAPIKey = "replace_auth_with_apikey"
+	relayLocalAuthStrategyPreserveChatGPTAuth   = "preserve_chatgpt_auth"
+	relayLocalAuthStrategyReplaceAuthWithOAuth  = "replace_auth_with_oauth"
 )
 
 func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) (*RelayLocalApplyResult, error) {
@@ -44,14 +47,16 @@ func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*Rel
 		return nil, err
 	}
 
-	metadata, err := loadRelayServiceAPIKeyMetadata()
-	if err != nil {
-		return nil, err
-	}
-	metadata, changed := markRelayServiceAPIKeyLastUsed(metadata, normalized.APIKey, time.Now())
-	if changed {
-		if err := saveRelayServiceAPIKeyMetadata(metadata); err != nil {
+	if strings.TrimSpace(normalized.APIKey) != "" {
+		metadata, err := loadRelayServiceAPIKeyMetadata()
+		if err != nil {
 			return nil, err
+		}
+		metadata, changed := markRelayServiceAPIKeyLastUsed(metadata, normalized.APIKey, time.Now())
+		if changed {
+			if err := saveRelayServiceAPIKeyMetadata(metadata); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -95,6 +100,14 @@ func applyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalAp
 		if err := writeFileAtomically(authPath, authPayload, 0600); err != nil {
 			return nil, err
 		}
+	} else if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
+		authPayload, err := buildRelayCodexOAuthAuthJSON(input.AuthFileContentBase64)
+		if err != nil {
+			return nil, err
+		}
+		if err := writeFileAtomically(authPath, authPayload, 0600); err != nil {
+			return nil, err
+		}
 	} else {
 		if input.ProviderID == relayCodexOpenAIProviderID {
 			return nil, errors.New("preserve_chatgpt_auth 模式不支持内置 openai provider，请改用自定义 provider id")
@@ -125,8 +138,13 @@ func applyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalAp
 }
 
 func normalizeRelayLocalApplyInput(input RelayLocalApplyInput) (RelayLocalApplyInput, error) {
+	authStrategy := normalizeRelayLocalAuthStrategy(input.AuthStrategy)
+	if authStrategy == "" {
+		return RelayLocalApplyInput{}, errors.New("缺少 authStrategy")
+	}
+
 	normalizedAPIKey := strings.TrimSpace(input.APIKey)
-	if normalizedAPIKey == "" {
+	if normalizedAPIKey == "" && authStrategy != relayLocalAuthStrategyReplaceAuthWithOAuth {
 		return RelayLocalApplyInput{}, errors.New("缺少 API KEY")
 	}
 
@@ -135,21 +153,17 @@ func normalizeRelayLocalApplyInput(input RelayLocalApplyInput) (RelayLocalApplyI
 		return RelayLocalApplyInput{}, errors.New("缺少 BASE URL")
 	}
 
-	authStrategy := normalizeRelayLocalAuthStrategy(input.AuthStrategy)
-	if authStrategy == "" {
-		return RelayLocalApplyInput{}, errors.New("缺少 authStrategy")
-	}
-
 	normalizedProviderID, normalizedProviderName := normalizeRelayLocalProvider(input.ProviderID, input.ProviderName)
 	return RelayLocalApplyInput{
-		APIKey:             normalizedAPIKey,
-		BaseURL:            normalizedBaseURL,
-		Model:              normalizeRelayLocalModel(input.Model),
-		ReasoningEffort:    normalizeRelayLocalReasoningEffort(input.ReasoningEffort),
-		ProviderID:         normalizedProviderID,
-		ProviderName:       normalizedProviderName,
-		SupportsWebsockets: input.SupportsWebsockets,
-		AuthStrategy:       authStrategy,
+		APIKey:                normalizedAPIKey,
+		AuthFileContentBase64: strings.TrimSpace(input.AuthFileContentBase64),
+		BaseURL:               normalizedBaseURL,
+		Model:                 normalizeRelayLocalModel(input.Model),
+		ReasoningEffort:       normalizeRelayLocalReasoningEffort(input.ReasoningEffort),
+		ProviderID:            normalizedProviderID,
+		ProviderName:          normalizedProviderName,
+		SupportsWebsockets:    input.SupportsWebsockets,
+		AuthStrategy:          authStrategy,
 	}, nil
 }
 
@@ -192,6 +206,8 @@ func normalizeRelayLocalAuthStrategy(value string) string {
 		return relayLocalAuthStrategyReplaceAuthWithAPIKey
 	case relayLocalAuthStrategyPreserveChatGPTAuth:
 		return relayLocalAuthStrategyPreserveChatGPTAuth
+	case relayLocalAuthStrategyReplaceAuthWithOAuth:
+		return relayLocalAuthStrategyReplaceAuthWithOAuth
 	default:
 		return ""
 	}
@@ -245,28 +261,112 @@ func normalizeRelayLocalProviderID(value string) string {
 }
 
 func buildRelayCodexAuthJSON(apiKey string) ([]byte, error) {
-	codexHome, err := resolveCodexHomePath()
-	if err != nil {
-		return nil, err
+	payload := map[string]any{
+		"auth_mode":      "apikey",
+		"OPENAI_API_KEY": strings.TrimSpace(apiKey),
 	}
-	authPath := filepath.Join(codexHome, "auth.json")
-
-	payload := map[string]any{}
-	if existing, err := readOptionalTextFile(authPath); err != nil {
-		return nil, err
-	} else if strings.TrimSpace(existing) != "" {
-		if err := json.Unmarshal([]byte(existing), &payload); err != nil {
-			return nil, fmt.Errorf("现有 auth.json 不是有效 JSON，已停止写入以避免覆盖: %w", err)
-		}
-	}
-
-	payload["auth_mode"] = "apikey"
-	payload["OPENAI_API_KEY"] = strings.TrimSpace(apiKey)
 	body, err := json.MarshalIndent(payload, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("序列化 auth.json 失败: %w", err)
 	}
 	return append(body, '\n'), nil
+}
+
+func buildRelayCodexOAuthAuthJSON(contentBase64 string) ([]byte, error) {
+	trimmed := strings.TrimSpace(contentBase64)
+	if trimmed == "" {
+		return nil, errors.New("缺少 Codex OAuth auth.json 内容")
+	}
+
+	body, err := base64.StdEncoding.DecodeString(trimmed)
+	if err != nil {
+		return nil, fmt.Errorf("Codex OAuth auth.json base64 解码失败: %w", err)
+	}
+
+	payload := map[string]any{}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, fmt.Errorf("Codex OAuth auth.json 不是有效 JSON: %w", err)
+	}
+	nextPayload, err := normalizeRelayCodexOAuthAuthPayload(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	nextBody, err := json.MarshalIndent(nextPayload, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("序列化 Codex OAuth auth.json 失败: %w", err)
+	}
+	return append(nextBody, '\n'), nil
+}
+
+func normalizeRelayCodexOAuthAuthPayload(payload map[string]any) (map[string]any, error) {
+	tokensPayload := map[string]any{}
+	if tokens, ok := payload["tokens"].(map[string]any); ok {
+		for key, value := range tokens {
+			tokensPayload[key] = value
+		}
+	}
+
+	accessToken := firstAuthString(
+		tokensPayload["access_token"],
+		tokensPayload["accessToken"],
+		payload["access_token"],
+		payload["accessToken"],
+	)
+	idToken := firstAuthString(
+		tokensPayload["id_token"],
+		tokensPayload["idToken"],
+		payload["id_token"],
+		payload["idToken"],
+	)
+	refreshToken := firstAuthString(
+		tokensPayload["refresh_token"],
+		tokensPayload["refreshToken"],
+		payload["refresh_token"],
+		payload["refreshToken"],
+	)
+	accountID := firstAuthString(
+		tokensPayload["account_id"],
+		tokensPayload["accountId"],
+		payload["account_id"],
+		payload["accountId"],
+	)
+
+	if accessToken == "" {
+		return nil, errors.New("Codex OAuth auth.json 缺少 access_token，不能写入 OAuth 模式")
+	}
+	if idToken == "" {
+		return nil, errors.New("Codex OAuth auth.json 缺少 id_token，不能写入 OAuth 模式")
+	}
+
+	tokens := map[string]any{
+		"id_token":      idToken,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}
+	if accountID != "" {
+		tokens["account_id"] = accountID
+	} else if _, ok := tokensPayload["account_id"]; ok {
+		tokens["account_id"] = tokensPayload["account_id"]
+	}
+
+	nextPayload := map[string]any{
+		"auth_mode": "chatgpt",
+		"tokens":    tokens,
+	}
+	if lastRefresh := firstAuthString(payload["last_refresh"], payload["lastRefresh"]); lastRefresh != "" {
+		nextPayload["last_refresh"] = lastRefresh
+	}
+	if email := firstAuthString(payload["email"], readNestedAuthAny(payload, "user", "email")); email != "" {
+		nextPayload["user"] = map[string]any{
+			"email": email,
+		}
+		if planType := firstAuthString(payload["plan_type"], payload["planType"], readNestedAuthAny(payload, "user", "plan_type")); planType != "" {
+			nextPayload["user"].(map[string]any)["plan_type"] = planType
+		}
+	}
+
+	return nextPayload, nil
 }
 
 func readOptionalTextFile(path string) (string, error) {
@@ -325,7 +425,7 @@ func buildRelayCodexConfigToml(baseURL string, model string, reasoningEffort str
 		)
 	}
 
-		wsLine := ""
+	wsLine := ""
 	if supportsWebsockets {
 		wsLine = "\nsupports_websockets = true"
 	}
@@ -349,20 +449,31 @@ func mergeRelayCodexConfigToml(existing string, input RelayLocalApplyInput) stri
 	lines = upsertRootTomlKey(lines, "model_reasoning_effort", quoteTomlString(input.ReasoningEffort), true)
 
 	if input.ProviderID == relayCodexOpenAIProviderID {
-		lines = upsertRootTomlKey(lines, "openai_base_url", quoteTomlString(strings.TrimSpace(input.BaseURL)), true)
+		if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
+			lines = deleteTomlRootKey(lines, "openai_base_url")
+		} else {
+			lines = upsertRootTomlKey(lines, "openai_base_url", quoteTomlString(strings.TrimSpace(input.BaseURL)), true)
+		}
 		if hasModelProvider {
 			lines = upsertRootTomlKey(lines, "model_provider", quoteTomlString(relayCodexOpenAIProviderID), false)
 		}
 	} else {
 		lines = upsertRootTomlKey(lines, "model_provider", quoteTomlString(input.ProviderID), true)
 		sectionName := fmt.Sprintf("model_providers.%s", input.ProviderID)
+		providerBaseURL := strings.TrimSpace(input.BaseURL)
+		if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
+			providerBaseURL = relayCodexChatGPTBackendBaseURL
+		}
 		lines = upsertTomlSectionKey(lines, sectionName, "name", quoteTomlString(input.ProviderName), true)
-		lines = upsertTomlSectionKey(lines, sectionName, "base_url", quoteTomlString(strings.TrimSpace(input.BaseURL)), true)
+		lines = upsertTomlSectionKey(lines, sectionName, "base_url", quoteTomlString(providerBaseURL), true)
 		lines = upsertTomlSectionKey(lines, sectionName, "requires_openai_auth", "true", true)
 		lines = upsertTomlSectionKey(lines, sectionName, "wire_api", quoteTomlString("responses"), true)
 		if input.AuthStrategy == relayLocalAuthStrategyPreserveChatGPTAuth {
 			lines = deleteTomlSectionKey(lines, sectionName, "env_key")
 			lines = upsertTomlSectionKey(lines, sectionName, "experimental_bearer_token", quoteTomlString(input.APIKey), true)
+		} else if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
+			lines = deleteTomlSectionKey(lines, sectionName, "env_key")
+			lines = deleteTomlSectionKey(lines, sectionName, "experimental_bearer_token")
 		} else {
 			lines = deleteTomlSectionKey(lines, sectionName, "experimental_bearer_token")
 		}
@@ -414,11 +525,13 @@ func getLocalCodexAuthState() (*LocalCodexAuthState, error) {
 	state.PlanType = readNestedAuthString(payload, "user", "plan_type")
 
 	switch {
-	case authMode == "apikey" || state.HasOpenAIAPIKey:
+	case authMode == "apikey":
 		state.AuthMode = "apikey"
 	case authMode == "chatgpt":
 		state.AuthMode = "chatgpt"
 		state.CanPreserveChatGPTAuth = hasTokens
+	case state.HasOpenAIAPIKey:
+		state.AuthMode = "apikey"
 	case hasTokens:
 		state.AuthMode = "chatgpt_auth_tokens"
 		state.CanPreserveChatGPTAuth = true
@@ -430,7 +543,7 @@ func getLocalCodexAuthState() (*LocalCodexAuthState, error) {
 		state.Warnings = append(state.Warnings, "auth_mode=chatgpt 但未发现 tokens 字段")
 	}
 	if authMode == "chatgpt" && state.HasOpenAIAPIKey {
-		state.Warnings = append(state.Warnings, "当前 auth.json 仍包含 OPENAI_API_KEY，主请求将以 provider token 优先")
+		state.Warnings = append(state.Warnings, "auth_mode=chatgpt 优先生效，auth.json 中残留的 OPENAI_API_KEY 将被 Codex 主认证忽略")
 	}
 
 	return state, nil
@@ -521,6 +634,17 @@ func deleteTomlSectionKey(lines []string, sectionName string, key string) []stri
 		return lines
 	}
 	for index := start + 1; index < end; index++ {
+		if !tomlLineDefinesKey(lines[index], key) {
+			continue
+		}
+		return append(lines[:index], lines[index+1:]...)
+	}
+	return lines
+}
+
+func deleteTomlRootKey(lines []string, key string) []string {
+	rootEnd := firstTomlSectionIndex(lines)
+	for index := 0; index < rootEnd; index++ {
 		if !tomlLineDefinesKey(lines[index], key) {
 			continue
 		}
@@ -633,6 +757,23 @@ func readAuthString(value any) string {
 		return text
 	}
 	return ""
+}
+
+func firstAuthString(values ...any) string {
+	for _, value := range values {
+		if text := strings.TrimSpace(readAuthString(value)); text != "" {
+			return text
+		}
+	}
+	return ""
+}
+
+func readNestedAuthAny(payload map[string]any, parentKey string, childKey string) any {
+	parent, ok := payload[parentKey].(map[string]any)
+	if !ok {
+		return nil
+	}
+	return parent[childKey]
 }
 
 func readNestedAuthString(payload map[string]any, parentKey string, childKey string) string {

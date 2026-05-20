@@ -48,6 +48,42 @@ test('buildCodexLocalApplyDiff preserves ChatGPT auth and writes experimental be
   assert.match(diff, /-env_key = "OPENAI_API_KEY"/);
 });
 
+test('buildCodexLocalApplyDiff writes OAuth auth and ChatGPT Codex backend in OAuth mode', () => {
+  const diff = buildCodexLocalApplyDiff({
+    apiKey: '',
+    baseUrl: 'http://127.0.0.1:8317/v1',
+    model: 'gpt-5.4',
+    reasoningEffort: 'high',
+    providerID: 'team-codex-relay',
+    providerName: 'Team Codex Relay',
+    supportsWebsockets: true,
+    authStrategy: 'replace_auth_with_oauth',
+  });
+
+  assert.match(diff, /\+"auth_mode": "chatgpt"/);
+  assert.match(diff, /\+"tokens": "<selected OAuth account tokens>"/);
+  assert.match(diff, /\+base_url = "https:\/\/chatgpt\.com\/backend-api\/codex"/);
+  assert.match(diff, /-experimental_bearer_token = "<previous token>"/);
+  assert.match(diff, /-env_key = "OPENAI_API_KEY"/);
+});
+
+test('buildCodexLocalApplyDiff removes openai_base_url in builtin OpenAI OAuth mode', () => {
+  const diff = buildCodexLocalApplyDiff({
+    apiKey: '',
+    baseUrl: 'http://127.0.0.1:8317/v1',
+    model: 'gpt-5.4',
+    reasoningEffort: 'high',
+    providerID: 'openai',
+    providerName: 'OpenAI',
+    supportsWebsockets: true,
+    authStrategy: 'replace_auth_with_oauth',
+  });
+
+  assert.match(diff, /-openai_base_url = "<previous override if present>"/);
+  assert.match(diff, /uses ChatGPT Codex backend when auth_mode=chatgpt/);
+  assert.doesNotMatch(diff, /\+openai_base_url = "http:\/\/127\.0\.0\.1:8317\/v1"/);
+});
+
 test('buildClaudeCodeSettingsDiff previews only Claude Code settings env fields', () => {
   const diff = buildClaudeCodeSettingsDiff({
     apiKey: 'sk-gettokens-1234567890abcdef',

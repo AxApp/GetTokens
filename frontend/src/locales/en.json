@@ -127,6 +127,8 @@
     "account_list_density_full": "Full",
     "account_list_density_compact": "Compact",
     "account_list_density_list": "List",
+    "account_list_control_view": "View",
+    "account_list_control_scope": "Scope",
     "account_list_filter_all": "All",
     "account_list_filter_requestable": "Hide Blocked",
     "account_list_filter_empty": "No requestable accounts match this filter",

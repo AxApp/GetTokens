@@ -52,7 +52,7 @@ test('buildDefaultCodexQuotaCurl creates a safe editable quota template', () => 
   );
 });
 
-test('buildManagedAuthJSONSnippet fills placeholders and normalized base url', () => {
+test('buildManagedAuthJSONSnippet writes minimal API key auth payload', () => {
   assert.equal(
     buildManagedAuthJSONSnippetFromConfig({
       apiKey: ' ',
@@ -62,7 +62,6 @@ test('buildManagedAuthJSONSnippet fills placeholders and normalized base url', (
       {
         auth_mode: 'apikey',
         OPENAI_API_KEY: '<FILL_API_KEY>',
-        base_url: 'https://api.example.com/v1',
       },
       null,
       2
@@ -85,13 +84,11 @@ test('buildRelayCodexAuthJSONSnippet only keeps the fields codex actually uses',
   assert.equal(
     buildRelayCodexAuthJSONSnippetFromConfig({
       apiKey: ' sk-service-key ',
-      model: ' GT ',
     }),
     JSON.stringify(
       {
         auth_mode: 'apikey',
         OPENAI_API_KEY: 'sk-service-key',
-        model: 'GT',
       },
       null,
       2

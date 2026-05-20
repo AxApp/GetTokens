@@ -341,14 +341,15 @@ type RelayLocalApplyResult struct {
 }
 
 type RelayLocalApplyInput struct {
-	APIKey             string `json:"apiKey"`
-	BaseURL            string `json:"baseURL"`
-	Model              string `json:"model"`
-	ReasoningEffort    string `json:"reasoningEffort"`
-	ProviderID         string `json:"providerID"`
-	ProviderName       string `json:"providerName"`
-	SupportsWebsockets bool   `json:"supportsWebsockets"`
-	AuthStrategy       string `json:"authStrategy"`
+	APIKey                string `json:"apiKey"`
+	AuthFileContentBase64 string `json:"authFileContentBase64,omitempty"`
+	BaseURL               string `json:"baseURL"`
+	Model                 string `json:"model"`
+	ReasoningEffort       string `json:"reasoningEffort"`
+	ProviderID            string `json:"providerID"`
+	ProviderName          string `json:"providerName"`
+	SupportsWebsockets    bool   `json:"supportsWebsockets"`
+	AuthStrategy          string `json:"authStrategy"`
 }
 
 type LocalCodexAuthState struct {
