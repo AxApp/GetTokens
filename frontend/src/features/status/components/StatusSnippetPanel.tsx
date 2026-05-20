@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import SnippetPre from '../../../components/ui/SnippetPre';
 import { resolveUnifiedDiffLineTone } from '../model/relayLocalState';
 
 interface StatusSnippetPanelProps {
@@ -53,13 +54,13 @@ export default function StatusSnippetPanel({
           </div>
         ) : null}
       </div>
-      <pre className={`overflow-x-auto bg-[var(--bg-surface)] p-4 text-xs font-bold leading-6 ${preClassName}`}>
+      <SnippetPre className={preClassName}>
         {lines.map((line, index) => (
           <code key={`${index}-${line}`} className={`block min-h-6 whitespace-pre ${lineClassName(line)}`}>
             {line || ' '}
           </code>
         ))}
-      </pre>
+      </SnippetPre>
     </div>
   );
 }

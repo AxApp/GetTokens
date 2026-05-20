@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { main } from '../../../../wailsjs/go/models';
 import ActionSelect, { type ActionSelectOption } from '../../../components/ui/ActionSelect';
+import FormField, { FieldLabel, SelectField, TextInputField } from '../../../components/ui/FormField';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { RelayModelEditorModal } from './RelayEditors';
@@ -371,48 +372,23 @@ export function StatusApplyLocalSection({
                   deleteDisabled={relayProviderOptions.length <= 1}
                 />
 
-                <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('status.reasoning_effort_title')}
-                  </span>
-                  <select
-                    value={selectedRelayReasoningEffort}
-                    onChange={(event) => onSelectRelayReasoningEffort(event.target.value)}
-                    className="select-swiss"
-                  >
-                    {relayReasoningEffortOptions.map((effort) => (
-                      <option key={effort} value={effort}>
-                        {effort}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <SelectField
+                  title={t('status.reasoning_effort_title')}
+                  value={selectedRelayReasoningEffort}
+                  options={relayReasoningEffortOptions.map((effort) => ({ value: effort, label: effort }))}
+                  onChange={onSelectRelayReasoningEffort}
+                />
               </div>
 
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('status.auth_strategy_title')}
-                  </span>
-                  <select
-                    value={codexLocalAuthStrategy}
-                    onChange={(event) =>
-                      onSelectCodexLocalAuthStrategy(event.target.value as CodexLocalAuthStrategy)
-                    }
-                    className="select-swiss"
-                  >
-                    {codexLocalAuthStrategyOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <SelectField
+                  title={t('status.auth_strategy_title')}
+                  value={codexLocalAuthStrategy}
+                  options={codexLocalAuthStrategyOptions}
+                  onChange={(value) => onSelectCodexLocalAuthStrategy(value as CodexLocalAuthStrategy)}
+                />
 
-                <div className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('status.codex_local_auth_state_title')}
-                  </span>
+                <FormField title={t('status.codex_local_auth_state_title')} as="div">
                   <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-md-compact)] font-semibold text-[var(--text-primary)]">
                     <div>{codexLocalAuthSummary}</div>
                     {localCodexAuthState?.accountEmail ? (
@@ -421,7 +397,7 @@ export function StatusApplyLocalSection({
                       </div>
                     ) : null}
                   </div>
-                </div>
+                </FormField>
               </div>
 
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
@@ -433,12 +409,7 @@ export function StatusApplyLocalSection({
                   onCreate={() => openModelEditor({ target: 'codex' }, selectedRelayModel)}
                 />
 
-                <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('status.local_cli_wire_api')}
-                  </span>
-                  <input value="responses" readOnly className="input-swiss w-full" />
-                </label>
+                <TextInputField title={t('status.local_cli_wire_api')} value="responses" readOnly />
               </div>
 
               {selectedRelayProvider.id !== 'openai' ? (
@@ -625,30 +596,20 @@ export function StatusApplyLocalSection({
               </div>
 
               <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
-                <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('status.claude_max_output_tokens')}
-                  </span>
-                  <input
-                    value={claudeDraft.maxOutputTokens}
-                    onChange={(event) => updateClaudeDraft({ maxOutputTokens: event.target.value })}
-                    className="input-swiss w-full"
-                    inputMode="numeric"
-                    placeholder="6000"
-                  />
-                </label>
-                <label className="grid gap-2">
-                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('status.claude_api_timeout_ms')}
-                  </span>
-                  <input
-                    value={claudeDraft.apiTimeoutMs}
-                    onChange={(event) => updateClaudeDraft({ apiTimeoutMs: event.target.value })}
-                    className="input-swiss w-full"
-                    inputMode="numeric"
-                    placeholder="600000"
-                  />
-                </label>
+                <TextInputField
+                  title={t('status.claude_max_output_tokens')}
+                  value={claudeDraft.maxOutputTokens}
+                  onChange={(event) => updateClaudeDraft({ maxOutputTokens: event.target.value })}
+                  inputMode="numeric"
+                  placeholder="6000"
+                />
+                <TextInputField
+                  title={t('status.claude_api_timeout_ms')}
+                  value={claudeDraft.apiTimeoutMs}
+                  onChange={(event) => updateClaudeDraft({ apiTimeoutMs: event.target.value })}
+                  inputMode="numeric"
+                  placeholder="600000"
+                />
                 <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
                   <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
@@ -764,9 +725,7 @@ function StatusEndpointPicker({
   return (
     <div className="grid gap-2">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-          {t('status.endpoint_title')}
-        </span>
+        <FieldLabel>{t('status.endpoint_title')}</FieldLabel>
         <button
           type="button"
           onClick={onToggleLANAccess}

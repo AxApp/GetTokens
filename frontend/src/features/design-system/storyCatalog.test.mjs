@@ -24,10 +24,12 @@ const featureComponentsRoot = new URL('../', import.meta.url);
 const runtimeDesignSystemComponentPaths = [
   'frontend/src/components/ui/ActionSelect.tsx',
   'frontend/src/components/ui/Combobox.tsx',
+  'frontend/src/components/ui/FormField.tsx',
   'frontend/src/components/ui/ModalFrame.tsx',
   'frontend/src/components/ui/PageLoadingFallback.tsx',
   'frontend/src/components/ui/SearchInput.tsx',
   'frontend/src/components/ui/SegmentedControl.tsx',
+  'frontend/src/components/ui/SnippetPre.tsx',
   'frontend/src/components/ui/ToggleSwitch.tsx',
   'frontend/src/components/ui/WorkspacePageHeader.tsx',
 ];

@@ -115,6 +115,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/components/ui/ActionSelect.stories.tsx',
       },
       {
+        id: 'form-field',
+        title: '表单字段',
+        storybookTitle: 'Design System/通用组件/表单字段',
+        path: 'frontend/src/components/ui/FormField.stories.tsx',
+      },
+      {
         id: 'modal-frame',
         title: '弹窗窗口',
         storybookTitle: 'Design System/通用组件/弹窗窗口',
@@ -131,6 +137,12 @@ export const designSystemStoryGroups = [
         title: '搜索输入',
         storybookTitle: 'Design System/通用组件/搜索输入',
         path: 'frontend/src/components/ui/SearchInput.stories.tsx',
+      },
+      {
+        id: 'snippet-pre',
+        title: '代码片段区域',
+        storybookTitle: 'Design System/通用组件/代码片段区域',
+        path: 'frontend/src/components/ui/SnippetPre.stories.tsx',
       },
       {
         id: 'workspace-page-header',

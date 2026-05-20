@@ -1,3 +1,5 @@
+import { FieldLabel } from './FormField';
+
 export interface ActionSelectOption {
   value: string;
   label: string;
@@ -32,9 +34,7 @@ export default function ActionSelect({
       data-design-system-component-name="ActionSelect"
       className="grid gap-2"
     >
-      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-        {title}
-      </span>
+      <FieldLabel>{title}</FieldLabel>
       <div className="relative min-w-0">
         <select
           value={value}
