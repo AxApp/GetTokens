@@ -33,7 +33,7 @@ export default function SegmentedControl<T extends string>({
         >
           {option.label}
           {value === option.id ? (
-            <div className="absolute bottom-0 left-0 right-0 h-[var(--gt-control-segmented-indicator-height,3px)] bg-[var(--border-color)]"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-[var(--gt-control-segmented-indicator-height,2px)] bg-[color-mix(in_srgb,var(--border-color)_72%,transparent)]"></div>
           ) : null}
         </button>
       ))}

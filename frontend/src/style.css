@@ -234,7 +234,7 @@
     --gt-control-segmented-font-size: var(--font-size-ui-md-compact);
     --gt-control-segmented-min-height: 2.125rem;
     --gt-control-segmented-padding-inline: 0.625rem;
-    --gt-control-segmented-indicator-height: 0.1875rem;
+    --gt-control-segmented-indicator-height: 0.125rem;
     --gt-settings-section-badge-size: 0.5rem;
     --gt-settings-section-title-size: 0.75rem;
     --gt-settings-label-size: 0.5625rem;
