@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { SegmentedOption } from '../../types';
 
 interface SegmentedControlProps<T extends string> {
@@ -11,11 +12,21 @@ export default function SegmentedControl<T extends string>({
   value,
   onChange,
 }: SegmentedControlProps<T>) {
+  const selectedIndex = Math.max(
+    options.findIndex((option) => option.id === value),
+    0,
+  );
+  const segmentCount = Math.max(options.length, 1);
+  const indicatorStyle: CSSProperties = {
+    width: `calc(100% / ${segmentCount})`,
+    transform: `translateX(${selectedIndex * 100}%)`,
+  };
+
   return (
     <div
       data-design-system-component="true"
       data-design-system-component-name="SegmentedControl"
-      className="flex w-full max-w-sm overflow-hidden border-[1px] border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-main)]"
+      className="relative flex w-full max-w-sm overflow-hidden border-[1px] border-[color:color-mix(in_srgb,var(--border-color)_55%,transparent)] bg-[var(--bg-main)]"
     >
       {options.map((option, index) => (
         <button
@@ -32,11 +43,13 @@ export default function SegmentedControl<T extends string>({
           }`}
         >
           {option.label}
-          {value === option.id ? (
-            <div className="absolute bottom-0 left-0 right-0 h-[var(--gt-control-segmented-indicator-height,2px)] bg-[color-mix(in_srgb,var(--border-color)_72%,transparent)]"></div>
-          ) : null}
         </button>
       ))}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-0 left-0 h-[var(--gt-control-segmented-indicator-height,2px)] bg-[color-mix(in_srgb,var(--border-color)_72%,transparent)] transition-transform duration-200 ease-out motion-reduce:transition-none"
+        style={indicatorStyle}
+      />
     </div>
   );
 }
