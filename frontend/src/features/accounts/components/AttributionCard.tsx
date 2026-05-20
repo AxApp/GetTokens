@@ -139,9 +139,9 @@ export default function AttributionCard({
       interactive={interactive}
       onOpen={onOpen}
     >
-      <div className="account-card-header flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
+      <div className="account-card-header relative flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
         {leadingAction ? <div className="shrink-0">{leadingAction}</div> : null}
-        <div className="min-w-0 flex-1 space-y-3">
+        <div className={`min-w-0 flex-1 space-y-3 ${topActions ? 'pr-10' : ''}`}>
           {eyebrow ? (
             <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
               {eyebrow}
@@ -178,7 +178,7 @@ export default function AttributionCard({
             </div>
           ) : null}
         </div>
-        {topActions ? <div className="account-card-top-actions shrink-0">{topActions}</div> : null}
+        {topActions ? <div className="account-card-top-actions absolute right-4 top-4 z-10">{topActions}</div> : null}
       </div>
 
       {density === 'compact' ? (

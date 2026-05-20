@@ -283,14 +283,6 @@
   }
 
   @container (max-width: 320px) {
-    .account-card-header {
-      flex-wrap: wrap;
-    }
-
-    .account-card-top-actions {
-      width: 100%;
-    }
-
     .account-card-traffic {
       grid-template-columns: minmax(0, 1fr);
     }
