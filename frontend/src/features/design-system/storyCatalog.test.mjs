@@ -24,6 +24,7 @@ const featureComponentsRoot = new URL('../', import.meta.url);
 const runtimeDesignSystemComponentPaths = [
   'frontend/src/components/ui/ActionSelect.tsx',
   'frontend/src/components/ui/Combobox.tsx',
+  'frontend/src/components/ui/ModalFrame.tsx',
   'frontend/src/components/ui/PageLoadingFallback.tsx',
   'frontend/src/components/ui/SearchInput.tsx',
   'frontend/src/components/ui/SegmentedControl.tsx',
@@ -100,6 +101,17 @@ test('design system story stats match flattened catalog', () => {
   assert.equal(stories.length, stats.storyCount);
   assert.equal(designSystemStoryGroups.length, stats.groupCount);
   assert.ok(stats.storyCount >= 10);
+});
+
+test('modal frame is admitted as a shared design-system component', () => {
+  const componentsGroup = getCatalogGroup('components');
+  assert.ok(componentsGroup);
+
+  const modalStory = componentsGroup.stories.find((story) => story.id === 'modal-frame');
+  assert.ok(modalStory);
+  assert.equal(modalStory.title, '弹窗窗口');
+  assert.equal(modalStory.storybookTitle, 'Design System/通用组件/弹窗窗口');
+  assert.equal(modalStory.path, 'frontend/src/components/ui/ModalFrame.stories.tsx');
 });
 
 test('storybook locale globals default to Chinese and accept English', () => {

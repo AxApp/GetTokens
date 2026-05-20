@@ -115,6 +115,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/components/ui/ActionSelect.stories.tsx',
       },
       {
+        id: 'modal-frame',
+        title: '弹窗窗口',
+        storybookTitle: 'Design System/通用组件/弹窗窗口',
+        path: 'frontend/src/components/ui/ModalFrame.stories.tsx',
+      },
+      {
         id: 'combobox',
         title: '组合框',
         storybookTitle: 'Design System/通用组件/组合框',

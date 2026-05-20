@@ -120,6 +120,22 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 - 状态：implemented
 - 最近更新：2026-05-19
 
+## 2026-05-20 Modal 设计系统统一标准增量
+### 背景
+账号、Codex、状态页和代理池里已经存在多种 modal / dialog 写法，遮罩、窗口宽度、滚动边界、header / body / footer 分区和设计系统准入标记不完全一致。后续继续新增弹窗时，如果没有统一基础组件，会让主题、文字缩放、截图回归和项目页设计组件圈定都变得不可控。
+
+### 目标
+1. 在 `frontend/src/components/ui/` 新增统一 `ModalFrame`，作为所有非业务 modal shell 的设计系统标准。
+2. `ModalFrame` 必须统一遮罩、窗口材质、尺寸档位、滚动边界、header / body / footer / error 插槽和 `data-design-system-component` 标记。
+3. Storybook 新增 `Design System/通用组件/弹窗窗口`，用 `Overview` 同屏覆盖基础、长内容、错误、紧凑确认、全宽详情等状态。
+4. 先把已有账号详情弹窗 shell 接入 `ModalFrame`，后续业务弹窗按组件收编节奏逐步迁移。
+
+### 验收标准
+1. Given 用户打开 Storybook 设计系统通用组件分组，When 查看弹窗窗口 story，Then 能看到 `Overview` 状态矩阵和可单独调试的默认 / 错误 / 长内容状态。
+2. Given 开发模式下项目页面渲染基于 `ModalFrame` 的弹窗，When 设计系统组件圈定开启，Then 弹窗根节点带 `data-design-system-component-name="ModalFrame"`。
+3. Given 账号详情弹窗继续使用 `AccountDetailModalFrame`，When 组件渲染，Then 外层窗口行为和视觉由 `ModalFrame` 提供，业务内容、header、footer、error 插槽保持兼容。
+4. Given 运行设计系统门禁测试，When 执行 `storyCatalog.test.mjs`，Then `ModalFrame` 被纳入 runtime marker 检查和 story catalog。
+
 ## 2026-05-19 交付记录
 1. 已接入 Storybook 10 + `@storybook/react-vite`，新增 `storybook` / `build-storybook` 脚本。
 2. 已新增应用内 `design-system` 路由、Sidebar 入口、hash 持久化、双语导航文案。
