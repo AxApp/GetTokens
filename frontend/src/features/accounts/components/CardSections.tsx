@@ -3,6 +3,7 @@ import type { AccountRecord, QuotaDisplay, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import { formatLabel } from '../model/vendorPresetHelpers';
+import { hasDisplayableBilling } from '../model/accountQuota';
 
 const FLOW_BASE = '12,58 50,44 92,48 134,34 176,60 218,50 260,42 302,40';
 
@@ -389,7 +390,7 @@ interface UnsupportedQuotaPlaceholderProps {
 
 export function UnsupportedQuotaPlaceholder({ quotaDisplay, billing, t }: UnsupportedQuotaPlaceholderProps) {
   const windows = quotaDisplay?.windows ?? [];
-  if (windows.length > 0 || billing) return null;
+  if (windows.length > 0 || hasDisplayableBilling(billing)) return null;
 
   return (
     <section className="border-b border-dashed border-[var(--border-color)] px-4 py-4">

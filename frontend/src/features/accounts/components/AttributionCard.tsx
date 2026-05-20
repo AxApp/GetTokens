@@ -4,6 +4,7 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { BillingDisplay } from '../../../types';
 import type { QuotaDisplay, Translator } from '../model/types';
+import { resolveAccountCardValueSection } from '../model/accountQuota';
 import {
   AccountMiniMetrics,
   BillingBalance,
@@ -76,6 +77,7 @@ export default function AttributionCard({
   const accentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[tone];
   const accentFillClass = ATTRIBUTION_CARD_TONE_FILL_CLASS[tone];
   const resolvedQuotaDisplay = quotaDisplay ?? { status: 'unsupported', planType: '', windows: [] };
+  const compactValueSection = resolveAccountCardValueSection(resolvedQuotaDisplay, billing);
 
   if (density === 'list') {
     return (
@@ -182,7 +184,13 @@ export default function AttributionCard({
       </div>
 
       {density === 'compact' ? (
-        <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} />
+        compactValueSection === 'quota' ? (
+          <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} />
+        ) : compactValueSection === 'billing' ? (
+          <BillingBalance billing={billing} />
+        ) : (
+          <UnsupportedQuotaPlaceholder quotaDisplay={resolvedQuotaDisplay} billing={billing} t={t} />
+        )
       ) : null}
 
       {showAttribution ? (

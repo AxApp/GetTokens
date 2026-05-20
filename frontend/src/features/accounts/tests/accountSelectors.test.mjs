@@ -10,6 +10,7 @@ import {
   beginQuotaRefreshState,
   buildQuotaDisplay,
   failQuotaRefreshState,
+  resolveAccountCardValueSection,
 } from '../model/accountQuota.ts';
 import { defaultAccountsFilterState } from '../model/accountFilters.ts';
 
@@ -78,6 +79,40 @@ test('failed quota refresh preserves the last successful quota payload', () => {
       ['five-hour', 72],
       ['weekly', 31],
     ],
+  );
+});
+
+test('compact account cards prefer quota over billing and fall back to balance when quota has no windows', () => {
+  const quotaDisplay = buildQuotaDisplay(quotaAccount, quotaState);
+  const billing = {
+    isAvailable: true,
+    balances: [{ currency: 'USD', totalBalance: '12.00', grantedBalance: '0', toppedUpBalance: '12.00' }],
+  };
+
+  assert.equal(resolveAccountCardValueSection(quotaDisplay, billing), 'quota');
+  assert.equal(
+    resolveAccountCardValueSection({ status: 'empty', planType: '', windows: [] }, billing),
+    'billing',
+  );
+  assert.equal(
+    resolveAccountCardValueSection({ status: 'unsupported', planType: '', windows: [] }, undefined),
+    'placeholder',
+  );
+});
+
+test('compact account cards ignore unavailable or empty billing payloads', () => {
+  const emptyQuotaDisplay = { status: 'empty', planType: '', windows: [] };
+
+  assert.equal(
+    resolveAccountCardValueSection(emptyQuotaDisplay, {
+      isAvailable: false,
+      balances: [{ currency: 'USD', totalBalance: '1', grantedBalance: '0', toppedUpBalance: '1' }],
+    }),
+    'placeholder',
+  );
+  assert.equal(
+    resolveAccountCardValueSection(emptyQuotaDisplay, { isAvailable: true, balances: [] }),
+    'placeholder',
   );
 });
 
