@@ -79,6 +79,8 @@ export function GetCodexSkillsSnapshot():Promise<main.CodexSkillsSnapshot>;
 
 export function GetLocalCodexAuthState():Promise<main.LocalCodexAuthState>;
 
+export function GetLocalCodexModelProviderStateView():Promise<main.LocalCodexModelProviderStateView>;
+
 export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsageSettings>;
 
 export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;

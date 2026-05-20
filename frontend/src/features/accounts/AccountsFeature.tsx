@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ApplyClaudeCodeAPIKeyConfigToLocal,
+  ApplyRelayServiceConfigToLocalV2,
   CreateCodexAPIKey,
   CreateRateLimitRule,
   DeleteRateLimitRule,
   DownloadAuthFile,
   FetchOpenAICompatibleProviderModels,
+  GetLocalCodexAuthState,
+  GetLocalCodexModelProviderStateView,
+  GetRelayServiceConfig,
   ListRateLimitRules,
   ListRelaySupportedModels,
   UpdateRateLimitRule,
@@ -14,6 +19,7 @@ import { main } from '../../../wailsjs/go/models';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
+import AccountLocalCliApplyConfirm from './components/AccountLocalCliApplyConfirm';
 import AccountRotationModal from './components/AccountRotationModal';
 import AccountGroupSection from './components/AccountGroupSection';
 import AccountsHeader from './components/AccountsHeader';
@@ -34,6 +40,11 @@ import { buildAccountDetailFrameHash, clearAccountDetailFrameHash } from '../../
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import type { AccountRecord } from './model/types';
 import {
+  resolveAccountLocalCliMappings,
+  type AccountCliApplyDraft,
+  type AccountLocalCliMapping,
+} from './model/accountLocalCliMapping';
+import {
   ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY,
   DEFAULT_ACCOUNT_LIST_DISPLAY_MODE,
   buildAccountListDisplayModeHash,
@@ -47,6 +58,7 @@ import {
 import type { OpenAICompatibleProvider } from './model/openAICompatible';
 import type { VendorPreset } from './model/vendorPresets';
 import { emptyApiKeyForm } from './model/accountConfig';
+import { toErrorMessage } from '../../utils/error';
 
 interface AccountsFeatureProps {
   workspace?: string;
@@ -129,6 +141,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     updateSelectedApiKeyPriority,
     updateSelectedApiKeyConfig,
     ready,
+    sidecarStatus,
     headerActionsMenuRef,
   } = useAccountsPageStateContext();
 
@@ -141,6 +154,13 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   });
   const [unifiedComposeError, setUnifiedComposeError] = useState('');
   const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() => readInitialDisplayMode());
+  const [relayKeyItems, setRelayKeyItems] = useState<main.RelayServiceAPIKeyItem[]>([]);
+  const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
+  const [localCodexAuthState, setLocalCodexAuthState] = useState<main.LocalCodexAuthState | null>(null);
+  const [localCodexProviderState, setLocalCodexProviderState] = useState<main.LocalCodexModelProviderStateView | null>(null);
+  const [localCliDraft, setLocalCliDraft] = useState<AccountCliApplyDraft | null>(null);
+  const [localCliApplyMessage, setLocalCliApplyMessage] = useState('');
+  const [isApplyingLocalCli, setIsApplyingLocalCli] = useState(false);
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
@@ -174,6 +194,78 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       cancelled = true;
     };
   }, [loadRelayModelNames, relayModelProviderSignature]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadLocalCliContext() {
+      if (!hasWailsAppBindings()) {
+        if (cancelled) return;
+        setRelayKeyItems([
+          main.RelayServiceAPIKeyItem.createFrom({
+            value: 'sk-gettokens-preview-account-template',
+          }),
+        ]);
+        setRelayEndpoints([
+          main.RelayServiceEndpoint.createFrom({
+            id: 'localhost',
+            kind: 'localhost',
+            host: '127.0.0.1',
+            baseUrl: 'http://127.0.0.1:8317/v1',
+          }),
+        ]);
+        setLocalCodexAuthState(main.LocalCodexAuthState.createFrom({
+          hasAuthFile: true,
+          authMode: 'chatgpt',
+          hasTokens: true,
+          canPreserveChatGPTAuth: true,
+        }));
+        setLocalCodexProviderState(main.LocalCodexModelProviderStateView.createFrom({
+          currentProviderID: 'team-codex-relay',
+          currentProviderName: 'Team Codex Relay',
+          currentProviderIsBuiltin: false,
+          currentProviderExists: true,
+          providers: [{ providerID: 'team-codex-relay', providerName: 'Team Codex Relay' }],
+        }));
+        return;
+      }
+
+      if (!ready) {
+        setRelayKeyItems([]);
+        setRelayEndpoints([]);
+        return;
+      }
+
+      try {
+        const [config, authState, providerState] = await Promise.all([
+          trackRequest('GetRelayServiceConfig', { args: [] }, () => GetRelayServiceConfig()),
+          trackRequest('GetLocalCodexAuthState', { args: [] }, () => GetLocalCodexAuthState()),
+          trackRequest('GetLocalCodexModelProviderStateView', { args: [] }, () => GetLocalCodexModelProviderStateView()),
+        ]);
+        if (cancelled) {
+          return;
+        }
+        setRelayKeyItems(config.apiKeyItems || (config.apiKeys || []).map((value) => main.RelayServiceAPIKeyItem.createFrom({ value })));
+        setRelayEndpoints(config.endpoints || []);
+        setLocalCodexAuthState(authState);
+        setLocalCodexProviderState(providerState);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setRelayKeyItems([]);
+          setRelayEndpoints([]);
+          setLocalCodexAuthState(null);
+          setLocalCodexProviderState(null);
+        }
+      }
+    }
+
+    void loadLocalCliContext();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, trackRequest]);
   useEffect(() => {
     if (selectedAccount?.credentialSource !== 'api-key') {
       return;
@@ -189,6 +281,15 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const isAggregateWorkspace = true;
   const usageAccounts = useMemo(() => accounts, [accounts]);
   const rotationAccounts = accounts;
+  const previewMode = !hasWailsAppBindings();
+  const selectedRelayEndpoint = useMemo(() => (
+    relayEndpoints[0] || main.RelayServiceEndpoint.createFrom({
+      id: 'localhost',
+      kind: 'localhost',
+      host: '127.0.0.1',
+      baseUrl: `http://127.0.0.1:${sidecarStatus.port || 8317}/v1`,
+    })
+  ), [relayEndpoints, sidecarStatus.port]);
 
   useEffect(() => {
     if (!ready) {
@@ -369,6 +470,147 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     clearAccountDetailInHash();
   }, [clearAccountDetailInHash, openAICompatibleState]);
 
+  const resolveLocalCliMappingsForAccount = useCallback(
+    (account: AccountRecord) =>
+      resolveAccountLocalCliMappings({
+        account,
+        relayKeyItems,
+        relayEndpoint: selectedRelayEndpoint,
+        selectedModel: relayModelNames[0] || 'GT',
+        selectedReasoningEffort: 'medium',
+        supportsWebsockets: true,
+        sidecarReady: previewMode || sidecarStatus.code === 'ready',
+        previewMode,
+        currentCodexProviderState: localCodexProviderState,
+        localCodexAuthState,
+        accountBlockedReason: accountRateLimitByID[account.id]?.blocked
+          ? accountRateLimitByID[account.id]?.blockReason || '账号当前被路由保护阻塞'
+          : '',
+      }),
+    [
+      accountRateLimitByID,
+      localCodexAuthState,
+      localCodexProviderState,
+      previewMode,
+      relayKeyItems,
+      relayModelNames,
+      selectedRelayEndpoint,
+      sidecarStatus.code,
+    ],
+  );
+
+  const resolveLocalCliActionsForAccount = useCallback(
+    (account: AccountRecord) =>
+      resolveLocalCliMappingsForAccount(account).map((mapping) => ({
+        id: mapping.id,
+        label: mapping.target === 'codex' ? '应用到 Codex' : '应用到 Claude Code',
+        detail: `${mapping.templateName} / ${mapping.sourceFormat.toUpperCase()}`,
+        disabled: !mapping.enabled,
+        disabledReason: mapping.disabledReason,
+        onSelect: () => {
+          if (!mapping.enabled) {
+            return;
+          }
+          setLocalCliApplyMessage('');
+          setLocalCliDraft(mapping.draft);
+        },
+      })),
+    [resolveLocalCliMappingsForAccount],
+  );
+
+  async function applyAccountLocalCliDraft(draft: AccountCliApplyDraft) {
+    if (previewMode) {
+      setLocalCliApplyMessage(`PREVIEW ONLY / ${draft.target === 'codex' ? 'Codex' : 'Claude Code'} 草稿已确认，未调用 Wails 写入。`);
+      return;
+    }
+
+    const blockingWarning = draft.source.warnings.find((warning) => warning.severity === 'blocking');
+    if (blockingWarning) {
+      setLocalCliApplyMessage(blockingWarning.message);
+      return;
+    }
+    const relayKey = String(relayKeyItems[draft.source.relayKeyIndex]?.value || '').trim();
+    if (!relayKey) {
+      setLocalCliApplyMessage('缺少 GetTokens relay key，不能写入本机 CLI 配置。');
+      return;
+    }
+
+    setIsApplyingLocalCli(true);
+    try {
+      if (draft.target === 'codex') {
+        const result = await trackRequest(
+          'ApplyRelayServiceConfigToLocalV2',
+          {
+            apiKey: relayKey,
+            baseURL: draft.codex.baseUrl,
+            model: draft.codex.model,
+            reasoningEffort: draft.codex.reasoningEffort,
+            providerID: draft.codex.providerID,
+            providerName: draft.codex.providerName,
+            authStrategy: draft.codex.authStrategy,
+          },
+          () =>
+            ApplyRelayServiceConfigToLocalV2({
+              apiKey: relayKey,
+              baseURL: draft.codex.baseUrl,
+              model: draft.codex.model,
+              reasoningEffort: draft.codex.reasoningEffort,
+              providerID: draft.codex.providerID,
+              providerName: draft.codex.providerName,
+              supportsWebsockets: draft.codex.supportsWebsockets,
+              authStrategy: draft.codex.authStrategy,
+            }),
+        );
+        setLocalCliApplyMessage(`已写入 Codex：${result.configPath || result.codexHomePath}`);
+        try {
+          const providerState = await trackRequest('GetLocalCodexModelProviderStateView', { args: [] }, () =>
+            GetLocalCodexModelProviderStateView()
+          );
+          setLocalCodexProviderState(providerState);
+        } catch (refreshError) {
+          console.error(refreshError);
+        }
+        return;
+      }
+
+      const result = await trackRequest(
+        'ApplyClaudeCodeAPIKeyConfigToLocal',
+        {
+          apiKey: relayKey,
+          baseURL: draft.claude.baseUrl,
+          options: {
+            model: draft.claude.model,
+            defaultHaikuModel: draft.claude.defaultHaikuModel,
+            defaultSonnetModel: draft.claude.defaultSonnetModel,
+            defaultOpusModel: draft.claude.defaultOpusModel,
+            smallFastModel: draft.claude.smallFastModel,
+            maxOutputTokens: draft.claude.maxOutputTokens,
+            apiTimeoutMs: draft.claude.apiTimeoutMs,
+            disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
+          },
+        },
+        () =>
+          ApplyClaudeCodeAPIKeyConfigToLocal(relayKey, draft.claude.baseUrl, {
+            model: draft.claude.model,
+            defaultHaikuModel: draft.claude.defaultHaikuModel,
+            defaultSonnetModel: draft.claude.defaultSonnetModel,
+            defaultOpusModel: draft.claude.defaultOpusModel,
+            smallFastModel: draft.claude.smallFastModel,
+            maxOutputTokens: draft.claude.maxOutputTokens,
+            apiTimeoutMs: draft.claude.apiTimeoutMs,
+            disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
+          }),
+      );
+      const warningSuffix = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
+      setLocalCliApplyMessage(`已写入 Claude Code：${result.settingsPath}${warningSuffix}`);
+    } catch (error) {
+      console.error(error);
+      setLocalCliApplyMessage(`写入失败：${toErrorMessage(error)}`);
+    } finally {
+      setIsApplyingLocalCli(false);
+    }
+  }
+
   return (
     <>
       <div
@@ -499,6 +741,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   onCancelDelete={() => setPendingDeleteID(null)}
                   onConfirmDelete={(account) => void deleteAccount(account)}
                   downloadAuthFile={DownloadAuthFile}
+                  resolveLocalCliActions={resolveLocalCliActionsForAccount}
                 />
               ))}
             </div>
@@ -656,6 +899,21 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           url={oauthDialog.url}
           onClose={cancelCodexOAuth}
           onOpenInBrowser={openOAuthDialogInBrowser}
+        />
+      ) : null}
+
+      {localCliDraft ? (
+        <AccountLocalCliApplyConfirm
+          draft={localCliDraft}
+          relayKeyItems={relayKeyItems}
+          applying={isApplyingLocalCli}
+          resultMessage={localCliApplyMessage}
+          previewMode={previewMode}
+          onClose={() => {
+            setLocalCliDraft(null);
+            setLocalCliApplyMessage('');
+          }}
+          onApply={(draft) => void applyAccountLocalCliDraft(draft)}
         />
       ) : null}
         </div>

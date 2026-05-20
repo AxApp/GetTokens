@@ -11,6 +11,14 @@ type LocalCodexModelProvider struct {
 	ProviderName string `json:"providerName"`
 }
 
+type LocalCodexModelProviderState struct {
+	CurrentProviderID        string                    `json:"currentProviderID"`
+	CurrentProviderName      string                    `json:"currentProviderName"`
+	CurrentProviderIsBuiltin bool                      `json:"currentProviderIsBuiltin"`
+	CurrentProviderExists    bool                      `json:"currentProviderExists"`
+	Providers                []LocalCodexModelProvider `json:"providers"`
+}
+
 func (a *App) ListLocalCodexModelProviders() ([]LocalCodexModelProvider, error) {
 	codexHome, err := resolveCodexHomePath()
 	if err != nil {
@@ -24,6 +32,70 @@ func (a *App) ListLocalCodexModelProviders() ([]LocalCodexModelProvider, error) 
 	}
 
 	return parseLocalCodexModelProviders(configBody), nil
+}
+
+func (a *App) GetLocalCodexModelProviderState() (*LocalCodexModelProviderState, error) {
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil, err
+	}
+
+	configPath := filepath.Join(codexHome, "config.toml")
+	configBody, err := readOptionalTextFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	state := parseLocalCodexModelProviderState(configBody)
+	return &state, nil
+}
+
+func parseLocalCodexModelProviderState(configBody string) LocalCodexModelProviderState {
+	providers := parseLocalCodexModelProviders(configBody)
+	currentProviderID := parseLocalCodexRootModelProvider(configBody)
+	currentProviderIsBuiltin := false
+	if currentProviderID == "" {
+		currentProviderID = relayCodexOpenAIProviderID
+		currentProviderIsBuiltin = true
+	} else if currentProviderID == relayCodexOpenAIProviderID {
+		currentProviderIsBuiltin = true
+	}
+
+	currentProviderName := currentProviderID
+	currentProviderExists := currentProviderIsBuiltin
+	for _, provider := range providers {
+		if provider.ProviderID == currentProviderID {
+			currentProviderName = provider.ProviderName
+			currentProviderExists = true
+			break
+		}
+	}
+	if currentProviderIsBuiltin && currentProviderID == relayCodexOpenAIProviderID {
+		currentProviderName = "OpenAI"
+	}
+
+	return LocalCodexModelProviderState{
+		CurrentProviderID:        currentProviderID,
+		CurrentProviderName:      currentProviderName,
+		CurrentProviderIsBuiltin: currentProviderIsBuiltin,
+		CurrentProviderExists:    currentProviderExists,
+		Providers:                providers,
+	}
+}
+
+func parseLocalCodexRootModelProvider(configBody string) string {
+	lines, _ := splitTomlDocument(configBody)
+	if len(lines) == 0 {
+		return ""
+	}
+
+	rootEnd := firstTomlSectionIndex(lines)
+	for index := 0; index < rootEnd; index++ {
+		if value, ok := parseTomlStringKeyValue(lines[index], "model_provider"); ok {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 func parseLocalCodexModelProviders(configBody string) []LocalCodexModelProvider {

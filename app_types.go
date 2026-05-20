@@ -301,6 +301,14 @@ type LocalCodexModelProviderView struct {
 	ProviderName string `json:"providerName"`
 }
 
+type LocalCodexModelProviderStateView struct {
+	CurrentProviderID        string                        `json:"currentProviderID"`
+	CurrentProviderName      string                        `json:"currentProviderName"`
+	CurrentProviderIsBuiltin bool                          `json:"currentProviderIsBuiltin"`
+	CurrentProviderExists    bool                          `json:"currentProviderExists"`
+	Providers                []LocalCodexModelProviderView `json:"providers"`
+}
+
 type RelayServiceEndpoint struct {
 	ID      string `json:"id"`
 	Kind    string `json:"kind"`

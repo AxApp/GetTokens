@@ -829,14 +829,22 @@ func (a *App) ListLocalCodexProviderViews() ([]LocalCodexModelProviderView, erro
 		return nil, err
 	}
 
-	providers := make([]LocalCodexModelProviderView, 0, len(result))
-	for _, item := range result {
-		providers = append(providers, LocalCodexModelProviderView{
-			ProviderID:   item.ProviderID,
-			ProviderName: item.ProviderName,
-		})
+	return mapLocalCodexModelProviderViews(result), nil
+}
+
+func (a *App) GetLocalCodexModelProviderStateView() (*LocalCodexModelProviderStateView, error) {
+	result, err := a.core.GetLocalCodexModelProviderState()
+	if err != nil {
+		return nil, err
 	}
-	return providers, nil
+
+	return &LocalCodexModelProviderStateView{
+		CurrentProviderID:        result.CurrentProviderID,
+		CurrentProviderName:      result.CurrentProviderName,
+		CurrentProviderIsBuiltin: result.CurrentProviderIsBuiltin,
+		CurrentProviderExists:    result.CurrentProviderExists,
+		Providers:                mapLocalCodexModelProviderViews(result.Providers),
+	}, nil
 }
 
 func (a *App) UpdateRelayServiceAPIKey(apiKey string) (*RelayServiceConfig, error) {
@@ -850,6 +858,17 @@ func (a *App) UpdateRelayServiceAPIKey(apiKey string) (*RelayServiceConfig, erro
 		APIKeyItems: mapRelayServiceAPIKeyItems(result.APIKeyItems),
 		Endpoints:   mapRelayServiceEndpoints(result.Endpoints),
 	}, nil
+}
+
+func mapLocalCodexModelProviderViews(result []wailsapp.LocalCodexModelProvider) []LocalCodexModelProviderView {
+	providers := make([]LocalCodexModelProviderView, 0, len(result))
+	for _, item := range result {
+		providers = append(providers, LocalCodexModelProviderView{
+			ProviderID:   item.ProviderID,
+			ProviderName: item.ProviderName,
+		})
+	}
+	return providers
 }
 
 func (a *App) UpdateRelayServiceAPIKeys(apiKeys []string) (*RelayServiceConfig, error) {

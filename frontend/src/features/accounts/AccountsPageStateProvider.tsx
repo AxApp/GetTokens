@@ -8,6 +8,7 @@ import { shouldLoadAccountsData } from './model/accountRuntime';
 
 interface AccountsPageStateContextValue extends AccountsPageState {
   ready: boolean;
+  sidecarStatus: SidecarStatus;
   headerActionsMenuRef: MutableRefObject<HTMLDivElement | null>;
 }
 
@@ -34,9 +35,10 @@ export function AccountsPageStateProvider({
     () => ({
       ...accountsPageState,
       ready,
+      sidecarStatus,
       headerActionsMenuRef,
     }),
-    [accountsPageState, ready],
+    [accountsPageState, ready, sidecarStatus],
   );
 
   return <AccountsPageStateContext.Provider value={value}>{children}</AccountsPageStateContext.Provider>;

@@ -194,7 +194,13 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
   const reasoningEffort = input.reasoningEffort.trim();
   const maskedKey = maskRelayKey(input.apiKey);
   const authStrategy = input.authStrategy || defaultCodexLocalAuthStrategy;
-  const customProviderLines = [`+model_provider = ${quoteConfigString(providerID)}`, '', `+[model_providers.${providerID}]`, `+name = ${quoteConfigString(providerName)}`, `+base_url = ${quoteConfigString(baseUrl)}`];
+  const customProviderLines = [
+    ` model_provider = ${quoteConfigString(providerID)} # current user provider preserved unless explicitly switched`,
+    '',
+    `+[model_providers.${providerID}]`,
+    `+name = ${quoteConfigString(providerName)}`,
+    `+base_url = ${quoteConfigString(baseUrl)}`,
+  ];
   if (authStrategy === 'preserve_chatgpt_auth') {
     customProviderLines.push(`+experimental_bearer_token = ${quoteConfigString(maskedKey)}`);
     customProviderLines.push('-env_key = "OPENAI_API_KEY"');
@@ -213,11 +219,10 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
   const authLines =
     authStrategy === 'preserve_chatgpt_auth'
       ? [
-          '--- CODEX_HOME/auth.json',
-          '+++ CODEX_HOME/auth.json',
-          '@@ auth preserved @@',
+          '# CODEX_HOME/auth.json (read-only preflight)',
+          '# read: auth_mode must be ChatGPT-compatible and tokens must exist',
           '# preserved: existing ChatGPT login tokens stay in place',
-          '# preserved: auth_mode / tokens / account metadata are not rewritten',
+          '# preserved: auth_mode / OPENAI_API_KEY / tokens / account metadata are not rewritten',
         ]
       : [
           '--- CODEX_HOME/auth.json',

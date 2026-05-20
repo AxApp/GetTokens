@@ -150,6 +150,10 @@ export function GetLocalCodexAuthState() {
   return window['go']['main']['App']['GetLocalCodexAuthState']();
 }
 
+export function GetLocalCodexModelProviderStateView() {
+  return window['go']['main']['App']['GetLocalCodexModelProviderStateView']();
+}
+
 export function GetLocalProjectedUsageSettings() {
   return window['go']['main']['App']['GetLocalProjectedUsageSettings']();
 }

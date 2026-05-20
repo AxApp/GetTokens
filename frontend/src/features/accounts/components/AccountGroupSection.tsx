@@ -2,7 +2,7 @@ import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from '.
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
-import AccountCard from './AccountCard';
+import AccountCard, { type AccountCardLocalCliAction } from './AccountCard';
 import AccountGroupSectionView from './AccountGroupSectionView';
 
 interface AccountGroupSectionProps {
@@ -28,6 +28,7 @@ interface AccountGroupSectionProps {
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
   downloadAuthFile?: (accountName: string) => Promise<{ contentBase64: string }>;
+  resolveLocalCliActions?: (account: AccountRecord) => ReadonlyArray<AccountCardLocalCliAction>;
 }
 
 export default function AccountGroupSection({
@@ -53,6 +54,7 @@ export default function AccountGroupSection({
   onCancelDelete,
   onConfirmDelete,
   downloadAuthFile,
+  resolveLocalCliActions,
 }: AccountGroupSectionProps) {
   return (
     <AccountGroupSectionView
@@ -84,6 +86,7 @@ export default function AccountGroupSection({
           onCancelDelete={onCancelDelete}
           onConfirmDelete={onConfirmDelete}
           downloadAuthFile={downloadAuthFile}
+          localCliActions={resolveLocalCliActions?.(account) || []}
         />
       )}
     />

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Copy, FileText, MoreVertical, Power, Trash2 } from 'lucide-react';
+import { Copy, FileText, MoreVertical, Power, Terminal, Trash2 } from 'lucide-react';
 import { buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
 import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
@@ -41,6 +41,17 @@ interface AccountCardProps {
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
   downloadAuthFile?: (accountName: string) => Promise<{ contentBase64: string }>;
+  localCliActions?: ReadonlyArray<AccountCardLocalCliAction>;
+  defaultActionMenuOpen?: boolean;
+}
+
+export interface AccountCardLocalCliAction {
+  id: string;
+  label: string;
+  detail?: string;
+  disabled?: boolean;
+  disabledReason?: string;
+  onSelect: (account: AccountRecord) => void;
 }
 
 export default function AccountCard({
@@ -66,8 +77,10 @@ export default function AccountCard({
   onCancelDelete,
   onConfirmDelete,
   downloadAuthFile,
+  localCliActions = [],
+  defaultActionMenuOpen = false,
 }: AccountCardProps) {
-  const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const [isActionMenuOpen, setIsActionMenuOpen] = useState(defaultActionMenuOpen);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
   const copyResetTimerRef = useRef<number | null>(null);
@@ -266,6 +279,31 @@ export default function AccountCard({
                     <FileText size={14} strokeWidth={3} />
                     {t('common.copy_content')}
                   </button>
+                  {localCliActions.length > 0 ? (
+                    <>
+                      <div className="my-1 border-t-2 border-dashed border-[var(--border-color)]" />
+                      {localCliActions.map((action) => (
+                        <button
+                          key={action.id}
+                          type="button"
+                          role="menuitem"
+                          disabled={action.disabled}
+                          onClick={() => {
+                            if (action.disabled) {
+                              return;
+                            }
+                            setIsActionMenuOpen(false);
+                            action.onSelect(account);
+                          }}
+                          title={action.disabledReason || action.detail || action.label}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Terminal size={14} strokeWidth={3} className="shrink-0" />
+                          <span>{action.label}</span>
+                        </button>
+                      ))}
+                    </>
+                  ) : null}
                   {canToggleDisabled ? (
                     <button
                       type="button"

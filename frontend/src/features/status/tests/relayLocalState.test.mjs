@@ -24,7 +24,7 @@ test('buildCodexLocalApplyDiff includes Codex auth and config controlled fields'
   assert.match(diff, /--- CODEX_HOME\/auth\.json/);
   assert.match(diff, /\+"OPENAI_API_KEY": "sk-getto\.\.\.cdef"/);
   assert.match(diff, /\+model = "gpt-5.4"/);
-  assert.match(diff, /\+model_provider = "gettokens"/);
+  assert.match(diff, / model_provider = "gettokens" # current user provider preserved/);
   assert.match(diff, /\+wire_api = "responses"/);
 });
 
@@ -40,8 +40,10 @@ test('buildCodexLocalApplyDiff preserves ChatGPT auth and writes experimental be
     authStrategy: 'preserve_chatgpt_auth',
   });
 
-  assert.match(diff, /@@ auth preserved @@/);
+  assert.match(diff, /CODEX_HOME\/auth\.json \(read-only preflight\)/);
+  assert.match(diff, /auth_mode must be ChatGPT-compatible and tokens must exist/);
   assert.match(diff, /existing ChatGPT login tokens stay in place/);
+  assert.match(diff, /auth_mode \/ OPENAI_API_KEY \/ tokens \/ account metadata are not rewritten/);
   assert.match(diff, /\+experimental_bearer_token = "sk-getto\.\.\.cdef"/);
   assert.match(diff, /-env_key = "OPENAI_API_KEY"/);
 });

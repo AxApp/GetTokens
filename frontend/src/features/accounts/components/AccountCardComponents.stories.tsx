@@ -1,7 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useState } from 'react';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { BillingDisplay, CodexQuota } from '../../../types';
+import {
+  buildClaudeCodeSettingsDiff,
+  buildCodexLocalApplyDiff,
+  type ClaudeCodeLocalApplyDraft,
+  type CodexLocalAuthStrategy,
+} from '../../status/model/relayLocalState';
+import StatusSnippetPanel from '../../status/components/StatusSnippetPanel';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from '../model/types';
@@ -268,6 +276,73 @@ const disabledAccountCardRecord: AccountRecord = {
   supportedFormats: ['openai_chat'],
 };
 
+const deepseekTemplateAccountRecord: AccountRecord = {
+  id: 'account-card-deepseek-template',
+  provider: 'deepseek',
+  credentialSource: 'api-key',
+  displayName: 'DeepSeek Coding Plan',
+  status: 'active',
+  baseUrl: 'https://api.deepseek.com/anthropic',
+  keyFingerprint: 'sk-...P1AN',
+  supportedFormats: ['anthropic', 'openai_chat'],
+  formatBaseUrls: {
+    anthropic: 'https://api.deepseek.com/anthropic',
+    openai_chat: 'https://api.deepseek.com/v1',
+  },
+  models: [{ name: 'deepseek-v4-pro' }, { name: 'deepseek-v4-flash' }],
+};
+
+const openAIApiKeyTemplateAccountRecord: AccountRecord = {
+  id: 'account-card-openai-api-key-template',
+  provider: 'openai',
+  credentialSource: 'api-key',
+  displayName: 'OpenAI API Key Relay',
+  status: 'active',
+  baseUrl: 'https://api.openai.com/v1',
+  keyFingerprint: 'sk-...C0DX',
+  supportedFormats: ['openai_responses', 'openai_chat'],
+  formatBaseUrls: {
+    openai_responses: 'https://api.openai.com/v1',
+    openai_chat: 'https://api.openai.com/v1',
+  },
+  models: [{ name: 'gpt-5.4' }, { name: 'gpt-5.4-mini' }],
+};
+
+const openAIOAuthTemplateAccountRecord: AccountRecord = {
+  id: 'account-card-openai-codex-template',
+  provider: 'openai',
+  credentialSource: 'auth-file',
+  displayName: 'OpenAI Codex OAuth',
+  status: 'active',
+  baseUrl: 'https://api.openai.com/v1',
+  keyFingerprint: 'chatgpt-oauth',
+  supportedFormats: ['openai_responses', 'openai_chat'],
+  formatBaseUrls: {
+    openai_responses: 'https://api.openai.com/v1',
+    openai_chat: 'https://api.openai.com/v1',
+  },
+  models: [{ name: 'gpt-5.4' }, { name: 'gpt-5.4-mini' }],
+};
+
+const templateClaudeDraft: ClaudeCodeLocalApplyDraft = {
+  relayKeyIndex: 0,
+  baseUrl: 'http://127.0.0.1:18317/v1',
+  model: 'deepseek-v4-pro',
+  defaultHaikuModel: 'deepseek-v4-flash',
+  defaultSonnetModel: 'deepseek-v4-pro',
+  defaultOpusModel: 'deepseek-v4-pro',
+  smallFastModel: 'deepseek-v4-flash',
+  maxOutputTokens: '6000',
+  apiTimeoutMs: '600000',
+  disableNonEssentialTraffic: true,
+  authField: 'ANTHROPIC_API_KEY',
+};
+
+type TemplatePreviewTarget = 'claude' | 'codex-api-key' | 'codex-oauth';
+
+const currentCodexProviderID = 'team-codex-relay';
+const currentCodexProviderName = 'Team Codex Relay';
+
 function AccountCardSample({
   label,
   account = accountCardRecord,
@@ -319,6 +394,341 @@ function AccountCardSample({
         onConfirmDelete={() => undefined}
         downloadAuthFile={async () => ({ contentBase64: 'eyJ0eXBlIjoic3Rvcnlib29rIn0=' })}
       />
+    </DesignSystemStoryFrame>
+  );
+}
+
+function AccountCardTemplateApplySample() {
+  const { t } = useI18n();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [result, setResult] = useState('等待确认 / 未写入');
+  const [previewTarget, setPreviewTarget] = useState<TemplatePreviewTarget>('claude');
+  const [selectedFileID, setSelectedFileID] = useState('claude-settings');
+  const codexAuthStrategy: CodexLocalAuthStrategy =
+    previewTarget === 'codex-oauth' ? 'preserve_chatgpt_auth' : 'replace_auth_with_apikey';
+  const claudeDiff = buildClaudeCodeSettingsDiff({
+    ...templateClaudeDraft,
+    apiKey: 'sk-relay-preview-primary',
+    targetPath: '~/.claude/settings.json',
+  });
+  const codexDiff = buildCodexLocalApplyDiff({
+    apiKey: 'sk-relay-preview-primary',
+    baseUrl: 'http://127.0.0.1:18317/v1',
+    model: 'gpt-5.4',
+    reasoningEffort: 'high',
+    providerID: currentCodexProviderID,
+    providerName: currentCodexProviderName,
+    supportsWebsockets: true,
+    authStrategy: codexAuthStrategy,
+  }).replace(
+    `+model_provider = "${currentCodexProviderID}"`,
+    ` model_provider = "${currentCodexProviderID}" # current user provider preserved`
+  );
+  const codexAuthIndex = codexDiff.indexOf('--- CODEX_HOME/auth.json');
+  const codexConfigIndex = codexDiff.indexOf('--- CODEX_HOME/config.toml');
+  const codexAuthDiff =
+    codexAuthIndex >= 0 && codexConfigIndex > codexAuthIndex
+      ? codexDiff.slice(codexAuthIndex, codexConfigIndex).trim()
+      : '';
+  const codexConfigDiff = codexConfigIndex >= 0 ? codexDiff.slice(codexConfigIndex) : codexDiff;
+  const previewFiles =
+    previewTarget !== 'claude'
+      ? [
+          ...(codexAuthStrategy === 'replace_auth_with_apikey'
+            ? [
+                {
+                  id: 'codex-auth',
+                  path: 'CODEX_HOME/auth.json',
+                  target: 'Codex',
+                  status: '将修改',
+                  changedFields: ['auth_mode', 'OPENAI_API_KEY'],
+                  preservedFields: ['tokens / account metadata 之外的未知字段按 JSON merge 保留'],
+                  diff: codexAuthDiff,
+                },
+              ]
+            : []),
+          {
+            id: 'codex-config',
+            path: 'CODEX_HOME/config.toml',
+            target: 'Codex',
+            status: '将修改',
+            changedFields:
+              codexAuthStrategy === 'preserve_chatgpt_auth'
+                ? ['model', 'model_reasoning_effort', 'experimental_bearer_token', 'wire_api']
+                : ['model', 'model_reasoning_effort', 'base_url', 'wire_api'],
+            preservedFields:
+              codexAuthStrategy === 'preserve_chatgpt_auth'
+                ? [
+                    `model_provider = "${currentCodexProviderID}"`,
+                    'CODEX_HOME/auth.json',
+                    'mcp_servers',
+                    'profiles',
+                    'unknown provider keys',
+                  ]
+                : [`model_provider = "${currentCodexProviderID}"`, 'mcp_servers', 'profiles', 'unknown provider keys'],
+            diff: codexConfigDiff,
+          },
+        ]
+      : [
+          {
+            id: 'claude-settings',
+            path: '~/.claude/settings.json',
+            target: 'Claude Code',
+            status: '将修改',
+            changedFields: ['ANTHROPIC_API_KEY', 'ANTHROPIC_BASE_URL', 'ANTHROPIC_MODEL', 'DEFAULT_*'],
+            preservedFields: ['permissions', 'hooks', 'statusLine', 'MCP', 'HTTP_PROXY'],
+            diff: claudeDiff,
+          },
+        ];
+  const selectedFile = previewFiles.find((file) => file.id === selectedFileID) ?? previewFiles[0];
+  const previewTitle =
+    previewTarget === 'codex-api-key'
+      ? 'OpenAI API Key -> Codex'
+      : previewTarget === 'codex-oauth'
+        ? 'OpenAI OAuth -> Codex'
+        : 'DeepSeek -> Claude Code';
+  const codexModeLabel =
+    codexAuthStrategy === 'replace_auth_with_apikey' ? '写入 API Key auth.json' : '保留 ChatGPT 登录态';
+
+  return (
+    <DesignSystemStoryFrame label="DS-ACCOUNT-CARD-TEMPLATE-APPLY">
+      <div className="relative grid gap-4 bg-[var(--bg-surface)] p-4">
+        <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            ACCOUNT CARD MENU / VERIFIED TEMPLATE ONLY
+          </div>
+          <div className="grid gap-4 xl:grid-cols-3">
+            <AccountCard
+              t={t}
+              account={deepseekTemplateAccountRecord}
+              usageSummary={healthyUsageSummary}
+              rateLimitStatus={rateLimitStatus}
+              density="compact"
+              ready
+              isSelectionMode={false}
+              isSelected={false}
+              isPendingDelete={false}
+              isOAuthPending={false}
+              isStatusPending={false}
+              onToggleSelection={() => undefined}
+              onOpenDetails={() => undefined}
+              onRefreshQuota={() => undefined}
+              onStartReauth={() => undefined}
+              onToggleDisabled={() => undefined}
+              onRequestDelete={() => undefined}
+              onCancelDelete={() => undefined}
+              onConfirmDelete={() => undefined}
+              localCliActions={[
+                {
+                  id: 'claude-code',
+                  label: '应用到 Claude Code',
+                  detail: '官方模板已验证',
+                  onSelect: () => {
+                    setPreviewTarget('claude');
+                    setSelectedFileID('claude-settings');
+                    setResult('等待确认 / 未写入');
+                    setConfirmOpen(true);
+                  },
+                },
+              ]}
+              defaultActionMenuOpen
+            />
+            <AccountCard
+              t={t}
+              account={openAIApiKeyTemplateAccountRecord}
+              usageSummary={healthyUsageSummary}
+              rateLimitStatus={rateLimitStatus}
+              density="compact"
+              ready
+              isSelectionMode={false}
+              isSelected={false}
+              isPendingDelete={false}
+              isOAuthPending={false}
+              isStatusPending={false}
+              onToggleSelection={() => undefined}
+              onOpenDetails={() => undefined}
+              onRefreshQuota={() => undefined}
+              onStartReauth={() => undefined}
+              onToggleDisabled={() => undefined}
+              onRequestDelete={() => undefined}
+              onCancelDelete={() => undefined}
+              onConfirmDelete={() => undefined}
+              localCliActions={[
+                {
+                  id: 'codex-api-key',
+                  label: '应用到 Codex',
+                  detail: 'API Key 模板已验证',
+                  onSelect: () => {
+                    setPreviewTarget('codex-api-key');
+                    setSelectedFileID('codex-auth');
+                    setResult('等待确认 / 未写入');
+                    setConfirmOpen(true);
+                  },
+                },
+              ]}
+              defaultActionMenuOpen
+            />
+            <AccountCard
+              t={t}
+              account={openAIOAuthTemplateAccountRecord}
+              usageSummary={healthyUsageSummary}
+              rateLimitStatus={rateLimitStatus}
+              density="compact"
+              ready
+              isSelectionMode={false}
+              isSelected={false}
+              isPendingDelete={false}
+              isOAuthPending={false}
+              isStatusPending={false}
+              onToggleSelection={() => undefined}
+              onOpenDetails={() => undefined}
+              onRefreshQuota={() => undefined}
+              onStartReauth={() => undefined}
+              onToggleDisabled={() => undefined}
+              onRequestDelete={() => undefined}
+              onCancelDelete={() => undefined}
+              onConfirmDelete={() => undefined}
+              localCliActions={[
+                {
+                  id: 'codex-oauth',
+                  label: '应用到 Codex',
+                  detail: 'OAuth 模板已验证',
+                  onSelect: () => {
+                    setPreviewTarget('codex-oauth');
+                    setSelectedFileID('codex-config');
+                    setResult('等待确认 / 未写入');
+                    setConfirmOpen(true);
+                  },
+                },
+              ]}
+              defaultActionMenuOpen
+            />
+          </div>
+        </div>
+
+        {confirmOpen ? (
+          <div
+            className="fixed inset-0 z-50 grid bg-black/45 p-4 backdrop-blur-[1px] lg:place-items-center"
+            role="dialog"
+            aria-modal="true"
+            aria-label={previewTarget !== 'claude' ? '确认应用到 Codex' : '确认应用到 Claude Code'}
+          >
+            <div className="grid max-h-[calc(100vh-2rem)] w-full max-w-6xl overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] shadow-[10px_10px_0_var(--shadow-color)]">
+              <div className="grid gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                <div className="min-w-0">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    FILE PREVIEW CONFIRM
+                  </div>
+                  <h2 className="mt-1 text-xl font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                    {previewTitle}
+                  </h2>
+                  <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+                    只预览将写入的本地配置文件。确认前不会调用 Wails，也不会修改本机文件。
+                  </p>
+                  {previewTarget !== 'claude' ? (
+                    <div className="mt-3 flex max-w-full flex-wrap gap-2">
+                      <span className="inline-flex border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                        固定应用模式：{codexModeLabel}
+                      </span>
+                      <span className="inline-flex border-2 border-[var(--border-muted)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        当前 provider：{currentCodexProviderID}
+                      </span>
+                    </div>
+                  ) : null}
+                </div>
+                <button type="button" onClick={() => setConfirmOpen(false)} className="btn-swiss active:scale-95">
+                  关闭
+                </button>
+              </div>
+
+              <div className="grid min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
+                <div className="grid content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:max-h-[calc(100vh-11rem)] lg:border-b-0 lg:border-r-2">
+                  <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    文件列表
+                  </div>
+                  <div className="grid gap-2">
+                    {previewFiles.map((file) => (
+                      <button
+                        key={file.id}
+                        type="button"
+                        onClick={() => setSelectedFileID(file.id)}
+                        className={`grid gap-2 border-2 px-3 py-3 text-left active:scale-[0.99] ${
+                          selectedFileID === file.id
+                            ? 'border-[var(--border-color)] bg-[var(--bg-surface)] shadow-[4px_4px_0_var(--shadow-color)]'
+                            : 'border-[var(--border-muted)] bg-[var(--bg-main)] hover:bg-[var(--bg-surface)]'
+                        }`}
+                      >
+                        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+                          {file.path}
+                        </span>
+                        <span className="flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                          <span>{file.target}</span>
+                          <span className="border border-[var(--border-color)] px-1.5 py-0.5 text-[var(--color-status-warning)]">
+                            {file.status}
+                          </span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid gap-2 border-2 border-dashed border-[var(--color-status-warning)] bg-[var(--bg-surface)] p-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--color-status-warning)]">
+                    {previewTarget !== 'claude' ? (
+                      codexAuthStrategy === 'replace_auth_with_apikey' ? (
+                        <>
+                          <span>{codexModeLabel}</span>
+                          <span>读取当前 model_provider={currentCodexProviderID}；只 patch 该 provider 的受控字段。</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>{codexModeLabel}</span>
+                          <span>读取当前 model_provider={currentCodexProviderID}；auth.json 只读校验。</span>
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <span>DeepSeek 官方模板当前只适配 Claude Code。</span>
+                        <span>未验证目标不展示 Codex 按钮。</span>
+                      </>
+                    )}
+                  </div>
+                  <div className="grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+                    <span className="font-mono font-black uppercase tracking-[0.16em]">改动字段</span>
+                    <span>{selectedFile.changedFields.join(' / ')}</span>
+                    <span className="font-mono font-black uppercase tracking-[0.16em]">保留字段</span>
+                    <span>{selectedFile.preservedFields.join(' / ')}</span>
+                  </div>
+                </div>
+
+                <div className="min-w-0 overflow-auto p-4 lg:max-h-[calc(100vh-11rem)]">
+                  <StatusSnippetPanel
+                    title={`文件改动 / ${selectedFile.path}`}
+                    content={selectedFile.diff}
+                    onCopy={() => setResult('Diff copied / preview')}
+                    preClassName="max-h-[calc(100vh-18rem)]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
+                <button type="button" onClick={() => setConfirmOpen(false)} className="btn-swiss active:scale-95">
+                  取消
+                </button>
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                    {result}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setResult(`PREVIEW ONLY / ${previewTarget !== 'claude' ? `Codex ${codexModeLabel}` : 'Claude Code'} 草稿已确认，未调用 Wails 写入。`)}
+                    className="btn-swiss bg-[var(--border-color)] !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] active:scale-95"
+                  >
+                    确认并应用
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
     </DesignSystemStoryFrame>
   );
 }
@@ -491,6 +901,11 @@ function AccountCardsOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '模板应用菜单' : 'Template apply menu'}</h3>
+        <AccountCardTemplateApplySample />
+      </section>
+
+      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '交互外壳' : 'Interactive shell'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountCardFrameSample />
@@ -537,6 +952,10 @@ export const FullAccountCard: Story = {
 
 export const CompactAccountCard: Story = {
   render: () => <AccountCardSample label="DS-ACCOUNT-CARD-COMPACT-QUOTA" density="compact" />,
+};
+
+export const AccountTemplateApplyMenu: Story = {
+  render: () => <AccountCardTemplateApplySample />,
 };
 
 export const AttributionHealthy: Story = {

@@ -1745,6 +1745,45 @@ export namespace main {
 	        this.providerName = source["providerName"];
 	    }
 	}
+	export class LocalCodexModelProviderStateView {
+	    currentProviderID: string;
+	    currentProviderName: string;
+	    currentProviderIsBuiltin: boolean;
+	    currentProviderExists: boolean;
+	    providers: LocalCodexModelProviderView[];
+	
+	    static createFrom(source: any = {}) {
+	        return new LocalCodexModelProviderStateView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentProviderID = source["currentProviderID"];
+	        this.currentProviderName = source["currentProviderName"];
+	        this.currentProviderIsBuiltin = source["currentProviderIsBuiltin"];
+	        this.currentProviderExists = source["currentProviderExists"];
+	        this.providers = this.convertValues(source["providers"], LocalCodexModelProviderView);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
 	export class LocalProjectedUsageDetail {
 	    timestamp: string;
 	    provider: string;
