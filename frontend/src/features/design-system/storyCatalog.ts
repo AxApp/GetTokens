@@ -121,6 +121,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/components/ui/Combobox.stories.tsx',
       },
       {
+        id: 'search-input',
+        title: '搜索输入',
+        storybookTitle: 'Design System/通用组件/搜索输入',
+        path: 'frontend/src/components/ui/SearchInput.stories.tsx',
+      },
+      {
         id: 'workspace-page-header',
         title: '工作区页头',
         storybookTitle: 'Design System/通用组件/工作区页头',

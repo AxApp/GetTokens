@@ -1,4 +1,4 @@
-import { Download, FilePenLine, RefreshCw, Search } from 'lucide-react';
+import { Download, FilePenLine, RefreshCw } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   GetCodexConfigToml,
@@ -11,6 +11,7 @@ import {
   SaveCodexSkillEnabled,
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
+import SearchInput from '../../components/ui/SearchInput';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
@@ -295,15 +296,12 @@ Path: ${parsedGitSource.path}`,
         <section className="flex min-h-[30rem] flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
           <div className="grid gap-3 border-b-2 border-[var(--border-color)] p-3 lg:grid-cols-[minmax(0,24rem)_minmax(16rem,1fr)]">
             <SegmentedControl options={skillRootOptions} value={rootFilter} onChange={setRootFilter} />
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="input-swiss w-full !pl-9"
-                placeholder={t('codex_extensions.search_skills')}
-              />
-            </label>
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              clearLabel={t('common.reset')}
+              placeholder={t('codex_extensions.search_skills')}
+            />
           </div>
 
           {message ? (
@@ -591,15 +589,12 @@ function CodexMcpServersWorkspace() {
         <section className="flex flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
           <div className="grid gap-3 border-b-2 border-[var(--border-color)] p-3 lg:grid-cols-[minmax(0,24rem)_minmax(16rem,1fr)]">
             <SegmentedControl options={mcpFilterOptions} value={filter} onChange={setFilter} />
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                className="input-swiss w-full !pl-9"
-                placeholder={t('codex_extensions.search_mcp')}
-              />
-            </label>
+            <SearchInput
+              value={query}
+              onChange={setQuery}
+              clearLabel={t('common.reset')}
+              placeholder={t('codex_extensions.search_mcp')}
+            />
           </div>
 
           {message ? (
