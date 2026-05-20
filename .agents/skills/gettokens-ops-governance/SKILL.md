@@ -126,6 +126,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Versioning**:
   - If a release tag has already failed or been consumed, bump to the next patch tag instead of reusing it.
   - Keep `frontend/package.json`, `frontend/package-lock.json`, and `frontend/package.json.md5` in sync with the release version.
+  - Post-release docs or memory commits may be pushed to `master` after the release tag. Do not move or recreate the tag just to include those records; the tag should continue to identify the shipped code.
 - **Sidecar Build Rule**:
   - Do not fetch sidecar binaries from upstream release assets for GetTokens release builds.
   - Build `CLIProxyAPI` from the maintained fork source first.
@@ -146,6 +147,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Download the official release assets and verify `checksums.txt` with `shasum -a 256 -c`.
   - Run `spctl -a -t open --context context:primary-signature -v` and `xcrun stapler validate` on both Apple Silicon and Intel DMGs.
   - Mount both DMGs and verify the bundled `.app` with `codesign -dv --verbose=4`, executable architecture, `CFBundleShortVersionString`, `CFBundleVersion`, and per-arch `SUFeedURL`.
+  - Verify the remote per-architecture Sparkle appcasts contain the shipped version and point to the matching release DMG.
   - Only claim "可分发 DMG 已发布" after the DMG-level Gatekeeper, stapler, app signature, architecture, and bundle metadata checks all pass.
 
 ## Acceptance Checklist

@@ -77,7 +77,32 @@ This skill unifies the technical rules for building, styling, and debugging GetT
     - `auth.json` uses field-level merge
     - do not rewrite the whole file and destroy user ordering, comments, or unknown fields
 
-## 3.1 Codex Workspace & Local Config Surfaces
+### 3.1 Account Template Local CLI Apply
+- **Scope**: Use this when account cards, vendor presets, or local CLI apply flows map an account template into Codex or Claude Code configuration.
+- **Entry Rule**:
+  - Account-card actions are intent launchers only. They may open a confirmation page/modal, but must not write local CLI files before the user confirms.
+  - Only show Codex / Claude Code apply actions for official or verified template targets. Do not infer a Codex button from generic OpenAI-compatible capability alone.
+  - DeepSeek is currently treated as a Claude Code-only official template target; do not show a Codex action unless a later verified template explicitly enables it.
+- **Mapping Boundary**:
+  - Keep template resolution in pure model code under `frontend/src/features/accounts/model/`, not inside `AccountCard`.
+  - A single account has a fixed application mode from its source: Codex API key accounts use API key mode; Codex OAuth/auth-file accounts use OAuth mode. Do not offer an API key/OAuth toggle inside the confirmation page for one account.
+  - Codex provider id should default to the user's current root `model_provider`; avoid forcing a stable provider id such as `gettokens` because existing Codex sessions may depend on the current provider.
+- **Confirmation UI**:
+  - Use a file-preview layout: left side target file list, right side selected file diff.
+  - Avoid explanatory card stacks inside the modal. Keep summary metadata compact and make the file diff the primary content.
+  - Modal height should stay stable when switching files; file tabs/list selection must not resize the shell.
+- **Codex auth.json Semantics**:
+  - API key mode writes the minimal Codex auth payload: `auth_mode=apikey` plus `OPENAI_API_KEY`. Clear OAuth `tokens`, flat token fields, refresh metadata, agent identity, and user metadata.
+  - OAuth/auth-file mode writes `auth_mode=chatgpt` plus native nested `tokens`. If the source auth-file is sidecar-normalized into flat `access_token` / `id_token` / `refresh_token` fields, convert it back to Codex native nested tokens before writing.
+  - Codex auth detection follows source behavior: explicit `auth_mode` wins; only when it is missing should `OPENAI_API_KEY` cause API key fallback.
+  - For OAuth mode, provider config must not leave `env_key` or `experimental_bearer_token` values that would make Codex choose API key / relay token auth instead of ChatGPT OAuth.
+- **Claude Code Settings Semantics**:
+  - Only patch controlled `env` keys such as `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, and model family fields.
+  - Preserve unrelated settings such as permissions, hooks, status line, MCP, and unknown fields.
+- **Rendering Rule**:
+  - Account groups should render available local data first. Do not block the full account list on slower per-account enrichment; update enrichment-dependent fields incrementally.
+
+## 3.2 Codex Workspace & Local Config Surfaces
 - **Codex Binary**: For Codex CLI binary version/source management, use the dedicated `gettokens-codex-binary-management` skill. Keep it as an independent binary-management business; do not merge it into account pool, local apply, usage, session, or routing flows.
 - **Codex Account List**: For Codex account request order, route probing, OAuth/auth-file model aliasing, openai-compatible model mappings, and `#frame=codex&workspace=account-list`, use the dedicated `gettokens-codex-account-list` skill. Keep request order semantics in that skill: draggable account order is the test order, while allow/deny only filters candidates.
 - **Codex Extensions**: For Codex Skills / MCP Servers, `[[skills.config]]`, `tk://github.com` / `tk://gitlab.com` skill sources, and `#frame=codex&workspace=skills|mcp-servers`, use the dedicated `gettokens-codex-extensions-management` skill. Keep source-accurate parsing, modal/list UI semantics, and cleanup split rules in that skill instead of expanding this general domain skill.
