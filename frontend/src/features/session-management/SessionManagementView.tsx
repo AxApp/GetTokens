@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, MoreVertical, Pencil, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowRight, Check, MoreVertical, Pencil, RefreshCw, X } from 'lucide-react';
 import { Combobox } from '../../components/ui/Combobox.tsx';
+import SearchInput from '../../components/ui/SearchInput';
 import type {
   MessageRole,
   ProjectSummary,
@@ -202,26 +203,13 @@ export function SessionManagementSearchBar({
   onSearchChange: (query: string) => void;
 }) {
   return (
-    <div className="flex h-12 shrink-0 items-center gap-2 border-b-4 border-[var(--border-color)] px-4">
-      <Search className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" strokeWidth={2.5} />
-      <input
-        type="text"
+    <div className="shrink-0 border-b-4 border-[var(--border-color)] p-4">
+      <SearchInput
         value={searchQuery}
-        onChange={(event) => onSearchChange(event.target.value)}
+        onChange={onSearchChange}
         placeholder={copy.searchPlaceholder}
-        className="min-w-0 flex-1 bg-transparent text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.16em] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 focus:outline-none"
+        clearLabel={copy.close}
       />
-      {searchQuery ? (
-        <button
-          type="button"
-          onClick={() => onSearchChange('')}
-          className="flex h-7 w-7 shrink-0 items-center justify-center border border-transparent text-[var(--text-muted)] transition-colors hover:border-[var(--border-color)] hover:text-[var(--text-primary)] active:scale-90"
-          aria-label={copy.close}
-          title={copy.close}
-        >
-          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-        </button>
-      ) : null}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { MoreHorizontal } from 'lucide-react';
 import { type DragEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import SegmentedControl from '../../../components/ui/SegmentedControl';
 import {
   type CodexAccountRow,
   type CodexRoutePolicyRowMode,
@@ -387,82 +388,73 @@ function InlineActionControls({
   onAccountFilterChange: (filter: CodexAccountOrderFilter) => void;
   onDensityChange: (density: CodexAccountOrderDisplayMode) => void;
 }) {
+  const densityOptions = [
+    { id: 'full', label: t('codex.account_list_density_full') },
+    { id: 'compact', label: t('codex.account_list_density_compact') },
+    { id: 'list', label: t('codex.account_list_density_list') },
+  ] satisfies Array<{ id: CodexAccountOrderDisplayMode; label: string }>;
+  const accountFilterOptions = [
+    { id: 'all', label: t('codex.account_list_filter_all') },
+    { id: 'requestable', label: t('codex.account_list_filter_requestable') },
+  ] satisfies Array<{ id: CodexAccountOrderFilter; label: string }>;
+
   return (
-    <div className={`flex ${stacked ? 'w-full flex-col items-stretch gap-2' : 'flex-nowrap items-center gap-2'}`}>
+    <div
+      className={
+        stacked
+          ? 'grid w-full gap-2'
+          : 'grid grid-cols-[5.75rem_12.5rem_11.5rem] items-center gap-2'
+      }
+    >
       <button
         type="button"
         onClick={onReload}
         disabled={disabled || loading || saving || routingProbeRunning}
-        className={`btn-swiss !min-h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50 ${
+        className={`btn-swiss min-w-0 !min-h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50 ${
           stacked ? 'w-full justify-center' : 'shrink-0'
         }`}
       >
-        {loading ? loadingLabel : refreshLabel}
+        <span className="min-w-0 truncate">{loading ? loadingLabel : refreshLabel}</span>
       </button>
-      <div
-        className={`grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] ${
-          stacked ? 'w-full grid-cols-3' : 'shrink-0 grid-cols-3'
-        }`}
-        data-account-card-ignore-click="true"
-      >
-        <DensityButton active={density === 'full'} bordered onClick={() => onDensityChange('full')}>
-          {t('codex.account_list_density_full')}
-        </DensityButton>
-        <DensityButton active={density === 'compact'} bordered onClick={() => onDensityChange('compact')}>
-          {t('codex.account_list_density_compact')}
-        </DensityButton>
-        <DensityButton active={density === 'list'} onClick={() => onDensityChange('list')}>
-          {t('codex.account_list_density_list')}
-        </DensityButton>
-      </div>
-      <div
-        className={`grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] ${
-          stacked ? 'w-full grid-cols-2' : 'shrink-0 grid-cols-[max-content_max-content]'
-        }`}
-        data-account-card-ignore-click="true"
-      >
-        <DensityButton
-          active={accountFilter === 'all'}
-          bordered
-          onClick={() => onAccountFilterChange('all')}
-        >
-          {t('codex.account_list_filter_all')}
-        </DensityButton>
-        <DensityButton
-          active={accountFilter === 'requestable'}
-          onClick={() => onAccountFilterChange('requestable')}
-        >
-          {t('codex.account_list_filter_requestable')}
-        </DensityButton>
-      </div>
+      <ActionControlCluster label={t('codex.account_list_control_view')} stacked={stacked}>
+        <SegmentedControl
+          options={densityOptions}
+          value={density}
+          onChange={onDensityChange}
+        />
+      </ActionControlCluster>
+      <ActionControlCluster label={t('codex.account_list_control_scope')} stacked={stacked}>
+        <SegmentedControl
+          options={accountFilterOptions}
+          value={accountFilter}
+          onChange={onAccountFilterChange}
+        />
+      </ActionControlCluster>
     </div>
   );
 }
 
-function DensityButton({
-  active,
-  bordered = false,
+function ActionControlCluster({
+  label,
+  stacked,
   children,
-  onClick,
 }: {
-  active: boolean;
-  bordered?: boolean;
+  label: string;
+  stacked: boolean;
   children: ReactNode;
-  onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`min-h-9 px-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
-        bordered ? 'border-r border-[var(--border-color)]' : ''
-      } ${
-        active
-          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-      }`}
+    <div
+      className={
+        stacked
+          ? 'grid min-w-0 gap-1.5'
+          : 'grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 border-l-2 border-[color:color-mix(in_srgb,var(--border-color)_60%,transparent)] pl-2'
+      }
     >
-      {children}
-    </button>
+      <span className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none text-[var(--text-muted)]">
+        {label}
+      </span>
+      <div className="min-w-0 [--gt-control-segmented-padding-inline:0.35rem]">{children}</div>
+    </div>
   );
 }

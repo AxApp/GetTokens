@@ -52,7 +52,12 @@ export default function CodexBinaryVersionCell({
     : 'border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[4px_4px_0_var(--shadow-color)]';
 
   return (
-    <article className={`${articleClass} cursor-pointer`} onClick={onToggleNotes}>
+    <article
+      data-design-system-component="true"
+      data-design-system-component-name="CodexBinaryVersionCell"
+      className={`${articleClass} cursor-pointer`}
+      onClick={onToggleNotes}
+    >
       <div className="p-3 sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0 flex-1">

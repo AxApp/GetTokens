@@ -140,6 +140,9 @@
   - 新增 `components/CodexBinarySummaryPanel.tsx`、`components/CodexBinaryVersionList.tsx`、`components/CodexBinaryVersionCell.tsx`，把顶部摘要、筛选列表和版本行从主文件拆出。
   - 新增 `presentation.ts` 承载 release 浏览器 URL 与下载大小展示格式化，避免把纯展示逻辑继续堆在 controller 中。
   - 本轮为结构整理，不改变下载、激活、回退、菜单、release notes 和默认正式版筛选语义。
+- 2026-05-21 已补齐摘要面板和版本 cell 的设计系统运行时圈定：
+  - `CodexBinarySummaryPanel` 与 `CodexBinaryVersionCell` 根节点新增 `data-design-system-component="true"` 和对应 `data-design-system-component-name`，项目页设计系统高亮可直接定位 Codex Binary 业务组件。
+  - `storyCatalog.test.mjs` 将这两个业务组件纳入 runtime marker 门禁，避免后续重构移除标记。
 - 本切片未完成项：
   - 取消下载、下载 event 推送仍为后续实现项；当前下载进度通过 snapshot 轮询展示。
 
@@ -217,5 +220,5 @@
   - `docs-linhay/dev/codex-binary-management-design-2026-05-11.md`
 
 ## 当前状态
-- 状态：frontend-structure-refactored
-- 最近更新：2026-05-13
+- 状态：design-system-runtime-marker-admitted
+- 最近更新：2026-05-21

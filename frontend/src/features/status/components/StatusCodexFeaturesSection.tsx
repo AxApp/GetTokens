@@ -1,3 +1,4 @@
+import SearchInput from '../../../components/ui/SearchInput';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import type {
   CodexFeatureConfigSnapshot,
@@ -118,10 +119,9 @@ export default function StatusCodexFeaturesSection({
             </button>
           ))}
         </div>
-        <input
+        <SearchInput
           value={query}
-          onChange={(event) => onChangeQuery(event.target.value)}
-          className="input-swiss w-full"
+          onChange={onChangeQuery}
           placeholder={t('status.codex_features_search_placeholder')}
         />
       </div>

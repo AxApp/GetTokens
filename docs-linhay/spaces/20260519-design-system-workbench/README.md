@@ -118,7 +118,24 @@ And 文件名遵守 `<YYYYMMDD>-design-system-<scene>-<status>-v<nn>.png`。
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-05-19
+- 最近更新：2026-05-21
+
+## 2026-05-21 SearchInput 业务搜索框统一
+### 背景
+账号工具栏、代理池、Codex Features 状态页、Session Management 和统一新增账号弹窗仍有手写搜索框，虽然视觉接近，但没有统一复用设计系统 `SearchInput` 的搜索图标、清空按钮、运行时设计系统标记和可访问语义。
+
+### 落地
+1. `AccountsToolbar` 的账号搜索框已替换为 `SearchInput`。
+2. `ProxyPoolFeature` 的节点搜索框已替换为 `SearchInput`；测速网址输入不是搜索框，继续保留普通输入。
+3. `StatusCodexFeaturesSection` 的 feature key 搜索框已替换为 `SearchInput`。
+4. `SessionManagementSearchBar` 的项目/会话搜索框已替换为 `SearchInput`，复用组件内置搜索图标和清空按钮。
+5. `UnifiedComposeModal` 的 provider preset 搜索框已替换为 `SearchInput`。
+6. 已复扫确认业务搜索框均已使用 `SearchInput`；剩余手写输入为文件选择、表单字段、测速 URL 或 Story 示例。
+7. 已验证：
+   - `node --test frontend/src/features/accounts/tests/accountFilters.test.mjs frontend/src/features/proxy-pool/model.test.mjs frontend/src/features/status/tests/codexFeatureConfig.test.mjs frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `node --test frontend/src/features/session-management/model.test.mjs frontend/src/features/session-management/cache.test.mjs frontend/src/features/accounts/tests/accountFilters.test.mjs frontend/src/features/design-system/storyCatalog.test.mjs`
+   - `npm --prefix frontend run typecheck`
+   - `npm --prefix frontend run build`
 
 ## 2026-05-20 Modal 设计系统统一标准增量
 ### 背景

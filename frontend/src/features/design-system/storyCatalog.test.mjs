@@ -32,6 +32,8 @@ const runtimeDesignSystemComponentPaths = [
   'frontend/src/components/ui/SnippetPre.tsx',
   'frontend/src/components/ui/ToggleSwitch.tsx',
   'frontend/src/components/ui/WorkspacePageHeader.tsx',
+  'frontend/src/features/codex-binary/components/CodexBinarySummaryPanel.tsx',
+  'frontend/src/features/codex-binary/components/CodexBinaryVersionCell.tsx',
 ];
 
 async function listFeatureComponentSourcePaths(directoryURL = featureComponentsRoot) {

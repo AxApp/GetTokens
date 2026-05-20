@@ -19,7 +19,11 @@ export default function CodexBinarySummaryPanel({
   t: (key: string) => string;
 }) {
   return (
-    <section className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[5px_5px_0_var(--shadow-color)] sm:p-4">
+    <section
+      data-design-system-component="true"
+      data-design-system-component-name="CodexBinarySummaryPanel"
+      className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[5px_5px_0_var(--shadow-color)] sm:p-4"
+    >
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
         <div className="min-w-0 space-y-1.5">
           <div className="flex min-w-0 flex-col gap-1.5 lg:flex-row lg:items-center">

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import SearchInput from '../../../components/ui/SearchInput';
 import { getVendorPreset, getVendorPresets, type VendorPreset } from '../model/vendorPresets';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from '../model/types';
@@ -110,10 +111,9 @@ export default function UnifiedComposeModal({
         <div className="overflow-y-auto p-6 space-y-6">
           {showPresets ? (
             <div className="space-y-4">
-              <input
+              <SearchInput
                 value={presetSearch}
-                onChange={(e: TextInputEvent) => setPresetSearch(e.target.value)}
-                className="input-swiss w-full"
+                onChange={setPresetSearch}
                 placeholder="Search providers..."
               />
 

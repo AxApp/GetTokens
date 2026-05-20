@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
+import SearchInput from '../../../components/ui/SearchInput';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountsFilterState, Translator } from '../model/types';
 
@@ -68,11 +69,9 @@ export default function AccountsToolbar({
     <section className="space-y-4">
       <div className="grid grid-cols-1 gap-4">
         <div className="flex w-full items-center">
-          <input
+          <SearchInput
             value={searchTerm}
-            onChange={(event) => onSearchChange(event.target.value)}
-            type="text"
-            className="input-swiss w-full uppercase"
+            onChange={onSearchChange}
             placeholder={t('accounts.search_placeholder')}
           />
         </div>

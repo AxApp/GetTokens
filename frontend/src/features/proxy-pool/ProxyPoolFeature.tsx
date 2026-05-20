@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import { FetchProxySubscription, ProbeProxyNode } from '../../../wailsjs/go/main/App';
 
+import SearchInput from '../../components/ui/SearchInput';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/DebugContext';
 import { toErrorMessage } from '../../utils/error';
@@ -613,11 +614,9 @@ export default function ProxyPoolFeature() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 flex-col gap-4">
               <div className="w-full">
-                <input
-                  type="text"
+                <SearchInput
                   value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  className="input-swiss w-full uppercase"
+                  onChange={setQuery}
                   placeholder="搜索协议 / IP / 端口 / 来源"
                 />
               </div>
