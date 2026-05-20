@@ -21,7 +21,6 @@ import {
 } from '../model/openAICompatible.ts';
 import {
   buildOpenAICompatibleCardBadges,
-  buildOpenAICompatibleCardEvidenceRows,
   resolveOpenAICompatibleCardEyebrow,
   resolveOpenAICompatibleCardTone,
   resolveOpenAICompatibleVerifyMessage,
@@ -63,10 +62,6 @@ test('openai-compatible card helpers resolve shared top-region metadata', () => 
   assert.equal(resolveOpenAICompatibleCardTone(provider, verifyState), 'positive');
   assert.equal(resolveOpenAICompatibleCardEyebrow(t, provider, verifyState), '账号验证成功');
   assert.deepEqual(buildOpenAICompatibleCardBadges(t, provider), [{ label: '兼容 OpenAI' }]);
-  assert.deepEqual(
-    buildOpenAICompatibleCardEvidenceRows(t, provider, verifyState, 2).map((row) => row.label),
-    ['账号 ID', '数据源', '模型', '最近验证时间'],
-  );
   assert.equal(resolveOpenAICompatibleVerifyMessage(t, verifyState), '尚未执行验证');
 });
 

@@ -16,7 +16,7 @@ import { rateLimitStateTone, type RateLimitState } from '../model/rateLimit';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import { canToggleRotationAccountDisabled } from '../model/accountRotation';
 import AccountCardSkeleton from './AccountCardSkeleton';
-import AttributionCard, { type AttributionCardBadge, type AttributionCardEvidenceRow } from './AttributionCard';
+import AttributionCard, { type AttributionCardBadge } from './AttributionCard';
 
 interface AccountCardProps {
   t: Translator;
@@ -115,46 +115,7 @@ export default function AccountCard({
   if (rateLimitStatus?.blocked) {
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
-  const formatBaseUrls = account.formatBaseUrls;
-  const hasFormatEndpoints = formatBaseUrls && Object.keys(formatBaseUrls).length > 0;
   const canToggleDisabled = canToggleRotationAccountDisabled(account);
-
-  const evidenceRows: AttributionCardEvidenceRow[] = [
-    {
-      label: t('accounts.card_asset'),
-      value: account.id,
-      title: account.id,
-    },
-    {
-      label: t('accounts.card_source_type'),
-      value:
-        usageSummary?.source === 'attribution'
-          ? 'ATTRIBUTION'
-          : usageSummary?.source === 'legacy'
-            ? 'LEGACY'
-            : 'NONE',
-    },
-    {
-      label: t('accounts.card_last_hit'),
-      value: formatLastActivity(usageSummary?.lastActivityAt ?? null),
-    },
-  ];
-  if (hasFormatEndpoints) {
-    for (const [fmt, url] of Object.entries(formatBaseUrls)) {
-      evidenceRows.push({
-        label: `ENDPOINT · ${fmt.toUpperCase()}`,
-        value: url as string,
-        title: url as string,
-      });
-    }
-  }
-  if (usageSummary?.attributionKey) {
-    evidenceRows.splice(2, 0, {
-      label: t('accounts.card_attribution_key'),
-      value: usageSummary.attributionKey,
-      title: usageSummary.attributionKey,
-    });
-  }
 
   function openDetails() {
     if (isSelectionMode || isPendingDelete) {
@@ -252,7 +213,6 @@ export default function AccountCard({
       quotaDisplay={quotaDisplay}
       billing={billing}
       rateLimitStatus={rateLimitStatus}
-      evidenceRows={evidenceRows}
       tone={cardTone}
       density={density}
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
@@ -410,11 +370,4 @@ export default function AccountCard({
       onOpen={openDetails}
     />
   );
-}
-
-function formatLastActivity(timestamp: number | null) {
-  if (!timestamp || !Number.isFinite(timestamp)) {
-    return '—';
-  }
-  return new Date(timestamp).toLocaleString();
 }

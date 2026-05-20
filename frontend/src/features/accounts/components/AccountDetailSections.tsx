@@ -13,6 +13,7 @@ import {
   resolveAccountPrimaryLabel,
 } from '../model/accountPresentation';
 import type { AccountUsageSummary } from '../model/accountUsage';
+import { buildAccountEvidenceRows, type AccountEvidenceRow } from '../model/accountEvidence';
 import type { CodexQuotaState } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { BillingBalance } from './CardSections';
@@ -59,6 +60,12 @@ export interface AccountBillingSectionProps {
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
   liveBilling?: BillingDisplay;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => Promise<any>;
+}
+
+export interface AccountEvidenceSectionProps {
+  account: AccountRecord;
+  usageSummary?: AccountUsageSummary;
+  rows?: AccountEvidenceRow[];
 }
 
 export interface AccountDetailFooterProps {
@@ -562,6 +569,42 @@ export function AccountBillingSection({
       {testStatus === 'error' ? (
         <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
       ) : null}
+    </section>
+  );
+}
+
+export function AccountEvidenceSection({
+  account,
+  usageSummary,
+  rows,
+}: AccountEvidenceSectionProps) {
+  const { t } = useI18n();
+  const evidenceRows = rows ?? buildAccountEvidenceRows(t, account, usageSummary);
+
+  if (evidenceRows.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="space-y-3">
+      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        EVIDENCE
+      </h3>
+      <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+        {evidenceRows.map((row, index) => (
+          <div key={`${row.label}-${index}`} className="grid gap-2 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start">
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              {row.label}
+            </div>
+            <div
+              className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]"
+              title={row.title ?? row.value}
+            >
+              {row.value}
+            </div>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

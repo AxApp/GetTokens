@@ -12,6 +12,7 @@ import {
   AccountCredentialsSection,
   AccountDetailFooter,
   AccountDetailHeader,
+  AccountEvidenceSection,
   AccountQuotaSection,
   AccountVerifySection,
 } from './AccountDetailSections';
@@ -544,6 +545,10 @@ function AccountDetailSectionsSample({
                 },
               ],
             })}
+          />
+          <AccountEvidenceSection
+            account={apiKeyDetailAccount}
+            usageSummary={apiKeyUsageSummary}
           />
         </div>
       </AccountDetailModalFrame>

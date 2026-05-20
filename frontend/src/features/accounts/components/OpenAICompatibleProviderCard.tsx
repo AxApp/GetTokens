@@ -6,7 +6,6 @@ import type { OpenAICompatibleProvider, ProviderVerifyState } from '../model/ope
 import { maskProviderAPIKey } from '../model/openAICompatible';
 import {
   buildOpenAICompatibleCardBadges,
-  buildOpenAICompatibleCardEvidenceRows,
   resolveOpenAICompatibleCardEyebrow,
   resolveOpenAICompatibleCardTone,
   resolveOpenAICompatibleVerifyMessage,
@@ -46,7 +45,6 @@ export default function OpenAICompatibleProviderCard({
   if (rateLimitStatus?.blocked) {
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
-  const evidenceRows = buildOpenAICompatibleCardEvidenceRows(t, provider, verifyState, effectiveModelCount);
   const verifyMessage = resolveOpenAICompatibleVerifyMessage(t, verifyState);
 
   return (
@@ -56,7 +54,6 @@ export default function OpenAICompatibleProviderCard({
       subtitle={provider.baseUrl}
       eyebrow={eyebrow}
       badges={badges}
-      evidenceRows={evidenceRows}
       usageSummary={usageSummary}
       rateLimitStatus={rateLimitStatus}
       tone={tone}

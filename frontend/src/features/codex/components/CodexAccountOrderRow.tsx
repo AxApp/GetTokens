@@ -5,10 +5,7 @@ import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
 import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { buildQuotaDisplay } from '../../accounts/model/accountQuota';
-import AttributionCard, {
-  type AttributionCardBadge,
-  type AttributionCardEvidenceRow,
-} from '../../accounts/components/AttributionCard';
+import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import {
   ATTRIBUTION_CARD_BADGE_TONE_CLASS,
   ATTRIBUTION_CARD_TONE_BORDER_CLASS,
@@ -127,19 +124,6 @@ export function AccountOrderRow({
   if (rateLimitStatus?.blocked) {
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
-  const evidenceRows: AttributionCardEvidenceRow[] = [
-    { label: t('accounts.card_asset'), value: row.id, title: row.id },
-    { label: t('codex.account_list_policy_title'), value: routePolicyState?.mode || 'default' },
-    { label: t('accounts.card_last_hit'), value: formatLastActivity(usageSummary?.lastActivityAt ?? null) },
-  ];
-  if (usageSummary?.attributionKey) {
-    evidenceRows.splice(2, 0, {
-      label: t('accounts.card_attribution_key'),
-      value: usageSummary.attributionKey,
-      title: usageSummary.attributionKey,
-    });
-  }
-
   function handleDragHandleClick(event: MouseEvent<HTMLDivElement>) {
     event.stopPropagation();
   }
@@ -227,7 +211,6 @@ export function AccountOrderRow({
         usageSummary={usageSummary}
         quotaDisplay={quotaDisplay}
         rateLimitStatus={rateLimitStatus}
-        evidenceRows={evidenceRows}
         tone={cardTone}
         density={cardDensity}
         className={`${density === 'full' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid] xl:h-auto' : ''} ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
@@ -356,11 +339,4 @@ function RegionHead({ label, value }: { label: string; value: string }) {
       </b>
     </div>
   );
-}
-
-function formatLastActivity(timestamp: number | null) {
-  if (!timestamp || !Number.isFinite(timestamp)) {
-    return '—';
-  }
-  return new Date(timestamp).toLocaleString();
 }

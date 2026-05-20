@@ -225,6 +225,10 @@
     grid-template-columns: minmax(5.75rem, 0.32fr) minmax(0, 1fr);
   }
 
+  .account-card-traffic-chart {
+    padding-left: 0.75rem;
+  }
+
   .account-card-usage-metrics {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -253,10 +257,6 @@
     background-size: 32px 100%;
     animation: account-card-quota-refresh-sweep 0.85s linear infinite;
     opacity: 0.72;
-  }
-
-  .account-card-evidence-grid {
-    grid-template-columns: auto minmax(0, 1fr);
   }
 
   .account-card-action-grid-1 {
@@ -302,8 +302,7 @@
       padding-top: 0.75rem;
     }
 
-    .account-card-list-metrics,
-    .account-card-flow-head {
+    .account-card-list-metrics {
       grid-template-columns: minmax(0, 1fr);
     }
 
@@ -311,8 +310,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .account-card-billing-grid,
-    .account-card-evidence-grid {
+    .account-card-billing-grid {
       grid-template-columns: minmax(0, 1fr);
     }
 

@@ -66,17 +66,75 @@ export default function OpenAICompatibleDetailModal({
         onFetchModels={onFetchModels}
         onApplyFetchedModels={onApplyFetchedModels}
         afterSections={
-          <RateLimitRulesSection
-            accountKey={rateLimitAccountKey}
-            matchKey={rateLimitMatchKey}
-            rateLimitStatus={rateLimitStatus}
-            rateLimitStrategies={rateLimitStrategies}
-            rateLimitRulesAPI={rateLimitRulesAPI}
-            onRateLimitRulesChanged={onRateLimitRulesChanged}
-            t={t}
-          />
+          <>
+            <OpenAICompatibleEvidenceSection
+              t={t}
+              draft={draft}
+              verifyState={verifyState}
+            />
+            <RateLimitRulesSection
+              accountKey={rateLimitAccountKey}
+              matchKey={rateLimitMatchKey}
+              rateLimitStatus={rateLimitStatus}
+              rateLimitStrategies={rateLimitStrategies}
+              rateLimitRulesAPI={rateLimitRulesAPI}
+              onRateLimitRulesChanged={onRateLimitRulesChanged}
+              t={t}
+            />
+          </>
         }
       />
     </AccountDetailModalFrame>
+  );
+}
+
+function OpenAICompatibleEvidenceSection({
+  t,
+  draft,
+  verifyState,
+}: {
+  t: Translator;
+  draft: OpenAICompatibleProviderDraft;
+  verifyState: ProviderVerifyState;
+}) {
+  const providerName = draft.currentName || draft.name || '—';
+  const modelCount = draft.models.filter((model) => model.name.trim()).length;
+  const rows = [
+    {
+      label: t('accounts.card_asset'),
+      value: `openai-compatible:${providerName}`,
+    },
+    {
+      label: t('accounts.card_source_type'),
+      value: 'OPENAI-COMPATIBLE',
+    },
+    {
+      label: t('accounts.ui_models'),
+      value: String(modelCount),
+    },
+    {
+      label: t('accounts.openai_provider_last_verified'),
+      value: verifyState.lastVerifiedAt ? new Date(verifyState.lastVerifiedAt).toLocaleString() : '—',
+    },
+  ];
+
+  return (
+    <section className="space-y-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-6 py-6">
+      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        EVIDENCE
+      </h3>
+      <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+        {rows.map((row, index) => (
+          <div key={`${row.label}-${index}`} className="grid gap-2 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start">
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              {row.label}
+            </div>
+            <div className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
+              {row.value}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

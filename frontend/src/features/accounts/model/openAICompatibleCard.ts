@@ -8,12 +8,6 @@ export interface OpenAICompatibleCardBadge {
   tone?: OpenAICompatibleCardTone;
 }
 
-export interface OpenAICompatibleCardEvidenceRow {
-  label: string;
-  value: string;
-  title?: string;
-}
-
 export function resolveOpenAICompatibleCardTone(
   provider: OpenAICompatibleProvider,
   verifyState: ProviderVerifyState,
@@ -58,40 +52,6 @@ export function buildOpenAICompatibleCardBadges(
   return badges;
 }
 
-export function buildOpenAICompatibleCardEvidenceRows(
-  t: Translator,
-  provider: OpenAICompatibleProvider,
-  verifyState: ProviderVerifyState,
-  effectiveModelCount: number,
-): OpenAICompatibleCardEvidenceRow[] {
-  return [
-    {
-      label: t('accounts.card_asset'),
-      value: `openai-compatible:${provider.name}`,
-      title: `openai-compatible:${provider.name}`,
-    },
-    {
-      label: t('accounts.card_source_type'),
-      value: 'OPENAI-COMPATIBLE',
-    },
-    {
-      label: t('accounts.ui_models'),
-      value: String(effectiveModelCount),
-    },
-    {
-      label: t('accounts.openai_provider_last_verified'),
-      value: formatProviderLastVerified(verifyState.lastVerifiedAt),
-    },
-  ];
-}
-
 export function resolveOpenAICompatibleVerifyMessage(t: Translator, verifyState: ProviderVerifyState) {
   return verifyState.message || t('accounts.openai_provider_test_idle');
-}
-
-export function formatProviderLastVerified(timestamp: number | null) {
-  if (!timestamp || !Number.isFinite(timestamp)) {
-    return '—';
-  }
-  return new Date(timestamp).toLocaleString();
 }

@@ -28,6 +28,7 @@ import {
   AccountCredentialsSection,
   AccountDetailFooter,
   AccountDetailHeader,
+  AccountEvidenceSection,
   AccountQuotaSection,
   AccountVerifySection,
   type APIKeyVerifyState,
@@ -174,6 +175,10 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           />
         ) : null}
         {isAuthFile ? <CompatibleModelsSection account={account} /> : null}
+        <AccountEvidenceSection
+          account={account}
+          usageSummary={props.usageSummary}
+        />
       </div>
     </AccountDetailModalFrame>
   );

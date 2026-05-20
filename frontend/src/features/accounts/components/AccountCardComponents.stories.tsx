@@ -1,20 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
-import type { BillingDisplay } from '../../../types';
+import type { BillingDisplay, CodexQuota } from '../../../types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
-import type { AccountRecord, QuotaDisplay, Translator } from '../model/types';
+import type { AccountRecord, CodexQuotaState, QuotaDisplay, Translator } from '../model/types';
 import AccountCard from './AccountCard';
 import AccountCardFrame from './AccountCardFrame';
 import AccountCardSkeleton from './AccountCardSkeleton';
 import AccountHealthBar from './AccountHealthBar';
 import AttributionCard from './AttributionCard';
 import {
+  AccountMiniMetrics,
   BillingBalance,
-  EvidenceSection,
   QuotaBars,
   RateLimitGuard,
+  TrafficSection,
   UnsupportedQuotaPlaceholder,
   UsageMetrics,
 } from './CardSections';
@@ -182,6 +183,20 @@ const refreshingQuotaDisplay: QuotaDisplay = {
   refreshing: true,
 };
 
+const accountCardQuotaState: CodexQuotaState = {
+  status: 'success',
+  quota: {
+    planType: quotaDisplay.planType,
+    windows: quotaDisplay.windows.map((window) => ({
+      id: window.id,
+      label: window.label,
+      remainingPercent: window.remainingPercent ?? undefined,
+      resetLabel: window.resetLabel,
+      resetAtUnix: window.resetAtUnix,
+    })),
+  } as CodexQuota,
+};
+
 const billing: BillingDisplay = {
   isAvailable: true,
   balances: [
@@ -231,7 +246,7 @@ const rateLimitStatus: RateLimitState = {
 
 const accountCardRecord: AccountRecord = {
   id: 'account-card-primary',
-  provider: 'openai',
+  provider: 'codex',
   credentialSource: 'auth-file',
   displayName: 'Codex Primary Workbench',
   status: 'active',
@@ -284,6 +299,7 @@ function AccountCardSample({
       <AccountCard
         t={t}
         account={account}
+        quotaState={accountCardQuotaState}
         usageSummary={blocked ? failedUsageSummary : healthyUsageSummary}
         rateLimitStatus={blockedRateLimit}
         density={density}
@@ -386,10 +402,6 @@ function AttributionCardSample({
         quotaDisplay={failed ? { ...quotaDisplay, windows: [{ ...quotaDisplay.windows[0], remainingPercent: 8 }] } : quotaDisplay}
         billing={failed ? undefined : billing}
         rateLimitStatus={failed ? { ...rateLimitStatus, blocked: true, blockReason: '1H REQUEST LIMIT' } : rateLimitStatus}
-        evidenceRows={[
-          { label: 'source', value: failed ? 'routing backup' : 'attribution cache' },
-          { label: 'last seen', value: '2026-05-19 22:18' },
-        ]}
         tone={tone}
         density={density}
         interactive={false}
@@ -404,19 +416,38 @@ function CardSectionsSample() {
   return (
     <DesignSystemStoryFrame label="DS-SECTIONS">
       <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+        <TrafficSection usageSummary={healthyUsageSummary} t={t} />
+        <div className="border-b border-dashed border-[var(--border-color)] p-4">
+          <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
+        </div>
+        <UsageMetrics usageSummary={healthyUsageSummary} t={t} />
         <QuotaBars quotaDisplay={quotaDisplay} accentFillClass="bg-[var(--color-status-success)]" />
         <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" />
         <BillingBalance billing={billing} />
-        <UsageMetrics usageSummary={healthyUsageSummary} t={t} />
         <RateLimitGuard rateLimitStatus={rateLimitStatus} />
-        <EvidenceSection
-          rows={[
-            { label: 'account', value: 'codex-workbench' },
-            { label: 'model', value: 'gpt-5.2' },
-            { label: 'route', value: 'managed relay' },
-          ]}
-        />
         <UnsupportedQuotaPlaceholder quotaDisplay={loadingQuotaDisplay} t={t} />
+      </div>
+    </DesignSystemStoryFrame>
+  );
+}
+
+function TrafficSectionSample() {
+  const { t } = useStoryCopy();
+  return (
+    <DesignSystemStoryFrame label="DS-TRAFFIC">
+      <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+        <TrafficSection usageSummary={healthyUsageSummary} t={t} />
+      </div>
+    </DesignSystemStoryFrame>
+  );
+}
+
+function MiniMetricsSample() {
+  const { t } = useStoryCopy();
+  return (
+    <DesignSystemStoryFrame label="DS-MINI-METRICS">
+      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+        <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
       </div>
     </DesignSystemStoryFrame>
   );
@@ -452,6 +483,7 @@ function AccountCardsOverview() {
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '完整账号卡' : 'Full account card'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountCardSample label="DS-ACCOUNT-CARD-READY" />
+          <AccountCardSample label="DS-ACCOUNT-CARD-COMPACT-QUOTA" density="compact" />
           <AccountCardSample label="DS-ACCOUNT-CARD-SELECTION" selection selected />
           <AccountCardSample label="DS-ACCOUNT-CARD-PENDING-DELETE" pendingDelete />
           <AccountCardSample label="DS-ACCOUNT-CARD-LIST-BLOCKED" account={disabledAccountCardRecord} density="list" blocked />
@@ -503,6 +535,10 @@ export const FullAccountCard: Story = {
   render: () => <AccountCardSample label="DS-ACCOUNT-CARD-READY" />,
 };
 
+export const CompactAccountCard: Story = {
+  render: () => <AccountCardSample label="DS-ACCOUNT-CARD-COMPACT-QUOTA" density="compact" />,
+};
+
 export const AttributionHealthy: Story = {
   render: () => <AttributionCardSample />,
 };
@@ -511,8 +547,21 @@ export const AttributionFailed: Story = {
   render: () => <AttributionCardSample tone="critical" failed />,
 };
 
+export const AttributionCompactQuota: Story = {
+  render: () => <AttributionCardSample tone="warning" density="compact" />,
+};
+
 export const CardSections: Story = {
   render: () => <CardSectionsSample />,
+};
+
+export const TrafficSectionStory: Story = {
+  name: 'Traffic Section',
+  render: () => <TrafficSectionSample />,
+};
+
+export const MiniMetrics: Story = {
+  render: () => <MiniMetricsSample />,
 };
 
 export const QuotaBarsRefreshing: Story = {
