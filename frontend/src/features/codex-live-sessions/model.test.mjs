@@ -7,6 +7,10 @@ import {
   filterCodexLiveSessions,
   formatCodexLiveTimingLine,
 } from './model/selectors.ts';
+import {
+  buildCodexLiveSessionsInitialSnapshot,
+  buildCodexLiveSessionsLoadFailureSnapshot,
+} from './model/snapshotState.ts';
 import { mapBackendCodexLiveSessionsSnapshot } from './model/adapters.ts';
 import { codexLiveSessionsPreviewSnapshot } from './model/mockData.ts';
 
@@ -137,4 +141,32 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
   assert.equal(snapshot.sessions[0].fallbackConfidence, undefined);
   assert.equal(snapshot.sessions[0].recentEvents[0].lane, 'sidecar');
   assert.equal(snapshot.sessions[0].recentEvents[0].severity, 'info');
+});
+
+test('desktop live sessions state never promotes preview rows to cache', () => {
+  const initial = buildCodexLiveSessionsInitialSnapshot({ browserMode: false, sidecarReady: true });
+
+  assert.equal(initial.source, 'unavailable');
+  assert.deepEqual(initial.sessions, []);
+
+  const failed = buildCodexLiveSessionsLoadFailureSnapshot(codexLiveSessionsPreviewSnapshot);
+
+  assert.equal(failed.source, 'unavailable');
+  assert.equal(failed.sidecarReady, false);
+  assert.deepEqual(failed.sessions, []);
+});
+
+test('desktop live sessions state keeps only prior real live rows as cache after a poll failure', () => {
+  const liveSnapshot = {
+    ...codexLiveSessionsPreviewSnapshot,
+    source: 'live',
+    sessions: [codexLiveSessionsPreviewSnapshot.sessions[0]],
+  };
+
+  const failed = buildCodexLiveSessionsLoadFailureSnapshot(liveSnapshot);
+
+  assert.equal(failed.source, 'cache');
+  assert.equal(failed.sidecarReady, false);
+  assert.equal(failed.sessions.length, 1);
+  assert.equal(failed.sessions[0].sessionID, codexLiveSessionsPreviewSnapshot.sessions[0].sessionID);
 });

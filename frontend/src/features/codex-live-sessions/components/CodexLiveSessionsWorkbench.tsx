@@ -138,7 +138,10 @@ export default function CodexLiveSessionsWorkbench({
         <SummaryStrip snapshot={snapshot} t={t} />
 
         {!snapshot.sidecarReady ? (
-          <div className="border-2 border-[var(--border-color)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--bg-main))] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+          <div
+            data-debug={undefined}
+            className="border-2 border-[var(--border-color)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--bg-main))] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+          >
             <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
               {t('codex_live_sessions.sidecar_not_ready_title')}
             </div>
@@ -176,7 +179,7 @@ export default function CodexLiveSessionsWorkbench({
 }
 
 function SourceBadge({ snapshot }: { snapshot: CodexLiveSessionSnapshot }) {
-  const label = snapshot.sidecarReady ? snapshot.source.toUpperCase() : 'CACHE';
+  const label = snapshot.source === 'unavailable' ? 'UNAVAILABLE' : snapshot.sidecarReady ? snapshot.source.toUpperCase() : 'CACHE';
   return (
     <span className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase shadow-[3px_3px_0_var(--shadow-color)]">
       {label}
@@ -195,7 +198,7 @@ function SummaryStrip({ snapshot, t }: { snapshot: CodexLiveSessionSnapshot; t: 
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <div data-debug={undefined} className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {items.map(([label, value]) => (
         <div
           key={label}
@@ -228,7 +231,10 @@ function SessionFeed({
 }) {
   return (
     <div className="min-h-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-      <div className="grid gap-1 border-b-2 border-[var(--border-color)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end">
+      <div
+        data-debug={undefined}
+        className="grid gap-1 border-b-2 border-[var(--border-color)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
+      >
         <div>
           <h3 className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em]">
             {t('codex_live_sessions.session_feed')}

@@ -10,7 +10,7 @@ export type CodexLiveSessionStatus =
 
 export type CodexLiveTransport = 'websocket' | 'http' | 'unknown';
 
-export type CodexLiveSessionSource = 'live' | 'cache' | 'preview';
+export type CodexLiveSessionSource = 'live' | 'cache' | 'preview' | 'unavailable';
 
 export interface CodexLiveTokenUsage {
   inputTokens: number;

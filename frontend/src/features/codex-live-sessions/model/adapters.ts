@@ -21,7 +21,7 @@ const statusValues = new Set<CodexLiveSessionStatus>([
 ]);
 
 const transportValues = new Set<CodexLiveTransport>(['websocket', 'http', 'unknown']);
-const sourceValues = new Set<CodexLiveSessionSource>(['live', 'cache', 'preview']);
+const sourceValues = new Set<CodexLiveSessionSource>(['live', 'cache', 'preview', 'unavailable']);
 const laneValues = new Set<CodexLiveTimelineEvent['lane']>(['downstream', 'sidecar', 'upstream', 'fallback']);
 const severityValues = new Set<CodexLiveTimelineEvent['severity']>(['info', 'success', 'warning', 'error']);
 

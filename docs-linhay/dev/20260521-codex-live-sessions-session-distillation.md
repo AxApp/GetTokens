@@ -37,7 +37,20 @@ WebSocket handler 生成的 request id 必须写入 context，并贯穿 Codex We
 
 该规则防止 UI 同时出现一条 WebSocket session 和一条重复 HTTP session，尤其适用于 `response.completed` 后 usage 被异步归因的场景。
 
-### 4. fallback 只能观测和提示，不承诺透明恢复
+### 4. Codex 运行会话按 conversation_id 收拢
+
+Codex 请求中的稳定会话标识是 `conversation_id` / `ThreadId`，它会出现在 `session_id`、`x-client-request-id`、`prompt_cache_key`、`x-codex-window-id` 等字段中。Live sessions tracker 的条目 key 应优先使用该值，而不是 sidecar WebSocket handler 临时生成的 `passthroughSessionID`。
+
+实现规则：
+
+1. 从 downstream headers / WebSocket body / upstream request headers 和 body 中抽取 identity。
+2. 优先级为 `session_id`、`prompt_cache_key`、`x-codex-window-id` 去掉 `:<window_generation>`、`x-client-request-id`。
+3. 若请求先以 passthrough session 建立临时条目，后续拿到 conversation_id 后必须迁移并合并到 canonical session。
+4. `execution_session_id`、`downstream_session_id`、`codex_window_id` 保留为诊断字段，不作为主聚合 key。
+
+这样可以把同一个 Codex 会话中的多次请求、WebSocket 重连、HTTP fallback 或 sidecar execution session 变化收拢到同一个 UI 条目。
+
+### 5. fallback 只能观测和提示，不承诺透明恢复
 
 Codex upstream HTTP fallback 属于 Codex / sidecar 运行时链路的 sticky 状态。GetTokens 可以：
 
@@ -47,7 +60,7 @@ Codex upstream HTTP fallback 属于 Codex / sidecar 运行时链路的 sticky �
 
 GetTokens 不应宣称可以在同一个已降级会话中透明恢复 WebSocket。若未来要做主动恢复，必须单独设计取消/重放/新会话语义和用户确认。
 
-### 5. 脏工作区提交要双仓精确暂存
+### 6. 脏工作区提交要双仓精确暂存
 
 本轮工作区存在大量 Claude Code 并行改动，Codex live sessions 提交必须做到：
 

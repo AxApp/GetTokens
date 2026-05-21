@@ -8,6 +8,11 @@ import {
   codexLiveSessionsPreviewSnapshot,
   codexLiveSessionsSidecarNotReadySnapshot,
 } from './model/mockData';
+import {
+  buildCodexLiveSessionsInitialSnapshot,
+  buildCodexLiveSessionsLoadFailureSnapshot,
+  buildCodexLiveSessionsSidecarUnavailableSnapshot,
+} from './model/snapshotState';
 import type { CodexLiveSessionSnapshot } from './model/types';
 
 interface CodexLiveSessionsFeatureProps {
@@ -18,7 +23,7 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
   const sidecarReady = sidecarStatus?.code === 'ready';
   const browserMode = !hasWailsAppBindings();
   const [snapshot, setSnapshot] = useState<CodexLiveSessionSnapshot>(() =>
-    sidecarReady ? codexLiveSessionsPreviewSnapshot : codexLiveSessionsSidecarNotReadySnapshot,
+    buildCodexLiveSessionsInitialSnapshot({ browserMode, sidecarReady }),
   );
 
   const loadSnapshot = useCallback(async () => {
@@ -27,10 +32,7 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
       return;
     }
     if (!sidecarReady) {
-      setSnapshot((current) => ({
-        ...codexLiveSessionsSidecarNotReadySnapshot,
-        sessions: current.sessions.length > 0 ? current.sessions : codexLiveSessionsSidecarNotReadySnapshot.sessions,
-      }));
+      setSnapshot(buildCodexLiveSessionsSidecarUnavailableSnapshot());
       return;
     }
     const nextSnapshot = await GetCodexLiveSessionsSnapshot();
@@ -45,11 +47,7 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
           return;
         }
         console.error(error);
-        setSnapshot((current) => ({
-          ...current,
-          sidecarReady: false,
-          source: current.sessions.length > 0 ? 'cache' : 'preview',
-        }));
+        setSnapshot((current) => buildCodexLiveSessionsLoadFailureSnapshot(current));
       });
     };
 
