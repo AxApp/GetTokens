@@ -53,6 +53,12 @@ export function GetAppRuntimeSettings():Promise<main.AppRuntimeSettings>;
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
 
+export function GetClaudeCodeExtensionsSnapshot():Promise<main.ClaudeCodeExtensionsSnapshot>;
+
+export function GetClaudeCodeSessionDetail(arg1:string):Promise<main.SessionManagementSessionDetail>;
+
+export function GetClaudeCodeSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
 export function GetCodexBinaryDoctor():Promise<codexbinary.DoctorSummary>;
 
 export function GetCodexBinarySnapshot():Promise<codexbinary.Snapshot>;
@@ -143,6 +149,8 @@ export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageRespons
 
 export function RebuildCodexLocalUsageDay(arg1:string):Promise<main.LocalProjectedUsageResponse>;
 
+export function RefreshClaudeCodeSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
 export function RefreshCodexBinaryAvailable():Promise<codexbinary.Snapshot>;
 
 export function RefreshCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
@@ -152,6 +160,8 @@ export function RefreshCodexSessionManagementSnapshot():Promise<main.SessionMana
 export function RemoveCodexSkill(arg1:main.RemoveCodexSkillInput):Promise<main.RemoveCodexSkillResult>;
 
 export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<void>;
+
+export function SaveClaudeCodeMcpServer(arg1:main.SaveClaudeCodeMcpServerInput):Promise<main.SaveClaudeCodeMcpServerResult>;
 
 export function SaveCodexConfigToml(arg1:main.SaveCodexConfigTomlInput):Promise<main.SaveCodexConfigTomlResult>;
 

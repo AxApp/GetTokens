@@ -256,6 +256,11 @@ test('persistCodexWorkspace writes the selected workspace to storage', () => {
 
 test('isClaudeWorkspace only accepts known claude subpages', () => {
   assert.equal(isClaudeWorkspace('account-list'), true);
+  assert.equal(isClaudeWorkspace('skills'), true);
+  assert.equal(isClaudeWorkspace('mcp-servers'), true);
+  assert.equal(isClaudeWorkspace('extensions'), false);
+  assert.equal(isClaudeWorkspace('session-management'), true);
+  assert.equal(isClaudeWorkspace('usage'), true);
   assert.equal(isClaudeWorkspace('claude-account-list'), false);
   assert.equal(isClaudeWorkspace('unknown'), false);
   assert.equal(isClaudeWorkspace(null), false);
@@ -269,6 +274,11 @@ test('isLegacyClaudeCodexWorkspace detects the old codex-hosted claude workspace
 
 test('resolveInitialClaudeWorkspace falls back to account list for invalid values', () => {
   assert.equal(resolveInitialClaudeWorkspace('account-list'), 'account-list');
+  assert.equal(resolveInitialClaudeWorkspace('skills'), 'skills');
+  assert.equal(resolveInitialClaudeWorkspace('mcp-servers'), 'mcp-servers');
+  assert.equal(resolveInitialClaudeWorkspace('extensions'), 'skills');
+  assert.equal(resolveInitialClaudeWorkspace('session-management'), 'session-management');
+  assert.equal(resolveInitialClaudeWorkspace('usage'), 'usage');
   assert.equal(resolveInitialClaudeWorkspace('claude-account-list'), 'account-list');
   assert.equal(resolveInitialClaudeWorkspace('unknown'), 'account-list');
   assert.equal(resolveInitialClaudeWorkspace(null), 'account-list');
@@ -278,11 +288,22 @@ test('readStoredClaudeWorkspace restores the last valid workspace from storage',
   const storage = {
     getItem(key) {
       assert.equal(key, CLAUDE_WORKSPACE_STORAGE_KEY);
-      return 'account-list';
+      return 'mcp-servers';
     },
   };
 
-  assert.equal(readStoredClaudeWorkspace(storage), 'account-list');
+  assert.equal(readStoredClaudeWorkspace(storage), 'mcp-servers');
+});
+
+test('readStoredClaudeWorkspace migrates legacy extensions storage to skills', () => {
+  const storage = {
+    getItem(key) {
+      assert.equal(key, CLAUDE_WORKSPACE_STORAGE_KEY);
+      return 'extensions';
+    },
+  };
+
+  assert.equal(readStoredClaudeWorkspace(storage), 'skills');
 });
 
 test('persistClaudeWorkspace writes the selected workspace to storage', () => {
@@ -293,19 +314,21 @@ test('persistClaudeWorkspace writes the selected workspace to storage', () => {
     },
   };
 
-  persistClaudeWorkspace(storage, 'account-list');
+  persistClaudeWorkspace(storage, 'skills');
 
-  assert.deepEqual(writes, [[CLAUDE_WORKSPACE_STORAGE_KEY, 'account-list']]);
+  assert.deepEqual(writes, [[CLAUDE_WORKSPACE_STORAGE_KEY, 'skills']]);
 });
 
 test('isSessionManagementWorkspace only accepts known session management subpages', () => {
   assert.equal(isSessionManagementWorkspace('codex'), true);
+  assert.equal(isSessionManagementWorkspace('claude'), true);
   assert.equal(isSessionManagementWorkspace('unknown'), false);
   assert.equal(isSessionManagementWorkspace(null), false);
 });
 
 test('resolveInitialSessionManagementWorkspace falls back to codex for invalid values', () => {
   assert.equal(resolveInitialSessionManagementWorkspace('codex'), 'codex');
+  assert.equal(resolveInitialSessionManagementWorkspace('claude'), 'claude');
   assert.equal(resolveInitialSessionManagementWorkspace('unknown'), 'codex');
   assert.equal(resolveInitialSessionManagementWorkspace(null), 'codex');
 });
@@ -336,14 +359,16 @@ test('persistSessionManagementWorkspace writes the selected workspace to storage
 
 test('isUsageDeskWorkspace only accepts known usage desk subpages', () => {
   assert.equal(isUsageDeskWorkspace('codex'), true);
-  assert.equal(isUsageDeskWorkspace('gemini'), true);
+  assert.equal(isUsageDeskWorkspace('claude'), true);
+  assert.equal(isUsageDeskWorkspace('gemini'), false);
   assert.equal(isUsageDeskWorkspace('unknown'), false);
   assert.equal(isUsageDeskWorkspace(null), false);
 });
 
 test('resolveInitialUsageDeskWorkspace falls back to codex for invalid values', () => {
   assert.equal(resolveInitialUsageDeskWorkspace('codex'), 'codex');
-  assert.equal(resolveInitialUsageDeskWorkspace('gemini'), 'gemini');
+  assert.equal(resolveInitialUsageDeskWorkspace('claude'), 'claude');
+  assert.equal(resolveInitialUsageDeskWorkspace('gemini'), 'codex');
   assert.equal(resolveInitialUsageDeskWorkspace('unknown'), 'codex');
   assert.equal(resolveInitialUsageDeskWorkspace(null), 'codex');
 });
@@ -352,11 +377,11 @@ test('readStoredUsageDeskWorkspace restores the last valid workspace from storag
   const storage = {
     getItem(key) {
       assert.equal(key, USAGE_DESK_WORKSPACE_STORAGE_KEY);
-      return 'gemini';
+      return 'claude';
     },
   };
 
-  assert.equal(readStoredUsageDeskWorkspace(storage), 'gemini');
+  assert.equal(readStoredUsageDeskWorkspace(storage), 'claude');
 });
 
 test('persistUsageDeskWorkspace writes the selected workspace to storage', () => {
@@ -367,9 +392,9 @@ test('persistUsageDeskWorkspace writes the selected workspace to storage', () =>
     },
   };
 
-  persistUsageDeskWorkspace(storage, 'gemini');
+  persistUsageDeskWorkspace(storage, 'claude');
 
-  assert.deepEqual(writes, [[USAGE_DESK_WORKSPACE_STORAGE_KEY, 'gemini']]);
+  assert.deepEqual(writes, [[USAGE_DESK_WORKSPACE_STORAGE_KEY, 'claude']]);
 });
 
 test('isUsageDeskSourceStorageValue only accepts known usage desk source values', () => {
@@ -542,6 +567,26 @@ test('readFrameHashState parses claude workspace and migrates old codex claude r
     page: 'claude',
     claudeWorkspace: 'account-list',
   });
+  assert.deepEqual(readFrameHashState('#frame=claude&workspace=skills'), {
+    page: 'claude',
+    claudeWorkspace: 'skills',
+  });
+  assert.deepEqual(readFrameHashState('#frame=claude&workspace=mcp-servers'), {
+    page: 'claude',
+    claudeWorkspace: 'mcp-servers',
+  });
+  assert.deepEqual(readFrameHashState('#frame=claude&workspace=extensions'), {
+    page: 'claude',
+    claudeWorkspace: 'skills',
+  });
+  assert.deepEqual(readFrameHashState('#frame=claude&workspace=session-management'), {
+    page: 'claude',
+    claudeWorkspace: 'session-management',
+  });
+  assert.deepEqual(readFrameHashState('#frame=claude&workspace=usage'), {
+    page: 'claude',
+    claudeWorkspace: 'usage',
+  });
   assert.deepEqual(readFrameHashState('#frame=claude&workspace=unknown'), {
     page: 'claude',
     claudeWorkspace: 'account-list',
@@ -632,6 +677,22 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(buildFrameHash('design-system', 'all', 'feature-config', 'codex', 'codex'), '#frame=design-system');
   assert.equal(buildFrameHash('codex', 'all', 'feature-config', 'codex', 'codex'), '#frame=codex');
   assert.equal(buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex'), '#frame=claude&workspace=account-list');
+  assert.equal(
+    buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex', null, { claudeWorkspace: 'skills' }),
+    '#frame=claude&workspace=skills',
+  );
+  assert.equal(
+    buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex', null, { claudeWorkspace: 'mcp-servers' }),
+    '#frame=claude&workspace=mcp-servers',
+  );
+  assert.equal(
+    buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex', null, { claudeWorkspace: 'session-management' }),
+    '#frame=claude&workspace=session-management',
+  );
+  assert.equal(
+    buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex', null, { claudeWorkspace: 'usage' }),
+    '#frame=claude&workspace=usage',
+  );
   assert.equal(
     buildFrameHash('codex', 'all', 'usage-codex', 'codex', 'codex'),
     '#frame=codex&workspace=usage-codex',

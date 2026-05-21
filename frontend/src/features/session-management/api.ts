@@ -9,11 +9,15 @@ import {
   getSessionManagementPreviewSnapshot,
   hasSessionManagementPreviewMode,
 } from './previewData.ts';
+import type { SessionManagementWorkspace } from '../../types';
 
 interface SessionManagementRuntimeApp {
   GetCodexSessionManagementSnapshot?: () => Promise<unknown>;
   RefreshCodexSessionManagementSnapshot?: () => Promise<unknown>;
   GetCodexSessionDetail?: (sessionID: string) => Promise<unknown>;
+  GetClaudeCodeSessionManagementSnapshot?: () => Promise<unknown>;
+  RefreshClaudeCodeSessionManagementSnapshot?: () => Promise<unknown>;
+  GetClaudeCodeSessionDetail?: (sessionID: string) => Promise<unknown>;
   UpdateCodexSessionProviders?: (input: {
     projectID: string;
     mappings: Array<{ sourceProvider: string; targetProvider: string }>;
@@ -147,15 +151,34 @@ async function fetchDevPayload(path: string) {
   throw lastError ?? new Error('session management dev bridge unavailable');
 }
 
-async function loadDevSnapshot(forceRefresh = false) {
-  const path = forceRefresh
-    ? '/__dev/session-management/snapshot?refresh=1'
+async function loadDevSnapshot(workspace: SessionManagementWorkspace, forceRefresh = false) {
+  const query = new URLSearchParams();
+  if (workspace !== 'codex') {
+    query.set('workspace', workspace);
+  }
+  if (forceRefresh) {
+    query.set('refresh', '1');
+  }
+  const suffix = query.toString();
+  const path = suffix
+    ? `/__dev/session-management/snapshot?${suffix}`
     : '/__dev/session-management/snapshot';
   return fetchDevPayload(path);
 }
 
-async function loadDevDetail(sessionID: string) {
-  return fetchDevPayload(`/__dev/session-management/detail?sessionID=${encodeURIComponent(sessionID)}`);
+async function loadDevDetail(workspace: SessionManagementWorkspace, sessionID: string) {
+  const query = new URLSearchParams({ sessionID });
+  if (workspace !== 'codex') {
+    query.set('workspace', workspace);
+  }
+  return fetchDevPayload(`/__dev/session-management/detail?${query.toString()}`);
+}
+
+async function loadLegacyDevSnapshot(forceRefresh = false) {
+  const path = forceRefresh
+    ? '/__dev/session-management/snapshot?refresh=1'
+    : '/__dev/session-management/snapshot';
+  return fetchDevPayload(path);
 }
 
 async function updateDevProviders(projectID: string, mappings: Array<{ sourceProvider: string; targetProvider: string }>) {
@@ -252,16 +275,45 @@ function toRuntimeSessionManagementSnapshot(
 }
 
 export async function getCodexSessionManagementSnapshot(): Promise<SessionManagementSnapshot> {
+  return getSessionManagementSnapshot('codex');
+}
+
+export async function refreshCodexSessionManagementSnapshot(): Promise<SessionManagementSnapshot> {
+  return refreshSessionManagementSnapshot('codex');
+}
+
+export async function getCodexSessionDetail(sessionID: string): Promise<SessionDetail> {
+  return getSessionDetail('codex', sessionID);
+}
+
+export async function getSessionManagementSnapshot(
+  workspace: SessionManagementWorkspace,
+): Promise<SessionManagementSnapshot> {
   if (hasSessionManagementPreviewMode()) {
     return getSessionManagementPreviewSnapshot();
   }
+  if (workspace === 'claude') {
+    const getSnapshot = getRuntimeMethod('GetClaudeCodeSessionManagementSnapshot');
+    if (getSnapshot) {
+      const raw = await getSnapshot();
+      return mapSessionManagementSnapshotResponse(raw);
+    }
+    if (canUseSessionManagementDevHTTP()) {
+      return mapSessionManagementSnapshotResponse(await loadDevSnapshot(workspace, false));
+    }
+
+    const missingSnapshot = resolveRuntimeMethod('GetClaudeCodeSessionManagementSnapshot');
+    const raw = await missingSnapshot();
+    return mapSessionManagementSnapshotResponse(raw);
+  }
+
   const getSnapshot = getRuntimeMethod('GetCodexSessionManagementSnapshot');
   if (getSnapshot) {
     const raw = await getSnapshot();
     return mapSessionManagementSnapshotResponse(raw);
   }
   if (canUseSessionManagementDevHTTP()) {
-    return mapSessionManagementSnapshotResponse(await loadDevSnapshot(false));
+    return mapSessionManagementSnapshotResponse(await loadLegacyDevSnapshot(false));
   }
 
   const missingSnapshot = resolveRuntimeMethod('GetCodexSessionManagementSnapshot');
@@ -269,17 +321,34 @@ export async function getCodexSessionManagementSnapshot(): Promise<SessionManage
   return mapSessionManagementSnapshotResponse(raw);
 }
 
-export async function refreshCodexSessionManagementSnapshot(): Promise<SessionManagementSnapshot> {
+export async function refreshSessionManagementSnapshot(
+  workspace: SessionManagementWorkspace,
+): Promise<SessionManagementSnapshot> {
   if (hasSessionManagementPreviewMode()) {
     return getSessionManagementPreviewSnapshot();
   }
+  if (workspace === 'claude') {
+    const refreshSnapshot = getRuntimeMethod('RefreshClaudeCodeSessionManagementSnapshot');
+    if (refreshSnapshot) {
+      const raw = await refreshSnapshot();
+      return mapSessionManagementSnapshotResponse(raw);
+    }
+    if (canUseSessionManagementDevHTTP()) {
+      return mapSessionManagementSnapshotResponse(await loadDevSnapshot(workspace, true));
+    }
+
+    const missingRefreshSnapshot = resolveRuntimeMethod('RefreshClaudeCodeSessionManagementSnapshot');
+    const raw = await missingRefreshSnapshot();
+    return mapSessionManagementSnapshotResponse(raw);
+  }
+
   const refreshSnapshot = getRuntimeMethod('RefreshCodexSessionManagementSnapshot');
   if (refreshSnapshot) {
     const raw = await refreshSnapshot();
     return mapSessionManagementSnapshotResponse(raw);
   }
   if (canUseSessionManagementDevHTTP()) {
-    return mapSessionManagementSnapshotResponse(await loadDevSnapshot(true));
+    return mapSessionManagementSnapshotResponse(await loadLegacyDevSnapshot(true));
   }
 
   const missingRefreshSnapshot = resolveRuntimeMethod('RefreshCodexSessionManagementSnapshot');
@@ -287,17 +356,35 @@ export async function refreshCodexSessionManagementSnapshot(): Promise<SessionMa
   return mapSessionManagementSnapshotResponse(raw);
 }
 
-export async function getCodexSessionDetail(sessionID: string): Promise<SessionDetail> {
+export async function getSessionDetail(
+  workspace: SessionManagementWorkspace,
+  sessionID: string,
+): Promise<SessionDetail> {
   if (hasSessionManagementPreviewMode()) {
     return getSessionManagementPreviewDetail(sessionID);
   }
+  if (workspace === 'claude') {
+    const getDetail = getRuntimeMethod('GetClaudeCodeSessionDetail');
+    if (getDetail) {
+      const raw = await getDetail(sessionID);
+      return mapSessionDetailResponse(raw);
+    }
+    if (canUseSessionManagementDevHTTP()) {
+      return mapSessionDetailResponse(await loadDevDetail(workspace, sessionID));
+    }
+
+    const missingDetail = resolveRuntimeMethod('GetClaudeCodeSessionDetail');
+    const raw = await missingDetail(sessionID);
+    return mapSessionDetailResponse(raw);
+  }
+
   const getDetail = getRuntimeMethod('GetCodexSessionDetail');
   if (getDetail) {
     const raw = await getDetail(sessionID);
     return mapSessionDetailResponse(raw);
   }
   if (canUseSessionManagementDevHTTP()) {
-    return mapSessionDetailResponse(await loadDevDetail(sessionID));
+    return mapSessionDetailResponse(await loadDevDetail('codex', sessionID));
   }
 
   const missingDetail = resolveRuntimeMethod('GetCodexSessionDetail');

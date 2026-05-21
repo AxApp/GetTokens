@@ -23,9 +23,9 @@ export type CodexWorkspace =
   | 'session-management'
   | 'vendor-status'
   | 'usage-codex';
-export type ClaudeWorkspace = 'account-list';
-export type SessionManagementWorkspace = 'codex';
-export type UsageDeskWorkspace = 'codex' | 'gemini';
+export type ClaudeWorkspace = 'account-list' | 'skills' | 'mcp-servers' | 'session-management' | 'usage';
+export type SessionManagementWorkspace = 'codex' | 'claude';
+export type UsageDeskWorkspace = 'codex' | 'claude';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 

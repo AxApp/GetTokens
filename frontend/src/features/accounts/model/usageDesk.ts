@@ -3,6 +3,7 @@ import type {
   AccountUsageAttributionItem,
   AccountUsageAttributionResponse,
 } from './accountUsage';
+import type { UsageDeskWorkspace } from '../../../types';
 
 export type UsageDeskSource = 'observed' | 'projected';
 
@@ -622,12 +623,43 @@ function collectObservedDetailsFromAttributionItem(
   });
 }
 
-export function collectUsageDeskObservedDetails(usageData: unknown): UsageDeskObservedDetail[] {
+function isClaudeObservedDetail(detail: UsageDeskObservedDetail): boolean {
+  const haystack = [
+    detail.provider,
+    detail.model,
+    detail.accountKey,
+    detail.attributionKey,
+  ].join(' ').toLowerCase();
+
+  return (
+    haystack.includes('anthropic') ||
+    haystack.includes('claude') ||
+    haystack.includes('sonnet') ||
+    haystack.includes('opus') ||
+    haystack.includes('haiku')
+  );
+}
+
+function filterUsageDeskObservedDetailsByWorkspace(
+  details: UsageDeskObservedDetail[],
+  workspace: UsageDeskWorkspace = 'codex',
+): UsageDeskObservedDetail[] {
+  if (workspace === 'claude') {
+    return details.filter(isClaudeObservedDetail);
+  }
+  return details;
+}
+
+export function collectUsageDeskObservedDetails(
+  usageData: unknown,
+  workspace: UsageDeskWorkspace = 'codex',
+): UsageDeskObservedDetail[] {
   if (isAttributionResponse(usageData)) {
     const result: UsageDeskObservedDetail[] = [];
     (usageData.items ?? []).forEach((item) => collectObservedDetailsFromAttributionItem(item, result));
     (usageData.unresolved ?? []).forEach((item) => collectObservedDetailsFromAttributionItem(item, result));
-    return result.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+    return filterUsageDeskObservedDetailsByWorkspace(result, workspace)
+      .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
   }
 
   const usageRecord = isRecord(usageData) ? usageData : null;
@@ -669,15 +701,17 @@ export function collectUsageDeskObservedDetails(usageData: unknown): UsageDeskOb
     });
   });
 
-  return result.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
+  return filterUsageDeskObservedDetailsByWorkspace(result, workspace)
+    .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp));
 }
 
 export function buildUsageDeskObservedSnapshot(
   usageData: unknown,
   selectedDayKey?: string | null,
   resolution: UsageDeskResolution = '1M',
+  workspace: UsageDeskWorkspace = 'codex',
 ): UsageDeskObservedSnapshot {
-  const details = collectUsageDeskObservedDetails(usageData);
+  const details = collectUsageDeskObservedDetails(usageData, workspace);
   if (details.length === 0) {
     return {
       hasData: false,

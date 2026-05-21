@@ -101,9 +101,12 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const { trackRequest } = useDebug();
   const browserMode = hasPreviewMode('usage-codex') || !hasWailsAppBindings();
   const ready = sidecarStatus?.code === 'ready';
+  const supportsProjectedUsage = workspace === 'codex';
 
   const [source, setSource] = useState<UsageDeskSource>(() =>
-    readStoredUsageDeskSource(typeof window === 'undefined' ? null : window.localStorage),
+    workspace === 'codex'
+      ? readStoredUsageDeskSource(typeof window === 'undefined' ? null : window.localStorage)
+      : 'observed',
   );
   const [range, setRange] = useState<UsageDeskRangeOption>(() => {
     const stored = readStoredUsageDeskRange(typeof window === 'undefined' ? null : window.localStorage);
@@ -128,6 +131,12 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const [rangeAnimationVersion, setRangeAnimationVersion] = useState(0);
   const [stickyProgress, setStickyProgress] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!supportsProjectedUsage && source === 'projected') {
+      setSource('observed');
+    }
+  }, [source, supportsProjectedUsage]);
 
   useEffect(() => {
     persistUsageDeskSource(typeof window === 'undefined' ? null : window.localStorage, source);
@@ -224,6 +233,16 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     let mounted = true;
 
     async function loadProjectedUsage() {
+      if (!supportsProjectedUsage) {
+        if (!mounted) return;
+        setProjectedUsageData(null);
+        setProjectedLoading(false);
+        setProjectedLoadError('');
+        setProjectedProgress(null);
+        setProjectedActionMessage('');
+        return;
+      }
+
       if (browserMode) {
         if (!mounted) return;
         setProjectedUsageData(getUsageDeskPreviewProjectedUsage(workspace));
@@ -261,9 +280,14 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     return () => {
       mounted = false;
     };
-  }, [browserMode, trackRequest, workspace]);
+  }, [browserMode, supportsProjectedUsage, trackRequest, workspace]);
 
   const refreshProjectedUsage = async () => {
+    if (!supportsProjectedUsage) {
+      setProjectedActionMessage('');
+      return;
+    }
+
     if (browserMode) {
       setProjectedUsageData(getUsageDeskPreviewProjectedUsage(workspace));
       setProjectedLoading(false);
@@ -293,6 +317,11 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   };
 
   const rebuildProjectedUsage = async () => {
+    if (!supportsProjectedUsage) {
+      setProjectedActionMessage('');
+      return;
+    }
+
     if (browserMode) {
       setProjectedUsageData(getUsageDeskPreviewProjectedUsage(workspace));
       setProjectedLoading(false);
@@ -322,6 +351,11 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   };
 
   const rebuildProjectedUsageDay = async (dayKey?: string | null) => {
+    if (!supportsProjectedUsage) {
+      setProjectedActionMessage('');
+      return;
+    }
+
     const targetDayKey = dayKey?.trim();
     if (!targetDayKey) {
       return rebuildProjectedUsage();
@@ -357,8 +391,8 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   };
 
   const observedSnapshot = useMemo(
-    () => buildUsageDeskObservedSnapshot(observedUsageData, selectedDayKey, resolution),
-    [observedUsageData, selectedDayKey, resolution],
+    () => buildUsageDeskObservedSnapshot(observedUsageData, selectedDayKey, resolution, workspace),
+    [observedUsageData, selectedDayKey, resolution, workspace],
   );
   const projectedSnapshot = useMemo(
     () => buildUsageDeskProjectedSnapshot(projectedUsageData, selectedDayKey, resolution),

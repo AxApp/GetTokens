@@ -47,9 +47,9 @@ const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'vendor-status',
   'usage-codex',
 ]);
-const claudeWorkspaces: ReadonlySet<ClaudeWorkspace> = new Set(['account-list']);
-const sessionManagementWorkspaces: ReadonlySet<SessionManagementWorkspace> = new Set(['codex']);
-const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', 'gemini']);
+const claudeWorkspaces: ReadonlySet<ClaudeWorkspace> = new Set(['account-list', 'skills', 'mcp-servers', 'session-management', 'usage']);
+const sessionManagementWorkspaces: ReadonlySet<SessionManagementWorkspace> = new Set(['codex', 'claude']);
+const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', 'claude']);
 const usageDeskSources = new Set(['observed', 'projected'] as const);
 const usageDeskRanges = new Set(['TODAY', '7D', '14D', '30D', '全部'] as const);
 
@@ -67,6 +67,7 @@ export interface FrameHashState {
 }
 
 interface FrameHashOptions {
+  claudeWorkspace?: ClaudeWorkspace;
   density?: string | null;
 }
 
@@ -94,6 +95,10 @@ export function isCodexWorkspace(value: string | null | undefined): value is Cod
 
 export function isClaudeWorkspace(value: string | null | undefined): value is ClaudeWorkspace {
   return typeof value === 'string' && claudeWorkspaces.has(value as ClaudeWorkspace);
+}
+
+export function isLegacyClaudeExtensionsWorkspace(value: string | null | undefined): boolean {
+  return value === 'extensions';
 }
 
 export function isLegacyClaudeCodexWorkspace(value: string | null | undefined): boolean {
@@ -164,6 +169,9 @@ export function resolveInitialClaudeWorkspace(
   storageValue: string | null | undefined,
   fallback: ClaudeWorkspace = 'account-list',
 ): ClaudeWorkspace {
+  if (isLegacyClaudeExtensionsWorkspace(storageValue)) {
+    return 'skills';
+  }
   return isClaudeWorkspace(storageValue) ? storageValue : fallback;
 }
 
@@ -350,7 +358,7 @@ export function readFrameHashState(
     const workspace = params.get('workspace');
     return {
       page,
-      claudeWorkspace: isClaudeWorkspace(workspace) ? workspace : 'account-list',
+      claudeWorkspace: resolveInitialClaudeWorkspace(workspace),
     };
   }
 
@@ -386,7 +394,7 @@ export function buildFrameHash(
     params.set('workspace', codexWorkspace);
   }
   if (page === 'claude') {
-    params.set('workspace', 'account-list');
+    params.set('workspace', options?.claudeWorkspace ?? 'account-list');
   }
   if (page === 'session-management' && sessionManagementWorkspace !== 'codex') {
     params.set('workspace', sessionManagementWorkspace);

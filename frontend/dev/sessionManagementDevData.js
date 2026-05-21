@@ -6,11 +6,15 @@ const SNAPSHOT_CACHE_TTL_MS = 60_000;
 const SESSION_PATH_PATTERN = /\/Users\/[^/\s]+(?:\/[^\s"'<>]+)*/g;
 const SESSION_CALL_ID_PATTERN = /\bcall[_-]?[A-Za-z0-9_-]+\b/g;
 const SESSION_HEX_ID_PATTERN = /\b[0-9a-f]{8,}\b/gi;
+const SESSION_SECRET_PATTERN = /\b(?:sk-ant|sk-proj|sk)-[A-Za-z0-9_-]{8,}\b|(?:api[_-]?key|token|secret)\s*[:=]\s*["']?[A-Za-z0-9._-]{8,}["']?/gi;
 const SESSION_WHITESPACE_PATTERN = /\s+/g;
 
 let snapshotCache = null;
 let snapshotCacheUpdatedAt = 0;
 let snapshotRefreshPromise = null;
+let claudeSnapshotCache = null;
+let claudeSnapshotCacheUpdatedAt = 0;
+let claudeSnapshotRefreshPromise = null;
 
 async function rewriteSessionMetaProvider(absolutePath, targetProvider) {
   const raw = await fs.readFile(absolutePath, 'utf8');
@@ -71,6 +75,10 @@ function resolveCodexHome() {
   return process.env.CODEX_HOME || path.join(os.homedir(), '.codex');
 }
 
+function resolveClaudeConfigDir() {
+  return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
+}
+
 async function pathExists(targetPath) {
   try {
     await fs.stat(targetPath);
@@ -109,6 +117,23 @@ async function listCodexRolloutPaths(codexHome) {
   return paths.sort();
 }
 
+function isClaudeSubagentSessionPath(absolutePath) {
+  const parts = absolutePath.split(path.sep);
+  if (parts.includes('subagents')) {
+    return true;
+  }
+  return path.basename(absolutePath).startsWith('agent-');
+}
+
+async function listClaudeSessionPaths(claudeProjectsRoot) {
+  const paths = [];
+  if (!(await pathExists(claudeProjectsRoot))) {
+    return paths;
+  }
+  await walkRolloutPaths(claudeProjectsRoot, paths);
+  return paths.filter((sessionPath) => !isClaudeSubagentSessionPath(sessionPath)).sort();
+}
+
 async function mapWithConcurrency(items, concurrency, worker) {
   if (!items.length) {
     return [];
@@ -140,6 +165,7 @@ function sanitizeSessionText(raw) {
   }
   return trimmed
     .replace(SESSION_PATH_PATTERN, '<redacted-path>')
+    .replace(SESSION_SECRET_PATTERN, '[密钥]')
     .replace(SESSION_CALL_ID_PATTERN, '[调用ID]')
     .replace(SESSION_HEX_ID_PATTERN, '[会话ID]')
     .replace(SESSION_WHITESPACE_PATTERN, ' ')
@@ -399,6 +425,48 @@ function summarizeToolResult(payload) {
   return parts.join(' / ');
 }
 
+function summarizeClaudeToolUse(item) {
+  const name = String(item?.name || '').trim();
+  let input = '';
+  try {
+    input = JSON.stringify(item?.input || {});
+  } catch {
+    input = String(item?.input || '');
+  }
+  return [name, input].filter(Boolean).join(' / ');
+}
+
+function summarizeClaudeToolResult(item) {
+  const content = item?.content;
+  if (typeof content === 'string') {
+    return content;
+  }
+  if (Array.isArray(content)) {
+    return content
+      .map((entry) => entry?.text || entry?.content || '')
+      .filter(Boolean)
+      .join(' ');
+  }
+  try {
+    return JSON.stringify(content || item || {});
+  } catch {
+    return String(item?.tool_use_id || '工具结果');
+  }
+}
+
+function getClaudeTextContent(content) {
+  if (typeof content === 'string') {
+    return content;
+  }
+  if (!Array.isArray(content)) {
+    return '';
+  }
+  return content
+    .map((item) => item?.text || item?.content || '')
+    .filter((value) => typeof value === 'string')
+    .join(' ');
+}
+
 function summarizeWebSearch(payload) {
   const direct = String(payload?.action?.query || '').trim();
   const queries = Array.isArray(payload?.action?.queries)
@@ -582,6 +650,159 @@ async function parseSessionFile(codexHome, absolutePath) {
   };
 }
 
+async function parseClaudeSessionFile(claudeProjectsRoot, absolutePath) {
+  const relativePath = path.relative(claudeProjectsRoot, absolutePath).split(path.sep).join('/');
+  const raw = await fs.readFile(absolutePath, 'utf8');
+  const lines = raw.split('\n').filter(Boolean);
+  const roleCounts = {
+    system: 0,
+    user: 0,
+    assistant: 0,
+    reasoning: 0,
+    tool_call: 0,
+    tool_result: 0,
+    event: 0,
+  };
+  const messages = [];
+  const state = {
+    firstUserText: '',
+    lastPrimaryText: '',
+    lastAnyText: '',
+  };
+  let firstTimestamp = '';
+  let lastTimestamp = '';
+  let cwd = '';
+  let model = '';
+  let sessionID = path.basename(absolutePath, '.jsonl');
+
+  for (const line of lines) {
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      continue;
+    }
+
+    const timestamp = entry?.timestamp || '';
+    if (!firstTimestamp && timestamp) {
+      firstTimestamp = timestamp;
+    }
+    if (timestamp) {
+      lastTimestamp = timestamp;
+    }
+    if (String(entry?.cwd || '').trim()) {
+      cwd = String(entry.cwd).trim();
+    }
+    if (String(entry?.sessionId || entry?.sessionID || '').trim()) {
+      sessionID = String(entry.sessionId || entry.sessionID).trim();
+    }
+    if (String(entry?.message?.model || '').trim()) {
+      model = String(entry.message.model).trim();
+    }
+
+    if (entry?.type === 'attachment') {
+      buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'event', '附件', getClaudeTextContent(entry?.message?.content || entry?.content || entry));
+      continue;
+    }
+
+    if (entry?.type === 'user') {
+      const content = entry?.message?.content;
+      if (Array.isArray(content)) {
+        let emitted = false;
+        for (const item of content) {
+          if (item?.type === 'tool_result') {
+            buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'tool_result', '工具结果', summarizeClaudeToolResult(item));
+            emitted = true;
+          } else if (item?.type === 'text' && item?.text) {
+            buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'user', '用户消息', String(item.text));
+            emitted = true;
+          }
+        }
+        if (!emitted) {
+          buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'user', '用户消息', getClaudeTextContent(content));
+        }
+        continue;
+      }
+      buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'user', '用户消息', getClaudeTextContent(content));
+      continue;
+    }
+
+    if (entry?.type === 'assistant') {
+      const content = entry?.message?.content;
+      if (typeof content === 'string') {
+        buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'assistant', '助手消息', content);
+        continue;
+      }
+      if (Array.isArray(content)) {
+        for (const item of content) {
+          switch (item?.type) {
+            case 'text':
+              buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'assistant', '助手消息', String(item?.text || ''));
+              break;
+            case 'thinking':
+              buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'reasoning', '推理', String(item?.thinking || item?.text || ''));
+              break;
+            case 'tool_use':
+              buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'tool_call', '工具调用', summarizeClaudeToolUse(item));
+              break;
+            default:
+              buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'event', '响应项', JSON.stringify(item || {}));
+              break;
+          }
+        }
+        continue;
+      }
+      buildMessageRecord(relativePath, messages, roleCounts, state, timestamp, 'assistant', '助手消息', '');
+      continue;
+    }
+  }
+
+  const projectName = cwd ? path.basename(cwd) : path.basename(path.dirname(absolutePath)).replace(/^-+/, '').replace(/-/g, '/').split('/').at(-1) || 'Claude Code';
+  const detail = {
+    sessionID: relativePath,
+    projectID: projectName.toLowerCase().replace(/\s+/g, '-'),
+    title: state.firstUserText || sessionID,
+    status: 'active',
+    fileLabel: relativePath,
+    messageCount: messages.length,
+    provider: 'claude',
+    roleSummary: formatRoleSummary(roleCounts),
+    topic: firstRunes(state.lastPrimaryText || state.lastAnyText || `claude --resume ${sessionID}`, 60),
+    currentMessageLabel: formatCurrentMessageLabel(messages),
+    messages,
+  };
+
+  const resumeSummary = `claude --resume ${sessionID}`;
+  if (model) {
+    detail.topic = firstRunes(`${detail.topic} / 模型 ${model} / ${resumeSummary}`, 90);
+  } else if (!detail.topic.includes('claude --resume')) {
+    detail.topic = firstRunes(`${detail.topic} / ${resumeSummary}`, 90);
+  }
+
+  return {
+    projectName,
+    provider: 'claude',
+    updatedAt: formatTimestamp(lastTimestamp),
+    updatedAtRaw: new Date(lastTimestamp || firstTimestamp || 0).getTime(),
+    session: {
+      id: relativePath,
+      sessionID: relativePath,
+      projectID: detail.projectID,
+      projectName,
+      title: firstRunes(detail.title, 60),
+      status: detail.status,
+      archived: false,
+      messageCount: detail.messageCount,
+      roleSummary: detail.roleSummary,
+      updatedAt: detail.messages.length ? formatTimestamp(lastTimestamp) : '',
+      fileLabel: detail.fileLabel,
+      summary: detail.topic,
+      provider: 'claude',
+    },
+    detail,
+  };
+}
+
 let sessionThreadNamesPromise = null;
 
 async function loadSessionThreadNames(codexHome) {
@@ -685,6 +906,70 @@ async function buildSessionManagementSnapshot() {
   };
 }
 
+async function buildClaudeSessionManagementSnapshot() {
+  const claudeProjectsRoot = path.join(resolveClaudeConfigDir(), 'projects');
+  const sessionPaths = await listClaudeSessionPaths(claudeProjectsRoot);
+  const parsedSessions = await mapWithConcurrency(sessionPaths, 24, (sessionPath) =>
+    parseClaudeSessionFile(claudeProjectsRoot, sessionPath),
+  );
+  const projectsByID = new Map();
+  let activeSessionCount = 0;
+  const providerCounts = {};
+
+  for (const parsed of parsedSessions) {
+    const projectID = parsed.detail.projectID;
+    if (!projectsByID.has(projectID)) {
+      projectsByID.set(projectID, {
+        id: projectID,
+        name: parsed.projectName,
+        sessionCount: 0,
+        activeSessionCount: 0,
+        archivedSessionCount: 0,
+        lastActiveAt: parsed.updatedAt,
+        lastActiveAtRaw: parsed.updatedAtRaw,
+        providerCounts: {},
+        sessions: [],
+      });
+    }
+    const project = projectsByID.get(projectID);
+    project.sessions.push(parsed.session);
+    project.sessionCount += 1;
+    project.activeSessionCount += 1;
+    activeSessionCount += 1;
+    project.providerCounts[parsed.provider] = (project.providerCounts[parsed.provider] || 0) + 1;
+    providerCounts[parsed.provider] = (providerCounts[parsed.provider] || 0) + 1;
+    if (parsed.updatedAtRaw > project.lastActiveAtRaw) {
+      project.lastActiveAtRaw = parsed.updatedAtRaw;
+      project.lastActiveAt = parsed.updatedAt;
+    }
+  }
+
+  const projects = [...projectsByID.values()]
+    .map((project) => ({
+      id: project.id,
+      name: project.name,
+      sessionCount: project.sessionCount,
+      activeSessionCount: project.activeSessionCount,
+      archivedSessionCount: project.archivedSessionCount,
+      lastActiveAt: project.lastActiveAt,
+      providerCounts: project.providerCounts,
+      providerSummary: formatProviderSummary(project.providerCounts),
+      sessions: project.sessions.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+    }))
+    .sort((left, right) => right.lastActiveAt.localeCompare(left.lastActiveAt));
+
+  const now = new Date();
+  return {
+    projectCount: projects.length,
+    sessionCount: activeSessionCount,
+    activeSessionCount,
+    archivedSessionCount: 0,
+    lastScanAt: formatTimestamp(now.toISOString()),
+    providerCounts,
+    projects,
+  };
+}
+
 async function refreshSnapshotCache() {
   if (snapshotRefreshPromise) {
     return snapshotRefreshPromise;
@@ -702,6 +987,24 @@ async function refreshSnapshotCache() {
     });
 
   return snapshotRefreshPromise;
+}
+
+async function refreshClaudeSnapshotCache() {
+  if (claudeSnapshotRefreshPromise) {
+    return claudeSnapshotRefreshPromise;
+  }
+
+  claudeSnapshotRefreshPromise = buildClaudeSessionManagementSnapshot()
+    .then((snapshot) => {
+      claudeSnapshotCache = snapshot;
+      claudeSnapshotCacheUpdatedAt = Date.now();
+      return snapshot;
+    })
+    .finally(() => {
+      claudeSnapshotRefreshPromise = null;
+    });
+
+  return claudeSnapshotRefreshPromise;
 }
 
 export async function loadSessionManagementSnapshot(options = {}) {
@@ -726,6 +1029,22 @@ export async function loadSessionManagementSnapshot(options = {}) {
   return refreshSnapshotCache();
 }
 
+export async function loadClaudeSessionManagementSnapshot(options = {}) {
+  const { forceRefresh = false } = options;
+  const cacheFresh = claudeSnapshotCache && Date.now() - claudeSnapshotCacheUpdatedAt < SNAPSHOT_CACHE_TTL_MS;
+
+  if (!forceRefresh && cacheFresh) {
+    return claudeSnapshotCache;
+  }
+
+  if (!forceRefresh && claudeSnapshotCache) {
+    void refreshClaudeSnapshotCache();
+    return claudeSnapshotCache;
+  }
+
+  return refreshClaudeSnapshotCache();
+}
+
 export async function loadSessionManagementDetail(sessionID) {
   const codexHome = resolveCodexHome();
   const relativePath = String(sessionID || '').trim();
@@ -734,6 +1053,16 @@ export async function loadSessionManagementDetail(sessionID) {
   }
   const absolutePath = path.join(codexHome, relativePath);
   return (await parseSessionFile(codexHome, absolutePath)).detail;
+}
+
+export async function loadClaudeSessionManagementDetail(sessionID) {
+  const claudeProjectsRoot = path.join(resolveClaudeConfigDir(), 'projects');
+  const relativePath = String(sessionID || '').trim();
+  if (!relativePath) {
+    throw new Error('缺少 session id');
+  }
+  const absolutePath = path.join(claudeProjectsRoot, relativePath);
+  return (await parseClaudeSessionFile(claudeProjectsRoot, absolutePath)).detail;
 }
 
 export async function updateSessionManagementProviders({ projectID, mappings }) {

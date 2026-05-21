@@ -10,7 +10,10 @@ import {
 import {
   getCodexSessionDetail,
   getCodexSessionManagementSnapshot,
+  getSessionDetail,
+  getSessionManagementSnapshot,
   refreshCodexSessionManagementSnapshot,
+  refreshSessionManagementSnapshot,
   updateCodexSessionProviders,
 } from './api.ts';
 import {
@@ -183,6 +186,99 @@ test('getCodexSessionManagementSnapshot throws a clear error when bridge is miss
   await assert.rejects(
     () => getCodexSessionManagementSnapshot(),
     /GetCodexSessionManagementSnapshot/,
+  );
+});
+
+test('claude session management uses Claude Code runtime bindings', async () => {
+  const calls = [];
+  globalThis.window = {
+    go: {
+      main: {
+        App: {
+          async GetClaudeCodeSessionManagementSnapshot() {
+            calls.push('snapshot');
+            return {
+              projectCount: 1,
+              sessionCount: 1,
+              activeSessionCount: 1,
+              archivedSessionCount: 0,
+              lastScanAt: '2026-05-21 17:00',
+              providerCounts: { claude: 1 },
+              projects: [
+                {
+                  id: 'gettokens',
+                  name: 'GetTokens',
+                  sessionCount: 1,
+                  activeSessionCount: 1,
+                  archivedSessionCount: 0,
+                  lastActiveAt: '2026-05-21 17:00',
+                  providerCounts: { claude: 1 },
+                  providerSummary: 'claude 1',
+                  sessions: [],
+                },
+              ],
+            };
+          },
+          async RefreshClaudeCodeSessionManagementSnapshot() {
+            calls.push('refresh');
+            return {
+              projectCount: 1,
+              sessionCount: 2,
+              activeSessionCount: 2,
+              archivedSessionCount: 0,
+              lastScanAt: '2026-05-21 17:01',
+              providerCounts: { claude: 2 },
+              projects: [],
+            };
+          },
+          async GetClaudeCodeSessionDetail(sessionID) {
+            calls.push(`detail:${sessionID}`);
+            return {
+              sessionID,
+              projectID: 'gettokens',
+              title: 'Claude Code Session',
+              status: 'active',
+              fileLabel: 'claude-session.jsonl',
+              messageCount: 1,
+              provider: 'claude',
+              roleSummary: '用户 1',
+              topic: 'claude resume',
+              currentMessageLabel: '01 / 用户',
+              messages: [{ id: 'm-1', role: 'user', timeLabel: '17:00', title: 'ask', summary: '继续' }],
+            };
+          },
+        },
+      },
+    },
+  };
+
+  const snapshot = await getSessionManagementSnapshot('claude');
+  assert.equal(snapshot.stats.providerSummary, 'claude 1');
+  assert.equal(snapshot.projects[0].providerSummary, 'claude 1');
+
+  const refreshed = await refreshSessionManagementSnapshot('claude');
+  assert.equal(refreshed.stats.sessionCount, 2);
+
+  const detail = await getSessionDetail('claude', 'claude-session');
+  assert.equal(detail.provider, 'claude');
+  assert.equal(detail.messages[0].summary, '继续');
+  assert.deepEqual(calls, ['snapshot', 'refresh', 'detail:claude-session']);
+});
+
+test('claude session management reports missing Claude bindings clearly', async () => {
+  globalThis.window = {};
+
+  await assert.rejects(
+    () => getSessionManagementSnapshot('claude'),
+    /GetClaudeCodeSessionManagementSnapshot/,
+  );
+  await assert.rejects(
+    () => refreshSessionManagementSnapshot('claude'),
+    /RefreshClaudeCodeSessionManagementSnapshot/,
+  );
+  await assert.rejects(
+    () => getSessionDetail('claude', 'missing-session'),
+    /GetClaudeCodeSessionDetail/,
   );
 });
 

@@ -11,10 +11,10 @@ import {
   SaveCodexSkillEnabled,
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
+import AssetWorkbenchShell from '../../components/ui/AssetWorkbenchShell';
 import SearchInput from '../../components/ui/SearchInput';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
-import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import type { CodexWorkspace, SegmentedOption } from '../../types';
 import { toErrorMessage } from '../../utils/error';
@@ -273,28 +273,25 @@ Path: ${parsedGitSource.path}`,
   }
 
   return (
-    <div className="scrollbar-stable h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CODEX_SKILLS">
-      <div className="w-full space-y-6">
-        <WorkspacePageHeader
-          title={t('codex_extensions.skills_title')}
-          subtitle={skillsHeaderSubtitle}
-          align="center"
-          actions={
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => setGitInstallOpen(true)}>
-                <Download className="h-3.5 w-3.5" />
-                {t('codex_extensions.add_skill')}
-              </button>
-              <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => void reloadSkills()} disabled={loading}>
-                <RefreshCw className="h-3.5 w-3.5" />
-                {loading ? t('common.loading') : t('common.refresh')}
-              </button>
-            </div>
-          }
-        />
-
-        <section className="flex min-h-[30rem] flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-          <div className="grid gap-3 border-b-2 border-[var(--border-color)] p-3 lg:grid-cols-[minmax(0,24rem)_minmax(16rem,1fr)]">
+    <>
+      <AssetWorkbenchShell
+        dataCollaborationId="PAGE_CODEX_SKILLS"
+        title={t('codex_extensions.skills_title')}
+        subtitle={skillsHeaderSubtitle}
+        actions={
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => setGitInstallOpen(true)}>
+              <Download className="h-3.5 w-3.5" />
+              {t('codex_extensions.add_skill')}
+            </button>
+            <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => void reloadSkills()} disabled={loading}>
+              <RefreshCw className="h-3.5 w-3.5" />
+              {loading ? t('common.loading') : t('common.refresh')}
+            </button>
+          </div>
+        }
+        toolbar={
+          <>
             <SegmentedControl options={skillRootOptions} value={rootFilter} onChange={setRootFilter} />
             <SearchInput
               value={query}
@@ -302,56 +299,56 @@ Path: ${parsedGitSource.path}`,
               clearLabel={t('common.reset')}
               placeholder={t('codex_extensions.search_skills')}
             />
-          </div>
-
-          {message ? (
+          </>
+        }
+        notice={
+          message ? (
             <div className="border-b-2 border-[var(--border-color)] px-4 py-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
               {message}
             </div>
-          ) : null}
-
-          <div className="scrollbar-stable min-h-0 flex-1 overflow-auto divide-y-2 divide-[var(--border-color)]">
-            {filteredSkills.map((skill) => (
-              <article
-                key={skill.id}
-                className="group relative grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--bg-surface)] focus-within:bg-[var(--bg-surface)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-              >
-                <button
-                  type="button"
-                  aria-label={`${skill.name} ${t('common.details')}`}
-                  onClick={() => setSelectedID(skill.id)}
-                  className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]"
-                />
-                <div className="pointer-events-none relative z-[1] min-w-0 text-left">
-                  <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)]">
-                    {skill.name}
-                  </div>
-                  <div className="mt-1 line-clamp-2 text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">
-                    {skill.description || skill.rootPath}
-                  </div>
-                  <div className="mt-2 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black tracking-wide text-[var(--text-muted)]">
-                    <span className="font-black text-[var(--text-primary)]">{formatSkillSourceLabel(skill, t)}: </span>
-                    <span>{formatSkillSourceValue(skill)}</span>
-                  </div>
-                </div>
-                <ToggleSwitch
-                  label={skill.enabled ? t('common.disable') : t('common.enable')}
-                  checked={skill.enabled}
-                  disabled={loading}
-                  className="relative z-10"
-                  stopPropagation
-                  onChange={(checked) => void toggleSkill(skill, checked)}
-                />
-              </article>
-            ))}
-            {filteredSkills.length === 0 ? (
-              <div className="px-4 py-12 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {loading ? t('common.loading') : t('codex_extensions.no_selection')}
+          ) : null
+        }
+        contentClassName="scrollbar-stable min-h-0 flex-1 overflow-auto divide-y-2 divide-[var(--border-color)]"
+      >
+        {filteredSkills.map((skill) => (
+          <article
+            key={skill.id}
+            className="group relative grid gap-3 px-4 py-3 transition-colors hover:bg-[var(--bg-surface)] focus-within:bg-[var(--bg-surface)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+          >
+            <button
+              type="button"
+              aria-label={`${skill.name} ${t('common.details')}`}
+              onClick={() => setSelectedID(skill.id)}
+              className="absolute inset-0 z-0 cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--border-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-main)]"
+            />
+            <div className="pointer-events-none relative z-[1] min-w-0 text-left">
+              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)]">
+                {skill.name}
               </div>
-            ) : null}
+              <div className="mt-1 line-clamp-2 text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">
+                {skill.description || skill.rootPath}
+              </div>
+              <div className="mt-2 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black tracking-wide text-[var(--text-muted)]">
+                <span className="font-black text-[var(--text-primary)]">{formatSkillSourceLabel(skill, t)}: </span>
+                <span>{formatSkillSourceValue(skill)}</span>
+              </div>
+            </div>
+            <ToggleSwitch
+              label={skill.enabled ? t('common.disable') : t('common.enable')}
+              checked={skill.enabled}
+              disabled={loading}
+              className="relative z-10"
+              stopPropagation
+              onChange={(checked) => void toggleSkill(skill, checked)}
+            />
+          </article>
+        ))}
+        {filteredSkills.length === 0 ? (
+          <div className="px-4 py-12 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            {loading ? t('common.loading') : t('codex_extensions.no_selection')}
           </div>
-        </section>
-      </div>
+        ) : null}
+      </AssetWorkbenchShell>
 
       {selectedSkill ? (
         <SkillPreviewModal
@@ -377,7 +374,7 @@ Path: ${parsedGitSource.path}`,
         />
       ) : null}
       {successHud ? <SuccessHud title={successHud.title} detail={successHud.detail} /> : null}
-    </div>
+    </>
   );
 }
 
@@ -561,33 +558,30 @@ function CodexMcpServersWorkspace() {
   }
 
   return (
-    <div className="scrollbar-stable h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CODEX_MCP_SERVERS">
-      <div className="w-full space-y-6">
-        <WorkspacePageHeader
-          title={t('codex_extensions.mcp_title')}
-          subtitle={mcpHeaderSubtitle}
-          align="center"
-          actions={
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <button
-                type="button"
-                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
-                onClick={() => void openConfigToml()}
-                disabled={configEditor.loading}
-              >
-                <FilePenLine className="h-3.5 w-3.5" />
-                {configEditor.loading ? t('common.loading') : t('codex_extensions.edit_config_toml')}
-              </button>
-              <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => void reloadServers()} disabled={loading}>
-                <RefreshCw className="h-3.5 w-3.5" />
-                {loading ? t('common.loading') : t('common.refresh')}
-              </button>
-            </div>
-          }
-        />
-
-        <section className="flex flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-          <div className="grid gap-3 border-b-2 border-[var(--border-color)] p-3 lg:grid-cols-[minmax(0,24rem)_minmax(16rem,1fr)]">
+    <>
+      <AssetWorkbenchShell
+        dataCollaborationId="PAGE_CODEX_MCP_SERVERS"
+        title={t('codex_extensions.mcp_title')}
+        subtitle={mcpHeaderSubtitle}
+        actions={
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
+              onClick={() => void openConfigToml()}
+              disabled={configEditor.loading}
+            >
+              <FilePenLine className="h-3.5 w-3.5" />
+              {configEditor.loading ? t('common.loading') : t('codex_extensions.edit_config_toml')}
+            </button>
+            <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => void reloadServers()} disabled={loading}>
+              <RefreshCw className="h-3.5 w-3.5" />
+              {loading ? t('common.loading') : t('common.refresh')}
+            </button>
+          </div>
+        }
+        toolbar={
+          <>
             <SegmentedControl options={mcpFilterOptions} value={filter} onChange={setFilter} />
             <SearchInput
               value={query}
@@ -595,43 +589,44 @@ function CodexMcpServersWorkspace() {
               clearLabel={t('common.reset')}
               placeholder={t('codex_extensions.search_mcp')}
             />
-          </div>
-
-          {message ? (
+          </>
+        }
+        notice={
+          message ? (
             <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
               {message}
             </div>
-          ) : null}
-
-          <div className="divide-y-2 divide-[var(--border-color)]">
-            {filteredServers.map((server) => (
-              <button
-                key={server.id}
-                type="button"
-                onClick={() => openMcpServerEditor(server)}
-                className="grid w-full gap-3 px-4 py-3 text-left text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
-              >
-                <div className="min-w-0">
-                  <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg-compact)] font-black">{server.label}</div>
-                  <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-                    {server.command || server.url || '-'}
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 md:justify-end">
-                  <McpStatusBadge status={server.status} />
-                  <div className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                    {server.transport === 'stdio' ? 'stdio' : 'http'}
-                  </div>
-                </div>
-              </button>
-            ))}
-            {filteredServers.length === 0 ? (
-              <div className="px-4 py-10 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {t('codex_extensions.empty_mcp')}
+          ) : null
+        }
+        contentClassName="divide-y-2 divide-[var(--border-color)]"
+      >
+        {filteredServers.map((server) => (
+          <button
+            key={server.id}
+            type="button"
+            onClick={() => openMcpServerEditor(server)}
+            className="grid w-full gap-3 px-4 py-3 text-left text-[var(--text-primary)] transition-colors hover:bg-[var(--bg-surface)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center"
+          >
+            <div className="min-w-0">
+              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg-compact)] font-black">{server.label}</div>
+              <div className="mt-1 break-all font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+                {server.command || server.url || '-'}
               </div>
-            ) : null}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 md:justify-end">
+              <McpStatusBadge status={server.status} />
+              <div className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                {server.transport === 'stdio' ? 'stdio' : 'http'}
+              </div>
+            </div>
+          </button>
+        ))}
+        {filteredServers.length === 0 ? (
+          <div className="px-4 py-10 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            {t('codex_extensions.empty_mcp')}
           </div>
-        </section>
+        ) : null}
+      </AssetWorkbenchShell>
         {draft ? (
           <McpServerEditorModal
             draft={draft}
@@ -657,7 +652,6 @@ function CodexMcpServersWorkspace() {
             onSave={() => void saveConfigToml()}
           />
         ) : null}
-      </div>
-    </div>
+    </>
   );
 }

@@ -103,6 +103,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/components/ui/SegmentedControl.stories.tsx',
       },
       {
+        id: 'asset-workbench-shell',
+        title: '资产工作台框架',
+        storybookTitle: 'Design System/通用组件/资产工作台框架',
+        path: 'frontend/src/components/ui/AssetWorkbenchShell.stories.tsx',
+      },
+      {
         id: 'toggle-switch',
         title: '开关',
         storybookTitle: 'Design System/通用组件/开关',
@@ -276,6 +282,12 @@ export const designSystemStoryGroups = [
         title: 'Claude Code 账号列表组件',
         storybookTitle: 'Design System/业务组件/Claude Code 账号列表',
         path: 'frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.stories.tsx',
+      },
+      {
+        id: 'claude-code-asset-workbench',
+        title: 'Claude Code 资产工作台',
+        storybookTitle: 'Design System/业务组件/Claude Code 资产工作台',
+        path: 'frontend/src/features/claude-code/components/ClaudeCodeAssetWorkbench.stories.tsx',
       },
       {
         id: 'account-rotation-components',

@@ -1,9 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import { getCodexSessionDetail } from './api.ts';
+import { getSessionDetail } from './api.ts';
 import type { SessionDetailState } from './SessionManagementView.tsx';
 import { INITIAL_DETAIL_STATE, toErrorMessage } from './sessionManagementUtils.ts';
+import type { SessionManagementWorkspace } from '../../types';
 
-export function useSessionManagementDetail(loadFailedMessage: string) {
+export function useSessionManagementDetail(workspace: SessionManagementWorkspace, loadFailedMessage: string) {
   const [detailState, setDetailState] = useState<SessionDetailState>(INITIAL_DETAIL_STATE);
   const detailRequestRef = useRef(0);
 
@@ -29,7 +30,7 @@ export function useSessionManagementDetail(loadFailedMessage: string) {
       });
 
       try {
-        const detail = await getCodexSessionDetail(sessionID);
+        const detail = await getSessionDetail(workspace, sessionID);
         if (detailRequestRef.current !== requestID) {
           return;
         }
@@ -53,7 +54,7 @@ export function useSessionManagementDetail(loadFailedMessage: string) {
         }));
       }
     },
-    [loadFailedMessage],
+    [loadFailedMessage, workspace],
   );
 
   return {

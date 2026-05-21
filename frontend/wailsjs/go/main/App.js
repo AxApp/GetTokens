@@ -98,6 +98,18 @@ export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
 }
 
+export function GetClaudeCodeExtensionsSnapshot() {
+  return window['go']['main']['App']['GetClaudeCodeExtensionsSnapshot']();
+}
+
+export function GetClaudeCodeSessionDetail(arg1) {
+  return window['go']['main']['App']['GetClaudeCodeSessionDetail'](arg1);
+}
+
+export function GetClaudeCodeSessionManagementSnapshot() {
+  return window['go']['main']['App']['GetClaudeCodeSessionManagementSnapshot']();
+}
+
 export function GetCodexBinaryDoctor() {
   return window['go']['main']['App']['GetCodexBinaryDoctor']();
 }
@@ -278,6 +290,10 @@ export function RebuildCodexLocalUsageDay(arg1) {
   return window['go']['main']['App']['RebuildCodexLocalUsageDay'](arg1);
 }
 
+export function RefreshClaudeCodeSessionManagementSnapshot() {
+  return window['go']['main']['App']['RefreshClaudeCodeSessionManagementSnapshot']();
+}
+
 export function RefreshCodexBinaryAvailable() {
   return window['go']['main']['App']['RefreshCodexBinaryAvailable']();
 }
@@ -296,6 +312,10 @@ export function RemoveCodexSkill(arg1) {
 
 export function RevealCodexBinaryVersion(arg1) {
   return window['go']['main']['App']['RevealCodexBinaryVersion'](arg1);
+}
+
+export function SaveClaudeCodeMcpServer(arg1) {
+  return window['go']['main']['App']['SaveClaudeCodeMcpServer'](arg1);
 }
 
 export function SaveCodexConfigToml(arg1) {

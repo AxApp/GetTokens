@@ -28,7 +28,7 @@ test('session management snapshot cache roundtrips a valid snapshot', () => {
   const originalLocalStorage = globalThis.localStorage;
   globalThis.localStorage = createStorage();
 
-  persistSessionManagementSnapshot({
+  persistSessionManagementSnapshot('codex', {
     stats: {
       projectCount: 1,
       sessionCount: 2,
@@ -51,9 +51,10 @@ test('session management snapshot cache roundtrips a valid snapshot', () => {
     ],
   });
 
-  const snapshot = readStoredSessionManagementSnapshot();
+  const snapshot = readStoredSessionManagementSnapshot('codex');
   assert.equal(snapshot?.stats.projectCount, 1);
   assert.equal(snapshot?.projects[0].name, 'GetTokens');
+  assert.equal(readStoredSessionManagementSnapshot('claude'), null);
 
   globalThis.localStorage = originalLocalStorage;
 });
@@ -61,9 +62,9 @@ test('session management snapshot cache roundtrips a valid snapshot', () => {
 test('session management snapshot cache ignores invalid payloads', () => {
   const originalLocalStorage = globalThis.localStorage;
   globalThis.localStorage = createStorage();
-  globalThis.localStorage.setItem('gettokens.sessionManagement.snapshot', '{invalid json');
+  globalThis.localStorage.setItem('gettokens.sessionManagement.snapshot.codex', '{invalid json');
 
-  assert.equal(readStoredSessionManagementSnapshot(), null);
+  assert.equal(readStoredSessionManagementSnapshot('codex'), null);
 
   globalThis.localStorage = originalLocalStorage;
 });

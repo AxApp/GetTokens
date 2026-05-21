@@ -18,6 +18,7 @@ var (
 	sessionPathPattern       = regexp.MustCompile(`/(Users|home|private|tmp|var|Volumes|opt)/[^\s"'<>]+`)
 	sessionCallIDPattern     = regexp.MustCompile(`\b(call|turn|session)_[A-Za-z0-9_-]+\b`)
 	sessionHexIDPattern      = regexp.MustCompile(`\b[0-9a-f]{8,}-[0-9a-f-]{8,}\b`)
+	sessionSecretPattern     = regexp.MustCompile(`(?i)\b(?:sk-ant|sk-proj|sk|token|api[_-]?key)[A-Za-z0-9._=-]*\b`)
 	sessionCodeFencePattern  = regexp.MustCompile("(?s)```.*?```")
 )
 
@@ -144,6 +145,21 @@ type responseItemEnvelope struct {
 	} `json:"action"`
 }
 
+type claudeCodeSessionMessageEnvelope struct {
+	Role    string          `json:"role"`
+	Model   string          `json:"model"`
+	Content json.RawMessage `json:"content"`
+}
+
+type claudeCodeSessionLineEnvelope struct {
+	Type      string                           `json:"type"`
+	Timestamp string                           `json:"timestamp"`
+	Cwd       string                           `json:"cwd"`
+	SessionID string                           `json:"sessionId"`
+	IsMeta    bool                             `json:"isMeta"`
+	Message   claudeCodeSessionMessageEnvelope `json:"message"`
+}
+
 type eventMessageEnvelope struct {
 	Type                  string `json:"type"`
 	Message               string `json:"message"`
@@ -206,6 +222,34 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 		return nil, err
 	}
 	result, err := parseSessionFile(codexHome, absolutePath, filepath.ToSlash(relativePath), threadNames)
+	if err != nil {
+		return nil, err
+	}
+	return &result.detail, nil
+}
+
+func (a *App) GetClaudeCodeSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	return a.loadClaudeCodeSessionManagementSnapshot()
+}
+
+func (a *App) RefreshClaudeCodeSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	return a.loadClaudeCodeSessionManagementSnapshot()
+}
+
+func (a *App) GetClaudeCodeSessionDetail(sessionID string) (*SessionManagementSessionDetail, error) {
+	claudeConfigDir, err := resolveClaudeConfigDirPath()
+	if err != nil {
+		return nil, err
+	}
+	absolutePath, err := resolveClaudeCodeSessionAbsolutePath(claudeConfigDir, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	relativePath, err := filepath.Rel(claudeConfigDir, absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	result, err := parseClaudeCodeSessionFile(claudeConfigDir, absolutePath, filepath.ToSlash(relativePath))
 	if err != nil {
 		return nil, err
 	}
@@ -491,6 +535,151 @@ func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, 
 	snapshot.Projects = projectRecords
 	snapshot.ProviderCounts = cloneSessionProviderCounts(providerCounts)
 	return snapshot, nil
+}
+
+func (a *App) loadClaudeCodeSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	claudeConfigDir, err := resolveClaudeConfigDirPath()
+	if err != nil {
+		return nil, err
+	}
+	sessionPaths, err := listClaudeCodeSessionPaths(claudeConfigDir)
+	if err != nil {
+		return nil, err
+	}
+
+	projects := make(map[string]*projectAggregate)
+	providerCounts := map[string]int{}
+	snapshot := &SessionManagementSnapshot{
+		LastScanAt:     formatSessionManagementTimestamp(time.Now()),
+		ProviderCounts: map[string]int{},
+	}
+
+	for _, absolutePath := range sessionPaths {
+		relativePath, err := filepath.Rel(claudeConfigDir, absolutePath)
+		if err != nil {
+			return nil, err
+		}
+		relativePath = filepath.ToSlash(relativePath)
+		result, err := parseClaudeCodeSessionFile(claudeConfigDir, absolutePath, relativePath)
+		if err != nil {
+			return nil, err
+		}
+		projectID := result.session.ProjectID
+		if projectID == "" {
+			projectID = "unknown"
+			result.session.ProjectID = projectID
+			result.detail.ProjectID = projectID
+		}
+		project := projects[projectID]
+		if project == nil {
+			project = &projectAggregate{
+				ID:             projectID,
+				Name:           result.projectName,
+				ProviderCounts: map[string]int{},
+				Sessions:       make([]SessionManagementSessionRecord, 0, 8),
+			}
+			projects[projectID] = project
+		}
+		if project.Name == "" {
+			project.Name = result.projectName
+		}
+		if result.updatedAtRaw.After(project.LastActiveAt) {
+			project.LastActiveAt = result.updatedAtRaw
+		}
+		project.ProviderCounts[result.provider]++
+		project.Sessions = append(project.Sessions, result.session)
+		snapshot.SessionCount++
+		snapshot.ActiveSessionCount++
+		providerCounts[result.provider]++
+	}
+
+	projectRecords := make([]SessionManagementProjectRecord, 0, len(projects))
+	for _, project := range projects {
+		sort.Slice(project.Sessions, func(i, j int) bool {
+			return project.Sessions[i].UpdatedAt > project.Sessions[j].UpdatedAt
+		})
+		record := SessionManagementProjectRecord{
+			ID:                 project.ID,
+			Name:               project.Name,
+			ProviderCounts:     cloneSessionProviderCounts(project.ProviderCounts),
+			SessionCount:       len(project.Sessions),
+			ActiveSessionCount: len(project.Sessions),
+			LastActiveAt:       formatSessionManagementTimestamp(project.LastActiveAt),
+			ProviderSummary:    formatProviderSummary(project.ProviderCounts),
+			Sessions:           project.Sessions,
+		}
+		projectRecords = append(projectRecords, record)
+	}
+	sort.Slice(projectRecords, func(i, j int) bool {
+		return projectRecords[i].LastActiveAt > projectRecords[j].LastActiveAt
+	})
+	snapshot.ProjectCount = len(projectRecords)
+	snapshot.Projects = projectRecords
+	snapshot.ProviderCounts = cloneSessionProviderCounts(providerCounts)
+	return snapshot, nil
+}
+
+func listClaudeCodeSessionPaths(claudeConfigDir string) ([]string, error) {
+	root := filepath.Join(claudeConfigDir, "projects")
+	if _, err := os.Stat(root); err != nil {
+		if os.IsNotExist(err) {
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	paths := make([]string, 0, 128)
+	err := filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if filepath.Ext(d.Name()) != ".jsonl" || isClaudeCodeSubagentSessionPath(path) {
+			return nil
+		}
+		paths = append(paths, path)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(paths)
+	return paths, nil
+}
+
+func isClaudeCodeSubagentSessionPath(path string) bool {
+	slashPath := filepath.ToSlash(path)
+	return strings.Contains(slashPath, "/subagents/") || strings.HasPrefix(filepath.Base(path), "agent-")
+}
+
+func resolveClaudeCodeSessionAbsolutePath(claudeConfigDir string, sessionID string) (string, error) {
+	trimmed := strings.TrimSpace(sessionID)
+	if trimmed == "" {
+		return "", errors.New("缺少 Claude Code session id")
+	}
+	cleaned := filepath.Clean(trimmed)
+	if filepath.IsAbs(cleaned) {
+		return "", errors.New("Claude Code session id 必须是相对路径")
+	}
+	absolutePath := filepath.Join(claudeConfigDir, cleaned)
+	relativePath, err := filepath.Rel(claudeConfigDir, absolutePath)
+	if err != nil {
+		return "", err
+	}
+	if strings.HasPrefix(relativePath, "..") {
+		return "", errors.New("Claude Code session id 超出配置目录范围")
+	}
+	if isClaudeCodeSubagentSessionPath(absolutePath) {
+		return "", errors.New("Claude Code subagent sidecar session 不支持直接打开")
+	}
+	if _, err := os.Stat(absolutePath); err != nil {
+		if os.IsNotExist(err) {
+			return "", errors.New("Claude Code 会话文件不存在")
+		}
+		return "", err
+	}
+	return absolutePath, nil
 }
 
 func listCodexRolloutPaths(codexHome string) ([]string, error) {
@@ -834,6 +1023,306 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	}, nil
 }
 
+func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, relativePath string) (*sessionParseResult, error) {
+	file, err := os.Open(absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	projectName := fallbackClaudeCodeProjectName(relativePath)
+	projectCWD := ""
+	sessionID := strings.TrimSuffix(filepath.Base(relativePath), filepath.Ext(relativePath))
+	model := ""
+	messageRecords := make([]SessionManagementMessageRecord, 0, 32)
+	roleCounts := map[string]int{
+		"user":        0,
+		"assistant":   0,
+		"system":      0,
+		"reasoning":   0,
+		"tool_call":   0,
+		"tool_result": 0,
+		"event":       0,
+	}
+	firstUserText := ""
+	lastSummary := ""
+	lastPrimarySummary := ""
+	customTitle := ""
+	firstTimestamp := time.Time{}
+	lastTimestamp := time.Time{}
+
+	appendRecord := func(timestamp time.Time, role string, title string, raw string) {
+		title, summary, content, truncated := buildSessionMessageContent(role, title, raw)
+		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
+			return
+		}
+		record := SessionManagementMessageRecord{
+			ID:        fmt.Sprintf("%s:%d", filepath.Base(relativePath), len(messageRecords)+1),
+			Role:      role,
+			TimeLabel: formatSessionManagementTime(timestamp),
+			Timestamp: formatSessionManagementTimestamp(timestamp),
+			Title:     title,
+			Summary:   summary,
+			Content:   content,
+			Truncated: truncated,
+		}
+		messageRecords = append(messageRecords, record)
+		roleCounts[role]++
+		if role == "user" && firstUserText == "" {
+			firstUserText = content
+		}
+		if role != "event" && role != "system" && strings.TrimSpace(summary) != "" {
+			lastPrimarySummary = summary
+		}
+		if strings.TrimSpace(summary) != "" {
+			lastSummary = summary
+		}
+	}
+
+	reader := bufio.NewReaderSize(file, 1024*128)
+	for {
+		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			var envelope claudeCodeSessionLineEnvelope
+			if unmarshalErr := json.Unmarshal(line, &envelope); unmarshalErr == nil {
+				messageTimestamp := time.Time{}
+				if parsed, parseErr := time.Parse(time.RFC3339Nano, envelope.Timestamp); parseErr == nil {
+					messageTimestamp = parsed
+					if firstTimestamp.IsZero() || parsed.Before(firstTimestamp) {
+						firstTimestamp = parsed
+					}
+					if parsed.After(lastTimestamp) {
+						lastTimestamp = parsed
+					}
+				}
+				if strings.TrimSpace(envelope.SessionID) != "" {
+					sessionID = strings.TrimSpace(envelope.SessionID)
+				}
+				if strings.TrimSpace(envelope.Cwd) != "" {
+					projectCWD = strings.TrimSpace(envelope.Cwd)
+					projectName = pathBaseFromCWD(projectCWD)
+				}
+				switch envelope.Type {
+				case "attachment":
+					appendRecord(messageTimestamp, "system", "Claude 会话元数据", formatClaudeCodeSessionMetaSummary(projectCWD, sessionID))
+				case "custom-title":
+					customTitle = extractClaudeCodeCustomTitle(line)
+				case "system":
+					if !envelope.IsMeta {
+						appendRecord(messageTimestamp, "system", "Claude 系统事件", extractClaudeCodeSystemContent(line))
+					}
+				case "user", "assistant":
+					role, title, text, nextModel, ok := extractClaudeCodeMessageRecord(envelope)
+					if strings.TrimSpace(nextModel) != "" {
+						model = strings.TrimSpace(nextModel)
+					}
+					if ok {
+						appendRecord(messageTimestamp, role, title, text)
+					}
+				}
+			}
+		}
+		if err != nil {
+			break
+		}
+	}
+
+	if firstTimestamp.IsZero() {
+		if info, statErr := os.Stat(absolutePath); statErr == nil {
+			firstTimestamp = info.ModTime()
+			lastTimestamp = info.ModTime()
+		}
+	}
+	if lastTimestamp.IsZero() {
+		lastTimestamp = firstTimestamp
+	}
+	if projectName == "" {
+		projectName = fallbackClaudeCodeProjectName(relativePath)
+	}
+	fileLabel := formatClaudeCodeSessionFileLabel(relativePath)
+	title := strings.TrimSpace(customTitle)
+	if title == "" {
+		title = deriveSessionTitle(firstUserText, lastPrimarySummary, fileLabel)
+	}
+	resumeCommand := "claude --resume " + sessionID
+	preview := chooseNonEmpty(lastPrimarySummary, lastSummary, title, fileLabel)
+	preview = strings.TrimSpace(preview + " / " + resumeCommand)
+	projectID := slugifySessionProjectName(projectName)
+	roleSummary := formatSessionRoleSummary(roleCounts)
+	currentMessageLabel := formatCurrentMessageLabel(messageRecords)
+
+	sessionRecord := SessionManagementSessionRecord{
+		ID:                  relativePath,
+		SessionID:           relativePath,
+		ProjectID:           projectID,
+		ProjectName:         projectName,
+		Title:               title,
+		Status:              "active",
+		Archived:            false,
+		MessageCount:        len(messageRecords),
+		RoleSummary:         roleSummary,
+		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
+		FileLabel:           fileLabel,
+		Summary:             preview,
+		Preview:             preview,
+		Topic:               title,
+		CurrentMessageLabel: currentMessageLabel,
+		Provider:            "claude",
+		Model:               model,
+	}
+	detail := SessionManagementSessionDetail{
+		SessionID:           relativePath,
+		ProjectID:           projectID,
+		ProjectName:         projectName,
+		Title:               title,
+		Status:              "active",
+		Archived:            false,
+		FileLabel:           fileLabel,
+		MessageCount:        len(messageRecords),
+		Masked:              true,
+		CurrentMessageLabel: currentMessageLabel,
+		RoleSummary:         roleSummary,
+		Topic:               title,
+		Preview:             preview,
+		Provider:            "claude",
+		Model:               model,
+		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
+		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
+		Messages:            messageRecords,
+	}
+	return &sessionParseResult{
+		projectName:  projectName,
+		provider:     "claude",
+		session:      sessionRecord,
+		detail:       detail,
+		startedAtRaw: firstTimestamp,
+		updatedAtRaw: lastTimestamp,
+	}, nil
+}
+
+func extractClaudeCodeMessageRecord(envelope claudeCodeSessionLineEnvelope) (string, string, string, string, bool) {
+	role := normalizeSessionRole(envelope.Message.Role)
+	if role == "system" {
+		role = normalizeSessionRole(envelope.Type)
+	}
+	text, contentRole := extractClaudeCodeContent(envelope.Message.Content)
+	if contentRole != "" {
+		role = contentRole
+	}
+	title := fallbackSessionMessageTitle(role)
+	return role, title, text, envelope.Message.Model, strings.TrimSpace(text) != ""
+}
+
+func extractClaudeCodeContent(raw json.RawMessage) (string, string) {
+	if len(raw) == 0 || string(raw) == "null" {
+		return "", ""
+	}
+	var text string
+	if err := json.Unmarshal(raw, &text); err == nil {
+		return text, ""
+	}
+	var items []map[string]any
+	if err := json.Unmarshal(raw, &items); err != nil {
+		return string(raw), ""
+	}
+	parts := make([]string, 0, len(items))
+	role := ""
+	for _, item := range items {
+		itemType := strings.TrimSpace(fmt.Sprint(item["type"]))
+		switch itemType {
+		case "text":
+			parts = append(parts, strings.TrimSpace(fmt.Sprint(item["text"])))
+		case "thinking":
+			role = chooseNonEmpty(role, "reasoning")
+			parts = append(parts, strings.TrimSpace(fmt.Sprint(item["thinking"])))
+		case "tool_use":
+			role = "tool_call"
+			parts = append(parts, formatClaudeCodeToolUse(item))
+		case "tool_result":
+			role = "tool_result"
+			parts = append(parts, formatClaudeCodeToolResult(item))
+		default:
+			if value := strings.TrimSpace(fmt.Sprint(item["content"])); value != "" {
+				parts = append(parts, value)
+			}
+		}
+	}
+	return strings.Join(filterNonEmptyStrings(parts), "\n"), role
+}
+
+func formatClaudeCodeToolUse(item map[string]any) string {
+	name := strings.TrimSpace(fmt.Sprint(item["name"]))
+	if name == "" {
+		name = "tool"
+	}
+	input := marshalSessionJSON(item["input"])
+	return strings.TrimSpace(name + " " + input)
+}
+
+func formatClaudeCodeToolResult(item map[string]any) string {
+	return strings.TrimSpace(fmt.Sprint(item["content"]))
+}
+
+func extractClaudeCodeSystemContent(line []byte) string {
+	var payload map[string]any
+	if err := json.Unmarshal(line, &payload); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(fmt.Sprint(payload["content"]))
+}
+
+func extractClaudeCodeCustomTitle(line []byte) string {
+	var payload map[string]any
+	if err := json.Unmarshal(line, &payload); err != nil {
+		return ""
+	}
+	return sanitizeSessionText(fmt.Sprint(payload["customTitle"]))
+}
+
+func formatClaudeCodeSessionMetaSummary(cwd string, sessionID string) string {
+	parts := make([]string, 0, 2)
+	if cwd != "" {
+		parts = append(parts, "目录 "+cwd)
+	}
+	if sessionID != "" {
+		parts = append(parts, "Session "+sessionID)
+	}
+	return strings.Join(parts, " / ")
+}
+
+func fallbackClaudeCodeProjectName(relativePath string) string {
+	parts := strings.Split(filepath.ToSlash(relativePath), "/")
+	if len(parts) >= 2 && parts[0] == "projects" {
+		encoded := strings.Trim(parts[1], "-")
+		if encoded != "" {
+			segments := strings.Split(encoded, "-")
+			if len(segments) > 0 {
+				return segments[len(segments)-1]
+			}
+		}
+	}
+	return "未知项目"
+}
+
+func formatClaudeCodeSessionFileLabel(relativePath string) string {
+	parts := strings.Split(filepath.ToSlash(relativePath), "/")
+	if len(parts) >= 3 && parts[0] == "projects" {
+		return parts[1] + "/" + parts[len(parts)-1]
+	}
+	return filepath.Base(relativePath)
+}
+
+func filterNonEmptyStrings(values []string) []string {
+	filtered := values[:0]
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			filtered = append(filtered, value)
+		}
+	}
+	return filtered
+}
+
 func extractMessageText(item responseItemEnvelope) string {
 	parts := make([]string, 0, len(item.Content))
 	for _, part := range item.Content {
@@ -960,6 +1449,7 @@ func sanitizeSessionText(raw string) string {
 	text = sessionPathPattern.ReplaceAllString(text, "<redacted-path>")
 	text = sessionCallIDPattern.ReplaceAllString(text, "[调用ID]")
 	text = sessionHexIDPattern.ReplaceAllString(text, "[会话ID]")
+	text = sessionSecretPattern.ReplaceAllString(text, "[密钥]")
 	text = sessionWhitespacePattern.ReplaceAllString(text, " ")
 	return strings.TrimSpace(text)
 }

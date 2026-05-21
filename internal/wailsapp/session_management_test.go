@@ -201,6 +201,116 @@ func TestGetCodexSessionDetailMasksSensitiveTextAndKeepsMessageRows(t *testing.T
 	}
 }
 
+func TestGetClaudeCodeSessionManagementSnapshotScansMainSessionsAndSkipsSubagents(t *testing.T) {
+	home := t.TempDir()
+	claudeDir := filepath.Join(home, ".claude")
+	projectDir := filepath.Join(claudeDir, "projects", "-Users-linhey-Desktop-GetTokens")
+	subagentDir := filepath.Join(projectDir, "main-session", "subagents")
+	t.Setenv("HOME", home)
+	t.Setenv("CLAUDE_CONFIG_DIR", claudeDir)
+	if err := os.MkdirAll(subagentDir, 0755); err != nil {
+		t.Fatalf("mkdir claude project dirs: %v", err)
+	}
+
+	sessionPath := filepath.Join(projectDir, "main-session.jsonl")
+	if err := os.WriteFile(sessionPath, []byte(claudeSessionFixture(
+		"main-session",
+		"/Users/linhey/Desktop/GetTokens",
+		"2026-05-21T10:00:00.000Z",
+		"请分析 /Users/linhey/Desktop/GetTokens 的 Claude Code 会话管理，token=secret-token",
+		"我会只做只读扫描。",
+	)), 0600); err != nil {
+		t.Fatalf("write claude session fixture: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(subagentDir, "agent-1.jsonl"), []byte(claudeSessionFixture(
+		"agent-session",
+		"/Users/linhey/Desktop/GetTokens",
+		"2026-05-21T10:02:00.000Z",
+		"这个 subagent 不应该出现在主会话列表",
+		"ignored",
+	)), 0600); err != nil {
+		t.Fatalf("write subagent fixture: %v", err)
+	}
+
+	app := &App{}
+	snapshot, err := app.GetClaudeCodeSessionManagementSnapshot()
+	if err != nil {
+		t.Fatalf("GetClaudeCodeSessionManagementSnapshot returned error: %v", err)
+	}
+	if snapshot.ProjectCount != 1 || snapshot.SessionCount != 1 {
+		t.Fatalf("snapshot counts = %d/%d, want 1/1: %#v", snapshot.ProjectCount, snapshot.SessionCount, snapshot)
+	}
+	if snapshot.ProviderCounts["claude"] != 1 {
+		t.Fatalf("providerCounts[claude] = %d, want 1", snapshot.ProviderCounts["claude"])
+	}
+	project := snapshot.Projects[0]
+	if project.Name != "GetTokens" {
+		t.Fatalf("project name = %q, want GetTokens", project.Name)
+	}
+	session := project.Sessions[0]
+	if session.Provider != "claude" || session.Model != "claude-sonnet-4-5" {
+		t.Fatalf("session provider/model mismatch: %#v", session)
+	}
+	if !strings.Contains(session.Summary, "claude --resume main-session") {
+		t.Fatalf("summary missing resume command: %q", session.Summary)
+	}
+	if strings.Contains(session.Summary, "/Users/linhey") || strings.Contains(session.Summary, "secret-token") {
+		t.Fatalf("summary leaked sensitive content: %q", session.Summary)
+	}
+}
+
+func TestGetClaudeCodeSessionDetailMasksMessagesAndToolPayloads(t *testing.T) {
+	home := t.TempDir()
+	claudeDir := filepath.Join(home, ".claude")
+	projectDir := filepath.Join(claudeDir, "projects", "-Users-linhey-Desktop-GetTokens")
+	t.Setenv("HOME", home)
+	t.Setenv("CLAUDE_CONFIG_DIR", claudeDir)
+	if err := os.MkdirAll(projectDir, 0755); err != nil {
+		t.Fatalf("mkdir claude project dir: %v", err)
+	}
+
+	sessionPath := filepath.Join(projectDir, "detail-session.jsonl")
+	if err := os.WriteFile(sessionPath, []byte(claudeSessionFixture(
+		"detail-session",
+		"/Users/linhey/Desktop/GetTokens",
+		"2026-05-21T11:00:00.000Z",
+		"请读取 /Users/linhey/Desktop/GetTokens/AGENTS.md 并使用 sk-ant-secret",
+		"已经完成只读摘要。",
+	)), 0600); err != nil {
+		t.Fatalf("write claude detail fixture: %v", err)
+	}
+
+	relativeID := filepath.ToSlash(filepath.Join("projects", "-Users-linhey-Desktop-GetTokens", "detail-session.jsonl"))
+	app := &App{}
+	detail, err := app.GetClaudeCodeSessionDetail(relativeID)
+	if err != nil {
+		t.Fatalf("GetClaudeCodeSessionDetail returned error: %v", err)
+	}
+	if detail.Provider != "claude" || !detail.Masked {
+		t.Fatalf("detail provider/masked mismatch: %#v", detail)
+	}
+	if detail.MessageCount != 5 {
+		t.Fatalf("message count = %d, want 5: %#v", detail.MessageCount, detail.Messages)
+	}
+	if !strings.Contains(detail.Preview, "claude --resume detail-session") {
+		t.Fatalf("detail preview missing resume command: %q", detail.Preview)
+	}
+	for _, message := range detail.Messages {
+		if strings.Contains(message.Content, "/Users/linhey") || strings.Contains(message.Summary, "/Users/linhey") {
+			t.Fatalf("message leaked path: %#v", message)
+		}
+		if strings.Contains(message.Content, "sk-ant-secret") || strings.Contains(message.Summary, "sk-ant-secret") {
+			t.Fatalf("message leaked token: %#v", message)
+		}
+	}
+	if detail.Messages[2].Role != "tool_call" {
+		t.Fatalf("third message role = %q, want tool_call: %#v", detail.Messages[2].Role, detail.Messages)
+	}
+	if detail.Messages[3].Role != "tool_result" {
+		t.Fatalf("fourth message role = %q, want tool_result: %#v", detail.Messages[3].Role, detail.Messages)
+	}
+}
+
 func TestGetCodexSessionManagementSnapshotUsesAppMemoryCacheUntilExplicitRefresh(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -440,4 +550,13 @@ func sessionFixture(timestamp string, projectName string, modelProvider string, 
 		"{\"timestamp\":\"" + timestamp + "\",\"type\":\"session_meta\",\"payload\":{\"id\":\"" + projectName + "-id\",\"cwd\":\"/Users/linhey/Desktop/" + projectName + "\",\"model_provider\":\"" + modelProvider + "\",\"git\":{\"repository_url\":\"git@github.com:linhay/" + projectName + ".git\"}}}\n" +
 		"{\"timestamp\":\"" + timestamp + "\",\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"user\",\"content\":[{\"type\":\"input_text\",\"text\":\"" + userText + "\"}]}}\n" +
 		"{\"timestamp\":\"" + timestamp + "\",\"type\":\"response_item\",\"payload\":{\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"output_text\",\"text\":\"" + assistantText + "\"}]}}\n"
+}
+
+func claudeSessionFixture(sessionID string, cwd string, timestamp string, userText string, assistantText string) string {
+	return "" +
+		"{\"type\":\"attachment\",\"timestamp\":\"" + timestamp + "\",\"cwd\":\"" + cwd + "\",\"sessionId\":\"" + sessionID + "\"}\n" +
+		"{\"type\":\"user\",\"timestamp\":\"" + timestamp + "\",\"cwd\":\"" + cwd + "\",\"sessionId\":\"" + sessionID + "\",\"message\":{\"role\":\"user\",\"content\":\"" + userText + "\"}}\n" +
+		"{\"type\":\"assistant\",\"timestamp\":\"2026-05-21T11:00:01.000Z\",\"cwd\":\"" + cwd + "\",\"sessionId\":\"" + sessionID + "\",\"message\":{\"role\":\"assistant\",\"model\":\"claude-sonnet-4-5\",\"content\":[{\"type\":\"tool_use\",\"name\":\"Read\",\"input\":{\"file_path\":\"/Users/linhey/Desktop/GetTokens/AGENTS.md\",\"api_key\":\"sk-ant-secret\"}}]}}\n" +
+		"{\"type\":\"user\",\"timestamp\":\"2026-05-21T11:00:02.000Z\",\"cwd\":\"" + cwd + "\",\"sessionId\":\"" + sessionID + "\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"content\":\"Read /Users/linhey/Desktop/GetTokens/AGENTS.md with token sk-ant-secret\"}]}}\n" +
+		"{\"type\":\"assistant\",\"timestamp\":\"2026-05-21T11:00:03.000Z\",\"cwd\":\"" + cwd + "\",\"sessionId\":\"" + sessionID + "\",\"message\":{\"role\":\"assistant\",\"model\":\"claude-sonnet-4-5\",\"content\":[{\"type\":\"text\",\"text\":\"" + assistantText + "\"}]}}\n"
 }

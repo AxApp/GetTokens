@@ -120,7 +120,7 @@ export function useSessionManagementProviderMerge({
     setProviderEditorError(null);
     try {
       const nextSnapshot = await updateCodexSessionProviders(editingProject.id, mappings, snapshot);
-      persistSessionManagementSnapshot(nextSnapshot);
+      persistSessionManagementSnapshot('codex', nextSnapshot);
       onSnapshotUpdated(nextSnapshot);
       closeProviderEditor();
     } catch (error) {

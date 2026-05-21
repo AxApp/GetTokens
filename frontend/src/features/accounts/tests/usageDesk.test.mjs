@@ -226,6 +226,72 @@ test('collectUsageDeskObservedDetails supports sidecar attribution buckets', () 
   assert.equal(details[0].totalTokens, 600);
 });
 
+test('Claude usage desk keeps only Anthropic-compatible observed attribution', () => {
+  const snapshot = buildUsageDeskObservedSnapshot(
+    {
+      items: [
+        {
+          accountKey: 'openai-compatible:deepseek',
+          attributionKey: 'provider:deepseek',
+          provider: 'deepseek',
+          requestedModels: ['deepseek-chat'],
+          buckets: [
+            {
+              start: '2026-04-28T06:00:00.000Z',
+              requestCount: 9,
+              failedCount: 0,
+              totalTokens: 900,
+            },
+          ],
+        },
+        {
+          accountKey: 'openai-compatible:anthropic-relay',
+          attributionKey: 'provider:anthropic',
+          provider: 'anthropic',
+          requestedModels: ['claude-sonnet-4-6'],
+          buckets: [
+            {
+              start: '2026-04-28T06:20:00.000Z',
+              requestCount: 4,
+              failedCount: 1,
+              inputTokens: 400,
+              cachedInputTokens: 80,
+              outputTokens: 120,
+              totalTokens: 600,
+            },
+          ],
+        },
+      ],
+      unresolved: [
+        {
+          accountKey: '',
+          attributionKey: 'unknown-openai',
+          provider: 'openai',
+          requestedModels: ['gpt-5'],
+          buckets: [
+            {
+              start: '2026-04-28T06:30:00.000Z',
+              requestCount: 3,
+              failedCount: 0,
+              totalTokens: 300,
+            },
+          ],
+        },
+      ],
+    },
+    null,
+    '1M',
+    'claude',
+  );
+
+  assert.equal(snapshot.hasData, true);
+  assert.equal(snapshot.dailyPoints[0].requests, 4);
+  assert.equal(snapshot.dailyPoints[0].failure, 1);
+  assert.equal(snapshot.dailyPoints[0].totalTokens, 600);
+  assert.equal(snapshot.minuteRows[0].provider, 'anthropic');
+  assert.equal(snapshot.minuteRows[0].model, 'claude-sonnet-4-6');
+});
+
 test('buildUsageDeskObservedSnapshot aggregates sidecar attribution buckets by request count and tokens', () => {
   const snapshot = buildUsageDeskObservedSnapshot(
     {

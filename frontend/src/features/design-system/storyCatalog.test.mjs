@@ -23,6 +23,7 @@ const admittedComponentGroupIds = ['components', 'feature-components'];
 const featureComponentsRoot = new URL('../', import.meta.url);
 const runtimeDesignSystemComponentPaths = [
   'frontend/src/components/ui/ActionSelect.tsx',
+  'frontend/src/components/ui/AssetWorkbenchShell.tsx',
   'frontend/src/components/ui/Combobox.tsx',
   'frontend/src/components/ui/FormField.tsx',
   'frontend/src/components/ui/ModalFrame.tsx',
@@ -116,6 +117,23 @@ test('modal frame is admitted as a shared design-system component', () => {
   assert.equal(modalStory.title, '弹窗窗口');
   assert.equal(modalStory.storybookTitle, 'Design System/通用组件/弹窗窗口');
   assert.equal(modalStory.path, 'frontend/src/components/ui/ModalFrame.stories.tsx');
+});
+
+test('asset workbench shell is shared by Codex and Claude extension surfaces', async () => {
+  const componentsGroup = getCatalogGroup('components');
+  assert.ok(componentsGroup);
+
+  const shellStory = componentsGroup.stories.find((story) => story.id === 'asset-workbench-shell');
+  assert.ok(shellStory);
+  assert.equal(shellStory.title, '资产工作台框架');
+  assert.equal(shellStory.storybookTitle, 'Design System/通用组件/资产工作台框架');
+  assert.equal(shellStory.path, 'frontend/src/components/ui/AssetWorkbenchShell.stories.tsx');
+
+  const codexSource = await readFile(new URL('../../features/codex-extensions/CodexExtensionsFeature.tsx', import.meta.url), 'utf8');
+  const claudeSource = await readFile(new URL('../../features/claude-code/components/ClaudeCodeAssetWorkbench.tsx', import.meta.url), 'utf8');
+
+  assert.match(codexSource, /AssetWorkbenchShell/, 'Codex Extensions must use the shared asset workbench shell');
+  assert.match(claudeSource, /AssetWorkbenchShell/, 'Claude Code assets must use the shared asset workbench shell');
 });
 
 test('storybook locale globals default to Chinese and accept English', () => {

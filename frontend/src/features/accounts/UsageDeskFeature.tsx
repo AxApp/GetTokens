@@ -9,7 +9,7 @@ import {
 import { usageDeskProjectedSurfaceViewOptions } from './model/usageDesk';
 import { UsageChartCard } from './components/usage-desk/UsageDeskChart';
 import { UsageDetailTable } from './components/usage-desk/UsageDetailTable';
-import { InfoCard, StatePanel, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
+import { StatePanel, UsageProjectDrilldownPanel, UsageSessionDrilldownPanel } from './components/usage-desk/UsageDeskPanels';
 
 export default function UsageDeskFeature({
   sidecarStatus,
@@ -64,10 +64,11 @@ export default function UsageDeskFeature({
     handleRangeSelect,
   } = useUsageDeskFeature(sidecarStatus, workspace);
 
-  const pageTitle = workspace === 'gemini' ? 'Gemini Usage Desk' : 'Codex Usage Desk';
+  const supportsProjectedUsage = workspace === 'codex';
+  const pageTitle = workspace === 'claude' ? 'Claude Usage Desk' : 'Codex Usage Desk';
   const pageDescription =
-    workspace === 'gemini'
-      ? 'Gemini 子页保留独立页面边界，后续接入自己的 usage 真源、图表和明细表。'
+    workspace === 'claude'
+        ? '当前只展示 relay attribution 中可识别为 Claude / Anthropic 的真实请求量，不读取或估算 Claude 原生 session token。'
       : '当前已经接入 ObservedRequestUsage 与 LocalProjectedUsage 两条真实数据链路，并在同一页内承接按日与分钟级切换。';
 
   const projectedLoadingBody = useMemo<ReactNode>(() => {
@@ -116,57 +117,30 @@ export default function UsageDeskFeature({
               >
                 真实请求量
               </button>
-              <button
-                onClick={() => setSource('projected')}
-                className={`btn-swiss ${source === 'projected' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
-              >
-                本地投影用量
-              </button>
+              {supportsProjectedUsage ? (
+                <button
+                  onClick={() => setSource('projected')}
+                  className={`btn-swiss ${source === 'projected' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
+                >
+                  本地投影用量
+                </button>
+              ) : null}
             </>
           }
         />
 
         <div className="space-y-6">
-          {workspace === 'gemini' ? (
-              <section className="card-swiss !p-5">
-                <div className="flex flex-col gap-4 border-b-2 border-dashed border-[var(--border-color)] pb-4 xl:flex-row xl:items-end xl:justify-between">
-                  <div>
-                    <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">模块 01</div>
-                    <h3 className="mt-2 text-2xl font-black uppercase italic tracking-tight text-[var(--text-primary)]">gemini 用量分析</h3>
-                  </div>
-                  <p className="max-w-2xl text-[length:var(--font-size-ui-md-compact)] leading-6 text-[var(--text-muted)]">
-                    `gemini` 保留为独立页面，不和 `codex` 混在同一块里。当前这页先只承接页面边界，后续再接入 gemini 自己的 usage 真源。
-                  </p>
-                </div>
-
-                <div className="mt-5 grid gap-4 xl:grid-cols-3">
-                  <InfoCard
-                    title="当前子页"
-                    highlight="gemini"
-                    body="这个子页和 codex 是并列关系，后续会有独立的数据链路、图表和明细表，不再走混合池视图。"
-                  />
-                  <InfoCard
-                    title="页面状态"
-                    highlight="独立页面"
-                    body="当前先完成信息架构收口：左侧只保留 codex / gemini 两个子选项，主区按子选项切成独立页面。"
-                  />
-                  <InfoCard
-                    title="接入计划"
-                    highlight="待接入"
-                    body="后续需要为 Gemini 建立自己的 ObservedRequestUsage / LocalProjectedUsage 定义，再把图表模块接进来。"
-                  />
-                </div>
-              </section>
-          ) : null}
-
-          {workspace === 'codex' ? (
+          {workspace === 'codex' || workspace === 'claude' ? (
             <section className="space-y-5">
-              {source === 'observed' ? (
+              {source === 'observed' || workspace === 'claude' ? (
                 <section className="space-y-5">
                     <div className="space-y-5">
                       <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">
                       {loading ? (
-                        <StatePanel title="加载中" body="正在拉取 sidecar 账号归因真实请求样本。" />
+                        <StatePanel
+                          title="加载中"
+                          body={workspace === 'claude' ? '正在拉取 Claude / Anthropic relay 账号归因真实请求样本。' : '正在拉取 sidecar 账号归因真实请求样本。'}
+                        />
                       ) : loadError ? (
                         <StatePanel title="加载失败" body={loadError} tone="error" />
                       ) : (
@@ -182,7 +156,7 @@ export default function UsageDeskFeature({
                             status={
                                 <div className="flex items-center gap-3 text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-wider text-[var(--text-primary)]">
                                   <div className="h-3 w-3 bg-[var(--text-primary)]" />
-                                <span>数据源: Sidecar Attribution</span>
+                                <span>{workspace === 'claude' ? '数据源: Claude Attribution' : '数据源: Sidecar Attribution'}</span>
                                 <span className="opacity-40">/</span>
                                 <span>{observedDrilldownDayKey || '全部'}</span>
                                 {selectedChartPointKey && (

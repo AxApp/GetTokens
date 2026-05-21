@@ -125,7 +125,10 @@ export function useAppNavigation() {
       activeSessionManagementWorkspace,
       activeUsageDeskWorkspace,
       detailID,
-      { density: activePage === 'accounts' ? readCurrentHashParam('density') : null },
+      {
+        claudeWorkspace: activeClaudeWorkspace,
+        density: activePage === 'accounts' ? readCurrentHashParam('density') : null,
+      },
     );
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
@@ -197,7 +200,10 @@ function buildCanonicalFrameHashFromState(hashState: NonNullable<ReturnType<type
     hashState.sessionManagementWorkspace ?? 'codex',
     hashState.usageDeskWorkspace ?? 'codex',
     hashState.accountDetailID ?? null,
-    { density: hashState.page === 'accounts' ? readCurrentHashParam('density') : null },
+    {
+      claudeWorkspace: hashState.claudeWorkspace ?? 'account-list',
+      density: hashState.page === 'accounts' ? readCurrentHashParam('density') : null,
+    },
   );
 }
 

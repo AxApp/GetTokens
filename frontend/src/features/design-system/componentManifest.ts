@@ -55,6 +55,8 @@ const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk
 const usageDeskStorybookTitle = 'Design System/业务组件/用量工作台';
 const claudeCodeAccountListStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.stories.tsx';
 const claudeCodeAccountListStorybookTitle = 'Design System/业务组件/Claude Code 账号列表';
+const claudeCodeAssetWorkbenchStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeAssetWorkbench.stories.tsx';
+const claudeCodeAssetWorkbenchStorybookTitle = 'Design System/业务组件/Claude Code 资产工作台';
 const codexRouteProbeStoryPath = 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx';
 const codexRouteProbeStorybookTitle = 'Design System/业务组件/Codex 路由探测';
 const codexAccountOrderStoryPath = 'frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx';
@@ -611,6 +613,21 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['ready', 'source-conflict', 'disabled-blocked', 'profile-draft'],
     mockDataSources: ['storybook claude code account rows/profile/mapping/probe mock'],
+  },
+  {
+    id: 'claude-code-asset-workbench',
+    componentName: 'ClaudeCodeAssetWorkbench',
+    sourcePath: 'frontend/src/features/claude-code/components/ClaudeCodeAssetWorkbench.tsx',
+    ownerFeature: 'claude-code',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Claude Code 资产工作台纯展示层已进入设计系统，覆盖 Skills、legacy commands、MCP scope precedence、secret redaction、parse error、empty 和 preservative patch preview；后端 adapter 接入前必须先通过该状态矩阵。',
+    matchedPatterns: ['CodexExtensionsFeature', 'WorkspacePageHeader', 'SegmentedControl', 'SnippetPre', 'ModalFrame'],
+    storyPath: claudeCodeAssetWorkbenchStoryPath,
+    storybookTitle: claudeCodeAssetWorkbenchStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['skills-ready', 'skills-legacy-command', 'mcp-ready', 'mcp-shadowed-scope', 'empty', 'parse-error', 'saving-diff'],
+    mockDataSources: ['storybook claude code skills/mcp/scope/diff/candidate mock'],
   },
   {
     id: 'codex-account-detail-modal',

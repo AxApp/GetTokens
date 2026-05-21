@@ -17,4 +17,9 @@ node_modules/
 
 .DS_Store
 /CLAUDE.md
+
+# Local reference project clones. Keep root markdown index files in git, but do not
+# add vendored source trees under docs-linhay/references by default.
+docs-linhay/references/*/
+!docs-linhay/references/*.md
 docs-linhay/references/codex/

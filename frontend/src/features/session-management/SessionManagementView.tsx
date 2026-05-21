@@ -241,7 +241,7 @@ export function ProjectListPanel({
   onRetry: () => void;
   onRefresh: () => void;
   onSelectProject: (projectID: string, openCompact: boolean) => void;
-  onOpenProviderEditor: (projectID: string) => void;
+  onOpenProviderEditor?: (projectID: string) => void;
 }) {
   return (
     <section className="flex min-h-0 flex-1 flex-col">
@@ -308,7 +308,8 @@ export function ProjectListPanel({
                   </div>
                 </button>
 
-                <div className="flex shrink-0 items-center px-3">
+                {onOpenProviderEditor ? (
+                  <div className="flex shrink-0 items-center px-3">
                   <button
                     type="button"
                     onClick={() => onOpenProviderEditor(project.id)}
@@ -321,7 +322,8 @@ export function ProjectListPanel({
                   >
                     <Pencil className="h-3 w-3" strokeWidth={2.5} />
                   </button>
-                </div>
+                  </div>
+                ) : null}
               </div>
             );
           })}

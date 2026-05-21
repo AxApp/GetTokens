@@ -373,10 +373,26 @@ export function getAccountsPreviewRateLimitByID(accounts: Array<Pick<AccountReco
   }, {});
 }
 
-export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'gemini' = 'codex') {
-  if (workspace === 'gemini') {
+export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' = 'codex') {
+  if (workspace === 'claude') {
     return {
-      items: [],
+      items: [
+        previewObservedUsageItem({
+          accountKey: 'openai-compatible:anthropic-relay',
+          attributionKey: 'provider:anthropic',
+          provider: 'anthropic',
+          requestedModels: ['claude-sonnet-4-6', 'claude-opus-4-7'],
+          buckets: [
+            previewObservedBucket({ daysAgo: 6, hour: 10, requestCount: 11, failedCount: 0, totalTokens: 126000 }),
+            previewObservedBucket({ daysAgo: 5, hour: 15, requestCount: 8, failedCount: 1, totalTokens: 94000 }),
+            previewObservedBucket({ daysAgo: 4, hour: 11, requestCount: 13, failedCount: 0, totalTokens: 138000 }),
+            previewObservedBucket({ daysAgo: 3, hour: 16, requestCount: 9, failedCount: 0, totalTokens: 87000 }),
+            previewObservedBucket({ daysAgo: 2, hour: 13, requestCount: 7, failedCount: 0, totalTokens: 76000 }),
+            previewObservedBucket({ daysAgo: 1, hour: 18, requestCount: 6, failedCount: 1, totalTokens: 69000 }),
+            previewObservedBucket({ daysAgo: 0, hour: 9, requestCount: 5, failedCount: 0, totalTokens: 58000 }),
+          ],
+        }),
+      ],
       unresolved: [],
     };
   }
@@ -441,8 +457,8 @@ export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'gemini' =
   };
 }
 
-export function getUsageDeskPreviewProjectedUsage(workspace: 'codex' | 'gemini' = 'codex') {
-  if (workspace === 'gemini') {
+export function getUsageDeskPreviewProjectedUsage(workspace: 'codex' | 'claude' = 'codex') {
+  if (workspace === 'claude') {
     return {
       details: [],
       scannedFiles: 0,

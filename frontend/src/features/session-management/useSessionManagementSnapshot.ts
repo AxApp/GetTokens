@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
-  getCodexSessionManagementSnapshot,
-  refreshCodexSessionManagementSnapshot,
+  getSessionManagementSnapshot,
+  refreshSessionManagementSnapshot,
 } from './api.ts';
 import {
   persistSessionManagementSnapshot,
@@ -9,9 +9,10 @@ import {
 } from './cache.ts';
 import type { SessionManagementSnapshot } from './model.ts';
 import { EMPTY_SNAPSHOT, toErrorMessage } from './sessionManagementUtils.ts';
+import type { SessionManagementWorkspace } from '../../types';
 
-export function useSessionManagementSnapshot(loadFailedMessage: string) {
-  const cachedSnapshotRef = useRef<SessionManagementSnapshot | null>(readStoredSessionManagementSnapshot());
+export function useSessionManagementSnapshot(workspace: SessionManagementWorkspace, loadFailedMessage: string) {
+  const cachedSnapshotRef = useRef<SessionManagementSnapshot | null>(readStoredSessionManagementSnapshot(workspace));
   const [snapshot, setSnapshot] = useState<SessionManagementSnapshot>(cachedSnapshotRef.current ?? EMPTY_SNAPSHOT);
   const [snapshotLoading, setSnapshotLoading] = useState(cachedSnapshotRef.current === null);
   const [snapshotRefreshing, setSnapshotRefreshing] = useState(false);
@@ -33,13 +34,13 @@ export function useSessionManagementSnapshot(loadFailedMessage: string) {
       try {
         const nextSnapshot =
           mode === 'refresh'
-            ? await refreshCodexSessionManagementSnapshot()
-            : await getCodexSessionManagementSnapshot();
+            ? await refreshSessionManagementSnapshot(workspace)
+            : await getSessionManagementSnapshot(workspace);
         if (snapshotRequestRef.current !== requestID) {
           return;
         }
         setSnapshot(nextSnapshot);
-        persistSessionManagementSnapshot(nextSnapshot);
+        persistSessionManagementSnapshot(workspace, nextSnapshot);
       } catch (error) {
         if (snapshotRequestRef.current !== requestID) {
           return;
@@ -53,13 +54,13 @@ export function useSessionManagementSnapshot(loadFailedMessage: string) {
         setSnapshotRefreshing(false);
       }
     },
-    [loadFailedMessage],
+    [loadFailedMessage, workspace],
   );
 
   const updateSnapshot = useCallback((nextSnapshot: SessionManagementSnapshot) => {
     setSnapshot(nextSnapshot);
-    persistSessionManagementSnapshot(nextSnapshot);
-  }, []);
+    persistSessionManagementSnapshot(workspace, nextSnapshot);
+  }, [workspace]);
 
   return {
     snapshot,

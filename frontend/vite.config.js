@@ -49,10 +49,16 @@ function sessionManagementDevBridgePlugin() {
 
       server.middlewares.use('/__dev/session-management/snapshot', async (req, res) => {
         try {
-          const { loadSessionManagementSnapshot } = await import('./dev/sessionManagementDevData.js')
           const url = new URL(req.url || '', 'http://127.0.0.1')
+          const workspace = url.searchParams.get('workspace') === 'claude' ? 'claude' : 'codex'
           const forceRefresh = url.searchParams.get('refresh') === '1'
-          const payload = await loadSessionManagementSnapshot({ forceRefresh })
+          const {
+            loadClaudeSessionManagementSnapshot,
+            loadSessionManagementSnapshot,
+          } = await import('./dev/sessionManagementDevData.js')
+          const payload = workspace === 'claude'
+            ? await loadClaudeSessionManagementSnapshot({ forceRefresh })
+            : await loadSessionManagementSnapshot({ forceRefresh })
           writeJSON(res, 200, payload)
         } catch (error) {
           writeJSON(res, 500, { error: error instanceof Error ? error.message : 'snapshot load failed' })
@@ -61,10 +67,16 @@ function sessionManagementDevBridgePlugin() {
 
       server.middlewares.use('/__dev/session-management/detail', async (req, res) => {
         try {
-          const { loadSessionManagementDetail } = await import('./dev/sessionManagementDevData.js')
           const url = new URL(req.url || '', 'http://127.0.0.1')
+          const workspace = url.searchParams.get('workspace') === 'claude' ? 'claude' : 'codex'
           const sessionID = url.searchParams.get('sessionID') || ''
-          const payload = await loadSessionManagementDetail(sessionID)
+          const {
+            loadClaudeSessionManagementDetail,
+            loadSessionManagementDetail,
+          } = await import('./dev/sessionManagementDevData.js')
+          const payload = workspace === 'claude'
+            ? await loadClaudeSessionManagementDetail(sessionID)
+            : await loadSessionManagementDetail(sessionID)
           writeJSON(res, 200, payload)
         } catch (error) {
           writeJSON(res, 500, { error: error instanceof Error ? error.message : 'detail load failed' })

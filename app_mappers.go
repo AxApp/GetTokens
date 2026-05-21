@@ -462,6 +462,100 @@ func mapCodexSkillsSnapshot(result *wailsapp.CodexSkillsSnapshot) *CodexSkillsSn
 	}
 }
 
+func mapClaudeCodeExtensionsSnapshot(result *wailsapp.ClaudeCodeExtensionsSnapshot) *ClaudeCodeExtensionsSnapshot {
+	if result == nil {
+		return &ClaudeCodeExtensionsSnapshot{Skills: []ClaudeCodeSkillAsset{}, McpServers: []ClaudeCodeMcpAsset{}, Warnings: []string{}}
+	}
+	skills := make([]ClaudeCodeSkillAsset, 0, len(result.Skills))
+	for _, skill := range result.Skills {
+		skills = append(skills, ClaudeCodeSkillAsset{
+			ID:                  skill.ID,
+			Name:                skill.Name,
+			Description:         skill.Description,
+			Scope:               skill.Scope,
+			Path:                skill.Path,
+			FrontmatterStatus:   skill.FrontmatterStatus,
+			Invocation:          skill.Invocation,
+			ModelInvocation:     skill.ModelInvocation,
+			Removable:           skill.Removable,
+			FileCount:           skill.FileCount,
+			Risk:                skill.Risk,
+			PreviewMarkdown:     skill.PreviewMarkdown,
+			FrontmatterError:    skill.FrontmatterError,
+			LegacyCommandSource: skill.LegacyCommandSource,
+		})
+	}
+	servers := make([]ClaudeCodeMcpAsset, 0, len(result.McpServers))
+	for _, server := range result.McpServers {
+		servers = append(servers, ClaudeCodeMcpAsset{
+			ID:          server.ID,
+			Label:       server.Label,
+			Transport:   server.Transport,
+			Scope:       server.Scope,
+			SourcePath:  server.SourcePath,
+			Endpoint:    server.Endpoint,
+			Active:      server.Active,
+			SecretState: server.SecretState,
+			Dirty:       server.Dirty,
+			ShadowedBy:  server.ShadowedBy,
+		})
+	}
+	return &ClaudeCodeExtensionsSnapshot{
+		ClaudeConfigDirPath: result.ClaudeConfigDirPath,
+		ClaudeJSONPath:      result.ClaudeJSONPath,
+		ProjectPath:         result.ProjectPath,
+		Skills:              skills,
+		McpServers:          servers,
+		Warnings:            append([]string(nil), result.Warnings...),
+	}
+}
+
+func mapWailsClaudeCodeMcpAsset(server ClaudeCodeMcpAsset) wailsapp.ClaudeCodeMcpAsset {
+	return wailsapp.ClaudeCodeMcpAsset{
+		ID:          server.ID,
+		Label:       server.Label,
+		Transport:   server.Transport,
+		Scope:       server.Scope,
+		SourcePath:  server.SourcePath,
+		Endpoint:    server.Endpoint,
+		Active:      server.Active,
+		SecretState: server.SecretState,
+		Dirty:       server.Dirty,
+		ShadowedBy:  server.ShadowedBy,
+	}
+}
+
+func mapClaudeCodeMcpAsset(server wailsapp.ClaudeCodeMcpAsset) ClaudeCodeMcpAsset {
+	return ClaudeCodeMcpAsset{
+		ID:          server.ID,
+		Label:       server.Label,
+		Transport:   server.Transport,
+		Scope:       server.Scope,
+		SourcePath:  server.SourcePath,
+		Endpoint:    server.Endpoint,
+		Active:      server.Active,
+		SecretState: server.SecretState,
+		Dirty:       server.Dirty,
+		ShadowedBy:  server.ShadowedBy,
+	}
+}
+
+func mapClaudeCodeMcpSaveResult(result *wailsapp.SaveClaudeCodeMcpServerResult) *SaveClaudeCodeMcpServerResult {
+	if result == nil {
+		return &SaveClaudeCodeMcpServerResult{Changes: []ClaudeCodeMcpChange{}}
+	}
+	changes := make([]ClaudeCodeMcpChange, 0, len(result.Changes))
+	for _, change := range result.Changes {
+		changes = append(changes, ClaudeCodeMcpChange{Key: change.Key, Before: change.Before, After: change.After})
+	}
+	return &SaveClaudeCodeMcpServerResult{
+		ConfigPath: result.ConfigPath,
+		Server:     mapClaudeCodeMcpAsset(result.Server),
+		Preview:    result.Preview,
+		Changes:    changes,
+	}
+}
+
 func mapCodexMcpServersSnapshot(result *wailsapp.CodexMcpServersSnapshot) *CodexMcpServersSnapshot {
 	if result == nil {
 		return &CodexMcpServersSnapshot{Servers: []CodexMcpServer{}, Warnings: []string{}}

@@ -398,6 +398,14 @@ func (a *App) GetCodexSessionManagementSnapshot() (*SessionManagementSnapshot, e
 	return mapSessionManagementSnapshot(result), nil
 }
 
+func (a *App) GetClaudeCodeSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	result, err := a.core.GetClaudeCodeSessionManagementSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementSnapshot(result), nil
+}
+
 func (a *App) GetCodexBinarySnapshot() (*codexbinary.Snapshot, error) {
 	return a.core.GetCodexBinarySnapshot()
 }
@@ -446,8 +454,24 @@ func (a *App) RefreshCodexSessionManagementSnapshot() (*SessionManagementSnapsho
 	return mapSessionManagementSnapshot(result), nil
 }
 
+func (a *App) RefreshClaudeCodeSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
+	result, err := a.core.RefreshClaudeCodeSessionManagementSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementSnapshot(result), nil
+}
+
 func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSessionDetail, error) {
 	result, err := a.core.GetCodexSessionDetail(sessionID)
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementSessionDetail(result), nil
+}
+
+func (a *App) GetClaudeCodeSessionDetail(sessionID string) (*SessionManagementSessionDetail, error) {
+	result, err := a.core.GetClaudeCodeSessionDetail(sessionID)
 	if err != nil {
 		return nil, err
 	}
@@ -591,6 +615,24 @@ func (a *App) GetCodexSkillsSnapshot() (*CodexSkillsSnapshot, error) {
 		return nil, err
 	}
 	return mapCodexSkillsSnapshot(result), nil
+}
+
+func (a *App) GetClaudeCodeExtensionsSnapshot() (*ClaudeCodeExtensionsSnapshot, error) {
+	result, err := a.core.GetClaudeCodeExtensionsSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeExtensionsSnapshot(result), nil
+}
+
+func (a *App) SaveClaudeCodeMcpServer(input SaveClaudeCodeMcpServerInput) (*SaveClaudeCodeMcpServerResult, error) {
+	result, err := a.core.SaveClaudeCodeMcpServer(wailsapp.SaveClaudeCodeMcpServerInput{
+		Server: mapWailsClaudeCodeMcpAsset(input.Server),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeMcpSaveResult(result), nil
 }
 
 func (a *App) SaveCodexSkillEnabled(input SaveCodexSkillEnabledInput) (*SaveCodexSkillEnabledResult, error) {

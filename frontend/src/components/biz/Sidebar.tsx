@@ -39,6 +39,10 @@ const codexWorkspaceItems = [
 
 const claudeWorkspaceItems = [
   { id: 'account-list', label: 'nav.claude_account_list' },
+  { id: 'skills', label: 'nav.claude_skills' },
+  { id: 'mcp-servers', label: 'nav.claude_mcp_servers' },
+  { id: 'session-management', label: 'nav.session_management' },
+  { id: 'usage', label: 'nav.usage_desk_claude' },
 ] as const satisfies ReadonlyArray<{ id: ClaudeWorkspace; label: string }>;
 
 export default function Sidebar({

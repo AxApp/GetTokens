@@ -96,6 +96,7 @@ Git `worktree` 治理：
 2. 技术方案和治理说明放 `docs-linhay/dev/`。
 3. 截图、计划、辩论材料必须跟着对应 `space` 走。
 4. 外部参考资料统一归档到 `docs-linhay/references/`。
+5. 完整源码型本地参考项目默认不进入 git；`docs-linhay/references/` 只提交根部 Markdown 索引、调研摘要和必要的小型资料，参考项目源码目录由 `.gitignore` 忽略。既有已跟踪参考目录视为历史遗留，后续新增参考项目必须遵循“不提交源码目录，只提交调研结论”的规则。
 
 项目级 skills：
 1. 涉及 `space` 创建、命名、README 模板、截图或 debate 归档时，优先使用 `gettokens-ops-governance`。

@@ -830,6 +830,114 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class ClaudeCodeMcpAsset {
+	    id: string;
+	    label: string;
+	    transport: string;
+	    scope: string;
+	    sourcePath: string;
+	    endpoint: string;
+	    active: boolean;
+	    secretState: string;
+	    dirty?: boolean;
+	    shadowedBy?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ClaudeCodeMcpAsset(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.label = source["label"];
+	        this.transport = source["transport"];
+	        this.scope = source["scope"];
+	        this.sourcePath = source["sourcePath"];
+	        this.endpoint = source["endpoint"];
+	        this.active = source["active"];
+	        this.secretState = source["secretState"];
+	        this.dirty = source["dirty"];
+	        this.shadowedBy = source["shadowedBy"];
+	    }
+	}
+	export class ClaudeCodeSkillAsset {
+	    id: string;
+	    name: string;
+	    description: string;
+	    scope: string;
+	    path: string;
+	    frontmatterStatus: string;
+	    invocation: string;
+	    modelInvocation: string;
+	    removable: boolean;
+	    fileCount: number;
+	    risk?: string;
+	    previewMarkdown?: string;
+	    frontmatterError?: string;
+	    legacyCommandSource?: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ClaudeCodeSkillAsset(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.description = source["description"];
+	        this.scope = source["scope"];
+	        this.path = source["path"];
+	        this.frontmatterStatus = source["frontmatterStatus"];
+	        this.invocation = source["invocation"];
+	        this.modelInvocation = source["modelInvocation"];
+	        this.removable = source["removable"];
+	        this.fileCount = source["fileCount"];
+	        this.risk = source["risk"];
+	        this.previewMarkdown = source["previewMarkdown"];
+	        this.frontmatterError = source["frontmatterError"];
+	        this.legacyCommandSource = source["legacyCommandSource"];
+	    }
+	}
+	export class ClaudeCodeExtensionsSnapshot {
+	    claudeConfigDirPath: string;
+	    claudeJsonPath: string;
+	    projectPath: string;
+	    skills: ClaudeCodeSkillAsset[];
+	    mcpServers: ClaudeCodeMcpAsset[];
+	    warnings?: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new ClaudeCodeExtensionsSnapshot(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.claudeConfigDirPath = source["claudeConfigDirPath"];
+	        this.claudeJsonPath = source["claudeJsonPath"];
+	        this.projectPath = source["projectPath"];
+	        this.skills = this.convertValues(source["skills"], ClaudeCodeSkillAsset);
+	        this.mcpServers = this.convertValues(source["mcpServers"], ClaudeCodeMcpAsset);
+	        this.warnings = source["warnings"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ClaudeCodeLocalApplyOptions {
 	    model?: string;
 	    defaultHaikuModel?: string;
@@ -874,6 +982,24 @@ export namespace main {
 	        this.conflicts = source["conflicts"];
 	    }
 	}
+	
+	export class ClaudeCodeMcpChange {
+	    key: string;
+	    before: string;
+	    after: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ClaudeCodeMcpChange(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.key = source["key"];
+	        this.before = source["before"];
+	        this.after = source["after"];
+	    }
+	}
+	
 	export class CodexAccountRoutingProbeAttempt {
 	    index: number;
 	    success: boolean;
@@ -1076,17 +1202,17 @@ export namespace main {
 		    return a;
 		}
 	}
-
+	
 	export class CodexLiveErrorSummary {
 	    statusCode?: number;
 	    code?: string;
 	    message: string;
 	    retryable?: boolean;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveErrorSummary(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.statusCode = source["statusCode"];
@@ -1103,11 +1229,11 @@ export namespace main {
 	    label: string;
 	    severity: string;
 	    detail?: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveTimelineEvent(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -1132,11 +1258,11 @@ export namespace main {
 	    reconnectCount?: number;
 	    outputTokensPerSecond?: number;
 	    totalTokensPerSecond?: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveTimingMetrics(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.queueWaitMs = source["queueWaitMs"];
@@ -1158,11 +1284,11 @@ export namespace main {
 	    cachedInputTokens: number;
 	    outputTokens: number;
 	    totalTokens: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveTokenUsage(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.inputTokens = source["inputTokens"];
@@ -1192,11 +1318,11 @@ export namespace main {
 	    timing?: CodexLiveTimingMetrics;
 	    error?: CodexLiveErrorSummary;
 	    timeline: CodexLiveTimelineEvent[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveRequest(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.requestID = source["requestID"];
@@ -1220,7 +1346,7 @@ export namespace main {
 	        this.error = this.convertValues(source["error"], CodexLiveErrorSummary);
 	        this.timeline = this.convertValues(source["timeline"], CodexLiveTimelineEvent);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1262,11 +1388,11 @@ export namespace main {
 	    fallbackReason?: string;
 	    recentEvents: CodexLiveTimelineEvent[];
 	    requests: CodexLiveRequest[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveSession(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sessionID = source["sessionID"];
@@ -1292,7 +1418,7 @@ export namespace main {
 	        this.recentEvents = this.convertValues(source["recentEvents"], CodexLiveTimelineEvent);
 	        this.requests = this.convertValues(source["requests"], CodexLiveRequest);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1318,11 +1444,11 @@ export namespace main {
 	    httpSessions: number;
 	    degradedSessions: number;
 	    errorSessions: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveSessionSummary(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.activeSessions = source["activeSessions"];
@@ -1340,11 +1466,11 @@ export namespace main {
 	    retentionLabel: string;
 	    summary: CodexLiveSessionSummary;
 	    sessions: CodexLiveSession[];
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveSessionsSnapshot(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.generatedAt = source["generatedAt"];
@@ -1354,7 +1480,7 @@ export namespace main {
 	        this.summary = this.convertValues(source["summary"], CodexLiveSessionSummary);
 	        this.sessions = this.convertValues(source["sessions"], CodexLiveSession);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1373,18 +1499,18 @@ export namespace main {
 		    return a;
 		}
 	}
-
-
-
+	
+	
+	
 	export class CodexMcpChange {
 	    key: string;
 	    before: string;
 	    after: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new CodexMcpChange(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
@@ -2766,6 +2892,72 @@ export namespace main {
 	        this.removedPath = source["removedPath"];
 	        this.preview = source["preview"];
 	    }
+	}
+	export class SaveClaudeCodeMcpServerInput {
+	    server: ClaudeCodeMcpAsset;
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveClaudeCodeMcpServerInput(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.server = this.convertValues(source["server"], ClaudeCodeMcpAsset);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SaveClaudeCodeMcpServerResult {
+	    configPath: string;
+	    server: ClaudeCodeMcpAsset;
+	    preview: string;
+	    changes: ClaudeCodeMcpChange[];
+	
+	    static createFrom(source: any = {}) {
+	        return new SaveClaudeCodeMcpServerResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.configPath = source["configPath"];
+	        this.server = this.convertValues(source["server"], ClaudeCodeMcpAsset);
+	        this.preview = source["preview"];
+	        this.changes = this.convertValues(source["changes"], ClaudeCodeMcpChange);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class SaveCodexConfigTomlInput {
 	    content: string;

@@ -46,12 +46,12 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
     snapshotError,
     loadSnapshot,
     updateSnapshot,
-  } = useSessionManagementSnapshot(copy.loadFailed);
+  } = useSessionManagementSnapshot(workspace, copy.loadFailed);
   const {
     detailState,
     loadDetail,
     clearDetail,
-  } = useSessionManagementDetail(copy.loadFailed);
+  } = useSessionManagementDetail(workspace, copy.loadFailed);
 
   useEffect(() => {
     void loadSnapshot('initial');
@@ -314,7 +314,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                   setCompactSessionsOpen(true);
                 }
               }}
-              onOpenProviderEditor={openProviderEditor}
+              onOpenProviderEditor={workspace === 'codex' ? openProviderEditor : undefined}
             />
           </div>
 
@@ -381,7 +381,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         </div>
       ) : null}
 
-      {editingProjectId ? (
+      {workspace === 'codex' && editingProjectId ? (
         <ProviderMergeModal
           copy={copy}
           projectName={editingProject?.name ?? copy.unavailable}
