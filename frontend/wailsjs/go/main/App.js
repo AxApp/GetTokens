@@ -118,6 +118,10 @@ export function GetCodexFeatureConfig() {
   return window['go']['main']['App']['GetCodexFeatureConfig']();
 }
 
+export function GetCodexLiveSessionsSnapshot() {
+  return window['go']['main']['App']['GetCodexLiveSessionsSnapshot']();
+}
+
 export function GetCodexLocalUsage() {
   return window['go']['main']['App']['GetCodexLocalUsage']();
 }

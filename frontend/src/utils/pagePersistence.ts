@@ -42,6 +42,7 @@ const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'skills',
   'mcp-servers',
   'account-list',
+  'live-sessions',
   'session-management',
   'vendor-status',
   'usage-codex',

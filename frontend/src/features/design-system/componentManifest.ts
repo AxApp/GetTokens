@@ -59,6 +59,8 @@ const codexRouteProbeStoryPath = 'frontend/src/features/codex/components/CodexRo
 const codexRouteProbeStorybookTitle = 'Design System/业务组件/Codex 路由探测';
 const codexAccountOrderStoryPath = 'frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx';
 const codexAccountOrderStorybookTitle = 'Design System/业务组件/Codex 账号顺序';
+const codexLiveSessionsStoryPath = 'frontend/src/features/codex-live-sessions/components/CodexLiveSessionsComponents.stories.tsx';
+const codexLiveSessionsStorybookTitle = 'Design System/业务组件/Codex 运行会话';
 
 export const designSystemComponentManifest = [
   {
@@ -681,6 +683,21 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['idle', 'running', 'failed'],
     mockDataSources: ['storybook codex route probe row/log mock'],
+  },
+  {
+    id: 'codex-live-sessions-workbench',
+    componentName: 'CodexLiveSessionsWorkbench',
+    sourcePath: 'frontend/src/features/codex-live-sessions/components/CodexLiveSessionsWorkbench.tsx',
+    ownerFeature: 'codex-live-sessions',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Codex 运行会话纯展示工作台已通过 mock snapshot 纳入设计系统，覆盖 active websocket、reconnecting、degraded_http、failed、sidecar-not-ready、empty、high-volume、rate/time metrics 和 redacted diagnostic。',
+    matchedPatterns: ['WorkspacePageHeader', 'SearchInput', 'SegmentedControl', 'SnippetPre', 'DebugPanel list'],
+    storyPath: codexLiveSessionsStoryPath,
+    storybookTitle: codexLiveSessionsStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['overview', 'active-websocket', 'reconnecting', 'degraded-http', 'failed', 'rate-time-metrics', 'sidecar-not-ready', 'empty', 'high-volume', 'redacted-diagnostic'],
+    mockDataSources: ['codexLiveSessionsPreviewSnapshot', 'codexLiveSessionsHighVolumeSnapshot'],
   },
   {
     id: 'codex-model-combobox',

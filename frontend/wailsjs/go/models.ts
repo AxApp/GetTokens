@@ -1076,16 +1076,315 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
+	export class CodexLiveErrorSummary {
+	    statusCode?: number;
+	    code?: string;
+	    message: string;
+	    retryable?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveErrorSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.statusCode = source["statusCode"];
+	        this.code = source["code"];
+	        this.message = source["message"];
+	        this.retryable = source["retryable"];
+	    }
+	}
+	export class CodexLiveTimelineEvent {
+	    id: string;
+	    at: string;
+	    lane: string;
+	    kind: string;
+	    label: string;
+	    severity: string;
+	    detail?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveTimelineEvent(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.at = source["at"];
+	        this.lane = source["lane"];
+	        this.kind = source["kind"];
+	        this.label = source["label"];
+	        this.severity = source["severity"];
+	        this.detail = source["detail"];
+	    }
+	}
+	export class CodexLiveTimingMetrics {
+	    queueWaitMs?: number;
+	    authSelectMs?: number;
+	    upstreamConnectMs?: number;
+	    firstEventMs?: number;
+	    firstTokenMs?: number;
+	    averageEventGapMs?: number;
+	    longestEventGapMs?: number;
+	    streamDurationMs?: number;
+	    totalDurationMs?: number;
+	    reconnectCount?: number;
+	    outputTokensPerSecond?: number;
+	    totalTokensPerSecond?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveTimingMetrics(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.queueWaitMs = source["queueWaitMs"];
+	        this.authSelectMs = source["authSelectMs"];
+	        this.upstreamConnectMs = source["upstreamConnectMs"];
+	        this.firstEventMs = source["firstEventMs"];
+	        this.firstTokenMs = source["firstTokenMs"];
+	        this.averageEventGapMs = source["averageEventGapMs"];
+	        this.longestEventGapMs = source["longestEventGapMs"];
+	        this.streamDurationMs = source["streamDurationMs"];
+	        this.totalDurationMs = source["totalDurationMs"];
+	        this.reconnectCount = source["reconnectCount"];
+	        this.outputTokensPerSecond = source["outputTokensPerSecond"];
+	        this.totalTokensPerSecond = source["totalTokensPerSecond"];
+	    }
+	}
+	export class CodexLiveTokenUsage {
+	    inputTokens: number;
+	    cachedInputTokens: number;
+	    outputTokens: number;
+	    totalTokens: number;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveTokenUsage(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.inputTokens = source["inputTokens"];
+	        this.cachedInputTokens = source["cachedInputTokens"];
+	        this.outputTokens = source["outputTokens"];
+	        this.totalTokens = source["totalTokens"];
+	    }
+	}
+	export class CodexLiveRequest {
+	    requestID: string;
+	    clientRequestID?: string;
+	    upstreamRequestID?: string;
+	    sessionID: string;
+	    sequence: number;
+	    model: string;
+	    status: string;
+	    startedAt: string;
+	    completedAt?: string;
+	    downstreamTransport: string;
+	    upstreamTransport: string;
+	    connectionReused?: boolean;
+	    authID?: string;
+	    authLabel?: string;
+	    provider?: string;
+	    proxyRoute?: string;
+	    usage?: CodexLiveTokenUsage;
+	    timing?: CodexLiveTimingMetrics;
+	    error?: CodexLiveErrorSummary;
+	    timeline: CodexLiveTimelineEvent[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveRequest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requestID = source["requestID"];
+	        this.clientRequestID = source["clientRequestID"];
+	        this.upstreamRequestID = source["upstreamRequestID"];
+	        this.sessionID = source["sessionID"];
+	        this.sequence = source["sequence"];
+	        this.model = source["model"];
+	        this.status = source["status"];
+	        this.startedAt = source["startedAt"];
+	        this.completedAt = source["completedAt"];
+	        this.downstreamTransport = source["downstreamTransport"];
+	        this.upstreamTransport = source["upstreamTransport"];
+	        this.connectionReused = source["connectionReused"];
+	        this.authID = source["authID"];
+	        this.authLabel = source["authLabel"];
+	        this.provider = source["provider"];
+	        this.proxyRoute = source["proxyRoute"];
+	        this.usage = this.convertValues(source["usage"], CodexLiveTokenUsage);
+	        this.timing = this.convertValues(source["timing"], CodexLiveTimingMetrics);
+	        this.error = this.convertValues(source["error"], CodexLiveErrorSummary);
+	        this.timeline = this.convertValues(source["timeline"], CodexLiveTimelineEvent);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CodexLiveSession {
+	    sessionID: string;
+	    executionSessionID?: string;
+	    downstreamSessionID?: string;
+	    codexWindowID?: string;
+	    status: string;
+	    startedAt: string;
+	    lastEventAt: string;
+	    durationMs: number;
+	    requestCount: number;
+	    activeRequestID?: string;
+	    lastRequestID?: string;
+	    model: string;
+	    authID?: string;
+	    authLabel?: string;
+	    provider?: string;
+	    downstreamTransport: string;
+	    upstreamTransport: string;
+	    fallbackInferred?: boolean;
+	    fallbackConfidence?: string;
+	    fallbackReason?: string;
+	    recentEvents: CodexLiveTimelineEvent[];
+	    requests: CodexLiveRequest[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveSession(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionID = source["sessionID"];
+	        this.executionSessionID = source["executionSessionID"];
+	        this.downstreamSessionID = source["downstreamSessionID"];
+	        this.codexWindowID = source["codexWindowID"];
+	        this.status = source["status"];
+	        this.startedAt = source["startedAt"];
+	        this.lastEventAt = source["lastEventAt"];
+	        this.durationMs = source["durationMs"];
+	        this.requestCount = source["requestCount"];
+	        this.activeRequestID = source["activeRequestID"];
+	        this.lastRequestID = source["lastRequestID"];
+	        this.model = source["model"];
+	        this.authID = source["authID"];
+	        this.authLabel = source["authLabel"];
+	        this.provider = source["provider"];
+	        this.downstreamTransport = source["downstreamTransport"];
+	        this.upstreamTransport = source["upstreamTransport"];
+	        this.fallbackInferred = source["fallbackInferred"];
+	        this.fallbackConfidence = source["fallbackConfidence"];
+	        this.fallbackReason = source["fallbackReason"];
+	        this.recentEvents = this.convertValues(source["recentEvents"], CodexLiveTimelineEvent);
+	        this.requests = this.convertValues(source["requests"], CodexLiveRequest);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class CodexLiveSessionSummary {
+	    activeSessions: number;
+	    activeRequests: number;
+	    websocketSessions: number;
+	    httpSessions: number;
+	    degradedSessions: number;
+	    errorSessions: number;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveSessionSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.activeSessions = source["activeSessions"];
+	        this.activeRequests = source["activeRequests"];
+	        this.websocketSessions = source["websocketSessions"];
+	        this.httpSessions = source["httpSessions"];
+	        this.degradedSessions = source["degradedSessions"];
+	        this.errorSessions = source["errorSessions"];
+	    }
+	}
+	export class CodexLiveSessionsSnapshot {
+	    generatedAt: string;
+	    sidecarReady: boolean;
+	    source: string;
+	    retentionLabel: string;
+	    summary: CodexLiveSessionSummary;
+	    sessions: CodexLiveSession[];
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveSessionsSnapshot(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.generatedAt = source["generatedAt"];
+	        this.sidecarReady = source["sidecarReady"];
+	        this.source = source["source"];
+	        this.retentionLabel = source["retentionLabel"];
+	        this.summary = this.convertValues(source["summary"], CodexLiveSessionSummary);
+	        this.sessions = this.convertValues(source["sessions"], CodexLiveSession);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
+
 	export class CodexMcpChange {
 	    key: string;
 	    before: string;
 	    after: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexMcpChange(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];

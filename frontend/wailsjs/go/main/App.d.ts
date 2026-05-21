@@ -63,6 +63,8 @@ export function GetCodexConfigToml():Promise<main.CodexConfigTomlDocument>;
 
 export function GetCodexFeatureConfig():Promise<main.CodexFeatureConfigSnapshot>;
 
+export function GetCodexLiveSessionsSnapshot():Promise<main.CodexLiveSessionsSnapshot>;
+
 export function GetCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function GetCodexMcpServers():Promise<main.CodexMcpServersSnapshot>;

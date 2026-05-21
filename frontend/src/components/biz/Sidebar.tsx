@@ -31,6 +31,7 @@ const codexWorkspaceItems = [
   { id: 'skills', label: 'nav.codex_skills' },
   { id: 'mcp-servers', label: 'nav.codex_mcp_servers' },
   { id: 'account-list', label: 'nav.codex_account_list' },
+  { id: 'live-sessions', label: 'nav.codex_live_sessions' },
   { id: 'session-management', label: 'nav.session_management' },
   { id: 'vendor-status', label: 'nav.openai_status' },
   { id: 'usage-codex', label: 'nav.usage_desk_codex' },

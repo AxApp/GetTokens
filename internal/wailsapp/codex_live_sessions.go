@@ -1,0 +1,126 @@
+package wailsapp
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+type CodexLiveSessionsSnapshot struct {
+	GeneratedAt  string                  `json:"generatedAt"`
+	SidecarReady bool                    `json:"sidecarReady"`
+	Source       string                  `json:"source"`
+	Retention    string                  `json:"retentionLabel"`
+	Summary      CodexLiveSessionSummary `json:"summary"`
+	Sessions     []CodexLiveSession      `json:"sessions"`
+}
+
+type CodexLiveSessionSummary struct {
+	ActiveSessions    int `json:"activeSessions"`
+	ActiveRequests    int `json:"activeRequests"`
+	WebsocketSessions int `json:"websocketSessions"`
+	HTTPSessions      int `json:"httpSessions"`
+	DegradedSessions  int `json:"degradedSessions"`
+	ErrorSessions     int `json:"errorSessions"`
+}
+
+type CodexLiveSession struct {
+	SessionID           string                   `json:"sessionID"`
+	ExecutionSessionID  string                   `json:"executionSessionID,omitempty"`
+	DownstreamSessionID string                   `json:"downstreamSessionID,omitempty"`
+	CodexWindowID       string                   `json:"codexWindowID,omitempty"`
+	Status              string                   `json:"status"`
+	StartedAt           string                   `json:"startedAt"`
+	LastEventAt         string                   `json:"lastEventAt"`
+	DurationMs          int64                    `json:"durationMs"`
+	RequestCount        int                      `json:"requestCount"`
+	ActiveRequestID     string                   `json:"activeRequestID,omitempty"`
+	LastRequestID       string                   `json:"lastRequestID,omitempty"`
+	Model               string                   `json:"model"`
+	AuthID              string                   `json:"authID,omitempty"`
+	AuthLabel           string                   `json:"authLabel,omitempty"`
+	Provider            string                   `json:"provider,omitempty"`
+	DownstreamTransport string                   `json:"downstreamTransport"`
+	UpstreamTransport   string                   `json:"upstreamTransport"`
+	FallbackInferred    bool                     `json:"fallbackInferred,omitempty"`
+	FallbackConfidence  string                   `json:"fallbackConfidence,omitempty"`
+	FallbackReason      string                   `json:"fallbackReason,omitempty"`
+	RecentEvents        []CodexLiveTimelineEvent `json:"recentEvents"`
+	Requests            []CodexLiveRequest       `json:"requests"`
+}
+
+type CodexLiveRequest struct {
+	RequestID           string                   `json:"requestID"`
+	ClientRequestID     string                   `json:"clientRequestID,omitempty"`
+	UpstreamRequestID   string                   `json:"upstreamRequestID,omitempty"`
+	SessionID           string                   `json:"sessionID"`
+	Sequence            int                      `json:"sequence"`
+	Model               string                   `json:"model"`
+	Status              string                   `json:"status"`
+	StartedAt           string                   `json:"startedAt"`
+	CompletedAt         string                   `json:"completedAt,omitempty"`
+	DownstreamTransport string                   `json:"downstreamTransport"`
+	UpstreamTransport   string                   `json:"upstreamTransport"`
+	ConnectionReused    bool                     `json:"connectionReused,omitempty"`
+	AuthID              string                   `json:"authID,omitempty"`
+	AuthLabel           string                   `json:"authLabel,omitempty"`
+	Provider            string                   `json:"provider,omitempty"`
+	ProxyRoute          string                   `json:"proxyRoute,omitempty"`
+	Usage               *CodexLiveTokenUsage     `json:"usage,omitempty"`
+	Timing              CodexLiveTimingMetrics   `json:"timing,omitempty"`
+	Error               *CodexLiveErrorSummary   `json:"error,omitempty"`
+	Timeline            []CodexLiveTimelineEvent `json:"timeline"`
+}
+
+type CodexLiveTokenUsage struct {
+	InputTokens       int64 `json:"inputTokens"`
+	CachedInputTokens int64 `json:"cachedInputTokens"`
+	OutputTokens      int64 `json:"outputTokens"`
+	TotalTokens       int64 `json:"totalTokens"`
+}
+
+type CodexLiveTimingMetrics struct {
+	QueueWaitMs           int64   `json:"queueWaitMs,omitempty"`
+	AuthSelectMs          int64   `json:"authSelectMs,omitempty"`
+	UpstreamConnectMs     int64   `json:"upstreamConnectMs,omitempty"`
+	FirstEventMs          int64   `json:"firstEventMs,omitempty"`
+	FirstTokenMs          int64   `json:"firstTokenMs,omitempty"`
+	AverageEventGapMs     int64   `json:"averageEventGapMs,omitempty"`
+	LongestEventGapMs     int64   `json:"longestEventGapMs,omitempty"`
+	StreamDurationMs      int64   `json:"streamDurationMs,omitempty"`
+	TotalDurationMs       int64   `json:"totalDurationMs,omitempty"`
+	ReconnectCount        int     `json:"reconnectCount,omitempty"`
+	OutputTokensPerSecond float64 `json:"outputTokensPerSecond,omitempty"`
+	TotalTokensPerSecond  float64 `json:"totalTokensPerSecond,omitempty"`
+}
+
+type CodexLiveErrorSummary struct {
+	StatusCode int    `json:"statusCode,omitempty"`
+	Code       string `json:"code,omitempty"`
+	Message    string `json:"message"`
+	Retryable  bool   `json:"retryable,omitempty"`
+}
+
+type CodexLiveTimelineEvent struct {
+	ID       string `json:"id"`
+	At       string `json:"at"`
+	Lane     string `json:"lane"`
+	Kind     string `json:"kind"`
+	Label    string `json:"label"`
+	Severity string `json:"severity"`
+	Detail   string `json:"detail,omitempty"`
+}
+
+func (a *App) GetCodexLiveSessionsSnapshot() (*CodexLiveSessionsSnapshot, error) {
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/gettokens/live-sessions", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var snapshot CodexLiveSessionsSnapshot
+	if err := json.Unmarshal(body, &snapshot); err != nil {
+		return nil, err
+	}
+	if snapshot.Sessions == nil {
+		snapshot.Sessions = []CodexLiveSession{}
+	}
+	return &snapshot, nil
+}

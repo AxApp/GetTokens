@@ -1,0 +1,263 @@
+package main
+
+import wailsapp "github.com/linhay/gettokens/internal/wailsapp"
+
+type CodexLiveSessionsSnapshot struct {
+	GeneratedAt  string                  `json:"generatedAt"`
+	SidecarReady bool                    `json:"sidecarReady"`
+	Source       string                  `json:"source"`
+	Retention    string                  `json:"retentionLabel"`
+	Summary      CodexLiveSessionSummary `json:"summary"`
+	Sessions     []CodexLiveSession      `json:"sessions"`
+}
+
+type CodexLiveSessionSummary struct {
+	ActiveSessions    int `json:"activeSessions"`
+	ActiveRequests    int `json:"activeRequests"`
+	WebsocketSessions int `json:"websocketSessions"`
+	HTTPSessions      int `json:"httpSessions"`
+	DegradedSessions  int `json:"degradedSessions"`
+	ErrorSessions     int `json:"errorSessions"`
+}
+
+type CodexLiveSession struct {
+	SessionID           string                   `json:"sessionID"`
+	ExecutionSessionID  string                   `json:"executionSessionID,omitempty"`
+	DownstreamSessionID string                   `json:"downstreamSessionID,omitempty"`
+	CodexWindowID       string                   `json:"codexWindowID,omitempty"`
+	Status              string                   `json:"status"`
+	StartedAt           string                   `json:"startedAt"`
+	LastEventAt         string                   `json:"lastEventAt"`
+	DurationMs          int64                    `json:"durationMs"`
+	RequestCount        int                      `json:"requestCount"`
+	ActiveRequestID     string                   `json:"activeRequestID,omitempty"`
+	LastRequestID       string                   `json:"lastRequestID,omitempty"`
+	Model               string                   `json:"model"`
+	AuthID              string                   `json:"authID,omitempty"`
+	AuthLabel           string                   `json:"authLabel,omitempty"`
+	Provider            string                   `json:"provider,omitempty"`
+	DownstreamTransport string                   `json:"downstreamTransport"`
+	UpstreamTransport   string                   `json:"upstreamTransport"`
+	FallbackInferred    bool                     `json:"fallbackInferred,omitempty"`
+	FallbackConfidence  string                   `json:"fallbackConfidence,omitempty"`
+	FallbackReason      string                   `json:"fallbackReason,omitempty"`
+	RecentEvents        []CodexLiveTimelineEvent `json:"recentEvents"`
+	Requests            []CodexLiveRequest       `json:"requests"`
+}
+
+type CodexLiveRequest struct {
+	RequestID           string                   `json:"requestID"`
+	ClientRequestID     string                   `json:"clientRequestID,omitempty"`
+	UpstreamRequestID   string                   `json:"upstreamRequestID,omitempty"`
+	SessionID           string                   `json:"sessionID"`
+	Sequence            int                      `json:"sequence"`
+	Model               string                   `json:"model"`
+	Status              string                   `json:"status"`
+	StartedAt           string                   `json:"startedAt"`
+	CompletedAt         string                   `json:"completedAt,omitempty"`
+	DownstreamTransport string                   `json:"downstreamTransport"`
+	UpstreamTransport   string                   `json:"upstreamTransport"`
+	ConnectionReused    bool                     `json:"connectionReused,omitempty"`
+	AuthID              string                   `json:"authID,omitempty"`
+	AuthLabel           string                   `json:"authLabel,omitempty"`
+	Provider            string                   `json:"provider,omitempty"`
+	ProxyRoute          string                   `json:"proxyRoute,omitempty"`
+	Usage               *CodexLiveTokenUsage     `json:"usage,omitempty"`
+	Timing              CodexLiveTimingMetrics   `json:"timing,omitempty"`
+	Error               *CodexLiveErrorSummary   `json:"error,omitempty"`
+	Timeline            []CodexLiveTimelineEvent `json:"timeline"`
+}
+
+type CodexLiveTokenUsage struct {
+	InputTokens       int64 `json:"inputTokens"`
+	CachedInputTokens int64 `json:"cachedInputTokens"`
+	OutputTokens      int64 `json:"outputTokens"`
+	TotalTokens       int64 `json:"totalTokens"`
+}
+
+type CodexLiveTimingMetrics struct {
+	QueueWaitMs           int64   `json:"queueWaitMs,omitempty"`
+	AuthSelectMs          int64   `json:"authSelectMs,omitempty"`
+	UpstreamConnectMs     int64   `json:"upstreamConnectMs,omitempty"`
+	FirstEventMs          int64   `json:"firstEventMs,omitempty"`
+	FirstTokenMs          int64   `json:"firstTokenMs,omitempty"`
+	AverageEventGapMs     int64   `json:"averageEventGapMs,omitempty"`
+	LongestEventGapMs     int64   `json:"longestEventGapMs,omitempty"`
+	StreamDurationMs      int64   `json:"streamDurationMs,omitempty"`
+	TotalDurationMs       int64   `json:"totalDurationMs,omitempty"`
+	ReconnectCount        int     `json:"reconnectCount,omitempty"`
+	OutputTokensPerSecond float64 `json:"outputTokensPerSecond,omitempty"`
+	TotalTokensPerSecond  float64 `json:"totalTokensPerSecond,omitempty"`
+}
+
+type CodexLiveErrorSummary struct {
+	StatusCode int    `json:"statusCode,omitempty"`
+	Code       string `json:"code,omitempty"`
+	Message    string `json:"message"`
+	Retryable  bool   `json:"retryable,omitempty"`
+}
+
+type CodexLiveTimelineEvent struct {
+	ID       string `json:"id"`
+	At       string `json:"at"`
+	Lane     string `json:"lane"`
+	Kind     string `json:"kind"`
+	Label    string `json:"label"`
+	Severity string `json:"severity"`
+	Detail   string `json:"detail,omitempty"`
+}
+
+func (a *App) GetCodexLiveSessionsSnapshot() (*CodexLiveSessionsSnapshot, error) {
+	result, err := a.core.GetCodexLiveSessionsSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexLiveSessionsSnapshot(result), nil
+}
+
+func mapCodexLiveSessionsSnapshot(result *wailsapp.CodexLiveSessionsSnapshot) *CodexLiveSessionsSnapshot {
+	if result == nil {
+		return &CodexLiveSessionsSnapshot{Sessions: []CodexLiveSession{}}
+	}
+	return &CodexLiveSessionsSnapshot{
+		GeneratedAt:  result.GeneratedAt,
+		SidecarReady: result.SidecarReady,
+		Source:       result.Source,
+		Retention:    result.Retention,
+		Summary: CodexLiveSessionSummary{
+			ActiveSessions:    result.Summary.ActiveSessions,
+			ActiveRequests:    result.Summary.ActiveRequests,
+			WebsocketSessions: result.Summary.WebsocketSessions,
+			HTTPSessions:      result.Summary.HTTPSessions,
+			DegradedSessions:  result.Summary.DegradedSessions,
+			ErrorSessions:     result.Summary.ErrorSessions,
+		},
+		Sessions: mapCodexLiveSessions(result.Sessions),
+	}
+}
+
+func mapCodexLiveSessions(items []wailsapp.CodexLiveSession) []CodexLiveSession {
+	if len(items) == 0 {
+		return []CodexLiveSession{}
+	}
+	out := make([]CodexLiveSession, 0, len(items))
+	for _, item := range items {
+		out = append(out, CodexLiveSession{
+			SessionID:           item.SessionID,
+			ExecutionSessionID:  item.ExecutionSessionID,
+			DownstreamSessionID: item.DownstreamSessionID,
+			CodexWindowID:       item.CodexWindowID,
+			Status:              item.Status,
+			StartedAt:           item.StartedAt,
+			LastEventAt:         item.LastEventAt,
+			DurationMs:          item.DurationMs,
+			RequestCount:        item.RequestCount,
+			ActiveRequestID:     item.ActiveRequestID,
+			LastRequestID:       item.LastRequestID,
+			Model:               item.Model,
+			AuthID:              item.AuthID,
+			AuthLabel:           item.AuthLabel,
+			Provider:            item.Provider,
+			DownstreamTransport: item.DownstreamTransport,
+			UpstreamTransport:   item.UpstreamTransport,
+			FallbackInferred:    item.FallbackInferred,
+			FallbackConfidence:  item.FallbackConfidence,
+			FallbackReason:      item.FallbackReason,
+			RecentEvents:        mapCodexLiveTimelineEvents(item.RecentEvents),
+			Requests:            mapCodexLiveRequests(item.Requests),
+		})
+	}
+	return out
+}
+
+func mapCodexLiveRequests(items []wailsapp.CodexLiveRequest) []CodexLiveRequest {
+	if len(items) == 0 {
+		return []CodexLiveRequest{}
+	}
+	out := make([]CodexLiveRequest, 0, len(items))
+	for _, item := range items {
+		out = append(out, CodexLiveRequest{
+			RequestID:           item.RequestID,
+			ClientRequestID:     item.ClientRequestID,
+			UpstreamRequestID:   item.UpstreamRequestID,
+			SessionID:           item.SessionID,
+			Sequence:            item.Sequence,
+			Model:               item.Model,
+			Status:              item.Status,
+			StartedAt:           item.StartedAt,
+			CompletedAt:         item.CompletedAt,
+			DownstreamTransport: item.DownstreamTransport,
+			UpstreamTransport:   item.UpstreamTransport,
+			ConnectionReused:    item.ConnectionReused,
+			AuthID:              item.AuthID,
+			AuthLabel:           item.AuthLabel,
+			Provider:            item.Provider,
+			ProxyRoute:          item.ProxyRoute,
+			Usage:               mapCodexLiveTokenUsage(item.Usage),
+			Timing:              mapCodexLiveTiming(item.Timing),
+			Error:               mapCodexLiveError(item.Error),
+			Timeline:            mapCodexLiveTimelineEvents(item.Timeline),
+		})
+	}
+	return out
+}
+
+func mapCodexLiveTokenUsage(item *wailsapp.CodexLiveTokenUsage) *CodexLiveTokenUsage {
+	if item == nil {
+		return nil
+	}
+	return &CodexLiveTokenUsage{
+		InputTokens:       item.InputTokens,
+		CachedInputTokens: item.CachedInputTokens,
+		OutputTokens:      item.OutputTokens,
+		TotalTokens:       item.TotalTokens,
+	}
+}
+
+func mapCodexLiveTiming(item wailsapp.CodexLiveTimingMetrics) CodexLiveTimingMetrics {
+	return CodexLiveTimingMetrics{
+		QueueWaitMs:           item.QueueWaitMs,
+		AuthSelectMs:          item.AuthSelectMs,
+		UpstreamConnectMs:     item.UpstreamConnectMs,
+		FirstEventMs:          item.FirstEventMs,
+		FirstTokenMs:          item.FirstTokenMs,
+		AverageEventGapMs:     item.AverageEventGapMs,
+		LongestEventGapMs:     item.LongestEventGapMs,
+		StreamDurationMs:      item.StreamDurationMs,
+		TotalDurationMs:       item.TotalDurationMs,
+		ReconnectCount:        item.ReconnectCount,
+		OutputTokensPerSecond: item.OutputTokensPerSecond,
+		TotalTokensPerSecond:  item.TotalTokensPerSecond,
+	}
+}
+
+func mapCodexLiveError(item *wailsapp.CodexLiveErrorSummary) *CodexLiveErrorSummary {
+	if item == nil {
+		return nil
+	}
+	return &CodexLiveErrorSummary{
+		StatusCode: item.StatusCode,
+		Code:       item.Code,
+		Message:    item.Message,
+		Retryable:  item.Retryable,
+	}
+}
+
+func mapCodexLiveTimelineEvents(items []wailsapp.CodexLiveTimelineEvent) []CodexLiveTimelineEvent {
+	if len(items) == 0 {
+		return []CodexLiveTimelineEvent{}
+	}
+	out := make([]CodexLiveTimelineEvent, 0, len(items))
+	for _, item := range items {
+		out = append(out, CodexLiveTimelineEvent{
+			ID:       item.ID,
+			At:       item.At,
+			Lane:     item.Lane,
+			Kind:     item.Kind,
+			Label:    item.Label,
+			Severity: item.Severity,
+			Detail:   item.Detail,
+		})
+	}
+	return out
+}

@@ -266,6 +266,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx',
       },
       {
+        id: 'codex-live-sessions-components',
+        title: 'Codex 运行会话',
+        storybookTitle: 'Design System/业务组件/Codex 运行会话',
+        path: 'frontend/src/features/codex-live-sessions/components/CodexLiveSessionsComponents.stories.tsx',
+      },
+      {
         id: 'claude-code-account-list-components',
         title: 'Claude Code 账号列表组件',
         storybookTitle: 'Design System/业务组件/Claude Code 账号列表',

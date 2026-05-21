@@ -1,5 +1,6 @@
 import CodexAccountListFeature from '../features/codex/CodexAccountListFeature';
 import CodexFeature from '../features/codex/CodexFeature';
+import CodexLiveSessionsFeature from '../features/codex-live-sessions/CodexLiveSessionsFeature';
 import CodexBinaryFeature from '../features/codex-binary/CodexBinaryFeature';
 import CodexExtensionsFeature from '../features/codex-extensions/CodexExtensionsFeature';
 import UsageDeskFeature from '../features/accounts/UsageDeskFeature';
@@ -15,6 +16,10 @@ interface CodexPageProps {
 export default function CodexPage({ workspace, sidecarStatus }: CodexPageProps) {
   if (workspace === 'account-list') {
     return <CodexAccountListFeature sidecarStatus={sidecarStatus} />;
+  }
+
+  if (workspace === 'live-sessions') {
+    return <CodexLiveSessionsFeature sidecarStatus={sidecarStatus} />;
   }
 
   if (workspace === 'binary-management') {
