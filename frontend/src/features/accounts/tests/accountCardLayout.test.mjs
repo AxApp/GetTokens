@@ -32,3 +32,10 @@ test('account card grids keep empty tracks so single-card groups match page card
     /\.account-card-grid-compact\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,/s,
   );
 });
+
+test('quota bars render reset time from quota windows', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /formatQuotaResetDisplayWithUnix\(window\.resetLabel,\s*window\.resetAtUnix\)/);
+  assert.match(source, /t\('accounts\.quota_reset'\)/);
+});

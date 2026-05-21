@@ -185,7 +185,7 @@ export default function AttributionCard({
 
       {density === 'compact' ? (
         compactValueSection === 'quota' ? (
-          <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} />
+          <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} t={t} />
         ) : compactValueSection === 'billing' ? (
           <BillingBalance billing={billing} />
         ) : (
@@ -199,7 +199,7 @@ export default function AttributionCard({
 
           <UsageMetrics usageSummary={usageSummary} t={t} />
 
-          <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} />
+          <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} t={t} />
           <BillingBalance billing={billing} />
           <UnsupportedQuotaPlaceholder
             quotaDisplay={resolvedQuotaDisplay}

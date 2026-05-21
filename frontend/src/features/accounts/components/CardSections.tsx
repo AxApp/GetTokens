@@ -3,7 +3,7 @@ import type { AccountRecord, QuotaDisplay, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import { formatLabel } from '../model/vendorPresetHelpers';
-import { hasDisplayableBilling } from '../model/accountQuota';
+import { formatQuotaResetDisplayWithUnix, hasDisplayableBilling } from '../model/accountQuota';
 
 const FLOW_BASE = '12,58 50,44 92,48 134,34 176,60 218,50 260,42 302,40';
 
@@ -206,9 +206,10 @@ export function AccountMiniMetric({ label, value }: { label: string; value: stri
 interface QuotaBarsProps {
   quotaDisplay: QuotaDisplay;
   accentFillClass: string;
+  t: Translator;
 }
 
-export function QuotaBars({ quotaDisplay, accentFillClass }: QuotaBarsProps) {
+export function QuotaBars({ quotaDisplay, accentFillClass, t }: QuotaBarsProps) {
   const windows = quotaDisplay.windows ?? [];
   if (windows.length === 0) return null;
   const refreshing = quotaDisplay.refreshing === true;
@@ -219,37 +220,47 @@ export function QuotaBars({ quotaDisplay, accentFillClass }: QuotaBarsProps) {
       aria-busy={refreshing}
       data-quota-refreshing={refreshing ? 'true' : undefined}
     >
-      {windows.map((window) => (
-        <div key={window.id} className="account-card-quota-row grid items-center gap-2">
-          <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-            {window.label}
-          </div>
-          <div
-            className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
-            style={{
-              backgroundImage: window.remainingPercent === null
-                ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)'
-                : 'none',
-            }}
-          >
-            {window.remainingPercent !== null ? (
+      {windows.map((window) => {
+        const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
+
+        return (
+          <div key={window.id} className="account-card-quota-row grid items-start gap-2">
+            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              {window.label}
+            </div>
+            <div className="grid min-w-0 gap-1">
               <div
-                className={`absolute inset-y-0 left-0 ${accentFillClass}`}
-                style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
-              />
-            ) : null}
-            {refreshing ? (
-              <div
-                className="account-card-quota-refresh-skeleton absolute inset-0 pointer-events-none"
-                aria-hidden="true"
-              />
-            ) : null}
+                className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
+                style={{
+                  backgroundImage: window.remainingPercent === null
+                    ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)'
+                    : 'none',
+                }}
+              >
+                {window.remainingPercent !== null ? (
+                  <div
+                    className={`absolute inset-y-0 left-0 ${accentFillClass}`}
+                    style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
+                  />
+                ) : null}
+                {refreshing ? (
+                  <div
+                    className="account-card-quota-refresh-skeleton absolute inset-0 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                ) : null}
+              </div>
+              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                <span className="shrink-0">{t('accounts.quota_reset')}</span>
+                <span className="min-w-0 truncate text-right text-[var(--text-primary)]">{resetTime}</span>
+              </div>
+            </div>
+            <div className="text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+              {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
+            </div>
           </div>
-          <div className="text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
-            {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

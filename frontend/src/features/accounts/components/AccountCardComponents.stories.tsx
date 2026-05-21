@@ -43,6 +43,7 @@ const copy = {
     'accounts.recent_requests': '最近请求',
     'accounts.total_tokens': '总 Token',
     'accounts.quota_remaining': '剩余额度',
+    'accounts.quota_reset': '重置时间',
     'accounts.quota_unsupported': '暂不支持额度同步',
     'accounts.quota_syncing': '正在同步额度',
     'accounts.attribution_window': '归因窗口',
@@ -54,6 +55,7 @@ const copy = {
     'accounts.recent_requests': 'Recent requests',
     'accounts.total_tokens': 'Total tokens',
     'accounts.quota_remaining': 'Quota remaining',
+    'accounts.quota_reset': 'Reset',
     'accounts.quota_unsupported': 'Quota sync unavailable',
     'accounts.quota_syncing': 'Syncing quota',
     'accounts.attribution_window': 'Attribution window',
@@ -776,8 +778,8 @@ function CardSectionsSample() {
           <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
         </div>
         <UsageMetrics usageSummary={healthyUsageSummary} t={t} />
-        <QuotaBars quotaDisplay={quotaDisplay} accentFillClass="bg-[var(--color-status-success)]" />
-        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" />
+        <QuotaBars quotaDisplay={quotaDisplay} accentFillClass="bg-[var(--color-status-success)]" t={t} />
+        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" t={t} />
         <BillingBalance billing={billing} />
         <RateLimitGuard rateLimitStatus={rateLimitStatus} />
         <UnsupportedQuotaPlaceholder quotaDisplay={loadingQuotaDisplay} t={t} />
@@ -803,6 +805,17 @@ function MiniMetricsSample() {
     <DesignSystemStoryFrame label="DS-MINI-METRICS">
       <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
+      </div>
+    </DesignSystemStoryFrame>
+  );
+}
+
+function QuotaBarsRefreshingSample() {
+  const { t } = useStoryCopy();
+  return (
+    <DesignSystemStoryFrame label="DS-QUOTA-REFRESHING">
+      <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" t={t} />
       </div>
     </DesignSystemStoryFrame>
   );
@@ -929,13 +942,7 @@ export const MiniMetrics: Story = {
 };
 
 export const QuotaBarsRefreshing: Story = {
-  render: () => (
-    <DesignSystemStoryFrame label="DS-QUOTA-REFRESHING">
-      <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" />
-      </div>
-    </DesignSystemStoryFrame>
-  ),
+  render: () => <QuotaBarsRefreshingSample />,
 };
 
 export const HealthBar: Story = {
