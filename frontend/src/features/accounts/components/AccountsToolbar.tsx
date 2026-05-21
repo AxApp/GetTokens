@@ -77,7 +77,7 @@ export default function AccountsToolbar({
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div ref={menuRef} className="relative">
-            <button onClick={() => setIsMenuOpen((prev) => !prev)} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
+            <button onClick={() => setIsMenuOpen((prev) => !prev)} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
               {buildToolbarFilterLabel(t, filters)}
             </button>
             {isMenuOpen ? (
@@ -108,9 +108,9 @@ export default function AccountsToolbar({
               </div>
             ) : null}
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-stretch justify-end gap-2">
             <div
-              className="grid shrink-0 grid-cols-3 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+              className="grid h-10 shrink-0 grid-cols-3 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
               data-account-card-ignore-click="true"
             >
               <DisplayModeButton active={displayMode === 'full'} bordered onClick={() => onDisplayModeChange('full')}>
@@ -123,7 +123,7 @@ export default function AccountsToolbar({
                 {t('accounts.display_mode_list')}
               </DisplayModeButton>
             </div>
-            <button onClick={onToggleSelectionMode} className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
+            <button onClick={onToggleSelectionMode} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
               {isSelectionMode ? t('accounts.unselect_all') : t('accounts.selection_mode')}
             </button>
           </div>
@@ -164,7 +164,7 @@ function DisplayModeButton({
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-9 px-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
+      className={`h-full min-h-0 px-3 text-[length:var(--font-size-ui-xs)] font-black uppercase leading-none tracking-[0.12em] ${
         bordered ? 'border-r border-[var(--border-color)]' : ''
       } ${
         active
