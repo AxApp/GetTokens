@@ -52,9 +52,13 @@ export interface RateLimitEvent {
   triggeredAt: number;
 }
 
+export const RATE_LIMIT_CALENDAR_DAY_WINDOW = 'calendar-day';
+
+export const DEFAULT_RATE_LIMIT_WINDOWS = ['1h', '6h', '12h', '24h', RATE_LIMIT_CALENDAR_DAY_WINDOW, '7d', '30d'];
+
 export const DEFAULT_RATE_LIMIT_STRATEGIES: RateLimitStrategyMeta[] = [
-  { id: 'token-window', name: 'Token 窗口限流', supportedWindows: ['1h', '6h', '12h', '24h', '7d', '30d'] },
-  { id: 'request-window', name: '请求窗口限流', supportedWindows: ['1h', '6h', '12h', '24h', '7d', '30d'] },
+  { id: 'token-window', name: 'Token 窗口限流', supportedWindows: DEFAULT_RATE_LIMIT_WINDOWS },
+  { id: 'request-window', name: '请求窗口限流', supportedWindows: DEFAULT_RATE_LIMIT_WINDOWS },
 ];
 
 export function buildRateLimitStatusMap(items: RateLimitState[] | undefined) {
@@ -106,8 +110,16 @@ export function rateLimitStateTone(status?: RateLimitState): RateLimitTone {
 export function rateLimitRuleLabel(rule: Pick<RateLimitRule, 'strategy' | 'window' | 'label'>) {
   const label = String(rule.label || '').trim();
   if (label) return label.toUpperCase();
-  const window = String(rule.window || 'window').toUpperCase();
+  const window = formatRateLimitWindowLabel(rule.window).toUpperCase();
   return `${window} ${rateLimitStrategyShortLabel(rule.strategy)}`;
+}
+
+export function formatRateLimitWindowLabel(window: string) {
+  const normalized = String(window || '').trim().toLowerCase();
+  if (normalized === RATE_LIMIT_CALENDAR_DAY_WINDOW) {
+    return '00:00-23:59';
+  }
+  return normalized || 'window';
 }
 
 export function rateLimitStrategyShortLabel(strategy: string) {

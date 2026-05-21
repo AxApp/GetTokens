@@ -794,6 +794,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         <OpenAICompatibleDetailModal
           t={t}
           draft={openAICompatibleState.detailDraft}
+          usageSummary={accountUsageByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
           rateLimitStatus={accountRateLimitByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
           rateLimitStrategies={rateLimitStrategies}
           rateLimitRulesAPI={{
@@ -815,7 +816,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           saving={openAICompatibleState.detailSaving}
           onClose={closeOpenAICompatibleDetail}
           onChange={openAICompatibleState.setDetailDraft}
-          onSave={() => void openAICompatibleState.saveDetail()}
+          onSave={openAICompatibleState.saveDetail}
           onVerify={() => void openAICompatibleState.verifyDetail()}
           onFetchModels={() => void openAICompatibleState.fetchDetailModels()}
           onApplyFetchedModels={openAICompatibleState.applyFetchedModelsToDetailDraft}

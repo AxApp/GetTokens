@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   applyCodexAccountPriorities,
@@ -242,6 +243,15 @@ test('getCodexAccountOrderGridClass keeps list single-column and card modes adap
   assert.match(getCodexAccountOrderGridClass('full'), /codex-account-order-card-grid-full/);
   assert.doesNotMatch(getCodexAccountOrderGridClass('compact'), /xl:grid-cols-3/);
   assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /xl:grid-cols-3/);
+});
+
+test('Codex account order cards reuse the account attribution card and keep custom controls in the footer', async () => {
+  const source = await readFile(new URL('./components/CodexAccountOrderRow.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /<AttributionCard/);
+  assert.doesNotMatch(source, /customBody=\{/);
+  assert.match(source, /footer=\{/);
+  assert.match(source, /CodexAccountSpecialActionBar/);
 });
 
 test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {

@@ -1,4 +1,6 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Translator } from '../model/types';
+import type { AccountUsageSummary } from '../model/accountUsage';
 import type {
   OpenAICompatibleProviderDraft,
   ProviderRemoteModelsState,
@@ -6,14 +8,20 @@ import type {
 } from '../model/openAICompatible';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
+import { AccountRuntimeSnapshotSection } from './AccountDetailSections';
+import {
+  AccountDetailEvidenceGrid,
+  AccountDetailSection,
+} from './AccountDetailPrimitives';
 import OpenAICompatibleDetailPanel from './OpenAICompatibleDetailPanel';
-import RateLimitRulesSection, { type RateLimitRulesAPI } from './RateLimitRulesSection';
+import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 
 interface OpenAICompatibleDetailModalProps {
   t: Translator;
   draft: OpenAICompatibleProviderDraft;
   verifyState: ProviderVerifyState;
   remoteModelsState?: ProviderRemoteModelsState;
+  usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
   rateLimitRulesAPI?: RateLimitRulesAPI;
@@ -21,7 +29,7 @@ interface OpenAICompatibleDetailModalProps {
   saving: boolean;
   onClose: () => void;
   onChange: (next: OpenAICompatibleProviderDraft) => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   onVerify: () => void;
   onFetchModels: () => void;
   onApplyFetchedModels: () => void;
@@ -33,6 +41,7 @@ export default function OpenAICompatibleDetailModal({
   draft,
   verifyState,
   remoteModelsState,
+  usageSummary,
   rateLimitStatus,
   rateLimitStrategies,
   rateLimitRulesAPI,
@@ -46,9 +55,31 @@ export default function OpenAICompatibleDetailModal({
   onApplyFetchedModels,
   onRateLimitRulesChanged,
 }: OpenAICompatibleDetailModalProps) {
+  const [rateLimitDirty, setRateLimitDirty] = useState(false);
+  const [savingRateLimit, setSavingRateLimit] = useState(false);
+  const rateLimitRulesRef = useRef<RateLimitRulesSectionHandle>(null);
   const rateLimitAccountName = draft.currentName || draft.name;
   const rateLimitAccountKey = `openai-compatible:${rateLimitAccountName}`;
   const rateLimitMatchKey = rateLimitStatus?.matchKey || `provider:${rateLimitAccountName.trim().toLowerCase()}`;
+
+  useEffect(() => {
+    setRateLimitDirty(false);
+  }, [rateLimitAccountKey]);
+
+  async function saveDetail() {
+    if (saving || savingRateLimit) {
+      return;
+    }
+    setSavingRateLimit(true);
+    try {
+      await onSave();
+      if (rateLimitDirty) {
+        await rateLimitRulesRef.current?.save();
+      }
+    } finally {
+      setSavingRateLimit(false);
+    }
+  }
 
   return (
     <AccountDetailModalFrame onClose={onClose}>
@@ -58,26 +89,30 @@ export default function OpenAICompatibleDetailModal({
         verifyState={verifyState}
         remoteModelsState={remoteModelsState}
         error={error}
-        saving={saving}
+        saving={saving || savingRateLimit}
+        footerMessage={rateLimitDirty ? t('accounts.rate_limit_dirty') : undefined}
         onClose={onClose}
         onChange={onChange}
-        onSave={onSave}
+        onSave={saveDetail}
         onVerify={onVerify}
         onFetchModels={onFetchModels}
         onApplyFetchedModels={onApplyFetchedModels}
         afterSections={
           <>
+            <AccountRuntimeSnapshotSection usageSummary={usageSummary} />
             <OpenAICompatibleEvidenceSection
               t={t}
               draft={draft}
               verifyState={verifyState}
             />
             <RateLimitRulesSection
+              ref={rateLimitRulesRef}
               accountKey={rateLimitAccountKey}
               matchKey={rateLimitMatchKey}
               rateLimitStatus={rateLimitStatus}
               rateLimitStrategies={rateLimitStrategies}
               rateLimitRulesAPI={rateLimitRulesAPI}
+              onDirtyChange={setRateLimitDirty}
               onRateLimitRulesChanged={onRateLimitRulesChanged}
               t={t}
             />
@@ -119,22 +154,8 @@ function OpenAICompatibleEvidenceSection({
   ];
 
   return (
-    <section className="space-y-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-6 py-6">
-      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        EVIDENCE
-      </h3>
-      <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-        {rows.map((row, index) => (
-          <div key={`${row.label}-${index}`} className="grid gap-2 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {row.label}
-            </div>
-            <div className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
-              {row.value}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+    <AccountDetailSection inset muted eyebrow="Audit" title="EVIDENCE">
+      <AccountDetailEvidenceGrid rows={rows} />
+    </AccountDetailSection>
   );
 }

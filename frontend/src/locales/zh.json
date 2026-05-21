@@ -1094,6 +1094,8 @@
     "rate_limit_add_rule": "+ 新增规则",
     "rate_limit_no_local_rule": "暂无本地路由守卫",
     "rate_limit_rule_required": "请填写规则、窗口与限额。",
+    "rate_limit_dirty": "路由守卫有未保存改动",
+    "rate_limit_save_success": "路由守卫规则已保存。",
     "rate_limit_preview_only": "仅浏览器预览，本地草稿已更新。",
     "rate_limit_rule_legend": "路由守卫规则配置",
     "rate_limit_strategy": "策略",

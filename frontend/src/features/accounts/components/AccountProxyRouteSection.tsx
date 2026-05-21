@@ -11,6 +11,11 @@ import {
   type AccountProxyMode,
   type AccountProxyRouteDraft,
 } from '../model/accountProxyRoute.ts';
+import {
+  AccountDetailEmptyState,
+  AccountDetailPill,
+  AccountDetailSection,
+} from './AccountDetailPrimitives';
 
 interface AccountProxyRouteSectionProps {
   proxyUrl?: string;
@@ -134,25 +139,21 @@ export default function AccountProxyRouteSection({
   }
 
   return (
-    <section className="space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            {t('accounts.proxy_route_title')}
-          </h3>
-          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-mono text-[var(--text-muted)]">
-            {summary.proxyUrl || t('accounts.proxy_route_inherit_hint')}
-          </div>
-        </div>
-        <div className="border-2 border-[var(--border-color)] px-3 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+    <AccountDetailSection
+      eyebrow="Route"
+      title={t('accounts.proxy_route_title')}
+      meta={summary.proxyUrl || t('accounts.proxy_route_inherit_hint')}
+      actions={
+        <AccountDetailPill className="!border-2 !text-[var(--text-primary)]">
           {summary.label}
-        </div>
-      </div>
+        </AccountDetailPill>
+      }
+    >
 
       {isReadonly ? (
-        <div className="border-2 border-dashed border-[var(--border-color)] px-4 py-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+        <AccountDetailEmptyState className="py-3 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
           {readonlyReason}
-        </div>
+        </AccountDetailEmptyState>
       ) : (
         <>
           <div className="grid grid-cols-3 border-2 border-[var(--border-color)]">
@@ -205,6 +206,6 @@ export default function AccountProxyRouteSection({
           ) : null}
         </>
       )}
-    </section>
+    </AccountDetailSection>
   );
 }

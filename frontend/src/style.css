@@ -363,7 +363,7 @@
   }
 
   .account-card-quota-row {
-    grid-template-columns: 4.25rem minmax(0, 1fr) 2.75rem;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .account-card-rate-limit-row {
@@ -431,10 +431,6 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .account-card-quota-row {
-      grid-template-columns: 3.5rem minmax(0, 1fr) 2.25rem;
-    }
-
     .account-card-rate-limit-row {
       grid-template-columns: 4rem minmax(0, 1fr) 2.25rem;
     }
@@ -446,7 +442,6 @@
 
   @container (max-width: 288px) {
     .account-card-usage-metrics,
-    .account-card-quota-row,
     .account-card-rate-limit-row {
       grid-template-columns: minmax(0, 1fr);
     }

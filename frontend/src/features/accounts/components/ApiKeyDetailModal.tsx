@@ -12,7 +12,7 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import { DEFAULT_RATE_LIMIT_STRATEGIES, type RateLimitState, type RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountHealthBar from './AccountHealthBar';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
-import RateLimitRulesSection, { type RateLimitRulesAPI } from './RateLimitRulesSection';
+import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 import { resolveAPIKeyModelMenuNames, type APIKeyModelMenuMode } from '../model/apiKeyModelCatalog';
 import { buildDefaultCodexQuotaCurl } from '../model/accountConfig';
 import type { CodexQuota } from '../../../types';
@@ -91,6 +91,8 @@ export default function ApiKeyDetailModal({
     status: 'idle',
   });
   const [isSavingConfig, setIsSavingConfig] = useState(false);
+  const [rateLimitDirty, setRateLimitDirty] = useState(false);
+  const rateLimitRulesRef = useRef<RateLimitRulesSectionHandle>(null);
   const [quotaTestState, setQuotaTestState] = useState<{
     status: 'idle' | 'loading' | 'success' | 'error';
     message: string;
@@ -141,6 +143,7 @@ export default function ApiKeyDetailModal({
 
   useEffect(() => {
     setQuotaTestState({ status: 'idle', message: '' });
+    setRateLimitDirty(false);
   }, [account.id]);
 
   useEffect(() => {
@@ -244,13 +247,18 @@ export default function ApiKeyDetailModal({
   async function saveConfig() {
     setIsSavingConfig(true);
     try {
-      await onSaveConfig({
-        apiKey: configDraft.apiKey,
-        baseUrl: configDraft.baseUrl,
-        prefix: configDraft.prefix,
-        quotaCurl: configDraft.quotaCurl,
-        quotaEnabled: configDraft.quotaEnabled,
-      });
+      if (configDirty) {
+        await onSaveConfig({
+          apiKey: configDraft.apiKey,
+          baseUrl: configDraft.baseUrl,
+          prefix: configDraft.prefix,
+          quotaCurl: configDraft.quotaCurl,
+          quotaEnabled: configDraft.quotaEnabled,
+        });
+      }
+      if (rateLimitDirty) {
+        await rateLimitRulesRef.current?.save();
+      }
     } finally {
       setIsSavingConfig(false);
     }
@@ -516,11 +524,13 @@ export default function ApiKeyDetailModal({
             </section>
 
             <RateLimitRulesSection
+              ref={rateLimitRulesRef}
               accountKey={account.id}
               matchKey={usageSummary?.attributionKey}
               rateLimitStatus={rateLimitStatus}
               rateLimitStrategies={rateLimitStrategies}
               rateLimitRulesAPI={rateLimitRulesAPI}
+              onDirtyChange={setRateLimitDirty}
               onRateLimitRulesChanged={onRateLimitRulesChanged}
               t={t}
             />
@@ -649,13 +659,13 @@ export default function ApiKeyDetailModal({
 
         <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
-            {missingFieldsMessage}
+            {rateLimitDirty && missingFields.length === 0 ? `${missingFieldsMessage} / ${t('accounts.rate_limit_dirty')}` : missingFieldsMessage}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => void saveConfig()}
               className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
-              disabled={!configDirty || missingFields.length > 0 || isSavingConfig}
+              disabled={(!configDirty && !rateLimitDirty) || missingFields.length > 0 || isSavingConfig}
             >
               {isSavingConfig ? t('common.loading') : t('common.save')}
             </button>

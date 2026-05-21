@@ -9,6 +9,10 @@ import {
   type ProviderVerifyState,
 } from '../model/openAICompatible';
 import AccountProxyRouteSection from './AccountProxyRouteSection';
+import {
+  AccountDetailNotice,
+  AccountDetailSection,
+} from './AccountDetailPrimitives';
 
 interface OpenAICompatibleDetailPanelProps {
   t: Translator;
@@ -17,9 +21,10 @@ interface OpenAICompatibleDetailPanelProps {
   remoteModelsState?: ProviderRemoteModelsState;
   error: string;
   saving: boolean;
+  footerMessage?: string;
   onClose: () => void;
   onChange: (next: OpenAICompatibleProviderDraft) => void;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   onVerify: () => void;
   onFetchModels: () => void;
   onApplyFetchedModels: () => void;
@@ -40,6 +45,7 @@ export default function OpenAICompatibleDetailPanel({
   remoteModelsState,
   error,
   saving,
+  footerMessage,
   onClose,
   onChange,
   onSave,
@@ -124,30 +130,34 @@ export default function OpenAICompatibleDetailPanel({
       <div className="min-h-0 flex-1 overflow-auto">
         <section className="min-h-0 px-6 py-6">
           <div className="space-y-6">
-            <label className="space-y-2">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.ui_base_url')}
-              </div>
-              <input
-                value={draft.baseUrl}
-                onChange={(event) => onChange({ ...draft, baseUrl: event.target.value })}
-                className="input-swiss w-full"
-                placeholder={selectedPreset?.baseUrl || 'https://api.deepseek.com/v1'}
-              />
-            </label>
+            <AccountDetailSection eyebrow="Endpoint" title={t('accounts.openai_provider_name')} meta={draft.currentName}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="space-y-2">
+                  <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                    {t('accounts.ui_base_url')}
+                  </div>
+                  <input
+                    value={draft.baseUrl}
+                    onChange={(event) => onChange({ ...draft, baseUrl: event.target.value })}
+                    className="input-swiss w-full"
+                    placeholder={selectedPreset?.baseUrl || 'https://api.deepseek.com/v1'}
+                  />
+                </label>
 
-            <label className="space-y-2">
-              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                {t('accounts.ui_api_key')}
+                <label className="space-y-2">
+                  <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                    {t('accounts.ui_api_key')}
+                  </div>
+                  <input
+                    value={draft.apiKey}
+                    onChange={(event) => onChange({ ...draft, apiKey: event.target.value })}
+                    className="input-swiss w-full"
+                    type="text"
+                    placeholder={selectedPreset?.apiKeyPlaceholder || 'sk-...'}
+                  />
+                </label>
               </div>
-              <input
-                value={draft.apiKey}
-                onChange={(event) => onChange({ ...draft, apiKey: event.target.value })}
-                className="input-swiss w-full"
-                type="text"
-                placeholder={selectedPreset?.apiKeyPlaceholder || 'sk-...'}
-              />
-            </label>
+            </AccountDetailSection>
 
             <AccountProxyRouteSection
               proxyUrl={draft.proxyUrl}
@@ -155,17 +165,19 @@ export default function OpenAICompatibleDetailPanel({
               onValidityChange={setProxyRouteError}
             />
 
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={() => setHeadersExpanded((prev) => !prev)}
-                className="flex w-full items-center gap-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)]"
-              >
-                <span className="inline-grid h-3.5 w-3.5 place-items-center border border-[var(--border-color)] text-[length:var(--font-size-ui-2xs)] leading-none">
+            <AccountDetailSection
+              eyebrow="HTTP"
+              title={t('accounts.openai_provider_headers')}
+              actions={
+                <button
+                  type="button"
+                  onClick={() => setHeadersExpanded((prev) => !prev)}
+                  className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                >
                   {draft.headersText || headersExpanded ? '−' : '+'}
-                </span>
-                {t('accounts.openai_provider_headers')}
-              </button>
+                </button>
+              }
+            >
               {draft.headersText || headersExpanded ? (
                 <>
                   <textarea
@@ -179,14 +191,13 @@ export default function OpenAICompatibleDetailPanel({
                   </div>
                 </>
               ) : null}
-            </div>
+            </AccountDetailSection>
 
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                  {t('accounts.openai_provider_models')}
-                </div>
-                <div className="flex items-center gap-2">
+            <AccountDetailSection
+              eyebrow="Model Catalog"
+              title={t('accounts.openai_provider_models')}
+              actions={
+                <>
                   {remoteModelsState?.status === 'success' && remoteModelsState.models.length > 0 ? (
                     <button onClick={onApplyFetchedModels} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
                       {t('accounts.openai_provider_models_apply_remote')}
@@ -201,8 +212,9 @@ export default function OpenAICompatibleDetailPanel({
                       ? t('accounts.openai_provider_models_fetch_running')
                       : t('accounts.openai_provider_models_fetch')}
                   </button>
-                </div>
-              </div>
+                </>
+              }
+            >
               <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
@@ -278,15 +290,12 @@ export default function OpenAICompatibleDetailPanel({
                   {t('accounts.openai_provider_add_model')}
                 </button>
               </div>
-            </div>
+            </AccountDetailSection>
           </div>
         </section>
 
-        <section className="min-h-0 space-y-6 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-6 py-6">
+        <AccountDetailSection inset muted eyebrow="Connection" title={t('accounts.openai_provider_test_model')}>
           <div className="space-y-4">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-              {t('accounts.openai_provider_test_model')}
-            </div>
             {suggestedModels.some((item) => item.name.trim()) ? (
               <div className="flex flex-wrap gap-2">
                 {suggestedModels
@@ -297,7 +306,7 @@ export default function OpenAICompatibleDetailPanel({
                       <button
                         key={`${item.name}:${item.alias}`}
                         onClick={() => onChange({ ...draft, verifyModel: modelName })}
-                        className={`border-2 px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-colors ${
+                        className={`border-2 px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-colors active:scale-95 ${
                           effectiveVerifyModel === modelName
                             ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                             : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-primary)]'
@@ -331,23 +340,23 @@ export default function OpenAICompatibleDetailPanel({
               {t('accounts.openai_provider_test_model_hint')}
             </div>
           </div>
-        </section>
+        </AccountDetailSection>
 
         {afterSections}
       </div>
 
       {error ? (
-        <div className="mx-6 mb-4 shrink-0 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
+        <AccountDetailNotice tone="danger" className="mx-6 mb-4 shrink-0">
           {error}
-        </div>
+        </AccountDetailNotice>
       ) : null}
 
       <footer className="flex shrink-0 flex-col gap-3 border-t-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
-          {proxyRouteError || verifyState.message || t('accounts.openai_provider_test_idle')}
+          {proxyRouteError || footerMessage || verifyState.message || t('accounts.openai_provider_test_idle')}
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onSave} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]" disabled={saving || Boolean(proxyRouteError)}>
+          <button onClick={() => void onSave()} className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]" disabled={saving || Boolean(proxyRouteError)}>
             {saving ? t('common.loading') : t('common.save')}
           </button>
           <button onClick={onClose} className="btn-swiss">

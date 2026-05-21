@@ -121,6 +121,21 @@ export function buildCodexAccountSummary(rows: Array<Pick<CodexAccountRow, 'requ
   );
 }
 
+export function buildCodexQuotaSummaryAccount(row: CodexAccountRow): AccountRecord {
+  return {
+    id: row.id,
+    provider: row.provider,
+    credentialSource: row.sourceKind === 'codex-auth-file' ? 'auth-file' : 'api-key',
+    displayName: row.label,
+    status: row.status,
+    disabled: row.disabled,
+    baseUrl: row.baseUrl,
+    prefix: row.prefix,
+    quotaKey: row.quotaKey,
+    name: row.id.startsWith('auth-file:') ? row.id.slice('auth-file:'.length) : undefined,
+  };
+}
+
 function isCodexRequestAccount(account: AccountRecord) {
   const id = String(account.id || '').trim();
   const provider = String(account.provider || '').trim().toLowerCase();

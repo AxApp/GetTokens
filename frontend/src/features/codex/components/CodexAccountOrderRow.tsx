@@ -14,6 +14,7 @@ import {
 } from '../../accounts/components/attributionCardTone';
 import { buildEndpointLabel, routePolicyModeLabel, sourceKindLabel } from './codexAccountPresentation';
 import {
+  buildCodexQuotaSummaryAccount,
   type CodexAccountRow,
   type CodexRoutePolicyRowMode,
   type CodexRoutePolicyRowState,
@@ -98,16 +99,14 @@ export function AccountOrderRow({
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
 }) {
   const cardDensity = density === 'full' ? 'full' : 'compact';
-  const showSortingListBody = density !== 'list';
   const endpointLabel = buildEndpointLabel(row);
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
   const policyMuted = Boolean(routePolicyState && !routePolicyState.participates);
   const policyRankLabel = routePolicyState?.participates
     ? t('codex.account_list_policy_rank')
     : t('codex.account_list_policy_skipped');
-  const quotaDisplay = buildQuotaDisplay(buildQuotaSummaryAccount(row), quotaState);
+  const quotaDisplay = buildQuotaDisplay(buildCodexQuotaSummaryAccount(row), quotaState);
   const cardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'neutral') : 'critical';
-  const accentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[cardTone];
   const listTone: AttributionCardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'positive') : 'critical';
   const listAccentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[listTone];
   const listRailFillClass = ATTRIBUTION_CARD_TONE_FILL_CLASS[listTone];
@@ -125,10 +124,6 @@ export function AccountOrderRow({
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
   function handleDragHandleClick(event: MouseEvent<HTMLDivElement>) {
-    event.stopPropagation();
-  }
-
-  function stopRowAction(event: MouseEvent<HTMLDivElement>) {
     event.stopPropagation();
   }
 
@@ -214,7 +209,6 @@ export function AccountOrderRow({
         tone={cardTone}
         density={cardDensity}
         className={`${density === 'full' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid] xl:h-auto' : ''} ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
-        style={density === 'full' ? { minHeight: '48rem' } : density === 'compact' ? { minHeight: '28rem' } : undefined}
         leadingAction={
           <div
             draggable
@@ -230,85 +224,18 @@ export function AccountOrderRow({
             </span>
           </div>
         }
-        customBody={showSortingListBody ? (
-          <div
-            className="grid min-h-[15rem] grid-cols-[minmax(0,1fr)_7rem] grid-rows-[4.75rem_minmax(0,1fr)_auto] bg-[var(--bg-surface)]"
-            data-account-card-ignore-click="true"
-            onClick={stopRowAction}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <div className="border-r border-b border-[var(--border-color)] px-3 py-3">
-              <RegionHead label={t('codex.account_list_route')} value={endpointLabel} />
-            </div>
-            <div className="border-b border-[var(--border-color)] px-3 py-3">
-              <RegionHead
-                label={t('codex.account_list_runtime')}
-                value={row.requestable ? t('common.enable') : routePolicyModeLabel(t, 'blocked')}
-              />
-              <div className="mt-3 flex items-center justify-end">
-                <ToggleSwitch
-                  checked={!row.disabled}
-                  disabled={pending}
-                  label={row.disabled ? t('common.enable') : t('common.disable')}
-                  stopPropagation
-                  onChange={onToggle}
-                />
-              </div>
-            </div>
-
-            <div className="col-span-2 border-b border-[var(--border-color)] px-3 py-3">
-              <RegionHead
-                label={t('codex.account_list_model_mapping')}
-                value={row.modelMappings.length > 0 ? String(row.modelMappings.length) : '0'}
-              />
-              <div className={`mt-3 grid h-[4.5rem] gap-2 overflow-hidden`}>
-                {row.modelMappings.length > 0 ? (
-                  row.modelMappings.slice(0, 2).map((mapping, mappingIndex) => (
-                    <div
-                      key={`${mapping.realModel}-${mapping.codexModel || mappingIndex}`}
-                      className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2"
-                    >
-                      <code className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
-                        {mapping.realModel}
-                      </code>
-                      <b className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
-                        {mapping.codexModel || mapping.realModel}
-                      </b>
-                    </div>
-                  ))
-                ) : (
-                  <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {t('accounts.ui_no_data_available')}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="col-span-2 px-3 py-3">
-              <div className="mb-2">
-                <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                  {t('codex.account_list_policy_title')}
-                </span>
-              </div>
-              {row.requestable && routePolicyState?.mode !== 'blocked' ? (
-                <RoutePolicyModeControl
-                  id={row.id}
-                  mode={
-                    routePolicyState?.mode === 'allow' || routePolicyState?.mode === 'deny'
-                      ? routePolicyState.mode
-                      : 'default'
-                  }
-                  t={t}
-                  onChange={onPolicyModeChange}
-                />
-              ) : (
-                <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                  {blockedLabel || routePolicyModeLabel(t, 'blocked')}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : undefined}
+        footer={
+          <CodexAccountSpecialActionBar
+            row={row}
+            endpointLabel={endpointLabel}
+            blockedLabel={blockedLabel}
+            pending={pending}
+            routePolicyState={routePolicyState}
+            t={t}
+            onToggle={onToggle}
+            onPolicyModeChange={onPolicyModeChange}
+          />
+        }
         interactive
         onOpen={onOpenDetail}
       />
@@ -316,25 +243,104 @@ export function AccountOrderRow({
   );
 }
 
-function buildQuotaSummaryAccount(row: CodexAccountRow) {
-  const credentialSource: 'auth-file' | 'api-key' = row.sourceKind === 'codex-auth-file' ? 'auth-file' : 'api-key';
-  return {
-    id: row.id,
-    provider: row.provider,
-    credentialSource,
-    displayName: row.label,
-    status: row.status,
-    disabled: row.disabled,
-    quotaKey: row.quotaKey,
-    name: row.id.startsWith('auth-file:') ? row.id.slice('auth-file:'.length) : undefined,
-  };
+function CodexAccountSpecialActionBar({
+  row,
+  endpointLabel,
+  blockedLabel,
+  pending,
+  routePolicyState,
+  t,
+  onToggle,
+  onPolicyModeChange,
+}: {
+  row: CodexAccountRow;
+  endpointLabel: string;
+  blockedLabel?: string;
+  pending: boolean;
+  routePolicyState?: CodexRoutePolicyRowState;
+  t: (key: string) => string;
+  onToggle: () => void;
+  onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
+}) {
+  const runtimeLabel = row.requestable ? t('common.enable') : routePolicyModeLabel(t, 'blocked');
+  const modelMappingCount = row.modelMappings.length > 0 ? String(row.modelMappings.length) : '0';
+
+  function stopAction(event: MouseEvent<HTMLDivElement>) {
+    event.stopPropagation();
+  }
+
+  return (
+    <div
+      className="grid gap-3 border-t border-dashed border-[var(--border-color)] pt-3"
+      data-account-card-ignore-click="true"
+      onClick={stopAction}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
+      <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_9rem]">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <RegionHead label={t('codex.account_list_route')} value={endpointLabel || row.provider} />
+          <RegionHead label={t('codex.account_list_model_mapping')} value={modelMappingCount} />
+        </div>
+        <div className="flex min-w-0 items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2">
+          <RegionHead label={t('codex.account_list_runtime')} value={runtimeLabel} compact />
+          <ToggleSwitch
+            checked={!row.disabled}
+            disabled={pending}
+            label={row.disabled ? t('common.enable') : t('common.disable')}
+            stopPropagation
+            onChange={onToggle}
+          />
+        </div>
+      </div>
+
+      {row.modelMappings.length > 0 ? (
+        <div className="grid gap-2">
+          {row.modelMappings.slice(0, 2).map((mapping, mappingIndex) => (
+            <div
+              key={`${mapping.realModel}-${mapping.codexModel || mappingIndex}`}
+              className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1.5"
+            >
+              <code className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-muted)]">
+                {mapping.realModel}
+              </code>
+              <b className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                {mapping.codexModel || mapping.realModel}
+              </b>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="grid gap-2">
+        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          {t('codex.account_list_policy_title')}
+        </span>
+        {row.requestable && routePolicyState?.mode !== 'blocked' ? (
+          <RoutePolicyModeControl
+            id={row.id}
+            mode={
+              routePolicyState?.mode === 'allow' || routePolicyState?.mode === 'deny'
+                ? routePolicyState.mode
+                : 'default'
+            }
+            t={t}
+            onChange={onPolicyModeChange}
+          />
+        ) : (
+          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            {blockedLabel || routePolicyModeLabel(t, 'blocked')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-function RegionHead({ label, value }: { label: string; value: string }) {
+function RegionHead({ label, value, compact = false }: { label: string; value: string; compact?: boolean }) {
   return (
-    <div className="grid gap-2">
+    <div className={compact ? 'grid min-w-0 gap-1' : 'grid min-w-0 gap-1.5 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2'}>
       <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">{label}</span>
-      <b className="truncate font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+      <b className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
         {value}
       </b>
     </div>

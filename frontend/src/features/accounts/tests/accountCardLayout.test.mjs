@@ -39,3 +39,11 @@ test('quota bars render reset time from quota windows', async () => {
   assert.match(source, /formatQuotaResetDisplayWithUnix\(window\.resetLabel,\s*window\.resetAtUnix\)/);
   assert.match(source, /t\('accounts\.quota_reset'\)/);
 });
+
+test('quota rows keep label and percentage together above the progress bar', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(source, /account-card-quota-heading/);
+  assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
+});

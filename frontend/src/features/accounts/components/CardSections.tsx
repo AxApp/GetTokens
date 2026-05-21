@@ -224,9 +224,14 @@ export function QuotaBars({ quotaDisplay, accentFillClass, t }: QuotaBarsProps) 
         const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
 
         return (
-          <div key={window.id} className="account-card-quota-row grid items-start gap-2">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-              {window.label}
+          <div key={window.id} className="account-card-quota-row grid min-w-0 gap-2">
+            <div className="account-card-quota-heading flex min-w-0 items-baseline justify-between gap-3">
+              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                {window.label}
+              </div>
+              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
+              </div>
             </div>
             <div className="grid min-w-0 gap-1">
               <div
@@ -254,9 +259,6 @@ export function QuotaBars({ quotaDisplay, accentFillClass, t }: QuotaBarsProps) 
                 <span className="shrink-0">{t('accounts.quota_reset')}</span>
                 <span className="min-w-0 truncate text-right text-[var(--text-primary)]">{resetTime}</span>
               </div>
-            </div>
-            <div className="text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
-              {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
             </div>
           </div>
         );

@@ -7,16 +7,22 @@ import {
   buildQuotaCurlTemplate,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
-import { selectQuotaWindows } from '../model/accountQuota';
+import { formatQuotaResetDisplayWithUnix, selectQuotaWindows } from '../model/accountQuota';
+import { buildAccountRuntimeStats } from '../model/accountDetailRuntime';
 import {
   resolveAccountOperationalState,
   resolveAccountPrimaryLabel,
 } from '../model/accountPresentation';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import { buildAccountEvidenceRows, type AccountEvidenceRow } from '../model/accountEvidence';
-import type { CodexQuotaState } from '../model/types';
+import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { BillingBalance } from './CardSections';
+import {
+  AccountDetailEvidenceGrid,
+  AccountDetailPill,
+  AccountDetailSection,
+} from './AccountDetailPrimitives';
 
 export interface APIKeyVerifyState {
   model: string;
@@ -68,9 +74,16 @@ export interface AccountEvidenceSectionProps {
   rows?: AccountEvidenceRow[];
 }
 
+export interface AccountRuntimeSnapshotSectionProps {
+  usageSummary?: AccountUsageSummary;
+  quotaDisplay?: QuotaDisplay;
+  billing?: BillingDisplay;
+}
+
 export interface AccountDetailFooterProps {
   isApiKey: boolean;
   configDirty: boolean;
+  rateLimitDirty?: boolean;
   missingFields: string[];
   savingConfig: boolean;
   onClose: () => void;
@@ -138,17 +151,12 @@ export function AccountDetailHeader({
               {primaryLabel}
             </button>
           )}
-          <span
-            className={`border px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
-              operationalState.tone === 'positive'
-                ? 'border-[var(--color-status-success)] text-[var(--color-status-success)]'
-                : operationalState.tone === 'warning'
-                  ? 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]'
-                  : 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
-            }`}
+          <AccountDetailPill
+            tone={operationalState.tone === 'positive' ? 'success' : operationalState.tone === 'warning' ? 'warning' : 'danger'}
+            className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-xs)] !tracking-[0.12em]"
           >
             {operationalState.label}
-          </span>
+          </AccountDetailPill>
         </div>
 
         {canReauth ? (
@@ -164,9 +172,9 @@ export function AccountDetailHeader({
         </span>
         <div className="flex flex-wrap gap-1.5">
           {formats.map((fmt) => (
-            <span key={fmt} className="border border-[var(--border-color)] px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            <AccountDetailPill key={fmt} className="!min-h-0 !py-0.5 !tracking-[0.12em]">
               {formatLabel(fmt)}
-            </span>
+            </AccountDetailPill>
           ))}
         </div>
       </div>
@@ -196,10 +204,7 @@ export function AccountCredentialsSection({
   setDraft,
 }: AccountCredentialsSectionProps) {
   return (
-    <section className="space-y-4">
-      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        凭据
-      </h3>
+    <AccountDetailSection eyebrow="Credential" title="凭据">
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1.5">
@@ -240,7 +245,7 @@ export function AccountCredentialsSection({
           placeholder="/v1"
         />
       </label>
-    </section>
+    </AccountDetailSection>
   );
 }
 
@@ -287,11 +292,7 @@ export function AccountVerifySection({
   }, [isModelMenuOpen]);
 
   return (
-    <section className="space-y-3">
-      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        验证连接
-      </h3>
-
+    <AccountDetailSection eyebrow="Connection" title="验证连接">
       {vs.lastVerifiedAt ? (
         <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           上次验证：{new Date(vs.lastVerifiedAt).toLocaleString()}
@@ -355,7 +356,7 @@ export function AccountVerifySection({
           {vs.message}
         </div>
       ) : null}
-    </section>
+    </AccountDetailSection>
   );
 }
 
@@ -397,17 +398,11 @@ export function AccountQuotaSection({
   }
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-          额度追踪
-        </h3>
-        {liveWindows.length > 0 ? (
-          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-success)]">
-            实时 {liveWindows.length} 个窗口
-          </span>
-        ) : null}
-      </div>
+    <AccountDetailSection
+      eyebrow="Quota"
+      title="额度追踪"
+      meta={liveWindows.length > 0 ? `实时 ${liveWindows.length} 个窗口` : undefined}
+    >
 
       <label className="flex items-center gap-2">
         <input
@@ -453,7 +448,96 @@ export function AccountQuotaSection({
       {testStatus === 'error' ? (
         <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
       ) : null}
-    </section>
+    </AccountDetailSection>
+  );
+}
+
+export function AccountRuntimeSnapshotSection({
+  usageSummary,
+  quotaDisplay,
+  billing,
+}: AccountRuntimeSnapshotSectionProps) {
+  const { t } = useI18n();
+  const stats = buildAccountRuntimeStats(usageSummary, quotaDisplay, billing, t);
+  const quotaWindows = quotaDisplay?.windows ?? [];
+  const balances = billing?.isAvailable ? billing.balances ?? [] : [];
+
+  return (
+    <AccountDetailSection
+      eyebrow="Runtime"
+      title="运行快照"
+      meta={usageSummary?.lastActivityAt ? `LAST ${new Date(usageSummary.lastActivityAt).toLocaleString()}` : undefined}
+    >
+      <div className="grid border-y-2 border-[var(--border-color)] md:grid-cols-3">
+        {stats.map((item) => (
+          <div key={item.id} className="min-w-0 border-b border-r border-dashed border-[var(--border-color)] px-3 py-3">
+            <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              {item.label}
+            </div>
+            <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tabular-nums text-[var(--text-primary)]">
+              {item.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {quotaWindows.length > 0 ? (
+        <div className="grid gap-2 border-b-2 border-dashed border-[var(--border-color)] pb-4">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            QUOTA
+          </div>
+          {quotaWindows.map((window) => {
+            const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
+            return (
+              <div key={window.id} className="grid gap-2 md:grid-cols-[6rem_minmax(0,1fr)_5rem_12rem] md:items-center">
+                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                  {window.label}
+                </div>
+                <div
+                  className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
+                  style={{
+                    backgroundImage: window.remainingPercent === null
+                      ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)'
+                      : 'none',
+                  }}
+                >
+                  {window.remainingPercent !== null ? (
+                    <div
+                      className="absolute inset-y-0 left-0 bg-[var(--color-status-success)]"
+                      style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
+                    />
+                  ) : null}
+                  {quotaDisplay?.refreshing ? (
+                    <div className="account-card-quota-refresh-skeleton pointer-events-none absolute inset-0" aria-hidden="true" />
+                  ) : null}
+                </div>
+                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] md:text-right">
+                  {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
+                </div>
+                <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] md:text-right">
+                  {t('accounts.quota_reset')} {resetTime}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {balances.length > 0 ? (
+        <div className="grid gap-2">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            BALANCE
+          </div>
+          {balances.map((balance, index) => (
+            <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
+              <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
+              <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
+              <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </AccountDetailSection>
   );
 }
 
@@ -506,17 +590,11 @@ export function AccountBillingSection({
   }
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-          余额
-        </h3>
-        {liveBilling ? (
-          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-success)]">
-            实时余额已就绪
-          </span>
-        ) : null}
-      </div>
+    <AccountDetailSection
+      eyebrow="Billing"
+      title="余额"
+      meta={liveBilling ? '实时余额已就绪' : undefined}
+    >
 
       {liveBilling ? (
         <div className="border-2 border-[var(--border-color)]">
@@ -569,7 +647,7 @@ export function AccountBillingSection({
       {testStatus === 'error' ? (
         <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
       ) : null}
-    </section>
+    </AccountDetailSection>
   );
 }
 
@@ -586,56 +664,65 @@ export function AccountEvidenceSection({
   }
 
   return (
-    <section className="space-y-3">
-      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        EVIDENCE
-      </h3>
-      <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
-        {evidenceRows.map((row, index) => (
-          <div key={`${row.label}-${index}`} className="grid gap-2 md:grid-cols-[10rem_minmax(0,1fr)] md:items-start">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {row.label}
-            </div>
-            <div
-              className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]"
-              title={row.title ?? row.value}
-            >
-              {row.value}
-            </div>
-          </div>
-        ))}
+    <AccountDetailSection eyebrow="Audit" title="EVIDENCE">
+      <AccountDetailEvidenceGrid
+        rows={evidenceRows.map((row) => ({
+          label: row.label,
+          value: row.value,
+          title: row.title ?? row.value,
+        }))}
+      />
+    </AccountDetailSection>
+  );
+}
+
+function RuntimeKV({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+        {label}
       </div>
-    </section>
+      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
+        {value}
+      </div>
+    </div>
   );
 }
 
 export function AccountDetailFooter({
   isApiKey,
   configDirty,
+  rateLimitDirty = false,
   missingFields,
   savingConfig,
   onClose,
   onSaveConfig,
 }: AccountDetailFooterProps) {
   const { t } = useI18n();
+  const hasDirtyChanges = configDirty || rateLimitDirty;
+  const dirtyMessage = configDirty && rateLimitDirty
+    ? '账号配置 / 路由守卫有未保存改动'
+    : configDirty
+      ? '账号配置有未保存改动'
+      : rateLimitDirty
+        ? t('accounts.rate_limit_dirty')
+        : '';
 
   return (
     <>
       <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
         {isApiKey && missingFields.length > 0
           ? `缺少：${missingFields.join(', ')}`
-          : isApiKey && configDirty
-            ? '账号配置有未保存改动'
-            : ''}
+          : dirtyMessage}
       </div>
       <div className="flex items-center gap-2">
         <button onClick={onClose} className="btn-swiss text-[length:var(--font-size-ui-xs)]">
           {t('common.close')}
         </button>
-        {isApiKey ? (
+        {isApiKey || rateLimitDirty ? (
           <button
             onClick={onSaveConfig}
-            disabled={!configDirty || missingFields.length > 0 || savingConfig}
+            disabled={!hasDirtyChanges || missingFields.length > 0 || savingConfig}
             className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] !text-[length:var(--font-size-ui-xs)]"
           >
             {savingConfig ? '保存中...' : '保存改动'}

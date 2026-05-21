@@ -1094,6 +1094,8 @@
     "rate_limit_add_rule": "+ Rule",
     "rate_limit_no_local_rule": "No Local Route Guard",
     "rate_limit_rule_required": "Rule, window, and limit are required.",
+    "rate_limit_dirty": "Route guard has unsaved changes",
+    "rate_limit_save_success": "Route guard rules saved.",
     "rate_limit_preview_only": "Browser preview only. Local draft updated.",
     "rate_limit_rule_legend": "Route guard rule configuration",
     "rate_limit_strategy": "Strategy",

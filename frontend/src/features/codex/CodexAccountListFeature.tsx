@@ -822,6 +822,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         <CodexAccountDetailModal
           row={detailRowWithModels}
           t={t}
+          quotaState={detailRowWithModels.quotaKey ? codexQuotaByName[detailRowWithModels.quotaKey] : undefined}
+          usageSummary={accountUsageByID[detailRowWithModels.id]}
           savingMappings={pendingMappingID === detailRowWithModels.id}
           loadingModelMappings={loadingAuthFileModelID === detailRowWithModels.id}
           modelMappingError={authFileModelErrors[detailRowWithModels.id] || ''}

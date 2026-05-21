@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
   CreateRateLimitRule,
   DeleteRateLimitRule,
@@ -19,7 +19,7 @@ import {
   listApiKeyConfigMissingFields,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
-import { extractBilling } from '../model/accountQuota';
+import { buildQuotaDisplay, extractBilling } from '../model/accountQuota';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import type { CodexQuotaState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
@@ -30,11 +30,17 @@ import {
   AccountDetailHeader,
   AccountEvidenceSection,
   AccountQuotaSection,
+  AccountRuntimeSnapshotSection,
   AccountVerifySection,
   type APIKeyVerifyState,
 } from './AccountDetailSections';
+import {
+  AccountDetailEmptyState,
+  AccountDetailPill,
+  AccountDetailSection,
+} from './AccountDetailPrimitives';
 import AccountProxyRouteSection from './AccountProxyRouteSection';
-import RateLimitRulesSection from './RateLimitRulesSection';
+import RateLimitRulesSection, { type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 
 export type { APIKeyVerifyState } from './AccountDetailSections';
 
@@ -65,6 +71,8 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   const [configDraft, setConfigDraft] = useState<ApiKeyConfigDraft>(() => buildApiKeyConfigDraft(account));
   const [proxyRouteError, setProxyRouteError] = useState('');
   const [savingConfig, setSavingConfig] = useState(false);
+  const [rateLimitDirty, setRateLimitDirty] = useState(false);
+  const rateLimitRulesRef = useRef<RateLimitRulesSectionHandle>(null);
 
   useEffect(() => {
     if (!isApiKey) {
@@ -83,6 +91,10 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     account.proxyUrl,
     isApiKey,
   ]);
+
+  useEffect(() => {
+    setRateLimitDirty(false);
+  }, [account.id]);
 
   const configDirty = useMemo(
     () => (isApiKey ? hasApiKeyConfigChanges(account, configDraft) : false),
@@ -105,14 +117,23 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     () => (quotaState?.quota ? extractBilling(quotaState.quota) : undefined),
     [quotaState],
   );
+  const quotaDisplay = useMemo(
+    () => buildQuotaDisplay(account, quotaState),
+    [account, quotaState],
+  );
 
   async function saveConfig() {
-    if (!isApiKey || !onSaveConfig || savingConfig || missingFields.length > 0) {
+    if (savingConfig || missingFields.length > 0) {
       return;
     }
     setSavingConfig(true);
     try {
-      await onSaveConfig(configDraft);
+      if (isApiKey && configDirty && onSaveConfig) {
+        await onSaveConfig(configDraft);
+      }
+      if (rateLimitDirty) {
+        await rateLimitRulesRef.current?.save();
+      }
     } finally {
       setSavingConfig(false);
     }
@@ -126,6 +147,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         <AccountDetailFooter
           isApiKey={isApiKey}
           configDirty={configDirty}
+          rateLimitDirty={rateLimitDirty}
           missingFields={missingFields}
           savingConfig={savingConfig}
           onClose={onClose}
@@ -147,7 +169,16 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
           onValidityChange={setProxyRouteError}
         />
-        <RateLimitSection {...props} />
+        <AccountRuntimeSnapshotSection
+          usageSummary={props.usageSummary}
+          quotaDisplay={quotaDisplay}
+          billing={liveBilling}
+        />
+        <RateLimitSection
+          {...props}
+          rateLimitRulesRef={rateLimitRulesRef}
+          onRateLimitDirtyChange={setRateLimitDirty}
+        />
         {isApiKey ? (
           <AccountVerifySection
             draft={configDraft}
@@ -197,11 +228,17 @@ function RateLimitSection({
   rateLimitStatus,
   rateLimitStrategies,
   onRateLimitRulesChanged,
-}: UnifiedAccountDetailProps) {
+  rateLimitRulesRef,
+  onRateLimitDirtyChange,
+}: UnifiedAccountDetailProps & {
+  rateLimitRulesRef: RefObject<RateLimitRulesSectionHandle>;
+  onRateLimitDirtyChange: (dirty: boolean) => void;
+}) {
   const { t } = useI18n();
 
   return (
     <RateLimitRulesSection
+      ref={rateLimitRulesRef}
       accountKey={account.id}
       matchKey={usageSummary?.attributionKey}
       rateLimitStatus={rateLimitStatus}
@@ -212,6 +249,7 @@ function RateLimitSection({
         update: UpdateRateLimitRule,
         delete: DeleteRateLimitRule,
       }}
+      onDirtyChange={onRateLimitDirtyChange}
       onRateLimitRulesChanged={onRateLimitRulesChanged ?? (() => {})}
       t={t}
     />
@@ -278,20 +316,20 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
   const displayed = viewMode === 'sanitized' && sanitizedContent ? sanitizedContent : rawContent;
 
   return (
-    <section className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-          {viewMode === 'sanitized' ? 'Sanitized Content' : 'Raw Content'}
-        </h3>
-        <div className="flex items-center gap-2">
+    <AccountDetailSection
+      eyebrow="Auth File"
+      title={viewMode === 'sanitized' ? 'Sanitized Content' : 'Raw Content'}
+      actions={
+        <>
           <button onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
             {sanitizing ? '...' : viewMode === 'sanitized' ? 'Show Raw' : 'Sanitize'}
           </button>
           <button onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
             {copyState === 'success' ? 'Copied!' : copyState === 'error' ? 'Error' : 'Copy'}
           </button>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {loading ? (
         <div className="animate-pulse space-y-2">
@@ -310,7 +348,7 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
           {displayed || '(empty)'}
         </pre>
       )}
-    </section>
+    </AccountDetailSection>
   );
 }
 
@@ -339,23 +377,20 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
   }, [account.name, trackRequest]);
 
   return (
-    <section className="space-y-3">
-      <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        Compatible Models
-      </h3>
+    <AccountDetailSection eyebrow="Model Catalog" title="Compatible Models">
       {loading ? (
         <div className="h-4 w-1/3 animate-pulse bg-[var(--border-color)]" />
       ) : models.length === 0 ? (
-        <div className="text-[length:var(--font-size-ui-2xs)] text-[var(--text-muted)]">No models data</div>
+        <AccountDetailEmptyState>No models data</AccountDetailEmptyState>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {models.map((model, index) => (
-            <span key={index} className="border border-[var(--border-color)] px-2 py-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-primary)]">
+            <AccountDetailPill key={index}>
               {model.name ?? model.display_name ?? `Model ${index + 1}`}
-            </span>
+            </AccountDetailPill>
           ))}
         </div>
       )}
-    </section>
+    </AccountDetailSection>
   );
 }

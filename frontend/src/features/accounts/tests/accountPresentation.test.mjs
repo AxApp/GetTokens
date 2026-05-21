@@ -18,7 +18,15 @@ import {
   resolveLoadedAuthFileRecords,
 } from '../model/accountPresentation.ts';
 import { shouldLoadAccountsData } from '../model/accountRuntime.ts';
-import { formatRateLimitLimitDraftValue, parseRateLimitLimitDraftValue } from '../model/rateLimit.ts';
+import { buildAccountRuntimeStats, formatRuntimeLatency, formatRuntimeTokens } from '../model/accountDetailRuntime.ts';
+import {
+  DEFAULT_RATE_LIMIT_STRATEGIES,
+  RATE_LIMIT_CALENDAR_DAY_WINDOW,
+  formatRateLimitLimitDraftValue,
+  formatRateLimitWindowLabel,
+  parseRateLimitLimitDraftValue,
+  rateLimitRuleLabel,
+} from '../model/rateLimit.ts';
 
 test('shouldLoadAccountsData allows browser preview data without Wails bindings', () => {
   assert.equal(shouldLoadAccountsData({ code: 'running' }, false), true);
@@ -38,6 +46,51 @@ test('rate limit token-window draft limit is edited in millions', () => {
 test('rate limit request-window draft limit keeps raw count units', () => {
   assert.equal(formatRateLimitLimitDraftValue({ strategy: 'request-window', limitValue: 120 }), '120');
   assert.equal(parseRateLimitLimitDraftValue('request-window', '120'), 120);
+});
+
+test('rate limit supports calendar day window label', () => {
+  assert.equal(formatRateLimitWindowLabel(RATE_LIMIT_CALENDAR_DAY_WINDOW), '00:00-23:59');
+  assert.equal(rateLimitRuleLabel({ strategy: 'request-window', window: RATE_LIMIT_CALENDAR_DAY_WINDOW }), '00:00-23:59 REQ');
+  assert.ok(DEFAULT_RATE_LIMIT_STRATEGIES.every((strategy) => strategy.supportedWindows.includes(RATE_LIMIT_CALENDAR_DAY_WINDOW)));
+});
+
+test('account detail runtime stats mirror card quota billing and usage values', () => {
+  const t = (key) => ({
+    'accounts.recent_requests': '最近请求',
+    'accounts.total_tokens': '总 Token',
+    'accounts.average_latency': '平均延迟',
+    'accounts.quota_remaining': '剩余额度',
+    'accounts.quota_syncing': '正在同步额度',
+  }[key] || key);
+  const stats = buildAccountRuntimeStats(
+    {
+      requestCount: 1234,
+      totalTokens: 2600000,
+      cachedInputTokens: 2400,
+      averageLatencyMs: 1450,
+    },
+    {
+      status: 'success',
+      planType: 'plus',
+      windows: [{ id: 'weekly', label: '7D', remainingPercent: 72, usedLabel: '28%', resetLabel: 'tomorrow' }],
+    },
+    {
+      isAvailable: true,
+      balances: [{ currency: 'USD', totalBalance: '12.50', grantedBalance: '8.00', toppedUpBalance: '4.50' }],
+    },
+    t,
+  );
+
+  assert.deepEqual(stats.map((item) => [item.id, item.value]), [
+    ['recent-requests', '1.2K'],
+    ['total-tokens', '2.6M'],
+    ['cached-input', '2.4K'],
+    ['average-latency', '1.5s'],
+    ['quota-remaining', '72%'],
+    ['balance', '12.50 USD'],
+  ]);
+  assert.equal(formatRuntimeTokens(0), '—');
+  assert.equal(formatRuntimeLatency(900), '900ms');
 });
 
 test('mapAuthFileToRecord keeps auth file status message', () => {
