@@ -8,6 +8,7 @@ import {
   buildCodexModelAliasOptionNames,
   buildCodexModelOptionNames,
   buildCodexAccountRows,
+  buildCodexQuotaSummaryAccount,
   buildCodexAccountSummary,
   buildCodexRoutingProbeModelOptions,
   buildCodexRoutingProbeStreamLines,
@@ -33,6 +34,7 @@ import {
   shouldUseCodexOrderSectionActionMenu,
 } from './model/codexAccountOrderSectionLayout.ts';
 import { getCodexAccountListPreviewRows } from './previewData.ts';
+import { buildQuotaDisplay, supportsQuota } from '../accounts/model/accountQuota.ts';
 
 test('buildCodexAccountRows merges codex auth files, codex api keys, and openai-compatible providers by priority', () => {
   const rows = buildCodexAccountRows({
@@ -113,6 +115,35 @@ test('buildCodexAccountRows keeps disabled or errored accounts in order but mark
       ['openai-compatible:openrouter', false, 'disabled'],
     ],
   );
+});
+
+test('buildCodexAccountRows preserves account quota and billing metadata for shared account cards', () => {
+  const rows = buildCodexAccountRows({
+    accounts: [
+      {
+        id: 'codex-api-key:stable',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Prod Key',
+        status: 'configured',
+        quotaKey: 'codex-api-key:stable',
+        quotaCurl: 'curl https://quota.example.test',
+        quotaEnabled: true,
+        billingCurl: 'curl https://billing.example.test',
+        billingEnabled: true,
+      },
+    ],
+    providers: [],
+  });
+
+  const account = buildCodexQuotaSummaryAccount(rows[0]);
+
+  assert.equal(account.quotaCurl, 'curl https://quota.example.test');
+  assert.equal(account.quotaEnabled, true);
+  assert.equal(account.billingCurl, 'curl https://billing.example.test');
+  assert.equal(account.billingEnabled, true);
+  assert.equal(supportsQuota(account), true);
+  assert.equal(buildQuotaDisplay(account, { status: 'loading' }).status, 'loading');
 });
 
 test('buildOpenAICompatibleModelMappings exposes real model to codex model mappings with same-name fallback', () => {
@@ -251,6 +282,7 @@ test('Codex account order cards reuse the account attribution card and keep cust
   assert.match(source, /<AttributionCard/);
   assert.doesNotMatch(source, /customBody=\{/);
   assert.match(source, /footer=\{/);
+  assert.match(source, /billing=\{billing\}/);
   assert.match(source, /CodexAccountSpecialActionBar/);
 });
 

@@ -1,4 +1,4 @@
-import type { AccountRecord } from '../../../types';
+import type { AccountRecord, ApiFormat } from '../../../types';
 import type { OpenAICompatibleProvider } from '../../accounts/model/openAICompatible.ts';
 import { compareAccountRecords } from '../../accounts/model/accountPresentation.ts';
 import { buildPriorityUpdates, reorderPriorityAccounts } from '../../accounts/model/accountRotation.ts';
@@ -52,6 +52,17 @@ export interface CodexAccountRow {
   apiKey?: string;
   apiKeys?: string[];
   headers?: Record<string, string>;
+  quotaCurl?: string;
+  quotaEnabled?: boolean;
+  billingCurl?: string;
+  billingEnabled?: boolean;
+  name?: string;
+  email?: string;
+  planType?: string;
+  proxyUrl?: string;
+  supportedFormats?: readonly string[];
+  formatBaseUrls?: AccountRecord['formatBaseUrls'];
+  models?: AccountRecord['models'];
   modelMappings: CodexModelMappingRow[];
 }
 
@@ -132,8 +143,33 @@ export function buildCodexQuotaSummaryAccount(row: CodexAccountRow): AccountReco
     baseUrl: row.baseUrl,
     prefix: row.prefix,
     quotaKey: row.quotaKey,
-    name: row.id.startsWith('auth-file:') ? row.id.slice('auth-file:'.length) : undefined,
+    quotaCurl: row.quotaCurl,
+    quotaEnabled: row.quotaEnabled,
+    billingCurl: row.billingCurl,
+    billingEnabled: row.billingEnabled,
+    name: row.name || (row.id.startsWith('auth-file:') ? row.id.slice('auth-file:'.length) : undefined),
+    email: row.email,
+    planType: row.planType,
+    apiKey: row.apiKey,
+    apiKeys: row.apiKeys,
+    headers: row.headers,
+    keySuffix: row.keySuffix,
+    proxyUrl: row.proxyUrl,
+    supportedFormats: normalizeSupportedFormats(row.supportedFormats),
+    formatBaseUrls: row.formatBaseUrls,
+    models: row.models,
   };
+}
+
+function normalizeSupportedFormats(formats: readonly string[] | undefined): ApiFormat[] | undefined {
+  if (!formats?.length) {
+    return undefined;
+  }
+  return formats.filter(isApiFormat);
+}
+
+function isApiFormat(format: string): format is ApiFormat {
+  return format === 'anthropic' || format === 'openai_chat' || format === 'openai_responses' || format === 'gemini_native';
 }
 
 function isCodexRequestAccount(account: AccountRecord) {
@@ -159,6 +195,20 @@ function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
     prefix: String(account.prefix || '').trim(),
     keySuffix: String(account.keySuffix || '').trim(),
     disabled: account.disabled,
+    apiKey: account.apiKey,
+    apiKeys: account.apiKeys,
+    headers: account.headers,
+    quotaCurl: account.quotaCurl,
+    quotaEnabled: account.quotaEnabled,
+    billingCurl: account.billingCurl,
+    billingEnabled: account.billingEnabled,
+    name: account.name,
+    email: account.email,
+    planType: account.planType,
+    proxyUrl: account.proxyUrl,
+    supportedFormats: account.supportedFormats,
+    formatBaseUrls: account.formatBaseUrls,
+    models: account.models,
     modelMappings: [],
   };
 }
@@ -182,6 +232,7 @@ function mapOpenAICompatibleProviderToCodexRow(provider: OpenAICompatibleProvide
     apiKey: String(provider.apiKey || ''),
     apiKeys: provider.apiKeys || [],
     headers: provider.headers || {},
+    proxyUrl: String(provider.proxyUrl || ''),
     modelMappings: buildOpenAICompatibleModelMappings(provider),
   };
 }

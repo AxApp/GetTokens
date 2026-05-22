@@ -37,6 +37,7 @@ import {
   buildCodexAuthFileModelMappings,
   buildCodexAccountPriorityUpdates,
   buildCodexAccountRows,
+  buildCodexQuotaSummaryAccount,
   buildCodexRoutePolicyPreview,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutingProbeModelOptions,
@@ -856,15 +857,5 @@ function filterCodexAccountIDs(previous: string[], availableIDs: string[]) {
 }
 
 function codexRowToAccountRecord(row: CodexAccountRow): AccountRecord {
-  return {
-    id: row.id,
-    provider: row.provider,
-    credentialSource: row.sourceKind === 'codex-auth-file' ? 'auth-file' : 'api-key',
-    displayName: row.label,
-    status: row.status,
-    disabled: row.disabled,
-    baseUrl: row.baseUrl,
-    quotaKey: row.quotaKey,
-    name: row.id.startsWith('auth-file:') ? row.id.slice('auth-file:'.length) : undefined,
-  };
+  return buildCodexQuotaSummaryAccount(row);
 }

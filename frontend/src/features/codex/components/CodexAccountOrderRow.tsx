@@ -4,7 +4,7 @@ import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
 import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
-import { buildQuotaDisplay } from '../../accounts/model/accountQuota';
+import { buildQuotaDisplay, extractBilling } from '../../accounts/model/accountQuota';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import {
   ATTRIBUTION_CARD_BADGE_TONE_CLASS,
@@ -106,6 +106,7 @@ export function AccountOrderRow({
     ? t('codex.account_list_policy_rank')
     : t('codex.account_list_policy_skipped');
   const quotaDisplay = buildQuotaDisplay(buildCodexQuotaSummaryAccount(row), quotaState);
+  const billing = quotaState?.quota ? extractBilling(quotaState.quota) : undefined;
   const cardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'neutral') : 'critical';
   const listTone: AttributionCardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'positive') : 'critical';
   const listAccentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[listTone];
@@ -205,6 +206,7 @@ export function AccountOrderRow({
         badges={badges}
         usageSummary={usageSummary}
         quotaDisplay={quotaDisplay}
+        billing={billing}
         rateLimitStatus={rateLimitStatus}
         tone={cardTone}
         density={cardDensity}
