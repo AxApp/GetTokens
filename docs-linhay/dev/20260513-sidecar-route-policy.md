@@ -67,6 +67,15 @@ P2 将切换边界收敛到下一条 downstream request：
 
 该语义不尝试在同一条正在 streaming 的 response 中途迁移账号；中途迁移仍属于取消/重放语义，需要单独设计。
 
+### 会话沉淀规则
+
+本轮沉淀为账号路由领域 skill，而不上升到 `AGENTS.md`：
+
+1. 手动禁用、自动限流、后续高延迟短期跳过都应优先建模为 Route Guard source，而不是分散修改 selector、scheduler 或请求中间件。
+2. WebSocket 相关 guard 必须同时检查两层状态：候选过滤只能影响新选路；`pinnedAuthID` / execution session / upstream conn 需要在请求轮次边界释放或重建。
+3. P2 热切验收不能只看 RoutePolicy deny。必须证明 downstream WebSocket 连接保留、新 auth 被选中、旧 `previous_response_id` 不泄漏、同 session upstream 重新握手。
+4. 中途 streaming 迁移不属于 Route Guard P2，必须作为取消/重放能力单独设计。
+
 ## Codex 账号列表接入
 
 `CodexAccountListFeature` 的路由策略调试区面向用户展示页面 row id，例如 `auth-file:auth.json`、`codex-api-key:<local-id>`、`openai-compatible:<name>`。这些 id 只属于 GetTokens UI，不直接暴露 sidecar 内部 auth id。
