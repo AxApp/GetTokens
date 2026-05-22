@@ -15,6 +15,28 @@
 5. Enforcement 在 sidecar routing 阶段生效——超限账号从候选列表中剔除，路由自动 fallback 到下一账号。
 6. 前端显示每个账号的限流状态：哪些规则生效、当前用量、是否超限、超限原因。
 
+## 2026-05-22 Route Guard v2 补充
+
+本期追加把“手动禁用账号”和“自动限流阻断”收敛为同一类路由守卫需求：账号不应继续参与新请求候选。
+
+落地边界：
+1. sidecar fork 新增 `AccountRouteGuardStore`，按 `manual-disabled` 与 `rate-limit` 两个 source 维护内存阻断状态。
+2. `accountRouteGuardPolicy` 作为 `RoutePolicy` 安装，热路径只读内存 deny list，不查 DB。
+3. 手动禁用账号时，`sdk/cliproxy.Service.applyCoreAuthAddOrUpdate` 写入 `manual-disabled` source；重新启用时只清理该 source，不影响限流 source。
+4. 限流 `RateLimitEvaluator` 每次评估后同步写入 `rate-limit` source；窗口恢复或规则删除只清理限流 source，不会误恢复用户手动禁用的账号。
+5. Codex auth 从可路由状态切到 disabled 时，立即调用现有 `CloseCodexWebsocketSessionsForAuthID(authID, "auth_disabled")` 关闭受影响上游 WebSocket session，让客户端重连后重新选账号。
+
+P0 行为选择：本轮不做同一个 downstream WebSocket 内的无感热迁移；禁用/限流先保证新请求不会再命中旧账号，Codex WebSocket 已有 upstream session 在手动禁用时立即断开，触发客户端重连到其他可用账号。
+
+## 2026-05-22 P2 WebSocket 热切补充
+
+P2 已把同一个 downstream WebSocket 内的账号切换做到“请求轮次边界”：
+1. downstream 连接不因 Route Guard 命中而主动关闭。
+2. 每次收到新的 `response.create` / `response.append` 后，handler 先检查当前 `pinnedAuthID` 是否已被 `AccountRouteGuardStore` 阻断；如果阻断，则释放 pin，并要求下一轮使用完整 transcript replay。
+3. 释放 pin 时会关闭当前 execution session 的旧 upstream 资源，但保留 downstream WebSocket，随后本轮请求重新进入 AuthManager 选路。
+4. Codex WebSocket executor 在同一个 execution session 内发现新选中的 `authID` 或 `wsURL` 与旧 upstream conn 不一致时，会以 `auth_rotated` 关闭旧 upstream 并重新握手，避免新账号请求仍写入旧连接。
+5. P2 不承诺在一条正在输出的 response 中途切换账号；切换边界固定为下一条 downstream request。
+
 ## 范围
 
 ### Sidecar Fork（`internal/gettokenshooks/`）
@@ -127,13 +149,19 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
 - Codex 账号列表：[20260511-codex-account-list-tab](../20260511-codex-account-list-tab/README.md)
 
 ## 当前状态
-- 状态：implemented-smoked
-- 最近更新：2026-05-16
+- 状态：implemented-verified
+- 最近更新：2026-05-22
 - 实现摘要：
   - sidecar fork 已接入 `RateLimitStrategyRegistry`、`rate_limit_rules` / `rate_limit_events`、定时 `RateLimitEvaluator`、`rateLimitPolicy` 和 `/gettokens/rate-limit-*` management API。
+  - sidecar fork 已追加 `AccountRouteGuardStore` / `accountRouteGuardPolicy`：`manual-disabled` 与 `rate-limit` 共用 RoutePolicy deny 机制，但 source 独立清理。
+  - 手动禁用 Codex auth 会关闭该 auth 关联的上游 WebSocket session，避免已有 `pinnedAuthID` 长期继续复用旧上游。
+  - Codex WebSocket P2 已支持同 downstream 连接内在下一轮请求释放 guarded pinned auth、重放 transcript，并按新 auth 重新建立 upstream conn。
   - GetTokens Go/Wails 已暴露策略、规则、状态与事件查询/保存方法，root `main.App` 绑定已同步。
   - 前端首期收敛在账号池、Codex 顺序卡与 OpenAI-compatible 账号：共享 `AttributionCard` 增加 `Route Guard` 区域，Codex API Key 与 OpenAI-compatible 详情均复用 `Route Guard Rules` 配置区。
 - 验收记录：
+  - 2026-05-22 自动化：sidecar fork `go test ./internal/gettokenshooks ./internal/runtime/executor ./sdk/cliproxy ./sdk/api/handlers/openai` 与 `go test ./...` 均已通过。
+  - 2026-05-22 回归新增：覆盖手动禁用 deny、手动/限流 source 互不误清、限流评估写入统一 guard、Codex auth 禁用触发 WebSocket close 且不误伤同 provider 其他账号。
+  - 2026-05-22 P2 回归：覆盖同 execution session auth 变化时重新 upstream 握手；覆盖 WebSocket handler 在 pinned auth 被 Route Guard 阻断后，同一个 downstream 连接内切到新 auth 且不泄漏旧 `previous_response_id`。
   - 自动化：sidecar `go test ./...`、主仓库 `go test ./...`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit`、`npm --prefix frontend run build` 均已通过。
   - 多场景回归：已补 sidecar 场景测试，覆盖 token-window 阻断、request-window 阻断、warn 只告警不 deny、窗口滑过恢复、disabled/unconfigured 放行、注册式新策略、CRUD/event。
   - Live sidecar API：Wails dev `VERSION 2026.05.16.15` 使用最新 sidecar binary 重新启动；用 synthetic account `smoke-rate-limit:20260516:api` 验证 strategies、空状态、token block、event 记录、warn、窗口恢复、disabled、delete cleanup 全链路通过。

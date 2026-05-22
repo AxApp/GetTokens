@@ -11,6 +11,25 @@
 - 冒烟使用真实 Wails dev app 与本地 sidecar：对 `codex-api-key:26b1c3ff958f` 新增 `30d token-window limit=1 block` 测试规则，确认 `match_key=auth-id:codex:apikey:a6ba88c12cad`、status `blocked=true`、卡片显示 `ROUTE GUARD / 30D TOKENS 已满`。测试规则已在冒烟后清理。
 - 追加多场景验证：sidecar 自动化测试已覆盖 token-window、request-window、warn、窗口恢复、disabled/unconfigured、注册式新策略、CRUD/event；live sidecar API 使用 synthetic account 跑通 strategies、empty status、block、events、warn、recovery、disabled、delete cleanup。
 
+## 2026-05-22 Route Guard v2 实现闭环
+
+- 手动禁用与自动限流统一为 `AccountRouteGuardStore` 的不同 source：`manual-disabled` 表示用户显式操作，`rate-limit` 表示策略评估结果。
+- `accountRouteGuardPolicy` 安装在 GetTokens route policy hook 内；热路径只读内存状态并输出 `DenyIDs`，不在请求链路做 DB 查询，也不通过 Gin middleware 直接返回 429。
+- `RateLimitEvaluator.EvaluateNow` 每轮评估后用 `ReplaceAccountRouteGuardSource("rate-limit", blocks)` 刷新限流 source；窗口恢复或规则变更只影响自动 source。
+- `Service.applyCoreAuthAddOrUpdate` 在 auth 切到 disabled 时写入 `manual-disabled` source，重新启用时清理该 source；两个 source 独立，所以自动恢复不会误启用户手动禁用。
+- Codex auth 从可路由状态切到 disabled 时，复用现有 `CloseCodexWebsocketSessionsForAuthID` 立即关闭该 auth 的上游 WebSocket sessions，打断已有 `pinnedAuthID` / upstream conn 复用。
+- 本轮 P0 不实现同 downstream WebSocket 内的轮次边界热切；行为定义为“阻断新请求 + 手动禁用时断开受影响 upstream session，客户端重连后重新选账号”。
+- 验证：`go test ./internal/gettokenshooks ./internal/runtime/executor ./sdk/cliproxy ./sdk/api/handlers/openai` 与 sidecar fork `go test ./...` 均通过。
+
+## 2026-05-22 P2 WebSocket 热切实现闭环
+
+- `AccountRouteGuardStore` 增加 `IsAuthBlocked` / `AccountRouteGuardBlocksAuth`，让 WebSocket handler 可在请求轮次边界判断当前 pinned auth 是否已被手动禁用或自动限流 source 阻断。
+- `ResponsesWebsocket` 在每条 downstream request 进入 normalize 之前检查 `pinnedAuthID`；命中 guard 时释放 pin、设置 transcript replay，并关闭当前 execution session 的旧 upstream 资源，但保留 downstream WebSocket。
+- `CodexWebsocketsExecutor.ensureUpstreamConn` 不再只按 execution session 复用连接；当新选中的 `authID` 或 `wsURL` 与 session 上已有 upstream 不一致时，旧连接以 `auth_rotated` 关闭，新请求重新握手。
+- 切换边界固定为下一条 downstream request，不在同一条正在 streaming 的 response 中途迁移。
+- 验证：新增 `TestCodexWebsocketsExecutionSessionRotatesUpstreamWhenAuthChanges` 覆盖同 session 下 auth 变化必须产生第二次 upstream 握手；新增 `TestResponsesWebsocketReleasesPinnedAuthAfterRouteGuardBlock` 覆盖 pinned auth 被 Route Guard 阻断后同 downstream 连接内切到 auth-b，并用完整 transcript replay 避免旧 `previous_response_id` 泄漏。
+- 自动化：相关包 `go test ./internal/gettokenshooks ./internal/runtime/executor ./sdk/cliproxy ./sdk/api/handlers ./sdk/api/handlers/openai ./sdk/cliproxy/auth` 与 sidecar fork `go test ./...` 均通过。
+
 ## v4 → v5 的设计修正
 
 v4 在 `RoutePolicy.RewriteCandidates` 热路径上对每个候选账号逐条查 SQLite，不可接受。

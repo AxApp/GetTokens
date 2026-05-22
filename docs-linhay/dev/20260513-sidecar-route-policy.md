@@ -45,6 +45,28 @@ GetTokens 独立策略位于 `internal/gettokenshooks/route_policy.go`，由 sid
 
 header 只接受 loopback 请求，远端请求的路由 header 会被忽略。
 
+## Account Route Guard
+
+2026-05-22 起，GetTokens 在 `internal/gettokenshooks/route_guard.go` 增加统一账号路由守卫。它不是请求中途的 Gin middleware，而是一个 RoutePolicy source 聚合器：
+
+- `manual-disabled`：用户手动禁用账号，由 `sdk/cliproxy.Service.applyCoreAuthAddOrUpdate` 在 auth 变为 disabled 时写入。
+- `rate-limit`：自动限流阻断，由 `RateLimitEvaluator` 每轮评估后刷新。
+
+两个 source 共用候选 deny 机制，但清理互不影响。限流窗口恢复只清 `rate-limit`；用户重新启用账号只清 `manual-disabled`。这样可以避免自动策略恢复时误恢复用户手动禁用的账号。
+
+Codex WebSocket 的特殊处理在 service 层完成：当 Codex auth 从可路由状态切到 disabled 时，调用 `CloseCodexWebsocketSessionsForAuthID(authID, "auth_disabled")` 关闭已有上游 session。原因是 WebSocket handler / executor 会复用既有 `pinnedAuthID` 和 upstream connection，单靠候选过滤只能影响后续新选路，不能打断已建立连接。
+
+### P2 WebSocket 热切
+
+P2 将切换边界收敛到下一条 downstream request：
+
+1. `ResponsesWebsocket` 在每条 request 进入 normalize 前检查当前 `pinnedAuthID` 对应 auth 是否被 `AccountRouteGuardBlocksAuth` 阻断。
+2. 若已阻断，handler 释放 pin，设置下一轮完整 transcript replay，并关闭当前 execution session 的旧 upstream 资源；downstream WebSocket 连接继续保留。
+3. 本轮请求重新进入 AuthManager 选路，RoutePolicy 会剔除 guarded auth。
+4. `CodexWebsocketsExecutor.ensureUpstreamConn` 在同 execution session 内发现新 `authID` / `wsURL` 与旧 upstream 不一致时，关闭旧 conn 并重新握手。
+
+该语义不尝试在同一条正在 streaming 的 response 中途迁移账号；中途迁移仍属于取消/重放语义，需要单独设计。
+
 ## Codex 账号列表接入
 
 `CodexAccountListFeature` 的路由策略调试区面向用户展示页面 row id，例如 `auth-file:auth.json`、`codex-api-key:<local-id>`、`openai-compatible:<name>`。这些 id 只属于 GetTokens UI，不直接暴露 sidecar 内部 auth id。
