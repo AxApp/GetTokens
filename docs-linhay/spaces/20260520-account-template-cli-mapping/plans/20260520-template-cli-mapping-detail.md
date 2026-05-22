@@ -4,11 +4,11 @@
 
 本需求不是新增一套“账号卡直接写本机配置”的能力，而是在账号卡识别到稳定应用模板后，生成一份可审计的 local CLI apply 草稿，并在应用前打开一个确认页面。确认页面采用文件预览器布局：左侧只列目标文件，右侧展示选中文件的 diff；状态页 `StatusApplyLocalSection` 只作为 diff builder、preflight 和 apply handler 的逻辑参考，不作为页面布局参考。
 
-P0 只走 GetTokens relay：
+P0 按目标 CLI 与账号来源分流：
 
-- Codex 复用既有 local apply：API Key 模式写 `CODEX_HOME/auth.json` / `CODEX_HOME/config.toml` 的受控字段；保留 ChatGPT 登录态模式只读取校验 `auth.json`，并只 patch `config.toml` 的 custom provider 字段。
+- Codex 复用既有 local apply：API Key 模式写当前账号资产自身的 `apiKey` 与上游 `baseUrl` 到 `CODEX_HOME/auth.json` / `CODEX_HOME/config.toml` 的受控字段；OAuth / auth-file 模式写所选账号 OAuth；保留 ChatGPT 登录态模式只读取校验 `auth.json`，并只 patch `config.toml` 的 custom provider 字段。
 - Claude Code 写 `~/.claude/settings.json` 的既有受控 `env` 字段。
-- 多账号轮换仍发生在 relay 内，不把上游账号 API Key 或上游 base URL 直接写入 Codex / Claude Code。
+- Claude Code 的多账号轮换仍发生在 relay 内，不把上游账号 API Key 或上游 base URL 直接写入 Claude Code。
 
 ## 调研依据
 
@@ -163,13 +163,14 @@ type AccountCliApplyDraft =
       codex: {
         relayKeyIndex: number;
         endpointID: string;
+        apiKey: string;
         baseUrl: string;
         model: string;
         providerID: string;
         providerName: string;
         reasoningEffort: string;
         supportsWebsockets: boolean;
-        authStrategy: 'replace_auth_with_apikey' | 'preserve_chatgpt_auth';
+        authStrategy: 'replace_auth_with_apikey' | 'replace_auth_with_oauth' | 'preserve_chatgpt_auth';
       };
     }
   | {

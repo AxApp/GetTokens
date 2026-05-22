@@ -74,5 +74,5 @@
 ## 施工中疑问 / 后续报告
 
 1. 未做真实用户 `CODEX_HOME` / `~/.claude` 写入验收，原因是本轮避免直接改动用户本机 CLI 配置；真实写入由 Go 单测在临时目录覆盖。
-2. P0 仍不做 direct upstream 模式，也不把当前账号固定为 relay 候选；如后续要做，需要另开路由策略持久化和回滚设计。
+2. 2026-05-22 修正：Codex API key 模式已经收敛为写当前账号资产自身的 `apiKey` 与上游 `baseUrl`，不再走 relay key；Claude Code 仍不做 direct upstream，也不把当前账号固定为 relay 候选。如后续要扩展 Claude Code direct upstream，需要另开路由策略、密钥来源和回滚设计。
 3. `vendorPresets` 还没有新增字段承载 `localCliTemplateTargets`，本轮先在 resolver 内用官方/已验证白名单表达，后续可迁移成模板显式字段。

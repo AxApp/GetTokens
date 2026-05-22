@@ -11,7 +11,7 @@ P0 交付结果：
 1. 已验证模板账号在账号卡右上角菜单展示 `应用到 Codex` / `应用到 Claude Code`。
 2. 点击动作后必须先打开确认页；用户未确认前不写本机文件。
 3. 确认页采用文件预览器布局：左侧文件列表，右侧选中文件 diff。
-4. Codex 根据账号来源固定应用模式：API Key 账号走 `replace_auth_with_apikey`，OAuth / auth-file 账号走 `preserve_chatgpt_auth`。
+4. Codex 根据账号来源固定应用模式：API Key 账号走 `replace_auth_with_apikey` 并写当前账号资产自身的 `apiKey/baseUrl`，OAuth / auth-file 账号走 OAuth 写入模式；Status 页的 `preserve_chatgpt_auth` 仍是保留本机 ChatGPT 登录态的独立路径。
 5. Codex provider 先读取用户当前 `CODEX_HOME/config.toml` 的 root `model_provider`，默认 patch `[model_providers.<current>]`，不默认改成 `gettokens`，不按账号新建 provider。
 6. DeepSeek P0 只展示 Claude Code 入口；不因 OpenAI-compatible API 能力自动展示 Codex。
 
@@ -110,8 +110,8 @@ frontend/src/features/accounts/tests/accountLocalCliMapping.test.mjs
 1. 未命中模板不生成动作。
 2. DeepSeek 只生成 Claude Code 动作，不生成 Codex。
 3. OpenAI API Key 账号生成 Codex API Key draft，包含 `authStrategy=replace_auth_with_apikey`。
-4. OpenAI OAuth/auth-file 账号生成 Codex OAuth draft，包含 `authStrategy=preserve_chatgpt_auth`。
-5. OAuth draft 遇到 current provider `openai` 时返回 blocking warning，不静默 apply。
+4. OpenAI OAuth/auth-file 账号生成 Codex OAuth draft，包含 `authStrategy=replace_auth_with_oauth`。
+5. OAuth draft 可复用 current provider `openai`，但必须移除 `openai_base_url` override，让 Codex 按 `auth_mode=chatgpt` 使用 ChatGPT/Codex backend。
 6. current provider 为 `team-codex-relay` 时，draft providerID 保持该值。
 7. Claude draft 使用 relay endpoint，不使用上游 anthropic URL。
 8. 禁用账号不可执行并返回 disabled reason。
@@ -205,7 +205,7 @@ Wails / 桌面：
 
 ## 当前不做
 
-1. 不做 direct upstream 写入。
+1. 不做 Claude Code direct upstream 写入；Codex API key 模式只允许写当前选中账号资产自身内容，不扩展为任意上游直写工作台。
 2. 不修改 relay 请求顺序或单账号 pin。
 3. 不把账号卡变成 TOML/JSON 编辑器。
 4. 不为未验证厂商展示 Codex / Claude Code 按钮。

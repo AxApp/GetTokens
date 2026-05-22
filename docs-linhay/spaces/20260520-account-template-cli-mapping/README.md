@@ -13,7 +13,7 @@
 2. 支持从账号卡动作菜单快速生成 Codex 或 Claude Code local apply 草稿，减少用户在状态页重复选择 endpoint、provider、model 的步骤。
 3. 复用现有 local apply 的 diff 预览、预检和保留式写入，不在账号卡内另写一套 `config.toml` / `settings.json` 写入逻辑。
 4. 把账号模板、目标 CLI、API 格式和模型映射关系显式建模，避免用 provider 名称或 URL 字符串临时猜测。
-5. 明确安全边界：默认经由 GetTokens relay 应用到本地 CLI；是否允许绕过 relay 直写上游 key 作为后续待确认，不纳入 P0。
+5. 明确安全边界：Codex API key 账号应用到 Codex 时写入当前账号资产自身的 `apiKey` 与上游 `baseUrl`；OAuth/auth-file 账号写所选账号 OAuth；Claude Code 默认仍经由 GetTokens relay。
 6. Codex 侧必须先读取用户当前 `CODEX_HOME/config.toml` 中的 root `model_provider`；优先沿用用户正在使用的 provider，只 patch 对应 `[model_providers.<current>]` 的受控字段，避免已有会话因为 provider id 变化需要批量迁移。
 
 ## 范围
@@ -48,7 +48,7 @@
 ## 非目标
 - 不在账号卡内直接 patch `CODEX_HOME/config.toml`、`CODEX_HOME/auth.json` 或 `~/.claude/settings.json`。
 - 不把账号卡变成完整 local apply 工作台；复杂 provider、auth strategy、模型族字段仍在 Status local apply 中完成。
-- P0 不支持绕过 relay 直接把上游账号 API Key 写入 Codex / Claude Code。本项目当前本地 CLI 应用语义是写入 GetTokens relay 入口。
+- P0 不支持把上游账号 API Key 直写到 Claude Code；Claude Code 仍写 GetTokens relay 入口。Codex API key 账号是例外：API Key 模式必须写当前账号资产自身内容，不能用 relay key 代替。
 - P0 不实现跨协议转换，例如仅 `anthropic` 账号直接映射到 Codex，或仅 `openai_chat` 账号直接映射到 Claude Code。
 - 不新增第二套厂商模板系统；继续复用或扩展现有 `vendorPresets`。
 - 不自动覆盖用户已有 Codex provider、Claude env、MCP、profiles、agents、permissions、hooks、statusLine 或未知字段。
@@ -114,7 +114,7 @@ interface AccountLocalCliMapping {
 ### 2. Codex 映射规则
 
 1. 先要求应用模板显式支持 Codex，再优先匹配 `openai_responses`，其次 `openai_chat`。
-2. P0 仍写入 GetTokens relay 入口，不直接写上游账号 API Key。
+2. Codex API key 账号写入当前账号资产自身的 `apiKey` 与匹配到的格式化上游 `baseUrl`；缺少 GetTokens relay key 不应禁用该路径。Codex OAuth/auth-file 账号写所选账号 OAuth auth-file；Claude Code 仍写 GetTokens relay 入口。
 3. 源码校准依据为 OpenAI Codex `codex-rs/login/src/auth/storage.rs`、`codex-rs/model-provider/src/auth.rs`、`codex-rs/model-provider-info/src/lib.rs`：
    - `auth.json` 是 Codex 一方读取 API key / ChatGPT tokens 的结构化文件；API Key 模式必须写 `auth_mode=apikey` 与 `OPENAI_API_KEY`，OAuth / auth-file 账号必须写 `auth_mode=chatgpt` 与所选账号的 `tokens`。
    - Codex 读取 `auth.json` 时先解析 `auth_mode`，再 fallback 到 `OPENAI_API_KEY`：`auth_mode=apikey` 只读 `OPENAI_API_KEY`，`auth_mode=chatgpt` / `chatgptAuthTokens` 走 `tokens`；只有缺失 `auth_mode` 时，存在 `OPENAI_API_KEY` 才 fallback 为 API Key 模式。
@@ -159,7 +159,7 @@ interface AccountLocalCliMapping {
 6. 确认页面按钮语义应从“应用到 Codex / Claude Code”细化为“确认并应用”，并提供“取消”回到账号卡，不允许在进入确认页前写文件。
 
 ## 后续问题
-1. “直接映射”是否只允许经 GetTokens relay，还是未来也允许 direct upstream 模式把账号 API Key / 上游 base URL 写入 Codex 或 Claude Code？当前建议 P0 只走 relay。
+1. “直接映射”的当前边界已经收敛：Codex API key 模式写当前账号资产；Claude Code 仍走 relay。未来若要让 Claude Code 或其他 CLI 支持 direct upstream，需要单独设计回滚、密钥来源和 UI 风险提示。
 2. 应用模板是否就等于 `vendorPresets`，还是需要新增独立 `appTemplates` 概念？当前建议先扩展 `vendorPresets` 或增加 resolver，避免过早拆新系统。
 3. 如果一个账号支持多个模板或多个格式端点，菜单是否让用户选目标模板，还是使用 resolver 的最高置信匹配？当前建议 P0 使用最高置信匹配并在确认页允许调整。
 4. Codex 映射是否需要把选中账号固定为单账号候选？当前账号列表已有路由策略雏形，但 local apply 尚未持久化单账号 pin，P0 建议只生成 CLI 配置草稿，不修改请求顺序或候选策略。

@@ -52,3 +52,14 @@
 ## AGENTS 判断
 
 本次不更新 `AGENTS.md`。原因：新规则属于账号模板和 release 的具体领域执行边界，已落在现有项目级 skills；还没有形成新的 repo-wide 行为规范。
+
+## 2026-05-22 补充沉淀
+
+本轮修正了账号卡片 `应用到 Codex` 的 API key 模式边界：确认页和真实写入不能再使用 GetTokens relay key / relay endpoint 代替当前账号内容。稳定规则补充如下：
+
+1. Codex API key 账号应用到 Codex 时，`AccountCliApplyDraft.codex` 必须携带当前账号资产自身的 `apiKey` 与匹配到的 source format `baseUrl`。
+2. 缺少 GetTokens relay key 不应禁用 Codex API key 模式；但 Claude Code local apply 仍依赖 relay key。
+3. 后端 `ApplyRelayServiceConfigToLocalV2` 接收账号池 API key 时必须避免更新 relay key metadata，防止把账号资产误记为 relay service key。
+4. 旧文档中的“P0 只走 relay”需改成按目标分流：Codex API key 直写当前账号，Codex OAuth 写 auth-file，Claude Code 继续走 relay。
+
+已同步更新 `gettokens-domain-engineering` 的 `Account Template Local CLI Apply` 小节和 `20260520-account-template-cli-mapping` space。该规则仍属于账号模板 / 本机 CLI 应用领域，不升级到 `AGENTS.md`。
