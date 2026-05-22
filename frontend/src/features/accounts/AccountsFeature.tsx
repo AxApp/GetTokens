@@ -618,6 +618,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             maxOutputTokens: draft.claude.maxOutputTokens,
             apiTimeoutMs: draft.claude.apiTimeoutMs,
             disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
+            claudeCodeAttributionHeader: draft.claude.claudeCodeAttributionHeader,
           },
         },
         () =>
@@ -630,6 +631,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             maxOutputTokens: draft.claude.maxOutputTokens,
             apiTimeoutMs: draft.claude.apiTimeoutMs,
             disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
+            claudeCodeAttributionHeader: draft.claude.claudeCodeAttributionHeader,
           }),
       );
       const warningSuffix = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';

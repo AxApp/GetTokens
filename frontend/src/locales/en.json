@@ -272,7 +272,8 @@
     "account_list_real_model": "Real Model",
     "account_list_claude_model": "Claude Code Model",
     "account_list_move_up": "Move Account Up",
-    "account_list_move_down": "Move Account Down"
+    "account_list_move_down": "Move Account Down",
+    "attribution_header": "Hide Attribution Header"
   },
   "codex_live_sessions": {
     "title": "Codex Live Sessions",
@@ -769,6 +770,7 @@
     "claude_max_output_tokens": "Max Output Tokens",
     "claude_api_timeout_ms": "API Timeout Ms",
     "claude_disable_nonessential_traffic": "Disable Nonessential Traffic",
+    "claude_code_attribution_header": "Hide Attribution Header",
     "codex_controlled_auth_hint": "Merges auth fields and preserves unknown fields",
     "codex_controlled_config_hint": "Only patches controlled root/provider keys; preserves MCP, profiles, and agents",
     "claude_controlled_key_hint": "Writes the Relay API key",

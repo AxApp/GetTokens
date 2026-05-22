@@ -181,6 +181,7 @@ function buildPreviewFiles(draft: AccountCliApplyDraft, relayKeyItems: AccountLo
           maxOutputTokens: draft.claude.maxOutputTokens,
           apiTimeoutMs: draft.claude.apiTimeoutMs,
           disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
+          claudeCodeAttributionHeader: draft.claude.claudeCodeAttributionHeader,
           authField: draft.claude.authField,
         }),
       },

@@ -63,6 +63,7 @@ export interface ClaudeCodeLocalApplyDraft {
   maxOutputTokens: string;
   apiTimeoutMs: string;
   disableNonEssentialTraffic: boolean;
+  claudeCodeAttributionHeader: boolean;
   authField: 'ANTHROPIC_API_KEY';
 }
 
@@ -134,6 +135,7 @@ export interface ClaudeCodeSettingsDiffInput {
   maxOutputTokens?: string;
   apiTimeoutMs?: string;
   disableNonEssentialTraffic?: boolean;
+  claudeCodeAttributionHeader?: boolean;
   targetPath?: string;
   authField?: 'ANTHROPIC_API_KEY';
 }
@@ -347,6 +349,7 @@ export function buildClaudeCodeSettingsDiff(input: ClaudeCodeSettingsDiffInput) 
     ['CLAUDE_CODE_MAX_OUTPUT_TOKENS', input.maxOutputTokens?.trim() || ''],
     ['API_TIMEOUT_MS', input.apiTimeoutMs?.trim() || ''],
     ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', input.disableNonEssentialTraffic ? '1' : ''],
+    ['CLAUDE_CODE_ATTRIBUTION_HEADER', input.claudeCodeAttributionHeader ? '0' : ''],
   ].filter(([, value]) => value) as [string, string][];
 
   const envLines = envItems.map(([key, value], index) => {

@@ -5,7 +5,7 @@ export const previewUserLayer = {
   path: '~/.claude/settings.json',
   exists: true,
   knownFields: {
-    env: { ANTHROPIC_MODEL: 'claude-sonnet-4-6', ANTHROPIC_BASE_URL: 'https://api.example.com/v1' },
+    env: { ANTHROPIC_MODEL: 'claude-sonnet-4-6', ANTHROPIC_BASE_URL: 'https://api.example.com/v1', CLAUDE_CODE_ATTRIBUTION_HEADER: '0' },
     permissions: { allow: ['Read', 'Write', 'Bash'], deny: [], defaultMode: 'default' },
     disableAllHooks: false,
     outputStyle: 'default',

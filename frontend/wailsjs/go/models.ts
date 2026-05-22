@@ -948,6 +948,7 @@ export namespace main {
 	    apiTimeoutMs?: string;
 	    disableNonEssentialTraffic?: boolean;
 	
+		claudeCodeAttributionHeader?: boolean;
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeLocalApplyOptions(source);
 	    }
@@ -962,6 +963,7 @@ export namespace main {
 	        this.maxOutputTokens = source["maxOutputTokens"];
 	        this.apiTimeoutMs = source["apiTimeoutMs"];
 	        this.disableNonEssentialTraffic = source["disableNonEssentialTraffic"];
+		this.claudeCodeAttributionHeader = source["claudeCodeAttributionHeader"];
 	    }
 	}
 	export class ClaudeCodeLocalApplyResult {

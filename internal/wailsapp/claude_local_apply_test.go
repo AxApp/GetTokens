@@ -125,7 +125,8 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesTopLevelAndEnvFields(t *test
 		SmallFastModel:             "claude-haiku-test",
 		MaxOutputTokens:            "6000",
 		APITimeoutMS:               "600000",
-		DisableNonEssentialTraffic: true,
+		DisableNonEssentialTraffic:  true,
+		ClaudeCodeAttributionHeader: true,
 	}
 	if _, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317/v1", options); err != nil {
 		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
@@ -159,6 +160,7 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesTopLevelAndEnvFields(t *test
 		`"CLAUDE_CODE_MAX_OUTPUT_TOKENS": "6000"`,
 		`"API_TIMEOUT_MS": "600000"`,
 		`"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"`,
+		`"CLAUDE_CODE_ATTRIBUTION_HEADER": "0"`,
 	} {
 		if !strings.Contains(content, expected) {
 			t.Fatalf("settings.json missing preserved or patched content %q:\n%s", expected, content)
@@ -200,6 +202,40 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesAuthTokenAndReturnsWarning(t
 	}
 	if !strings.Contains(content, `"ANTHROPIC_AUTH_TOKEN": "keep-token"`) {
 		t.Fatalf("ANTHROPIC_AUTH_TOKEN should be preserved:\n%s", content)
+	}
+	if !strings.Contains(content, `"ANTHROPIC_API_KEY": "sk-ant-new"`) {
+		t.Fatalf("ANTHROPIC_API_KEY should still be written:\n%s", content)
+	}
+}
+
+func TestApplyClaudeCodeAPIKeyConfigToLocalRemovesAttributionHeaderWhenSetToFalse(t *testing.T) {
+	claudeDir := filepath.Join(t.TempDir(), ".claude")
+	t.Setenv("CLAUDE_CONFIG_DIR", claudeDir)
+	t.Setenv("HOME", t.TempDir())
+
+	if err := os.MkdirAll(claudeDir, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	settingsPath := filepath.Join(claudeDir, "settings.json")
+	existing := "{\n  \"env\": {\n    \"CLAUDE_CODE_ATTRIBUTION_HEADER\": \"0\",\n    \"ANTHROPIC_API_KEY\": \"old-key\"\n  }\n}\n"
+	if err := os.WriteFile(settingsPath, []byte(existing), 0600); err != nil {
+		t.Fatalf("WriteFile settings.json: %v", err)
+	}
+
+	app := &App{}
+	options := ClaudeCodeLocalApplyOptions{ClaudeCodeAttributionHeader: false}
+	if _, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-ant-new", "http://127.0.0.1:8317", options); err != nil {
+		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
+	}
+
+	body, err := os.ReadFile(settingsPath)
+	if err != nil {
+		t.Fatalf("ReadFile settings.json: %v", err)
+	}
+	content := string(body)
+
+	if strings.Contains(content, `CLAUDE_CODE_ATTRIBUTION_HEADER`) {
+		t.Fatalf("CLAUDE_CODE_ATTRIBUTION_HEADER should be removed when toggle is off:\n%s", content)
 	}
 	if !strings.Contains(content, `"ANTHROPIC_API_KEY": "sk-ant-new"`) {
 		t.Fatalf("ANTHROPIC_API_KEY should still be written:\n%s", content)

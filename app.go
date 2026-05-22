@@ -1050,6 +1050,7 @@ func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, 
 		MaxOutputTokens:            options.MaxOutputTokens,
 		APITimeoutMS:               options.APITimeoutMS,
 		DisableNonEssentialTraffic: options.DisableNonEssentialTraffic,
+		ClaudeCodeAttributionHeader: options.ClaudeCodeAttributionHeader,
 	})
 	if err != nil {
 		return nil, err

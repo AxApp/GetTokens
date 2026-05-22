@@ -3,6 +3,7 @@ import { useState, type ReactNode } from 'react';
 import type { main } from '../../../../wailsjs/go/models';
 import AssetWorkbenchShell from '../../../components/ui/AssetWorkbenchShell';
 import SnippetPre from '../../../components/ui/SnippetPre';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 
 export type SettingsScopeStackState =
   | 'all-layers-valid'
@@ -22,6 +23,8 @@ interface ClaudeCodeSettingsScopeStackProps {
   onStartEdit?: (scope: string) => void;
   onCancelEdit?: () => void;
   onSavePatch?: (patches: Record<string, any>) => void;
+  onToggleAttributionHeader?: (scope: string, enabled: boolean) => void;
+  attributionHeaderLabel?: string;
   state: SettingsScopeStackState;
   stateMessage?: string;
 }
@@ -53,6 +56,8 @@ export default function ClaudeCodeSettingsScopeStack({
   draftPatches,
   savePreview,
   saveError,
+  onToggleAttributionHeader,
+  attributionHeaderLabel,
   state,
   stateMessage,
 }: ClaudeCodeSettingsScopeStackProps) {
@@ -156,6 +161,18 @@ export default function ClaudeCodeSettingsScopeStack({
                             ))}
                           </div>
                         </SettingsFieldSection>
+                      )}
+
+                      {layer.knownFields?.env && `${layer.scope}` !== 'managed' && (
+                        <div className="flex items-center justify-between ml-6 mt-4">
+                          <span className="text-sm font-medium text-[var(--text-primary)]">{attributionHeaderLabel}</span>
+                          <ToggleSwitch
+                            label={attributionHeaderLabel ?? 'Attribution Header'}
+                            checked={'CLAUDE_CODE_ATTRIBUTION_HEADER' in layer.knownFields.env}
+                            className="h-8 w-14"
+                            onChange={(checked) => onToggleAttributionHeader?.(`${layer.scope}`, checked)}
+                          />
+                        </div>
                       )}
 
                       {layer.knownFields.permissions && (

@@ -124,6 +124,7 @@ export function StatusApplyLocalSection({
     maxOutputTokens: '',
     apiTimeoutMs: '',
     disableNonEssentialTraffic: false,
+    claudeCodeAttributionHeader: false,
     authField: 'ANTHROPIC_API_KEY',
   }));
   const selectedRelayKey = relayKeyItems[selectedKeyIndex]?.value || '';
@@ -209,11 +210,13 @@ export function StatusApplyLocalSection({
         maxOutputTokens: claudeDraft.maxOutputTokens,
         apiTimeoutMs: claudeDraft.apiTimeoutMs,
         disableNonEssentialTraffic: claudeDraft.disableNonEssentialTraffic,
+        claudeCodeAttributionHeader: claudeDraft.claudeCodeAttributionHeader,
         authField: claudeDraft.authField,
       }),
     [
       claudeDraft.apiTimeoutMs,
       claudeDraft.authField,
+      claudeDraft.claudeCodeAttributionHeader,
       claudeDraft.defaultHaikuModel,
       claudeDraft.defaultOpusModel,
       claudeDraft.defaultSonnetModel,
@@ -620,6 +623,18 @@ export function StatusApplyLocalSection({
                     disabled={isApplyingClaude}
                     className="h-8 w-14"
                     onChange={(checked) => updateClaudeDraft({ disableNonEssentialTraffic: checked })}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
+                  <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                    {t('status.claude_code_attribution_header')}
+                  </span>
+                  <ToggleSwitch
+                    label={t('status.claude_code_attribution_header')}
+                    checked={claudeDraft.claudeCodeAttributionHeader}
+                    disabled={isApplyingClaude}
+                    className="h-8 w-14"
+                    onChange={(checked) => updateClaudeDraft({ claudeCodeAttributionHeader: checked })}
                   />
                 </div>
               </div>

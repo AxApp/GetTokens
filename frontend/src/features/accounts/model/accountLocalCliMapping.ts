@@ -129,6 +129,7 @@ export type AccountCliApplyDraft =
         maxOutputTokens: string;
         apiTimeoutMs: string;
         disableNonEssentialTraffic: boolean;
+        claudeCodeAttributionHeader: boolean;
         authField: 'ANTHROPIC_API_KEY';
       };
     };
@@ -400,6 +401,7 @@ function buildClaudeDraft(
       maxOutputTokens: '',
       apiTimeoutMs: '',
       disableNonEssentialTraffic: true,
+      claudeCodeAttributionHeader: false,
       authField: 'ANTHROPIC_API_KEY',
     },
   };

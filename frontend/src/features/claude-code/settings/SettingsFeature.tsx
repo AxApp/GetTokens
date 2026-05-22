@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GetClaudeCodeSettingsSnapshot, PatchClaudeCodeSettings } from '../../../../wailsjs/go/main/App';
 import type { main } from '../../../../wailsjs/go/models';
+import { useI18n } from '../../../context/I18nContext';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import ClaudeCodeSettingsScopeStack from '../components/ClaudeCodeSettingsScopeStack';
 import type { SettingsScopeStackState } from '../components/ClaudeCodeSettingsScopeStack';
 import { previewAllLayersSnapshot, previewEmptySnapshot } from './previewData';
 
 export default function SettingsFeature() {
+  const { t } = useI18n();
   const [snapshot, setSnapshot] = useState<main.ClaudeCodeSettingsSnapshot>(previewAllLayersSnapshot);
   const [loadError, setLoadError] = useState('');
   const [editingScope, setEditingScope] = useState('');
@@ -91,6 +93,41 @@ export default function SettingsFeature() {
     }
   }, [editingScope, snapshot.layers, loadSnapshot]);
 
+  const handleToggleAttributionHeader = useCallback(async (scope: string, enabled: boolean) => {
+    const layer = snapshot.layers.find((l) => l.scope === scope);
+    if (!layer || !layer.path || !layer.knownFields?.env) return;
+
+    setSaving(true);
+    setSaveError('');
+    try {
+      const currentEnv = { ...layer.knownFields.env };
+      if (enabled) {
+        currentEnv['CLAUDE_CODE_ATTRIBUTION_HEADER'] = '0';
+      } else {
+        delete currentEnv['CLAUDE_CODE_ATTRIBUTION_HEADER'];
+      }
+
+      if (!hasWailsAppBindings()) {
+        setSavePreview(JSON.stringify({ env: currentEnv }, null, 2));
+        setEditingScope('');
+        return;
+      }
+
+      const result = await PatchClaudeCodeSettings({
+        scope: scope as any,
+        path: layer.path,
+        patches: { env: currentEnv },
+      });
+      setSavePreview(result.preview);
+      setEditingScope('');
+      await loadSnapshot();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setSaving(false);
+    }
+  }, [snapshot.layers, loadSnapshot]);
+
   return (
     <ClaudeCodeSettingsScopeStack
       snapshot={snapshot}
@@ -100,6 +137,8 @@ export default function SettingsFeature() {
       onStartEdit={handleStartEdit}
       onCancelEdit={handleCancelEdit}
       onSavePatch={handleSavePatch}
+      onToggleAttributionHeader={handleToggleAttributionHeader}
+      attributionHeaderLabel={t('claude_code.attribution_header')}
       savePreview={savePreview}
       saveError={saveError}
     />

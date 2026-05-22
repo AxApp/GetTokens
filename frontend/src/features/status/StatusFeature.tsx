@@ -686,6 +686,7 @@ export default function StatusFeature({
             maxOutputTokens: draft.maxOutputTokens,
             apiTimeoutMs: draft.apiTimeoutMs,
             disableNonEssentialTraffic: draft.disableNonEssentialTraffic,
+            claudeCodeAttributionHeader: draft.claudeCodeAttributionHeader,
           },
         },
         () =>
@@ -698,6 +699,7 @@ export default function StatusFeature({
             maxOutputTokens: draft.maxOutputTokens,
             apiTimeoutMs: draft.apiTimeoutMs,
             disableNonEssentialTraffic: draft.disableNonEssentialTraffic,
+            claudeCodeAttributionHeader: draft.claudeCodeAttributionHeader,
           })
       );
       const warningSuffix = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';

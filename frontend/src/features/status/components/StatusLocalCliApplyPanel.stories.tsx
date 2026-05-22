@@ -318,6 +318,7 @@ const templateClaudeDraft: ClaudeCodeLocalApplyDraft = {
   maxOutputTokens: '6000',
   apiTimeoutMs: '600000',
   disableNonEssentialTraffic: true,
+  claudeCodeAttributionHeader: false,
   authField: 'ANTHROPIC_API_KEY',
 };
 

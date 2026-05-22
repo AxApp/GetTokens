@@ -272,7 +272,8 @@
     "account_list_real_model": "真实模型",
     "account_list_claude_model": "Claude Code 模型",
     "account_list_move_up": "上移账号",
-    "account_list_move_down": "下移账号"
+    "account_list_move_down": "下移账号",
+    "attribution_header": "隐藏归因头部"
   },
   "codex_live_sessions": {
     "title": "Codex 运行会话",
@@ -769,6 +770,7 @@
     "claude_max_output_tokens": "最大输出 Tokens",
     "claude_api_timeout_ms": "API 超时毫秒",
     "claude_disable_nonessential_traffic": "禁用非必要流量",
+    "claude_code_attribution_header": "隐藏归因头部",
     "codex_controlled_auth_hint": "merge auth 字段，保留未知字段",
     "codex_controlled_config_hint": "只 patch root/provider 受控 key，保留 MCP、profiles、agents",
     "claude_controlled_key_hint": "写入 Relay API key",

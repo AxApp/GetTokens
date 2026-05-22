@@ -120,7 +120,8 @@ type ClaudeCodeLocalApplyOptions struct {
 	SmallFastModel             string `json:"smallFastModel,omitempty"`
 	MaxOutputTokens            string `json:"maxOutputTokens,omitempty"`
 	APITimeoutMS               string `json:"apiTimeoutMs,omitempty"`
-	DisableNonEssentialTraffic bool   `json:"disableNonEssentialTraffic,omitempty"`
+	DisableNonEssentialTraffic  bool `json:"disableNonEssentialTraffic,omitempty"`
+	ClaudeCodeAttributionHeader bool `json:"claudeCodeAttributionHeader,omitempty"`
 }
 
 type LocalProjectedUsageDetail struct {

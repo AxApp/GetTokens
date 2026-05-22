@@ -36,7 +36,8 @@ func normalizeClaudeCodeLocalApplyOptions(options ClaudeCodeLocalApplyOptions) C
 		SmallFastModel:             strings.TrimSpace(options.SmallFastModel),
 		MaxOutputTokens:            strings.TrimSpace(options.MaxOutputTokens),
 		APITimeoutMS:               strings.TrimSpace(options.APITimeoutMS),
-		DisableNonEssentialTraffic: options.DisableNonEssentialTraffic,
+		DisableNonEssentialTraffic:  options.DisableNonEssentialTraffic,
+		ClaudeCodeAttributionHeader: options.ClaudeCodeAttributionHeader,
 	}
 }
 
@@ -150,6 +151,11 @@ func buildClaudeCodeEnvPayload(env map[string]any, apiKey string, baseURL string
 		env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
 	} else {
 		delete(env, "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")
+	}
+	if options.ClaudeCodeAttributionHeader {
+		env["CLAUDE_CODE_ATTRIBUTION_HEADER"] = "0"
+	} else {
+		delete(env, "CLAUDE_CODE_ATTRIBUTION_HEADER")
 	}
 	return env
 }
