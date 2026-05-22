@@ -28,7 +28,7 @@ export function SessionDetail({
 }) {
   if (!session) {
     return (
-      <div className="grid place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-6 shadow-[6px_6px_0_var(--shadow-color)]">
+      <div className="grid w-full place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-6 shadow-[6px_6px_0_var(--shadow-color)]">
         <div className="max-w-sm text-center font-bold text-[var(--text-muted)]">
           {t('codex_live_sessions.no_running_sessions')}
         </div>
@@ -39,7 +39,7 @@ export function SessionDetail({
   const timeline = request?.timeline ?? session.recentEvents;
 
   return (
-    <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
+    <div className="min-w-0 w-full border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
       <div className="grid gap-3 border-b-2 border-[var(--border-color)] p-4 lg:grid-cols-[1fr_auto]">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">

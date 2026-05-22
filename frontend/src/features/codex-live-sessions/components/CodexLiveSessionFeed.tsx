@@ -25,7 +25,7 @@ export function SessionFeed({
   t: Translate;
 }) {
   return (
-    <div className="min-h-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
+    <div className="min-h-0 min-w-0 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
       <div
         data-debug={undefined}
         className="grid gap-1 border-b-2 border-[var(--border-color)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
@@ -41,14 +41,6 @@ export function SessionFeed({
         <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
           {sessions.length} {t('codex_live_sessions.rows')}
         </span>
-      </div>
-
-      <div className="hidden grid-cols-[9rem_minmax(15rem,1.1fr)_minmax(14rem,0.85fr)_minmax(13rem,0.8fr)_5rem] gap-4 border-b border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] px-4 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)] lg:grid">
-        <span>{t('codex_live_sessions.col_status')}</span>
-        <span>{t('codex_live_sessions.col_model_account')}</span>
-        <span>{t('codex_live_sessions.col_connection')}</span>
-        <span>{t('codex_live_sessions.col_speed')}</span>
-        <span>{t('codex_live_sessions.col_open')}</span>
       </div>
 
       <div>
@@ -105,7 +97,7 @@ function SessionRow({
       type="button"
       onClick={onSelect}
       aria-expanded={selected}
-      className={`grid w-full gap-4 px-4 py-4 text-left transition-colors active:scale-[0.99] lg:grid-cols-[9rem_minmax(15rem,1.1fr)_minmax(14rem,0.85fr)_minmax(13rem,0.8fr)_5rem] lg:items-center ${
+      className={`grid w-full gap-3 px-4 py-4 text-left transition-colors active:scale-[0.99] ${
         selected
           ? 'bg-[color-mix(in_srgb,var(--border-color)_10%,var(--bg-main))]'
           : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'

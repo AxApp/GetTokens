@@ -184,6 +184,37 @@ test('filterAccounts can narrow accounts by credential source', () => {
   );
 });
 
+test('filterAccounts returns no accounts when no credential source is selected', () => {
+  const accounts = [
+    {
+      id: 'auth-file:alpha',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Alpha',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'api-key:beta',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Beta Key',
+      status: 'CONFIGURED',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        source: 'none',
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    []
+  );
+});
+
 test('filterAccounts can keep only requestable accounts', () => {
   const accounts = [
     {
@@ -215,7 +246,7 @@ test('filterAccounts can keep only requestable accounts', () => {
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        requestableOnly: true,
+        availability: 'requestable',
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -449,7 +480,7 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        errorsOnly: true,
+        availability: 'errors',
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -460,7 +491,7 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        disabledOnly: true,
+        availability: 'disabled',
       },
       codexQuotaByName: {},
     }).map((item) => item.id),

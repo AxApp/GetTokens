@@ -25,15 +25,11 @@ interface BuildAccountsViewArgs {
 export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters, codexQuotaByName }: FilterAccountsArgs) {
   const query = searchTerm.trim().toLowerCase();
   return accounts.filter((account) => {
+    if (filters.source === 'none') {
+      return false;
+    }
+
     if (filters.source !== 'all' && account.credentialSource !== filters.source) {
-      return false;
-    }
-
-    if (filters.requestableOnly && isAccountUnavailable(account)) {
-      return false;
-    }
-
-    if (filters.disabledOnly && !isAccountDisabled(account)) {
       return false;
     }
 
@@ -45,7 +41,15 @@ export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters,
       return false;
     }
 
-    if (filters.errorsOnly && !isAccountError(account)) {
+    if (filters.availability === 'requestable' && isAccountUnavailable(account)) {
+      return false;
+    }
+
+    if (filters.availability === 'disabled' && !isAccountDisabled(account)) {
+      return false;
+    }
+
+    if (filters.availability === 'errors' && !isAccountError(account)) {
       return false;
     }
 

@@ -60,15 +60,14 @@ export interface AccountGroup {
   accounts: AccountRecord[];
 }
 
-export type AccountsFilterSource = 'all' | CredentialSource;
+export type AccountsFilterSource = 'all' | 'none' | CredentialSource;
+export type AccountsAvailabilityFilter = 'all' | 'requestable' | 'disabled' | 'errors';
 
 export interface AccountsFilterState {
   source: AccountsFilterSource;
-  requestableOnly: boolean;
-  disabledOnly: boolean;
+  availability: AccountsAvailabilityFilter;
   hasBalance: boolean;
   hasLongestQuota: boolean;
-  errorsOnly: boolean;
 }
 
 export type TrackRequest = <T>(

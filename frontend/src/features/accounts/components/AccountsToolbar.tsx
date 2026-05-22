@@ -1,8 +1,13 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import SearchInput from '../../../components/ui/SearchInput';
-import { defaultAccountsFilterState } from '../model/accountFilters';
+import {
+  defaultAccountsFilterState,
+  isAccountsFilterSourceSelected,
+  toggleAccountsFilterSource,
+} from '../model/accountFilters';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
-import type { AccountsFilterSource, AccountsFilterState, Translator } from '../model/types';
+import type { AccountsAvailabilityFilter, AccountsFilterState, Translator } from '../model/types';
+import type { CredentialSource } from '../../../types';
 
 interface AccountsToolbarProps {
   t: Translator;
@@ -59,14 +64,28 @@ export default function AccountsToolbar({
     };
   }, [isMenuOpen]);
 
-  function setSourceFilter(source: AccountsFilterSource) {
+  function toggleSourceFilter(source: CredentialSource) {
     onFiltersChange({
       ...filters,
-      source,
+      source: toggleAccountsFilterSource(filters.source, source),
     });
   }
 
-  function toggleFilter(key: 'requestableOnly' | 'disabledOnly' | 'hasBalance' | 'hasLongestQuota' | 'errorsOnly') {
+  const availabilityOptions: ReadonlyArray<{ id: AccountsAvailabilityFilter; label: string }> = [
+    { id: 'all', label: t('accounts.filter_availability_all') },
+    { id: 'requestable', label: t('accounts.filter_requestable') },
+    { id: 'disabled', label: t('accounts.filter_disabled_only') },
+    { id: 'errors', label: t('accounts.errors_only') },
+  ];
+
+  function setAvailabilityFilter(availability: AccountsAvailabilityFilter) {
+    onFiltersChange({
+      ...filters,
+      availability,
+    });
+  }
+
+  function toggleResourceFilter(key: 'hasBalance' | 'hasLongestQuota') {
     onFiltersChange({
       ...filters,
       [key]: !filters[key],
@@ -94,35 +113,47 @@ export default function AccountsToolbar({
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_source')}
                   </p>
-                  <div className="grid h-10 grid-cols-3 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-                    <FilterOptionButton active={filters.source === 'all'} bordered onClick={() => setSourceFilter('all')}>
-                      {t('accounts.filter_all')}
-                    </FilterOptionButton>
-                    <FilterOptionButton active={filters.source === 'auth-file'} bordered onClick={() => setSourceFilter('auth-file')}>
+                  <div className="grid gap-2">
+                    <FilterCheckbox
+                      checked={isAccountsFilterSourceSelected(filters.source, 'auth-file')}
+                      onChange={() => toggleSourceFilter('auth-file')}
+                    >
                       {t('accounts.source_auth_file')}
-                    </FilterOptionButton>
-                    <FilterOptionButton active={filters.source === 'api-key'} onClick={() => setSourceFilter('api-key')}>
+                    </FilterCheckbox>
+                    <FilterCheckbox
+                      checked={isAccountsFilterSourceSelected(filters.source, 'api-key')}
+                      onChange={() => toggleSourceFilter('api-key')}
+                    >
                       {t('accounts.source_api_key')}
-                    </FilterOptionButton>
+                    </FilterCheckbox>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_status')}
                   </p>
-                  <FilterCheckbox checked={filters.requestableOnly} onChange={() => toggleFilter('requestableOnly')}>
-                    {t('accounts.filter_requestable')}
-                  </FilterCheckbox>
-                  <FilterCheckbox checked={filters.disabledOnly} onChange={() => toggleFilter('disabledOnly')}>
-                    {t('accounts.filter_disabled_only')}
-                  </FilterCheckbox>
-                  <FilterCheckbox checked={filters.errorsOnly} onChange={() => toggleFilter('errorsOnly')}>
-                    {t('accounts.errors_only')}
-                  </FilterCheckbox>
-                  <FilterCheckbox checked={filters.hasBalance} onChange={() => toggleFilter('hasBalance')}>
+                  <div className="grid grid-cols-2 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+                    {availabilityOptions.map((option, index) => (
+                      <FilterOptionButton
+                        key={option.id}
+                        active={filters.availability === option.id}
+                        bordered={index % 2 === 0}
+                        topBorder={index >= 2}
+                        onClick={() => setAvailabilityFilter(option.id)}
+                      >
+                        {option.label}
+                      </FilterOptionButton>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('accounts.filter_group_resource')}
+                  </p>
+                  <FilterCheckbox checked={filters.hasBalance} onChange={() => toggleResourceFilter('hasBalance')}>
                     {t('accounts.filter_has_balance')}
                   </FilterCheckbox>
-                  <FilterCheckbox checked={filters.hasLongestQuota} onChange={() => toggleFilter('hasLongestQuota')}>
+                  <FilterCheckbox checked={filters.hasLongestQuota} onChange={() => toggleResourceFilter('hasLongestQuota')}>
                     {t('accounts.filter_longest_quota')}
                   </FilterCheckbox>
                 </div>
@@ -210,11 +241,13 @@ function DisplayModeButton({
 function FilterOptionButton({
   active,
   bordered = false,
+  topBorder = false,
   children,
   onClick,
 }: {
   active: boolean;
   bordered?: boolean;
+  topBorder?: boolean;
   children: ReactNode;
   onClick: () => void;
 }) {
@@ -222,15 +255,15 @@ function FilterOptionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`h-full min-h-0 px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
+      className={`min-h-9 min-w-0 px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
         bordered ? 'border-r border-[var(--border-color)]' : ''
-      } ${
+      } ${topBorder ? 'border-t border-[var(--border-color)]' : ''} ${
         active
           ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
           : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
       }`}
     >
-      {children}
+      <span className="block truncate">{children}</span>
     </button>
   );
 }
@@ -260,26 +293,29 @@ function FilterCheckbox({
 function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState) {
   const parts: string[] = [];
 
+  if (filters.source === 'none') {
+    parts.push(t('accounts.filter_source_none'));
+  }
   if (filters.source === 'auth-file') {
     parts.push(t('accounts.source_auth_file'));
   }
   if (filters.source === 'api-key') {
     parts.push(t('accounts.source_api_key'));
   }
-  if (filters.requestableOnly) {
+  if (filters.availability === 'requestable') {
     parts.push(t('accounts.filter_requestable'));
   }
-  if (filters.disabledOnly) {
+  if (filters.availability === 'disabled') {
     parts.push(t('accounts.filter_disabled_only'));
+  }
+  if (filters.availability === 'errors') {
+    parts.push(t('accounts.errors_only'));
   }
   if (filters.hasBalance) {
     parts.push(t('accounts.filter_has_balance'));
   }
   if (filters.hasLongestQuota) {
     parts.push(t('accounts.filter_longest_quota'));
-  }
-  if (filters.errorsOnly) {
-    parts.push(t('accounts.errors_only'));
   }
 
   if (parts.length === 0) {

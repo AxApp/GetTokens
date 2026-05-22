@@ -1,18 +1,70 @@
-import type { AccountsFilterSource, AccountsFilterState } from './types';
+import type { AccountsAvailabilityFilter, AccountsFilterSource, AccountsFilterState } from './types';
+import type { CredentialSource } from '../../../types';
 
 export const ACCOUNTS_FILTERS_STORAGE_KEY = 'gettokens.accountsFilters';
 
 export const defaultAccountsFilterState: AccountsFilterState = {
   source: 'all',
-  requestableOnly: false,
-  disabledOnly: false,
+  availability: 'all',
   hasBalance: false,
   hasLongestQuota: false,
-  errorsOnly: false,
 };
 
 function resolveAccountsFilterSource(value: unknown): AccountsFilterSource {
-  return value === 'auth-file' || value === 'api-key' ? value : 'all';
+  return value === 'all' || value === 'none' || value === 'auth-file' || value === 'api-key' ? value : 'all';
+}
+
+function resolveAccountsAvailabilityFilter(candidate: Record<string, unknown>): AccountsAvailabilityFilter {
+  const availability = candidate.availability;
+  if (availability === 'all' || availability === 'requestable' || availability === 'disabled' || availability === 'errors') {
+    return availability;
+  }
+
+  if (candidate.errorsOnly === true) {
+    return 'errors';
+  }
+  if (candidate.disabledOnly === true) {
+    return 'disabled';
+  }
+  if (candidate.requestableOnly === true) {
+    return 'requestable';
+  }
+  return 'all';
+}
+
+export function isAccountsFilterSourceSelected(filterSource: AccountsFilterSource, source: CredentialSource): boolean {
+  if (filterSource === 'all') {
+    return true;
+  }
+  if (filterSource === 'none') {
+    return false;
+  }
+  return filterSource === source;
+}
+
+export function toggleAccountsFilterSource(
+  filterSource: AccountsFilterSource,
+  source: CredentialSource,
+): AccountsFilterSource {
+  const authFileSelected =
+    source === 'auth-file'
+      ? !isAccountsFilterSourceSelected(filterSource, 'auth-file')
+      : isAccountsFilterSourceSelected(filterSource, 'auth-file');
+  const apiKeySelected =
+    source === 'api-key'
+      ? !isAccountsFilterSourceSelected(filterSource, 'api-key')
+      : isAccountsFilterSourceSelected(filterSource, 'api-key');
+
+  if (authFileSelected && apiKeySelected) {
+    return 'all';
+  }
+  if (authFileSelected) {
+    return 'auth-file';
+  }
+  if (apiKeySelected) {
+    return 'api-key';
+  }
+  return 'none';
 }
 
 export function resolveAccountsFilterState(value: unknown): AccountsFilterState {
@@ -20,14 +72,12 @@ export function resolveAccountsFilterState(value: unknown): AccountsFilterState 
     return defaultAccountsFilterState;
   }
 
-  const candidate = value as Partial<AccountsFilterState>;
+  const candidate = value as Partial<AccountsFilterState> & Record<string, unknown>;
   return {
     source: resolveAccountsFilterSource(candidate.source),
-    requestableOnly: candidate.requestableOnly === true,
-    disabledOnly: candidate.disabledOnly === true,
+    availability: resolveAccountsAvailabilityFilter(candidate),
     hasBalance: candidate.hasBalance === true,
     hasLongestQuota: candidate.hasLongestQuota === true,
-    errorsOnly: candidate.errorsOnly === true,
   };
 }
 

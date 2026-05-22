@@ -23,15 +23,13 @@ type Story = StoryObj;
 const emptyFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
   hasLongestQuota: false,
-  errorsOnly: false,
 };
 
 const activeFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
   source: 'api-key',
-  requestableOnly: true,
+  availability: 'requestable',
   hasLongestQuota: true,
-  errorsOnly: true,
 };
 
 const statusBar = {
