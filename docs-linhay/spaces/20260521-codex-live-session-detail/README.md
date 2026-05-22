@@ -188,3 +188,11 @@ Then 详情区展示 Rate / time measurements，并包含 TTFT、first token、s
 - GetTokens Wails 新增 `GetCodexLiveSessionsSnapshot`，root `main.App`、DTO、mapper 与 `frontend/wailsjs` 已同步。
 - 前端 `CodexLiveSessionsFeature` 在桌面环境 sidecar ready 后每 2 秒拉取真实 snapshot；浏览器或 binding 不存在时继续使用 preview/mock。
 - 当前仍为只读观测：不做请求取消、重放、强制 WebSocket 恢复，不展示完整 payload。
+
+## 2026-05-22 页面整理
+
+- 页面信息架构收敛为左右工作台：左侧 `SessionFeed` 聚合 conversation 会话列表，右侧 `SessionDetail` 固定展示当前会话诊断，不再在列表行内展开详情。
+- `CodexLiveSessionsWorkbench` 只保留筛选、选中、复制诊断与页面编排；统计条、列表、详情和格式化工具分别拆到独立组件文件，便于后续维护。
+- 选中逻辑统一使用 `getSelectedCodexLiveSession`：显式 `conversation_id` 存在时优先展示，过滤后失效或未选择时自动回落到当前列表第一条。
+- 保持正式版真实数据链路不变；mock 仍仅用于浏览器 preview / Storybook。
+- 验证：`npm --prefix frontend run typecheck`、`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run build`、`git diff --check` 已通过；Playwright / Chrome DevTools 本地页面验收因工具审批超时未拿到截图或 DOM 快照。

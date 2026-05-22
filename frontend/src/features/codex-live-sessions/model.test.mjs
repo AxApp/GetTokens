@@ -6,6 +6,7 @@ import {
   buildCodexLiveSessionSummary,
   filterCodexLiveSessions,
   formatCodexLiveTimingLine,
+  getSelectedCodexLiveSession,
 } from './model/selectors.ts';
 import {
   buildCodexLiveSessionsInitialSnapshot,
@@ -42,6 +43,17 @@ test('filterCodexLiveSessions filters degraded and transport state conservativel
     transportFilter: 'http',
   });
   assert.deepEqual(http.map((session) => session.sessionID), ['codex_win_48f2', 'http_req_a623']);
+});
+
+test('getSelectedCodexLiveSession keeps explicit conversation id or falls back to first filtered row', () => {
+  const sessions = filterCodexLiveSessions({
+    sessions: codexLiveSessionsPreviewSnapshot.sessions,
+    statusFilter: 'failed',
+  });
+
+  assert.equal(getSelectedCodexLiveSession(sessions)?.sessionID, sessions[0].sessionID);
+  assert.equal(getSelectedCodexLiveSession(sessions, sessions[0].sessionID)?.sessionID, sessions[0].sessionID);
+  assert.equal(getSelectedCodexLiveSession(sessions, 'missing-conversation-id')?.sessionID, sessions[0].sessionID);
 });
 
 test('buildCodexLiveSessionSummary derives counts from sessions', () => {
