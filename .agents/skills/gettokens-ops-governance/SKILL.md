@@ -61,6 +61,23 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Verify the real macOS desktop app for top menu/status item presence and close/quit behavior.
   - Archive before/after or final screenshots under the matching `space` path, separating browser-preview settings shots from desktop menu/status item shots.
 
+### 1.3 Feature Panel Extraction & Design-System Admission
+- **When to use**:
+  - A page section is reused across storybook, preview, and runtime surfaces, especially for settings, status, or account workbench panels.
+  - The section starts carrying its own runtime state, build metadata, or dedicated acceptance states.
+- **Extraction rule**:
+  - Keep business logic in the parent feature and extract the panel into a pure presentational component.
+  - If the panel needs build metadata such as version or git hash, source it from build-time env or a small helper with a Node-test-safe fallback.
+  - Declare any new `import.meta.env` keys in `frontend/src/vite-env.d.ts` so typecheck and test environments agree.
+- **Design-system admission**:
+  - Register the component in `componentManifest.ts` and `storyCatalog.ts`.
+  - Add a Storybook overview that covers every runtime state the component is expected to render.
+  - Keep `data-design-system-component-name` and related test assertions aligned with the extracted component name.
+- **Acceptance checklist**:
+  - Focused unit tests for the helper and the component states.
+  - `typecheck` and `build` after the binding or shared frontend surface changes.
+  - `storyCatalog` / manifest tests that prove the component is admitted instead of being a one-off inline block.
+
 ## 2. Space Governance (`docs-linhay/spaces/`)
 - **Structure**: Each space must have `README.md`, `plans/`, `screenshots/`, and `debate/`.
 - **Naming**: Use English slugs. Prefer `YYYYMMDD-<topic>` for short tasks or stable feature names for milestones.
