@@ -62,17 +62,18 @@ test('Generated Wails bindings expose subagent DTOs', () => {
   assert.match(appSource, /export function GetClaudeCodeSubagentsSnapshot\(\)/);
   assert.match(appSource, /export function SaveClaudeCodeSubagent\(arg1\)/);
   assert.match(appSource, /export function DeleteClaudeCodeSubagent\(arg1\)/);
-  assert.match(appTypes, /GetClaudeCodeSubagentsSnapshot\(\):Promise<main\.ClaudeCodeSubagentsSnapshot>/);
-  assert.match(appTypes, /SaveClaudeCodeSubagent\(arg1:main\.SaveClaudeCodeSubagentInput\):Promise<main\.SaveClaudeCodeSubagentResult>/);
-  assert.match(appTypes, /DeleteClaudeCodeSubagent\(arg1:main\.DeleteClaudeCodeSubagentInput\):Promise<void>/);
-  assert.match(modelSource, /export class ClaudeCodeSubagentsSnapshot/);
-  assert.match(modelSource, /export class ClaudeCodeSubagentRecord/);
-  assert.match(modelSource, /export class SaveClaudeCodeSubagentInput/);
-  assert.match(modelSource, /export class SaveClaudeCodeSubagentResult/);
+  assert.match(appTypes, /GetClaudeCodeSubagentsSnapshot\(\):Promise<main\.ClaudeCodeSubagentsSnapshotDTO>/);
+  assert.match(appTypes, /SaveClaudeCodeSubagent\(arg1:main\.SaveClaudeCodeSubagentInputDTO\):Promise<main\.SaveClaudeCodeSubagentResultDTO>/);
+  assert.match(appTypes, /DeleteClaudeCodeSubagent\(arg1:main\.DeleteClaudeCodeSubagentInputDTO\):Promise<void>/);
+  assert.match(modelSource, /export class ClaudeCodeSubagentsSnapshotDTO/);
+  assert.match(modelSource, /export class ClaudeCodeSubagentRecordDTO/);
+  assert.match(modelSource, /export class SaveClaudeCodeSubagentInputDTO/);
+  assert.match(modelSource, /export class SaveClaudeCodeSubagentResultDTO/);
 });
 
 test('Create/edit form requires name and description', () => {
   const featureSource = readFileSync(featurePath, 'utf8');
+  const componentSource = readFileSync(componentPath, 'utf8');
 
   assert.match(featureSource, /draftName/, 'must track draft name');
   assert.match(featureSource, /draftDescription/, 'must track draft description');
@@ -80,6 +81,10 @@ test('Create/edit form requires name and description', () => {
   assert.match(featureSource, /handleStartEdit/, 'must support editing existing agents');
   assert.match(featureSource, /handleDeleteAgent/, 'must support deleting agents');
   assert.match(featureSource, /previewEmptySnapshot/, 'must fall back to empty snapshot on error');
+  assert.match(featureSource, /setDraftBody\(agent\.body\s*\?\?/, 'editing must use full agent body, not truncated preview');
+  assert.match(featureSource, /knownFields:\s*existingAgent\?\.knownFields/, 'editing must preserve known frontmatter fields');
+  assert.match(featureSource, /unknownFields:\s*existingAgent\?\.unknownFields/, 'editing must preserve unknown frontmatter fields');
+  assert.match(componentSource, /Boolean\(editingPath\)\s*\|\|\s*Boolean\(creatingNew\)/, 'empty editingPath must not hide the New Agent button');
 });
 
 test('Plugin subagents show ignored fields', () => {

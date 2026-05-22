@@ -108,6 +108,7 @@ func TestGetClaudeCodeSettingsSnapshot_UserLayer(t *testing.T) {
 
 func TestPatchClaudeCodeSettings_EnvOnly(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	path := filepath.Join(dir, "settings.json")
 	body := `{
   "env": {
@@ -178,6 +179,7 @@ func TestPatchClaudeCodeSettings_EnvOnly(t *testing.T) {
 
 func TestPatchClaudeCodeSettings_DisableAllHooks(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	path := filepath.Join(dir, "settings.json")
 	body := `{
   "hooks": {
@@ -224,6 +226,7 @@ func TestPatchClaudeCodeSettings_DisableAllHooks(t *testing.T) {
 
 func TestPatchClaudeCodeSettings_RejectUnknownKey(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	path := filepath.Join(dir, "settings.json")
 	if err := os.WriteFile(path, []byte(`{}`), 0600); err != nil {
 		t.Fatal(err)
@@ -259,8 +262,32 @@ func TestPatchClaudeCodeSettings_RejectManagedScope(t *testing.T) {
 	}
 }
 
+func TestPatchClaudeCodeSettings_RejectsPathOutsideScope(t *testing.T) {
+	tmpHome := t.TempDir()
+	t.Setenv("HOME", tmpHome)
+	claudeDir := filepath.Join(tmpHome, ".claude")
+	t.Setenv("CLAUDE_CONFIG_DIR", claudeDir)
+
+	roguePath := filepath.Join(t.TempDir(), "settings.json")
+	app := &App{}
+	_, err := app.PatchClaudeCodeSettings(PatchClaudeCodeSettingsInput{
+		Scope: SettingsScopeUser,
+		Path:  roguePath,
+		Patches: map[string]any{
+			"outputStyle": "compact",
+		},
+	})
+	if err == nil {
+		t.Fatal("expected error for settings path outside user scope")
+	}
+	if _, statErr := os.Stat(roguePath); !os.IsNotExist(statErr) {
+		t.Fatalf("rogue settings path should not be created, stat error = %v", statErr)
+	}
+}
+
 func TestPatchClaudeCodeSettings_InvalidJSON(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	path := filepath.Join(dir, "settings.json")
 	if err := os.WriteFile(path, []byte(`{ invalid`), 0600); err != nil {
 		t.Fatal(err)
@@ -281,6 +308,7 @@ func TestPatchClaudeCodeSettings_InvalidJSON(t *testing.T) {
 
 func TestPatchClaudeCodeSettings_CreateNew(t *testing.T) {
 	dir := t.TempDir()
+	t.Setenv("CLAUDE_CONFIG_DIR", dir)
 	path := filepath.Join(dir, "settings.json")
 
 	app := &App{}

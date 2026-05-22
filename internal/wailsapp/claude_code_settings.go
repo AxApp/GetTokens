@@ -11,10 +11,10 @@ import (
 )
 
 var allowedSettingsPatchKeys = map[string]bool{
-	"env":              true,
-	"permissions":      true,
-	"disableAllHooks":  true,
-	"outputStyle":      true,
+	"env":             true,
+	"permissions":     true,
+	"disableAllHooks": true,
+	"outputStyle":     true,
 }
 
 func (a *App) GetClaudeCodeSettingsSnapshot() (*ClaudeCodeSettingsSnapshot, error) {
@@ -155,7 +155,12 @@ func (a *App) PatchClaudeCodeSettings(input PatchClaudeCodeSettingsInput) (*Patc
 		return nil, err
 	}
 
-	existing, err := readOptionalTextFile(input.Path)
+	settingsPath, err := validateClaudeCodeSettingsPath(input.Scope, input.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	existing, err := readOptionalTextFile(settingsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -165,10 +170,10 @@ func (a *App) PatchClaudeCodeSettings(input PatchClaudeCodeSettingsInput) (*Patc
 		return nil, err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(input.Path), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(settingsPath), 0700); err != nil {
 		return nil, err
 	}
-	if err := writeFileAtomically(input.Path, nextBody, 0600); err != nil {
+	if err := writeFileAtomically(settingsPath, nextBody, 0600); err != nil {
 		return nil, err
 	}
 
@@ -176,7 +181,7 @@ func (a *App) PatchClaudeCodeSettings(input PatchClaudeCodeSettingsInput) (*Patc
 	saved := string(nextBody)
 	if _, parseErr := parseSettingsFields(saved); parseErr != nil {
 		return &PatchClaudeCodeSettingsResult{
-			ConfigPath: input.Path,
+			ConfigPath: settingsPath,
 			Preview:    saved,
 			Changes:    buildSettingsChanges(original, saved),
 		}, fmt.Errorf("保存后 settings.json 无法解析: %w", parseErr)
@@ -189,10 +194,57 @@ func (a *App) PatchClaudeCodeSettings(input PatchClaudeCodeSettingsInput) (*Patc
 	}
 
 	return &PatchClaudeCodeSettingsResult{
-		ConfigPath: input.Path,
+		ConfigPath: settingsPath,
 		Preview:    preview,
 		Changes:    changes,
 	}, nil
+}
+
+func validateClaudeCodeSettingsPath(scope ClaudeCodeSettingsScope, path string) (string, error) {
+	expected, err := resolveClaudeCodeSettingsPath(scope)
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(path) == "" {
+		return expected, nil
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("无法解析 settings 路径: %w", err)
+	}
+	absExpected, err := filepath.Abs(expected)
+	if err != nil {
+		return "", fmt.Errorf("无法解析允许的 settings 路径: %w", err)
+	}
+	if filepath.Clean(absPath) != filepath.Clean(absExpected) {
+		return "", fmt.Errorf("settings 路径不属于 %s scope: %s", scope, absPath)
+	}
+	return absExpected, nil
+}
+
+func resolveClaudeCodeSettingsPath(scope ClaudeCodeSettingsScope) (string, error) {
+	switch scope {
+	case SettingsScopeUser:
+		claudeConfigDir, err := resolveClaudeConfigDirPath()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(claudeConfigDir, claudeCodeSettingsFileName), nil
+	case SettingsScopeProject:
+		projectPath, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(projectPath, ".claude", claudeCodeSettingsFileName), nil
+	case SettingsScopeLocal:
+		projectPath, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(projectPath, ".claude", "settings.local.json"), nil
+	default:
+		return "", fmt.Errorf("不支持的 scope: %s", scope)
+	}
 }
 
 func validateSettingsPatches(patches map[string]any) error {

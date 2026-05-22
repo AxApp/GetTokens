@@ -373,15 +373,15 @@ type ClaudeCodeLocalApplyResult struct {
 }
 
 type ClaudeCodeLocalApplyOptions struct {
-	Model                      string `json:"model,omitempty"`
-	DefaultHaikuModel          string `json:"defaultHaikuModel,omitempty"`
-	DefaultSonnetModel         string `json:"defaultSonnetModel,omitempty"`
-	DefaultOpusModel           string `json:"defaultOpusModel,omitempty"`
-	SmallFastModel             string `json:"smallFastModel,omitempty"`
-	MaxOutputTokens            string `json:"maxOutputTokens,omitempty"`
-	APITimeoutMS               string `json:"apiTimeoutMs,omitempty"`
-	DisableNonEssentialTraffic  bool `json:"disableNonEssentialTraffic,omitempty"`
-	ClaudeCodeAttributionHeader bool `json:"claudeCodeAttributionHeader,omitempty"`
+	Model                       string `json:"model,omitempty"`
+	DefaultHaikuModel           string `json:"defaultHaikuModel,omitempty"`
+	DefaultSonnetModel          string `json:"defaultSonnetModel,omitempty"`
+	DefaultOpusModel            string `json:"defaultOpusModel,omitempty"`
+	SmallFastModel              string `json:"smallFastModel,omitempty"`
+	MaxOutputTokens             string `json:"maxOutputTokens,omitempty"`
+	APITimeoutMS                string `json:"apiTimeoutMs,omitempty"`
+	DisableNonEssentialTraffic  bool   `json:"disableNonEssentialTraffic,omitempty"`
+	ClaudeCodeAttributionHeader bool   `json:"claudeCodeAttributionHeader,omitempty"`
 }
 
 type UsageStatisticsResponse struct {
@@ -694,17 +694,17 @@ type SaveCodexSkillEnabledInput struct {
 }
 
 type ClaudeCodeSettingsSnapshotDTO struct {
-	ProjectPath string                     `json:"projectPath"`
-	Layers      []ClaudeCodeSettingsLayer  `json:"layers"`
-	Warnings    []string                   `json:"warnings,omitempty"`
+	ProjectPath string                    `json:"projectPath"`
+	Layers      []ClaudeCodeSettingsLayer `json:"layers"`
+	Warnings    []string                  `json:"warnings,omitempty"`
 }
 
 type ClaudeCodeSettingsLayer struct {
-	Scope       string                        `json:"scope"`
-	Path        string                        `json:"path"`
-	Exists      bool                          `json:"exists"`
-	ParseError  string                        `json:"parseError,omitempty"`
-	KnownFields *ClaudeCodeSettingsFieldsDTO  `json:"knownFields,omitempty"`
+	Scope       string                       `json:"scope"`
+	Path        string                       `json:"path"`
+	Exists      bool                         `json:"exists"`
+	ParseError  string                       `json:"parseError,omitempty"`
+	KnownFields *ClaudeCodeSettingsFieldsDTO `json:"knownFields,omitempty"`
 }
 
 type ClaudeCodeSettingsFieldsDTO struct {
@@ -727,8 +727,8 @@ type ClaudeCodeSettingsChangeDTO struct {
 }
 
 type PatchClaudeCodeSettingsResultDTO struct {
-	ConfigPath string                       `json:"configPath"`
-	Preview    string                       `json:"preview"`
+	ConfigPath string                        `json:"configPath"`
+	Preview    string                        `json:"preview"`
 	Changes    []ClaudeCodeSettingsChangeDTO `json:"changes"`
 }
 
@@ -929,83 +929,84 @@ type SessionManagementMessageRecord struct {
 	Summary   string `json:"summary"`
 	Content   string `json:"content"`
 	Truncated bool   `json:"truncated,omitempty"`
+}
 
-	// CLAUDE.md Memory File types
-	type ClaudeCodeMemoryFilesSnapshotDTO struct {
-		ProjectPath string                         `json:"projectPath"`
-		Files       []ClaudeCodeMemoryFileRecordDTO `json:"files"`
-		Warnings    []string                       `json:"warnings,omitempty"`
-	}
+// CLAUDE.md Memory File types
+type ClaudeCodeMemoryFilesSnapshotDTO struct {
+	ProjectPath string                          `json:"projectPath"`
+	Files       []ClaudeCodeMemoryFileRecordDTO `json:"files"`
+	Warnings    []string                        `json:"warnings,omitempty"`
+}
 
-	type ClaudeCodeMemoryFileRecordDTO struct {
-		Scope            string                         `json:"scope"`
-		Path             string                         `json:"path"`
-		Exists           bool                           `json:"exists"`
-		GitIgnored       bool                           `json:"gitIgnored,omitempty"`
-		Imports          []ClaudeCodeMemoryFileImportDTO `json:"imports,omitempty"`
-		Content          string                         `json:"content,omitempty"`
-		ContentTruncated bool                           `json:"contentTruncated,omitempty"`
-		Size             int64                          `json:"size"`
-	}
+type ClaudeCodeMemoryFileRecordDTO struct {
+	Scope            string                          `json:"scope"`
+	Path             string                          `json:"path"`
+	Exists           bool                            `json:"exists"`
+	GitIgnored       bool                            `json:"gitIgnored,omitempty"`
+	Imports          []ClaudeCodeMemoryFileImportDTO `json:"imports,omitempty"`
+	Content          string                          `json:"content,omitempty"`
+	ContentTruncated bool                            `json:"contentTruncated,omitempty"`
+	Size             int64                           `json:"size"`
+}
 
-	type ClaudeCodeMemoryFileImportDTO struct {
-		Raw      string `json:"raw"`
-		Resolved string `json:"resolved"`
-		Exists   bool   `json:"exists"`
-		Depth    int    `json:"depth"`
-	}
+type ClaudeCodeMemoryFileImportDTO struct {
+	Raw      string `json:"raw"`
+	Resolved string `json:"resolved"`
+	Exists   bool   `json:"exists"`
+	Depth    int    `json:"depth"`
+}
 
-	type SaveClaudeCodeMemoryFileInputDTO struct {
-		Path    string `json:"path"`
-		Content string `json:"content"`
-	}
+type SaveClaudeCodeMemoryFileInputDTO struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+}
 
-	type SaveClaudeCodeMemoryFileResultDTO struct {
-		Path    string `json:"path"`
-		Size    int64  `json:"size"`
-		Warning string `json:"warning,omitempty"`
-	}
+type SaveClaudeCodeMemoryFileResultDTO struct {
+	Path    string `json:"path"`
+	Size    int64  `json:"size"`
+	Warning string `json:"warning,omitempty"`
+}
 
-	// Subagents types
-	type ClaudeCodeSubagentsSnapshotDTO struct {
-		UserPath    string                        `json:"userPath"`
-		ProjectPath string                        `json:"projectPath"`
-		Agents      []ClaudeCodeSubagentRecordDTO `json:"agents"`
-		Warnings    []string                      `json:"warnings,omitempty"`
-	}
+// Subagents types
+type ClaudeCodeSubagentsSnapshotDTO struct {
+	UserPath    string                        `json:"userPath"`
+	ProjectPath string                        `json:"projectPath"`
+	Agents      []ClaudeCodeSubagentRecordDTO `json:"agents"`
+	Warnings    []string                      `json:"warnings,omitempty"`
+}
 
-	type ClaudeCodeSubagentRecordDTO struct {
-		Name             string         `json:"name"`
-		Description      string         `json:"description"`
-		Path             string         `json:"path"`
-		Scope            string         `json:"scope"`
-		FrontmatterValid bool           `json:"frontmatterValid"`
-		FrontmatterError string         `json:"frontmatterError,omitempty"`
-		ValidationErrors []string       `json:"validationErrors,omitempty"`
-		KnownFields      map[string]any `json:"knownFields,omitempty"`
-		UnknownFields    map[string]any `json:"unknownFields,omitempty"`
-		BodyPreview      string         `json:"bodyPreview,omitempty"`
-		IsPlugin         bool           `json:"isPlugin,omitempty"`
-		IgnoredFields    []string       `json:"ignoredFields,omitempty"`
-	}
+type ClaudeCodeSubagentRecordDTO struct {
+	Name             string         `json:"name"`
+	Description      string         `json:"description"`
+	Path             string         `json:"path"`
+	Scope            string         `json:"scope"`
+	FrontmatterValid bool           `json:"frontmatterValid"`
+	FrontmatterError string         `json:"frontmatterError,omitempty"`
+	ValidationErrors []string       `json:"validationErrors,omitempty"`
+	KnownFields      map[string]any `json:"knownFields,omitempty"`
+	UnknownFields    map[string]any `json:"unknownFields,omitempty"`
+	Body             string         `json:"body,omitempty"`
+	BodyPreview      string         `json:"bodyPreview,omitempty"`
+	IsPlugin         bool           `json:"isPlugin,omitempty"`
+	IgnoredFields    []string       `json:"ignoredFields,omitempty"`
+}
 
-	type SaveClaudeCodeSubagentInputDTO struct {
-		Scope         string         `json:"scope"`
-		Path          string         `json:"path"`
-		Name          string         `json:"name"`
-		Description   string         `json:"description"`
-		KnownFields   map[string]any `json:"knownFields,omitempty"`
-		UnknownFields map[string]any `json:"unknownFields,omitempty"`
-		Body          string         `json:"body"`
-	}
+type SaveClaudeCodeSubagentInputDTO struct {
+	Scope         string         `json:"scope"`
+	Path          string         `json:"path"`
+	Name          string         `json:"name"`
+	Description   string         `json:"description"`
+	KnownFields   map[string]any `json:"knownFields,omitempty"`
+	UnknownFields map[string]any `json:"unknownFields,omitempty"`
+	Body          string         `json:"body"`
+}
 
-	type SaveClaudeCodeSubagentResultDTO struct {
-		Path    string `json:"path"`
-		Preview string `json:"preview"`
-	}
+type SaveClaudeCodeSubagentResultDTO struct {
+	Path    string `json:"path"`
+	Preview string `json:"preview"`
+}
 
-	type DeleteClaudeCodeSubagentInputDTO struct {
-		Scope string `json:"scope"`
-		Path  string `json:"path"`
-	}
+type DeleteClaudeCodeSubagentInputDTO struct {
+	Scope string `json:"scope"`
+	Path  string `json:"path"`
 }

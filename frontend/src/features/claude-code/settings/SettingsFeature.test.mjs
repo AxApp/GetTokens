@@ -55,13 +55,13 @@ test('Generated Wails bindings expose Claude Code settings DTOs', () => {
 
   assert.match(appSource, /export function GetClaudeCodeSettingsSnapshot\(\)/);
   assert.match(appSource, /export function PatchClaudeCodeSettings\(arg1\)/);
-  assert.match(appTypes, /GetClaudeCodeSettingsSnapshot\(\):Promise<main\.ClaudeCodeSettingsSnapshot>/);
-  assert.match(appTypes, /PatchClaudeCodeSettings\(arg1:main\.PatchClaudeCodeSettingsInput\):Promise<main\.PatchClaudeCodeSettingsResult>/);
-  assert.match(modelSource, /export class ClaudeCodeSettingsSnapshot/);
+  assert.match(appTypes, /GetClaudeCodeSettingsSnapshot\(\):Promise<main\.ClaudeCodeSettingsSnapshotDTO>/);
+  assert.match(appTypes, /PatchClaudeCodeSettings\(arg1:main\.PatchClaudeCodeSettingsInputDTO\):Promise<main\.PatchClaudeCodeSettingsResultDTO>/);
+  assert.match(modelSource, /export class ClaudeCodeSettingsSnapshotDTO/);
   assert.match(modelSource, /export class ClaudeCodeSettingsLayer/);
   assert.match(modelSource, /export class ClaudeCodeSettingsFields/);
-  assert.match(modelSource, /export class PatchClaudeCodeSettingsInput/);
-  assert.match(modelSource, /export class PatchClaudeCodeSettingsResult/);
+  assert.match(modelSource, /export class PatchClaudeCodeSettingsInputDTO/);
+  assert.match(modelSource, /export class PatchClaudeCodeSettingsResultDTO/);
 });
 
 test('Managed scope is read-only and cannot be patched', () => {
@@ -72,6 +72,17 @@ test('Managed scope is read-only and cannot be patched', () => {
     componentSource.includes('managed') && componentSource.includes('read-only'),
     'managed scope must be displayed as read-only',
   );
+});
+
+test('Settings scope edit controls are wired to callbacks', () => {
+  const componentSource = readFileSync(componentPath, 'utf8');
+
+  assert.match(componentSource, /onStartEdit/, 'component must accept edit callback');
+  assert.match(componentSource, /onCancelEdit/, 'component must accept cancel callback');
+  assert.match(componentSource, /onSavePatch/, 'component must accept save callback');
+  assert.match(componentSource, /onClick=\{\(\)\s*=>\s*onStartEdit\?\.\(\`\$\{layer\.scope\}\`\)\}/, 'Edit button must enter edit mode for that scope');
+  assert.match(componentSource, /onClick=\{onCancelEdit\}/, 'Cancel button must leave edit mode');
+  assert.match(componentSource, /onClick=\{\(\)\s*=>\s*onSavePatch\?\./, 'Save button must call patch callback');
 });
 
 test('SettingsFeature reloads snapshot after successful patch', async () => {

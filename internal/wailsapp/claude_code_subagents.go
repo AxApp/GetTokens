@@ -130,9 +130,16 @@ func parseSubagentFile(path string, scope string) ClaudeCodeSubagentRecord {
 	record.FrontmatterValid = len(validationErrors) == 0
 	record.ValidationErrors = validationErrors
 
+	record.Body = strings.TrimSpace(bodyContent)
+
 	// Parse full frontmatter to extract known and unknown fields
 	var allFields map[string]any
-	if err := yaml.Unmarshal([]byte(body), &allFields); err == nil {
+	if fmBody, ok := subagentFrontmatterBody(body); ok {
+		if err := yaml.Unmarshal([]byte(fmBody), &allFields); err != nil {
+			allFields = nil
+		}
+	}
+	if allFields != nil {
 		// Extract known fields
 		knownFields := map[string]any{}
 		unknownFields := map[string]any{}
@@ -153,13 +160,26 @@ func parseSubagentFile(path string, scope string) ClaudeCodeSubagentRecord {
 		record.IgnoredFields = pluginIgnoredSubagentFields
 	}
 
-	if len(bodyContent) > 200 {
-		record.BodyPreview = strings.TrimSpace(bodyContent)[:200] + "..."
+	if len(record.Body) > 200 {
+		record.BodyPreview = record.Body[:200] + "..."
 	} else {
-		record.BodyPreview = strings.TrimSpace(bodyContent)
+		record.BodyPreview = record.Body
 	}
 
 	return record
+}
+
+func subagentFrontmatterBody(content string) (string, bool) {
+	trimmed := strings.TrimSpace(content)
+	if !strings.HasPrefix(trimmed, "---") {
+		return "", false
+	}
+	rest := trimmed[3:]
+	endIdx := strings.Index(rest, "\n---")
+	if endIdx < 0 {
+		return "", false
+	}
+	return rest[:endIdx], true
 }
 
 func splitSubagentFrontmatter(content string) (subagentFrontmatter, string, error) {
@@ -307,7 +327,7 @@ func validateSubagentPath(path string) error {
 	userAgentsDir := filepath.Join(home, ".claude", "agents")
 	projAgentsDir := filepath.Join(projectPath, ".claude", "agents")
 
-	if !strings.HasPrefix(abs, userAgentsDir) && (projectPath == "" || !strings.HasPrefix(abs, projAgentsDir)) {
+	if !pathWithinDir(abs, userAgentsDir) && (projectPath == "" || !pathWithinDir(abs, projAgentsDir)) {
 		return fmt.Errorf("路径不在允许的子代理目录内: %s", abs)
 	}
 	if !strings.HasSuffix(abs, ".md") {

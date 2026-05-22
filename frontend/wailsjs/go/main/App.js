@@ -42,6 +42,10 @@ export function DeleteAuthFiles(arg1) {
   return window['go']['main']['App']['DeleteAuthFiles'](arg1);
 }
 
+export function DeleteClaudeCodeSubagent(arg1) {
+  return window['go']['main']['App']['DeleteClaudeCodeSubagent'](arg1);
+}
+
 export function DeleteCodexAPIKey(arg1) {
   return window['go']['main']['App']['DeleteCodexAPIKey'](arg1);
 }
@@ -106,32 +110,20 @@ export function GetClaudeCodeMemoryFilesSnapshot() {
   return window['go']['main']['App']['GetClaudeCodeMemoryFilesSnapshot']();
 }
 
-export function SaveClaudeCodeMemoryFile(arg1) {
-  return window['go']['main']['App']['SaveClaudeCodeMemoryFile'](arg1);
-}
-
-export function GetClaudeCodeSubagentsSnapshot() {
-  return window['go']['main']['App']['GetClaudeCodeSubagentsSnapshot']();
-}
-
-export function SaveClaudeCodeSubagent(arg1) {
-  return window['go']['main']['App']['SaveClaudeCodeSubagent'](arg1);
-}
-
-export function DeleteClaudeCodeSubagent(arg1) {
-  return window['go']['main']['App']['DeleteClaudeCodeSubagent'](arg1);
-}
-
-export function GetClaudeCodeSettingsSnapshot() {
-  return window['go']['main']['App']['GetClaudeCodeSettingsSnapshot']();
-}
-
 export function GetClaudeCodeSessionDetail(arg1) {
   return window['go']['main']['App']['GetClaudeCodeSessionDetail'](arg1);
 }
 
 export function GetClaudeCodeSessionManagementSnapshot() {
   return window['go']['main']['App']['GetClaudeCodeSessionManagementSnapshot']();
+}
+
+export function GetClaudeCodeSettingsSnapshot() {
+  return window['go']['main']['App']['GetClaudeCodeSettingsSnapshot']();
+}
+
+export function GetClaudeCodeSubagentsSnapshot() {
+  return window['go']['main']['App']['GetClaudeCodeSubagentsSnapshot']();
 }
 
 export function GetCodexBinaryDoctor() {
@@ -290,6 +282,10 @@ export function OpenCodexSkillInFinder(arg1) {
   return window['go']['main']['App']['OpenCodexSkillInFinder'](arg1);
 }
 
+export function PatchClaudeCodeSettings(arg1) {
+  return window['go']['main']['App']['PatchClaudeCodeSettings'](arg1);
+}
+
 export function PreviewCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['PreviewCodexFeatureConfig'](arg1);
 }
@@ -342,8 +338,12 @@ export function SaveClaudeCodeMcpServer(arg1) {
   return window['go']['main']['App']['SaveClaudeCodeMcpServer'](arg1);
 }
 
-export function PatchClaudeCodeSettings(arg1) {
-  return window['go']['main']['App']['PatchClaudeCodeSettings'](arg1);
+export function SaveClaudeCodeMemoryFile(arg1) {
+  return window['go']['main']['App']['SaveClaudeCodeMemoryFile'](arg1);
+}
+
+export function SaveClaudeCodeSubagent(arg1) {
+  return window['go']['main']['App']['SaveClaudeCodeSubagent'](arg1);
 }
 
 export function SaveCodexConfigToml(arg1) {

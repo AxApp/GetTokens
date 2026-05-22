@@ -15,7 +15,7 @@ export type SettingsScopeStackState =
   | 'saving-diff';
 
 interface ClaudeCodeSettingsScopeStackProps {
-  snapshot: main.ClaudeCodeSettingsSnapshot;
+  snapshot: main.ClaudeCodeSettingsSnapshotDTO;
   editingScope?: string;
   draftPatches?: Record<string, any>;
   savePreview?: string;
@@ -56,6 +56,9 @@ export default function ClaudeCodeSettingsScopeStack({
   draftPatches,
   savePreview,
   saveError,
+  onStartEdit,
+  onCancelEdit,
+  onSavePatch,
   onToggleAttributionHeader,
   attributionHeaderLabel,
   state,
@@ -199,13 +202,17 @@ export default function ClaudeCodeSettingsScopeStack({
                         <div className="flex justify-end">
                           {editingScope === `${layer.scope}` ? (
                             <div className="flex gap-2">
-                              <button type="button" className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main])]">
+                              <button
+                                type="button"
+                                onClick={onCancelEdit}
+                                className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main)]"
+                              >
                                 Cancel
                               </button>
                               <button
                                 type="button"
                                 className="rounded bg-[var(--button-primary-bg)] px-3 py-1 text-xs text-[var(--button-primary-text)]"
-                                onClick={(e) => e.preventDefault()}
+                                onClick={() => onSavePatch?.(draftPatches ?? buildLayerPatch(layer))}
                               >
                                 Save Changes
                               </button>
@@ -214,6 +221,7 @@ export default function ClaudeCodeSettingsScopeStack({
                             <button
                               type="button"
                               className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main)]"
+                              onClick={() => onStartEdit?.(`${layer.scope}`)}
                             >
                               Edit
                             </button>
@@ -238,6 +246,18 @@ export default function ClaudeCodeSettingsScopeStack({
       )}
     </AssetWorkbenchShell>
   );
+}
+
+function buildLayerPatch(layer: main.ClaudeCodeSettingsLayer): Record<string, any> {
+  const fields = layer.knownFields;
+  if (!fields) return {};
+
+  const patch: Record<string, any> = {};
+  if (fields.env) patch.env = { ...fields.env };
+  if (fields.permissions) patch.permissions = fields.permissions;
+  if (fields.disableAllHooks !== undefined) patch.disableAllHooks = fields.disableAllHooks;
+  if (fields.outputStyle) patch.outputStyle = fields.outputStyle;
+  return patch;
 }
 
 function SettingsFieldSection({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {

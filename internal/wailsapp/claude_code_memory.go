@@ -223,14 +223,30 @@ func validateMemoryFilePath(path string) error {
 		return fmt.Errorf("无法解析路径: %w", err)
 	}
 
-	isInHome := strings.HasPrefix(abs, filepath.Join(home, ".claude"))
-	isInProject := projectPath != "" && strings.HasPrefix(abs, filepath.Clean(projectPath))
+	isInHome := pathWithinDir(abs, filepath.Join(home, ".claude"))
+	isInProject := projectPath != "" && pathWithinDir(abs, filepath.Clean(projectPath))
 
 	if !isInHome && !isInProject {
 		return fmt.Errorf("路径不在允许范围内: %s", abs)
 	}
 
 	return nil
+}
+
+func pathWithinDir(path string, dir string) bool {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		return false
+	}
+	rel, err := filepath.Rel(absDir, absPath)
+	if err != nil {
+		return false
+	}
+	return rel == "." || (rel != "" && rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator)))
 }
 
 func (a *App) ValidateClaudeCodeMemoryImports(path string) (*ValidateClaudeCodeMemoryImportsResult, error) {

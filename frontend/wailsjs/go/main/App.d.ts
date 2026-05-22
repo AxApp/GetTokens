@@ -25,6 +25,8 @@ export function CreateRateLimitRule(arg1:main.RateLimitRule):Promise<Array<main.
 
 export function DeleteAuthFiles(arg1:Array<string>):Promise<void>;
 
+export function DeleteClaudeCodeSubagent(arg1:main.DeleteClaudeCodeSubagentInputDTO):Promise<void>;
+
 export function DeleteCodexAPIKey(arg1:string):Promise<void>;
 
 export function DeleteCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<codexbinary.DeleteVersionResult>;
@@ -55,17 +57,15 @@ export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>
 
 export function GetClaudeCodeExtensionsSnapshot():Promise<main.ClaudeCodeExtensionsSnapshot>;
 
-export function GetClaudeCodeSettingsSnapshot():Promise<main.ClaudeCodeSettingsSnapshot>;
-export function GetClaudeCodeMemoryFilesSnapshot():Promise<main.ClaudeCodeMemoryFilesSnapshot>;
-export function SaveClaudeCodeMemoryFile(arg1:main.SaveClaudeCodeMemoryFileInput):Promise<main.SaveClaudeCodeMemoryFileResult>;
-export function GetClaudeCodeSubagentsSnapshot():Promise<main.ClaudeCodeSubagentsSnapshot>;
-export function SaveClaudeCodeSubagent(arg1:main.SaveClaudeCodeSubagentInput):Promise<main.SaveClaudeCodeSubagentResult>;
-export function DeleteClaudeCodeSubagent(arg1:main.DeleteClaudeCodeSubagentInput):Promise<void>;
-
+export function GetClaudeCodeMemoryFilesSnapshot():Promise<main.ClaudeCodeMemoryFilesSnapshotDTO>;
 
 export function GetClaudeCodeSessionDetail(arg1:string):Promise<main.SessionManagementSessionDetail>;
 
 export function GetClaudeCodeSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
+export function GetClaudeCodeSettingsSnapshot():Promise<main.ClaudeCodeSettingsSnapshotDTO>;
+
+export function GetClaudeCodeSubagentsSnapshot():Promise<main.ClaudeCodeSubagentsSnapshotDTO>;
 
 export function GetCodexBinaryDoctor():Promise<codexbinary.DoctorSummary>;
 
@@ -145,6 +145,8 @@ export function OpenCodexConfigToml():Promise<main.OpenCodexConfigTomlResult>;
 
 export function OpenCodexSkillInFinder(arg1:main.OpenCodexSkillInFinderInput):Promise<main.OpenCodexSkillInFinderResult>;
 
+export function PatchClaudeCodeSettings(arg1:main.PatchClaudeCodeSettingsInputDTO):Promise<main.PatchClaudeCodeSettingsResultDTO>;
+
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
 
 export function ProbeClaudeCodeAccountRouting(arg1:main.ProbeClaudeCodeAccountRoutingInput):Promise<main.ClaudeCodeAccountRoutingProbeResult>;
@@ -171,7 +173,9 @@ export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Pr
 
 export function SaveClaudeCodeMcpServer(arg1:main.SaveClaudeCodeMcpServerInput):Promise<main.SaveClaudeCodeMcpServerResult>;
 
-export function PatchClaudeCodeSettings(arg1:main.PatchClaudeCodeSettingsInput):Promise<main.PatchClaudeCodeSettingsResult>;
+export function SaveClaudeCodeMemoryFile(arg1:main.SaveClaudeCodeMemoryFileInputDTO):Promise<main.SaveClaudeCodeMemoryFileResultDTO>;
+
+export function SaveClaudeCodeSubagent(arg1:main.SaveClaudeCodeSubagentInputDTO):Promise<main.SaveClaudeCodeSubagentResultDTO>;
 
 export function SaveCodexConfigToml(arg1:main.SaveCodexConfigTomlInput):Promise<main.SaveCodexConfigTomlResult>;
 

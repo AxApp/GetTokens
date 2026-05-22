@@ -1,18 +1,19 @@
 package wailsapp
 
 type ClaudeCodeSubagentRecord struct {
-	Name             string `json:"name"`
-	Description      string `json:"description"`
-	Path             string `json:"path"`
-	Scope            string `json:"scope"`
-	FrontmatterValid bool   `json:"frontmatterValid"`
-	FrontmatterError string `json:"frontmatterError,omitempty"`
-	ValidationErrors []string                `json:"validationErrors,omitempty"`
-	KnownFields      map[string]any          `json:"knownFields,omitempty"`
-	UnknownFields    map[string]any          `json:"unknownFields,omitempty"`
-	BodyPreview      string                  `json:"bodyPreview,omitempty"`
-	IsPlugin         bool                    `json:"isPlugin,omitempty"`
-	IgnoredFields    []string                `json:"ignoredFields,omitempty"`
+	Name             string         `json:"name"`
+	Description      string         `json:"description"`
+	Path             string         `json:"path"`
+	Scope            string         `json:"scope"`
+	FrontmatterValid bool           `json:"frontmatterValid"`
+	FrontmatterError string         `json:"frontmatterError,omitempty"`
+	ValidationErrors []string       `json:"validationErrors,omitempty"`
+	KnownFields      map[string]any `json:"knownFields,omitempty"`
+	UnknownFields    map[string]any `json:"unknownFields,omitempty"`
+	Body             string         `json:"body,omitempty"`
+	BodyPreview      string         `json:"bodyPreview,omitempty"`
+	IsPlugin         bool           `json:"isPlugin,omitempty"`
+	IgnoredFields    []string       `json:"ignoredFields,omitempty"`
 }
 
 type ClaudeCodeSubagentsSnapshot struct {

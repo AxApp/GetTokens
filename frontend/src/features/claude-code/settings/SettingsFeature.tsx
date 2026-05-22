@@ -9,7 +9,7 @@ import { previewAllLayersSnapshot, previewEmptySnapshot } from './previewData';
 
 export default function SettingsFeature() {
   const { t } = useI18n();
-  const [snapshot, setSnapshot] = useState<main.ClaudeCodeSettingsSnapshot>(previewAllLayersSnapshot);
+  const [snapshot, setSnapshot] = useState<main.ClaudeCodeSettingsSnapshotDTO>(previewAllLayersSnapshot);
   const [loadError, setLoadError] = useState('');
   const [editingScope, setEditingScope] = useState('');
   const [savePreview, setSavePreview] = useState('');

@@ -10,7 +10,7 @@ export const previewUserClaudeMd = {
     { raw: 'AGENTS.md', resolved: '/Users/dev/project/AGENTS.md', exists: true, depth: 1 },
     { raw: '.claude/code-style.md', resolved: '/Users/dev/project/.claude/code-style.md', exists: true, depth: 1 },
   ],
-} as unknown as main.ClaudeCodeMemoryFileRecord;
+} as unknown as main.ClaudeCodeMemoryFileRecordDTO;
 
 export const previewProjectClaudeMd = {
   scope: 'project',
@@ -21,7 +21,7 @@ export const previewProjectClaudeMd = {
   imports: [
     { raw: '.claude/testing.md', resolved: '/Users/dev/project/.claude/testing.md', exists: true, depth: 1 },
   ],
-} as unknown as main.ClaudeCodeMemoryFileRecord;
+} as unknown as main.ClaudeCodeMemoryFileRecordDTO;
 
 export const previewLocalClaudeMd = {
   scope: 'local',
@@ -31,7 +31,7 @@ export const previewLocalClaudeMd = {
   size: 512,
   content: '# Local-override CLI preferences\n- ANTHROPIC_BASE_URL=https://local-relay.example.com/v1',
   imports: [],
-} as unknown as main.ClaudeCodeMemoryFileRecord;
+} as unknown as main.ClaudeCodeMemoryFileRecordDTO;
 
 export const previewLocalNotGitignored = {
   scope: 'local',
@@ -41,7 +41,7 @@ export const previewLocalNotGitignored = {
   size: 512,
   content: '# Local-override preferences',
   imports: [],
-} as unknown as main.ClaudeCodeMemoryFileRecord;
+} as unknown as main.ClaudeCodeMemoryFileRecordDTO;
 
 export const previewMissingImportFile = {
   scope: 'project',
@@ -53,7 +53,7 @@ export const previewMissingImportFile = {
     { raw: 'AGENTS.md', resolved: '/Users/dev/project/AGENTS.md', exists: true, depth: 1 },
     { raw: 'nonexistent/file.md', resolved: '/Users/dev/project/nonexistent/file.md', exists: false, depth: 1 },
   ],
-} as unknown as main.ClaudeCodeMemoryFileRecord;
+} as unknown as main.ClaudeCodeMemoryFileRecordDTO;
 
 export const previewDeepImportFile = {
   scope: 'user',
@@ -68,37 +68,37 @@ export const previewDeepImportFile = {
     { raw: 'd.md', resolved: '/path/d.md', exists: true, depth: 4 },
     { raw: 'e.md', resolved: '/path/e.md', exists: true, depth: 5 },
   ],
-} as unknown as main.ClaudeCodeMemoryFileRecord;
+} as unknown as main.ClaudeCodeMemoryFileRecordDTO;
 
 export const previewAllFilesSnapshot = {
   projectPath: '/Users/dev/project',
   files: [previewUserClaudeMd, previewProjectClaudeMd, previewLocalClaudeMd],
   warnings: [],
-} as unknown as main.ClaudeCodeMemoryFilesSnapshot;
+} as unknown as main.ClaudeCodeMemoryFilesSnapshotDTO;
 
 export const previewPartialFilesSnapshot = {
   projectPath: '/Users/dev/project',
-  files: [previewUserClaudeMd, { scope: 'project', path: '/Users/dev/project/CLAUDE.md', exists: false, size: 0 } as unknown as main.ClaudeCodeMemoryFileRecord],
+  files: [previewUserClaudeMd, { scope: 'project', path: '/Users/dev/project/CLAUDE.md', exists: false, size: 0 } as unknown as main.ClaudeCodeMemoryFileRecordDTO],
   warnings: [],
-} as unknown as main.ClaudeCodeMemoryFilesSnapshot;
+} as unknown as main.ClaudeCodeMemoryFilesSnapshotDTO;
 
 export const previewMissingImportSnapshot = {
   projectPath: '/Users/dev/project',
   files: [previewMissingImportFile],
   warnings: ['@import "nonexistent/file.md" not found'],
-} as unknown as main.ClaudeCodeMemoryFilesSnapshot;
+} as unknown as main.ClaudeCodeMemoryFilesSnapshotDTO;
 
 export const previewLocalNotGitignoredSnapshot = {
   projectPath: '/Users/dev/project',
   files: [previewLocalNotGitignored],
   warnings: ['CLAUDE.local.md is not in .gitignore — sensitive local config may be committed'],
-} as unknown as main.ClaudeCodeMemoryFilesSnapshot;
+} as unknown as main.ClaudeCodeMemoryFilesSnapshotDTO;
 
 export const previewDeepImportSnapshot = {
   projectPath: '/Users/dev/project',
   files: [previewDeepImportFile],
   warnings: ['import depth exceeds max (5 levels)'],
-} as unknown as main.ClaudeCodeMemoryFilesSnapshot;
+} as unknown as main.ClaudeCodeMemoryFilesSnapshotDTO;
 
 export const previewEmptySnapshot = {
   projectPath: '/Users/dev/project',
@@ -108,7 +108,7 @@ export const previewEmptySnapshot = {
     { scope: 'local', path: '/Users/dev/project/CLAUDE.local.md', exists: false, size: 0 },
   ],
   warnings: [],
-} as unknown as main.ClaudeCodeMemoryFilesSnapshot;
+} as unknown as main.ClaudeCodeMemoryFilesSnapshotDTO;
 
 export const previewEditContent = `# Project CLAUDE.md
 

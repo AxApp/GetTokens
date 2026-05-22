@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import type { main } from '../../../../wailsjs/go/models';
+import type { ComponentProps } from 'react';
+import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import ClaudeCodeMemoryFilesPanel from './ClaudeCodeMemoryFilesPanel';
 import {
   previewAllFilesSnapshot,
@@ -12,91 +13,90 @@ import {
 } from '../claude-md/previewData';
 
 const meta: Meta<typeof ClaudeCodeMemoryFilesPanel> = {
-  title: 'Design System/Business Components/Claude Code Memory Files Panel',
+  title: 'Design System/业务组件/Claude Code Memory Files Panel',
   component: ClaudeCodeMemoryFilesPanel,
   tags: ['autodocs'],
 };
 
 export default meta;
 type Story = StoryObj<typeof ClaudeCodeMemoryFilesPanel>;
+type PanelProps = ComponentProps<typeof ClaudeCodeMemoryFilesPanel>;
+
+function MemoryFilesSample({ label, props }: { label: string; props: PanelProps }) {
+  return (
+    <DesignSystemStoryFrame label={label}>
+      <ClaudeCodeMemoryFilesPanel {...props} />
+    </DesignSystemStoryFrame>
+  );
+}
+
+function ClaudeCodeMemoryFilesPanelOverview() {
+  return (
+    <div className="space-y-6">
+      <MemoryFilesSample label="DS-CLAUDE-MEMORY-ALL" props={{ snapshot: previewAllFilesSnapshot, state: 'all-files-present' }} />
+      <MemoryFilesSample label="DS-CLAUDE-MEMORY-PARTIAL" props={{ snapshot: previewPartialFilesSnapshot, state: 'partial-files' }} />
+      <MemoryFilesSample label="DS-CLAUDE-MEMORY-IMPORT-MISSING" props={{ snapshot: previewMissingImportSnapshot, state: 'import-missing', stateMessage: 'Some @imports could not be resolved' }} />
+      <MemoryFilesSample label="DS-CLAUDE-MEMORY-LOCAL-WARN" props={{ snapshot: previewLocalNotGitignoredSnapshot, state: 'local-not-gitignored' }} />
+      <MemoryFilesSample label="DS-CLAUDE-MEMORY-SAVE" props={{ snapshot: previewAllFilesSnapshot, state: 'save-preview', editingPath: '/Users/dev/project/CLAUDE.md', editContent: previewEditContent, savePreview: previewEditContent }} />
+      <MemoryFilesSample label="DS-CLAUDE-MEMORY-EMPTY" props={{ snapshot: previewEmptySnapshot, state: 'empty' }} />
+    </div>
+  );
+}
+
+export const Overview: Story = {
+  render: () => <ClaudeCodeMemoryFilesPanelOverview />,
+};
 
 export const AllFilesPresent: Story = {
-  args: {
-    snapshot: previewAllFilesSnapshot,
-    state: 'all-files-present',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-ALL" props={{ snapshot: previewAllFilesSnapshot, state: 'all-files-present' }} />,
 };
 
 export const PartialFiles: Story = {
-  args: {
-    snapshot: previewPartialFilesSnapshot,
-    state: 'partial-files',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-PARTIAL" props={{ snapshot: previewPartialFilesSnapshot, state: 'partial-files' }} />,
 };
 
 export const ImportExists: Story = {
-  args: {
-    snapshot: previewAllFilesSnapshot,
-    state: 'import-exists',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-IMPORT-EXISTS" props={{ snapshot: previewAllFilesSnapshot, state: 'import-exists' }} />,
 };
 
 export const ImportMissing: Story = {
-  args: {
-    snapshot: previewMissingImportSnapshot,
-    state: 'import-missing',
-    stateMessage: 'Some @imports could not be resolved',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-IMPORT-MISSING" props={{ snapshot: previewMissingImportSnapshot, state: 'import-missing', stateMessage: 'Some @imports could not be resolved' }} />,
 };
 
 export const ImportRecursion: Story = {
-  args: {
-    snapshot: previewDeepImportSnapshot,
-    state: 'import-recursion',
-    stateMessage: 'Import depth exceeds max (5 levels)',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-IMPORT-RECURSION" props={{ snapshot: previewDeepImportSnapshot, state: 'import-recursion', stateMessage: 'Import depth exceeds max (5 levels)' }} />,
 };
 
 export const ImportDepthLimit: Story = {
-  args: {
-    snapshot: previewDeepImportSnapshot,
-    state: 'import-depth-limit',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-IMPORT-DEPTH" props={{ snapshot: previewDeepImportSnapshot, state: 'import-depth-limit' }} />,
 };
 
 export const LocalNotGitignored: Story = {
-  args: {
-    snapshot: previewLocalNotGitignoredSnapshot,
-    state: 'local-not-gitignored',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-LOCAL-WARN" props={{ snapshot: previewLocalNotGitignoredSnapshot, state: 'local-not-gitignored' }} />,
 };
 
 export const SavePreview: Story = {
-  args: {
-    snapshot: previewAllFilesSnapshot,
-    state: 'save-preview',
-    editingPath: '/Users/dev/project/CLAUDE.md',
-    editContent: previewEditContent,
-    savePreview: previewEditContent,
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-SAVE" props={{ snapshot: previewAllFilesSnapshot, state: 'save-preview', editingPath: '/Users/dev/project/CLAUDE.md', editContent: previewEditContent, savePreview: previewEditContent }} />,
 };
 
 export const Empty: Story = {
-  args: {
-    snapshot: previewEmptySnapshot,
-    state: 'empty',
-  },
+  render: () => <MemoryFilesSample label="DS-CLAUDE-MEMORY-EMPTY" props={{ snapshot: previewEmptySnapshot, state: 'empty' }} />,
 };
 
 export const ParseError: Story = {
-  args: {
-    snapshot: {
-      projectPath: '/Users/dev/project',
-      files: [
-        { scope: 'project', path: '/Users/dev/project/CLAUDE.md', exists: true, size: 128, content: '# Broken markdown' },
-      ],
-      warnings: [],
-    } as unknown as main.ClaudeCodeMemoryFilesSnapshot,
-    state: 'parse-error',
-  },
+  render: () => (
+    <MemoryFilesSample
+      label="DS-CLAUDE-MEMORY-PARSE"
+      props={{
+        snapshot: {
+          projectPath: '/Users/dev/project',
+          files: [
+            { scope: 'project', path: '/Users/dev/project/CLAUDE.md', exists: true, size: 128, content: '# Broken markdown' },
+          ],
+          warnings: [],
+        } as any,
+        state: 'parse-error',
+      }}
+    />
+  ),
 };

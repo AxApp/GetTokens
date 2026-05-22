@@ -6,10 +6,10 @@ import ClaudeCodeSubagentCatalog from '../components/ClaudeCodeSubagentCatalog';
 import type { SubagentCatalogState } from '../components/ClaudeCodeSubagentCatalog';
 import { previewFullSnapshot, previewEmptySnapshot } from './previewData';
 
-type AgentRecord = main.ClaudeCodeSubagentRecord;
+type AgentRecord = main.ClaudeCodeSubagentRecordDTO;
 
 export default function SubagentsFeature() {
-  const [snapshot, setSnapshot] = useState<main.ClaudeCodeSubagentsSnapshot>(previewFullSnapshot);
+  const [snapshot, setSnapshot] = useState<main.ClaudeCodeSubagentsSnapshotDTO>(previewFullSnapshot);
   const [loadError, setLoadError] = useState('');
   const [creatingNew, setCreatingNew] = useState(false);
   const [editingPath, setEditingPath] = useState('');
@@ -21,7 +21,7 @@ export default function SubagentsFeature() {
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { agents, warnings } = snapshot;
+  const { agents, warnings = [] } = snapshot;
 
   const state = useMemo<SubagentCatalogState>(() => {
     if (creatingNew) return 'creating-agent';
@@ -88,7 +88,7 @@ export default function SubagentsFeature() {
     setEditingPath(agent.path);
     setDraftName(agent.name);
     setDraftDescription(agent.description);
-    setDraftBody(agent.bodyPreview ?? '');
+    setDraftBody(agent.body ?? '');
     setDraftScope(agent.scope);
     setSavePreview('');
     setSaveError('');
@@ -121,6 +121,8 @@ export default function SubagentsFeature() {
         path: editingPath,
         name: draftName,
         description: draftDescription,
+        knownFields: existingAgent?.knownFields,
+        unknownFields: existingAgent?.unknownFields,
         body: draftBody,
       });
       setSavePreview('');
@@ -136,9 +138,9 @@ export default function SubagentsFeature() {
 
   const handleDeleteAgent = useCallback(async (agent: AgentRecord) => {
     if (!hasWailsAppBindings()) {
-      setSnapshot((prev: main.ClaudeCodeSubagentsSnapshot) => {
+      setSnapshot((prev: main.ClaudeCodeSubagentsSnapshotDTO) => {
         const filtered = prev.agents.filter((a: AgentRecord) => a.path !== agent.path);
-        return { ...prev, agents: filtered } as unknown as main.ClaudeCodeSubagentsSnapshot;
+        return { ...prev, agents: filtered } as unknown as main.ClaudeCodeSubagentsSnapshotDTO;
       });
       return;
     }

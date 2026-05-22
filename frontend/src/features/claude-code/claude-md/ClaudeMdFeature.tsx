@@ -7,7 +7,7 @@ import type { MemoryFilesPanelState } from '../components/ClaudeCodeMemoryFilesP
 import { previewAllFilesSnapshot, previewEmptySnapshot } from './previewData';
 
 export default function ClaudeMdFeature() {
-  const [snapshot, setSnapshot] = useState<main.ClaudeCodeMemoryFilesSnapshot>(previewAllFilesSnapshot);
+  const [snapshot, setSnapshot] = useState<main.ClaudeCodeMemoryFilesSnapshotDTO>(previewAllFilesSnapshot);
   const [loadError, setLoadError] = useState('');
   const [editingPath, setEditingPath] = useState('');
   const [editContent, setEditContent] = useState('');
@@ -15,7 +15,7 @@ export default function ClaudeMdFeature() {
   const [saveError, setSaveError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { files, warnings } = snapshot;
+  const { files, warnings = [] } = snapshot;
 
   const state = useMemo<MemoryFilesPanelState>(() => {
     const existing = files.filter((f) => f.exists);

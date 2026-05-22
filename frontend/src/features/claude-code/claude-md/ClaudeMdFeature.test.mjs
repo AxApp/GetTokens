@@ -64,13 +64,13 @@ test('Generated Wails bindings expose CLAUDE.md DTOs', () => {
 
   assert.match(appSource, /export function GetClaudeCodeMemoryFilesSnapshot\(\)/);
   assert.match(appSource, /export function SaveClaudeCodeMemoryFile\(arg1\)/);
-  assert.match(appTypes, /GetClaudeCodeMemoryFilesSnapshot\(\):Promise<main\.ClaudeCodeMemoryFilesSnapshot>/);
-  assert.match(appTypes, /SaveClaudeCodeMemoryFile\(arg1:main\.SaveClaudeCodeMemoryFileInput\):Promise<main\.SaveClaudeCodeMemoryFileResult>/);
-  assert.match(modelSource, /export class ClaudeCodeMemoryFilesSnapshot/);
-  assert.match(modelSource, /export class ClaudeCodeMemoryFileRecord/);
-  assert.match(modelSource, /export class ClaudeCodeMemoryFileImport/);
-  assert.match(modelSource, /export class SaveClaudeCodeMemoryFileInput/);
-  assert.match(modelSource, /export class SaveClaudeCodeMemoryFileResult/);
+  assert.match(appTypes, /GetClaudeCodeMemoryFilesSnapshot\(\):Promise<main\.ClaudeCodeMemoryFilesSnapshotDTO>/);
+  assert.match(appTypes, /SaveClaudeCodeMemoryFile\(arg1:main\.SaveClaudeCodeMemoryFileInputDTO\):Promise<main\.SaveClaudeCodeMemoryFileResultDTO>/);
+  assert.match(modelSource, /export class ClaudeCodeMemoryFilesSnapshotDTO/);
+  assert.match(modelSource, /export class ClaudeCodeMemoryFileRecordDTO/);
+  assert.match(modelSource, /export class ClaudeCodeMemoryFileImportDTO/);
+  assert.match(modelSource, /export class SaveClaudeCodeMemoryFileInputDTO/);
+  assert.match(modelSource, /export class SaveClaudeCodeMemoryFileResultDTO/);
 });
 
 test('Local file not gitignored shows warning', () => {

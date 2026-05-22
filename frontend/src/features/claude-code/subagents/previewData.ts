@@ -1,8 +1,8 @@
 import { main } from '../../../../wailsjs/go/models';
 
-const { ClaudeCodeSubagentRecord, ClaudeCodeSubagentsSnapshot } = main;
+const { ClaudeCodeSubagentRecordDTO, ClaudeCodeSubagentsSnapshotDTO } = main;
 
-export const previewValidSubagent = ClaudeCodeSubagentRecord.createFrom({
+export const previewValidSubagent = ClaudeCodeSubagentRecordDTO.createFrom({
   name: 'code-reviewer',
   description: 'Reviews code changes with project context and restricted tools',
   path: '~/.claude/agents/code-reviewer.md',
@@ -17,7 +17,7 @@ export const previewValidSubagent = ClaudeCodeSubagentRecord.createFrom({
   bodyPreview: '# Code Reviewer\n\nYou are a thorough code reviewer. Focus on correctness, security, and performance...',
 });
 
-export const previewValidProjectSubagent = ClaudeCodeSubagentRecord.createFrom({
+export const previewValidProjectSubagent = ClaudeCodeSubagentRecordDTO.createFrom({
   name: 'test-runner',
   description: 'Runs tests and reports failures with suggested fixes',
   path: '.claude/agents/test-runner.md',
@@ -31,7 +31,7 @@ export const previewValidProjectSubagent = ClaudeCodeSubagentRecord.createFrom({
   bodyPreview: '# Test Runner\n\nYou run test suites and report results concisely...',
 });
 
-export const previewMissingNameSubagent = ClaudeCodeSubagentRecord.createFrom({
+export const previewMissingNameSubagent = ClaudeCodeSubagentRecordDTO.createFrom({
   name: '',
   description: 'Has a description but no name',
   path: '~/.claude/agents/broken.md',
@@ -41,7 +41,7 @@ export const previewMissingNameSubagent = ClaudeCodeSubagentRecord.createFrom({
   knownFields: { description: 'Has a description but no name' },
 });
 
-export const previewMissingDescSubagent = ClaudeCodeSubagentRecord.createFrom({
+export const previewMissingDescSubagent = ClaudeCodeSubagentRecordDTO.createFrom({
   name: 'incomplete',
   description: '',
   path: '.claude/agents/incomplete.md',
@@ -51,7 +51,7 @@ export const previewMissingDescSubagent = ClaudeCodeSubagentRecord.createFrom({
   knownFields: { tools: ['Read'], model: 'claude-haiku-4-5' },
 });
 
-export const previewPluginSubagent = ClaudeCodeSubagentRecord.createFrom({
+export const previewPluginSubagent = ClaudeCodeSubagentRecordDTO.createFrom({
   name: 'deploy-helper',
   description: 'Plugin-provided deploy helper subagent',
   path: '~/.claude/agents/plugins/deploy-helper.md',
@@ -67,7 +67,7 @@ export const previewPluginSubagent = ClaudeCodeSubagentRecord.createFrom({
   bodyPreview: '# Deploy Helper\n\nPlugin-managed...',
 });
 
-export const previewParseErrorSubagent = ClaudeCodeSubagentRecord.createFrom({
+export const previewParseErrorSubagent = ClaudeCodeSubagentRecordDTO.createFrom({
   name: '',
   description: '',
   path: '.claude/agents/corrupt.md',
@@ -77,21 +77,21 @@ export const previewParseErrorSubagent = ClaudeCodeSubagentRecord.createFrom({
   validationErrors: ['name 为必填字段', 'description 为必填字段'],
 });
 
-export const previewFullSnapshot = ClaudeCodeSubagentsSnapshot.createFrom({
+export const previewFullSnapshot = ClaudeCodeSubagentsSnapshotDTO.createFrom({
   userPath: '~/.claude/agents',
   projectPath: '/Users/dev/project',
   agents: [previewValidSubagent, previewValidProjectSubagent, previewMissingDescSubagent, previewPluginSubagent],
   warnings: [],
 });
 
-export const previewErrorSnapshot = ClaudeCodeSubagentsSnapshot.createFrom({
+export const previewErrorSnapshot = ClaudeCodeSubagentsSnapshotDTO.createFrom({
   userPath: '~/.claude/agents',
   projectPath: '/Users/dev/project',
   agents: [previewParseErrorSubagent, previewMissingNameSubagent, previewValidSubagent],
   warnings: ['1 agent has parse errors'],
 });
 
-export const previewEmptySnapshot = ClaudeCodeSubagentsSnapshot.createFrom({
+export const previewEmptySnapshot = ClaudeCodeSubagentsSnapshotDTO.createFrom({
   userPath: '~/.claude/agents',
   projectPath: '/Users/dev/project',
   agents: [],

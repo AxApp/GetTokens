@@ -981,7 +981,7 @@ func mapClaudeCodeSubagentsSnapshot(result *wailsapp.ClaudeCodeSubagentsSnapshot
 			Name: a.Name, Description: a.Description, Path: a.Path, Scope: a.Scope,
 			FrontmatterValid: a.FrontmatterValid, FrontmatterError: a.FrontmatterError,
 			ValidationErrors: a.ValidationErrors, KnownFields: a.KnownFields,
-			UnknownFields: a.UnknownFields, BodyPreview: a.BodyPreview,
+			UnknownFields: a.UnknownFields, Body: a.Body, BodyPreview: a.BodyPreview,
 			IsPlugin: a.IsPlugin, IgnoredFields: a.IgnoredFields,
 		})
 	}
@@ -994,4 +994,3 @@ func mapClaudeCodeSubagentSaveResult(result *wailsapp.SaveClaudeCodeSubagentResu
 	}
 	return &SaveClaudeCodeSubagentResultDTO{Path: result.Path, Preview: result.Preview}
 }
-

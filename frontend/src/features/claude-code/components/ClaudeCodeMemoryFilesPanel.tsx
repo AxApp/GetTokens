@@ -17,7 +17,7 @@ export type MemoryFilesPanelState =
   | 'import-depth-limit';
 
 interface ClaudeCodeMemoryFilesPanelProps {
-  snapshot: main.ClaudeCodeMemoryFilesSnapshot;
+  snapshot: main.ClaudeCodeMemoryFilesSnapshotDTO;
   editingPath?: string;
   editContent?: string;
   savePreview?: string;
@@ -74,7 +74,8 @@ export default function ClaudeCodeMemoryFilesPanel({
   }
 
   const existingFiles = snapshot.files.filter((f) => f.exists);
-  const hasWarnings = snapshot.warnings.length > 0;
+  const warnings = snapshot.warnings ?? [];
+  const hasWarnings = warnings.length > 0;
   const isEditing = editingPath != null;
 
   return (
@@ -85,7 +86,7 @@ export default function ClaudeCodeMemoryFilesPanel({
         stateMessage || hasWarnings ? (
           <span className={`flex items-center gap-2 text-sm ${hasWarnings ? 'text-[var(--text-warning)]' : 'text-[var(--text-secondary)]'}`}>
             {hasWarnings ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-            {stateMessage || (hasWarnings ? snapshot.warnings[0] : `${existingFiles.length} file${existingFiles.length !== 1 ? 's' : ''} found`)}
+            {stateMessage || (hasWarnings ? warnings[0] : `${existingFiles.length} file${existingFiles.length !== 1 ? 's' : ''} found`)}
           </span>
         ) : undefined
       }

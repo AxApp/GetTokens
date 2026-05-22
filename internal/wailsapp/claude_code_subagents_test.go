@@ -160,6 +160,36 @@ myCustomField: some-value
 	}
 }
 
+func TestParseSubagentFile_ExposesFullBodyForEditing(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "long.md")
+	longBody := strings.Repeat("long instructions line\n", 20)
+	content := `---
+name: long-agent
+description: Agent with long editable body
+tools: [Read]
+color: blue
+---
+` + longBody
+	if err := os.WriteFile(path, []byte(content), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	record := parseSubagentFile(path, "user")
+	if record.Body != strings.TrimSpace(longBody) {
+		t.Fatalf("Body should keep full editable content, got %d bytes want %d", len(record.Body), len(strings.TrimSpace(longBody)))
+	}
+	if !strings.HasSuffix(record.BodyPreview, "...") {
+		t.Fatalf("BodyPreview should remain truncated for list display, got %q", record.BodyPreview)
+	}
+	if _, ok := record.KnownFields["tools"]; !ok {
+		t.Fatal("expected tools frontmatter to be preserved in known fields")
+	}
+	if _, ok := record.KnownFields["color"]; !ok {
+		t.Fatal("expected color frontmatter to be preserved in known fields")
+	}
+}
+
 func TestParseSubagentFile_PluginDetection(t *testing.T) {
 	dir := t.TempDir()
 	pluginsDir := filepath.Join(dir, "plugins")
@@ -194,8 +224,8 @@ func TestBuildSubagentMarkdown(t *testing.T) {
 		Name:        "test-agent",
 		Description: "A test agent",
 		KnownFields: map[string]any{
-			"tools":  []interface{}{"Read", "Bash"},
-			"model":  "claude-haiku-4-5",
+			"tools": []interface{}{"Read", "Bash"},
+			"model": "claude-haiku-4-5",
 		},
 		UnknownFields: map[string]any{
 			"color": "green",

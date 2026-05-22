@@ -52,19 +52,19 @@ export const previewAllLayersSnapshot = {
   projectPath: '/Users/dev/my-project',
   layers: [previewManagedLayer, previewLocalLayer, previewProjectLayer, previewUserLayer],
   warnings: [],
-} as unknown as main.ClaudeCodeSettingsSnapshot;
+} as unknown as main.ClaudeCodeSettingsSnapshotDTO;
 
 export const previewPartialLayersSnapshot = {
   projectPath: '/Users/dev/my-project',
   layers: [previewUserLayer],
   warnings: [],
-} as unknown as main.ClaudeCodeSettingsSnapshot;
+} as unknown as main.ClaudeCodeSettingsSnapshotDTO;
 
 export const previewParseErrorSnapshot = {
   projectPath: '/Users/dev/my-project',
   layers: [previewParseErrorLayer, previewUserLayer],
   warnings: ['project settings parse error: settings.json 不是有效 JSON'],
-} as unknown as main.ClaudeCodeSettingsSnapshot;
+} as unknown as main.ClaudeCodeSettingsSnapshotDTO;
 
 export const previewEmptySnapshot = {
   projectPath: '/Users/dev/my-project',
@@ -74,7 +74,7 @@ export const previewEmptySnapshot = {
     { scope: 'local', path: '.claude/settings.local.json', exists: false },
   ],
   warnings: [],
-} as unknown as main.ClaudeCodeSettingsSnapshot;
+} as unknown as main.ClaudeCodeSettingsSnapshotDTO;
 
 export const previewSavingDiffJson = JSON.stringify(
   {

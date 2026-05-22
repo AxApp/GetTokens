@@ -15,7 +15,7 @@ export type SubagentCatalogState =
   | 'saving-agent';
 
 interface ClaudeCodeSubagentCatalogProps {
-  snapshot: main.ClaudeCodeSubagentsSnapshot;
+  snapshot: main.ClaudeCodeSubagentsSnapshotDTO;
   creatingNew?: boolean;
   editingPath?: string;
   draftName?: string;
@@ -27,13 +27,13 @@ interface ClaudeCodeSubagentCatalogProps {
   stateMessage?: string;
   onStartCreate?: () => void;
   onCancelCreate?: () => void;
-  onStartEdit?: (agent: main.ClaudeCodeSubagentRecord) => void;
+  onStartEdit?: (agent: main.ClaudeCodeSubagentRecordDTO) => void;
   onCancelEdit?: () => void;
   onChangeDraftName?: (name: string) => void;
   onChangeDraftDescription?: (desc: string) => void;
   onChangeDraftBody?: (body: string) => void;
   onSaveAgent?: () => void;
-  onDeleteAgent?: (agent: main.ClaudeCodeSubagentRecord) => void;
+  onDeleteAgent?: (agent: main.ClaudeCodeSubagentRecordDTO) => void;
 }
 
 const scopeIcons: Record<string, ReactNode> = {
@@ -83,7 +83,7 @@ export default function ClaudeCodeSubagentCatalog({
   const total = snapshot.agents.length;
   const validCount = snapshot.agents.filter((a) => a.frontmatterValid).length;
   const errorCount = snapshot.agents.filter((a) => !a.frontmatterValid).length;
-  const isEditing = editingPath != null || creatingNew;
+  const isEditing = Boolean(editingPath) || Boolean(creatingNew);
 
   return (
     <AssetWorkbenchShell
