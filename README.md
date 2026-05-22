@@ -18,6 +18,20 @@ GetTokens is a desktop application built with Wails, React, and Go. It is used t
 - 设置与更新入口：检查新版本，并按平台触发安全的升级动作。
 - Settings and update entry: check for new versions and trigger platform-safe update actions.
 
+## 示例截图 | UI Screenshots
+
+### 账号池视图 | Account Inventory
+
+![Account inventory screenshot](docs-linhay/screenshots/20260519/accounts/20260519-accounts-display-mode-list-after-v01.png)
+
+### 状态面板视图 | Status Panel
+
+![Status panel screenshot](docs-linhay/screenshots/20260518/status/20260518-status-claude-local-config-after-v01.png)
+
+### Codex 账号列表 | Codex Account List
+
+![Codex account list screenshot](docs-linhay/screenshots/20260518/codex/20260518-codex-account-list-row-layout-after-v01.png)
+
 ## 技术栈 | Tech Stack
 
 - 桌面壳：Wails `v2.12.0`
