@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process'
+import { execSync, spawn } from 'node:child_process'
 import { createViteDebugInspectorPlugin } from '@linhey/react-debug-inspector'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
@@ -6,6 +6,22 @@ import { defineConfig } from 'vite'
 const DESIGN_SYSTEM_STORYBOOK_PORT = 6006
 const DESIGN_SYSTEM_STORYBOOK_URL = `http://127.0.0.1:${DESIGN_SYSTEM_STORYBOOK_PORT}`
 let storybookProcess = null
+
+function resolveBuildGitHash() {
+  if (process.env.VITE_GIT_HASH) {
+    return process.env.VITE_GIT_HASH
+  }
+
+  try {
+    return execSync('git rev-parse --short=12 HEAD', {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim()
+  } catch {
+    return ''
+  }
+}
 
 function sessionManagementDevBridgePlugin() {
   function writeJSON(res, statusCode, payload) {
@@ -208,6 +224,9 @@ function designSystemStorybookDevBridgePlugin() {
 
 // https://vitejs.dev/config/
 export default defineConfig(({ command }) => ({
+  define: {
+    'import.meta.env.VITE_GIT_HASH': JSON.stringify(resolveBuildGitHash()),
+  },
   plugins: [
     command === 'serve' ? createViteDebugInspectorPlugin() : null,
     command === 'serve' ? sessionManagementDevBridgePlugin() : null,

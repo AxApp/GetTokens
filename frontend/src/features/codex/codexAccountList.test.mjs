@@ -17,6 +17,7 @@ import {
   buildCodexRoutePolicySummary,
   buildOpenAICompatibleModelMappings,
   mergeCodexAuthFileModelMappings,
+  moveCodexAccountRowToEdge,
   normalizeCodexModelMappingsForProvider,
   reorderCodexAccountRows,
   resolveCodexRoutingProbeDefaultModel,
@@ -212,6 +213,34 @@ test('reorderCodexAccountRows and buildCodexAccountPriorityUpdates preserve top-
   ]);
 });
 
+test('moveCodexAccountRowToEdge moves rows directly to top or bottom', () => {
+  const rows = [
+    { id: 'a', label: 'A', priority: 3 },
+    { id: 'b', label: 'B', priority: 2 },
+    { id: 'c', label: 'C', priority: 1 },
+  ];
+
+  assert.deepEqual(
+    moveCodexAccountRowToEdge(rows, 'b', 'top').map((row) => row.id),
+    ['b', 'a', 'c'],
+  );
+  assert.deepEqual(
+    moveCodexAccountRowToEdge(rows, 'b', 'bottom').map((row) => row.id),
+    ['a', 'c', 'b'],
+  );
+  assert.deepEqual(
+    buildCodexAccountPriorityUpdates(moveCodexAccountRowToEdge(rows, 'b', 'top')),
+    [
+      { id: 'b', priority: 3 },
+      { id: 'a', priority: 2 },
+    ],
+  );
+  assert.deepEqual(
+    moveCodexAccountRowToEdge(rows, 'missing', 'top').map((row) => row.id),
+    ['a', 'b', 'c'],
+  );
+});
+
 test('applyCodexAccountPriorities updates local browser-preview priority values after saving order', () => {
   const rows = [
     { id: 'c', label: 'C', priority: 1 },
@@ -390,6 +419,15 @@ test('Codex account order cards reuse the account attribution card and keep cust
   assert.match(source, /footer=\{/);
   assert.match(source, /billing=\{billing\}/);
   assert.match(source, /CodexAccountSpecialActionBar/);
+});
+
+test('Codex account order row exposes direct top and bottom reorder actions', async () => {
+  const source = await readFile(new URL('./components/CodexAccountOrderRow.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /onMoveToTop/);
+  assert.match(source, /onMoveToBottom/);
+  assert.match(source, /codex\.account_list_move_top/);
+  assert.match(source, /codex\.account_list_move_bottom/);
 });
 
 test('Codex account order toolbar uses the unified filter menu instead of separate scope clusters', async () => {

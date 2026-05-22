@@ -51,6 +51,8 @@ const statusLocalCliApplyStoryPath = 'frontend/src/features/status/components/St
 const statusLocalCliApplyStorybookTitle = 'Design System/业务组件/状态页本地 CLI 应用';
 const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx';
 const statusSnippetPanelStorybookTitle = 'Design System/业务组件/状态页片段面板';
+const settingsReleasePanelStoryPath = 'frontend/src/features/settings/components/SettingsReleasePanel.stories.tsx';
+const settingsReleasePanelStorybookTitle = 'Design System/业务组件/设置更新面板';
 const usageDeskStoryPath = 'frontend/src/features/accounts/components/usage-desk/UsageDeskComponents.stories.tsx';
 const usageDeskStorybookTitle = 'Design System/业务组件/用量工作台';
 const claudeCodeAccountListStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.stories.tsx';
@@ -619,6 +621,21 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['stable-filter', 'all-filter', 'empty'],
     mockDataSources: ['codexBinaryPreviewSnapshot'],
+  },
+  {
+    id: 'settings-release-panel',
+    componentName: 'SettingsReleasePanel',
+    sourcePath: 'frontend/src/features/settings/components/SettingsReleasePanel.tsx',
+    ownerFeature: 'settings',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: '设置页版本更新区块已拆成无 Wails 的纯展示组件，并展示当前项目构建 git hash；Storybook 覆盖可更新、检查中和原生更新三种状态。',
+    matchedPatterns: ['WorkspacePageHeader', 'SegmentedControl', 'ToggleSwitch'],
+    storyPath: settingsReleasePanelStoryPath,
+    storybookTitle: settingsReleasePanelStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'checking', 'native-updater', 'git-hash'],
+    mockDataSources: ['storybook settings release/version/git hash mock'],
   },
   {
     id: 'claude-code-account-list-workbench',

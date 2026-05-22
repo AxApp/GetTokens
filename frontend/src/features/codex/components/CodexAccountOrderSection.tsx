@@ -64,6 +64,8 @@ export function CodexAccountOrderSection({
   onDrop,
   onOpenDetail,
   onToggle,
+  onMoveToTop,
+  onMoveToBottom,
   onPolicyModeChange,
   initialDensity,
   initialAccountFilter,
@@ -99,6 +101,8 @@ export function CodexAccountOrderSection({
   onDrop: () => void;
   onOpenDetail: (id: string) => void;
   onToggle: (row: CodexAccountRow) => void;
+  onMoveToTop: (id: string) => void;
+  onMoveToBottom: (id: string) => void;
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
   initialDensity?: CodexAccountOrderDisplayMode;
   initialAccountFilter?: CodexAccountOrderFilter | 'all' | 'requestable';
@@ -184,30 +188,37 @@ export function CodexAccountOrderSection({
   } else {
     content = (
       <div className={getCodexAccountOrderGridClass(density)}>
-        {visibleRows.map((row) => (
-          <AccountOrderRow
-            key={row.id}
-            row={row}
-            index={rowOrderIndexByID.get(row.id) ?? 0}
-            density={density}
-            dragged={draggedID === row.id}
-            pending={pendingToggleID === row.id}
-            t={t}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDragEnter={onDragEnter}
-            onDragEnd={onDragEnd}
-            onDrop={onDrop}
-            onOpenDetail={() => onOpenDetail(row.id)}
-            onToggle={() => onToggle(row)}
-            probeHit={latestRoutingProbeAccountID === row.id}
-            routePolicyState={routePolicyRowStates[row.id]}
-            quotaState={row.quotaKey ? codexQuotaByName[row.quotaKey] : undefined}
-            usageSummary={accountUsageByID[row.id]}
-            rateLimitStatus={accountRateLimitByID[row.id]}
-            onPolicyModeChange={onPolicyModeChange}
-          />
-        ))}
+        {visibleRows.map((row) => {
+          const rowOrderIndex = rowOrderIndexByID.get(row.id) ?? 0;
+          return (
+            <AccountOrderRow
+              key={row.id}
+              row={row}
+              index={rowOrderIndex}
+              density={density}
+              dragged={draggedID === row.id}
+              pending={pendingToggleID === row.id}
+              canMoveToTop={rowOrderIndex > 0}
+              canMoveToBottom={rowOrderIndex < rows.length - 1}
+              t={t}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDragEnter={onDragEnter}
+              onDragEnd={onDragEnd}
+              onDrop={onDrop}
+              onOpenDetail={() => onOpenDetail(row.id)}
+              onToggle={() => onToggle(row)}
+              onMoveToTop={() => onMoveToTop(row.id)}
+              onMoveToBottom={() => onMoveToBottom(row.id)}
+              probeHit={latestRoutingProbeAccountID === row.id}
+              routePolicyState={routePolicyRowStates[row.id]}
+              quotaState={row.quotaKey ? codexQuotaByName[row.quotaKey] : undefined}
+              usageSummary={accountUsageByID[row.id]}
+              rateLimitStatus={accountRateLimitByID[row.id]}
+              onPolicyModeChange={onPolicyModeChange}
+            />
+          );
+        })}
       </div>
     );
   }

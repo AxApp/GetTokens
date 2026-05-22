@@ -632,12 +632,57 @@ function isClaudeObservedDetail(detail: UsageDeskObservedDetail): boolean {
   ].join(' ').toLowerCase();
 
   return (
+    usageDeskProviderSupportsClaude(detail.provider) ||
+    usageDeskAttributionAccountSupportsClaude(detail.accountKey) ||
     haystack.includes('anthropic') ||
     haystack.includes('claude') ||
     haystack.includes('sonnet') ||
     haystack.includes('opus') ||
     haystack.includes('haiku')
   );
+}
+
+function usageDeskAttributionAccountSupportsClaude(accountKey: string): boolean {
+  const normalized = accountKey.trim().toLowerCase();
+  if (!normalized) {
+    return false;
+  }
+  if (normalized.startsWith('openai-compatible:')) {
+    return usageDeskProviderSupportsClaude(normalized.slice('openai-compatible:'.length));
+  }
+  if (normalized.startsWith('auth-file:')) {
+    return usageDeskProviderSupportsClaude(normalized.slice('auth-file:'.length));
+  }
+  return false;
+}
+
+function usageDeskProviderSupportsClaude(provider: string): boolean {
+  switch (provider.trim().toLowerCase()) {
+    case 'anthropic':
+    case 'claude':
+    case 'deepseek':
+    case 'zhipu':
+    case 'glm':
+    case 'kimi':
+    case 'moonshot':
+    case 'stepfun':
+    case 'minimax':
+    case 'doubao':
+    case 'longcat':
+    case 'xiaomimimo':
+    case 'mimo':
+    case 'bailian':
+    case 'dashscope':
+    case 'modelscope':
+    case 'bailing':
+    case 'ling':
+    case 'siliconflow':
+    case 'openrouter':
+    case 'therouter':
+      return true;
+    default:
+      return false;
+  }
 }
 
 function filterUsageDeskObservedDetailsByWorkspace(

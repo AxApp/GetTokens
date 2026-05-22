@@ -9,6 +9,7 @@ import {
   buildClaudeCodeAccountSummary,
   buildClaudeCodeModelMappings,
   buildClaudeCodeProfileMappingDraft,
+  moveClaudeCodeAccountRowToEdge,
   normalizeClaudeCodeModelMappingsForProvider,
   reorderClaudeCodeAccountRows,
   resolveClaudeCodeProviderProfile,
@@ -159,6 +160,8 @@ test('Claude Code request order helpers preserve top-to-bottom runtime order', (
 
   const reordered = reorderClaudeCodeAccountRows(rows, 'c', 'a');
   assert.deepEqual(reordered.map((row) => row.id), ['c', 'a', 'b']);
+  assert.deepEqual(moveClaudeCodeAccountRowToEdge(rows, 'b', 'top').map((row) => row.id), ['b', 'a', 'c']);
+  assert.deepEqual(moveClaudeCodeAccountRowToEdge(rows, 'b', 'bottom').map((row) => row.id), ['a', 'c', 'b']);
   assert.deepEqual(buildClaudeCodeAccountPriorityUpdates(reordered), [
     { id: 'c', priority: 3 },
     { id: 'a', priority: 2 },

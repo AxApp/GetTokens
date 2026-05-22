@@ -231,10 +231,10 @@ test('Claude usage desk keeps only Anthropic-compatible observed attribution', (
     {
       items: [
         {
-          accountKey: 'openai-compatible:deepseek',
-          attributionKey: 'provider:deepseek',
-          provider: 'deepseek',
-          requestedModels: ['deepseek-chat'],
+          accountKey: 'openai-compatible:github',
+          attributionKey: 'provider:github',
+          provider: 'github',
+          requestedModels: ['gpt-4o'],
           buckets: [
             {
               start: '2026-04-28T06:00:00.000Z',
@@ -290,6 +290,56 @@ test('Claude usage desk keeps only Anthropic-compatible observed attribution', (
   assert.equal(snapshot.dailyPoints[0].totalTokens, 600);
   assert.equal(snapshot.minuteRows[0].provider, 'anthropic');
   assert.equal(snapshot.minuteRows[0].model, 'claude-sonnet-4-6');
+});
+
+test('Claude usage desk keeps provider accounts whose account key maps to Anthropic-compatible formats', () => {
+  const snapshot = buildUsageDeskObservedSnapshot(
+    {
+      items: [
+        {
+          accountKey: 'openai-compatible:deepseek',
+          attributionKey: 'provider:deepseek',
+          provider: 'deepseek',
+          requestedModels: ['deepseek-chat'],
+          buckets: [
+            {
+              start: '2026-04-28T06:20:00.000Z',
+              requestCount: 5,
+              failedCount: 0,
+              inputTokens: 500,
+              cachedInputTokens: 40,
+              outputTokens: 100,
+              totalTokens: 640,
+            },
+          ],
+        },
+        {
+          accountKey: 'openai-compatible:github',
+          attributionKey: 'provider:github',
+          provider: 'github',
+          requestedModels: ['gpt-4o'],
+          buckets: [
+            {
+              start: '2026-04-28T06:30:00.000Z',
+              requestCount: 3,
+              failedCount: 0,
+              totalTokens: 300,
+            },
+          ],
+        },
+      ],
+      unresolved: [],
+    },
+    null,
+    '1M',
+    'claude',
+  );
+
+  assert.equal(snapshot.hasData, true);
+  assert.equal(snapshot.dailyPoints[0].requests, 5);
+  assert.equal(snapshot.dailyPoints[0].totalTokens, 640);
+  assert.equal(snapshot.minuteRows[0].provider, 'deepseek');
+  assert.equal(snapshot.minuteRows[0].model, 'deepseek-chat');
 });
 
 test('buildUsageDeskObservedSnapshot aggregates sidecar attribution buckets by request count and tokens', () => {

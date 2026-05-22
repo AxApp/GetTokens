@@ -1,4 +1,4 @@
-import { GripVertical } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpToLine, GripVertical } from 'lucide-react';
 import { type DragEvent, type MouseEvent } from 'react';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
@@ -63,6 +63,8 @@ export function AccountOrderRow({
   density,
   dragged,
   pending,
+  canMoveToTop,
+  canMoveToBottom,
   t,
   onDragStart,
   onDragOver,
@@ -71,6 +73,8 @@ export function AccountOrderRow({
   onDrop,
   onOpenDetail,
   onToggle,
+  onMoveToTop,
+  onMoveToBottom,
   probeHit,
   routePolicyState,
   quotaState,
@@ -83,6 +87,8 @@ export function AccountOrderRow({
   density: CodexAccountOrderDisplayMode;
   dragged: boolean;
   pending: boolean;
+  canMoveToTop: boolean;
+  canMoveToBottom: boolean;
   t: (key: string) => string;
   onDragStart: (id: string) => void;
   onDragOver: (event: DragEvent) => void;
@@ -91,6 +97,8 @@ export function AccountOrderRow({
   onDrop: () => void;
   onOpenDetail: () => void;
   onToggle: () => void;
+  onMoveToTop: () => void;
+  onMoveToBottom: () => void;
   probeHit: boolean;
   routePolicyState?: CodexRoutePolicyRowState;
   quotaState?: CodexQuotaState;
@@ -213,17 +221,31 @@ export function AccountOrderRow({
         className={`${density === 'full' ? 'xl:row-span-6 xl:grid xl:grid-rows-[subgrid] xl:h-auto' : ''} ${policyMuted && !probeHit ? 'opacity-75 grayscale' : ''}`.trim()}
         leadingAction={
           <div
-            draggable
-            onClick={handleDragHandleClick}
-            onDragStart={() => onDragStart(row.id)}
-            onDragEnd={onDragEnd}
-            className="flex cursor-grab items-center gap-1 text-[var(--text-muted)] active:cursor-grabbing"
-            title={t('accounts.rotation_drag_badge')}
+            className="grid gap-2"
+            data-account-card-ignore-click="true"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.stopPropagation()}
           >
-            <GripVertical className="h-4 w-4" strokeWidth={3} />
-            <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em]">
-              {t('accounts.rotation_drag_badge')}
-            </span>
+            <div
+              draggable
+              onClick={handleDragHandleClick}
+              onDragStart={() => onDragStart(row.id)}
+              onDragEnd={onDragEnd}
+              className="flex cursor-grab items-center gap-1 text-[var(--text-muted)] active:cursor-grabbing"
+              title={t('accounts.rotation_drag_badge')}
+            >
+              <GripVertical className="h-4 w-4" strokeWidth={3} />
+              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em]">
+                {t('accounts.rotation_drag_badge')}
+              </span>
+            </div>
+            <OrderEdgeMoveActions
+              t={t}
+              canMoveToTop={canMoveToTop}
+              canMoveToBottom={canMoveToBottom}
+              onMoveToTop={onMoveToTop}
+              onMoveToBottom={onMoveToBottom}
+            />
           </div>
         }
         footer={
@@ -241,6 +263,60 @@ export function AccountOrderRow({
         interactive
         onOpen={onOpenDetail}
       />
+    </div>
+  );
+}
+
+function OrderEdgeMoveActions({
+  t,
+  canMoveToTop,
+  canMoveToBottom,
+  onMoveToTop,
+  onMoveToBottom,
+}: {
+  t: (key: string) => string;
+  canMoveToTop: boolean;
+  canMoveToBottom: boolean;
+  onMoveToTop: () => void;
+  onMoveToBottom: () => void;
+}) {
+  const buttonClassName =
+    'flex min-h-7 items-center justify-center gap-1 border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-35';
+
+  function handleTopClick(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    onMoveToTop();
+  }
+
+  function handleBottomClick(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    onMoveToBottom();
+  }
+
+  return (
+    <div className="grid gap-1">
+      <button
+        type="button"
+        onClick={handleTopClick}
+        disabled={!canMoveToTop}
+        className={buttonClassName}
+        aria-label={t('codex.account_list_move_top')}
+        title={t('codex.account_list_move_top')}
+      >
+        <ArrowUpToLine className="h-3.5 w-3.5" strokeWidth={3} />
+        <span>{t('codex.account_list_move_top')}</span>
+      </button>
+      <button
+        type="button"
+        onClick={handleBottomClick}
+        disabled={!canMoveToBottom}
+        className={buttonClassName}
+        aria-label={t('codex.account_list_move_bottom')}
+        title={t('codex.account_list_move_bottom')}
+      >
+        <ArrowDownToLine className="h-3.5 w-3.5" strokeWidth={3} />
+        <span>{t('codex.account_list_move_bottom')}</span>
+      </button>
     </div>
   );
 }

@@ -71,6 +71,8 @@ export interface BuildCodexAccountRowsInput {
   providers: OpenAICompatibleProvider[];
 }
 
+export type CodexAccountOrderEdge = 'top' | 'bottom';
+
 export interface CodexAccountSummary {
   total: number;
   requestable: number;
@@ -95,6 +97,26 @@ export function reorderCodexAccountRows<T extends { id: string; priority?: numbe
   targetID: string,
 ): T[] {
   return reorderPriorityAccounts(rows, draggedID, targetID);
+}
+
+export function moveCodexAccountRowToEdge<T extends { id: string }>(
+  rows: T[],
+  rowID: string,
+  edge: CodexAccountOrderEdge,
+): T[] {
+  const next = rows.slice();
+  const rowIndex = next.findIndex((row) => row.id === rowID);
+  if (rowIndex < 0) {
+    return next;
+  }
+
+  const [row] = next.splice(rowIndex, 1);
+  if (edge === 'top') {
+    next.unshift(row);
+  } else {
+    next.push(row);
+  }
+  return next;
 }
 
 export function buildCodexAccountPriorityUpdates<T extends { id: string; priority?: number }>(rows: T[]) {

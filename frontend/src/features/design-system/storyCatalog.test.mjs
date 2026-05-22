@@ -35,6 +35,7 @@ const runtimeDesignSystemComponentPaths = [
   'frontend/src/components/ui/WorkspacePageHeader.tsx',
   'frontend/src/features/codex-binary/components/CodexBinarySummaryPanel.tsx',
   'frontend/src/features/codex-binary/components/CodexBinaryVersionCell.tsx',
+  'frontend/src/features/settings/components/SettingsReleasePanel.tsx',
 ];
 
 async function listFeatureComponentSourcePaths(directoryURL = featureComponentsRoot) {
@@ -218,6 +219,15 @@ test('runtime design system components expose project highlight markers', async 
       `${sourcePath} must identify the marked design component`,
     );
   }
+});
+
+test('settings release panel exposes current project git hash metadata', async () => {
+  const source = await readFile(new URL('../../features/settings/components/SettingsReleasePanel.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../../features/settings/SettingsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-design-system-component-name="SettingsReleasePanel"/);
+  assert.match(source, /data-design-system-git-hash=\{gitHashLabel\}/);
+  assert.match(featureSource, /gitHashLabel=\{buildGitHashLabel\}/);
 });
 
 test('feature component manifest covers extracted feature component files', async () => {

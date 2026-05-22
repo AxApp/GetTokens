@@ -1,0 +1,86 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import type { ComponentProps } from 'react';
+import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
+import SettingsReleasePanel from './SettingsReleasePanel';
+
+const meta: Meta<typeof SettingsReleasePanel> = {
+  title: 'Design System/业务组件/设置更新面板',
+  component: SettingsReleasePanel,
+  parameters: {
+    layout: 'padded',
+  },
+};
+
+export default meta;
+
+type Story = StoryObj<typeof SettingsReleasePanel>;
+
+const baseProps = {
+  currentVersionTitle: '当前版本',
+  currentVersionLabel: '0.2.1',
+  releaseLabelTitle: '构建批次',
+  releaseLabel: '2026.05.23.11',
+  gitHashTitle: 'Git Hash',
+  gitHashLabel: '960ebd9fd83f',
+  latestReleaseTitle: '最新版本',
+  latestReleaseLabel: '0.2.2',
+  updateAssetTitle: '更新包',
+  updateAssetName: 'GetTokens_macOS_AppleSilicon.dmg',
+  updateChannelTitle: '更新通道',
+  updateChannelHint: '自动下载并应用当前架构的 macOS 更新包。',
+  updateMessage: '',
+  checkUpdateLabel: '检查更新',
+  checkingUpdateLabel: '检查中',
+  isCheckingUpdate: false,
+  onCheckUpdate: () => undefined,
+  showPrimaryUpdateAction: true,
+  primaryUpdateLabel: '应用更新',
+  primaryUpdateDisabled: false,
+  onPrimaryUpdateAction: () => undefined,
+  updateActionHint: '保留当前版本、构建批次与源码 hash，便于复现发布包。',
+} satisfies ComponentProps<typeof SettingsReleasePanel>;
+
+function ReleasePanelSample({
+  label,
+  props,
+}: {
+  label: string;
+  props?: Partial<ComponentProps<typeof SettingsReleasePanel>>;
+}) {
+  return (
+    <DesignSystemStoryFrame label={label}>
+      <SettingsReleasePanel {...baseProps} {...props} />
+    </DesignSystemStoryFrame>
+  );
+}
+
+export const Overview: Story = {
+  render: () => (
+    <div className="grid gap-5">
+      <ReleasePanelSample label="DS-SETTINGS-RELEASE-READY" />
+      <ReleasePanelSample
+        label="DS-SETTINGS-RELEASE-CHECKING"
+        props={{
+          latestReleaseLabel: '—',
+          updateAssetName: '—',
+          isCheckingUpdate: true,
+          primaryUpdateDisabled: true,
+          updateMessage: '正在检查 GitHub Releases。',
+        }}
+      />
+      <ReleasePanelSample
+        label="DS-SETTINGS-RELEASE-NATIVE"
+        props={{
+          showPrimaryUpdateAction: false,
+          updateChannelHint: '当前包使用原生更新入口。',
+          updateActionHint: '点击检查更新会唤起系统更新界面。',
+          updateMessage: '已调用原生更新器。',
+        }}
+      />
+    </div>
+  ),
+};
+
+export const Ready: Story = {
+  render: () => <ReleasePanelSample label="DS-SETTINGS-RELEASE-READY" />,
+};

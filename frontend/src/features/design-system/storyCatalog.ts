@@ -254,6 +254,12 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx',
       },
       {
+        id: 'settings-release-panel',
+        title: '设置更新面板',
+        storybookTitle: 'Design System/业务组件/设置更新面板',
+        path: 'frontend/src/features/settings/components/SettingsReleasePanel.stories.tsx',
+      },
+      {
         id: 'usage-desk-components',
         title: '用量工作台组件',
         storybookTitle: 'Design System/业务组件/用量工作台',

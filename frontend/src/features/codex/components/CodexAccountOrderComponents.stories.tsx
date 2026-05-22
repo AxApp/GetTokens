@@ -195,6 +195,8 @@ function RowSample({
           density={density}
           dragged={dragged}
           pending={pending}
+          canMoveToTop={index > 0}
+          canMoveToBottom={index < rows.length - 1}
           t={t}
           onDragStart={() => undefined}
           onDragOver={noopDragEvent}
@@ -203,6 +205,8 @@ function RowSample({
           onDrop={() => undefined}
           onOpenDetail={() => undefined}
           onToggle={() => undefined}
+          onMoveToTop={() => undefined}
+          onMoveToBottom={() => undefined}
           probeHit={probeHit}
           routePolicyState={routePolicyStates[row.id]}
           quotaState={row.quotaKey === 'team-codex' ? quotaState : undefined}
@@ -279,6 +283,8 @@ function SectionSample({
           onDrop={() => undefined}
           onOpenDetail={() => undefined}
           onToggle={() => undefined}
+          onMoveToTop={() => undefined}
+          onMoveToBottom={() => undefined}
           onPolicyModeChange={() => undefined}
           initialDensity={density}
         />

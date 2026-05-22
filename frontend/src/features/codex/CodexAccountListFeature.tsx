@@ -45,10 +45,12 @@ import {
   buildOpenAICompatibleModelMappings,
   DEFAULT_CODEX_ROUTING_PROBE_MODEL,
   mergeCodexAuthFileModelMappings,
+  moveCodexAccountRowToEdge,
   normalizeCodexModelMappingsForProvider,
   normalizeCodexAccountIDList,
   reorderCodexAccountRows,
   resolveCodexRoutingProbeDefaultModel,
+  type CodexAccountOrderEdge,
   type CodexAccountRow,
   type CodexModelMappingRow,
   type CodexRoutePolicyRowMode,
@@ -427,6 +429,18 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     setAutoSaveOrderRequested(true);
   }
 
+  function moveAccountToOrderEdge(rowID: string, edge: CodexAccountOrderEdge) {
+    const rowIndex = orderedRows.findIndex((row) => row.id === rowID);
+    if (rowIndex < 0 || (edge === 'top' && rowIndex === 0) || (edge === 'bottom' && rowIndex === orderedRows.length - 1)) {
+      return;
+    }
+
+    setOrderDirty(true);
+    setOrderedRows((prev) => moveCodexAccountRowToEdge(prev, rowID, edge));
+    setMessage(t('codex.account_list_unsaved'));
+    setAutoSaveOrderRequested(true);
+  }
+
   function handleDragEnd() {
     setDraggedID(null);
     window.setTimeout(() => {
@@ -797,6 +811,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onDrop={handleDrop}
           onOpenDetail={openDetail}
           onToggle={(row) => void toggleAccount(row)}
+          onMoveToTop={(rowID) => moveAccountToOrderEdge(rowID, 'top')}
+          onMoveToBottom={(rowID) => moveAccountToOrderEdge(rowID, 'bottom')}
           onPolicyModeChange={setRoutePolicyMode}
         />
       </div>

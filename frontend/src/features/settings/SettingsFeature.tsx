@@ -13,10 +13,12 @@ import { BrowserOpenURL, Quit } from '../../../wailsjs/runtime/runtime';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
+import SettingsReleasePanel from './components/SettingsReleasePanel';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import { useTextScale } from '../../context/TextScaleContext';
 import { useTheme } from '../../context/ThemeContext';
+import { buildGitHashLabel } from './settingsBuildMetadata';
 import { mapCheckedRelease } from './settingsRelease';
 import {
   localProjectedUsageRefreshIntervalOptions,
@@ -693,102 +695,50 @@ export default function SettingsFeature({
               </h3>
             </div>
 
-            <div className="card-swiss bg-[var(--bg-surface)] !p-5">
-              <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-                        {t('settings.current_version')}
-                      </div>
-                      <div className="font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
-                        {currentVersionLabel}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-                        {t('settings.release_label')}
-                      </div>
-                      <div className="font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
-                        {releaseLabel || 'DEV'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 border-t border-dashed border-[var(--border-color)] pt-4">
-                    <div className="space-y-1">
-                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-                        {t('settings.latest_release')}
-                      </div>
-                      <div className="font-black uppercase italic text-[var(--text-primary)]" style={valueTextStyle}>
-                        {latestReleaseLabel}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-                        {t('settings.update_asset')}
-                      </div>
-                      <div className="font-mono font-bold text-[var(--text-primary)]" style={bodyTextStyle}>
-                        {availableRelease?.assetName || '—'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-dashed border-[var(--border-color)] pt-4">
-                    <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-                      {t('settings.update_channel')}
-                    </div>
-                    <div className="mt-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]" style={valueTextStyle}>
-                      {t(
-                        usesNativeUpdaterUI
-                          ? 'settings.update_channel_hint_native'
-                          : canApplyUpdate
-                            ? 'settings.update_channel_hint_auto'
-                            : 'settings.update_channel_hint_manual'
-                      )}
-                    </div>
-                    {updateMessage ? (
-                      <div
-                        className="mt-3 border border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 font-bold uppercase leading-5 tracking-widest text-[var(--text-primary)]"
-                        style={bodyTextStyle}
-                      >
-                        {updateMessage}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="space-y-3 border-t border-dashed border-[var(--border-color)] pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
-                  <button className="btn-swiss w-full" onClick={handleCheckUpdate} disabled={isCheckingUpdate}>
-                    {isCheckingUpdate ? t('settings.checking_update') : t('settings.check_update')}
-                  </button>
-                  {usesNativeUpdaterUI ? null : (
-                    <button
-                      className="btn-swiss w-full"
-                      onClick={canApplyUpdate ? handleApplyUpdate : handleOpenReleasePage}
-                      disabled={!availableRelease || isApplyingUpdate || isOpeningRelease}
-                    >
-                      {canApplyUpdate
-                        ? isApplyingUpdate
-                          ? t('settings.applying_update')
-                          : t('settings.apply_update')
-                        : isOpeningRelease
-                          ? t('settings.opening_release_page')
-                          : t('settings.open_release_page')}
-                    </button>
-                  )}
-                  <div className="font-bold uppercase leading-5 tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-                    {t(
-                      usesNativeUpdaterUI
-                        ? 'settings.native_update_hint'
-                        : canApplyUpdate
-                          ? 'settings.apply_update_hint'
-                          : 'settings.manual_update_hint'
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SettingsReleasePanel
+              currentVersionTitle={t('settings.current_version')}
+              currentVersionLabel={currentVersionLabel}
+              releaseLabelTitle={t('settings.release_label')}
+              releaseLabel={releaseLabel || 'DEV'}
+              gitHashTitle={t('settings.git_hash')}
+              gitHashLabel={buildGitHashLabel}
+              latestReleaseTitle={t('settings.latest_release')}
+              latestReleaseLabel={latestReleaseLabel}
+              updateAssetTitle={t('settings.update_asset')}
+              updateAssetName={availableRelease?.assetName || '—'}
+              updateChannelTitle={t('settings.update_channel')}
+              updateChannelHint={t(
+                usesNativeUpdaterUI
+                  ? 'settings.update_channel_hint_native'
+                  : canApplyUpdate
+                    ? 'settings.update_channel_hint_auto'
+                    : 'settings.update_channel_hint_manual'
+              )}
+              updateMessage={updateMessage}
+              checkUpdateLabel={t('settings.check_update')}
+              checkingUpdateLabel={t('settings.checking_update')}
+              isCheckingUpdate={isCheckingUpdate}
+              onCheckUpdate={handleCheckUpdate}
+              showPrimaryUpdateAction={!usesNativeUpdaterUI}
+              primaryUpdateLabel={
+                canApplyUpdate
+                  ? isApplyingUpdate
+                    ? t('settings.applying_update')
+                    : t('settings.apply_update')
+                  : isOpeningRelease
+                    ? t('settings.opening_release_page')
+                    : t('settings.open_release_page')
+              }
+              primaryUpdateDisabled={!availableRelease || isApplyingUpdate || isOpeningRelease}
+              onPrimaryUpdateAction={canApplyUpdate ? handleApplyUpdate : handleOpenReleasePage}
+              updateActionHint={t(
+                usesNativeUpdaterUI
+                  ? 'settings.native_update_hint'
+                  : canApplyUpdate
+                    ? 'settings.apply_update_hint'
+                    : 'settings.manual_update_hint'
+              )}
+            />
           </section>
         </div>
       </div>
