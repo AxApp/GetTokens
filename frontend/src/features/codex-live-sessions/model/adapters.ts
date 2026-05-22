@@ -98,6 +98,20 @@ function mapBackendCodexLiveRequest(request: main.CodexLiveRequest): CodexLiveRe
           totalTokens: request.usage.totalTokens || 0,
         }
       : undefined,
+    quota: (((request as any).quota) || []).map((q: any) => ({
+      label: q.label || '',
+      remaining: q.remaining,
+      limit: q.limit,
+      remainingPercent: q.remainingPercent,
+      resetLabel: q.resetLabel,
+      resetAtUnix: q.resetAtUnix,
+    })),
+    billing: (((request as any).billing) || []).map((b: any) => ({
+      currency: b.currency || '',
+      totalBalance: b.totalBalance || 0,
+      grantedBalance: b.grantedBalance || 0,
+      toppedUpBalance: b.toppedUpBalance || 0,
+    })),
     timing: request.timing
       ? {
           queueWaitMs: request.timing.queueWaitMs,

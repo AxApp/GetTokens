@@ -19,6 +19,22 @@ export interface CodexLiveTokenUsage {
   totalTokens: number;
 }
 
+export interface CodexLiveQuotaWindow {
+  label: string;
+  remaining?: number;
+  limit?: number;
+  remainingPercent?: number | null;
+  resetLabel?: string;
+  resetAtUnix?: number;
+}
+
+export interface CodexLiveBillingBalance {
+  currency: string;
+  totalBalance: number;
+  grantedBalance: number;
+  toppedUpBalance: number;
+}
+
 export interface CodexLiveErrorSummary {
   statusCode?: number;
   code?: string;
@@ -69,6 +85,8 @@ export interface CodexLiveRequest {
   provider?: string;
   proxyRoute?: string;
   usage?: CodexLiveTokenUsage;
+  quota?: CodexLiveQuotaWindow[];
+  billing?: CodexLiveBillingBalance[];
   timing?: CodexLiveTimingMetrics;
   error?: CodexLiveErrorSummary;
   timeline: CodexLiveTimelineEvent[];

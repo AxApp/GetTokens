@@ -5,9 +5,6 @@ import type {
 } from '../model/types';
 import {
   formatDuration,
-  formatOptionalDuration,
-  formatOptionalRate,
-  getConnectionLabel,
   statusDotClass,
   statusLabelKeys,
 } from './formatters';
@@ -90,69 +87,37 @@ function SessionRow({
   onSelect: () => void;
   t: Translate;
 }) {
-  const timing = request?.timing;
-  const connectionLabel = getConnectionLabel(session, t);
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-expanded={selected}
-      className={`grid w-full gap-3 px-4 py-4 text-left transition-colors active:scale-[0.99] ${
+      className={`grid w-full grid-cols-[1fr_auto] items-start gap-x-4 px-4 py-3 text-left transition-colors active:scale-[0.99] ${
         selected
           ? 'bg-[color-mix(in_srgb,var(--border-color)_10%,var(--bg-main))]'
           : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'
       }`}
     >
       <div className="min-w-0">
-        <span className="mb-1 block font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] lg:hidden">
-          {t('codex_live_sessions.col_status')}
-        </span>
-        <RowStatus status={session.status} fallbackInferred={session.fallbackInferred} t={t} />
-      </div>
-
-      <div className="min-w-0">
-        <span className="mb-1 block font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] lg:hidden">
-          {t('codex_live_sessions.col_model_account')}
-        </span>
-        <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
-          {request?.model || session.model}
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug text-[var(--text-primary)]">
+            {request?.model || session.model}
+          </span>
+          <RowStatusTag status={session.status} fallbackInferred={session.fallbackInferred} t={t} />
         </div>
-        <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-muted)]">
           {request?.authLabel || session.authLabel || request?.authID || session.authID || t('codex_live_sessions.unknown_auth')}
         </div>
       </div>
 
-      <div className="min-w-0">
-        <span className="mb-1 block font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] lg:hidden">
-          {t('codex_live_sessions.col_connection')}
-        </span>
-        <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
-          {connectionLabel}
-        </div>
-        <div className="mt-1 truncate text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
-          {session.fallbackInferred ? t('codex_live_sessions.connection_degraded_hint') : t('codex_live_sessions.connection_normal_hint')}
-        </div>
-      </div>
-
-      <div className="min-w-0">
-        <span className="mb-1 block font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] lg:hidden">
-          {t('codex_live_sessions.col_speed')}
-        </span>
-        <div className="grid gap-1 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
-          <MetricText label={t('codex_live_sessions.metric_output_rate')} value={formatOptionalRate(timing?.outputTokensPerSecond)} />
-          <MetricText label={t('codex_live_sessions.metric_first_token')} value={formatOptionalDuration(timing?.firstTokenMs)} />
-          <MetricText label={t('codex_live_sessions.metric_running_for')} value={formatDuration(session.durationMs)} />
-        </div>
-      </div>
-
-      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-        {selected ? t('codex_live_sessions.collapse') : t('codex_live_sessions.expand')}
+      <div className="text-right font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug text-[var(--text-primary)]">
+        {formatDuration(session.durationMs)}
       </div>
     </button>
   );
 }
 
-function RowStatus({
+function RowStatusTag({
   status,
   fallbackInferred,
   t,
@@ -161,27 +126,22 @@ function RowStatus({
   fallbackInferred?: boolean;
   t: Translate;
 }) {
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <span className={`h-2.5 w-2.5 shrink-0 ${statusDotClass(status)}`} />
-      <div className="min-w-0">
-        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
-          {t(statusLabelKeys[status])}
-        </div>
-        {fallbackInferred ? (
-          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-warning)]">
-            {t('codex_live_sessions.http_inferred')}
-          </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
+  const toneBg =
+    status === 'failed' || status === 'cancelled'
+      ? 'bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]'
+      : status === 'degraded_http' || status === 'reconnecting' || status === 'upstream_disconnected'
+        ? 'bg-[color-mix(in_srgb,var(--color-warning)_12%,transparent)]'
+        : status === 'active' || status === 'streaming'
+          ? 'bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)]'
+          : 'bg-[var(--bg-surface)]';
 
-function MetricText({ label, value }: { label: string; value: string }) {
   return (
-    <span className="min-w-0 truncate text-[var(--text-muted)]">
-      {label} <b className="text-[var(--text-primary)]">{value}</b>
+    <span className={`inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 ${toneBg}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${statusDotClass(status)}`} />
+      <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none text-[var(--text-primary)]">
+        {t(statusLabelKeys[status])}
+        {fallbackInferred ? ` · ${t('codex_live_sessions.http_inferred')}` : ''}
+      </span>
     </span>
   );
 }

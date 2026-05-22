@@ -50,7 +50,7 @@ export function SessionDetail({
             {request?.requestID || session.lastRequestID || session.sessionID}
           </h3>
           <p className="mt-1 truncate text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-            {session.model} / {session.authLabel || session.authID || t('codex_live_sessions.unknown_auth')} / {session.codexWindowID || t('codex_live_sessions.unknown_window')}
+            {session.model} · {session.downstreamTransport} → {session.upstreamTransport}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
@@ -62,9 +62,10 @@ export function SessionDetail({
       </div>
 
       <div className="grid gap-5 p-4">
+        <AccountCard session={session} request={request} t={t} />
+        <SessionCard session={session} request={request} t={t} />
         <TransportLane events={timeline} t={t} />
         <TimingMetrics request={request} t={t} />
-        <RequestMeta session={session} request={request} t={t} />
         <Timeline events={timeline} t={t} />
         <DiagnosticSummary diagnostic={diagnostic} t={t} />
       </div>
@@ -147,24 +148,160 @@ function TimingMetrics({ request, t }: { request?: CodexLiveRequest; t: Translat
   );
 }
 
-function RequestMeta({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {
-  const rows = [
+function AccountCard({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {
+  const authLabel = request?.authLabel || session.authLabel;
+  const authID = request?.authID || session.authID;
+  const provider = request?.provider || session.provider;
+  const proxyRoute = request?.proxyRoute;
+  const usage = request?.usage;
+  const quota = request?.quota;
+  const billing = request?.billing;
+
+  const accountRows: Array<[string, string]> = [
+    [t('codex_live_sessions.account_label'), authLabel || authID || t('codex_live_sessions.unknown_auth')],
+    [t('codex_live_sessions.account_id'), authID || t('codex_live_sessions.unknown')],
+    [t('codex_live_sessions.account_provider'), provider || t('codex_live_sessions.unknown')],
+    [t('codex_live_sessions.account_transport'), `${session.downstreamTransport} → ${session.upstreamTransport}`],
+  ];
+  if (proxyRoute) {
+    accountRows.push([t('codex_live_sessions.account_proxy'), proxyRoute]);
+  }
+
+  return (
+    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        {t('codex_live_sessions.account_routing')}
+      </div>
+      <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-2">
+        {accountRows.map(([label, value]) => (
+          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] py-1 text-[length:var(--font-size-ui-xs)]">
+            <span className="shrink-0 font-mono font-black uppercase text-[var(--text-muted)]">{label}</span>
+            <span className="truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
+          </div>
+        ))}
+      </div>
+
+      {usage != null ? (
+        <div className="mt-4">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            {t('codex_live_sessions.token_usage')}
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-x-3 gap-y-1">
+            <UsageStat label={t('codex_live_sessions.tokens_input')} value={usage.inputTokens} />
+            <UsageStat label={t('codex_live_sessions.tokens_cached')} value={usage.cachedInputTokens} />
+            <UsageStat label={t('codex_live_sessions.tokens_output')} value={usage.outputTokens} />
+            <UsageStat label={t('codex_live_sessions.tokens_total')} value={usage.totalTokens} />
+          </div>
+        </div>
+      ) : null}
+
+      {(quota?.length ?? 0) > 0 ? (
+        <div className="mt-4">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            {t('codex_live_sessions.quota')}
+          </div>
+          <div className="mt-2 grid gap-2">
+            {quota!.map((w, i) => (
+              <div key={i} className="grid grid-cols-[5rem_1fr_auto] items-center gap-3">
+                <span className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+                  {w.label}
+                </span>
+                <div className="relative h-3 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-main)]">
+                  {w.remainingPercent != null ? (
+                    <div
+                      className="absolute inset-y-0 left-0 bg-[var(--color-status-success)] transition-all"
+                      style={{ width: `${Math.max(0, Math.min(100, w.remainingPercent))}%` }}
+                    />
+                  ) : null}
+                </div>
+                <span className="text-right font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-primary)]">
+                  {w.remaining != null ? w.remaining.toLocaleString() : '—'} / {w.limit != null ? w.limit.toLocaleString() : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {(billing?.length ?? 0) > 0 ? (
+        <div className="mt-4">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            {t('codex_live_sessions.billing')}
+          </div>
+          <div className="mt-2 grid gap-x-5 gap-y-2 md:grid-cols-3">
+            {billing!.flatMap((b) => [
+              <BalanceStat key={`${b.currency}-total`} label={t('codex_live_sessions.balance_total')} value={`${b.totalBalance.toLocaleString()} ${b.currency}`} />,
+              <BalanceStat key={`${b.currency}-granted`} label={t('codex_live_sessions.balance_granted')} value={`${b.grantedBalance.toLocaleString()} ${b.currency}`} />,
+              <BalanceStat key={`${b.currency}-topped`} label={t('codex_live_sessions.balance_topped_up')} value={`${b.toppedUpBalance.toLocaleString()} ${b.currency}`} />,
+            ])}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function UsageStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="text-center">
+      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-primary)]">
+        {value.toLocaleString()}
+      </div>
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function BalanceStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] py-1 text-[length:var(--font-size-ui-xs)]">
+      <span className="shrink-0 font-mono font-black uppercase text-[var(--text-muted)]">{label}</span>
+      <span className="truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
+    </div>
+  );
+}
+
+function SessionCard({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {
+  const rows: Array<[string, string]> = [
     [t('codex_live_sessions.meta_session'), session.sessionID],
     [t('codex_live_sessions.meta_execution'), session.executionSessionID || t('codex_live_sessions.unknown')],
     [t('codex_live_sessions.meta_client_request'), request?.clientRequestID || t('codex_live_sessions.unknown')],
     [t('codex_live_sessions.meta_upstream_request'), request?.upstreamRequestID || t('codex_live_sessions.unknown')],
-    [t('codex_live_sessions.meta_transport'), `${session.downstreamTransport} -> ${session.upstreamTransport}`],
-    [t('codex_live_sessions.meta_fallback'), session.fallbackInferred ? `${session.fallbackConfidence || t('codex_live_sessions.unknown')} / ${session.fallbackReason || t('codex_live_sessions.unknown')}` : t('codex_live_sessions.none')],
+    [t('codex_live_sessions.session_window'), session.codexWindowID || t('codex_live_sessions.unknown')],
   ];
 
+  if (session.downstreamSessionID) {
+    rows.push([t('codex_live_sessions.session_downstream'), session.downstreamSessionID]);
+  }
+
+  if (session.fallbackInferred) {
+    rows.push([t('codex_live_sessions.meta_fallback'), `${session.fallbackConfidence || '?'} / ${session.fallbackReason || t('codex_live_sessions.unknown')}`]);
+  }
+
+  if (request?.connectionReused !== undefined) {
+    rows.push([t('codex_live_sessions.session_connection'), request.connectionReused ? t('codex_live_sessions.connection_reused') : t('codex_live_sessions.connection_fresh')]);
+  }
+
+  rows.push(
+    [t('codex_live_sessions.session_started'), session.startedAt],
+    [t('codex_live_sessions.session_last_event'), session.lastEventAt],
+  );
+
   return (
-    <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      {rows.map(([label, value]) => (
-        <div key={label} className="grid gap-2 text-[length:var(--font-size-ui-xs)] md:grid-cols-[8rem_1fr]">
-          <span className="font-mono font-black uppercase text-[var(--text-muted)]">{label}</span>
-          <span className="min-w-0 truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
-        </div>
-      ))}
+    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+        {t('codex_live_sessions.local_session')}
+      </div>
+      <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] py-1 text-[length:var(--font-size-ui-xs)]">
+            <span className="shrink-0 font-mono font-black uppercase text-[var(--text-muted)]">{label}</span>
+            <span className="truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
