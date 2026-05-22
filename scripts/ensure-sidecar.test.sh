@@ -30,6 +30,10 @@ read_fingerprint() {
   sed -n 's/.*"fingerprint"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${OUTPUT_DIR}/cli-proxy-api.meta.json" | head -n 1
 }
 
+read_commit() {
+  sed -n 's/.*"commit"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "${OUTPUT_DIR}/cli-proxy-api.meta.json" | head -n 1
+}
+
 mkdir -p "${SOURCE_DIR}"
 cd "${SOURCE_DIR}"
 git init -q
@@ -76,6 +80,7 @@ run_ensure() {
   CLI_PROXY_SOURCE_DIR="${SOURCE_DIR}" \
   CLI_PROXY_OUTPUT_DIR="${OUTPUT_DIR}" \
   CLI_PROXY_BUILD_SCRIPT="${FAKE_BUILD_SCRIPT}" \
+  CLI_PROXY_COMMIT="${CLI_PROXY_COMMIT:-}" \
   FAKE_BUILD_COUNT_FILE="${COUNT_FILE}" \
   "${ROOT_DIR}/scripts/ensure-sidecar.sh" darwin arm64 >/dev/null
 }
@@ -83,6 +88,7 @@ run_ensure() {
 run_ensure
 assert_eq "$(cat "${COUNT_FILE}")" "1" "首次运行必须构建 sidecar"
 fingerprint_v1="$(read_fingerprint)"
+assert_eq "$(read_commit)" "$(git -C "${SOURCE_DIR}" rev-parse --short HEAD)" "meta.json 必须记录 source commit"
 
 run_ensure
 assert_eq "$(cat "${COUNT_FILE}")" "1" "源码未变化时不应重复构建"
@@ -117,5 +123,9 @@ EOF
 
 run_ensure
 assert_eq "$(cat "${COUNT_FILE}")" "3" "dirty 内容再次变化后必须再次构建"
+
+CLI_PROXY_COMMIT="release-explicit-hash" run_ensure
+assert_eq "$(cat "${COUNT_FILE}")" "4" "显式发布 commit 变化后必须重新生成 sidecar metadata"
+assert_eq "$(read_commit)" "release-explicit-hash" "meta.json 必须优先记录显式 CLI_PROXY_COMMIT"
 
 echo "ensure-sidecar test passed"

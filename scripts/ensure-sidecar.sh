@@ -21,6 +21,10 @@ if [[ "$GOOS" == "windows" ]]; then
 fi
 
 resolve_commit() {
+  if [[ -n "${CLI_PROXY_COMMIT:-}" ]]; then
+    echo "${CLI_PROXY_COMMIT}"
+    return
+  fi
   git -C "${SOURCE_DIR}" rev-parse --short HEAD 2>/dev/null || echo "unknown"
 }
 

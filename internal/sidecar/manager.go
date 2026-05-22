@@ -36,6 +36,7 @@ type Status struct {
 	Port          int        `json:"port"`
 	Message       string     `json:"message"`
 	Version       string     `json:"version"`
+	GitHash       string     `json:"gitHash"`
 	StartedAtUnix int64      `json:"startedAtUnix"`
 }
 
@@ -52,11 +53,15 @@ type Manager struct {
 // NewManager creates a Manager with default configuration.
 func NewManager() *Manager {
 	profile := resolveSidecarProfile()
-	return &Manager{
+	manager := &Manager{
 		port:    preferredPortForProfile(profile),
 		status:  Status{Code: StatusStopped},
 		profile: profile,
 	}
+	if gitHash, err := manager.resolveBinaryGitHash(); err == nil {
+		manager.status.GitHash = gitHash
+	}
+	return manager
 }
 
 // Start launches the sidecar and calls notify on every status change.
@@ -68,6 +73,11 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 	if err != nil {
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("找不到后端二进制: %v", err)}, notify)
 		return
+	}
+
+	binaryGitHash, err := readBinaryGitHash(binPath)
+	if err != nil {
+		binaryGitHash = ""
 	}
 
 	port, err := m.pickPort()
@@ -119,15 +129,16 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 		return
 	}
 
-	m.setStatus(
-		Status{
-			Code:          StatusStarting,
-			Port:          port,
-			Message:       "正在启动后端服务…",
-			StartedAtUnix: time.Now().UnixMilli(),
-		},
-		notify,
-	)
+	startingStatus := Status{
+		Code:          StatusStarting,
+		Port:          port,
+		Message:       "正在启动后端服务…",
+		StartedAtUnix: time.Now().UnixMilli(),
+	}
+	if binaryGitHash != "" {
+		startingStatus.GitHash = binaryGitHash
+	}
+	m.setStatus(startingStatus, notify)
 
 	// Wait for health check or timeout.
 	healthURL := fmt.Sprintf("http://127.0.0.1:%d%s", port, healthzPath)
@@ -160,7 +171,7 @@ func (m *Manager) Stop() {
 	if m.cmd != nil && m.cmd.Process != nil {
 		_ = m.cmd.Process.Signal(os.Interrupt)
 	}
-	m.status = Status{Code: StatusStopped}
+	m.status = Status{Code: StatusStopped, GitHash: m.status.GitHash}
 }
 
 // CurrentStatus returns the latest known status.
@@ -214,9 +225,20 @@ func (m *Manager) setStatus(s Status, notify func(Status)) {
 	if s.StartedAtUnix == 0 && s.Code != StatusStopped {
 		s.StartedAtUnix = m.status.StartedAtUnix
 	}
+	if s.GitHash == "" && m.status.GitHash != "" {
+		s.GitHash = m.status.GitHash
+	}
 	m.status = s
 	m.mu.Unlock()
 	if notify != nil {
 		notify(s)
 	}
+}
+
+func (m *Manager) resolveBinaryGitHash() (string, error) {
+	binPath, err := m.resolveBinaryPath()
+	if err != nil {
+		return "", err
+	}
+	return readBinaryGitHash(binPath)
 }

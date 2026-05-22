@@ -4188,6 +4188,7 @@ export namespace sidecar {
 	    port: number;
 	    message: string;
 	    version: string;
+	    gitHash: string;
 	    startedAtUnix: number;
 	
 	    static createFrom(source: any = {}) {
@@ -4200,6 +4201,7 @@ export namespace sidecar {
 	        this.port = source["port"];
 	        this.message = source["message"];
 	        this.version = source["version"];
+	        this.gitHash = source["gitHash"];
 	        this.startedAtUnix = source["startedAtUnix"];
 	    }
 	}

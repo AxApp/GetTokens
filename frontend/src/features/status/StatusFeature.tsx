@@ -65,6 +65,7 @@ const defaultSidecarStatus: SidecarStatus = {
   port: 0,
   message: '',
   version: '',
+  gitHash: '',
   startedAtUnix: 0,
 };
 

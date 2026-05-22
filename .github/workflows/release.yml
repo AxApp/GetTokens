@@ -87,6 +87,11 @@ jobs:
         with:
           node-version: '24'
 
+      - name: Resolve CLIProxyAPI commit
+        shell: bash
+        run: |
+          echo "CLI_PROXY_COMMIT=$(git -C docs-linhay/references/CLIProxyAPI rev-parse --short HEAD)" >> "$GITHUB_ENV"
+
       # ── Restore built frontend ────────────────────────────────────────────
       - uses: actions/download-artifact@v5
         with:
@@ -108,11 +113,11 @@ jobs:
           exit 1
 
       # ── Build sidecar from fork source ───────────────────────────────────
-      - name: Build CLIProxyAPI sidecar from source
+      - name: Ensure CLIProxyAPI sidecar from source
         shell: bash
         run: |
-          chmod +x scripts/build-sidecar.sh
-          ./scripts/build-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch }} build/bin
+          chmod +x scripts/ensure-sidecar.sh scripts/build-sidecar.sh
+          ./scripts/ensure-sidecar.sh ${{ matrix.goos }} ${{ matrix.goarch }}
 
       # ── Platform-specific dependencies ───────────────────────────────────
       - name: Install macOS packaging tools
@@ -181,8 +186,28 @@ jobs:
         shell: bash
         run: |
           cp build/bin/cli-proxy-api build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+          cp build/bin/cli-proxy-api.meta.json build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json
           chmod +x build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
           file build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api
+
+      - name: Verify CLIProxyAPI metadata
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          expected = os.environ["CLI_PROXY_COMMIT"].strip()
+          meta_path = Path("build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api.meta.json")
+          meta = json.loads(meta_path.read_text())
+          actual = str(meta.get("commit", "")).strip()
+          if not actual:
+            raise SystemExit("missing commit in bundled CLIProxyAPI metadata")
+          if actual != expected:
+            raise SystemExit(f"CLIProxyAPI metadata commit mismatch: {actual!r} != {expected!r}")
+          PY
 
       - name: Configure Sparkle metadata
         if: runner.os == 'macOS' && env.SPARKLE_ENABLE == '1'

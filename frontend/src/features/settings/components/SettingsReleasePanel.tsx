@@ -11,6 +11,8 @@ interface SettingsReleasePanelProps {
   releaseLabel: string;
   gitHashTitle: string;
   gitHashLabel: string;
+  cliProxyApiGitHashTitle: string;
+  cliProxyApiGitHashLabel: string;
   latestReleaseTitle: string;
   latestReleaseLabel: string;
   updateAssetTitle: string;
@@ -36,6 +38,8 @@ export default function SettingsReleasePanel({
   releaseLabel,
   gitHashTitle,
   gitHashLabel,
+  cliProxyApiGitHashTitle,
+  cliProxyApiGitHashLabel,
   latestReleaseTitle,
   latestReleaseLabel,
   updateAssetTitle,
@@ -62,10 +66,11 @@ export default function SettingsReleasePanel({
     >
       <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <SettingsReleaseValue title={currentVersionTitle} value={currentVersionLabel} />
             <SettingsReleaseValue title={releaseLabelTitle} value={releaseLabel} />
             <SettingsReleaseValue title={gitHashTitle} value={gitHashLabel} mono />
+            <SettingsReleaseValue title={cliProxyApiGitHashTitle} value={cliProxyApiGitHashLabel} mono />
           </div>
 
           <div className="grid grid-cols-1 gap-4 border-t border-dashed border-[var(--border-color)] pt-4 sm:grid-cols-2">

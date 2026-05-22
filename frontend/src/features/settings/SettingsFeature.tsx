@@ -18,7 +18,7 @@ import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import { useTextScale } from '../../context/TextScaleContext';
 import { useTheme } from '../../context/ThemeContext';
-import { buildGitHashLabel } from './settingsBuildMetadata';
+import { buildGitHashLabel, formatBuildGitHash } from './settingsBuildMetadata';
 import { mapCheckedRelease } from './settingsRelease';
 import {
   localProjectedUsageRefreshIntervalOptions,
@@ -33,7 +33,7 @@ import { getSettingsSectionBadge, type SettingsSectionID } from './settingsLayou
 import { toErrorMessage } from '../../utils/error';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import { formatAppVersion } from '../../utils/version';
-import type { LocaleCode, ReleaseInfo, SegmentedOption, ThemeMode } from '../../types';
+import type { LocaleCode, ReleaseInfo, SegmentedOption, SidecarStatus, ThemeMode } from '../../types';
 
 const themes: ReadonlyArray<SegmentedOption<ThemeMode>> = [
   { id: 'system', label: 'SYSTEM' },
@@ -63,6 +63,7 @@ const valueTextStyle = { fontSize: 'var(--gt-settings-value-size, 10px)' } as co
 interface SettingsFeatureProps {
   version: string;
   releaseLabel: string;
+  sidecarStatus: SidecarStatus;
   canApplyUpdate: boolean;
   usesNativeUpdaterUI: boolean;
   availableRelease: ReleaseInfo | null;
@@ -72,6 +73,7 @@ interface SettingsFeatureProps {
 export default function SettingsFeature({
   version,
   releaseLabel,
+  sidecarStatus,
   canApplyUpdate,
   usesNativeUpdaterUI,
   availableRelease,
@@ -105,6 +107,7 @@ export default function SettingsFeature({
   const [isSavingAppRuntimeSettings, setIsSavingAppRuntimeSettings] = useState(false);
   const currentVersionLabel = formatAppVersion(version);
   const latestReleaseLabel = availableRelease ? formatAppVersion(availableRelease.version) : '—';
+  const cliProxyApiGitHashLabel = formatBuildGitHash(sidecarStatus.gitHash);
   const textScaleOptions: ReadonlyArray<SegmentedOption<typeof textScale>> = [
     { id: 'default', label: t('settings.text_scale_default') },
     { id: 'large', label: t('settings.text_scale_large') },
@@ -702,6 +705,8 @@ export default function SettingsFeature({
               releaseLabel={releaseLabel || 'DEV'}
               gitHashTitle={t('settings.git_hash')}
               gitHashLabel={buildGitHashLabel}
+              cliProxyApiGitHashTitle="CLIProxyAPI Git Hash"
+              cliProxyApiGitHashLabel={cliProxyApiGitHashLabel}
               latestReleaseTitle={t('settings.latest_release')}
               latestReleaseLabel={latestReleaseLabel}
               updateAssetTitle={t('settings.update_asset')}

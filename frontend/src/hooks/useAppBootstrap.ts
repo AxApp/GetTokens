@@ -10,6 +10,7 @@ const defaultSidecarStatus: SidecarStatus = {
   port: 0,
   message: '',
   version: '',
+  gitHash: '',
   startedAtUnix: 0,
 };
 
@@ -39,6 +40,7 @@ export function useAppBootstrap() {
           port: 18317,
           message: previewMode ? 'preview runtime' : 'browser runtime',
           version: previewMode ? 'preview' : 'browser',
+          gitHash: '',
           startedAtUnix: Math.floor(Date.now() / 1000),
         });
         return;

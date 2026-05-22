@@ -22,6 +22,8 @@ const baseProps = {
   releaseLabel: '2026.05.23.11',
   gitHashTitle: 'Git Hash',
   gitHashLabel: '960ebd9fd83f',
+  cliProxyApiGitHashTitle: 'CLIProxyAPI Git Hash',
+  cliProxyApiGitHashLabel: '7f1c2d9',
   latestReleaseTitle: '最新版本',
   latestReleaseLabel: '0.2.2',
   updateAssetTitle: '更新包',
@@ -37,7 +39,7 @@ const baseProps = {
   primaryUpdateLabel: '应用更新',
   primaryUpdateDisabled: false,
   onPrimaryUpdateAction: () => undefined,
-  updateActionHint: '保留当前版本、构建批次与源码 hash，便于复现发布包。',
+  updateActionHint: '保留当前版本、构建批次、app 源码 hash 与 CLIProxyAPI hash，便于复现发布包。',
 } satisfies ComponentProps<typeof SettingsReleasePanel>;
 
 function ReleasePanelSample({

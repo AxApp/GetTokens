@@ -110,6 +110,7 @@ function AppShell() {
         <SettingsPage
           version={version}
           releaseLabel={releaseLabel}
+          sidecarStatus={sidecarStatus}
           canApplyUpdate={canApplyUpdate}
           usesNativeUpdaterUI={usesNativeUpdaterUI}
           availableRelease={availableRelease}

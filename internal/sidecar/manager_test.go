@@ -31,6 +31,31 @@ func TestSetStatusPreservesStartedAtUnixUntilStopped(t *testing.T) {
 	}
 }
 
+func TestSetStatusPreservesGitHashAcrossTransitions(t *testing.T) {
+	manager := NewManager()
+	manager.status = Status{Code: StatusStopped, GitHash: "960ebd9fd83f"}
+
+	manager.setStatus(Status{Code: StatusStarting, StartedAtUnix: 12345}, nil)
+	if got := manager.CurrentStatus().GitHash; got != "960ebd9fd83f" {
+		t.Fatalf("gitHash after starting = %q, want %q", got, "960ebd9fd83f")
+	}
+
+	manager.setStatus(Status{Code: StatusReady, Port: 8317}, nil)
+	if got := manager.CurrentStatus().GitHash; got != "960ebd9fd83f" {
+		t.Fatalf("gitHash after ready = %q, want %q", got, "960ebd9fd83f")
+	}
+
+	manager.setStatus(Status{Code: StatusError, Message: "boom"}, nil)
+	if got := manager.CurrentStatus().GitHash; got != "960ebd9fd83f" {
+		t.Fatalf("gitHash after error = %q, want %q", got, "960ebd9fd83f")
+	}
+
+	manager.setStatus(Status{Code: StatusStopped}, nil)
+	if got := manager.CurrentStatus().GitHash; got != "960ebd9fd83f" {
+		t.Fatalf("gitHash after stopped = %q, want %q", got, "960ebd9fd83f")
+	}
+}
+
 func TestResolveSidecarProfileFromPrefersEnvAndDevExecutable(t *testing.T) {
 	if got := resolveSidecarProfileFrom("GetTokens", "dev"); got != "dev" {
 		t.Fatalf("profile from env = %q, want dev", got)
@@ -272,6 +297,27 @@ func TestResolveBinaryCandidatesPrefersFreshBuildBinInDev(t *testing.T) {
 	}
 	if got, want := candidates[1], "/repo/build/bin/GetTokens.app/Contents/MacOS/cli-proxy-api"; got != want {
 		t.Fatalf("second dev candidate = %q, want %q", got, want)
+	}
+}
+
+func TestReadBinaryGitHashReadsAdjacentMetadata(t *testing.T) {
+	dir := t.TempDir()
+	binaryPath := filepath.Join(dir, "cli-proxy-api.exe")
+	metaPath := filepath.Join(dir, "cli-proxy-api.meta.json")
+
+	if err := os.WriteFile(binaryPath, []byte("binary"), 0600); err != nil {
+		t.Fatalf("seed binary: %v", err)
+	}
+	if err := os.WriteFile(metaPath, []byte(`{"commit":"960ebd9fd83f"}`), 0600); err != nil {
+		t.Fatalf("seed metadata: %v", err)
+	}
+
+	got, err := readBinaryGitHash(binaryPath)
+	if err != nil {
+		t.Fatalf("readBinaryGitHash returned error: %v", err)
+	}
+	if got != "960ebd9fd83f" {
+		t.Fatalf("gitHash = %q, want %q", got, "960ebd9fd83f")
 	}
 }
 

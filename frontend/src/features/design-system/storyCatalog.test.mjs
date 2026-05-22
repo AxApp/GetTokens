@@ -224,10 +224,16 @@ test('runtime design system components expose project highlight markers', async 
 test('settings release panel exposes current project git hash metadata', async () => {
   const source = await readFile(new URL('../../features/settings/components/SettingsReleasePanel.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('../../features/settings/SettingsFeature.tsx', import.meta.url), 'utf8');
+  const storySource = await readFile(new URL('../../features/settings/components/SettingsReleasePanel.stories.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /data-design-system-component-name="SettingsReleasePanel"/);
   assert.match(source, /data-design-system-git-hash=\{gitHashLabel\}/);
+  assert.match(source, /lg:grid-cols-4/);
   assert.match(featureSource, /gitHashLabel=\{buildGitHashLabel\}/);
+  assert.match(featureSource, /const cliProxyApiGitHashLabel = formatBuildGitHash\(sidecarStatus\.gitHash\);/);
+  assert.match(featureSource, /cliProxyApiGitHashLabel=\{cliProxyApiGitHashLabel\}/);
+  assert.match(storySource, /cliProxyApiGitHashTitle: 'CLIProxyAPI Git Hash'/);
+  assert.match(storySource, /cliProxyApiGitHashLabel: '7f1c2d9'/);
 });
 
 test('feature component manifest covers extracted feature component files', async () => {
