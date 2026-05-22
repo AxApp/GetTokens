@@ -1,21 +1,21 @@
 # Codex 本地 bool feature 快捷配置方案 v02
 
 ## 本轮调整
-一期范围从“完整 `config.toml` 快捷配置”收窄为“只支持 `[features]` 下的 bool feature 配置”。
+一期范围从“完整 `config.toml` 快捷配置”收窄为“只支持 `[features]` 下的 bool feature 配置”，后续又补入 `[notice]` 下的 bool 提示开关。
 
-参考源码已归档到 `docs-linhay/references/codex/`，当前对应官方 `openai/codex` main 最新 HEAD：
+参考源码已归档到 `docs-linhay/references/codex/`，当前对应官方 `openai/codex` main 最新可见 HEAD：
 
-- commit：`35aaa5d9fcb606fb6f27dd5747ecab3f4ba0c07e`
-- 时间：`2026-05-01T23:33:32-07:00`
-- 提交：`Bound websocket request sends with idle timeout (#20751)`
+- commit：`932f72c225889102257493f57460251016cbfdc2`
+- 时间：`2026-05-22`
+- 提交：`fix: reject legacy profile selectors (#24059)`
 - 关键文件：
-  - `codex-rs/features/src/lib.rs`
-  - `codex-rs/features/src/feature_configs.rs`
-  - `codex-rs/features/src/legacy.rs`
-  - `codex-rs/core/config.schema.json`
+  - `codex-rs/core/src/config/edit.rs`
+  - `codex-rs/core/src/config/types.rs`
+  - `codex-rs/tui/src/chatwidget.rs`
+  - `codex-rs/tui/src/status/snapshots/codex_tui__status__tests__status_snapshot_shows_refreshing_limits_notice.snap`
 
 ## 需求边界
-本期只做 `config.toml` 中这一类配置：
+本期只做 `config.toml` 中这一类配置（后续补入 `[notice]` bool 提示开关）：
 
 ```toml
 [features]
@@ -29,8 +29,9 @@ goals = false
 1. 顶层 `model / model_provider / approval_policy / sandbox_mode / web_search`。
 2. `[model_providers.*]`。
 3. `[mcp_servers.*]`。
-4. `[agents]`、`[profiles.*]` 等复杂 section。
+4. `[agents]`、`[profiles.*]`、`[projects.*]` 等复杂 section。
 5. `multi_agent_v2`、`apps_mcp_path_override` 这类可写成 bool 或 object 的复合 feature。
+6. `[notice].model_migrations`、`[notice].external_config_migration_prompts` 这类 map / nested table。
 
 ## 上游配置形态
 Codex 当前源码中 `[features]` 的 schema 有三类：
@@ -94,7 +95,7 @@ type CodexFeatureConfigPreview struct {
 Wails 方法：
 
 1. `GetCodexFeatureConfig()`：读取 `CODEX_HOME/config.toml`，返回 definitions、已配置 values、raw。
-2. `PreviewCodexFeatureConfig(input)`：基于最新磁盘内容计算 `[features]` patch 和 diff。
+2. `PreviewCodexFeatureConfig(input)`：基于最新磁盘内容计算 `[features]` / `[notice]` patch 和 diff。
 3. `SaveCodexFeatureConfig(input)`：再次读取最新磁盘内容，执行同一 patch，原子写入。
 
 ## 写入规则
@@ -151,6 +152,19 @@ schema 仍接受这些 bool key，但源码建议使用 canonical key：
 - `apps_mcp_path_override`
 
 补充：源码 registry 里还有 `artifact`，但当前 `config.schema.json` 的 `[features]` properties 中未暴露为 bool；一期不纳入 UI。
+
+### `[notice]` bool，一期纳入
+- `hide_full_access_warning`
+- `hide_world_writable_warning`
+- `hide_rate_limit_model_nudge`
+- `hide_gpt5_1_migration_prompt`
+- `hide_gpt-5.1-codex-max_migration_prompt`
+
+### `[notice]` 复杂结构，一期不纳入
+- `fast_default_opt_out`
+- `windows_wsl_setup_acknowledged`
+- `model_migrations`
+- `external_config_migration_prompts`
 
 ## BDD 场景
 ### 场景 1：没有 `[features]`
@@ -219,10 +233,11 @@ And UI 标记为本地未知项
 
 1. 后端按本方案暴露 `GetCodexFeatureConfig`、`PreviewCodexFeatureConfig`、`SaveCodexFeatureConfig`。
 2. 根层 `main.App` 已补 wrapper 和 DTO 映射，Wails bindings 已生成对应 TypeScript 方法与模型。
-3. 前端保存入参只包含 dirty bool key；legacy alias 和 removed 项按只读或兼容提示处理。
+3. 前端保存入参只包含 dirty bool key；legacy alias、notice bool 和 removed 项按只读或兼容提示处理。
 4. 表格 UI 已按最新设计反馈收敛为全宽工作区、独立行、矩形 switch，并从状态页迁移到 `Codex > Feature 配置`。
 5. `test:unit` 已接入 `frontend/src/features/status/tests/codexFeatureConfig.test.mjs`，避免新增模型测试游离在标准回归外。
-6. feature definition 已补充 description 字段：experimental 项优先同步上游 `/experimental` menu description，其余项参考上游源码注释补齐；前端同步修复 `definitions[]` 归一化路径，避免表格统一显示“暂无描述”。
+6. feature / notice definition 已补充 description 字段：experimental 项优先同步上游 `/experimental` menu description，其余项参考上游源码注释补齐；前端同步修复 `definitions[]` 归一化路径，避免表格统一显示“暂无描述”。
+7. `Codex Notices` 子区块已落地，`hide_rate_limit_model_nudge` 等 notice bool 可直接切换，且 preview / save 只影响对应 section。
 
 保留后续项：
 

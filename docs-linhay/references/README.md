@@ -17,7 +17,7 @@
 | `CLIProxyAPI` | `docs-linhay/references/CLIProxyAPI/` | GetTokens sidecar fork，relay、Anthropic/OpenAI 协议转换、账号路由参考。 |
 | `Cli-Proxy-API-Management-Center` | `docs-linhay/references/Cli-Proxy-API-Management-Center/` | Web 管理中心，Claude provider、模型映射、usage UI 参考。 |
 | `cherry-studio` | `docs-linhay/references/cherry-studio/` | Skills 同步、MCP server、agent/skill 资产组织参考。 |
-| `codex` | `docs-linhay/references/codex/` | Codex CLI 官方源码镜像，Codex 行为校准参考。 |
+| `codex` | `docs-linhay/references/codex/` | Codex CLI 官方源码镜像，已核验到 2026-05-22 可见 HEAD `932f72c2`，用于行为校准参考。 |
 
 ## GitHub 调研候选
 
@@ -26,3 +26,4 @@
 - `VoltAgent/awesome-claude-code-subagents`：subagents 资产组织、分类与模板参考。
 - `jandroav/claude-mcp-switch`：MCP 配置切换和启停参考。
 - `spences10/mcpick`：MCP profile / server selection 参考。
+- `yynxxxxx/GPTSession2CPAandSub2API`：多格式自动检测、转换为 CPA 格式并上传的流程参考。

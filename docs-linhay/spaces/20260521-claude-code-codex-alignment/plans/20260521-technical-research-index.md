@@ -170,7 +170,7 @@ GitHub 参考：
 
 ### G. Session / Usage
 
-当前状态：已完成 P2 技术调研；结论为仅做只读摘要与 relay usage 归因，不写 Claude 原生 session。
+当前状态：已完成 P2 技术调研；结论为只做只读摘要、Usage Desk 本地 token 投影与 relay usage 归因，不写 Claude 原生 session。2026-05-23 已按 `cc-switch` 边界补齐 `~/.claude/projects/**/*.jsonl` 的本地文件投影。
 
 待调研问题：
 - Claude Code session 文件路径、格式、隐私字段、可展示摘要。
