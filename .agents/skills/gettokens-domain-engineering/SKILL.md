@@ -130,6 +130,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Account Route Guard & WebSocket Hot Switch**:
   - Treat manual disable and automatic rate-limit blocking as the same routing-domain condition: an account must not participate in new candidate selection.
   - Use `AccountRouteGuardStore` source aggregation for guard state. Keep sources independent, such as `manual-disabled` and `rate-limit`, so automatic recovery never clears a user manual disable.
+  - Codex API key manual disable must survive every layer: GetTokens local store -> management `codex-api-key` config payload -> CLIProxyAPI `config.CodexKey.Disabled` -> synthesized runtime auth `Disabled=true` / `StatusDisabled` -> `manual-disabled` route guard. If changing Codex order appears to fix a disabled account, suspect the disabled flag was dropped before runtime auth synthesis.
   - Enforce guard state through `RoutePolicy` deny decisions on the hot path. Do not add Gin middleware that returns 429 in the middle of a request when selector fallback can route to another account.
   - For Codex WebSocket, candidate filtering alone is insufficient because downstream sessions may hold `pinnedAuthID` and an upstream connection. Add WebSocket-specific session control at request boundaries.
   - P0 behavior may close affected upstream sessions immediately when an auth is disabled. P2 behavior should preserve the downstream WebSocket and switch at the next downstream request boundary.

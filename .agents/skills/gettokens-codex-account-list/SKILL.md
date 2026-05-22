@@ -14,6 +14,7 @@ description: GetTokens Codex 账号列表：账号请求顺序、路由探测、
   - `codex-api-key`
   - `openai-compatible`
 - 禁用账号保留在排序中，但不参与运行时请求候选。
+- 对 `codex-api-key`，禁用不能只停留在 GetTokens 本地 store：sidecar `codex-api-key` 配置必须保存 `disabled:true`，CLIProxyAPI synthesizer 必须生成 disabled runtime auth，之后由 `manual-disabled` route guard 排除候选。
 - 请求测试顺序只来自当前可请求账号的拖拽顺序，从上到下执行。
 - 不再维护第二套独立策略顺序；允许/排除只过滤候选，不重排候选。
 

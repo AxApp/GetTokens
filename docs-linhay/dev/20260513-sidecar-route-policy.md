@@ -56,6 +56,18 @@ header 只接受 loopback 请求，远端请求的路由 header 会被忽略。
 
 Codex WebSocket 的特殊处理在 service 层完成：当 Codex auth 从可路由状态切到 disabled 时，调用 `CloseCodexWebsocketSessionsForAuthID(authID, "auth_disabled")` 关闭已有上游 session。原因是 WebSocket handler / executor 会复用既有 `pinnedAuthID` 和 upstream connection，单靠候选过滤只能影响后续新选路，不能打断已建立连接。
 
+### Codex API Key 禁用配置链路
+
+Codex API Key 的禁用必须贯穿完整链路：
+
+1. GetTokens 本地账号资产保存 `disabled`。
+2. Wails `SetAccountDisabled("codex-api-key:<id>", true)` 通过 management `PUT /v0/management/codex-api-key` 把 `disabled:true` 写入 sidecar config。
+3. CLIProxyAPI `config.CodexKey` 必须保留 `disabled` 字段，不能在 JSON/YAML 反序列化时丢弃。
+4. `ConfigSynthesizer.synthesizeCodexKeys` 必须把 disabled key 合成为 `Disabled=true` 且 `StatusDisabled` 的 runtime auth，而不是跳过或合成为 active auth。
+5. watcher 发出 modify 后，`applyCoreAuthAddOrUpdate` 写入 `manual-disabled` route guard，并触发 Codex WebSocket 旧上游连接关闭或后续请求边界热切。
+
+若只调整 Codex 请求顺序能规避命中，而账号页禁用不能生效，优先检查上述第 3 / 4 步：这通常说明禁用状态在 sidecar config 或 runtime auth 合成阶段丢失，排序只是改变了 selector 命中顺序，并没有修复禁用语义。
+
 ### P2 WebSocket 热切
 
 P2 将切换边界收敛到下一条 downstream request：
