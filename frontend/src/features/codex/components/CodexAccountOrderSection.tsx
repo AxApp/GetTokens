@@ -16,9 +16,11 @@ import {
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
   filterCodexAccountOrderRows,
   getCodexAccountOrderGridClass,
+  normalizeCodexAccountOrderFilter,
   parseCodexAccountOrderDisplayMode,
   shouldUseCodexOrderSectionActionMenu,
   type CodexAccountOrderFilter,
+  type CodexAccountOrderFilterSource,
   type CodexAccountOrderDisplayMode,
 } from '../model/codexAccountOrderSectionLayout';
 
@@ -99,16 +101,16 @@ export function CodexAccountOrderSection({
   onToggle: (row: CodexAccountRow) => void;
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
   initialDensity?: CodexAccountOrderDisplayMode;
-  initialAccountFilter?: CodexAccountOrderFilter;
+  initialAccountFilter?: CodexAccountOrderFilter | 'all' | 'requestable';
 }) {
   const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => initialDensity ?? readInitialDensity());
-  const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(initialAccountFilter ?? DEFAULT_CODEX_ACCOUNT_ORDER_FILTER);
+  const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(() => normalizeCodexAccountOrderFilter(initialAccountFilter));
   const [useActionMenu, setUseActionMenu] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionAreaRef = useRef<HTMLDivElement | null>(null);
   const actionMeasureRef = useRef<HTMLDivElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
-  const visibleRows = filterCodexAccountOrderRows(rows, accountFilter);
+  const visibleRows = filterCodexAccountOrderRows(rows, accountFilter, codexQuotaByName);
   const rowOrderIndexByID = new Map(rows.map((row, index) => [row.id, index]));
 
   useEffect(() => {
@@ -273,11 +275,9 @@ export function CodexAccountOrderSection({
                       }}
                       onAccountFilterChange={(nextFilter) => {
                         setAccountFilter(nextFilter);
-                        setIsActionMenuOpen(false);
                       }}
                       onDensityChange={(nextDensity) => {
                         updateDensity(nextDensity, setDensity);
-                        setIsActionMenuOpen(false);
                       }}
                     />
                   </div>
@@ -388,22 +388,58 @@ function InlineActionControls({
   onAccountFilterChange: (filter: CodexAccountOrderFilter) => void;
   onDensityChange: (density: CodexAccountOrderDisplayMode) => void;
 }) {
+  const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+  const filterMenuRef = useRef<HTMLDivElement | null>(null);
   const densityOptions = [
     { id: 'full', label: t('codex.account_list_density_full') },
     { id: 'compact', label: t('codex.account_list_density_compact') },
     { id: 'list', label: t('codex.account_list_density_list') },
   ] satisfies Array<{ id: CodexAccountOrderDisplayMode; label: string }>;
-  const accountFilterOptions = [
-    { id: 'all', label: t('codex.account_list_filter_all') },
-    { id: 'requestable', label: t('codex.account_list_filter_requestable') },
-  ] satisfies Array<{ id: CodexAccountOrderFilter; label: string }>;
+
+  useEffect(() => {
+    if (!isFilterMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!filterMenuRef.current?.contains(event.target as Node)) {
+        setIsFilterMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsFilterMenuOpen(false);
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isFilterMenuOpen]);
+
+  function updateFilter(patch: Partial<CodexAccountOrderFilter>) {
+    onAccountFilterChange({
+      ...accountFilter,
+      ...patch,
+    });
+  }
+
+  function toggleFilter(key: 'requestableOnly' | 'disabledOnly' | 'hasBalance' | 'hasLongestQuota' | 'errorsOnly') {
+    updateFilter({
+      [key]: !accountFilter[key],
+    });
+  }
 
   return (
     <div
       className={
         stacked
           ? 'grid w-full gap-2'
-          : 'grid grid-cols-[5.75rem_12.5rem_11.5rem] items-center gap-2'
+          : 'grid grid-cols-[5.75rem_minmax(12rem,auto)_12.5rem] items-center gap-2'
       }
     >
       <button
@@ -416,45 +452,161 @@ function InlineActionControls({
       >
         <span className="min-w-0 truncate">{loading ? loadingLabel : refreshLabel}</span>
       </button>
-      <ActionControlCluster label={t('codex.account_list_control_view')} stacked={stacked}>
+      <div ref={filterMenuRef} className="relative min-w-0">
+        <button
+          type="button"
+          onClick={() => setIsFilterMenuOpen((prev) => !prev)}
+          disabled={disabled}
+          className="btn-swiss flex h-10 w-full min-w-0 items-center justify-center !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
+          aria-expanded={isFilterMenuOpen}
+        >
+          <span className="min-w-0 truncate">{buildCodexOrderFilterLabel(t, accountFilter)}</span>
+        </button>
+        {isFilterMenuOpen ? (
+          <div className="absolute right-0 top-[calc(100%+0.75rem)] z-30 grid min-w-[22rem] gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[6px_6px_0_var(--shadow-color)]">
+            <div className="grid gap-2">
+              <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {t('accounts.filter_group_source')}
+              </p>
+              <div className="grid grid-cols-2 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+                <SourceFilterButton active={accountFilter.source === 'all'} bordered onClick={() => updateFilter({ source: 'all' })}>
+                  {t('codex.account_list_filter_all')}
+                </SourceFilterButton>
+                <SourceFilterButton active={accountFilter.source === 'codex-auth-file'} onClick={() => updateFilter({ source: 'codex-auth-file' })}>
+                  {t('codex.account_list_source_auth_file')}
+                </SourceFilterButton>
+                <SourceFilterButton active={accountFilter.source === 'codex-api-key'} bordered topBorder onClick={() => updateFilter({ source: 'codex-api-key' })}>
+                  {t('codex.account_list_source_api_key')}
+                </SourceFilterButton>
+                <SourceFilterButton active={accountFilter.source === 'openai-compatible'} topBorder onClick={() => updateFilter({ source: 'openai-compatible' })}>
+                  {t('codex.account_list_source_openai_compatible')}
+                </SourceFilterButton>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {t('accounts.filter_group_status')}
+              </p>
+              <FilterCheckbox checked={accountFilter.requestableOnly} onChange={() => toggleFilter('requestableOnly')}>
+                {t('accounts.filter_requestable')}
+              </FilterCheckbox>
+              <FilterCheckbox checked={accountFilter.disabledOnly} onChange={() => toggleFilter('disabledOnly')}>
+                {t('accounts.filter_disabled_only')}
+              </FilterCheckbox>
+              <FilterCheckbox checked={accountFilter.errorsOnly} onChange={() => toggleFilter('errorsOnly')}>
+                {t('accounts.errors_only')}
+              </FilterCheckbox>
+              <FilterCheckbox checked={accountFilter.hasBalance} onChange={() => toggleFilter('hasBalance')}>
+                {t('accounts.filter_has_balance')}
+              </FilterCheckbox>
+              <FilterCheckbox checked={accountFilter.hasLongestQuota} onChange={() => toggleFilter('hasLongestQuota')}>
+                {t('accounts.filter_longest_quota')}
+              </FilterCheckbox>
+            </div>
+            <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-3">
+              <button
+                type="button"
+                onClick={() => onAccountFilterChange({ ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER })}
+                className="btn-swiss h-8 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+              >
+                {t('accounts.filter_reset')}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <div className="min-w-0 [--gt-control-segmented-padding-inline:0.35rem]">
         <SegmentedControl
           options={densityOptions}
           value={density}
           onChange={onDensityChange}
         />
-      </ActionControlCluster>
-      <ActionControlCluster label={t('codex.account_list_control_scope')} stacked={stacked}>
-        <SegmentedControl
-          options={accountFilterOptions}
-          value={accountFilter}
-          onChange={onAccountFilterChange}
-        />
-      </ActionControlCluster>
+      </div>
     </div>
   );
 }
 
-function ActionControlCluster({
-  label,
-  stacked,
+function SourceFilterButton({
+  active,
+  bordered = false,
+  topBorder = false,
   children,
+  onClick,
 }: {
-  label: string;
-  stacked: boolean;
+  active: boolean;
+  bordered?: boolean;
+  topBorder?: boolean;
   children: ReactNode;
+  onClick: () => void;
 }) {
   return (
-    <div
-      className={
-        stacked
-          ? 'grid min-w-0 gap-1.5'
-          : 'grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-1.5 border-l-2 border-[color:color-mix(in_srgb,var(--border-color)_60%,transparent)] pl-2'
-      }
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-9 min-w-0 px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
+        bordered ? 'border-r border-[var(--border-color)]' : ''
+      } ${topBorder ? 'border-t border-[var(--border-color)]' : ''} ${
+        active
+          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+          : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+      }`}
     >
-      <span className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none text-[var(--text-muted)]">
-        {label}
-      </span>
-      <div className="min-w-0 [--gt-control-segmented-padding-inline:0.35rem]">{children}</div>
-    </div>
+      <span className="block truncate">{children}</span>
+    </button>
   );
+}
+
+function FilterCheckbox({
+  checked,
+  children,
+  onChange,
+}: {
+  checked: boolean;
+  children: ReactNode;
+  onChange: () => void;
+}) {
+  return (
+    <label className="flex min-h-8 cursor-pointer items-center gap-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="h-3.5 w-3.5 accent-[var(--text-primary)]"
+      />
+      <span>{children}</span>
+    </label>
+  );
+}
+
+function buildCodexOrderFilterLabel(t: (key: string) => string, filter: CodexAccountOrderFilter) {
+  const sourceLabels: Record<CodexAccountOrderFilterSource, string> = {
+    all: '',
+    'codex-auth-file': t('codex.account_list_source_auth_file'),
+    'codex-api-key': t('codex.account_list_source_api_key'),
+    'openai-compatible': t('codex.account_list_source_openai_compatible'),
+  };
+  const parts: string[] = [];
+  const sourceLabel = sourceLabels[filter.source];
+  if (sourceLabel) {
+    parts.push(sourceLabel);
+  }
+  if (filter.requestableOnly) {
+    parts.push(t('accounts.filter_requestable'));
+  }
+  if (filter.disabledOnly) {
+    parts.push(t('accounts.filter_disabled_only'));
+  }
+  if (filter.errorsOnly) {
+    parts.push(t('accounts.errors_only'));
+  }
+  if (filter.hasBalance) {
+    parts.push(t('accounts.filter_has_balance'));
+  }
+  if (filter.hasLongestQuota) {
+    parts.push(t('accounts.filter_longest_quota'));
+  }
+  if (parts.length === 0) {
+    return t('accounts.display_filters');
+  }
+  return `${t('accounts.display_filters')} · ${parts.join(' · ')}`;
 }

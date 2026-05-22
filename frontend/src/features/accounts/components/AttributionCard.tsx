@@ -46,6 +46,7 @@ interface AttributionCardProps {
   customBody?: ReactNode;
   footer?: ReactNode;
   className?: string;
+  cardID?: string;
   style?: CSSProperties;
   interactive?: boolean;
   onOpen: () => void;
@@ -69,6 +70,7 @@ export default function AttributionCard({
   customBody,
   footer,
   className = '',
+  cardID,
   style,
   interactive = true,
   onOpen,
@@ -83,6 +85,7 @@ export default function AttributionCard({
     return (
       <AccountCardFrame
         className={`min-h-[5rem] border-l-[8px] p-0 ${accentBorderClass} ${className}`}
+        cardID={cardID}
         style={style}
         interactive={interactive}
         onOpen={onOpen}
@@ -137,6 +140,7 @@ export default function AttributionCard({
   return (
     <AccountCardFrame
       className={`border-l-[6px] p-0 ${accentBorderClass} ${className}`}
+      cardID={cardID}
       style={style}
       interactive={interactive}
       onOpen={onOpen}
@@ -185,7 +189,7 @@ export default function AttributionCard({
 
       {density === 'compact' ? (
         compactValueSection === 'quota' ? (
-          <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} t={t} />
+          <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
         ) : compactValueSection === 'billing' ? (
           <BillingBalance billing={billing} />
         ) : (
@@ -199,7 +203,7 @@ export default function AttributionCard({
 
           <UsageMetrics usageSummary={usageSummary} t={t} />
 
-          <QuotaBars quotaDisplay={resolvedQuotaDisplay} accentFillClass={accentFillClass} t={t} />
+          <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
           <BillingBalance billing={billing} />
           <UnsupportedQuotaPlaceholder
             quotaDisplay={resolvedQuotaDisplay}

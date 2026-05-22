@@ -279,7 +279,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     };
   }, [loadRelayModelNames, selectedAccount?.credentialSource, selectedAccount?.id]);
 
-  const groupCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs, displayMode);
+  const accountCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs, displayMode);
   const isAggregateWorkspace = true;
   const usageAccounts = useMemo(() => accounts, [accounts]);
   const rotationAccounts = accounts;
@@ -749,7 +749,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   key={group.id}
                   t={t}
                   group={group}
-                  groupCardHeight={groupCardHeights[group.id]}
+                  accountCardHeights={accountCardHeights}
                   codexQuotaByName={codexQuotaByName}
                   accountUsageByID={accountUsageByID}
                   accountRateLimitByID={accountRateLimitByID}

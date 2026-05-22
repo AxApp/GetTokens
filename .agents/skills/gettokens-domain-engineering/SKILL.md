@@ -26,8 +26,12 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Do not re-introduce `helpers.ts`-style catch-all files. Split by responsibility such as config snippets, selectors, presentation, quota formatting, and actions.
   - Account list filters must not be collapsed into a single enum once source and availability semantics diverge. Prefer a filter object such as:
     - `source`
+    - `requestableOnly`
+    - `disabledOnly`
+    - `hasBalance`
     - `hasLongestQuota`
     - `errorsOnly`
+  - Keep disabled and error/unavailable filters separate. A manually disabled account is route-excluded by user intent, while an error/unavailable account needs diagnostic attention.
   - Persist account-list filter preferences separately from ephemeral UI state. Persist filters; do not persist search drafts, modal open state, or bulk-selection state unless a later requirement explicitly needs that.
 
 ## 2. Feature / Page Boundary
@@ -222,6 +226,19 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Status Local CLI Config**: In `StatusApplyLocalSection`, Codex and Claude Code tabs must share field components for equivalent concepts such as Relay API key, endpoint/base URL, provider, and model. Do not maintain parallel JSX just because one tab has fewer fields.
 - **Codex Feature Config UI**: The local Codex `[features]` bool editor is a config list, not a data table. Each feature is one row with feature key as the title, stage as a compact tag before the subtitle, localized description as the subtitle, and the switch as the only bool value expression. Do not add duplicate `default/local/on/off` value labels when the switch already communicates the state. Do not force feature keys or descriptions to uppercase; preserve source and localization casing.
 - **Account Cards**: Account cards should support whole-card detail entry, but clicks originating from nested interactive controls (`button`, `input`, etc.) must not trigger the card-level detail action.
+- **Account Detail Surfaces**:
+  - Use `AccountDetailPrimitives` as the first choice for account-like detail modals.
+  - Preferred module flow is `AccountDetailBody -> AccountDetailOverviewGrid(runtime + evidence) -> AccountDetailModuleStack -> AccountDetailSection`.
+  - Module headers must use the standardized `AccountDetailSectionHeader` path inside `AccountDetailSection`; do not hand-roll per-module eyebrow/title/meta/action headers in account detail body modules.
+  - Header-level module actions such as add-row/add-model belong in `AccountDetailSection` `actions` so they render at the module header's top right. Do not leave primary row-creation actions at the bottom of dense editor sections.
+  - Wide detail modals should use `AccountDetailModuleStack layout="cards"` for editable modules so sections can occupy multiple columns. Single-column module stacks waste space on detail-sized modals.
+  - Use `span="wide"` for modules with horizontal data, tables, textareas, rule rows, quota/billing editors, or model catalogs so the card grid does not compress operational controls.
+  - Runtime information that already exists on account cards (recent requests, tokens, cached tokens, latency, quota windows, balance) should be shown in details through `AccountRuntimeSnapshotSection`, not by embedding account cards inside the modal. In the runtime section, quota and balance should share the `quota-balance` resource grid so wide modals can compare them side by side.
+  - Runtime snapshot and evidence should sit together in `AccountDetailOverviewGrid` near the top of the detail body, instead of sending evidence to a disconnected secondary sidebar. The runtime and evidence sections must stretch to equal height in wide overview rows.
+  - Route-row details such as Codex / Claude Code should put route identity, status, priority, requestability, and enablement into an evidence section inside the overview grid, not into a separate field grid before runtime.
+  - Do not put cards inside account details just to create section boundaries. Use section density (`standard`, `dense`, `hero`), table/grid rows, and overview evidence modules instead.
+  - Save actions for detail-page modules should follow the page/modal footer when the edit affects persistent account configuration. Individual sections may keep local actions such as add row, delete draft row, verify, fetch models, or copy.
+  - OpenAI-compatible and Codex route-row details are account detail variants; keep them visually aligned with `UnifiedAccountDetailModal` even when their controller/state logic remains separate.
 - **Rotation Cards**: `AccountRotationModal` is a variant of the account card, not a second visual system. Reuse the account-card content hierarchy and only replace the bottom action strip plus rotation-only affordances such as rank rail and drag marker.
 - **Rotation Disable Semantics**:
   - Disabled accounts stay in the saved rotation order.

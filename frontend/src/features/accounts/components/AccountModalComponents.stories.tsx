@@ -14,8 +14,14 @@ import {
   AccountDetailHeader,
   AccountEvidenceSection,
   AccountQuotaSection,
+  AccountRuntimeSnapshotSection,
   AccountVerifySection,
 } from './AccountDetailSections';
+import {
+  AccountDetailBody,
+  AccountDetailModuleStack,
+  AccountDetailOverviewGrid,
+} from './AccountDetailPrimitives';
 import ApiKeyDetailModal, { type APIKeyVerifyState } from './ApiKeyDetailModal';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
 import CodexOAuthModal from './CodexOAuthModal';
@@ -504,53 +510,65 @@ function AccountDetailSectionsSample({
           />
         }
       >
-        <div className="space-y-6 p-6">
-          <AccountCredentialsSection draft={draft} setDraft={setDraft} />
-          <AccountVerifySection
-            draft={draft}
-            verifyState={apiKeyVerifyStates.success}
-            modelNames={['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2']}
-            onVerify={() => undefined}
+        <AccountDetailBody>
+          <AccountDetailOverviewGrid
+            runtime={
+              <AccountRuntimeSnapshotSection
+                usageSummary={apiKeyUsageSummary}
+                billing={apiKeyDetailBilling}
+              />
+            }
+            evidence={
+              <AccountEvidenceSection
+                account={apiKeyDetailAccount}
+                usageSummary={apiKeyUsageSummary}
+              />
+            }
           />
-          <AccountQuotaSection
-            account={apiKeyDetailAccount}
-            draft={draft}
-            setDraft={setDraft}
-            onTestQuotaCurl={async () => ({
-              planType: 'Pro',
-              windows: [
-                {
-                  id: 'five-hour',
-                  label: '5H WINDOW',
-                  remainingPercent: 64,
-                  usedLabel: '36%',
-                  resetLabel: '02:10:00',
-                },
-              ],
-            })}
-          />
-          <AccountBillingSection
-            account={apiKeyDetailAccount}
-            draft={draft}
-            setDraft={setDraft}
-            liveBilling={apiKeyDetailBilling}
-            onTestBillingCurl={async () => ({
-              isAvailable: true,
-              balanceInfos: [
-                {
-                  currency: 'USD',
-                  totalBalance: '120.00',
-                  grantedBalance: '80.00',
-                  toppedUpBalance: '40.00',
-                },
-              ],
-            })}
-          />
-          <AccountEvidenceSection
-            account={apiKeyDetailAccount}
-            usageSummary={apiKeyUsageSummary}
-          />
-        </div>
+          <AccountDetailModuleStack layout="cards">
+            <AccountCredentialsSection draft={draft} setDraft={setDraft} />
+            <AccountVerifySection
+              draft={draft}
+              verifyState={apiKeyVerifyStates.success}
+              modelNames={['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2']}
+              onVerify={() => undefined}
+            />
+            <AccountQuotaSection
+              account={apiKeyDetailAccount}
+              draft={draft}
+              setDraft={setDraft}
+              onTestQuotaCurl={async () => ({
+                planType: 'Pro',
+                windows: [
+                  {
+                    id: 'five-hour',
+                    label: '5H WINDOW',
+                    remainingPercent: 64,
+                    usedLabel: '36%',
+                    resetLabel: '02:10:00',
+                  },
+                ],
+              })}
+            />
+            <AccountBillingSection
+              account={apiKeyDetailAccount}
+              draft={draft}
+              setDraft={setDraft}
+              liveBilling={apiKeyDetailBilling}
+              onTestBillingCurl={async () => ({
+                isAvailable: true,
+                balanceInfos: [
+                  {
+                    currency: 'USD',
+                    totalBalance: '120.00',
+                    grantedBalance: '80.00',
+                    toppedUpBalance: '40.00',
+                  },
+                ],
+              })}
+            />
+          </AccountDetailModuleStack>
+        </AccountDetailBody>
       </AccountDetailModalFrame>
     </ModalViewport>
   );

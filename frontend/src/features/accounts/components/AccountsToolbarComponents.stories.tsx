@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
+import { defaultAccountsFilterState } from '../model/accountFilters';
 import type { AccountsFilterState } from '../model/types';
 import AccountsToolbar from './AccountsToolbar';
 
@@ -18,11 +19,15 @@ export default meta;
 type Story = StoryObj;
 
 const emptyFilters: AccountsFilterState = {
+  ...defaultAccountsFilterState,
   hasLongestQuota: false,
   errorsOnly: false,
 };
 
 const activeFilters: AccountsFilterState = {
+  ...defaultAccountsFilterState,
+  source: 'api-key',
+  requestableOnly: true,
   hasLongestQuota: true,
   errorsOnly: true,
 };

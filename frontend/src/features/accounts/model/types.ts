@@ -60,9 +60,13 @@ export interface AccountGroup {
   accounts: AccountRecord[];
 }
 
-export type AccountsFilterSource = CredentialSource;
+export type AccountsFilterSource = 'all' | CredentialSource;
 
 export interface AccountsFilterState {
+  source: AccountsFilterSource;
+  requestableOnly: boolean;
+  disabledOnly: boolean;
+  hasBalance: boolean;
   hasLongestQuota: boolean;
   errorsOnly: boolean;
 }

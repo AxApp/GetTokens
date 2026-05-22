@@ -223,6 +223,7 @@ export default function AccountCard({
       rateLimitStatus={rateLimitStatus}
       tone={cardTone}
       density={density}
+      cardID={account.id}
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
       interactive={!isSelectionMode && !isPendingDelete}
       topActions={

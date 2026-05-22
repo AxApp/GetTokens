@@ -4,12 +4,13 @@ import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteract
 interface AccountCardFrameProps {
   children: ReactNode;
   className?: string;
+  cardID?: string;
   style?: CSSProperties;
   interactive?: boolean;
   onOpen: () => void;
 }
 
-export default function AccountCardFrame({ children, className = '', style, interactive = true, onOpen }: AccountCardFrameProps) {
+export default function AccountCardFrame({ children, className = '', cardID, style, interactive = true, onOpen }: AccountCardFrameProps) {
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     if (!interactive || !shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
       return;
@@ -31,6 +32,7 @@ export default function AccountCardFrame({ children, className = '', style, inte
   return (
     <div
       data-account-card
+      data-account-card-id={cardID}
       className={`card-swiss flex h-full w-full min-w-0 max-w-full flex-col overflow-visible bg-[var(--bg-main)] p-0 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] active:scale-[0.985] ${
         interactive ? 'cursor-pointer' : ''
       } ${className}`}

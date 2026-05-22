@@ -778,8 +778,8 @@ function CardSectionsSample() {
           <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
         </div>
         <UsageMetrics usageSummary={healthyUsageSummary} t={t} />
-        <QuotaBars quotaDisplay={quotaDisplay} accentFillClass="bg-[var(--color-status-success)]" t={t} />
-        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" t={t} />
+        <QuotaBars quotaDisplay={quotaDisplay} t={t} />
+        <QuotaBars quotaDisplay={refreshingQuotaDisplay} t={t} />
         <BillingBalance billing={billing} />
         <RateLimitGuard rateLimitStatus={rateLimitStatus} />
         <UnsupportedQuotaPlaceholder quotaDisplay={loadingQuotaDisplay} t={t} />
@@ -815,7 +815,7 @@ function QuotaBarsRefreshingSample() {
   return (
     <DesignSystemStoryFrame label="DS-QUOTA-REFRESHING">
       <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <QuotaBars quotaDisplay={refreshingQuotaDisplay} accentFillClass="bg-[var(--color-status-warning)]" t={t} />
+        <QuotaBars quotaDisplay={refreshingQuotaDisplay} t={t} />
       </div>
     </DesignSystemStoryFrame>
   );

@@ -272,3 +272,71 @@ test('admitted feature component manifest entries are synced with the story cata
     assert.ok(admittedStories.has(story.path), `${story.path} must have admitted manifest coverage`);
   }
 });
+
+test('account detail modules expose design-system anatomy and runtime states', async () => {
+  const primitivesSource = await readFile(
+    new URL('../../features/accounts/components/AccountDetailPrimitives.tsx', import.meta.url),
+    'utf8',
+  );
+  const modalStorySource = await readFile(
+    new URL('../../features/accounts/components/AccountModalComponents.stories.tsx', import.meta.url),
+    'utf8',
+  );
+  const unifiedDetailSource = await readFile(
+    new URL('../../features/accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url),
+    'utf8',
+  );
+  const openAICompatibleDetailSource = await readFile(
+    new URL('../../features/accounts/components/OpenAICompatibleDetailPanel.tsx', import.meta.url),
+    'utf8',
+  );
+  const openAICompatibleModalSource = await readFile(
+    new URL('../../features/accounts/components/OpenAICompatibleDetailModal.tsx', import.meta.url),
+    'utf8',
+  );
+  const codexDetailSource = await readFile(
+    new URL('../../features/codex/components/CodexAccountDetailModal.tsx', import.meta.url),
+    'utf8',
+  );
+  const sectionsSource = await readFile(
+    new URL('../../features/accounts/components/AccountDetailSections.tsx', import.meta.url),
+    'utf8',
+  );
+  const sectionsEntry = designSystemComponentManifest.find((entry) => entry.id === 'accounts-account-detail-sections');
+
+  assert.ok(sectionsEntry, 'account detail sections must be registered in the design system manifest');
+  assert.match(primitivesSource, /data-design-system-component="true"/);
+  assert.match(primitivesSource, /data-design-system-component-name=\{componentName\}/);
+  assert.match(primitivesSource, /AccountDetailSectionDensity/);
+  assert.match(primitivesSource, /AccountDetailModuleStackLayout/);
+  assert.match(primitivesSource, /AccountDetailSectionHeader/);
+  assert.match(primitivesSource, /data-account-detail-section-header="standard"/);
+  assert.match(primitivesSource, /AccountDetailOverviewGrid/);
+  assert.match(primitivesSource, /data-account-detail-overview-grid="runtime-evidence"/);
+  assert.match(primitivesSource, /data-account-detail-overview-equal-height="true"/);
+  assert.match(primitivesSource, /data-account-detail-overview-slot="runtime"[^>]+h-full/);
+  assert.match(primitivesSource, /data-account-detail-overview-slot="evidence"[^>]+h-full/);
+  assert.match(primitivesSource, /data-account-detail-module-layout=\{layout\}/);
+  assert.match(sectionsSource, /data-account-runtime-resource-grid="quota-balance"/);
+  assert.match(modalStorySource, /AccountRuntimeSnapshotSection/);
+  assert.match(modalStorySource, /AccountDetailOverviewGrid/);
+  assert.match(modalStorySource, /layout="cards"/);
+  assert.match(unifiedDetailSource, /layout="cards"/);
+  assert.match(unifiedDetailSource, /AccountDetailOverviewGrid/);
+  assert.match(openAICompatibleDetailSource, /layout="cards"/);
+  assert.match(openAICompatibleModalSource, /AccountDetailOverviewGrid/);
+  assert.match(codexDetailSource, /layout="cards"/);
+  assert.match(codexDetailSource, /AccountDetailOverviewGrid/);
+  assert.match(codexDetailSource, /CodexAccountEvidenceSection/);
+  assert.match(codexDetailSource, /componentName="CodexAccountEvidenceSection"/);
+  assert.doesNotMatch(sectionsSource, /componentName="AccountQuotaSection"[\s\S]{0,220}span="wide"/);
+  assert.doesNotMatch(sectionsSource, /componentName="AccountBillingSection"[\s\S]{0,220}span="wide"/);
+  assert.ok(sectionsEntry.requiredStates?.includes('runtime-snapshot'));
+  assert.ok(sectionsEntry.requiredStates?.includes('module-layout'));
+  assert.ok(sectionsEntry.requiredStates?.includes('card-mode'));
+  assert.ok(sectionsEntry.requiredStates?.includes('runtime-evidence-overview'));
+  assert.ok(sectionsEntry.requiredStates?.includes('quota-balance-grid'));
+  assert.ok(sectionsEntry.requiredStates?.includes('quota-billing-side-by-side'));
+  assert.ok(sectionsEntry.requiredStates?.includes('standard-module-header'));
+}
+);

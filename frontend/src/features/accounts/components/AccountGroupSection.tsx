@@ -2,13 +2,14 @@ import type { AccountGroup, AccountRecord, CodexQuotaState, Translator } from '.
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
+import { shouldEqualizeAccountCardDisplayMode } from '../model/accountCardLayout';
 import AccountCard, { type AccountCardLocalCliAction } from './AccountCard';
 import AccountGroupSectionView from './AccountGroupSectionView';
 
 interface AccountGroupSectionProps {
   t: Translator;
   group: AccountGroup;
-  groupCardHeight?: number;
+  accountCardHeights: Record<string, number>;
   codexQuotaByName: Record<string, CodexQuotaState>;
   accountUsageByID: Record<string, AccountUsageSummary>;
   accountRateLimitByID: Record<string, RateLimitState>;
@@ -34,7 +35,7 @@ interface AccountGroupSectionProps {
 export default function AccountGroupSection({
   t,
   group,
-  groupCardHeight,
+  accountCardHeights,
   codexQuotaByName,
   accountUsageByID,
   accountRateLimitByID,
@@ -69,7 +70,11 @@ export default function AccountGroupSection({
           quotaState={codexQuotaByName[account.quotaKey || '']}
           usageSummary={accountUsageByID[account.id]}
           rateLimitStatus={accountRateLimitByID[account.id]}
-          minHeight={displayMode === 'full' ? groupCardHeight : undefined}
+          minHeight={
+            shouldEqualizeAccountCardDisplayMode(displayMode)
+              ? accountCardHeights[account.id]
+              : undefined
+          }
           density={displayMode}
           ready={ready}
           isSelectionMode={isSelectionMode}

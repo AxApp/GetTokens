@@ -35,7 +35,10 @@ import {
   type APIKeyVerifyState,
 } from './AccountDetailSections';
 import {
+  AccountDetailBody,
   AccountDetailEmptyState,
+  AccountDetailModuleStack,
+  AccountDetailOverviewGrid,
   AccountDetailPill,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
@@ -155,62 +158,70 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         />
       }
     >
-      <div className="space-y-6 p-6">
-        {isApiKey ? (
-          <AccountCredentialsSection
-            draft={configDraft}
-            setDraft={setConfigDraft}
-          />
-        ) : null}
-        {isAuthFile ? <AuthFileContentSection account={account} /> : null}
-        <AccountProxyRouteSection
-          proxyUrl={isApiKey ? configDraft.proxyUrl : account.proxyUrl}
-          readonlyReason={isApiKey ? undefined : tReadonlyProxyReason(account)}
-          onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
-          onValidityChange={setProxyRouteError}
+      <AccountDetailBody>
+        <AccountDetailOverviewGrid
+          runtime={
+            <AccountRuntimeSnapshotSection
+              usageSummary={props.usageSummary}
+              quotaDisplay={quotaDisplay}
+              billing={liveBilling}
+            />
+          }
+          evidence={
+            <AccountEvidenceSection
+              account={account}
+              usageSummary={props.usageSummary}
+            />
+          }
         />
-        <AccountRuntimeSnapshotSection
-          usageSummary={props.usageSummary}
-          quotaDisplay={quotaDisplay}
-          billing={liveBilling}
-        />
-        <RateLimitSection
-          {...props}
-          rateLimitRulesRef={rateLimitRulesRef}
-          onRateLimitDirtyChange={setRateLimitDirty}
-        />
-        {isApiKey ? (
-          <AccountVerifySection
-            draft={configDraft}
-            verifyState={props.verifyState}
-            modelNames={props.modelNames}
-            onVerify={props.onVerify}
+        <AccountDetailModuleStack layout="cards">
+          {isApiKey ? (
+            <AccountCredentialsSection
+              draft={configDraft}
+              setDraft={setConfigDraft}
+            />
+          ) : null}
+          {isAuthFile ? <AuthFileContentSection account={account} /> : null}
+          <AccountProxyRouteSection
+            proxyUrl={isApiKey ? configDraft.proxyUrl : account.proxyUrl}
+            readonlyReason={isApiKey ? undefined : tReadonlyProxyReason(account)}
+            onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
+            onValidityChange={setProxyRouteError}
           />
-        ) : null}
-        {isApiKey ? (
-          <AccountQuotaSection
-            account={account}
-            draft={configDraft}
-            setDraft={setConfigDraft}
-            quotaState={quotaState}
-            onTestQuotaCurl={props.onTestQuotaCurl}
+          <RateLimitSection
+            {...props}
+            rateLimitRulesRef={rateLimitRulesRef}
+            onRateLimitDirtyChange={setRateLimitDirty}
           />
-        ) : null}
-        {isApiKey ? (
-          <AccountBillingSection
-            account={account}
-            draft={configDraft}
-            setDraft={setConfigDraft}
-            liveBilling={liveBilling}
-            onTestBillingCurl={props.onTestBillingCurl}
-          />
-        ) : null}
-        {isAuthFile ? <CompatibleModelsSection account={account} /> : null}
-        <AccountEvidenceSection
-          account={account}
-          usageSummary={props.usageSummary}
-        />
-      </div>
+          {isApiKey ? (
+            <AccountVerifySection
+              draft={configDraft}
+              verifyState={props.verifyState}
+              modelNames={props.modelNames}
+              onVerify={props.onVerify}
+            />
+          ) : null}
+          {isApiKey ? (
+            <AccountQuotaSection
+              account={account}
+              draft={configDraft}
+              setDraft={setConfigDraft}
+              quotaState={quotaState}
+              onTestQuotaCurl={props.onTestQuotaCurl}
+            />
+          ) : null}
+          {isApiKey ? (
+            <AccountBillingSection
+              account={account}
+              draft={configDraft}
+              setDraft={setConfigDraft}
+              liveBilling={liveBilling}
+              onTestBillingCurl={props.onTestBillingCurl}
+            />
+          ) : null}
+          {isAuthFile ? <CompatibleModelsSection account={account} /> : null}
+        </AccountDetailModuleStack>
+      </AccountDetailBody>
     </AccountDetailModalFrame>
   );
 }
@@ -317,8 +328,10 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
 
   return (
     <AccountDetailSection
+      componentName="AuthFileContentSection"
       eyebrow="Auth File"
       title={viewMode === 'sanitized' ? 'Sanitized Content' : 'Raw Content'}
+      span="wide"
       actions={
         <>
           <button onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
@@ -377,7 +390,7 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
   }, [account.name, trackRequest]);
 
   return (
-    <AccountDetailSection eyebrow="Model Catalog" title="Compatible Models">
+    <AccountDetailSection componentName="CompatibleModelsSection" eyebrow="Model Catalog" title="Compatible Models" span="wide">
       {loading ? (
         <div className="h-4 w-1/3 animate-pulse bg-[var(--border-color)]" />
       ) : models.length === 0 ? (

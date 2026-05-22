@@ -22,6 +22,8 @@ import {
   AccountDetailEvidenceGrid,
   AccountDetailPill,
   AccountDetailSection,
+  AccountDetailStatCell,
+  AccountDetailStatGrid,
 } from './AccountDetailPrimitives';
 
 export interface APIKeyVerifyState {
@@ -204,7 +206,7 @@ export function AccountCredentialsSection({
   setDraft,
 }: AccountCredentialsSectionProps) {
   return (
-    <AccountDetailSection eyebrow="Credential" title="凭据">
+    <AccountDetailSection componentName="AccountCredentialsSection" eyebrow="Credential" title="凭据">
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-1.5">
@@ -292,7 +294,7 @@ export function AccountVerifySection({
   }, [isModelMenuOpen]);
 
   return (
-    <AccountDetailSection eyebrow="Connection" title="验证连接">
+    <AccountDetailSection componentName="AccountVerifySection" eyebrow="Connection" title="验证连接">
       {vs.lastVerifiedAt ? (
         <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           上次验证：{new Date(vs.lastVerifiedAt).toLocaleString()}
@@ -399,6 +401,7 @@ export function AccountQuotaSection({
 
   return (
     <AccountDetailSection
+      componentName="AccountQuotaSection"
       eyebrow="Quota"
       title="额度追踪"
       meta={liveWindows.length > 0 ? `实时 ${liveWindows.length} 个窗口` : undefined}
@@ -464,77 +467,85 @@ export function AccountRuntimeSnapshotSection({
 
   return (
     <AccountDetailSection
+      componentName="AccountRuntimeSnapshotSection"
       eyebrow="Runtime"
       title="运行快照"
+      density="hero"
       meta={usageSummary?.lastActivityAt ? `LAST ${new Date(usageSummary.lastActivityAt).toLocaleString()}` : undefined}
     >
-      <div className="grid border-y-2 border-[var(--border-color)] md:grid-cols-3">
+      <AccountDetailStatGrid columns={6}>
         {stats.map((item) => (
-          <div key={item.id} className="min-w-0 border-b border-r border-dashed border-[var(--border-color)] px-3 py-3">
-            <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {item.label}
-            </div>
-            <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tabular-nums text-[var(--text-primary)]">
-              {item.value}
-            </div>
-          </div>
+          <AccountDetailStatCell key={item.id} label={item.label} value={item.value} />
         ))}
-      </div>
+      </AccountDetailStatGrid>
 
-      {quotaWindows.length > 0 ? (
-        <div className="grid gap-2 border-b-2 border-dashed border-[var(--border-color)] pb-4">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            QUOTA
-          </div>
-          {quotaWindows.map((window) => {
-            const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
-            return (
-              <div key={window.id} className="grid gap-2 md:grid-cols-[6rem_minmax(0,1fr)_5rem_12rem] md:items-center">
-                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                  {window.label}
-                </div>
-                <div
-                  className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
-                  style={{
-                    backgroundImage: window.remainingPercent === null
-                      ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)'
-                      : 'none',
-                  }}
-                >
-                  {window.remainingPercent !== null ? (
-                    <div
-                      className="absolute inset-y-0 left-0 bg-[var(--color-status-success)]"
-                      style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
-                    />
-                  ) : null}
-                  {quotaDisplay?.refreshing ? (
-                    <div className="account-card-quota-refresh-skeleton pointer-events-none absolute inset-0" aria-hidden="true" />
-                  ) : null}
-                </div>
-                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] md:text-right">
-                  {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
-                </div>
-                <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] md:text-right">
-                  {t('accounts.quota_reset')} {resetTime}
-                </div>
+      {quotaWindows.length > 0 || balances.length > 0 ? (
+        <div
+          data-account-runtime-resource-grid="quota-balance"
+          className={`grid gap-4 ${quotaWindows.length > 0 && balances.length > 0 ? 'xl:grid-cols-2' : ''}`}
+        >
+          {quotaWindows.length > 0 ? (
+            <div data-account-runtime-resource-panel="quota" className="grid gap-2">
+              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                QUOTA
               </div>
-            );
-          })}
-        </div>
-      ) : null}
-
-      {balances.length > 0 ? (
-        <div className="grid gap-2">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            BALANCE
-          </div>
-          {balances.map((balance, index) => (
-            <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
-              <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
-              <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
-              <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
+              <div className="grid grid-cols-[5.5rem_minmax(0,1fr)_4.5rem_8rem] border-b border-dashed border-[var(--border-color)] pb-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+                <span>Window</span>
+                <span>Remaining</span>
+                <span className="text-right">Pct</span>
+                <span className="text-right">Reset</span>
+              </div>
+              {quotaWindows.map((window) => {
+                const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
+                return (
+                  <div key={window.id} className="grid gap-2 border-b border-dashed border-[var(--border-color)] py-2 md:grid-cols-[5.5rem_minmax(0,1fr)_4.5rem_8rem] md:items-center">
+                    <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      {window.label}
+                    </div>
+                    <div
+                      className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
+                      style={{
+                        backgroundImage: window.remainingPercent === null
+                          ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)'
+                          : 'none',
+                      }}
+                    >
+                      {window.remainingPercent !== null ? (
+                        <div
+                          className="absolute inset-y-0 left-0 bg-[var(--color-status-success)]"
+                          style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
+                        />
+                      ) : null}
+                      {quotaDisplay?.refreshing ? (
+                        <div className="account-card-quota-refresh-skeleton pointer-events-none absolute inset-0" aria-hidden="true" />
+                      ) : null}
+                    </div>
+                    <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] md:text-right">
+                      {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
+                    </div>
+                    <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] md:text-right">
+                      {resetTime}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          ))}
+          ) : null}
+
+          {balances.length > 0 ? (
+            <div data-account-runtime-resource-panel="balance" className="grid gap-2 content-start">
+              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                BALANCE
+              </div>
+              {balances.map((balance, index) => (
+                <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
+                  <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
+                  <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
+                  <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </AccountDetailSection>
@@ -591,6 +602,7 @@ export function AccountBillingSection({
 
   return (
     <AccountDetailSection
+      componentName="AccountBillingSection"
       eyebrow="Billing"
       title="余额"
       meta={liveBilling ? '实时余额已就绪' : undefined}
@@ -664,7 +676,7 @@ export function AccountEvidenceSection({
   }
 
   return (
-    <AccountDetailSection eyebrow="Audit" title="EVIDENCE">
+    <AccountDetailSection componentName="AccountEvidenceSection" density="dense" eyebrow="Audit" title="EVIDENCE">
       <AccountDetailEvidenceGrid
         rows={evidenceRows.map((row) => ({
           label: row.label,

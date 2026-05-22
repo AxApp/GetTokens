@@ -11,7 +11,7 @@
 
 ## 决策
 1. 保留 controller 分工：Accounts、Codex、Claude Code 继续各自负责数据加载、保存、验证、模型拉取和错误处理。
-2. 新增 `AccountDetailPrimitives` 作为详情 UI 基础层，提供 section、字段网格、状态 pill、notice、empty state、evidence grid。
+2. 新增 `AccountDetailPrimitives` 作为详情 UI 基础层，提供 section density、标准模块头部、body、overview grid、module grid、module stack、stat grid、字段网格、状态 pill、notice、empty state、evidence grid。
 3. `CodexAccountDetailModal` 使用 `AccountDetailModalFrame`，从而与账号池详情共享壳层、遮罩、滚动和 header/footer 结构。
 4. `OpenAICompatibleDetailPanel` 暂时保留自身 header/footer，因为其 provider 编辑流程和保存提示仍有独立状态；内部内容区已统一为详情 section。
 5. `AccountProxyRouteSection` 是跨三类详情复用模块，统一接入 `AccountDetailSection`，避免 OpenAI-compatible 和 API key 的出口配置出现两套视觉语言。
@@ -20,6 +20,14 @@
 8. `calendar-day` 表示自然日窗口，UI 展示为 `00:00-23:59`；CLIProxyAPI evaluator 对该窗口按本地自然日 00:00 作为起点计算用量，不等同于滚动 `24h`。
 9. 卡片模式里的运行数据进入详情页时不复用卡片容器，而是通过 `AccountRuntimeSnapshotSection` 展示同源语义：近期请求、总 token、cached token、平均延迟、首个 quota 窗口、balance 明细。
 10. Codex 排序卡片和 Codex 详情共用 `buildCodexQuotaSummaryAccount`，保证 `CodexAccountRow` 映射到 quota/billing 展示时不分叉。
+11. 详情模块布局统一为 `AccountDetailBody -> AccountDetailOverviewGrid(runtime + evidence) -> AccountDetailModuleStack -> AccountDetailSection`，避免卡中卡和局部 padding 分叉。
+12. 保存动作按页面 footer 归口：限流规则和 Codex 模型映射不再在模块内部放独立保存按钮，模块内部只保留添加、删除、验证、拉取模型等局部动作。
+13. 宽屏详情弹窗默认支持 card-mode：`AccountDetailModuleStack layout="cards"` 让短模块多列并排；`AccountDetailSection span="wide"` 让限流规则、额度/余额编辑、模型目录、auth content 等横向内容跨列，避免单列浪费空间或压缩表格。
+14. 模块头部统一走 `AccountDetailSectionHeader`，所有详情模块使用相同的 eyebrow、title、meta、actions 排布。
+15. 顶部运行信息统一走 `AccountDetailOverviewGrid`，将 `AccountRuntimeSnapshotSection` 与 evidence 模块并排；运行快照内部使用 `quota-balance` 资源网格让额度和余额在宽屏并排。
+16. Codex route row 详情不再把类型、状态、路由、优先级等字段作为独立字段网格，而是通过 `CodexAccountEvidenceSection` 放入 overview evidence。
+17. `AccountDetailOverviewGrid` 负责顶部 runtime/evidence 的等高行为；slot 和内部 card section 均使用 stretch / full-height 约束。
+18. Codex 模型映射的新增动作属于 section header action，放在 `CodexModelRoutingSection` 右上角，避免底部编辑区同时承载创建和错误提示。
 
 ## 当前边界
 本阶段不是最终的 capability registry。后续如果继续收敛，可以在当前 primitives 之上新增：
@@ -42,12 +50,28 @@ type AccountDetailTarget =
 ## 运行快照模块边界
 - `accountDetailRuntime` 只做格式化与统计项组装，不读取 Wails、不拉取 quota、不关心详情保存。
 - `AccountRuntimeSnapshotSection` 只负责详情页展示，不把 `AttributionCard`、`QuotaBars`、`BillingBalance` 作为整卡嵌入，避免卡中卡。
+- `AccountRuntimeSnapshotSection` 内部按 stats、quota/balance 两层组织；quota 与 balance 只在同一资源层并排，不拆成两个孤立模块。
 - `UnifiedAccountDetailModal` 从 `AccountRecord + CodexQuotaState` 构建 `QuotaDisplay` 与 billing；`CodexAccountDetailModal` 从 `CodexAccountRow` 通过 `buildCodexQuotaSummaryAccount` 走同一 `buildQuotaDisplay` 链路。
 - OpenAI-compatible provider 当前只有 usage attribution，因此详情快照展示近期统计；后续若 provider 具备 quota/billing 数据，再通过同一 props 扩展。
 
+## 设计系统收编
+- 运行时详情模块根节点通过 `data-design-system-component="true"` 与 `data-design-system-component-name` 暴露项目高亮标记。
+- `AccountDetailSectionDensity` 用于区分 standard、dense、hero 三类详情密度，避免每个业务 section 自行写 padding 和列宽。
+- `AccountDetailSectionHeader` 是详情 body 模块的唯一标准头部路径，避免 flow/card 分支各写一套 header。
+- section header actions 是新增行/新增模型这类模块级创建动作的默认位置。
+- `AccountDetailOverviewGrid` 是运行快照与 evidence 的顶部组合模式，避免 evidence 被放到与快照脱节的 sidebar。
+- `AccountDetailOverviewGrid` 的 runtime slot 与 evidence slot 在宽屏并排时等高，保证 `AccountRuntimeSnapshotSection` 与 evidence section 边界一致。
+- `CodexAccountEvidenceSection` 承载 route row 的审计字段：asset id、来源类型、状态、路由、优先级、请求状态和启用状态。
+- `AccountDetailModuleStackLayout` 用于区分 `flow` 与 `cards`。cards 模式通过 context 让内部 `AccountDetailSection` 自动切换为独立模块卡片，不要求每个业务 section 手动改壳层。
+- `AccountModalComponents.stories.tsx` 的详情 section 示例覆盖运行快照/evidence overview、主列模块、footer 保存状态；manifest 的 `requiredStates` 显式记录 `runtime-snapshot`、`runtime-evidence-overview`、`quota-balance-grid`、`standard-module-header`、`module-layout`、`footer-save`。
+- `componentManifest.ts` 已补齐 `card-mode` required state，并补齐 Codex live sessions 新拆分组件的收编记录，保证 manifest coverage 继续严格。
+- 可复用规则已沉淀到 `.agents/skills/gettokens-domain-engineering/SKILL.md` 的 Account Detail Surfaces 小节；该规则限定在账号域，不写入 `AGENTS.md`。
+
 ## 验收
+- `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
 - `npm --prefix frontend run typecheck`
 - `npm --prefix frontend run test:unit`
+- `npm --prefix frontend run build-storybook`
 - `go test ./internal/gettokenshooks`（CLIProxyAPI）
 - `git diff --check`
 - `git -C docs-linhay/references/CLIProxyAPI diff --check`

@@ -1,3 +1,5 @@
+import type { AccountListDisplayMode } from './accountListLayout';
+
 export function countRenderedGridColumns(gridTemplateColumns: string | null | undefined): number {
   if (!gridTemplateColumns) {
     return 0;
@@ -41,4 +43,34 @@ export function shouldEqualizeAccountCardGrid(
   cardCount: number,
 ): boolean {
   return cardCount > 1 && countRenderedGridColumns(gridTemplateColumns) > 1;
+}
+
+export function shouldEqualizeAccountCardDisplayMode(displayMode: AccountListDisplayMode): boolean {
+  return displayMode !== 'list';
+}
+
+export interface AccountCardColumnMeasurement {
+  id: string;
+  columnLeft: number;
+  height: number;
+}
+
+export function resolveAccountCardColumnHeights(
+  cards: AccountCardColumnMeasurement[],
+): Record<string, number> {
+  const maxHeightByColumn: Record<string, number> = {};
+
+  cards.forEach((card) => {
+    const columnKey = String(Math.round(card.columnLeft));
+    maxHeightByColumn[columnKey] = Math.max(maxHeightByColumn[columnKey] ?? 0, card.height);
+  });
+
+  return cards.reduce<Record<string, number>>((result, card) => {
+    const columnKey = String(Math.round(card.columnLeft));
+    const maxHeight = maxHeightByColumn[columnKey] ?? 0;
+    if (maxHeight > 0) {
+      result[card.id] = maxHeight;
+    }
+    return result;
+  }, {});
 }

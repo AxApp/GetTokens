@@ -13,6 +13,10 @@ test('readStoredAccountsFilterState restores a valid stored filter state', () =>
     getItem(key) {
       assert.equal(key, ACCOUNTS_FILTERS_STORAGE_KEY);
       return JSON.stringify({
+        source: 'api-key',
+        requestableOnly: true,
+        disabledOnly: false,
+        hasBalance: true,
         hasLongestQuota: true,
         errorsOnly: false,
       });
@@ -20,9 +24,29 @@ test('readStoredAccountsFilterState restores a valid stored filter state', () =>
   };
 
   assert.deepEqual(readStoredAccountsFilterState(storage), {
+    source: 'api-key',
+    requestableOnly: true,
+    disabledOnly: false,
+    hasBalance: true,
     hasLongestQuota: true,
     errorsOnly: false,
   });
+});
+
+test('readStoredAccountsFilterState migrates legacy stored filter state', () => {
+  assert.deepEqual(
+    readStoredAccountsFilterState({
+      getItem() {
+        return '{"hasLongestQuota":true,"errorsOnly":true}';
+      },
+    }),
+    {
+      ...defaultAccountsFilterState,
+      hasBalance: false,
+      hasLongestQuota: true,
+      errorsOnly: true,
+    },
+  );
 });
 
 test('readStoredAccountsFilterState falls back for invalid or missing storage payloads', () => {
@@ -46,6 +70,10 @@ test('persistAccountsFilterState serializes the full filter state', () => {
   };
 
   persistAccountsFilterState(storage, {
+    source: 'auth-file',
+    requestableOnly: true,
+    disabledOnly: false,
+    hasBalance: true,
     hasLongestQuota: false,
     errorsOnly: true,
   });
@@ -54,6 +82,10 @@ test('persistAccountsFilterState serializes the full filter state', () => {
     [
       ACCOUNTS_FILTERS_STORAGE_KEY,
       JSON.stringify({
+        source: 'auth-file',
+        requestableOnly: true,
+        disabledOnly: false,
+        hasBalance: true,
         hasLongestQuota: false,
         errorsOnly: true,
       }),

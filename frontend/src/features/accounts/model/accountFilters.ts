@@ -1,11 +1,19 @@
-import type { AccountsFilterState } from './types';
+import type { AccountsFilterSource, AccountsFilterState } from './types';
 
 export const ACCOUNTS_FILTERS_STORAGE_KEY = 'gettokens.accountsFilters';
 
 export const defaultAccountsFilterState: AccountsFilterState = {
+  source: 'all',
+  requestableOnly: false,
+  disabledOnly: false,
+  hasBalance: false,
   hasLongestQuota: false,
   errorsOnly: false,
 };
+
+function resolveAccountsFilterSource(value: unknown): AccountsFilterSource {
+  return value === 'auth-file' || value === 'api-key' ? value : 'all';
+}
 
 export function resolveAccountsFilterState(value: unknown): AccountsFilterState {
   if (!value || typeof value !== 'object') {
@@ -13,13 +21,13 @@ export function resolveAccountsFilterState(value: unknown): AccountsFilterState 
   }
 
   const candidate = value as Partial<AccountsFilterState>;
-  if (typeof candidate.hasLongestQuota !== 'boolean' || typeof candidate.errorsOnly !== 'boolean') {
-    return defaultAccountsFilterState;
-  }
-
   return {
-    hasLongestQuota: candidate.hasLongestQuota,
-    errorsOnly: candidate.errorsOnly,
+    source: resolveAccountsFilterSource(candidate.source),
+    requestableOnly: candidate.requestableOnly === true,
+    disabledOnly: candidate.disabledOnly === true,
+    hasBalance: candidate.hasBalance === true,
+    hasLongestQuota: candidate.hasLongestQuota === true,
+    errorsOnly: candidate.errorsOnly === true,
   };
 }
 

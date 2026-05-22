@@ -1,6 +1,6 @@
 import type { AccountRecord } from '../../../types';
 import type { AccountGroup, AccountsFilterState, CodexQuotaState, Translator } from './types';
-import { buildQuotaDisplay, hasPositiveLongestQuota } from './accountQuota.ts';
+import { extractBilling, hasDisplayableBilling, hasPositiveLongestQuota } from './accountQuota.ts';
 import {
   compareAccountRecords,
   isAccountUnavailable,
@@ -25,11 +25,27 @@ interface BuildAccountsViewArgs {
 export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters, codexQuotaByName }: FilterAccountsArgs) {
   const query = searchTerm.trim().toLowerCase();
   return accounts.filter((account) => {
+    if (filters.source !== 'all' && account.credentialSource !== filters.source) {
+      return false;
+    }
+
+    if (filters.requestableOnly && isAccountUnavailable(account)) {
+      return false;
+    }
+
+    if (filters.disabledOnly && !isAccountDisabled(account)) {
+      return false;
+    }
+
+    if (filters.hasBalance && !hasAccountDisplayableBalance(codexQuotaByName[account.quotaKey || ''])) {
+      return false;
+    }
+
     if (filters.hasLongestQuota && !hasPositiveLongestQuota(account, codexQuotaByName[account.quotaKey || ''])) {
       return false;
     }
 
-    if (filters.errorsOnly && !isAccountUnavailable(account)) {
+    if (filters.errorsOnly && !isAccountError(account)) {
       return false;
     }
 
@@ -49,6 +65,31 @@ export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters,
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(query));
   });
+}
+
+function hasAccountDisplayableBalance(state?: CodexQuotaState) {
+  if (!state?.quota) {
+    return false;
+  }
+  return hasDisplayableBilling(extractBilling(state.quota));
+}
+
+function isAccountDisabled(account: AccountRecord) {
+  if (account.disabled) {
+    return true;
+  }
+  return String(account.status || '').trim().toUpperCase() === 'DISABLED';
+}
+
+function isAccountError(account: AccountRecord) {
+  if (isAccountDisabled(account)) {
+    return false;
+  }
+  if (account.rawAuthFile?.unavailable) {
+    return true;
+  }
+  const status = String(account.status || '').trim().toUpperCase();
+  return status !== 'ACTIVE' && status !== 'CONFIGURED' && status !== 'LOCAL';
 }
 
 function normalizeProviderKey(provider: string): string {

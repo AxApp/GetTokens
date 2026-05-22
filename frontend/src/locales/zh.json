@@ -20,7 +20,8 @@
     "yes": "是",
     "no": "否",
     "confirm_delete": "确认删除此记录吗？",
-    "loading": "数据加载中..."
+    "loading": "数据加载中...",
+    "more_actions": "更多操作"
   },
   "nav": {
     "status": "运行状态",
@@ -985,7 +986,11 @@
     "filter_all": "全部来源",
     "filter_group_source": "来源",
     "filter_group_status": "状态筛选",
+    "filter_requestable": "仅可请求",
+    "filter_disabled_only": "仅已禁用",
+    "filter_has_balance": "仅显示有余额",
     "filter_longest_quota": "仅显示有最长窗口额度",
+    "filter_reset": "重置筛选",
     "source_auth_file": "AUTH FILE",
     "source_api_key": "API KEY",
     "source_api_key_with_provider": "{provider} API KEY",

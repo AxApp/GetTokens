@@ -4,6 +4,7 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { formatQuotaResetDisplayWithUnix, hasDisplayableBilling } from '../model/accountQuota';
+import { resolveQuotaRemainingFillClass } from '../model/quotaColor';
 
 const FLOW_BASE = '12,58 50,44 92,48 134,34 176,60 218,50 260,42 302,40';
 
@@ -205,11 +206,10 @@ export function AccountMiniMetric({ label, value }: { label: string; value: stri
 
 interface QuotaBarsProps {
   quotaDisplay: QuotaDisplay;
-  accentFillClass: string;
   t: Translator;
 }
 
-export function QuotaBars({ quotaDisplay, accentFillClass, t }: QuotaBarsProps) {
+export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
   const windows = quotaDisplay.windows ?? [];
   if (windows.length === 0) return null;
   const refreshing = quotaDisplay.refreshing === true;
@@ -244,7 +244,7 @@ export function QuotaBars({ quotaDisplay, accentFillClass, t }: QuotaBarsProps) 
               >
                 {window.remainingPercent !== null ? (
                   <div
-                    className={`absolute inset-y-0 left-0 ${accentFillClass}`}
+                    className={`absolute inset-y-0 left-0 ${resolveQuotaRemainingFillClass(window.remainingPercent)}`}
                     style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
                   />
                 ) : null}

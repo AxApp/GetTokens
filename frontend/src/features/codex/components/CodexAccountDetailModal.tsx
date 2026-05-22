@@ -3,10 +3,12 @@ import { useEffect, useMemo, useState } from 'react';
 import AccountDetailModalFrame from '../../accounts/components/AccountDetailModalFrame';
 import { AccountRuntimeSnapshotSection } from '../../accounts/components/AccountDetailSections';
 import {
+  AccountDetailBody,
+  AccountDetailEvidenceGrid,
   AccountDetailEmptyState,
-  AccountDetailField,
-  AccountDetailFieldGrid,
+  AccountDetailModuleStack,
   AccountDetailNotice,
+  AccountDetailOverviewGrid,
   AccountDetailPill,
   AccountDetailSection,
 } from '../../accounts/components/AccountDetailPrimitives';
@@ -75,7 +77,8 @@ export function CodexAccountDetailModal({
     [quotaState],
   );
   const modelSectionTitle = t('codex.account_list_model_mapping');
-  const detailFields: Array<[string, string]> = [
+  const evidenceRows: Array<{ label: string; value: string; title?: string }> = [
+    ['Asset', row.id],
     [t('common.type'), sourceKindLabel(t, row.sourceKind)],
     [t('common.status'), row.status || '—'],
     [t('codex.account_list_route'), endpointLabel || '—'],
@@ -85,7 +88,7 @@ export function CodexAccountDetailModal({
       row.requestable ? t('codex.account_list_state_requestable') : t('codex.account_list_state_blocked'),
     ],
     [t('common.enable'), row.disabled ? t('common.no') : t('common.yes')],
-  ];
+  ].map(([label, value]) => ({ label, value, title: value }));
 
   useEffect(() => {
     setMappingDraft(buildEditableModelMappings(row));
@@ -142,32 +145,65 @@ export function CodexAccountDetailModal({
           </button>
         </div>
       }
-      bodyClassName="p-6"
+      footer={
+        editableModelMappings ? (
+          <>
+            <div className="min-w-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
+              {mappingError || modelMappingError || modelOptionError || (loadingModelOptions ? t('accounts.openai_provider_models_fetch_running') : modelSectionTitle)}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void saveMappingDraft()}
+                disabled={savingMappings}
+                className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] disabled:cursor-wait disabled:opacity-50"
+              >
+                {savingMappings ? t('codex.account_list_saving') : t('common.save')}
+              </button>
+              <button type="button" onClick={onClose} className="btn-swiss">
+                {t('common.cancel')}
+              </button>
+            </div>
+          </>
+        ) : undefined
+      }
     >
-      <div data-collaboration-id="MODAL_CODEX_ACCOUNT_DETAIL" className="space-y-6">
-        <AccountDetailFieldGrid>
-          {detailFields.map(([label, value]) => (
-            <AccountDetailField key={label} label={label} value={value} title={value} />
-          ))}
-        </AccountDetailFieldGrid>
-
+      <AccountDetailBody data-collaboration-id="MODAL_CODEX_ACCOUNT_DETAIL">
         {!row.requestable ? (
           <AccountDetailNotice tone="danger">
             {blockedLabel}
           </AccountDetailNotice>
         ) : null}
 
-        <AccountRuntimeSnapshotSection
-          usageSummary={usageSummary}
-          quotaDisplay={quotaDisplay}
-          billing={billing}
+        <AccountDetailOverviewGrid
+          runtime={
+            <AccountRuntimeSnapshotSection
+              usageSummary={usageSummary}
+              quotaDisplay={quotaDisplay}
+              billing={billing}
+            />
+          }
+          evidence={<CodexAccountEvidenceSection rows={evidenceRows} />}
         />
 
-        <AccountDetailSection
-          eyebrow="Model Routing"
-          title={modelSectionTitle}
-          meta={showModelMappings ? String(displayedModelMappings.length) : undefined}
-        >
+        <AccountDetailModuleStack layout="cards">
+          <AccountDetailSection
+            componentName="CodexModelRoutingSection"
+            eyebrow="Model Routing"
+            title={modelSectionTitle}
+            meta={showModelMappings ? String(displayedModelMappings.length) : undefined}
+            span="wide"
+            actions={editableModelMappings ? (
+              <button
+                type="button"
+                onClick={addMappingDraft}
+                className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+              >
+                <Plus className="h-3.5 w-3.5" strokeWidth={4} />
+                {t('accounts.openai_provider_add_model')}
+              </button>
+            ) : undefined}
+          >
           {showModelMappings ? (
             loadingModelMappings ? (
               <AccountDetailEmptyState>
@@ -262,34 +298,27 @@ export function CodexAccountDetailModal({
             </div>
           ) : null}
 
-          {editableModelMappings ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={addMappingDraft}
-                className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={4} />
-                {t('accounts.openai_provider_add_model')}
-              </button>
-              <button
-                type="button"
-                onClick={() => void saveMappingDraft()}
-                disabled={savingMappings}
-                className="btn-swiss bg-[var(--text-primary)] !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--bg-main)] disabled:cursor-wait disabled:opacity-50"
-              >
-                {savingMappings ? t('codex.account_list_saving') : t('common.save')}
-              </button>
-              {mappingError ? (
-                <div className="basis-full border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
-                  {mappingError}
-                </div>
-              ) : null}
+          {editableModelMappings && mappingError ? (
+            <div className="border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+              {mappingError}
             </div>
           ) : null}
-        </AccountDetailSection>
-      </div>
+          </AccountDetailSection>
+        </AccountDetailModuleStack>
+      </AccountDetailBody>
     </AccountDetailModalFrame>
+  );
+}
+
+function CodexAccountEvidenceSection({
+  rows,
+}: {
+  rows: Array<{ label: string; value: string; title?: string }>;
+}) {
+  return (
+    <AccountDetailSection componentName="CodexAccountEvidenceSection" density="dense" muted eyebrow="Audit" title="EVIDENCE">
+      <AccountDetailEvidenceGrid rows={rows} />
+    </AccountDetailSection>
   );
 }
 

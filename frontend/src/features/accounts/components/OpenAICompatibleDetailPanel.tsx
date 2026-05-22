@@ -10,6 +10,8 @@ import {
 } from '../model/openAICompatible';
 import AccountProxyRouteSection from './AccountProxyRouteSection';
 import {
+  AccountDetailBody,
+  AccountDetailModuleStack,
   AccountDetailNotice,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
@@ -28,6 +30,7 @@ interface OpenAICompatibleDetailPanelProps {
   onVerify: () => void;
   onFetchModels: () => void;
   onApplyFetchedModels: () => void;
+  leadingSections?: ReactNode;
   afterSections?: ReactNode;
 }
 
@@ -52,6 +55,7 @@ export default function OpenAICompatibleDetailPanel({
   onVerify,
   onFetchModels,
   onApplyFetchedModels,
+  leadingSections,
   afterSections,
 }: OpenAICompatibleDetailPanelProps) {
   const [headersExpanded, setHeadersExpanded] = useState(false);
@@ -128,93 +132,98 @@ export default function OpenAICompatibleDetailPanel({
       </header>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        <section className="min-h-0 px-6 py-6">
-          <div className="space-y-6">
-            <AccountDetailSection eyebrow="Endpoint" title={t('accounts.openai_provider_name')} meta={draft.currentName}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2">
-                  <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                    {t('accounts.ui_base_url')}
-                  </div>
-                  <input
-                    value={draft.baseUrl}
-                    onChange={(event) => onChange({ ...draft, baseUrl: event.target.value })}
-                    className="input-swiss w-full"
-                    placeholder={selectedPreset?.baseUrl || 'https://api.deepseek.com/v1'}
-                  />
-                </label>
+        <AccountDetailBody>
+          {leadingSections}
 
-                <label className="space-y-2">
-                  <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                    {t('accounts.ui_api_key')}
-                  </div>
-                  <input
-                    value={draft.apiKey}
-                    onChange={(event) => onChange({ ...draft, apiKey: event.target.value })}
-                    className="input-swiss w-full"
-                    type="text"
-                    placeholder={selectedPreset?.apiKeyPlaceholder || 'sk-...'}
-                  />
-                </label>
-              </div>
-            </AccountDetailSection>
+          <AccountDetailModuleStack layout="cards">
+          <AccountDetailSection componentName="OpenAICompatibleEndpointSection" eyebrow="Endpoint" title={t('accounts.openai_provider_name')} meta={draft.currentName}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2">
+                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  {t('accounts.ui_base_url')}
+                </div>
+                <input
+                  value={draft.baseUrl}
+                  onChange={(event) => onChange({ ...draft, baseUrl: event.target.value })}
+                  className="input-swiss w-full"
+                  placeholder={selectedPreset?.baseUrl || 'https://api.deepseek.com/v1'}
+                />
+              </label>
 
-            <AccountProxyRouteSection
-              proxyUrl={draft.proxyUrl}
-              onProxyUrlChange={(nextProxyURL) => onChange({ ...draft, proxyUrl: nextProxyURL })}
-              onValidityChange={setProxyRouteError}
-            />
+              <label className="space-y-2">
+                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                  {t('accounts.ui_api_key')}
+                </div>
+                <input
+                  value={draft.apiKey}
+                  onChange={(event) => onChange({ ...draft, apiKey: event.target.value })}
+                  className="input-swiss w-full"
+                  type="text"
+                  placeholder={selectedPreset?.apiKeyPlaceholder || 'sk-...'}
+                />
+              </label>
+            </div>
+          </AccountDetailSection>
 
-            <AccountDetailSection
-              eyebrow="HTTP"
-              title={t('accounts.openai_provider_headers')}
-              actions={
-                <button
-                  type="button"
-                  onClick={() => setHeadersExpanded((prev) => !prev)}
-                  className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
-                >
-                  {draft.headersText || headersExpanded ? '−' : '+'}
-                </button>
-              }
-            >
-              {draft.headersText || headersExpanded ? (
-                <>
-                  <textarea
-                    value={draft.headersText}
-                    onChange={(event) => onChange({ ...draft, headersText: event.target.value })}
-                    className="input-swiss min-h-32 w-full resize-y font-mono !text-[length:var(--font-size-ui-md-compact)] leading-6"
-                    placeholder={'Authorization: Bearer sk-...\nHTTP-Referer: https://example.com\nX-Title: GetTokens'}
-                  />
-                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    {t('accounts.openai_provider_headers_hint')}
-                  </div>
-                </>
-              ) : null}
-            </AccountDetailSection>
+          <AccountProxyRouteSection
+            proxyUrl={draft.proxyUrl}
+            onProxyUrlChange={(nextProxyURL) => onChange({ ...draft, proxyUrl: nextProxyURL })}
+            onValidityChange={setProxyRouteError}
+          />
 
-            <AccountDetailSection
-              eyebrow="Model Catalog"
-              title={t('accounts.openai_provider_models')}
-              actions={
-                <>
-                  {remoteModelsState?.status === 'success' && remoteModelsState.models.length > 0 ? (
-                    <button onClick={onApplyFetchedModels} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
-                      {t('accounts.openai_provider_models_apply_remote')}
-                    </button>
-                  ) : null}
-                  <button
-                    onClick={onFetchModels}
-                    className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-                    disabled={remoteModelsState?.status === 'loading'}
-                  >
-                    {remoteModelsState?.status === 'loading'
-                      ? t('accounts.openai_provider_models_fetch_running')
-                      : t('accounts.openai_provider_models_fetch')}
+          <AccountDetailSection
+            componentName="OpenAICompatibleHeadersSection"
+            eyebrow="HTTP"
+            title={t('accounts.openai_provider_headers')}
+            actions={
+              <button
+                type="button"
+                onClick={() => setHeadersExpanded((prev) => !prev)}
+                className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+              >
+                {draft.headersText || headersExpanded ? '−' : '+'}
+              </button>
+            }
+          >
+            {draft.headersText || headersExpanded ? (
+              <>
+                <textarea
+                  value={draft.headersText}
+                  onChange={(event) => onChange({ ...draft, headersText: event.target.value })}
+                  className="input-swiss min-h-32 w-full resize-y font-mono !text-[length:var(--font-size-ui-md-compact)] leading-6"
+                  placeholder={'Authorization: Bearer sk-...\nHTTP-Referer: https://example.com\nX-Title: GetTokens'}
+                />
+                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  {t('accounts.openai_provider_headers_hint')}
+                </div>
+              </>
+            ) : null}
+          </AccountDetailSection>
+
+          <AccountDetailSection
+            componentName="OpenAICompatibleModelsSection"
+            eyebrow="Model Catalog"
+            title={t('accounts.openai_provider_models')}
+            span="wide"
+            actions={
+              <>
+                {remoteModelsState?.status === 'success' && remoteModelsState.models.length > 0 ? (
+                  <button onClick={onApplyFetchedModels} className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]">
+                    {t('accounts.openai_provider_models_apply_remote')}
                   </button>
-                </>
-              }
-            >
+                ) : null}
+                <button
+                  onClick={onFetchModels}
+                  className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                  disabled={remoteModelsState?.status === 'loading'}
+                >
+                  {remoteModelsState?.status === 'loading'
+                    ? t('accounts.openai_provider_models_fetch_running')
+                    : t('accounts.openai_provider_models_fetch')}
+                </button>
+              </>
+            }
+          >
               <div className="space-y-2 border border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
@@ -291,58 +300,58 @@ export default function OpenAICompatibleDetailPanel({
                 </button>
               </div>
             </AccountDetailSection>
-          </div>
-        </section>
 
-        <AccountDetailSection inset muted eyebrow="Connection" title={t('accounts.openai_provider_test_model')}>
-          <div className="space-y-4">
-            {suggestedModels.some((item) => item.name.trim()) ? (
-              <div className="flex flex-wrap gap-2">
-                {suggestedModels
-                  .filter((item) => item.name.trim())
-                  .map((item) => {
-                    const modelName = item.name.trim();
-                    return (
-                      <button
-                        key={`${item.name}:${item.alias}`}
-                        onClick={() => onChange({ ...draft, verifyModel: modelName })}
-                        className={`border-2 px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-colors active:scale-95 ${
-                          effectiveVerifyModel === modelName
-                            ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                            : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-primary)]'
-                        }`}
-                      >
-                        {item.alias ? `${item.alias} / ${modelName}` : modelName}
-                      </button>
-                    );
-                  })}
+          <AccountDetailSection componentName="OpenAICompatibleVerifySection" muted eyebrow="Connection" title={t('accounts.openai_provider_test_model')}>
+            <div className="space-y-4">
+              {suggestedModels.some((item) => item.name.trim()) ? (
+                <div className="flex flex-wrap gap-2">
+                  {suggestedModels
+                    .filter((item) => item.name.trim())
+                    .map((item) => {
+                      const modelName = item.name.trim();
+                      return (
+                        <button
+                          key={`${item.name}:${item.alias}`}
+                          onClick={() => onChange({ ...draft, verifyModel: modelName })}
+                          className={`border-2 px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] transition-colors active:scale-95 ${
+                            effectiveVerifyModel === modelName
+                              ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                              : 'border-[var(--border-color)] text-[var(--text-muted)] hover:border-[var(--text-primary)]'
+                          }`}
+                        >
+                          {item.alias ? `${item.alias} / ${modelName}` : modelName}
+                        </button>
+                      );
+                    })}
+                </div>
+              ) : null}
+              <div className="flex items-end gap-3">
+                <input
+                  value={effectiveVerifyModel}
+                  onChange={(event) => onChange({ ...draft, verifyModel: event.target.value })}
+                  list="openai-compatible-remote-models"
+                  className="input-swiss flex-1"
+                  placeholder={selectedPreset?.models[0]?.name || 'deepseek-chat'}
+                />
+                <button
+                  onClick={onVerify}
+                  className="btn-swiss !py-2 !text-[length:var(--font-size-ui-xs)] whitespace-nowrap"
+                  disabled={verifyState.status === 'loading'}
+                >
+                  {verifyState.status === 'loading'
+                    ? t('accounts.openai_provider_test_running')
+                    : t('accounts.openai_provider_test')}
+                </button>
               </div>
-            ) : null}
-            <div className="flex items-end gap-3">
-              <input
-                value={effectiveVerifyModel}
-                onChange={(event) => onChange({ ...draft, verifyModel: event.target.value })}
-                list="openai-compatible-remote-models"
-                className="input-swiss flex-1"
-                placeholder={selectedPreset?.models[0]?.name || 'deepseek-chat'}
-              />
-              <button
-                onClick={onVerify}
-                className="btn-swiss !py-2 !text-[length:var(--font-size-ui-xs)] whitespace-nowrap"
-                disabled={verifyState.status === 'loading'}
-              >
-                {verifyState.status === 'loading'
-                  ? t('accounts.openai_provider_test_running')
-                  : t('accounts.openai_provider_test')}
-              </button>
+              <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                {t('accounts.openai_provider_test_model_hint')}
+              </div>
             </div>
-            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              {t('accounts.openai_provider_test_model_hint')}
-            </div>
-          </div>
-        </AccountDetailSection>
+          </AccountDetailSection>
 
-        {afterSections}
+          {afterSections}
+          </AccountDetailModuleStack>
+        </AccountDetailBody>
       </div>
 
       {error ? (

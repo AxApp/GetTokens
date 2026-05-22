@@ -20,7 +20,8 @@
     "yes": "Yes",
     "no": "No",
     "confirm_delete": "Delete this record?",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "more_actions": "More Actions"
   },
   "nav": {
     "status": "STATUS",
@@ -985,7 +986,11 @@
     "filter_all": "All Sources",
     "filter_group_source": "Source",
     "filter_group_status": "Status",
+    "filter_requestable": "Requestable Only",
+    "filter_disabled_only": "Disabled Only",
+    "filter_has_balance": "Only With Balance",
     "filter_longest_quota": "Only With Longest Quota",
+    "filter_reset": "Reset Filters",
     "source_auth_file": "AUTH FILE",
     "source_api_key": "API KEY",
     "source_api_key_with_provider": "{provider} API KEY",

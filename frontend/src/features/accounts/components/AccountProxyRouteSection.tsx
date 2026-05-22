@@ -140,6 +140,7 @@ export default function AccountProxyRouteSection({
 
   return (
     <AccountDetailSection
+      componentName="AccountProxyRouteSection"
       eyebrow="Route"
       title={t('accounts.proxy_route_title')}
       meta={summary.proxyUrl || t('accounts.proxy_route_inherit_hint')}

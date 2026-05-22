@@ -6,6 +6,7 @@ import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { AccountGroup, AccountRecord, AccountsFilterState } from '../model/types';
+import { defaultAccountsFilterState } from '../model/accountFilters';
 import AccountCard from './AccountCard';
 import AccountsListWorkbenchView from './AccountsListWorkbenchView';
 
@@ -20,11 +21,15 @@ export default meta;
 type Story = StoryObj;
 
 const emptyFilters: AccountsFilterState = {
+  ...defaultAccountsFilterState,
   hasLongestQuota: false,
   errorsOnly: false,
 };
 
 const activeFilters: AccountsFilterState = {
+  ...defaultAccountsFilterState,
+  source: 'api-key',
+  requestableOnly: true,
   hasLongestQuota: true,
   errorsOnly: true,
 };

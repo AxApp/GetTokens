@@ -191,6 +191,7 @@ function AccountGroupSectionWrapperSample({
         codexQuotaByName={{}}
         accountUsageByID={Object.fromEntries(accountRecords.map((account) => [account.id, usageSummary]))}
         accountRateLimitByID={Object.fromEntries(accountRecords.map((account) => [account.id, rateLimitStatus]))}
+        accountCardHeights={{}}
         ready
         isSelectionMode={displayMode === 'list'}
         selectedAccountIDSet={new Set(['acct-team-primary'])}

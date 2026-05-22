@@ -228,9 +228,11 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
 
   return (
     <AccountDetailSection
+      componentName="RateLimitRulesSection"
       eyebrow="Route Guard"
       title={t('accounts.rate_limit_rules_title')}
       meta={`${t('accounts.rate_limit_cache')} ${rateLimitStatus?.updatedAt ? new Date(rateLimitStatus.updatedAt).toLocaleString() : '-'}`}
+      span="wide"
       actions={
         <button
           type="button"

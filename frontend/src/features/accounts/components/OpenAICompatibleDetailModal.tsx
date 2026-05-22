@@ -11,6 +11,7 @@ import AccountDetailModalFrame from './AccountDetailModalFrame';
 import { AccountRuntimeSnapshotSection } from './AccountDetailSections';
 import {
   AccountDetailEvidenceGrid,
+  AccountDetailOverviewGrid,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
 import OpenAICompatibleDetailPanel from './OpenAICompatibleDetailPanel';
@@ -97,14 +98,20 @@ export default function OpenAICompatibleDetailModal({
         onVerify={onVerify}
         onFetchModels={onFetchModels}
         onApplyFetchedModels={onApplyFetchedModels}
+        leadingSections={
+          <AccountDetailOverviewGrid
+            runtime={<AccountRuntimeSnapshotSection usageSummary={usageSummary} />}
+            evidence={
+              <OpenAICompatibleEvidenceSection
+                t={t}
+                draft={draft}
+                verifyState={verifyState}
+              />
+            }
+          />
+        }
         afterSections={
           <>
-            <AccountRuntimeSnapshotSection usageSummary={usageSummary} />
-            <OpenAICompatibleEvidenceSection
-              t={t}
-              draft={draft}
-              verifyState={verifyState}
-            />
             <RateLimitRulesSection
               ref={rateLimitRulesRef}
               accountKey={rateLimitAccountKey}
@@ -154,7 +161,7 @@ function OpenAICompatibleEvidenceSection({
   ];
 
   return (
-    <AccountDetailSection inset muted eyebrow="Audit" title="EVIDENCE">
+    <AccountDetailSection componentName="OpenAICompatibleEvidenceSection" density="dense" muted eyebrow="Audit" title="EVIDENCE">
       <AccountDetailEvidenceGrid rows={rows} />
     </AccountDetailSection>
   );

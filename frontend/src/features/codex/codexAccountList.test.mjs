@@ -251,21 +251,127 @@ test('parseCodexAccountOrderDisplayMode supports persisted list sorting mode', (
 
 test('filterCodexAccountOrderRows hides blocked accounts without reordering visible rows', () => {
   const rows = [
-    { id: 'auth-file:a.json', requestable: true },
-    { id: 'auth-file:disabled.json', requestable: false },
-    { id: 'openai-compatible:mi', requestable: true },
+    { id: 'auth-file:a.json', sourceKind: 'codex-auth-file', requestable: true, status: 'active' },
+    { id: 'auth-file:disabled.json', sourceKind: 'codex-auth-file', requestable: false, disabled: true, status: 'disabled' },
+    { id: 'openai-compatible:mi', sourceKind: 'openai-compatible', requestable: true, status: 'configured' },
   ];
 
-  assert.equal(DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, 'all');
-  assert.deepEqual(filterCodexAccountOrderRows(rows, 'all').map((row) => row.id), [
+  assert.deepEqual(DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, {
+    source: 'all',
+    requestableOnly: false,
+    disabledOnly: false,
+    hasBalance: false,
+    hasLongestQuota: false,
+    errorsOnly: false,
+  });
+  assert.deepEqual(filterCodexAccountOrderRows(rows, DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, {}).map((row) => row.id), [
     'auth-file:a.json',
     'auth-file:disabled.json',
     'openai-compatible:mi',
   ]);
-  assert.deepEqual(filterCodexAccountOrderRows(rows, 'requestable').map((row) => row.id), [
+  assert.deepEqual(filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requestableOnly: true }, {}).map((row) => row.id), [
     'auth-file:a.json',
     'openai-compatible:mi',
   ]);
+});
+
+test('filterCodexAccountOrderRows syncs source, balance, disabled, error, and longest quota filters', () => {
+  const rows = [
+    {
+      id: 'auth-file:pro.json',
+      label: 'Pro',
+      sourceKind: 'codex-auth-file',
+      provider: 'codex',
+      requestable: true,
+      status: 'active',
+      quotaKey: 'pro',
+    },
+    {
+      id: 'codex-api-key:balance',
+      label: 'Balance',
+      sourceKind: 'codex-api-key',
+      provider: 'codex',
+      requestable: true,
+      status: 'configured',
+      quotaKey: 'balance',
+      quotaEnabled: true,
+      billingEnabled: true,
+    },
+    {
+      id: 'openai-compatible:mi',
+      label: 'MI',
+      sourceKind: 'openai-compatible',
+      provider: 'mi',
+      requestable: true,
+      status: 'configured',
+    },
+    {
+      id: 'auth-file:error.json',
+      label: 'Error',
+      sourceKind: 'codex-auth-file',
+      provider: 'codex',
+      requestable: false,
+      status: 'error',
+    },
+    {
+      id: 'codex-api-key:disabled',
+      label: 'Disabled',
+      sourceKind: 'codex-api-key',
+      provider: 'codex',
+      requestable: false,
+      disabled: true,
+      status: 'disabled',
+      quotaKey: 'disabled',
+    },
+  ];
+  const quotaByName = {
+    pro: {
+      status: 'success',
+      quota: {
+        planType: 'pro',
+        windows: [
+          { id: 'five-hour', label: '5H', remainingPercent: 0, resetLabel: 'later' },
+          { id: 'weekly', label: '7D', remainingPercent: 42, resetLabel: 'later' },
+        ],
+      },
+    },
+    balance: {
+      status: 'success',
+      quota: {
+        planType: '',
+        windows: [{ id: 'custom', label: 'Custom', remainingPercent: 88, resetLabel: 'later' }],
+        billing: {
+          isAvailable: true,
+          balanceInfos: [{ currency: 'USD', totalBalance: '10', grantedBalance: '4', toppedUpBalance: '6' }],
+        },
+      },
+    },
+  };
+
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, source: 'codex-api-key' }, quotaByName).map((row) => row.id),
+    ['codex-api-key:balance', 'codex-api-key:disabled'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, source: 'openai-compatible' }, quotaByName).map((row) => row.id),
+    ['openai-compatible:mi'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, disabledOnly: true }, quotaByName).map((row) => row.id),
+    ['codex-api-key:disabled'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, errorsOnly: true }, quotaByName).map((row) => row.id),
+    ['auth-file:error.json'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, hasBalance: true }, quotaByName).map((row) => row.id),
+    ['codex-api-key:balance'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, hasLongestQuota: true }, quotaByName).map((row) => row.id),
+    ['auth-file:pro.json'],
+  );
 });
 
 test('getCodexAccountOrderGridClass keeps list single-column and card modes adaptive', () => {
@@ -284,6 +390,14 @@ test('Codex account order cards reuse the account attribution card and keep cust
   assert.match(source, /footer=\{/);
   assert.match(source, /billing=\{billing\}/);
   assert.match(source, /CodexAccountSpecialActionBar/);
+});
+
+test('Codex account order toolbar uses the unified filter menu instead of separate scope clusters', async () => {
+  const source = await readFile(new URL('./components/CodexAccountOrderSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /filter_has_balance/);
+  assert.match(source, /account_list_source_openai_compatible/);
+  assert.doesNotMatch(source, /function ActionControlCluster/);
 });
 
 test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {

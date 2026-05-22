@@ -153,6 +153,136 @@ test('filterAccounts applies text query across key fields', () => {
   );
 });
 
+test('filterAccounts can narrow accounts by credential source', () => {
+  const accounts = [
+    {
+      id: 'auth-file:alpha',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Alpha',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'api-key:beta',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Beta Key',
+      status: 'CONFIGURED',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        source: 'api-key',
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['api-key:beta']
+  );
+});
+
+test('filterAccounts can keep only requestable accounts', () => {
+  const accounts = [
+    {
+      id: 'auth-file:active',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Active',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'auth-file:disabled',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Disabled',
+      status: 'DISABLED',
+      disabled: true,
+    },
+    {
+      id: 'auth-file:error',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Error',
+      status: 'ERROR',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        requestableOnly: true,
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:active']
+  );
+});
+
+test('filterAccounts can keep only accounts with displayable balance', () => {
+  const accounts = [
+    {
+      id: 'api-key:balance',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Balance Key',
+      status: 'CONFIGURED',
+      quotaKey: 'api-key:balance',
+      billingCurl: 'curl https://api.example.com/billing',
+      billingEnabled: true,
+    },
+    {
+      id: 'api-key:no-balance',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'No Balance Key',
+      status: 'CONFIGURED',
+      quotaKey: 'api-key:no-balance',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        hasBalance: true,
+      },
+      codexQuotaByName: {
+        'api-key:balance': {
+          status: 'success',
+          quota: {
+            planType: 'paid',
+            windows: [],
+            billing: {
+              isAvailable: true,
+              balanceInfos: [
+                { currency: 'USD', totalBalance: '12.00', grantedBalance: '0', toppedUpBalance: '12.00' },
+              ],
+            },
+          },
+        },
+        'api-key:no-balance': {
+          status: 'success',
+          quota: {
+            planType: 'paid',
+            windows: [],
+            billing: {
+              isAvailable: false,
+              balanceInfos: [],
+            },
+          },
+        },
+      },
+    }).map((item) => item.id),
+    ['api-key:balance']
+  );
+});
+
 test('filterAccounts keeps only auth-file codex accounts with positive longest-window quota when enabled', () => {
   const accounts = [
     {
@@ -276,7 +406,7 @@ test('filterAccounts includes codex api keys with configured positive longest qu
   );
 });
 
-test('filterAccounts keeps only unavailable or unusable accounts when errorsOnly is enabled', () => {
+test('filterAccounts separates disabled accounts from unavailable error accounts', () => {
   const accounts = [
     {
       id: 'auth-file:active',
@@ -323,7 +453,18 @@ test('filterAccounts keeps only unavailable or unusable accounts when errorsOnly
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
-    ['auth-file:disabled', 'auth-file:error', 'auth-file:unavailable']
+    ['auth-file:error', 'auth-file:unavailable']
+  );
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        disabledOnly: true,
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:disabled']
   );
 });
 

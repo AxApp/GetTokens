@@ -35,12 +35,17 @@
 - And API key 的保存、验证、额度、余额、限流能力保持可用
 - And auth-file 的内容查看、sanitize、compatible models、重新授权保持可用
 - And 详情页显示卡片模式已有的近期统计、额度窗口与 balance 信息
+- And 运行快照与证据模块在顶部概览区并排展示，额度与余额在运行快照内部并排展示
+- And 顶部运行快照与 evidence 模块在宽屏并排时保持等高
+- And 详情 body 内的模块头部统一使用标准 eyebrow / title / meta / actions 结构
+- And 宽屏详情弹窗内的编辑模块以卡片式多列展示，不退化为浪费空间的单列堆叠
 
 ### 场景 2：OpenAI-compatible provider 详情
 - Given 用户打开 OpenAI-compatible provider 详情
 - When 编辑名称、baseUrl、apiKey、headers、models 或 proxy
 - Then 信息结构与账号详情一致
 - And 拉取远程模型、应用模型、验证模型、限流规则、保存动作保持原语义
+- And Endpoint、HTTP、连接验证等短模块可并列展示，模型列表和限流规则这类宽模块跨列展示
 
 ### 场景 3：Codex / Claude Code route row 详情
 - Given 用户从 Codex 或 Claude Code 请求顺序列表打开详情
@@ -49,6 +54,8 @@
 - And real model -> codex/claude model 的保存、空映射语义、错误提示保持不变
 - And 被阻塞账号显示统一但醒目的阻塞原因
 - And Codex 账号详情与排序卡片使用同一 quota 适配语义展示近期统计、额度和余额
+- And Codex 账号详情的路由、状态、优先级和启用状态进入顶部 evidence 模块，与运行快照并排展示
+- And Codex 模型映射的新增动作位于模块头部右上角，不再占用底部编辑区
 
 ### 场景 4：验证
 - TypeScript 类型检查通过。
@@ -79,7 +86,7 @@
 - 研发说明：`docs-linhay/dev/20260522-unified-account-detail-system.md`
 
 ## 实施记录
-1. 新增 `AccountDetailPrimitives`，统一账号详情 section、field grid、pill、notice、empty state、evidence grid。
+1. 新增 `AccountDetailPrimitives`，统一账号详情 section、section density、body、module grid、module stack、stat grid、field grid、pill、notice、empty state、evidence grid。
 2. `UnifiedAccountDetailModal`、`OpenAICompatibleDetailModal` / `OpenAICompatibleDetailPanel`、`CodexAccountDetailModal` 已接入统一详情 primitives。
 3. `CodexAccountDetailModal` 改为使用 `AccountDetailModalFrame`，因此 Codex 与 Claude Code 复用入口同步获得统一弹窗壳层。
 4. `AccountProxyRouteSection` 作为三类详情共享模块，已统一到同一 section 语言。
@@ -89,10 +96,23 @@
 8. 前端与 CLIProxyAPI 本地参考源均加入 `calendar-day` 窗口，展示为 `00:00-23:59`，sidecar evaluator 按本地自然日 00:00 起计算请求/token 用量。
 9. 新增 `AccountRuntimeSnapshotSection` 与 `accountDetailRuntime`，将卡片模式中的近期统计、quota、balance 以详情页 section 展示；`UnifiedAccountDetailModal`、`OpenAICompatibleDetailModal`、`CodexAccountDetailModal` 均接入。
 10. Codex 排序卡片与 Codex 详情共用 `buildCodexQuotaSummaryAccount`，避免 quota 展示适配在卡片和详情中分叉。
+11. `OpenAICompatibleDetailPanel` 改为 `AccountDetailBody` 单一内容流，并拆分 leading/trailing sections：运行快照优先展示，evidence 与限流规则保持详情模块化接入。
+12. `CodexAccountDetailModal` 的模型映射保存从 section 内移到弹窗 footer，section 内只保留添加/删除行等局部动作。
+13. `AccountModalComponents.stories.tsx` 的详情 section 示例改为运行快照 + module grid/side evidence 布局，并更新 manifest required states 覆盖 `runtime-snapshot` 与 `module-layout`。
+14. `AccountDetailModuleStack` 新增 `layout="cards"`，详情弹窗宽屏下可用卡片式多列模块布局；`span="wide"` 用于限流规则、额度、余额、模型目录、auth content 等宽模块。
+15. `UnifiedAccountDetailModal`、`OpenAICompatibleDetailPanel`、`CodexAccountDetailModal` 已接入 card-mode 布局，避免详情页主区域长期单列浪费空间。
+16. 补齐 `CodexLiveSessionDetail`、`CodexLiveSessionFeed`、`CodexLiveSessionSummary` 的设计系统 manifest 记录，使新增 feature 组件不再沉默缺席。
+17. `AccountDetailSectionHeader` 成为详情模块的标准头部渲染路径，`AccountDetailBody` 内不再按 flow/card 分别拼 header。
+18. `AccountDetailOverviewGrid` 将 `AccountRuntimeSnapshotSection` 与 evidence 模块放到顶部并排；`AccountRuntimeSnapshotSection` 内部新增 `quota-balance` 资源网格，让额度与余额在宽屏并排。
+19. `CodexAccountDetailModal` 新增 `CodexAccountEvidenceSection`，把原独立字段网格迁入顶部 overview evidence，与普通账号和 OpenAI-compatible 详情保持一致。
+20. `AccountDetailOverviewGrid` 新增 equal-height 标记与 stretch slot，确保 `AccountRuntimeSnapshotSection` 与 `CodexAccountEvidenceSection` 等顶部 evidence 模块在宽屏并排时等高。
+21. `CodexModelRoutingSection` 的新增模型按钮移入 section header actions，显示在模块右上角；底部只保留错误提示。
 
 ## 验证记录
+- `node --test frontend/src/features/design-system/storyCatalog.test.mjs`：通过。
 - `npm --prefix frontend run typecheck`：通过。
-- `npm --prefix frontend run test:unit`：387 个测试通过。
+- `npm --prefix frontend run test:unit`：394 个测试通过。
+- `npm --prefix frontend run build-storybook`：通过。
 - `go test ./internal/gettokenshooks`（CLIProxyAPI）：通过。
 - `git diff --check`：通过。
 - `git -C docs-linhay/references/CLIProxyAPI diff --check`：通过。
@@ -100,11 +120,14 @@
 - `qmd update`：GetTokens collection 新增 2 个文档、更新 1 个文档。
 - `qmd embed`：完成 3 个文档的 embedding。
 - 浏览器预览：`http://127.0.0.1:5173/#frame=accounts` 与 `#frame=codex&workspace=account-list` 已验证详情弹窗可打开；唯一 console error 为本地 `favicon.ico` 404，与本次改动无关。
+- Storybook 静态预览：`AccountDetailSections` story 已验证 `AccountDetailOverviewGrid`、标准模块头部与 `quota-balance` 资源网格均渲染；唯一 console error 为本地 `favicon.ico` 404，与本次改动无关。
+- Storybook 静态预览：`CodexAccountOrder Detail` story 已验证 `AccountDetailOverviewGrid`、`CodexAccountEvidenceSection`、`AccountRuntimeSnapshotSection` 均渲染；1440px 宽度下 runtime slot 与 evidence slot 并排且高度均为 `327.8515625px`，新增模型按钮位于 `CodexModelRoutingSection` 头部右上角，console 无错误。
 
 ## 截图归档
 - `screenshots/20260522/accounts/20260522-accounts-detail-api-key-after-v01.png`
 - `screenshots/20260522/accounts/20260522-accounts-detail-openai-compatible-after-v01.png`
 - `screenshots/20260522/codex/20260522-codex-detail-route-row-after-v01.png`
+- `docs-linhay/spaces/20260522-unified-account-detail-system/screenshots/20260522/accounts/20260522-account-detail-overview-header-after-v01.png`
 
 ## 当前状态
 - 状态：implemented
