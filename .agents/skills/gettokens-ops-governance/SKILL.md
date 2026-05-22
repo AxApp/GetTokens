@@ -142,6 +142,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **CI Hygiene**:
   - Keep GitHub Actions dependencies on Node 24 compatible major versions to avoid Node 20 deprecation warnings.
   - When a release run fails, inspect the exact failed job logs before changing tag strategy or packaging assumptions.
+  - When the working tree already contains unrelated user changes, stage only the release closure set explicitly. Do not widen the commit to absorb unrelated frontend or screenshot diffs just to obtain a clean tree.
 - **Distributable DMG Acceptance**:
   - A GitHub Release page or uploaded DMG asset is not enough to claim distribution readiness.
   - Download the official release assets and verify `checksums.txt` with `shasum -a 256 -c`.
