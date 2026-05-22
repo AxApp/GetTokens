@@ -556,6 +556,50 @@ func mapClaudeCodeMcpSaveResult(result *wailsapp.SaveClaudeCodeMcpServerResult) 
 	}
 }
 
+func mapClaudeCodeSettingsSnapshot(result *wailsapp.ClaudeCodeSettingsSnapshot) *ClaudeCodeSettingsSnapshotDTO {
+	if result == nil {
+		return &ClaudeCodeSettingsSnapshotDTO{Layers: []ClaudeCodeSettingsLayer{}, Warnings: []string{}}
+	}
+	layers := make([]ClaudeCodeSettingsLayer, 0, len(result.Layers))
+	for _, layer := range result.Layers {
+		mapped := ClaudeCodeSettingsLayer{
+			Scope:      string(layer.Scope),
+			Path:       layer.Path,
+			Exists:     layer.Exists,
+			ParseError: layer.ParseError,
+		}
+		if layer.KnownFields != nil {
+			mapped.KnownFields = &ClaudeCodeSettingsFieldsDTO{
+				Env:             layer.KnownFields.Env,
+				Permissions:     layer.KnownFields.Permissions,
+				DisableAllHooks: layer.KnownFields.DisableAllHooks,
+				OutputStyle:     layer.KnownFields.OutputStyle,
+			}
+		}
+		layers = append(layers, mapped)
+	}
+	return &ClaudeCodeSettingsSnapshotDTO{
+		ProjectPath: result.ProjectPath,
+		Layers:      layers,
+		Warnings:    result.Warnings,
+	}
+}
+
+func mapClaudeCodeSettingsPatchResult(result *wailsapp.PatchClaudeCodeSettingsResult) *PatchClaudeCodeSettingsResultDTO {
+	if result == nil {
+		return &PatchClaudeCodeSettingsResultDTO{Changes: []ClaudeCodeSettingsChangeDTO{}}
+	}
+	changes := make([]ClaudeCodeSettingsChangeDTO, 0, len(result.Changes))
+	for _, change := range result.Changes {
+		changes = append(changes, ClaudeCodeSettingsChangeDTO{Key: change.Key, Before: change.Before, After: change.After})
+	}
+	return &PatchClaudeCodeSettingsResultDTO{
+		ConfigPath: result.ConfigPath,
+		Preview:    result.Preview,
+		Changes:    changes,
+	}
+}
+
 func mapCodexMcpServersSnapshot(result *wailsapp.CodexMcpServersSnapshot) *CodexMcpServersSnapshot {
 	if result == nil {
 		return &CodexMcpServersSnapshot{Servers: []CodexMcpServer{}, Warnings: []string{}}
@@ -901,3 +945,53 @@ func mapRelayServiceEndpoints(items []wailsapp.RelayServiceEndpoint) []RelayServ
 	}
 	return endpoints
 }
+
+func mapClaudeCodeMemoryFilesSnapshot(result *wailsapp.ClaudeCodeMemoryFilesSnapshot) *ClaudeCodeMemoryFilesSnapshotDTO {
+	if result == nil {
+		return &ClaudeCodeMemoryFilesSnapshotDTO{Files: []ClaudeCodeMemoryFileRecordDTO{}, Warnings: []string{}}
+	}
+	files := make([]ClaudeCodeMemoryFileRecordDTO, 0, len(result.Files))
+	for _, f := range result.Files {
+		imports := make([]ClaudeCodeMemoryFileImportDTO, 0, len(f.Imports))
+		for _, imp := range f.Imports {
+			imports = append(imports, ClaudeCodeMemoryFileImportDTO{Raw: imp.Raw, Resolved: imp.Resolved, Exists: imp.Exists, Depth: imp.Depth})
+		}
+		files = append(files, ClaudeCodeMemoryFileRecordDTO{
+			Scope: string(f.Scope), Path: f.Path, Exists: f.Exists, GitIgnored: f.GitIgnored,
+			Imports: imports, Content: f.Content, ContentTruncated: f.ContentTruncated, Size: f.Size,
+		})
+	}
+	return &ClaudeCodeMemoryFilesSnapshotDTO{ProjectPath: result.ProjectPath, Files: files, Warnings: result.Warnings}
+}
+
+func mapClaudeCodeMemoryFileSaveResult(result *wailsapp.SaveClaudeCodeMemoryFileResult) *SaveClaudeCodeMemoryFileResultDTO {
+	if result == nil {
+		return &SaveClaudeCodeMemoryFileResultDTO{}
+	}
+	return &SaveClaudeCodeMemoryFileResultDTO{Path: result.Path, Size: result.Size, Warning: result.Warning}
+}
+
+func mapClaudeCodeSubagentsSnapshot(result *wailsapp.ClaudeCodeSubagentsSnapshot) *ClaudeCodeSubagentsSnapshotDTO {
+	if result == nil {
+		return &ClaudeCodeSubagentsSnapshotDTO{Agents: []ClaudeCodeSubagentRecordDTO{}, Warnings: []string{}}
+	}
+	agents := make([]ClaudeCodeSubagentRecordDTO, 0, len(result.Agents))
+	for _, a := range result.Agents {
+		agents = append(agents, ClaudeCodeSubagentRecordDTO{
+			Name: a.Name, Description: a.Description, Path: a.Path, Scope: a.Scope,
+			FrontmatterValid: a.FrontmatterValid, FrontmatterError: a.FrontmatterError,
+			ValidationErrors: a.ValidationErrors, KnownFields: a.KnownFields,
+			UnknownFields: a.UnknownFields, BodyPreview: a.BodyPreview,
+			IsPlugin: a.IsPlugin, IgnoredFields: a.IgnoredFields,
+		})
+	}
+	return &ClaudeCodeSubagentsSnapshotDTO{UserPath: result.UserPath, ProjectPath: result.ProjectPath, Agents: agents, Warnings: result.Warnings}
+}
+
+func mapClaudeCodeSubagentSaveResult(result *wailsapp.SaveClaudeCodeSubagentResult) *SaveClaudeCodeSubagentResultDTO {
+	if result == nil {
+		return &SaveClaudeCodeSubagentResultDTO{}
+	}
+	return &SaveClaudeCodeSubagentResultDTO{Path: result.Path, Preview: result.Preview}
+}
+

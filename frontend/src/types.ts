@@ -23,7 +23,7 @@ export type CodexWorkspace =
   | 'session-management'
   | 'vendor-status'
   | 'usage-codex';
-export type ClaudeWorkspace = 'account-list' | 'skills' | 'mcp-servers' | 'session-management' | 'usage';
+export type ClaudeWorkspace = 'account-list' | 'skills' | 'mcp-servers' | 'session-management' | 'usage' | 'settings' | 'claude-md' | 'subagents';
 export type SessionManagementWorkspace = 'codex' | 'claude';
 export type UsageDeskWorkspace = 'codex' | 'claude';
 

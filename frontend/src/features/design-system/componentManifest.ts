@@ -57,6 +57,12 @@ const claudeCodeAccountListStoryPath = 'frontend/src/features/claude-code/compon
 const claudeCodeAccountListStorybookTitle = 'Design System/业务组件/Claude Code 账号列表';
 const claudeCodeAssetWorkbenchStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeAssetWorkbench.stories.tsx';
 const claudeCodeAssetWorkbenchStorybookTitle = 'Design System/业务组件/Claude Code 资产工作台';
+const claudeCodeSubagentCatalogStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeSubagentCatalog.stories.tsx';
+const claudeCodeMemoryFilesPanelStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeMemoryFilesPanel.stories.tsx';
+const claudeCodeSettingsScopeStackStoryPath = 'frontend/src/features/claude-code/components/ClaudeCodeSettingsScopeStack.stories.tsx';
+const claudeCodeSubagentCatalogStorybookTitle = 'Design System/业务组件/Claude Code Subagent Catalog';
+const claudeCodeMemoryFilesPanelStorybookTitle = 'Design System/业务组件/Claude Code Memory Files Panel';
+const claudeCodeSettingsScopeStackStorybookTitle = 'Design System/业务组件/Claude Code Settings Scope Stack';
 const codexRouteProbeStoryPath = 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx';
 const codexRouteProbeStorybookTitle = 'Design System/业务组件/Codex 路由探测';
 const codexAccountOrderStoryPath = 'frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx';
@@ -644,6 +650,21 @@ export const designSystemComponentManifest = [
     requiredStates: ['skills-ready', 'skills-legacy-command', 'mcp-ready', 'mcp-shadowed-scope', 'empty', 'parse-error', 'saving-diff'],
     mockDataSources: ['storybook claude code skills/mcp/scope/diff/candidate mock'],
   },
+	  {
+	    id: 'claude-code-settings-scope-stack',
+	    componentName: 'ClaudeCodeSettingsScopeStack',
+	    sourcePath: 'frontend/src/features/claude-code/components/ClaudeCodeSettingsScopeStack.tsx',
+	    ownerFeature: 'claude-code',
+	    status: 'candidate',
+	    tier: 'feature-component',
+	    decisionReason: 'Claude Code Settings scope stack 设计系统候选组件，覆盖 user/project/local/managed 四个 scope layer 的手风琴展示，支持 parse error、editing 和 saving-diff 状态。',
+	    matchedPatterns: ['AssetWorkbenchShell', 'WorkspacePageHeader', 'SnippetPre'],
+	    storyPath: claudeCodeSettingsScopeStackStoryPath,
+	    storybookTitle: claudeCodeSettingsScopeStackStorybookTitle,
+	    catalogGroupId: 'feature-components',
+	    requiredStates: ['all-layers-valid', 'partial-layers', 'parse-error', 'managed-readonly', 'env-field-editing', 'all-layers-empty', 'saving-diff'],
+	    mockDataSources: ['storybook claude code settings layer/scopes mock'],
+  },
   {
     id: 'codex-account-detail-modal',
     componentName: 'CodexAccountDetailModal',
@@ -891,6 +912,36 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['plain', 'diff', 'long-line', 'header-action'],
     mockDataSources: ['storybook local config snippet mock'],
+  },
+  {
+    id: 'claude-code-memory-files-panel',
+    componentName: 'ClaudeCodeMemoryFilesPanel',
+    sourcePath: 'frontend/src/features/claude-code/components/ClaudeCodeMemoryFilesPanel.tsx',
+    ownerFeature: 'claude-code',
+    status: 'candidate',
+    tier: 'feature-component',
+    decisionReason: 'Claude Code Memory Files Panel 设计系统候选组件，覆盖 user/project/local CLAUDE.md 文件发现、@import 解析、预览、编辑和 save-preview 状态。',
+    matchedPatterns: ['AssetWorkbenchShell', 'WorkspacePageHeader', 'SnippetPre'],
+    storyPath: claudeCodeMemoryFilesPanelStoryPath,
+    storybookTitle: claudeCodeMemoryFilesPanelStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['all-files-present', 'partial-files', 'import-exists', 'import-missing', 'import-recursion', 'local-not-gitignored', 'save-preview', 'empty', 'parse-error', 'import-depth-limit'],
+    mockDataSources: ['storybook claude code memory files/imports/scope mock'],
+  },
+  {
+    id: 'claude-code-subagent-catalog',
+    componentName: 'ClaudeCodeSubagentCatalog',
+    sourcePath: 'frontend/src/features/claude-code/components/ClaudeCodeSubagentCatalog.tsx',
+    ownerFeature: 'claude-code',
+    status: 'candidate',
+    tier: 'feature-component',
+    decisionReason: 'Claude Code Subagent Catalog 设计系统候选组件，覆盖 user/project subagent 扫描、frontmatter 校验、plugin ignored fields、创建/编辑/删除和 saving-agent 状态。',
+    matchedPatterns: ['AssetWorkbenchShell', 'WorkspacePageHeader', 'SnippetPre'],
+    storyPath: claudeCodeSubagentCatalogStoryPath,
+    storybookTitle: claudeCodeSubagentCatalogStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['valid-agents', 'missing-name', 'missing-description', 'plugin-ignored-fields', 'parse-error', 'empty', 'creating-agent', 'saving-agent'],
+    mockDataSources: ['storybook claude code subagent frontmatter/scope/plugin mock'],
   },
 ] as const satisfies readonly DesignSystemComponentManifestEntry[];
 

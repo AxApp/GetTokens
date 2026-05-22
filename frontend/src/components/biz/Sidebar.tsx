@@ -43,6 +43,9 @@ const claudeWorkspaceItems = [
   { id: 'mcp-servers', label: 'nav.claude_mcp_servers' },
   { id: 'session-management', label: 'nav.session_management' },
   { id: 'usage', label: 'nav.usage_desk_claude' },
+  { id: 'settings', label: 'nav.claude_settings' },
+  { id: 'claude-md', label: 'nav.claude_claude_md' },
+  { id: 'subagents', label: 'nav.claude_subagents' },
 ] as const satisfies ReadonlyArray<{ id: ClaudeWorkspace; label: string }>;
 
 export default function Sidebar({

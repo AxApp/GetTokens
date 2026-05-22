@@ -55,6 +55,14 @@ export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>
 
 export function GetClaudeCodeExtensionsSnapshot():Promise<main.ClaudeCodeExtensionsSnapshot>;
 
+export function GetClaudeCodeSettingsSnapshot():Promise<main.ClaudeCodeSettingsSnapshot>;
+export function GetClaudeCodeMemoryFilesSnapshot():Promise<main.ClaudeCodeMemoryFilesSnapshot>;
+export function SaveClaudeCodeMemoryFile(arg1:main.SaveClaudeCodeMemoryFileInput):Promise<main.SaveClaudeCodeMemoryFileResult>;
+export function GetClaudeCodeSubagentsSnapshot():Promise<main.ClaudeCodeSubagentsSnapshot>;
+export function SaveClaudeCodeSubagent(arg1:main.SaveClaudeCodeSubagentInput):Promise<main.SaveClaudeCodeSubagentResult>;
+export function DeleteClaudeCodeSubagent(arg1:main.DeleteClaudeCodeSubagentInput):Promise<void>;
+
+
 export function GetClaudeCodeSessionDetail(arg1:string):Promise<main.SessionManagementSessionDetail>;
 
 export function GetClaudeCodeSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
@@ -162,6 +170,8 @@ export function RemoveCodexSkill(arg1:main.RemoveCodexSkillInput):Promise<main.R
 export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<void>;
 
 export function SaveClaudeCodeMcpServer(arg1:main.SaveClaudeCodeMcpServerInput):Promise<main.SaveClaudeCodeMcpServerResult>;
+
+export function PatchClaudeCodeSettings(arg1:main.PatchClaudeCodeSettingsInput):Promise<main.PatchClaudeCodeSettingsResult>;
 
 export function SaveCodexConfigToml(arg1:main.SaveCodexConfigTomlInput):Promise<main.SaveCodexConfigTomlResult>;
 

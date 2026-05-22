@@ -1,4 +1,7 @@
 import ClaudeCodeAccountListFeature from '../features/claude-code/ClaudeCodeAccountListFeature';
+import SettingsFeature from '../features/claude-code/settings/SettingsFeature';
+import ClaudeMdFeature from '../features/claude-code/claude-md/ClaudeMdFeature';
+import SubagentsFeature from '../features/claude-code/subagents/SubagentsFeature';
 import ClaudeCodeAssetWorkbenchFeature from '../features/claude-code/ClaudeCodeAssetWorkbenchFeature';
 import UsageDeskFeature from '../features/accounts/UsageDeskFeature';
 import SessionManagementFeature from '../features/session-management/SessionManagementFeature';
@@ -22,6 +25,15 @@ export default function ClaudePage({ workspace, sidecarStatus }: ClaudePageProps
     return <SessionManagementFeature workspace="claude" />;
   }
 
+  if (workspace === 'subagents') {
+    return <SubagentsFeature />;
+  }
+  if (workspace === 'claude-md') {
+    return <ClaudeMdFeature />;
+  }
+  if (workspace === 'settings') {
+    return <SettingsFeature />;
+  }
   if (workspace === 'usage') {
     return <UsageDeskFeature sidecarStatus={sidecarStatus} workspace="claude" />;
   }

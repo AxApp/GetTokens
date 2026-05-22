@@ -2961,6 +2961,162 @@ export namespace main {
 		    return a;
 		}
 	}
+		export class ClaudeCodeSettingsLayer {
+		    scope: string;
+		    path: string;
+		    exists: boolean;
+		    parseError?: string;
+		    knownFields?: ClaudeCodeSettingsFields;
+
+		    static createFrom(source: any = {}) {
+		        return new ClaudeCodeSettingsLayer(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.scope = source["scope"];
+		        this.path = source["path"];
+		        this.exists = source["exists"];
+		        this.parseError = source["parseError"];
+		        this.knownFields = this.convertValues(source["knownFields"], ClaudeCodeSettingsFields);
+		    }
+
+			convertValues(a: any, classs: any, asMap: boolean = false): any {
+			    if (!a) {
+			        return a;
+			    }
+			    if (a.slice && a.map) {
+			        return (a as any[]).map(elem => this.convertValues(elem, classs));
+			    } else if ("object" === typeof a) {
+			        if (asMap) {
+			            for (const key of Object.keys(a)) {
+			                a[key] = new classs(a[key]);
+			            }
+			            return a;
+			        }
+			        return new classs(a);
+			    }
+			    return a;
+			}
+		}
+		export class ClaudeCodeSettingsFields {
+		    env?: Record<string, string>;
+		    permissions?: Record<string, any>;
+		    disableAllHooks?: boolean;
+		    outputStyle?: string;
+
+		    static createFrom(source: any = {}) {
+		        return new ClaudeCodeSettingsFields(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.env = source["env"];
+		        this.permissions = source["permissions"];
+		        this.disableAllHooks = source["disableAllHooks"];
+		        this.outputStyle = source["outputStyle"];
+		    }
+		}
+		export class ClaudeCodeSettingsSnapshot {
+		    projectPath: string;
+		    layers: ClaudeCodeSettingsLayer[];
+		    warnings: string[];
+
+		    static createFrom(source: any = {}) {
+		        return new ClaudeCodeSettingsSnapshot(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.projectPath = source["projectPath"];
+		        this.layers = this.convertValues(source["layers"], ClaudeCodeSettingsLayer);
+		        this.warnings = source["warnings"];
+		    }
+
+			convertValues(a: any, classs: any, asMap: boolean = false): any {
+			    if (!a) {
+			        return a;
+			    }
+			    if (a.slice && a.map) {
+			        return (a as any[]).map(elem => this.convertValues(elem, classs));
+			    } else if ("object" === typeof a) {
+			        if (asMap) {
+			            for (const key of Object.keys(a)) {
+			                a[key] = new classs(a[key]);
+			            }
+			            return a;
+			        }
+			        return new classs(a);
+			    }
+			    return a;
+			}
+		}
+		export class ClaudeCodeSettingsChange {
+		    key: string;
+		    before: any;
+		    after: any;
+
+		    static createFrom(source: any = {}) {
+		        return new ClaudeCodeSettingsChange(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.key = source["key"];
+		        this.before = source["before"];
+		        this.after = source["after"];
+		    }
+		}
+		export class PatchClaudeCodeSettingsInput {
+		    scope: string;
+		    path: string;
+		    patches: Record<string, any>;
+
+		    static createFrom(source: any = {}) {
+		        return new PatchClaudeCodeSettingsInput(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.scope = source["scope"];
+		        this.path = source["path"];
+		        this.patches = source["patches"];
+		    }
+		}
+		export class PatchClaudeCodeSettingsResult {
+		    configPath: string;
+		    preview: string;
+		    changes: ClaudeCodeSettingsChange[];
+
+		    static createFrom(source: any = {}) {
+		        return new PatchClaudeCodeSettingsResult(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.configPath = source["configPath"];
+		        this.preview = source["preview"];
+		        this.changes = this.convertValues(source["changes"], ClaudeCodeSettingsChange);
+		    }
+
+			convertValues(a: any, classs: any, asMap: boolean = false): any {
+			    if (!a) {
+			        return a;
+			    }
+			    if (a.slice && a.map) {
+			        return (a as any[]).map(elem => this.convertValues(elem, classs));
+			    } else if ("object" === typeof a) {
+			        if (asMap) {
+			            for (const key of Object.keys(a)) {
+			                a[key] = new classs(a[key]);
+			            }
+			            return a;
+			        }
+			        return new classs(a);
+			    }
+			    return a;
+			}
+		}
 	export class SaveCodexConfigTomlInput {
 	    content: string;
 	
@@ -3771,6 +3927,200 @@ export namespace main {
 	    }
 	}
 
+		export class ClaudeCodeMemoryFileImport {
+		    raw: string;
+		    resolved: string;
+		    exists: boolean;
+		    depth: number;
+
+		    static createFrom(source: any = {}) {
+		        return new ClaudeCodeMemoryFileImport(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.raw = source["raw"];
+		        this.resolved = source["resolved"];
+		        this.exists = source["exists"];
+		        this.depth = source["depth"];
+		    }
+		}
+		export class ClaudeCodeMemoryFileRecord {
+		    scope: string;
+		    path: string;
+		    exists: boolean;
+		    gitIgnored?: boolean;
+		    imports?: ClaudeCodeMemoryFileImport[];
+		    content?: string;
+		    contentTruncated?: boolean;
+		    size: number;
+
+		    static createFrom(source: any = {}) {
+		        return new ClaudeCodeMemoryFileRecord(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.scope = source["scope"];
+		        this.path = source["path"];
+		        this.exists = source["exists"];
+		        this.gitIgnored = source["gitIgnored"];
+		        this.imports = this.convertValues(source["imports"], ClaudeCodeMemoryFileImport);
+		        this.content = source["content"];
+		        this.contentTruncated = source["contentTruncated"];
+		        this.size = source["size"];
+		    }
+
+			convertValues(a: any, classs: any, asMap: boolean = false): any {
+			    if (!a) return a;
+			    if (a.slice && a.map) return (a as any[]).map(elem => this.convertValues(elem, classs));
+			    if ("object" === typeof a) return new classs(a);
+			    return a;
+			}
+		}
+		export class ClaudeCodeMemoryFilesSnapshot {
+		    projectPath: string;
+		    files: ClaudeCodeMemoryFileRecord[];
+		    warnings: string[];
+
+		    static createFrom(source: any = {}) {
+		        return new ClaudeCodeMemoryFilesSnapshot(source);
+		    }
+
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.projectPath = source["projectPath"];
+		        this.files = this.convertValues(source["files"], ClaudeCodeMemoryFileRecord);
+		        this.warnings = source["warnings"];
+		    }
+
+			convertValues(a: any, classs: any, asMap: boolean = false): any {
+			    if (!a) return a;
+			    if (a.slice && a.map) return (a as any[]).map(elem => this.convertValues(elem, classs));
+			    if ("object" === typeof a) return new classs(a);
+			    return a;
+			}
+		}
+		export class SaveClaudeCodeMemoryFileInput {
+		    path: string;
+		    content: string;
+
+		    static createFrom(source: any = {}) { return new SaveClaudeCodeMemoryFileInput(source); }
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.path = source["path"];
+		        this.content = source["content"];
+		    }
+		}
+		export class SaveClaudeCodeMemoryFileResult {
+		    path: string;
+		    size: number;
+		    warning?: string;
+
+		    static createFrom(source: any = {}) { return new SaveClaudeCodeMemoryFileResult(source); }
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.path = source["path"];
+		        this.size = source["size"];
+		        this.warning = source["warning"];
+		    }
+		}
+		export class ClaudeCodeSubagentRecord {
+		    name: string;
+		    description: string;
+		    path: string;
+		    scope: string;
+		    frontmatterValid: boolean;
+		    frontmatterError?: string;
+		    validationErrors?: string[];
+		    knownFields?: Record<string, any>;
+		    unknownFields?: Record<string, any>;
+		    bodyPreview?: string;
+		    isPlugin?: boolean;
+		    ignoredFields?: string[];
+
+		    static createFrom(source: any = {}) { return new ClaudeCodeSubagentRecord(source); }
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.name = source["name"];
+		        this.description = source["description"];
+		        this.path = source["path"];
+		        this.scope = source["scope"];
+		        this.frontmatterValid = source["frontmatterValid"];
+		        this.frontmatterError = source["frontmatterError"];
+		        this.validationErrors = source["validationErrors"];
+		        this.knownFields = source["knownFields"];
+		        this.unknownFields = source["unknownFields"];
+		        this.bodyPreview = source["bodyPreview"];
+		        this.isPlugin = source["isPlugin"];
+		        this.ignoredFields = source["ignoredFields"];
+		    }
+		}
+		export class ClaudeCodeSubagentsSnapshot {
+		    userPath: string;
+		    projectPath: string;
+		    agents: ClaudeCodeSubagentRecord[];
+		    warnings: string[];
+
+		    static createFrom(source: any = {}) { return new ClaudeCodeSubagentsSnapshot(source); }
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.userPath = source["userPath"];
+		        this.projectPath = source["projectPath"];
+		        this.agents = this.convertValues(source["agents"], ClaudeCodeSubagentRecord);
+		        this.warnings = source["warnings"];
+		    }
+			convertValues(a: any, classs: any, asMap: boolean = false): any {
+			    if (!a) return a;
+			    if (a.slice && a.map) return (a as any[]).map(elem => this.convertValues(elem, classs));
+			    if ("object" === typeof a) return new classs(a);
+			    return a;
+			}
+		}
+		export class SaveClaudeCodeSubagentInput {
+		    scope: string;
+		    path: string;
+		    name: string;
+		    description: string;
+		    knownFields?: Record<string, any>;
+		    unknownFields?: Record<string, any>;
+		    body: string;
+
+		    static createFrom(source: any = {}) { return new SaveClaudeCodeSubagentInput(source); }
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.scope = source["scope"];
+		        this.path = source["path"];
+		        this.name = source["name"];
+		        this.description = source["description"];
+		        this.knownFields = source["knownFields"];
+		        this.unknownFields = source["unknownFields"];
+		        this.body = source["body"];
+		    }
+		}
+		export class SaveClaudeCodeSubagentResult {
+		    path: string;
+		    preview: string;
+
+		    static createFrom(source: any = {}) { return new SaveClaudeCodeSubagentResult(source); }
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.path = source["path"];
+		        this.preview = source["preview"];
+		    }
+		}
+		export class DeleteClaudeCodeSubagentInput {
+		    scope: string;
+		    path: string;
+
+		    static createFrom(source: any = {}) { return new DeleteClaudeCodeSubagentInput(source); }
+		    constructor(source: any = {}) {
+		        if ('string' === typeof source) source = JSON.parse(source);
+		        this.scope = source["scope"];
+		        this.path = source["path"];
+		    }
+		}
+
 }
 
 export namespace sidecar {
@@ -3820,4 +4170,3 @@ export namespace updater {
 	}
 
 }
-

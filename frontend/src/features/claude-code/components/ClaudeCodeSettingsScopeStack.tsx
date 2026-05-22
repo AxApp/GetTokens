@@ -1,0 +1,248 @@
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronRight, FileJson, FileWarning, Globe, Lock, ShieldCheck, Wrench } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import type { main } from '../../../../wailsjs/go/models';
+import AssetWorkbenchShell from '../../../components/ui/AssetWorkbenchShell';
+import SnippetPre from '../../../components/ui/SnippetPre';
+
+export type SettingsScopeStackState =
+  | 'all-layers-valid'
+  | 'partial-layers'
+  | 'parse-error'
+  | 'managed-readonly'
+  | 'env-field-editing'
+  | 'all-layers-empty'
+  | 'saving-diff';
+
+interface ClaudeCodeSettingsScopeStackProps {
+  snapshot: main.ClaudeCodeSettingsSnapshot;
+  editingScope?: string;
+  draftPatches?: Record<string, any>;
+  savePreview?: string;
+  saveError?: string;
+  onStartEdit?: (scope: string) => void;
+  onCancelEdit?: () => void;
+  onSavePatch?: (patches: Record<string, any>) => void;
+  state: SettingsScopeStackState;
+  stateMessage?: string;
+}
+
+const scopeIcons: Record<string, ReactNode> = {
+  user: <FileJson className="h-4 w-4" />,
+  project: <FileJson className="h-4 w-4" />,
+  local: <FileWarning className="h-4 w-4" />,
+  managed: <Lock className="h-4 w-4" />,
+};
+
+const scopeLabels: Record<string, string> = {
+  user: 'User (~/.claude/settings.json)',
+  project: 'Project (.claude/settings.json)',
+  local: 'Local (.claude/settings.local.json)',
+  managed: 'Managed policy (read-only)',
+};
+
+const scopePriorityLabels: Record<string, string> = {
+  managed: 'Highest priority',
+  local: 'Overrides project & user',
+  project: 'Overrides user',
+  user: 'Base',
+};
+
+export default function ClaudeCodeSettingsScopeStack({
+  snapshot,
+  editingScope,
+  draftPatches,
+  savePreview,
+  saveError,
+  state,
+  stateMessage,
+}: ClaudeCodeSettingsScopeStackProps) {
+  const [expandedScopes, setExpandedScopes] = useState<Set<string>>(() => {
+    const set = new Set<string>();
+    snapshot.layers.filter((l) => l.exists).forEach((l) => set.add(`${l.scope}`));
+    return set;
+  });
+
+  function toggleScope(scope: string) {
+    setExpandedScopes((prev) => {
+      const next = new Set(prev);
+      if (next.has(scope)) {
+        next.delete(scope);
+      } else {
+        next.add(scope);
+      }
+      return next;
+    });
+  }
+
+  const hasAnyLayers = snapshot.layers.some((l) => l.exists);
+  const hasErrors = snapshot.layers.some((l) => l.parseError);
+
+  return (
+    <AssetWorkbenchShell
+      title="Claude Code Settings"
+      subtitle={snapshot.projectPath ? `Project: ${snapshot.projectPath}` : undefined}
+      notice={
+        (stateMessage || hasErrors) ? (
+          <span className={`flex items-center gap-2 text-sm ${hasErrors ? 'text-[var(--text-warning)]' : 'text-[var(--text-secondary)]'}`}>
+            {hasErrors ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+            {stateMessage || (hasErrors ? 'Some layers have parse errors' : `All ${snapshot.layers.filter((l) => l.exists).length} layers loaded`)}
+          </span>
+        ) : undefined
+      }
+    >
+      {!hasAnyLayers ? (
+        <div className="flex flex-col items-center justify-center gap-3 p-12 text-center">
+          <FileJson className="h-10 w-10 text-[var(--text-muted)]" />
+          <p className="text-sm text-[var(--text-muted)]">No Claude Code settings files discovered</p>
+          <p className="max-w-md text-xs text-[var(--text-muted)]">
+            Create a settings.json file in ~/.claude/ or .claude/ to start configuring Claude Code
+          </p>
+        </div>
+      ) : (
+        <div className="divide-y-2 divide-[var(--border-color)]">
+          {snapshot.layers.map((layer) => (
+            <div key={`${layer.scope}`} className="group">
+              <button
+                type="button"
+                onClick={() => toggleScope(`${layer.scope}`)}
+                className={`flex w-full items-center gap-3 p-4 text-left hover:bg-[var(--bg-subtle)] ${!layer.exists ? 'opacity-50' : ''}`}
+              >
+                <span className="text-[var(--text-secondary)]">
+                  {expandedScopes.has(`${layer.scope}`) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                </span>
+                <span className="text-[var(--text-secondary)]">{scopeIcons[`${layer.scope}`] ?? <FileJson className="h-4 w-4" />}</span>
+                <div className="flex-1 text-left">
+                  <span className="text-sm font-medium">{scopeLabels[`${layer.scope}`] ?? `${layer.scope}`}</span>
+                  <span className="ml-2 text-xs text-[var(--text-muted)]">{scopePriorityLabels[`${layer.scope}`] ?? ''}</span>
+                </div>
+                {layer.parseError ? (
+                  <span className="flex items-center gap-1 rounded bg-[var(--badge-warning-bg)] px-2 py-0.5 text-xs text-[var(--text-warning)]">
+                    <AlertTriangle className="h-3 w-3" /> Parse Error
+                  </span>
+                ) : layer.exists ? (
+                  <span className="flex items-center gap-1 rounded bg-[var(--badge-success-bg)] px-2 py-0.5 text-xs text-[var(--text-success)]">
+                    <CheckCircle2 className="h-3 w-3" /> Valid
+                  </span>
+                ) : (
+                  <span className="rounded bg-[var(--badge-neutral-bg)] px-2 py-0.5 text-xs text-[var(--text-muted)]">
+                    Not found
+                  </span>
+                )}
+                {`${layer.scope}` === 'managed' && (
+                  <Lock className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+                )}
+                {`${layer.scope}` === 'local' && layer.exists && (
+                  <span className="rounded bg-[var(--badge-warning-bg)] px-2 py-0.5 text-xs text-[var(--text-warning)]">
+                    gitignored
+                  </span>
+                )}
+              </button>
+
+              {expandedScopes.has(`${layer.scope}`) && layer.exists && (
+                <div className="border-t-2 border-[var(--border-color)] bg-[var(--bg-subtle)] p-4">
+                  <p className="mb-3 font-mono text-xs text-[var(--text-muted)]">{layer.path}</p>
+
+                  {layer.parseError ? (
+                    <div className="rounded border-2 border-[var(--border-warning)] bg-[var(--bg-warning)]/10 p-3">
+                      <p className="text-sm text-[var(--text-warning)]">{layer.parseError}</p>
+                    </div>
+                  ) : layer.knownFields ? (
+                    <div className="space-y-4">
+                      {layer.knownFields.env && Object.keys(layer.knownFields.env).length > 0 && (
+                        <SettingsFieldSection icon={<Wrench className="h-4 w-4" />} title="Environment Variables">
+                          <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+                            {Object.entries(layer.knownFields.env).map(([key, value]) => (
+                              <EnvRow key={key} envKey={key} value={value} isEditing={`${layer.scope}` === editingScope} />
+                            ))}
+                          </div>
+                        </SettingsFieldSection>
+                      )}
+
+                      {layer.knownFields.permissions && (
+                        <SettingsFieldSection icon={<ShieldCheck className="h-4 w-4" />} title="Permissions">
+                          <SnippetPre className="max-h-40 overflow-auto text-xs">{JSON.stringify(layer.knownFields.permissions, null, 2)}</SnippetPre>
+                        </SettingsFieldSection>
+                      )}
+
+                      {layer.knownFields.disableAllHooks !== undefined && (
+                        <SettingsFieldSection icon={<AlertTriangle className="h-4 w-4" />} title="Hooks">
+                          <span className={`text-sm ${layer.knownFields.disableAllHooks ? 'text-[var(--text-warning)]' : 'text-[var(--text-success)]'}`}>
+                            {layer.knownFields.disableAllHooks ? 'All hooks disabled' : 'Hooks enabled'}
+                          </span>
+                        </SettingsFieldSection>
+                      )}
+
+                      {layer.knownFields.outputStyle && (
+                        <SettingsFieldSection icon={<Globe className="h-4 w-4" />} title="Output Style">
+                          <span className="text-sm">{layer.knownFields.outputStyle}</span>
+                        </SettingsFieldSection>
+                      )}
+
+                      {`${layer.scope}` !== 'managed' && (
+                        <div className="flex justify-end">
+                          {editingScope === `${layer.scope}` ? (
+                            <div className="flex gap-2">
+                              <button type="button" className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main])]">
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded bg-[var(--button-primary-bg)] px-3 py-1 text-xs text-[var(--button-primary-text)]"
+                                onClick={(e) => e.preventDefault()}
+                              >
+                                Save Changes
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className="rounded border-2 border-[var(--border-color)] px-3 py-1 text-xs hover:bg-[var(--bg-main)]"
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {savePreview && (
+        <div className="border-t-2 border-[var(--border-color)] p-4">
+          <h3 className="mb-2 text-sm font-medium">Save Preview</h3>
+          <SnippetPre className="max-h-60 overflow-auto text-xs">{savePreview}</SnippetPre>
+          {saveError && <p className="mt-2 text-sm text-[var(--text-danger)]">{saveError}</p>}
+        </div>
+      )}
+    </AssetWorkbenchShell>
+  );
+}
+
+function SettingsFieldSection({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-[var(--text-secondary)]">{icon}</span>
+        <span className="text-sm font-medium">{title}</span>
+      </div>
+      <div className="ml-6">{children}</div>
+    </div>
+  );
+}
+
+function EnvRow({ envKey, value, isEditing }: { envKey: string; value: string; isEditing: boolean }) {
+  const isSecret = /key|token|secret|auth/i.test(envKey);
+  const displayValue = isSecret ? `${value.slice(0, 8)}...` : value;
+
+  return (
+    <>
+      <span className="font-mono text-xs text-[var(--text-secondary)]">{envKey}</span>
+      <span className="font-mono text-xs text-[var(--text-primary)]">{displayValue}</span>
+    </>
+  );
+}

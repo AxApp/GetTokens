@@ -290,6 +290,24 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/claude-code/components/ClaudeCodeAssetWorkbench.stories.tsx',
       },
       {
+        id: 'claude-code-subagent-catalog',
+        title: 'Claude Code Subagent Catalog',
+        storybookTitle: 'Design System/业务组件/Claude Code Subagent Catalog',
+        path: 'frontend/src/features/claude-code/components/ClaudeCodeSubagentCatalog.stories.tsx',
+      },
+      {
+        id: 'claude-code-memory-files-panel',
+        title: 'Claude Code Memory Files Panel',
+        storybookTitle: 'Design System/业务组件/Claude Code Memory Files Panel',
+        path: 'frontend/src/features/claude-code/components/ClaudeCodeMemoryFilesPanel.stories.tsx',
+      },
+      {
+        id: 'claude-code-settings-scope-stack',
+        title: 'Claude Code Settings Scope Stack',
+        storybookTitle: 'Design System/业务组件/Claude Code Settings Scope Stack',
+        path: 'frontend/src/features/claude-code/components/ClaudeCodeSettingsScopeStack.stories.tsx',
+      },
+      {
         id: 'account-rotation-components',
         title: '账号轮换组件',
         storybookTitle: 'Design System/业务组件/账号轮换',

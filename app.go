@@ -635,6 +635,26 @@ func (a *App) SaveClaudeCodeMcpServer(input SaveClaudeCodeMcpServerInput) (*Save
 	return mapClaudeCodeMcpSaveResult(result), nil
 }
 
+func (a *App) GetClaudeCodeSettingsSnapshot() (*ClaudeCodeSettingsSnapshotDTO, error) {
+	result, err := a.core.GetClaudeCodeSettingsSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeSettingsSnapshot(result), nil
+}
+
+func (a *App) PatchClaudeCodeSettings(input PatchClaudeCodeSettingsInputDTO) (*PatchClaudeCodeSettingsResultDTO, error) {
+	result, err := a.core.PatchClaudeCodeSettings(wailsapp.PatchClaudeCodeSettingsInput{
+		Scope:   wailsapp.ClaudeCodeSettingsScope(input.Scope),
+		Path:    input.Path,
+		Patches: input.Patches,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeSettingsPatchResult(result), nil
+}
+
 func (a *App) SaveCodexSkillEnabled(input SaveCodexSkillEnabledInput) (*SaveCodexSkillEnabledResult, error) {
 	result, err := a.core.SaveCodexSkillEnabled(wailsapp.SaveCodexSkillEnabledInput{
 		Path:    input.Path,
@@ -1146,6 +1166,56 @@ func (a *App) FetchOpenAICompatibleProviderModels(input FetchOpenAICompatiblePro
 	}, nil
 }
 
+
+func (a *App) GetClaudeCodeMemoryFilesSnapshot() (*ClaudeCodeMemoryFilesSnapshotDTO, error) {
+	result, err := a.core.GetClaudeCodeMemoryFilesSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeMemoryFilesSnapshot(result), nil
+}
+
+func (a *App) SaveClaudeCodeMemoryFile(input SaveClaudeCodeMemoryFileInputDTO) (*SaveClaudeCodeMemoryFileResultDTO, error) {
+	result, err := a.core.SaveClaudeCodeMemoryFile(wailsapp.SaveClaudeCodeMemoryFileInput{
+		Path:    input.Path,
+		Content: input.Content,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeMemoryFileSaveResult(result), nil
+}
+
+func (a *App) GetClaudeCodeSubagentsSnapshot() (*ClaudeCodeSubagentsSnapshotDTO, error) {
+	result, err := a.core.GetClaudeCodeSubagentsSnapshot()
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeSubagentsSnapshot(result), nil
+}
+
+func (a *App) SaveClaudeCodeSubagent(input SaveClaudeCodeSubagentInputDTO) (*SaveClaudeCodeSubagentResultDTO, error) {
+	result, err := a.core.SaveClaudeCodeSubagent(wailsapp.SaveClaudeCodeSubagentInput{
+		Scope:         input.Scope,
+		Path:          input.Path,
+		Name:          input.Name,
+		Description:   input.Description,
+		KnownFields:   input.KnownFields,
+		UnknownFields: input.UnknownFields,
+		Body:          input.Body,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapClaudeCodeSubagentSaveResult(result), nil
+}
+
+func (a *App) DeleteClaudeCodeSubagent(input DeleteClaudeCodeSubagentInputDTO) error {
+	return a.core.DeleteClaudeCodeSubagent(wailsapp.DeleteClaudeCodeSubagentInput{
+		Scope: input.Scope,
+		Path:  input.Path,
+	})
+}
 func (a *App) DeleteCodexAPIKey(id string) error {
 	return a.core.DeleteCodexAPIKey(id)
 }

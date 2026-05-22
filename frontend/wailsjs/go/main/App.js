@@ -102,6 +102,30 @@ export function GetClaudeCodeExtensionsSnapshot() {
   return window['go']['main']['App']['GetClaudeCodeExtensionsSnapshot']();
 }
 
+export function GetClaudeCodeMemoryFilesSnapshot() {
+  return window['go']['main']['App']['GetClaudeCodeMemoryFilesSnapshot']();
+}
+
+export function SaveClaudeCodeMemoryFile(arg1) {
+  return window['go']['main']['App']['SaveClaudeCodeMemoryFile'](arg1);
+}
+
+export function GetClaudeCodeSubagentsSnapshot() {
+  return window['go']['main']['App']['GetClaudeCodeSubagentsSnapshot']();
+}
+
+export function SaveClaudeCodeSubagent(arg1) {
+  return window['go']['main']['App']['SaveClaudeCodeSubagent'](arg1);
+}
+
+export function DeleteClaudeCodeSubagent(arg1) {
+  return window['go']['main']['App']['DeleteClaudeCodeSubagent'](arg1);
+}
+
+export function GetClaudeCodeSettingsSnapshot() {
+  return window['go']['main']['App']['GetClaudeCodeSettingsSnapshot']();
+}
+
 export function GetClaudeCodeSessionDetail(arg1) {
   return window['go']['main']['App']['GetClaudeCodeSessionDetail'](arg1);
 }
@@ -316,6 +340,10 @@ export function RevealCodexBinaryVersion(arg1) {
 
 export function SaveClaudeCodeMcpServer(arg1) {
   return window['go']['main']['App']['SaveClaudeCodeMcpServer'](arg1);
+}
+
+export function PatchClaudeCodeSettings(arg1) {
+  return window['go']['main']['App']['PatchClaudeCodeSettings'](arg1);
 }
 
 export function SaveCodexConfigToml(arg1) {
