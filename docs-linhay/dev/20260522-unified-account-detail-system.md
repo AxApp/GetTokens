@@ -81,3 +81,22 @@ type AccountDetailTarget =
 1. 给 `AccountDetailPrimitives` 补 Storybook Overview，覆盖 section、pill tone、notice、empty、evidence 状态矩阵。
 2. 再评估是否把 `OpenAICompatibleDetailPanel` 的 header/footer 也完全迁移到 `AccountDetailModalFrame` slots。
 3. 如果出现第四类账号详情，再开始抽 `AccountDetailTarget` / capability registry；不要提前把现有 controller 合成单体。
+
+## 会话沉淀：2026-05-22
+本轮“统一账号详情 + 账号筛选 + Codex 请求顺序筛选”形成了三个可复用模式：
+
+1. 账号详情视觉统一应优先抽 UI primitives，而不是把不同来源的 controller 合并成单体。Accounts、Codex、Claude Code、OpenAI-compatible 继续各自持有数据加载、保存、hash 与 Wails 调用边界；共享层只负责 frame、section、overview、module stack、header 和 footer 等详情结构。
+2. 账号详情中的运行态、evidence、quota、balance 必须从账号卡共享语义进入详情页，但不能把账号卡整体嵌入详情造成卡中卡。宽屏详情默认允许 card-mode 多列排布，长编辑面通过 `span="wide"` 跨列。
+3. 账号筛选一旦来源、请求性、禁用、错误、余额和额度语义分离，就必须使用对象状态。Codex 请求顺序页同步账号池筛选维度时只过滤展示行，不改变真实拖拽顺序、ORDER 编号或路由探测顺序。
+
+已沉淀位置：
+
+- `.agents/skills/gettokens-domain-engineering/SKILL.md`：Account Detail Surfaces、account list filters。
+- `.agents/skills/gettokens-codex-account-list/SKILL.md`：Codex account-list 展示筛选与请求顺序边界。
+- `docs-linhay/memory/2026-05-22.md`：本轮决策、验证与沉淀摘要。
+
+不纳入长期规则：
+
+- 本轮具体测试账号、浏览器运行端口、临时截图路径和一次性 Playwright 节点编号。
+- 当前阶段的 `AccountDetailTarget` registry 草案只作为后续建议，不作为已落地架构约束。
+- `AGENTS.md` 不更新：本轮规则属于账号域和 Codex account-list 域，不是 repo-wide 治理规则。
