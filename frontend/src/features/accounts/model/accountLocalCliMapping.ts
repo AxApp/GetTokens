@@ -10,6 +10,7 @@ export type AccountLocalCliMappingStatus =
   | 'ready'
   | 'disabled-account'
   | 'blocked-account'
+  | 'missing-account-key'
   | 'missing-relay-key'
   | 'sidecar-not-ready';
 
@@ -20,6 +21,7 @@ export type AccountLocalCliWarningCode =
   | 'preserve-chatgpt-auth-requires-custom-provider'
   | 'preserve-chatgpt-auth-missing-local-auth'
   | 'missing-oauth-auth-file'
+  | 'missing-account-api-key'
   | 'current-provider-missing'
   | 'model-derived-from-template'
   | 'model-family-partial';
@@ -28,6 +30,13 @@ export interface AccountLocalCliWarning {
   code: AccountLocalCliWarningCode;
   severity: AccountLocalCliWarningSeverity;
   message: string;
+}
+
+interface AccountLocalCliStatusContext {
+  status: AccountLocalCliMappingStatus;
+  enabled: boolean;
+  disabledReason?: string;
+  warnings: AccountLocalCliWarning[];
 }
 
 export interface AccountLocalCliRelayKeyLike {
@@ -95,6 +104,7 @@ export type AccountCliApplyDraft =
       codex: {
         relayKeyIndex: number;
         endpointID: string;
+        apiKey: string;
         baseUrl: string;
         model: string;
         providerID: string;
@@ -158,7 +168,7 @@ export function resolveAccountLocalCliMappings(input: ResolveAccountLocalCliMapp
   const relayKeyItems = input.relayKeyItems || [];
   const relayKeyIndex = firstUsableRelayKeyIndex(relayKeyItems);
   const relayKeyLabel = buildRelayKeyLabel(relayKeyItems[relayKeyIndex], relayKeyIndex);
-  const baseContext = resolveBaseStatus(input, relayKeyIndex);
+  const baseContext = resolveBaseStatus(input);
 
   return targets
     .map((target) => buildMappingForTarget({
@@ -210,12 +220,7 @@ function buildMappingForTarget(input: ResolveAccountLocalCliMappingsInput & {
   relayEndpoint: AccountLocalCliRelayEndpointLike;
   relayKeyIndex: number;
   relayKeyLabel: string;
-  baseContext: {
-    status: AccountLocalCliMappingStatus;
-    enabled: boolean;
-    disabledReason?: string;
-    warnings: AccountLocalCliWarning[];
-  };
+  baseContext: AccountLocalCliStatusContext;
 }): AccountLocalCliMapping | null {
   const sourceFormat = resolveSourceFormat(input.account, input.preset, input.target);
   if (!sourceFormat) {
@@ -233,11 +238,19 @@ function buildMappingForTarget(input: ResolveAccountLocalCliMappingsInput & {
       message: 'PREVIEW ONLY：普通浏览器预览不会调用 Wails 写入本机配置。',
     });
   }
-  warnings.push({
-    code: 'relay-only',
-    severity: 'info',
-    message: 'P0 只写入 GetTokens relay 入口，不把上游 API Key 或上游 base URL 直接写入本地 CLI。',
-  });
+  if (input.target === 'codex' && input.account.credentialSource !== 'auth-file') {
+    warnings.push({
+      code: 'relay-only',
+      severity: 'info',
+      message: 'Codex API key 模式写入当前账号的 API Key 与 base URL，不使用 GetTokens relay key。',
+    });
+  } else {
+    warnings.push({
+      code: 'relay-only',
+      severity: 'info',
+      message: 'P0 只写入 GetTokens relay 入口，不把上游 API Key 或上游 base URL 直接写入本地 CLI。',
+    });
+  }
   if (!hasAccountModel(input.account) && input.preset.modelSuggestions.length > 0) {
     warnings.push({
       code: 'model-derived-from-template',
@@ -246,6 +259,7 @@ function buildMappingForTarget(input: ResolveAccountLocalCliMappingsInput & {
     });
   }
 
+  const targetStatus = resolveTargetStatus(input, input.target, input.relayKeyIndex, input.baseContext);
   const sourceBase = {
     id: `${input.account.id}:${input.target}`,
     accountID: input.account.id,
@@ -253,9 +267,9 @@ function buildMappingForTarget(input: ResolveAccountLocalCliMappingsInput & {
     templateID: input.preset.id,
     templateName: input.preset.name,
     target: input.target,
-    status: input.baseContext.status,
-    enabled: input.baseContext.enabled,
-    disabledReason: input.baseContext.disabledReason,
+    status: targetStatus.status,
+    enabled: targetStatus.enabled,
+    disabledReason: targetStatus.disabledReason,
     sourceFormat,
     sourceFormatBaseUrl,
     relayEndpointID: input.relayEndpoint.id,
@@ -291,8 +305,19 @@ function buildCodexDraft(
     ? 'replace_auth_with_oauth'
     : 'replace_auth_with_apikey';
   const authFileName = resolveAuthFileName(input.account);
+  const apiKey = authStrategy === 'replace_auth_with_apikey'
+    ? String(input.account.apiKey || '').trim()
+    : '';
 
-  if (authStrategy === 'replace_auth_with_oauth') {
+  if (authStrategy === 'replace_auth_with_apikey') {
+    if (!apiKey) {
+      warnings.push({
+        code: 'missing-account-api-key',
+        severity: 'blocking',
+        message: '当前 Codex API key 账号缺少可写入 Codex auth.json 的 API Key。',
+      });
+    }
+  } else {
     if (!authFileName) {
       warnings.push({
         code: 'missing-oauth-auth-file',
@@ -315,7 +340,8 @@ function buildCodexDraft(
     codex: {
       relayKeyIndex: input.relayKeyIndex,
       endpointID: input.relayEndpoint.id,
-      baseUrl: authStrategy === 'replace_auth_with_oauth' ? CODEX_CHATGPT_BACKEND_BASE_URL : input.relayEndpoint.baseUrl,
+      apiKey,
+      baseUrl: authStrategy === 'replace_auth_with_oauth' ? CODEX_CHATGPT_BACKEND_BASE_URL : source.sourceFormatBaseUrl,
       model,
       providerID: providerState.currentProviderID,
       providerName: providerState.currentProviderName,
@@ -425,7 +451,7 @@ function findModelCandidate(account: AccountRecord, preset: VendorPreset, tokens
   });
 }
 
-function resolveBaseStatus(input: ResolveAccountLocalCliMappingsInput, relayKeyIndex: number) {
+function resolveBaseStatus(input: ResolveAccountLocalCliMappingsInput) {
   if (input.account.disabled || String(input.account.status || '').trim().toUpperCase() === 'DISABLED') {
     return {
       status: 'disabled-account' as const,
@@ -450,19 +476,43 @@ function resolveBaseStatus(input: ResolveAccountLocalCliMappingsInput, relayKeyI
       warnings: [] as AccountLocalCliWarning[],
     };
   }
-  if (relayKeyIndex < 0) {
-    return {
-      status: 'missing-relay-key' as const,
-      enabled: false,
-      disabledReason: '缺少 GetTokens relay key。',
-      warnings: [] as AccountLocalCliWarning[],
-    };
-  }
   return {
     status: 'ready' as const,
     enabled: true,
     warnings: [] as AccountLocalCliWarning[],
   };
+}
+
+function resolveTargetStatus(
+  input: ResolveAccountLocalCliMappingsInput,
+  target: AccountLocalCliTarget,
+  relayKeyIndex: number,
+  baseContext: AccountLocalCliStatusContext,
+) {
+  if (!baseContext.enabled) {
+    return baseContext;
+  }
+  if (target === 'claude' && relayKeyIndex < 0) {
+    return {
+      status: 'missing-relay-key' as const,
+      enabled: false,
+      disabledReason: '缺少 GetTokens relay key。',
+      warnings: baseContext.warnings,
+    };
+  }
+  if (
+    target === 'codex' &&
+    input.account.credentialSource !== 'auth-file' &&
+    !String(input.account.apiKey || '').trim()
+  ) {
+    return {
+      status: 'missing-account-key' as const,
+      enabled: false,
+      disabledReason: '当前账号缺少 API Key。',
+      warnings: baseContext.warnings,
+    };
+  }
+  return baseContext;
 }
 
 function firstUsableRelayKeyIndex(items: AccountLocalCliRelayKeyLike[]) {

@@ -187,8 +187,11 @@ function buildPreviewFiles(draft: AccountCliApplyDraft, relayKeyItems: AccountLo
     ];
   }
 
+  const codexAPIKey = draft.codex.authStrategy === 'replace_auth_with_apikey'
+    ? draft.codex.apiKey
+    : relayKey;
   const diff = buildCodexLocalApplyDiff({
-    apiKey: relayKey,
+    apiKey: codexAPIKey,
     baseUrl: draft.codex.baseUrl,
     model: draft.codex.model,
     reasoningEffort: draft.codex.reasoningEffort,

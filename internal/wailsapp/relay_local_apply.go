@@ -47,7 +47,7 @@ func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*Rel
 		return nil, err
 	}
 
-	if strings.TrimSpace(normalized.APIKey) != "" {
+	if strings.TrimSpace(normalized.APIKey) != "" && !normalized.SkipRelayKeyMetadata {
 		metadata, err := loadRelayServiceAPIKeyMetadata()
 		if err != nil {
 			return nil, err
@@ -164,6 +164,7 @@ func normalizeRelayLocalApplyInput(input RelayLocalApplyInput) (RelayLocalApplyI
 		ProviderName:          normalizedProviderName,
 		SupportsWebsockets:    input.SupportsWebsockets,
 		AuthStrategy:          authStrategy,
+		SkipRelayKeyMetadata:  input.SkipRelayKeyMetadata,
 	}, nil
 }
 

@@ -63,6 +63,7 @@ test('OpenAI API key account generates Codex API key draft', () => {
     account: account({
       provider: 'openai',
       credentialSource: 'api-key',
+      apiKey: 'sk-current-openai-account',
       baseUrl: 'https://api.openai.com/v1',
       supportedFormats: ['openai_responses'],
       models: [{ name: 'gpt-5.5', alias: 'GT' }],
@@ -79,9 +80,34 @@ test('OpenAI API key account generates Codex API key draft', () => {
   assert.equal(actions[0].target, 'codex');
   assert.equal(actions[0].draft.target, 'codex');
   assert.equal(actions[0].draft.codex.authStrategy, 'replace_auth_with_apikey');
+  assert.equal(actions[0].draft.codex.apiKey, 'sk-current-openai-account');
+  assert.equal(actions[0].draft.codex.baseUrl, 'https://api.openai.com/v1');
   assert.equal(actions[0].draft.codex.providerID, 'team-codex-relay');
   assert.equal(actions[0].draft.codex.model, 'GT');
   assert.equal(actions[0].draft.codex.reasoningEffort, 'xhigh');
+});
+
+test('Codex API key account apply does not require a relay key', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      provider: 'openai',
+      credentialSource: 'api-key',
+      apiKey: 'sk-current-openai-account',
+      baseUrl: 'https://api.openai.com/v1',
+      supportedFormats: ['openai_responses'],
+    }),
+    relayKeyItems: [],
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 1);
+  assert.equal(actions[0].target, 'codex');
+  assert.equal(actions[0].enabled, true);
+  assert.equal(actions[0].draft.target, 'codex');
+  assert.equal(actions[0].draft.codex.apiKey, 'sk-current-openai-account');
 });
 
 test('OpenAI auth-file account generates fixed OAuth auth draft', () => {

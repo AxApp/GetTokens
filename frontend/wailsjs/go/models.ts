@@ -2704,6 +2704,7 @@ export namespace main {
 	    providerName: string;
 	    supportsWebsockets: boolean;
 	    authStrategy: string;
+	    skipRelayKeyMetadata?: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new RelayLocalApplyInput(source);
@@ -2720,6 +2721,7 @@ export namespace main {
 	        this.providerName = source["providerName"];
 	        this.supportsWebsockets = source["supportsWebsockets"];
 	        this.authStrategy = source["authStrategy"];
+	        this.skipRelayKeyMetadata = source["skipRelayKeyMetadata"];
 	    }
 	}
 	export class RelayLocalApplyResult {

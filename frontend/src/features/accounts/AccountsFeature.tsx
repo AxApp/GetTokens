@@ -533,7 +533,17 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     }
     const relayKey = String(relayKeyItems[draft.source.relayKeyIndex]?.value || '').trim();
     const codexUsesOAuthAuthFile = draft.target === 'codex' && draft.codex.authStrategy === 'replace_auth_with_oauth';
-    if (!relayKey && !codexUsesOAuthAuthFile) {
+    const codexUsesAccountAPIKey = draft.target === 'codex' && draft.codex.authStrategy === 'replace_auth_with_apikey';
+    const codexAPIKey = codexUsesAccountAPIKey ? String(draft.codex.apiKey || '').trim() : relayKey;
+    if (draft.target === 'codex' && codexUsesAccountAPIKey && !codexAPIKey) {
+      setLocalCliApplyMessage('当前账号缺少 API Key，不能写入 Codex。');
+      return;
+    }
+    if (draft.target !== 'codex' && !relayKey) {
+      setLocalCliApplyMessage('缺少 GetTokens relay key，不能写入本机 CLI 配置。');
+      return;
+    }
+    if (draft.target === 'codex' && !codexAPIKey && !codexUsesOAuthAuthFile) {
       setLocalCliApplyMessage('缺少 GetTokens relay key，不能写入本机 CLI 配置。');
       return;
     }
@@ -558,7 +568,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         const result = await trackRequest(
           'ApplyRelayServiceConfigToLocalV2',
           {
-            apiKey: relayKey,
+            apiKey: codexAPIKey,
             authFileName: draft.codex.authFileName,
             baseURL: draft.codex.baseUrl,
             model: draft.codex.model,
@@ -566,10 +576,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             providerID: draft.codex.providerID,
             providerName: draft.codex.providerName,
             authStrategy: draft.codex.authStrategy,
+            skipRelayKeyMetadata: codexUsesAccountAPIKey,
           },
           () =>
             ApplyRelayServiceConfigToLocalV2({
-              apiKey: relayKey,
+              apiKey: codexAPIKey,
               authFileContentBase64,
               baseURL: draft.codex.baseUrl,
               model: draft.codex.model,
@@ -578,6 +589,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               providerName: draft.codex.providerName,
               supportsWebsockets: draft.codex.supportsWebsockets,
               authStrategy: draft.codex.authStrategy,
+              skipRelayKeyMetadata: codexUsesAccountAPIKey,
             }),
         );
         setLocalCliApplyMessage(`已写入 Codex：${result.configPath || result.codexHomePath}`);

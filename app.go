@@ -988,6 +988,7 @@ func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*Rel
 		ProviderName:          input.ProviderName,
 		SupportsWebsockets:    input.SupportsWebsockets,
 		AuthStrategy:          input.AuthStrategy,
+		SkipRelayKeyMetadata:  input.SkipRelayKeyMetadata,
 	})
 	if err != nil {
 		return nil, err

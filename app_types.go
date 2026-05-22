@@ -350,6 +350,7 @@ type RelayLocalApplyInput struct {
 	ProviderName          string `json:"providerName"`
 	SupportsWebsockets    bool   `json:"supportsWebsockets"`
 	AuthStrategy          string `json:"authStrategy"`
+	SkipRelayKeyMetadata  bool   `json:"skipRelayKeyMetadata,omitempty"`
 }
 
 type LocalCodexAuthState struct {
