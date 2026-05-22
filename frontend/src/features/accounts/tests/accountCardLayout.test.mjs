@@ -45,5 +45,7 @@ test('quota rows keep label and percentage together above the progress bar', asy
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
   assert.match(source, /account-card-quota-heading/);
+  assert.match(source, /className="grid gap-2\.5 border-b/);
+  assert.match(source, /className="account-card-quota-row grid min-w-0 gap-1\.5"/);
   assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
 });

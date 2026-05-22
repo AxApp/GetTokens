@@ -216,7 +216,7 @@ export function QuotaBars({ quotaDisplay, accentFillClass, t }: QuotaBarsProps) 
 
   return (
     <div
-      className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4"
+      className="grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3"
       aria-busy={refreshing}
       data-quota-refreshing={refreshing ? 'true' : undefined}
     >
@@ -224,8 +224,8 @@ export function QuotaBars({ quotaDisplay, accentFillClass, t }: QuotaBarsProps) 
         const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
 
         return (
-          <div key={window.id} className="account-card-quota-row grid min-w-0 gap-2">
-            <div className="account-card-quota-heading flex min-w-0 items-baseline justify-between gap-3">
+          <div key={window.id} className="account-card-quota-row grid min-w-0 gap-1.5">
+            <div className="account-card-quota-heading flex min-w-0 items-baseline justify-between gap-2">
               <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {window.label}
               </div>
