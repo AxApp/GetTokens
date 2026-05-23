@@ -58,6 +58,9 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
       label: window.label,
       remainingPercent,
       usedLabel: usedPercent === null ? '--' : `${usedPercent}%`,
+      usedTokens: normalizeQuotaTokenCount(window.usedTokens),
+      limitTokens: normalizeQuotaTokenCount(window.limitTokens),
+      remainingTokens: normalizeQuotaTokenCount(window.remainingTokens),
       resetLabel: window.resetLabel || '--',
       resetAtUnix: typeof window.resetAtUnix === 'number' ? window.resetAtUnix : undefined,
     };
@@ -174,6 +177,13 @@ export function normalizePercent(value: number | null | undefined) {
     return null;
   }
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+export function normalizeQuotaTokenCount(value: number | null | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value) || value < 0) {
+    return undefined;
+  }
+  return Math.round(value);
 }
 
 export function createPlaceholderWindows(): QuotaWindowDisplay[] {

@@ -192,6 +192,15 @@ func TestBuildCodexQuotaResponseFromUsagePayloadParsesXiaomiMiMoTokenPlanUsage(t
 	if got := *result.Windows[0].RemainingPercent; got != 88 {
 		t.Fatalf("plan remaining = %d, want 88", got)
 	}
+	if result.Windows[0].UsedTokens == nil || *result.Windows[0].UsedTokens != 125 {
+		t.Fatalf("plan used tokens = %#v, want 125", result.Windows[0].UsedTokens)
+	}
+	if result.Windows[0].LimitTokens == nil || *result.Windows[0].LimitTokens != 1000 {
+		t.Fatalf("plan limit tokens = %#v, want 1000", result.Windows[0].LimitTokens)
+	}
+	if result.Windows[0].RemainingTokens == nil || *result.Windows[0].RemainingTokens != 875 {
+		t.Fatalf("plan remaining tokens = %#v, want 875", result.Windows[0].RemainingTokens)
+	}
 	if result.Windows[1].ID != "mimo-month-total-token" || result.Windows[1].Label != "MONTH" {
 		t.Fatalf("month window = %#v", result.Windows[1])
 	}

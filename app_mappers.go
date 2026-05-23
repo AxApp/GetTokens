@@ -103,6 +103,9 @@ func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaRespo
 			ID:               window.ID,
 			Label:            window.Label,
 			RemainingPercent: window.RemainingPercent,
+			UsedTokens:       window.UsedTokens,
+			LimitTokens:      window.LimitTokens,
+			RemainingTokens:  window.RemainingTokens,
 			ResetLabel:       window.ResetLabel,
 			ResetAtUnix:      window.ResetAtUnix,
 		})

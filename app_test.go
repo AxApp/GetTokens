@@ -155,13 +155,19 @@ func findMenuItemByLabelInItem(item *menu.MenuItem, label string) *menu.MenuItem
 }
 
 func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {
+	usedTokens := 125.0
+	limitTokens := 1000.0
+	remainingTokens := 875.0
 	result := mapCodexQuotaResponse(&wailsapp.CodexQuotaResponse{
 		PlanType: "metered",
 		Windows: []wailsapp.CodexQuotaWindow{
 			{
-				ID:         "weekly",
-				Label:      "7D",
-				ResetLabel: "tomorrow",
+				ID:              "weekly",
+				Label:           "7D",
+				UsedTokens:      &usedTokens,
+				LimitTokens:     &limitTokens,
+				RemainingTokens: &remainingTokens,
+				ResetLabel:      "tomorrow",
 			},
 		},
 		Billing: &wailsapp.CodexQuotaBillingInfo{
@@ -190,5 +196,14 @@ func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {
 	}
 	if got := result.Billing.BalanceInfos[0].Currency; got != "USD" {
 		t.Fatalf("mapCodexQuotaResponse currency = %q, want %q", got, "USD")
+	}
+	if result.Windows[0].UsedTokens == nil || *result.Windows[0].UsedTokens != 125 {
+		t.Fatalf("mapCodexQuotaResponse used tokens = %#v, want 125", result.Windows[0].UsedTokens)
+	}
+	if result.Windows[0].LimitTokens == nil || *result.Windows[0].LimitTokens != 1000 {
+		t.Fatalf("mapCodexQuotaResponse limit tokens = %#v, want 1000", result.Windows[0].LimitTokens)
+	}
+	if result.Windows[0].RemainingTokens == nil || *result.Windows[0].RemainingTokens != 875 {
+		t.Fatalf("mapCodexQuotaResponse remaining tokens = %#v, want 875", result.Windows[0].RemainingTokens)
 	}
 }

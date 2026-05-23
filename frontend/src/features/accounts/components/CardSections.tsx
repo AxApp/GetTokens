@@ -1,5 +1,7 @@
+import { useState } from 'react';
+import type { MouseEvent } from 'react';
 import type { ApiFormat, BillingDisplay } from '../../../types';
-import type { AccountRecord, QuotaDisplay, Translator } from '../model/types';
+import type { AccountRecord, QuotaDisplay, QuotaWindowDisplay, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import { formatLabel } from '../model/vendorPresetHelpers';
@@ -209,19 +211,41 @@ interface QuotaBarsProps {
   t: Translator;
 }
 
+type QuotaBarsDisplayMode = 'percent' | 'tokens';
+
 export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
   const windows = quotaDisplay.windows ?? [];
+  const [displayMode, setDisplayMode] = useState<QuotaBarsDisplayMode>('percent');
   if (windows.length === 0) return null;
   const refreshing = quotaDisplay.refreshing === true;
+  const hasTokenProgress = windows.some(hasQuotaTokenProgress);
+
+  const handleToggleDisplayMode = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!hasTokenProgress) return;
+    setDisplayMode((current) => current === 'percent' ? 'tokens' : 'percent');
+  };
 
   return (
     <div
       className="grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3"
       aria-busy={refreshing}
       data-quota-refreshing={refreshing ? 'true' : undefined}
+      data-quota-display-mode={displayMode}
     >
       {windows.map((window) => {
         const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
+        const valueLabel = displayMode === 'tokens' && hasQuotaTokenProgress(window)
+          ? formatQuotaTokenProgress(window)
+          : formatQuotaPercent(window);
+        const fillPercent = displayMode === 'tokens' && hasQuotaTokenProgress(window)
+          ? resolveQuotaTokenFillPercent(window)
+          : window.remainingPercent;
+        const fillClass = fillPercent === null
+          ? ''
+          : window.remainingPercent !== null
+            ? resolveQuotaRemainingFillClass(window.remainingPercent)
+            : resolveQuotaRemainingFillClass(Math.max(0, 100 - fillPercent));
 
         return (
           <div key={window.id} className="account-card-quota-row grid min-w-0 gap-1.5">
@@ -229,9 +253,21 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
               <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {window.label}
               </div>
-              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
-                {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
-              </div>
+              {hasTokenProgress ? (
+                <button
+                  type="button"
+                  className="shrink-0 cursor-pointer text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:underline"
+                  aria-pressed={displayMode === 'tokens'}
+                  title={`${formatQuotaPercent(window)} / ${formatQuotaTokenProgress(window)}`}
+                  onClick={handleToggleDisplayMode}
+                >
+                  {valueLabel}
+                </button>
+              ) : (
+                <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                  {valueLabel}
+                </div>
+              )}
             </div>
             <div className="grid min-w-0 gap-1">
               <div
@@ -242,10 +278,10 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
                     : 'none',
                 }}
               >
-                {window.remainingPercent !== null ? (
+                {fillPercent !== null ? (
                   <div
-                    className={`absolute inset-y-0 left-0 ${resolveQuotaRemainingFillClass(window.remainingPercent)}`}
-                    style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
+                    className={`absolute inset-y-0 left-0 ${fillClass}`}
+                    style={{ width: `${Math.max(0, fillPercent)}%` }}
                   />
                 ) : null}
                 {refreshing ? (
@@ -265,6 +301,28 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
       })}
     </div>
   );
+}
+
+function hasQuotaTokenProgress(window: QuotaWindowDisplay) {
+  return typeof window.usedTokens === 'number' && typeof window.limitTokens === 'number' && window.limitTokens > 0;
+}
+
+function formatQuotaPercent(window: QuotaWindowDisplay) {
+  return window.remainingPercent === null ? '--' : `${window.remainingPercent}%`;
+}
+
+function formatQuotaTokenProgress(window: QuotaWindowDisplay) {
+  if (!hasQuotaTokenProgress(window)) {
+    return formatQuotaPercent(window);
+  }
+  return `${formatTokenMetric(window.usedTokens)} / ${formatTokenMetric(window.limitTokens)}`;
+}
+
+function resolveQuotaTokenFillPercent(window: QuotaWindowDisplay) {
+  if (!hasQuotaTokenProgress(window)) {
+    return window.remainingPercent;
+  }
+  return Math.max(0, Math.min(100, Math.round((window.usedTokens! / window.limitTokens!) * 100)));
 }
 
 // ── Billing Balance ─────────────────────────────────────────────────

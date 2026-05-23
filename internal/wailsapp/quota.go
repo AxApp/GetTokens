@@ -112,6 +112,9 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 			ID:               window.ID,
 			Label:            window.Label,
 			RemainingPercent: window.RemainingPercent,
+			UsedTokens:       window.UsedTokens,
+			LimitTokens:      window.LimitTokens,
+			RemainingTokens:  window.RemainingTokens,
 			ResetLabel:       window.ResetLabel,
 			ResetAtUnix:      window.ResetAtUnix,
 		})
@@ -276,6 +279,9 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 			ID:               window.ID,
 			Label:            window.Label,
 			RemainingPercent: window.RemainingPercent,
+			UsedTokens:       window.UsedTokens,
+			LimitTokens:      window.LimitTokens,
+			RemainingTokens:  window.RemainingTokens,
 			ResetLabel:       window.ResetLabel,
 			ResetAtUnix:      window.ResetAtUnix,
 		})

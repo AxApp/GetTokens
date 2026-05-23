@@ -85,3 +85,13 @@ test('quota rows keep label and percentage together above the progress bar', asy
   assert.match(source, /className="account-card-quota-row grid min-w-0 gap-1\.5"/);
   assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
 });
+
+test('quota bars can toggle from percent to token progress when token counts exist', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /useState<QuotaBarsDisplayMode>\('percent'\)/);
+  assert.match(source, /data-quota-display-mode=\{displayMode\}/);
+  assert.match(source, /setDisplayMode\(\(current\) => current === 'percent' \? 'tokens' : 'percent'\)/);
+  assert.match(source, /formatQuotaTokenProgress\(window\)/);
+  assert.match(source, /event\.stopPropagation\(\)/);
+});

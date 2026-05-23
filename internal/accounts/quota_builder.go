@@ -62,14 +62,54 @@ func newCodexQuotaWindow(id string, label string, window *codexUsageWindow, limi
 	resetLabel := formatCodexResetLabel(window)
 	usedPercent := numberValue(firstNonNil(window.UsedPercent, window.UsedPercentCamel))
 	remainingPercent := remainingPercentFromUsed(usedPercent, limitReached, allowed, resetLabel)
+	usedTokens, limitTokens, remainingTokens := quotaTokenProgressFromWindow(window)
 
 	return &CodexQuotaWindow{
 		ID:               id,
 		Label:            label,
 		RemainingPercent: remainingPercent,
+		UsedTokens:       usedTokens,
+		LimitTokens:      limitTokens,
+		RemainingTokens:  remainingTokens,
 		ResetLabel:       resetLabel,
 		ResetAtUnix:      resetAtUnix,
 	}
+}
+
+func quotaTokenProgressFromWindow(window *codexUsageWindow) (*float64, *float64, *float64) {
+	if window == nil {
+		return nil, nil, nil
+	}
+
+	return normalizeQuotaTokenProgress(
+		numberValue(firstNonNil(window.UsedTokens, window.UsedTokensCamel)),
+		numberValue(firstNonNil(window.LimitTokens, window.LimitTokensCamel)),
+		numberValue(firstNonNil(window.RemainingTokens, window.RemainingTokensCamel)),
+	)
+}
+
+func normalizeQuotaTokenProgress(used *float64, limit *float64, remaining *float64) (*float64, *float64, *float64) {
+	if used != nil && *used < 0 {
+		used = nil
+	}
+	if limit != nil && *limit <= 0 {
+		limit = nil
+	}
+	if remaining != nil && *remaining < 0 {
+		remaining = nil
+	}
+	if remaining == nil && used != nil && limit != nil {
+		value := clampNumber(*limit-*used, 0, *limit)
+		remaining = &value
+	}
+	if used == nil && remaining != nil && limit != nil {
+		value := clampNumber(*limit-*remaining, 0, *limit)
+		used = &value
+	}
+	if used == nil || limit == nil {
+		return used, limit, remaining
+	}
+	return used, limit, remaining
 }
 
 func classifyCodexWindows(info *codexRateLimitInfo) (*codexUsageWindow, *codexUsageWindow) {
@@ -256,6 +296,11 @@ func parseCachedCodexQuota(body []byte) *CodexQuotaResponse {
 		}
 
 		usedPercent := numberValue(firstNonNil(window["usedPercent"], window["used_percent"]))
+		usedTokens, limitTokens, remainingTokens := normalizeQuotaTokenProgress(
+			numberValue(firstNonNil(window["usedTokens"], window["used_tokens"])),
+			numberValue(firstNonNil(window["limitTokens"], window["limit_tokens"])),
+			numberValue(firstNonNil(window["remainingTokens"], window["remaining_tokens"])),
+		)
 		var remainingPercent *int
 		if usedPercent != nil {
 			remaining := int(roundNumber(clampNumber(100-*usedPercent, 0, 100)))
@@ -281,6 +326,9 @@ func parseCachedCodexQuota(body []byte) *CodexQuotaResponse {
 			ID:               spec.id,
 			Label:            spec.label,
 			RemainingPercent: remainingPercent,
+			UsedTokens:       usedTokens,
+			LimitTokens:      limitTokens,
+			RemainingTokens:  remainingTokens,
 			ResetLabel:       resetLabel,
 			ResetAtUnix:      resetAtUnix,
 		})

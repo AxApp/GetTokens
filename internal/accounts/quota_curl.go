@@ -212,11 +212,19 @@ func xiaomiMiMoQuotaWindow(id string, label string, group xiaomiMiMoUsageGroup, 
 		return nil
 	}
 	remaining := int(roundNumber(clampNumber(100-*usedPercent, 0, 100)))
+	usedTokens, limitTokens, remainingTokens := normalizeQuotaTokenProgress(
+		numberValue(item.Used),
+		numberValue(item.Limit),
+		nil,
+	)
 
 	return &CodexQuotaWindow{
 		ID:               id,
 		Label:            label,
 		RemainingPercent: &remaining,
+		UsedTokens:       usedTokens,
+		LimitTokens:      limitTokens,
+		RemainingTokens:  remainingTokens,
 		ResetLabel:       "-",
 	}
 }

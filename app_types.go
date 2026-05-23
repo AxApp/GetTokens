@@ -48,11 +48,14 @@ type CompleteCodexOAuthInput struct {
 }
 
 type CodexQuotaWindow struct {
-	ID               string `json:"id"`
-	Label            string `json:"label"`
-	RemainingPercent *int   `json:"remainingPercent,omitempty"`
-	ResetLabel       string `json:"resetLabel"`
-	ResetAtUnix      int64  `json:"resetAtUnix,omitempty"`
+	ID               string   `json:"id"`
+	Label            string   `json:"label"`
+	RemainingPercent *int     `json:"remainingPercent,omitempty"`
+	UsedTokens       *float64 `json:"usedTokens,omitempty"`
+	LimitTokens      *float64 `json:"limitTokens,omitempty"`
+	RemainingTokens  *float64 `json:"remainingTokens,omitempty"`
+	ResetLabel       string   `json:"resetLabel"`
+	ResetAtUnix      int64    `json:"resetAtUnix,omitempty"`
 }
 
 type CodexQuotaResponse struct {

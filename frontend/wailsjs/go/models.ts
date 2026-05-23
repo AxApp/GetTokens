@@ -2055,18 +2055,24 @@ export namespace main {
 	    id: string;
 	    label: string;
 	    remainingPercent?: number;
+	    usedTokens?: number;
+	    limitTokens?: number;
+	    remainingTokens?: number;
 	    resetLabel: string;
 	    resetAtUnix?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaWindow(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.label = source["label"];
 	        this.remainingPercent = source["remainingPercent"];
+	        this.usedTokens = source["usedTokens"];
+	        this.limitTokens = source["limitTokens"];
+	        this.remainingTokens = source["remainingTokens"];
 	        this.resetLabel = source["resetLabel"];
 	        this.resetAtUnix = source["resetAtUnix"];
 	    }

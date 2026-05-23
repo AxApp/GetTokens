@@ -12,6 +12,9 @@ type CodexQuotaWindow struct {
 	ID               string
 	Label            string
 	RemainingPercent *int
+	UsedTokens       *float64
+	LimitTokens      *float64
+	RemainingTokens  *float64
 	ResetLabel       string
 	ResetAtUnix      int64
 }
@@ -23,8 +26,8 @@ type CodexQuotaResponse struct {
 }
 
 type CodexQuotaBilling struct {
-	IsAvailable     bool                    `json:"isAvailable"`
-	BalanceInfos    []CodexQuotaBalanceInfo `json:"balanceInfos"`
+	IsAvailable  bool                    `json:"isAvailable"`
+	BalanceInfos []CodexQuotaBalanceInfo `json:"balanceInfos"`
 }
 
 type CodexQuotaBalanceInfo struct {
@@ -88,6 +91,12 @@ type codexRateLimitInfo struct {
 type codexUsageWindow struct {
 	UsedPercent          interface{} `json:"used_percent"`
 	UsedPercentCamel     interface{} `json:"usedPercent"`
+	UsedTokens           interface{} `json:"used_tokens"`
+	UsedTokensCamel      interface{} `json:"usedTokens"`
+	LimitTokens          interface{} `json:"limit_tokens"`
+	LimitTokensCamel     interface{} `json:"limitTokens"`
+	RemainingTokens      interface{} `json:"remaining_tokens"`
+	RemainingTokensCamel interface{} `json:"remainingTokens"`
 	LimitWindowSeconds   interface{} `json:"limit_window_seconds"`
 	LimitWindowCamel     interface{} `json:"limitWindowSeconds"`
 	ResetAfterSeconds    interface{} `json:"reset_after_seconds"`
