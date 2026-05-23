@@ -78,8 +78,39 @@ export function getSelectedCodexLiveSession(
   return filterCodexLiveSessions({ sessions })[0];
 }
 
+export function getPrimaryCodexLiveRequest(session: CodexLiveSession): CodexLiveRequest | undefined {
+  const activeRequest = session.requests.find((item) => item.requestID === session.activeRequestID);
+  if (activeRequest) {
+    return activeRequest;
+  }
+
+  const lastRequest = session.requests.find((item) => item.requestID === session.lastRequestID);
+  if (lastRequest) {
+    return lastRequest;
+  }
+
+  let newestRequest: CodexLiveRequest | undefined;
+  for (const request of session.requests) {
+    if (!newestRequest) {
+      newestRequest = request;
+      continue;
+    }
+
+    if (request.sequence > newestRequest.sequence) {
+      newestRequest = request;
+      continue;
+    }
+
+    if (request.sequence === newestRequest.sequence && Date.parse(request.startedAt) > Date.parse(newestRequest.startedAt)) {
+      newestRequest = request;
+    }
+  }
+
+  return newestRequest;
+}
+
 export function buildCodexLiveDiagnosticSummary(session: CodexLiveSession, request?: CodexLiveRequest): string {
-  const selectedRequest = request ?? session.requests.find((item) => item.requestID === session.activeRequestID) ?? session.requests[0];
+  const selectedRequest = request ?? getPrimaryCodexLiveRequest(session);
   const redactedCount = selectedRequest?.error ? 5 : 4;
   const timeline = (selectedRequest?.timeline ?? session.recentEvents)
     .slice(0, 8)
@@ -95,7 +126,7 @@ export function buildCodexLiveDiagnosticSummary(session: CodexLiveSession, reque
     `client_request_id: ${selectedRequest?.clientRequestID || 'unknown'}`,
     `upstream_request_id: ${selectedRequest?.upstreamRequestID || 'unknown'}`,
     `model: ${selectedRequest?.model || session.model}`,
-    `auth: ${session.authID || 'unknown'} / ${session.authLabel || 'unknown'}`,
+    `auth: ${selectedRequest?.authID || session.authID || 'unknown'} / ${selectedRequest?.authLabel || session.authLabel || 'unknown'}`,
     `transport: downstream=${session.downstreamTransport} upstream=${session.upstreamTransport}`,
     `status: ${session.status}`,
     `fallback_inferred: ${session.fallbackInferred ? `true (${session.fallbackConfidence || 'unknown'})` : 'false'}`,

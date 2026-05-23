@@ -7,6 +7,7 @@ import type { SegmentedOption } from '../../../types';
 import {
   buildCodexLiveDiagnosticSummary,
   filterCodexLiveSessions,
+  getPrimaryCodexLiveRequest,
   getSelectedCodexLiveSession,
 } from '../model/selectors';
 import type {
@@ -15,7 +16,7 @@ import type {
   CodexLiveTransportFilter,
 } from '../model/types';
 import { SessionDetail } from './CodexLiveSessionDetail';
-import { getPrimarySessionRequest, SessionFeed } from './CodexLiveSessionFeed';
+import { SessionFeed } from './CodexLiveSessionFeed';
 import { SourceBadge } from './CodexLiveSessionSummary';
 
 interface CodexLiveSessionsWorkbenchProps {
@@ -62,7 +63,7 @@ export default function CodexLiveSessionsWorkbench({
     [query, snapshot.sessions, statusFilter, transportFilter],
   );
   const selectedSession = getSelectedCodexLiveSession(sessions, selectedSessionID);
-  const selectedRequest = selectedSession ? getPrimarySessionRequest(selectedSession) : undefined;
+  const selectedRequest = selectedSession ? getPrimaryCodexLiveRequest(selectedSession) : undefined;
   const diagnostic = selectedSession ? buildCodexLiveDiagnosticSummary(selectedSession, selectedRequest) : '';
   const filterLabel = buildCodexLiveFilterLabel(t, statusFilter, transportFilter, statusOptions, transportOptions);
 

@@ -5,6 +5,7 @@ import type {
 import {
   buildSessionRowSummary,
 } from './formatters';
+import { getPrimaryCodexLiveRequest } from '../model/selectors';
 import type { Translate } from './types';
 
 export function SessionFeed({
@@ -47,7 +48,7 @@ export function SessionFeed({
         ) : (
           <div className="divide-y divide-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)]">
             {sessions.map((session) => {
-              const request = getPrimarySessionRequest(session);
+              const request = getPrimaryCodexLiveRequest(session);
               const selected = session.sessionID === selectedSessionID;
               return (
                 <SessionRow
@@ -65,10 +66,6 @@ export function SessionFeed({
       </div>
     </div>
   );
-}
-
-export function getPrimarySessionRequest(session: CodexLiveSession): CodexLiveRequest | undefined {
-  return session.requests.find((request) => request.requestID === session.activeRequestID) ?? session.requests[0];
 }
 
 function SessionRow({

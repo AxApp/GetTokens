@@ -6,6 +6,7 @@ import {
   buildCodexLiveSessionSummary,
   filterCodexLiveSessions,
   formatCodexLiveTimingLine,
+  getPrimaryCodexLiveRequest,
   getSelectedCodexLiveSession,
 } from './model/selectors.ts';
 import { buildSessionRowSummary } from './components/formatters.ts';
@@ -100,6 +101,49 @@ test('buildSessionRowSummary falls back to unknown project and prefers http for 
 
   assert.equal(summary.sessionProjectLabel, 'codex_win_48f2 / 未知项目');
   assert.equal(summary.accountTransportLabel, 'team-codex@example.com / http');
+});
+
+test('getPrimaryCodexLiveRequest prefers active request, then last request, then newest sequence', () => {
+  const session = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0],
+    activeRequestID: '',
+    lastRequestID: 'gt-req-8913',
+    authID: 'auth-file:team-codex-legacy',
+    authLabel: 'legacy-session-account@example.com',
+    requests: [
+      {
+        ...codexLiveSessionsPreviewSnapshot.sessions[0].requests[0],
+        requestID: 'gt-req-8912',
+        sequence: 1,
+        authID: 'auth-file:team-codex-old',
+        authLabel: 'old-account@example.com',
+      },
+      {
+        ...codexLiveSessionsPreviewSnapshot.sessions[0].requests[0],
+        requestID: 'gt-req-8913',
+        sequence: 2,
+        authID: 'auth-file:team-codex-new',
+        authLabel: 'new-account@example.com',
+      },
+    ],
+  };
+
+  const selected = getPrimaryCodexLiveRequest(session);
+  assert.equal(selected?.requestID, 'gt-req-8913');
+
+  const rowSummary = buildSessionRowSummary(session, selected, (key) => {
+    if (key === 'codex_live_sessions.unknown_project') {
+      return 'unknown-project';
+    }
+    if (key === 'codex_live_sessions.unknown_auth') {
+      return 'unknown-auth';
+    }
+    return key;
+  });
+  assert.equal(rowSummary.accountTransportLabel, 'new-account@example.com / ws');
+
+  const diagnostic = buildCodexLiveDiagnosticSummary(session, selected);
+  assert.match(diagnostic, /auth: auth-file:team-codex-new \/ new-account@example.com/);
 });
 
 test('buildLiveSessionQuotaDisplay and billing display reuse account card shapes', () => {
