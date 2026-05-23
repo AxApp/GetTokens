@@ -87,6 +87,15 @@ gh run view <run-id> --log-failed
 9. 生成 `checksums.txt` 并发布五类 release assets。
 10. 若启用 Sparkle，则按架构生成并发布 `appcast-arm64.xml` 和 `appcast-amd64.xml`。
 
+## 发布状态口径
+
+发布状态分两层记录，不能混用：
+
+1. `CI 发布完成`：目标 tag 触发的 release workflow 已成功结束，GitHub Release 已创建，五类资产已挂载。此时可以说“版本已发布到 GitHub Release”。
+2. `可分发 DMG 验收完成`：从 GitHub Release 下载正式资产后，完成 checksum、Gatekeeper、stapler、app 签名、架构、bundle 版本和 Sparkle feed 校验。此时才可以说“可分发 DMG 已验收完成”。
+
+如果 CI 已绿但本地正式资产下载慢、下载方式异常或 post-release 验收未完成，状态应写为“已发布，分发验收待完成/被阻塞”，不要回退成“未发布”或误以为需要手工重新发版。
+
 ## sidecar 构建边界
 
 发布前必须从仓库维护的 fork 源码构建 sidecar：

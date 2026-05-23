@@ -134,6 +134,10 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 
 ## 6. Release Governance
 - **Scope**: Current release scope is macOS only.
+- **State Vocabulary**:
+  - "CI release published" means the release workflow completed successfully, the tag-backed GitHub Release exists, and the expected assets are attached.
+  - "Distributable DMG accepted" means the official GitHub Release assets were downloaded and passed checksum, Gatekeeper, stapler, app signature, architecture, bundle version, and Sparkle feed checks.
+  - Do not describe a CI-published release as "not published" just because post-release local DMG acceptance is still running or blocked. Report it as "已发布，分发验收待完成/被阻塞".
 - **Assets**:
   - `GetTokens_macOS_AppleSilicon.dmg`
   - `GetTokens_macOS_AppleSilicon.tar.gz`
