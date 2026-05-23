@@ -5,6 +5,7 @@ import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
 import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { buildQuotaDisplay, extractBilling } from '../../accounts/model/accountQuota';
+import { resolveAccountPlanLabel } from '../../accounts/model/accountPresentation';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import {
   ATTRIBUTION_CARD_BADGE_TONE_CLASS,
@@ -113,7 +114,8 @@ export function AccountOrderRow({
   const policyRankLabel = routePolicyState?.participates
     ? t('codex.account_list_policy_rank')
     : t('codex.account_list_policy_skipped');
-  const quotaDisplay = buildQuotaDisplay(buildCodexQuotaSummaryAccount(row), quotaState);
+  const quotaSummaryAccount = buildCodexQuotaSummaryAccount(row);
+  const quotaDisplay = buildQuotaDisplay(quotaSummaryAccount, quotaState);
   const billing = quotaState?.quota ? extractBilling(quotaState.quota) : undefined;
   const cardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'neutral') : 'critical';
   const listTone: AttributionCardTone = row.requestable ? (probeHit ? 'positive' : policyMuted ? 'warning' : 'positive') : 'critical';
@@ -124,6 +126,10 @@ export function AccountOrderRow({
     { label: `ORDER ${String(index + 1).padStart(2, '0')}` },
     { label: sourceKindLabel(t, row.sourceKind) },
   ];
+  const planLabel = resolveAccountPlanLabel(quotaSummaryAccount, quotaDisplay);
+  if (planLabel) {
+    badges.push({ label: planLabel });
+  }
   if (probeHit) {
     badges.push({ label: t('codex.account_list_probe_landed'), tone: 'positive' });
   } else if (!row.requestable) {

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildAccountAttributionBadges,
   buildAccountStabilitySummary,
   isCodexAuthFile,
   isCodexReauthEligible,
@@ -92,6 +93,28 @@ test('account detail runtime stats mirror card quota billing and usage values', 
   ]);
   assert.equal(formatRuntimeTokens(0), '—');
   assert.equal(formatRuntimeLatency(900), '900ms');
+});
+
+test('buildAccountAttributionBadges includes codex plan from quota before source formats', () => {
+  const badges = buildAccountAttributionBadges(
+    {
+      id: 'auth-file:codex.json',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'codex.json',
+      status: 'ACTIVE',
+      planType: 'free',
+      supportedFormats: ['openai_responses', 'anthropic'],
+    },
+    {
+      status: 'success',
+      planType: 'plus',
+      windows: [{ id: 'weekly', label: '7D', remainingPercent: 80, usedLabel: '20%', resetLabel: 'soon' }],
+    },
+  );
+
+  assert.deepEqual(badges.map((badge) => badge.label), ['PLUS', 'OPENAI RESPONSES', 'ANTHROPIC']);
+  assert.deepEqual(badges.map((badge) => badge.shortLabel || badge.label), ['PLUS', 'OAI RESP', 'ANTH']);
 });
 
 test('mapAuthFileToRecord keeps auth file status message', () => {

@@ -4,6 +4,7 @@ import { buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accou
 import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import {
+  buildAccountAttributionBadges,
   isCodexReauthEligible,
   resolveAccountOperationalState,
   resolveAccountStatusTone,
@@ -104,23 +105,7 @@ export default function AccountCard({
         : statusTone === 'warning' || guardTone === 'warning'
           ? 'warning'
           : 'critical';
-  const badges: AttributionCardBadge[] = [];
-  const formats = account.supportedFormats && account.supportedFormats.length > 0
-    ? account.supportedFormats
-    : ['anthropic'];
-  for (const fmt of formats) {
-    badges.push({
-      label: fmt === 'anthropic'
-        ? 'ANTHROPIC'
-        : fmt === 'openai_chat'
-          ? 'OPENAI CHAT'
-          : fmt === 'openai_responses'
-            ? 'OPENAI RESPONSES'
-            : fmt === 'gemini_native'
-              ? 'GEMINI'
-              : fmt.toUpperCase(),
-    });
-  }
+  const badges: AttributionCardBadge[] = buildAccountAttributionBadges(account, quotaDisplay);
   if (account.disabled) {
     badges.push({ label: t('accounts.rotation_disabled_badge'), tone: 'critical' });
   }

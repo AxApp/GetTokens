@@ -2,6 +2,13 @@ import type { main } from '../../../../wailsjs/go/models';
 import type { AccountRecord, ApiFormat, AuthFile, CredentialSource } from '../../../types';
 import type { AccountUsageSummary } from './accountUsage';
 import type { AccountStabilitySummary, QuotaDisplay, Translator } from './types';
+import { formatLabel, formatShortLabel } from './vendorPresetHelpers.ts';
+
+export interface AccountAttributionBadge {
+  label: string;
+  shortLabel?: string;
+  tone?: 'neutral' | 'positive' | 'warning' | 'critical';
+}
 
 function resolveSupportedFormats(provider: string): ApiFormat[] {
   switch (provider.trim().toLowerCase()) {
@@ -302,6 +309,22 @@ export function resolveAccountPlanLabel(account: AccountRecord, quotaDisplay: Qu
     .trim()
     .toUpperCase();
   return plan || '';
+}
+
+export function buildAccountAttributionBadges(account: AccountRecord, quotaDisplay: QuotaDisplay): AccountAttributionBadge[] {
+  const badges: AccountAttributionBadge[] = [];
+  const planLabel = resolveAccountPlanLabel(account, quotaDisplay);
+  if (planLabel) {
+    badges.push({ label: planLabel });
+  }
+
+  const formats = account.supportedFormats && account.supportedFormats.length > 0
+    ? account.supportedFormats
+    : ['anthropic' as ApiFormat];
+  for (const format of formats) {
+    badges.push({ label: formatLabel(format), shortLabel: formatShortLabel(format) });
+  }
+  return badges;
 }
 
 export function resolveAccountPrimaryLabel(account: AccountRecord) {

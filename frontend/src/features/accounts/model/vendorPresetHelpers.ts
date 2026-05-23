@@ -42,6 +42,15 @@ export function formatLabel(fmt: ApiFormat): string {
   }
 }
 
+export function formatShortLabel(fmt: ApiFormat): string {
+  switch (fmt) {
+    case 'anthropic': return 'ANTH';
+    case 'openai_chat': return 'OAI CHAT';
+    case 'openai_responses': return 'OAI RESP';
+    case 'gemini_native': return 'GEM';
+  }
+}
+
 export function formatSupportedFormatsDisplay(formats: ApiFormat[]): string {
   return formats.map(formatLabel).join(' + ');
 }
