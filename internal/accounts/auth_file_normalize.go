@@ -10,6 +10,13 @@ func NormalizeAuthFileForSidecar(body []byte) ([]byte, bool, error) {
 		return nil, false, err
 	}
 
+	convertedFromSession := false
+	if converted, ok := convertSessionLikePayloadToCPA(payload); ok {
+		payload = converted
+		body = mustMarshalJSON(payload)
+		convertedFromSession = true
+	}
+
 	kind := InferAuthFileKind(body)
 	profile := ExtractAuthFileProfile(body)
 	tokens := nestedMap(payload, "tokens")
@@ -18,7 +25,16 @@ func NormalizeAuthFileForSidecar(body []byte) ([]byte, bool, error) {
 			"type": "codex",
 		}
 
-		for _, key := range []string{"access_token", "id_token", "refresh_token", "account_id"} {
+		for _, key := range []string{
+			"access_token",
+			"id_token",
+			"refresh_token",
+			"session_token",
+			"account_id",
+			"chatgpt_account_id",
+			"expired",
+			"last_refresh",
+		} {
 			value := firstNonEmpty(
 				stringValue(payload, key),
 				stringValue(tokens, key),
@@ -34,6 +50,12 @@ func NormalizeAuthFileForSidecar(body []byte) ([]byte, bool, error) {
 		if profile.PlanType != "" {
 			minimalPayload["plan_type"] = profile.PlanType
 		}
+		if value := stringValue(payload, "chatgpt_plan_type"); value != "" {
+			minimalPayload["chatgpt_plan_type"] = normalizePlanType(value)
+		}
+		if value, ok := payload["id_token_synthetic"].(bool); ok && value {
+			minimalPayload["id_token_synthetic"] = true
+		}
 		if priority := priorityValue(payload["priority"]); priority > 0 {
 			minimalPayload["priority"] = priority
 		}
@@ -48,6 +70,15 @@ func NormalizeAuthFileForSidecar(body []byte) ([]byte, bool, error) {
 
 	if kind != "" && stringValue(payload, "type") == "" {
 		payload["type"] = kind
+		normalized, err := json.MarshalIndent(payload, "", "  ")
+		if err != nil {
+			return nil, false, err
+		}
+		normalized = append(normalized, '\n')
+		return normalized, true, nil
+	}
+
+	if convertedFromSession {
 		normalized, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
 			return nil, false, err

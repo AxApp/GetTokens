@@ -48,6 +48,7 @@ export function mapBackendCodexLiveSessionsSnapshot(
 function mapBackendCodexLiveSession(session: main.CodexLiveSession): CodexLiveSession {
   return {
     sessionID: session.sessionID || '',
+    projectName: session.projectName || undefined,
     executionSessionID: session.executionSessionID || undefined,
     downstreamSessionID: session.downstreamSessionID || undefined,
     codexWindowID: session.codexWindowID || undefined,

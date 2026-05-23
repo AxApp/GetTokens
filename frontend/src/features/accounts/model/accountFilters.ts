@@ -3,6 +3,11 @@ import type { CredentialSource } from '../../../types';
 
 export const ACCOUNTS_FILTERS_STORAGE_KEY = 'gettokens.accountsFilters';
 
+export interface AccountsFilterSummaryPart {
+  kind: 'status' | 'resource' | 'source';
+  label: string;
+}
+
 export const defaultAccountsFilterState: AccountsFilterState = {
   source: 'all',
   requiresRequestable: false,
@@ -51,7 +56,7 @@ export function toggleAccountsFilterSource(
   return 'none';
 }
 
-export function resolveAccountsFilterState(value: unknown): AccountsFilterState {
+export function normalizeAccountsFilterState(value: unknown): AccountsFilterState {
   if (!value || typeof value !== 'object') {
     return defaultAccountsFilterState;
   }
@@ -67,13 +72,59 @@ export function resolveAccountsFilterState(value: unknown): AccountsFilterState 
   };
 }
 
+export const resolveAccountsFilterState = normalizeAccountsFilterState;
+
+export function applyAccountsFilterState(
+  base: AccountsFilterState,
+  patch: Partial<AccountsFilterState>,
+): AccountsFilterState {
+  return normalizeAccountsFilterState({
+    ...base,
+    ...patch,
+  });
+}
+
+export function summarizeAccountsFilterState(
+  t: (key: string) => string,
+  state: AccountsFilterState,
+): AccountsFilterSummaryPart[] {
+  const parts: AccountsFilterSummaryPart[] = [];
+
+  if (state.requiresRequestable) {
+    parts.push({ kind: 'status', label: t('accounts.filter_requestable_match') });
+  }
+  if (state.requiresError) {
+    parts.push({ kind: 'status', label: t('accounts.filter_error_match') });
+  }
+  if (state.requiresDisabled) {
+    parts.push({ kind: 'status', label: t('accounts.filter_disabled_match') });
+  }
+  if (state.hasLongestQuota) {
+    parts.push({ kind: 'resource', label: t('accounts.filter_longest_quota_match') });
+  }
+  if (state.hasBalance) {
+    parts.push({ kind: 'resource', label: t('accounts.filter_balance_match') });
+  }
+  if (state.source === 'none') {
+    parts.push({ kind: 'source', label: t('accounts.filter_source_none') });
+  }
+  if (state.source === 'auth-file') {
+    parts.push({ kind: 'source', label: t('accounts.source_auth_file') });
+  }
+  if (state.source === 'api-key') {
+    parts.push({ kind: 'source', label: t('accounts.source_api_key') });
+  }
+
+  return parts;
+}
+
 export function readStoredAccountsFilterState(storage: Pick<Storage, 'getItem'> | null | undefined): AccountsFilterState {
   try {
     const raw = storage?.getItem(ACCOUNTS_FILTERS_STORAGE_KEY);
     if (!raw) {
       return defaultAccountsFilterState;
     }
-    return resolveAccountsFilterState(JSON.parse(raw));
+    return normalizeAccountsFilterState(JSON.parse(raw));
   } catch {
     return defaultAccountsFilterState;
   }

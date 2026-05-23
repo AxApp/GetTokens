@@ -460,11 +460,16 @@ export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' =
 export function getUsageDeskPreviewProjectedUsage(workspace: 'codex' | 'claude' = 'codex') {
   if (workspace === 'claude') {
     return {
-      details: [],
-      scannedFiles: 0,
+      details: [
+        previewProjectedDetail({ provider: 'claude', projectName: 'GetTokens', sessionID: 'projects/-Users-linhey-Desktop-GetTokens/session-a.jsonl', daysAgo: 4, hour: 11, minute: 15, model: 'claude-opus-4-6', inputTokens: 210000, cachedInputTokens: 78000, outputTokens: 18000, requestCount: 2 }),
+        previewProjectedDetail({ provider: 'claude', projectName: 'GetTokens', sessionID: 'projects/-Users-linhey-Desktop-GetTokens/session-a.jsonl', daysAgo: 3, hour: 16, minute: 35, model: 'claude-sonnet-4-6', inputTokens: 180000, cachedInputTokens: 64000, outputTokens: 16000, requestCount: 2 }),
+        previewProjectedDetail({ provider: 'claude', projectName: 'CLIProxyAPI', sessionID: 'projects/-Users-linhey-Desktop-CLIProxyAPI/session-b.jsonl', daysAgo: 1, hour: 18, minute: 20, model: 'claude-sonnet-4-6', inputTokens: 96000, cachedInputTokens: 42000, outputTokens: 9000, requestCount: 1 }),
+        previewProjectedDetail({ provider: 'claude', projectName: 'GetTokens', sessionID: 'projects/-Users-linhey-Desktop-GetTokens/session-c.jsonl', daysAgo: 0, hour: 9, minute: 45, model: 'claude-haiku-4-5', inputTokens: 62000, cachedInputTokens: 18000, outputTokens: 6000, requestCount: 1 }),
+      ],
+      scannedFiles: 18,
       cacheHitFiles: 0,
       deltaAppendFiles: 0,
-      fullRebuildFiles: 0,
+      fullRebuildFiles: 18,
       fileMissingFiles: 0,
     };
   }
@@ -696,11 +701,13 @@ function previewObservedBucket(input: {
 }
 
 function previewProjectedDetail(input: {
+  provider?: 'codex' | 'claude';
   daysAgo: number;
   hour: number;
   minute: number;
   model: string;
   sessionID?: string;
+  projectName?: string;
   inputTokens: number;
   cachedInputTokens: number;
   outputTokens: number;
@@ -710,10 +717,10 @@ function previewProjectedDetail(input: {
   timestamp.setHours(input.hour, input.minute, 0, 0);
   return {
     timestamp: timestamp.toISOString(),
-    provider: 'codex',
+    provider: input.provider ?? 'codex',
     sourceKind: 'local_projected',
     sessionID: input.sessionID ?? `sessions/2026/05/preview-${input.daysAgo}-${input.hour}-${input.minute}.jsonl`,
-    projectName: 'GetTokens',
+    projectName: input.projectName ?? 'GetTokens',
     model: input.model,
     inputTokens: input.inputTokens,
     cachedInputTokens: input.cachedInputTokens,

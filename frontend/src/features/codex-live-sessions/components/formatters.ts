@@ -1,4 +1,5 @@
 import type {
+  CodexLiveRequest,
   CodexLiveSession,
   CodexLiveSessionStatus,
   CodexLiveTimelineEvent,
@@ -27,6 +28,30 @@ export function getConnectionLabel(session: CodexLiveSession, t: Translate): str
     return t('codex_live_sessions.connection_http');
   }
   return t('codex_live_sessions.connection_unknown');
+}
+
+export function buildSessionRowSummary(
+  session: CodexLiveSession,
+  request: CodexLiveRequest | undefined,
+  t: Translate,
+) {
+  const projectName = session.projectName?.trim() || t('codex_live_sessions.unknown_project');
+  const auth = request?.authLabel || session.authLabel || request?.authID || session.authID || t('codex_live_sessions.unknown_auth');
+
+  return {
+    sessionProjectLabel: `${session.sessionID} / ${projectName}`,
+    accountTransportLabel: `${auth} / ${getShortTransportLabel(session)}`,
+  };
+}
+
+function getShortTransportLabel(session: CodexLiveSession): 'http' | 'ws' | string {
+  if (session.fallbackInferred || session.downstreamTransport === 'http' || session.upstreamTransport === 'http') {
+    return 'http';
+  }
+  if (session.downstreamTransport === 'websocket' || session.upstreamTransport === 'websocket') {
+    return 'ws';
+  }
+  return 'unknown';
 }
 
 export function statusDotClass(status: CodexLiveSessionStatus): string {

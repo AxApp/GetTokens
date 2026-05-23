@@ -28,6 +28,7 @@ type App struct {
 	sidecarProxyPendingApply bool
 	localUsageMu             sync.RWMutex
 	localUsage               localUsageRuntimeState
+	claudeLocalUsage         localUsageRuntimeState
 	sessionMgmtMu            sync.RWMutex
 	sessionMgmt              sessionManagementRuntimeState
 	codexBinary              *codexbinary.Service

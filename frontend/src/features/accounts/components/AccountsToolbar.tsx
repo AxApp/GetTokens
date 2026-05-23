@@ -1,9 +1,11 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import SearchInput from '../../../components/ui/SearchInput';
 import {
+  applyAccountsFilterState,
   defaultAccountsFilterState,
   isAccountsFilterSourceSelected,
   toggleAccountsFilterSource,
+  summarizeAccountsFilterState,
 } from '../model/accountFilters';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountsFilterState, Translator } from '../model/types';
@@ -65,10 +67,7 @@ export default function AccountsToolbar({
   }, [isMenuOpen]);
 
   function toggleSourceFilter(source: CredentialSource) {
-    onFiltersChange({
-      ...filters,
-      source: toggleAccountsFilterSource(filters.source, source),
-    });
+    onFiltersChange(applyAccountsFilterState(filters, { source: toggleAccountsFilterSource(filters.source, source) }));
   }
 
   const statusOptions: ReadonlyArray<{ key: 'requiresRequestable' | 'requiresError' | 'requiresDisabled'; label: string }> = [
@@ -78,17 +77,11 @@ export default function AccountsToolbar({
   ];
 
   function toggleStatusFilter(key: 'requiresRequestable' | 'requiresError' | 'requiresDisabled') {
-    onFiltersChange({
-      ...filters,
-      [key]: !filters[key],
-    });
+    onFiltersChange(applyAccountsFilterState(filters, { [key]: !filters[key] }));
   }
 
   function toggleResourceFilter(key: 'hasBalance' | 'hasLongestQuota') {
-    onFiltersChange({
-      ...filters,
-      [key]: !filters[key],
-    });
+    onFiltersChange(applyAccountsFilterState(filters, { [key]: !filters[key] }));
   }
 
   return (
@@ -269,35 +262,10 @@ function FilterCheckOption({
 }
 
 function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState) {
-  const parts: string[] = [];
-
-  if (filters.requiresRequestable) {
-    parts.push(t('accounts.filter_requestable_match'));
-  }
-  if (filters.requiresError) {
-    parts.push(t('accounts.filter_error_match'));
-  }
-  if (filters.requiresDisabled) {
-    parts.push(t('accounts.filter_disabled_match'));
-  }
-  if (filters.hasLongestQuota) {
-    parts.push(t('accounts.filter_longest_quota_match'));
-  }
-  if (filters.hasBalance) {
-    parts.push(t('accounts.filter_balance_match'));
-  }
-  if (filters.source === 'none') {
-    parts.push(t('accounts.filter_source_none'));
-  }
-  if (filters.source === 'auth-file') {
-    parts.push(t('accounts.source_auth_file'));
-  }
-  if (filters.source === 'api-key') {
-    parts.push(t('accounts.source_api_key'));
-  }
+  const parts = summarizeAccountsFilterState(t, filters);
 
   if (parts.length === 0) {
     return t('accounts.display_filters');
   }
-  return `${t('accounts.display_filters')} · ${parts.join(' · ')}`;
+  return `${t('accounts.display_filters')} · ${parts.map((part) => part.label).join(' · ')}`;
 }

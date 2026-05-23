@@ -67,6 +67,8 @@ export function GetClaudeCodeSettingsSnapshot():Promise<main.ClaudeCodeSettingsS
 
 export function GetClaudeCodeSubagentsSnapshot():Promise<main.ClaudeCodeSubagentsSnapshotDTO>;
 
+export function GetClaudeLocalUsage():Promise<main.LocalProjectedUsageResponse>;
+
 export function GetCodexBinaryDoctor():Promise<codexbinary.DoctorSummary>;
 
 export function GetCodexBinarySnapshot():Promise<codexbinary.Snapshot>;
@@ -155,11 +157,17 @@ export function ProbeCodexAccountRouting(arg1:main.ProbeCodexAccountRoutingInput
 
 export function ProbeProxyNode(arg1:main.ProbeProxyNodeInput):Promise<main.ProbeProxyNodeResult>;
 
+export function RebuildClaudeLocalUsage():Promise<main.LocalProjectedUsageResponse>;
+
+export function RebuildClaudeLocalUsageDay(arg1:string):Promise<main.LocalProjectedUsageResponse>;
+
 export function RebuildCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function RebuildCodexLocalUsageDay(arg1:string):Promise<main.LocalProjectedUsageResponse>;
 
 export function RefreshClaudeCodeSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
+export function RefreshClaudeLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function RefreshCodexBinaryAvailable():Promise<codexbinary.Snapshot>;
 

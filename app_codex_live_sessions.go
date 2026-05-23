@@ -22,6 +22,7 @@ type CodexLiveSessionSummary struct {
 
 type CodexLiveSession struct {
 	SessionID           string                   `json:"sessionID"`
+	ProjectName         string                   `json:"projectName,omitempty"`
 	ExecutionSessionID  string                   `json:"executionSessionID,omitempty"`
 	DownstreamSessionID string                   `json:"downstreamSessionID,omitempty"`
 	CodexWindowID       string                   `json:"codexWindowID,omitempty"`
@@ -144,6 +145,7 @@ func mapCodexLiveSessions(items []wailsapp.CodexLiveSession) []CodexLiveSession 
 	for _, item := range items {
 		out = append(out, CodexLiveSession{
 			SessionID:           item.SessionID,
+			ProjectName:         item.ProjectName,
 			ExecutionSessionID:  item.ExecutionSessionID,
 			DownstreamSessionID: item.DownstreamSessionID,
 			CodexWindowID:       item.CodexWindowID,

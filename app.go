@@ -408,6 +408,38 @@ func (a *App) RebuildCodexLocalUsageDay(dayKey string) (*LocalProjectedUsageResp
 	return mapLocalProjectedUsageResponse(result), nil
 }
 
+func (a *App) GetClaudeLocalUsage() (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.GetClaudeLocalUsage()
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
+}
+
+func (a *App) RefreshClaudeLocalUsage() (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.RefreshClaudeLocalUsage()
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
+}
+
+func (a *App) RebuildClaudeLocalUsage() (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.RebuildClaudeLocalUsage()
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
+}
+
+func (a *App) RebuildClaudeLocalUsageDay(dayKey string) (*LocalProjectedUsageResponse, error) {
+	result, err := a.core.RebuildClaudeLocalUsageDay(dayKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapLocalProjectedUsageResponse(result), nil
+}
+
 func (a *App) GetCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
 	result, err := a.core.GetCodexSessionManagementSnapshot()
 	if err != nil {
@@ -1062,14 +1094,14 @@ func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {
 
 func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions) (*ClaudeCodeLocalApplyResult, error) {
 	result, err := a.core.ApplyClaudeCodeAPIKeyConfigToLocal(apiKey, baseURL, wailsapp.ClaudeCodeLocalApplyOptions{
-		Model:                      options.Model,
-		DefaultHaikuModel:          options.DefaultHaikuModel,
-		DefaultSonnetModel:         options.DefaultSonnetModel,
-		DefaultOpusModel:           options.DefaultOpusModel,
-		SmallFastModel:             options.SmallFastModel,
-		MaxOutputTokens:            options.MaxOutputTokens,
-		APITimeoutMS:               options.APITimeoutMS,
-		DisableNonEssentialTraffic: options.DisableNonEssentialTraffic,
+		Model:                       options.Model,
+		DefaultHaikuModel:           options.DefaultHaikuModel,
+		DefaultSonnetModel:          options.DefaultSonnetModel,
+		DefaultOpusModel:            options.DefaultOpusModel,
+		SmallFastModel:              options.SmallFastModel,
+		MaxOutputTokens:             options.MaxOutputTokens,
+		APITimeoutMS:                options.APITimeoutMS,
+		DisableNonEssentialTraffic:  options.DisableNonEssentialTraffic,
 		ClaudeCodeAttributionHeader: options.ClaudeCodeAttributionHeader,
 	})
 	if err != nil {
@@ -1186,7 +1218,6 @@ func (a *App) FetchOpenAICompatibleProviderModels(input FetchOpenAICompatiblePro
 		ResponseBody: result.ResponseBody,
 	}, nil
 }
-
 
 func (a *App) GetClaudeCodeMemoryFilesSnapshot() (*ClaudeCodeMemoryFilesSnapshotDTO, error) {
 	result, err := a.core.GetClaudeCodeMemoryFilesSnapshot()

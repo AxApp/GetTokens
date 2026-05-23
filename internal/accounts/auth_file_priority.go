@@ -36,6 +36,11 @@ func SetAuthFilePriority(body []byte, priority int) ([]byte, error) {
 
 func priorityValue(raw interface{}) int {
 	switch value := raw.(type) {
+	case int:
+		if value <= 0 {
+			return 0
+		}
+		return value
 	case float64:
 		if value <= 0 {
 			return 0

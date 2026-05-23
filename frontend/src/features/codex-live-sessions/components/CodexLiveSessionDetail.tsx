@@ -1,4 +1,5 @@
 import SnippetPre from '../../../components/ui/SnippetPre';
+import { BillingBalance, QuotaBars } from '../../accounts/components/CardSections';
 import { groupTimelineByLane } from '../model/selectors';
 import type {
   CodexLiveRequest,
@@ -13,6 +14,10 @@ import {
   severityDotClass,
   statusLabelKeys,
 } from './formatters';
+import {
+  buildLiveSessionBillingDisplay,
+  buildLiveSessionQuotaDisplay,
+} from './accountCardAdapters';
 import type { Translate } from './types';
 
 export function SessionDetail({
@@ -154,8 +159,8 @@ function AccountCard({ session, request, t }: { session: CodexLiveSession; reque
   const provider = request?.provider || session.provider;
   const proxyRoute = request?.proxyRoute;
   const usage = request?.usage;
-  const quota = request?.quota;
-  const billing = request?.billing;
+  const quotaDisplay = buildLiveSessionQuotaDisplay(request?.quota);
+  const billingDisplay = buildLiveSessionBillingDisplay(request?.billing);
 
   const accountRows: Array<[string, string]> = [
     [t('codex_live_sessions.account_label'), authLabel || authID || t('codex_live_sessions.unknown_auth')],
@@ -181,6 +186,18 @@ function AccountCard({ session, request, t }: { session: CodexLiveSession; reque
         ))}
       </div>
 
+      {quotaDisplay ? (
+        <div className="mt-4">
+          <QuotaBars quotaDisplay={quotaDisplay} t={t} />
+        </div>
+      ) : null}
+
+      {billingDisplay ? (
+        <div className="mt-4">
+          <BillingBalance billing={billingDisplay} />
+        </div>
+      ) : null}
+
       {usage != null ? (
         <div className="mt-4">
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -195,48 +212,6 @@ function AccountCard({ session, request, t }: { session: CodexLiveSession; reque
         </div>
       ) : null}
 
-      {(quota?.length ?? 0) > 0 ? (
-        <div className="mt-4">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-            {t('codex_live_sessions.quota')}
-          </div>
-          <div className="mt-2 grid gap-2">
-            {quota!.map((w, i) => (
-              <div key={i} className="grid grid-cols-[5rem_1fr_auto] items-center gap-3">
-                <span className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-                  {w.label}
-                </span>
-                <div className="relative h-3 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-main)]">
-                  {w.remainingPercent != null ? (
-                    <div
-                      className="absolute inset-y-0 left-0 bg-[var(--color-status-success)] transition-all"
-                      style={{ width: `${Math.max(0, Math.min(100, w.remainingPercent))}%` }}
-                    />
-                  ) : null}
-                </div>
-                <span className="text-right font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-primary)]">
-                  {w.remaining != null ? w.remaining.toLocaleString() : '—'} / {w.limit != null ? w.limit.toLocaleString() : '—'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {(billing?.length ?? 0) > 0 ? (
-        <div className="mt-4">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-            {t('codex_live_sessions.billing')}
-          </div>
-          <div className="mt-2 grid gap-x-5 gap-y-2 md:grid-cols-3">
-            {billing!.flatMap((b) => [
-              <BalanceStat key={`${b.currency}-total`} label={t('codex_live_sessions.balance_total')} value={`${b.totalBalance.toLocaleString()} ${b.currency}`} />,
-              <BalanceStat key={`${b.currency}-granted`} label={t('codex_live_sessions.balance_granted')} value={`${b.grantedBalance.toLocaleString()} ${b.currency}`} />,
-              <BalanceStat key={`${b.currency}-topped`} label={t('codex_live_sessions.balance_topped_up')} value={`${b.toppedUpBalance.toLocaleString()} ${b.currency}`} />,
-            ])}
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -250,15 +225,6 @@ function UsageStat({ label, value }: { label: string; value: number }) {
       <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">
         {label}
       </div>
-    </div>
-  );
-}
-
-function BalanceStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] py-1 text-[length:var(--font-size-ui-xs)]">
-      <span className="shrink-0 font-mono font-black uppercase text-[var(--text-muted)]">{label}</span>
-      <span className="truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
     </div>
   );
 }

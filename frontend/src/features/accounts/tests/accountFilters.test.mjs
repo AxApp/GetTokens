@@ -4,10 +4,13 @@ import { readFile } from 'node:fs/promises';
 
 import {
   ACCOUNTS_FILTERS_STORAGE_KEY,
+  applyAccountsFilterState,
   defaultAccountsFilterState,
   isAccountsFilterSourceSelected,
+  normalizeAccountsFilterState,
   persistAccountsFilterState,
   readStoredAccountsFilterState,
+  summarizeAccountsFilterState,
   toggleAccountsFilterSource,
 } from '../model/accountFilters.ts';
 
@@ -46,6 +49,74 @@ test('readStoredAccountsFilterState ignores legacy filter fields', () => {
       hasBalance: false,
       hasLongestQuota: true,
     },
+  );
+});
+
+test('normalizeAccountsFilterState keeps only supported fields and coercions', () => {
+  assert.deepEqual(
+    normalizeAccountsFilterState({
+      source: 'blocked-only',
+      requiresRequestable: 1,
+      requiresDisabled: true,
+      requiresError: 'yes',
+      hasBalance: true,
+      hasLongestQuota: false,
+      legacy: 'ignored',
+    }),
+    {
+      ...defaultAccountsFilterState,
+      source: 'all',
+      requiresDisabled: true,
+      hasBalance: true,
+    },
+  );
+});
+
+test('applyAccountsFilterState normalizes patched filter state', () => {
+  assert.deepEqual(
+    applyAccountsFilterState(
+      {
+        ...defaultAccountsFilterState,
+        source: 'api-key',
+        requiresRequestable: true,
+      },
+      {
+        source: 'none',
+        requiresError: true,
+        hasLongestQuota: true,
+        requiresDisabled: false,
+      },
+    ),
+    {
+      ...defaultAccountsFilterState,
+      source: 'none',
+      requiresRequestable: true,
+      requiresDisabled: false,
+      requiresError: true,
+      hasBalance: false,
+      hasLongestQuota: true,
+    },
+  );
+});
+
+test('summarizeAccountsFilterState keeps status, resource, and source parts in a stable order', () => {
+  assert.deepEqual(
+    summarizeAccountsFilterState((key) => key, {
+      source: 'auth-file',
+      requiresRequestable: true,
+      requiresDisabled: true,
+      requiresError: true,
+      hasBalance: true,
+      hasLongestQuota: true,
+    }).map((part) => [part.kind, part.label]),
+    [
+      ['status', 'accounts.filter_requestable_match'],
+      ['status', 'accounts.filter_error_match'],
+      ['status', 'accounts.filter_disabled_match'],
+      ['resource', 'accounts.filter_longest_quota_match'],
+      ['resource', 'accounts.filter_balance_match'],
+      ['source', 'accounts.source_auth_file'],
+    ],
   );
 });
 
@@ -92,11 +163,15 @@ test('AccountsToolbar keeps status, resource, and source filters in the new orde
   const labelStart = source.indexOf('function buildToolbarFilterLabel');
   assert.notEqual(labelStart, -1);
   const labelSource = source.slice(labelStart);
-  assertBefore("t('accounts.filter_requestable_match')", "t('accounts.filter_error_match')", labelSource);
-  assertBefore("t('accounts.filter_error_match')", "t('accounts.filter_disabled_match')", labelSource);
-  assertBefore("t('accounts.filter_disabled_match')", "t('accounts.filter_longest_quota_match')", labelSource);
-  assertBefore("t('accounts.filter_longest_quota_match')", "t('accounts.filter_balance_match')", labelSource);
-  assertBefore("t('accounts.filter_balance_match')", "t('accounts.filter_source_none')", labelSource);
+  assert.match(labelSource, /summarizeAccountsFilterState/);
+  assert.match(labelSource, /parts\.map\(\(part\) => part\.label\)/);
+  assert.doesNotMatch(labelSource, /parts\.push\(/);
+  assert.equal(labelSource.includes('accounts.filter_requestable_match'), false);
+  assert.equal(labelSource.includes('accounts.filter_error_match'), false);
+  assert.equal(labelSource.includes('accounts.filter_disabled_match'), false);
+  assert.equal(labelSource.includes('accounts.filter_longest_quota_match'), false);
+  assert.equal(labelSource.includes('accounts.filter_balance_match'), false);
+  assert.equal(labelSource.includes('accounts.filter_source_none'), false);
 });
 
 test('source filter toggles incrementally and all selected maps to all', () => {

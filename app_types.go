@@ -547,34 +547,61 @@ type AppRuntimeSettings struct {
 }
 
 type CodexFeatureDefinition struct {
-	Key            string `json:"key"`
-	Description    string `json:"description,omitempty"`
-	Stage          string `json:"stage"`
-	DefaultEnabled bool   `json:"defaultEnabled"`
-	CanonicalKey   string `json:"canonicalKey,omitempty"`
-	LegacyAlias    bool   `json:"legacyAlias,omitempty"`
+	Section        string   `json:"section"`
+	Key            string   `json:"key"`
+	ID             string   `json:"id,omitempty"`
+	Path           []string `json:"path,omitempty"`
+	Description    string   `json:"description,omitempty"`
+	Stage          string   `json:"stage"`
+	ValueType      string   `json:"valueType,omitempty"`
+	Options        []string `json:"options,omitempty"`
+	DefaultValue   any      `json:"defaultValue,omitempty"`
+	DefaultEnabled bool     `json:"defaultEnabled"`
+	CanonicalKey   string   `json:"canonicalKey,omitempty"`
+	LegacyAlias    bool     `json:"legacyAlias,omitempty"`
+	ReadOnly       bool     `json:"readOnly,omitempty"`
+	Unsupported    bool     `json:"unsupported,omitempty"`
 }
 
 type CodexFeatureConfigSnapshot struct {
-	CodexHomePath string                   `json:"codexHomePath"`
-	ConfigPath    string                   `json:"configPath"`
-	Exists        bool                     `json:"exists"`
-	Definitions   []CodexFeatureDefinition `json:"definitions"`
-	Values        map[string]bool          `json:"values"`
-	UnknownValues map[string]bool          `json:"unknownValues,omitempty"`
-	Raw           string                   `json:"raw"`
-	Warnings      []string                 `json:"warnings"`
+	CodexHomePath   string                   `json:"codexHomePath"`
+	ConfigPath      string                   `json:"configPath"`
+	Exists          bool                     `json:"exists"`
+	Definitions     []CodexFeatureDefinition `json:"definitions"`
+	Values          map[string]bool          `json:"values"`
+	TypedValues     map[string]any           `json:"typedValues,omitempty"`
+	RawValues       map[string]string        `json:"rawValues,omitempty"`
+	UnknownValues   map[string]bool          `json:"unknownValues,omitempty"`
+	UnknownSections map[string]string        `json:"unknownSections,omitempty"`
+	Raw             string                   `json:"raw"`
+	Warnings        []string                 `json:"warnings"`
 }
 
 type SaveCodexFeatureConfigInput struct {
-	Values map[string]bool `json:"values"`
+	Values  map[string]bool          `json:"values,omitempty"`
+	Changes []CodexConfigChangeInput `json:"changes,omitempty"`
+}
+
+type CodexConfigChangeInput struct {
+	ID        string   `json:"id,omitempty"`
+	Section   string   `json:"section,omitempty"`
+	Key       string   `json:"key,omitempty"`
+	Path      []string `json:"path,omitempty"`
+	ValueType string   `json:"valueType,omitempty"`
+	Value     any      `json:"value,omitempty"`
 }
 
 type CodexFeatureConfigChange struct {
-	Key             string `json:"key"`
-	Type            string `json:"type"`
-	PreviousEnabled *bool  `json:"previousEnabled,omitempty"`
-	NextEnabled     bool   `json:"nextEnabled"`
+	ID              string   `json:"id,omitempty"`
+	Section         string   `json:"section,omitempty"`
+	Key             string   `json:"key"`
+	Path            []string `json:"path,omitempty"`
+	ValueType       string   `json:"valueType,omitempty"`
+	Type            string   `json:"type"`
+	PreviousEnabled *bool    `json:"previousEnabled,omitempty"`
+	NextEnabled     bool     `json:"nextEnabled,omitempty"`
+	PreviousValue   any      `json:"previousValue,omitempty"`
+	NextValue       any      `json:"nextValue,omitempty"`
 }
 
 type CodexFeatureConfigPreview struct {

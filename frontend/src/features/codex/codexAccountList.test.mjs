@@ -30,10 +30,12 @@ import {
   CODEX_ORDER_SECTION_ACTION_MENU_GAP,
   DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+  applyCodexAccountOrderFilter,
   filterCodexAccountOrderRows,
   getCodexAccountOrderGridClass,
   normalizeCodexAccountOrderFilter,
   parseCodexAccountOrderDisplayMode,
+  summarizeCodexAccountOrderFilter,
   shouldUseCodexOrderSectionActionMenu,
 } from './model/codexAccountOrderSectionLayout.ts';
 import { getCodexAccountListPreviewRows } from './previewData.ts';
@@ -342,6 +344,67 @@ test('filterCodexAccountOrderRows hides blocked accounts without reordering visi
     normalizeCodexAccountOrderFilter({ ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresRequestable: true, requiresBlocked: true }),
     { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresRequestable: true, requiresBlocked: true },
   );
+  assert.deepEqual(
+    normalizeCodexAccountOrderFilter({
+      ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+      source: 'blocked-only',
+    }),
+    DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+  );
+});
+
+test('applyCodexAccountOrderFilter normalizes patched filter state', () => {
+  assert.deepEqual(
+    applyCodexAccountOrderFilter(
+      {
+        ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+        source: 'codex-auth-file',
+        requiresRequestable: true,
+      },
+      {
+        source: 'openai-compatible',
+        requiresBlocked: true,
+        requiresDisabled: true,
+        hasBalance: true,
+        hasLongestQuota: true,
+        requiresError: false,
+      },
+    ),
+    {
+      ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+      source: 'openai-compatible',
+      requiresRequestable: true,
+      requiresBlocked: true,
+      requiresDisabled: true,
+      hasBalance: true,
+      hasLongestQuota: true,
+      requiresError: false,
+    },
+  );
+});
+
+test('summarizeCodexAccountOrderFilter keeps status, resource, and source parts in a stable order', () => {
+  assert.deepEqual(
+    summarizeCodexAccountOrderFilter((key) => key, {
+      ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+      source: 'codex-api-key',
+      requiresRequestable: true,
+      requiresBlocked: true,
+      requiresDisabled: true,
+      requiresError: true,
+      hasBalance: true,
+      hasLongestQuota: true,
+    }).map((part) => [part.kind, part.label]),
+    [
+      ['status', 'codex.account_list_filter_requestable_match'],
+      ['status', 'codex.account_list_filter_blocked_match'],
+      ['status', 'codex.account_list_filter_disabled_match'],
+      ['status', 'codex.account_list_filter_error_match'],
+      ['resource', 'codex.account_list_filter_balance_match'],
+      ['resource', 'codex.account_list_filter_longest_quota_match'],
+      ['source', 'codex.account_list_source_api_key'],
+    ],
+  );
 });
 
 test('filterCodexAccountOrderRows syncs source, balance, disabled, error, and longest quota filters', () => {
@@ -479,6 +542,8 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
 
   assert.match(source, /account_list_filter_balance_match/);
   assert.match(source, /requiresBlocked/);
+  assert.match(source, /applyCodexAccountOrderFilter/);
+  assert.match(source, /summarizeCodexAccountOrderFilter/);
   assert.doesNotMatch(source, /blockedOnly/);
   assert.doesNotMatch(source, /requestableOnly/);
   assert.doesNotMatch(source, /disabledOnly/);

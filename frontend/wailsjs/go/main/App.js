@@ -126,6 +126,10 @@ export function GetClaudeCodeSubagentsSnapshot() {
   return window['go']['main']['App']['GetClaudeCodeSubagentsSnapshot']();
 }
 
+export function GetClaudeLocalUsage() {
+  return window['go']['main']['App']['GetClaudeLocalUsage']();
+}
+
 export function GetCodexBinaryDoctor() {
   return window['go']['main']['App']['GetCodexBinaryDoctor']();
 }
@@ -302,6 +306,14 @@ export function ProbeProxyNode(arg1) {
   return window['go']['main']['App']['ProbeProxyNode'](arg1);
 }
 
+export function RebuildClaudeLocalUsage() {
+  return window['go']['main']['App']['RebuildClaudeLocalUsage']();
+}
+
+export function RebuildClaudeLocalUsageDay(arg1) {
+  return window['go']['main']['App']['RebuildClaudeLocalUsageDay'](arg1);
+}
+
 export function RebuildCodexLocalUsage() {
   return window['go']['main']['App']['RebuildCodexLocalUsage']();
 }
@@ -312,6 +324,10 @@ export function RebuildCodexLocalUsageDay(arg1) {
 
 export function RefreshClaudeCodeSessionManagementSnapshot() {
   return window['go']['main']['App']['RefreshClaudeCodeSessionManagementSnapshot']();
+}
+
+export function RefreshClaudeLocalUsage() {
+  return window['go']['main']['App']['RefreshClaudeLocalUsage']();
 }
 
 export function RefreshCodexBinaryAvailable() {

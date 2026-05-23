@@ -25,6 +25,7 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 			"summary":{"activeSessions":1,"activeRequests":1,"websocketSessions":1,"httpSessions":0,"degradedSessions":0,"errorSessions":0},
 			"sessions":[{
 				"sessionID":"ws-session-1",
+				"projectName":"GetTokens",
 				"status":"streaming",
 				"startedAt":"2026-05-21T08:00:00Z",
 				"lastEventAt":"2026-05-21T08:00:02Z",
@@ -63,7 +64,7 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 		t.Fatalf("sessions = %d, want 1", len(snapshot.Sessions))
 	}
 	session := snapshot.Sessions[0]
-	if session.SessionID != "ws-session-1" || session.Requests[0].Timing.OutputTokensPerSecond != 42 {
+	if session.SessionID != "ws-session-1" || session.ProjectName != "GetTokens" || session.Requests[0].Timing.OutputTokensPerSecond != 42 {
 		t.Fatalf("unexpected session payload: %#v", session)
 	}
 }

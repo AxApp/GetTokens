@@ -8,6 +8,11 @@ import {
   formatCodexLiveTimingLine,
   getSelectedCodexLiveSession,
 } from './model/selectors.ts';
+import { buildSessionRowSummary } from './components/formatters.ts';
+import {
+  buildLiveSessionBillingDisplay,
+  buildLiveSessionQuotaDisplay,
+} from './components/accountCardAdapters.ts';
 import {
   buildCodexLiveSessionsInitialSnapshot,
   buildCodexLiveSessionsLoadFailureSnapshot,
@@ -64,6 +69,71 @@ test('buildCodexLiveSessionSummary derives counts from sessions', () => {
     httpSessions: 2,
     degradedSessions: 1,
     errorSessions: 1,
+  });
+});
+
+test('buildSessionRowSummary only exposes session project, account, and short protocol', () => {
+  const session = codexLiveSessionsPreviewSnapshot.sessions[0];
+  const summary = buildSessionRowSummary(session, session.requests[0], (key) => key);
+
+  assert.deepEqual(summary, {
+    sessionProjectLabel: 'ws_sess_7a91 / GetTokens',
+    accountTransportLabel: 'team-codex@example.com / ws',
+  });
+  assert.doesNotMatch(Object.values(summary).join(' '), /gpt-5\.5|streaming|8\.0s/);
+});
+
+test('buildSessionRowSummary falls back to unknown project and prefers http for degraded rows', () => {
+  const session = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[2],
+    projectName: '',
+  };
+  const summary = buildSessionRowSummary(session, session.requests[0], (key) => {
+    if (key === 'codex_live_sessions.unknown_project') {
+      return '未知项目';
+    }
+    if (key === 'codex_live_sessions.unknown_auth') {
+      return '未知账号';
+    }
+    return key;
+  });
+
+  assert.equal(summary.sessionProjectLabel, 'codex_win_48f2 / 未知项目');
+  assert.equal(summary.accountTransportLabel, 'team-codex@example.com / http');
+});
+
+test('buildLiveSessionQuotaDisplay and billing display reuse account card shapes', () => {
+  const quotaDisplay = buildLiveSessionQuotaDisplay([
+    { label: '30m', remaining: 12, limit: 40, remainingPercent: 30, resetLabel: '2026-05-23 12:00', resetAtUnix: 123 },
+  ]);
+  const billingDisplay = buildLiveSessionBillingDisplay([
+    { currency: 'USD', totalBalance: 10, grantedBalance: 7, toppedUpBalance: 3 },
+  ]);
+
+  assert.deepEqual(quotaDisplay, {
+    status: 'success',
+    planType: 'live',
+    windows: [
+      {
+        id: '0',
+        label: '30m',
+        remainingPercent: 30,
+        usedLabel: '12 / 40',
+        resetLabel: '2026-05-23 12:00',
+        resetAtUnix: 123,
+      },
+    ],
+  });
+  assert.deepEqual(billingDisplay, {
+    isAvailable: true,
+    balances: [
+      {
+        currency: 'USD',
+        totalBalance: '10',
+        grantedBalance: '7',
+        toppedUpBalance: '3',
+      },
+    ],
   });
 });
 

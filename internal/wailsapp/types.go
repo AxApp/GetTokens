@@ -49,11 +49,14 @@ type CompleteCodexOAuthInput struct {
 }
 
 type CodexQuotaWindow struct {
-	ID               string
-	Label            string
-	RemainingPercent *int
-	ResetLabel       string
-	ResetAtUnix      int64
+	ID               string   `json:"id"`
+	Label            string   `json:"label"`
+	RemainingPercent *int     `json:"remainingPercent,omitempty"`
+	UsedTokens       *float64 `json:"usedTokens,omitempty"`
+	LimitTokens      *float64 `json:"limitTokens,omitempty"`
+	RemainingTokens  *float64 `json:"remainingTokens,omitempty"`
+	ResetLabel       string   `json:"resetLabel"`
+	ResetAtUnix      int64    `json:"resetAtUnix,omitempty"`
 }
 
 type CodexQuotaResponse struct {
@@ -113,15 +116,15 @@ type ClaudeCodeLocalApplyResult struct {
 }
 
 type ClaudeCodeLocalApplyOptions struct {
-	Model                      string `json:"model,omitempty"`
-	DefaultHaikuModel          string `json:"defaultHaikuModel,omitempty"`
-	DefaultSonnetModel         string `json:"defaultSonnetModel,omitempty"`
-	DefaultOpusModel           string `json:"defaultOpusModel,omitempty"`
-	SmallFastModel             string `json:"smallFastModel,omitempty"`
-	MaxOutputTokens            string `json:"maxOutputTokens,omitempty"`
-	APITimeoutMS               string `json:"apiTimeoutMs,omitempty"`
-	DisableNonEssentialTraffic  bool `json:"disableNonEssentialTraffic,omitempty"`
-	ClaudeCodeAttributionHeader bool `json:"claudeCodeAttributionHeader,omitempty"`
+	Model                       string `json:"model,omitempty"`
+	DefaultHaikuModel           string `json:"defaultHaikuModel,omitempty"`
+	DefaultSonnetModel          string `json:"defaultSonnetModel,omitempty"`
+	DefaultOpusModel            string `json:"defaultOpusModel,omitempty"`
+	SmallFastModel              string `json:"smallFastModel,omitempty"`
+	MaxOutputTokens             string `json:"maxOutputTokens,omitempty"`
+	APITimeoutMS                string `json:"apiTimeoutMs,omitempty"`
+	DisableNonEssentialTraffic  bool   `json:"disableNonEssentialTraffic,omitempty"`
+	ClaudeCodeAttributionHeader bool   `json:"claudeCodeAttributionHeader,omitempty"`
 }
 
 type LocalProjectedUsageDetail struct {
@@ -149,6 +152,7 @@ type LocalProjectedUsageResponse struct {
 }
 
 type LocalProjectedUsageProgress struct {
+	Provider       string `json:"provider,omitempty"`
 	Phase          string `json:"phase"`
 	CurrentFile    string `json:"currentFile,omitempty"`
 	ProcessedFiles int    `json:"processedFiles"`

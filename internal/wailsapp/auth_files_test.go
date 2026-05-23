@@ -1,8 +1,11 @@
 package wailsapp
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"io"
+	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
@@ -115,6 +118,83 @@ func TestUniqueAuthFileUploadName(t *testing.T) {
 	}
 }
 
+func TestUploadAuthFilesConvertsChatGPTSessionToCPA(t *testing.T) {
+	const sessionBody = `{
+  "user": {"id": "user_123", "email": "tester@example.com"},
+  "expires": "2026-08-06T14:29:36.155Z",
+  "account": {"id": "acct_123", "planType": "plus"},
+  "accessToken": "access-token",
+  "sessionToken": "session-token"
+}`
+
+	var uploadedName string
+	var uploadedPayload map[string]interface{}
+
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
+				return []byte(`{"files":[],"total":0}`), http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/auth-files":
+				_, params, err := mime.ParseMediaType(contentType)
+				if err != nil {
+					t.Fatalf("ParseMediaType: %v", err)
+				}
+				reader := multipart.NewReader(body, params["boundary"])
+				part, err := reader.NextPart()
+				if err != nil {
+					t.Fatalf("NextPart: %v", err)
+				}
+				uploadedName = part.FileName()
+				raw, err := io.ReadAll(part)
+				if err != nil {
+					t.Fatalf("ReadAll upload part: %v", err)
+				}
+				if err := json.Unmarshal(raw, &uploadedPayload); err != nil {
+					t.Fatalf("uploaded payload is invalid json: %v; raw=%s", err, raw)
+				}
+				return []byte(`{"status":"ok"}`), http.StatusOK, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	err := app.UploadAuthFiles([]UploadFilePayload{{
+		Name:          "chatgpt-session.json",
+		ContentBase64: base64.StdEncoding.EncodeToString([]byte(sessionBody)),
+	}})
+	if err != nil {
+		t.Fatalf("UploadAuthFiles: %v", err)
+	}
+
+	if uploadedName != "chatgpt-session.json" {
+		t.Fatalf("uploaded filename = %q, want chatgpt-session.json", uploadedName)
+	}
+	if got := uploadedPayload["type"]; got != "codex" {
+		t.Fatalf("type = %#v, want codex", got)
+	}
+	if got := uploadedPayload["access_token"]; got != "access-token" {
+		t.Fatalf("access_token = %#v, want access-token", got)
+	}
+	if got := uploadedPayload["session_token"]; got != "session-token" {
+		t.Fatalf("session_token = %#v, want session-token", got)
+	}
+	if got := uploadedPayload["account_id"]; got != "acct_123" {
+		t.Fatalf("account_id = %#v, want acct_123", got)
+	}
+	if got := uploadedPayload["email"]; got != "tester@example.com" {
+		t.Fatalf("email = %#v, want tester@example.com", got)
+	}
+	if got := uploadedPayload["plan_type"]; got != "plus" {
+		t.Fatalf("plan_type = %#v, want plus", got)
+	}
+	if got := uploadedPayload["id_token_synthetic"]; got != true {
+		t.Fatalf("id_token_synthetic = %#v, want true", got)
+	}
+}
+
 func TestUpdateAuthFilePriorityPreservesDisabledStatus(t *testing.T) {
 	const fileName = "disabled.json"
 	const originalBody = `{"type":"codex","access_token":"token","priority":2}`
@@ -171,7 +251,7 @@ func TestUpdateAuthFilePriorityPreservesDisabledStatus(t *testing.T) {
 				if err != nil {
 					t.Fatalf("ReadAll upload body: %v", err)
 				}
-				if !strings.Contains(string(raw), `"priority":7`) {
+				if !strings.Contains(string(raw), `"priority": 7`) {
 					t.Fatalf("upload body should contain updated priority: %s", raw)
 				}
 				existingNames[fileName] = struct{}{}

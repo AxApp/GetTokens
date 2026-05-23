@@ -8,6 +8,10 @@ export const CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY = 'gettokens.codex.acc
 export type CodexAccountOrderDisplayMode = 'full' | 'compact' | 'list';
 export const DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE: CodexAccountOrderDisplayMode = 'compact';
 export type CodexAccountOrderFilterSource = 'all' | 'codex-auth-file' | 'codex-api-key' | 'openai-compatible';
+export interface CodexAccountOrderFilterSummaryPart {
+  kind: 'status' | 'resource' | 'source';
+  label: string;
+}
 export interface CodexAccountOrderFilter {
   source: CodexAccountOrderFilterSource;
   requiresRequestable: boolean;
@@ -58,6 +62,14 @@ export function parseCodexAccountOrderDisplayMode(value: string | null | undefin
   return DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE;
 }
 
+function resolveCodexAccountOrderFilterSource(
+  value: unknown,
+): CodexAccountOrderFilterSource {
+  return value === 'all' || value === 'codex-auth-file' || value === 'codex-api-key' || value === 'openai-compatible'
+    ? value
+    : 'all';
+}
+
 export function normalizeCodexAccountOrderFilter(
   filter: CodexAccountOrderFilter | 'all' | null | undefined,
 ): CodexAccountOrderFilter {
@@ -65,7 +77,7 @@ export function normalizeCodexAccountOrderFilter(
     return { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER };
   }
   return {
-    source: filter.source || DEFAULT_CODEX_ACCOUNT_ORDER_FILTER.source,
+    source: resolveCodexAccountOrderFilterSource(filter.source),
     requiresRequestable: filter.requiresRequestable === true,
     requiresBlocked: filter.requiresBlocked === true,
     requiresDisabled: filter.requiresDisabled === true,
@@ -73,6 +85,54 @@ export function normalizeCodexAccountOrderFilter(
     hasLongestQuota: filter.hasLongestQuota === true,
     requiresError: filter.requiresError === true,
   };
+}
+
+export function applyCodexAccountOrderFilter(
+  base: CodexAccountOrderFilter,
+  patch: Partial<CodexAccountOrderFilter>,
+): CodexAccountOrderFilter {
+  return normalizeCodexAccountOrderFilter({
+    ...base,
+    ...patch,
+  });
+}
+
+export function summarizeCodexAccountOrderFilter(
+  t: (key: string) => string,
+  filter: CodexAccountOrderFilter,
+): CodexAccountOrderFilterSummaryPart[] {
+  const normalizedFilter = normalizeCodexAccountOrderFilter(filter);
+  const parts: CodexAccountOrderFilterSummaryPart[] = [];
+
+  if (normalizedFilter.requiresRequestable) {
+    parts.push({ kind: 'status', label: t('codex.account_list_filter_requestable_match') });
+  }
+  if (normalizedFilter.requiresBlocked) {
+    parts.push({ kind: 'status', label: t('codex.account_list_filter_blocked_match') });
+  }
+  if (normalizedFilter.requiresDisabled) {
+    parts.push({ kind: 'status', label: t('codex.account_list_filter_disabled_match') });
+  }
+  if (normalizedFilter.requiresError) {
+    parts.push({ kind: 'status', label: t('codex.account_list_filter_error_match') });
+  }
+  if (normalizedFilter.hasBalance) {
+    parts.push({ kind: 'resource', label: t('codex.account_list_filter_balance_match') });
+  }
+  if (normalizedFilter.hasLongestQuota) {
+    parts.push({ kind: 'resource', label: t('codex.account_list_filter_longest_quota_match') });
+  }
+  if (normalizedFilter.source === 'codex-auth-file') {
+    parts.push({ kind: 'source', label: t('codex.account_list_source_auth_file') });
+  }
+  if (normalizedFilter.source === 'codex-api-key') {
+    parts.push({ kind: 'source', label: t('codex.account_list_source_api_key') });
+  }
+  if (normalizedFilter.source === 'openai-compatible') {
+    parts.push({ kind: 'source', label: t('codex.account_list_source_openai_compatible') });
+  }
+
+  return parts;
 }
 
 export function filterCodexAccountOrderRows<T extends CodexAccountOrderFilterableRow>(

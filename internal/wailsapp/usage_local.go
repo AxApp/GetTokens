@@ -19,15 +19,16 @@ import (
 )
 
 const (
-	localProjectedProvider      = "codex"
-	localProjectedSourceKind    = "local_projected"
-	localUsageIndexDirName      = "codex-local-usage"
-	localUsageIndexFileName     = "usage-index-v1.sqlite"
-	localUsageMinutesTableName  = "session_usage_minutes_v2"
-	localUsageSourceCacheHit    = "cacheHit"
-	localUsageSourceDeltaAppend = "deltaAppend"
-	localUsageSourceFullRebuild = "fullRebuild"
-	localUsageSourceFileMissing = "fileMissing"
+	localProjectedProvider       = "codex"
+	localProjectedProviderClaude = "claude"
+	localProjectedSourceKind     = "local_projected"
+	localUsageIndexDirName       = "codex-local-usage"
+	localUsageIndexFileName      = "usage-index-v1.sqlite"
+	localUsageMinutesTableName   = "session_usage_minutes_v2"
+	localUsageSourceCacheHit     = "cacheHit"
+	localUsageSourceDeltaAppend  = "deltaAppend"
+	localUsageSourceFullRebuild  = "fullRebuild"
+	localUsageSourceFileMissing  = "fileMissing"
 )
 
 type codexTokenUsage struct {
@@ -84,10 +85,11 @@ type localUsageIndexEntry struct {
 	PreviousOutputTokens int64
 }
 
-func (a *App) emitLocalUsageProgress(progress LocalProjectedUsageProgress) {
+func (a *App) emitLocalUsageProgress(provider string, progress LocalProjectedUsageProgress) {
 	if a.ctx == nil {
 		return
 	}
+	progress.Provider = provider
 	wailsRuntime.EventsEmit(a.ctx, "usage-local:progress", progress)
 }
 
@@ -109,7 +111,7 @@ func relativeLocalUsageProgressPath(codexHome string, absolutePath string) strin
 }
 
 func (a *App) GetCodexLocalUsage() (*LocalProjectedUsageResponse, error) {
-	if cached := a.readCachedLocalUsageResponse(); cached != nil {
+	if cached := a.readCachedLocalUsageResponse(localProjectedProvider); cached != nil {
 		return cached, nil
 	}
 	return a.refreshCodexLocalUsage(false, false)
@@ -227,10 +229,15 @@ func (a *App) waitForLocalUsageRefresh(forceRebuild bool, emitUpdated bool) (*Lo
 	}
 }
 
-func (a *App) readCachedLocalUsageResponse() *LocalProjectedUsageResponse {
+func (a *App) readCachedLocalUsageResponse(provider string) *LocalProjectedUsageResponse {
 	a.localUsageMu.RLock()
 	defer a.localUsageMu.RUnlock()
-	return cloneLocalProjectedUsageResponse(a.localUsage.cachedResponse)
+	switch provider {
+	case localProjectedProviderClaude:
+		return cloneLocalProjectedUsageResponse(a.claudeLocalUsage.cachedResponse)
+	default:
+		return cloneLocalProjectedUsageResponse(a.localUsage.cachedResponse)
+	}
 }
 
 func cloneLocalProjectedUsageResponse(response *LocalProjectedUsageResponse) *LocalProjectedUsageResponse {
@@ -260,11 +267,16 @@ func (a *App) startLocalUsageRefreshLoop(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case <-ticker.C:
-				if !a.shouldRunScheduledLocalUsageRefresh(time.Now()) {
-					continue
+				now := time.Now()
+				if a.shouldRunScheduledLocalUsageRefresh(now) {
+					if _, err := a.refreshCodexLocalUsage(false, true); err != nil {
+						log.Printf("scheduled codex local usage refresh failed: %v", err)
+					}
 				}
-				if _, err := a.refreshCodexLocalUsage(false, true); err != nil {
-					log.Printf("scheduled local usage refresh failed: %v", err)
+				if a.shouldRunScheduledLocalUsageRefreshForProvider(localProjectedProviderClaude, now) {
+					if _, err := a.refreshClaudeLocalUsage(true); err != nil {
+						log.Printf("scheduled claude local usage refresh failed: %v", err)
+					}
 				}
 			}
 		}
@@ -272,10 +284,15 @@ func (a *App) startLocalUsageRefreshLoop(ctx context.Context) {
 }
 
 func (a *App) shouldRunScheduledLocalUsageRefresh(now time.Time) bool {
+	return a.shouldRunScheduledLocalUsageRefreshForProvider(localProjectedProvider, now)
+}
+
+func (a *App) shouldRunScheduledLocalUsageRefreshForProvider(provider string, now time.Time) bool {
 	a.localUsageMu.RLock()
-	cachedResponse := a.localUsage.cachedResponse
-	lastRefreshAt := a.localUsage.lastRefreshAt
-	refreshRunning := a.localUsage.refreshRunning
+	state := a.localUsageState(provider)
+	cachedResponse := state.cachedResponse
+	lastRefreshAt := state.lastRefreshAt
+	refreshRunning := state.refreshRunning
 	a.localUsageMu.RUnlock()
 
 	if refreshRunning || cachedResponse == nil || lastRefreshAt.IsZero() {
@@ -288,6 +305,13 @@ func (a *App) shouldRunScheduledLocalUsageRefresh(now time.Time) bool {
 	}
 	interval := time.Duration(settings.RefreshIntervalMinutes) * time.Minute
 	return now.Sub(lastRefreshAt) >= interval
+}
+
+func (a *App) localUsageState(provider string) *localUsageRuntimeState {
+	if provider == localProjectedProviderClaude {
+		return &a.claudeLocalUsage
+	}
+	return &a.localUsage
 }
 
 func collectCodexLocalUsageDetailsFromHome(codexHome string) ([]LocalProjectedUsageDetail, int, error) {
@@ -341,7 +365,7 @@ func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebu
 		return &localUsageSnapshot{}, nil
 	}
 
-	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+	a.emitLocalUsageProgress(localProjectedProvider, LocalProjectedUsageProgress{
 		Phase:          "scan_inventory",
 		ProcessedFiles: 0,
 		TotalFiles:     len(rolloutPaths),
@@ -391,7 +415,7 @@ func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebu
 			snapshot.FullRebuildFiles++
 		}
 
-		a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+		a.emitLocalUsageProgress(localProjectedProvider, LocalProjectedUsageProgress{
 			Phase:          "reconcile_rollouts",
 			CurrentFile:    relativeLocalUsageProgressPath(codexHome, absolutePath),
 			ProcessedFiles: index + 1,
@@ -416,7 +440,7 @@ func (a *App) collectCodexLocalUsageSnapshotFromHome(codexHome string, forceRebu
 		return snapshot.Details[i].Timestamp < snapshot.Details[j].Timestamp
 	})
 
-	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+	a.emitLocalUsageProgress(localProjectedProvider, LocalProjectedUsageProgress{
 		Phase:          "finished",
 		ProcessedFiles: len(rolloutPaths),
 		TotalFiles:     len(rolloutPaths),
@@ -499,7 +523,7 @@ func (a *App) collectCodexLocalUsageSnapshotForDay(codexHome string, dayKey stri
 	}
 	sort.Strings(candidatePaths)
 
-	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+	a.emitLocalUsageProgress(localProjectedProvider, LocalProjectedUsageProgress{
 		Phase:          "scan_inventory",
 		ProcessedFiles: 0,
 		TotalFiles:     len(candidatePaths),
@@ -529,7 +553,7 @@ func (a *App) collectCodexLocalUsageSnapshotForDay(codexHome string, dayKey stri
 			return nil, err
 		}
 		snapshot.FullRebuildFiles++
-		a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+		a.emitLocalUsageProgress(localProjectedProvider, LocalProjectedUsageProgress{
 			Phase:          "reconcile_rollouts",
 			CurrentFile:    relativeLocalUsageProgressPath(codexHome, absolutePath),
 			ProcessedFiles: index + 1,
@@ -543,7 +567,7 @@ func (a *App) collectCodexLocalUsageSnapshotForDay(codexHome string, dayKey stri
 		return nil, err
 	}
 	snapshot.Details = details
-	a.emitLocalUsageProgress(LocalProjectedUsageProgress{
+	a.emitLocalUsageProgress(localProjectedProvider, LocalProjectedUsageProgress{
 		Phase:          "finished",
 		ProcessedFiles: len(candidatePaths),
 		TotalFiles:     len(candidatePaths),

@@ -64,11 +64,11 @@ export default function UsageDeskFeature({
     handleRangeSelect,
   } = useUsageDeskFeature(sidecarStatus, workspace);
 
-  const supportsProjectedUsage = workspace === 'codex';
+  const supportsProjectedUsage = workspace === 'codex' || workspace === 'claude';
   const pageTitle = workspace === 'claude' ? 'Claude Usage Desk' : 'Codex Usage Desk';
   const pageDescription =
     workspace === 'claude'
-        ? '当前只展示 relay attribution 中可识别为 Claude / Anthropic 的真实请求量，不读取或估算 Claude 原生 session token。'
+        ? '当前已经接入 Claude / Anthropic relay attribution 与 Claude Code 本地 session 文件投影，两条数据链路分开展示。'
       : '当前已经接入 ObservedRequestUsage 与 LocalProjectedUsage 两条真实数据链路，并在同一页内承接按日与分钟级切换。';
 
   const projectedLoadingBody = useMemo<ReactNode>(() => {
@@ -88,7 +88,7 @@ export default function UsageDeskFeature({
 
     return (
       <div className="space-y-2">
-        <div>正在扫描本地 Codex rollout 样本。</div>
+        <div>{workspace === 'claude' ? '正在扫描本地 Claude Code session 样本。' : '正在扫描本地 Codex rollout 样本。'}</div>
         <div className="font-black text-[var(--text-primary)]">
           进度 {processedFiles}/{totalFiles || '?'}
         </div>
@@ -122,7 +122,7 @@ export default function UsageDeskFeature({
                   onClick={() => setSource('projected')}
                   className={`btn-swiss ${source === 'projected' ? 'bg-[var(--text-primary)] !text-[var(--bg-main)]' : ''}`}
                 >
-                  本地投影用量
+                  {workspace === 'claude' ? '本地文件投影' : '本地投影用量'}
                 </button>
               ) : null}
             </>
@@ -132,7 +132,7 @@ export default function UsageDeskFeature({
         <div className="space-y-6">
           {workspace === 'codex' || workspace === 'claude' ? (
             <section className="space-y-5">
-              {source === 'observed' || workspace === 'claude' ? (
+              {source === 'observed' ? (
                 <section className="space-y-5">
                     <div className="space-y-5">
                       <div className="sticky top-0 z-20 -mx-12 bg-[var(--bg-surface)] px-12 pb-3 pt-3">

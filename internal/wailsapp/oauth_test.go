@@ -55,29 +55,29 @@ func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 				files := make([]map[string]any, 0, len(existingNames))
 				for name := range existingNames {
 					files = append(files, map[string]any{
-						"name":       name,
-						"provider":   "codex",
-						"type":       "codex",
-						"email":      "tester@example.com",
-						"planType":   "plus",
-						"status":     "active",
-						"disabled":   false,
+						"name":        name,
+						"provider":    "codex",
+						"type":        "codex",
+						"email":       "tester@example.com",
+						"planType":    "plus",
+						"status":      "active",
+						"disabled":    false,
 						"runtimeOnly": false,
 					})
 				}
 				payload, _ := json.Marshal(map[string]any{"files": files, "total": len(files)})
 				return payload, http.StatusOK, nil
-				case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-					switch got := query.Get("name"); got {
-					case "fresh-login.json":
-						return []byte(freshContent), http.StatusOK, nil
-					case "expired.json":
-						return []byte(existingContent), http.StatusOK, nil
-					default:
-						t.Fatalf("download name = %q, want fresh-login.json or expired.json", got)
-					}
-					return nil, 0, nil
-				case method == http.MethodDelete && path == ManagementAPIPrefix+"/auth-files":
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
+				switch got := query.Get("name"); got {
+				case "fresh-login.json":
+					return []byte(freshContent), http.StatusOK, nil
+				case "expired.json":
+					return []byte(existingContent), http.StatusOK, nil
+				default:
+					t.Fatalf("download name = %q, want fresh-login.json or expired.json", got)
+				}
+				return nil, 0, nil
+			case method == http.MethodDelete && path == ManagementAPIPrefix+"/auth-files":
 				raw, err := io.ReadAll(body)
 				if err != nil {
 					t.Fatalf("ReadAll delete body: %v", err)
@@ -124,10 +124,10 @@ func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 	if !strings.Contains(uploadedBody, `filename="expired.json"`) {
 		t.Fatalf("upload body should keep original file name: %s", uploadedBody)
 	}
-	if !strings.Contains(uploadedBody, `"access_token":"fresh-access"`) {
+	if !strings.Contains(uploadedBody, `"access_token": "fresh-access"`) {
 		t.Fatalf("upload body should contain new auth content: %s", uploadedBody)
 	}
-	if !strings.Contains(uploadedBody, `"priority":6`) {
+	if !strings.Contains(uploadedBody, `"priority": 6`) {
 		t.Fatalf("upload body should preserve old priority: %s", uploadedBody)
 	}
 }

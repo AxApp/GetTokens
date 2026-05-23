@@ -74,3 +74,13 @@ test('usage desk preview projected usage includes local projected detail rows an
   assert.equal(projected.scannedFiles, 48);
   assert.equal(projected.cacheHitFiles, 29);
 });
+
+test('usage desk preview projected usage includes Claude local session rows', () => {
+  const projected = getUsageDeskPreviewProjectedUsage('claude');
+
+  assert.ok(Array.isArray(projected.details));
+  assert.ok(projected.details.length >= 4);
+  assert.equal(projected.details[0].provider, 'claude');
+  assert.match(projected.details[0].sessionID, /^projects\//);
+  assert.equal(projected.scannedFiles, 18);
+});

@@ -25,6 +25,7 @@ type CodexLiveSessionSummary struct {
 
 type CodexLiveSession struct {
 	SessionID           string                   `json:"sessionID"`
+	ProjectName         string                   `json:"projectName,omitempty"`
 	ExecutionSessionID  string                   `json:"executionSessionID,omitempty"`
 	DownstreamSessionID string                   `json:"downstreamSessionID,omitempty"`
 	CodexWindowID       string                   `json:"codexWindowID,omitempty"`

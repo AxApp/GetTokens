@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
+  GetClaudeLocalUsage,
   GetCodexLocalUsage,
   GetSidecarUsageAttribution,
   GetUsageStatistics,
+  RebuildClaudeLocalUsage,
+  RebuildClaudeLocalUsageDay,
   RebuildCodexLocalUsage,
   RebuildCodexLocalUsageDay,
+  RefreshClaudeLocalUsage,
   RefreshCodexLocalUsage,
 } from '../../../../wailsjs/go/main/App';
 import { EventsOn } from '../../../../wailsjs/runtime/runtime';
@@ -51,6 +55,7 @@ export const resolutionOptions = ['1M', '5M', '15M', '30M', '60M'] as const;
 export type UsageDeskResolution = (typeof resolutionOptions)[number];
 
 export type LocalUsageProgressEvent = {
+  provider?: string;
   phase?: string;
   currentFile?: string;
   processedFiles?: number;
@@ -58,6 +63,40 @@ export type LocalUsageProgressEvent = {
   source?: string;
 };
 export type ProjectedChartMetric = 'tokens' | 'requests';
+
+function resolveProjectedUsageRuntime(workspace: UsageDeskWorkspaceID) {
+  if (workspace === 'claude') {
+    return {
+      getName: 'GetClaudeLocalUsage',
+      refreshName: 'RefreshClaudeLocalUsage',
+      rebuildName: 'RebuildClaudeLocalUsage',
+      rebuildDayName: 'RebuildClaudeLocalUsageDay',
+      get: () => GetClaudeLocalUsage(),
+      refresh: () => RefreshClaudeLocalUsage(),
+      rebuild: () => RebuildClaudeLocalUsage(),
+      rebuildDay: (dayKey: string) => RebuildClaudeLocalUsageDay(dayKey),
+    };
+  }
+
+  return {
+    getName: 'GetCodexLocalUsage',
+    refreshName: 'RefreshCodexLocalUsage',
+    rebuildName: 'RebuildCodexLocalUsage',
+    rebuildDayName: 'RebuildCodexLocalUsageDay',
+    get: () => GetCodexLocalUsage(),
+    refresh: () => RefreshCodexLocalUsage(),
+    rebuild: () => RebuildCodexLocalUsage(),
+    rebuildDay: (dayKey: string) => RebuildCodexLocalUsageDay(dayKey),
+  };
+}
+
+function isProjectedUsagePayloadForWorkspace(payload: unknown, workspace: UsageDeskWorkspaceID): boolean {
+  if (!payload || typeof payload !== 'object') {
+    return true;
+  }
+  const provider = (payload as { provider?: unknown }).provider;
+  return typeof provider !== 'string' || provider === workspace;
+}
 
 function applyRange<T extends UsageDeskDailyPoint | UsageDeskProjectedDailyPoint>(points: T[], range: UsageDeskRangeOption) {
   if (range === '全部') return points;
@@ -101,10 +140,10 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   const { trackRequest } = useDebug();
   const browserMode = hasPreviewMode('usage-codex') || !hasWailsAppBindings();
   const ready = sidecarStatus?.code === 'ready';
-  const supportsProjectedUsage = workspace === 'codex';
+  const supportsProjectedUsage = workspace === 'codex' || workspace === 'claude';
 
   const [source, setSource] = useState<UsageDeskSource>(() =>
-    workspace === 'codex'
+    workspace === 'codex' || workspace === 'claude'
       ? readStoredUsageDeskSource(typeof window === 'undefined' ? null : window.localStorage)
       : 'observed',
   );
@@ -152,9 +191,15 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     }
 
     const offProgress = EventsOn('usage-local:progress', (payload: LocalUsageProgressEvent) => {
+      if (!isProjectedUsagePayloadForWorkspace(payload, workspace)) {
+        return;
+      }
       setProjectedProgress(payload ?? null);
     });
     const offUpdated = EventsOn('usage-local:updated', (payload: unknown) => {
+      if (!isProjectedUsagePayloadForWorkspace(payload, workspace)) {
+        return;
+      }
       setProjectedUsageData(payload ?? null);
       setProjectedProgress(null);
       setProjectedActionMessage('');
@@ -165,7 +210,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
       offProgress?.();
       offUpdated?.();
     };
-  }, []);
+  }, [workspace]);
 
   useEffect(() => {
     let mounted = true;
@@ -257,7 +302,8 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
       setProjectedLoadError('');
       setProjectedProgress(null);
       try {
-        const response = await trackRequest<any>('GetCodexLocalUsage', { args: [] }, () => GetCodexLocalUsage());
+        const runtime = resolveProjectedUsageRuntime(workspace);
+        const response = await trackRequest<any>(runtime.getName, { args: [] }, runtime.get);
         if (!mounted) return;
         setProjectedUsageData(response ?? null);
         setProjectedProgress(null);
@@ -302,7 +348,8 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     setProjectedProgress(null);
     setProjectedActionMessage('正在刷新索引…');
     try {
-      const response = await trackRequest<any>('RefreshCodexLocalUsage', { args: [] }, () => RefreshCodexLocalUsage());
+      const runtime = resolveProjectedUsageRuntime(workspace);
+      const response = await trackRequest<any>(runtime.refreshName, { args: [] }, runtime.refresh);
       setProjectedUsageData(response ?? null);
       setProjectedProgress(null);
       setProjectedActionMessage('索引已刷新');
@@ -336,7 +383,8 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     setProjectedProgress(null);
     setProjectedActionMessage('正在重建索引…');
     try {
-      const response = await trackRequest<any>('RebuildCodexLocalUsage', { args: [] }, () => RebuildCodexLocalUsage());
+      const runtime = resolveProjectedUsageRuntime(workspace);
+      const response = await trackRequest<any>(runtime.rebuildName, { args: [] }, runtime.rebuild);
       setProjectedUsageData(response ?? null);
       setProjectedProgress(null);
       setProjectedActionMessage('索引已重建');
@@ -374,8 +422,9 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     setProjectedProgress(null);
     setProjectedActionMessage(`正在重建 ${targetDayKey}…`);
     try {
-      const response = await trackRequest<any>('RebuildCodexLocalUsageDay', { args: [targetDayKey] }, () =>
-        RebuildCodexLocalUsageDay(targetDayKey),
+      const runtime = resolveProjectedUsageRuntime(workspace);
+      const response = await trackRequest<any>(runtime.rebuildDayName, { args: [targetDayKey] }, () =>
+        runtime.rebuildDay(targetDayKey),
       );
       setProjectedUsageData(response ?? null);
       setProjectedProgress(null);
@@ -464,7 +513,7 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     .reverse()
     .map((point) => ({
       timeLabel: point.label,
-      provider: 'codex',
+      provider: workspace,
       model: point.model ?? '--',
       metric: '总 tokens',
       value: formatUsageDeskChartValue(point.totalTokens, 'tokens'),

@@ -59,6 +59,7 @@ function request(input: Partial<CodexLiveRequest> & Pick<CodexLiveRequest, 'requ
 export const codexLiveSessionsPreviewSessions: CodexLiveSession[] = [
   {
     sessionID: 'ws_sess_7a91',
+    projectName: 'GetTokens',
     executionSessionID: '8a1d8e9f-6e9a-4e0f-bb5a-05c69d2a8c20',
     downstreamSessionID: 'downstream:7a91',
     codexWindowID: 'win_831f',
@@ -110,6 +111,7 @@ export const codexLiveSessionsPreviewSessions: CodexLiveSession[] = [
   },
   {
     sessionID: 'ws_sess_4c27',
+    projectName: 'GetTokens',
     executionSessionID: '50827663-0bde-438e-b80a-c6bdf21d38b2',
     downstreamSessionID: 'downstream:4c27',
     codexWindowID: 'win_92ad',
@@ -160,6 +162,7 @@ export const codexLiveSessionsPreviewSessions: CodexLiveSession[] = [
   },
   {
     sessionID: 'codex_win_48f2',
+    projectName: 'GetTokens',
     executionSessionID: '69e11a8e-8583-4f02-bf94-183b2e0988e6',
     codexWindowID: 'win_48f2',
     status: 'degraded_http',
@@ -215,6 +218,7 @@ export const codexLiveSessionsPreviewSessions: CodexLiveSession[] = [
   },
   {
     sessionID: 'http_req_a623',
+    projectName: 'GetTokens',
     codexWindowID: 'win_a623',
     status: 'failed',
     startedAt: '2026-05-21T18:14:02+08:00',

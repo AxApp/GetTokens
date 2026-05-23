@@ -14,13 +14,14 @@ import {
   CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY,
   DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
+  applyCodexAccountOrderFilter,
   filterCodexAccountOrderRows,
   getCodexAccountOrderGridClass,
   normalizeCodexAccountOrderFilter,
   parseCodexAccountOrderDisplayMode,
+  summarizeCodexAccountOrderFilter,
   shouldUseCodexOrderSectionActionMenu,
   type CodexAccountOrderFilter,
-  type CodexAccountOrderFilterSource,
   type CodexAccountOrderDisplayMode,
 } from '../model/codexAccountOrderSectionLayout';
 
@@ -433,16 +434,11 @@ function InlineActionControls({
   }, [isFilterMenuOpen]);
 
   function updateFilter(patch: Partial<CodexAccountOrderFilter>) {
-    onAccountFilterChange({
-      ...accountFilter,
-      ...patch,
-    });
+    onAccountFilterChange(applyCodexAccountOrderFilter(accountFilter, patch));
   }
 
   function toggleFilter(key: 'requiresRequestable' | 'requiresBlocked' | 'requiresDisabled' | 'hasBalance' | 'hasLongestQuota' | 'requiresError') {
-    updateFilter({
-      [key]: !accountFilter[key],
-    });
+    updateFilter({ [key]: !accountFilter[key] });
   }
 
   return (
@@ -572,37 +568,9 @@ function FilterCheckOption({
 }
 
 function buildCodexOrderFilterLabel(t: (key: string) => string, filter: CodexAccountOrderFilter) {
-  const sourceLabels: Record<CodexAccountOrderFilterSource, string> = {
-    all: '',
-    'codex-auth-file': t('codex.account_list_source_auth_file'),
-    'codex-api-key': t('codex.account_list_source_api_key'),
-    'openai-compatible': t('codex.account_list_source_openai_compatible'),
-  };
-  const parts: string[] = [];
-  if (filter.requiresRequestable) {
-    parts.push(t('codex.account_list_filter_requestable_match'));
-  }
-  if (filter.requiresBlocked) {
-    parts.push(t('codex.account_list_filter_blocked_match'));
-  }
-  if (filter.requiresDisabled) {
-    parts.push(t('codex.account_list_filter_disabled_match'));
-  }
-  if (filter.requiresError) {
-    parts.push(t('codex.account_list_filter_error_match'));
-  }
-  if (filter.hasBalance) {
-    parts.push(t('codex.account_list_filter_balance_match'));
-  }
-  if (filter.hasLongestQuota) {
-    parts.push(t('codex.account_list_filter_longest_quota_match'));
-  }
-  const sourceLabel = sourceLabels[filter.source];
-  if (sourceLabel) {
-    parts.push(sourceLabel);
-  }
+  const parts = summarizeCodexAccountOrderFilter(t, filter);
   if (parts.length === 0) {
     return t('accounts.display_filters');
   }
-  return `${t('accounts.display_filters')} · ${parts.join(' · ')}`;
+  return `${t('accounts.display_filters')} · ${parts.map((part) => part.label).join(' · ')}`;
 }

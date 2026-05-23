@@ -1,12 +1,9 @@
 import type {
   CodexLiveRequest,
   CodexLiveSession,
-  CodexLiveSessionStatus,
 } from '../model/types';
 import {
-  formatDuration,
-  statusDotClass,
-  statusLabelKeys,
+  buildSessionRowSummary,
 } from './formatters';
 import type { Translate } from './types';
 
@@ -87,61 +84,27 @@ function SessionRow({
   onSelect: () => void;
   t: Translate;
 }) {
+  const summary = buildSessionRowSummary(session, request, t);
+
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-expanded={selected}
-      className={`grid w-full grid-cols-[1fr_auto] items-start gap-x-4 px-4 py-3 text-left transition-colors active:scale-[0.99] ${
+      className={`grid w-full gap-1 px-4 py-3 text-left transition-colors active:scale-[0.99] ${
         selected
           ? 'bg-[color-mix(in_srgb,var(--border-color)_10%,var(--bg-main))]'
           : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'
       }`}
     >
       <div className="min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug text-[var(--text-primary)]">
-            {request?.model || session.model}
-          </span>
-          <RowStatusTag status={session.status} fallbackInferred={session.fallbackInferred} t={t} />
+        <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug text-[var(--text-primary)]">
+          {summary.sessionProjectLabel}
         </div>
         <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-muted)]">
-          {request?.authLabel || session.authLabel || request?.authID || session.authID || t('codex_live_sessions.unknown_auth')}
+          {summary.accountTransportLabel}
         </div>
       </div>
-
-      <div className="text-right font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug text-[var(--text-primary)]">
-        {formatDuration(session.durationMs)}
-      </div>
     </button>
-  );
-}
-
-function RowStatusTag({
-  status,
-  fallbackInferred,
-  t,
-}: {
-  status: CodexLiveSessionStatus;
-  fallbackInferred?: boolean;
-  t: Translate;
-}) {
-  const toneBg =
-    status === 'failed' || status === 'cancelled'
-      ? 'bg-[color-mix(in_srgb,var(--color-danger)_12%,transparent)]'
-      : status === 'degraded_http' || status === 'reconnecting' || status === 'upstream_disconnected'
-        ? 'bg-[color-mix(in_srgb,var(--color-warning)_12%,transparent)]'
-        : status === 'active' || status === 'streaming'
-          ? 'bg-[color-mix(in_srgb,var(--color-success)_10%,transparent)]'
-          : 'bg-[var(--bg-surface)]';
-
-  return (
-    <span className={`inline-flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 ${toneBg}`}>
-      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${statusDotClass(status)}`} />
-      <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none text-[var(--text-primary)]">
-        {t(statusLabelKeys[status])}
-        {fallbackInferred ? ` · ${t('codex_live_sessions.http_inferred')}` : ''}
-      </span>
-    </span>
   );
 }

@@ -13,6 +13,10 @@ func InferAuthFileKind(body []byte) string {
 		return ""
 	}
 
+	if strings.EqualFold(stringValue(payload, "type"), "codex") {
+		return "codex"
+	}
+
 	authMode := normalizeAuthMode(firstNonEmpty(
 		stringValue(payload, "auth_mode"),
 		stringValue(nestedMap(payload, "metadata"), "auth_mode"),

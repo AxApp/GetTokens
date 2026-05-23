@@ -94,6 +94,7 @@ export interface CodexLiveRequest {
 
 export interface CodexLiveSession {
   sessionID: string;
+  projectName?: string;
   executionSessionID?: string;
   downstreamSessionID?: string;
   codexWindowID?: string;

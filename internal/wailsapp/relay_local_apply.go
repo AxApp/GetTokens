@@ -593,7 +593,7 @@ func upsertRootTomlKey(lines []string, key string, value string, insertIfMissing
 	insertAt := rootEnd
 	lines = append(lines, "")
 	copy(lines[insertAt+1:], lines[insertAt:])
-	lines[insertAt] = fmt.Sprintf("%s = %s", key, value)
+	lines[insertAt] = fmt.Sprintf("%s = %s", formatTomlKey(key), value)
 	return lines
 }
 
@@ -608,7 +608,7 @@ func upsertTomlSectionKey(lines []string, sectionName string, key string, value 
 			lines = append(lines, "")
 		}
 		lines = append(lines, header)
-		lines = append(lines, fmt.Sprintf("%s = %s", key, value))
+		lines = append(lines, fmt.Sprintf("%s = %s", formatTomlKey(key), value))
 		return lines
 	}
 
@@ -625,7 +625,7 @@ func upsertTomlSectionKey(lines []string, sectionName string, key string, value 
 	insertAt := end
 	lines = append(lines, "")
 	copy(lines[insertAt+1:], lines[insertAt:])
-	lines[insertAt] = fmt.Sprintf("%s = %s", key, value)
+	lines[insertAt] = fmt.Sprintf("%s = %s", formatTomlKey(key), value)
 	return lines
 }
 
@@ -686,25 +686,15 @@ func isTomlSectionHeader(line string) bool {
 }
 
 func tomlLineDefinesKey(line string, key string) bool {
-	content := strings.TrimSpace(stripTomlLineComment(line))
-	if !strings.HasPrefix(content, key) {
-		return false
-	}
-	if len(content) == len(key) {
-		return false
-	}
-	next := content[len(key)]
-	if next != ' ' && next != '\t' && next != '=' {
-		return false
-	}
-	return strings.Contains(content, "=")
+	parsedKey, _, _, hasSimpleKey := parseTomlBoolKeyValue(line)
+	return hasSimpleKey && parsedKey == key
 }
 
 func rewriteTomlKeyLine(line string, key string, value string) string {
 	comment := extractTomlLineComment(line)
 	indentLength := len(line) - len(strings.TrimLeft(line, " \t"))
 	indent := line[:indentLength]
-	return fmt.Sprintf("%s%s = %s%s", indent, key, value, comment)
+	return fmt.Sprintf("%s%s = %s%s", indent, formatTomlKey(key), value, comment)
 }
 
 func stripTomlLineComment(line string) string {
