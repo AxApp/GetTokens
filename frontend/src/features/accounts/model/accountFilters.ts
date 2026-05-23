@@ -1,35 +1,19 @@
-import type { AccountsAvailabilityFilter, AccountsFilterSource, AccountsFilterState } from './types';
+import type { AccountsFilterSource, AccountsFilterState } from './types';
 import type { CredentialSource } from '../../../types';
 
 export const ACCOUNTS_FILTERS_STORAGE_KEY = 'gettokens.accountsFilters';
 
 export const defaultAccountsFilterState: AccountsFilterState = {
   source: 'all',
-  availability: 'all',
+  requiresRequestable: false,
+  requiresDisabled: false,
+  requiresError: false,
   hasBalance: false,
   hasLongestQuota: false,
 };
 
 function resolveAccountsFilterSource(value: unknown): AccountsFilterSource {
   return value === 'all' || value === 'none' || value === 'auth-file' || value === 'api-key' ? value : 'all';
-}
-
-function resolveAccountsAvailabilityFilter(candidate: Record<string, unknown>): AccountsAvailabilityFilter {
-  const availability = candidate.availability;
-  if (availability === 'all' || availability === 'requestable' || availability === 'disabled' || availability === 'errors') {
-    return availability;
-  }
-
-  if (candidate.errorsOnly === true) {
-    return 'errors';
-  }
-  if (candidate.disabledOnly === true) {
-    return 'disabled';
-  }
-  if (candidate.requestableOnly === true) {
-    return 'requestable';
-  }
-  return 'all';
 }
 
 export function isAccountsFilterSourceSelected(filterSource: AccountsFilterSource, source: CredentialSource): boolean {
@@ -75,7 +59,9 @@ export function resolveAccountsFilterState(value: unknown): AccountsFilterState 
   const candidate = value as Partial<AccountsFilterState> & Record<string, unknown>;
   return {
     source: resolveAccountsFilterSource(candidate.source),
-    availability: resolveAccountsAvailabilityFilter(candidate),
+    requiresRequestable: candidate.requiresRequestable === true,
+    requiresDisabled: candidate.requiresDisabled === true,
+    requiresError: candidate.requiresError === true,
     hasBalance: candidate.hasBalance === true,
     hasLongestQuota: candidate.hasLongestQuota === true,
   };

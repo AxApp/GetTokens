@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   ACCOUNTS_FILTERS_STORAGE_KEY,
@@ -16,7 +17,7 @@ test('readStoredAccountsFilterState restores a valid stored filter state', () =>
       assert.equal(key, ACCOUNTS_FILTERS_STORAGE_KEY);
       return JSON.stringify({
         source: 'api-key',
-        availability: 'requestable',
+        requiresRequestable: true,
         hasBalance: true,
         hasLongestQuota: true,
       });
@@ -25,13 +26,15 @@ test('readStoredAccountsFilterState restores a valid stored filter state', () =>
 
   assert.deepEqual(readStoredAccountsFilterState(storage), {
     source: 'api-key',
-    availability: 'requestable',
+    requiresRequestable: true,
+    requiresDisabled: false,
+    requiresError: false,
     hasBalance: true,
     hasLongestQuota: true,
   });
 });
 
-test('readStoredAccountsFilterState migrates legacy stored filter state to availability', () => {
+test('readStoredAccountsFilterState ignores legacy filter fields', () => {
   assert.deepEqual(
     readStoredAccountsFilterState({
       getItem() {
@@ -40,7 +43,6 @@ test('readStoredAccountsFilterState migrates legacy stored filter state to avail
     }),
     {
       ...defaultAccountsFilterState,
-      availability: 'errors',
       hasBalance: false,
       hasLongestQuota: true,
     },
@@ -59,6 +61,42 @@ test('readStoredAccountsFilterState restores empty source selection', () => {
       source: 'none',
     },
   );
+});
+
+test('AccountsToolbar keeps status, resource, and source filters in the new order', async () => {
+  const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
+  const assertBefore = (left, right, content = source) => {
+    const leftIndex = content.indexOf(left);
+    const rightIndex = content.indexOf(right);
+    assert.notEqual(leftIndex, -1);
+    assert.notEqual(rightIndex, -1);
+    assert.ok(leftIndex < rightIndex, `${left} should appear before ${right}`);
+  };
+
+  assertBefore('accounts.filter_group_status', 'accounts.filter_group_resource');
+  assertBefore('accounts.filter_group_resource', 'accounts.filter_group_source');
+  assertBefore("{ key: 'requiresRequestable', label: t('accounts.filter_requestable_match') }", "{ key: 'requiresError', label: t('accounts.filter_error_match') }");
+  assertBefore("{ key: 'requiresError', label: t('accounts.filter_error_match') }", "{ key: 'requiresDisabled', label: t('accounts.filter_disabled_match') }");
+  assertBefore("t('accounts.filter_longest_quota_match')", "t('accounts.filter_balance_match')");
+  assert.equal(source.includes('function FilterCheckbox'), false);
+  assert.equal(source.includes('FilterMenuButton'), false);
+  assert.equal(source.includes('type="radio"'), false);
+  assert.ok((source.match(/<FilterCheckOption/g) || []).length >= 5);
+  assert.equal(source.includes('availability'), false);
+  assert.equal(source.includes('errorsOnly'), false);
+  assert.equal(source.includes('disabledOnly'), false);
+  assert.equal(source.includes('requestableOnly'), false);
+  assert.equal(source.includes('filter_disabled_only'), false);
+  assert.equal(source.includes('errors_only'), false);
+
+  const labelStart = source.indexOf('function buildToolbarFilterLabel');
+  assert.notEqual(labelStart, -1);
+  const labelSource = source.slice(labelStart);
+  assertBefore("t('accounts.filter_requestable_match')", "t('accounts.filter_error_match')", labelSource);
+  assertBefore("t('accounts.filter_error_match')", "t('accounts.filter_disabled_match')", labelSource);
+  assertBefore("t('accounts.filter_disabled_match')", "t('accounts.filter_longest_quota_match')", labelSource);
+  assertBefore("t('accounts.filter_longest_quota_match')", "t('accounts.filter_balance_match')", labelSource);
+  assertBefore("t('accounts.filter_balance_match')", "t('accounts.filter_source_none')", labelSource);
 });
 
 test('source filter toggles incrementally and all selected maps to all', () => {
@@ -92,8 +130,9 @@ test('persistAccountsFilterState serializes the full filter state', () => {
   };
 
   persistAccountsFilterState(storage, {
+    ...defaultAccountsFilterState,
     source: 'none',
-    availability: 'disabled',
+    requiresDisabled: true,
     hasBalance: true,
     hasLongestQuota: false,
   });
@@ -103,7 +142,9 @@ test('persistAccountsFilterState serializes the full filter state', () => {
       ACCOUNTS_FILTERS_STORAGE_KEY,
       JSON.stringify({
         source: 'none',
-        availability: 'disabled',
+        requiresRequestable: false,
+        requiresDisabled: true,
+        requiresError: false,
         hasBalance: true,
         hasLongestQuota: false,
       }),

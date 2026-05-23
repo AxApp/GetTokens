@@ -74,10 +74,10 @@ description: GetTokens Codex 账号列表：账号请求顺序、路由探测、
   - 状态色统一来自账号卡 tone 来源，不在 Codex 行内重新手写一套颜色。
   - 阻塞账号可被展示过滤隐藏，但真实排序数组和运行时请求顺序不能因此重排。
 - 请求顺序页顶部筛选要和账号池筛选维度保持同步，但只作为展示过滤：
-  - 筛选状态使用对象，不退回单一 enum；至少覆盖 `source`、`requestableOnly`、`disabledOnly`、`hasBalance`、`hasLongestQuota`、`errorsOnly`。
+  - 筛选状态使用对象和 AND-style requirement 字段，不退回单一 enum，也不兼容 `*Only` 字段；至少覆盖 `source`、`requiresRequestable`、`requiresBlocked`、`requiresDisabled`、`hasBalance`、`hasLongestQuota`、`requiresError`。
   - `source` 必须区分 `codex-auth-file`、`codex-api-key`、`openai-compatible`。
   - `hasBalance` 基于 quota response 中的 billing/balance 信息判断；`hasLongestQuota` 基于最长 quota window 判断。
-  - 手动禁用和错误/不可用分开筛选；`errorsOnly` 不包含已禁用账号。
+  - 阻塞、手动禁用和错误/不可用分开筛选；`requiresError` 不包含已禁用账号。
   - 刷新、筛选和显示密度属于同一个请求顺序工具栏；不要再拆成独立 `View / Scope` cluster。
 - 路由探测 modal 是调试工作台，不是说明卡片：
   - 顶部显示标题与运行摘要，例如测试模型、候选数、当前命中/空闲状态。

@@ -10,19 +10,21 @@ export const DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE: CodexAccountOrderDisplayM
 export type CodexAccountOrderFilterSource = 'all' | 'codex-auth-file' | 'codex-api-key' | 'openai-compatible';
 export interface CodexAccountOrderFilter {
   source: CodexAccountOrderFilterSource;
-  requestableOnly: boolean;
-  disabledOnly: boolean;
+  requiresRequestable: boolean;
+  requiresBlocked: boolean;
+  requiresDisabled: boolean;
   hasBalance: boolean;
   hasLongestQuota: boolean;
-  errorsOnly: boolean;
+  requiresError: boolean;
 }
 export const DEFAULT_CODEX_ACCOUNT_ORDER_FILTER: CodexAccountOrderFilter = {
   source: 'all',
-  requestableOnly: false,
-  disabledOnly: false,
+  requiresRequestable: false,
+  requiresBlocked: false,
+  requiresDisabled: false,
   hasBalance: false,
   hasLongestQuota: false,
-  errorsOnly: false,
+  requiresError: false,
 };
 
 interface CodexAccountOrderFilterableRow {
@@ -57,17 +59,19 @@ export function parseCodexAccountOrderDisplayMode(value: string | null | undefin
 }
 
 export function normalizeCodexAccountOrderFilter(
-  filter: CodexAccountOrderFilter | 'all' | 'requestable' | null | undefined,
+  filter: CodexAccountOrderFilter | 'all' | null | undefined,
 ): CodexAccountOrderFilter {
-  if (filter === 'requestable') {
-    return { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requestableOnly: true };
-  }
   if (!filter || filter === 'all') {
     return { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER };
   }
   return {
-    ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
-    ...filter,
+    source: filter.source || DEFAULT_CODEX_ACCOUNT_ORDER_FILTER.source,
+    requiresRequestable: filter.requiresRequestable === true,
+    requiresBlocked: filter.requiresBlocked === true,
+    requiresDisabled: filter.requiresDisabled === true,
+    hasBalance: filter.hasBalance === true,
+    hasLongestQuota: filter.hasLongestQuota === true,
+    requiresError: filter.requiresError === true,
   };
 }
 
@@ -81,13 +85,16 @@ export function filterCodexAccountOrderRows<T extends CodexAccountOrderFilterabl
     if (normalizedFilter.source !== 'all' && row.sourceKind !== normalizedFilter.source) {
       return false;
     }
-    if (normalizedFilter.requestableOnly && row.requestable === false) {
+    if (normalizedFilter.requiresRequestable && row.requestable === false) {
       return false;
     }
-    if (normalizedFilter.disabledOnly && !isCodexOrderRowDisabled(row)) {
+    if (normalizedFilter.requiresBlocked && row.requestable !== false) {
       return false;
     }
-    if (normalizedFilter.errorsOnly && !isCodexOrderRowError(row)) {
+    if (normalizedFilter.requiresDisabled && !isCodexOrderRowDisabled(row)) {
+      return false;
+    }
+    if (normalizedFilter.requiresError && !isCodexOrderRowError(row)) {
       return false;
     }
     if (normalizedFilter.hasBalance && !hasCodexOrderRowDisplayableBalance(row, codexQuotaByName)) {

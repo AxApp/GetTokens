@@ -87,7 +87,7 @@ type AccountDetailTarget =
 
 1. 账号详情视觉统一应优先抽 UI primitives，而不是把不同来源的 controller 合并成单体。Accounts、Codex、Claude Code、OpenAI-compatible 继续各自持有数据加载、保存、hash 与 Wails 调用边界；共享层只负责 frame、section、overview、module stack、header 和 footer 等详情结构。
 2. 账号详情中的运行态、evidence、quota、balance 必须从账号卡共享语义进入详情页，但不能把账号卡整体嵌入详情造成卡中卡。宽屏详情默认允许 card-mode 多列排布，长编辑面通过 `span="wide"` 跨列。
-3. 账号筛选一旦来源、请求性、禁用、错误、余额和额度语义分离，就必须使用对象状态。Codex 请求顺序页同步账号池筛选维度时只过滤展示行，不改变真实拖拽顺序、ORDER 编号或路由探测顺序。
+3. 账号筛选一旦来源、请求性、禁用、错误、余额和额度语义分离，就必须使用对象状态，并用 AND-style requirement 字段表达叠加条件，不回退到旧单选或旧兼容字段。Codex 请求顺序页同步账号池筛选维度时只过滤展示行，不改变真实拖拽顺序、ORDER 编号或路由探测顺序。
 
 已沉淀位置：
 

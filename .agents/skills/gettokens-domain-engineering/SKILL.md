@@ -24,13 +24,14 @@ This skill unifies the technical rules for building, styling, and debugging GetT
     - `model/`
     - `tests/`
   - Do not re-introduce `helpers.ts`-style catch-all files. Split by responsibility such as config snippets, selectors, presentation, quota formatting, and actions.
-  - Account list filters must not be collapsed into a single enum once source and availability semantics diverge. Prefer a filter object such as:
+  - Account list filters must not be collapsed into a single enum once source and availability semantics diverge. For account list and Codex account order filters, use AND-style requirement fields instead of a single `availability` enum or `*Only` compatibility fields:
     - `source`
-    - `requestableOnly`
-    - `disabledOnly`
+    - `requiresRequestable`
+    - `requiresBlocked`
+    - `requiresDisabled`
     - `hasBalance`
     - `hasLongestQuota`
-    - `errorsOnly`
+    - `requiresError`
   - Keep disabled and error/unavailable filters separate. A manually disabled account is route-excluded by user intent, while an error/unavailable account needs diagnostic attention.
   - Persist account-list filter preferences separately from ephemeral UI state. Persist filters; do not persist search drafts, modal open state, or bulk-selection state unless a later requirement explicitly needs that.
 
@@ -119,10 +120,21 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Shared shells and visual primitives are still encouraged. Reuse `AssetWorkbenchShell`, preview data, DTO mappers, and list patterns where they fit, but do not let shared UI collapse distinct navigation surfaces into one tabbed page.
   - Keep legacy hash/storage compatibility explicit. A retired merged workspace such as `extensions` may migrate to the safest default (`skills`), but should not remain a first-class menu item once split pages exist.
   - Page-internal segmented controls should represent local field choices such as MCP transport, filters, or modes; they should not be used as replacement navigation for top-level or second-level workspaces that already exist in the sidebar.
+- **Usage Desk Local Projection**:
+  - Treat local file projection as a provider-specific data source, not a generic Codex-only feature. Each provider needs its own backend reader, runtime cache, progress events, root Wails binding, generated frontend binding, preview payload, and frontend source switching.
+  - Claude Code local usage projection reads `CLAUDE_CONFIG_DIR || ~/.claude` under `projects/**/*.jsonl` only. It is read-only: never write, delete, compress, rename, or rewrite Claude native session files.
+  - Claude Code projection must skip `subagents/agent-*` sidechain files and parse only assistant envelopes with `message.usage`; do not return prompt text, tool input, message body, credentials, emails, or raw content.
+  - For streaming Claude Code assistant rows, dedupe by `message.id`. Keep the final row with non-empty `message.stop_reason`; if multiple comparable rows exist, keep the one with the larger `output_tokens`. Skip unfinished rows with empty `stop_reason` or `output_tokens=0`.
+  - Token mapping is `input_tokens + cache_creation_input_tokens`, `cache_read_input_tokens || cached_input_tokens`, and `output_tokens`.
+  - Frontend Usage Desk rendering must branch by `source === 'observed'` vs `source === 'projected'`, not by workspace. A workspace-specific override such as `workspace === 'claude'` inside the observed branch can make a projected button visually selected while still rendering observed data.
+  - `usage-local:*` events must carry and filter `provider`, so Codex rollout projection and Claude session projection do not overwrite each other's page state.
+  - Verification for this class of change must include fixture tests, generated binding assertions, preview projected rows, and a real local-file sanity check that reports counts/totals without reading or printing sensitive message content.
 - **Codex Live Sessions**: For `#frame=codex&workspace=live-sessions`, treat the feature as runtime observability, not local session-file management. Use this when surfacing in-flight request/session state from CLIProxyAPI.
   - Data ownership starts in the CLIProxyAPI fork. Add an in-memory runtime tracker and a read-only management endpoint first; then expose it through `internal/wailsapp`, root `main.App`, generated `frontend/wailsjs`, and finally the React feature.
   - Keep the UI read-only. Do not add request cancel, replay, forced WebSocket recovery, or full payload display unless a later requirement explicitly scopes the action and safety model.
-  - Default list columns should show the operator-level facts users asked for: status, model/account, connection mode, output rate, first token / TTFT, and running duration. Put request/session/execution ids and redacted diagnostics behind row expansion.
+  - Default list rows should stay low-noise. Show only the operator-facing identity pair requested for the feed: `sessionID / projectName` and `account / http|ws`. Keep status, model, timing, request ids, execution ids, and redacted diagnostics in detail panes.
+  - `projectName` is a display label that may be enriched by Wails/frontend from trusted local metadata. Add it as an optional DTO field end-to-end (`internal/wailsapp` -> root `main.App` -> generated `frontend/wailsjs` -> feature model) and fall back to an explicit unknown-project label when absent.
+  - Account resource surfaces inside live-session details should reuse accounts-domain components such as `QuotaBars` and `BillingBalance`. Add a small adapter from live request `quota` / `billing` DTOs into account display shapes instead of copying quota or balance JSX into live sessions.
   - Never display raw request/response payloads, credentials, bearer tokens, cookies, or unredacted error bodies. Diagnostic copy must be redacted and bounded.
   - When correlating WebSocket and HTTP usage, preserve request ids through context. Usage hooks should update an existing WebSocket request when the request id is known, not create a duplicate HTTP-only session.
   - Treat Codex upstream HTTP fallback as an observable sticky state. GetTokens may infer and explain the fallback, but must not promise transparent recovery to WebSocket after Codex has already downgraded.
@@ -182,14 +194,26 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 
 ## 5. Auth File Normalize & Status Surface Boundary
 - **Normalize**: Legacy `codex` auth payloads must be normalized to the minimal sidecar-consumable shape, not persisted as “original payload plus patched fields”.
+- **CPA Auto-Convert**:
+  - When importing or uploading ChatGPT Web session, 9router Codex OAuth, or other session-like Codex OAuth payloads, put detection and conversion in `internal/accounts.NormalizeAuthFileForSidecar`.
+  - Upload, paste/import, and detail normalize paths must share the backend normalize entrypoint. Do not duplicate access-token/session-token/id-token conversion in frontend model code.
+  - Convert supported session-like payloads to CPA / sidecar-compatible `type: "codex"` JSON before posting to CLIProxyAPI auth-files.
+  - If the source lacks a real `id_token` but has enough account identity, generate a synthetic JWT with `https://api.openai.com/auth` claims so downstream profile/quota parsers can still infer `chatgpt_account_id` and `chatgpt_plan_type`.
+  - Unknown JSON must not be force-converted. Preserve existing upload behavior unless the payload has an OAuth access token plus account identity signal such as email, account id, or user id.
+  - Regression tests for this class must cover ChatGPT Web session, 9router OAuth, existing CPA/Codex auth JSON, unknown JSON, and the Wails upload multipart path.
 - **Minimal Fields**:
   - `type`
   - `access_token`
   - `id_token`
   - `refresh_token`
+  - `session_token`
   - `account_id`
+  - `chatgpt_account_id`
   - `email`
   - `plan_type`
+  - `chatgpt_plan_type`
+  - `expired`
+  - `last_refresh`
 - **Reuse**: Frontend sanitize/preview UI must call the same backend normalize entrypoint that import/upload uses. Do not fork normalization rules in the frontend.
 - **Status Message**: Auth-file failure reasons come from sidecar `statusMessage` and must be preserved end-to-end:
   - sidecar auth file item

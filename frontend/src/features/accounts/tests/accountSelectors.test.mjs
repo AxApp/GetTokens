@@ -215,7 +215,7 @@ test('filterAccounts returns no accounts when no credential source is selected',
   );
 });
 
-test('filterAccounts can keep only requestable accounts', () => {
+test('filterAccounts can require requestable accounts', () => {
   const accounts = [
     {
       id: 'auth-file:active',
@@ -246,7 +246,7 @@ test('filterAccounts can keep only requestable accounts', () => {
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        availability: 'requestable',
+        requiresRequestable: true,
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -254,7 +254,7 @@ test('filterAccounts can keep only requestable accounts', () => {
   );
 });
 
-test('filterAccounts can keep only accounts with displayable balance', () => {
+test('filterAccounts can require accounts with displayable balance', () => {
   const accounts = [
     {
       id: 'api-key:balance',
@@ -314,7 +314,7 @@ test('filterAccounts can keep only accounts with displayable balance', () => {
   );
 });
 
-test('filterAccounts keeps only auth-file codex accounts with positive longest-window quota when enabled', () => {
+test('filterAccounts requires auth-file codex accounts with positive longest-window quota when enabled', () => {
   const accounts = [
     {
       id: 'auth-file:weekly-ok',
@@ -480,7 +480,7 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        availability: 'errors',
+        requiresError: true,
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -491,11 +491,23 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        availability: 'disabled',
+        requiresDisabled: true,
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
     ['auth-file:disabled']
+  );
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        requiresError: true,
+        requiresDisabled: true,
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    []
   );
 });
 

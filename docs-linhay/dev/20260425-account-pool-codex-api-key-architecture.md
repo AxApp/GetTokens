@@ -121,10 +121,13 @@ Codex 额度不再由 app 直接拼 bearer 请求外网，而是走：
 
 1. 列表筛选不能再继续复用单一 `SourceFilter` 枚举
 2. “来源”和“账号可用性 / 额度状态”是两类不同维度
-3. 稳定状态模型应拆为：
+3. 稳定状态模型应拆为对象字段，并按 AND 条件叠加，不再回退到 `*Only` 兼容字段：
    - `source`
+   - `requiresRequestable`
+   - `requiresDisabled`
+   - `requiresError`
    - `hasLongestQuota`
-   - `errorsOnly`
+   - `hasBalance`
 4. 这些筛选配置可以持久化；搜索词、批量选择态、弹窗开关等仍属于瞬时 UI 状态，不应一起落盘
 
 ### 最长窗口额度语义

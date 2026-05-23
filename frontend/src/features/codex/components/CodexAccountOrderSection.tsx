@@ -105,7 +105,7 @@ export function CodexAccountOrderSection({
   onMoveToBottom: (id: string) => void;
   onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
   initialDensity?: CodexAccountOrderDisplayMode;
-  initialAccountFilter?: CodexAccountOrderFilter | 'all' | 'requestable';
+  initialAccountFilter?: CodexAccountOrderFilter | 'all';
 }) {
   const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => initialDensity ?? readInitialDensity());
   const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(() => normalizeCodexAccountOrderFilter(initialAccountFilter));
@@ -439,7 +439,7 @@ function InlineActionControls({
     });
   }
 
-  function toggleFilter(key: 'requestableOnly' | 'disabledOnly' | 'hasBalance' | 'hasLongestQuota' | 'errorsOnly') {
+  function toggleFilter(key: 'requiresRequestable' | 'requiresBlocked' | 'requiresDisabled' | 'hasBalance' | 'hasLongestQuota' | 'requiresError') {
     updateFilter({
       [key]: !accountFilter[key],
     });
@@ -477,42 +477,48 @@ function InlineActionControls({
           <div className="absolute right-0 top-[calc(100%+0.75rem)] z-30 grid min-w-[22rem] gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[6px_6px_0_var(--shadow-color)]">
             <div className="grid gap-2">
               <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {t('accounts.filter_group_source')}
+                {t('accounts.filter_group_status')}
               </p>
-              <div className="grid grid-cols-2 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-                <SourceFilterButton active={accountFilter.source === 'all'} bordered onClick={() => updateFilter({ source: 'all' })}>
-                  {t('codex.account_list_filter_all')}
-                </SourceFilterButton>
-                <SourceFilterButton active={accountFilter.source === 'codex-auth-file'} onClick={() => updateFilter({ source: 'codex-auth-file' })}>
-                  {t('codex.account_list_source_auth_file')}
-                </SourceFilterButton>
-                <SourceFilterButton active={accountFilter.source === 'codex-api-key'} bordered topBorder onClick={() => updateFilter({ source: 'codex-api-key' })}>
-                  {t('codex.account_list_source_api_key')}
-                </SourceFilterButton>
-                <SourceFilterButton active={accountFilter.source === 'openai-compatible'} topBorder onClick={() => updateFilter({ source: 'openai-compatible' })}>
-                  {t('codex.account_list_source_openai_compatible')}
-                </SourceFilterButton>
-              </div>
+              <FilterCheckOption checked={accountFilter.requiresRequestable} onChange={() => toggleFilter('requiresRequestable')}>
+                {t('codex.account_list_filter_requestable_match')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.requiresBlocked} onChange={() => toggleFilter('requiresBlocked')}>
+                {t('codex.account_list_filter_blocked_match')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.requiresDisabled} onChange={() => toggleFilter('requiresDisabled')}>
+                {t('codex.account_list_filter_disabled_match')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.requiresError} onChange={() => toggleFilter('requiresError')}>
+                {t('codex.account_list_filter_error_match')}
+              </FilterCheckOption>
             </div>
             <div className="grid gap-2">
               <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                {t('accounts.filter_group_status')}
+                {t('accounts.filter_group_resource')}
               </p>
-              <FilterCheckbox checked={accountFilter.requestableOnly} onChange={() => toggleFilter('requestableOnly')}>
-                {t('accounts.filter_requestable')}
-              </FilterCheckbox>
-              <FilterCheckbox checked={accountFilter.disabledOnly} onChange={() => toggleFilter('disabledOnly')}>
-                {t('accounts.filter_disabled_only')}
-              </FilterCheckbox>
-              <FilterCheckbox checked={accountFilter.errorsOnly} onChange={() => toggleFilter('errorsOnly')}>
-                {t('accounts.errors_only')}
-              </FilterCheckbox>
-              <FilterCheckbox checked={accountFilter.hasBalance} onChange={() => toggleFilter('hasBalance')}>
-                {t('accounts.filter_has_balance')}
-              </FilterCheckbox>
-              <FilterCheckbox checked={accountFilter.hasLongestQuota} onChange={() => toggleFilter('hasLongestQuota')}>
-                {t('accounts.filter_longest_quota')}
-              </FilterCheckbox>
+              <FilterCheckOption checked={accountFilter.hasBalance} onChange={() => toggleFilter('hasBalance')}>
+                {t('codex.account_list_filter_balance_match')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.hasLongestQuota} onChange={() => toggleFilter('hasLongestQuota')}>
+                {t('codex.account_list_filter_longest_quota_match')}
+              </FilterCheckOption>
+            </div>
+            <div className="grid gap-2">
+              <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {t('accounts.filter_group_source')}
+              </p>
+              <FilterCheckOption checked={accountFilter.source === 'all'} onChange={() => updateFilter({ source: 'all' })}>
+                {t('codex.account_list_filter_all')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.source === 'codex-auth-file'} onChange={() => updateFilter({ source: 'codex-auth-file' })}>
+                {t('codex.account_list_source_auth_file')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.source === 'codex-api-key'} onChange={() => updateFilter({ source: 'codex-api-key' })}>
+                {t('codex.account_list_source_api_key')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.source === 'openai-compatible'} onChange={() => updateFilter({ source: 'openai-compatible' })}>
+                {t('codex.account_list_source_openai_compatible')}
+              </FilterCheckOption>
             </div>
             <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-3">
               <button
@@ -537,37 +543,7 @@ function InlineActionControls({
   );
 }
 
-function SourceFilterButton({
-  active,
-  bordered = false,
-  topBorder = false,
-  children,
-  onClick,
-}: {
-  active: boolean;
-  bordered?: boolean;
-  topBorder?: boolean;
-  children: ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`min-h-9 min-w-0 px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
-        bordered ? 'border-r border-[var(--border-color)]' : ''
-      } ${topBorder ? 'border-t border-[var(--border-color)]' : ''} ${
-        active
-          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-      }`}
-    >
-      <span className="block truncate">{children}</span>
-    </button>
-  );
-}
-
-function FilterCheckbox({
+function FilterCheckOption({
   checked,
   children,
   onChange,
@@ -577,14 +553,20 @@ function FilterCheckbox({
   onChange: () => void;
 }) {
   return (
-    <label className="flex min-h-8 cursor-pointer items-center gap-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+    <label
+      className={`flex min-h-9 cursor-pointer items-center gap-2 border-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
+        checked
+          ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]'
+          : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+      }`}
+    >
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
-        className="h-3.5 w-3.5 accent-[var(--text-primary)]"
+        className="h-3.5 w-3.5 shrink-0 accent-[var(--text-primary)]"
       />
-      <span>{children}</span>
+      <span className="block min-w-0 truncate">{children}</span>
     </label>
   );
 }
@@ -597,24 +579,27 @@ function buildCodexOrderFilterLabel(t: (key: string) => string, filter: CodexAcc
     'openai-compatible': t('codex.account_list_source_openai_compatible'),
   };
   const parts: string[] = [];
+  if (filter.requiresRequestable) {
+    parts.push(t('codex.account_list_filter_requestable_match'));
+  }
+  if (filter.requiresBlocked) {
+    parts.push(t('codex.account_list_filter_blocked_match'));
+  }
+  if (filter.requiresDisabled) {
+    parts.push(t('codex.account_list_filter_disabled_match'));
+  }
+  if (filter.requiresError) {
+    parts.push(t('codex.account_list_filter_error_match'));
+  }
+  if (filter.hasBalance) {
+    parts.push(t('codex.account_list_filter_balance_match'));
+  }
+  if (filter.hasLongestQuota) {
+    parts.push(t('codex.account_list_filter_longest_quota_match'));
+  }
   const sourceLabel = sourceLabels[filter.source];
   if (sourceLabel) {
     parts.push(sourceLabel);
-  }
-  if (filter.requestableOnly) {
-    parts.push(t('accounts.filter_requestable'));
-  }
-  if (filter.disabledOnly) {
-    parts.push(t('accounts.filter_disabled_only'));
-  }
-  if (filter.errorsOnly) {
-    parts.push(t('accounts.errors_only'));
-  }
-  if (filter.hasBalance) {
-    parts.push(t('accounts.filter_has_balance'));
-  }
-  if (filter.hasLongestQuota) {
-    parts.push(t('accounts.filter_longest_quota'));
   }
   if (parts.length === 0) {
     return t('accounts.display_filters');

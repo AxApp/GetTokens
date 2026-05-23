@@ -28,7 +28,7 @@ const emptyFilters: AccountsFilterState = {
 const activeFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
   source: 'api-key',
-  availability: 'requestable',
+  requiresRequestable: true,
   hasLongestQuota: true,
 };
 

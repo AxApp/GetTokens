@@ -23,6 +23,9 @@ export interface QuotaWindowDisplay {
   label: string;
   remainingPercent: number | null;
   usedLabel: string;
+  usedTokens?: number;
+  limitTokens?: number;
+  remainingTokens?: number;
   resetLabel: string;
   resetAtUnix?: number;
 }
@@ -61,11 +64,12 @@ export interface AccountGroup {
 }
 
 export type AccountsFilterSource = 'all' | 'none' | CredentialSource;
-export type AccountsAvailabilityFilter = 'all' | 'requestable' | 'disabled' | 'errors';
 
 export interface AccountsFilterState {
   source: AccountsFilterSource;
-  availability: AccountsAvailabilityFilter;
+  requiresRequestable: boolean;
+  requiresDisabled: boolean;
+  requiresError: boolean;
   hasBalance: boolean;
   hasLongestQuota: boolean;
 }

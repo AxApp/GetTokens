@@ -41,15 +41,15 @@ export function filterAccounts(accounts: AccountRecord[], { searchTerm, filters,
       return false;
     }
 
-    if (filters.availability === 'requestable' && isAccountUnavailable(account)) {
+    if (filters.requiresRequestable && isAccountUnavailable(account)) {
       return false;
     }
 
-    if (filters.availability === 'disabled' && !isAccountDisabled(account)) {
+    if (filters.requiresDisabled && !isAccountDisabled(account)) {
       return false;
     }
 
-    if (filters.availability === 'errors' && !isAccountError(account)) {
+    if (filters.requiresError && !isAccountError(account)) {
       return false;
     }
 

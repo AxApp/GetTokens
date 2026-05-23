@@ -32,6 +32,7 @@ import {
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
   filterCodexAccountOrderRows,
   getCodexAccountOrderGridClass,
+  normalizeCodexAccountOrderFilter,
   parseCodexAccountOrderDisplayMode,
   shouldUseCodexOrderSectionActionMenu,
 } from './model/codexAccountOrderSectionLayout.ts';
@@ -318,21 +319,29 @@ test('filterCodexAccountOrderRows hides blocked accounts without reordering visi
 
   assert.deepEqual(DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, {
     source: 'all',
-    requestableOnly: false,
-    disabledOnly: false,
+    requiresRequestable: false,
+    requiresBlocked: false,
+    requiresDisabled: false,
     hasBalance: false,
     hasLongestQuota: false,
-    errorsOnly: false,
+    requiresError: false,
   });
   assert.deepEqual(filterCodexAccountOrderRows(rows, DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, {}).map((row) => row.id), [
     'auth-file:a.json',
     'auth-file:disabled.json',
     'openai-compatible:mi',
   ]);
-  assert.deepEqual(filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requestableOnly: true }, {}).map((row) => row.id), [
+  assert.deepEqual(filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresRequestable: true }, {}).map((row) => row.id), [
     'auth-file:a.json',
     'openai-compatible:mi',
   ]);
+  assert.deepEqual(filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresBlocked: true }, {}).map((row) => row.id), [
+    'auth-file:disabled.json',
+  ]);
+  assert.deepEqual(
+    normalizeCodexAccountOrderFilter({ ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresRequestable: true, requiresBlocked: true }),
+    { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresRequestable: true, requiresBlocked: true },
+  );
 });
 
 test('filterCodexAccountOrderRows syncs source, balance, disabled, error, and longest quota filters', () => {
@@ -417,11 +426,15 @@ test('filterCodexAccountOrderRows syncs source, balance, disabled, error, and lo
     ['openai-compatible:mi'],
   );
   assert.deepEqual(
-    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, disabledOnly: true }, quotaByName).map((row) => row.id),
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresDisabled: true }, quotaByName).map((row) => row.id),
     ['codex-api-key:disabled'],
   );
   assert.deepEqual(
-    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, errorsOnly: true }, quotaByName).map((row) => row.id),
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresBlocked: true }, quotaByName).map((row) => row.id),
+    ['auth-file:error.json', 'codex-api-key:disabled'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, requiresError: true }, quotaByName).map((row) => row.id),
     ['auth-file:error.json'],
   );
   assert.deepEqual(
@@ -464,8 +477,15 @@ test('Codex account order row exposes direct top and bottom reorder actions', as
 test('Codex account order toolbar uses the unified filter menu instead of separate scope clusters', async () => {
   const source = await readFile(new URL('./components/CodexAccountOrderSection.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /filter_has_balance/);
+  assert.match(source, /account_list_filter_balance_match/);
+  assert.match(source, /requiresBlocked/);
+  assert.doesNotMatch(source, /blockedOnly/);
+  assert.doesNotMatch(source, /requestableOnly/);
+  assert.doesNotMatch(source, /disabledOnly/);
+  assert.doesNotMatch(source, /errorsOnly/);
   assert.match(source, /account_list_source_openai_compatible/);
+  assert.match(source, /FilterCheckOption/);
+  assert.doesNotMatch(source, /function SourceFilterButton/);
   assert.doesNotMatch(source, /function ActionControlCluster/);
 });
 
