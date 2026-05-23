@@ -172,6 +172,21 @@ export function resolveAccountFailureReason(account: AccountRecord) {
     .trim();
 }
 
+export function buildAccountDetailStatusMessage(account: AccountRecord, t: Translator) {
+  const status = String(account.localOnly ? 'LOCAL' : account.status || '')
+    .trim()
+    .toUpperCase();
+  if (status === 'ACTIVE' || status === 'CONFIGURED' || status === 'DISABLED' || status === 'LOCAL') {
+    return null;
+  }
+
+  return {
+    title: t('accounts.detail_error_title'),
+    body: resolveAccountFailureReason(account) || t('accounts.detail_error_fallback'),
+    tone: 'danger' as const,
+  };
+}
+
 export function resolveAccountStatusTone(account: AccountRecord) {
   const status = String(account.localOnly ? 'LOCAL' : account.status || '')
     .trim()

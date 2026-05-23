@@ -15,6 +15,7 @@ import {
   resolveAccountProviderConfigHeading,
   resolveAccountStatusTone,
   resolveAccountSourceHeading,
+  buildAccountDetailStatusMessage,
   resolveLoadedAuthFileRecords,
 } from '../model/accountPresentation.ts';
 import { shouldLoadAccountsData } from '../model/accountRuntime.ts';
@@ -192,6 +193,66 @@ test('resolveAccountFailureReason only returns message for failed statuses', () 
       statusMessage: 'should stay hidden',
     }),
     ''
+  );
+});
+
+test('buildAccountDetailStatusMessage exposes failed account diagnostics for detail page', () => {
+  const t = (key) =>
+    ({
+      'accounts.detail_error_title': '账号异常',
+      'accounts.detail_error_fallback': '当前账号状态异常，但 sidecar 未返回具体原因。',
+    })[key] || key;
+
+  assert.deepEqual(
+    buildAccountDetailStatusMessage(
+      {
+        id: 'auth-file:broken',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'broken.json',
+        status: 'ERROR',
+        statusMessage: 'refresh token expired',
+      },
+      t
+    ),
+    {
+      title: '账号异常',
+      body: 'refresh token expired',
+      tone: 'danger',
+    }
+  );
+
+  assert.deepEqual(
+    buildAccountDetailStatusMessage(
+      {
+        id: 'auth-file:unknown-error',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'unknown-error.json',
+        status: 'ERROR',
+      },
+      t
+    ),
+    {
+      title: '账号异常',
+      body: '当前账号状态异常，但 sidecar 未返回具体原因。',
+      tone: 'danger',
+    }
+  );
+
+  assert.equal(
+    buildAccountDetailStatusMessage(
+      {
+        id: 'auth-file:healthy',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'healthy.json',
+        status: 'ACTIVE',
+        statusMessage: 'should stay hidden',
+      },
+      t
+    ),
+    null
   );
 });
 

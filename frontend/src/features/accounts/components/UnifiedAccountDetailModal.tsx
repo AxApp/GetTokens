@@ -20,6 +20,7 @@ import {
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
 import { buildQuotaDisplay, extractBilling } from '../model/accountQuota';
+import { buildAccountDetailStatusMessage } from '../model/accountPresentation';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import type { CodexQuotaState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
@@ -39,6 +40,7 @@ import {
   AccountDetailEmptyState,
   AccountDetailModuleStack,
   AccountDetailOverviewGrid,
+  AccountDetailNotice,
   AccountDetailPill,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
@@ -69,6 +71,7 @@ export interface UnifiedAccountDetailProps {
 
 export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailProps) {
   const { account, onClose, onSaveConfig, quotaState } = props;
+  const { t } = useI18n();
   const isApiKey = account.credentialSource === 'api-key';
   const isAuthFile = account.credentialSource === 'auth-file';
   const [configDraft, setConfigDraft] = useState<ApiKeyConfigDraft>(() => buildApiKeyConfigDraft(account));
@@ -124,6 +127,10 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     () => buildQuotaDisplay(account, quotaState),
     [account, quotaState],
   );
+  const statusMessage = useMemo(
+    () => buildAccountDetailStatusMessage(account, t),
+    [account, t],
+  );
 
   async function saveConfig() {
     if (savingConfig || missingFields.length > 0) {
@@ -146,6 +153,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     <AccountDetailModalFrame
       onClose={onClose}
       header={<AccountDetailHeader {...props} />}
+      error={statusMessage ? <AccountDetailStatusNotice message={statusMessage} /> : undefined}
       footer={
         <AccountDetailFooter
           isApiKey={isApiKey}
@@ -223,6 +231,23 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         </AccountDetailModuleStack>
       </AccountDetailBody>
     </AccountDetailModalFrame>
+  );
+}
+
+function AccountDetailStatusNotice({
+  message,
+}: {
+  message: NonNullable<ReturnType<typeof buildAccountDetailStatusMessage>>;
+}) {
+  return (
+    <AccountDetailNotice tone={message.tone} className="mx-6 mb-4 shrink-0">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] tracking-[0.18em]">
+        {message.title}
+      </div>
+      <div className="mt-1 break-words font-mono text-[length:var(--font-size-ui-xs)] normal-case tracking-[0.06em]">
+        {message.body}
+      </div>
+    </AccountDetailNotice>
   );
 }
 

@@ -35,6 +35,7 @@
 - And API key 的保存、验证、额度、余额、限流能力保持可用
 - And auth-file 的内容查看、sanitize、compatible models、重新授权保持可用
 - And 详情页显示卡片模式已有的近期统计、额度窗口与 balance 信息
+- And 失败态账号详情会直接展示 sidecar 返回的 `statusMessage`；若 sidecar 未返回具体原因，显示明确兜底提示
 - And 运行快照与证据模块在顶部概览区并排展示，额度与余额在运行快照内部并排展示
 - And 顶部运行快照与 evidence 模块在宽屏并排时保持等高
 - And 详情 body 内的模块头部统一使用标准 eyebrow / title / meta / actions 结构
@@ -107,6 +108,7 @@
 19. `CodexAccountDetailModal` 新增 `CodexAccountEvidenceSection`，把原独立字段网格迁入顶部 overview evidence，与普通账号和 OpenAI-compatible 详情保持一致。
 20. `AccountDetailOverviewGrid` 新增 equal-height 标记与 stretch slot，确保 `AccountRuntimeSnapshotSection` 与 `CodexAccountEvidenceSection` 等顶部 evidence 模块在宽屏并排时等高。
 21. `CodexModelRoutingSection` 的新增模型按钮移入 section header actions，显示在模块右上角；底部只保留错误提示。
+22. `UnifiedAccountDetailModal` 接入 `buildAccountDetailStatusMessage`，失败态账号在详情弹窗显示 `statusMessage` 或明确兜底原因，正常 / 禁用 / 本地草稿不显示错误条。
 
 ## 验证记录
 - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`：通过。
@@ -118,6 +120,8 @@
 - `git -C docs-linhay/references/CLIProxyAPI diff --check`：通过。
 - `docs-linhay/scripts/check-docs.sh`：通过。
 - `qmd update`：GetTokens collection 新增 2 个文档、更新 1 个文档。
+- `node --test src/features/accounts/tests/accountPresentation.test.mjs`：通过。
+- `npm --prefix frontend run typecheck`：通过。
 - `qmd embed`：完成 3 个文档的 embedding。
 - 浏览器预览：`http://127.0.0.1:5173/#frame=accounts` 与 `#frame=codex&workspace=account-list` 已验证详情弹窗可打开；唯一 console error 为本地 `favicon.ico` 404，与本次改动无关。
 - Storybook 静态预览：`AccountDetailSections` story 已验证 `AccountDetailOverviewGrid`、标准模块头部与 `quota-balance` 资源网格均渲染；唯一 console error 为本地 `favicon.ico` 404，与本次改动无关。

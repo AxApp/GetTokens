@@ -1174,6 +1174,8 @@
     "status_waiting_check": "等待检测",
     "status_disabled_display": "已禁用",
     "status_error_display": "异常",
+    "detail_error_title": "账号异常",
+    "detail_error_fallback": "当前账号状态异常，但 sidecar 未返回具体原因。",
     "quick_actions": "快速控制指令",
     "errors_only": "仅显示异常账号"
   },

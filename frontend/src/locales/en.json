@@ -1174,6 +1174,8 @@
     "status_waiting_check": "Waiting Check",
     "status_disabled_display": "Disabled",
     "status_error_display": "Error",
+    "detail_error_title": "Account Error",
+    "detail_error_fallback": "The account is in an error state, but sidecar did not return a concrete reason.",
     "quick_actions": "Quick Actions",
     "errors_only": "Only Unavailable"
   },
