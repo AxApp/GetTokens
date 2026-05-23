@@ -22,6 +22,7 @@ import {
   buildCodexQuotaSummaryAccount,
   buildCodexModelAliasOptionNames,
   buildCodexModelOptionNames,
+  canEditCodexModelMappings,
   type CodexAccountRow,
   type CodexModelMappingRow,
 } from '../model/codexAccountList';
@@ -59,7 +60,7 @@ export function CodexAccountDetailModal({
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
   const [mappingDraft, setMappingDraft] = useState<CodexModelMappingRow[]>(() => buildEditableModelMappings(row));
   const [mappingError, setMappingError] = useState('');
-  const editableModelMappings = row.sourceKind === 'openai-compatible' || row.sourceKind === 'codex-auth-file';
+  const editableModelMappings = canEditCodexModelMappings(row.sourceKind);
   const showModelMappings = editableModelMappings;
   const displayedModelMappings = editableModelMappings ? mappingDraft : row.modelMappings;
   const modelOptionNames = buildCodexModelOptionNames(modelOptions);
@@ -323,7 +324,7 @@ function CodexAccountEvidenceSection({
 }
 
 function buildEditableModelMappings(row: Pick<CodexAccountRow, 'sourceKind' | 'modelMappings'>): CodexModelMappingRow[] {
-  if (row.sourceKind !== 'openai-compatible' && row.sourceKind !== 'codex-auth-file') {
+  if (!canEditCodexModelMappings(row.sourceKind)) {
     return [];
   }
   if (row.sourceKind === 'codex-auth-file' && row.modelMappings.length === 0) {

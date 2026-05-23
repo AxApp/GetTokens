@@ -80,6 +80,10 @@ export interface CodexAccountSummary {
   openAICompatible: number;
 }
 
+export function canEditCodexModelMappings(sourceKind: CodexAccountSourceKind): boolean {
+  return sourceKind === 'openai-compatible' || sourceKind === 'codex-auth-file' || sourceKind === 'codex-api-key';
+}
+
 export function buildCodexAccountRows(input: BuildCodexAccountRowsInput): CodexAccountRow[] {
   const rows = [
     ...input.accounts
@@ -203,10 +207,11 @@ function isCodexRequestAccount(account: AccountRecord) {
 function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
   const status = String(account.status || '').trim();
   const requestable = isRequestableStatus(status) && !account.disabled;
+  const sourceKind = account.credentialSource === 'auth-file' ? 'codex-auth-file' : 'codex-api-key';
   return {
     id: account.id,
     label: String(account.email || account.displayName || account.name || account.id).trim(),
-    sourceKind: account.credentialSource === 'auth-file' ? 'codex-auth-file' : 'codex-api-key',
+    sourceKind,
     provider: String(account.provider || 'codex').trim(),
     quotaKey: account.quotaKey,
     priority: account.priority,
@@ -231,7 +236,9 @@ function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
     supportedFormats: account.supportedFormats,
     formatBaseUrls: account.formatBaseUrls,
     models: account.models,
-    modelMappings: [],
+    modelMappings: sourceKind === 'codex-api-key'
+      ? buildOpenAICompatibleModelMappings({ models: readAccountModels(account) })
+      : [],
   };
 }
 
@@ -262,6 +269,24 @@ function mapOpenAICompatibleProviderToCodexRow(provider: OpenAICompatibleProvide
 function isRequestableStatus(status: string) {
   const normalized = status.trim().toUpperCase();
   return normalized === 'ACTIVE' || normalized === 'CONFIGURED' || normalized === 'LOCAL';
+}
+
+function readAccountModels(account: AccountRecord): Array<{ name: string; alias?: string }> {
+  const models = (account as AccountRecord & { models?: unknown }).models;
+  if (!Array.isArray(models)) {
+    return [];
+  }
+  return models.flatMap((model) => {
+    if (!model || typeof model !== 'object') {
+      return [];
+    }
+    const name = String((model as { name?: unknown }).name || '').trim();
+    if (!name) {
+      return [];
+    }
+    const alias = String((model as { alias?: unknown }).alias || '').trim();
+    return [{ name, alias }];
+  });
 }
 
 function buildAccountBlockReason(account: AccountRecord) {

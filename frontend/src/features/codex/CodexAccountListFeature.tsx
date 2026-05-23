@@ -11,6 +11,7 @@ import {
   SetAccountDisabled,
   UpdateOAuthModelAliases,
   UpdateAccountPriority,
+  UpdateCodexAPIKeyConfig,
   UpdateOpenAICompatibleProvider,
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
@@ -43,6 +44,7 @@ import {
   buildCodexRoutingProbeModelOptions,
   buildCodexRoutingProbeStreamLines,
   buildOpenAICompatibleModelMappings,
+  canEditCodexModelMappings,
   DEFAULT_CODEX_ROUTING_PROBE_MODEL,
   mergeCodexAuthFileModelMappings,
   moveCodexAccountRowToEdge,
@@ -672,13 +674,13 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   }
 
   async function saveModelMappings(row: CodexAccountRow, mappings: CodexModelMappingRow[]) {
-    if (row.sourceKind !== 'openai-compatible' && row.sourceKind !== 'codex-auth-file') {
+    if (!canEditCodexModelMappings(row.sourceKind)) {
       return;
     }
 
     const normalizedModels = normalizeCodexModelMappingsForProvider(mappings);
+    const nextMappings = buildOpenAICompatibleModelMappings({ models: normalizedModels });
     if (row.sourceKind === 'codex-auth-file') {
-      const nextMappings = buildOpenAICompatibleModelMappings({ models: normalizedModels });
       if (browserMode) {
         setAuthFileModelMappings((prev) => ({ ...prev, [row.id]: nextMappings }));
         setOrderedRows((prev) => prev.map((item) => (item.id === row.id ? { ...item, modelMappings: nextMappings } : item)));
@@ -726,20 +728,39 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
     setPendingMappingID(row.id);
     try {
-      await trackRequest('UpdateOpenAICompatibleProvider', { id: row.id, models: normalizedModels }, () =>
-        UpdateOpenAICompatibleProvider(
-          main.UpdateOpenAICompatibleProviderInput.createFrom({
-            currentName: row.provider,
-            name: row.provider,
-            baseUrl: row.baseUrl,
-            prefix: row.prefix,
-            apiKey: row.apiKey || row.apiKeys?.[0] || '',
-            apiKeys: row.apiKeys && row.apiKeys.length > 0 ? row.apiKeys : row.apiKey ? [row.apiKey] : [],
-            headers: row.headers || {},
-            models: normalizedModels,
-          }),
-        ),
-      );
+      if (row.sourceKind === 'openai-compatible') {
+        await trackRequest('UpdateOpenAICompatibleProvider', { id: row.id, models: normalizedModels }, () =>
+          UpdateOpenAICompatibleProvider(
+            main.UpdateOpenAICompatibleProviderInput.createFrom({
+              currentName: row.provider,
+              name: row.provider,
+              baseUrl: row.baseUrl,
+              prefix: row.prefix,
+              apiKey: row.apiKey || row.apiKeys?.[0] || '',
+              apiKeys: row.apiKeys && row.apiKeys.length > 0 ? row.apiKeys : row.apiKey ? [row.apiKey] : [],
+              headers: row.headers || {},
+              models: normalizedModels,
+            }),
+          ),
+        );
+      } else {
+        await trackRequest('UpdateCodexAPIKeyConfig', { id: row.id, models: normalizedModels }, () =>
+          UpdateCodexAPIKeyConfig(
+            main.UpdateCodexAPIKeyConfigInput.createFrom({
+              id: row.id,
+              apiKey: row.apiKey || '',
+              baseUrl: row.baseUrl,
+              prefix: row.prefix,
+              proxyUrl: row.proxyUrl || '',
+              models: normalizedModels,
+              quotaCurl: row.quotaCurl || '',
+              quotaEnabled: Boolean(row.quotaEnabled && row.quotaCurl),
+              billingCurl: row.billingCurl || '',
+              billingEnabled: Boolean(row.billingEnabled && row.billingCurl),
+            }),
+          ),
+        );
+      }
       await reload(t('codex.account_list_model_mapping_saved'));
     } catch (error) {
       console.error(error);

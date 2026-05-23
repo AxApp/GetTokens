@@ -12,6 +12,7 @@ import {
   buildCodexAccountSummary,
   buildCodexRoutingProbeModelOptions,
   buildCodexRoutingProbeStreamLines,
+  canEditCodexModelMappings,
   buildCodexRoutePolicyPreview,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutePolicySummary,
@@ -82,6 +83,36 @@ test('buildCodexAccountRows merges codex auth files, codex api keys, and openai-
   );
   assert.equal(rows[0].sourceKind, 'openai-compatible');
   assert.equal(rows[0].requestable, true);
+});
+
+test('buildCodexAccountRows keeps codex api key model mappings from stored account models', () => {
+  const rows = buildCodexAccountRows({
+    accounts: [
+      {
+        id: 'codex-api-key:relay',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Relay Key',
+        status: 'configured',
+        models: [
+          { name: 'deepseek-chat', alias: 'gpt-5.4' },
+          { name: 'deepseek-reasoner', alias: '' },
+        ],
+      },
+    ],
+    providers: [],
+  });
+
+  assert.deepEqual(rows[0].modelMappings, [
+    { realModel: 'deepseek-chat', codexModel: 'gpt-5.4' },
+    { realModel: 'deepseek-reasoner', codexModel: 'deepseek-reasoner' },
+  ]);
+});
+
+test('canEditCodexModelMappings allows codex api key mappings in detail modal editor', () => {
+  assert.equal(canEditCodexModelMappings('openai-compatible'), true);
+  assert.equal(canEditCodexModelMappings('codex-auth-file'), true);
+  assert.equal(canEditCodexModelMappings('codex-api-key'), true);
 });
 
 test('buildCodexAccountRows keeps disabled or errored accounts in order but marks them not requestable', () => {

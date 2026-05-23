@@ -24,7 +24,7 @@
 ## 非目标
 - 不恢复已移除的“请求编排”业务。
 - 不在本期提供账号新增、删除、详情编辑；这些仍留在账号池入口。
-- openai-compatible 模型映射允许在 Codex 账号详情 modal 内新增、删除和保存；更完整的 provider 基础信息编辑仍留在账号池入口。
+- openai-compatible 与 codex-api-key 模型映射允许在 Codex 账号详情 modal 内新增、删除和保存；更完整的 provider 基础信息编辑仍留在账号池入口。
 - 不把账号池路由策略持久化为新的全局配置；本期策略编辑用于单次路由探测与后续客户端 overlay 的交互基础。
 
 ## 验收标准
@@ -33,12 +33,13 @@
 3. Given 某账号被禁用或状态异常，When 查看列表，Then 该账号保留在顺序中但标记为不可请求。
 4. Given 用户拖动账号调整顺序，When 放下账号行，Then 页面自动通过 `UpdateAccountPriority` 写回优先级，刷新后仍按新顺序展示，不再需要额外点击保存按钮。
 5. Given openai-compatible provider 配置了模型 `{ alias, name }`，When 查看该账号详情，Then 模型映射显示为 `name -> alias || name`；当 alias 为空时显示 `name -> name`，并可新增、删除、保存映射。
-6. Given sidecar 未 ready，When 打开账号列表，Then 页面显示等待 sidecar ready 的状态，不发起账号加载。
-7. Given 在普通浏览器环境打开 `#frame=codex&workspace=account-list`，When 页面缺少 Wails runtime，Then 加载稳定预览账号并支持本地排序/启停交互，不抛出 Wails 绑定错误。
-8. Given 用户打开 Codex 账号详情 modal，When URL hash 同步完成，Then 地址栏保留 `#frame=codex&workspace=account-list&detail=<account-id>`；When 关闭 modal，Then 只移除 `detail`，保留当前 Codex 账号列表 frame。
-9. Given 用户保存请求顺序后，When 输入测试模型并点击 `测试一次` 或 `连续测试 3 次`，Then 页面通过真实 relay 请求识别命中的账号，并在结果区与对应账号行展示命中标记。
-10. Given 用户打开 Codex OAuth/auth-file 账号详情，When 调整模型映射并保存，Then 页面写入 sidecar `oauth-model-alias[<provider>]`，支持将高等级 Codex 模型 alias 路由到低等级真实模型。
-11. Given 用户在账号列表配置允许账号、排除账号、策略顺序和 fallback，When 点击路由测试按钮，Then 后端将页面 row id 翻译为 sidecar auth id，通过 `X-GetTokens-Route-*` loopback header 控制本次测试请求的候选账号与顺序，并在页面展示最终候选顺序和实际命中账号。
+6. Given 用户打开 Codex API Key 账号详情，When 查看模型映射模块，Then 右上角显示 `添加映射`，并且已保存的 `models[].name/alias` 会回填为可编辑映射；保存后通过 `UpdateCodexAPIKeyConfig(models)` 持久化。
+7. Given sidecar 未 ready，When 打开账号列表，Then 页面显示等待 sidecar ready 的状态，不发起账号加载。
+8. Given 在普通浏览器环境打开 `#frame=codex&workspace=account-list`，When 页面缺少 Wails runtime，Then 加载稳定预览账号并支持本地排序/启停交互，不抛出 Wails 绑定错误。
+9. Given 用户打开 Codex 账号详情 modal，When URL hash 同步完成，Then 地址栏保留 `#frame=codex&workspace=account-list&detail=<account-id>`；When 关闭 modal，Then 只移除 `detail`，保留当前 Codex 账号列表 frame。
+10. Given 用户保存请求顺序后，When 输入测试模型并点击 `测试一次` 或 `连续测试 3 次`，Then 页面通过真实 relay 请求识别命中的账号，并在结果区与对应账号行展示命中标记。
+11. Given 用户打开 Codex OAuth/auth-file 账号详情，When 调整模型映射并保存，Then 页面写入 sidecar `oauth-model-alias[<provider>]`，支持将高等级 Codex 模型 alias 路由到低等级真实模型。
+12. Given 用户在账号列表配置允许账号、排除账号、策略顺序和 fallback，When 点击路由测试按钮，Then 后端将页面 row id 翻译为 sidecar auth id，通过 `X-GetTokens-Route-*` loopback header 控制本次测试请求的候选账号与顺序，并在页面展示最终候选顺序和实际命中账号。
 
 ## 设计稿入口
 
@@ -91,13 +92,14 @@
 6. `AccountOrderRow` 已重设计为 Swiss-industrial 高密度行：整行左边缘承载请求状态色，左侧顺位轨只保留序号和拖拽柄，并且只有该顺位轨可拖拽；中间展示账号身份、来源和请求出口；右侧将请求状态和启停 switch 组合展示；整行主体点击打开详情。排序仅通过左侧拖拽柄调整，不再显示详情/上移/下移按钮。
 7. 模型映射不再挤在排序行内，改到账号详情 modal 展示；映射方向按 openai-compatible 编辑页现有字段语义统一为真实模型 `models[].name` -> Codex 模型 `models[].alias || name`。
 8. `CodexAccountDetailModal` 支持 openai-compatible 模型映射编辑：真实模型输入写回 provider `models[].name`，Codex 模型输入写回 `models[].alias`；浏览器 preview 只更新本地状态，桌面环境调用 `UpdateOpenAICompatibleProvider` 后刷新真实列表。
-9. Codex 账号详情 modal 已接入 hash detail 约定：打开详情写入 `detail=<account-id>`，直接打开带 detail 的 URL 可恢复 modal，全局导航 hash 同步不会误删当前页面的 modal detail。
-10. OAuth/auth-file 账号详情已接入 `GetAuthFileModels`，在 Codex 账号详情 modal 内按同名透传展示 Web/OAuth 可用模型；openai-compatible 继续保留可编辑模型映射。
-11. openai-compatible 模型映射编辑的真实模型列已接入账号池现有 `FetchOpenAICompatibleProviderModels` 拉取逻辑，并通过下拉候选辅助选择；Codex 模型/alias 列接入现有 `ListRelaySupportedModels` 模型目录，也使用可下拉、可自定义输入的 combobox。
-12. 账号列表顶部新增路由探测区：模型输入支持自定义 combobox 候选，提供 `测试一次` 与 `连续测试 3 次` 两个按钮；存在未保存顺序时禁用测试并提示先保存，测试结果会显示 HTTP 状态、命中账号、recent request 证据，并高亮列表中刚命中的账号。
-13. 后端新增 `ProbeCodexAccountRouting`：使用 relay API key 向 sidecar `/v1/chat/completions` 发送最小测试请求，通过请求前后 `auth-files` 与 `api-key-usage` 的 recent request 差量识别命中的 auth-file、codex-api-key 或 openai-compatible provider。
-14. OAuth/auth-file 账号详情的模型区域已从只读兼容模型改为可编辑模型映射：加载时合并 `GetAuthFileModels` 与 `ListOAuthModelAliases(provider)`，保存时调用 `UpdateOAuthModelAliases` 写回 `oauth-model-alias`；该配置按 provider/channel 生效，同一 `codex` OAuth 通道共享映射。
-15. 路由策略调试区按 Gemini 评审方案重构为“控制台 + 内联策略编辑”：默认先展示测试模型、测试按钮、候选顺序和最近路由命中；点击 `编辑策略` 后不再渲染第二套账号清单，而是在既有请求顺序账号行内直接显示默认/允许/排除与策略上移/下移控件；账号列表行同步显示 `路由 NN`、`跳过` 和策略模式，避免重复账号列表打断配置路径。
+9. Codex API Key 账号详情的模型映射区域与 openai-compatible 保持同一交互：右上角展示 `添加映射`，初始值来自账号 `models`，桌面环境保存走 `UpdateCodexAPIKeyConfig(models)`。
+10. Codex 账号详情 modal 已接入 hash detail 约定：打开详情写入 `detail=<account-id>`，直接打开带 detail 的 URL 可恢复 modal，全局导航 hash 同步不会误删当前页面的 modal detail。
+11. OAuth/auth-file 账号详情已接入 `GetAuthFileModels`，在 Codex 账号详情 modal 内按同名透传展示 Web/OAuth 可用模型；openai-compatible 继续保留可编辑模型映射。
+12. openai-compatible 模型映射编辑的真实模型列已接入账号池现有 `FetchOpenAICompatibleProviderModels` 拉取逻辑，并通过下拉候选辅助选择；Codex 模型/alias 列接入现有 `ListRelaySupportedModels` 模型目录，也使用可下拉、可自定义输入的 combobox。
+13. 账号列表顶部新增路由探测区：模型输入支持自定义 combobox 候选，提供 `测试一次` 与 `连续测试 3 次` 两个按钮；存在未保存顺序时禁用测试并提示先保存，测试结果会显示 HTTP 状态、命中账号、recent request 证据，并高亮列表中刚命中的账号。
+14. 后端新增 `ProbeCodexAccountRouting`：使用 relay API key 向 sidecar `/v1/chat/completions` 发送最小测试请求，通过请求前后 `auth-files` 与 `api-key-usage` 的 recent request 差量识别命中的 auth-file、codex-api-key 或 openai-compatible provider。
+15. OAuth/auth-file 账号详情的模型区域已从只读兼容模型改为可编辑模型映射：加载时合并 `GetAuthFileModels` 与 `ListOAuthModelAliases(provider)`，保存时调用 `UpdateOAuthModelAliases` 写回 `oauth-model-alias`；该配置按 provider/channel 生效，同一 `codex` OAuth 通道共享映射。
+16. 路由策略调试区按 Gemini 评审方案重构为“控制台 + 内联策略编辑”：默认先展示测试模型、测试按钮、候选顺序和最近路由命中；点击 `编辑策略` 后不再渲染第二套账号清单，而是在既有请求顺序账号行内直接显示默认/允许/排除与策略上移/下移控件；账号列表行同步显示 `路由 NN`、`跳过` 和策略模式，避免重复账号列表打断配置路径。
 
 ## 验证记录
 1. `npm run typecheck`
