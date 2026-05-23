@@ -1340,15 +1340,37 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CodexConfigChangeInput {
+	    id?: string;
+	    section?: string;
+	    key?: string;
+	    path?: string[];
+	    valueType?: string;
+	    value?: any;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexConfigChangeInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.section = source["section"];
+	        this.key = source["key"];
+	        this.path = source["path"];
+	        this.valueType = source["valueType"];
+	        this.value = source["value"];
+	    }
+	}
 	export class CodexConfigTomlDocument {
 	    configPath: string;
 	    content: string;
 	    exists: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexConfigTomlDocument(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -1357,21 +1379,33 @@ export namespace main {
 	    }
 	}
 	export class CodexFeatureConfigChange {
+	    id?: string;
+	    section?: string;
 	    key: string;
+	    path?: string[];
+	    valueType?: string;
 	    type: string;
 	    previousEnabled?: boolean;
-	    nextEnabled: boolean;
-	
+	    nextEnabled?: boolean;
+	    previousValue?: any;
+	    nextValue?: any;
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureConfigChange(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.section = source["section"];
 	        this.key = source["key"];
+	        this.path = source["path"];
+	        this.valueType = source["valueType"];
 	        this.type = source["type"];
 	        this.previousEnabled = source["previousEnabled"];
 	        this.nextEnabled = source["nextEnabled"];
+	        this.previousValue = source["previousValue"];
+	        this.nextValue = source["nextValue"];
 	    }
 	}
 	export class CodexFeatureConfigPreview {
@@ -1380,11 +1414,11 @@ export namespace main {
 	    changes: CodexFeatureConfigChange[];
 	    preview: string;
 	    warnings: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureConfigPreview(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -1393,7 +1427,7 @@ export namespace main {
 	        this.preview = source["preview"];
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1413,25 +1447,41 @@ export namespace main {
 		}
 	}
 	export class CodexFeatureDefinition {
+	    section: string;
 	    key: string;
+	    id?: string;
+	    path?: string[];
 	    description?: string;
 	    stage: string;
+	    valueType?: string;
+	    options?: string[];
+	    defaultValue?: any;
 	    defaultEnabled: boolean;
 	    canonicalKey?: string;
 	    legacyAlias?: boolean;
-	
+	    readOnly?: boolean;
+	    unsupported?: boolean;
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureDefinition(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.section = source["section"];
 	        this.key = source["key"];
+	        this.id = source["id"];
+	        this.path = source["path"];
 	        this.description = source["description"];
 	        this.stage = source["stage"];
+	        this.valueType = source["valueType"];
+	        this.options = source["options"];
+	        this.defaultValue = source["defaultValue"];
 	        this.defaultEnabled = source["defaultEnabled"];
 	        this.canonicalKey = source["canonicalKey"];
 	        this.legacyAlias = source["legacyAlias"];
+	        this.readOnly = source["readOnly"];
+	        this.unsupported = source["unsupported"];
 	    }
 	}
 	export class CodexFeatureConfigSnapshot {
@@ -1440,14 +1490,17 @@ export namespace main {
 	    exists: boolean;
 	    definitions: CodexFeatureDefinition[];
 	    values: Record<string, boolean>;
+	    typedValues?: Record<string, any>;
+	    rawValues?: Record<string, string>;
 	    unknownValues?: Record<string, boolean>;
+	    unknownSections?: Record<string, string>;
 	    raw: string;
 	    warnings: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureConfigSnapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.codexHomePath = source["codexHomePath"];
@@ -1455,11 +1508,14 @@ export namespace main {
 	        this.exists = source["exists"];
 	        this.definitions = this.convertValues(source["definitions"], CodexFeatureDefinition);
 	        this.values = source["values"];
+	        this.typedValues = source["typedValues"];
+	        this.rawValues = source["rawValues"];
 	        this.unknownValues = source["unknownValues"];
+	        this.unknownSections = source["unknownSections"];
 	        this.raw = source["raw"];
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;

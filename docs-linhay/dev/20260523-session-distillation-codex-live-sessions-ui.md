@@ -1,0 +1,72 @@
+# Codex Live Sessions UI 会话沉淀
+
+## 背景
+
+本轮围绕 `#frame=codex&workspace=live-sessions` 做了两类收敛：
+
+1. 会话列表行从模型、状态、时长等运行指标收窄为用户指定的低噪声信息。
+2. 详情页账号区的额度与余额展示改为复用账号卡片组件。
+
+这属于 Codex runtime observability 的 UI 边界沉淀，不是新的 repo-wide 治理规则。
+
+## 沉淀模式
+
+### 1. 列表只承载操作者识别信息
+
+Live sessions 的 feed 不是完整诊断表。默认行只展示：
+
+- `sessionID / projectName`
+- `account / http|ws`
+
+状态、模型、请求数、持续时间、TTFT、request id、execution id 和诊断摘要继续放在详情区。这样列表用于快速识别会话，详情用于排障。
+
+### 2. `projectName` 必须端到端可选传递
+
+项目名不是 sidecar runtime tracker 的必备真实源。当前应作为可选显示字段贯穿：
+
+- `internal/wailsapp.CodexLiveSession`
+- root `main.CodexLiveSession`
+- `frontend/wailsjs/go/models.ts`
+- `frontend/src/features/codex-live-sessions/model/types.ts`
+- backend adapter
+
+当字段不存在时，前端显示明确的未知项目文案，不从 session id 或 window id 伪造项目名。
+
+### 3. 账号资源展示复用账号域组件
+
+Live session detail 的账号区如果展示 quota / billing，不再复制私有 JSX。统一做法：
+
+1. 把 live request 的 `quota` 转成 accounts 域 `QuotaDisplay`。
+2. 把 live request 的 `billing` 转成全局 `BillingDisplay`。
+3. 直接复用 `QuotaBars` 和 `BillingBalance`。
+
+这能保持账号卡片、账号详情和运行会话详情在额度/余额上的视觉与语义一致。
+
+### 4. 映射层要用纯函数测试锁住
+
+新增或调整这类展示适配时，优先补纯函数测试：
+
+- feed row summary 不应回显模型、状态、持续时间等噪声字段。
+- quota adapter 应保留 label、remainingPercent、resetLabel / resetAtUnix。
+- billing adapter 应保留 total / granted / topped-up 与 currency。
+
+## 不纳入
+
+- 不新增独立 `gettokens-codex-live-sessions` skill；当前规则继续归入 `gettokens-domain-engineering` 的 Codex Live Sessions 小节。
+- 不把这次视觉顺序、间距和具体 Tailwind class 升级为 AGENTS 规则。
+- 不承诺 GetTokens 能从 Codex HTTP fallback 透明恢复到 WebSocket。
+
+## 后续入口
+
+- Codex live sessions / runtime observability：`.agents/skills/gettokens-domain-engineering`
+- 文档与 memory 写回：`.agents/skills/gettokens-ops-governance`
+- 会话沉淀：`.agents/skills/gettokens-session-skill-distill`
+
+## 验证记录
+
+本轮已通过：
+
+- `node --test frontend/src/features/codex-live-sessions/model.test.mjs`
+- `npm --prefix frontend run typecheck`
+
+Go focused test 曾被当前工作区其他变更阻塞过：`internal/accounts/auth_file_normalize.go` 缺少 `convertSessionLikePayloadToCPA`。后续提交 live sessions 改动时，应重新确认当前工作区是否已经恢复可编译。

@@ -62,8 +62,36 @@ const copy: Record<string, string> = {
 
 const t = (key: string) => copy[key] ?? key;
 
+function boolRow(row: Omit<CodexFeatureRow, 'id' | 'path' | 'valueType' | 'options' | 'draftValue' | 'dirty' | 'changeKind'> & {
+  draftValue: boolean;
+  dirty: boolean;
+  changeKind: CodexFeatureRow['changeKind'];
+}): CodexFeatureRow {
+  return {
+    id: row.key,
+    path: [row.key],
+    valueType: 'boolean',
+    options: [],
+    ...row,
+  };
+}
+
+function previewChange(key: string, before: unknown, after: unknown, kind: string) {
+  return {
+    id: key,
+    section: 'features',
+    key,
+    path: [key],
+    valueType: 'boolean',
+    before,
+    after,
+    kind,
+  };
+}
+
 const rows: CodexFeatureRow[] = [
-  {
+  boolRow({
+    section: 'features',
     key: 'responses_api',
     description: '优先使用 Responses API 路径。',
     stage: 'recommended',
@@ -80,8 +108,9 @@ const rows: CodexFeatureRow[] = [
     draftValue: true,
     dirty: false,
     changeKind: 'none',
-  },
-  {
+  }),
+  boolRow({
+    section: 'features',
     key: 'compact_context',
     description: '压缩上下文窗口内的低价值历史记录。',
     stage: 'experimental',
@@ -98,8 +127,9 @@ const rows: CodexFeatureRow[] = [
     draftValue: true,
     dirty: true,
     changeKind: 'modified',
-  },
-  {
+  }),
+  boolRow({
+    section: 'features',
     key: 'legacy_tools',
     description: '旧版本工具桥接开关。',
     stage: 'legacy',
@@ -116,8 +146,9 @@ const rows: CodexFeatureRow[] = [
     draftValue: true,
     dirty: false,
     changeKind: 'none',
-  },
-  {
+  }),
+  boolRow({
+    section: 'features',
     key: 'remote_shell',
     description: '当前本地 Codex 版本不支持。',
     stage: 'unsupported',
@@ -134,7 +165,7 @@ const rows: CodexFeatureRow[] = [
     draftValue: false,
     dirty: false,
     changeKind: 'none',
-  },
+  }),
 ];
 
 const snapshot: CodexFeatureConfigSnapshot = {
@@ -148,14 +179,7 @@ const snapshot: CodexFeatureConfigSnapshot = {
 const preview: CodexFeaturePreview = {
   configPath: snapshot.configPath,
   summary: '1 modified',
-  changes: [
-    {
-      key: 'compact_context',
-      before: false,
-      after: true,
-      kind: 'modified',
-    },
-  ],
+  changes: [previewChange('compact_context', false, true, 'modified')],
 };
 
 function Frame({ label, children }: { label: string; children: ReactNode }) {
@@ -207,7 +231,7 @@ function FeatureSectionSample({
         onReload={() => undefined}
         onChangeQuery={() => undefined}
         onChangeStageFilter={() => undefined}
-        onToggleFeature={() => undefined}
+        onChangeFeature={() => undefined}
         onPreview={() => undefined}
         onSave={() => undefined}
         onReset={() => undefined}

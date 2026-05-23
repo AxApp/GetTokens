@@ -79,3 +79,4 @@ Then 只读取 assistant usage token、模型、时间、session 路径和项目
 - 已移除 Usage Desk 的 `gemini` workspace 类型、placeholder 页面和 preview 分支；旧 `usage-gemini` 不再是有效 workspace。
 - 已归档截图：`docs-linhay/spaces/20260521-claude-code-codex-alignment/screenshots/20260521/claude-usage/20260521-claude-usage-web-after-v01.png`。
 - 2026-05-23 回归：`go test ./internal/wailsapp -run TestGetClaudeLocalUsage`、`go test ./internal/wailsapp`、`go test ./...`、Usage Desk 相关 Node 测试均通过；`npm --prefix frontend run typecheck` 被无关 `StatusCodexFeaturesSection.stories.tsx` 缺 `section` 字段阻塞。
+- 2026-05-23 复核修正：真实本机 `~/.claude/projects` 可按当前 parser 产出 projected rows；后端链路正确。前端曾因 `workspace === 'claude'` 写死 observed 分支，导致点击“本地文件投影”仍显示真实请求量区块；已改为只按 `source === 'observed'` / `source === 'projected'` 分流，并用测试锁住。

@@ -10,15 +10,21 @@ export type CodexFeatureStage =
   | 'unsupported';
 
 export type CodexFeatureStageFilter = 'all' | CodexFeatureStage | 'compat';
+export type CodexConfigSection = 'root' | 'features' | 'notice' | 'model_providers';
 
 export interface CodexFeatureConfigItem {
+  id: string;
+  section: CodexConfigSection;
   key: string;
+  path: string[];
   description: string;
   stage: CodexFeatureStage;
-  defaultValue: boolean;
-  localValue?: boolean;
+  valueType: string;
+  options: string[];
+  defaultValue: unknown;
+  localValue?: unknown;
   localRawValue: string;
-  effectiveValue: boolean;
+  effectiveValue: unknown;
   hasLocalValue: boolean;
   legacyAliases: string[];
   canonicalKey: string;
@@ -36,23 +42,35 @@ export interface CodexFeatureConfigSnapshot {
 }
 
 export interface CodexFeatureDraft {
-  values: Record<string, boolean>;
+  values: Record<string, unknown>;
 }
 
 export interface CodexFeatureRow extends CodexFeatureConfigItem {
-  draftValue: boolean;
+  draftValue: unknown;
   dirty: boolean;
   changeKind: 'none' | 'added' | 'modified';
 }
 
 export interface CodexFeatureChangeInput {
   values: Record<string, boolean>;
+  changes: Array<{
+    id: string;
+    section: string;
+    key: string;
+    path: string[];
+    valueType: string;
+    value: unknown;
+  }>;
 }
 
 export interface CodexFeaturePreviewChange {
+  id: string;
+  section: string;
   key: string;
-  before?: boolean;
-  after: boolean;
+  path: string[];
+  valueType: string;
+  before?: unknown;
+  after: unknown;
   kind: string;
 }
 
@@ -65,6 +83,7 @@ export interface CodexFeaturePreview {
 export interface CodexFeatureSelectOptions {
   query?: string;
   stageFilter?: CodexFeatureStageFilter;
+  sectionFilter?: CodexConfigSection;
 }
 
 const stageRank: Record<CodexFeatureStage, number> = {
@@ -109,6 +128,25 @@ function readBoolean(record: Record<string, unknown>, keys: string[]) {
   return undefined;
 }
 
+function readAny(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    if (hasOwn(record, key)) {
+      return record[key];
+    }
+  }
+  return undefined;
+}
+
+function readPathList(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key];
+    if (Array.isArray(value)) {
+      return value.filter((item): item is string => typeof item === 'string');
+    }
+  }
+  return [];
+}
+
 function readStringList(record: Record<string, unknown>, keys: string[]) {
   const values: string[] = [];
 
@@ -122,6 +160,37 @@ function readStringList(record: Record<string, unknown>, keys: string[]) {
   }
 
   return Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)));
+}
+
+function resolveCodexDefaultValue(
+  valueType: string,
+  defaultValue: unknown,
+  defaultEnabled?: boolean
+) {
+  if (typeof defaultValue !== 'undefined') {
+    return defaultValue;
+  }
+  if (typeof defaultEnabled !== 'undefined') {
+    return defaultEnabled;
+  }
+  if (valueType === 'boolean' || valueType === 'bool') {
+    return false;
+  }
+  return undefined;
+}
+
+function normalizeSection(rawSection: unknown): CodexConfigSection {
+  const normalized = String(rawSection || '').trim().toLowerCase();
+  if (normalized === 'root') {
+    return 'root';
+  }
+  if (normalized === 'notice') {
+    return 'notice';
+  }
+  if (normalized === 'model_providers') {
+    return 'model_providers';
+  }
+  return 'features';
 }
 
 function normalizeStage(rawStage: unknown, unsupported: boolean): CodexFeatureStage {
@@ -183,38 +252,71 @@ function readBackendDefinitionItems(raw: unknown): unknown[] {
   }
 
   const values = isRecord(raw.values) ? raw.values : {};
+  const typedValues = isRecord(raw.typedValues) ? raw.typedValues : {};
+  const rawValues = isRecord(raw.rawValues) ? raw.rawValues : {};
   const unknownValues = isRecord(raw.unknownValues) ? raw.unknownValues : {};
+  const unknownSections = isRecord(raw.unknownSections) ? raw.unknownSections : {};
   const definitionItems = raw.definitions.filter(isRecord).map((definition) => {
     const key = readString(definition, ['key', 'name', 'id']);
-    const hasLocalValue = key ? hasOwn(values, key) : false;
-    const localValue = key ? readBoolean(values, [key]) : undefined;
-    const defaultValue = readBoolean(definition, ['defaultEnabled', 'defaultValue', 'default']) ?? false;
+    const valueType = readString(definition, ['valueType', 'type', 'kind'], 'boolean').toLowerCase();
+    const section = normalizeSection(definition.section ?? definition.scope);
+    const path = readPathList(definition, ['path']);
+    const resolvedPath = path.length > 0 ? path : section === 'root' ? [key] : [section, key];
+    const defaultID = resolvedPath.length === 1 ? `root.${resolvedPath[0]}` : resolvedPath.join('.');
+    const id = readString(definition, ['id'], defaultID);
+    const typedLocalValue = readAny(typedValues, [id, key]);
+    const boolLocalValue =
+      valueType === 'boolean' || valueType === 'bool' ? readAny(values, [key]) : undefined;
+    const localValue = typeof typedLocalValue !== 'undefined' ? typedLocalValue : boolLocalValue;
+    const localRawValue = readString(rawValues, [id, key]);
+    const hasLocalValue =
+      hasOwn(typedValues, id) ||
+      hasOwn(typedValues, key) ||
+      hasOwn(values, key) ||
+      localRawValue !== '';
+    const defaultValue = resolveCodexDefaultValue(
+      valueType,
+      readAny(definition, ['defaultValue', 'default']),
+      readBoolean(definition, ['defaultEnabled'])
+    );
     const canonicalKey = readString(definition, ['canonicalKey', 'canonical'], key);
     const isLegacyAlias = Boolean(definition.legacyAlias);
+    const options = readStringList(definition, ['options']);
 
     return {
+      id,
+      section,
       key,
+      path: resolvedPath,
       description: readString(definition, ['description', 'help', 'summary']),
       stage: isLegacyAlias ? 'legacy' : definition.stage,
+      valueType,
+      options,
       defaultValue,
       localValue,
       hasLocalValue,
-      localRawValue: hasLocalValue && typeof localValue === 'boolean' ? String(localValue) : '',
-      effectiveValue: (typeof localValue === 'boolean' ? localValue : undefined) ?? defaultValue,
+      localRawValue: localRawValue || (typeof localValue !== 'undefined' ? String(localValue) : ''),
+      effectiveValue: localValue ?? defaultValue,
       canonicalKey,
       legacyAliases:
         isLegacyAlias && key && canonicalKey && canonicalKey !== key
           ? [key]
           : readStringList(definition, ['legacyAliases', 'aliases', 'alias']),
-      readOnly: isLegacyAlias,
+      unsupported: Boolean(definition.unsupported),
+      readOnly: isLegacyAlias || Boolean(definition.readOnly),
     };
   });
 
   const unknownItems = Object.entries(unknownValues)
     .filter(([, value]) => typeof value === 'boolean')
     .map(([key, value]) => ({
+      id: key,
+      section: normalizeSection(unknownSections[key]),
       key,
+      path: [key],
       stage: 'unknown',
+      valueType: 'boolean',
+      options: [],
       defaultValue: value,
       localValue: value,
       hasLocalValue: true,
@@ -222,6 +324,7 @@ function readBackendDefinitionItems(raw: unknown): unknown[] {
       effectiveValue: value,
       canonicalKey: key,
       readOnly: false,
+      unsupported: false,
     }));
 
   return [...definitionItems, ...unknownItems];
@@ -236,47 +339,45 @@ function normalizeItem(rawItem: unknown): CodexFeatureConfigItem | null {
   if (!key) {
     return null;
   }
-
-  const valueType = readString(rawItem, ['valueType', 'type', 'kind']).toLowerCase();
-  const defaultValue = readBoolean(rawItem, ['defaultValue', 'default', 'schemaDefault']);
-  const localValue = readBoolean(rawItem, ['localValue', 'local', 'fileValue']);
-  const currentValue = readBoolean(rawItem, ['effectiveValue', 'value', 'currentValue']);
+  const valueType = readString(rawItem, ['valueType', 'type', 'kind'], 'boolean').toLowerCase();
+  const defaultValue = resolveCodexDefaultValue(
+    valueType,
+    readAny(rawItem, ['defaultValue', 'default', 'schemaDefault']),
+    readBoolean(rawItem, ['defaultEnabled'])
+  );
+  const localValue = readAny(rawItem, ['localValue', 'local', 'fileValue', 'effectiveValue', 'value', 'currentValue']);
   const hasLocalValue = Boolean(
     readBoolean(rawItem, ['hasLocalValue']) ??
       hasOwn(rawItem, 'localValue') ??
       hasOwn(rawItem, 'local') ??
-      hasOwn(rawItem, 'fileValue')
+      hasOwn(rawItem, 'fileValue') ??
+      hasOwn(rawItem, 'effectiveValue') ??
+      hasOwn(rawItem, 'value') ??
+      hasOwn(rawItem, 'currentValue')
   );
-  const boolByType = valueType === 'bool' || valueType === 'boolean';
-  const boolByValue =
-    typeof defaultValue === 'boolean' || typeof localValue === 'boolean' || typeof currentValue === 'boolean';
-  const unsupported =
-    Boolean(rawItem.unsupported) || Boolean(valueType && !boolByType && !boolByValue);
-
-  if (!boolByType && !boolByValue && !unsupported) {
-    return null;
-  }
-
+  const unsupported = Boolean(rawItem.unsupported);
   const stage = normalizeStage(
     rawItem.stage ??
       (rawItem.removed ? 'removed' : rawItem.deprecated ? 'deprecated' : rawItem.legacy ? 'legacy' : undefined),
     unsupported
   );
-  const resolvedDefault = defaultValue ?? currentValue ?? localValue ?? false;
-  const resolvedLocal = typeof localValue === 'boolean' ? localValue : undefined;
-  const effectiveValue = resolvedLocal ?? currentValue ?? resolvedDefault;
-  const localRawValue =
-    readString(rawItem, ['localRawValue', 'rawValue', 'sourceValue']) ||
-    (hasLocalValue && typeof resolvedLocal === 'boolean' ? String(resolvedLocal) : '');
+  const effectiveValue = localValue ?? defaultValue;
+  const localRawValue = readString(rawItem, ['localRawValue', 'rawValue', 'sourceValue']);
   const hiddenByDefault = (stage === 'deprecated' || stage === 'removed') && !hasLocalValue;
+  const path = readPathList(rawItem, ['path']);
 
   return {
+    id: readString(rawItem, ['id'], key),
+    section: normalizeSection(rawItem.section ?? rawItem.scope),
     key,
+    path: path.length > 0 ? path : [key],
     description: readString(rawItem, ['description', 'help', 'summary']),
     stage,
-    defaultValue: resolvedDefault,
-    localValue: resolvedLocal,
-    localRawValue,
+    valueType,
+    options: readStringList(rawItem, ['options']),
+    defaultValue,
+    localValue,
+    localRawValue: localRawValue || (typeof localValue === 'boolean' ? String(localValue) : ''),
     effectiveValue,
     hasLocalValue,
     legacyAliases: readStringList(rawItem, ['legacyAliases', 'aliases', 'alias']),
@@ -313,10 +414,12 @@ export function normalizeCodexFeatureConfigSnapshot(raw: unknown): CodexFeatureC
 }
 
 export function buildCodexFeatureDraft(snapshot: CodexFeatureConfigSnapshot): CodexFeatureDraft {
-  const values: Record<string, boolean> = {};
+  const values: Record<string, unknown> = {};
   for (const item of snapshot.items) {
     if (!item.unsupported && !item.readOnly) {
-      values[item.key] = item.effectiveValue;
+      if (typeof item.effectiveValue !== 'undefined') {
+        values[item.id] = item.effectiveValue;
+      }
     }
   }
   return { values };
@@ -325,7 +428,7 @@ export function buildCodexFeatureDraft(snapshot: CodexFeatureConfigSnapshot): Co
 export function setCodexFeatureDraftValue(
   draft: CodexFeatureDraft,
   key: string,
-  value: boolean
+  value: unknown
 ): CodexFeatureDraft {
   return {
     values: {
@@ -345,6 +448,10 @@ function matchesStageFilter(item: CodexFeatureConfigItem, filter: CodexFeatureSt
   return item.stage === filter;
 }
 
+function matchesSectionFilter(item: CodexFeatureConfigItem, filter: CodexConfigSection | undefined) {
+  return !filter || item.section === filter;
+}
+
 function matchesQuery(item: CodexFeatureConfigItem, query: string) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) {
@@ -352,11 +459,15 @@ function matchesQuery(item: CodexFeatureConfigItem, query: string) {
   }
 
   return [
+    item.id,
     item.key,
     item.description,
     item.stage,
+    item.section,
+    item.path.join('.'),
     item.canonicalKey,
     item.localRawValue,
+    String(item.effectiveValue ?? ''),
     ...item.legacyAliases,
   ]
     .join(' ')
@@ -371,6 +482,29 @@ function isHiddenByCurrentFilter(item: CodexFeatureConfigItem, stageFilter: Code
   return stageFilter !== item.stage;
 }
 
+function areCodexValuesEqual(left: unknown, right: unknown) {
+  if (Object.is(left, right)) {
+    return true;
+  }
+  if (Array.isArray(left) && Array.isArray(right)) {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  if (left && right && typeof left === 'object' && typeof right === 'object') {
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+  return false;
+}
+
+function resolveDraftValue(item: CodexFeatureConfigItem, draft: CodexFeatureDraft) {
+  if (hasOwn(draft.values, item.id)) {
+    return draft.values[item.id];
+  }
+  if (hasOwn(draft.values, item.key)) {
+    return draft.values[item.key];
+  }
+  return item.effectiveValue;
+}
+
 export function selectCodexFeatureRows(
   snapshot: CodexFeatureConfigSnapshot,
   draft: CodexFeatureDraft,
@@ -380,12 +514,13 @@ export function selectCodexFeatureRows(
   const query = options.query ?? '';
 
   return snapshot.items
+    .filter((item) => matchesSectionFilter(item, options.sectionFilter))
     .filter((item) => matchesStageFilter(item, stageFilter))
     .filter((item) => !isHiddenByCurrentFilter(item, stageFilter))
     .filter((item) => matchesQuery(item, query))
     .map((item) => {
-      const draftValue = draft.values[item.key] ?? item.effectiveValue;
-      const dirty = !item.readOnly && draftValue !== item.effectiveValue;
+      const draftValue = resolveDraftValue(item, draft);
+      const dirty = !item.readOnly && !areCodexValuesEqual(draftValue, item.effectiveValue);
       const changeKind: CodexFeatureRow['changeKind'] = dirty
         ? item.hasLocalValue
           ? 'modified'
@@ -402,18 +537,30 @@ export function selectCodexFeatureRows(
 
 export function buildCodexFeatureChangeInput(
   snapshot: CodexFeatureConfigSnapshot,
-  draft: CodexFeatureDraft
+  draft: CodexFeatureDraft,
+  options: Pick<CodexFeatureSelectOptions, 'sectionFilter'> = {}
 ): CodexFeatureChangeInput {
   const values: Record<string, boolean> = {};
+  const changes: CodexFeatureChangeInput['changes'] = [];
 
-  for (const row of selectCodexFeatureRows(snapshot, draft, { stageFilter: 'all' })) {
+  for (const row of selectCodexFeatureRows(snapshot, draft, { stageFilter: 'all', sectionFilter: options.sectionFilter })) {
     if (row.readOnly || !row.dirty) {
       continue;
     }
-    values[row.key] = row.draftValue;
+    if (row.valueType === 'boolean' || row.valueType === 'bool') {
+      values[row.key] = Boolean(row.draftValue);
+    }
+    changes.push({
+      id: row.id,
+      section: row.section,
+      key: row.key,
+      path: row.path,
+      valueType: row.valueType,
+      value: row.draftValue,
+    });
   }
 
-  return { values };
+  return { values, changes };
 }
 
 export function normalizeCodexFeaturePreview(
@@ -427,25 +574,49 @@ export function normalizeCodexFeaturePreview(
     .filter(isRecord)
     .map((item): CodexFeaturePreviewChange | null => {
       const key = readString(item, ['key', 'name', 'id']);
-      const after = readBoolean(item, ['after', 'afterValue', 'nextEnabled', 'value']);
-      if (!key || typeof after !== 'boolean') {
+      const id = readString(item, ['id'], key);
+      const path = readPathList(item, ['path']);
+      const valueType = readString(item, ['valueType', 'value_type'], 'boolean');
+      const after = readAny(item, ['after', 'afterValue', 'nextValue', 'nextEnabled', 'value']);
+      if (!key || typeof after === 'undefined') {
         return null;
       }
-      const before = readBoolean(item, ['before', 'beforeValue', 'previousEnabled']);
+      const before = readAny(item, ['before', 'beforeValue', 'previousValue', 'previousEnabled']);
       return {
+        id,
+        section: readString(item, ['section'], ''),
         key,
-        ...(typeof before === 'boolean' ? { before } : {}),
+        path: path.length > 0 ? path : [key],
+        valueType,
+        ...(typeof before !== 'undefined' ? { before } : {}),
         after,
         kind: readString(item, ['kind', 'type'], 'modified'),
       };
     })
     .filter((item): item is CodexFeaturePreviewChange => Boolean(item));
 
-  const fallbackChanges = Object.entries(fallbackInput.values).map(([key, after]) => ({
-    key,
-    after,
-    kind: 'modified',
-  }));
+  const fallbackChanges =
+    Array.isArray(fallbackInput.changes) && fallbackInput.changes.length > 0
+      ? fallbackInput.changes.map((change) => ({
+          id: change.id,
+          section: change.section,
+          key: change.key,
+          path: change.path,
+          valueType: change.valueType,
+          before: undefined,
+          after: change.value,
+          kind: 'modified',
+        }))
+      : Object.entries(fallbackInput.values).map(([key, after]) => ({
+          id: key,
+          section: '',
+          key,
+          path: [key],
+          valueType: 'boolean',
+          before: undefined,
+          after,
+          kind: 'modified',
+        }));
   const resolvedChanges = changes.length > 0 ? changes : fallbackChanges;
 
   return {

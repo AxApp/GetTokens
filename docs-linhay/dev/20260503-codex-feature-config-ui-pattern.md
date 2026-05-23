@@ -13,6 +13,9 @@
 5. Bool 值只由开关表达，不再重复展示 `default true/false`、`local value`、`ON/OFF` 等文案。
 6. 开关开启态滑块在右侧且使用绿色，关闭态滑块在左侧；切换使用 transform 动画，滑块必须始终在线框内。
 7. 已弃用、移除、未知或不支持项可以用 Stage / unsupported 提示表达风险，不增加额外表格列。
+8. 页面不再限定 bool：同一列表行按 `valueType` 选择控件，`boolean` 用开关，`enum` 用下拉，`integer/number` 用数字输入框，`string` 用文本框，`string_array` 用按行拆分的多行文本，`text/textarea` 用多行文本。
+9. 复合 TOML table 进入可写 raw TOML textarea；保存时必须校验 section header 只能匹配当前 path 或子 path，例如 `skills` 只能写 `[skills...]` / `[[skills...]]`，`model_providers.gettokens.auth` 只能写该 provider 的 auth 子表。
+10. Wails DTO 必须把 `section/id/path/valueType/options/defaultValue/readOnly/unsupported/rawValues/typedValues` 从 `internal/wailsapp` 透传到 root `main.App` 和生成的前端模型，否则前端无法区分 typed 标量、raw TOML 和兼容只读项。
 
 ## 验收方式
 
@@ -20,6 +23,8 @@
 2. 桌面和移动视口都不能出现横向溢出。
 3. 开关开启 / 关闭时滑块坐标必须在轨道边界内。
 4. 浏览器 preview 数据只能用于布局验收；真实 Wails 写入能力仍需通过桌面运行时验证。
+5. 每次上游 schema 同步后做差集审查，至少覆盖 root、features、notice、model_provider 四类；可写范围必须由 schema 类型和本地 patch 能力共同决定。
+6. 浏览器 MCP 被审批或环境阻塞时，必须明确记录未完成的 UI DOM 验收，并以 Go/Node 单测、typecheck、schema 差集作为替代验证，不得把替代验证描述成真实页面验收。
 
 ## 不纳入
 

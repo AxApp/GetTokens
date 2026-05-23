@@ -26,6 +26,24 @@ type App struct {
 	core *wailsapp.App
 }
 
+func mapCodexConfigChangeInputs(inputs []CodexConfigChangeInput) []wailsapp.CodexConfigChangeInput {
+	if len(inputs) == 0 {
+		return nil
+	}
+	changes := make([]wailsapp.CodexConfigChangeInput, 0, len(inputs))
+	for _, input := range inputs {
+		changes = append(changes, wailsapp.CodexConfigChangeInput{
+			ID:        input.ID,
+			Section:   input.Section,
+			Key:       input.Key,
+			Path:      append([]string(nil), input.Path...),
+			ValueType: input.ValueType,
+			Value:     input.Value,
+		})
+	}
+	return changes
+}
+
 func NewApp() *App {
 	return &App{
 		core: wailsapp.New(Version, ReleaseLabel, GitHubRepo),
@@ -591,7 +609,8 @@ func (a *App) GetCodexFeatureConfig() (*CodexFeatureConfigSnapshot, error) {
 
 func (a *App) PreviewCodexFeatureConfig(input SaveCodexFeatureConfigInput) (*CodexFeatureConfigPreview, error) {
 	result, err := a.core.PreviewCodexFeatureConfig(wailsapp.SaveCodexFeatureConfigInput{
-		Values: input.Values,
+		Values:  input.Values,
+		Changes: mapCodexConfigChangeInputs(input.Changes),
 	})
 	if err != nil {
 		return nil, err
@@ -601,7 +620,8 @@ func (a *App) PreviewCodexFeatureConfig(input SaveCodexFeatureConfigInput) (*Cod
 
 func (a *App) SaveCodexFeatureConfig(input SaveCodexFeatureConfigInput) (*CodexFeatureConfigPreview, error) {
 	result, err := a.core.SaveCodexFeatureConfig(wailsapp.SaveCodexFeatureConfigInput{
-		Values: input.Values,
+		Values:  input.Values,
+		Changes: mapCodexConfigChangeInputs(input.Changes),
 	})
 	if err != nil {
 		return nil, err

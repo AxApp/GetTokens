@@ -157,6 +157,9 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - If a page provides both a structured editor and a raw `config.toml` editor, saving either path must reload or resync the other path before showing success.
   - Browser preview raw editors should edit in-memory preview text and label the result as preview-only; desktop editors should read/write the real file through Wails.
   - Raw saves must not bypass structured validation for later structured edits. After raw save, re-read the parsed snapshot and surface TOML errors instead of keeping stale rows.
+  - For schema-backed `config.toml` pages, do not leave complex TOML tables permanently read-only just because they lack a fine-grained form. Use a raw TOML textarea for complex paths such as `features.multi_agent_v2`, `notice.model_migrations`, `mcp_servers`, `skills`, `projects`, `profiles`, and provider `auth/http_headers/query_params`.
+  - Path-scoped raw TOML writes must validate every `[section]` / `[[section]]` header before saving. The header must match the target path or one of its child paths, for example `skills` may write `[skills...]` / `[[skills...]]`, while `model_providers.gettokens.auth` may write only that provider auth subtree.
+  - Raw TOML section replacement must preserve unrelated config, comments, and ordering outside the target path. Do not rewrite the whole file or allow one textarea to replace sibling sections.
 - **MCP Config Semantics**:
   - `[mcp_servers.<id>.tools.<tool>]` belongs to the parent server and must not be rendered as a separate server row.
   - `bearer_token` is not a valid Codex MCP field for saved config; prompt for `bearer_token_env_var` instead.
@@ -171,6 +174,12 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Logic**: CLIProxyAPI injects token via `auth_index` for target `chatgpt.com/backend-api/wham/usage`.
 - **Debugging**: Verify both Wails debug events and CLIProxyAPI token resolution.
 - **Time**: Relative reset countdown must use raw unix seconds (`resetAtUnix`). Do not re-parse `resetLabel` for countdown logic, because display labels lose seconds and drift into false `0s`.
+- **Token Progress Display Boundary**:
+  - Quota window token counts are first-class quota telemetry. When an upstream or custom quota response exposes `used / limit / remaining` token counts, preserve them as `usedTokens / limitTokens / remainingTokens` through every layer: accounts domain parser -> `internal/wailsapp` DTO -> root `main.App` DTO/mappers -> generated `frontend/wailsjs` -> `QuotaDisplay`.
+  - `remainingPercent` remains the default account-card display and longest-quota filter input. Token progress is an additional display mode, not a replacement for quota remaining semantics.
+  - `QuotaBars` may let users click the quota value to toggle percent and token progress when `usedTokens + limitTokens` are available. The toggle target must be an interactive child that stops propagation so whole-card detail entry is not triggered.
+  - If token counts are absent, keep the existing percent-only UI. Do not invent token totals from percentage-only ChatGPT quota windows.
+  - Regression coverage for this class should include parser-level token count preservation, Wails/root DTO mapping preservation, frontend `QuotaDisplay` normalization, and account-card interaction structure.
 - **Quota Curl Template Boundary**:
   - Treat user-provided quota curl as a structured HTTP request template, not as a shell command to execute.
   - Keep shell operators blocked: pipes, redirects, multi-command separators, backticks, and `$()` remain parse errors.

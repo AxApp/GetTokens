@@ -242,6 +242,24 @@ export const designSystemStoryGroups = [
         path: 'frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx',
       },
       {
+        id: 'status-codex-root-settings',
+        title: '状态页 Codex Root Settings',
+        storybookTitle: 'Design System/业务组件/状态页 Codex Root Settings',
+        path: 'frontend/src/features/status/components/StatusCodexRootSettingsSection.stories.tsx',
+      },
+      {
+        id: 'status-codex-model-providers',
+        title: '状态页 Codex Model Providers',
+        storybookTitle: 'Design System/业务组件/状态页 Codex Model Providers',
+        path: 'frontend/src/features/status/components/StatusCodexModelProvidersSection.stories.tsx',
+      },
+      {
+        id: 'status-codex-notices',
+        title: '状态页 Codex Notices',
+        storybookTitle: 'Design System/业务组件/状态页 Codex Notices',
+        path: 'frontend/src/features/status/components/StatusCodexNoticeSection.stories.tsx',
+      },
+      {
         id: 'status-local-cli-apply',
         title: '状态页本地 CLI 应用',
         storybookTitle: 'Design System/业务组件/状态页本地 CLI 应用',

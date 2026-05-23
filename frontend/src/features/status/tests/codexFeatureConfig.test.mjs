@@ -55,6 +55,7 @@ const snapshot = normalizeCodexFeatureConfigSnapshot({
       key: 'compound_table',
       type: 'table',
       localRawValue: '{ enabled = true }',
+      unsupported: true,
     },
   ],
 });
@@ -99,6 +100,16 @@ test('dirty state and change input follow edited bool values', () => {
     values: {
       tool_search: false,
     },
+    changes: [
+      {
+        id: 'tool_search',
+        section: 'features',
+        key: 'tool_search',
+        path: ['tool_search'],
+        valueType: 'boolean',
+        value: false,
+      },
+    ],
   });
 });
 
@@ -120,6 +131,56 @@ test('unsupported non-bool feature is visible as read-only local hint', () => {
   assert.equal(row.unsupported, true);
 });
 
+test('raw TOML definitions are editable and scoped as typed changes', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'features',
+        key: 'multi_agent_v2',
+        valueType: 'toml',
+        stage: 'advanced',
+        path: ['features', 'multi_agent_v2'],
+      },
+      {
+        section: 'root',
+        key: 'skills',
+        valueType: 'toml',
+        stage: 'advanced',
+        path: ['skills'],
+      },
+    ],
+    typedValues: {
+      'features.multi_agent_v2': '[features.multi_agent_v2]\nenabled = false\n',
+    },
+    rawValues: {
+      'features.multi_agent_v2': '[features.multi_agent_v2]\nenabled = false\n',
+    },
+  });
+  const draft = setCodexFeatureDraftValue(
+    buildCodexFeatureDraft(backendSnapshot),
+    'features.multi_agent_v2',
+    '[features.multi_agent_v2]\nenabled = true\n'
+  );
+
+  const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'features' });
+
+  assert.equal(rows[0].readOnly, false);
+  assert.equal(rows[0].dirty, true);
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'features' }), {
+    values: {},
+    changes: [
+      {
+        id: 'features.multi_agent_v2',
+        section: 'features',
+        key: 'multi_agent_v2',
+        path: ['features', 'multi_agent_v2'],
+        valueType: 'toml',
+        value: '[features.multi_agent_v2]\nenabled = true\n',
+      },
+    ],
+  });
+});
+
 test('normalizes backend definitions values and unknownValues shape', () => {
   const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
     definitions: [
@@ -128,9 +189,13 @@ test('normalizes backend definitions values and unknownValues shape', () => {
       { key: 'runtime_metrics', stage: 'under_development', defaultEnabled: false },
       { key: 'collab', stage: 'legacy', defaultEnabled: true, legacyAlias: true, canonicalKey: 'multi_agent' },
     ],
-    values: {
+    typedValues: {
       goals: true,
       collab: true,
+    },
+    rawValues: {
+      goals: 'true',
+      collab: 'true',
     },
     unknownValues: {
       future_feature: false,
@@ -169,6 +234,202 @@ test('normalizes backend definitions values and unknownValues shape', () => {
   );
 });
 
+test('normalizes typed root definitions without coercing missing defaults to false', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'root',
+        key: 'approval_policy',
+        stage: 'stable',
+        valueType: 'enum',
+        options: ['untrusted', 'on-failure', 'on-request', 'never'],
+      },
+      {
+        section: 'root',
+        key: 'model',
+        stage: 'stable',
+        valueType: 'string',
+      },
+      {
+        section: 'root',
+        key: 'model_context_window',
+        stage: 'stable',
+        valueType: 'integer',
+      },
+      {
+        section: 'root',
+        key: 'notify',
+        stage: 'stable',
+        valueType: 'string_array',
+      },
+    ],
+  });
+
+  const draft = buildCodexFeatureDraft(backendSnapshot);
+  const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'root' });
+  const rowByKey = Object.fromEntries(rows.map((row) => [row.key, row]));
+
+  assert.equal(rowByKey.approval_policy.draftValue, undefined);
+  assert.equal(rowByKey.model.draftValue, undefined);
+  assert.equal(rowByKey.model_context_window.draftValue, undefined);
+  assert.equal(rowByKey.notify.draftValue, undefined);
+  assert.equal(rowByKey.model.dirty, false);
+  assert.equal(rowByKey.notify.dirty, false);
+
+  const updatedDraft = setCodexFeatureDraftValue(draft, 'model_context_window', 200000);
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, updatedDraft, { sectionFilter: 'root' }), {
+    values: {},
+    changes: [
+      {
+        id: 'root.model_context_window',
+        section: 'root',
+        key: 'model_context_window',
+        path: ['model_context_window'],
+        valueType: 'integer',
+        value: 200000,
+      },
+    ],
+  });
+});
+
+test('normalizes notice definitions and builds section-scoped changes', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      { section: 'features', key: 'goals', stage: 'experimental', defaultEnabled: false },
+      {
+        section: 'notice',
+        key: 'hide_rate_limit_model_nudge',
+        stage: 'stable',
+        defaultEnabled: false,
+        description: 'Hide rate limit model switch reminder.',
+      },
+      {
+        section: 'notice',
+        key: 'fast_default_opt_out',
+        stage: 'stable',
+        defaultEnabled: false,
+        description: 'Opt out of Codex-managed fast defaults.',
+      },
+    ],
+    values: {
+      fast_default_opt_out: false,
+      hide_rate_limit_model_nudge: false,
+    },
+    unknownValues: {
+      future_notice: true,
+    },
+    unknownSections: {
+      future_notice: 'notice',
+    },
+  });
+  const draft = setCodexFeatureDraftValue(
+    buildCodexFeatureDraft(backendSnapshot),
+    'notice.hide_rate_limit_model_nudge',
+    true
+  );
+
+  assert.deepEqual(
+    selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'notice' }).map((row) => [
+      row.key,
+      row.section,
+      row.dirty,
+    ]),
+    [
+      ['fast_default_opt_out', 'notice', false],
+      ['hide_rate_limit_model_nudge', 'notice', true],
+      ['future_notice', 'notice', false],
+    ]
+  );
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'notice' }), {
+    values: {
+      hide_rate_limit_model_nudge: true,
+    },
+    changes: [
+      {
+        id: 'notice.hide_rate_limit_model_nudge',
+        section: 'notice',
+        key: 'hide_rate_limit_model_nudge',
+        path: ['notice', 'hide_rate_limit_model_nudge'],
+        valueType: 'boolean',
+        value: true,
+      },
+    ],
+  });
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'features' }), {
+    values: {},
+    changes: [],
+  });
+});
+
+test('normalizes root bool definitions and builds section-scoped changes', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      { section: 'features', key: 'goals', stage: 'experimental', defaultEnabled: false },
+      {
+        section: 'root',
+        key: 'hide_agent_reasoning',
+        stage: 'stable',
+        defaultEnabled: false,
+        description: 'Hide AgentReasoning events.',
+      },
+      {
+        section: 'root',
+        key: 'include_permissions_instructions',
+        stage: 'advanced',
+        defaultEnabled: true,
+        description: 'Inject permissions instructions.',
+      },
+    ],
+    values: {
+      hide_agent_reasoning: false,
+      include_permissions_instructions: true,
+    },
+    unknownValues: {
+      future_root_flag: true,
+    },
+    unknownSections: {
+      future_root_flag: 'root',
+    },
+  });
+  const draft = setCodexFeatureDraftValue(
+    buildCodexFeatureDraft(backendSnapshot),
+    'root.hide_agent_reasoning',
+    true
+  );
+
+  assert.deepEqual(
+    selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'root' }).map((row) => [
+      row.key,
+      row.section,
+      row.dirty,
+    ]),
+    [
+      ['hide_agent_reasoning', 'root', true],
+      ['include_permissions_instructions', 'root', false],
+      ['future_root_flag', 'root', false],
+    ]
+  );
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'root' }), {
+    values: {
+      hide_agent_reasoning: true,
+    },
+    changes: [
+      {
+        id: 'root.hide_agent_reasoning',
+        section: 'root',
+        key: 'hide_agent_reasoning',
+        path: ['hide_agent_reasoning'],
+        valueType: 'boolean',
+        value: true,
+      },
+    ],
+  });
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'notice' }), {
+    values: {},
+    changes: [],
+  });
+});
+
 test('normalizes backend preview previousEnabled and nextEnabled fields', () => {
   const preview = normalizeCodexFeaturePreview(
     {
@@ -187,7 +448,11 @@ test('normalizes backend preview previousEnabled and nextEnabled fields', () => 
 
   assert.deepEqual(preview.changes, [
     {
+      id: 'goals',
+      section: '',
       key: 'goals',
+      path: ['goals'],
+      valueType: 'boolean',
       before: false,
       after: true,
       kind: 'updated',

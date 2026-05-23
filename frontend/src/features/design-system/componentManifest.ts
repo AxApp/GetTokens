@@ -47,6 +47,12 @@ const statusRelayEditorsStoryPath = 'frontend/src/features/status/components/Sta
 const statusRelayEditorsStorybookTitle = 'Design System/业务组件/状态页 Relay 编辑器';
 const statusCodexFeaturesStoryPath = 'frontend/src/features/status/components/StatusCodexFeaturesSection.stories.tsx';
 const statusCodexFeaturesStorybookTitle = 'Design System/业务组件/状态页 Codex 功能';
+const statusCodexRootSettingsStoryPath = 'frontend/src/features/status/components/StatusCodexRootSettingsSection.stories.tsx';
+const statusCodexRootSettingsStorybookTitle = 'Design System/业务组件/状态页 Codex Root Settings';
+const statusCodexModelProvidersStoryPath = 'frontend/src/features/status/components/StatusCodexModelProvidersSection.stories.tsx';
+const statusCodexModelProvidersStorybookTitle = 'Design System/业务组件/状态页 Codex Model Providers';
+const statusCodexNoticeStoryPath = 'frontend/src/features/status/components/StatusCodexNoticeSection.stories.tsx';
+const statusCodexNoticeStorybookTitle = 'Design System/业务组件/状态页 Codex Notices';
 const statusLocalCliApplyStoryPath = 'frontend/src/features/status/components/StatusLocalCliApplyPanel.stories.tsx';
 const statusLocalCliApplyStorybookTitle = 'Design System/业务组件/状态页本地 CLI 应用';
 const statusSnippetPanelStoryPath = 'frontend/src/features/status/components/StatusSnippetPanel.stories.tsx';
@@ -899,6 +905,51 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['ready', 'dirty-preview', 'saving', 'loading', 'empty', 'unsupported-readonly'],
     mockDataSources: ['storybook codex feature snapshot/rows/preview mock'],
+  },
+  {
+    id: 'status-codex-root-settings-section',
+    componentName: 'StatusCodexRootSettingsSection',
+    sourcePath: 'frontend/src/features/status/components/StatusCodexRootSettingsSection.tsx',
+    ownerFeature: 'status',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Codex root bool 设置已拆出并通过 Status Codex Root Settings story 收编，覆盖 ready、dirty preview、saving、loading 和 empty 状态。',
+    matchedPatterns: ['ToggleSwitch', 'DesignSystemStoryFrame'],
+    storyPath: statusCodexRootSettingsStoryPath,
+    storybookTitle: statusCodexRootSettingsStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'dirty-preview', 'saving', 'loading', 'empty'],
+    mockDataSources: ['storybook codex root settings snapshot/rows/preview mock'],
+  },
+  {
+    id: 'status-codex-model-providers-section',
+    componentName: 'StatusCodexModelProvidersSection',
+    sourcePath: 'frontend/src/features/status/components/StatusCodexModelProvidersSection.tsx',
+    ownerFeature: 'status',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Codex model providers 面板已拆出并通过 Story 收编，覆盖 ready、dirty preview、saving、loading 和 empty 状态。',
+    matchedPatterns: ['ToggleSwitch', 'DesignSystemStoryFrame'],
+    storyPath: statusCodexModelProvidersStoryPath,
+    storybookTitle: statusCodexModelProvidersStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'dirty-preview', 'saving', 'loading', 'empty'],
+    mockDataSources: ['storybook codex model providers snapshot/rows/preview mock'],
+  },
+  {
+    id: 'status-codex-notice-section',
+    componentName: 'StatusCodexNoticeSection',
+    sourcePath: 'frontend/src/features/status/components/StatusCodexNoticeSection.tsx',
+    ownerFeature: 'status',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Codex notice 提示开关已拆出并通过 Status Codex Notices story 收编，覆盖 ready、dirty preview、saving、loading 和 empty 状态。',
+    matchedPatterns: ['ToggleSwitch', 'DesignSystemStoryFrame'],
+    storyPath: statusCodexNoticeStoryPath,
+    storybookTitle: statusCodexNoticeStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'dirty-preview', 'saving', 'loading', 'empty'],
+    mockDataSources: ['storybook codex notice snapshot/rows/preview mock'],
   },
   {
     id: 'status-local-cli-apply-section',

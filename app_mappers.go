@@ -81,6 +81,17 @@ func cloneStringMap(items map[string]string) map[string]string {
 	return out
 }
 
+func cloneAnyMap(items map[string]any) map[string]any {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make(map[string]any, len(items))
+	for key, value := range items {
+		out[key] = value
+	}
+	return out
+}
+
 func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaResponse {
 	if result == nil {
 		return &CodexQuotaResponse{}
@@ -355,34 +366,48 @@ func mapRateLimitEvents(items []wailsapp.RateLimitEvent) []RateLimitEvent {
 func mapCodexFeatureConfigSnapshot(result *wailsapp.CodexFeatureConfigSnapshot) *CodexFeatureConfigSnapshot {
 	if result == nil {
 		return &CodexFeatureConfigSnapshot{
-			Definitions:   []CodexFeatureDefinition{},
-			Values:        map[string]bool{},
-			UnknownValues: map[string]bool{},
-			Warnings:      []string{},
+			Definitions:     []CodexFeatureDefinition{},
+			Values:          map[string]bool{},
+			TypedValues:     map[string]any{},
+			RawValues:       map[string]string{},
+			UnknownValues:   map[string]bool{},
+			UnknownSections: map[string]string{},
+			Warnings:        []string{},
 		}
 	}
 
 	definitions := make([]CodexFeatureDefinition, 0, len(result.Definitions))
 	for _, definition := range result.Definitions {
 		definitions = append(definitions, CodexFeatureDefinition{
+			Section:        definition.Section,
 			Key:            definition.Key,
+			ID:             definition.ID,
+			Path:           append([]string(nil), definition.Path...),
 			Description:    definition.Description,
 			Stage:          definition.Stage,
+			ValueType:      definition.ValueType,
+			Options:        append([]string(nil), definition.Options...),
+			DefaultValue:   definition.DefaultValue,
 			DefaultEnabled: definition.DefaultEnabled,
 			CanonicalKey:   definition.CanonicalKey,
 			LegacyAlias:    definition.LegacyAlias,
+			ReadOnly:       definition.ReadOnly,
+			Unsupported:    definition.Unsupported,
 		})
 	}
 
 	return &CodexFeatureConfigSnapshot{
-		CodexHomePath: result.CodexHomePath,
-		ConfigPath:    result.ConfigPath,
-		Exists:        result.Exists,
-		Definitions:   definitions,
-		Values:        cloneBoolMap(result.Values),
-		UnknownValues: cloneBoolMap(result.UnknownValues),
-		Raw:           result.Raw,
-		Warnings:      append([]string(nil), result.Warnings...),
+		CodexHomePath:   result.CodexHomePath,
+		ConfigPath:      result.ConfigPath,
+		Exists:          result.Exists,
+		Definitions:     definitions,
+		Values:          cloneBoolMap(result.Values),
+		TypedValues:     cloneAnyMap(result.TypedValues),
+		RawValues:       cloneStringMap(result.RawValues),
+		UnknownValues:   cloneBoolMap(result.UnknownValues),
+		UnknownSections: cloneStringMap(result.UnknownSections),
+		Raw:             result.Raw,
+		Warnings:        append([]string(nil), result.Warnings...),
 	}
 }
 
@@ -397,10 +422,16 @@ func mapCodexFeatureConfigPreview(result *wailsapp.CodexFeatureConfigPreview) *C
 	changes := make([]CodexFeatureConfigChange, 0, len(result.Changes))
 	for _, change := range result.Changes {
 		changes = append(changes, CodexFeatureConfigChange{
+			ID:              change.ID,
+			Section:         change.Section,
 			Key:             change.Key,
+			Path:            append([]string(nil), change.Path...),
+			ValueType:       change.ValueType,
 			Type:            change.Type,
 			PreviousEnabled: change.PreviousEnabled,
 			NextEnabled:     change.NextEnabled,
+			PreviousValue:   change.PreviousValue,
+			NextValue:       change.NextValue,
 		})
 	}
 
