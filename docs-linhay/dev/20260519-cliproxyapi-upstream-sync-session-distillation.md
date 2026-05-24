@@ -88,3 +88,21 @@ git check-ignore -v <path>
 - 本轮具体上游功能列表不沉淀为规则，只保留在 git 历史和 memory 中。
 - `server` 文件本体不归档、不提交。
 - 不把该流程升级到 `AGENTS.md`；它属于 CLIProxyAPI fork 领域维护流程，已沉淀到 `gettokens-domain-engineering` skill。
+
+## 2026-05-24 同步记录
+
+本轮将 `docs-linhay/references/CLIProxyAPI#gettokens/sidecar` 从 `upstream/main@50d19e20`（`v7.1.20-1-g50d19e20`）合并到维护分支，生成 merge commit `1c5db246` 并推送到 `AxApp/CLIProxyAPI#gettokens/sidecar`。
+
+冲突处理：
+
+1. `internal/registry/model_definitions_test.go` 上游删除、本地保留；该文件仍覆盖 GetTokens 关心的 GPT-5.5 Codex 静态模型、xAI 内建模型和 catalog 校验，因此保留 fork 侧测试。
+2. 合并后 `internal/runtime/executor` 两个 Antigravity credits 测试失败，根因是实现已跟随上游 `antigravityLoadCodeAssistBaseURL()` 默认使用 `https://cloudcode-pa.googleapis.com`，而测试仍断言旧 daily host。已把测试断言更新为 `antigravityBaseURLProd`。
+
+验证：
+
+1. `go test ./internal/registry`
+2. `go test ./internal/runtime/executor`
+3. `go test ./...`
+4. `git -C docs-linhay/references/CLIProxyAPI diff --check`
+
+本地 sidecar 已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，`build/bin/cli-proxy-api.meta.json` 记录 `commit=1c5db246`、`dirty=clean`、`goos=darwin`、`goarch=arm64`。
