@@ -4,11 +4,13 @@ import assert from 'node:assert/strict';
 import {
   buildCodexFeatureChangeInput,
   buildCodexFeatureDraft,
+  groupCodexFeatureRows,
   normalizeCodexFeatureConfigSnapshot,
   normalizeCodexFeaturePreview,
   selectCodexFeatureRows,
   setCodexFeatureDraftValue,
 } from '../model/codexFeatureConfig.ts';
+import { selectCodexValueEditorKind } from '../model/codexValueEditorModel.ts';
 
 const snapshot = normalizeCodexFeatureConfigSnapshot({
   codexHomePath: '/Users/test/.codex',
@@ -60,6 +62,43 @@ const snapshot = normalizeCodexFeatureConfigSnapshot({
   ],
 });
 
+function makeRow(overrides) {
+  const section = overrides.section;
+  const key = overrides.key;
+  const path =
+    overrides.path ||
+    (section === 'root'
+      ? [key]
+      : section === 'model_providers'
+        ? ['model_providers', 'gettokens', key]
+        : [section, key]);
+
+  return {
+    id: `${section}.${key}`,
+    section,
+    key,
+    path,
+    description: '',
+    stage: 'stable',
+    valueType: 'boolean',
+    options: [],
+    defaultValue: false,
+    localValue: false,
+    localRawValue: 'false',
+    effectiveValue: false,
+    hasLocalValue: false,
+    legacyAliases: [],
+    canonicalKey: key,
+    unsupported: false,
+    readOnly: false,
+    hiddenByDefault: false,
+    draftValue: false,
+    dirty: false,
+    changeKind: 'none',
+    ...overrides,
+  };
+}
+
 test('selectCodexFeatureRows groups and filters by stage and query', () => {
   const draft = buildCodexFeatureDraft(snapshot);
 
@@ -74,6 +113,65 @@ test('selectCodexFeatureRows groups and filters by stage and query', () => {
   assert.deepEqual(
     selectCodexFeatureRows(snapshot, draft, { stageFilter: 'compat' }).map((row) => row.key),
     ['removed_local']
+  );
+});
+
+test('groupCodexFeatureRows groups sections into stable UI buckets', () => {
+  const rows = [
+    makeRow({ section: 'root', key: 'profile' }),
+    makeRow({ section: 'root', key: 'model' }),
+    makeRow({ section: 'root', key: 'approval_policy', valueType: 'enum', options: ['on-request'] }),
+    makeRow({ section: 'notice', key: 'hide_full_access_warning' }),
+    makeRow({ section: 'notice', key: 'model_migrations', valueType: 'toml' }),
+    makeRow({ section: 'features', key: 'tool_search', stage: 'stable' }),
+    makeRow({ section: 'features', key: 'goals', stage: 'experimental' }),
+    makeRow({ section: 'model_providers', key: 'name', path: ['model_providers', 'gettokens', 'name'] }),
+    makeRow({ section: 'model_providers', key: 'auth', valueType: 'toml', path: ['model_providers', 'gettokens', 'auth'] }),
+  ];
+
+  assert.deepEqual(
+    groupCodexFeatureRows(rows).map((group) => [group.section, group.id, group.rows.map((row) => row.key)]),
+    [
+      ['root', 'launch', ['profile']],
+      ['root', 'model', ['model']],
+      ['root', 'policy', ['approval_policy']],
+      ['features', 'core', ['tool_search']],
+      ['features', 'experimental', ['goals']],
+      ['notice', 'safety', ['hide_full_access_warning']],
+      ['notice', 'raw', ['model_migrations']],
+      ['model_providers', 'gettokens', ['name', 'auth']],
+    ]
+  );
+});
+
+test('selectCodexValueEditorKind uses toggles for booleans and segments for fixed enums', () => {
+  assert.equal(
+    selectCodexValueEditorKind(makeRow({ section: 'root', key: 'web_search', valueType: 'boolean', draftValue: true })),
+    'toggle'
+  );
+  assert.equal(
+    selectCodexValueEditorKind(
+      makeRow({
+        section: 'root',
+        key: 'approval_policy',
+        valueType: 'enum',
+        options: ['untrusted', 'on-failure', 'on-request', 'never'],
+        draftValue: 'on-request',
+      })
+    ),
+    'segment'
+  );
+  assert.equal(
+    selectCodexValueEditorKind(
+      makeRow({
+        section: 'root',
+        key: 'approval_policy',
+        valueType: 'enum',
+        options: ['untrusted', 'on-failure', 'on-request', 'never'],
+        draftValue: 'legacy-custom-value',
+      })
+    ),
+    'segment'
   );
 });
 

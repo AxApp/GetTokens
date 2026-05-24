@@ -51,6 +51,12 @@ export interface CodexFeatureRow extends CodexFeatureConfigItem {
   changeKind: 'none' | 'added' | 'modified';
 }
 
+export interface CodexFeatureRowGroup {
+  section: CodexConfigSection;
+  id: string;
+  rows: CodexFeatureRow[];
+}
+
 export interface CodexFeatureChangeInput {
   values: Record<string, boolean>;
   changes: Array<{
@@ -533,6 +539,217 @@ export function selectCodexFeatureRows(
         changeKind,
       };
     });
+}
+
+const codexRootGroupOrder = ['launch', 'model', 'policy', 'workspace', 'integrations', 'advanced'] as const;
+const codexFeaturesGroupOrder = ['core', 'experimental', 'advanced', 'compat'] as const;
+const codexNoticeGroupOrder = ['safety', 'migration', 'raw'] as const;
+
+const codexRootLaunchKeys = new Set([
+  'allow_login_shell',
+  'check_for_update_on_startup',
+  'disable_paste_burst',
+  'profile',
+]);
+
+const codexRootModelKeys = new Set([
+  'model',
+  'model_provider',
+  'model_reasoning_effort',
+  'model_reasoning_summary',
+  'model_verbosity',
+  'model_context_window',
+  'model_auto_compact_token_limit',
+  'model_auto_compact_token_limit_scope',
+  'model_catalog_json',
+  'model_instructions_file',
+  'model_supports_reasoning_summaries',
+  'review_model',
+  'plan_mode_reasoning_effort',
+  'notify',
+  'personality',
+  'fast_mode',
+  'goals',
+  'workspace_dependencies',
+  'web_search',
+  'openai_base_url',
+  'chatgpt_base_url',
+  'oss_provider',
+  'service_tier',
+  'tool_output_token_limit',
+  'hide_agent_reasoning',
+  'show_raw_agent_reasoning',
+  'suppress_unstable_features_warning',
+]);
+
+const codexRootPolicyKeys = new Set([
+  'approval_policy',
+  'approvals_reviewer',
+  'sandbox_mode',
+  'default_permissions',
+  'auto_review',
+  'sandbox_workspace_write',
+  'permissions',
+  'include_permissions_instructions',
+  'include_apps_instructions',
+  'include_collaboration_mode_instructions',
+  'include_environment_context',
+]);
+
+const codexRootWorkspaceKeys = new Set([
+  'log_dir',
+  'file_opener',
+  'instructions',
+  'developer_instructions',
+  'compact_prompt',
+  'experimental_compact_prompt_file',
+  'experimental_realtime_start_instructions',
+  'experimental_realtime_ws_backend_prompt',
+  'experimental_realtime_ws_base_url',
+  'experimental_realtime_ws_model',
+  'experimental_realtime_ws_startup_context',
+  'experimental_thread_config_endpoint',
+  'project_doc_fallback_filenames',
+  'project_doc_max_bytes',
+  'project_root_markers',
+]);
+
+const codexRootIntegrationKeys = new Set([
+  'apps',
+  'apps_mcp_product_sku',
+  'mcp_oauth_callback_port',
+  'mcp_oauth_callback_url',
+  'mcp_oauth_credentials_store',
+  'hooks',
+  'plugins',
+  'skills',
+  'tool_suggest',
+  'tools',
+  'tui',
+  'desktop',
+  'audio',
+  'feedback',
+  'ghost_snapshot',
+  'history',
+  'analytics',
+  'otel',
+  'memories',
+  'windows',
+  'shell_environment_policy',
+  'realtime',
+  'agents',
+  'mcp_servers',
+  'marketplaces',
+]);
+
+function resolveCodexRowGroupId(row: CodexFeatureRow) {
+  if (row.section === 'features') {
+    if (row.stage === 'recommended' || row.stage === 'stable') {
+      return 'core';
+    }
+    if (row.stage === 'experimental') {
+      return 'experimental';
+    }
+    if (row.stage === 'advanced') {
+      return 'advanced';
+    }
+    return 'compat';
+  }
+
+  if (row.section === 'notice') {
+    if (row.key === 'external_config_migration_prompts' || row.key === 'model_migrations') {
+      return 'raw';
+    }
+    if (row.key === 'hide_gpt5_1_migration_prompt' || row.key === 'hide_gpt-5.1-codex-max_migration_prompt') {
+      return 'migration';
+    }
+    return 'safety';
+  }
+
+  if (row.section === 'model_providers') {
+    return row.path[1] || row.key;
+  }
+
+  if (row.section !== 'root') {
+    return 'advanced';
+  }
+
+  if (codexRootLaunchKeys.has(row.key)) {
+    return 'launch';
+  }
+  if (codexRootModelKeys.has(row.key) || row.key.startsWith('model_')) {
+    return 'model';
+  }
+  if (codexRootPolicyKeys.has(row.key) || row.key.startsWith('approval_') || row.key.startsWith('sandbox_')) {
+    return 'policy';
+  }
+  if (
+    codexRootWorkspaceKeys.has(row.key) ||
+    row.key.startsWith('project_') ||
+    row.key === 'compact_prompt' ||
+    row.key === 'developer_instructions' ||
+    row.key === 'file_opener'
+  ) {
+    return 'workspace';
+  }
+  if (codexRootIntegrationKeys.has(row.key) || row.key.startsWith('mcp_oauth_')) {
+    return 'integrations';
+  }
+  return 'advanced';
+}
+
+export function groupCodexFeatureRows(rows: CodexFeatureRow[]): CodexFeatureRowGroup[] {
+  const groupedBySection = new Map<CodexConfigSection, Map<string, CodexFeatureRow[]>>();
+
+  for (const row of rows) {
+    const sectionGroups = groupedBySection.get(row.section) || new Map<string, CodexFeatureRow[]>();
+    const groupId = resolveCodexRowGroupId(row);
+    if (!sectionGroups.has(groupId)) {
+      sectionGroups.set(groupId, []);
+    }
+    sectionGroups.get(groupId)!.push(row);
+    groupedBySection.set(row.section, sectionGroups);
+  }
+
+  const groupedRows: CodexFeatureRowGroup[] = [];
+  const sectionOrder: CodexConfigSection[] = ['root', 'features', 'notice', 'model_providers'];
+
+  for (const section of sectionOrder) {
+    const sectionGroups = groupedBySection.get(section);
+    if (!sectionGroups) {
+      continue;
+    }
+
+    if (section === 'model_providers') {
+      for (const [id, sectionRows] of Array.from(sectionGroups.entries()).sort(([left], [right]) => left.localeCompare(right))) {
+        groupedRows.push({ section, id, rows: sectionRows });
+      }
+      continue;
+    }
+
+    const orderedGroupIds =
+      section === 'root'
+        ? codexRootGroupOrder
+        : section === 'features'
+          ? codexFeaturesGroupOrder
+          : codexNoticeGroupOrder;
+    const orderedGroupIdSet = new Set<string>(orderedGroupIds);
+
+    for (const groupId of orderedGroupIds) {
+      const sectionRows = sectionGroups.get(groupId);
+      if (sectionRows && sectionRows.length > 0) {
+        groupedRows.push({ section, id: groupId, rows: sectionRows });
+      }
+    }
+
+    for (const [groupId, sectionRows] of sectionGroups.entries()) {
+      if (!orderedGroupIdSet.has(groupId)) {
+        groupedRows.push({ section, id: groupId, rows: sectionRows });
+      }
+    }
+  }
+
+  return groupedRows;
 }
 
 export function buildCodexFeatureChangeInput(

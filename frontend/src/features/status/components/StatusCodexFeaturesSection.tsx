@@ -5,6 +5,7 @@ import type {
   CodexFeatureRow,
   CodexFeatureStageFilter,
 } from '../model/codexFeatureConfig';
+import { groupCodexFeatureRows } from '../model/codexFeatureConfig';
 import { renderCodexValueEditor } from '../model/codexValueEditor';
 
 const codexFeatureStageFilters: CodexFeatureStageFilter[] = [
@@ -72,6 +73,13 @@ export default function StatusCodexFeaturesSection({
   const visibleCount = rows.length;
   const totalCount = snapshot?.items.filter((item) => item.section === 'features').length || 0;
   const isBusy = isLoading || isSaving;
+  const groupedRows = groupCodexFeatureRows(rows);
+
+  function resolveGroupTitle(groupId: string) {
+    const translationKey = `status.codex_features_group_${groupId}`;
+    const translated = t(translationKey);
+    return translated !== translationKey ? translated : groupId;
+  }
 
   return (
     <section className="relative overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
@@ -132,50 +140,66 @@ export default function StatusCodexFeaturesSection({
         </div>
       ) : null}
 
-      <div className="divide-y-2 divide-[var(--border-color)]">
-        {rows.map((row) => (
-          <div
-            key={row.key}
-            className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_5rem] md:items-center ${
-              row.stage === 'unknown' || row.stage === 'unsupported' ? 'bg-[var(--bg-main)]' : ''
-            }`}
-          >
-            <div className="min-w-0">
-              <div className="break-all font-mono text-[length:var(--font-size-ui-md)] font-black tracking-wide text-[var(--text-primary)]">
-                {row.key}
+      <div>
+        {groupedRows.map((group, groupIndex) => (
+          <div key={group.id} className={`${groupIndex > 0 ? 'border-t-2 border-[var(--border-color)]' : ''}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black italic uppercase tracking-[0.18em] text-[var(--text-primary)]">
+                {resolveGroupTitle(group.id)}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-bold tracking-wide text-[var(--text-muted)]">
-                <span
-                  className={`inline-flex shrink-0 border-2 px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] ${
-                    row.stage === 'unknown' || row.stage === 'unsupported' || row.stage === 'removed'
-                      ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--color-status-danger)]'
-                      : 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {group.rows.length} {t('design_system.items')}
+              </div>
+            </div>
+            <div className="divide-y-2 divide-[var(--border-color)]">
+              {group.rows.map((row) => (
+                <div
+                  key={row.key}
+                  className={`grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_5rem] md:items-center ${
+                    row.stage === 'unknown' || row.stage === 'unsupported' ? 'bg-[var(--bg-main)]' : ''
                   }`}
                 >
-                  {t(`status.codex_features_stage_${row.stage}`)}
-                </span>
-                {row.hiddenByDefault ? (
-                  <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] text-[var(--text-muted)]">
-                    {t('status.codex_features_hidden_default')}
-                  </span>
-                ) : null}
-                <span className="min-w-0">{resolveCodexFeatureDescription(t, row)}</span>
-              </div>
-              {row.legacyAliases.length > 0 ? (
-                <div className="mt-2 inline-flex max-w-full border-2 border-dashed border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
-                  <span className="truncate">
-                    {t('status.codex_features_legacy_alias')}: {row.legacyAliases.join(', ')}
-                  </span>
+                  <div className="min-w-0">
+                    <div className="break-all font-mono text-[length:var(--font-size-ui-md)] font-black tracking-wide text-[var(--text-primary)]">
+                      {row.key}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-bold tracking-wide text-[var(--text-muted)]">
+                      <span
+                        className={`inline-flex shrink-0 border-2 px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] ${
+                          row.stage === 'unknown' || row.stage === 'unsupported' || row.stage === 'removed'
+                            ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--color-status-danger)]'
+                            : 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                        }`}
+                      >
+                        {t(`status.codex_features_stage_${row.stage}`)}
+                      </span>
+                      {row.hiddenByDefault ? (
+                        <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] text-[var(--text-muted)]">
+                          {t('status.codex_features_hidden_default')}
+                        </span>
+                      ) : null}
+                      <span className="min-w-0">{resolveCodexFeatureDescription(t, row)}</span>
+                    </div>
+                    {row.legacyAliases.length > 0 ? (
+                      <div className="mt-2 inline-flex max-w-full border-2 border-dashed border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-primary)]">
+                        <span className="truncate">
+                          {t('status.codex_features_legacy_alias')}: {row.legacyAliases.join(', ')}
+                        </span>
+                      </div>
+                    ) : null}
+                    {row.unsupported ? (
+                      <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                        {t('status.codex_features_unsupported_hint')}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="flex justify-start md:justify-center">
+                    <div className="w-full max-w-[22rem]">
+                      {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeFeature)}
+                    </div>
+                  </div>
                 </div>
-              ) : null}
-              {row.unsupported ? (
-                <div className="mt-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                  {t('status.codex_features_unsupported_hint')}
-                </div>
-              ) : null}
-            </div>
-            <div className="flex justify-start md:justify-center">
-              <div className="w-full max-w-[22rem]">{renderCodexValueEditor(row, row.readOnly || isBusy, onChangeFeature)}</div>
+              ))}
             </div>
           </div>
         ))}

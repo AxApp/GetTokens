@@ -7,6 +7,18 @@ import (
 	"testing"
 )
 
+func assertStringSliceEqual(t *testing.T, label string, got []string, want []string) {
+	t.Helper()
+	if len(got) != len(want) {
+		t.Fatalf("%s = %#v, want %#v", label, got, want)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("%s = %#v, want %#v", label, got, want)
+		}
+	}
+}
+
 func TestSaveCodexFeatureConfigAppendsFeaturesSectionWhenMissing(t *testing.T) {
 	codexHome := filepath.Join(t.TempDir(), ".codex")
 	t.Setenv("CODEX_HOME", codexHome)
@@ -536,6 +548,9 @@ func TestGetCodexFeatureConfigReturnsAllModelProviderSchemaFields(t *testing.T) 
 		if row == nil {
 			t.Fatalf("missing model provider definition %q", id)
 		}
+		if key == "wire_api" {
+			assertStringSliceEqual(t, "model provider wire_api options", row.Options, []string{"responses"})
+		}
 	}
 
 	if got := snapshot.TypedValues["model_providers.gettokens.request_max_retries"]; got != int64(4) {
@@ -728,6 +743,14 @@ func TestGetCodexFeatureConfigReturnsTypedRootDefinitionsAndValues(t *testing.T)
 	}
 	if seen["root.model_reasoning_effort"].ValueType != "enum" || len(seen["root.model_reasoning_effort"].Options) == 0 {
 		t.Fatalf("root.model_reasoning_effort should be enum with options: %#v", seen["root.model_reasoning_effort"])
+	}
+	assertStringSliceEqual(t, "root.approvals_reviewer options", seen["root.approvals_reviewer"].Options, []string{"user", "auto_review", "guardian_subagent"})
+	assertStringSliceEqual(t, "root.cli_auth_credentials_store options", seen["root.cli_auth_credentials_store"].Options, []string{"file", "keyring", "auto", "ephemeral"})
+	assertStringSliceEqual(t, "root.mcp_oauth_credentials_store options", seen["root.mcp_oauth_credentials_store"].Options, []string{"auto", "file", "keyring"})
+	assertStringSliceEqual(t, "root.model_auto_compact_token_limit_scope options", seen["root.model_auto_compact_token_limit_scope"].Options, []string{"total", "body_after_prefix"})
+	assertStringSliceEqual(t, "root.personality options", seen["root.personality"].Options, []string{"none", "friendly", "pragmatic"})
+	if seen["root.experimental_thread_store"].ValueType != "toml" {
+		t.Fatalf("root.experimental_thread_store should be toml per Codex schema: %#v", seen["root.experimental_thread_store"])
 	}
 	if seen["root.notify"].ValueType != "string_array" {
 		t.Fatalf("root.notify should be string_array: %#v", seen["root.notify"])

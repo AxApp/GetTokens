@@ -1,5 +1,7 @@
+import SegmentedControl from '../../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import type { CodexFeatureRow } from './codexFeatureConfig';
+import { selectCodexValueEditorKind } from './codexValueEditorModel';
 
 function stringifyCodexValue(value: unknown) {
   if (Array.isArray(value)) {
@@ -14,14 +16,21 @@ function stringifyCodexValue(value: unknown) {
   return String(value);
 }
 
+function resolveSegmentedEnumOptions(row: CodexFeatureRow) {
+  const value = typeof row.draftValue === 'string' ? row.draftValue : '';
+  const options = value && !row.options.includes(value) ? [value, ...row.options] : row.options;
+  return options.map((option) => ({ id: option, label: option }));
+}
+
 export function renderCodexValueEditor(
   row: CodexFeatureRow,
   disabled: boolean,
   onChangeSetting: (id: string, value: unknown) => void
 ) {
   const value = row.draftValue;
+  const editorKind = selectCodexValueEditorKind(row);
 
-  if (row.valueType === 'boolean' || row.valueType === 'bool') {
+  if (editorKind === 'toggle') {
     return (
       <ToggleSwitch
         label={row.id}
@@ -33,24 +42,19 @@ export function renderCodexValueEditor(
     );
   }
 
-  if (row.valueType === 'enum' && row.options.length > 0) {
+  if (editorKind === 'segment') {
+    const selectedValue = typeof value === 'string' && row.options.includes(value) ? value : typeof value === 'string' ? value : '';
     return (
-      <select
-        value={String(value ?? '')}
+      <SegmentedControl
+        options={resolveSegmentedEnumOptions(row)}
+        value={selectedValue}
         disabled={disabled}
-        onChange={(event) => onChangeSetting(row.id, event.target.value)}
-        className="select-swiss w-full"
-      >
-        {row.options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+        onChange={(nextValue) => onChangeSetting(row.id, nextValue)}
+      />
     );
   }
 
-  if (row.valueType === 'integer' || row.valueType === 'number') {
+  if (editorKind === 'number') {
     return (
       <input
         type="number"
@@ -62,7 +66,7 @@ export function renderCodexValueEditor(
     );
   }
 
-  if (row.valueType === 'string_array') {
+  if (editorKind === 'string_array') {
     return (
       <textarea
         value={stringifyCodexValue(value)}
@@ -82,7 +86,7 @@ export function renderCodexValueEditor(
     );
   }
 
-  if (row.valueType === 'textarea' || row.valueType === 'text' || row.valueType === 'toml') {
+  if (editorKind === 'textarea') {
     return (
       <textarea
         value={stringifyCodexValue(value)}

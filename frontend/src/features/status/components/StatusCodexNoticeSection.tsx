@@ -3,6 +3,7 @@ import type {
   CodexFeaturePreview,
   CodexFeatureRow,
 } from '../model/codexFeatureConfig';
+import { groupCodexFeatureRows } from '../model/codexFeatureConfig';
 import { renderCodexValueEditor } from '../model/codexValueEditor';
 
 function resolveCodexNoticeDescription(t: (key: string) => string, row: CodexFeatureRow) {
@@ -46,6 +47,13 @@ export default function StatusCodexNoticeSection({
   onReset,
 }: StatusCodexNoticeSectionProps) {
   const isBusy = isLoading || isSaving;
+  const groupedRows = groupCodexFeatureRows(rows);
+
+  function resolveGroupTitle(groupId: string) {
+    const translationKey = `status.codex_notices_group_${groupId}`;
+    const translated = t(translationKey);
+    return translated !== translationKey ? translated : groupId;
+  }
 
   return (
     <section className="relative overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
@@ -82,25 +90,41 @@ export default function StatusCodexNoticeSection({
         </div>
       ) : null}
 
-      <div className="divide-y-2 divide-[var(--border-color)]">
-        {rows.map((row) => (
-          <div
-            key={row.key}
-            className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_5rem] md:items-center"
-          >
-            <div className="min-w-0">
-              <div className="break-all font-mono text-[length:var(--font-size-ui-md)] font-black tracking-wide text-[var(--text-primary)]">
-                {row.key}
+      <div>
+        {groupedRows.map((group, groupIndex) => (
+          <div key={group.id} className={`${groupIndex > 0 ? 'border-t-2 border-[var(--border-color)]' : ''}`}>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-2">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black italic uppercase tracking-[0.18em] text-[var(--text-primary)]">
+                {resolveGroupTitle(group.id)}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-bold tracking-wide text-[var(--text-muted)]">
-                <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--text-primary)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] text-[var(--bg-main)]">
-                  NOTICE
-                </span>
-                <span className="min-w-0">{resolveCodexNoticeDescription(t, row)}</span>
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {group.rows.length} {t('design_system.items')}
               </div>
             </div>
-            <div className="flex justify-start md:justify-center">
-              <div className="w-full max-w-[22rem]">{renderCodexValueEditor(row, row.readOnly || isBusy, onChangeNotice)}</div>
+            <div className="divide-y-2 divide-[var(--border-color)]">
+              {group.rows.map((row) => (
+                <div
+                  key={row.key}
+                  className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_5rem] md:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="break-all font-mono text-[length:var(--font-size-ui-md)] font-black tracking-wide text-[var(--text-primary)]">
+                      {row.key}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-bold tracking-wide text-[var(--text-muted)]">
+                      <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--text-primary)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] text-[var(--bg-main)]">
+                        NOTICE
+                      </span>
+                      <span className="min-w-0">{resolveCodexNoticeDescription(t, row)}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-start md:justify-center">
+                    <div className="w-full max-w-[22rem]">
+                      {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeNotice)}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ))}

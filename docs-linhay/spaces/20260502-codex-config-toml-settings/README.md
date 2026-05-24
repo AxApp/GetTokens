@@ -40,6 +40,7 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 - [x] 保存后无关顶层键、注释、MCP section、agents section、未知 provider 字段保持不变。
 - [x] 当现有 `config.toml` 语法明显无法安全 patch 时，停止写入并给出错误，不生成破坏性覆盖。
 - [x] 新增 Go 单元测试覆盖 `[features]` 读取、diff、merge、异常输入、未知字段保留；前端测试覆盖开关派生状态、保存前校验与 Codex 二级路由迁移。
+- [x] `Feature 配置` 页面不再以长列表展示，root、features、notice、model providers 均按语义分组，用户能先定位配置域再修改具体键。
 - [ ] 与现有“一键应用到本地 Codex 配置”共用后端保留式 TOML patch 工具，不出现两套写入规则。
 
 说明：本期实现已经使用同一类“保留原文件、只 patch 受控字段”的写入语义，但尚未把既有 relay 一键应用链路重构到同一个 helper；该项保留为后续内部收敛任务。
@@ -62,7 +63,7 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-05-23
+- 最近更新：2026-05-25
 
 ## 实施结果
 1. 后端新增 `GetCodexFeatureConfig`、`PreviewCodexFeatureConfig`、`SaveCodexFeatureConfig`，并通过根层 `main.App` wrapper 暴露到 Wails bindings。
@@ -77,6 +78,8 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 10. Gemini 用量入口暂不暴露，后续 Gemini 能力成型后再单独纳入导航。
 11. 旧 `#frame=session-management`、`#frame=vendor-status`、`#frame=usage-desk` 路由和本地存储值保留兼容迁移，统一进入 `Codex` 对应二级项。
 12. 实现截图：[`20260502-codex-config-codex-menu-after-v01.png`](screenshots/20260502/codex-config/20260502-codex-config-codex-menu-after-v01.png)。
+13. `Feature 配置` 长列表已追加展示分组：root 按启动默认、模型输出、权限沙箱、工作区文档、工具集成、高级兼容分组；features 按推荐稳定、实验性、高级、兼容旧项分组；notice 按安全提示、迁移提示、结构化 notice 分组；model providers 按 provider id 分组。分组仅影响展示，不改变 draft、preview、save 的字段路径和写入语义。
+14. 固定枚举值控件已从原生 select 收敛为 `SegmentedControl`；bool / boolean 仍使用 `ToggleSwitch`。当前值不在枚举 options 中时临时并入 segment 头部展示，布尔型缺省假值不会被渲染成 `false` 枚举项。枚举 options 已按本地 Codex 源码 `7d47056ea4` 的 `codex-rs/core/config.schema.json` 校准：`approvals_reviewer`、`cli_auth_credentials_store`、`mcp_oauth_credentials_store`、`model_auto_compact_token_limit_scope`、`personality`、`model_providers.*.wire_api` 等不再使用旧值。
 
 ## 验证记录
 1. `go test ./...`
@@ -98,3 +101,11 @@ GetTokens 已经在状态页支持把本地 relay service 的 `apiKey / baseURL 
 8. 浏览器 MCP 导航被自动审批超时阻塞后，改用 headless Chrome + CDP 验证 `http://127.0.0.1:34115/#frame=codex`；12 秒后页面 `loading=false`，DOM 命中 `Codex Root Settings`、`Codex Model Providers`、`Codex Features`、`Codex Notices`、`hide_rate_limit_model_nudge`、`approval_policy`、`request_max_retries`、`supports_websockets`、`multi_agent_v2`、`apps_mcp_path_override`、`network_proxy`、`model_migrations`、`external_config_migration_prompts`。
 
 补充：`npm --prefix frontend run test:unit` 当前 416 项中 415 通过，失败项为 `frontend/src/features/accounts/tests/accountFilters.test.mjs` 的 `AccountsToolbar keeps status, resource, and source filters in the new order`，属于 accounts 工具栏既有工作区改动，不在本次 Codex 配置页修改范围。
+
+## 2026-05-25 追加验证
+1. `node --test frontend/src/features/status/tests/codexFeatureConfig.test.mjs`
+2. `npm --prefix frontend run typecheck`
+3. `npm --prefix frontend run build`
+4. 浏览器重新加载 `http://127.0.0.1:34115/#frame=codex`，页面命中分组标题 `启动与默认`、`模型与输出`、`权限与沙箱`、`工作区与文档`、`工具与集成`、`高级与兼容`、`推荐与稳定`、`实验性`、`兼容与旧项`、`安全提示`、`迁移提示`，确认配置项已从长列表收敛为分组列表；空分组不会渲染。
+5. 追加控件形态验收：同一页面 DOM 命中 `SegmentedControl: 16`、`ToggleSwitch: 79`、`selectCount: 0`，固定枚举已改为 segment，bool 仍为 toggle。
+6. 追加 Codex 源码校准：对照 `docs-linhay/references/codex` 当前 `main`（`7d47056ea4`）的 `codex-rs/core/config.schema.json`，并用 `go test ./internal/wailsapp -run 'TestGetCodexFeatureConfigReturnsTypedRootDefinitionsAndValues|TestGetCodexFeatureConfigReturnsAllModelProviderSchemaFields'` 锁定关键 enum options。
