@@ -10,6 +10,7 @@ import {
   resolveHoveredSidebarSection,
 } from './sidebarState.ts';
 import { getSidebarNavItems } from './sidebarNav.ts';
+import { readFile } from 'node:fs/promises';
 
 test('sidebar hides developer-only entries outside dev tools mode', () => {
   const productionIDs = getSidebarNavItems(false).map((item) => item.id);
@@ -57,4 +58,13 @@ test('submenu motion state matches placement and visibility', () => {
   assert.equal(getSidebarSubmenuMotionState('right', false), 'closed-right');
   assert.equal(getSidebarSubmenuMotionState('bottom', true), 'open-bottom');
   assert.equal(getSidebarSubmenuMotionState('bottom', false), 'closed-bottom');
+});
+
+test('sidebar typography keeps the brand and nav labels readable', async () => {
+  const source = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /text-3xl/);
+  assert.match(source, /text-sm font-bold uppercase tracking-widest/);
+  assert.match(source, /font-size-ui-lg/);
+  assert.match(source, /font-size-ui-sm/);
 });

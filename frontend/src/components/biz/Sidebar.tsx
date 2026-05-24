@@ -80,7 +80,7 @@ export default function Sidebar({
       : 'max-w-0 -translate-x-2 opacity-0';
   const navLabelClassName =
     contentMotionState === 'expanded'
-      ? 'max-w-[9rem] flex-1 translate-x-0 opacity-100'
+      ? 'max-w-[10rem] flex-1 translate-x-0 opacity-100'
       : 'max-w-0 -translate-x-1 opacity-0';
   const navChevronClassName =
     contentMotionState === 'expanded'
@@ -140,7 +140,7 @@ export default function Sidebar({
               className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-200 ease-out ${brandTextClassName}`}
               aria-hidden={isCollapsed}
             >
-              <div className="flex flex-col text-2xl font-black italic tracking-tighter uppercase leading-none">
+              <div className="flex flex-col text-3xl font-black italic tracking-tighter uppercase leading-none">
                 <span>GET</span>
                 <span className="mt-[-4px] text-[var(--text-muted)]">TOKENS</span>
               </div>
@@ -204,7 +204,7 @@ export default function Sidebar({
                 setHoveredSection(null);
                 setPinnedSection(null);
               }}
-              className={`flex w-full items-center border-2 py-3 text-xs font-bold uppercase tracking-widest transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
+              className={`flex w-full items-center border-2 py-3 text-sm font-bold uppercase tracking-widest transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
                 isCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
               } ${
                 activePage === item.id
@@ -264,7 +264,7 @@ export default function Sidebar({
                             setPinnedSection('codex');
                             setActiveCodexWorkspace(workspace.id);
                           }}
-                          className={`w-full border px-3 py-2 text-left text-[length:var(--font-size-ui-md-compact)] font-black tracking-[0.08em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
+                          className={`w-full border px-3 py-2 text-left text-[length:var(--font-size-ui-lg)] font-black tracking-[0.08em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
                             activePage === 'codex' && activeCodexWorkspace === workspace.id
                               ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                               : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
@@ -297,7 +297,7 @@ export default function Sidebar({
                             setPinnedSection('claude');
                             setActiveClaudeWorkspace(workspace.id);
                           }}
-                          className={`w-full border px-3 py-2 text-left text-[length:var(--font-size-ui-md-compact)] font-black tracking-[0.08em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
+                          className={`w-full border px-3 py-2 text-left text-[length:var(--font-size-ui-lg)] font-black tracking-[0.08em] transition-[background-color,border-color,color,box-shadow,transform] duration-150 active:scale-95 ${
                             activePage === 'claude' && activeClaudeWorkspace === workspace.id
                               ? 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)] shadow-[4px_4px_0_var(--shadow-color)]'
                               : 'border-transparent text-[var(--text-muted)] hover:border-[var(--border-color)]'
@@ -318,7 +318,7 @@ export default function Sidebar({
       <div className={`border-t-2 border-[var(--border-color)] transition-[padding] duration-200 ease-out ${isCollapsed ? 'p-3' : 'p-6'}`}>
         <div className="grid place-items-center">
           <div
-            className={`col-start-1 row-start-1 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-tighter text-[var(--text-muted)] transition-[opacity,transform] duration-200 ease-out ${versionTextClassName}`}
+            className={`col-start-1 row-start-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-tighter text-[var(--text-muted)] transition-[opacity,transform] duration-200 ease-out ${versionTextClassName}`}
             aria-hidden={isCollapsed}
           >
             VERSION {sidebarVersion}
