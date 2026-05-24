@@ -1894,6 +1894,7 @@ export namespace main {
 	    bearerTokenEnvVar?: string;
 	    httpHeaders?: CodexMcpEnvRow[];
 	    envHttpHeaders?: CodexMcpEnvRow[];
+	    environmentId?: string;
 	    experimentalEnvironment?: string;
 	    required?: boolean;
 	    supportsParallelToolCalls?: boolean;
@@ -1903,6 +1904,7 @@ export namespace main {
 	    enabledTools?: string[];
 	    disabledTools?: string[];
 	    scopes?: string[];
+	    oauthClientId?: string;
 	    oauthResource?: string;
 	    tools?: CodexMcpToolRow[];
 	    rawConfig?: string;
@@ -1929,6 +1931,7 @@ export namespace main {
 	        this.bearerTokenEnvVar = source["bearerTokenEnvVar"];
 	        this.httpHeaders = this.convertValues(source["httpHeaders"], CodexMcpEnvRow);
 	        this.envHttpHeaders = this.convertValues(source["envHttpHeaders"], CodexMcpEnvRow);
+	        this.environmentId = source["environmentId"];
 	        this.experimentalEnvironment = source["experimentalEnvironment"];
 	        this.required = source["required"];
 	        this.supportsParallelToolCalls = source["supportsParallelToolCalls"];
@@ -1938,6 +1941,7 @@ export namespace main {
 	        this.enabledTools = source["enabledTools"];
 	        this.disabledTools = source["disabledTools"];
 	        this.scopes = source["scopes"];
+	        this.oauthClientId = source["oauthClientId"];
 	        this.oauthResource = source["oauthResource"];
 	        this.tools = this.convertValues(source["tools"], CodexMcpToolRow);
 	        this.rawConfig = source["rawConfig"];

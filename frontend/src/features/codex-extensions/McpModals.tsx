@@ -47,6 +47,7 @@ export function McpServerEditorModal({
         bearerTokenEnvVar: '',
         httpHeaders: [],
         envHttpHeaders: [],
+        oauthClientId: '',
         oauthResource: '',
       });
       return;
@@ -63,25 +64,6 @@ export function McpServerEditorModal({
   }
 
   const currentValueToml = draft.rawConfig?.trim() || formatMcpCurrentValueToml(draft);
-  const hasCwd = Boolean(draft.cwd?.trim());
-  const hasEnvVars = Boolean(draft.envVarsRaw?.trim());
-  const hasEnv = serializeMcpEnv(draft.env).trim() !== '';
-  const hasBearerEnv = Boolean(draft.bearerTokenEnvVar?.trim());
-  const hasHttpHeaders = serializeMcpEnv(draft.httpHeaders).trim() !== '';
-  const hasEnvHttpHeaders = serializeMcpEnv(draft.envHttpHeaders).trim() !== '';
-  const hasOauthResource = Boolean(draft.oauthResource?.trim());
-  const hasRuntimeConfig =
-    Boolean(draft.required) ||
-    Boolean(draft.supportsParallelToolCalls) ||
-    Boolean(draft.experimentalEnvironment?.trim()) ||
-    Boolean(draft.startupTimeoutSec?.trim()) ||
-    Boolean(draft.toolTimeoutSec?.trim()) ||
-    Boolean(draft.defaultToolsApprovalMode?.trim());
-  const hasToolScope =
-    serializeMcpList(draft.enabledTools).trim() !== '' ||
-    serializeMcpList(draft.disabledTools).trim() !== '' ||
-    serializeMcpList(draft.scopes).trim() !== '';
-
   return (
     <div
       className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-[var(--overlay-scrim-80)] px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10"
@@ -146,9 +128,9 @@ export function McpServerEditorModal({
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label={t('codex_extensions.command')} value={draft.command || ''} onChange={(value) => onPatch({ command: value })} />
                   <Field label={t('codex_extensions.args')} value={serializeMcpArgs(draft.args)} onChange={(value) => onPatch({ args: parseMcpArgs(value) })} />
-                  {hasCwd ? <Field label={t('codex_extensions.cwd')} value={draft.cwd || ''} onChange={(value) => onPatch({ cwd: value })} /> : null}
-                  {hasEnvVars ? <TextareaField label={t('codex_extensions.env_vars')} value={draft.envVarsRaw || ''} onChange={(value) => onPatch({ envVarsRaw: value })} /> : null}
-                  {hasEnv ? <TextareaField label={t('codex_extensions.env')} value={serializeMcpEnv(draft.env)} onChange={(value) => onPatch({ env: parseMcpEnv(value) })} /> : null}
+                  <Field label={t('codex_extensions.cwd')} value={draft.cwd || ''} onChange={(value) => onPatch({ cwd: value })} />
+                  <TextareaField label={t('codex_extensions.env_vars')} value={draft.envVarsRaw || ''} onChange={(value) => onPatch({ envVarsRaw: value })} />
+                  <TextareaField label={t('codex_extensions.env')} value={serializeMcpEnv(draft.env)} onChange={(value) => onPatch({ env: parseMcpEnv(value) })} />
                 </div>
               </McpEditorSection>
             ) : (
@@ -158,70 +140,62 @@ export function McpServerEditorModal({
               >
                 <div className="grid gap-4 md:grid-cols-2">
                   <Field label={t('codex_extensions.url')} value={draft.url || ''} onChange={(value) => onPatch({ url: value })} />
-                  {hasBearerEnv ? <Field label={t('codex_extensions.bearer_env')} value={draft.bearerTokenEnvVar || ''} onChange={(value) => onPatch({ bearerTokenEnvVar: value })} /> : null}
-                  {hasHttpHeaders ? <TextareaField label={t('codex_extensions.http_headers')} value={serializeMcpEnv(draft.httpHeaders)} onChange={(value) => onPatch({ httpHeaders: parseMcpEnv(value) })} /> : null}
-                  {hasEnvHttpHeaders ? <TextareaField label={t('codex_extensions.env_http_headers')} value={serializeMcpEnv(draft.envHttpHeaders)} onChange={(value) => onPatch({ envHttpHeaders: parseMcpEnv(value) })} /> : null}
-                  {hasOauthResource ? <Field label={t('codex_extensions.oauth_resource')} value={draft.oauthResource || ''} onChange={(value) => onPatch({ oauthResource: value })} /> : null}
+                  <Field label={t('codex_extensions.bearer_env')} value={draft.bearerTokenEnvVar || ''} onChange={(value) => onPatch({ bearerTokenEnvVar: value })} />
+                  <TextareaField label={t('codex_extensions.http_headers')} value={serializeMcpEnv(draft.httpHeaders)} onChange={(value) => onPatch({ httpHeaders: parseMcpEnv(value) })} />
+                  <TextareaField label={t('codex_extensions.env_http_headers')} value={serializeMcpEnv(draft.envHttpHeaders)} onChange={(value) => onPatch({ envHttpHeaders: parseMcpEnv(value) })} />
+                  <Field label={t('codex_extensions.oauth_client_id')} value={draft.oauthClientId || ''} onChange={(value) => onPatch({ oauthClientId: value })} />
+                  <Field label={t('codex_extensions.oauth_resource')} value={draft.oauthResource || ''} onChange={(value) => onPatch({ oauthResource: value })} />
                 </div>
               </McpEditorSection>
             )}
 
-            {hasRuntimeConfig ? (
-              <McpEditorSection
-                title={t('codex_extensions.mcp_runtime_section')}
-                meta={t('codex_extensions.mcp_shared_config')}
-              >
-                <div className="grid gap-4 md:grid-cols-2">
-                  {draft.required ? (
-                    <ToggleField
-                      label={t('codex_extensions.required')}
-                      checked={Boolean(draft.required)}
-                      onChange={(checked) => onPatch({ required: checked })}
-                    />
-                  ) : null}
-                  {draft.supportsParallelToolCalls ? (
-                    <ToggleField
-                      label={t('codex_extensions.supports_parallel_tool_calls')}
-                      checked={Boolean(draft.supportsParallelToolCalls)}
-                      onChange={(checked) => onPatch({ supportsParallelToolCalls: checked })}
-                    />
-                  ) : null}
-                  {draft.experimentalEnvironment?.trim() ? <Field label={t('codex_extensions.experimental_environment')} value={draft.experimentalEnvironment || ''} onChange={(value) => onPatch({ experimentalEnvironment: value })} /> : null}
-                  {draft.startupTimeoutSec?.trim() ? <Field label={t('codex_extensions.startup_timeout_sec')} value={draft.startupTimeoutSec || ''} onChange={(value) => onPatch({ startupTimeoutSec: value })} /> : null}
-                  {draft.toolTimeoutSec?.trim() ? <Field label={t('codex_extensions.tool_timeout_sec')} value={draft.toolTimeoutSec || ''} onChange={(value) => onPatch({ toolTimeoutSec: value })} /> : null}
-                  {draft.defaultToolsApprovalMode?.trim() ? (
-                    <label className="grid gap-2">
-                      <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                        {t('codex_extensions.default_tools_approval_mode')}
-                      </span>
-                      <select
-                        value={draft.defaultToolsApprovalMode || ''}
-                        className="select-swiss"
-                        onChange={(event) => onPatch({ defaultToolsApprovalMode: event.target.value })}
-                      >
-                        <option value="">-</option>
-                        <option value="auto">auto</option>
-                        <option value="prompt">prompt</option>
-                        <option value="approve">approve</option>
-                      </select>
-                    </label>
-                  ) : null}
-                </div>
-              </McpEditorSection>
-            ) : null}
+            <McpEditorSection
+              title={t('codex_extensions.mcp_runtime_section')}
+              meta={t('codex_extensions.mcp_shared_config')}
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label={t('codex_extensions.environment_id')} value={draft.environmentId || ''} onChange={(value) => onPatch({ environmentId: value })} />
+                <ToggleField
+                  label={t('codex_extensions.required')}
+                  checked={Boolean(draft.required)}
+                  onChange={(checked) => onPatch({ required: checked })}
+                />
+                <ToggleField
+                  label={t('codex_extensions.supports_parallel_tool_calls')}
+                  checked={Boolean(draft.supportsParallelToolCalls)}
+                  onChange={(checked) => onPatch({ supportsParallelToolCalls: checked })}
+                />
+                <Field label={t('codex_extensions.experimental_environment')} value={draft.experimentalEnvironment || ''} onChange={(value) => onPatch({ experimentalEnvironment: value })} />
+                <Field label={t('codex_extensions.startup_timeout_sec')} value={draft.startupTimeoutSec || ''} onChange={(value) => onPatch({ startupTimeoutSec: value })} />
+                <Field label={t('codex_extensions.tool_timeout_sec')} value={draft.toolTimeoutSec || ''} onChange={(value) => onPatch({ toolTimeoutSec: value })} />
+                <label className="grid gap-2">
+                  <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('codex_extensions.default_tools_approval_mode')}
+                  </span>
+                  <select
+                    value={draft.defaultToolsApprovalMode || ''}
+                    className="select-swiss"
+                    onChange={(event) => onPatch({ defaultToolsApprovalMode: event.target.value })}
+                  >
+                    <option value="">-</option>
+                    <option value="auto">auto</option>
+                    <option value="prompt">prompt</option>
+                    <option value="approve">approve</option>
+                  </select>
+                </label>
+              </div>
+            </McpEditorSection>
 
-            {hasToolScope ? (
-              <McpEditorSection
-                title={t('codex_extensions.mcp_tools_section')}
-                meta={t('codex_extensions.tools')}
-              >
-                <div className="grid gap-4 md:grid-cols-2">
-                  {serializeMcpList(draft.enabledTools).trim() ? <TextareaField label={t('codex_extensions.enabled_tools')} value={serializeMcpList(draft.enabledTools)} onChange={(value) => onPatch({ enabledTools: parseMcpList(value) })} /> : null}
-                  {serializeMcpList(draft.disabledTools).trim() ? <TextareaField label={t('codex_extensions.disabled_tools')} value={serializeMcpList(draft.disabledTools)} onChange={(value) => onPatch({ disabledTools: parseMcpList(value) })} /> : null}
-                  {serializeMcpList(draft.scopes).trim() ? <TextareaField label={t('codex_extensions.scopes')} value={serializeMcpList(draft.scopes)} onChange={(value) => onPatch({ scopes: parseMcpList(value) })} /> : null}
-                </div>
-              </McpEditorSection>
-            ) : null}
+            <McpEditorSection
+              title={t('codex_extensions.mcp_tools_section')}
+              meta={t('codex_extensions.tools')}
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <TextareaField label={t('codex_extensions.enabled_tools')} value={serializeMcpList(draft.enabledTools)} onChange={(value) => onPatch({ enabledTools: parseMcpList(value) })} />
+                <TextareaField label={t('codex_extensions.disabled_tools')} value={serializeMcpList(draft.disabledTools)} onChange={(value) => onPatch({ disabledTools: parseMcpList(value) })} />
+                <TextareaField label={t('codex_extensions.scopes')} value={serializeMcpList(draft.scopes)} onChange={(value) => onPatch({ scopes: parseMcpList(value) })} />
+              </div>
+            </McpEditorSection>
 
             <div className="flex flex-wrap gap-2 bg-[var(--bg-surface)] p-4">
               <button
@@ -462,6 +436,7 @@ function formatMcpCurrentValueToml(server: McpServerRecord): string {
   if (!server.enabled) {
     lines.push('enabled = false');
   }
+  pushTomlString(lines, 'environment_id', server.environmentId);
   pushTomlString(lines, 'experimental_environment', server.experimentalEnvironment);
   if (server.required) {
     lines.push('required = true');
@@ -476,6 +451,11 @@ function formatMcpCurrentValueToml(server: McpServerRecord): string {
   pushTomlStringArray(lines, 'disabled_tools', serializedArrayValues(server.disabledTools, serializeMcpList(server.disabledTools)));
   pushTomlStringArray(lines, 'scopes', serializedArrayValues(server.scopes, serializeMcpList(server.scopes)));
   pushTomlString(lines, 'oauth_resource', server.oauthResource);
+
+  if (server.oauthClientId?.trim()) {
+    lines.push('', `[mcp_servers.${formatTomlPathSegment(server.id)}.oauth]`);
+    pushTomlString(lines, 'client_id', server.oauthClientId);
+  }
 
   const toolLines = serializeMcpTools(server.tools).split('\n').map((value) => value.trim()).filter(Boolean);
   for (const toolLine of toolLines) {

@@ -130,6 +130,7 @@ test('buildMcpChangePreview reports only modified server fields', () => {
     transport: 'streamable_http',
     url: 'https://mcp.linear.app/mcp',
     bearerTokenEnvVar: 'LINEAR_API_KEY',
+    environmentId: 'local',
     sourcePath: '~/.codex/config.toml',
     status: 'ready',
   };
@@ -137,10 +138,16 @@ test('buildMcpChangePreview reports only modified server fields', () => {
     ...original,
     enabled: false,
     bearerTokenEnvVar: 'LINEAR_TOKEN',
+    environmentId: 'remote',
+    startupTimeoutSec: '20',
+    oauthClientId: 'eci-prd-pub-codex-123',
   };
 
   assert.deepEqual(buildMcpChangePreview(original, draft), [
     { key: 'enabled', before: 'true', after: 'false' },
     { key: 'bearer_token_env_var', before: 'LINEAR_API_KEY', after: 'LINEAR_TOKEN' },
+    { key: 'environment_id', before: 'local', after: 'remote' },
+    { key: 'startup_timeout_sec', before: '-', after: '20' },
+    { key: 'oauth.client_id', before: '-', after: 'eci-prd-pub-codex-123' },
   ]);
 });

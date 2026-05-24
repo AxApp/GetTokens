@@ -234,8 +234,11 @@ func (a *App) GetCodexMcpServers() (*CodexMcpServersSnapshot, error) {
 	warnings := []string{}
 	for _, section := range document.servers {
 		server, sectionWarnings := parseCodexMcpServerSection(section, document.configPath)
+		if clientID := document.oauth[server.ID]; clientID != "" {
+			server.OAuthClientID = clientID
+		}
 		server.Tools = append([]CodexMcpToolRow(nil), document.tools[server.ID]...)
-		server.RawConfig = formatCodexMcpRawConfig(document.lines, section, document.toolSections[server.ID])
+		server.RawConfig = formatCodexMcpRawConfig(document.lines, section, codexMcpNestedSections(document, server.ID))
 		servers = append(servers, server)
 		warnings = append(warnings, sectionWarnings...)
 	}
@@ -265,8 +268,11 @@ func (a *App) SaveCodexMcpServer(input SaveCodexMcpServerInput) (*SaveCodexMcpSe
 	for _, section := range document.servers {
 		if section.id == input.Server.ID {
 			original, _ = parseCodexMcpServerSection(section, document.configPath)
+			if clientID := document.oauth[original.ID]; clientID != "" {
+				original.OAuthClientID = clientID
+			}
 			original.Tools = append([]CodexMcpToolRow(nil), document.tools[original.ID]...)
-			original.RawConfig = formatCodexMcpRawConfig(document.lines, section, document.toolSections[original.ID])
+			original.RawConfig = formatCodexMcpRawConfig(document.lines, section, codexMcpNestedSections(document, original.ID))
 			break
 		}
 	}
@@ -775,10 +781,39 @@ func readCodexMcpDocument() (*codexMcpDocument, error) {
 		exists:       exists,
 		tools:        map[string][]CodexMcpToolRow{},
 		toolSections: map[string][]codexMcpServerSection{},
+		oauth:        map[string]string{},
+		oauthSection: map[string]codexMcpServerSection{},
 	}
 	for index, line := range lines {
 		section := strings.TrimSpace(stripTomlLineComment(line))
 		if !strings.HasPrefix(section, "[mcp_servers.") || !strings.HasSuffix(section, "]") {
+			continue
+		}
+		if serverID, ok := parseCodexMcpOAuthSectionID(section); ok {
+			clientID := ""
+			for next := index + 1; next < len(lines); next++ {
+				if isTomlSectionHeader(lines[next]) {
+					break
+				}
+				if value, ok := parseTomlStringKeyValue(lines[next], "client_id"); ok {
+					clientID = value
+					break
+				}
+			}
+			end := len(lines)
+			for next := index + 1; next < len(lines); next++ {
+				if isTomlSectionHeader(lines[next]) {
+					end = next
+					break
+				}
+			}
+			document.oauth[serverID] = clientID
+			document.oauthSection[serverID] = codexMcpServerSection{
+				id:    "oauth",
+				start: index,
+				end:   end,
+				lines: append([]string(nil), lines[index+1:end]...),
+			}
 			continue
 		}
 		if serverID, toolName, ok := parseCodexMcpToolSectionID(section); ok {
@@ -832,6 +867,19 @@ func readCodexMcpDocument() (*codexMcpDocument, error) {
 		})
 	}
 	return document, nil
+}
+
+func parseCodexMcpOAuthSectionID(section string) (string, bool) {
+	path := strings.TrimSuffix(strings.TrimPrefix(section, "[mcp_servers."), "]")
+	segments := splitTomlDottedPath(path)
+	if len(segments) != 2 || strings.Trim(segments[1], `"`) != "oauth" {
+		return "", false
+	}
+	serverID := strings.Trim(strings.TrimSpace(segments[0]), `"`)
+	if serverID == "" {
+		return "", false
+	}
+	return serverID, true
 }
 
 func parseCodexMcpToolSectionID(section string) (string, string, bool) {
@@ -920,6 +968,10 @@ func parseCodexMcpServerSection(section codexMcpServerSection, configPath string
 			server.BearerTokenEnvVar = value
 			continue
 		}
+		if value, ok := parseTomlStringKeyValue(line, "environment_id"); ok {
+			server.EnvironmentID = value
+			continue
+		}
 		if value, ok := parseTomlStringKeyValue(line, "experimental_environment"); ok {
 			server.ExperimentalEnvironment = value
 			continue
@@ -978,6 +1030,10 @@ func parseCodexMcpServerSection(section codexMcpServerSection, configPath string
 			server.EnvHTTPHeaders = codexMcpEnvRows(value)
 			continue
 		}
+		if value, ok := parseTomlInlineStringMap(line, "oauth"); ok {
+			server.OAuthClientID = value["client_id"]
+			continue
+		}
 		if key, value, isBool, ok := parseTomlBoolKeyValue(line); ok && isBool {
 			switch key {
 			case "enabled":
@@ -1027,11 +1083,14 @@ func validateCodexMcpServer(server CodexMcpServer) error {
 		if strings.TrimSpace(server.Command) == "" {
 			return errors.New("stdio mcp server requires command")
 		}
-		if server.URL != "" || server.BearerTokenEnvVar != "" || len(server.HTTPHeaders) > 0 || len(server.EnvHTTPHeaders) > 0 || server.OAuthResource != "" {
-			return errors.New("transport conflict: stdio does not support url, bearer_token_env_var, http headers, or oauth_resource")
+		if server.URL != "" || server.BearerTokenEnvVar != "" || len(server.HTTPHeaders) > 0 || len(server.EnvHTTPHeaders) > 0 || server.OAuthClientID != "" || server.OAuthResource != "" {
+			return errors.New("transport conflict: stdio does not support url, bearer_token_env_var, http headers, oauth, or oauth_resource")
 		}
 		if strings.TrimSpace(server.EnvVarsRaw) != "" && !strings.HasPrefix(strings.TrimSpace(server.EnvVarsRaw), "[") {
 			return errors.New("env_vars must be a TOML array")
+		}
+		if environmentID := strings.TrimSpace(server.EnvironmentID); environmentID != "" && environmentID != "local" && !filepath.IsAbs(strings.TrimSpace(server.Cwd)) {
+			return fmt.Errorf("remote stdio MCP servers require an absolute cwd when environment_id is %q", environmentID)
 		}
 	case "streamable_http":
 		if strings.TrimSpace(server.URL) == "" {
@@ -1075,15 +1134,15 @@ func patchCodexMcpServerSection(lines []string, newline string, server CodexMcpS
 		}
 		lines = append(lines, header)
 		lines = append(lines, formatCodexMcpServerKnownLines(server)...)
-		return lines
+		return patchCodexMcpOAuthSection(lines, server)
 	}
 
 	known := map[string]bool{
 		"command": true, "args": true, "env": true, "env_vars": true, "cwd": true,
 		"url": true, "bearer_token_env_var": true, "bearer_token": true, "http_headers": true, "env_http_headers": true,
-		"enabled": true, "required": true, "supports_parallel_tool_calls": true, "experimental_environment": true,
+		"enabled": true, "environment_id": true, "required": true, "supports_parallel_tool_calls": true, "experimental_environment": true,
 		"startup_timeout_sec": true, "startup_timeout_ms": true, "tool_timeout_sec": true,
-		"default_tools_approval_mode": true, "enabled_tools": true, "disabled_tools": true, "scopes": true, "oauth_resource": true,
+		"default_tools_approval_mode": true, "enabled_tools": true, "disabled_tools": true, "scopes": true, "oauth": true, "oauth_resource": true,
 	}
 	nextSection := []string{lines[start]}
 	for _, line := range lines[start+1 : end] {
@@ -1097,7 +1156,7 @@ func patchCodexMcpServerSection(lines []string, newline string, server CodexMcpS
 	next := append([]string{}, lines[:start]...)
 	next = append(next, nextSection...)
 	next = append(next, lines[end:]...)
-	return next
+	return patchCodexMcpOAuthSection(next, server)
 }
 
 func formatCodexMcpServerKnownLines(server CodexMcpServer) []string {
@@ -1130,6 +1189,9 @@ func formatCodexMcpServerKnownLines(server CodexMcpServer) []string {
 	}
 	if !server.Enabled {
 		lines = append(lines, "enabled = false")
+	}
+	if strings.TrimSpace(server.EnvironmentID) != "" {
+		lines = append(lines, fmt.Sprintf("environment_id = %s", quoteTomlString(server.EnvironmentID)))
 	}
 	if strings.TrimSpace(server.ExperimentalEnvironment) != "" {
 		lines = append(lines, fmt.Sprintf("experimental_environment = %s", quoteTomlString(server.ExperimentalEnvironment)))
@@ -1164,19 +1226,58 @@ func formatCodexMcpServerKnownLines(server CodexMcpServer) []string {
 	return lines
 }
 
-func formatCodexMcpRawConfig(lines []string, section codexMcpServerSection, toolSections []codexMcpServerSection) string {
+func patchCodexMcpOAuthSection(lines []string, server CodexMcpServer) []string {
+	header := "[mcp_servers." + server.ID + ".oauth]"
+	if start, end, found := findTomlSection(lines, header); found {
+		next := append([]string{}, lines[:start]...)
+		next = append(next, lines[end:]...)
+		lines = next
+	}
+	clientID := strings.TrimSpace(server.OAuthClientID)
+	if clientID == "" {
+		return lines
+	}
+	mainHeader := "[mcp_servers." + server.ID + "]"
+	_, insertAt, found := findTomlSection(lines, mainHeader)
+	if !found {
+		insertAt = len(lines)
+	}
+	section := []string{}
+	if insertAt > 0 && strings.TrimSpace(lines[insertAt-1]) != "" {
+		section = append(section, "")
+	}
+	section = append(section, header, fmt.Sprintf("client_id = %s", quoteTomlString(clientID)))
+	if insertAt < len(lines) && strings.TrimSpace(lines[insertAt]) != "" {
+		section = append(section, "")
+	}
+	next := append([]string{}, lines[:insertAt]...)
+	next = append(next, section...)
+	next = append(next, lines[insertAt:]...)
+	return next
+}
+
+func codexMcpNestedSections(document *codexMcpDocument, serverID string) []codexMcpServerSection {
+	sections := append([]codexMcpServerSection(nil), document.toolSections[serverID]...)
+	if oauthSection, ok := document.oauthSection[serverID]; ok {
+		sections = append(sections, oauthSection)
+	}
+	sort.Slice(sections, func(i, j int) bool { return sections[i].start < sections[j].start })
+	return sections
+}
+
+func formatCodexMcpRawConfig(lines []string, section codexMcpServerSection, nestedSections []codexMcpServerSection) string {
 	if section.start < 0 || section.end > len(lines) || section.start >= section.end {
 		return ""
 	}
 	raw := append([]string(nil), lines[section.start:section.end]...)
-	for _, toolSection := range toolSections {
-		if toolSection.start < 0 || toolSection.end > len(lines) || toolSection.start >= toolSection.end {
+	for _, nestedSection := range nestedSections {
+		if nestedSection.start < 0 || nestedSection.end > len(lines) || nestedSection.start >= nestedSection.end {
 			continue
 		}
 		if len(raw) > 0 && strings.TrimSpace(raw[len(raw)-1]) != "" {
 			raw = append(raw, "")
 		}
-		raw = append(raw, lines[toolSection.start:toolSection.end]...)
+		raw = append(raw, lines[nestedSection.start:nestedSection.end]...)
 	}
 	return strings.TrimRight(strings.Join(raw, "\n"), "\n")
 }
@@ -1184,6 +1285,10 @@ func formatCodexMcpRawConfig(lines []string, section codexMcpServerSection, tool
 func formatMcpCurrentConfigToml(server CodexMcpServer) string {
 	lines := []string{"[mcp_servers." + server.ID + "]"}
 	lines = append(lines, formatCodexMcpServerKnownLines(server)...)
+	if strings.TrimSpace(server.OAuthClientID) != "" {
+		lines = append(lines, "", "[mcp_servers."+server.ID+".oauth]")
+		lines = append(lines, fmt.Sprintf("client_id = %s", quoteTomlString(server.OAuthClientID)))
+	}
 	for _, tool := range server.Tools {
 		if strings.TrimSpace(tool.Name) == "" {
 			continue
@@ -1376,6 +1481,7 @@ func buildCodexMcpChanges(before CodexMcpServer, after CodexMcpServer) []CodexMc
 	add("bearer_token_env_var", before.BearerTokenEnvVar, after.BearerTokenEnvVar)
 	add("http_headers", formatMcpEnvRowsForChange(before.HTTPHeaders), formatMcpEnvRowsForChange(after.HTTPHeaders))
 	add("env_http_headers", formatMcpEnvRowsForChange(before.EnvHTTPHeaders), formatMcpEnvRowsForChange(after.EnvHTTPHeaders))
+	add("environment_id", before.EnvironmentID, after.EnvironmentID)
 	add("experimental_environment", before.ExperimentalEnvironment, after.ExperimentalEnvironment)
 	add("startup_timeout_sec", before.StartupTimeoutSec, after.StartupTimeoutSec)
 	add("tool_timeout_sec", before.ToolTimeoutSec, after.ToolTimeoutSec)
@@ -1383,6 +1489,7 @@ func buildCodexMcpChanges(before CodexMcpServer, after CodexMcpServer) []CodexMc
 	add("enabled_tools", strings.Join(before.EnabledTools, ", "), strings.Join(after.EnabledTools, ", "))
 	add("disabled_tools", strings.Join(before.DisabledTools, ", "), strings.Join(after.DisabledTools, ", "))
 	add("scopes", strings.Join(before.Scopes, ", "), strings.Join(after.Scopes, ", "))
+	add("oauth.client_id", before.OAuthClientID, after.OAuthClientID)
 	add("oauth_resource", before.OAuthResource, after.OAuthResource)
 	return changes
 }

@@ -110,6 +110,7 @@ type CodexMcpServer struct {
 	BearerTokenEnvVar         string            `json:"bearerTokenEnvVar,omitempty"`
 	HTTPHeaders               []CodexMcpEnvRow  `json:"httpHeaders,omitempty"`
 	EnvHTTPHeaders            []CodexMcpEnvRow  `json:"envHttpHeaders,omitempty"`
+	EnvironmentID             string            `json:"environmentId,omitempty"`
 	ExperimentalEnvironment   string            `json:"experimentalEnvironment,omitempty"`
 	Required                  bool              `json:"required,omitempty"`
 	SupportsParallelToolCalls bool              `json:"supportsParallelToolCalls,omitempty"`
@@ -119,6 +120,7 @@ type CodexMcpServer struct {
 	EnabledTools              []string          `json:"enabledTools,omitempty"`
 	DisabledTools             []string          `json:"disabledTools,omitempty"`
 	Scopes                    []string          `json:"scopes,omitempty"`
+	OAuthClientID             string            `json:"oauthClientId,omitempty"`
 	OAuthResource             string            `json:"oauthResource,omitempty"`
 	Tools                     []CodexMcpToolRow `json:"tools,omitempty"`
 	RawConfig                 string            `json:"rawConfig,omitempty"`
@@ -187,6 +189,8 @@ type codexMcpDocument struct {
 	servers      []codexMcpServerSection
 	tools        map[string][]CodexMcpToolRow
 	toolSections map[string][]codexMcpServerSection
+	oauth        map[string]string
+	oauthSection map[string]codexMcpServerSection
 }
 
 type codexMcpServerSection struct {

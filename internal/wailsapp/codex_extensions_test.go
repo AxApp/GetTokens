@@ -491,6 +491,7 @@ func TestGetCodexMcpServersParsesSectionServers(t *testing.T) {
 		`env = { NODE_ENV = "production" }`,
 		`env_vars = ["GITHUB_TOKEN", { name = "REMOTE_TOKEN", source = "remote" }]`,
 		`cwd = "/tmp/workspace"`,
+		`environment_id = "local"`,
 		`required = true`,
 		`supports_parallel_tool_calls = true`,
 		`startup_timeout_sec = 10`,
@@ -507,6 +508,9 @@ func TestGetCodexMcpServersParsesSectionServers(t *testing.T) {
 		`scopes = ["read", "write"]`,
 		`oauth_resource = "https://api.linear.app"`,
 		`enabled = false`,
+		``,
+		`[mcp_servers.linear.oauth]`,
+		`client_id = "eci-prd-pub-codex-123"`,
 	}, "\n") + "\n"
 	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(config), 0600); err != nil {
 		t.Fatalf("WriteFile config.toml: %v", err)
@@ -526,6 +530,7 @@ func TestGetCodexMcpServersParsesSectionServers(t *testing.T) {
 	filesystem := snapshot.Servers[0]
 	if filesystem.EnvVarsRaw != `["GITHUB_TOKEN", { name = "REMOTE_TOKEN", source = "remote" }]` ||
 		filesystem.Cwd != "/tmp/workspace" ||
+		filesystem.EnvironmentID != "local" ||
 		!filesystem.Required ||
 		!filesystem.SupportsParallelToolCalls ||
 		filesystem.StartupTimeoutSec != "10" ||
@@ -544,6 +549,7 @@ func TestGetCodexMcpServersParsesSectionServers(t *testing.T) {
 	if len(linear.HTTPHeaders) != 1 || linear.HTTPHeaders[0].Key != "X-Client" || linear.HTTPHeaders[0].Value != "GetTokens" ||
 		len(linear.EnvHTTPHeaders) != 1 || linear.EnvHTTPHeaders[0].Key != "Authorization" ||
 		len(linear.Scopes) != 2 ||
+		linear.OAuthClientID != "eci-prd-pub-codex-123" ||
 		linear.OAuthResource != "https://api.linear.app" {
 		t.Fatalf("linear extended fields parsed incorrectly: %#v", linear)
 	}
@@ -638,8 +644,11 @@ func TestSaveCodexMcpServerPatchesTargetSectionOnly(t *testing.T) {
 			BearerTokenEnvVar: "LINEAR_TOKEN",
 			HTTPHeaders:       []CodexMcpEnvRow{{Key: "X-Client", Value: "GetTokens"}},
 			EnvHTTPHeaders:    []CodexMcpEnvRow{{Key: "Authorization", Value: "LINEAR_AUTH_HEADER"}},
+			EnvironmentID:     "remote-http",
 			Scopes:            []string{"read", "write"},
+			OAuthClientID:     "eci-prd-pub-codex-123",
 			OAuthResource:     "https://api.linear.app",
+			StartupTimeoutSec: "12",
 			ToolTimeoutSec:    "45",
 		},
 	}); err != nil {
@@ -657,8 +666,12 @@ func TestSaveCodexMcpServerPatchesTargetSectionOnly(t *testing.T) {
 		!strings.Contains(content, `bearer_token_env_var = "LINEAR_TOKEN"`) ||
 		!strings.Contains(content, `http_headers = { X-Client = "GetTokens" }`) ||
 		!strings.Contains(content, `env_http_headers = { Authorization = "LINEAR_AUTH_HEADER" }`) ||
+		!strings.Contains(content, `environment_id = "remote-http"`) ||
 		!strings.Contains(content, `scopes = ["read", "write"]`) ||
+		!strings.Contains(content, `[mcp_servers.linear.oauth]`) ||
+		!strings.Contains(content, `client_id = "eci-prd-pub-codex-123"`) ||
 		!strings.Contains(content, `oauth_resource = "https://api.linear.app"`) ||
+		!strings.Contains(content, `startup_timeout_sec = 12`) ||
 		!strings.Contains(content, `tool_timeout_sec = 45`) ||
 		!strings.Contains(content, `[mcp_servers.linear.tools.search]`) ||
 		!strings.Contains(content, `approval_mode = "approve"`) {

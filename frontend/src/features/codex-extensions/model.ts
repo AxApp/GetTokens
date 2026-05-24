@@ -47,6 +47,7 @@ export interface McpServerRecord {
   bearerTokenEnvVar?: string;
   httpHeaders?: McpEnvRow[];
   envHttpHeaders?: McpEnvRow[];
+  environmentId?: string;
   experimentalEnvironment?: string;
   required?: boolean;
   supportsParallelToolCalls?: boolean;
@@ -56,6 +57,7 @@ export interface McpServerRecord {
   enabledTools?: string[];
   disabledTools?: string[];
   scopes?: string[];
+  oauthClientId?: string;
   oauthResource?: string;
   tools?: McpToolRow[];
   rawConfig?: string;
@@ -229,6 +231,7 @@ export function buildMcpChangePreview(original: McpServerRecord, draft: McpServe
   pushChange('bearer_token_env_var', original.bearerTokenEnvVar, draft.bearerTokenEnvVar);
   pushChange('http_headers', serializeMcpEnv(original.httpHeaders), serializeMcpEnv(draft.httpHeaders));
   pushChange('env_http_headers', serializeMcpEnv(original.envHttpHeaders), serializeMcpEnv(draft.envHttpHeaders));
+  pushChange('environment_id', original.environmentId, draft.environmentId);
   pushChange('experimental_environment', original.experimentalEnvironment, draft.experimentalEnvironment);
   pushChange('startup_timeout_sec', original.startupTimeoutSec, draft.startupTimeoutSec);
   pushChange('tool_timeout_sec', original.toolTimeoutSec, draft.toolTimeoutSec);
@@ -236,6 +239,7 @@ export function buildMcpChangePreview(original: McpServerRecord, draft: McpServe
   pushChange('enabled_tools', serializeMcpList(original.enabledTools), serializeMcpList(draft.enabledTools));
   pushChange('disabled_tools', serializeMcpList(original.disabledTools), serializeMcpList(draft.disabledTools));
   pushChange('scopes', serializeMcpList(original.scopes), serializeMcpList(draft.scopes));
+  pushChange('oauth.client_id', original.oauthClientId, draft.oauthClientId);
   pushChange('oauth_resource', original.oauthResource, draft.oauthResource);
 
   return changes;

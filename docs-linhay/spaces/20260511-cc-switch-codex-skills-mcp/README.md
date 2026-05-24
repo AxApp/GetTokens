@@ -253,7 +253,7 @@ And 浏览器预览环境使用内置 preview 文本，不访问本机文件系�
 ## 当前状态
 
 - 状态：implementation-cleanup-completed
-- 最近更新：2026-05-14
+- 最近更新：2026-05-24
 - 已完成首个 Web 切片：
   - Codex 侧边栏新增 `Skills` / `MCP Servers` 两个独立入口。
   - 前端新增 `features/codex-extensions/`，在浏览器无 Wails runtime 时使用稳定预览数据。
@@ -271,9 +271,11 @@ And 浏览器预览环境使用内置 preview 文本，不访问本机文件系�
   - MCP server 编辑 modal 左侧表单只展示当前 server 已配置的有效字段：transport 必需字段保留，空的 `cwd/env/env_vars`、HTTP header、runtime、tool filters 等可选字段不默认渲染。
   - MCP server 编辑 modal 的滚动由整个 overlay / dialog 承担，不在表单 `main` 内做独立滚动；桌面视口下收窄 max-height，避免底部贴边。
   - MCP server 编辑 modal 按 Codex transport 互斥语义分区：stdio 展示 `command/args/env/env_vars/cwd`，streamable_http 展示 `url/bearer_token_env_var/http_headers/env_http_headers/oauth_resource`，共享区展示 `required/supports_parallel_tool_calls/timeouts/tool filters/scopes`。
+  - MCP server 编辑 modal 已补齐 Codex 当前源码字段并允许直接新增空白可选项：runtime 区支持 `environment_id`、`startup_timeout_sec`、`tool_timeout_sec`、`default_tools_approval_mode`，HTTP 区支持 `oauth.client_id` 与 `oauth_resource`；STDIO 验收确认填写 `startup_timeout_sec = 20` 后出现字段级变更预览。
   - MCP server 编辑 modal 左侧表单改为单层分区布局：左列展示分区标题与 transport/meta，右列统一字段网格；布尔项使用 `ToggleField` 展示字段名、当前 true/false 和通用 `ToggleSwitch`，避免只显示开关导致层级不齐。
   - MCP server 编辑 modal 在常规桌面宽度使用右侧当前值栏，结构对齐会话页 detail 布局，不把当前值区压到页面底部。
   - MCP Servers 列表区经 debate 收敛后移除独立 metrics 卡片；总数、启用数、待保存数、config path 与 visible count 合入列表 section header，页面保持“只要列表”的单 section 结构。
+  - 截图归档：`screenshots/20260524/codex-extensions/20260524-codex-extensions-mcp-config-fields-after-v01.png`。
 - 已完成首个真实后端切片：
   - `internal/wailsapp` 新增 Codex Skills / MCP 基础 service。
   - Skills 支持按 Codex 全局 roots 扫描 `SKILL.md`、解析 YAML front matter、返回去 front matter 预览正文；依据 Codex `core-skills/src/loader.rs`，全局 roots 保留 User/System layer，排除 Repo scope 与 plugin/Git 追加 roots。

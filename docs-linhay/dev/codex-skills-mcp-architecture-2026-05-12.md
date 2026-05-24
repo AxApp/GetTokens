@@ -45,6 +45,20 @@
 5. `startup_timeout_ms` 读取时折算为秒展示；写回统一使用 `startup_timeout_sec`，避免新旧字段同时存在。
 6. modal 布局保持单层 overlay：最外层 overlay 负责滚动，表单 `main` 不独立滚动；桌面宽度下右侧当前值栏与编辑区并排，移动端自然下排。
 
+## 2026-05-24 MCP 配置字段补齐
+
+再次按 `docs-linhay/references/codex/codex-rs/config/src/mcp_types.rs` 与 `mcp_edit.rs` 校准后，Codex 当前有效 MCP 配置还包括：
+
+1. shared：`environment_id`。省略时 Codex 等价为 `local`；当 stdio server 使用非 `local` environment 时，Codex 要求 `cwd` 为绝对路径。
+2. HTTP OAuth：`[mcp_servers.<id>.oauth] client_id = "..."`，也可由 TOML inline table 表达为 `oauth = { client_id = "..." }`。
+
+本轮实现策略：
+
+1. 后端 DTO / parser / patch 支持 `environment_id`、`oauth.client_id`、`startup_timeout_sec`；`startup_timeout_ms` 仍只作为读取兼容字段，写回统一为秒。
+2. `[mcp_servers.<id>.oauth]` 与 `[mcp_servers.<id>.tools.<tool>]` 一样归属于父 server，不作为独立 server 行展示。
+3. 保存单个 server 时只替换目标主 section 与目标 oauth nested section，继续保留其它 server、nested tools、未知字段和非 MCP 配置。
+4. 编辑 modal 中 transport 字段、runtime 字段、tool scope 字段改为可直接新增，不再只显示已有值；用户可以直接填写 `startup_timeout_sec = 20` 这类空白配置。
+
 ## 后端模块建议
 
 ### `internal/codexskills`
@@ -191,8 +205,9 @@ Codex 字段：
 
 1. stdio：`command`、`args`、`env`、`env_vars`、`cwd`
 2. streamable_http：`url`、`bearer_token_env_var`、`http_headers`、`env_http_headers`
-3. shared：`enabled`、`required`、`supports_parallel_tool_calls`、`startup_timeout_sec`、`startup_timeout_ms`、`tool_timeout_sec`、`default_tools_approval_mode`、`enabled_tools`、`disabled_tools`、`scopes`、`oauth_resource`、`tools`
-4. nested tool policy：`[mcp_servers.<id>.tools.<tool>] approval_mode = "approve|prompt|auto"` 属于 `<id>` server 的嵌套配置，不是独立 MCP server。
+3. shared：`enabled`、`environment_id`、`required`、`supports_parallel_tool_calls`、`startup_timeout_sec`、`startup_timeout_ms`、`tool_timeout_sec`、`default_tools_approval_mode`、`enabled_tools`、`disabled_tools`、`scopes`、`oauth_resource`、`tools`
+4. nested OAuth：`[mcp_servers.<id>.oauth] client_id = "..."` 属于 `<id>` server。
+5. nested tool policy：`[mcp_servers.<id>.tools.<tool>] approval_mode = "approve|prompt|auto"` 属于 `<id>` server 的嵌套配置，不是独立 MCP server。
 
 校验：
 
