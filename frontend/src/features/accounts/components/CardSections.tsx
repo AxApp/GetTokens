@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { MouseEvent } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
 import type { ApiFormat, BillingDisplay } from '../../../types';
 import type { AccountRecord, QuotaDisplay, QuotaWindowDisplay, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
@@ -220,18 +220,37 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
   const refreshing = quotaDisplay.refreshing === true;
   const hasTokenProgress = windows.some(hasQuotaTokenProgress);
 
-  const handleToggleDisplayMode = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
+  const toggleDisplayMode = () => {
     if (!hasTokenProgress) return;
     setDisplayMode((current) => current === 'percent' ? 'tokens' : 'percent');
   };
 
+  const handleToggleDisplayMode = (event: MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    toggleDisplayMode();
+  };
+
+  const handleToggleDisplayModeKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    event.stopPropagation();
+    toggleDisplayMode();
+  };
+
   return (
-    <div
-      className="grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3"
+    <section
+      className={`grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3 ${
+        hasTokenProgress ? 'cursor-pointer transition-colors hover:bg-[var(--bg-surface)]' : ''
+      }`}
       aria-busy={refreshing}
+      aria-pressed={hasTokenProgress ? displayMode === 'tokens' : undefined}
+      role={hasTokenProgress ? 'button' : undefined}
+      tabIndex={hasTokenProgress ? 0 : undefined}
       data-quota-refreshing={refreshing ? 'true' : undefined}
       data-quota-display-mode={displayMode}
+      data-account-card-ignore-click={hasTokenProgress ? 'true' : undefined}
+      onClick={hasTokenProgress ? handleToggleDisplayMode : undefined}
+      onKeyDown={hasTokenProgress ? handleToggleDisplayModeKeyDown : undefined}
     >
       {windows.map((window) => {
         const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
@@ -253,21 +272,9 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
               <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
                 {window.label}
               </div>
-              {hasTokenProgress ? (
-                <button
-                  type="button"
-                  className="shrink-0 cursor-pointer text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:underline"
-                  aria-pressed={displayMode === 'tokens'}
-                  title={`${formatQuotaPercent(window)} / ${formatQuotaTokenProgress(window)}`}
-                  onClick={handleToggleDisplayMode}
-                >
-                  {valueLabel}
-                </button>
-              ) : (
-                <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
-                  {valueLabel}
-                </div>
-              )}
+              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                {valueLabel}
+              </div>
             </div>
             <div className="grid min-w-0 gap-1">
               <div
@@ -299,7 +306,7 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
           </div>
         );
       })}
-    </div>
+    </section>
   );
 }
 

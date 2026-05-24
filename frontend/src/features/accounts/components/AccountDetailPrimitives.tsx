@@ -15,15 +15,21 @@ const toneClassNames: Record<AccountDetailTone, string> = {
 };
 
 const sectionDensityClassNames: Record<AccountDetailSectionDensity, string> = {
-  standard: 'gap-4 py-5',
-  dense: 'gap-3 py-4',
-  hero: 'gap-5 py-6',
+  standard: 'gap-3 py-4',
+  dense: 'gap-2.5 py-3',
+  hero: 'gap-4 py-5',
 };
 
 const cardSectionDensityClassNames: Record<AccountDetailSectionDensity, string> = {
-  standard: 'gap-3 p-4',
-  dense: 'gap-3 p-3',
-  hero: 'gap-4 p-5',
+  standard: 'gap-2.5 p-3',
+  dense: 'gap-2 p-2.5',
+  hero: 'gap-3 p-4',
+};
+
+const sectionBodyDensityClassNames: Record<AccountDetailSectionDensity, string> = {
+  standard: 'space-y-3',
+  dense: 'space-y-2.5',
+  hero: 'space-y-4',
 };
 
 interface AccountDetailSectionProps {
@@ -58,26 +64,26 @@ export function AccountDetailSectionHeader({
   return (
     <div
       data-account-detail-section-header="standard"
-      className={`flex min-w-0 flex-col gap-3 border-b border-dashed border-[var(--border-color)] pb-3 sm:flex-row sm:items-start sm:justify-between ${className}`}
+      className={`flex min-w-0 flex-col gap-2 border-b border-dashed border-[var(--border-color)] pb-2 sm:flex-row sm:items-start sm:justify-between ${className}`}
     >
-      <div className="min-w-0 space-y-1.5">
+      <div className="min-w-0 space-y-1">
         {eyebrow ? (
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {eyebrow}
           </div>
         ) : null}
         {title ? (
-          <h3 className="text-[length:var(--font-size-ui-sm)] font-black uppercase italic leading-tight tracking-[0.08em] text-[var(--text-primary)]">
+          <h3 className="text-[length:var(--font-size-ui-xs)] font-black uppercase italic leading-snug tracking-[0.06em] text-[var(--text-primary)]">
             {title}
           </h3>
         ) : null}
         {meta ? (
-          <div className="break-words font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          <div className="break-words font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
             {meta}
           </div>
         ) : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-1.5">{actions}</div> : null}
     </div>
   );
 }
@@ -122,7 +128,7 @@ export function AccountDetailSection({
           actions={actions}
         />
       ) : null}
-      <div className="min-w-0 space-y-4">
+      <div data-account-detail-section-body="compact" className={`min-w-0 ${sectionBodyDensityClassNames[density]}`}>
         {children}
       </div>
     </section>

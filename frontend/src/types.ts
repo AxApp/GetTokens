@@ -46,6 +46,7 @@ export interface BillingDisplay {
   balances: { currency: string; totalBalance: string; grantedBalance: string; toppedUpBalance: string }[];
 }
 export type CredentialSource = 'auth-file' | 'api-key';
+export type AccountPlanType = 'free' | 'plus' | 'pro';
 
 export type ApiFormat = 'anthropic' | 'openai_chat' | 'openai_responses' | 'gemini_native';
 

@@ -327,6 +327,8 @@ test('account detail modules expose design-system anatomy and runtime states', a
   assert.match(primitivesSource, /AccountDetailModuleStackLayout/);
   assert.match(primitivesSource, /AccountDetailSectionHeader/);
   assert.match(primitivesSource, /data-account-detail-section-header="standard"/);
+  assert.match(primitivesSource, /data-account-detail-section-body="compact"/);
+  assert.doesNotMatch(primitivesSource, /<div className="min-w-0 space-y-4">/);
   assert.match(primitivesSource, /AccountDetailOverviewGrid/);
   assert.match(primitivesSource, /data-account-detail-overview-grid="runtime-evidence"/);
   assert.match(primitivesSource, /data-account-detail-overview-equal-height="true"/);
