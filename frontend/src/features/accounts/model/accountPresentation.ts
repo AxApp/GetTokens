@@ -7,6 +7,7 @@ import { formatLabel, formatShortLabel } from './vendorPresetHelpers.ts';
 export interface AccountAttributionBadge {
   label: string;
   shortLabel?: string;
+  backgroundColor?: string;
   tone?: 'neutral' | 'positive' | 'warning' | 'critical';
 }
 
@@ -315,7 +316,10 @@ export function buildAccountAttributionBadges(account: AccountRecord, quotaDispl
   const badges: AccountAttributionBadge[] = [];
   const planLabel = resolveAccountPlanLabel(account, quotaDisplay);
   if (planLabel) {
-    badges.push({ label: planLabel });
+    badges.push({
+      label: planLabel,
+      backgroundColor: 'color-mix(in_srgb,var(--text-primary)_6%,transparent)',
+    });
   }
 
   const formats = account.supportedFormats && account.supportedFormats.length > 0

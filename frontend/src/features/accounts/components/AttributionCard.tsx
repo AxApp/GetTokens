@@ -26,6 +26,7 @@ type AttributionCardDensity = 'full' | 'compact' | 'list';
 export interface AttributionCardBadge {
   label: string;
   shortLabel?: string;
+  backgroundColor?: string;
   tone?: AttributionCardTone;
 }
 
@@ -176,6 +177,7 @@ export default function AttributionCard({
                 <span
                   key={`${badge.label}-${badge.tone || 'neutral'}`}
                   title={badge.label}
+                  style={badge.backgroundColor ? { backgroundColor: badge.backgroundColor } : undefined}
                   className={`border px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] ${
                     ATTRIBUTION_CARD_BADGE_TONE_CLASS[badge.tone || 'neutral']
                   }`}
