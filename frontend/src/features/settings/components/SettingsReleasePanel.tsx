@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ExternalLink } from 'lucide-react';
 
 const fieldMetaStyle = { fontSize: 'var(--gt-settings-meta-size, 8px)' } as const;
 const bodyTextStyle = { fontSize: 'var(--gt-settings-body-size, 9px)' } as const;
@@ -15,10 +16,16 @@ interface SettingsReleasePanelProps {
   cliProxyApiGitHashLabel: string;
   latestReleaseTitle: string;
   latestReleaseLabel: string;
+  latestReleaseGitHubURL: string;
   updateAssetTitle: string;
   updateAssetName: string;
   updateChannelTitle: string;
   updateChannelHint: ReactNode;
+  currentReleaseGitHubURL: string;
+  gitHashGitHubURL: string;
+  cliProxyApiGitHashGitHubURL: string;
+  openGitHubLabel: string;
+  onOpenGitHubURL: (url: string) => void;
   updateMessage: string;
   checkUpdateLabel: string;
   checkingUpdateLabel: string;
@@ -42,10 +49,16 @@ export default function SettingsReleasePanel({
   cliProxyApiGitHashLabel,
   latestReleaseTitle,
   latestReleaseLabel,
+  latestReleaseGitHubURL,
   updateAssetTitle,
   updateAssetName,
   updateChannelTitle,
   updateChannelHint,
+  currentReleaseGitHubURL,
+  gitHashGitHubURL,
+  cliProxyApiGitHashGitHubURL,
+  openGitHubLabel,
+  onOpenGitHubURL,
   updateMessage,
   checkUpdateLabel,
   checkingUpdateLabel,
@@ -59,26 +72,54 @@ export default function SettingsReleasePanel({
 }: SettingsReleasePanelProps) {
   return (
     <div
-      className="card-swiss bg-[var(--bg-surface)] !p-5"
+      className="card-swiss overflow-hidden bg-[var(--bg-surface)] !p-0"
       data-design-system-component="true"
       data-design-system-component-name="SettingsReleasePanel"
       data-design-system-git-hash={gitHashLabel}
     >
-      <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <SettingsReleaseValue title={currentVersionTitle} value={currentVersionLabel} />
+      <div className="grid md:grid-cols-[minmax(0,1fr)_17rem]">
+        <div className="min-w-0">
+          <div className="grid grid-cols-1 border-b border-dashed border-[var(--border-color)] sm:grid-cols-2 lg:grid-cols-4">
+            <SettingsReleaseValue
+              title={currentVersionTitle}
+              value={currentVersionLabel}
+              actionURL={currentReleaseGitHubURL}
+              actionLabel={openGitHubLabel}
+              onOpenURL={onOpenGitHubURL}
+              strong
+            />
             <SettingsReleaseValue title={releaseLabelTitle} value={releaseLabel} />
-            <SettingsReleaseValue title={gitHashTitle} value={gitHashLabel} mono />
-            <SettingsReleaseValue title={cliProxyApiGitHashTitle} value={cliProxyApiGitHashLabel} mono />
+            <SettingsReleaseValue
+              title={gitHashTitle}
+              value={gitHashLabel}
+              mono
+              actionURL={gitHashGitHubURL}
+              actionLabel={openGitHubLabel}
+              onOpenURL={onOpenGitHubURL}
+            />
+            <SettingsReleaseValue
+              title={cliProxyApiGitHashTitle}
+              value={cliProxyApiGitHashLabel}
+              mono
+              actionURL={cliProxyApiGitHashGitHubURL}
+              actionLabel={openGitHubLabel}
+              onOpenURL={onOpenGitHubURL}
+            />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 border-t border-dashed border-[var(--border-color)] pt-4 sm:grid-cols-2">
-            <SettingsReleaseValue title={latestReleaseTitle} value={latestReleaseLabel} />
+          <div className="grid grid-cols-1 border-b border-dashed border-[var(--border-color)] sm:grid-cols-2">
+            <SettingsReleaseValue
+              title={latestReleaseTitle}
+              value={latestReleaseLabel}
+              actionURL={latestReleaseGitHubURL}
+              actionLabel={openGitHubLabel}
+              onOpenURL={onOpenGitHubURL}
+              strong
+            />
             <SettingsReleaseValue title={updateAssetTitle} value={updateAssetName} mono body />
           </div>
 
-          <div className="border-t border-dashed border-[var(--border-color)] pt-4">
+          <div className="px-4 py-4">
             <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
               {updateChannelTitle}
             </div>
@@ -96,7 +137,7 @@ export default function SettingsReleasePanel({
           </div>
         </div>
 
-        <div className="space-y-3 border-t border-dashed border-[var(--border-color)] pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+        <div className="grid content-start gap-3 border-t border-dashed border-[var(--border-color)] bg-[var(--bg-main)] p-4 md:border-l md:border-t-0">
           <button className="btn-swiss w-full" onClick={onCheckUpdate} disabled={isCheckingUpdate}>
             {isCheckingUpdate ? checkingUpdateLabel : checkUpdateLabel}
           </button>
@@ -119,22 +160,45 @@ function SettingsReleaseValue({
   value,
   mono = false,
   body = false,
+  strong = false,
+  actionURL = '',
+  actionLabel = '',
+  onOpenURL,
 }: {
   title: string;
   value: string;
   mono?: boolean;
   body?: boolean;
+  strong?: boolean;
+  actionURL?: string;
+  actionLabel?: string;
+  onOpenURL?: (url: string) => void;
 }) {
   const valueClassName = mono
     ? 'break-all font-mono font-bold text-[var(--text-primary)]'
-    : 'font-black uppercase italic text-[var(--text-primary)]';
+    : strong
+      ? 'font-black uppercase italic text-[var(--text-primary)]'
+      : 'font-bold uppercase text-[var(--text-primary)]';
 
   return (
-    <div className="min-w-0 space-y-1">
-      <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
-        {title}
+    <div className="min-w-0 border-b border-dashed border-[var(--border-color)] px-4 py-3 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0 lg:border-r lg:[&:nth-child(4n)]:border-r-0">
+      <div className="flex min-h-6 items-center justify-between gap-2">
+        <div className="font-bold uppercase tracking-widest text-[var(--text-muted)]" style={fieldMetaStyle}>
+          {title}
+        </div>
+        {actionURL && onOpenURL ? (
+          <button
+            type="button"
+            className="inline-flex h-6 w-6 shrink-0 items-center justify-center border border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] transition active:scale-95 hover:bg-[var(--bg-surface)]"
+            aria-label={`${actionLabel}: ${value}`}
+            title={actionLabel}
+            onClick={() => onOpenURL(actionURL)}
+          >
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
+        ) : null}
       </div>
-      <div className={valueClassName} style={body ? bodyTextStyle : valueTextStyle}>
+      <div className={`mt-1 ${valueClassName}`} style={body ? bodyTextStyle : valueTextStyle}>
         {value}
       </div>
     </div>

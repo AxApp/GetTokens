@@ -19,7 +19,13 @@ import { useI18n } from '../../context/I18nContext';
 import { useTextScale } from '../../context/TextScaleContext';
 import { useTheme } from '../../context/ThemeContext';
 import { buildGitHashLabel, formatBuildGitHash } from './settingsBuildMetadata';
-import { mapCheckedRelease } from './settingsRelease';
+import {
+  buildGetTokensReleaseURL,
+  buildGitHubCommitURL,
+  cliProxyApiGitHubRepositoryURL,
+  getTokensGitHubRepositoryURL,
+  mapCheckedRelease,
+} from './settingsRelease';
 import {
   localProjectedUsageRefreshIntervalOptions,
   parseLocalProjectedUsageRefreshIntervalMinutes,
@@ -31,7 +37,7 @@ import {
 } from './settingsTextScale';
 import { getSettingsSectionBadge, type SettingsSectionID } from './settingsLayout';
 import { toErrorMessage } from '../../utils/error';
-import { hasWailsAppBindings } from '../../utils/previewMode';
+import { hasWailsAppBindings, hasWailsRuntime } from '../../utils/previewMode';
 import { formatAppVersion } from '../../utils/version';
 import type { LocaleCode, ReleaseInfo, SegmentedOption, SidecarStatus, ThemeMode } from '../../types';
 
@@ -108,6 +114,10 @@ export default function SettingsFeature({
   const currentVersionLabel = formatAppVersion(version);
   const latestReleaseLabel = availableRelease ? formatAppVersion(availableRelease.version) : '—';
   const cliProxyApiGitHashLabel = formatBuildGitHash(sidecarStatus.gitHash);
+  const currentReleaseGitHubURL = buildGetTokensReleaseURL(currentVersionLabel);
+  const latestReleaseGitHubURL = availableRelease?.releaseUrl ?? '';
+  const gitHashGitHubURL = buildGitHubCommitURL(getTokensGitHubRepositoryURL, buildGitHashLabel);
+  const cliProxyApiGitHashGitHubURL = buildGitHubCommitURL(cliProxyApiGitHubRepositoryURL, cliProxyApiGitHashLabel);
   const textScaleOptions: ReadonlyArray<SegmentedOption<typeof textScale>> = [
     { id: 'default', label: t('settings.text_scale_default') },
     { id: 'large', label: t('settings.text_scale_large') },
@@ -278,7 +288,7 @@ export default function SettingsFeature({
     setIsOpeningRelease(true);
     setUpdateMessage('');
     try {
-      BrowserOpenURL(availableRelease.releaseUrl);
+      openExternalURL(availableRelease.releaseUrl);
       setUpdateMessage(t('settings.update_redirected'));
     } catch (error) {
       setUpdateMessage(`${t('settings.update_error')}: ${toErrorMessage(error)}`);
@@ -286,6 +296,25 @@ export default function SettingsFeature({
       return;
     }
     setIsOpeningRelease(false);
+  }
+
+  function handleOpenGitHubURL(url: string) {
+    openExternalURL(url);
+  }
+
+  function openExternalURL(url: string) {
+    if (!url) {
+      return;
+    }
+
+    if (hasWailsRuntime()) {
+      BrowserOpenURL(url);
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   }
 
   async function handleLocalUsageIntervalChange(value: LocalProjectedUsageRefreshIntervalID) {
@@ -709,6 +738,7 @@ export default function SettingsFeature({
               cliProxyApiGitHashLabel={cliProxyApiGitHashLabel}
               latestReleaseTitle={t('settings.latest_release')}
               latestReleaseLabel={latestReleaseLabel}
+              latestReleaseGitHubURL={latestReleaseGitHubURL}
               updateAssetTitle={t('settings.update_asset')}
               updateAssetName={availableRelease?.assetName || '—'}
               updateChannelTitle={t('settings.update_channel')}
@@ -719,6 +749,11 @@ export default function SettingsFeature({
                     ? 'settings.update_channel_hint_auto'
                     : 'settings.update_channel_hint_manual'
               )}
+              currentReleaseGitHubURL={currentReleaseGitHubURL}
+              gitHashGitHubURL={gitHashGitHubURL}
+              cliProxyApiGitHashGitHubURL={cliProxyApiGitHashGitHubURL}
+              openGitHubLabel={t('settings.open_github')}
+              onOpenGitHubURL={handleOpenGitHubURL}
               updateMessage={updateMessage}
               checkUpdateLabel={t('settings.check_update')}
               checkingUpdateLabel={t('settings.checking_update')}

@@ -1333,6 +1333,7 @@
     "apply_update": "应用更新并退出",
     "applying_update": "升级中...",
     "apply_update_hint": "应用成功后程序会退出；重新启动后进入新版本。",
+    "open_github": "打开 GitHub",
     "open_release_page": "打开发布页安装",
     "opening_release_page": "打开中...",
     "manual_update_hint": "macOS 已签名发布包不做 bundle 内原地替换，改为跳转发布页安装。",

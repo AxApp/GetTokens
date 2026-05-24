@@ -1333,6 +1333,7 @@
     "apply_update": "Apply Update & Quit",
     "applying_update": "Applying...",
     "apply_update_hint": "The app will quit after a successful update. Relaunch to enter the new version.",
+    "open_github": "Open GitHub",
     "open_release_page": "Open Release Page",
     "opening_release_page": "Opening...",
     "manual_update_hint": "Signed macOS releases avoid in-place bundle patching; install the update from the release page instead.",
