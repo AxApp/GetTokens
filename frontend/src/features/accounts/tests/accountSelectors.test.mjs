@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
   buildAccountsView,
+  compareAccountsBySortMode,
   filterAccounts,
+  groupAccounts,
   groupAccountsByVendor,
 } from '../model/accountSelectors.ts';
 import {
@@ -176,7 +178,7 @@ test('filterAccounts can narrow accounts by credential source', () => {
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        source: 'api-key',
+        source: { authFile: false, apiKey: true },
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -207,7 +209,7 @@ test('filterAccounts returns no accounts when no credential source is selected',
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        source: 'none',
+        source: { authFile: false, apiKey: false },
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -215,7 +217,7 @@ test('filterAccounts returns no accounts when no credential source is selected',
   );
 });
 
-test('filterAccounts can require requestable accounts', () => {
+test('filterAccounts can select requestable accounts from the status group', () => {
   const accounts = [
     {
       id: 'auth-file:active',
@@ -246,7 +248,7 @@ test('filterAccounts can require requestable accounts', () => {
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        requiresRequestable: true,
+        status: { error: false, disabled: false, requestable: true },
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -254,7 +256,7 @@ test('filterAccounts can require requestable accounts', () => {
   );
 });
 
-test('filterAccounts can require accounts with displayable balance', () => {
+test('filterAccounts can select accounts with displayable balance from the resource group', () => {
   const accounts = [
     {
       id: 'api-key:balance',
@@ -281,7 +283,7 @@ test('filterAccounts can require accounts with displayable balance', () => {
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        hasBalance: true,
+        resource: { hasLongestQuota: false, hasBalance: true },
       },
       codexQuotaByName: {
         'api-key:balance': {
@@ -314,7 +316,7 @@ test('filterAccounts can require accounts with displayable balance', () => {
   );
 });
 
-test('filterAccounts requires auth-file codex accounts with positive longest-window quota when enabled', () => {
+test('filterAccounts can select auth-file codex accounts with positive longest-window quota', () => {
   const accounts = [
     {
       id: 'auth-file:weekly-ok',
@@ -384,7 +386,8 @@ test('filterAccounts requires auth-file codex accounts with positive longest-win
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        hasLongestQuota: true,
+        source: { authFile: true, apiKey: false },
+        resource: { hasLongestQuota: true, hasBalance: false },
       },
       codexQuotaByName,
     }).map((item) => item.id),
@@ -418,7 +421,8 @@ test('filterAccounts includes codex api keys with configured positive longest qu
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        hasLongestQuota: true,
+        source: { authFile: false, apiKey: true },
+        resource: { hasLongestQuota: true, hasBalance: false },
       },
       codexQuotaByName: {
         'codex-api-key:ready': {
@@ -437,7 +441,51 @@ test('filterAccounts includes codex api keys with configured positive longest qu
   );
 });
 
-test('filterAccounts separates disabled accounts from unavailable error accounts', () => {
+test('filterAccounts can select accounts by plan type', () => {
+  const accounts = [
+    {
+      id: 'auth-file:free',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Free Account',
+      status: 'ACTIVE',
+      planType: 'free',
+      quotaKey: 'free.json',
+    },
+    {
+      id: 'auth-file:plus',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Plus Account',
+      status: 'ACTIVE',
+      planType: 'plus',
+      quotaKey: 'plus.json',
+    },
+    {
+      id: 'auth-file:pro',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Pro Account',
+      status: 'ACTIVE',
+      planType: 'pro',
+      quotaKey: 'pro.json',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        plan: { free: false, plus: true, pro: false },
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:plus']
+  );
+});
+
+test('filterAccounts separates disabled accounts from unavailable error accounts within the status group', () => {
   const accounts = [
     {
       id: 'auth-file:active',
@@ -480,7 +528,7 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        requiresError: true,
+        status: { error: true, disabled: false, requestable: false },
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -491,7 +539,7 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        requiresDisabled: true,
+        status: { error: false, disabled: true, requestable: false },
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
@@ -502,12 +550,11 @@ test('filterAccounts separates disabled accounts from unavailable error accounts
       searchTerm: '',
       filters: {
         ...defaultAccountsFilterState,
-        requiresError: true,
-        requiresDisabled: true,
+        status: { error: true, disabled: true, requestable: false },
       },
       codexQuotaByName: {},
     }).map((item) => item.id),
-    []
+    ['auth-file:disabled', 'auth-file:error', 'auth-file:unavailable']
   );
 });
 
@@ -548,6 +595,226 @@ test('groupAccountsByVendor groups by normalized provider', () => {
   );
 });
 
+test('groupAccounts groups accounts by plan with plan as the default view priority', () => {
+  const accounts = [
+    {
+      id: 'auth-file:free',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Free User',
+      status: 'ACTIVE',
+      planType: 'free',
+      quotaKey: 'free.json',
+    },
+    {
+      id: 'api-key:one',
+      provider: 'openai',
+      credentialSource: 'api-key',
+      displayName: 'Key One',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'auth-file:pro',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Pro User',
+      status: 'ACTIVE',
+      quotaKey: 'pro.json',
+    },
+    {
+      id: 'auth-file:unknown',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Unknown User',
+      status: 'ACTIVE',
+    },
+  ];
+
+  const groups = groupAccounts({
+    accounts,
+    groupMode: 'plan',
+    sortMode: 'priority',
+    codexQuotaByName: {
+      'pro.json': {
+        status: 'success',
+        quota: {
+          planType: 'pro',
+          windows: [],
+        },
+      },
+    },
+    t,
+  });
+
+  assert.deepEqual(groups.map((group) => [group.id, group.label, group.accounts.map((account) => account.id)]), [
+    ['plan:pro', 'accounts.group_plan_pro', ['auth-file:pro']],
+    ['plan:free', 'accounts.group_plan_free', ['auth-file:free']],
+    ['plan:api-key', 'accounts.group_plan_api_key', ['api-key:one']],
+    ['plan:unknown', 'accounts.group_plan_unknown', ['auth-file:unknown']],
+  ]);
+});
+
+test('groupAccounts can group by source and status without merging disabled and errors', () => {
+  const accounts = [
+    {
+      id: 'auth-file:active',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Active User',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'api-key:key',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'API Key',
+      status: 'CONFIGURED',
+    },
+    {
+      id: 'auth-file:disabled',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Disabled User',
+      status: 'DISABLED',
+      disabled: true,
+    },
+    {
+      id: 'auth-file:error',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Error User',
+      status: 'ERROR',
+    },
+  ];
+
+  assert.deepEqual(
+    groupAccounts({
+      accounts,
+      groupMode: 'source',
+      sortMode: 'priority',
+      codexQuotaByName: {},
+      t,
+    }).map((group) => [group.id, group.accounts.map((account) => account.id)]),
+    [
+      ['source:auth-file', ['auth-file:active', 'auth-file:disabled', 'auth-file:error']],
+      ['source:api-key', ['api-key:key']],
+    ],
+  );
+
+  assert.deepEqual(
+    groupAccounts({
+      accounts,
+      groupMode: 'status',
+      sortMode: 'priority',
+      codexQuotaByName: {},
+      t,
+    }).map((group) => [group.id, group.accounts.map((account) => account.id)]),
+    [
+      ['status:requestable', ['auth-file:active', 'api-key:key']],
+      ['status:disabled', ['auth-file:disabled']],
+      ['status:error', ['auth-file:error']],
+    ],
+  );
+});
+
+test('compareAccountsBySortMode supports name, status, quota, and reset sorting with stable fallback', () => {
+  const accounts = [
+    {
+      id: 'auth-file:active-low',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Zulu',
+      status: 'ACTIVE',
+      quotaKey: 'low.json',
+    },
+    {
+      id: 'auth-file:error-high',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Alpha',
+      status: 'ERROR',
+      quotaKey: 'high.json',
+    },
+    {
+      id: 'api-key:disabled',
+      provider: 'codex',
+      credentialSource: 'api-key',
+      displayName: 'Bravo',
+      status: 'DISABLED',
+      disabled: true,
+      priority: 5,
+      quotaKey: 'disabled.json',
+    },
+  ];
+  const codexQuotaByName = {
+    'low.json': {
+      status: 'success',
+      quota: {
+        planType: 'plus',
+        windows: [{ id: 'weekly', label: '7D', remainingPercent: 12, resetLabel: 'later', resetAtUnix: 30 }],
+      },
+    },
+    'high.json': {
+      status: 'success',
+      quota: {
+        planType: 'plus',
+        windows: [{ id: 'weekly', label: '7D', remainingPercent: 88, resetLabel: 'soon', resetAtUnix: 10 }],
+      },
+    },
+  };
+
+  const sortIDs = (sortMode) =>
+    [...accounts]
+      .sort((left, right) => compareAccountsBySortMode(left, right, sortMode, codexQuotaByName))
+      .map((account) => account.id);
+
+  assert.deepEqual(sortIDs('name'), ['auth-file:error-high', 'api-key:disabled', 'auth-file:active-low']);
+  assert.deepEqual(sortIDs('status'), ['auth-file:error-high', 'api-key:disabled', 'auth-file:active-low']);
+  assert.deepEqual(sortIDs('quota'), ['auth-file:error-high', 'auth-file:active-low', 'api-key:disabled']);
+  assert.deepEqual(sortIDs('reset'), ['auth-file:error-high', 'auth-file:active-low', 'api-key:disabled']);
+});
+
+test('buildAccountsView exposes the available plan types present in account data', () => {
+  const view = buildAccountsView({
+    authFileRecords: [
+      {
+        id: 'auth-file:free',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'Free',
+        status: 'ACTIVE',
+        planType: 'free',
+        quotaKey: 'free.json',
+      },
+    ],
+    apiKeyRecords: [
+      {
+        id: 'api-key:pro',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Pro',
+        status: 'ACTIVE',
+        planType: 'pro',
+      },
+    ],
+    codexQuotaByName: {
+      'free.json': {
+        status: 'success',
+        quota: {
+          planType: 'free',
+          windows: [],
+        },
+      },
+    },
+    searchTerm: '',
+    filters: defaultAccountsFilterState,
+    selectedAccountIDs: [],
+    t,
+  });
+
+  assert.deepEqual(view.availablePlanTypes, ['free', 'pro']);
+});
+
 test('buildAccountsView sorts, filters, groups, and resolves selection state together', () => {
   const accounts = [
     {
@@ -574,6 +841,8 @@ test('buildAccountsView sorts, filters, groups, and resolves selection state tog
     codexQuotaByName: {},
     searchTerm: 'a',
     filters: defaultAccountsFilterState,
+    groupMode: 'provider',
+    sortMode: 'priority',
     selectedAccountIDs: ['auth-file:alpha'],
     t,
   });
@@ -617,6 +886,8 @@ test('buildAccountsView sorts api keys by priority before display name', () => {
     codexQuotaByName: {},
     searchTerm: '',
     filters: defaultAccountsFilterState,
+    groupMode: 'provider',
+    sortMode: 'priority',
     selectedAccountIDs: [],
     t,
   });

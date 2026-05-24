@@ -47,9 +47,11 @@ import {
 import {
   ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY,
   DEFAULT_ACCOUNT_LIST_DISPLAY_MODE,
-  buildAccountListDisplayModeHash,
+  buildAccountListViewHash,
   parseAccountListDisplayMode,
+  type AccountGroupMode,
   type AccountListDisplayMode,
+  type AccountSortMode,
 } from './model/accountListLayout';
 import {
   ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
@@ -74,6 +76,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     loading,
     accountsLoaded,
     searchTerm,
+    groupMode,
+    sortMode,
     filters,
     selectedAccount,
     pendingDeleteID,
@@ -101,6 +105,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     accounts,
     filteredAccounts,
     groupedAccounts,
+    availablePlanTypes,
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
@@ -114,6 +119,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
+    setGroupMode,
+    setSortMode,
     setFilters,
     setSelectedAccount,
     setPendingDeleteID,
@@ -337,8 +344,24 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     } catch {
       // The current hash still reflects the active session if storage is unavailable.
     }
-    window.location.hash = buildAccountListDisplayModeHash(window.location.hash, nextMode);
+    window.location.hash = buildAccountListViewHash(window.location.hash, { displayMode: nextMode });
   }, []);
+
+  const updateGroupMode = useCallback((nextMode: AccountGroupMode) => {
+    setGroupMode(nextMode);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.location.hash = buildAccountListViewHash(window.location.hash, { groupMode: nextMode });
+  }, [setGroupMode]);
+
+  const updateSortMode = useCallback((nextMode: AccountSortMode) => {
+    setSortMode(nextMode);
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.location.hash = buildAccountListViewHash(window.location.hash, { sortMode: nextMode });
+  }, [setSortMode]);
 
   const markAccountDetailInHash = useCallback((detailID: string) => {
     if (typeof window === 'undefined') {
@@ -698,12 +721,18 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             allFilteredSelected={allFilteredSelected}
             selectedAccountCount={selectedAccountIDs.length}
             displayMode={displayMode}
+            groupMode={groupMode}
+            sortMode={sortMode}
+            availablePlanTypes={availablePlanTypes}
+            planAvailabilityResolved={accountsLoaded}
             onSearchChange={(value) => {
               setSearchTerm(value);
               setPendingDeleteID(null);
             }}
             onFiltersChange={setFilters}
             onDisplayModeChange={updateDisplayMode}
+            onGroupModeChange={updateGroupMode}
+            onSortModeChange={updateSortMode}
             onToggleSelectionMode={toggleSelectionMode}
             onToggleSelectAllFiltered={toggleSelectAllFiltered}
             onClearSelection={() => setSelectedAccountIDs([])}

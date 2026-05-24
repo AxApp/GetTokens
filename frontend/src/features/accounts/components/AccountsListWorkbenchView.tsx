@@ -1,6 +1,8 @@
 import type { MutableRefObject, ReactNode } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
+import type { AccountGroupMode, AccountSortMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, AccountsFilterState, Translator } from '../model/types';
+import type { AccountPlanType } from '../../../types';
 import AccountGroupSectionView from './AccountGroupSectionView';
 import AccountsHeader from './AccountsHeader';
 import AccountsToolbar from './AccountsToolbar';
@@ -27,13 +29,19 @@ interface AccountsListWorkbenchViewProps {
   allFilteredSelected: boolean;
   selectedAccountCount: number;
   displayMode: AccountListDisplayMode;
+  groupMode: AccountGroupMode;
+  sortMode: AccountSortMode;
   onSearchChange: (value: string) => void;
   onFiltersChange: (value: AccountsFilterState) => void;
   onDisplayModeChange: (value: AccountListDisplayMode) => void;
+  onGroupModeChange: (value: AccountGroupMode) => void;
+  onSortModeChange: (value: AccountSortMode) => void;
   onToggleSelectionMode: () => void;
   onToggleSelectAllFiltered: () => void;
   onClearSelection: () => void;
   onExportSelected: () => void;
+  availablePlanTypes?: readonly AccountPlanType[];
+  planAvailabilityResolved?: boolean;
   groups: AccountGroup[];
   renderAccount: (account: AccountRecord) => ReactNode;
   emptyContent?: ReactNode;
@@ -61,13 +69,19 @@ export default function AccountsListWorkbenchView({
   allFilteredSelected,
   selectedAccountCount,
   displayMode,
+  groupMode,
+  sortMode,
   onSearchChange,
   onFiltersChange,
   onDisplayModeChange,
+  onGroupModeChange,
+  onSortModeChange,
   onToggleSelectionMode,
   onToggleSelectAllFiltered,
   onClearSelection,
   onExportSelected,
+  availablePlanTypes,
+  planAvailabilityResolved,
   groups,
   renderAccount,
   emptyContent = null,
@@ -101,9 +115,15 @@ export default function AccountsListWorkbenchView({
           allFilteredSelected={allFilteredSelected}
           selectedAccountCount={selectedAccountCount}
           displayMode={displayMode}
+          groupMode={groupMode}
+          sortMode={sortMode}
+          availablePlanTypes={availablePlanTypes}
+          planAvailabilityResolved={planAvailabilityResolved}
           onSearchChange={onSearchChange}
           onFiltersChange={onFiltersChange}
           onDisplayModeChange={onDisplayModeChange}
+          onGroupModeChange={onGroupModeChange}
+          onSortModeChange={onSortModeChange}
           onToggleSelectionMode={onToggleSelectionMode}
           onToggleSelectAllFiltered={onToggleSelectAllFiltered}
           onClearSelection={onClearSelection}

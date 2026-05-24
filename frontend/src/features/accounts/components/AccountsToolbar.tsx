@@ -1,15 +1,11 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import SearchInput from '../../../components/ui/SearchInput';
-import {
-  applyAccountsFilterState,
-  defaultAccountsFilterState,
-  isAccountsFilterSourceSelected,
-  toggleAccountsFilterSource,
-  summarizeAccountsFilterState,
-} from '../model/accountFilters';
-import type { AccountListDisplayMode } from '../model/accountListLayout';
+import { applyAccountsFilterState, defaultAccountsFilterState, summarizeAccountsFilterState } from '../model/accountFilters';
+import type { AccountPlanType } from '../../../types';
+import type { AccountGroupMode, AccountListDisplayMode, AccountSortMode } from '../model/accountListLayout';
 import type { AccountsFilterState, Translator } from '../model/types';
-import type { CredentialSource } from '../../../types';
+
+const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = ['free', 'plus', 'pro'];
 
 interface AccountsToolbarProps {
   t: Translator;
@@ -19,9 +15,15 @@ interface AccountsToolbarProps {
   allFilteredSelected: boolean;
   selectedAccountCount: number;
   displayMode: AccountListDisplayMode;
+  groupMode: AccountGroupMode;
+  sortMode: AccountSortMode;
+  availablePlanTypes?: readonly AccountPlanType[];
+  planAvailabilityResolved?: boolean;
   onSearchChange: (value: string) => void;
   onFiltersChange: (value: AccountsFilterState) => void;
   onDisplayModeChange: (value: AccountListDisplayMode) => void;
+  onGroupModeChange: (value: AccountGroupMode) => void;
+  onSortModeChange: (value: AccountSortMode) => void;
   onToggleSelectionMode: () => void;
   onToggleSelectAllFiltered: () => void;
   onClearSelection: () => void;
@@ -37,9 +39,15 @@ export default function AccountsToolbar({
   allFilteredSelected,
   selectedAccountCount,
   displayMode,
+  groupMode,
+  sortMode,
+  availablePlanTypes = DEFAULT_AVAILABLE_PLAN_TYPES,
+  planAvailabilityResolved = true,
   onSearchChange,
   onFiltersChange,
   onDisplayModeChange,
+  onGroupModeChange,
+  onSortModeChange,
   onToggleSelectionMode,
   onToggleSelectAllFiltered,
   onClearSelection,
@@ -48,6 +56,10 @@ export default function AccountsToolbar({
 }: AccountsToolbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(initialFiltersMenuOpen);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const sourceAllSelected = filters.source.authFile && filters.source.apiKey;
+  const resourceAllSelected = filters.resource.hasLongestQuota && filters.resource.hasBalance;
+  const statusAllSelected = filters.status.error && filters.status.disabled && filters.status.requestable;
+  const planAllSelected = filters.plan.free && filters.plan.plus && filters.plan.pro;
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -66,55 +78,139 @@ export default function AccountsToolbar({
     };
   }, [isMenuOpen]);
 
-  function toggleSourceFilter(source: CredentialSource) {
-    onFiltersChange(applyAccountsFilterState(filters, { source: toggleAccountsFilterSource(filters.source, source) }));
+  function setSourceOption(key: keyof AccountsFilterState['source']) {
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        source: {
+          ...filters.source,
+          [key]: !filters.source[key],
+        },
+      }),
+    );
   }
 
-  const statusOptions: ReadonlyArray<{ key: 'requiresRequestable' | 'requiresError' | 'requiresDisabled'; label: string }> = [
-    { key: 'requiresRequestable', label: t('accounts.filter_requestable_match') },
-    { key: 'requiresError', label: t('accounts.filter_error_match') },
-    { key: 'requiresDisabled', label: t('accounts.filter_disabled_match') },
-  ];
-
-  function toggleStatusFilter(key: 'requiresRequestable' | 'requiresError' | 'requiresDisabled') {
-    onFiltersChange(applyAccountsFilterState(filters, { [key]: !filters[key] }));
+  function setResourceOption(key: keyof AccountsFilterState['resource']) {
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        resource: {
+          ...filters.resource,
+          [key]: !filters.resource[key],
+        },
+      }),
+    );
   }
 
-  function toggleResourceFilter(key: 'hasBalance' | 'hasLongestQuota') {
-    onFiltersChange(applyAccountsFilterState(filters, { [key]: !filters[key] }));
+  function setStatusOption(key: keyof AccountsFilterState['status']) {
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        status: {
+          ...filters.status,
+          [key]: !filters.status[key],
+        },
+      }),
+    );
+  }
+
+  function setPlanOption(key: keyof AccountsFilterState['plan']) {
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        plan: {
+          ...filters.plan,
+          [key]: !filters.plan[key],
+        },
+      }),
+    );
+  }
+
+  function enableAllSourceOptions() {
+    if (sourceAllSelected) {
+      return;
+    }
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        source: {
+          authFile: true,
+          apiKey: true,
+        },
+      }),
+    );
+  }
+
+  function enableAllResourceOptions() {
+    if (resourceAllSelected) {
+      return;
+    }
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        resource: {
+          hasLongestQuota: true,
+          hasBalance: true,
+        },
+      }),
+    );
+  }
+
+  function enableAllStatusOptions() {
+    if (statusAllSelected) {
+      return;
+    }
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        status: {
+          error: true,
+          disabled: true,
+          requestable: true,
+        },
+      }),
+    );
+  }
+
+  function enableAllPlanOptions() {
+    if (planAllSelected) {
+      return;
+    }
+    onFiltersChange(
+      applyAccountsFilterState(filters, {
+        plan: {
+          free: true,
+          plus: true,
+          pro: true,
+        },
+      }),
+    );
   }
 
   return (
     <section className="space-y-4">
       <div className="grid grid-cols-1 gap-4">
         <div className="flex w-full items-center">
-          <SearchInput
-            value={searchTerm}
-            onChange={onSearchChange}
-            placeholder={t('accounts.search_placeholder')}
-          />
+          <SearchInput value={searchTerm} onChange={onSearchChange} placeholder={t('accounts.search_placeholder')} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div ref={menuRef} className="relative">
-            <button type="button" onClick={() => setIsMenuOpen((prev) => !prev)} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+            >
               {buildToolbarFilterLabel(t, filters)}
             </button>
             {isMenuOpen ? (
               <div className="absolute left-0 top-full z-20 mt-3 flex min-w-[320px] flex-col gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[8px_8px_0_var(--shadow-color)]">
                 <div className="space-y-2">
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('accounts.filter_group_status')}
+                    {t('accounts.filter_group_source')}
                   </p>
                   <div className="grid gap-2">
-                    {statusOptions.map((option) => (
-                      <FilterCheckOption
-                        key={option.key}
-                        active={filters[option.key]}
-                        onClick={() => toggleStatusFilter(option.key)}
-                      >
-                        {option.label}
-                      </FilterCheckOption>
-                    ))}
+                    <FilterCheckOption active={sourceAllSelected} onClick={enableAllSourceOptions}>
+                      {t('accounts.filter_all')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.source.authFile} onClick={() => setSourceOption('authFile')}>
+                      {t('accounts.source_auth_file')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.source.apiKey} onClick={() => setSourceOption('apiKey')}>
+                      {t('accounts.source_api_key')}
+                    </FilterCheckOption>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -122,33 +218,67 @@ export default function AccountsToolbar({
                     {t('accounts.filter_group_resource')}
                   </p>
                   <div className="grid gap-2">
-                    <FilterCheckOption
-                      active={filters.hasLongestQuota}
-                      onClick={() => toggleResourceFilter('hasLongestQuota')}
-                    >
+                    <FilterCheckOption active={resourceAllSelected} onClick={enableAllResourceOptions}>
+                      {t('accounts.filter_all')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.resource.hasLongestQuota} onClick={() => setResourceOption('hasLongestQuota')}>
                       {t('accounts.filter_longest_quota_match')}
                     </FilterCheckOption>
-                    <FilterCheckOption active={filters.hasBalance} onClick={() => toggleResourceFilter('hasBalance')}>
+                    <FilterCheckOption active={filters.resource.hasBalance} onClick={() => setResourceOption('hasBalance')}>
                       {t('accounts.filter_balance_match')}
                     </FilterCheckOption>
                   </div>
                 </div>
                 <div className="space-y-2">
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    {t('accounts.filter_group_source')}
+                    {t('accounts.filter_group_status')}
                   </p>
                   <div className="grid gap-2">
-                    <FilterCheckOption
-                      active={isAccountsFilterSourceSelected(filters.source, 'auth-file')}
-                      onClick={() => toggleSourceFilter('auth-file')}
-                    >
-                      {t('accounts.source_auth_file')}
+                    <FilterCheckOption active={statusAllSelected} onClick={enableAllStatusOptions}>
+                      {t('accounts.filter_all')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.status.error} onClick={() => setStatusOption('error')}>
+                      {t('accounts.filter_error_match')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.status.disabled} onClick={() => setStatusOption('disabled')}>
+                      {t('accounts.filter_disabled_match')}
+                    </FilterCheckOption>
+                    <FilterCheckOption active={filters.status.requestable} onClick={() => setStatusOption('requestable')}>
+                      {t('accounts.filter_requestable_match')}
+                    </FilterCheckOption>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    {t('accounts.filter_group_plan')}
+                  </p>
+                  <div className="grid gap-2">
+                    <FilterCheckOption active={planAllSelected} onClick={enableAllPlanOptions}>
+                      {t('accounts.filter_all')}
                     </FilterCheckOption>
                     <FilterCheckOption
-                      active={isAccountsFilterSourceSelected(filters.source, 'api-key')}
-                      onClick={() => toggleSourceFilter('api-key')}
+                      active={filters.plan.free}
+                      disabled={planAvailabilityResolved && !availablePlanTypes.includes('free')}
+                      uppercase={false}
+                      onClick={() => setPlanOption('free')}
                     >
-                      {t('accounts.source_api_key')}
+                      free
+                    </FilterCheckOption>
+                    <FilterCheckOption
+                      active={filters.plan.plus}
+                      disabled={planAvailabilityResolved && !availablePlanTypes.includes('plus')}
+                      uppercase={false}
+                      onClick={() => setPlanOption('plus')}
+                    >
+                      plus
+                    </FilterCheckOption>
+                    <FilterCheckOption
+                      active={filters.plan.pro}
+                      disabled={planAvailabilityResolved && !availablePlanTypes.includes('pro')}
+                      uppercase={false}
+                      onClick={() => setPlanOption('pro')}
+                    >
+                      pro
                     </FilterCheckOption>
                   </div>
                 </div>
@@ -165,6 +295,30 @@ export default function AccountsToolbar({
             ) : null}
           </div>
           <div className="flex flex-wrap items-stretch justify-end gap-2">
+            <ToolbarModeMenu
+              label={t('accounts.group_mode_label')}
+              value={groupMode}
+              options={[
+                ['plan', t('accounts.group_mode_plan')],
+                ['source', t('accounts.group_mode_source')],
+                ['status', t('accounts.group_mode_status')],
+                ['provider', t('accounts.group_mode_provider')],
+                ['resource', t('accounts.group_mode_resource')],
+              ]}
+              onChange={(value) => onGroupModeChange(value as AccountGroupMode)}
+            />
+            <ToolbarModeMenu
+              label={t('accounts.sort_mode_label')}
+              value={sortMode}
+              options={[
+                ['priority', t('accounts.sort_mode_priority')],
+                ['name', t('accounts.sort_mode_name')],
+                ['status', t('accounts.sort_mode_status')],
+                ['quota', t('accounts.sort_mode_quota')],
+                ['reset', t('accounts.sort_mode_reset')],
+              ]}
+              onChange={(value) => onSortModeChange(value as AccountSortMode)}
+            />
             <div
               className="grid h-10 shrink-0 grid-cols-3 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
               data-account-card-ignore-click="true"
@@ -205,6 +359,76 @@ export default function AccountsToolbar({
   );
 }
 
+function ToolbarModeMenu<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: readonly (readonly [T, string])[];
+  onChange: (value: T) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  const activeLabel = options.find(([optionValue]) => optionValue === value)?.[1] || value;
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={menuRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+      >
+        {label} · {activeLabel}
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-full z-20 mt-3 grid min-w-[220px] gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[8px_8px_0_var(--shadow-color)]">
+          <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            {label}
+          </p>
+          {options.map(([optionValue, optionLabel]) => (
+            <button
+              key={optionValue}
+              type="button"
+              aria-pressed={optionValue === value}
+              onClick={() => {
+                onChange(optionValue);
+                setOpen(false);
+              }}
+              className={`min-h-9 border-2 border-[var(--border-color)] px-2 text-left text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
+                optionValue === value
+                  ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+                  : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+              }`}
+            >
+              {optionLabel}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DisplayModeButton({
   active,
   bordered = false,
@@ -236,23 +460,32 @@ function DisplayModeButton({
 function FilterCheckOption({
   active,
   children,
+  disabled = false,
+  uppercase = true,
   onClick,
 }: {
   active: boolean;
   children: ReactNode;
+  disabled?: boolean;
+  uppercase?: boolean;
   onClick: () => void;
 }) {
   return (
     <label
-      className={`flex min-h-9 cursor-pointer items-center gap-2 border-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none tracking-[0.1em] ${
-        active
-          ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]'
-          : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+      className={`flex min-h-9 cursor-pointer items-center gap-2 border-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black leading-none tracking-[0.1em] ${
+        uppercase ? 'uppercase' : ''
+      } ${
+        disabled
+          ? 'cursor-not-allowed bg-[var(--bg-main)] text-[var(--text-muted)] opacity-50'
+          : active
+            ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]'
+            : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
       }`}
     >
       <input
         type="checkbox"
         checked={active}
+        disabled={disabled}
         onChange={onClick}
         className="h-3.5 w-3.5 shrink-0 accent-[var(--text-primary)]"
       />

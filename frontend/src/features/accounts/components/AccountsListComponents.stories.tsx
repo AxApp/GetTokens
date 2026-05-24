@@ -2,11 +2,12 @@ import { useRef, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
-import type { AccountListDisplayMode } from '../model/accountListLayout';
+import type { AccountGroupMode, AccountListDisplayMode, AccountSortMode } from '../model/accountListLayout';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { RateLimitState } from '../model/rateLimit';
 import type { AccountGroup, AccountRecord, AccountsFilterState } from '../model/types';
 import { defaultAccountsFilterState } from '../model/accountFilters';
+import type { AccountPlanType } from '../../../types';
 import AccountCard from './AccountCard';
 import AccountsListWorkbenchView from './AccountsListWorkbenchView';
 
@@ -22,14 +23,30 @@ type Story = StoryObj;
 
 const emptyFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
-  hasLongestQuota: false,
+  resource: {
+    ...defaultAccountsFilterState.resource,
+    hasLongestQuota: false,
+  },
 };
 
 const activeFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
-  source: 'api-key',
-  requiresRequestable: true,
-  hasLongestQuota: true,
+  source: {
+    ...defaultAccountsFilterState.source,
+    authFile: false,
+  },
+  resource: {
+    ...defaultAccountsFilterState.resource,
+    hasBalance: false,
+  },
+  status: {
+    ...defaultAccountsFilterState.status,
+    error: false,
+  },
+  plan: {
+    ...defaultAccountsFilterState.plan,
+    plus: false,
+  },
 };
 
 const statusBar = {
@@ -253,10 +270,13 @@ function AccountsListSample({
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [filters, setFilters] = useState(initialFilters);
   const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(initialDisplayMode);
+  const [groupMode, setGroupMode] = useState<AccountGroupMode>('plan');
+  const [sortMode, setSortMode] = useState<AccountSortMode>('priority');
   const [isSelectionMode, setIsSelectionMode] = useState(initialSelectionMode);
   const [selectedAccountIDSet, setSelectedAccountIDSet] = useState(() => new Set(initialSelectedAccountIDs));
   const accountCount = groups.reduce((total, group) => total + group.accounts.length, 0);
   const allFilteredSelected = accountCount > 0 && selectedAccountIDSet.size === accountCount;
+  const availablePlanTypes: readonly AccountPlanType[] = ['free', 'pro'];
 
   function toggleSelection(accountID: string) {
     setSelectedAccountIDSet((current) => {
@@ -295,9 +315,15 @@ function AccountsListSample({
           allFilteredSelected={allFilteredSelected}
           selectedAccountCount={selectedAccountIDSet.size}
           displayMode={displayMode}
+          groupMode={groupMode}
+          sortMode={sortMode}
+          availablePlanTypes={availablePlanTypes}
+          planAvailabilityResolved
           onSearchChange={setSearchTerm}
           onFiltersChange={setFilters}
           onDisplayModeChange={setDisplayMode}
+          onGroupModeChange={setGroupMode}
+          onSortModeChange={setSortMode}
           onToggleSelectionMode={() => setIsSelectionMode((prev) => !prev)}
           onToggleSelectAllFiltered={() => {
             if (allFilteredSelected) {

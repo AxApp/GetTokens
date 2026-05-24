@@ -1,4 +1,5 @@
-import type { AccountRecord, AuthFile, CodexQuota, CredentialSource } from '../../../types';
+import type { AccountRecord, AuthFile, CodexQuota, AccountPlanType } from '../../../types';
+import type { AccountGroupMode } from './accountListLayout';
 
 export interface AccountsPageProps {
   sidecarStatus: {
@@ -60,19 +61,37 @@ export interface AccountGroup {
   id: string;
   label: string;
   rank: number;
+  mode?: AccountGroupMode;
   accounts: AccountRecord[];
+  meta?: {
+    requestableCount: number;
+    disabledCount: number;
+    errorCount: number;
+  };
 }
-
-export type AccountsFilterSource = 'all' | 'none' | CredentialSource;
 
 export interface AccountsFilterState {
-  source: AccountsFilterSource;
-  requiresRequestable: boolean;
-  requiresDisabled: boolean;
-  requiresError: boolean;
-  hasBalance: boolean;
-  hasLongestQuota: boolean;
+  source: {
+    authFile: boolean;
+    apiKey: boolean;
+  };
+  resource: {
+    hasLongestQuota: boolean;
+    hasBalance: boolean;
+  };
+  status: {
+    error: boolean;
+    disabled: boolean;
+    requestable: boolean;
+  };
+  plan: {
+    free: boolean;
+    plus: boolean;
+    pro: boolean;
+  };
 }
+
+export type AccountsFilterPlan = AccountPlanType;
 
 export type TrackRequest = <T>(
   name: string,

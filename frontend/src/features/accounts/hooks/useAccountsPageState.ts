@@ -28,6 +28,16 @@ import {
   readStoredAccountsFilterState,
 } from '../model/accountFilters';
 import {
+  ACCOUNT_GROUP_MODE_STORAGE_KEY,
+  ACCOUNT_SORT_MODE_STORAGE_KEY,
+  DEFAULT_ACCOUNT_GROUP_MODE,
+  DEFAULT_ACCOUNT_SORT_MODE,
+  parseAccountGroupMode,
+  parseAccountSortMode,
+  type AccountGroupMode,
+  type AccountSortMode,
+} from '../model/accountListLayout';
+import {
   removeDeletedAPIKeyRecord,
   removeDeletedAuthFile,
   shouldClearDeletedSelectedAccount,
@@ -112,6 +122,8 @@ export default function useAccountsPageState({
   const [loading, setLoading] = useState(false);
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [groupMode, setGroupMode] = useState<AccountGroupMode>(() => readInitialAccountGroupMode());
+  const [sortMode, setSortMode] = useState<AccountSortMode>(() => readInitialAccountSortMode());
   const [filters, setFilters] = useState<AccountsFilterState>(() =>
     typeof window === 'undefined' ? defaultAccountsFilterState : readStoredAccountsFilterState(window.localStorage)
   );
@@ -153,6 +165,7 @@ export default function useAccountsPageState({
     accounts,
     filteredAccounts,
     groupedAccounts,
+    availablePlanTypes,
     selectedAccountIDSet,
     selectedAccounts,
     allFilteredSelected,
@@ -164,10 +177,12 @@ export default function useAccountsPageState({
         codexQuotaByName,
         searchTerm,
         filters,
+        groupMode,
+        sortMode,
         selectedAccountIDs,
         t,
       }),
-    [apiKeyRecords, authFileRecords, codexQuotaByName, filters, searchTerm, selectedAccountIDs, t]
+    [apiKeyRecords, authFileRecords, codexQuotaByName, filters, groupMode, searchTerm, selectedAccountIDs, sortMode, t]
   );
 
   useEffect(() => {
@@ -176,6 +191,28 @@ export default function useAccountsPageState({
     }
     persistAccountsFilterState(window.localStorage, filters);
   }, [filters]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(ACCOUNT_GROUP_MODE_STORAGE_KEY, groupMode);
+    } catch {
+      // The URL hash still carries the active view if storage is unavailable.
+    }
+  }, [groupMode]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    try {
+      window.localStorage.setItem(ACCOUNT_SORT_MODE_STORAGE_KEY, sortMode);
+    } catch {
+      // The URL hash still carries the active view if storage is unavailable.
+    }
+  }, [sortMode]);
 
   const migrateLegacyAPIKeyLabels = useCallback(
     async (accounts: main.AccountRecord[]) => {
@@ -616,6 +653,8 @@ export default function useAccountsPageState({
     loading,
     accountsLoaded,
     searchTerm,
+    groupMode,
+    sortMode,
     filters,
     selectedAccount,
     pendingDeleteID,
@@ -651,6 +690,7 @@ export default function useAccountsPageState({
     accounts,
     filteredAccounts,
     groupedAccounts,
+    availablePlanTypes,
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
@@ -664,6 +704,8 @@ export default function useAccountsPageState({
     openOAuthDialogInBrowser,
     refreshCodexQuota,
     setSearchTerm,
+    setGroupMode,
+    setSortMode,
     setFilters,
     setSelectedAccount,
     setPendingDeleteID,
@@ -694,4 +736,38 @@ export default function useAccountsPageState({
     updateSelectedApiKeyConfig,
     closeHeaderActionsMenu,
   };
+}
+
+function readInitialAccountGroupMode(): AccountGroupMode {
+  if (typeof window === 'undefined') {
+    return DEFAULT_ACCOUNT_GROUP_MODE;
+  }
+  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+  const params = new URLSearchParams(hash);
+  const hashGroup = params.get('group');
+  if (hashGroup) {
+    return parseAccountGroupMode(hashGroup);
+  }
+  try {
+    return parseAccountGroupMode(window.localStorage.getItem(ACCOUNT_GROUP_MODE_STORAGE_KEY));
+  } catch {
+    return DEFAULT_ACCOUNT_GROUP_MODE;
+  }
+}
+
+function readInitialAccountSortMode(): AccountSortMode {
+  if (typeof window === 'undefined') {
+    return DEFAULT_ACCOUNT_SORT_MODE;
+  }
+  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+  const params = new URLSearchParams(hash);
+  const hashSort = params.get('sort');
+  if (hashSort) {
+    return parseAccountSortMode(hashSort);
+  }
+  try {
+    return parseAccountSortMode(window.localStorage.getItem(ACCOUNT_SORT_MODE_STORAGE_KEY));
+  } catch {
+    return DEFAULT_ACCOUNT_SORT_MODE;
+  }
 }

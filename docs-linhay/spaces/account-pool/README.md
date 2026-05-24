@@ -22,6 +22,20 @@
 3. 筛选菜单中的状态、资源、来源都使用同一种勾选框行样式；状态无勾选即表示不过滤状态。
 4. 2026-05-23 无头浏览器验收截图：`screenshots/20260523/accounts/20260523-accounts-filter-and-after-v01.png`。
 
+### 分组模式规划
+
+1. 账号池主列表需要支持可切换分组模式和排序模式，二者只改变列表组织方式，不改变筛选、选择、路由、轮动、禁用或导出语义。
+2. 默认分组模式为“按套餐分组”，优先级最高；用户进入 `#frame=accounts` 时默认看到 `Pro / Plus / Free / API Key 或兼容服务 / 未识别套餐` 的结构。
+3. 其他规划维度按阶段推进：
+   - P0：来源、状态
+   - P1：供应商、资源状态
+4. 默认排序模式为“业务优先级”，保留现有 Codex API Key `priority` 轮动顺序；其他 P0 排序维度为名称、状态、剩余额度，P1 维度为重置时间、最近使用。
+5. 搜索和筛选先执行，再对过滤后的账号分组，最后在每个分组内排序；选择模式的全选继续作用于全部过滤结果，不限制在单个分组。
+6. 分组模式需要支持 hash 与本地偏好恢复，显式 `group=plan|source|status|provider|resource` 优先于本地持久化。
+7. 排序模式需要支持 hash 与本地偏好恢复，显式 `sort=priority|name|status|quota|reset|recent` 优先于本地持久化。
+8. 详细规划见 `plans/20260524-account-grouping-mode-plan-v01.md`。
+9. 2026-05-24 无头浏览器验收截图：`screenshots/20260524/accounts/20260524-accounts-group-sort-toolbar-after-v01.png`。
+
 ## 非目标
 - 在本次操作中直接定义账号池的详细产品方案或技术实现
 - 在仓库级 `dev/` 或其他 space 中重复维护同一份账号池范围说明
@@ -293,6 +307,37 @@
 - And 不应出现父级高亮、子级选中、主体内容三者不一致
 - And 父级折叠后再展开时，应保留上次子菜单选中态
 
+#### 场景 15：默认按套餐分组查看账号池
+
+- Given 用户进入 `#frame=accounts`
+- When 当前没有显式 `group` hash 且没有本地分组偏好
+- Then 账号列表默认按 `套餐` 分组
+- And 分组顺序为 `Pro -> Plus -> Free -> API Key / 兼容服务 -> 未识别套餐`
+- And 搜索、筛选、密度模式仍按原语义工作
+
+#### 场景 16：切换分组模式不改变筛选结果
+
+- Given 用户已在账号池主列表设置搜索词和筛选条件
+- When 用户将分组模式从 `套餐` 切换为 `来源` 或 `状态`
+- Then 页面只改变列表分组方式
+- And 过滤后的账号集合不应因为分组模式切换而扩大或缩小
+- And 选择模式中的全选仍作用于全部过滤结果
+
+#### 场景 17：默认按业务优先级排序
+
+- Given 用户进入 `#frame=accounts`
+- When 当前没有显式 `sort` hash 且没有本地排序偏好
+- Then 每个分组内账号默认按 `业务优先级` 排序
+- And Codex API Key 继续按 `priority` 从高到低排列
+- And priority 相同时按名称稳定排列
+
+#### 场景 18：切换排序模式不改变分组和过滤结果
+
+- Given 用户已在账号池主列表设置搜索词、筛选条件和 `套餐` 分组
+- When 用户将排序模式切换为 `剩余额度`
+- Then 页面只改变每个分组内部的账号顺序
+- And 分组数量、分组名称和过滤后的账号集合不应改变
+
 ## 验收标准
 - 已存在 `docs-linhay/spaces/account-pool/README.md`
 - 已存在 `docs-linhay/spaces/account-pool/plans/`
@@ -303,6 +348,10 @@
 - 已定义 `codex` OAuth 登录与过期恢复的验收场景
 - 已定义 `openai-compatible` provider 的最小闭环场景
 - 已明确定义子菜单恢复规则：显式目标 > 本地持久化 > 默认 `codex`
+- 已明确定义账号池分组模式规划，默认按套餐分组，其他维度按来源、状态、供应商、资源状态分阶段推进
+- 已明确定义账号池排序模式规划，默认按业务优先级排序，P0 支持名称、状态、剩余额度排序，P1 支持重置时间和最近使用排序
+- 已明确定义分组和排序模式不改变筛选、选择、路由、轮动、禁用或导出语义
+- 已实现账号池工具栏分组与排序模式入口，并支持 `group` / `sort` hash 恢复
 - `openai-compatible` detail modal 已覆盖基础字段、单 `apiKey`、`headers` 文本编辑、`models / alias` 与 provider 级验证
 - 已明确定义 `openai-compatible provider` 的唯一性与主标识规则
 - 已明确定义 `openai-compatible` 第一阶段采用独立 provider 列表模型
@@ -327,9 +376,10 @@
 - [spaces 结构治理](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/dev/20260424-spaces-structure-governance.md)
 - [OpenAI-Compatible 评估与边界](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260427-deepseek-provider-support/README.md)
 - [OpenAI-Compatible Debate](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/20260427-deepseek-provider-support/debate/20260427/accounts/20260427-openai-compatible-provider-support-v01.md)
+- [账号池分组模式规划 v01](/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/spaces/account-pool/plans/20260524-account-grouping-mode-plan-v01.md)
 
 ## 当前状态
 - 状态：active-umbrella
-- 最近更新：2026-05-16
-- 最近变更：`openai-compatible` provider detail 已收口为单 `apiKey` provider 工作流；`codex` 继续承接 OAuth 与 quota 闭环，`openai-compatible` 改为 provider 级心智，但不暴露多 `apiKey entries` 编辑。
+- 最近更新：2026-05-24
+- 最近变更：新增账号池分组与排序模式规划，默认按套餐分组、按业务优先级排序；P0 同时规划来源/状态分组与名称/状态/剩余额度排序，P1 规划供应商/资源状态分组与重置时间/最近使用排序；分组和排序只改变列表组织方式，不改变筛选、选择、路由、轮动、禁用或导出语义。
 - 判定：`account-pool` 是长期 umbrella space，不按单个未收口需求管理；具体新需求应进入独立 space，当前近期主线为 `20260515-rate-limit-middleware`，短线收尾为 `20260511-codex-binary-management`。

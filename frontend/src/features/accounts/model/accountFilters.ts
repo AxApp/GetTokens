@@ -1,60 +1,47 @@
-import type { AccountsFilterSource, AccountsFilterState } from './types';
 import type { CredentialSource } from '../../../types';
+import type { AccountsFilterState } from './types';
 
 export const ACCOUNTS_FILTERS_STORAGE_KEY = 'gettokens.accountsFilters';
 
 export interface AccountsFilterSummaryPart {
-  kind: 'status' | 'resource' | 'source';
+  kind: 'source' | 'resource' | 'status' | 'plan';
   label: string;
 }
 
-export const defaultAccountsFilterState: AccountsFilterState = {
-  source: 'all',
-  requiresRequestable: false,
-  requiresDisabled: false,
-  requiresError: false,
-  hasBalance: false,
-  hasLongestQuota: false,
+type AccountsFilterGroupSelection<T extends string> = Record<T, boolean>;
+
+type AccountsFilterStatePatch = {
+  source?: Partial<AccountsFilterState['source']>;
+  resource?: Partial<AccountsFilterState['resource']>;
+  status?: Partial<AccountsFilterState['status']>;
+  plan?: Partial<AccountsFilterState['plan']>;
 };
 
-function resolveAccountsFilterSource(value: unknown): AccountsFilterSource {
-  return value === 'all' || value === 'none' || value === 'auth-file' || value === 'api-key' ? value : 'all';
-}
+const SOURCE_KEYS = ['authFile', 'apiKey'] as const;
+const RESOURCE_KEYS = ['hasLongestQuota', 'hasBalance'] as const;
+const STATUS_KEYS = ['error', 'disabled', 'requestable'] as const;
+const PLAN_KEYS = ['free', 'plus', 'pro'] as const;
 
-export function isAccountsFilterSourceSelected(filterSource: AccountsFilterSource, source: CredentialSource): boolean {
-  if (filterSource === 'all') {
-    return true;
-  }
-  if (filterSource === 'none') {
-    return false;
-  }
-  return filterSource === source;
-}
-
-export function toggleAccountsFilterSource(
-  filterSource: AccountsFilterSource,
-  source: CredentialSource,
-): AccountsFilterSource {
-  const authFileSelected =
-    source === 'auth-file'
-      ? !isAccountsFilterSourceSelected(filterSource, 'auth-file')
-      : isAccountsFilterSourceSelected(filterSource, 'auth-file');
-  const apiKeySelected =
-    source === 'api-key'
-      ? !isAccountsFilterSourceSelected(filterSource, 'api-key')
-      : isAccountsFilterSourceSelected(filterSource, 'api-key');
-
-  if (authFileSelected && apiKeySelected) {
-    return 'all';
-  }
-  if (authFileSelected) {
-    return 'auth-file';
-  }
-  if (apiKeySelected) {
-    return 'api-key';
-  }
-  return 'none';
-}
+export const defaultAccountsFilterState: AccountsFilterState = {
+  source: {
+    authFile: true,
+    apiKey: true,
+  },
+  resource: {
+    hasLongestQuota: true,
+    hasBalance: true,
+  },
+  status: {
+    error: true,
+    disabled: true,
+    requestable: true,
+  },
+  plan: {
+    free: true,
+    plus: true,
+    pro: true,
+  },
+};
 
 export function normalizeAccountsFilterState(value: unknown): AccountsFilterState {
   if (!value || typeof value !== 'object') {
@@ -62,13 +49,12 @@ export function normalizeAccountsFilterState(value: unknown): AccountsFilterStat
   }
 
   const candidate = value as Partial<AccountsFilterState> & Record<string, unknown>;
+
   return {
-    source: resolveAccountsFilterSource(candidate.source),
-    requiresRequestable: candidate.requiresRequestable === true,
-    requiresDisabled: candidate.requiresDisabled === true,
-    requiresError: candidate.requiresError === true,
-    hasBalance: candidate.hasBalance === true,
-    hasLongestQuota: candidate.hasLongestQuota === true,
+    source: normalizeSourceSelection(candidate.source),
+    resource: normalizeResourceSelection(candidate.resource ?? candidate),
+    status: normalizeStatusSelection(candidate.status ?? candidate),
+    plan: normalizePlanSelection(candidate.plan ?? candidate),
   };
 }
 
@@ -76,11 +62,25 @@ export const resolveAccountsFilterState = normalizeAccountsFilterState;
 
 export function applyAccountsFilterState(
   base: AccountsFilterState,
-  patch: Partial<AccountsFilterState>,
+  patch: AccountsFilterStatePatch,
 ): AccountsFilterState {
   return normalizeAccountsFilterState({
-    ...base,
-    ...patch,
+    source: {
+      ...base.source,
+      ...patch.source,
+    },
+    resource: {
+      ...base.resource,
+      ...patch.resource,
+    },
+    status: {
+      ...base.status,
+      ...patch.status,
+    },
+    plan: {
+      ...base.plan,
+      ...patch.plan,
+    },
   });
 }
 
@@ -90,29 +90,46 @@ export function summarizeAccountsFilterState(
 ): AccountsFilterSummaryPart[] {
   const parts: AccountsFilterSummaryPart[] = [];
 
-  if (state.requiresRequestable) {
-    parts.push({ kind: 'status', label: t('accounts.filter_requestable_match') });
+  if (!isSelectionComplete(state.source, SOURCE_KEYS)) {
+    if (state.source.authFile) {
+      parts.push({ kind: 'source', label: t('accounts.source_auth_file') });
+    }
+    if (state.source.apiKey) {
+      parts.push({ kind: 'source', label: t('accounts.source_api_key') });
+    }
   }
-  if (state.requiresError) {
-    parts.push({ kind: 'status', label: t('accounts.filter_error_match') });
+
+  if (!isSelectionComplete(state.resource, RESOURCE_KEYS)) {
+    if (state.resource.hasLongestQuota) {
+      parts.push({ kind: 'resource', label: t('accounts.filter_longest_quota_match') });
+    }
+    if (state.resource.hasBalance) {
+      parts.push({ kind: 'resource', label: t('accounts.filter_balance_match') });
+    }
   }
-  if (state.requiresDisabled) {
-    parts.push({ kind: 'status', label: t('accounts.filter_disabled_match') });
+
+  if (!isSelectionComplete(state.status, STATUS_KEYS)) {
+    if (state.status.error) {
+      parts.push({ kind: 'status', label: t('accounts.filter_error_match') });
+    }
+    if (state.status.disabled) {
+      parts.push({ kind: 'status', label: t('accounts.filter_disabled_match') });
+    }
+    if (state.status.requestable) {
+      parts.push({ kind: 'status', label: t('accounts.filter_requestable_match') });
+    }
   }
-  if (state.hasLongestQuota) {
-    parts.push({ kind: 'resource', label: t('accounts.filter_longest_quota_match') });
-  }
-  if (state.hasBalance) {
-    parts.push({ kind: 'resource', label: t('accounts.filter_balance_match') });
-  }
-  if (state.source === 'none') {
-    parts.push({ kind: 'source', label: t('accounts.filter_source_none') });
-  }
-  if (state.source === 'auth-file') {
-    parts.push({ kind: 'source', label: t('accounts.source_auth_file') });
-  }
-  if (state.source === 'api-key') {
-    parts.push({ kind: 'source', label: t('accounts.source_api_key') });
+
+  if (!isSelectionComplete(state.plan, PLAN_KEYS)) {
+    if (state.plan.free) {
+      parts.push({ kind: 'plan', label: 'free' });
+    }
+    if (state.plan.plus) {
+      parts.push({ kind: 'plan', label: 'plus' });
+    }
+    if (state.plan.pro) {
+      parts.push({ kind: 'plan', label: 'pro' });
+    }
   }
 
   return parts;
@@ -135,4 +152,108 @@ export function persistAccountsFilterState(
   state: AccountsFilterState,
 ): void {
   storage?.setItem(ACCOUNTS_FILTERS_STORAGE_KEY, JSON.stringify(state));
+}
+
+function normalizeSourceSelection(value: unknown): AccountsFilterState['source'] {
+  if (isSelectionObject(value, SOURCE_KEYS)) {
+    return normalizeSelectionObject(value, SOURCE_KEYS, defaultAccountsFilterState.source);
+  }
+
+  if (typeof value === 'string') {
+    const source = resolveLegacySourceSelection(value);
+    if (source === 'auth-file') {
+      return { authFile: true, apiKey: false };
+    }
+    if (source === 'api-key') {
+      return { authFile: false, apiKey: true };
+    }
+    if (source === 'none') {
+      return { authFile: false, apiKey: false };
+    }
+  }
+
+  return { ...defaultAccountsFilterState.source };
+}
+
+function normalizeResourceSelection(value: unknown): AccountsFilterState['resource'] {
+  if (isSelectionObject(value, RESOURCE_KEYS)) {
+    return normalizeSelectionObject(value, RESOURCE_KEYS, defaultAccountsFilterState.resource);
+  }
+
+  const candidate = isPlainObject(value) ? value : null;
+  if (!candidate || (!('hasLongestQuota' in candidate) && !('hasBalance' in candidate))) {
+    return { ...defaultAccountsFilterState.resource };
+  }
+  return {
+    hasLongestQuota: resolveBoolean(candidate?.hasLongestQuota),
+    hasBalance: resolveBoolean(candidate?.hasBalance),
+  };
+}
+
+function normalizeStatusSelection(value: unknown): AccountsFilterState['status'] {
+  if (isSelectionObject(value, STATUS_KEYS)) {
+    return normalizeSelectionObject(value, STATUS_KEYS, defaultAccountsFilterState.status);
+  }
+
+  const candidate = isPlainObject(value) ? value : null;
+  if (!candidate || (!('requiresError' in candidate) && !('requiresDisabled' in candidate) && !('requiresRequestable' in candidate))) {
+    return { ...defaultAccountsFilterState.status };
+  }
+  return {
+    error: resolveBoolean(candidate?.requiresError),
+    disabled: resolveBoolean(candidate?.requiresDisabled),
+    requestable: resolveBoolean(candidate?.requiresRequestable),
+  };
+}
+
+function normalizePlanSelection(value: unknown): AccountsFilterState['plan'] {
+  if (isSelectionObject(value, PLAN_KEYS)) {
+    return normalizeSelectionObject(value, PLAN_KEYS, defaultAccountsFilterState.plan);
+  }
+
+  if (isPlainObject(value) && ('free' in value || 'plus' in value || 'pro' in value)) {
+    const candidate = value as Record<string, unknown>;
+    return {
+      free: resolveBoolean(candidate.free),
+      plus: resolveBoolean(candidate.plus),
+      pro: resolveBoolean(candidate.pro),
+    };
+  }
+
+  return { ...defaultAccountsFilterState.plan };
+}
+
+function normalizeSelectionObject<T extends string>(
+  value: unknown,
+  keys: readonly T[],
+  fallback: AccountsFilterGroupSelection<T>,
+): AccountsFilterGroupSelection<T> {
+  const candidate = isPlainObject(value) ? (value as Record<string, unknown>) : null;
+  return keys.reduce((result, key) => {
+    result[key] = typeof candidate?.[key] === 'boolean' ? candidate[key] === true : fallback[key];
+    return result;
+  }, {} as AccountsFilterGroupSelection<T>);
+}
+
+function isSelectionObject<T extends string>(value: unknown, keys: readonly T[]) {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+  return keys.every((key) => key in value);
+}
+
+function isSelectionComplete<T extends string>(selection: AccountsFilterGroupSelection<T>, keys: readonly T[]) {
+  return keys.every((key) => selection[key] === true);
+}
+
+function resolveLegacySourceSelection(value: unknown): CredentialSource | 'all' | 'none' {
+  return value === 'all' || value === 'none' || value === 'auth-file' || value === 'api-key' ? value : 'all';
+}
+
+function resolveBoolean(value: unknown): boolean {
+  return value === true;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

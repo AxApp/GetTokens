@@ -69,6 +69,8 @@ export interface FrameHashState {
 interface FrameHashOptions {
   claudeWorkspace?: ClaudeWorkspace;
   density?: string | null;
+  group?: string | null;
+  sort?: string | null;
 }
 
 export function isDeveloperAppPage(value: string | null | undefined): value is AppPage {
@@ -389,6 +391,18 @@ export function buildFrameHash(
   }
   if (page === 'accounts' && (options?.density === 'compact' || options?.density === 'list')) {
     params.set('density', options.density);
+  }
+  if (
+    page === 'accounts' &&
+    (options?.group === 'source' || options?.group === 'status' || options?.group === 'provider' || options?.group === 'resource')
+  ) {
+    params.set('group', options.group);
+  }
+  if (
+    page === 'accounts' &&
+    (options?.sort === 'name' || options?.sort === 'status' || options?.sort === 'quota' || options?.sort === 'reset' || options?.sort === 'recent')
+  ) {
+    params.set('sort', options.sort);
   }
   if (page === 'codex' && codexWorkspace !== 'feature-config') {
     params.set('workspace', codexWorkspace);

@@ -3,9 +3,10 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { useI18n } from '../../../context/I18nContext';
 import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
-import type { AccountListDisplayMode } from '../model/accountListLayout';
+import type { AccountGroupMode, AccountListDisplayMode, AccountSortMode } from '../model/accountListLayout';
 import { defaultAccountsFilterState } from '../model/accountFilters';
 import type { AccountsFilterState } from '../model/types';
+import type { AccountPlanType } from '../../../types';
 import AccountsToolbar from './AccountsToolbar';
 
 const meta = {
@@ -20,15 +21,33 @@ type Story = StoryObj;
 
 const emptyFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
-  hasLongestQuota: false,
+  resource: {
+    ...defaultAccountsFilterState.resource,
+    hasLongestQuota: false,
+  },
 };
 
 const activeFilters: AccountsFilterState = {
   ...defaultAccountsFilterState,
-  source: 'api-key',
-  requiresRequestable: true,
-  hasLongestQuota: true,
+  source: {
+    ...defaultAccountsFilterState.source,
+    authFile: false,
+  },
+  resource: {
+    ...defaultAccountsFilterState.resource,
+    hasBalance: false,
+  },
+  status: {
+    ...defaultAccountsFilterState.status,
+    error: false,
+  },
+  plan: {
+    ...defaultAccountsFilterState.plan,
+    pro: false,
+  },
 };
+
+const ALL_PLAN_TYPES: readonly AccountPlanType[] = ['free', 'plus', 'pro'];
 
 function ToolbarViewport({
   label,
@@ -55,6 +74,7 @@ function AccountsToolbarSample({
   initialSelectedAccountCount = 0,
   initialDisplayMode = 'full',
   initialFiltersMenuOpen = false,
+  availablePlanTypes = ALL_PLAN_TYPES,
 }: {
   label: string;
   initialSearchTerm?: string;
@@ -64,6 +84,7 @@ function AccountsToolbarSample({
   initialSelectedAccountCount?: number;
   initialDisplayMode?: AccountListDisplayMode;
   initialFiltersMenuOpen?: boolean;
+  availablePlanTypes?: readonly AccountPlanType[];
 }) {
   const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
@@ -72,6 +93,8 @@ function AccountsToolbarSample({
   const [allFilteredSelected, setAllFilteredSelected] = useState(initialAllFilteredSelected);
   const [selectedAccountCount, setSelectedAccountCount] = useState(initialSelectedAccountCount);
   const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(initialDisplayMode);
+  const [groupMode, setGroupMode] = useState<AccountGroupMode>('plan');
+  const [sortMode, setSortMode] = useState<AccountSortMode>('priority');
 
   return (
     <ToolbarViewport label={label}>
@@ -83,9 +106,14 @@ function AccountsToolbarSample({
         allFilteredSelected={allFilteredSelected}
         selectedAccountCount={selectedAccountCount}
         displayMode={displayMode}
+        groupMode={groupMode}
+        sortMode={sortMode}
+        availablePlanTypes={availablePlanTypes}
         onSearchChange={setSearchTerm}
         onFiltersChange={setFilters}
         onDisplayModeChange={setDisplayMode}
+        onGroupModeChange={setGroupMode}
+        onSortModeChange={setSortMode}
         onToggleSelectionMode={() => setIsSelectionMode((prev) => !prev)}
         onToggleSelectAllFiltered={() => {
           setAllFilteredSelected((prev) => !prev);
@@ -121,6 +149,7 @@ function AccountsToolbarOverview() {
             initialSearchTerm="team relay"
             initialFilters={activeFilters}
             initialFiltersMenuOpen
+            availablePlanTypes={['free', 'plus']}
           />
           <AccountsToolbarSample
             label="DS-ACCOUNTS-TOOLBAR-SELECTION-EMPTY"

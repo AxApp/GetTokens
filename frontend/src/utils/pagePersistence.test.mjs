@@ -703,6 +703,14 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
     '#frame=accounts&density=list',
   );
   assert.equal(
+    buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex', null, {
+      density: 'compact',
+      group: 'source',
+      sort: 'quota',
+    }),
+    '#frame=accounts&density=compact&group=source&sort=quota',
+  );
+  assert.equal(
     buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex', null, { density: 'compact' }),
     '#frame=accounts&density=compact',
   );

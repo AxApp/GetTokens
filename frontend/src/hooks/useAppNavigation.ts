@@ -128,6 +128,8 @@ export function useAppNavigation() {
       {
         claudeWorkspace: activeClaudeWorkspace,
         density: activePage === 'accounts' ? readCurrentHashParam('density') : null,
+        group: activePage === 'accounts' ? readCurrentHashParam('group') : null,
+        sort: activePage === 'accounts' ? readCurrentHashParam('sort') : null,
       },
     );
     if (window.location.hash !== nextHash) {
@@ -203,6 +205,8 @@ function buildCanonicalFrameHashFromState(hashState: NonNullable<ReturnType<type
     {
       claudeWorkspace: hashState.claudeWorkspace ?? 'account-list',
       density: hashState.page === 'accounts' ? readCurrentHashParam('density') : null,
+      group: hashState.page === 'accounts' ? readCurrentHashParam('group') : null,
+      sort: hashState.page === 'accounts' ? readCurrentHashParam('sort') : null,
     },
   );
 }
