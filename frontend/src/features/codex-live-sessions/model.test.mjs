@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   buildCodexLiveDiagnosticSummary,
@@ -267,6 +268,19 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
   assert.equal(snapshot.sessions[0].fallbackConfidence, undefined);
   assert.equal(snapshot.sessions[0].recentEvents[0].lane, 'sidecar');
   assert.equal(snapshot.sessions[0].recentEvents[0].severity, 'info');
+});
+
+test('codex live session surfaces use larger typography tokens for the dense workbench', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+  const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /font-size-ui-5xl/);
+  assert.match(detailSource, /font-size-ui-lg/);
+  assert.match(detailSource, /font-size-ui-sm/);
+  assert.match(detailSource, /!text-\[length:var\(--font-size-ui-sm\)\]/);
+  assert.match(feedSource, /font-size-ui-3xl/);
+  assert.match(feedSource, /font-size-ui-2xl/);
+  assert.match(feedSource, /font-size-ui-sm/);
 });
 
 test('desktop live sessions state never promotes preview rows to cache', () => {

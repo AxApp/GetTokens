@@ -26,14 +26,14 @@ export function SessionFeed({
         className="grid gap-1 border-b-2 border-[var(--border-color)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
       >
         <div>
-          <h3 className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em]">
+          <h3 className="font-mono text-[length:var(--font-size-ui-3xl)] font-black uppercase tracking-[0.16em]">
             {t('codex_live_sessions.session_feed')}
           </h3>
-          <p className="mt-1 text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+          <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
             {t('codex_live_sessions.session_feed_hint')}
           </p>
         </div>
-        <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+        <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
           {sessions.length} {t('codex_live_sessions.rows')}
         </span>
       </div>
@@ -95,10 +95,10 @@ function SessionRow({
       }`}
     >
       <div className="min-w-0">
-        <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug text-[var(--text-primary)]">
+        <div className="truncate font-mono text-[length:var(--font-size-ui-2xl)] font-black leading-snug text-[var(--text-primary)]">
           {summary.sessionProjectLabel}
         </div>
-        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-muted)]">
+        <div className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">
           {summary.accountTransportLabel}
         </div>
       </div>
