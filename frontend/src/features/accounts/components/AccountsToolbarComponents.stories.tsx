@@ -68,7 +68,7 @@ function ToolbarViewport({
 function AccountsToolbarSample({
   label,
   initialSearchTerm = '',
-  initialFilters = emptyFilters,
+  initialFilters = defaultAccountsFilterState,
   initialSelectionMode = false,
   initialAllFilteredSelected = false,
   initialSelectedAccountCount = 0,

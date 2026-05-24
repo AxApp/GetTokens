@@ -176,3 +176,20 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.sort_mode_priority'), true);
   assert.equal(source.includes('accounts.sort_mode_quota'), true);
 });
+
+test('AccountsToolbar filter menu keeps options in compact list mode', async () => {
+  const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
+  const menuPanelClass = 'mt-2 flex min-w-[300px] flex-col gap-3';
+  const optionClass = source.slice(source.indexOf('function FilterCheckOption'), source.indexOf('function buildToolbarFilterLabel'));
+
+  assert.equal(source.includes(menuPanelClass), true);
+  assert.equal(optionClass.includes('min-h-7'), true);
+  assert.equal(optionClass.includes('border-2 border-[var(--border-color)]'), false);
+});
+
+test('AccountsToolbar design-system default story starts with all filters selected', async () => {
+  const source = await readFile(new URL('../components/AccountsToolbarComponents.stories.tsx', import.meta.url), 'utf8');
+
+  assert.equal(source.includes('initialFilters = defaultAccountsFilterState'), true);
+  assert.equal(source.includes('initialFilters = emptyFilters'), false);
+});

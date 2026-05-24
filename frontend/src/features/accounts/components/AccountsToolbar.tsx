@@ -196,12 +196,12 @@ export default function AccountsToolbar({
               {buildToolbarFilterLabel(t, filters)}
             </button>
             {isMenuOpen ? (
-              <div className="absolute left-0 top-full z-20 mt-3 flex min-w-[320px] flex-col gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[8px_8px_0_var(--shadow-color)]">
-                <div className="space-y-2">
+              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[300px] flex-col gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[4px_4px_0_var(--shadow-color)]">
+                <div className="space-y-1.5">
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_source')}
                   </p>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1">
                     <FilterCheckOption active={sourceAllSelected} onClick={enableAllSourceOptions}>
                       {t('accounts.filter_all')}
                     </FilterCheckOption>
@@ -213,11 +213,11 @@ export default function AccountsToolbar({
                     </FilterCheckOption>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_resource')}
                   </p>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1">
                     <FilterCheckOption active={resourceAllSelected} onClick={enableAllResourceOptions}>
                       {t('accounts.filter_all')}
                     </FilterCheckOption>
@@ -229,11 +229,11 @@ export default function AccountsToolbar({
                     </FilterCheckOption>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_status')}
                   </p>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1">
                     <FilterCheckOption active={statusAllSelected} onClick={enableAllStatusOptions}>
                       {t('accounts.filter_all')}
                     </FilterCheckOption>
@@ -248,11 +248,11 @@ export default function AccountsToolbar({
                     </FilterCheckOption>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_plan')}
                   </p>
-                  <div className="grid gap-2">
+                  <div className="grid gap-1">
                     <FilterCheckOption active={planAllSelected} onClick={enableAllPlanOptions}>
                       {t('accounts.filter_all')}
                     </FilterCheckOption>
@@ -282,11 +282,11 @@ export default function AccountsToolbar({
                     </FilterCheckOption>
                   </div>
                 </div>
-                <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-3">
+                <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-2">
                   <button
                     type="button"
                     onClick={() => onFiltersChange({ ...defaultAccountsFilterState })}
-                    className="btn-swiss h-8 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                    className="btn-swiss h-7 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
                   >
                     {t('accounts.filter_reset')}
                   </button>
@@ -472,7 +472,7 @@ function FilterCheckOption({
 }) {
   return (
     <label
-      className={`flex min-h-9 cursor-pointer items-center gap-2 border-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-2xs)] font-black leading-none tracking-[0.1em] ${
+      className={`flex min-h-7 cursor-pointer items-center gap-2 px-1.5 text-[length:var(--font-size-ui-2xs)] font-black leading-none tracking-[0.1em] ${
         uppercase ? 'uppercase' : ''
       } ${
         disabled
