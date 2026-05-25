@@ -17,6 +17,7 @@ interface AccountLocalCliApplyConfirmProps {
   resultMessage: string;
   previewMode: boolean;
   onClose: () => void;
+  onDraftChange: (draft: AccountCliApplyDraft) => void;
   onApply: (draft: AccountCliApplyDraft) => void;
 }
 
@@ -26,6 +27,19 @@ interface PreviewFile {
   diff: string;
 }
 
+type ClaudeDraft = Extract<AccountCliApplyDraft, { target: 'claude' }>['claude'];
+type ClaudeTextField =
+  | 'apiKey'
+  | 'baseUrl'
+  | 'model'
+  | 'defaultHaikuModel'
+  | 'defaultSonnetModel'
+  | 'defaultOpusModel'
+  | 'smallFastModel'
+  | 'maxOutputTokens'
+  | 'apiTimeoutMs';
+type ClaudeBooleanField = 'disableNonEssentialTraffic' | 'claudeCodeAttributionHeader';
+
 export default function AccountLocalCliApplyConfirm({
   draft,
   relayKeyItems,
@@ -33,6 +47,7 @@ export default function AccountLocalCliApplyConfirm({
   resultMessage,
   previewMode,
   onClose,
+  onDraftChange,
   onApply,
 }: AccountLocalCliApplyConfirmProps) {
   const previewFiles = useMemo(() => buildPreviewFiles(draft, relayKeyItems), [draft, relayKeyItems]);
@@ -47,10 +62,48 @@ export default function AccountLocalCliApplyConfirm({
       : draft.codex.authStrategy === 'replace_auth_with_oauth'
         ? 'OAuth 写入模式'
         : 'OAuth 保留模式'
-    : 'Claude Code API Key 模式';
+    : draft.claude.authField === 'ANTHROPIC_AUTH_TOKEN'
+      ? 'Claude Code Auth Token 模式'
+      : 'Claude Code API Key 模式';
   const providerLabel = draft.target === 'codex'
     ? `${draft.codex.providerName} / ${draft.codex.providerID}`
     : 'Claude settings env';
+  const handleClaudeTextChange = (field: ClaudeTextField, value: string) => {
+    if (draft.target !== 'claude') {
+      return;
+    }
+    onDraftChange({
+      ...draft,
+      claude: {
+        ...draft.claude,
+        [field]: value,
+      },
+    });
+  };
+  const handleClaudeBooleanChange = (field: ClaudeBooleanField, value: boolean) => {
+    if (draft.target !== 'claude') {
+      return;
+    }
+    onDraftChange({
+      ...draft,
+      claude: {
+        ...draft.claude,
+        [field]: value,
+      },
+    });
+  };
+  const handleClaudeAuthFieldChange = (value: ClaudeDraft['authField']) => {
+    if (draft.target !== 'claude') {
+      return;
+    }
+    onDraftChange({
+      ...draft,
+      claude: {
+        ...draft.claude,
+        authField: value,
+      },
+    });
+  };
 
   return (
     <ModalFrame
@@ -103,6 +156,102 @@ export default function AccountLocalCliApplyConfirm({
     >
       <div className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:border-b-0 lg:border-r-2">
+          {draft.target === 'claude' ? (
+            <div className="grid gap-3 border-2 border-[var(--border-muted)] bg-[var(--bg-surface)] p-3">
+              <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Claude Code 配置
+              </div>
+              <ClaudeSettingsField
+                label="API KEY / TOKEN"
+                field="apiKey"
+                value={draft.claude.apiKey}
+                placeholder="留空使用 relay key"
+                type="password"
+                onChange={handleClaudeTextChange}
+              />
+              <ClaudeSettingsField
+                label="BASE URL"
+                field="baseUrl"
+                value={draft.claude.baseUrl}
+                onChange={handleClaudeTextChange}
+              />
+              <ClaudeSettingsField
+                label="MODEL"
+                field="model"
+                value={draft.claude.model}
+                onChange={handleClaudeTextChange}
+              />
+              <ClaudeSettingsField
+                label="HAIKU"
+                field="defaultHaikuModel"
+                value={draft.claude.defaultHaikuModel}
+                onChange={handleClaudeTextChange}
+              />
+              <ClaudeSettingsField
+                label="SONNET"
+                field="defaultSonnetModel"
+                value={draft.claude.defaultSonnetModel}
+                onChange={handleClaudeTextChange}
+              />
+              <ClaudeSettingsField
+                label="OPUS"
+                field="defaultOpusModel"
+                value={draft.claude.defaultOpusModel}
+                onChange={handleClaudeTextChange}
+              />
+              <ClaudeSettingsField
+                label="SMALL FAST"
+                field="smallFastModel"
+                value={draft.claude.smallFastModel}
+                onChange={handleClaudeTextChange}
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <ClaudeSettingsField
+                  label="MAX TOKENS"
+                  field="maxOutputTokens"
+                  value={draft.claude.maxOutputTokens}
+                  onChange={handleClaudeTextChange}
+                />
+                <ClaudeSettingsField
+                  label="TIMEOUT MS"
+                  field="apiTimeoutMs"
+                  value={draft.claude.apiTimeoutMs}
+                  onChange={handleClaudeTextChange}
+                />
+              </div>
+              <label className="grid gap-1">
+                <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                  AUTH FIELD
+                </span>
+                <select
+                  value={draft.claude.authField}
+                  onChange={(event) => handleClaudeAuthFieldChange(event.target.value as ClaudeDraft['authField'])}
+                  className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none focus:ring-2 focus:ring-[var(--accent-red)]"
+                >
+                  <option value="ANTHROPIC_API_KEY">ANTHROPIC_API_KEY</option>
+                  <option value="ANTHROPIC_AUTH_TOKEN">ANTHROPIC_AUTH_TOKEN</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                <input
+                  type="checkbox"
+                  checked={draft.claude.disableNonEssentialTraffic}
+                  onChange={(event) => handleClaudeBooleanChange('disableNonEssentialTraffic', event.target.checked)}
+                  className="h-4 w-4 accent-[var(--accent-red)]"
+                />
+                Disable nonessential traffic
+              </label>
+              <label className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                <input
+                  type="checkbox"
+                  checked={draft.claude.claudeCodeAttributionHeader}
+                  onChange={(event) => handleClaudeBooleanChange('claudeCodeAttributionHeader', event.target.checked)}
+                  className="h-4 w-4 accent-[var(--accent-red)]"
+                />
+                Attribution header
+              </label>
+            </div>
+          ) : null}
           <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             文件列表
           </div>
@@ -140,6 +289,37 @@ export default function AccountLocalCliApplyConfirm({
   );
 }
 
+function ClaudeSettingsField({
+  label,
+  field,
+  value,
+  placeholder = '',
+  type = 'text',
+  onChange,
+}: {
+  label: string;
+  field: ClaudeTextField;
+  value: string;
+  placeholder?: string;
+  type?: 'text' | 'password';
+  onChange: (field: ClaudeTextField, value: string) => void;
+}) {
+  return (
+    <label className="grid min-w-0 gap-1">
+      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(field, event.target.value)}
+        className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-[var(--accent-red)]"
+      />
+    </label>
+  );
+}
+
 function SummaryBadge({
   label,
   value,
@@ -166,12 +346,13 @@ function SummaryBadge({
 function buildPreviewFiles(draft: AccountCliApplyDraft, relayKeyItems: AccountLocalCliRelayKeyLike[]): PreviewFile[] {
   const relayKey = relayKeyItems[draft.source.relayKeyIndex]?.value || '';
   if (draft.target === 'claude') {
+    const apiKey = draft.claude.apiKey || relayKey;
     return [
       {
         id: 'claude-settings',
         path: '~/.claude/settings.json',
         diff: buildClaudeCodeSettingsDiff({
-          apiKey: relayKey,
+          apiKey,
           baseUrl: draft.claude.baseUrl,
           model: draft.claude.model,
           defaultHaikuModel: draft.claude.defaultHaikuModel,

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   resolveAccountLocalCliMappings,
@@ -56,6 +57,44 @@ test('DeepSeek official template only generates Claude Code action', () => {
   assert.equal(actions[0].target, 'claude');
   assert.equal(actions[0].templateID, 'deepseek');
   assert.equal(actions[0].draft.target, 'claude');
+});
+
+test('OpenRouter template generates direct Codex and Claude Code drafts', () => {
+  const actions = resolveAccountLocalCliMappings({
+    account: account({
+      id: 'openai-compatible:openrouter',
+      provider: 'openrouter',
+      displayName: 'OpenRouter',
+      credentialSource: 'api-key',
+      apiKey: 'sk-or-current-account',
+      baseUrl: 'https://openrouter.ai/api',
+      supportedFormats: ['openai_chat', 'anthropic'],
+      models: [{ name: '~openai/gpt-latest', alias: '' }],
+    }),
+    relayKeyItems: [],
+    relayEndpoint,
+    currentCodexProviderState: customProviderState,
+    localCodexAuthState,
+    sidecarReady: true,
+  });
+
+  assert.equal(actions.length, 2);
+  const codex = actions.find((item) => item.target === 'codex');
+  const claude = actions.find((item) => item.target === 'claude');
+
+  assert.equal(codex.enabled, true);
+  assert.equal(codex.sourceFormat, 'openai_chat');
+  assert.equal(codex.sourceFormatBaseUrl, 'https://openrouter.ai/api/v1');
+  assert.equal(codex.draft.codex.apiKey, 'sk-or-current-account');
+  assert.equal(codex.draft.codex.baseUrl, 'https://openrouter.ai/api/v1');
+  assert.equal(codex.draft.codex.model, '~openai/gpt-latest');
+
+  assert.equal(claude.enabled, true);
+  assert.equal(claude.sourceFormat, 'anthropic');
+  assert.equal(claude.sourceFormatBaseUrl, 'https://openrouter.ai/api');
+  assert.equal(claude.draft.claude.apiKey, 'sk-or-current-account');
+  assert.equal(claude.draft.claude.baseUrl, 'https://openrouter.ai/api');
+  assert.equal(claude.draft.claude.authField, 'ANTHROPIC_AUTH_TOKEN');
 });
 
 test('OpenAI API key account generates Codex API key draft', () => {
@@ -256,6 +295,26 @@ test('disabled account keeps verified action visible but not executable', () => 
   assert.equal(actions[0].enabled, false);
   assert.equal(actions[0].status, 'disabled-account');
   assert.match(actions[0].disabledReason, /禁用/);
+});
+
+test('AccountLocalCliApplyConfirm exposes editable Claude Code draft fields', async () => {
+  const source = await readFile(new URL('../components/AccountLocalCliApplyConfirm.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /onDraftChange/);
+  assert.match(source, /ClaudeSettingsField/);
+  assert.match(source, /Claude Code 配置/);
+  assert.match(source, /field="apiKey"/);
+  assert.match(source, /field="baseUrl"/);
+  assert.match(source, /field="model"/);
+  assert.match(source, /field="defaultHaikuModel"/);
+  assert.match(source, /field="defaultSonnetModel"/);
+  assert.match(source, /field="defaultOpusModel"/);
+  assert.match(source, /field="smallFastModel"/);
+  assert.match(source, /field="maxOutputTokens"/);
+  assert.match(source, /field="apiTimeoutMs"/);
+  assert.match(featureSource, /onDraftChange=\{\(nextDraft\) =>/);
+  assert.match(featureSource, /setLocalCliDraft\(nextDraft\)/);
 });
 
 function account(overrides = {}) {

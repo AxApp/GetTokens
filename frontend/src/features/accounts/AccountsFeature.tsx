@@ -549,11 +549,12 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     const codexUsesOAuthAuthFile = draft.target === 'codex' && draft.codex.authStrategy === 'replace_auth_with_oauth';
     const codexUsesAccountAPIKey = draft.target === 'codex' && draft.codex.authStrategy === 'replace_auth_with_apikey';
     const codexAPIKey = codexUsesAccountAPIKey ? String(draft.codex.apiKey || '').trim() : relayKey;
+    const claudeAPIKey = draft.target === 'claude' ? String(draft.claude.apiKey || relayKey).trim() : '';
     if (draft.target === 'codex' && codexUsesAccountAPIKey && !codexAPIKey) {
       setLocalCliApplyMessage('当前账号缺少 API Key，不能写入 Codex。');
       return;
     }
-    if (draft.target !== 'codex' && !relayKey) {
+    if (draft.target !== 'codex' && !claudeAPIKey) {
       setLocalCliApplyMessage('缺少 GetTokens relay key，不能写入本机 CLI 配置。');
       return;
     }
@@ -621,9 +622,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       const result = await trackRequest(
         'ApplyClaudeCodeAPIKeyConfigToLocal',
         {
-          apiKey: relayKey,
+          apiKey: claudeAPIKey,
           baseURL: draft.claude.baseUrl,
           options: {
+            authField: draft.claude.authField,
             model: draft.claude.model,
             defaultHaikuModel: draft.claude.defaultHaikuModel,
             defaultSonnetModel: draft.claude.defaultSonnetModel,
@@ -636,7 +638,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           },
         },
         () =>
-          ApplyClaudeCodeAPIKeyConfigToLocal(relayKey, draft.claude.baseUrl, {
+          ApplyClaudeCodeAPIKeyConfigToLocal(claudeAPIKey, draft.claude.baseUrl, {
+            authField: draft.claude.authField,
             model: draft.claude.model,
             defaultHaikuModel: draft.claude.defaultHaikuModel,
             defaultSonnetModel: draft.claude.defaultSonnetModel,
@@ -951,6 +954,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           previewMode={previewMode}
           onClose={() => {
             setLocalCliDraft(null);
+            setLocalCliApplyMessage('');
+          }}
+          onDraftChange={(nextDraft) => {
+            setLocalCliDraft(nextDraft);
             setLocalCliApplyMessage('');
           }}
           onApply={(draft) => void applyAccountLocalCliDraft(draft)}
