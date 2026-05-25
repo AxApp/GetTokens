@@ -70,7 +70,7 @@ export function buildFallbackTimelineSummary(
   };
 }
 
-export function formatTimelineTimeLabel(value: string, now = new Date()): string {
+export function formatTimelineTimeLabel(value: string, _now = new Date()): string {
   const trimmed = value.trim();
   if (!trimmed) {
     return '-';
@@ -79,10 +79,10 @@ export function formatTimelineTimeLabel(value: string, now = new Date()): string
   const datedTime = trimmed.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?$/);
   if (datedTime) {
     const parsed = new Date(trimmed);
-    if (!Number.isNaN(parsed.getTime()) && formatLocalDate(parsed) === formatLocalDate(now)) {
+    if (!Number.isNaN(parsed.getTime())) {
       return formatClockTime(parsed);
     }
-    return trimmed;
+    return datedTime[2];
   }
 
   const clockTime = trimmed.match(/^(\d{2}:\d{2}:\d{2})(?:\.\d+)?$/);
@@ -93,11 +93,22 @@ export function formatTimelineTimeLabel(value: string, now = new Date()): string
   return trimmed;
 }
 
-function formatLocalDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+export function formatTimelineRequestID(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '-';
+  }
+
+  const reqMatch = trimmed.match(/(?:^|[-_])req[-_]([a-z0-9]+)$/i);
+  if (reqMatch) {
+    return `REQ-${reqMatch[1].toUpperCase()}`;
+  }
+
+  if (trimmed.length <= 14) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, 6)}...${trimmed.slice(-4)}`;
 }
 
 function formatClockTime(date: Date): string {

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import SnippetPre from '../../../components/ui/SnippetPre';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
@@ -24,6 +23,7 @@ import {
 import {
   buildFallbackTimelineSummary,
   buildRequestTimelineSummary,
+  formatTimelineRequestID,
   type FallbackTimelineSummary,
   type RequestTimelineSummary,
 } from './requestTimelineSummary';
@@ -37,12 +37,10 @@ import {
 export function SessionDetail({
   session,
   request,
-  diagnostic,
   t,
 }: {
   session?: CodexLiveSession;
   request?: CodexLiveRequest;
-  diagnostic: string;
   t: Translate;
 }) {
   if (!session) {
@@ -58,18 +56,17 @@ export function SessionDetail({
   const timeline = request?.timeline ?? session.recentEvents;
 
   return (
-    <div className="min-w-0 w-full border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-      <div className="grid gap-5 border-b-2 border-[var(--border-color)] p-4">
+    <div className="grid min-w-0 w-full gap-5">
+      <div className="grid min-w-0 gap-5">
         <RequestTimingTrend session={session} request={request} t={t} />
         <TimingMetrics request={request} t={t} />
         <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
       </div>
 
-      <div className="grid gap-5 p-4">
+      <div className="grid min-w-0 gap-5">
         <AccountCard session={session} request={request} t={t} />
         <SessionCard session={session} request={request} t={t} />
         <TransportLane events={timeline} t={t} />
-        <DiagnosticSummary diagnostic={diagnostic} t={t} />
       </div>
     </div>
   );
@@ -120,7 +117,7 @@ function RequestTimingTrend({
           </span>
         </div>
 
-        <TimingTrendChart trend={trend} t={t} />
+        <TimingTrendChart trend={trend} selectedRequestID={request?.requestID || session.lastRequestID || ''} t={t} />
 
         <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
           <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-2">
@@ -157,14 +154,21 @@ function TimingTrendFooterItem({ label, value }: { label: string; value: string 
 
 function TimingTrendChart({
   trend,
+  selectedRequestID,
   t,
 }: {
   trend: ReturnType<typeof buildCodexLiveRequestTimingTrend>;
+  selectedRequestID: string;
   t: Translate;
 }) {
-  const width = 520;
-  const height = 128;
-  const padding = { top: 12, right: 18, bottom: 28, left: 44 };
+  const chartHeight = 224;
+  const chartTopInset = 38;
+  const chartBottomInset = 50;
+  const chartSideInset = 54;
+  const chartPlotWidth = Math.max(372, Math.max(trend.points.length - 1, 1) * 84);
+  const width = Math.max(480, chartPlotWidth + chartSideInset * 2);
+  const height = chartHeight;
+  const padding = { top: chartTopInset, right: chartSideInset, bottom: chartBottomInset, left: chartSideInset };
   const gridY = [0, 0.5, 1];
   const totalAreaPath = buildTimingTrendAreaPath(
     trend.points,
@@ -179,131 +183,230 @@ function TimingTrendChart({
 
   if (!trend.hasData) {
     return (
-      <div className="mt-3 grid h-[128px] place-items-center border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+      <div className="mt-3 grid h-[224px] place-items-center border-2 border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
         {t('codex_live_sessions.timing_trend_empty')}
       </div>
     );
   }
 
   return (
-    <svg
-      className="mt-3 h-[128px] w-full overflow-visible bg-[var(--bg-main)]"
-      viewBox={`0 0 ${width} ${height}`}
+    <div
+      className="mt-3 overflow-x-auto overflow-y-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[inset_0_12px_16px_-12px_var(--shadow-inset-color),inset_0_-12px_16px_-12px_var(--shadow-inset-color)]"
       role="img"
       aria-label={t('codex_live_sessions.request_timing_trend')}
     >
-      <rect
-        x={padding.left}
-        y={padding.top}
-        width={width - padding.left - padding.right}
-        height={height - padding.top - padding.bottom}
-        fill="var(--bg-surface)"
-        stroke="var(--color-chart-grid-strong)"
-        strokeWidth="1"
-      />
+      <div
+        className="relative mx-auto"
+        style={{
+          height: `${chartHeight}px`,
+          width: `${width}px`,
+          backgroundImage:
+            'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid-subtle) 55px, var(--color-chart-grid-subtle) 56px)',
+        }}
+      >
+        <style>{`
+          @keyframes usage-desk-curve-sweep {
+            0% { stroke-dashoffset: 1; opacity: 0.36; }
+            100% { stroke-dashoffset: 0; opacity: 1; }
+          }
+          @keyframes codex-live-area-rise {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
+          <defs>
+            <linearGradient id="codex-live-total-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-chart-primary-area)" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="var(--color-chart-primary-area)" stopOpacity="0.03" />
+            </linearGradient>
+          </defs>
 
-      {gridY.map((ratio) => {
-        const y = trendChartY(ratio * trend.maxMs, trend.maxMs, height, padding);
-        return (
-          <g key={ratio}>
-            <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="var(--color-chart-grid-subtle)" strokeWidth="1" />
-            <text x={padding.left - 8} y={y + 4} textAnchor="end" className="fill-[var(--text-muted)] font-mono text-[10px] font-black">
-              {formatDuration(ratio * trend.maxMs)}
-            </text>
-          </g>
-        );
-      })}
+          {gridY.map((ratio) => {
+            const y = trendChartY(ratio * trend.maxMs, trend.maxMs, height, padding);
+            return (
+              <g key={ratio}>
+                <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="var(--color-chart-grid-strong)" strokeWidth="1" />
+                <text x={padding.left - 12} y={y + 4} textAnchor="end" className="fill-[var(--text-muted)] font-mono text-[10px] font-black">
+                  {formatDuration(ratio * trend.maxMs)}
+                </text>
+              </g>
+            );
+          })}
 
-      {trend.points.map((point) => {
-        const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
-        return (
-          <g key={`${point.requestID}-grid`}>
-            <line
-              x1={x}
-              x2={x}
-              y1={padding.top}
-              y2={height - padding.bottom}
-              stroke="var(--color-chart-grid-strong)"
-              strokeWidth={point.isLive ? 1.5 : 1}
-              strokeDasharray={point.isLive ? '4 3' : undefined}
-            />
-            <text x={x} y={height - 9} textAnchor="middle" className="fill-[var(--text-muted)] font-mono text-[10px] font-black">
-              {point.sequence}
-            </text>
-          </g>
-        );
-      })}
-
-      {totalAreaPath ? <path d={totalAreaPath} fill="var(--color-chart-primary-area)" opacity="0.18" /> : null}
-
-      {timingTrendSeries.map((series) => {
-        const path = buildTimingTrendSeriesPath(
-          trend.points,
-          series.id,
-          trend.maxMs,
-          trend.startedAtMinMs,
-          trend.startedAtMaxMs,
-          width,
-          height,
-          padding,
-        );
-        if (!path) {
-          return null;
-        }
-        return (
-          <path
-            key={series.id}
-            d={path}
-            fill="none"
-            stroke={series.color}
-            strokeWidth={series.id === 'totalDurationMs' ? 3 : 2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        );
-      })}
-
-      {trend.points.map((point) => {
-        const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
-        return (
-          <g key={point.requestID}>
-            {timingTrendSeries.map((series) => {
-              const value = point.values[series.id];
-              if (value === null) {
-                return null;
-              }
-              return (
-                <circle
-                  key={series.id}
-                  cx={x}
-                  cy={trendChartY(value, trend.maxMs, height, padding)}
-                  r={series.id === 'totalDurationMs' ? 3.5 : 2.75}
-                  fill="var(--bg-main)"
-                  stroke={series.color}
-                  strokeDasharray={point.isLive ? '3 2' : undefined}
-                  strokeWidth="2"
-                >
-                  <title>{`${point.label} · ${t(series.labelKey)} ${formatDuration(value)}`}</title>
-                </circle>
-              );
-            })}
-            {point.isLive ? (
-              <circle
-                cx={x}
-                cy={trendChartY(point.values.totalDurationMs ?? 0, trend.maxMs, height, padding)}
-                r="7"
-                fill="none"
-                stroke="var(--color-chart-primary)"
-                strokeDasharray="2 3"
-                strokeWidth="1.5"
-                opacity="0.72"
+          {trend.points.map((point) => {
+            const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
+            return (
+              <line
+                key={`${point.requestID}-grid`}
+                x1={x}
+                x2={x}
+                y1={padding.top}
+                y2={height - padding.bottom}
+                stroke="var(--color-chart-grid-strong)"
+                strokeWidth={point.isLive ? 1.5 : 1}
+                strokeDasharray={point.isLive ? '4 3' : undefined}
               />
-            ) : null}
-          </g>
-        );
-      })}
-    </svg>
+            );
+          })}
+
+          {totalAreaPath ? (
+            <path
+              d={totalAreaPath}
+              fill="url(#codex-live-total-area)"
+              style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'codex-live-area-rise 320ms cubic-bezier(0.22,1,0.36,1)' }}
+            />
+          ) : null}
+
+          {timingTrendSeries.map((series) => {
+            const path = buildTimingTrendSeriesPath(
+              trend.points,
+              series.id,
+              trend.maxMs,
+              trend.startedAtMinMs,
+              trend.startedAtMaxMs,
+              width,
+              height,
+              padding,
+            );
+            if (!path) {
+              return null;
+            }
+            return (
+              <path
+                key={series.id}
+                d={path}
+                fill="none"
+                stroke={series.color}
+                strokeWidth={series.id === 'totalDurationMs' ? 4 : 2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                pathLength={series.id === 'totalDurationMs' ? 1 : undefined}
+                strokeDasharray={series.id === 'totalDurationMs' ? 1 : '10 8'}
+                strokeDashoffset={0}
+                style={{ animation: 'usage-desk-curve-sweep 900ms cubic-bezier(0.22,1,0.36,1)' }}
+              />
+            );
+          })}
+
+          {trend.points.map((point) => {
+            const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
+            return (
+              <g key={`${point.requestID}-auxiliary-points`}>
+                {timingTrendSeries.slice(1).map((series) => {
+                  const value = point.values[series.id];
+                  if (value === null) {
+                    return null;
+                  }
+                  return (
+                    <circle
+                      key={series.id}
+                      cx={x}
+                      cy={trendChartY(value, trend.maxMs, height, padding)}
+                      r={point.requestID === selectedRequestID ? 3.25 : 2.75}
+                      fill="var(--bg-main)"
+                      stroke={series.color}
+                      strokeDasharray={point.isLive ? '3 2' : undefined}
+                      strokeWidth="2"
+                    >
+                      <title>{`${point.label} · ${t(series.labelKey)} ${formatDuration(value)}`}</title>
+                    </circle>
+                  );
+                })}
+                {point.isLive ? (
+                  <circle
+                    cx={x}
+                    cy={trendChartY(point.values.totalDurationMs ?? 0, trend.maxMs, height, padding)}
+                    r="9"
+                    fill="none"
+                    stroke="var(--color-chart-primary)"
+                    strokeDasharray="2 3"
+                    strokeWidth="1.75"
+                    opacity="0.72"
+                  />
+                ) : null}
+              </g>
+            );
+          })}
+        </svg>
+
+        <div className="pointer-events-none absolute inset-0">
+          {trend.points.map((point) => {
+            const totalMs = point.values.totalDurationMs;
+            if (totalMs === null) {
+              return null;
+            }
+            const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
+            const y = trendChartY(totalMs, trend.maxMs, height, padding);
+            return (
+              <TimingTrendPoint
+                key={point.requestID}
+                x={x}
+                y={y}
+                label={formatDuration(totalMs)}
+                helper={`#${point.sequence}`}
+                selected={point.requestID === selectedRequestID}
+                live={point.isLive}
+              />
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
+}
+
+function TimingTrendPoint({
+  x,
+  y,
+  label,
+  helper,
+  selected,
+  live,
+}: {
+  x: number;
+  y: number;
+  label: string;
+  helper: string;
+  selected: boolean;
+  live: boolean;
+}) {
+  return (
+    <div
+      className="absolute flex items-center justify-center"
+      style={buildTimingTrendPointStyle(x, y)}
+    >
+      <div
+        className="absolute bottom-full mb-3 whitespace-nowrap text-center font-mono font-black transition-colors"
+        style={{
+          color: selected ? 'var(--text-primary)' : 'var(--text-muted)',
+          fontSize: selected ? 'var(--font-size-ui-md)' : 'var(--font-size-ui-md-compact)',
+        }}
+      >
+        {label}
+      </div>
+      {selected ? <div className="absolute h-8 w-8 rounded-full bg-[var(--text-primary)] opacity-10" /> : null}
+      <div
+        className={`relative rounded-full border-2 border-[var(--bg-main)] bg-[var(--color-chart-primary)] shadow-sm ${
+          selected ? 'h-3.5 w-3.5' : live ? 'h-3 w-3' : 'h-2.5 w-2.5'
+        }`}
+      />
+      <div
+        className="absolute top-7 whitespace-nowrap font-mono font-black uppercase text-[length:var(--font-size-ui-sm)]"
+        style={{ color: selected ? 'var(--text-primary)' : 'var(--text-muted)', opacity: selected ? 1 : 0.65 }}
+      >
+        {helper}
+      </div>
+    </div>
+  );
+}
+
+function buildTimingTrendPointStyle(x: number, y: number) {
+  return {
+    left: `${x}px`,
+    top: `${y}px`,
+    transform: 'translate(-50%, -50%)',
+  };
 }
 
 function buildTimingTrendSeriesPath(
@@ -711,33 +814,30 @@ function TimelineSummaryRow({
   dashed?: boolean;
 }) {
   const timeRangeLabel = buildTimelineTimeRange(summary);
-  const metricItems = buildTimelineMetricItems(summary, t);
+  const metricItems = buildTimelineMetricItems(summary);
+  const requestIDLabel = formatTimelineRequestID(summary.requestID);
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className={`grid w-full grid-cols-[minmax(0,1fr)] items-center gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-main)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
+      className={`grid min-h-10 w-full grid-cols-[auto_auto_auto_minmax(0,1fr)] items-center gap-2 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-main)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
       title={t('codex_live_sessions.detail')}
       aria-label={t('codex_live_sessions.detail')}
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="min-w-0 max-w-[18rem] truncate font-mono font-black text-[var(--text-primary)]">
-          {summary.sequenceLabel} · {summary.modelLabel}
-        </span>
-        <span className="min-w-0 max-w-[16rem] truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-          {summary.requestID}
-        </span>
-        {timeRangeLabel ? (
-          <span className="shrink-0 font-mono font-black text-[var(--text-primary)]">
-            {timeRangeLabel}
-          </span>
-        ) : null}
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-          {metricItems.map((item) => (
-            <TimelineMetricPill key={item.label} label={item.label} value={item.value} />
-          ))}
-        </div>
+      <span className="shrink-0 whitespace-nowrap font-mono font-black text-[var(--text-primary)]">
+        {summary.sequenceLabel} · {summary.modelLabel}
+      </span>
+      <span className="shrink-0 whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+        {requestIDLabel}
+      </span>
+      <span className="min-w-0 truncate whitespace-nowrap font-mono font-black text-[var(--text-primary)]">
+        {timeRangeLabel}
+      </span>
+      <div className="flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-hidden">
+        {metricItems.map((item, index) => (
+          <TimelineMetricPill key={item.label} label={item.label} value={item.value} priority={index} />
+        ))}
       </div>
     </button>
   );
@@ -747,19 +847,17 @@ function buildTimelineTimeRange(summary: RequestTimelineSummary | FallbackTimeli
   const started = isTimelineValuePresent(summary.startedAtLabel) ? summary.startedAtLabel : '';
   const completed = isTimelineValuePresent(summary.completedAtLabel) ? summary.completedAtLabel : '';
   if (started && completed && started !== completed) {
-    return `${started} - ${completed}`;
+    return `${started}-${completed}`;
   }
   return started || completed;
 }
 
-function buildTimelineMetricItems(summary: RequestTimelineSummary | FallbackTimelineSummary, t: Translate): Array<{ label: string; value: string }> {
+function buildTimelineMetricItems(summary: RequestTimelineSummary | FallbackTimelineSummary): Array<{ label: string; value: string }> {
   return [
-    { label: t('codex_live_sessions.timing_total'), value: summary.totalDurationLabel },
-    { label: t('codex_live_sessions.timing_ttft'), value: summary.ttftLabel },
-    { label: t('codex_live_sessions.timing_first_token'), value: summary.firstTokenLabel },
-    { label: t('codex_live_sessions.timing_stream'), value: summary.streamDurationLabel },
-    { label: t('codex_live_sessions.timing_avg_gap'), value: summary.averageGapLabel },
-    { label: t('codex_live_sessions.timing_max_gap'), value: summary.longestGapLabel },
+    { label: '总', value: summary.totalDurationLabel },
+    { label: 'TTFT', value: summary.ttftLabel },
+    { label: '首', value: summary.firstTokenLabel },
+    { label: '流', value: summary.streamDurationLabel },
   ].filter((item) => isTimelineValuePresent(item.value));
 }
 
@@ -767,9 +865,10 @@ function isTimelineValuePresent(value: string): boolean {
   return value !== '-' && value.toLowerCase() !== 'n/a';
 }
 
-function TimelineMetricPill({ label, value }: { label: string; value: string }) {
+function TimelineMetricPill({ label, value, priority }: { label: string; value: string; priority: number }) {
+  const visibilityClass = priority >= 3 ? 'hidden xl:inline-flex' : priority >= 2 ? 'hidden lg:inline-flex' : 'inline-flex';
   return (
-    <span className="inline-flex h-6 items-center gap-1 border border-[color:color-mix(in_srgb,var(--border-color)_42%,transparent)] bg-[var(--bg-main)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
+    <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 border border-[color:color-mix(in_srgb,var(--border-color)_42%,transparent)] bg-[var(--bg-main)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]`}>
       <span className="text-[var(--text-muted)]">{label}</span>
       <span>{value}</span>
     </span>
@@ -961,19 +1060,6 @@ function EventDetailLine({ event }: { event: CodexLiveTimelineEvent }) {
           </span>
         ) : null}
       </span>
-    </div>
-  );
-}
-
-function DiagnosticSummary({ diagnostic, t }: { diagnostic: string; t: Translate }) {
-  return (
-    <div className="grid gap-3">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-        {t('codex_live_sessions.redacted_diagnostic')}
-      </div>
-      <SnippetPre className="max-h-[260px] border-2 border-[var(--border-color)] !bg-[var(--bg-surface)] !text-[length:var(--font-size-ui-sm)]">
-        {diagnostic}
-      </SnippetPre>
     </div>
   );
 }

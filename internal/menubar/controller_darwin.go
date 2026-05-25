@@ -41,6 +41,11 @@ func (c *Controller) Start(callbacks Callbacks) error {
 	status := C.CString("GetTokens")
 	defer C.free(unsafe.Pointer(status))
 	C.GetTokensMenuBarStart(status)
+	if len(menuBarIconPNG) > 0 {
+		icon := C.CBytes(menuBarIconPNG)
+		defer C.free(icon)
+		C.GetTokensMenuBarSetIcon((*C.uchar)(icon), C.size_t(len(menuBarIconPNG)))
+	}
 	return nil
 }
 

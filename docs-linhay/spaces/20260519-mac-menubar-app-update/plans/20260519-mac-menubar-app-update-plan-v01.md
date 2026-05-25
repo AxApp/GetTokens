@@ -48,14 +48,14 @@
 - 状态：implemented
 - 最近更新：2026-05-19
 - 已完成：
-  - 新增 `app_menu.go`，构建 macOS 顶部菜单栏 `Help -> Check for Updates...`。
+  - 新增 `app_menu.go` 与 `internal/appmenu` 原生桥，构建 macOS 顶部 `GetTokens -> 检查更新...` App 菜单入口。
   - `main.go` 挂载自定义 Wails application menu。
   - 接入 `OnBeforeClose`，支持按设置退出或隐藏主窗口。
-  - 新增 `internal/menubar` 原生 macOS status item bridge，驻留菜单包含打开窗口、检查更新和退出。
+  - 新增 `internal/menubar` 原生 macOS status item bridge，驻留菜单包含打开窗口、检查更新和退出；状态栏按钮使用嵌入式模板图标。
   - 新增 `AppRuntimeSettings` 后端存储、LaunchAgent 写入/删除和 root Wails 绑定。
   - 设置页接入“启动与驻留”section。
   - `app_test.go` 增加菜单项存在性与点击回调测试。
-  - 桌面验证确认本地构建进程菜单栏包含 `Help`，且 `Help` 下存在 `Check for Updates...`。
+  - 桌面验证确认本地构建进程菜单栏 `GetTokens` App 菜单下存在 `检查更新...`。
 - 验证：
   - `go test . -run 'TestBuildApplicationMenuIncludesUpdateEntry|TestApplicationMenuUpdateEntryUsesSharedUpdateAction'`
   - `go test ./internal/wailsapp -run 'Test'`
@@ -66,6 +66,7 @@
   - `osascript` 读取本地构建进程菜单项
 - 截图：
   - `screenshots/20260519/menubar/20260519-menubar-check-update-after-v01.png`
+  - 2026-05-25 追加 System Events 菜单读取验证：`About GetTokens, 检查更新..., ...`
 - 待办：
   - 无需重复做真实 Sparkle appcast 点击回归；设置页已验证该链路，菜单入口已核对复用同一个 `App.CheckUpdate()` 后端入口。
   - 若后续需要更丰富驻留视图，再在当前 NSMenu 之外设计轻量 popover。

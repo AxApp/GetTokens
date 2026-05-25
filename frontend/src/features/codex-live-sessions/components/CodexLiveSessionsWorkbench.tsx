@@ -136,7 +136,7 @@ export default function CodexLiveSessionsWorkbench({
           }
         />
 
-        <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[6px_6px_0_var(--shadow-color)] lg:grid-cols-[minmax(260px,1fr)_auto]">
+        <div className="grid min-w-0 gap-2 lg:grid-cols-[minmax(260px,1fr)_auto]">
           <SearchInput
             value={query}
             onChange={setQuery}
@@ -217,7 +217,7 @@ export default function CodexLiveSessionsWorkbench({
             t={t}
           />
           <div className="min-w-0 xl:sticky xl:top-5">
-            <SessionDetail session={selectedSession} request={selectedRequest} diagnostic={diagnostic} t={t} />
+            <SessionDetail session={selectedSession} request={selectedRequest} t={t} />
           </div>
         </div>
       </div>

@@ -59,9 +59,21 @@ GetTokens 的 Wails 绑定根对象是 `main.App`，不是 `internal/wailsapp.Ap
 3. status item 展示和菜单点击。
 4. Sparkle/native updater 行为。
 
+### 5. App 菜单和状态栏图标要按原生 macOS 语义验收
+
+Wails 的 `menu.AppMenu()` 是默认 App 菜单 role，不等同于“可以往左上角应用菜单追加任意自定义项”。如果用户明确指向左上角 `GetTokens` 菜单，需要用 AppKit 在启动后操作 `NSApp.mainMenu`，把自定义项插入到第一个 App 菜单子菜单中；不能把入口放到 `Help` 菜单后宣称完成。
+
+右侧状态栏入口也不应长期使用 `GT` 文字占位。macOS status item 更适合使用 template image：
+
+1. 使用透明 PNG 或其他可模板化资源。
+2. 在 AppKit 中调用 `setTemplate:YES`。
+3. 使用 `NSSquareStatusItemLength` 保持按钮宽度稳定。
+4. Go 侧若用 embed 注入图片字节，Objective-C 侧必须先复制为 `NSData`，再切到主线程安装，避免内存生命周期竞态。
+5. 验收时至少读取真实桌面 App 菜单或观察真实状态栏按钮；浏览器预览不能覆盖这类 native placement。
+
 ## 不纳入沉淀的内容
 
-1. 本轮不把具体菜单文案、状态栏图标样式、LaunchAgent plist 字段固化为长期规则；这些属于当前实现细节。
+1. 本轮不把具体菜单文案、图标造型、LaunchAgent plist 字段固化为长期规则；这些属于当前实现细节。
 2. 本轮不把所有设置项都要求 native 验收；只有涉及桌面生命周期、系统集成或 Wails runtime 的设置项适用。
 3. 本轮不升级 `AGENTS.md`；该模式属于 GetTokens Wails/macOS 桌面交付流程，先沉淀到项目级 skill 与 dev 文档。
 
@@ -74,6 +86,8 @@ GetTokens 的 Wails 绑定根对象是 `main.App`，不是 `internal/wailsapp.Ap
 3. Wails root binding 同步合同。
 4. 浏览器预览 fallback 与验收边界。
 5. Go、前端、桌面实机和截图归档的验收清单。
+
+2026-05-26 追加更新：该 skill 补充 `Native menu/status item detail rule`，明确左上角 App 菜单自定义项需要 AppKit bridge，状态栏按钮优先使用 template image，并记录 Go embed 图片字节传给 Objective-C 时的 `NSData` 生命周期边界。
 
 ## 后续执行入口
 

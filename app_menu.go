@@ -3,30 +3,34 @@ package main
 import (
 	"log"
 
+	"github.com/linhay/gettokens/internal/appmenu"
 	"github.com/wailsapp/wails/v2/pkg/menu"
 )
 
-const macOSCheckForUpdatesMenuLabel = "Check for Updates..."
+const macOSCheckForUpdatesMenuLabel = "检查更新..."
 
 func buildApplicationMenu(app *App) *menu.Menu {
-	return buildApplicationMenuWithUpdateAction(func() {
-		go app.checkForUpdatesFromMenu()
-	})
+	return buildApplicationMenuWithUpdateAction(func() {})
 }
 
 func buildApplicationMenuWithUpdateAction(checkForUpdates func()) *menu.Menu {
-	helpMenu := menu.NewMenuFromItems(
-		menu.Text(macOSCheckForUpdatesMenuLabel, nil, func(_ *menu.CallbackData) {
-			checkForUpdates()
-		}),
-	)
+	_ = checkForUpdates
 
 	return menu.NewMenuFromItems(
 		menu.AppMenu(),
 		menu.EditMenu(),
 		menu.WindowMenu(),
-		menu.SubMenu("Help", helpMenu),
 	)
+}
+
+func installNativeApplicationMenuUpdateItem(app *App) {
+	if err := appmenu.InstallCheckForUpdates(macOSCheckForUpdatesMenuLabel, appmenu.Callbacks{
+		CheckForUpdates: func() {
+			go app.checkForUpdatesFromMenu()
+		},
+	}); err != nil {
+		log.Printf("install macOS check for updates menu item failed: %v", err)
+	}
 }
 
 func (a *App) checkForUpdatesFromMenu() {

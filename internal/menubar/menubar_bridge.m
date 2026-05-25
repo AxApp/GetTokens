@@ -73,12 +73,27 @@ static void rebuild_menu(NSString *statusText) {
     [statusItem setMenu:menu];
 }
 
+static void install_menu_bar_icon(NSData *iconData) {
+    if (statusItem == nil || iconData == nil) {
+        return;
+    }
+    NSImage *icon = [[NSImage alloc] initWithData:iconData];
+    if (icon == nil) {
+        return;
+    }
+    [icon setTemplate:YES];
+    [icon setSize:NSMakeSize(18.0, 18.0)];
+    statusItem.button.image = icon;
+    statusItem.button.imagePosition = NSImageOnly;
+    statusItem.button.title = @"";
+    [icon release];
+}
+
 void GetTokensMenuBarStart(const char *statusText) {
     NSString *status = string_from_c(statusText);
     run_on_main_async(^{
         if (statusItem == nil) {
-            statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-            statusItem.button.title = @"GT";
+            statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
             statusItem.button.toolTip = @"GetTokens";
         }
         rebuild_menu(status);
@@ -101,5 +116,15 @@ void GetTokensMenuBarSetStatus(const char *statusText) {
         if (statusMenuItem != nil) {
             [statusMenuItem setTitle:status];
         }
+    });
+}
+
+void GetTokensMenuBarSetIcon(const unsigned char *data, size_t length) {
+    if (data == NULL || length == 0) {
+        return;
+    }
+    NSData *iconData = [NSData dataWithBytes:data length:length];
+    run_on_main_async(^{
+        install_menu_bar_icon(iconData);
     });
 }

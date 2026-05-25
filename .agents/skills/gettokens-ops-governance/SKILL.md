@@ -60,6 +60,10 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Run the focused frontend unit tests for settings layout/state, then typecheck/build if bindings or shared frontend types changed.
   - Verify the real macOS desktop app for top menu/status item presence and close/quit behavior.
   - Archive before/after or final screenshots under the matching `space` path, separating browser-preview settings shots from desktop menu/status item shots.
+- **Native menu/status item detail rule**:
+  - A Wails `menu.AppMenu()` role only produces the default macOS App menu. Custom actions that users expect under the left app menu, such as `GetTokens -> 检查更新...`, may require an AppKit bridge that mutates `NSApp.mainMenu` after startup. Do not assume a custom `Help` menu satisfies an App-menu placement request.
+  - For macOS status bar buttons, prefer a template image over text such as `GT`. Keep the PNG resource embedded or otherwise bundled deterministically, call `setTemplate:YES`, use `NSSquareStatusItemLength`, and verify the real desktop status item after build.
+  - When passing embedded image bytes from Go to Objective-C, copy the bytes into `NSData` before dispatching onto the main queue, so the Go/C buffer lifetime cannot race the AppKit update.
 
 ### 1.3 Feature Panel Extraction & Design-System Admission
 - **When to use**:

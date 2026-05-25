@@ -125,11 +125,12 @@ GetTokens 已完成 macOS Sparkle 更新链路接入，并在设置页提供原�
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-05-20
-- 最近变更：修复登录项启动参数未消费导致 Wails 报 `flag provided but not defined: -gettokens-login-item` 的问题；登录项参数会在 `wails.Run` 前剥离，并在驻留模式下用于 `StartHidden` 后台启动。
+- 最近更新：2026-05-25
+- 最近变更：将顶部更新入口从 `Help` 菜单迁移到左上角 `GetTokens` App 菜单，位置紧跟 `About GetTokens`，文案为 `检查更新...`；右侧状态栏图标改为嵌入式模板 PNG，不再显示 `GT` 文字。
+- 历史变更：修复登录项启动参数未消费导致 Wails 报 `flag provided but not defined: -gettokens-login-item` 的问题；登录项参数会在 `wails.Run` 前剥离，并在驻留模式下用于 `StartHidden` 后台启动。
 - 历史变更：扩展为 macOS 状态栏驻留与应用生命周期设置；明确关闭窗口保留服务时必须提供状态栏恢复 / 退出入口，首期状态栏视图采用原生菜单。
-- 实施记录：已完成 macOS 顶部菜单栏 `Help -> Check for Updates...`，点击后复用 `App.CheckUpdate()`；同时补齐原生 status item 驻留菜单、设置页启动与驻留配置、用户级 LaunchAgent 开机启动、关闭窗口隐藏并保留服务的 `OnBeforeClose` 链路。
-- 状态栏菜单：选择“关闭窗口后继续运行服务”时启动 macOS status item，菜单包含状态文案、`打开 GetTokens`、`检查更新...`、`退出 GetTokens`。
+- 实施记录：已完成 macOS 顶部 `GetTokens -> 检查更新...` App 菜单入口，点击后复用 `App.CheckUpdate()`；同时补齐原生 status item 驻留菜单、设置页启动与驻留配置、用户级 LaunchAgent 开机启动、关闭窗口隐藏并保留服务的 `OnBeforeClose` 链路。
+- 状态栏菜单：选择“关闭窗口后继续运行服务”时启动 macOS status item，菜单包含状态文案、`打开 GetTokens`、`检查更新...`、`退出 GetTokens`；状态栏按钮现使用模板图标。
 - 验证：已通过菜单模型测试、应用生命周期 Go 测试、`go test ./...`、`npm --prefix frontend run test:unit`、`npm --prefix frontend run typecheck`、`./scripts/wails-cli.sh build` 和 System Events 桌面菜单读取验证；2026-05-20 追加验证构建后的 `.app` 带 `--gettokens-login-item` 启动不再输出 Wails 未定义 flag。
-- 验收产物：`screenshots/20260519/menubar/20260519-menubar-check-update-after-v01.png`
+- 验收产物：`screenshots/20260519/menubar/20260519-menubar-check-update-after-v01.png`；2026-05-25 追加使用 System Events 读取本地构建 App 菜单，确认菜单项为 `About GetTokens, 检查更新..., ...`。
 - 补充核对：不需要重新执行真实 Sparkle 点击回归；设置页已有可用更新链路，且代码核对确认设置页、顶部菜单栏和 status item 都调用同一个 root `App.CheckUpdate()`，最终落到 `internal/wailsapp.CheckUpdate()`。菜单入口与设置页的差异仅是无前端状态提示，错误只写日志。

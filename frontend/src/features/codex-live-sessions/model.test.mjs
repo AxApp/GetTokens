@@ -18,6 +18,7 @@ import {
 import {
   buildFallbackTimelineSummary,
   buildRequestTimelineSummary,
+  formatTimelineRequestID,
   formatTimelineTimeLabel,
 } from './components/requestTimelineSummary.ts';
 import {
@@ -207,7 +208,7 @@ test('buildRequestTimelineSummary keeps timeline rows focused on time fields', (
     requestID: 'gt-req-8912',
     sequenceLabel: '#5',
     modelLabel: 'gpt-5.5',
-    startedAtLabel: '2026-05-21T18:35:10+08:00',
+    startedAtLabel: '18:35:10',
     completedAtLabel: '-',
     totalDurationLabel: '8.0s',
     ttftLabel: '562ms',
@@ -219,12 +220,18 @@ test('buildRequestTimelineSummary keeps timeline rows focused on time fields', (
   assert.doesNotMatch(Object.values(summary).join(' '), /team-codex|websocket|response\.output_text|21,580/);
 });
 
-test('formatTimelineTimeLabel shortens only today timestamps', () => {
+test('formatTimelineTimeLabel keeps request rows to clock time', () => {
   const now = new Date('2026-05-21T20:00:00+08:00');
 
   assert.equal(formatTimelineTimeLabel('2026-05-21T18:35:10+08:00', now), '18:35:10');
-  assert.equal(formatTimelineTimeLabel('2026-05-20T18:35:10+08:00', now), '2026-05-20T18:35:10+08:00');
+  assert.equal(formatTimelineTimeLabel('2026-05-20T18:35:10+08:00', now), '18:35:10');
   assert.equal(formatTimelineTimeLabel('18:14:02.110', now), '18:14:02');
+});
+
+test('formatTimelineRequestID keeps only the operator-facing request suffix', () => {
+  assert.equal(formatTimelineRequestID('gt-req-8912'), 'REQ-8912');
+  assert.equal(formatTimelineRequestID('GT_REQ_ab12'), 'REQ-AB12');
+  assert.equal(formatTimelineRequestID('unknown-request'), 'unknow...uest');
 });
 
 test('buildFallbackTimelineSummary exposes only fallback time boundaries', () => {
@@ -360,17 +367,50 @@ test('codex live session detail timeline renders request monitor fields instead 
 
 test('codex live session detail timeline uses compact rows without horizontal table scroll', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+  const timelineSource = detailSource.slice(
+    detailSource.indexOf('function Timeline('),
+    detailSource.indexOf('function TimelineRequestRow('),
+  );
 
   assert.match(detailSource, /buildTimelineMetricItems/);
   assert.match(detailSource, /isTimelineValuePresent/);
   assert.match(detailSource, /TimelineMetricPill/);
   assert.match(detailSource, /function TimelineSummaryRow/);
   assert.match(detailSource, /onClick=\{onOpen\}/);
-  assert.doesNotMatch(detailSource, /overflow-x-auto/);
-  assert.doesNotMatch(detailSource, /min-w-\[1320px\]/);
+  assert.match(detailSource, /formatTimelineRequestID/);
+  assert.match(detailSource, /grid-cols-\[auto_auto_auto_minmax\(0,1fr\)\]/);
+  assert.match(detailSource, /flex-nowrap/);
+  assert.match(detailSource, /whitespace-nowrap/);
+  assert.doesNotMatch(detailSource, /flex-wrap items-center gap-x-3/);
+  assert.doesNotMatch(timelineSource, /overflow-x-auto/);
+  assert.doesNotMatch(timelineSource, /min-w-\[1320px\]/);
   assert.doesNotMatch(detailSource, /function TimelineHeader/);
   assert.doesNotMatch(detailSource, /from 'lucide-react'/);
   assert.doesNotMatch(detailSource, /btn-swiss inline-flex h-8 w-8/);
+});
+
+test('codex live session detail does not render the redacted diagnostic block', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(detailSource, /DiagnosticSummary/);
+  assert.doesNotMatch(detailSource, /SnippetPre/);
+  assert.doesNotMatch(detailSource, /redacted_diagnostic/);
+});
+
+test('codex live session surfaces avoid nested card shells in the dense workbench', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+  const workbenchSource = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
+  const filterSource = workbenchSource.slice(
+    workbenchSource.indexOf('<SearchInput'),
+    workbenchSource.indexOf('<div className="grid min-h-[620px]'),
+  );
+
+  assert.match(detailSource, /className="grid min-w-0 w-full gap-5"/);
+  assert.doesNotMatch(detailSource, /className="min-w-0 w-full border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[6px_6px_0_var\(--shadow-color\)\]"/);
+  assert.doesNotMatch(detailSource, /grid gap-5 border-b-2 border-\[var\(--border-color\)\] p-4/);
+  assert.match(workbenchSource, /className="grid min-w-0 gap-2 lg:grid-cols-\[minmax\(260px,1fr\)_auto\]"/);
+  assert.doesNotMatch(workbenchSource, /className="grid gap-3 border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] p-3 shadow-\[6px_6px_0_var\(--shadow-color\)\]/);
+  assert.doesNotMatch(filterSource, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] p-3/);
 });
 
 test('codex live session detail header uses request timing trend chart', async () => {
@@ -486,6 +526,19 @@ test('codex live session timing chart uses request timestamps and live refresh',
   assert.match(detailSource, /buildTimingTrendAreaPath/);
   assert.match(detailSource, /strokeDasharray=\{point\.isLive/);
   assert.doesNotMatch(detailSource, /trendChartX\(index,/);
+});
+
+test('codex live session timing chart follows Usage Desk chart styling primitives', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /backgroundImage:/);
+  assert.match(detailSource, /var\(--color-chart-grid\)/);
+  assert.match(detailSource, /var\(--color-chart-grid-subtle\)/);
+  assert.match(detailSource, /codex-live-total-area/);
+  assert.match(detailSource, /usage-desk-curve-sweep/);
+  assert.match(detailSource, /function TimingTrendPoint/);
+  assert.match(detailSource, /buildTimingTrendPointStyle/);
+  assert.doesNotMatch(detailSource, /className="mt-3 h-\[128px\] w-full overflow-visible bg-\[var\(--bg-main\)\]"/);
 });
 
 test('codex live session account block reuses account attribution card presentation', async () => {

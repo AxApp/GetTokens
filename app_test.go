@@ -56,35 +56,15 @@ func TestFetchVendorStatusRSSErrorOnNon2xx(t *testing.T) {
 	}
 }
 
-func TestBuildApplicationMenuIncludesUpdateEntry(t *testing.T) {
+func TestBuildApplicationMenuKeepsCheckForUpdatesOutOfHelpMenu(t *testing.T) {
 	appMenu := buildApplicationMenuWithUpdateAction(func() {})
 	updateItem := findMenuItemByLabel(appMenu, macOSCheckForUpdatesMenuLabel)
 
-	if updateItem == nil {
-		t.Fatalf("application menu does not include %q", macOSCheckForUpdatesMenuLabel)
+	if macOSCheckForUpdatesMenuLabel != "检查更新..." {
+		t.Fatalf("macOS update menu label = %q, want %q", macOSCheckForUpdatesMenuLabel, "检查更新...")
 	}
-	if updateItem.Disabled {
-		t.Fatalf("%q menu item is disabled", macOSCheckForUpdatesMenuLabel)
-	}
-	if updateItem.Click == nil {
-		t.Fatalf("%q menu item has no click action", macOSCheckForUpdatesMenuLabel)
-	}
-}
-
-func TestApplicationMenuUpdateEntryUsesSharedUpdateAction(t *testing.T) {
-	called := false
-	appMenu := buildApplicationMenuWithUpdateAction(func() {
-		called = true
-	})
-	updateItem := findMenuItemByLabel(appMenu, macOSCheckForUpdatesMenuLabel)
-	if updateItem == nil {
-		t.Fatalf("application menu does not include %q", macOSCheckForUpdatesMenuLabel)
-	}
-
-	updateItem.Click(&menu.CallbackData{MenuItem: updateItem})
-
-	if !called {
-		t.Fatalf("%q click did not call update action", macOSCheckForUpdatesMenuLabel)
+	if updateItem != nil {
+		t.Fatalf("application menu model should not include %q; it is inserted into the native App menu", macOSCheckForUpdatesMenuLabel)
 	}
 }
 

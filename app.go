@@ -52,6 +52,7 @@ func NewApp() *App {
 
 func (a *App) startup(ctx context.Context) {
 	a.core.Startup(ctx)
+	installNativeApplicationMenuUpdateItem(a)
 }
 
 func (a *App) shutdown(ctx context.Context) {
