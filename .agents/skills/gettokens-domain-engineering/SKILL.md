@@ -34,6 +34,12 @@ This skill unifies the technical rules for building, styling, and debugging GetT
     - `requiresError`
   - Keep disabled and error/unavailable filters separate. A manually disabled account is route-excluded by user intent, while an error/unavailable account needs diagnostic attention.
   - Persist account-list filter preferences separately from ephemeral UI state. Persist filters; do not persist search drafts, modal open state, or bulk-selection state unless a later requirement explicitly needs that.
+  - When simplifying an account detail surface, reduce repeated information before shrinking individual controls. Prefer these orderings:
+    1. remove duplicated summary fields that already appear in a dedicated section below
+    2. reuse shared primitives such as `QuotaBars`, compact stat strips, and embedded-label inputs instead of inventing detail-only variants
+    3. keep deep-link restoration and detail hash behavior intact while changing layout
+    4. lock the new density with focused tests that assert structure, module ordering, and route restoration
+  - For account detail surfaces, keep top-of-page runtime summaries limited to live operational signals. Quota, balance, raw auth content, and export/route controls should live in their own sections rather than repeating in the runtime strip.
 
 ## 2. Feature / Page Boundary
 - **Pages**: `frontend/src/pages/*` should be route wrappers, not long-lived business implementation files.
@@ -133,6 +139,8 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Data ownership starts in the CLIProxyAPI fork. Add an in-memory runtime tracker and a read-only management endpoint first; then expose it through `internal/wailsapp`, root `main.App`, generated `frontend/wailsjs`, and finally the React feature.
   - Keep the UI read-only. Do not add request cancel, replay, forced WebSocket recovery, or full payload display unless a later requirement explicitly scopes the action and safety model.
   - Default list rows should stay low-noise. Show only the operator-facing identity pair requested for the feed: `sessionID / projectName` and `account / http|ws`. Keep status, model, timing, request ids, execution ids, and redacted diagnostics in detail panes.
+  - Timeline rows inside the detail pane should still be scan-friendly. Compress each row to one line, prefer short request ids / short clock times, and surface only the core timing metrics first (`total`, `TTFT`, `first token`). Treat secondary gap / stream metrics as secondary-width affordances, not as mandatory first-line content.
+  - The detail shell and filter shell are workbench surfaces, not nested cards. Avoid stacking a second `border + shadow` card around the timeline, the filter bar, or the detail root unless a later design system rule explicitly requires that shell.
   - `projectName` is a display label owned by the CLIProxyAPI live tracker. The sidecar may enrich it from trusted local Codex session metadata (`CODEX_HOME || ~/.codex` session JSONL) before returning the live snapshot; GetTokens should only pass the optional DTO field through Wails/root bindings/frontend model and fall back to an explicit unknown-project label when absent. Do not add Wails/frontend compatibility lookup for old sidecars unless a later requirement explicitly reintroduces compatibility.
   - Account resource surfaces inside live-session details should reuse accounts-domain components such as `QuotaBars` and `BillingBalance`. Add a small adapter from live request `quota` / `billing` DTOs into account display shapes instead of copying quota or balance JSX into live sessions.
   - Never display raw request/response payloads, credentials, bearer tokens, cookies, or unredacted error bodies. Diagnostic copy must be redacted and bounded.
