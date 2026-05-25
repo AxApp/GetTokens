@@ -23,6 +23,7 @@ interface SidebarProps {
   setActiveClaudeWorkspace: (workspace: ClaudeWorkspace) => void;
   releaseLabel: string;
   showDeveloperTools?: boolean;
+  onCollapsedChange?: (isCollapsed: boolean) => void;
 }
 
 const codexWorkspaceItems = [
@@ -57,6 +58,7 @@ export default function Sidebar({
   setActiveClaudeWorkspace,
   releaseLabel,
   showDeveloperTools = import.meta.env.DEV,
+  onCollapsedChange,
 }: SidebarProps) {
   const { t } = useI18n();
   const navItems = getSidebarNavItems(showDeveloperTools);
@@ -104,6 +106,14 @@ export default function Sidebar({
       : 'border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-2 shadow-[4px_4px_0_var(--shadow-color)]';
   const submenuInnerClassName = submenuPlacement === 'right' ? '' : 'min-h-0 overflow-hidden';
 
+  function toggleCollapsed() {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      onCollapsedChange?.(next);
+      return next;
+    });
+  }
+
   function getSubmenuWrapperClassName(motionState: 'open-right' | 'closed-right' | 'open-bottom' | 'closed-bottom'): string {
     if (motionState === 'open-right') {
       return `${submenuWrapperBaseClassName} pointer-events-auto translate-x-0 opacity-100`;
@@ -148,7 +158,7 @@ export default function Sidebar({
           </div>
           <button
             type="button"
-            onClick={() => setIsCollapsed((prev) => !prev)}
+            onClick={toggleCollapsed}
             aria-label={sidebarToggleLabel}
             title={sidebarToggleLabel}
             aria-expanded={!isCollapsed}

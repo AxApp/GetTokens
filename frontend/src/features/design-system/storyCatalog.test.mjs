@@ -120,6 +120,16 @@ test('modal frame is admitted as a shared design-system component', () => {
   assert.equal(modalStory.path, 'frontend/src/components/ui/ModalFrame.stories.tsx');
 });
 
+test('modal frame constrains detail dialogs to the viewport width', async () => {
+  const source = await readFile(new URL('../../components/ui/ModalFrame.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /calc\(100vw-1\.5rem\)/);
+  assert.match(source, /var\(--app-sidebar-width, 0px\)/);
+  assert.match(source, /overflow-x-hidden/);
+  assert.match(source, /min-w-0/);
+  assert.doesNotMatch(source, /detail: 'max-w-6xl'/);
+});
+
 test('asset workbench shell is shared by Codex and Claude extension surfaces', async () => {
   const componentsGroup = getCatalogGroup('components');
   assert.ok(componentsGroup);

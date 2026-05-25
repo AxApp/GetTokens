@@ -68,3 +68,13 @@ test('sidebar typography keeps the brand and nav labels readable', async () => {
   assert.match(source, /font-size-ui-lg/);
   assert.match(source, /font-size-ui-sm/);
 });
+
+test('app shell publishes sidebar width for fixed modal layout', async () => {
+  const appSource = await readFile(new URL('../../App.tsx', import.meta.url), 'utf8');
+  const sidebarSource = await readFile(new URL('./Sidebar.tsx', import.meta.url), 'utf8');
+
+  assert.match(appSource, /--app-sidebar-width/);
+  assert.match(appSource, /isSidebarCollapsed \? '4\.75rem' : '15rem'/);
+  assert.match(sidebarSource, /onCollapsedChange\?:/);
+  assert.match(sidebarSource, /onCollapsedChange\?\.\(next\)/);
+});

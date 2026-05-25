@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect, useMemo } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import Sidebar from './components/biz/Sidebar';
 import PageLoadingFallback from './components/ui/PageLoadingFallback';
 import { DebugProvider } from './context/DebugContext';
@@ -23,6 +24,7 @@ const StatusPage = lazy(() => import('./pages/StatusPage'));
 function AppShell() {
   const { themeMode } = useTheme();
   const { textScale } = useTextScale();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const {
     activePage,
     setActivePage,
@@ -139,6 +141,9 @@ function AppShell() {
         data-collaboration-id="MAIN_FRAME"
         data-design-system-highlight={import.meta.env.DEV ? 'project' : undefined}
         data-text-scale={getTextScaleAttributeValue(textScale)}
+        style={{
+          '--app-sidebar-width': isSidebarCollapsed ? '4.75rem' : '15rem',
+        } as CSSProperties}
       >
         <Sidebar
           activePage={activePage}
@@ -149,6 +154,7 @@ function AppShell() {
           setActiveClaudeWorkspace={setActiveClaudeWorkspace}
           releaseLabel={releaseLabel}
           showDeveloperTools={showDeveloperTools}
+          onCollapsedChange={setIsSidebarCollapsed}
         />
         <main className="flex-1 overflow-hidden bg-[var(--bg-surface)]">
           <Suspense fallback={<PageLoadingFallback />}>{page}</Suspense>

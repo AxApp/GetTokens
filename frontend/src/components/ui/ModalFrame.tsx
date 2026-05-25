@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react';
+import type { CSSProperties, MouseEvent, ReactNode } from 'react';
 
 type ModalFrameSize = 'sm' | 'md' | 'lg' | 'xl' | 'detail';
 type ModalFramePosition = 'fixed' | 'absolute';
@@ -22,11 +22,11 @@ interface ModalFrameProps {
 }
 
 const sizeClassNames: Record<ModalFrameSize, string> = {
-  sm: 'max-w-xl',
-  md: 'max-w-2xl',
-  lg: 'max-w-4xl',
-  xl: 'max-w-5xl',
-  detail: 'max-w-6xl',
+  sm: 'max-w-[min(36rem,calc(100vw-1.5rem))]',
+  md: 'max-w-[min(42rem,calc(100vw-1.5rem))]',
+  lg: 'max-w-[min(56rem,calc(100vw-1.5rem))]',
+  xl: 'max-w-[min(64rem,calc(100vw-1.5rem))]',
+  detail: 'max-w-[min(72rem,calc(100vw-1.5rem))]',
 };
 
 export default function ModalFrame({
@@ -57,10 +57,14 @@ export default function ModalFrame({
   }
 
   const hasSlots = Boolean(header || footer || error);
+  const overlayStyle: CSSProperties | undefined = position === 'fixed'
+    ? { left: 'var(--app-sidebar-width, 0px)' }
+    : undefined;
 
   return (
     <div
-      className={`${position} inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[var(--overlay-scrim-80)] p-3 backdrop-blur-sm sm:p-6 ${overlayClassName}`}
+      className={`${position} inset-0 z-50 grid min-w-0 place-items-center overflow-y-auto overflow-x-hidden bg-[var(--overlay-scrim-80)] px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-6 ${overlayClassName}`}
+      style={overlayStyle}
       onClick={handleBackdropClick}
     >
       <div
@@ -70,7 +74,7 @@ export default function ModalFrame({
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`flex max-h-[calc(100vh-1.5rem)] w-full ${sizeClassNames[size]} flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)] ${panelClassName}`}
+        className={`flex max-h-[calc(100vh-2rem)] w-full min-w-0 ${sizeClassNames[size]} flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)] ${panelClassName}`}
         onClick={stopPanelClick}
       >
         {hasSlots ? (
