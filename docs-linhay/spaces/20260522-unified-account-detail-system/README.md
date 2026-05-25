@@ -109,6 +109,7 @@
 20. `AccountDetailOverviewGrid` 新增 equal-height 标记与 stretch slot，确保 `AccountRuntimeSnapshotSection` 与 `CodexAccountEvidenceSection` 等顶部 evidence 模块在宽屏并排时等高。
 21. `CodexModelRoutingSection` 的新增模型按钮移入 section header actions，显示在模块右上角；底部只保留错误提示。
 22. `UnifiedAccountDetailModal` 接入 `buildAccountDetailStatusMessage`，失败态账号在详情弹窗显示 `statusMessage` 或明确兜底原因，正常 / 禁用 / 本地草稿不显示错误条。
+23. 2026-05-25 补齐 root Wails DTO 透传链路：`accountsdomain.AccountRecord.StatusMessage -> main.AccountRecord.statusMessage -> frontend/wailsjs -> AccountRecord`，修复账号详情只能显示“sidecar 未返回具体原因”的问题。
 
 ## 验证记录
 - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`：通过。
@@ -126,6 +127,7 @@
 - 浏览器预览：`http://127.0.0.1:5173/#frame=accounts` 与 `#frame=codex&workspace=account-list` 已验证详情弹窗可打开；唯一 console error 为本地 `favicon.ico` 404，与本次改动无关。
 - Storybook 静态预览：`AccountDetailSections` story 已验证 `AccountDetailOverviewGrid`、标准模块头部与 `quota-balance` 资源网格均渲染；唯一 console error 为本地 `favicon.ico` 404，与本次改动无关。
 - Storybook 静态预览：`CodexAccountOrder Detail` story 已验证 `AccountDetailOverviewGrid`、`CodexAccountEvidenceSection`、`AccountRuntimeSnapshotSection` 均渲染；1440px 宽度下 runtime slot 与 evidence slot 并排且高度均为 `327.8515625px`，新增模型按钮位于 `CodexModelRoutingSection` 头部右上角，console 无错误。
+- 2026-05-25：`go test ./...`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit -- src/features/accounts/tests/accountConfig.test.mjs src/features/accounts/tests/accountPresentation.test.mjs` 通过；新增 root mapper 回归测试和 generated Wails `AccountRecord.statusMessage` 断言。
 
 ## 截图归档
 - `screenshots/20260522/accounts/20260522-accounts-detail-api-key-after-v01.png`

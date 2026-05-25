@@ -262,6 +262,7 @@ test('buildQuotaCurlTemplate resolves Xiaomi MiMo token plan usage preset withou
 test('generated Wails account models preserve quota curl fields', () => {
   const source = readFileSync(wailsModelsPath, 'utf8');
 
+  assert.match(source, /export class AccountRecord[\s\S]*statusMessage\?: string;/);
   assert.match(source, /export class AccountRecord[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);

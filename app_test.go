@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 	"github.com/wailsapp/wails/v2/pkg/menu"
 )
@@ -127,6 +128,21 @@ func TestConsumeLoginItemArgReportsMissingArg(t *testing.T) {
 	}
 	if strings.Join(args, "\x00") != "/Applications/GetTokens.app/Contents/MacOS/GetTokens\x00-loglevel\x00Info" {
 		t.Fatalf("consumeLoginItemArg changed args unexpectedly: %v", args)
+	}
+}
+
+func TestMapAccountRecordPreservesStatusMessage(t *testing.T) {
+	record := mapAccountRecord(accountsdomain.AccountRecord{
+		ID:               "auth-file:broken.json",
+		Provider:         "codex",
+		CredentialSource: "auth-file",
+		DisplayName:      "broken.json",
+		Status:           "error",
+		StatusMessage:    "refresh token expired",
+	})
+
+	if got := record.StatusMessage; got != "refresh token expired" {
+		t.Fatalf("StatusMessage = %q, want refresh token expired", got)
 	}
 }
 

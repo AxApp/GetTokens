@@ -596,6 +596,7 @@ export namespace main {
 	    credentialSource: string;
 	    displayName: string;
 	    status: string;
+	    statusMessage?: string;
 	    priority?: number;
 	    disabled?: boolean;
 	    email?: string;
@@ -631,6 +632,7 @@ export namespace main {
 	        this.credentialSource = source["credentialSource"];
 	        this.displayName = source["displayName"];
 	        this.status = source["status"];
+	        this.statusMessage = source["statusMessage"];
 	        this.priority = source["priority"];
 	        this.disabled = source["disabled"];
 	        this.email = source["email"];

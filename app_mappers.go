@@ -33,6 +33,7 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		CredentialSource: record.CredentialSource,
 		DisplayName:      record.DisplayName,
 		Status:           record.Status,
+		StatusMessage:    record.StatusMessage,
 		Priority:         record.Priority,
 		Disabled:         record.Disabled,
 		Email:            record.Email,

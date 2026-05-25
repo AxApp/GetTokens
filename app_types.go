@@ -82,6 +82,7 @@ type AccountRecord struct {
 	CredentialSource string                  `json:"credentialSource"`
 	DisplayName      string                  `json:"displayName"`
 	Status           string                  `json:"status"`
+	StatusMessage    string                  `json:"statusMessage,omitempty"`
 	Priority         int                     `json:"priority,omitempty"`
 	Disabled         bool                    `json:"disabled,omitempty"`
 	Email            string                  `json:"email,omitempty"`
