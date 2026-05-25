@@ -19,6 +19,7 @@ import {
   listApiKeyConfigMissingFields,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
+import { buildAccountDetailModulePlan } from '../model/accountDetailLayout';
 import { buildQuotaDisplay, extractBilling } from '../model/accountQuota';
 import { buildAccountDetailStatusMessage } from '../model/accountPresentation';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
@@ -73,7 +74,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   const { account, onClose, onSaveConfig, quotaState } = props;
   const { t } = useI18n();
   const isApiKey = account.credentialSource === 'api-key';
-  const isAuthFile = account.credentialSource === 'auth-file';
   const [configDraft, setConfigDraft] = useState<ApiKeyConfigDraft>(() => buildApiKeyConfigDraft(account));
   const [proxyRouteError, setProxyRouteError] = useState('');
   const [savingConfig, setSavingConfig] = useState(false);
@@ -183,51 +183,74 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
           }
         />
         <AccountDetailModuleStack layout="cards">
-          {isApiKey ? (
-            <AccountCredentialsSection
-              draft={configDraft}
-              setDraft={setConfigDraft}
-            />
-          ) : null}
-          {isAuthFile ? <AuthFileContentSection account={account} /> : null}
-          <AccountProxyRouteSection
-            proxyUrl={isApiKey ? configDraft.proxyUrl : account.proxyUrl}
-            readonlyReason={isApiKey ? undefined : tReadonlyProxyReason(account)}
-            onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
-            onValidityChange={setProxyRouteError}
-          />
-          <RateLimitSection
-            {...props}
-            rateLimitRulesRef={rateLimitRulesRef}
-            onRateLimitDirtyChange={setRateLimitDirty}
-          />
-          {isApiKey ? (
-            <AccountVerifySection
-              draft={configDraft}
-              verifyState={props.verifyState}
-              modelNames={props.modelNames}
-              onVerify={props.onVerify}
-            />
-          ) : null}
-          {isApiKey ? (
-            <AccountQuotaSection
-              account={account}
-              draft={configDraft}
-              setDraft={setConfigDraft}
-              quotaState={quotaState}
-              onTestQuotaCurl={props.onTestQuotaCurl}
-            />
-          ) : null}
-          {isApiKey ? (
-            <AccountBillingSection
-              account={account}
-              draft={configDraft}
-              setDraft={setConfigDraft}
-              liveBilling={liveBilling}
-              onTestBillingCurl={props.onTestBillingCurl}
-            />
-          ) : null}
-          {isAuthFile ? <CompatibleModelsSection account={account} /> : null}
+          {buildAccountDetailModulePlan(account).map((moduleID) => {
+            switch (moduleID) {
+              case 'credentials':
+                return (
+                  <AccountCredentialsSection
+                    key={moduleID}
+                    draft={configDraft}
+                    setDraft={setConfigDraft}
+                  />
+                );
+              case 'auth-file-actions':
+                return <AuthFileSummarySection key={moduleID} account={account} />;
+              case 'models':
+                return <CompatibleModelsSection key={moduleID} account={account} />;
+              case 'proxy-route':
+                return (
+                  <AccountProxyRouteSection
+                    key={moduleID}
+                    proxyUrl={configDraft.proxyUrl}
+                    onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
+                    onValidityChange={setProxyRouteError}
+                  />
+                );
+              case 'rate-limit':
+                return (
+                  <RateLimitSection
+                    key={moduleID}
+                    {...props}
+                    rateLimitRulesRef={rateLimitRulesRef}
+                    onRateLimitDirtyChange={setRateLimitDirty}
+                  />
+                );
+              case 'verify':
+                return (
+                  <AccountVerifySection
+                    key={moduleID}
+                    draft={configDraft}
+                    verifyState={props.verifyState}
+                    modelNames={props.modelNames}
+                    onVerify={props.onVerify}
+                  />
+                );
+              case 'quota':
+                return (
+                  <AccountQuotaSection
+                    key={moduleID}
+                    account={account}
+                    draft={configDraft}
+                    setDraft={setConfigDraft}
+                    quotaState={quotaState}
+                    onTestQuotaCurl={props.onTestQuotaCurl}
+                  />
+                );
+              case 'billing':
+                return (
+                  <AccountBillingSection
+                    key={moduleID}
+                    account={account}
+                    draft={configDraft}
+                    setDraft={setConfigDraft}
+                    liveBilling={liveBilling}
+                    onTestBillingCurl={props.onTestBillingCurl}
+                  />
+                );
+              default:
+                return null;
+            }
+          })}
         </AccountDetailModuleStack>
       </AccountDetailBody>
     </AccountDetailModalFrame>
@@ -249,13 +272,6 @@ function AccountDetailStatusNotice({
       </div>
     </AccountDetailNotice>
   );
-}
-
-function tReadonlyProxyReason(account: AccountRecord) {
-  if (account.credentialSource === 'auth-file') {
-    return 'AUTH FILE 暂不支持账号级出口写入；当前请求仍按全局或 sidecar 默认出口处理。';
-  }
-  return '当前账号类型暂不支持账号级出口配置。';
 }
 
 function RateLimitSection({
@@ -292,11 +308,10 @@ function RateLimitSection({
   );
 }
 
-function AuthFileContentSection({ account }: { account: AccountRecord }) {
+function AuthFileSummarySection({ account }: { account: AccountRecord }) {
   const { trackRequest } = useDebug();
   const [rawContent, setRawContent] = useState('');
   const [sanitizedContent, setSanitizedContent] = useState('');
-  const [viewMode, setViewMode] = useState<'raw' | 'sanitized'>('raw');
   const [loading, setLoading] = useState(false);
   const [sanitizing, setSanitizing] = useState(false);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
@@ -323,15 +338,10 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
   }, [account.name, trackRequest]);
 
   async function handleSanitize() {
-    if (rawContent === sanitizedContent && viewMode === 'sanitized') {
-      setViewMode('raw');
-      return;
-    }
     setSanitizing(true);
     try {
       const result = await trackRequest('NormalizeAuthFileContent', { content: rawContent }, () => NormalizeAuthFileContent(rawContent));
       setSanitizedContent(result);
-      setViewMode('sanitized');
     } catch {
       // ignore sanitize errors in modal
     }
@@ -339,9 +349,8 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
   }
 
   async function handleCopy() {
-    const displayed = viewMode === 'sanitized' && sanitizedContent ? sanitizedContent : rawContent;
     try {
-      await navigator.clipboard.writeText(displayed);
+      await navigator.clipboard.writeText(sanitizedContent || rawContent);
       setCopyState('success');
       setTimeout(() => setCopyState('idle'), 2000);
     } catch {
@@ -349,42 +358,48 @@ function AuthFileContentSection({ account }: { account: AccountRecord }) {
     }
   }
 
-  const displayed = viewMode === 'sanitized' && sanitizedContent ? sanitizedContent : rawContent;
+  const displayed = sanitizedContent || rawContent;
 
   return (
     <AccountDetailSection
-      componentName="AuthFileContentSection"
+      componentName="AuthFileSummarySection"
       eyebrow="Auth File"
-      title={viewMode === 'sanitized' ? 'Sanitized Content' : 'Raw Content'}
-      span="wide"
+      title="文件摘要"
       actions={
         <>
           <button onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-            {sanitizing ? '...' : viewMode === 'sanitized' ? 'Show Raw' : 'Sanitize'}
+            {sanitizing ? '...' : '脱敏'}
           </button>
           <button onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-            {copyState === 'success' ? 'Copied!' : copyState === 'error' ? 'Error' : 'Copy'}
+            {copyState === 'success' ? '已复制' : copyState === 'error' ? '失败' : '复制'}
           </button>
         </>
       }
     >
-
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+        <div className="space-y-2">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            {account.name || 'UNKNOWN FILE'}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <AccountDetailPill>RAW HIDDEN</AccountDetailPill>
+            <AccountDetailPill>{sanitizedContent ? 'SANITIZED READY' : 'SANITIZE ON DEMAND'}</AccountDetailPill>
+            <AccountDetailPill>{loading ? 'LOADING' : 'READY'}</AccountDetailPill>
+          </div>
+        </div>
+        <button onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+          {copyState === 'success' ? '已复制' : copyState === 'error' ? '失败' : '复制原文'}
+        </button>
+      </div>
       {loading ? (
         <div className="animate-pulse space-y-2">
           <div className="h-4 w-3/4 bg-[var(--border-color)]" />
           <div className="h-4 w-1/2 bg-[var(--border-color)]" />
         </div>
       ) : (
-        <pre
-          onClick={() => void handleCopy()}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') void handleCopy();
-          }}
-          className="max-h-64 cursor-pointer select-all overflow-auto border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4 font-mono text-[length:var(--font-size-ui-2xs)] leading-relaxed text-[var(--text-primary)]"
-          tabIndex={0}
-        >
-          {displayed || '(empty)'}
-        </pre>
+        <div className="border-2 border-dashed border-[var(--border-color)] px-3 py-2 font-mono text-[length:var(--font-size-ui-2xs)] uppercase tracking-[0.1em] text-[var(--text-muted)]">
+          默认不展开原始内容；需要时可复制原文或先脱敏再复制。
+        </div>
       )}
     </AccountDetailSection>
   );
@@ -405,7 +420,7 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
         if (cancelled) return;
         setModels((result as any)?.models ?? []);
       } catch {
-        // ignore models read errors in modal
+        // Model catalog is optional detail metadata.
       }
       if (!cancelled) setLoading(false);
     })();
@@ -415,16 +430,21 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
   }, [account.name, trackRequest]);
 
   return (
-    <AccountDetailSection componentName="CompatibleModelsSection" eyebrow="Model Catalog" title="Compatible Models" span="wide">
+    <AccountDetailSection
+      componentName="CompatibleModelsSection"
+      eyebrow="Model Catalog"
+      title="模型目录"
+      meta={models.length > 0 ? `${models.length} 个模型` : undefined}
+    >
       {loading ? (
         <div className="h-4 w-1/3 animate-pulse bg-[var(--border-color)]" />
       ) : models.length === 0 ? (
-        <AccountDetailEmptyState>No models data</AccountDetailEmptyState>
+        <AccountDetailEmptyState>暂无模型数据</AccountDetailEmptyState>
       ) : (
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex max-h-28 flex-wrap gap-1.5 overflow-auto pr-1">
           {models.map((model, index) => (
             <AccountDetailPill key={index}>
-              {model.name ?? model.display_name ?? `Model ${index + 1}`}
+              {model.name ?? model.display_name ?? `MODEL ${index + 1}`}
             </AccountDetailPill>
           ))}
         </div>

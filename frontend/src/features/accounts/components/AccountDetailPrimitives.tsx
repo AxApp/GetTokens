@@ -160,8 +160,9 @@ export function AccountDetailOverviewGrid({
     <AccountDetailModuleLayoutContext.Provider value="cards">
       <div
         data-account-detail-overview-grid="runtime-evidence"
+        data-account-detail-overview-layout="split-50-50"
         data-account-detail-overview-equal-height="true"
-        className={`grid min-w-0 items-stretch gap-4 xl:grid-cols-[minmax(0,1fr)_24rem] ${className}`}
+        className={`grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] ${className}`}
       >
         <div data-account-detail-overview-slot="runtime" className="min-w-0 h-full">
           {runtime}
