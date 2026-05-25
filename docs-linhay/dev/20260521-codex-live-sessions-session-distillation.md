@@ -69,9 +69,30 @@ GetTokens 不应宣称可以在同一个已降级会话中透明恢复 WebSocket
 3. 使用 `git add -p` 或精确路径暂存，避免混入无关 Claude / asset workbench / session-management 改动。
 4. 提交前运行 `git diff --cached --check`，特别注意生成文件局部 hunk 的尾随空白。
 
+### 7. 实时趋势图要把“请求时间”作为一等模型
+
+本轮追加的请求耗时趋势图暴露出一个可复用模式：运行时观测图表不能只做静态 SVG 装饰，必须从 request 记录生成可测试的时间序列。
+
+执行规则：
+
+1. 先新增纯模型，例如 `requestTimingTrend.ts`，输入 request 列表、当前 active request 和显式 `nowMs`。
+2. 按 `requestID` 合并 active request，按 `startedAt` 排序；无效时间戳直接丢弃。
+3. `streaming / active / reconnecting` 且没有 `completedAt` 的请求，用 `nowMs - startedAt` 投影 `totalDurationMs`，并加上安全上限，避免坏时间戳把图表拉爆。
+4. SVG 的 x 轴使用 `startedAtMs` 在 min/max 范围内定位，不用数组下标均分。这样多个请求间隔不均时，曲线仍表达真实请求时间。
+5. 图表视觉跟随 GetTokens Swiss-industrial 体系：主线、辅助线、面积填充、硬边界和底部摘要；不要把图表再包成卡中卡。
+6. 浏览器 preview 必须提供多条 completed request 加一条 streaming request，让 `#frame=codex&workspace=live-sessions` 能直接验收曲线、footer 和 live marker。
+
+验收组合：
+
+- 纯模型测试覆盖排序、active request 合并、实时 total 投影和 max 值。
+- 源码结构断言覆盖 `setInterval`、`nowMs`、`trendChartX(point.startedAtMs...)`、面积 path 和 live marker。
+- `node --test src/features/codex-live-sessions/model.test.mjs`、`npm run typecheck`、`npm run build`、必要时完整 `npm run test:unit`。
+- 浏览器或 DevTools 检查 SVG 非空、path / circle / dashed marker 数量合理，并归档一张干净 section 截图。
+
 ## 不纳入沉淀的临时内容
 
 - 本轮 UI 反复调整过的列宽、阴影、边框细节不写入治理规则；它们属于该页面的当前设计，而不是长期流程。
+- 本轮趋势图的具体曲线张力、面积透明度、点半径和截图中浮动调试按钮不写入规则；这些属于当前视觉调参，不是长期约束。
 - 不新增独立 `gettokens-codex-live-sessions` skill；当前边界可并入 `gettokens-domain-engineering` 的 Codex workspace / runtime observability 部分。
 - 不升级 `AGENTS.md`；已有 fork commit order、Wails binding boundary、docs/memory/qmd 规则已经覆盖 repo-wide 行为。
 
