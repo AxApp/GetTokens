@@ -127,6 +127,9 @@ test('modal frame constrains detail dialogs to the viewport width', async () => 
   assert.match(source, /var\(--app-sidebar-width, 0px\)/);
   assert.match(source, /overflow-x-hidden/);
   assert.match(source, /min-w-0/);
+  assert.match(source, /panelMaxHeightClassNames/);
+  assert.match(source, /fixed: 'max-h-\[calc\(100vh-2rem\)\]/);
+  assert.match(source, /absolute: 'max-h-\[calc\(100%-2rem\)\]/);
   assert.doesNotMatch(source, /detail: 'max-w-6xl'/);
 });
 

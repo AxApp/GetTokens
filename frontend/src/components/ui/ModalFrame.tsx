@@ -29,6 +29,11 @@ const sizeClassNames: Record<ModalFrameSize, string> = {
   detail: 'max-w-[min(72rem,calc(100vw-1.5rem))]',
 };
 
+const panelMaxHeightClassNames: Record<ModalFramePosition, string> = {
+  fixed: 'max-h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-3rem)]',
+  absolute: 'max-h-[calc(100%-2rem)] sm:max-h-[calc(100%-3rem)]',
+};
+
 export default function ModalFrame({
   children,
   onClose,
@@ -74,7 +79,7 @@ export default function ModalFrame({
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`flex max-h-[calc(100vh-2rem)] w-full min-w-0 ${sizeClassNames[size]} flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-3rem)] ${panelClassName}`}
+        className={`flex w-full min-w-0 ${sizeClassNames[size]} ${panelMaxHeightClassNames[position]} flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-hard shadow-[var(--shadow-color)] ${panelClassName}`}
         onClick={stopPanelClick}
       >
         {hasSlots ? (
