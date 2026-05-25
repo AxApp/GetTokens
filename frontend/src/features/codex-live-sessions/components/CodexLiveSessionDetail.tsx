@@ -71,7 +71,7 @@ export function SessionDetail({
         <SessionCard session={session} request={request} t={t} />
         <TransportLane events={timeline} t={t} />
         <TimingMetrics request={request} t={t} />
-        <Timeline events={timeline} t={t} />
+        <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
         <DiagnosticSummary diagnostic={diagnostic} t={t} />
       </div>
     </div>
@@ -272,23 +272,147 @@ function SessionCard({ session, request, t }: { session: CodexLiveSession; reque
   );
 }
 
-function Timeline({ events, t }: { events: readonly CodexLiveTimelineEvent[]; t: Translate }) {
+function Timeline({
+  requests,
+  fallbackEvents,
+  t,
+}: {
+  requests: readonly CodexLiveRequest[];
+  fallbackEvents: readonly CodexLiveTimelineEvent[];
+  t: Translate;
+}) {
   return (
     <div className="grid gap-3">
       <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
         {t('codex_live_sessions.request_timeline')}
       </div>
-      <div className="divide-y-2 divide-[var(--border-color)] border-2 border-[var(--border-color)]">
-        {events.map((event) => (
-          <div key={event.id} className="grid gap-3 p-3 md:grid-cols-[5.2rem_8rem_1fr]">
-            <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-muted)]">{event.at}</span>
-            <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-primary)]">
-              {event.lane}.{event.kind}
-            </span>
-            <span className="min-w-0 text-[length:var(--font-size-ui-lg)] font-bold text-[var(--text-muted)]">{event.label}</span>
+      <div className="grid gap-3">
+        {requests.length === 0 ? (
+          <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+              {t('codex_live_sessions.unknown_request')}
+            </div>
+            <div className="mt-2 grid gap-1">
+              {fallbackEvents.slice(0, 4).map((event) => (
+                <EventLine key={event.id} event={event} />
+              ))}
+            </div>
           </div>
-        ))}
+        ) : (
+          requests.map((request) => {
+            const timing = request.timing;
+            const usage = request.usage;
+            const requestRows: Array<[string, string]> = [
+              [t('codex_live_sessions.meta_client_request'), request.clientRequestID || t('codex_live_sessions.unknown')],
+              [t('codex_live_sessions.meta_upstream_request'), request.upstreamRequestID || t('codex_live_sessions.unknown')],
+              [t('codex_live_sessions.account_label'), request.authLabel || request.authID || t('codex_live_sessions.unknown_auth')],
+              [t('codex_live_sessions.account_provider'), request.provider || t('codex_live_sessions.unknown')],
+              [t('codex_live_sessions.account_transport'), `${request.downstreamTransport} → ${request.upstreamTransport}`],
+            ];
+            if (request.proxyRoute) {
+              requestRows.push([t('codex_live_sessions.account_proxy'), request.proxyRoute]);
+            }
+
+            const metricRows: Array<[string, string]> = [
+              [t('codex_live_sessions.timing_total'), formatOptionalDuration(timing?.totalDurationMs)],
+              [t('codex_live_sessions.timing_ttft'), formatOptionalDuration(timing?.firstEventMs)],
+              [t('codex_live_sessions.timing_first_token'), formatOptionalDuration(timing?.firstTokenMs)],
+              [t('codex_live_sessions.timing_output_rate'), formatOptionalRate(timing?.outputTokensPerSecond)],
+              [t('codex_live_sessions.tokens_total'), usage ? usage.totalTokens.toLocaleString() : 'n/a'],
+              [t('codex_live_sessions.tokens_output'), usage ? usage.outputTokens.toLocaleString() : 'n/a'],
+            ];
+
+            return (
+              <div key={request.requestID} className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+                <div className="grid gap-2 border-b-2 border-[var(--border-color)] p-3 lg:grid-cols-[1fr_auto] lg:items-start">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
+                        {t(statusLabelKeys[request.status])}
+                      </span>
+                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+                        #{request.sequence} · {request.model}
+                      </span>
+                    </div>
+                    <div className="mt-2 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)]">
+                      {request.requestID}
+                    </div>
+                  </div>
+                  <div className="text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] lg:text-right">
+                    <div>{request.startedAt}</div>
+                    <div>{request.completedAt || t('codex_live_sessions.status_streaming')}</div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 p-3 xl:grid-cols-[1fr_1fr]">
+                  <div className="grid gap-1">
+                    {requestRows.map(([label, value]) => (
+                      <RequestInfoRow key={label} label={label} value={value} />
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                    {metricRows.map(([label, value]) => (
+                      <MetricCell key={label} label={label} value={value} />
+                    ))}
+                  </div>
+                </div>
+
+                {request.error ? (
+                  <div className="border-t border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--color-danger)]">
+                    {request.error.statusCode ? `${request.error.statusCode} ` : ''}
+                    {request.error.code ? `${request.error.code}: ` : ''}
+                    {request.error.message}
+                  </div>
+                ) : null}
+
+                <div className="border-t border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] p-3">
+                  <div className="grid gap-1">
+                    {request.timeline.slice(0, 5).map((event) => (
+                      <EventLine key={event.id} event={event} />
+                    ))}
+                    {request.timeline.length === 0 ? (
+                      <span className="text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+                        {t('codex_live_sessions.no_event')}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
+    </div>
+  );
+}
+
+function RequestInfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="grid min-w-0 gap-2 border-b border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] py-1 font-mono text-[length:var(--font-size-ui-sm)] md:grid-cols-[9.5rem_1fr]">
+      <span className="font-black uppercase text-[var(--text-muted)]">{label}</span>
+      <span className="min-w-0 truncate font-bold text-[var(--text-primary)]">{value}</span>
+    </div>
+  );
+}
+
+function MetricCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 border border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] p-2">
+      <div className="truncate font-mono text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)]">{value}</div>
+      <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">{label}</div>
+    </div>
+  );
+}
+
+function EventLine({ event }: { event: CodexLiveTimelineEvent }) {
+  return (
+    <div className="grid min-w-0 grid-cols-[5.8rem_8px_7.5rem_1fr] gap-2 text-[length:var(--font-size-ui-sm)]">
+      <span className="font-mono font-black text-[var(--text-muted)]">{event.at}</span>
+      <span className={`mt-1.5 h-2 w-2 ${severityDotClass(event.severity)}`} />
+      <span className="truncate font-mono font-black uppercase text-[var(--text-primary)]">
+        {event.lane}.{event.kind}
+      </span>
+      <span className="min-w-0 truncate font-bold text-[var(--text-muted)]">{event.label}</span>
     </div>
   );
 }

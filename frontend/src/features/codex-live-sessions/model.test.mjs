@@ -283,6 +283,20 @@ test('codex live session surfaces use larger typography tokens for the dense wor
   assert.match(feedSource, /font-size-ui-sm/);
 });
 
+test('codex live session detail timeline renders request monitor fields instead of event-only rows', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /function Timeline\(\{\s+requests,/);
+  assert.match(detailSource, /request\.requestID/);
+  assert.match(detailSource, /request\.clientRequestID/);
+  assert.match(detailSource, /request\.upstreamRequestID/);
+  assert.match(detailSource, /request\.authLabel/);
+  assert.match(detailSource, /request\.timing/);
+  assert.match(detailSource, /request\.usage/);
+  assert.match(detailSource, /request\.error/);
+  assert.doesNotMatch(detailSource, /md:grid-cols-\[5\.2rem_8rem_1fr\]/);
+});
+
 test('desktop live sessions state never promotes preview rows to cache', () => {
   const initial = buildCodexLiveSessionsInitialSnapshot({ browserMode: false, sidecarReady: true });
 
