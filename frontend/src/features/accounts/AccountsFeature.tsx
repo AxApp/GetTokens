@@ -20,7 +20,6 @@ import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountLocalCliApplyConfirm from './components/AccountLocalCliApplyConfirm';
-import AccountRotationModal from './components/AccountRotationModal';
 import AccountGroupSection from './components/AccountGroupSection';
 import AccountsHeader from './components/AccountsHeader';
 import AccountsToolbar from './components/AccountsToolbar';
@@ -89,7 +88,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     apiKeyVerifyState,
     apiKeyFormError,
     isApiKeyModalOpen,
-    isRotationModalOpen,
     apiKeyForm,
     isPasteModalOpen,
     pasteContent,
@@ -129,7 +127,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setOAuthBanner,
     setOAuthDialog,
     setIsApiKeyModalOpen,
-    setIsRotationModalOpen,
     setApiKeyForm,
     setIsPasteModalOpen,
     setPasteContent,
@@ -289,7 +286,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const accountCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs, displayMode);
   const isAggregateWorkspace = true;
   const usageAccounts = useMemo(() => accounts, [accounts]);
-  const rotationAccounts = accounts;
   const previewMode = !hasWailsAppBindings();
   const selectedRelayEndpoint = useMemo(() => (
     relayEndpoints[0] || main.RelayServiceEndpoint.createFrom({
@@ -328,11 +324,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       window.clearInterval(timer);
     };
   }, [loadAccountUsage, ready, usageAccounts]);
-
-  async function reloadRotationAccounts() {
-    await loadAccounts();
-    await openAICompatibleState.loadProviders();
-  }
 
   const updateDisplayMode = useCallback((nextMode: AccountListDisplayMode) => {
     setDisplayMode(nextMode);
@@ -702,10 +693,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               setIsHeaderActionsMenuOpen(false);
             }}
             onOpenUnifiedCompose={openUnifiedCompose}
-            onOpenRotationModal={() => {
-              setIsRotationModalOpen(true);
-              setIsHeaderActionsMenuOpen(false);
-            }}
             onStartCodexOAuth={() => {
               void startCodexOAuth();
               setIsHeaderActionsMenuOpen(false);
@@ -928,16 +915,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           }}
           onPresetApply={handlePresetApply}
           onSubmit={() => void handleUnifiedComposeSubmit()}
-        />
-      ) : null}
-
-      {isRotationModalOpen ? (
-        <AccountRotationModal
-          accounts={rotationAccounts}
-          codexQuotaByName={codexQuotaByName}
-          ready={ready}
-          onClose={() => setIsRotationModalOpen(false)}
-          onReloadAccounts={reloadRotationAccounts}
         />
       ) : null}
 

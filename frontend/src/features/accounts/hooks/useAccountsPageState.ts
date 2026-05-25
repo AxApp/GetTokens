@@ -132,7 +132,6 @@ export default function useAccountsPageState({
   const [deleteError, setDeleteError] = useState('');
   const [apiKeyFormError, setApiKeyFormError] = useState('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
-  const [isRotationModalOpen, setIsRotationModalOpen] = useState(false);
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState>(emptyApiKeyForm);
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pasteContent, setPasteContent] = useState('');
@@ -675,7 +674,6 @@ export default function useAccountsPageState({
             lastVerifiedAt: null,
           },
     isApiKeyModalOpen,
-    isRotationModalOpen,
     apiKeyForm,
     isPasteModalOpen,
     pasteContent,
@@ -714,7 +712,6 @@ export default function useAccountsPageState({
     setOAuthBanner,
     setOAuthDialog,
     setIsApiKeyModalOpen,
-    setIsRotationModalOpen,
     setApiKeyForm,
     setIsPasteModalOpen,
     setPasteContent,

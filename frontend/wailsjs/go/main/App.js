@@ -74,6 +74,10 @@ export function EnableCodexBinaryManagedPath() {
   return window['go']['main']['App']['EnableCodexBinaryManagedPath']();
 }
 
+export function ExplainChannelRouting(arg1) {
+  return window['go']['main']['App']['ExplainChannelRouting'](arg1);
+}
+
 export function FetchOpenAICompatibleProviderModels(arg1) {
   return window['go']['main']['App']['FetchOpenAICompatibleProviderModels'](arg1);
 }
@@ -100,6 +104,10 @@ export function GetAppRuntimeSettings() {
 
 export function GetAuthFileModels(arg1) {
   return window['go']['main']['App']['GetAuthFileModels'](arg1);
+}
+
+export function GetChannelRoutingConfig(arg1) {
+  return window['go']['main']['App']['GetChannelRoutingConfig'](arg1);
 }
 
 export function GetClaudeCodeExtensionsSnapshot() {
@@ -246,6 +254,10 @@ export function ListAuthFiles() {
   return window['go']['main']['App']['ListAuthFiles']();
 }
 
+export function ListChannelRouteEvents(arg1) {
+  return window['go']['main']['App']['ListChannelRouteEvents'](arg1);
+}
+
 export function ListLocalCodexProviderViews() {
   return window['go']['main']['App']['ListLocalCodexProviderViews']();
 }
@@ -348,6 +360,10 @@ export function RemoveCodexSkill(arg1) {
 
 export function RevealCodexBinaryVersion(arg1) {
   return window['go']['main']['App']['RevealCodexBinaryVersion'](arg1);
+}
+
+export function SaveChannelRoutingConfig(arg1) {
+  return window['go']['main']['App']['SaveChannelRoutingConfig'](arg1);
 }
 
 export function SaveClaudeCodeMcpServer(arg1) {

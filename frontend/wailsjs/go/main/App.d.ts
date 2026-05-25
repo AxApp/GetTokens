@@ -41,6 +41,8 @@ export function DownloadCodexBinary(arg1:codexbinary.DownloadInput):Promise<code
 
 export function EnableCodexBinaryManagedPath():Promise<codexbinary.EnableManagedPathResult>;
 
+export function ExplainChannelRouting(arg1:main.ChannelRoutingExplainInput):Promise<main.ChannelRoutingExplainResult>;
+
 export function FetchOpenAICompatibleProviderModels(arg1:main.FetchOpenAICompatibleProviderModelsInput):Promise<main.FetchOpenAICompatibleProviderModelsResult>;
 
 export function FetchProxySubscription(arg1:main.FetchProxySubscriptionInput):Promise<main.FetchProxySubscriptionResult>;
@@ -54,6 +56,8 @@ export function GetAllRateLimitStatuses():Promise<Array<main.RateLimitState>>;
 export function GetAppRuntimeSettings():Promise<main.AppRuntimeSettings>;
 
 export function GetAuthFileModels(arg1:string):Promise<Array<Record<string, any>>>;
+
+export function GetChannelRoutingConfig(arg1:string):Promise<main.ChannelRoutingConfig>;
 
 export function GetClaudeCodeExtensionsSnapshot():Promise<main.ClaudeCodeExtensionsSnapshot>;
 
@@ -127,6 +131,8 @@ export function ListAccounts():Promise<Array<main.AccountRecord>>;
 
 export function ListAuthFiles():Promise<main.AuthFilesResponse>;
 
+export function ListChannelRouteEvents(arg1:main.ChannelRouteEventsInput):Promise<Array<main.ChannelRouteEvent>>;
+
 export function ListLocalCodexProviderViews():Promise<Array<main.LocalCodexModelProviderView>>;
 
 export function ListOAuthModelAliases(arg1:string):Promise<Array<main.OpenAICompatibleModel>>;
@@ -178,6 +184,8 @@ export function RefreshCodexSessionManagementSnapshot():Promise<main.SessionMana
 export function RemoveCodexSkill(arg1:main.RemoveCodexSkillInput):Promise<main.RemoveCodexSkillResult>;
 
 export function RevealCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<void>;
+
+export function SaveChannelRoutingConfig(arg1:main.ChannelRoutingConfig):Promise<main.ChannelRoutingConfig>;
 
 export function SaveClaudeCodeMcpServer(arg1:main.SaveClaudeCodeMcpServerInput):Promise<main.SaveClaudeCodeMcpServerResult>;
 

@@ -1,16 +1,22 @@
 ---
 name: gettokens-claude-code-account-list
-description: GetTokens Claude Code 账号列表：Anthropic 格式账号筛选、请求顺序、路由探测、模型映射、官方默认模型 profile 与 local apply 边界。
+description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthropic 格式账号筛选、请求顺序、三模式路由、项目绑定、路由探测、模型映射、官方默认模型 profile 与 local apply 边界。
 ---
 
 # GetTokens Claude Code Account List
 
-当任务涉及 Claude Code 账号列表、Claude Code relay 账号请求顺序、Anthropic 格式账号筛选、Claude Code 模型映射、官方默认模型 profile、`~/.claude/settings.json` local apply 或 Claude Code 路由探测时使用本 skill。
+当任务涉及 Claude Code 账号列表、Claude Channel Routing、Claude Code relay 账号请求顺序、Anthropic 格式账号筛选、Claude Code route mode、项目绑定、模型映射、官方默认模型 profile、`~/.claude/settings.json` local apply 或 Claude Code 路由探测时使用本 skill。
 
 ## 1. 业务边界
 
 - Claude Code 账号列表不是 `settings.json` 多 key 管理器。
-- 它是 GetTokens relay 可供 Claude Code 使用的 Anthropic 格式账号请求工作台。
+- 它是 GetTokens relay 可供 Claude Code 使用的 Anthropic 格式 Channel Routing 工作台。
+- 总账号池只管理 Account Inventory；Claude Code 账号列表拥有 Claude 渠道顺序、渠道 route mode、渠道组状态、项目绑定、dry-run/explain 和 probe。
+- Claude 渠道配置不得通过全局 `UpdateAccountPriority` 表达；渠道顺序必须保存到 Claude channel config。
+- 新 GetTokens route mode 只允许 `sequential / balanced / project`。
+- `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入 Claude 新 UI / Wails DTO / engine policy。
+- `exclude` 不是 route mode，只能作为请求级 deny 或 pool filter。
+- 旧 allow / deny / order / fallback 只作为请求级兼容 policy，不作为新页面主配置模型。
 - P0 账号筛选条件：`AccountRecord.supportedFormats` 包含 `anthropic`。
 - Claude Code 本地仍只写一个 relay endpoint / relay key；多账号轮换发生在 GetTokens relay 内。
 - 不把 provider 名称等于 `claude` 作为筛选条件。
@@ -21,11 +27,12 @@ description: GetTokens Claude Code 账号列表：Anthropic 格式账号筛选�
   - `supportedFormats` 包含 `anthropic`
   - 存在可用于 relay 的凭证或 auth route id
   - 请求出口优先 `formatBaseUrls.anthropic`，没有时回退 `baseUrl`
-- 请求顺序复用 Codex 账号列表模式：
+- 请求顺序使用 Claude channel config，不复用全局账号 priority：
   - 禁用或阻塞账号保留在排序中
   - 运行时请求候选只包含当前可请求账号
-  - 拖拽排序写回 `UpdateAccountPriority`
+  - 拖拽排序写回 Claude channel config
   - 启停写回 `SetAccountDisabled`
+- 项目模式只限定目标账号或账号组；命中账号组后，组内选择继续使用 `sequential` 或 `balanced`。
 - 浏览器 preview 必须在缺少 Wails runtime 时稳定显示 preview 数据。
 
 ## 3. 模型映射语义
@@ -48,6 +55,7 @@ description: GetTokens Claude Code 账号列表：Anthropic 格式账号筛选�
 - profile 可一键填充 Claude Code local apply 字段，也可生成 relay 映射草稿；保存仍走 `models[]` 或 `oauth-model-alias`。
 - 已保存的用户映射优先级最高；profile 更新只能提示，不能自动覆盖。
 - 官方默认值表维护在 `docs-linhay/spaces/20260519-claude-code-account-list/plans/official-model-profiles.md`。
+- 官方模型 profile 和 local apply 不并入共享 channel routing 模型；它们仍属于 Claude Code 领域逻辑。
 
 ## 5. 当前官方校准结论
 
@@ -71,3 +79,6 @@ description: GetTokens Claude Code 账号列表：Anthropic 格式账号筛选�
   - 模型映射同名透传
   - 同一真实模型多个 Claude alias
   - 官方默认 profile 不覆盖用户映射
+  - Claude channel config 保存不影响 Codex channel config
+  - `ChannelRouteMode` 只接受 `sequential / balanced / project`
+  - 上游兼容模式不进入 Claude 新配置保存

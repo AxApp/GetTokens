@@ -177,6 +177,111 @@ type ProbeClaudeCodeAccountRoutingInput struct {
 	AllowFallback   bool     `json:"allowFallback,omitempty"`
 }
 
+type ChannelGroupState struct {
+	Enabled    bool `json:"enabled"`
+	RouteOrder *int `json:"routeOrder,omitempty"`
+}
+
+type ChannelAccountGroup struct {
+	ID         string   `json:"id"`
+	Name       string   `json:"name,omitempty"`
+	Enabled    bool     `json:"enabled"`
+	RouteOrder int      `json:"routeOrder,omitempty"`
+	AccountIDs []string `json:"accountIDs"`
+}
+
+type ChannelProjectBinding struct {
+	ProjectName  string `json:"projectName"`
+	TargetType   string `json:"targetType"`
+	TargetID     string `json:"targetID"`
+	FallbackMode string `json:"fallbackMode"`
+}
+
+type ChannelRoutingConfig struct {
+	Channel                      string                       `json:"channel"`
+	RouteMode                    string                       `json:"routeMode"`
+	OrderedAccountIDs            []string                     `json:"orderedAccountIDs"`
+	AccountGroups                []ChannelAccountGroup        `json:"accountGroups,omitempty"`
+	ChannelGroupStates           map[string]ChannelGroupState `json:"channelGroupStates"`
+	ProjectBindings              []ChannelProjectBinding      `json:"projectBindings"`
+	ProjectModeFallbackRouteMode string                       `json:"projectModeFallbackRouteMode"`
+	FallbackMode                 string                       `json:"fallbackMode"`
+	ShadowEnabled                bool                         `json:"shadowEnabled,omitempty"`
+	ShadowRouteMode              string                       `json:"shadowRouteMode,omitempty"`
+}
+
+type ChannelRoutingConfigMeta struct {
+	IgnoredUpstreamModes []string `json:"ignoredUpstreamModes,omitempty"`
+	InvalidModes         []string `json:"invalidModes,omitempty"`
+}
+
+type ChannelRoutingExplainInput struct {
+	Channel         string         `json:"channel,omitempty"`
+	ProjectName     string         `json:"projectName,omitempty"`
+	TriedAccountIDs []string       `json:"triedAccountIDs,omitempty"`
+	ActiveSessions  map[string]int `json:"activeSessions,omitempty"`
+}
+
+type ChannelRoutingExplainResult struct {
+	Channel           string                          `json:"channel"`
+	RouteMode         string                          `json:"routeMode"`
+	SelectedAccountID string                          `json:"selectedAccountID,omitempty"`
+	Candidates        []ChannelRoutingCandidate       `json:"candidates"`
+	Filtered          []ChannelRoutingFilteredAccount `json:"filtered"`
+	Steps             []string                        `json:"steps"`
+	Meta              ChannelRoutingConfigMeta        `json:"meta"`
+	SnapshotVersion   string                          `json:"snapshotVersion,omitempty"`
+	PolicyVersion     string                          `json:"policyVersion,omitempty"`
+	Shadow            *ChannelRoutingShadowDecision   `json:"shadow,omitempty"`
+}
+
+type ChannelRoutingShadowDecision struct {
+	Enabled           bool     `json:"enabled"`
+	RouteMode         string   `json:"routeMode,omitempty"`
+	SelectedAccountID string   `json:"selectedAccountID,omitempty"`
+	Diff              bool     `json:"diff"`
+	Steps             []string `json:"steps,omitempty"`
+}
+
+type ChannelRoutingCandidate struct {
+	ID             string `json:"id"`
+	DisplayName    string `json:"displayName,omitempty"`
+	Provider       string `json:"provider,omitempty"`
+	RouteOrder     int    `json:"routeOrder,omitempty"`
+	GroupID        string `json:"groupID,omitempty"`
+	GroupOrder     int    `json:"groupOrder,omitempty"`
+	ChannelOrder   int    `json:"channelOrder,omitempty"`
+	ActiveSessions int    `json:"activeSessions,omitempty"`
+}
+
+type ChannelRoutingFilteredAccount struct {
+	ID     string `json:"id"`
+	Reason string `json:"reason"`
+}
+
+type ChannelRouteEventsInput struct {
+	Channel string `json:"channel,omitempty"`
+	Limit   int    `json:"limit,omitempty"`
+}
+
+type ChannelRouteEvent struct {
+	ID                      string `json:"id"`
+	RecordedAt              string `json:"recordedAt"`
+	Channel                 string `json:"channel"`
+	ProjectName             string `json:"projectName,omitempty"`
+	RouteMode               string `json:"routeMode"`
+	SelectedAccountID       string `json:"selectedAccountID,omitempty"`
+	CandidateCount          int    `json:"candidateCount"`
+	FilteredCount           int    `json:"filteredCount"`
+	SnapshotVersion         string `json:"snapshotVersion"`
+	PolicyVersion           string `json:"policyVersion"`
+	ShadowEnabled           bool   `json:"shadowEnabled,omitempty"`
+	ShadowRouteMode         string `json:"shadowRouteMode,omitempty"`
+	ShadowSelectedAccountID string `json:"shadowSelectedAccountID,omitempty"`
+	ShadowDiff              bool   `json:"shadowDiff,omitempty"`
+	Redacted                bool   `json:"redacted"`
+}
+
 type UpdateOAuthModelAliasesInput struct {
 	Channel string                  `json:"channel"`
 	Models  []OpenAICompatibleModel `json:"models,omitempty"`

@@ -2,15 +2,17 @@ import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Terminal } from 'lucide-react';
 import {
   FetchOpenAICompatibleProviderModels,
+  ExplainChannelRouting,
   GetAuthFileModels,
+  GetChannelRoutingConfig,
   ListOAuthModelAliases,
   ListAccounts,
   ListOpenAICompatibleProviders,
   ListRelaySupportedModels,
   ProbeCodexAccountRouting,
+  SaveChannelRoutingConfig,
   SetAccountDisabled,
   UpdateOAuthModelAliases,
-  UpdateAccountPriority,
   UpdateCodexAPIKeyConfig,
   UpdateOpenAICompatibleProvider,
 } from '../../../wailsjs/go/main/App';
@@ -31,12 +33,17 @@ import {
   ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
   shouldScheduleAccountUsageRefresh,
 } from '../accounts/model/accountUsage';
+import ChannelRoutingWorkbench from '../channel-routing/components/ChannelRoutingWorkbench';
+import {
+  normalizeChannelRoutingConfig,
+  updateChannelRoutingConfig,
+  type ChannelRouteMode,
+  type ChannelRoutingConfig,
+} from '../channel-routing/model/channelRouting';
 import { CodexAccountDetailModal, CodexAccountOrderSection, RouteProbeCard } from './components/CodexAccountListView';
 import { getCodexAccountListPreviewAuthFileModelOptions, getCodexAccountListPreviewRows } from './previewData';
 import {
-  applyCodexAccountPriorities,
   buildCodexAuthFileModelMappings,
-  buildCodexAccountPriorityUpdates,
   buildCodexAccountRows,
   buildCodexQuotaSummaryAccount,
   buildCodexRoutePolicyPreview,
@@ -94,12 +101,15 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const [message, setMessage] = useState('');
   const [orderDirty, setOrderDirty] = useState(false);
   const [autoSaveOrderRequested, setAutoSaveOrderRequested] = useState(false);
+  const [channelConfig, setChannelConfig] = useState<ChannelRoutingConfig>(() =>
+    buildDefaultChannelRoutingConfig('codex'),
+  );
+  const [channelExplain, setChannelExplain] = useState<main.ChannelRoutingExplainResult | null>(null);
   const suppressNextDetailClickRef = useRef(false);
   const { codexQuotaByName, loadCodexQuotas } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
   const { accountRateLimitByID, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
 
-  const priorityUpdates = useMemo(() => buildCodexAccountPriorityUpdates(orderedRows), [orderedRows]);
   const detailRow = useMemo(
     () => orderedRows.find((row) => row.id === detailRowID) || null,
     [detailRowID, orderedRows],
@@ -158,7 +168,11 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   async function reload(messageOverride?: string) {
     if (browserMode) {
       const previewAccounts = getAccountsPreviewCodexAccounts();
-      setOrderedRows(getCodexAccountListPreviewRows());
+      const previewRows = getCodexAccountListPreviewRows();
+      const previewConfig = buildDefaultChannelRoutingConfig('codex', previewRows.map((row) => row.id));
+      setChannelConfig(previewConfig);
+      setOrderedRows(applyChannelOrderToRows(previewRows, previewConfig.orderedAccountIDs));
+      setChannelExplain(null);
       setOrderDirty(false);
       void loadCodexQuotas(previewAccounts);
       const previewUsageAccounts: AccountRecord[] = [
@@ -197,16 +211,22 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         trackRequest('ListAccounts', { args: [] }, () => ListAccounts()),
         trackRequest('ListOpenAICompatibleProviders', { args: [] }, () => ListOpenAICompatibleProviders()),
       ]);
+      const routingConfig = await trackRequest('GetChannelRoutingConfig', { channel: 'codex' }, () =>
+        GetChannelRoutingConfig('codex'),
+      );
       const accountRows = (accountResponse || []).map((account) => mapBackendAccountRecord(account));
       const nextProviders = providerResponse || [];
-      const nextRows = buildCodexAccountRows({
+      const normalizedConfig = mapWailsChannelRoutingConfig(routingConfig, 'codex');
+      const nextRows = applyChannelOrderToRows(buildCodexAccountRows({
         accounts: accountRows,
         providers: nextProviders,
-      });
+      }), normalizedConfig.orderedAccountIDs);
       const nextUsageAccounts = nextRows.map((row) => codexRowToAccountRecord(row));
       void loadCodexQuotas(accountRows);
       void loadAccountUsage(nextUsageAccounts);
       void loadAccountRateLimits(nextUsageAccounts);
+      setChannelConfig(normalizedConfig);
+      setChannelExplain(null);
       setOrderedRows(nextRows);
       setOrderDirty(false);
       setMessage(messageOverride || t('codex.account_list_loaded'));
@@ -510,21 +530,22 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       return;
     }
 
-    if (browserMode) {
-      setOrderedRows((prev) => applyCodexAccountPriorities(prev));
-      setOrderDirty(false);
-      setMessage(t('codex.account_list_preview_saved'));
-      return;
-    }
-
     setSaving(true);
     setMessage('');
     try {
-      for (const update of priorityUpdates) {
-        await trackRequest('UpdateAccountPriority', update, () => UpdateAccountPriority(update));
+      const nextConfig = withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id));
+      if (!browserMode) {
+        await trackRequest('SaveChannelRoutingConfig', { channel: 'codex', mode: nextConfig.routeMode }, () =>
+          SaveChannelRoutingConfig(main.ChannelRoutingConfig.createFrom(nextConfig)),
+        );
       }
+      setChannelConfig(nextConfig);
       setOrderDirty(false);
-      await reload(t('codex.account_list_saved'));
+      if (browserMode) {
+        setMessage(t('codex.account_list_preview_saved'));
+      } else {
+        await reload(t('codex.account_list_saved'));
+      }
     } catch (error) {
       console.error(error);
       setMessage(`${t('codex.account_list_save_failed')}: ${toErrorMessage(error)}`);
@@ -543,7 +564,77 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     }
     setAutoSaveOrderRequested(false);
     void saveOrder();
-  }, [autoSaveOrderRequested, draggedID, orderChanged, priorityUpdates, saving]);
+  }, [autoSaveOrderRequested, channelConfig, draggedID, orderChanged, orderedRows, saving]);
+
+  function updateChannelMode(mode: ChannelRouteMode) {
+    setChannelConfig((prev) => updateChannelRoutingConfig(prev, { routeMode: mode }));
+    setOrderDirty(true);
+    setChannelExplain(null);
+    setMessage(t('codex.account_list_unsaved'));
+  }
+
+  function updateShadowEnabled(enabled: boolean) {
+    setChannelConfig((prev) => updateChannelRoutingConfig(prev, { shadowEnabled: enabled }));
+    setOrderDirty(true);
+    setChannelExplain(null);
+    setMessage(t('codex.account_list_unsaved'));
+  }
+
+  function updateShadowMode(mode: ChannelRouteMode) {
+    setChannelConfig((prev) => updateChannelRoutingConfig(prev, { shadowRouteMode: mode }));
+    setOrderDirty(true);
+    setChannelExplain(null);
+    setMessage(t('codex.account_list_unsaved'));
+  }
+
+  async function runChannelExplain() {
+    const nextConfig = withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id));
+    setChannelConfig(nextConfig);
+    if (browserMode) {
+      const candidates = orderedRows
+        .filter((row) => row.requestable)
+        .map((row, index) => ({
+          id: row.id,
+          displayName: row.label,
+          provider: row.provider,
+          routeOrder: index,
+          channelOrder: index,
+        }));
+      setChannelExplain(
+        main.ChannelRoutingExplainResult.createFrom({
+          channel: 'codex',
+          routeMode: nextConfig.routeMode,
+          selectedAccountID: candidates[0]?.id || '',
+          candidates,
+          filtered: orderedRows
+            .filter((row) => !row.requestable)
+            .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : 'account-unrequestable' })),
+          steps: [`mode:${nextConfig.routeMode}`, `candidates:${candidates.length}`, 'preview:browser'],
+          snapshotVersion: 'preview',
+          policyVersion: 'channel-routing-v1',
+          shadow: nextConfig.shadowEnabled
+            ? {
+                enabled: true,
+                routeMode: nextConfig.shadowRouteMode,
+                selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
+                diff: Boolean(candidates.length > 1),
+                steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
+              }
+            : undefined,
+        }),
+      );
+      return;
+    }
+    try {
+      const result = await trackRequest('ExplainChannelRouting', { channel: 'codex' }, () =>
+        ExplainChannelRouting(main.ChannelRoutingExplainInput.createFrom({ channel: 'codex' })),
+      );
+      setChannelExplain(result);
+    } catch (error) {
+      console.error(error);
+      setMessage(`${t('codex.account_list_probe_failed')}: ${toErrorMessage(error)}`);
+    }
+  }
 
   async function runRoutingProbe(attempts: number) {
     const model = routingProbeModel.trim();
@@ -794,6 +885,21 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           }
         />
 
+        <ChannelRoutingWorkbench
+          channel="codex"
+          config={withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id))}
+          explain={channelExplain}
+          disabled={!ready || saving}
+          saving={saving}
+          preview={browserMode}
+          message={orderChanged ? t('codex.account_list_unsaved') : ''}
+          onModeChange={updateChannelMode}
+          onShadowEnabledChange={updateShadowEnabled}
+          onShadowModeChange={updateShadowMode}
+          onSave={() => void saveOrder()}
+          onExplain={() => void runChannelExplain()}
+        />
+
         <CodexAccountOrderSection
           title={t('codex.account_list_order')}
           hint={
@@ -891,6 +997,58 @@ function readAuthFileNameFromRowID(rowID: string) {
 function filterCodexAccountIDs(previous: string[], availableIDs: string[]) {
   const available = new Set(availableIDs);
   return normalizeCodexAccountIDList(previous).filter((id) => available.has(id));
+}
+
+function buildDefaultChannelRoutingConfig(channel: 'codex', orderedAccountIDs: string[] = []): ChannelRoutingConfig {
+  return normalizeChannelRoutingConfig(
+    {
+      channel,
+      routeMode: 'sequential',
+      orderedAccountIDs,
+      accountGroups: [],
+      channelGroupStates: {},
+      projectBindings: [],
+      projectModeFallbackRouteMode: 'sequential',
+      fallbackMode: 'fail-closed',
+      shadowEnabled: false,
+      shadowRouteMode: 'balanced',
+    },
+    { channel },
+  ).config;
+}
+
+function mapWailsChannelRoutingConfig(input: main.ChannelRoutingConfig | null | undefined, channel: 'codex'): ChannelRoutingConfig {
+  return normalizeChannelRoutingConfig(
+    {
+      channel: input?.channel || channel,
+      routeMode: input?.routeMode,
+      orderedAccountIDs: input?.orderedAccountIDs || [],
+      accountGroups: input?.accountGroups || [],
+      channelGroupStates: input?.channelGroupStates || {},
+      projectBindings: input?.projectBindings || [],
+      projectModeFallbackRouteMode: input?.projectModeFallbackRouteMode,
+      fallbackMode: input?.fallbackMode,
+      shadowEnabled: input?.shadowEnabled,
+      shadowRouteMode: input?.shadowRouteMode,
+    },
+    { channel },
+  ).config;
+}
+
+function withCurrentChannelOrder(config: ChannelRoutingConfig, orderedAccountIDs: string[]): ChannelRoutingConfig {
+  return updateChannelRoutingConfig(config, { orderedAccountIDs });
+}
+
+function applyChannelOrderToRows<T extends { id: string }>(rows: T[], orderedAccountIDs: string[]): T[] {
+  const rank = new Map(orderedAccountIDs.map((id, index) => [id, index]));
+  return [...rows].sort((left, right) => {
+    const leftRank = rank.get(left.id) ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = rank.get(right.id) ?? Number.MAX_SAFE_INTEGER;
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
+    }
+    return rows.indexOf(left) - rows.indexOf(right);
+  });
 }
 
 function codexRowToAccountRecord(row: CodexAccountRow): AccountRecord {

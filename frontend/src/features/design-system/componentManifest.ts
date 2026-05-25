@@ -644,6 +644,18 @@ export const designSystemComponentManifest = [
     mockDataSources: ['storybook settings release/version/git hash mock'],
   },
   {
+    id: 'channel-routing-workbench',
+    componentName: 'ChannelRoutingWorkbench',
+    sourcePath: 'frontend/src/features/channel-routing/components/ChannelRoutingWorkbench.tsx',
+    ownerFeature: 'channel-routing',
+    status: 'deferred',
+    tier: 'feature-component',
+    decisionReason: 'Account Routing Engine 的跨渠道路由控制面，先随 Codex/Claude account-list 页面进入业务验收；后续补独立 story 覆盖三模式、preview explain、保存中和空候选状态。',
+    matchedPatterns: ['SegmentedControl', 'DebugPanel summary', 'WorkspacePageHeader'],
+    suggestedDesignComponent: 'RoutingPolicyWorkbench',
+    revisitTrigger: 'Codex/Claude Channel Routing 页面稳定后补 story matrix。',
+  },
+  {
     id: 'claude-code-account-list-workbench',
     componentName: 'ClaudeCodeAccountListWorkbench',
     sourcePath: 'frontend/src/features/claude-code/components/ClaudeCodeAccountListWorkbench.tsx',

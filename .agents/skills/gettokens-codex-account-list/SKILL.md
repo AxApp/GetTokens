@@ -1,30 +1,43 @@
 ---
 name: gettokens-codex-account-list
-description: GetTokens Codex 账号列表：账号请求顺序、路由探测、模型映射、OAuth 透传语义、openai-compatible 映射保存与浏览器预览。
+description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求顺序、三模式路由、项目绑定、路由探测、模型映射、OAuth 透传语义、openai-compatible 映射保存与浏览器预览。
 ---
 
 # GetTokens Codex Account List
 
-当任务涉及 `frontend/src/features/codex/CodexAccountListFeature.tsx`、Codex 账号请求顺序、路由探测、模型映射、OAuth/auth-file 映射、openai-compatible provider 映射，或后端 `ProbeCodexAccountRouting` / OAuth model alias 时使用本 skill。
+当任务涉及 `frontend/src/features/codex/CodexAccountListFeature.tsx`、Codex Channel Routing、Codex 账号请求顺序、路由模式、项目绑定、路由探测、模型映射、OAuth/auth-file 映射、openai-compatible provider 映射，或后端 Codex route explain / probe / OAuth model alias 时使用本 skill。
 
 ## 1. 业务边界
-- Codex 账号列表是请求调试与账号顺序工作台，不是账号创建页。
+- Codex 账号列表是 Codex Channel Routing 工作台，不是账号创建页，也不是总账号池。
+- 总账号池只管理 Account Inventory；Codex 账号列表拥有 Codex 渠道顺序、渠道 route mode、渠道组状态、项目绑定、dry-run/explain 和 probe。
+- Codex 渠道配置不得通过全局 `UpdateAccountPriority` 表达；渠道顺序必须保存到 Codex channel config。
+- 新 GetTokens route mode 只允许 `sequential / balanced / project`。
+- `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入 Codex 新 UI / Wails DTO / engine policy。
+- `exclude` 不是 route mode，只能作为请求级 deny 或 pool filter。
+- 旧 `allowAccountIDs / denyAccountIDs / orderAccountIDs / allowFallback` 只作为请求级兼容 policy，不作为新页面主配置模型。
 - 账号来源统一展示，但语义保持分离：
   - `auth-file` / OAuth Codex
   - `codex-api-key`
   - `openai-compatible`
 - 禁用账号保留在排序中，但不参与运行时请求候选。
 - 对 `codex-api-key`，禁用不能只停留在 GetTokens 本地 store：sidecar `codex-api-key` 配置必须保存 `disabled:true`，CLIProxyAPI synthesizer 必须生成 disabled runtime auth，之后由 `manual-disabled` route guard 排除候选。
-- 请求测试顺序只来自当前可请求账号的拖拽顺序，从上到下执行。
-- 不再维护第二套独立策略顺序；允许/排除只过滤候选，不重排候选。
+- 项目模式只限定目标账号或账号组；命中账号组后，组内选择继续使用 `sequential` 或 `balanced`。
 
 ## 2. 前端结构
 - `CodexAccountListFeature.tsx` 保持为 controller：
   - Wails/browser 数据加载
-  - 顺序保存
+  - Codex channel config 读取和保存
   - 路由探测调度
+  - dry-run/explain 调度
   - modal 打开/关闭与 hash 同步
   - 模型映射保存编排
+- Account Routing Engine rollout 期间应新增共享领域：
+  - `frontend/src/features/channel-routing/model/channelRouting.ts`
+  - `frontend/src/features/channel-routing/model/channelRoutingValidation.ts`
+  - `frontend/src/features/channel-routing/model/channelRoutingSelectors.ts`
+  - `frontend/src/features/channel-routing/model/channelRoutingPreviewData.ts`
+  - `frontend/src/features/channel-routing/components/ChannelRoutingWorkbench.tsx`
+  - `frontend/src/features/channel-routing/components/RouteExplainPanel.tsx`
 - UI 组件放在 `frontend/src/features/codex/components/`：
   - `CodexRouteProbeCard.tsx`
   - `CodexAccountOrderRow.tsx`
@@ -32,9 +45,9 @@ description: GetTokens Codex 账号列表：账号请求顺序、路由探测、
   - `ModelCombobox.tsx`
   - `codexAccountPresentation.ts`
 - 纯模型逻辑放在 `frontend/src/features/codex/model/`：
-  - `codexAccountList.ts`：账号合并、排序、优先级更新
+  - `codexAccountList.ts`：账号合并、渠道展示排序、可请求状态
   - `codexModelMappings.ts`：OAuth/openai-compatible 模型映射归一
-  - `codexRoutePolicy.ts`：候选过滤、探测日志、路由状态
+  - `codexRoutePolicy.ts`：旧请求级兼容 policy、探测日志、路由状态
 - 不新增 catch-all helper 文件；按账号、映射、路由策略拆分。
 
 ## 3. 模型映射语义
@@ -47,8 +60,8 @@ description: GetTokens Codex 账号列表：账号请求顺序、路由探测、
 
 ## 4. 路由探测语义
 - `ProbeCodexAccountRouting` 使用页面传入的候选约束发起最小 relay 请求。
-- 前端传给后端的 `orderAccountIDs` 必须是当前拖拽排序后的可请求账号 ID 列表。
-- `allowAccountIDs` 表示首选候选；`denyAccountIDs` 表示排除候选；`allowFallback` 只在设置允许账号后决定是否继续尝试其他未排除账号。
+- 新主路径应优先使用 Codex channel config + dry-run/explain，展示候选池、过滤原因、排序步骤和最终选择。
+- 旧 `orderAccountIDs / allowAccountIDs / denyAccountIDs / allowFallback` 仅作为请求级兼容探测输入，不能回写为 Codex channel config。
 - 探测结果需要同时展示：
   - 终端式流输出
   - 当前候选顺序
@@ -59,14 +72,14 @@ description: GetTokens Codex 账号列表：账号请求顺序、路由探测、
 ## 5. 浏览器预览
 - `#frame=codex&workspace=account-list` 必须可在普通浏览器预览。
 - 缺少 `window.go.main.App` 时使用 `previewData.ts`，不能让页面空白。
-- 浏览器预览中的排序、启停、模型映射保存是本地状态更新，并需要给出 preview-only 提示。
+- 浏览器预览中的渠道配置、排序、启停、模型映射保存是本地状态更新，并需要给出 preview-only 提示。
 - 视觉或交互调整要优先用浏览器预览快速验证；涉及真实 sidecar、Wails 绑定或账号命中时，再用桌面环境补验。
 
 ## 6. UI 规则
 - 保持 Swiss-industrial 风格：硬边框、黑白灰、紧凑高密度、monospace 辅助信息。
-- 账号行固定为单一请求顺序列表，不再额外渲染重复策略账号列表。
+- 账号行固定为单一 Codex 渠道顺序列表，不再额外渲染重复策略账号列表。
 - 账号行主体点击打开详情；嵌套按钮、switch、combobox、策略控件必须阻止冒泡。
-- 策略控件常驻行内：默认 / 允许 / 排除。
+- 新主控件应围绕 `sequential / balanced / project`、渠道组范围、项目绑定和 explain；旧“默认 / 允许 / 排除”只用于请求级兼容探测入口。
 - 路由探测卡片独立于账号顺序卡片；测试流常驻显示，不使用卡中卡文本模块。
 - 请求顺序列表模式用于高密度排序，不再做卡片式信息堆叠：
   - 左侧 rail 固定承载顺位与拖拽柄，顺位数字和拖拽柄横向排列。
@@ -106,6 +119,10 @@ description: GetTokens Codex 账号列表：账号请求顺序、路由探测、
 - 后端、Wails 或 sidecar 探测调整：
   - `go test ./internal/wailsapp -run 'TestListOAuthModelAliases|TestUpdateOAuthModelAliases|TestProbeCodexAccountRouting|TestDetectCodexRoutingProbeHit|TestSidecarRelayRequest'`
   - 涉及公共 DTO 或绑定时重新生成 `frontend/wailsjs` 并跑类型检查。
+- Account Routing Engine rollout 额外覆盖：
+  - Codex channel config 保存不影响 Claude channel config。
+  - `ChannelRouteMode` 只接受 `sequential / balanced / project`。
+  - 上游兼容模式不进入 Codex 新配置保存。
 - 视觉截图放到 `docs-linhay/spaces/20260511-codex-account-list-tab/screenshots/<YYYYMMDD>/codex/`。
 
 ## 9. 文档

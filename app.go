@@ -241,6 +241,66 @@ func (a *App) ProbeClaudeCodeAccountRouting(input ProbeClaudeCodeAccountRoutingI
 	}, nil
 }
 
+func (a *App) GetChannelRoutingConfig(channel string) (*ChannelRoutingConfig, error) {
+	result, err := a.core.GetChannelRoutingConfig(channel)
+	if err != nil {
+		return nil, err
+	}
+	return mapChannelRoutingConfig(result), nil
+}
+
+func (a *App) SaveChannelRoutingConfig(input ChannelRoutingConfig) (*ChannelRoutingConfig, error) {
+	result, err := a.core.SaveChannelRoutingConfig(mapWailsChannelRoutingConfig(input))
+	if err != nil {
+		return nil, err
+	}
+	return mapChannelRoutingConfig(result), nil
+}
+
+func (a *App) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelRoutingExplainResult, error) {
+	result, err := a.core.ExplainChannelRouting(wailsapp.ChannelRoutingExplainInput{
+		Channel:         input.Channel,
+		ProjectName:     input.ProjectName,
+		TriedAccountIDs: append([]string(nil), input.TriedAccountIDs...),
+		ActiveSessions:  cloneIntMap(input.ActiveSessions),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapChannelRoutingExplainResult(result), nil
+}
+
+func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRouteEvent, error) {
+	result, err := a.core.ListChannelRouteEvents(wailsapp.ChannelRouteEventsInput{
+		Channel: input.Channel,
+		Limit:   input.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ChannelRouteEvent, 0, len(result))
+	for _, event := range result {
+		out = append(out, ChannelRouteEvent{
+			ID:                      event.ID,
+			RecordedAt:              event.RecordedAt,
+			Channel:                 event.Channel,
+			ProjectName:             event.ProjectName,
+			RouteMode:               string(event.RouteMode),
+			SelectedAccountID:       event.SelectedAccountID,
+			CandidateCount:          event.CandidateCount,
+			FilteredCount:           event.FilteredCount,
+			SnapshotVersion:         event.SnapshotVersion,
+			PolicyVersion:           event.PolicyVersion,
+			ShadowEnabled:           event.ShadowEnabled,
+			ShadowRouteMode:         string(event.ShadowRouteMode),
+			ShadowSelectedAccountID: event.ShadowSelectedAccountID,
+			ShadowDiff:              event.ShadowDiff,
+			Redacted:                event.Redacted,
+		})
+	}
+	return out, nil
+}
+
 func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 	payload := make([]wailsapp.UploadFilePayload, 0, len(files))
 	for _, file := range files {
@@ -1268,6 +1328,186 @@ func (a *App) DeleteClaudeCodeSubagent(input DeleteClaudeCodeSubagentInputDTO) e
 		Path:  input.Path,
 	})
 }
+
+func mapWailsChannelRoutingConfig(input ChannelRoutingConfig) wailsapp.ChannelRoutingConfig {
+	return wailsapp.ChannelRoutingConfig{
+		Channel:                      input.Channel,
+		RouteMode:                    wailsapp.ChannelRouteMode(input.RouteMode),
+		OrderedAccountIDs:            append([]string(nil), input.OrderedAccountIDs...),
+		AccountGroups:                mapWailsChannelAccountGroups(input.AccountGroups),
+		ChannelGroupStates:           mapWailsChannelGroupStates(input.ChannelGroupStates),
+		ProjectBindings:              mapWailsChannelProjectBindings(input.ProjectBindings),
+		ProjectModeFallbackRouteMode: wailsapp.ChannelRouteMode(input.ProjectModeFallbackRouteMode),
+		FallbackMode:                 wailsapp.ChannelFallbackMode(input.FallbackMode),
+		ShadowEnabled:                input.ShadowEnabled,
+		ShadowRouteMode:              wailsapp.ChannelRouteMode(input.ShadowRouteMode),
+	}
+}
+
+func mapChannelRoutingConfig(input *wailsapp.ChannelRoutingConfig) *ChannelRoutingConfig {
+	if input == nil {
+		return nil
+	}
+	return &ChannelRoutingConfig{
+		Channel:                      input.Channel,
+		RouteMode:                    string(input.RouteMode),
+		OrderedAccountIDs:            append([]string(nil), input.OrderedAccountIDs...),
+		AccountGroups:                mapChannelAccountGroups(input.AccountGroups),
+		ChannelGroupStates:           mapChannelGroupStates(input.ChannelGroupStates),
+		ProjectBindings:              mapChannelProjectBindings(input.ProjectBindings),
+		ProjectModeFallbackRouteMode: string(input.ProjectModeFallbackRouteMode),
+		FallbackMode:                 string(input.FallbackMode),
+		ShadowEnabled:                input.ShadowEnabled,
+		ShadowRouteMode:              string(input.ShadowRouteMode),
+	}
+}
+
+func mapWailsChannelAccountGroups(inputs []ChannelAccountGroup) []wailsapp.ChannelAccountGroup {
+	out := make([]wailsapp.ChannelAccountGroup, 0, len(inputs))
+	for _, input := range inputs {
+		out = append(out, wailsapp.ChannelAccountGroup{
+			ID:         input.ID,
+			Name:       input.Name,
+			Enabled:    input.Enabled,
+			RouteOrder: input.RouteOrder,
+			AccountIDs: append([]string(nil), input.AccountIDs...),
+		})
+	}
+	return out
+}
+
+func mapChannelAccountGroups(inputs []wailsapp.ChannelAccountGroup) []ChannelAccountGroup {
+	out := make([]ChannelAccountGroup, 0, len(inputs))
+	for _, input := range inputs {
+		out = append(out, ChannelAccountGroup{
+			ID:         input.ID,
+			Name:       input.Name,
+			Enabled:    input.Enabled,
+			RouteOrder: input.RouteOrder,
+			AccountIDs: append([]string(nil), input.AccountIDs...),
+		})
+	}
+	return out
+}
+
+func mapWailsChannelGroupStates(inputs map[string]ChannelGroupState) map[string]wailsapp.ChannelGroupState {
+	out := make(map[string]wailsapp.ChannelGroupState, len(inputs))
+	for id, input := range inputs {
+		out[id] = wailsapp.ChannelGroupState{
+			Enabled:    input.Enabled,
+			RouteOrder: cloneIntPtrMain(input.RouteOrder),
+		}
+	}
+	return out
+}
+
+func mapChannelGroupStates(inputs map[string]wailsapp.ChannelGroupState) map[string]ChannelGroupState {
+	out := make(map[string]ChannelGroupState, len(inputs))
+	for id, input := range inputs {
+		out[id] = ChannelGroupState{
+			Enabled:    input.Enabled,
+			RouteOrder: cloneIntPtrMain(input.RouteOrder),
+		}
+	}
+	return out
+}
+
+func mapWailsChannelProjectBindings(inputs []ChannelProjectBinding) []wailsapp.ChannelProjectBinding {
+	out := make([]wailsapp.ChannelProjectBinding, 0, len(inputs))
+	for _, input := range inputs {
+		out = append(out, wailsapp.ChannelProjectBinding{
+			ProjectName:  input.ProjectName,
+			TargetType:   input.TargetType,
+			TargetID:     input.TargetID,
+			FallbackMode: wailsapp.ChannelFallbackMode(input.FallbackMode),
+		})
+	}
+	return out
+}
+
+func mapChannelProjectBindings(inputs []wailsapp.ChannelProjectBinding) []ChannelProjectBinding {
+	out := make([]ChannelProjectBinding, 0, len(inputs))
+	for _, input := range inputs {
+		out = append(out, ChannelProjectBinding{
+			ProjectName:  input.ProjectName,
+			TargetType:   input.TargetType,
+			TargetID:     input.TargetID,
+			FallbackMode: string(input.FallbackMode),
+		})
+	}
+	return out
+}
+
+func mapChannelRoutingExplainResult(input *wailsapp.ChannelRoutingExplainResult) *ChannelRoutingExplainResult {
+	if input == nil {
+		return nil
+	}
+	candidates := make([]ChannelRoutingCandidate, 0, len(input.Candidates))
+	for _, item := range input.Candidates {
+		candidates = append(candidates, ChannelRoutingCandidate{
+			ID:             item.ID,
+			DisplayName:    item.DisplayName,
+			Provider:       item.Provider,
+			RouteOrder:     item.RouteOrder,
+			GroupID:        item.GroupID,
+			GroupOrder:     item.GroupOrder,
+			ChannelOrder:   item.ChannelOrder,
+			ActiveSessions: item.ActiveSessions,
+		})
+	}
+	filtered := make([]ChannelRoutingFilteredAccount, 0, len(input.Filtered))
+	for _, item := range input.Filtered {
+		filtered = append(filtered, ChannelRoutingFilteredAccount{ID: item.ID, Reason: item.Reason})
+	}
+	return &ChannelRoutingExplainResult{
+		Channel:           input.Channel,
+		RouteMode:         string(input.RouteMode),
+		SelectedAccountID: input.SelectedAccountID,
+		Candidates:        candidates,
+		Filtered:          filtered,
+		Steps:             append([]string(nil), input.Steps...),
+		Meta: ChannelRoutingConfigMeta{
+			IgnoredUpstreamModes: append([]string(nil), input.Meta.IgnoredUpstreamModes...),
+			InvalidModes:         append([]string(nil), input.Meta.InvalidModes...),
+		},
+		SnapshotVersion: input.SnapshotVersion,
+		PolicyVersion:   input.PolicyVersion,
+		Shadow:          mapChannelRoutingShadow(input.Shadow),
+	}
+}
+
+func mapChannelRoutingShadow(input *wailsapp.ChannelRoutingShadowDecision) *ChannelRoutingShadowDecision {
+	if input == nil {
+		return nil
+	}
+	return &ChannelRoutingShadowDecision{
+		Enabled:           input.Enabled,
+		RouteMode:         string(input.RouteMode),
+		SelectedAccountID: input.SelectedAccountID,
+		Diff:              input.Diff,
+		Steps:             append([]string(nil), input.Steps...),
+	}
+}
+
+func cloneIntMap(input map[string]int) map[string]int {
+	if input == nil {
+		return nil
+	}
+	out := make(map[string]int, len(input))
+	for key, value := range input {
+		out[key] = value
+	}
+	return out
+}
+
+func cloneIntPtrMain(input *int) *int {
+	if input == nil {
+		return nil
+	}
+	value := *input
+	return &value
+}
+
 func (a *App) DeleteCodexAPIKey(id string) error {
 	return a.core.DeleteCodexAPIKey(id)
 }
