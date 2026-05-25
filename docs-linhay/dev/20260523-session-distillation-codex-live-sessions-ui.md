@@ -50,6 +50,26 @@ Live session detail 的账号区如果展示 quota / billing，不再复制私�
 - quota adapter 应保留 label、remainingPercent、resetLabel / resetAtUnix。
 - billing adapter 应保留 total / granted / topped-up 与 currency。
 
+### 5. 时间线指标要按排障优先级露出首 token
+
+请求时间线不是纯装饰条，而是可快速扫读的排障行。当前更合适的做法是：
+
+1. 默认优先展示 `total`、`TTFT`、`first token` 这三枚主指标。
+2. `stream`、`gap` 这类次级指标继续保留在更宽视口或详情区。
+3. 视图断点应以“还能不能看清三枚主指标”为准，而不是按固定 `lg/xl` 机械隐藏。
+
+这次改动只是在 timeline 行上把 `firstTokenLabel` 露出来，不代表要把所有次级耗时都前置到列表层。
+
+### 6. 时间线行与详情壳层要避免“卡中卡”
+
+Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是再包一层大卡的内容块。当前更稳的做法是：
+
+1. 筛选条、时间线列表、详情根容器保持同一视觉平面，不额外叠加一层 `border + shadow`。
+2. 时间线 row 采用单行扫描式布局，`#序号 · model / request id / time range / 核心指标` 一行读完。
+3. 诊断类长文本只留在 detail 内部的次级区块，不再默认显式渲染成底部独立大块。
+
+这条边界适合继续放在 `gettokens-domain-engineering` 的 live sessions 小节里，不上升到 `AGENTS.md`。
+
 ## 不纳入
 
 - 不新增独立 `gettokens-codex-live-sessions` skill；当前规则继续归入 `gettokens-domain-engineering` 的 Codex Live Sessions 小节。

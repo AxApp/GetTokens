@@ -34,6 +34,11 @@
   - `go test ./internal/gettokenshooks -run LiveSessions`（CLIProxyAPI fork）
   - `node --test frontend/src/features/codex-live-sessions/model.test.mjs`
   - `npm --prefix frontend run typecheck`
+- 2026-05-26：请求时间线行补出首 token 指标，和总耗时、TTFT 并排显示，紧凑宽度下仍保留可读的三枚时间标签。
+- 截图：`screenshots/20260526/codex-live-sessions/20260526-codex-live-sessions-timeline-row-after-v01.png`
+- 自动化验证：
+  - `node --test frontend/src/features/codex-live-sessions/model.test.mjs`
+  - `npm --prefix frontend run typecheck`
 
 ## 设计稿入口
 
@@ -53,4 +58,4 @@
 
 ## 当前状态
 - 状态：implemented
-- 最近更新：2026-05-25
+- 最近更新：2026-05-26
