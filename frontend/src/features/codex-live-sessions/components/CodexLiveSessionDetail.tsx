@@ -1,5 +1,4 @@
-import { Info } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import SnippetPre from '../../../components/ui/SnippetPre';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
@@ -29,6 +28,11 @@ import {
   type RequestTimelineSummary,
 } from './requestTimelineSummary';
 import type { Translate } from './types';
+import {
+  buildCodexLiveRequestTimingTrend,
+  type CodexLiveRequestTimingTrendPoint,
+  type CodexLiveTimingTrendMetric,
+} from '../model/requestTimingTrend';
 
 export function SessionDetail({
   session,
@@ -55,37 +59,345 @@ export function SessionDetail({
 
   return (
     <div className="min-w-0 w-full border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
-      <div className="grid gap-3 border-b-2 border-[var(--border-color)] p-4 lg:grid-cols-[1fr_auto]">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={session.status} t={t} />
-            {session.fallbackInferred ? <span className="badge-swiss">{t('codex_live_sessions.inferred')}</span> : null}
-          </div>
-          <h3 className="mt-3 truncate font-mono text-[length:var(--font-size-ui-5xl)] font-black tracking-normal text-[var(--text-primary)]">
-            {request?.requestID || session.lastRequestID || session.sessionID}
-          </h3>
-          <p className="mt-1 truncate text-[length:var(--font-size-ui-lg)] font-bold text-[var(--text-muted)]">
-            {session.model} · {session.downstreamTransport} → {session.upstreamTransport}
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-2 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
-          <span>{t('codex_live_sessions.duration')}</span>
-          <span className="text-[var(--text-primary)]">{formatDuration(session.durationMs)}</span>
-          <span>{t('codex_live_sessions.requests')}</span>
-          <span className="text-[var(--text-primary)]">{session.requestCount}</span>
-        </div>
+      <div className="grid gap-5 border-b-2 border-[var(--border-color)] p-4">
+        <RequestTimingTrend session={session} request={request} t={t} />
+        <TimingMetrics request={request} t={t} />
+        <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
       </div>
 
       <div className="grid gap-5 p-4">
         <AccountCard session={session} request={request} t={t} />
         <SessionCard session={session} request={request} t={t} />
         <TransportLane events={timeline} t={t} />
-        <TimingMetrics request={request} t={t} />
-        <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
         <DiagnosticSummary diagnostic={diagnostic} t={t} />
       </div>
     </div>
   );
+}
+
+const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: string; color: string }> = [
+  { id: 'totalDurationMs', labelKey: 'codex_live_sessions.timing_total', color: 'var(--color-chart-primary)' },
+  { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--color-chart-blue)' },
+  { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--color-chart-peak)' },
+];
+
+function RequestTimingTrend({
+  session,
+  request,
+  t,
+}: {
+  session: CodexLiveSession;
+  request?: CodexLiveRequest;
+  t: Translate;
+}) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const refreshID = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(refreshID);
+  }, []);
+
+  const trend = buildCodexLiveRequestTimingTrend(session.requests, request, { nowMs });
+  const currentRequestID = request?.requestID || session.lastRequestID || session.sessionID;
+  const latestPoint = trend.points[trend.points.length - 1];
+
+  return (
+    <section className="min-w-0" aria-label={t('codex_live_sessions.request_timing_trend')}>
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge status={session.status} t={t} />
+        {session.fallbackInferred ? <span className="badge-swiss">{t('codex_live_sessions.inferred')}</span> : null}
+        <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+          {currentRequestID}
+        </span>
+      </div>
+
+      <div className="mt-3 grid min-h-[166px] gap-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 className="font-mono text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+            {t('codex_live_sessions.request_timing_trend')}
+          </h3>
+          <span className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+            {session.model} · {session.downstreamTransport} → {session.upstreamTransport}
+          </span>
+        </div>
+
+        <TimingTrendChart trend={trend} t={t} />
+
+        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
+          <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-2">
+            <TimingTrendFooterItem label={t('codex_live_sessions.duration')} value={formatDuration(session.durationMs)} />
+            <TimingTrendFooterItem label={t('codex_live_sessions.requests')} value={`${session.requestCount}`} />
+            <TimingTrendFooterItem label={t('codex_live_sessions.latest_sample')} value={latestPoint?.label || t('codex_live_sessions.timing_trend_empty')} />
+          </div>
+
+          <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
+            {timingTrendSeries.map((series) => (
+              <div key={series.id} className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
+                <span className="h-2 w-2" style={{ backgroundColor: series.color }} />
+                <span className="font-black text-[var(--text-muted)]">{t(series.labelKey)}</span>
+                <span className="font-black text-[var(--text-primary)]">
+                  {formatOptionalDuration(latestPoint?.values[series.id] ?? undefined)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TimingTrendFooterItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
+      <span className="mr-2 font-black text-[var(--text-muted)]">{label}</span>
+      <span className="font-black text-[var(--text-primary)]">{value}</span>
+    </div>
+  );
+}
+
+function TimingTrendChart({
+  trend,
+  t,
+}: {
+  trend: ReturnType<typeof buildCodexLiveRequestTimingTrend>;
+  t: Translate;
+}) {
+  const width = 520;
+  const height = 128;
+  const padding = { top: 12, right: 18, bottom: 28, left: 44 };
+  const gridY = [0, 0.5, 1];
+  const totalAreaPath = buildTimingTrendAreaPath(
+    trend.points,
+    'totalDurationMs',
+    trend.maxMs,
+    trend.startedAtMinMs,
+    trend.startedAtMaxMs,
+    width,
+    height,
+    padding,
+  );
+
+  if (!trend.hasData) {
+    return (
+      <div className="mt-3 grid h-[128px] place-items-center border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+        {t('codex_live_sessions.timing_trend_empty')}
+      </div>
+    );
+  }
+
+  return (
+    <svg
+      className="mt-3 h-[128px] w-full overflow-visible bg-[var(--bg-main)]"
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label={t('codex_live_sessions.request_timing_trend')}
+    >
+      <rect
+        x={padding.left}
+        y={padding.top}
+        width={width - padding.left - padding.right}
+        height={height - padding.top - padding.bottom}
+        fill="var(--bg-surface)"
+        stroke="var(--color-chart-grid-strong)"
+        strokeWidth="1"
+      />
+
+      {gridY.map((ratio) => {
+        const y = trendChartY(ratio * trend.maxMs, trend.maxMs, height, padding);
+        return (
+          <g key={ratio}>
+            <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="var(--color-chart-grid-subtle)" strokeWidth="1" />
+            <text x={padding.left - 8} y={y + 4} textAnchor="end" className="fill-[var(--text-muted)] font-mono text-[10px] font-black">
+              {formatDuration(ratio * trend.maxMs)}
+            </text>
+          </g>
+        );
+      })}
+
+      {trend.points.map((point) => {
+        const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
+        return (
+          <g key={`${point.requestID}-grid`}>
+            <line
+              x1={x}
+              x2={x}
+              y1={padding.top}
+              y2={height - padding.bottom}
+              stroke="var(--color-chart-grid-strong)"
+              strokeWidth={point.isLive ? 1.5 : 1}
+              strokeDasharray={point.isLive ? '4 3' : undefined}
+            />
+            <text x={x} y={height - 9} textAnchor="middle" className="fill-[var(--text-muted)] font-mono text-[10px] font-black">
+              {point.sequence}
+            </text>
+          </g>
+        );
+      })}
+
+      {totalAreaPath ? <path d={totalAreaPath} fill="var(--color-chart-primary-area)" opacity="0.18" /> : null}
+
+      {timingTrendSeries.map((series) => {
+        const path = buildTimingTrendSeriesPath(
+          trend.points,
+          series.id,
+          trend.maxMs,
+          trend.startedAtMinMs,
+          trend.startedAtMaxMs,
+          width,
+          height,
+          padding,
+        );
+        if (!path) {
+          return null;
+        }
+        return (
+          <path
+            key={series.id}
+            d={path}
+            fill="none"
+            stroke={series.color}
+            strokeWidth={series.id === 'totalDurationMs' ? 3 : 2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        );
+      })}
+
+      {trend.points.map((point) => {
+        const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
+        return (
+          <g key={point.requestID}>
+            {timingTrendSeries.map((series) => {
+              const value = point.values[series.id];
+              if (value === null) {
+                return null;
+              }
+              return (
+                <circle
+                  key={series.id}
+                  cx={x}
+                  cy={trendChartY(value, trend.maxMs, height, padding)}
+                  r={series.id === 'totalDurationMs' ? 3.5 : 2.75}
+                  fill="var(--bg-main)"
+                  stroke={series.color}
+                  strokeDasharray={point.isLive ? '3 2' : undefined}
+                  strokeWidth="2"
+                >
+                  <title>{`${point.label} · ${t(series.labelKey)} ${formatDuration(value)}`}</title>
+                </circle>
+              );
+            })}
+            {point.isLive ? (
+              <circle
+                cx={x}
+                cy={trendChartY(point.values.totalDurationMs ?? 0, trend.maxMs, height, padding)}
+                r="7"
+                fill="none"
+                stroke="var(--color-chart-primary)"
+                strokeDasharray="2 3"
+                strokeWidth="1.5"
+                opacity="0.72"
+              />
+            ) : null}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function buildTimingTrendSeriesPath(
+  points: readonly CodexLiveRequestTimingTrendPoint[],
+  metric: CodexLiveTimingTrendMetric,
+  maxMs: number,
+  startedAtMinMs: number,
+  startedAtMaxMs: number,
+  width: number,
+  height: number,
+  padding: { top: number; right: number; bottom: number; left: number },
+): string {
+  const coordinates = points.flatMap((point) => {
+    const value = point.values[metric];
+    if (value === null) {
+      return [];
+    }
+    return [[
+      trendChartX(point.startedAtMs, startedAtMinMs, startedAtMaxMs, width, padding),
+      trendChartY(value, maxMs, height, padding),
+    ] as const];
+  });
+
+  if (coordinates.length === 0) {
+    return '';
+  }
+  if (coordinates.length === 1) {
+    const [x, y] = coordinates[0];
+    return `M ${x - 5} ${y} L ${x + 5} ${y}`;
+  }
+
+  return coordinates.slice(1).reduce((path, [x, y], index) => {
+    const [previousX, previousY] = coordinates[index];
+    const controlX = previousX + (x - previousX) / 2;
+    return `${path} C ${controlX} ${previousY}, ${controlX} ${y}, ${x} ${y}`;
+  }, `M ${coordinates[0][0]} ${coordinates[0][1]}`);
+}
+
+function buildTimingTrendAreaPath(
+  points: readonly CodexLiveRequestTimingTrendPoint[],
+  metric: CodexLiveTimingTrendMetric,
+  maxMs: number,
+  startedAtMinMs: number,
+  startedAtMaxMs: number,
+  width: number,
+  height: number,
+  padding: { top: number; right: number; bottom: number; left: number },
+): string {
+  const linePath = buildTimingTrendSeriesPath(points, metric, maxMs, startedAtMinMs, startedAtMaxMs, width, height, padding);
+  const coordinates = points.flatMap((point) => {
+    const value = point.values[metric];
+    if (value === null) {
+      return [];
+    }
+    return [[
+      trendChartX(point.startedAtMs, startedAtMinMs, startedAtMaxMs, width, padding),
+      trendChartY(value, maxMs, height, padding),
+    ] as const];
+  });
+
+  if (!linePath || coordinates.length === 0) {
+    return '';
+  }
+
+  const baselineY = height - padding.bottom;
+  const firstX = coordinates[0][0];
+  const lastX = coordinates[coordinates.length - 1][0];
+  return `${linePath} L ${lastX} ${baselineY} L ${firstX} ${baselineY} Z`;
+}
+
+function trendChartX(
+  startedAtMs: number,
+  startedAtMinMs: number,
+  startedAtMaxMs: number,
+  width: number,
+  padding: { right: number; left: number },
+): number {
+  const chartWidth = width - padding.left - padding.right;
+  if (startedAtMaxMs <= startedAtMinMs) {
+    return padding.left + chartWidth / 2;
+  }
+  const ratio = Math.min(1, Math.max(0, (startedAtMs - startedAtMinMs) / (startedAtMaxMs - startedAtMinMs)));
+  return padding.left + chartWidth * ratio;
+}
+
+function trendChartY(
+  value: number,
+  maxMs: number,
+  height: number,
+  padding: { top: number; bottom: number },
+): number {
+  const chartHeight = height - padding.top - padding.bottom;
+  const ratio = maxMs > 0 ? Math.min(1, Math.max(0, value / maxMs)) : 0;
+  return padding.top + chartHeight - chartHeight * ratio;
 }
 
 function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[]; t: Translate }) {
@@ -402,7 +714,13 @@ function TimelineSummaryRow({
   const metricItems = buildTimelineMetricItems(summary, t);
 
   return (
-    <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-2 text-[length:var(--font-size-ui-sm)] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}>
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`grid w-full grid-cols-[minmax(0,1fr)] items-center gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-main)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
+      title={t('codex_live_sessions.detail')}
+      aria-label={t('codex_live_sessions.detail')}
+    >
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
         <span className="min-w-0 max-w-[18rem] truncate font-mono font-black text-[var(--text-primary)]">
           {summary.sequenceLabel} · {summary.modelLabel}
@@ -421,16 +739,7 @@ function TimelineSummaryRow({
           ))}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="btn-swiss inline-flex h-8 w-8 items-center justify-center justify-self-end !p-0 active:scale-95"
-        title={t('codex_live_sessions.detail')}
-        aria-label={t('codex_live_sessions.detail')}
-      >
-        <Info className="h-4 w-4" strokeWidth={2.5} />
-      </button>
-    </div>
+    </button>
   );
 }
 

@@ -26,6 +26,7 @@ import {
 } from './model/snapshotState.ts';
 import { mapBackendCodexLiveSessionsSnapshot } from './model/adapters.ts';
 import { codexLiveSessionsPreviewSnapshot } from './model/mockData.ts';
+import { buildCodexLiveRequestTimingTrend } from './model/requestTimingTrend.ts';
 
 test('filterCodexLiveSessions searches request ids and keeps active sessions first', () => {
   const rows = filterCodexLiveSessions({
@@ -198,12 +199,13 @@ test('buildLiveSessionQuotaDisplay and billing display reuse account card shapes
 });
 
 test('buildRequestTimelineSummary keeps timeline rows focused on time fields', () => {
-  const request = codexLiveSessionsPreviewSnapshot.sessions[0].requests[0];
+  const request = getPrimaryCodexLiveRequest(codexLiveSessionsPreviewSnapshot.sessions[0]);
+  assert.ok(request);
   const summary = buildRequestTimelineSummary(request);
 
   assert.deepEqual(summary, {
     requestID: 'gt-req-8912',
-    sequenceLabel: '#1',
+    sequenceLabel: '#5',
     modelLabel: 'gpt-5.5',
     startedAtLabel: '2026-05-21T18:35:10+08:00',
     completedAtLabel: '-',
@@ -333,10 +335,10 @@ test('codex live session surfaces use larger typography tokens for the dense wor
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
 
-  assert.match(detailSource, /font-size-ui-5xl/);
+  assert.match(detailSource, /RequestTimingTrend/);
   assert.match(detailSource, /font-size-ui-lg/);
   assert.match(detailSource, /font-size-ui-sm/);
-  assert.match(detailSource, /!text-\[length:var\(--font-size-ui-sm\)\]/);
+  assert.match(detailSource, /font-size-ui-xs/);
   assert.match(feedSource, /font-size-ui-3xl/);
   assert.match(feedSource, /font-size-ui-2xl/);
   assert.match(feedSource, /font-size-ui-sm/);
@@ -362,9 +364,128 @@ test('codex live session detail timeline uses compact rows without horizontal ta
   assert.match(detailSource, /buildTimelineMetricItems/);
   assert.match(detailSource, /isTimelineValuePresent/);
   assert.match(detailSource, /TimelineMetricPill/);
+  assert.match(detailSource, /function TimelineSummaryRow/);
+  assert.match(detailSource, /onClick=\{onOpen\}/);
   assert.doesNotMatch(detailSource, /overflow-x-auto/);
   assert.doesNotMatch(detailSource, /min-w-\[1320px\]/);
   assert.doesNotMatch(detailSource, /function TimelineHeader/);
+  assert.doesNotMatch(detailSource, /from 'lucide-react'/);
+  assert.doesNotMatch(detailSource, /btn-swiss inline-flex h-8 w-8/);
+});
+
+test('codex live session detail header uses request timing trend chart', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /<RequestTimingTrend session=\{session\} request=\{request\} t=\{t\} \/>/);
+  assert.match(detailSource, /<RequestTimingTrend[\s\S]*?<TimingMetrics[\s\S]*?<Timeline[\s\S]*?<AccountCard/);
+  assert.match(detailSource, /function RequestTimingTrend/);
+  assert.match(detailSource, /buildCodexLiveRequestTimingTrend/);
+  assert.match(detailSource, /function TimingTrendChart/);
+  assert.match(detailSource, /TimingTrendFooterItem label=\{t\('codex_live_sessions\.duration'\)\}/);
+  assert.doesNotMatch(detailSource, /min-h-\[166px\][^"]*border[^"]*bg-\[var\(--bg-surface\)\]/);
+  assert.doesNotMatch(detailSource, /font-size-ui-5xl/);
+});
+
+test('buildCodexLiveRequestTimingTrend orders request timing metrics by request start time', () => {
+  const trend = buildCodexLiveRequestTimingTrend(
+    [
+      {
+        requestID: 'req-b',
+        sessionID: 'session-1',
+        sequence: 2,
+        model: 'gpt-5',
+        status: 'completed',
+        startedAt: '2026-05-21T08:02:00Z',
+        downstreamTransport: 'websocket',
+        upstreamTransport: 'websocket',
+        timing: { totalDurationMs: 2400, firstEventMs: 520, firstTokenMs: 760 },
+        timeline: [],
+      },
+      {
+        requestID: 'req-a',
+        sessionID: 'session-1',
+        sequence: 1,
+        model: 'gpt-5',
+        status: 'completed',
+        startedAt: '2026-05-21T08:00:00Z',
+        downstreamTransport: 'websocket',
+        upstreamTransport: 'websocket',
+        timing: { totalDurationMs: 1800, firstEventMs: 400, firstTokenMs: 650 },
+        timeline: [],
+      },
+    ],
+    {
+      requestID: 'req-c',
+      sessionID: 'session-1',
+      sequence: 3,
+      model: 'gpt-5',
+      status: 'streaming',
+      startedAt: '2026-05-21T08:04:00Z',
+      downstreamTransport: 'websocket',
+      upstreamTransport: 'websocket',
+      timing: { firstTokenMs: 900 },
+      timeline: [],
+    },
+  );
+
+  assert.deepEqual(trend.points.map((point) => point.requestID), ['req-a', 'req-b', 'req-c']);
+  assert.deepEqual(trend.points.map((point) => point.values.totalDurationMs), [1800, 2400, null]);
+  assert.deepEqual(trend.points.map((point) => point.values.firstTokenMs), [650, 760, 900]);
+  assert.equal(trend.maxMs, 2400);
+  assert.equal(trend.hasData, true);
+});
+
+test('buildCodexLiveRequestTimingTrend projects active request duration from current time', () => {
+  const trend = buildCodexLiveRequestTimingTrend(
+    [],
+    {
+      requestID: 'req-live',
+      sessionID: 'session-1',
+      sequence: 1,
+      model: 'gpt-5',
+      status: 'streaming',
+      startedAt: '2026-05-21T08:00:00Z',
+      downstreamTransport: 'websocket',
+      upstreamTransport: 'websocket',
+      timing: { firstEventMs: 420, firstTokenMs: 760 },
+      timeline: [],
+    },
+    { nowMs: Date.parse('2026-05-21T08:00:07Z') },
+  );
+
+  assert.equal(trend.points[0].values.totalDurationMs, 7000);
+  assert.equal(trend.points[0].isLive, true);
+  assert.equal(trend.maxMs, 7000);
+});
+
+test('codex live sessions preview data gives the default detail chart multiple timing samples', () => {
+  const selectedSession = getSelectedCodexLiveSession(codexLiveSessionsPreviewSnapshot.sessions);
+  assert.ok(selectedSession);
+  const selectedRequest = getPrimaryCodexLiveRequest(selectedSession);
+  const trend = buildCodexLiveRequestTimingTrend(selectedSession.requests, selectedRequest);
+
+  assert.equal(selectedSession.sessionID, 'ws_sess_7a91');
+  assert.equal(selectedRequest?.requestID, 'gt-req-8912');
+  assert.equal(selectedSession.requestCount, selectedSession.requests.length);
+  assert.ok(trend.points.length >= 5);
+  assert.deepEqual(trend.points.map((point) => point.requestID), [
+    'gt-req-8874',
+    'gt-req-8885',
+    'gt-req-8898',
+    'gt-req-8906',
+    'gt-req-8912',
+  ]);
+});
+
+test('codex live session timing chart uses request timestamps and live refresh', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /setInterval/);
+  assert.match(detailSource, /nowMs/);
+  assert.match(detailSource, /trendChartX\(point\.startedAtMs/);
+  assert.match(detailSource, /buildTimingTrendAreaPath/);
+  assert.match(detailSource, /strokeDasharray=\{point\.isLive/);
+  assert.doesNotMatch(detailSource, /trendChartX\(index,/);
 });
 
 test('codex live session account block reuses account attribution card presentation', async () => {
