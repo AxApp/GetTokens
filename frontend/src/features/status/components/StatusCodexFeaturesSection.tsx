@@ -42,6 +42,7 @@ interface StatusCodexFeaturesSectionProps {
   dirtyCount: number;
   isLoading: boolean;
   isSaving: boolean;
+  showSearch?: boolean;
   onReload: () => void;
   onChangeQuery: (value: string) => void;
   onChangeStageFilter: (value: CodexFeatureStageFilter) => void;
@@ -62,6 +63,7 @@ export default function StatusCodexFeaturesSection({
   dirtyCount,
   isLoading,
   isSaving,
+  showSearch = true,
   onReload,
   onChangeQuery,
   onChangeStageFilter,
@@ -127,11 +129,14 @@ export default function StatusCodexFeaturesSection({
             </button>
           ))}
         </div>
-        <SearchInput
-          value={query}
-          onChange={onChangeQuery}
-          placeholder={t('status.codex_features_search_placeholder')}
-        />
+        {showSearch ? (
+          <SearchInput
+            value={query}
+            onChange={onChangeQuery}
+            placeholder={t('status.codex_features_search_placeholder')}
+            clearLabel={t('common.clear_search')}
+          />
+        ) : null}
       </div>
 
       {message ? (

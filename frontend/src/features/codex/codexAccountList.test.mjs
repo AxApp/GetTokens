@@ -510,6 +510,59 @@ test('filterCodexAccountOrderRows syncs source, balance, disabled, error, and lo
   );
 });
 
+test('filterCodexAccountOrderRows applies text search across account identity and model mapping fields', () => {
+  const rows = [
+    {
+      id: 'auth-file:pro.json',
+      label: 'Pro Account',
+      sourceKind: 'codex-auth-file',
+      provider: 'codex',
+      requestable: true,
+      status: 'active',
+      email: 'pro@example.com',
+      baseUrl: 'https://chatgpt.com/backend-api',
+      modelMappings: [{ realModel: 'gpt-5.4', codexModel: 'gpt-5.4-codex' }],
+    },
+    {
+      id: 'codex-api-key:relay',
+      label: 'Relay Key',
+      sourceKind: 'codex-api-key',
+      provider: 'codex',
+      requestable: true,
+      status: 'configured',
+      keySuffix: 'abcd',
+      baseUrl: 'https://relay.example.test/v1',
+      modelMappings: [{ realModel: 'deepseek-chat', codexModel: 'codex-deepseek' }],
+    },
+    {
+      id: 'openai-compatible:mi',
+      label: 'MI Provider',
+      sourceKind: 'openai-compatible',
+      provider: 'mi',
+      requestable: true,
+      status: 'configured',
+      modelMappings: [{ realModel: 'kimi-k2', codexModel: 'codex-kimi' }],
+    },
+  ];
+
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, {}, 'relay.example').map((row) => row.id),
+    ['codex-api-key:relay'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, {}, 'GPT-5.4-CODEX').map((row) => row.id),
+    ['auth-file:pro.json'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, source: 'openai-compatible' }, {}, 'codex').map((row) => row.id),
+    ['openai-compatible:mi'],
+  );
+  assert.deepEqual(
+    filterCodexAccountOrderRows(rows, { ...DEFAULT_CODEX_ACCOUNT_ORDER_FILTER, source: 'codex-api-key' }, {}, 'pro account').map((row) => row.id),
+    [],
+  );
+});
+
 test('getCodexAccountOrderGridClass keeps list single-column and card modes adaptive', () => {
   assert.equal(getCodexAccountOrderGridClass('list'), 'grid gap-3 p-4');
   assert.match(getCodexAccountOrderGridClass('compact'), /codex-account-order-card-grid-compact/);

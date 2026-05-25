@@ -1,5 +1,6 @@
 import { MoreHorizontal } from 'lucide-react';
 import { type DragEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import SearchInput from '../../../components/ui/SearchInput';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
 import { type CodexAccountRow, type CodexRoutePolicyRowState } from '../model/codexAccountList';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
@@ -104,12 +105,13 @@ export function CodexAccountOrderSection({
 }) {
   const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => initialDensity ?? readInitialDensity());
   const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(() => normalizeCodexAccountOrderFilter(initialAccountFilter));
+  const [accountSearchTerm, setAccountSearchTerm] = useState('');
   const [useActionMenu, setUseActionMenu] = useState(false);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionAreaRef = useRef<HTMLDivElement | null>(null);
   const actionMeasureRef = useRef<HTMLDivElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
-  const visibleRows = filterCodexAccountOrderRows(rows, accountFilter, codexQuotaByName);
+  const visibleRows = filterCodexAccountOrderRows(rows, accountFilter, codexQuotaByName, accountSearchTerm);
   const rowOrderIndexByID = new Map(rows.map((row, index) => [row.id, index]));
 
   useEffect(() => {
@@ -138,7 +140,7 @@ export function CodexAccountOrderSection({
       observer.disconnect();
       window.removeEventListener('resize', updateActionLayout);
     };
-  }, [accountFilter, loading, loadingLabel, refreshLabel, saving]);
+  }, [accountFilter, accountSearchTerm, loading, loadingLabel, refreshLabel, saving]);
 
   useEffect(() => {
     if (!useActionMenu) {
@@ -234,6 +236,7 @@ export function CodexAccountOrderSection({
               <InlineActionControls
                 density={density}
                 accountFilter={accountFilter}
+                accountSearchTerm={accountSearchTerm}
                 disabled={!ready}
                 loading={loading}
                 saving={saving}
@@ -243,6 +246,7 @@ export function CodexAccountOrderSection({
                 t={t}
                 onReload={onReload}
                 onAccountFilterChange={setAccountFilter}
+                onAccountSearchChange={setAccountSearchTerm}
                 onDensityChange={(nextDensity) => updateDensity(nextDensity, setDensity)}
               />
             </div>
@@ -266,6 +270,7 @@ export function CodexAccountOrderSection({
                     <InlineActionControls
                       density={density}
                       accountFilter={accountFilter}
+                      accountSearchTerm={accountSearchTerm}
                       disabled={!ready}
                       loading={loading}
                       saving={saving}
@@ -281,6 +286,7 @@ export function CodexAccountOrderSection({
                       onAccountFilterChange={(nextFilter) => {
                         setAccountFilter(nextFilter);
                       }}
+                      onAccountSearchChange={setAccountSearchTerm}
                       onDensityChange={(nextDensity) => {
                         updateDensity(nextDensity, setDensity);
                       }}
@@ -292,6 +298,7 @@ export function CodexAccountOrderSection({
               <InlineActionControls
                 density={density}
                 accountFilter={accountFilter}
+                accountSearchTerm={accountSearchTerm}
                 disabled={!ready}
                 loading={loading}
                 saving={saving}
@@ -301,6 +308,7 @@ export function CodexAccountOrderSection({
                 t={t}
                 onReload={onReload}
                 onAccountFilterChange={setAccountFilter}
+                onAccountSearchChange={setAccountSearchTerm}
                 onDensityChange={(nextDensity) => updateDensity(nextDensity, setDensity)}
               />
             )}
@@ -367,6 +375,7 @@ function updateDensity(
 function InlineActionControls({
   density,
   accountFilter,
+  accountSearchTerm,
   disabled,
   loading,
   saving,
@@ -377,10 +386,12 @@ function InlineActionControls({
   t,
   onReload,
   onAccountFilterChange,
+  onAccountSearchChange,
   onDensityChange,
 }: {
   density: CodexAccountOrderDisplayMode;
   accountFilter: CodexAccountOrderFilter;
+  accountSearchTerm: string;
   disabled: boolean;
   loading: boolean;
   saving: boolean;
@@ -391,6 +402,7 @@ function InlineActionControls({
   t: (key: string) => string;
   onReload: () => void;
   onAccountFilterChange: (filter: CodexAccountOrderFilter) => void;
+  onAccountSearchChange: (value: string) => void;
   onDensityChange: (density: CodexAccountOrderDisplayMode) => void;
 }) {
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
@@ -439,9 +451,17 @@ function InlineActionControls({
       className={
         stacked
           ? 'grid w-full gap-2'
-          : 'grid grid-cols-[5.75rem_minmax(12rem,auto)_12.5rem] items-center gap-2'
+          : 'grid grid-cols-[minmax(12rem,17rem)_5.75rem_minmax(12rem,auto)_12.5rem] items-center gap-2'
       }
     >
+      <SearchInput
+        value={accountSearchTerm}
+        onChange={onAccountSearchChange}
+        disabled={disabled}
+        placeholder={t('codex.account_list_search_placeholder')}
+        clearLabel={t('common.clear_search')}
+        className={stacked ? 'w-full' : 'w-full'}
+      />
       <button
         type="button"
         onClick={onReload}

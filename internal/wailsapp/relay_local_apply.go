@@ -480,6 +480,8 @@ func mergeRelayCodexConfigToml(existing string, input RelayLocalApplyInput) stri
 		}
 		if input.SupportsWebsockets {
 			lines = upsertTomlSectionKey(lines, sectionName, "supports_websockets", "true", true)
+		} else {
+			lines = deleteTomlSectionKey(lines, sectionName, "supports_websockets")
 		}
 	}
 

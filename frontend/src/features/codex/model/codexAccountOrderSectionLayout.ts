@@ -40,6 +40,17 @@ interface CodexAccountOrderFilterableRow {
   disabled?: boolean;
   status?: string;
   quotaKey?: string;
+  baseUrl?: string;
+  prefix?: string;
+  keySuffix?: string;
+  name?: string;
+  email?: string;
+  planType?: string;
+  proxyUrl?: string;
+  supportedFormats?: readonly string[];
+  apiKeys?: readonly string[];
+  headers?: Record<string, string>;
+  modelMappings?: readonly { realModel?: string; codexModel?: string }[];
 }
 
 export function shouldUseCodexOrderSectionActionMenu(containerWidth: number, inlineActionsWidth: number) {
@@ -139,8 +150,10 @@ export function filterCodexAccountOrderRows<T extends CodexAccountOrderFilterabl
   rows: T[],
   filter: CodexAccountOrderFilter,
   codexQuotaByName: Record<string, CodexQuotaState> = {},
+  query = '',
 ) {
   const normalizedFilter = normalizeCodexAccountOrderFilter(filter);
+  const normalizedQuery = normalizeCodexOrderSearchQuery(query);
   return rows.filter((row) => {
     if (normalizedFilter.source !== 'all' && row.sourceKind !== normalizedFilter.source) {
       return false;
@@ -161,6 +174,9 @@ export function filterCodexAccountOrderRows<T extends CodexAccountOrderFilterabl
       return false;
     }
     if (normalizedFilter.hasLongestQuota && !hasCodexOrderRowLongestQuota(row, codexQuotaByName)) {
+      return false;
+    }
+    if (normalizedQuery && !buildCodexOrderRowSearchText(row).includes(normalizedQuery)) {
       return false;
     }
     return true;
@@ -226,4 +242,35 @@ function isCodexOrderRowError(row: CodexAccountOrderFilterableRow) {
     return row.requestable === false;
   }
   return status !== 'ACTIVE' && status !== 'CONFIGURED' && status !== 'LOCAL';
+}
+
+function normalizeCodexOrderSearchQuery(query: string) {
+  return String(query || '').trim().toLowerCase();
+}
+
+function buildCodexOrderRowSearchText(row: CodexAccountOrderFilterableRow) {
+  const values = [
+    row.id,
+    row.label,
+    row.sourceKind,
+    row.provider,
+    row.status,
+    row.baseUrl,
+    row.prefix,
+    row.keySuffix,
+    row.name,
+    row.email,
+    row.planType,
+    row.proxyUrl,
+    ...(row.supportedFormats || []),
+    ...(row.apiKeys || []),
+    ...Object.keys(row.headers || {}),
+    ...Object.values(row.headers || {}),
+    ...(row.modelMappings || []).flatMap((mapping) => [mapping.realModel, mapping.codexModel]),
+  ];
+
+  return values
+    .map((value) => String(value || '').trim().toLowerCase())
+    .filter(Boolean)
+    .join('\n');
 }

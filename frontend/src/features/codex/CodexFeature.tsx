@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import SearchInput from '../../components/ui/SearchInput';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
@@ -64,19 +65,21 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
     () =>
       snapshot
         ? selectCodexFeatureRows(snapshot, draft, {
+            query,
             sectionFilter: 'root',
           })
         : [],
-    [draft, snapshot]
+    [draft, query, snapshot]
   );
   const providerRows = useMemo(
     () =>
       snapshot
         ? selectCodexFeatureRows(snapshot, draft, {
+            query,
             sectionFilter: 'model_providers',
           })
         : [],
-    [draft, snapshot]
+    [draft, query, snapshot]
   );
   const rows = useMemo(
     () =>
@@ -93,10 +96,11 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
     () =>
       snapshot
         ? selectCodexFeatureRows(snapshot, draft, {
+            query,
             sectionFilter: 'notice',
           })
         : [],
-    [draft, snapshot]
+    [draft, query, snapshot]
   );
   const rootDirtyCount = useMemo(
     () =>
@@ -317,6 +321,15 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
           align="center"
         />
 
+        <section className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-4">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            placeholder={t('status.codex_config_search_placeholder')}
+            clearLabel={t('common.clear_search')}
+          />
+        </section>
+
         <StatusCodexRootSettingsSection
           t={t}
           snapshot={snapshot}
@@ -363,6 +376,7 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
           onReload={() => void reload('features')}
           onChangeQuery={setQuery}
           onChangeStageFilter={setStageFilter}
+          showSearch={false}
           onChangeFeature={updateDraftValue}
           onPreview={() => void previewChanges('features')}
           onSave={() => void saveChanges('features')}

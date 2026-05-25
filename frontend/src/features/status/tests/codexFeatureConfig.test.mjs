@@ -10,6 +10,11 @@ import {
   selectCodexFeatureRows,
   setCodexFeatureDraftValue,
 } from '../model/codexFeatureConfig.ts';
+import {
+  getCodexFeatureConfig,
+  previewCodexFeatureConfig,
+  saveCodexFeatureConfig,
+} from '../api/codexFeatures.ts';
 import { selectCodexValueEditorKind } from '../model/codexValueEditorModel.ts';
 
 const snapshot = normalizeCodexFeatureConfigSnapshot({
@@ -114,6 +119,113 @@ test('selectCodexFeatureRows groups and filters by stage and query', () => {
     selectCodexFeatureRows(snapshot, draft, { stageFilter: 'compat' }).map((row) => row.key),
     ['removed_local']
   );
+});
+
+test('selectCodexFeatureRows applies query filters across codex config sections', () => {
+  const mixedSnapshot = normalizeCodexFeatureConfigSnapshot({
+    features: [
+      {
+        key: 'model',
+        section: 'root',
+        valueType: 'string',
+        defaultValue: 'gpt-5',
+        description: 'default model setting',
+      },
+      {
+        key: 'base_url',
+        section: 'model_providers',
+        path: ['model_providers', 'gettokens', 'base_url'],
+        valueType: 'string',
+        defaultValue: 'https://relay.example.test/v1',
+        description: 'relay endpoint',
+      },
+      {
+        key: 'tool_search',
+        section: 'features',
+        defaultValue: true,
+        description: 'tool discovery',
+      },
+      {
+        key: 'model_migrations',
+        section: 'notice',
+        valueType: 'table',
+        defaultValue: {},
+        description: 'migration notices',
+      },
+    ],
+  });
+  const draft = buildCodexFeatureDraft(mixedSnapshot);
+
+  assert.deepEqual(
+    selectCodexFeatureRows(mixedSnapshot, draft, { sectionFilter: 'root', query: 'default model' }).map((row) => row.key),
+    ['model']
+  );
+  assert.deepEqual(
+    selectCodexFeatureRows(mixedSnapshot, draft, { sectionFilter: 'model_providers', query: 'relay' }).map((row) => row.key),
+    ['base_url']
+  );
+  assert.deepEqual(
+    selectCodexFeatureRows(mixedSnapshot, draft, { sectionFilter: 'notice', query: 'migration' }).map((row) => row.key),
+    ['model_migrations']
+  );
+  assert.deepEqual(
+    selectCodexFeatureRows(mixedSnapshot, draft, { sectionFilter: 'features', query: 'relay' }).map((row) => row.key),
+    []
+  );
+});
+
+test('codex feature api returns browser preview data when Wails bindings are missing', async () => {
+  const previousWindow = globalThis.window;
+  globalThis.window = {
+    location: { protocol: 'http:' },
+    go: { main: { App: {} } },
+  };
+
+  try {
+    const previewSnapshot = await getCodexFeatureConfig();
+    const draft = buildCodexFeatureDraft(previewSnapshot);
+
+    assert.equal(previewSnapshot.configPath, '/Users/preview/.codex/config.toml');
+    assert.ok(selectCodexFeatureRows(previewSnapshot, draft, { sectionFilter: 'root' }).length > 0);
+    assert.ok(selectCodexFeatureRows(previewSnapshot, draft, { sectionFilter: 'model_providers' }).length > 0);
+    assert.ok(selectCodexFeatureRows(previewSnapshot, draft, { sectionFilter: 'features' }).length > 0);
+    assert.ok(selectCodexFeatureRows(previewSnapshot, draft, { sectionFilter: 'notice' }).length > 0);
+    assert.deepEqual(
+      selectCodexFeatureRows(previewSnapshot, draft, { query: 'relay' }).map((row) => row.section),
+      ['model_providers'],
+    );
+
+    const input = {
+      values: {},
+      changes: [
+        {
+          id: 'root.model',
+          section: 'root',
+          key: 'model',
+          path: ['model'],
+          valueType: 'string',
+          value: 'gpt-5.5-preview',
+        },
+      ],
+    };
+    const preview = await previewCodexFeatureConfig(input, previewSnapshot.configPath);
+    assert.equal(preview.changes[0].before, 'gpt-5.4');
+    assert.equal(preview.changes[0].after, 'gpt-5.5-preview');
+
+    await saveCodexFeatureConfig(input);
+    const savedSnapshot = await getCodexFeatureConfig();
+    const savedDraft = buildCodexFeatureDraft(savedSnapshot);
+    assert.equal(
+      selectCodexFeatureRows(savedSnapshot, savedDraft, { sectionFilter: 'root', query: 'model' })[0].effectiveValue,
+      'gpt-5.5-preview',
+    );
+  } finally {
+    if (typeof previousWindow === 'undefined') {
+      delete globalThis.window;
+    } else {
+      globalThis.window = previousWindow;
+    }
+  }
 });
 
 test('groupCodexFeatureRows groups sections into stable UI buckets', () => {
