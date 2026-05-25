@@ -23,6 +23,9 @@
 5. `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入新 UI / Wails DTO / engine policy。
 6. `exclude` 不是 route mode，只是请求级 deny 或 pool filter。
 7. 项目模式只限定目标账号或账号组；命中组后仍通过 `sequential` 或 `balanced` 做组内选择。
+8. 账号或有效组禁用立即生效，高于 session sticky、失败降级和 retry；已有流式连接在最近可控边界断开。
+9. 账号或有效组激活只重新进入可路由账号池，等待下一轮 route / retry 选择，不抢占当前 stream / sticky。
+10. 失败冷却状态必须持久化到运行态或 guard source；自动恢复只清对应 source，不清用户禁用。
 
 ## 分支与工作区
 
@@ -46,6 +49,8 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 
 - 为 `RoutePolicy` allow / deny / order / fallback 补兼容测试。
 - 为 hard guard 优先级补测试：manual-disabled / rate-limit / disabled / cooldown 不可被 allow/order 放回。
+- 为启停实时性补测试：禁用清理 sticky / pinned auth 并断开当前流；激活只进入下一轮候选池，不抢占当前连接。
+- 为失败冷却持久化补测试：429/5xx 写入运行态后，后续 route explain 和真实 route 都能过滤该账号。
 - 为 hook 安装点补测试：route policy、usage attribution、rate-limit hook 必须在生产启动链路安装。
 - 为前端模型补测试：`ChannelRouteMode` 只接受 `sequential / balanced / project`。
 - 为前端边界补测试：Account Inventory 不渲染 rotation orchestration 入口。
@@ -91,6 +96,8 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 - route trace 中 rate-limit 只出现一次过滤步骤。
 - manual-disabled 与 rate-limit source 独立。
 - sticky auth 被 guard 命中后失效重选。
+- sticky / pinned auth 对应账号或有效组被禁用后立即失效；当前流式连接在最近可控边界断开，不进入失败降级继续使用原账号。
+- 账号或账号组激活后只进入下一轮候选池，不抢占已有 stream / sticky。
 - Codex WebSocket pinned auth 被 guard 命中后释放 pin、关闭旧 upstream、重新进入 engine。
 
 ### Phase 3：Routeable Account Pool 与三模式
@@ -202,6 +209,16 @@ qmd embed
 5. 将 Codex / Claude account-list skill 更新到新 Channel Routing 边界。
 
 这批完成后，再进入真实实现，避免一开始就改 UI 和 sidecar 热路径导致回归面失控。
+
+## 新增优先级决策
+
+2026-05-25 确认：
+
+- `manual-disabled`、账号 `disabled`、`inventoryGroup.enabled=false`、`channelGroup.enabled=false` 是硬状态。
+- 硬禁用优先级高于 `StickyPolicy`、失败降级、retry 和 selector。
+- 已经绑定 sticky / pinned auth 的长连接被禁用命中时，不做无缝续流；执行器需要在 request-boundary 或管理控制可达的最近边界主动断开，然后让下一次请求重新进入路由引擎。
+- 激活账号或账号组只让它回到可路由账号池，等待下一轮 route / retry，不主动抢占当前 stream / sticky。
+- 失败冷却需要持久化，至少覆盖 401、429、5xx、timeout、model-unavailable；冷却恢复不能清理用户禁用。
 
 ## 本次整理的沉淀结论
 

@@ -5,6 +5,7 @@ import {
   ExplainChannelRouting,
   GetAuthFileModels,
   GetChannelRoutingConfig,
+  ListChannelRouteEvents,
   ListOAuthModelAliases,
   ListAccounts,
   ListOpenAICompatibleProviders,
@@ -35,8 +36,10 @@ import {
 } from '../accounts/model/accountUsage';
 import ChannelRoutingWorkbench from '../channel-routing/components/ChannelRoutingWorkbench';
 import {
+  buildPreviewChannelRouteAuditEvent,
   normalizeChannelRoutingConfig,
   updateChannelRoutingConfig,
+  type ChannelRouteAuditEvent,
   type ChannelRouteMode,
   type ChannelRoutingConfig,
 } from '../channel-routing/model/channelRouting';
@@ -56,13 +59,11 @@ import {
   mergeCodexAuthFileModelMappings,
   moveCodexAccountRowToEdge,
   normalizeCodexModelMappingsForProvider,
-  normalizeCodexAccountIDList,
   reorderCodexAccountRows,
   resolveCodexRoutingProbeDefaultModel,
   type CodexAccountOrderEdge,
   type CodexAccountRow,
   type CodexModelMappingRow,
-  type CodexRoutePolicyRowMode,
   type CodexRoutingProbeAttemptView,
 } from './model/codexAccountList';
 
@@ -90,9 +91,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const [openAICompatibleModelErrors, setOpenAICompatibleModelErrors] = useState<Record<string, string>>({});
   const [codexModelCatalogOptions, setCodexModelCatalogOptions] = useState<CodexModelMappingRow[]>([]);
   const [routingProbeModel, setRoutingProbeModel] = useState(DEFAULT_CODEX_ROUTING_PROBE_MODEL);
-  const [routePolicyAllowIDs, setRoutePolicyAllowIDs] = useState<string[]>([]);
-  const [routePolicyDenyIDs, setRoutePolicyDenyIDs] = useState<string[]>([]);
-  const [routePolicyAllowFallback, setRoutePolicyAllowFallback] = useState(false);
   const [routingProbeAttempts, setRoutingProbeAttempts] = useState<CodexRoutingProbeAttemptView[]>([]);
   const [routingProbeRequestedAttempts, setRoutingProbeRequestedAttempts] = useState(1);
   const [routingProbeRunning, setRoutingProbeRunning] = useState(false);
@@ -105,6 +103,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     buildDefaultChannelRoutingConfig('codex'),
   );
   const [channelExplain, setChannelExplain] = useState<main.ChannelRoutingExplainResult | null>(null);
+  const [channelRouteEvents, setChannelRouteEvents] = useState<ChannelRouteAuditEvent[]>([]);
+  const [channelRouteEventsLoading, setChannelRouteEventsLoading] = useState(false);
   const suppressNextDetailClickRef = useRef(false);
   const { codexQuotaByName, loadCodexQuotas } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
@@ -129,12 +129,12 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const requestableOrderIDs = useMemo(() => requestableRows.map((row) => row.id), [requestableRows]);
   const routePolicyDraft = useMemo(
     () => ({
-      allowAccountIDs: routePolicyAllowIDs,
-      denyAccountIDs: routePolicyDenyIDs,
+      allowAccountIDs: [],
+      denyAccountIDs: [],
       orderAccountIDs: requestableOrderIDs,
-      allowFallback: routePolicyAllowFallback,
+      allowFallback: false,
     }),
-    [requestableOrderIDs, routePolicyAllowFallback, routePolicyAllowIDs, routePolicyDenyIDs],
+    [requestableOrderIDs],
   );
   const routePolicyPreviewRows = useMemo(
     () => buildCodexRoutePolicyPreview(orderedRows, routePolicyDraft),
@@ -173,6 +173,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       setChannelConfig(previewConfig);
       setOrderedRows(applyChannelOrderToRows(previewRows, previewConfig.orderedAccountIDs));
       setChannelExplain(null);
+      setChannelRouteEvents([]);
       setOrderDirty(false);
       void loadCodexQuotas(previewAccounts);
       const previewUsageAccounts: AccountRecord[] = [
@@ -228,6 +229,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       setChannelConfig(normalizedConfig);
       setChannelExplain(null);
       setOrderedRows(nextRows);
+      void loadChannelRouteEvents();
       setOrderDirty(false);
       setMessage(messageOverride || t('codex.account_list_loaded'));
     } catch (error) {
@@ -269,11 +271,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     }
     setRoutingProbeModel(resolveCodexRoutingProbeDefaultModel(orderedRows));
   }, [orderedRows, routingProbeModel]);
-
-  useEffect(() => {
-    setRoutePolicyAllowIDs((prev) => filterCodexAccountIDs(prev, requestableOrderIDs));
-    setRoutePolicyDenyIDs((prev) => filterCodexAccountIDs(prev, requestableOrderIDs));
-  }, [requestableOrderIDs]);
 
   useEffect(() => {
     if (!ready) {
@@ -600,8 +597,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           routeOrder: index,
           channelOrder: index,
         }));
-      setChannelExplain(
-        main.ChannelRoutingExplainResult.createFrom({
+      const result = main.ChannelRoutingExplainResult.createFrom({
           channel: 'codex',
           routeMode: nextConfig.routeMode,
           selectedAccountID: candidates[0]?.id || '',
@@ -619,10 +615,12 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
                 selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
                 diff: Boolean(candidates.length > 1),
                 steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
-              }
+            }
             : undefined,
-        }),
-      );
+        });
+      setChannelExplain(result);
+      const event = buildPreviewChannelRouteAuditEvent({ channel: 'codex', explain: result });
+      setChannelRouteEvents((prev) => (event ? [event, ...prev].slice(0, 5) : prev));
       return;
     }
     try {
@@ -630,9 +628,28 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         ExplainChannelRouting(main.ChannelRoutingExplainInput.createFrom({ channel: 'codex' })),
       );
       setChannelExplain(result);
+      await loadChannelRouteEvents();
     } catch (error) {
       console.error(error);
       setMessage(`${t('codex.account_list_probe_failed')}: ${toErrorMessage(error)}`);
+    }
+  }
+
+  async function loadChannelRouteEvents() {
+    if (browserMode) {
+      return;
+    }
+    setChannelRouteEventsLoading(true);
+    try {
+      const result = await trackRequest('ListChannelRouteEvents', { channel: 'codex', limit: 5 }, () =>
+        ListChannelRouteEvents(main.ChannelRouteEventsInput.createFrom({ channel: 'codex', limit: 5 })),
+      );
+      setChannelRouteEvents((result || []) as ChannelRouteAuditEvent[]);
+    } catch (error) {
+      console.error(error);
+      setMessage(`${t('codex.account_list_probe_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setChannelRouteEventsLoading(false);
     }
   }
 
@@ -670,10 +687,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         const routePolicyInput = {
           model,
           attempts: 1,
-          allowAccountIDs: routePolicyAllowIDs,
-          denyAccountIDs: routePolicyDenyIDs,
+          allowAccountIDs: [],
+          denyAccountIDs: [],
           orderAccountIDs: requestableOrderIDs,
-          allowFallback: routePolicyAllowFallback,
+          allowFallback: false,
         };
         const result = await trackRequest('ProbeCodexAccountRouting', { ...routePolicyInput, index: attemptIndex + 1 }, () =>
           ProbeCodexAccountRouting(
@@ -704,21 +721,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     }
   }
 
-  function setRoutePolicyMode(id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) {
-    setRoutePolicyAllowIDs((prev) => {
-      const filtered = normalizeCodexAccountIDList(prev).filter((item) => item !== id);
-      return mode === 'allow' ? [...filtered, id] : filtered;
-    });
-    setRoutePolicyDenyIDs((prev) => {
-      const filtered = normalizeCodexAccountIDList(prev).filter((item) => item !== id);
-      return mode === 'deny' ? [...filtered, id] : filtered;
-    });
-  }
-
   function resetRoutePolicy() {
-    setRoutePolicyAllowIDs([]);
-    setRoutePolicyDenyIDs([]);
-    setRoutePolicyAllowFallback(false);
     setRoutingProbeAttempts([]);
   }
 
@@ -893,11 +896,14 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           saving={saving}
           preview={browserMode}
           message={orderChanged ? t('codex.account_list_unsaved') : ''}
+          routeEvents={channelRouteEvents}
+          routeEventsLoading={channelRouteEventsLoading}
           onModeChange={updateChannelMode}
           onShadowEnabledChange={updateShadowEnabled}
           onShadowModeChange={updateShadowMode}
           onSave={() => void saveOrder()}
           onExplain={() => void runChannelExplain()}
+          onRefreshEvents={() => void loadChannelRouteEvents()}
         />
 
         <CodexAccountOrderSection
@@ -940,7 +946,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onToggle={(row) => void toggleAccount(row)}
           onMoveToTop={(rowID) => moveAccountToOrderEdge(rowID, 'top')}
           onMoveToBottom={(rowID) => moveAccountToOrderEdge(rowID, 'bottom')}
-          onPolicyModeChange={setRoutePolicyMode}
         />
       </div>
       {routeProbeOpen ? (
@@ -950,12 +955,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           routingProbeModelOptions={routingProbeModelOptions}
           routingProbeRunning={routingProbeRunning}
           routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
-          allowFallback={routePolicyAllowFallback}
           routePolicyPreviewRows={routePolicyPreviewRows}
           routingProbeStreamLines={routingProbeStreamLines}
           latestUsedFallback={latestRoutingProbeUsedFallback}
           onClose={() => setRouteProbeOpen(false)}
-          onFallbackChange={() => setRoutePolicyAllowFallback((prev) => !prev)}
           onModelChange={setRoutingProbeModel}
           onProbeOnce={() => void runRoutingProbe(1)}
           onProbeSeries={() => void runRoutingProbe(3)}
@@ -992,11 +995,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 function readAuthFileNameFromRowID(rowID: string) {
   const prefix = 'auth-file:';
   return rowID.startsWith(prefix) ? rowID.slice(prefix.length) : '';
-}
-
-function filterCodexAccountIDs(previous: string[], availableIDs: string[]) {
-  const available = new Set(availableIDs);
-  return normalizeCodexAccountIDList(previous).filter((id) => available.has(id));
 }
 
 function buildDefaultChannelRoutingConfig(channel: 'codex', orderedAccountIDs: string[] = []): ChannelRoutingConfig {

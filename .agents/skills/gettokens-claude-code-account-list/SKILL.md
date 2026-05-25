@@ -17,6 +17,9 @@ description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthr
 - `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入 Claude 新 UI / Wails DTO / engine policy。
 - `exclude` 不是 route mode，只能作为请求级 deny 或 pool filter。
 - 旧 allow / deny / order / fallback 只作为请求级兼容 policy，不作为新页面主配置模型。
+- 禁用优先级高于 session sticky、失败降级和 retry；禁用账号或禁用组不能被 sticky / fallback 继续使用。
+- 激活账号只重新进入可路由账号池，等待下一轮 route / retry，不抢占当前 stream / sticky。
+- 失败冷却状态必须持久化到运行态或 guard source；401/429/5xx/model-unavailable 后续请求和 explain 都应读取同一冷却状态，自动恢复不能清 `manual-disabled`。
 - P0 账号筛选条件：`AccountRecord.supportedFormats` 包含 `anthropic`。
 - Claude Code 本地仍只写一个 relay endpoint / relay key；多账号轮换发生在 GetTokens relay 内。
 - 不把 provider 名称等于 `claude` 作为筛选条件。

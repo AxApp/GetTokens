@@ -20,11 +20,28 @@
 
 ## 清理项
 
+### 当前状态（2026-05-25）
+
+- 已完成：生产启动 hook 安装点，`RoutePolicy` 注册顺序稳定，hard guard 不能被后续 allow/order 放回。
+- 已完成：`AccountRouteGuardStore` source 独立，`manual-disabled`、`rate-limit`、`auth-error`、`upstream-rate-limit`、`upstream-error` 分源管理。
+- 已完成：真实执行器 `MarkResult` 通过 `AccountRouteGuardResultHook` 写入 transient guard source。
+- 已完成：Codex / Claude 主 UI 不再暴露旧 allow / deny / fallback 编排；probe 只按渠道账号顺序传入 `orderAccountIDs`，旧字段保留为空作为兼容 API。
+- 已完成：Wails route event ledger 有读 API，Codex / Claude Channel Routing workbench 已展示最近 route ledger。
+- 已完成：`rateLimitPolicy` 兼容注册已删除，rate-limit evaluator 只刷新 `AccountRouteGuardSourceRateLimit`，热路径由 `accountRouteGuardPolicy` 统一 deny。
+- 已完成：session affinity legacy path 在进入 sticky selector 前会先执行 `RoutePolicy` / engine seam，guard deny 不能被 sticky cache 或 fallback 绕过。
+- 已完成：`SessionAffinitySelector` 作为 manager-local sticky policy 接入 scheduler fast path，sticky cache hit 以 `PolicyStageSticky` 排序候选，cache miss 在 selector 选中后绑定结果。
+- 已完成：WebSocket pinned auth request-boundary 释放逻辑已收敛到单一 helper，统一使用 `AccountRouteGuardStore` 判断 guarded auth 并触发 transcript replay。
+- 保留中：`RoutePolicy` 公共类型、`gettokensRoutePolicy`、`accountRouteGuardPolicy` 继续作为 selector 热路径兼容 seam。
+
 ### 1. Hook 安装点
 
 现状风险：
 
 - `InstallRoutePolicyHook()`、`InstallUsageAttributionHook()`、`InstallRateLimitHook()` 存在定义，但源码检索时未看到明确生产启动调用。
+
+2026-05-25 状态：
+
+- 已完成。`internal/cmd/run.go` 的启动链路通过 `buildGetTokensStartupHooks(configPath)` 安装 GetTokens route policy，启用 usage 时安装 usage attribution / rate-limit ledger，并有启动路径测试覆盖。
 
 目标：
 
@@ -40,7 +57,7 @@
 
 ### 2. Rate-limit 双路径
 
-现状风险：
+历史风险：
 
 - `RateLimitEvaluator.EvaluateNow()` 会刷新 `AccountRouteGuardSourceRateLimit`。
 - `InstallRateLimitHook()` 同时注册 `rateLimitPolicy`，该 policy 直接从 evaluator 输出 `DenyIDs`。
@@ -50,7 +67,11 @@
 
 - 收敛为一个权威热路径出口：优先使用 `AccountRouteGuardStore` 的 `rate-limit` source。
 - `RateLimitEvaluator` 只负责评估、刷新 guard source、写事件。
-- 若短期保留 `rateLimitPolicy`，必须标记为兼容层并在 engine 接管后删除。
+- 不再保留独立 `rateLimitPolicy`；rate-limit 只作为 guard source 数据进入统一 hard guard。
+
+2026-05-25 状态：
+
+- 已完成。`InstallRateLimitHook()` 不再注册 `rateLimitPolicy`，也不再维护独立 cleanup 句柄；`RateLimitEvaluator` 评估后只刷新 `AccountRouteGuardSourceRateLimit`。新增测试覆盖 blocked state 在没有 `rateLimitPolicy` 时仍由 `accountRouteGuardPolicy` 输出 deny。
 
 验收：
 
@@ -71,6 +92,10 @@
 - `gettokensRoutePolicy` 继续解析 metadata/header，但只作为输入适配层。
 - `accountRouteGuardPolicy` 迁移为 `HardFilterPolicy`，或作为兼容 shim 调用 engine guard。
 
+2026-05-25 状态：
+
+- 部分完成。公共 `RoutePolicy` 仍保留；它已按 stage 进入 `gettokensrouting.Engine` 的兼容执行顺序，并由 scheduler 热路径调用。新 UI 已停止产生 allow / deny / fallback 主交互，旧 header/metadata 只作为 request policy 兼容入口。
+
 验收：
 
 - allow/deny/order/fallback 旧测试不变。
@@ -90,6 +115,10 @@
 - cache hit 只在 auth 仍可用且未被 guard/cooldown/model state 排除时生效。
 - cache miss 再进入 selector。
 
+2026-05-25 状态：
+
+- 已完成主线收敛。Wails explain 已覆盖 `stickyAccountID` 失效与激活非抢占语义；普通 session affinity 已作为 manager-local `PolicyStageSticky` 接入 scheduler fast path，cache hit 通过 route engine 排序候选，cache miss 在 selector 选中后绑定结果。WebSocket pinned auth 的连接生命周期边界见第 5 节，已收口为 request-boundary helper。
+
 验收：
 
 - 同 session 命中同一账号。
@@ -107,6 +136,10 @@
 - 保留请求边界处理，但将“重新选择”统一进入 `AccountRoutingEngine.Route()`。
 - pinned auth guarded 检查使用同一 HardFilterPolicy / guard state。
 - executor 继续保证 authID / wsURL 变化时关闭旧 upstream 并重新握手。
+
+2026-05-25 状态：
+
+- 已完成边界收口。WebSocket request-boundary helper 使用同一 `AccountRouteGuardStore` 判断 pinned auth 是否 guarded，命中后释放 pin、关闭旧 execution session、强制 transcript replay，并有 pinned auth release、旧 upstream close、transcript replay、`previous_response_id` 清理测试覆盖。该特例保留为连接生命周期边界，不再作为另一套路由规则实现。
 
 验收：
 

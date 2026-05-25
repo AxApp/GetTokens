@@ -75,6 +75,32 @@ export interface NormalizedChannelRoutingConfig {
   invalidModes: string[];
 }
 
+export interface ChannelRouteAuditEvent {
+  id: string;
+  recordedAt: string;
+  channel: string;
+  projectName?: string;
+  routeMode: string;
+  selectedAccountID?: string;
+  candidateCount: number;
+  filteredCount: number;
+  snapshotVersion: string;
+  policyVersion: string;
+  shadowEnabled?: boolean;
+  shadowRouteMode?: string;
+  shadowSelectedAccountID?: string;
+  shadowDiff?: boolean;
+  redacted: boolean;
+}
+
+export interface ChannelRouteAuditEventSummary {
+  id: string;
+  title: string;
+  meta: string;
+  shadow: string;
+  redacted: boolean;
+}
+
 const CHANNELS = ['codex', 'claude'] as const;
 
 export function classifyChannelRouteMode(input: unknown): ChannelRouteModeClassification {
@@ -161,6 +187,71 @@ export function updateChannelRoutingConfig(
       : config.projectBindings.map((binding) => ({ ...binding })),
     shadowEnabled: patch.shadowEnabled ?? config.shadowEnabled,
     shadowRouteMode: patch.shadowRouteMode ?? config.shadowRouteMode,
+  };
+}
+
+export function buildChannelRouteAuditEventSummary(event: ChannelRouteAuditEvent): ChannelRouteAuditEventSummary {
+  const routeMode = String(event.routeMode || 'unknown').trim() || 'unknown';
+  const selected = String(event.selectedAccountID || 'none').trim() || 'none';
+  const project = String(event.projectName || '').trim();
+  const snapshot = String(event.snapshotVersion || 'snapshot-unknown').trim() || 'snapshot-unknown';
+  const policy = String(event.policyVersion || 'policy-unknown').trim() || 'policy-unknown';
+  const candidateCount = Number.isFinite(event.candidateCount) ? event.candidateCount : 0;
+  const filteredCount = Number.isFinite(event.filteredCount) ? event.filteredCount : 0;
+  const title = `${routeMode} -> ${selected}`;
+  const metaParts = [
+    project ? `project:${project}` : '',
+    `${candidateCount} candidates`,
+    `${filteredCount} filtered`,
+    `${snapshot} / ${policy}`,
+  ].filter(Boolean);
+  const shadow = event.shadowEnabled
+    ? `${event.shadowRouteMode || 'shadow'} -> ${event.shadowSelectedAccountID || 'none'} / diff:${event.shadowDiff ? 'yes' : 'no'}`
+    : '';
+  return {
+    id: String(event.id || '').trim() || `${event.channel || 'channel'}:${event.recordedAt || 'unknown'}`,
+    title,
+    meta: metaParts.join(' · '),
+    shadow,
+    redacted: event.redacted !== false,
+  };
+}
+
+export function buildPreviewChannelRouteAuditEvent(input: {
+  channel: ChannelID;
+  explain?: {
+    selectedAccountID?: string;
+    candidates?: unknown[];
+    filtered?: unknown[];
+    snapshotVersion?: string;
+    policyVersion?: string;
+    shadow?: {
+      enabled?: boolean;
+      routeMode?: string;
+      selectedAccountID?: string;
+      diff?: boolean;
+    };
+  } | null;
+}): ChannelRouteAuditEvent | null {
+  if (!input.explain) {
+    return null;
+  }
+  const now = new Date().toISOString();
+  return {
+    id: `preview:${input.channel}:${now}`,
+    recordedAt: now,
+    channel: input.channel,
+    routeMode: 'preview',
+    selectedAccountID: input.explain.selectedAccountID || '',
+    candidateCount: input.explain.candidates?.length || 0,
+    filteredCount: input.explain.filtered?.length || 0,
+    snapshotVersion: input.explain.snapshotVersion || 'preview',
+    policyVersion: input.explain.policyVersion || 'channel-routing-v1',
+    shadowEnabled: input.explain.shadow?.enabled === true,
+    shadowRouteMode: input.explain.shadow?.routeMode || '',
+    shadowSelectedAccountID: input.explain.shadow?.selectedAccountID || '',
+    shadowDiff: input.explain.shadow?.diff === true,
+    redacted: true,
   };
 }
 

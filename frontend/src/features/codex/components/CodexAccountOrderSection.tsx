@@ -1,11 +1,7 @@
 import { MoreHorizontal } from 'lucide-react';
 import { type DragEvent, type ReactNode, useEffect, useRef, useState } from 'react';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
-import {
-  type CodexAccountRow,
-  type CodexRoutePolicyRowMode,
-  type CodexRoutePolicyRowState,
-} from '../model/codexAccountList';
+import { type CodexAccountRow, type CodexRoutePolicyRowState } from '../model/codexAccountList';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
 import type { RateLimitState } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
@@ -67,7 +63,6 @@ export function CodexAccountOrderSection({
   onToggle,
   onMoveToTop,
   onMoveToBottom,
-  onPolicyModeChange,
   initialDensity,
   initialAccountFilter,
 }: {
@@ -104,7 +99,6 @@ export function CodexAccountOrderSection({
   onToggle: (row: CodexAccountRow) => void;
   onMoveToTop: (id: string) => void;
   onMoveToBottom: (id: string) => void;
-  onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
   initialDensity?: CodexAccountOrderDisplayMode;
   initialAccountFilter?: CodexAccountOrderFilter | 'all';
 }) {
@@ -216,7 +210,6 @@ export function CodexAccountOrderSection({
               quotaState={row.quotaKey ? codexQuotaByName[row.quotaKey] : undefined}
               usageSummary={accountUsageByID[row.id]}
               rateLimitStatus={accountRateLimitByID[row.id]}
-              onPolicyModeChange={onPolicyModeChange}
             />
           );
         })}

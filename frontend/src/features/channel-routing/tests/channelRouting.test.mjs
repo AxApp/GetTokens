@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   CHANNEL_ROUTE_MODES,
+  buildChannelRouteAuditEventSummary,
+  buildPreviewChannelRouteAuditEvent,
   classifyChannelRouteMode,
   isChannelRouteMode,
   normalizeChannelRoutingConfig,
@@ -165,4 +167,59 @@ test('normalizeChannelRoutingConfig trims project bindings and defaults invalid 
       fallbackMode: 'fallback-global',
     },
   ]);
+});
+
+test('buildChannelRouteAuditEventSummary keeps route ledger redacted and compact', () => {
+  assert.deepEqual(
+    buildChannelRouteAuditEventSummary({
+      id: 'route-1',
+      recordedAt: '2026-05-25T10:00:00Z',
+      channel: 'codex',
+      projectName: 'GetTokens',
+      routeMode: 'balanced',
+      selectedAccountID: 'codex-api-key:stable',
+      candidateCount: 3,
+      filteredCount: 1,
+      snapshotVersion: 'snapshot-7',
+      policyVersion: 'channel-routing-v1',
+      shadowEnabled: true,
+      shadowRouteMode: 'sequential',
+      shadowSelectedAccountID: 'auth-file:backup.json',
+      shadowDiff: true,
+      redacted: true,
+    }),
+    {
+      id: 'route-1',
+      title: 'balanced -> codex-api-key:stable',
+      meta: 'project:GetTokens · 3 candidates · 1 filtered · snapshot-7 / channel-routing-v1',
+      shadow: 'sequential -> auth-file:backup.json / diff:yes',
+      redacted: true,
+    },
+  );
+});
+
+test('buildPreviewChannelRouteAuditEvent converts explain result into browser-only ledger item', () => {
+  const event = buildPreviewChannelRouteAuditEvent({
+    channel: 'claude',
+    explain: {
+      selectedAccountID: 'codex-api-key:claude',
+      candidates: [{ id: 'codex-api-key:claude' }, { id: 'codex-api-key:fallback' }],
+      filtered: [{ id: 'codex-api-key:disabled' }],
+      snapshotVersion: 'preview',
+      policyVersion: 'channel-routing-v1',
+      shadow: {
+        enabled: true,
+        routeMode: 'balanced',
+        selectedAccountID: 'codex-api-key:fallback',
+        diff: true,
+      },
+    },
+  });
+
+  assert.equal(event.channel, 'claude');
+  assert.equal(event.selectedAccountID, 'codex-api-key:claude');
+  assert.equal(event.candidateCount, 2);
+  assert.equal(event.filteredCount, 1);
+  assert.equal(event.redacted, true);
+  assert.equal(event.shadowDiff, true);
 });

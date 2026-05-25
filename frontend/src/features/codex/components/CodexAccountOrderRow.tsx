@@ -17,46 +17,9 @@ import { buildEndpointLabel, routePolicyModeLabel, sourceKindLabel } from './cod
 import {
   buildCodexQuotaSummaryAccount,
   type CodexAccountRow,
-  type CodexRoutePolicyRowMode,
   type CodexRoutePolicyRowState,
 } from '../model/codexAccountList';
 import type { CodexAccountOrderDisplayMode } from '../model/codexAccountOrderSectionLayout';
-
-function RoutePolicyModeControl({
-  id,
-  mode,
-  t,
-  onChange,
-}: {
-  id: string;
-  mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>;
-  t: (key: string) => string;
-  onChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
-}) {
-  const options: Array<{ id: Exclude<CodexRoutePolicyRowMode, 'blocked'>; label: string }> = [
-    { id: 'default', label: t('codex.account_list_policy_mode_default') },
-    { id: 'allow', label: t('codex.account_list_policy_mode_allow') },
-    { id: 'deny', label: t('codex.account_list_policy_mode_deny') },
-  ];
-  return (
-    <div className="grid grid-cols-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-      {options.map((option) => (
-        <button
-          key={option.id}
-          type="button"
-          onClick={() => onChange(id, option.id)}
-          className={`min-h-9 border-r-2 border-[var(--border-color)] px-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide last:border-r-0 ${
-            mode === option.id
-              ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-              : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export function AccountOrderRow({
   row,
@@ -81,7 +44,6 @@ export function AccountOrderRow({
   quotaState,
   usageSummary,
   rateLimitStatus,
-  onPolicyModeChange,
 }: {
   row: CodexAccountRow;
   index: number;
@@ -105,7 +67,6 @@ export function AccountOrderRow({
   quotaState?: CodexQuotaState;
   usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
-  onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
 }) {
   const cardDensity = density === 'full' ? 'full' : 'compact';
   const endpointLabel = buildEndpointLabel(row);
@@ -263,7 +224,6 @@ export function AccountOrderRow({
             routePolicyState={routePolicyState}
             t={t}
             onToggle={onToggle}
-            onPolicyModeChange={onPolicyModeChange}
           />
         }
         interactive
@@ -335,7 +295,6 @@ function CodexAccountSpecialActionBar({
   routePolicyState,
   t,
   onToggle,
-  onPolicyModeChange,
 }: {
   row: CodexAccountRow;
   endpointLabel: string;
@@ -344,10 +303,14 @@ function CodexAccountSpecialActionBar({
   routePolicyState?: CodexRoutePolicyRowState;
   t: (key: string) => string;
   onToggle: () => void;
-  onPolicyModeChange: (id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) => void;
 }) {
   const runtimeLabel = row.requestable ? t('common.enable') : routePolicyModeLabel(t, 'blocked');
   const modelMappingCount = row.modelMappings.length > 0 ? String(row.modelMappings.length) : '0';
+  const routeStatusLabel = row.requestable
+    ? routePolicyState?.participates
+      ? `${t('codex.account_list_policy_rank')} ${routePolicyState.previewRank}`
+      : t('codex.account_list_policy_skipped')
+    : blockedLabel || routePolicyModeLabel(t, 'blocked');
 
   function stopAction(event: MouseEvent<HTMLDivElement>) {
     event.stopPropagation();
@@ -397,24 +360,11 @@ function CodexAccountSpecialActionBar({
 
       <div className="grid gap-2">
         <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-          {t('codex.account_list_policy_title')}
+          {t('codex.account_list_route_state')}
         </span>
-        {row.requestable && routePolicyState?.mode !== 'blocked' ? (
-          <RoutePolicyModeControl
-            id={row.id}
-            mode={
-              routePolicyState?.mode === 'allow' || routePolicyState?.mode === 'deny'
-                ? routePolicyState.mode
-                : 'default'
-            }
-            t={t}
-            onChange={onPolicyModeChange}
-          />
-        ) : (
-          <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-            {blockedLabel || routePolicyModeLabel(t, 'blocked')}
-          </div>
-        )}
+        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+          {routeStatusLabel}
+        </div>
       </div>
     </div>
   );

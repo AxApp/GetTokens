@@ -10,6 +10,8 @@
 4. 先兼容再迁移：保留现有 `RoutePolicy` 语义，先把新 endpoint policy 接到兼容层，再逐步收敛 rate-limit 和 session affinity。
 5. 上游合并优先：GetTokens 自定义逻辑集中到 GetTokens-owned 包，上游核心文件只保留 seam。
 6. 新旧同轮清理：本次 rollout 不允许留下两套路由系统；既有 `RoutePolicy`、rate-limit、session affinity、WebSocket request-boundary 逻辑必须有明确归属。
+7. 启停语义不对称：禁用立即生效并高于 sticky / 失败降级 / retry；激活只让账号进入下一轮候选池，不抢占当前 stream 或 sticky。
+8. 失败冷却持久化：401/429/5xx/model-unavailable 等执行结果必须写入运行态或 guard source，后续请求和 explain 从同一状态源读取。
 
 ## 总体链路
 
@@ -35,6 +37,23 @@ BeforeRoute(WebSocket boundary)
   -> pinned auth guarded?
   -> release pin + close upstream + transcript replay
   -> AccountRoutingEngine.Route()
+```
+
+启停特例：
+
+```text
+Disable account / group
+  -> update inventory or channel state
+  -> rebuild CompiledRouteSnapshot
+  -> invalidate sticky / pinned auth
+  -> disconnect active stream at nearest controlled boundary
+  -> next request re-enter AccountRoutingEngine.Route()
+
+Enable account / group
+  -> update inventory or channel state
+  -> rebuild CompiledRouteSnapshot
+  -> account re-enters routeable pool
+  -> wait for next route / retry selection
 ```
 
 ## P0：sidecar seam 与路由引擎骨架
@@ -90,6 +109,8 @@ BeforeRoute(WebSocket boundary)
 - manual-disabled 与 rate-limit source independence。
 - rate-limit block/recovery/delete cleanup 只出现一次 deny trace。
 - session affinity hit/miss/guarded reselect。
+- 禁用账号或禁用组会清理 sticky / pinned auth，并在最近可控边界断开当前流。
+- 激活账号或账号组只进入下一轮候选池，不抢占当前 sticky / stream。
 - WebSocket pinned auth release 后通过 engine 重新选择。
 - Codex/Claude route probe metadata/header 兼容。
 
@@ -156,6 +177,12 @@ BeforeRoute(WebSocket boundary)
   - 运行态过滤：异常、冷却、限流、模型不可用账号不进入本次可请求候选。
   - 组归属过滤：路由规则选中账号组时，只取该组内可路由账号。
   - 有效排序：`group.routeOrder` -> `account.routeOrder` -> stable account id。
+- 定义执行结果持久化：
+  - 401 / token expired / credential invalid -> `auth-error`，持久化为异常状态，直到凭证刷新或用户恢复。
+  - 429 / quota / rate-limit -> `rate-limit` 或 `cooldown`，持久化过期时间，窗口恢复只清该 source。
+  - 5xx / timeout / network error -> `upstream-error` 短期冷却，保留最近错误摘要。
+  - model unavailable -> `model-unavailable`，按模型探测或配置变更恢复。
+  - 用户手动禁用 -> `manual-disabled`，不被自动恢复逻辑清除。
 - 定义三种核心路由模式：
   - `sequential`：按有效排序值从低到高尝试；retry 排除已尝试账号后继续下一个。
   - `balanced`：按账号当前会话数 / in-flight 请求数最少优先；相同负载再按有效排序。
@@ -202,6 +229,9 @@ BeforeRoute(WebSocket boundary)
 - 项目模式按 projectName 命中账号组或账号；绑定不可用时按 fallback 策略处理。
 - 上游 `dedicated/prefer/ordered/weighted/canary` 字段不会改变新 engine 的三模式决策；若输入存在，trace 明确标记兼容处理。
 - `exclude` 请求级过滤不会排空后绕过 hard guard，也不会作为第四种路由模式持久化。
+- sticky 绑定账号被禁用后，禁用优先级高于 sticky 与失败降级；当前 sticky 被清理，后续按 hard filter 结果重选或失败。
+- 激活账号只重新进入可路由账号池；已有 stream / sticky 不因激活而迁移或抢占。
+- 失败冷却重启进程后仍能被 explain 和真实请求识别；冷却到期只恢复对应运行态 source。
 
 ## P2：Wails / Management API
 

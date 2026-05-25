@@ -158,6 +158,84 @@ func TestExplainChannelRoutingBalancedUsesActiveSessionsThenSortOrder(t *testing
 	}
 }
 
+func TestExplainChannelRoutingDisabledStickyInvalidatesAndFallsBack(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{ID: "auth-file:sticky.json", DisplayName: "Sticky", Status: "active", Disabled: true, Priority: 0, SupportedFormats: []string{"codex"}},
+		{ID: "auth-file:next.json", DisplayName: "Next", Status: "active", Priority: 1, SupportedFormats: []string{"codex"}},
+	}
+
+	result := explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"auth-file:sticky.json", "auth-file:next.json"},
+	}, ChannelRoutingExplainInput{StickyAccountID: "auth-file:sticky.json"})
+
+	if result.SelectedAccountID != "auth-file:next.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:next.json", result.SelectedAccountID)
+	}
+	assertFilteredReason(t, result.Filtered, "auth-file:sticky.json", "account-disabled")
+	assertStepContains(t, result.Steps, "sticky:invalidated:account-disabled")
+}
+
+func TestExplainChannelRoutingActivationDoesNotPreemptExistingSticky(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{ID: "auth-file:reactivated.json", DisplayName: "Reactivated", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
+		{ID: "auth-file:current.json", DisplayName: "Current", Status: "active", Priority: 9, SupportedFormats: []string{"codex"}},
+	}
+
+	result := explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"auth-file:reactivated.json", "auth-file:current.json"},
+	}, ChannelRoutingExplainInput{StickyAccountID: "auth-file:current.json"})
+
+	if result.SelectedAccountID != "auth-file:current.json" {
+		t.Fatalf("SelectedAccountID = %q, want sticky current account", result.SelectedAccountID)
+	}
+	assertStepContains(t, result.Steps, "sticky:hit:auth-file:current.json")
+}
+
+func TestChannelRouteAccountResultPersistsCooldownAndExplainFiltersRuntimeState(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	app := New("dev", "", "AxApp/GetTokens")
+
+	state, err := app.MarkChannelRouteAccountResult(ChannelRouteAccountResultInput{
+		AccountID:       "auth-file:limited.json",
+		StatusCode:      429,
+		CooldownSeconds: 60,
+		Reason:          "quota window exhausted",
+	})
+	if err != nil {
+		t.Fatalf("MarkChannelRouteAccountResult: %v", err)
+	}
+	if _, ok := state.Sources["rate-limit"]; !ok {
+		t.Fatalf("state missing rate-limit source: %#v", state)
+	}
+
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		t.Fatalf("loadChannelRoutingStore: %v", err)
+	}
+	if _, ok := store.RuntimeStates["auth-file:limited.json"].Sources["rate-limit"]; !ok {
+		t.Fatalf("persisted runtime state missing rate-limit source: %#v", store.RuntimeStates)
+	}
+
+	accounts := []accountsdomain.AccountRecord{
+		{ID: "auth-file:limited.json", DisplayName: "Limited", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
+		{ID: "auth-file:fallback.json", DisplayName: "Fallback", Status: "active", Priority: 1, SupportedFormats: []string{"codex"}},
+	}
+	result := explainChannelRoutingWithRuntime(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"auth-file:limited.json", "auth-file:fallback.json"},
+	}, ChannelRoutingExplainInput{}, store.RuntimeStates)
+
+	if result.SelectedAccountID != "auth-file:fallback.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:fallback.json", result.SelectedAccountID)
+	}
+	assertFilteredReason(t, result.Filtered, "auth-file:limited.json", "runtime-rate-limit")
+}
+
 func TestExplainChannelRoutingShadowComputesDiffWithoutChangingProductionDecision(t *testing.T) {
 	accounts := []accountsdomain.AccountRecord{
 		{ID: "auth-file:a.json", DisplayName: "A", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
@@ -250,4 +328,14 @@ func assertFilteredReason(t *testing.T, filtered []ChannelRoutingFilteredAccount
 		}
 	}
 	t.Fatalf("filtered reason for %s not found in %#v", id, filtered)
+}
+
+func assertStepContains(t *testing.T, steps []string, want string) {
+	t.Helper()
+	for _, step := range steps {
+		if step == want {
+			return
+		}
+	}
+	t.Fatalf("step %q not found in %#v", want, steps)
 }

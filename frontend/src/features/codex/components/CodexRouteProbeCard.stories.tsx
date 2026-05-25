@@ -160,7 +160,6 @@ function ProbeSample({
   fallback?: boolean;
   empty?: boolean;
 }) {
-  const [allowFallback, setAllowFallback] = useState(fallback);
   const [model, setModel] = useState('gpt-5.2');
   const visibleRows = empty ? [] : rows;
 
@@ -172,12 +171,10 @@ function ProbeSample({
         routingProbeModelOptions={['gpt-5.2', 'gpt-5.2-mini', 'gpt-5.4']}
         routingProbeRunning={running}
         routingProbeDisabled={running}
-        allowFallback={allowFallback}
         routePolicyPreviewRows={visibleRows}
         routingProbeStreamLines={empty ? [] : fallback ? hitLines : idleLines}
         latestUsedFallback={fallback}
         onClose={() => undefined}
-        onFallbackChange={() => setAllowFallback((value) => !value)}
         onModelChange={setModel}
         onProbeOnce={() => undefined}
         onProbeSeries={() => undefined}

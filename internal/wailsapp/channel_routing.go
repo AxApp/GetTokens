@@ -76,6 +76,7 @@ type ChannelRoutingExplainInput struct {
 	ProjectName     string         `json:"projectName,omitempty"`
 	TriedAccountIDs []string       `json:"triedAccountIDs,omitempty"`
 	ActiveSessions  map[string]int `json:"activeSessions,omitempty"`
+	StickyAccountID string         `json:"stickyAccountID,omitempty"`
 }
 
 type ChannelRoutingExplainResult struct {
@@ -138,10 +139,34 @@ type ChannelRouteEvent struct {
 	Redacted                bool             `json:"redacted"`
 }
 
+type ChannelRouteAccountResultInput struct {
+	AccountID       string `json:"accountID"`
+	StatusCode      int    `json:"statusCode,omitempty"`
+	ErrorType       string `json:"errorType,omitempty"`
+	Reason          string `json:"reason,omitempty"`
+	CooldownSeconds int    `json:"cooldownSeconds,omitempty"`
+	Model           string `json:"model,omitempty"`
+}
+
+type ChannelAccountRuntimeState struct {
+	AccountID string                               `json:"accountID"`
+	Sources   map[string]ChannelRuntimeStateSource `json:"sources,omitempty"`
+	UpdatedAt string                               `json:"updatedAt,omitempty"`
+}
+
+type ChannelRuntimeStateSource struct {
+	Source    string `json:"source"`
+	Reason    string `json:"reason,omitempty"`
+	Model     string `json:"model,omitempty"`
+	ExpiresAt string `json:"expiresAt,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
+}
+
 type channelRoutingStore struct {
-	Channels    map[string]ChannelRoutingConfig `json:"channels"`
-	Events      []ChannelRouteEvent             `json:"events,omitempty"`
-	NextEventID int                             `json:"nextEventID,omitempty"`
+	Channels      map[string]ChannelRoutingConfig       `json:"channels"`
+	Events        []ChannelRouteEvent                   `json:"events,omitempty"`
+	NextEventID   int                                   `json:"nextEventID,omitempty"`
+	RuntimeStates map[string]ChannelAccountRuntimeState `json:"runtimeStates,omitempty"`
 }
 
 type channelRouteScope struct {
@@ -210,11 +235,19 @@ func (a *App) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelR
 	if err != nil {
 		return nil, err
 	}
-	result := explainChannelRoutingWithAccounts(accounts, *cfg, input)
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		return nil, err
+	}
+	result := explainChannelRoutingWithRuntime(accounts, *cfg, input, store.RuntimeStates)
 	if err := appendChannelRouteEvent(input, result); err != nil {
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (a *App) MarkChannelRouteAccountResult(input ChannelRouteAccountResultInput) (*ChannelAccountRuntimeState, error) {
+	return markChannelRouteAccountResult(input, time.Now().UTC())
 }
 
 func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRouteEvent, error) {
@@ -246,15 +279,19 @@ func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRo
 }
 
 func explainChannelRoutingWithAccounts(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput) ChannelRoutingExplainResult {
+	return explainChannelRoutingWithRuntime(accounts, cfg, input, nil)
+}
+
+func explainChannelRoutingWithRuntime(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
 	normalized, meta := normalizeChannelRoutingConfig(cfg, cfg.Channel)
-	result := explainNormalizedChannelRouting(accounts, normalized, input, meta)
+	result := explainNormalizedChannelRouting(accounts, normalized, input, meta, runtimeStates)
 	result.SnapshotVersion = channelRoutingSnapshotVersion(normalized)
 	result.PolicyVersion = "channel-routing-v1"
 	if normalized.ShadowEnabled {
 		shadowConfig := normalized
 		shadowConfig.RouteMode = normalizeShadowRouteMode(normalized.ShadowRouteMode, normalized.RouteMode)
 		shadowConfig.ShadowEnabled = false
-		shadow := explainNormalizedChannelRouting(accounts, shadowConfig, input, ChannelRoutingConfigMeta{})
+		shadow := explainNormalizedChannelRouting(accounts, shadowConfig, input, ChannelRoutingConfigMeta{}, runtimeStates)
 		result.Shadow = &ChannelRoutingShadowDecision{
 			Enabled:           true,
 			RouteMode:         shadow.RouteMode,
@@ -266,7 +303,7 @@ func explainChannelRoutingWithAccounts(accounts []accountsdomain.AccountRecord, 
 	return result
 }
 
-func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, normalized ChannelRoutingConfig, input ChannelRoutingExplainInput, meta ChannelRoutingConfigMeta) ChannelRoutingExplainResult {
+func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, normalized ChannelRoutingConfig, input ChannelRoutingExplainInput, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
 	mode := normalized.RouteMode
 	steps := []string{"mode:" + string(mode)}
 	scope := channelRouteScope{}
@@ -281,7 +318,7 @@ func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, no
 				scope.GroupID = strings.TrimSpace(binding.TargetID)
 			}
 			mode = normalizeProjectModeRouteMode(normalized.ProjectModeFallbackRouteMode)
-			decision := decideChannelRoute(accounts, normalized, input, scope, mode, steps, meta)
+			decision := decideChannelRoute(accounts, normalized, input, scope, mode, steps, meta, runtimeStates)
 			if decision.SelectedAccountID != "" || normalizeChannelFallbackMode(binding.FallbackMode, normalized.FallbackMode) == ChannelFallbackModeFailClosed {
 				return decision
 			}
@@ -292,14 +329,25 @@ func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, no
 			mode = normalizeProjectModeRouteMode(normalized.ProjectModeFallbackRouteMode)
 		}
 	}
-	return decideChannelRoute(accounts, normalized, input, scope, mode, steps, meta)
+	return decideChannelRoute(accounts, normalized, input, scope, mode, steps, meta, runtimeStates)
 }
 
-func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, scope channelRouteScope, mode ChannelRouteMode, steps []string, meta ChannelRoutingConfigMeta) ChannelRoutingExplainResult {
-	candidates, filtered := buildChannelRouteablePool(accounts, cfg, input, scope)
+func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, scope channelRouteScope, mode ChannelRouteMode, steps []string, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
+	candidates, filtered := buildChannelRouteablePool(accounts, cfg, input, scope, runtimeStates)
 	steps = append(steps, "candidates:"+intString(len(candidates)))
 	selected := ""
-	if len(candidates) > 0 {
+	stickyAccountID := strings.TrimSpace(input.StickyAccountID)
+	if stickyAccountID != "" {
+		if stickyCandidate, ok := findChannelRouteCandidate(candidates, stickyAccountID); ok {
+			selected = stickyCandidate.Account.ID
+			steps = append(steps, "sticky:hit:"+stickyCandidate.Account.ID)
+		} else if reason, ok := findChannelFilteredReason(filtered, stickyAccountID); ok {
+			steps = append(steps, "sticky:invalidated:"+reason)
+		} else {
+			steps = append(steps, "sticky:miss")
+		}
+	}
+	if selected == "" && len(candidates) > 0 {
 		if mode == ChannelRouteModeBalanced {
 			selected = selectBalancedChannelCandidate(candidates).Account.ID
 		} else {
@@ -317,7 +365,7 @@ func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRout
 	}
 }
 
-func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, scope channelRouteScope) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount) {
+func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, scope channelRouteScope, runtimeStates map[string]ChannelAccountRuntimeState) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount) {
 	groupLookup := channelAccountGroupLookup(cfg.AccountGroups, cfg.ChannelGroupStates)
 	groupMembership := channelAccountGroupMembership(groupLookup)
 	channelOrder := rankIDs(cfg.OrderedAccountIDs)
@@ -343,6 +391,10 @@ func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg Chan
 		}
 		if account.Disabled {
 			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: "account-disabled"})
+			continue
+		}
+		if reason, blocked := activeRuntimeBlockReason(runtimeStates[account.ID], time.Now().UTC()); blocked {
+			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: reason})
 			continue
 		}
 		if !accountRequestable(account) {
@@ -391,6 +443,9 @@ func loadChannelRoutingStore() (channelRoutingStore, error) {
 	if store.Channels == nil {
 		store.Channels = map[string]ChannelRoutingConfig{}
 	}
+	if store.RuntimeStates == nil {
+		store.RuntimeStates = map[string]ChannelAccountRuntimeState{}
+	}
 	for _, channel := range []string{"codex", "claude"} {
 		if cfg, ok := store.Channels[channel]; ok {
 			normalized, _ := normalizeChannelRoutingConfig(cfg, channel)
@@ -434,10 +489,13 @@ func channelRoutingStorePath() (string, error) {
 }
 
 func defaultChannelRoutingStore() channelRoutingStore {
-	return channelRoutingStore{Channels: map[string]ChannelRoutingConfig{
-		"codex":  defaultChannelRoutingConfig("codex"),
-		"claude": defaultChannelRoutingConfig("claude"),
-	}}
+	return channelRoutingStore{
+		Channels: map[string]ChannelRoutingConfig{
+			"codex":  defaultChannelRoutingConfig("codex"),
+			"claude": defaultChannelRoutingConfig("claude"),
+		},
+		RuntimeStates: map[string]ChannelAccountRuntimeState{},
+	}
 }
 
 func defaultChannelRoutingConfig(channel string) ChannelRoutingConfig {
@@ -723,6 +781,115 @@ func accountRequestable(account accountsdomain.AccountRecord) bool {
 		return false
 	default:
 		return true
+	}
+}
+
+func findChannelRouteCandidate(candidates []channelRouteCandidate, accountID string) (channelRouteCandidate, bool) {
+	for _, candidate := range candidates {
+		if candidate.Account.ID == accountID {
+			return candidate, true
+		}
+	}
+	return channelRouteCandidate{}, false
+}
+
+func findChannelFilteredReason(filtered []ChannelRoutingFilteredAccount, accountID string) (string, bool) {
+	for _, item := range filtered {
+		if item.ID == accountID {
+			return item.Reason, true
+		}
+	}
+	return "", false
+}
+
+func activeRuntimeBlockReason(state ChannelAccountRuntimeState, now time.Time) (string, bool) {
+	if len(state.Sources) == 0 {
+		return "", false
+	}
+	for _, source := range []string{"manual-disabled", "auth-error", "rate-limit", "cooldown", "model-unavailable", "upstream-error"} {
+		entry, ok := state.Sources[source]
+		if !ok {
+			continue
+		}
+		if entry.ExpiresAt != "" {
+			expiresAt, err := time.Parse(time.RFC3339Nano, entry.ExpiresAt)
+			if err == nil && !expiresAt.After(now) {
+				continue
+			}
+		}
+		return "runtime-" + source, true
+	}
+	return "", false
+}
+
+func markChannelRouteAccountResult(input ChannelRouteAccountResultInput, now time.Time) (*ChannelAccountRuntimeState, error) {
+	accountID := strings.TrimSpace(input.AccountID)
+	if accountID == "" {
+		return nil, errors.New("accountID is required")
+	}
+	source, defaultCooldown := channelRuntimeSourceForResult(input)
+	if source == "" {
+		return nil, errors.New("unsupported channel route result")
+	}
+	store, err := loadChannelRoutingStore()
+	if err != nil {
+		return nil, err
+	}
+	if store.RuntimeStates == nil {
+		store.RuntimeStates = map[string]ChannelAccountRuntimeState{}
+	}
+	state := store.RuntimeStates[accountID]
+	state.AccountID = accountID
+	if state.Sources == nil {
+		state.Sources = map[string]ChannelRuntimeStateSource{}
+	}
+	if source == "success" {
+		for _, transient := range []string{"rate-limit", "cooldown", "upstream-error"} {
+			delete(state.Sources, transient)
+		}
+	} else {
+		cooldownSeconds := input.CooldownSeconds
+		if cooldownSeconds <= 0 {
+			cooldownSeconds = defaultCooldown
+		}
+		entry := ChannelRuntimeStateSource{
+			Source:    source,
+			Reason:    strings.TrimSpace(input.Reason),
+			Model:     strings.TrimSpace(input.Model),
+			UpdatedAt: now.Format(time.RFC3339Nano),
+		}
+		if cooldownSeconds > 0 {
+			entry.ExpiresAt = now.Add(time.Duration(cooldownSeconds) * time.Second).Format(time.RFC3339Nano)
+		}
+		state.Sources[source] = entry
+	}
+	state.UpdatedAt = now.Format(time.RFC3339Nano)
+	if len(state.Sources) == 0 {
+		delete(store.RuntimeStates, accountID)
+	} else {
+		store.RuntimeStates[accountID] = state
+	}
+	if err := saveChannelRoutingStore(store); err != nil {
+		return nil, err
+	}
+	return &state, nil
+}
+
+func channelRuntimeSourceForResult(input ChannelRouteAccountResultInput) (string, int) {
+	errorType := strings.TrimSpace(strings.ToLower(input.ErrorType))
+	switch {
+	case errorType == "success" || input.StatusCode >= 200 && input.StatusCode < 300:
+		return "success", 0
+	case input.StatusCode == 401 || errorType == "auth-error" || errorType == "token-expired" || errorType == "credential-invalid":
+		return "auth-error", 0
+	case input.StatusCode == 429 || errorType == "rate-limit" || errorType == "quota" || errorType == "cooldown":
+		return "rate-limit", 60
+	case input.StatusCode == 404 && errorType == "model-unavailable" || errorType == "model-unavailable":
+		return "model-unavailable", 0
+	case input.StatusCode >= 500 || errorType == "upstream-error" || errorType == "timeout" || errorType == "network":
+		return "upstream-error", 30
+	default:
+		return "", 0
 	}
 }
 

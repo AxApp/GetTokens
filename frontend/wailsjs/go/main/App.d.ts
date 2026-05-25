@@ -147,6 +147,8 @@ export function ListRateLimitStrategies():Promise<Array<main.RateLimitStrategyMe
 
 export function ListRelaySupportedModels():Promise<main.RelaySupportedModelsResult>;
 
+export function MarkChannelRouteAccountResult(arg1:main.ChannelRouteAccountResultInput):Promise<main.ChannelAccountRuntimeState>;
+
 export function NormalizeAuthFileContent(arg1:string):Promise<string>;
 
 export function OpenCodexConfigToml():Promise<main.OpenCodexConfigTomlResult>;

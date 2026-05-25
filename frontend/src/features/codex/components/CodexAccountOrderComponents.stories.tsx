@@ -212,7 +212,6 @@ function RowSample({
           quotaState={row.quotaKey === 'team-codex' ? quotaState : undefined}
           usageSummary={usageSummary}
           rateLimitStatus={rateLimitStatus}
-          onPolicyModeChange={() => undefined}
         />
       </div>
     </DesignSystemStoryFrame>
@@ -285,7 +284,6 @@ function SectionSample({
           onToggle={() => undefined}
           onMoveToTop={() => undefined}
           onMoveToBottom={() => undefined}
-          onPolicyModeChange={() => undefined}
           initialDensity={density}
         />
       </div>

@@ -5,6 +5,7 @@ import {
   FetchOpenAICompatibleProviderModels,
   GetAuthFileModels,
   GetChannelRoutingConfig,
+  ListChannelRouteEvents,
   ListAccounts,
   ListOAuthModelAliases,
   ProbeClaudeCodeAccountRouting,
@@ -24,8 +25,10 @@ import { hasWailsAppBindings } from '../../utils/previewMode';
 import { mapBackendAccountRecord } from '../accounts/model/accountPresentation';
 import ChannelRoutingWorkbench from '../channel-routing/components/ChannelRoutingWorkbench';
 import {
+  buildPreviewChannelRouteAuditEvent,
   normalizeChannelRoutingConfig,
   updateChannelRoutingConfig,
+  type ChannelRouteAuditEvent,
   type ChannelRouteMode,
   type ChannelRoutingConfig,
 } from '../channel-routing/model/channelRouting';
@@ -37,10 +40,8 @@ import {
   buildCodexRoutingProbeModelOptions,
   buildCodexRoutingProbeStreamLines,
   mergeCodexAuthFileModelMappings,
-  normalizeCodexAccountIDList,
   resolveCodexRoutingProbeDefaultModel,
   type CodexModelMappingRow,
-  type CodexRoutePolicyRowMode,
   type CodexRoutingProbeAttemptView,
 } from '../codex/model/codexAccountList';
 import {
@@ -82,9 +83,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   const [remoteModelOptions, setRemoteModelOptions] = useState<Record<string, CodexModelMappingRow[]>>({});
   const [remoteModelErrors, setRemoteModelErrors] = useState<Record<string, string>>({});
   const [routingProbeModel, setRoutingProbeModel] = useState(DEFAULT_CLAUDE_CODE_PROBE_MODEL);
-  const [routePolicyAllowIDs, setRoutePolicyAllowIDs] = useState<string[]>([]);
-  const [routePolicyDenyIDs, setRoutePolicyDenyIDs] = useState<string[]>([]);
-  const [routePolicyAllowFallback, setRoutePolicyAllowFallback] = useState(false);
   const [routingProbeAttempts, setRoutingProbeAttempts] = useState<CodexRoutingProbeAttemptView[]>([]);
   const [routingProbeRequestedAttempts, setRoutingProbeRequestedAttempts] = useState(1);
   const [routingProbeRunning, setRoutingProbeRunning] = useState(false);
@@ -97,6 +95,8 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     buildDefaultChannelRoutingConfig('claude'),
   );
   const [channelExplain, setChannelExplain] = useState<main.ChannelRoutingExplainResult | null>(null);
+  const [channelRouteEvents, setChannelRouteEvents] = useState<ChannelRouteAuditEvent[]>([]);
+  const [channelRouteEventsLoading, setChannelRouteEventsLoading] = useState(false);
   const suppressNextDetailClickRef = useRef(false);
 
   const summary = useMemo(() => buildClaudeCodeAccountSummary(orderedRows), [orderedRows]);
@@ -117,12 +117,12 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   const requestableOrderIDs = useMemo(() => requestableRows.map((row) => row.id), [requestableRows]);
   const routePolicyDraft = useMemo(
     () => ({
-      allowAccountIDs: routePolicyAllowIDs,
-      denyAccountIDs: routePolicyDenyIDs,
+      allowAccountIDs: [],
+      denyAccountIDs: [],
       orderAccountIDs: requestableOrderIDs,
-      allowFallback: routePolicyAllowFallback,
+      allowFallback: false,
     }),
-    [requestableOrderIDs, routePolicyAllowFallback, routePolicyAllowIDs, routePolicyDenyIDs],
+    [requestableOrderIDs],
   );
   const routePolicyPreviewRows = useMemo(
     () => buildCodexRoutePolicyPreview(orderedRows, routePolicyDraft),
@@ -159,6 +159,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       const previewConfig = buildDefaultChannelRoutingConfig('claude', previewRows.map((row) => row.id));
       setChannelConfig(previewConfig);
       setChannelExplain(null);
+      setChannelRouteEvents([]);
       setOrderedRows(applyChannelOrderToRows(previewRows, previewConfig.orderedAccountIDs));
       setOrderDirty(false);
       setMessage(messageOverride || t('claude_code.account_list_preview_loaded'));
@@ -182,6 +183,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       setChannelConfig(normalizedConfig);
       setChannelExplain(null);
       setOrderedRows(applyChannelOrderToRows(buildClaudeCodeAccountRows(accountRows), normalizedConfig.orderedAccountIDs));
+      void loadChannelRouteEvents();
       setOrderDirty(false);
       setMessage(messageOverride || t('claude_code.account_list_loaded'));
     } catch (error) {
@@ -202,11 +204,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     }
     setRoutingProbeModel(resolveCodexRoutingProbeDefaultModel(orderedRows) || DEFAULT_CLAUDE_CODE_PROBE_MODEL);
   }, [orderedRows, routingProbeModel]);
-
-  useEffect(() => {
-    setRoutePolicyAllowIDs((prev) => filterClaudeCodeAccountIDs(prev, requestableOrderIDs));
-    setRoutePolicyDenyIDs((prev) => filterClaudeCodeAccountIDs(prev, requestableOrderIDs));
-  }, [requestableOrderIDs]);
 
   useEffect(() => {
     if (!detailRow || detailRow.sourceKind !== 'codex-auth-file') {
@@ -467,8 +464,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           routeOrder: index,
           channelOrder: index,
         }));
-      setChannelExplain(
-        main.ChannelRoutingExplainResult.createFrom({
+      const result = main.ChannelRoutingExplainResult.createFrom({
           channel: 'claude',
           routeMode: nextConfig.routeMode,
           selectedAccountID: candidates[0]?.id || '',
@@ -486,10 +482,12 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
                 selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
                 diff: Boolean(candidates.length > 1),
                 steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
-              }
+            }
             : undefined,
-        }),
-      );
+        });
+      setChannelExplain(result);
+      const event = buildPreviewChannelRouteAuditEvent({ channel: 'claude', explain: result });
+      setChannelRouteEvents((prev) => (event ? [event, ...prev].slice(0, 5) : prev));
       return;
     }
     try {
@@ -497,9 +495,28 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
         ExplainChannelRouting(main.ChannelRoutingExplainInput.createFrom({ channel: 'claude' })),
       );
       setChannelExplain(result);
+      await loadChannelRouteEvents();
     } catch (error) {
       console.error(error);
       setMessage(`${t('claude_code.account_list_probe_failed')}: ${toErrorMessage(error)}`);
+    }
+  }
+
+  async function loadChannelRouteEvents() {
+    if (browserMode) {
+      return;
+    }
+    setChannelRouteEventsLoading(true);
+    try {
+      const result = await trackRequest('ListChannelRouteEvents', { channel: 'claude', limit: 5 }, () =>
+        ListChannelRouteEvents(main.ChannelRouteEventsInput.createFrom({ channel: 'claude', limit: 5 })),
+      );
+      setChannelRouteEvents((result || []) as ChannelRouteAuditEvent[]);
+    } catch (error) {
+      console.error(error);
+      setMessage(`${t('claude_code.account_list_probe_failed')}: ${toErrorMessage(error)}`);
+    } finally {
+      setChannelRouteEventsLoading(false);
     }
   }
 
@@ -579,10 +596,10 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
         const routePolicyInput = {
           model,
           attempts: 1,
-          allowAccountIDs: routePolicyAllowIDs,
-          denyAccountIDs: routePolicyDenyIDs,
+          allowAccountIDs: [],
+          denyAccountIDs: [],
           orderAccountIDs: requestableOrderIDs,
-          allowFallback: routePolicyAllowFallback,
+          allowFallback: false,
         };
         const result = await trackRequest('ProbeClaudeCodeAccountRouting', { ...routePolicyInput, index: attemptIndex + 1 }, () =>
           ProbeClaudeCodeAccountRouting(
@@ -613,21 +630,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     }
   }
 
-  function setRoutePolicyMode(id: string, mode: Exclude<CodexRoutePolicyRowMode, 'blocked'>) {
-    setRoutePolicyAllowIDs((prev) => {
-      const filtered = normalizeCodexAccountIDList(prev).filter((item) => item !== id);
-      return mode === 'allow' ? [...filtered, id] : filtered;
-    });
-    setRoutePolicyDenyIDs((prev) => {
-      const filtered = normalizeCodexAccountIDList(prev).filter((item) => item !== id);
-      return mode === 'deny' ? [...filtered, id] : filtered;
-    });
-  }
-
   function resetRoutePolicy() {
-    setRoutePolicyAllowIDs([]);
-    setRoutePolicyDenyIDs([]);
-    setRoutePolicyAllowFallback(false);
     setRoutingProbeAttempts([]);
   }
 
@@ -765,11 +768,14 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           saving={saving}
           preview={browserMode}
           message={orderDirty ? t('claude_code.account_list_unsaved') : ''}
+          routeEvents={channelRouteEvents}
+          routeEventsLoading={channelRouteEventsLoading}
           onModeChange={updateChannelMode}
           onShadowEnabledChange={updateShadowEnabled}
           onShadowModeChange={updateShadowMode}
           onSave={() => void saveOrder()}
           onExplain={() => void runChannelExplain()}
+          onRefreshEvents={() => void loadChannelRouteEvents()}
         />
 
         <CodexAccountOrderSection
@@ -812,7 +818,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           onToggle={(row) => void toggleAccount(row as ClaudeCodeAccountRow)}
           onMoveToTop={(rowID) => moveAccountToOrderEdge(rowID, 'top')}
           onMoveToBottom={(rowID) => moveAccountToOrderEdge(rowID, 'bottom')}
-          onPolicyModeChange={setRoutePolicyMode}
         />
       </div>
       {routeProbeOpen ? (
@@ -822,12 +827,10 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           routingProbeModelOptions={routingProbeModelOptions}
           routingProbeRunning={routingProbeRunning}
           routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
-          allowFallback={routePolicyAllowFallback}
           routePolicyPreviewRows={routePolicyPreviewRows}
           routingProbeStreamLines={routingProbeStreamLines}
           latestUsedFallback={latestRoutingProbeUsedFallback}
           onClose={() => setRouteProbeOpen(false)}
-          onFallbackChange={() => setRoutePolicyAllowFallback((prev) => !prev)}
           onModelChange={setRoutingProbeModel}
           onProbeOnce={() => void runRoutingProbe(1)}
           onProbeSeries={() => void runRoutingProbe(3)}
@@ -865,11 +868,6 @@ function SummaryMetric({ label, value }: { label: string; value: number }) {
 function readAuthFileNameFromRowID(rowID: string) {
   const prefix = 'auth-file:';
   return rowID.startsWith(prefix) ? rowID.slice(prefix.length) : '';
-}
-
-function filterClaudeCodeAccountIDs(previous: string[], availableIDs: string[]) {
-  const available = new Set(availableIDs);
-  return normalizeCodexAccountIDList(previous).filter((id) => available.has(id));
 }
 
 function buildDefaultChannelRoutingConfig(channel: 'claude', orderedAccountIDs: string[] = []): ChannelRoutingConfig {

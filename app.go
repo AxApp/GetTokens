@@ -263,11 +263,27 @@ func (a *App) ExplainChannelRouting(input ChannelRoutingExplainInput) (*ChannelR
 		ProjectName:     input.ProjectName,
 		TriedAccountIDs: append([]string(nil), input.TriedAccountIDs...),
 		ActiveSessions:  cloneIntMap(input.ActiveSessions),
+		StickyAccountID: input.StickyAccountID,
 	})
 	if err != nil {
 		return nil, err
 	}
 	return mapChannelRoutingExplainResult(result), nil
+}
+
+func (a *App) MarkChannelRouteAccountResult(input ChannelRouteAccountResultInput) (*ChannelAccountRuntimeState, error) {
+	result, err := a.core.MarkChannelRouteAccountResult(wailsapp.ChannelRouteAccountResultInput{
+		AccountID:       input.AccountID,
+		StatusCode:      input.StatusCode,
+		ErrorType:       input.ErrorType,
+		Reason:          input.Reason,
+		CooldownSeconds: input.CooldownSeconds,
+		Model:           input.Model,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapChannelAccountRuntimeState(result), nil
 }
 
 func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRouteEvent, error) {
@@ -299,6 +315,27 @@ func (a *App) ListChannelRouteEvents(input ChannelRouteEventsInput) ([]ChannelRo
 		})
 	}
 	return out, nil
+}
+
+func mapChannelAccountRuntimeState(input *wailsapp.ChannelAccountRuntimeState) *ChannelAccountRuntimeState {
+	if input == nil {
+		return nil
+	}
+	sources := make(map[string]ChannelRuntimeStateSource, len(input.Sources))
+	for key, source := range input.Sources {
+		sources[key] = ChannelRuntimeStateSource{
+			Source:    source.Source,
+			Reason:    source.Reason,
+			Model:     source.Model,
+			ExpiresAt: source.ExpiresAt,
+			UpdatedAt: source.UpdatedAt,
+		}
+	}
+	return &ChannelAccountRuntimeState{
+		AccountID: input.AccountID,
+		Sources:   sources,
+		UpdatedAt: input.UpdatedAt,
+	}
 }
 
 func (a *App) UploadAuthFiles(files []UploadFilePayload) error {

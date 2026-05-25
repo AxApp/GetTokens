@@ -286,6 +286,10 @@ export function ListRelaySupportedModels() {
   return window['go']['main']['App']['ListRelaySupportedModels']();
 }
 
+export function MarkChannelRouteAccountResult(arg1) {
+  return window['go']['main']['App']['MarkChannelRouteAccountResult'](arg1);
+}
+
 export function NormalizeAuthFileContent(arg1) {
   return window['go']['main']['App']['NormalizeAuthFileContent'](arg1);
 }

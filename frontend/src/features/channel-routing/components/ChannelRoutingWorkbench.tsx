@@ -1,6 +1,12 @@
-import { Activity, GitBranch, Play, Save, Shuffle, Split, Zap } from 'lucide-react';
+import { Activity, GitBranch, History, Play, RefreshCw, Save, ShieldCheck, Shuffle, Split, Zap } from 'lucide-react';
 import type { main } from '../../../../wailsjs/go/models';
-import type { ChannelID, ChannelRouteMode, ChannelRoutingConfig } from '../model/channelRouting';
+import {
+  buildChannelRouteAuditEventSummary,
+  type ChannelID,
+  type ChannelRouteAuditEvent,
+  type ChannelRouteMode,
+  type ChannelRoutingConfig,
+} from '../model/channelRouting';
 
 interface ChannelRoutingWorkbenchProps {
   channel: ChannelID;
@@ -10,11 +16,14 @@ interface ChannelRoutingWorkbenchProps {
   saving?: boolean;
   preview?: boolean;
   message?: string;
+  routeEvents?: ChannelRouteAuditEvent[];
+  routeEventsLoading?: boolean;
   onModeChange: (mode: ChannelRouteMode) => void;
   onShadowEnabledChange: (enabled: boolean) => void;
   onShadowModeChange: (mode: ChannelRouteMode) => void;
   onSave: () => void;
   onExplain: () => void;
+  onRefreshEvents?: () => void;
 }
 
 const routeModes: Array<{
@@ -35,19 +44,23 @@ export default function ChannelRoutingWorkbench({
   saving = false,
   preview = false,
   message = '',
+  routeEvents = [],
+  routeEventsLoading = false,
   onModeChange,
   onShadowEnabledChange,
   onShadowModeChange,
   onSave,
   onExplain,
+  onRefreshEvents,
 }: ChannelRoutingWorkbenchProps) {
   const candidateCount = explain?.candidates?.length ?? 0;
   const filteredCount = explain?.filtered?.length ?? 0;
   const selectedID = explain?.selectedAccountID || 'none';
   const shadow = explain?.shadow;
+  const eventSummaries = routeEvents.slice(0, 5).map((event) => buildChannelRouteAuditEventSummary(event));
 
   return (
-    <section className="grid gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+    <section className="grid gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.76fr)_minmax(320px,0.86fr)]">
       <div className="min-w-0 space-y-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -174,6 +187,52 @@ export default function ChannelRoutingWorkbench({
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-subtle)] p-3">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-secondary)]">
+            <History className="h-4 w-4" strokeWidth={3} />
+            Route Ledger
+          </div>
+          <button
+            type="button"
+            onClick={onRefreshEvents}
+            disabled={disabled || routeEventsLoading || !onRefreshEvents}
+            className="btn-swiss flex min-h-8 items-center gap-1 !px-2 !py-1 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${routeEventsLoading ? 'animate-spin' : ''}`} strokeWidth={4} />
+            {routeEventsLoading ? '加载' : '刷新'}
+          </button>
+        </div>
+        {eventSummaries.length === 0 ? (
+          <div className="border border-[var(--border-color)] bg-[var(--bg-main)] p-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+            暂无审计事件
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {eventSummaries.map((event) => (
+              <div key={event.id} className="min-w-0 border border-[var(--border-color)] bg-[var(--bg-main)] p-2">
+                <div className="flex min-w-0 items-center justify-between gap-2">
+                  <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">
+                    {event.title}
+                  </div>
+                  {event.redacted ? (
+                    <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
+                  ) : null}
+                </div>
+                <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                  {event.meta}
+                </div>
+                {event.shadow ? (
+                  <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-secondary)]">
+                    shadow: {event.shadow}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

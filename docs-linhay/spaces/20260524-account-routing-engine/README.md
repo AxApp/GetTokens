@@ -26,6 +26,8 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 8. 一次性清理既有账号路由实现：保留可验证行为，收敛实现入口，删除或降级重复路径。
 9. 明确产品 ownership：按 `Account Inventory / Channel Routing / Routing Engine` 三层拆分；总账号池只负责账号和账号组资产管理，Codex / Claude 账号列表分别负责本渠道的排序、路由模式、路由说明和探测。
 10. 区分全局组状态和渠道组状态：全局组禁用影响所有渠道，渠道组禁用只影响当前渠道。
+11. 明确启停实时性：账号或有效组禁用立即生效，高于 session sticky、失败降级和 retry；已有流式连接在最近可控边界断开。账号或有效组激活只重新进入可路由池，不抢占当前 stream / sticky，等待下一轮 route 或 retry 自然选择。
+12. 持久化失败冷却状态：401/429/5xx/model-unavailable 等执行结果由 `ResultRecorder / MarkResult` 写入账号运行态或 guard source，供后续请求、retry 和 explain 共同读取。
 
 ## 范围
 
@@ -62,6 +64,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 
 - 不把账号阻断做成普通 Gin / HTTP middleware；账号阻断必须保留 selector fallback 和 retry 能力。
 - 不在本期实现 streaming 中途迁移账号；WebSocket 只在下一条 downstream request 边界切换。
+- 不把账号激活做成主动抢占；激活只让账号进入后续候选池，不切换当前正在工作的账号。
 - 不把所有执行结果回写塞进路由引擎；`Executor -> MarkResult -> RetryController` 仍是独立阶段。
 - 不要求一次性重写所有 scheduler / selector 代码；先建立 seam 和兼容层，再逐步迁移。
 - 不把请求 payload、凭证、bearer token、cookie 或完整错误体写入 route event ledger。
@@ -97,6 +100,9 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 27. Given 总账号池禁用某账号组，When Codex 或 Claude 引用该组，Then 两个渠道都不能从该组产生候选。
 28. Given Codex 渠道禁用某账号组，When Claude 渠道仍启用该组，Then Codex 不从该组产生候选，但 Claude 仍可按自身渠道配置使用该组。
 29. Given 项目模式命中账号组，When 该组内有多个可路由账号，Then 项目绑定只负责限定目标池，组内选择继续按该渠道配置的 `sequential` 或 `balanced` 执行。
+30. Given 某账号已被 session sticky 或 WebSocket pinned auth 占用，When 用户禁用该账号或其有效组，Then sticky / pin 立即失效；当前流式连接在最近可控边界断开，后续请求重新进入 route engine。
+31. Given 某账号或账号组从禁用切回激活，When 当前已有其他账号承载 stream / sticky，Then 不主动抢占或迁移当前连接；该账号只进入下一轮 route / retry 的可路由账号池。
+32. Given 某账号因 401/429/5xx/model-unavailable 进入失败冷却，When 后续请求进入路由引擎，Then 该冷却状态从持久化运行态或 guard source 读取；冷却到期只恢复对应 source，不清除用户禁用状态。
 
 ## 设计稿入口
 

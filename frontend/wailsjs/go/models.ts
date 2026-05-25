@@ -788,6 +788,60 @@ export namespace main {
 	        this.accountIDs = source["accountIDs"];
 	    }
 	}
+	export class ChannelRuntimeStateSource {
+	    source: string;
+	    reason?: string;
+	    model?: string;
+	    expiresAt?: string;
+	    updatedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRuntimeStateSource(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.source = source["source"];
+	        this.reason = source["reason"];
+	        this.model = source["model"];
+	        this.expiresAt = source["expiresAt"];
+	        this.updatedAt = source["updatedAt"];
+	    }
+	}
+	export class ChannelAccountRuntimeState {
+	    accountID: string;
+	    sources?: Record<string, ChannelRuntimeStateSource>;
+	    updatedAt?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelAccountRuntimeState(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountID = source["accountID"];
+	        this.sources = this.convertValues(source["sources"], ChannelRuntimeStateSource, true);
+	        this.updatedAt = source["updatedAt"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ChannelGroupState {
 	    enabled: boolean;
 	    routeOrder?: number;
@@ -818,6 +872,28 @@ export namespace main {
 	        this.targetType = source["targetType"];
 	        this.targetID = source["targetID"];
 	        this.fallbackMode = source["fallbackMode"];
+	    }
+	}
+	export class ChannelRouteAccountResultInput {
+	    accountID: string;
+	    statusCode?: number;
+	    errorType?: string;
+	    reason?: string;
+	    cooldownSeconds?: number;
+	    model?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new ChannelRouteAccountResultInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountID = source["accountID"];
+	        this.statusCode = source["statusCode"];
+	        this.errorType = source["errorType"];
+	        this.reason = source["reason"];
+	        this.cooldownSeconds = source["cooldownSeconds"];
+	        this.model = source["model"];
 	    }
 	}
 	export class ChannelRouteEvent {
@@ -967,6 +1043,7 @@ export namespace main {
 	    projectName?: string;
 	    triedAccountIDs?: string[];
 	    activeSessions?: Record<string, number>;
+	    stickyAccountID?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingExplainInput(source);
@@ -978,6 +1055,7 @@ export namespace main {
 	        this.projectName = source["projectName"];
 	        this.triedAccountIDs = source["triedAccountIDs"];
 	        this.activeSessions = source["activeSessions"];
+	        this.stickyAccountID = source["stickyAccountID"];
 	    }
 	}
 	export class ChannelRoutingShadowDecision {
@@ -1062,6 +1140,7 @@ export namespace main {
 		    return a;
 		}
 	}
+
 
 
 	export class ClaudeCodeAccountRoutingProbeAttempt {

@@ -13,7 +13,7 @@ GetTokens 下一阶段自定义端点路由应收敛为 `AccountRoutingEngine`�
 3. 自定义端点路由本质是候选账号重写与排序，不是请求拦截。
 4. CLIProxyAPI fork 后续要持续合并上游，自定义逻辑必须集中到稳定扩展层。
 
-本次 rollout 同时需要清理既有账号路由逻辑。已经实现的 `RoutePolicy`、`AccountRouteGuardStore`、rate-limit policy、session affinity selector 和 WebSocket pinned auth 特例不能作为另一套路由系统长期并行存在；它们要么迁移为 engine policy，要么保留为明确的兼容 shim。
+本次 rollout 同时需要清理既有账号路由逻辑。已经实现的 `RoutePolicy`、`AccountRouteGuardStore`、rate-limit evaluator、session affinity selector 和 WebSocket pinned auth 特例不能作为另一套路由系统长期并行存在；它们要么迁移为 engine policy，要么保留为明确的兼容 shim。
 
 ## 推荐架构
 
@@ -62,6 +62,11 @@ RouteContext Normalize
    - project
 
 `P0` 不允许被后续策略绕过。请求级 allow/order 不能把手动禁用、限流阻断、冷却中或模型不可用账号放回候选。
+
+启停状态的实时性不对称：
+
+- 禁用立即生效：账号 `disabled`、`manual-disabled`、`inventoryGroup.enabled=false` 或 `channelGroup.enabled=false` 高于 `StickyPolicy`、失败降级、retry 和 selector。若当前 stream / pinned auth / sticky 正在使用该账号，执行器必须在 request-boundary 或管理控制可达的最近边界断开连接、释放 pin，并让后续请求重新进入路由引擎。
+- 激活非抢占：账号或账号组恢复激活后，只进入后续可路由账号池；不会抢占当前正在工作的 stream，不主动迁移已有 sticky，也不会因为“刚激活”立刻替换当前账号。
 
 ## 简化后的核心路由语义
 
@@ -238,6 +243,18 @@ AND supports channel/provider/model/endpoint
 
 配置或状态变化时重建快照；请求热路径不做 DB 查询和复杂解析。
 
+### 运行态持久化
+
+失败冷却必须由 `ResultRecorder / MarkResult` 写入可恢复的运行态存储或 guard source，而不是只存在于当前 selector 进程内存。至少区分：
+
+- `manual-disabled`：用户或配置意图，只能由用户启用或配置变更清除。
+- `rate-limit` / `cooldown`：429、配额窗口或短期熔断，可按窗口到期自动清理。
+- `auth-error`：401、token expired、credential invalid，默认保持异常，直到凭证刷新或用户显式恢复。
+- `model-unavailable`：模型不可用或账号不支持该模型，可按模型探测或配置变更恢复。
+- `upstream-error`：5xx、连接失败、超时，可进入短期冷却并记录过期时间。
+
+`MarkResult` 只负责写运行态和 guard source；下一次请求或 retry 仍通过 `AccountRoutingEngine.Route()` 读取快照后决策。自动恢复只能清理对应 source，不能误清 `manual-disabled`。账号激活会清除对应禁用 source 并使账号进入下一轮候选池，但不触发当前连接抢占。
+
 ## Trace 与 Explain
 
 每次决策应能产出简洁 trace：
@@ -272,6 +289,8 @@ Codex WebSocket 不承诺 mid-response 迁移。支持的边界是下一条 down
 4. 强制 transcript replay。
 5. 重新进入 `AccountRoutingEngine.Route()`。
 
+如果 guard 命中来源是 `manual-disabled`、账号 `disabled`、全局组禁用或渠道组禁用，不能等待 sticky 自然过期；需要把当前 pinned auth 视为立即不可用。已经开始输出的 stream 不做无缝续流，但应在最近可控边界主动断开并给出 trace，后续请求再根据 retry/fallback 重新选择。反向的激活操作只影响下一轮选择，不主动恢复或替换当前连接。
+
 ## 上游合并边界
 
 GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
@@ -304,7 +323,7 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 
 1. P0 作为兼容层保留。
 2. `gettokensRoutePolicy` 和 `accountRouteGuardPolicy` 可以先映射为 engine policy。
-3. endpoint route policy 上线后，逐步把 rate-limit 双路径、session affinity wrapper 收敛到 engine。
+3. endpoint route policy 上线后，逐步把 session affinity wrapper 等剩余 selector shim 收敛到 engine。
 
 ## 既有逻辑清理边界
 
@@ -339,8 +358,18 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 - `ListChannelRouteEvents` 输出只含安全摘要，不携带 payload / token / cookie / bearer。
 - Codex / Claude Channel Routing workbench 已加入 shadow 开关与 shadow explain 展示。
 
+2026-05-25 后续收敛：
+
+- CLIProxyAPI fork 默认 service builder 已接入 `AccountRouteGuardResultHook`，真实执行器 `MarkResult` 可把 401、429、408/5xx/timeout 写入 route guard transient sources，并在成功后只清 transient source，不清 `manual-disabled`。
+- Codex / Claude 账号列表已经移除旧 allow / deny / fallback 的主 UI 操作入口；路由探测只按渠道当前账号顺序传入 `orderAccountIDs`，旧字段保留为空作为 request policy 兼容层。
+- dev sidecar 真实 upstream 冒烟已完成：`GET /v1/models` 返回 `status=200 models=8`，`POST /v1/responses` 使用 `gpt-5.4` 和 `max_output_tokens=1` 返回 `status=200 object=response`。
+- Codex / Claude Channel Routing workbench 已展示最近 route event ledger，桌面模式读取 `ListChannelRouteEvents`，浏览器预览 Explain 后合成 redacted preview event。
+- `rateLimitPolicy` 兼容注册已删除；rate-limit evaluator 只刷新 `AccountRouteGuardSourceRateLimit`，热路径由 `accountRouteGuardPolicy` 统一 deny。
+- session affinity legacy path 已在 sticky selector 前复用 `RoutePolicy` / engine seam；sticky cache 和 fallback 只能在 guard 过滤后的候选池内工作。
+- session affinity 已进一步作为 manager-local `PolicyStageSticky` 接入 scheduler fast path：cache hit 通过 route engine 排序候选，cache miss 由 selector 选中后绑定结果。
+- WebSocket request-boundary 特例已收口为单一连接生命周期 helper：guarded pinned auth 释放 pin、关闭旧 execution session、强制 transcript replay。
+- `legacy-routing-cleanup-v01.md` 已更新当前 shim 状态：公共 `RoutePolicy` 兼容 API 是后续上游合并与旧 request policy 的主要兼容边界。
+
 仍未完成的项：
 
-- 真实 upstream 请求冒烟与完整 selector 热路径接管。
-- route event ledger 的更完整审计入口。
-- 旧路径的最后收敛和删除清单。
+- 完整 selector 热路径接管与旧 shim 删除。

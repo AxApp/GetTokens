@@ -221,6 +221,7 @@ type ChannelRoutingExplainInput struct {
 	ProjectName     string         `json:"projectName,omitempty"`
 	TriedAccountIDs []string       `json:"triedAccountIDs,omitempty"`
 	ActiveSessions  map[string]int `json:"activeSessions,omitempty"`
+	StickyAccountID string         `json:"stickyAccountID,omitempty"`
 }
 
 type ChannelRoutingExplainResult struct {
@@ -281,6 +282,29 @@ type ChannelRouteEvent struct {
 	ShadowSelectedAccountID string `json:"shadowSelectedAccountID,omitempty"`
 	ShadowDiff              bool   `json:"shadowDiff,omitempty"`
 	Redacted                bool   `json:"redacted"`
+}
+
+type ChannelRouteAccountResultInput struct {
+	AccountID       string `json:"accountID"`
+	StatusCode      int    `json:"statusCode,omitempty"`
+	ErrorType       string `json:"errorType,omitempty"`
+	Reason          string `json:"reason,omitempty"`
+	CooldownSeconds int    `json:"cooldownSeconds,omitempty"`
+	Model           string `json:"model,omitempty"`
+}
+
+type ChannelAccountRuntimeState struct {
+	AccountID string                               `json:"accountID"`
+	Sources   map[string]ChannelRuntimeStateSource `json:"sources,omitempty"`
+	UpdatedAt string                               `json:"updatedAt,omitempty"`
+}
+
+type ChannelRuntimeStateSource struct {
+	Source    string `json:"source"`
+	Reason    string `json:"reason,omitempty"`
+	Model     string `json:"model,omitempty"`
+	ExpiresAt string `json:"expiresAt,omitempty"`
+	UpdatedAt string `json:"updatedAt,omitempty"`
 }
 
 type UpdateOAuthModelAliasesInput struct {

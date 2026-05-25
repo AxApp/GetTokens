@@ -1,6 +1,5 @@
 import { Play, RotateCcw, Terminal, X } from 'lucide-react';
 import { useEffect } from 'react';
-import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { ModelCombobox } from './ModelCombobox';
 import { buildEndpointLabel, sourceKindLabel } from './codexAccountPresentation';
 import {
@@ -15,12 +14,10 @@ export function RouteProbeCard({
   routingProbeModelOptions,
   routingProbeRunning,
   routingProbeDisabled,
-  allowFallback,
   routePolicyPreviewRows,
   routingProbeStreamLines,
   latestUsedFallback,
   onClose,
-  onFallbackChange,
   onModelChange,
   onProbeOnce,
   onProbeSeries,
@@ -31,7 +28,6 @@ export function RouteProbeCard({
   routingProbeModelOptions: string[];
   routingProbeRunning: boolean;
   routingProbeDisabled: boolean;
-  allowFallback: boolean;
   routePolicyPreviewRows: CodexAccountRow[];
   routingProbeStreamLines: Array<{
     key: string;
@@ -42,7 +38,6 @@ export function RouteProbeCard({
   }>;
   latestUsedFallback: boolean;
   onClose: () => void;
-  onFallbackChange: () => void;
   onModelChange: (value: string) => void;
   onProbeOnce: () => void;
   onProbeSeries: () => void;
@@ -119,8 +114,6 @@ export function RouteProbeCard({
                 routingProbeModelOptions={routingProbeModelOptions}
                 routingProbeRunning={routingProbeRunning}
                 routingProbeDisabled={routingProbeDisabled}
-                allowFallback={allowFallback}
-                onFallbackChange={onFallbackChange}
                 onModelChange={onModelChange}
                 onProbeOnce={onProbeOnce}
                 onProbeSeries={onProbeSeries}
@@ -201,8 +194,6 @@ function ProbeControlPanel({
   routingProbeModelOptions,
   routingProbeRunning,
   routingProbeDisabled,
-  allowFallback,
-  onFallbackChange,
   onModelChange,
   onProbeOnce,
   onProbeSeries,
@@ -213,8 +204,6 @@ function ProbeControlPanel({
   routingProbeModelOptions: string[];
   routingProbeRunning: boolean;
   routingProbeDisabled: boolean;
-  allowFallback: boolean;
-  onFallbackChange: () => void;
   onModelChange: (value: string) => void;
   onProbeOnce: () => void;
   onProbeSeries: () => void;
@@ -224,7 +213,7 @@ function ProbeControlPanel({
     <div className="grid content-start gap-5">
       <div className="border-b-2 border-[var(--border-color)] pb-4">
         <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-          {t('codex.account_list_policy_title')}
+          {t('codex.account_list_probe_open')}
         </div>
         <div className="mt-2 text-lg font-black uppercase italic leading-none tracking-tighter text-[var(--text-primary)]">
           {t('codex.account_list_policy_headline')}
@@ -271,23 +260,6 @@ function ProbeControlPanel({
             <RotateCcw className="h-3.5 w-3.5" strokeWidth={4} />
             {t('common.reset')}
           </button>
-        </div>
-      </div>
-
-      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <div className="border-b-2 border-[var(--border-color)] px-3 py-2">
-          <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-            {t('codex.account_list_policy_fallback_scope')}
-          </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
-            {t('codex.account_list_policy_fallback')}
-          </div>
-        </div>
-        <div className="flex items-center justify-between gap-3 px-3 py-3">
-          <span className="min-w-0 text-[length:var(--font-size-ui-2xs)] font-bold uppercase leading-snug tracking-wide text-[var(--text-muted)]">
-            {t('codex.account_list_policy_fallback_hint')}
-          </span>
-          <ToggleSwitch checked={allowFallback} label={t('codex.account_list_policy_fallback')} onChange={onFallbackChange} />
         </div>
       </div>
     </div>
