@@ -396,6 +396,7 @@
     "connection_reused": "复用",
     "connection_fresh": "新建",
     "session_started": "开始时间",
+    "session_completed": "结束时间",
     "session_last_event": "最后事件",
     "token_usage": "Token 用量",
     "tokens_input": "输入",

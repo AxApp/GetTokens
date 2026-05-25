@@ -396,6 +396,7 @@
     "connection_reused": "Reused",
     "connection_fresh": "Fresh",
     "session_started": "Started",
+    "session_completed": "Completed",
     "session_last_event": "Last Event",
     "token_usage": "Token Usage",
     "tokens_input": "Input",

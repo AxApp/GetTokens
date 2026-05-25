@@ -1,5 +1,9 @@
+import { Info } from 'lucide-react';
+import { useState } from 'react';
 import SnippetPre from '../../../components/ui/SnippetPre';
-import { BillingBalance, QuotaBars } from '../../accounts/components/CardSections';
+import ModalFrame from '../../../components/ui/ModalFrame';
+import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
+import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
 import { groupTimelineByLane } from '../model/selectors';
 import type {
   CodexLiveRequest,
@@ -18,6 +22,12 @@ import {
   buildLiveSessionBillingDisplay,
   buildLiveSessionQuotaDisplay,
 } from './accountCardAdapters';
+import {
+  buildFallbackTimelineSummary,
+  buildRequestTimelineSummary,
+  type FallbackTimelineSummary,
+  type RequestTimelineSummary,
+} from './requestTimelineSummary';
 import type { Translate } from './types';
 
 export function SessionDetail({
@@ -156,77 +166,101 @@ function TimingMetrics({ request, t }: { request?: CodexLiveRequest; t: Translat
 function AccountCard({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {
   const authLabel = request?.authLabel || session.authLabel;
   const authID = request?.authID || session.authID;
-  const provider = request?.provider || session.provider;
+  const provider = request?.provider || session.provider || 'codex';
   const proxyRoute = request?.proxyRoute;
   const usage = request?.usage;
   const quotaDisplay = buildLiveSessionQuotaDisplay(request?.quota);
   const billingDisplay = buildLiveSessionBillingDisplay(request?.billing);
-
-  const accountRows: Array<[string, string]> = [
-    [t('codex_live_sessions.account_label'), authLabel || authID || t('codex_live_sessions.unknown_auth')],
-    [t('codex_live_sessions.account_id'), authID || t('codex_live_sessions.unknown')],
-    [t('codex_live_sessions.account_provider'), provider || t('codex_live_sessions.unknown')],
-    [t('codex_live_sessions.account_transport'), `${session.downstreamTransport} → ${session.upstreamTransport}`],
+  const title = authLabel || stripLiveAuthPrefix(authID) || t('codex_live_sessions.unknown_auth');
+  const subtitle = authID || '';
+  const transportLabel = `${session.downstreamTransport} → ${session.upstreamTransport}`;
+  const badges: AttributionCardBadge[] = [
+    { label: provider.toUpperCase(), tone: 'neutral' },
+    { label: transportLabel, tone: session.fallbackInferred ? 'warning' : 'neutral' },
   ];
   if (proxyRoute) {
-    accountRows.push([t('codex_live_sessions.account_proxy'), proxyRoute]);
+    badges.push({ label: proxyRoute, tone: 'neutral' });
   }
 
+  const tone = request?.error
+    ? 'critical'
+    : session.fallbackInferred
+      ? 'warning'
+      : 'positive';
+  const statusLabel = request?.error
+    ? t('accounts.status_error_display')
+    : session.fallbackInferred
+      ? t('codex_live_sessions.inferred')
+      : t('accounts.status_available');
+
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-        {t('codex_live_sessions.account_routing')}
-      </div>
-      <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-2">
-        {accountRows.map(([label, value]) => (
-          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] py-1 text-[length:var(--font-size-ui-sm)]">
-            <span className="shrink-0 font-mono font-black uppercase text-[var(--text-muted)]">{label}</span>
-            <span className="truncate font-mono font-bold text-[var(--text-primary)]">{value}</span>
-          </div>
-        ))}
-      </div>
-
-      {quotaDisplay ? (
-        <div className="mt-4">
-          <QuotaBars quotaDisplay={quotaDisplay} t={t} />
-        </div>
-      ) : null}
-
-      {billingDisplay ? (
-        <div className="mt-4">
-          <BillingBalance billing={billingDisplay} />
-        </div>
-      ) : null}
-
-      {usage != null ? (
-        <div className="mt-4">
-          <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-            {t('codex_live_sessions.token_usage')}
-          </div>
-          <div className="mt-2 grid grid-cols-4 gap-x-3 gap-y-1">
-            <UsageStat label={t('codex_live_sessions.tokens_input')} value={usage.inputTokens} />
-            <UsageStat label={t('codex_live_sessions.tokens_cached')} value={usage.cachedInputTokens} />
-            <UsageStat label={t('codex_live_sessions.tokens_output')} value={usage.outputTokens} />
-            <UsageStat label={t('codex_live_sessions.tokens_total')} value={usage.totalTokens} />
-          </div>
-        </div>
-      ) : null}
-
-    </div>
+    <AttributionCard
+      t={t}
+      title={title}
+      subtitle={subtitle}
+      eyebrow={statusLabel}
+      failureReason={request?.error?.message || ''}
+      badges={badges}
+      usageSummary={buildLiveAccountUsageSummary(session, request)}
+      quotaDisplay={quotaDisplay}
+      billing={billingDisplay}
+      tone={tone}
+      density="full"
+      interactive={false}
+      onOpen={() => undefined}
+    />
   );
 }
 
-function UsageStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="text-center">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]">
-        {value.toLocaleString()}
-      </div>
-      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-        {label}
-      </div>
-    </div>
-  );
+function stripLiveAuthPrefix(authID?: string): string {
+  return String(authID || '').replace(/^(auth-file|codex-api-key|openai-compatible):/i, '').trim();
+}
+
+function buildLiveAccountUsageSummary(session: CodexLiveSession, request?: CodexLiveRequest): AccountUsageSummary | undefined {
+  const usage = request?.usage;
+  if (!usage) {
+    return undefined;
+  }
+
+  const failed = request?.status === 'failed' || Boolean(request?.error);
+  const bucketStart = request?.startedAt || session.startedAt;
+  return {
+    source: 'attribution',
+    hasData: true,
+    requestCount: 1,
+    failedCount: failed ? 1 : 0,
+    success: failed ? 0 : 1,
+    failure: failed ? 1 : 0,
+    successRate: failed ? 0 : 1,
+    averageLatencyMs: request?.timing?.totalDurationMs ?? null,
+    inputTokens: usage.inputTokens,
+    cachedInputTokens: usage.cachedInputTokens,
+    outputTokens: usage.outputTokens,
+    totalTokens: usage.totalTokens,
+    lastActivityAt: Date.parse(request?.completedAt || session.lastEventAt || bucketStart) || null,
+    attributionKey: request?.authID || session.authID || '',
+    attributionKind: 'live-session',
+    provider: request?.provider || session.provider || 'codex',
+    requestedModels: [request?.model || session.model],
+    trafficBuckets: [
+      {
+        start: bucketStart,
+        requestCount: 1,
+        failedCount: failed ? 1 : 0,
+        inputTokens: usage.inputTokens,
+        cachedInputTokens: usage.cachedInputTokens,
+        outputTokens: usage.outputTokens,
+        totalTokens: usage.totalTokens,
+      },
+    ],
+    statusBar: {
+      blocks: [failed ? 'failure' : 'success'],
+      blockDetails: [],
+      successRate: failed ? 0 : 1,
+      totalSuccess: failed ? 0 : 1,
+      totalFailure: failed ? 1 : 0,
+    },
+  };
 }
 
 function SessionCard({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {
@@ -281,105 +315,303 @@ function Timeline({
   fallbackEvents: readonly CodexLiveTimelineEvent[];
   t: Translate;
 }) {
+  const [detailTarget, setDetailTarget] = useState<
+    | { type: 'request'; request: CodexLiveRequest }
+    | { type: 'fallback'; events: readonly CodexLiveTimelineEvent[] }
+    | null
+  >(null);
+  const fallbackSummary = buildFallbackTimelineSummary(fallbackEvents, t);
+
   return (
     <div className="grid gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          {t('codex_live_sessions.request_timeline')}
+        </div>
+        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+          {requests.length > 0 ? requests.length : 1} {t('codex_live_sessions.rows')}
+        </div>
+      </div>
+
+      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+        {requests.length === 0 ? (
+          <TimelineFallbackRow
+            summary={fallbackSummary}
+            t={t}
+            onOpen={() => setDetailTarget({ type: 'fallback', events: fallbackEvents })}
+          />
+        ) : (
+          requests.map((request) => (
+            <TimelineRequestRow
+              key={request.requestID}
+              summary={buildRequestTimelineSummary(request)}
+              t={t}
+              onOpen={() => setDetailTarget({ type: 'request', request })}
+            />
+          ))
+        )}
+      </div>
+
+      {detailTarget?.type === 'request' ? (
+        <RequestTimelineDetailModal request={detailTarget.request} t={t} onClose={() => setDetailTarget(null)} />
+      ) : null}
+
+      {detailTarget?.type === 'fallback' ? (
+        <FallbackTimelineDetailModal events={detailTarget.events} t={t} onClose={() => setDetailTarget(null)} />
+      ) : null}
+    </div>
+  );
+}
+
+function TimelineRequestRow({
+  summary,
+  t,
+  onOpen,
+}: {
+  summary: RequestTimelineSummary;
+  t: Translate;
+  onOpen: () => void;
+}) {
+  return <TimelineSummaryRow summary={summary} t={t} onOpen={onOpen} />;
+}
+
+function TimelineFallbackRow({
+  summary,
+  t,
+  onOpen,
+}: {
+  summary: FallbackTimelineSummary;
+  t: Translate;
+  onOpen: () => void;
+}) {
+  return <TimelineSummaryRow summary={summary} t={t} onOpen={onOpen} dashed />;
+}
+
+function TimelineSummaryRow({
+  summary,
+  t,
+  onOpen,
+  dashed = false,
+}: {
+  summary: RequestTimelineSummary | FallbackTimelineSummary;
+  t: Translate;
+  onOpen: () => void;
+  dashed?: boolean;
+}) {
+  const timeRangeLabel = buildTimelineTimeRange(summary);
+  const metricItems = buildTimelineMetricItems(summary, t);
+
+  return (
+    <div className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-2 text-[length:var(--font-size-ui-sm)] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="min-w-0 max-w-[18rem] truncate font-mono font-black text-[var(--text-primary)]">
+          {summary.sequenceLabel} · {summary.modelLabel}
+        </span>
+        <span className="min-w-0 max-w-[16rem] truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+          {summary.requestID}
+        </span>
+        {timeRangeLabel ? (
+          <span className="shrink-0 font-mono font-black text-[var(--text-primary)]">
+            {timeRangeLabel}
+          </span>
+        ) : null}
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          {metricItems.map((item) => (
+            <TimelineMetricPill key={item.label} label={item.label} value={item.value} />
+          ))}
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="btn-swiss inline-flex h-8 w-8 items-center justify-center justify-self-end !p-0 active:scale-95"
+        title={t('codex_live_sessions.detail')}
+        aria-label={t('codex_live_sessions.detail')}
+      >
+        <Info className="h-4 w-4" strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+}
+
+function buildTimelineTimeRange(summary: RequestTimelineSummary | FallbackTimelineSummary): string {
+  const started = isTimelineValuePresent(summary.startedAtLabel) ? summary.startedAtLabel : '';
+  const completed = isTimelineValuePresent(summary.completedAtLabel) ? summary.completedAtLabel : '';
+  if (started && completed && started !== completed) {
+    return `${started} - ${completed}`;
+  }
+  return started || completed;
+}
+
+function buildTimelineMetricItems(summary: RequestTimelineSummary | FallbackTimelineSummary, t: Translate): Array<{ label: string; value: string }> {
+  return [
+    { label: t('codex_live_sessions.timing_total'), value: summary.totalDurationLabel },
+    { label: t('codex_live_sessions.timing_ttft'), value: summary.ttftLabel },
+    { label: t('codex_live_sessions.timing_first_token'), value: summary.firstTokenLabel },
+    { label: t('codex_live_sessions.timing_stream'), value: summary.streamDurationLabel },
+    { label: t('codex_live_sessions.timing_avg_gap'), value: summary.averageGapLabel },
+    { label: t('codex_live_sessions.timing_max_gap'), value: summary.longestGapLabel },
+  ].filter((item) => isTimelineValuePresent(item.value));
+}
+
+function isTimelineValuePresent(value: string): boolean {
+  return value !== '-' && value.toLowerCase() !== 'n/a';
+}
+
+function TimelineMetricPill({ label, value }: { label: string; value: string }) {
+  return (
+    <span className="inline-flex h-6 items-center gap-1 border border-[color:color-mix(in_srgb,var(--border-color)_42%,transparent)] bg-[var(--bg-main)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
+      <span className="text-[var(--text-muted)]">{label}</span>
+      <span>{value}</span>
+    </span>
+  );
+}
+
+function RequestTimelineDetailModal({
+  request,
+  t,
+  onClose,
+}: {
+  request: CodexLiveRequest;
+  t: Translate;
+  onClose: () => void;
+}) {
+  const timing = request.timing;
+  const usage = request.usage;
+  const requestRows: Array<[string, string]> = [
+    [t('codex_live_sessions.meta_client_request'), request.clientRequestID || t('codex_live_sessions.unknown')],
+    [t('codex_live_sessions.meta_upstream_request'), request.upstreamRequestID || t('codex_live_sessions.unknown')],
+    [t('codex_live_sessions.account_label'), request.authLabel || request.authID || t('codex_live_sessions.unknown_auth')],
+    [t('codex_live_sessions.account_provider'), request.provider || t('codex_live_sessions.unknown')],
+    [t('codex_live_sessions.account_transport'), `${request.downstreamTransport} → ${request.upstreamTransport}`],
+  ];
+  if (request.proxyRoute) {
+    requestRows.push([t('codex_live_sessions.account_proxy'), request.proxyRoute]);
+  }
+
+  const metricRows: Array<[string, string]> = [
+    [t('codex_live_sessions.timing_total'), formatOptionalDuration(timing?.totalDurationMs)],
+    [t('codex_live_sessions.timing_ttft'), formatOptionalDuration(timing?.firstEventMs)],
+    [t('codex_live_sessions.timing_first_token'), formatOptionalDuration(timing?.firstTokenMs)],
+    [t('codex_live_sessions.timing_output_rate'), formatOptionalRate(timing?.outputTokensPerSecond)],
+    [t('codex_live_sessions.tokens_total'), usage ? usage.totalTokens.toLocaleString() : 'n/a'],
+    [t('codex_live_sessions.tokens_output'), usage ? usage.outputTokens.toLocaleString() : 'n/a'],
+  ];
+
+  return (
+    <ModalFrame
+      size="detail"
+      onClose={onClose}
+      ariaLabel={t('codex_live_sessions.request_timeline')}
+      header={
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
+                {t(statusLabelKeys[request.status])}
+              </span>
+              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+                #{request.sequence} · {request.model}
+              </span>
+            </div>
+            <div className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xl)] font-black text-[var(--text-primary)]">
+              {request.requestID}
+            </div>
+          </div>
+          <div className="shrink-0 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] sm:text-right">
+            <div>{request.startedAt}</div>
+            <div>{request.completedAt || t('codex_live_sessions.status_streaming')}</div>
+          </div>
+        </div>
+      }
+      footer={
+        <div className="ml-auto">
+          <button type="button" onClick={onClose} className="btn-swiss active:scale-95">
+            {t('common.close')}
+          </button>
+        </div>
+      }
+    >
+      <div className="grid gap-3 p-4">
+        <div className="grid gap-3 xl:grid-cols-[1fr_1fr]">
+          <div className="grid gap-1">
+            {requestRows.map(([label, value]) => (
+              <RequestInfoRow key={label} label={label} value={value} />
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+            {metricRows.map(([label, value]) => (
+              <MetricCell key={label} label={label} value={value} />
+            ))}
+          </div>
+        </div>
+
+        {request.error ? (
+          <div className="border-2 border-[var(--color-danger)] bg-[color-mix(in_srgb,var(--color-danger)_10%,var(--bg-main))] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--color-danger)]">
+            {request.error.statusCode ? `${request.error.statusCode} ` : ''}
+            {request.error.code ? `${request.error.code}: ` : ''}
+            {request.error.message}
+          </div>
+        ) : null}
+
+        <TimelineEventsPanel events={request.timeline} t={t} />
+      </div>
+    </ModalFrame>
+  );
+}
+
+function FallbackTimelineDetailModal({
+  events,
+  t,
+  onClose,
+}: {
+  events: readonly CodexLiveTimelineEvent[];
+  t: Translate;
+  onClose: () => void;
+}) {
+  return (
+    <ModalFrame
+      size="lg"
+      onClose={onClose}
+      ariaLabel={t('codex_live_sessions.unknown_request')}
+      header={
+        <div>
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            {t('codex_live_sessions.request_timeline')}
+          </div>
+          <div className="mt-2 font-mono text-[length:var(--font-size-ui-xl)] font-black text-[var(--text-primary)]">
+            {t('codex_live_sessions.unknown_request')}
+          </div>
+        </div>
+      }
+      footer={
+        <div className="ml-auto">
+          <button type="button" onClick={onClose} className="btn-swiss active:scale-95">
+            {t('common.close')}
+          </button>
+        </div>
+      }
+    >
+      <div className="p-4">
+        <TimelineEventsPanel events={events} t={t} />
+      </div>
+    </ModalFrame>
+  );
+}
+
+function TimelineEventsPanel({ events, t }: { events: readonly CodexLiveTimelineEvent[]; t: Translate }) {
+  return (
+    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
       <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
         {t('codex_live_sessions.request_timeline')}
       </div>
-      <div className="grid gap-3">
-        {requests.length === 0 ? (
-          <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-            <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
-              {t('codex_live_sessions.unknown_request')}
-            </div>
-            <div className="mt-2 grid gap-1">
-              {fallbackEvents.slice(0, 4).map((event) => (
-                <EventLine key={event.id} event={event} />
-              ))}
-            </div>
-          </div>
+      <div className="mt-3 grid gap-2">
+        {events.length === 0 ? (
+          <span className="text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+            {t('codex_live_sessions.no_event')}
+          </span>
         ) : (
-          requests.map((request) => {
-            const timing = request.timing;
-            const usage = request.usage;
-            const requestRows: Array<[string, string]> = [
-              [t('codex_live_sessions.meta_client_request'), request.clientRequestID || t('codex_live_sessions.unknown')],
-              [t('codex_live_sessions.meta_upstream_request'), request.upstreamRequestID || t('codex_live_sessions.unknown')],
-              [t('codex_live_sessions.account_label'), request.authLabel || request.authID || t('codex_live_sessions.unknown_auth')],
-              [t('codex_live_sessions.account_provider'), request.provider || t('codex_live_sessions.unknown')],
-              [t('codex_live_sessions.account_transport'), `${request.downstreamTransport} → ${request.upstreamTransport}`],
-            ];
-            if (request.proxyRoute) {
-              requestRows.push([t('codex_live_sessions.account_proxy'), request.proxyRoute]);
-            }
-
-            const metricRows: Array<[string, string]> = [
-              [t('codex_live_sessions.timing_total'), formatOptionalDuration(timing?.totalDurationMs)],
-              [t('codex_live_sessions.timing_ttft'), formatOptionalDuration(timing?.firstEventMs)],
-              [t('codex_live_sessions.timing_first_token'), formatOptionalDuration(timing?.firstTokenMs)],
-              [t('codex_live_sessions.timing_output_rate'), formatOptionalRate(timing?.outputTokensPerSecond)],
-              [t('codex_live_sessions.tokens_total'), usage ? usage.totalTokens.toLocaleString() : 'n/a'],
-              [t('codex_live_sessions.tokens_output'), usage ? usage.outputTokens.toLocaleString() : 'n/a'],
-            ];
-
-            return (
-              <div key={request.requestID} className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
-                <div className="grid gap-2 border-b-2 border-[var(--border-color)] p-3 lg:grid-cols-[1fr_auto] lg:items-start">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="border border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]">
-                        {t(statusLabelKeys[request.status])}
-                      </span>
-                      <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-                        #{request.sequence} · {request.model}
-                      </span>
-                    </div>
-                    <div className="mt-2 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black text-[var(--text-primary)]">
-                      {request.requestID}
-                    </div>
-                  </div>
-                  <div className="text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] lg:text-right">
-                    <div>{request.startedAt}</div>
-                    <div>{request.completedAt || t('codex_live_sessions.status_streaming')}</div>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 p-3 xl:grid-cols-[1fr_1fr]">
-                  <div className="grid gap-1">
-                    {requestRows.map(([label, value]) => (
-                      <RequestInfoRow key={label} label={label} value={value} />
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-                    {metricRows.map(([label, value]) => (
-                      <MetricCell key={label} label={label} value={value} />
-                    ))}
-                  </div>
-                </div>
-
-                {request.error ? (
-                  <div className="border-t border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--color-danger)]">
-                    {request.error.statusCode ? `${request.error.statusCode} ` : ''}
-                    {request.error.code ? `${request.error.code}: ` : ''}
-                    {request.error.message}
-                  </div>
-                ) : null}
-
-                <div className="border-t border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] p-3">
-                  <div className="grid gap-1">
-                    {request.timeline.slice(0, 5).map((event) => (
-                      <EventLine key={event.id} event={event} />
-                    ))}
-                    {request.timeline.length === 0 ? (
-                      <span className="text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-                        {t('codex_live_sessions.no_event')}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          events.map((event) => <EventDetailLine key={event.id} event={event} />)
         )}
       </div>
     </div>
@@ -404,15 +636,22 @@ function MetricCell({ label, value }: { label: string; value: string }) {
   );
 }
 
-function EventLine({ event }: { event: CodexLiveTimelineEvent }) {
+function EventDetailLine({ event }: { event: CodexLiveTimelineEvent }) {
   return (
-    <div className="grid min-w-0 grid-cols-[5.8rem_8px_7.5rem_1fr] gap-2 text-[length:var(--font-size-ui-sm)]">
+    <div className="grid min-w-0 grid-cols-[5.8rem_8px_minmax(8rem,10rem)_1fr] gap-2 border-b border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] pb-2 text-[length:var(--font-size-ui-sm)] last:border-b-0 last:pb-0">
       <span className="font-mono font-black text-[var(--text-muted)]">{event.at}</span>
       <span className={`mt-1.5 h-2 w-2 ${severityDotClass(event.severity)}`} />
       <span className="truncate font-mono font-black uppercase text-[var(--text-primary)]">
         {event.lane}.{event.kind}
       </span>
-      <span className="min-w-0 truncate font-bold text-[var(--text-muted)]">{event.label}</span>
+      <span className="min-w-0">
+        <span className="block truncate font-bold text-[var(--text-muted)]">{event.label}</span>
+        {event.detail ? (
+          <span className="mt-1 block truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+            {event.detail}
+          </span>
+        ) : null}
+      </span>
     </div>
   );
 }

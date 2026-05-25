@@ -16,6 +16,11 @@ import {
   buildLiveSessionQuotaDisplay,
 } from './components/accountCardAdapters.ts';
 import {
+  buildFallbackTimelineSummary,
+  buildRequestTimelineSummary,
+  formatTimelineTimeLabel,
+} from './components/requestTimelineSummary.ts';
+import {
   buildCodexLiveSessionsInitialSnapshot,
   buildCodexLiveSessionsLoadFailureSnapshot,
 } from './model/snapshotState.ts';
@@ -79,10 +84,20 @@ test('buildSessionRowSummary only exposes session project, account, and short pr
   const summary = buildSessionRowSummary(session, session.requests[0], (key) => key);
 
   assert.deepEqual(summary, {
-    sessionProjectLabel: 'ws_sess_7a91 / GetTokens',
+    sessionProjectLabel: 'GetTokens / ws_sess_7a91',
     accountTransportLabel: 'team-codex@example.com / ws',
   });
   assert.doesNotMatch(Object.values(summary).join(' '), /gpt-5\.5|streaming|8\.0s/);
+});
+
+test('buildSessionRowSummary places project name before long session ids so feed truncation keeps it visible', () => {
+  const session = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0],
+    sessionID: 'projects/-Users-linhey-Desktop-linhay-open-sources-GetTokens/sessions/2026/05/25/very-long-session-id.jsonl',
+  };
+  const summary = buildSessionRowSummary(session, session.requests[0], (key) => key);
+
+  assert.match(summary.sessionProjectLabel, /^GetTokens \/ projects\//);
 });
 
 test('buildSessionRowSummary falls back to unknown project and prefers http for degraded rows', () => {
@@ -100,7 +115,7 @@ test('buildSessionRowSummary falls back to unknown project and prefers http for 
     return key;
   });
 
-  assert.equal(summary.sessionProjectLabel, 'codex_win_48f2 / 未知项目');
+  assert.equal(summary.sessionProjectLabel, '未知项目 / codex_win_48f2');
   assert.equal(summary.accountTransportLabel, 'team-codex@example.com / http');
 });
 
@@ -180,6 +195,50 @@ test('buildLiveSessionQuotaDisplay and billing display reuse account card shapes
       },
     ],
   });
+});
+
+test('buildRequestTimelineSummary keeps timeline rows focused on time fields', () => {
+  const request = codexLiveSessionsPreviewSnapshot.sessions[0].requests[0];
+  const summary = buildRequestTimelineSummary(request);
+
+  assert.deepEqual(summary, {
+    requestID: 'gt-req-8912',
+    sequenceLabel: '#1',
+    modelLabel: 'gpt-5.5',
+    startedAtLabel: '2026-05-21T18:35:10+08:00',
+    completedAtLabel: '-',
+    totalDurationLabel: '8.0s',
+    ttftLabel: '562ms',
+    firstTokenLabel: '810ms',
+    streamDurationLabel: '7.4s',
+    averageGapLabel: '82ms',
+    longestGapLabel: '420ms',
+  });
+  assert.doesNotMatch(Object.values(summary).join(' '), /team-codex|websocket|response\.output_text|21,580/);
+});
+
+test('formatTimelineTimeLabel shortens only today timestamps', () => {
+  const now = new Date('2026-05-21T20:00:00+08:00');
+
+  assert.equal(formatTimelineTimeLabel('2026-05-21T18:35:10+08:00', now), '18:35:10');
+  assert.equal(formatTimelineTimeLabel('2026-05-20T18:35:10+08:00', now), '2026-05-20T18:35:10+08:00');
+  assert.equal(formatTimelineTimeLabel('18:14:02.110', now), '18:14:02');
+});
+
+test('buildFallbackTimelineSummary exposes only fallback time boundaries', () => {
+  const fallbackEvents = codexLiveSessionsPreviewSnapshot.sessions.find((session) => session.status === 'failed')?.recentEvents ?? [];
+  const summary = buildFallbackTimelineSummary(fallbackEvents, (key) => {
+    if (key === 'codex_live_sessions.unknown_request') {
+      return 'Unknown request';
+    }
+    return key;
+  });
+
+  assert.equal(summary.requestID, 'Unknown request');
+  assert.equal(summary.startedAtLabel, '18:14:02');
+  assert.equal(summary.completedAtLabel, '18:14:03');
+  assert.equal(summary.totalDurationLabel, 'n/a');
+  assert.doesNotMatch(Object.values(summary).join(' '), /upstream\.error|sidecar\.failed|team-codex|websocket/);
 });
 
 test('buildCodexLiveDiagnosticSummary redacts sensitive text', () => {
@@ -295,6 +354,26 @@ test('codex live session detail timeline renders request monitor fields instead 
   assert.match(detailSource, /request\.usage/);
   assert.match(detailSource, /request\.error/);
   assert.doesNotMatch(detailSource, /md:grid-cols-\[5\.2rem_8rem_1fr\]/);
+});
+
+test('codex live session detail timeline uses compact rows without horizontal table scroll', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /buildTimelineMetricItems/);
+  assert.match(detailSource, /isTimelineValuePresent/);
+  assert.match(detailSource, /TimelineMetricPill/);
+  assert.doesNotMatch(detailSource, /overflow-x-auto/);
+  assert.doesNotMatch(detailSource, /min-w-\[1320px\]/);
+  assert.doesNotMatch(detailSource, /function TimelineHeader/);
+});
+
+test('codex live session account block reuses account attribution card presentation', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /from '..\/..\/accounts\/components\/AttributionCard'/);
+  assert.match(detailSource, /<AttributionCard/);
+  assert.match(detailSource, /buildLiveAccountUsageSummary/);
+  assert.doesNotMatch(detailSource, /function UsageStat/);
 });
 
 test('desktop live sessions state never promotes preview rows to cache', () => {
