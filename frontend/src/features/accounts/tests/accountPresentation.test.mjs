@@ -61,8 +61,6 @@ test('account detail runtime stats mirror card quota billing and usage values', 
     'accounts.recent_requests': '最近请求',
     'accounts.total_tokens': '总 Token',
     'accounts.average_latency': '平均延迟',
-    'accounts.quota_remaining': '剩余额度',
-    'accounts.quota_syncing': '正在同步额度',
   }[key] || key);
   const stats = buildAccountRuntimeStats(
     {
@@ -70,15 +68,6 @@ test('account detail runtime stats mirror card quota billing and usage values', 
       totalTokens: 2600000,
       cachedInputTokens: 2400,
       averageLatencyMs: 1450,
-    },
-    {
-      status: 'success',
-      planType: 'plus',
-      windows: [{ id: 'weekly', label: '7D', remainingPercent: 72, usedLabel: '28%', resetLabel: 'tomorrow' }],
-    },
-    {
-      isAvailable: true,
-      balances: [{ currency: 'USD', totalBalance: '12.50', grantedBalance: '8.00', toppedUpBalance: '4.50' }],
     },
     t,
   );
@@ -88,8 +77,6 @@ test('account detail runtime stats mirror card quota billing and usage values', 
     ['total-tokens', '2.6M'],
     ['cached-input', '2.4K'],
     ['average-latency', '1.5s'],
-    ['quota-remaining', '72%'],
-    ['balance', '12.50 USD'],
   ]);
   assert.equal(formatRuntimeTokens(0), '—');
   assert.equal(formatRuntimeLatency(900), '900ms');
@@ -577,5 +564,45 @@ test('resolveAccountOperationalState treats oauth accounts with quota data as av
       t,
     ),
     { tone: 'positive', label: '可用' },
+  );
+});
+
+test('resolveAccountOperationalState keeps error cards visible even when usage looks healthy', () => {
+  const t = (key) =>
+    ({
+      'accounts.status_available': '可用',
+      'accounts.status_waiting_check': '等待检测',
+      'accounts.status_disabled_display': '已禁用',
+      'accounts.status_error_display': '异常',
+      'accounts.status_local': '本地草稿',
+    })[key] || key;
+
+  assert.deepEqual(
+    resolveAccountOperationalState(
+      {
+        id: 'auth-file:broken',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'broken.json',
+        status: 'ERROR',
+        statusMessage: 'refresh token expired',
+      },
+      {
+        hasData: true,
+        success: 4,
+        failure: 0,
+        successRate: 100,
+        averageLatencyMs: 88,
+        lastActivityAt: Date.now(),
+        statusBar: { blocks: [], blockDetails: [], successRate: 100, totalSuccess: 4, totalFailure: 0 },
+      },
+      {
+        status: 'success',
+        planType: 'PLUS',
+        windows: [{ id: 'weekly', label: 'WEEKLY', remainingPercent: 64, usedLabel: '36%', resetLabel: 'soon' }],
+      },
+      t,
+    ),
+    { tone: 'danger', label: '异常' },
   );
 });

@@ -1,6 +1,4 @@
-import type { BillingDisplay } from '../../../types';
 import type { AccountUsageSummary } from './accountUsage';
-import type { QuotaDisplay } from './types';
 
 export interface AccountRuntimeStatItem {
   id: string;
@@ -10,13 +8,8 @@ export interface AccountRuntimeStatItem {
 
 export function buildAccountRuntimeStats(
   summary: AccountUsageSummary | undefined,
-  quotaDisplay: QuotaDisplay | undefined,
-  billing: BillingDisplay | undefined,
   t: (key: string) => string,
 ): AccountRuntimeStatItem[] {
-  const firstQuotaWindow = quotaDisplay?.windows?.[0];
-  const balance = firstBillingBalance(billing);
-
   return [
     {
       id: 'recent-requests',
@@ -37,22 +30,6 @@ export function buildAccountRuntimeStats(
       id: 'average-latency',
       label: t('accounts.average_latency'),
       value: formatRuntimeLatency(summary?.averageLatencyMs ?? null),
-    },
-    {
-      id: 'quota-remaining',
-      label: firstQuotaWindow?.label || t('accounts.quota_remaining'),
-      value: firstQuotaWindow
-        ? firstQuotaWindow.remainingPercent === null
-          ? '--'
-          : `${firstQuotaWindow.remainingPercent}%`
-        : quotaDisplay?.status === 'loading'
-          ? t('accounts.quota_syncing')
-          : '—',
-    },
-    {
-      id: 'balance',
-      label: 'BALANCE',
-      value: balance ? `${balance.totalBalance} ${balance.currency}`.trim() : '—',
     },
   ];
 }
@@ -75,13 +52,6 @@ export function formatRuntimeLatency(value: number | null | undefined) {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return '—';
   if (value >= 1000) return `${trimRuntimeDecimal(value / 1000)}s`;
   return `${Math.round(value)}ms`;
-}
-
-function firstBillingBalance(billing: BillingDisplay | undefined) {
-  if (!billing?.isAvailable || !billing.balances?.length) {
-    return undefined;
-  }
-  return billing.balances[0];
 }
 
 function trimRuntimeDecimal(value: number) {

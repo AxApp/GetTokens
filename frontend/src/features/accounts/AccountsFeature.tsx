@@ -33,9 +33,10 @@ import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
 import { useAccountsPageStateContext } from './AccountsPageStateProvider';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
 import { isCodexAuthFile } from './model/accountPresentation';
+import { findAccountDetailByID } from './model/accountDetailSelection';
 import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
-import { buildAccountDetailFrameHash, clearAccountDetailFrameHash } from '../../utils/pagePersistence';
+import { buildAccountDetailFrameHash, clearAccountDetailFrameHash, readFrameHashState } from '../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import type { AccountRecord } from './model/types';
 import {
@@ -167,6 +168,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const [localCliDraft, setLocalCliDraft] = useState<AccountCliApplyDraft | null>(null);
   const [localCliApplyMessage, setLocalCliApplyMessage] = useState('');
   const [isApplyingLocalCli, setIsApplyingLocalCli] = useState(false);
+  const [accountDetailIDFromHash, setAccountDetailIDFromHash] = useState(() => readAccountDetailIDFromHash());
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
@@ -297,14 +299,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   ), [relayEndpoints, sidecarStatus.port]);
 
   useEffect(() => {
-    if (!ready) {
-      return;
-    }
-    void loadAccountUsage(usageAccounts);
-    void loadAccountRateLimits(usageAccounts);
-  }, [loadAccountRateLimits, loadAccountUsage, ready, usageAccounts]);
-
-  useEffect(() => {
     if (
       typeof window === 'undefined' ||
       !shouldScheduleAccountUsageRefresh({
@@ -324,6 +318,30 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       window.clearInterval(timer);
     };
   }, [loadAccountUsage, ready, usageAccounts]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    function syncDetailIDFromHash() {
+      setAccountDetailIDFromHash(readAccountDetailIDFromHash());
+    }
+    window.addEventListener('hashchange', syncDetailIDFromHash);
+    return () => window.removeEventListener('hashchange', syncDetailIDFromHash);
+  }, []);
+
+  useEffect(() => {
+    if (!accountDetailIDFromHash || accountDetailIDFromHash.startsWith('openai-compatible:')) {
+      return;
+    }
+    if (selectedAccount?.id === accountDetailIDFromHash) {
+      return;
+    }
+    const account = findAccountDetailByID(accounts, accountDetailIDFromHash);
+    if (account) {
+      setSelectedAccount(account);
+    }
+  }, [accountDetailIDFromHash, accounts, selectedAccount?.id, setSelectedAccount]);
 
   const updateDisplayMode = useCallback((nextMode: AccountListDisplayMode) => {
     setDisplayMode(nextMode);
@@ -984,4 +1002,11 @@ function readInitialDisplayMode(): AccountListDisplayMode {
   } catch {
     return DEFAULT_ACCOUNT_LIST_DISPLAY_MODE;
   }
+}
+
+function readAccountDetailIDFromHash() {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return readFrameHashState(window.location.hash)?.accountDetailID ?? '';
 }

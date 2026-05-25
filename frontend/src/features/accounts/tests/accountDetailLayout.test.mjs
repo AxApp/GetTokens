@@ -36,6 +36,22 @@ test('runtime quota rows use a full-width visible progress track', async () => {
   assert.doesNotMatch(source, /data-account-quota-progress-fill/);
 });
 
+test('runtime stats render as a compact strip instead of a large stat grid', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-runtime-stat-strip/);
+  assert.match(source, /md:grid-cols-3/);
+  assert.doesNotMatch(source, /<AccountDetailStatGrid columns=\{6\}>/);
+});
+
+test('api key credential fields stack vertically with embedded labels', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-credential-fields="stacked"/);
+  assert.match(source, /data-account-credential-field-label="embedded"/);
+  assert.doesNotMatch(source, /md:grid-cols-2/);
+});
+
 test('account detail preserves api-key edit modules', () => {
   assert.deepEqual(
     buildAccountDetailModulePlan({ credentialSource: 'api-key' }),

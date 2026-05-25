@@ -215,6 +215,31 @@ export function resolveAccountOperationalState(
   quotaDisplay: QuotaDisplay | undefined,
   t: Translator,
 ) {
+  const status = String(account.localOnly ? 'LOCAL' : account.status || '')
+    .trim()
+    .toUpperCase();
+
+  if (status === 'DISABLED') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_disabled_display'),
+    };
+  }
+
+  if (status === 'LOCAL') {
+    return {
+      tone: 'warning' as const,
+      label: t('accounts.status_local'),
+    };
+  }
+
+  if (status !== 'ACTIVE' && status !== 'CONFIGURED') {
+    return {
+      tone: 'danger' as const,
+      label: t('accounts.status_error_display'),
+    };
+  }
+
   if (usageSummary?.success && usageSummary.success > 0) {
     return {
       tone: 'positive' as const,
@@ -236,34 +261,9 @@ export function resolveAccountOperationalState(
     };
   }
 
-  const status = String(account.localOnly ? 'LOCAL' : account.status || '')
-    .trim()
-    .toUpperCase();
-
-  if (status === 'DISABLED') {
-    return {
-      tone: 'warning' as const,
-      label: t('accounts.status_disabled_display'),
-    };
-  }
-
-  if (status === 'LOCAL') {
-    return {
-      tone: 'warning' as const,
-      label: t('accounts.status_local'),
-    };
-  }
-
-  if (status === 'ACTIVE' || status === 'CONFIGURED') {
-    return {
-      tone: 'warning' as const,
-      label: t('accounts.status_waiting_check'),
-    };
-  }
-
   return {
-    tone: 'danger' as const,
-    label: t('accounts.status_error_display'),
+    tone: 'warning' as const,
+    label: t('accounts.status_waiting_check'),
   };
 }
 

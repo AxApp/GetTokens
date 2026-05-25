@@ -64,7 +64,7 @@ export interface ClaudeCodeLocalApplyDraft {
   apiTimeoutMs: string;
   disableNonEssentialTraffic: boolean;
   claudeCodeAttributionHeader: boolean;
-  authField: 'ANTHROPIC_API_KEY';
+  authField: 'ANTHROPIC_API_KEY' | 'ANTHROPIC_AUTH_TOKEN';
 }
 
 export interface LocalCliTargetDrafts {
@@ -137,7 +137,7 @@ export interface ClaudeCodeSettingsDiffInput {
   disableNonEssentialTraffic?: boolean;
   claudeCodeAttributionHeader?: boolean;
   targetPath?: string;
-  authField?: 'ANTHROPIC_API_KEY';
+  authField?: 'ANTHROPIC_API_KEY' | 'ANTHROPIC_AUTH_TOKEN';
 }
 
 export type UnifiedDiffLineTone = 'add' | 'remove' | 'hunk' | 'file' | 'meta' | 'context';
@@ -340,6 +340,7 @@ export function buildClaudeCodeSettingsDiff(input: ClaudeCodeSettingsDiffInput) 
   const model = input.model.trim();
   const envItems = [
     [authField, maskedKey],
+    ...(authField === 'ANTHROPIC_AUTH_TOKEN' ? [['ANTHROPIC_API_KEY', ''] as [string, string]] : []),
     ['ANTHROPIC_BASE_URL', baseUrl],
     ['ANTHROPIC_MODEL', model],
     ['ANTHROPIC_DEFAULT_HAIKU_MODEL', input.defaultHaikuModel?.trim() || ''],
@@ -350,7 +351,7 @@ export function buildClaudeCodeSettingsDiff(input: ClaudeCodeSettingsDiffInput) 
     ['API_TIMEOUT_MS', input.apiTimeoutMs?.trim() || ''],
     ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', input.disableNonEssentialTraffic ? '1' : ''],
     ['CLAUDE_CODE_ATTRIBUTION_HEADER', input.claudeCodeAttributionHeader ? '0' : ''],
-  ].filter(([, value]) => value) as [string, string][];
+  ].filter(([key, value]) => value || (authField === 'ANTHROPIC_AUTH_TOKEN' && key === 'ANTHROPIC_API_KEY')) as [string, string][];
 
   const envLines = envItems.map(([key, value], index) => {
     const comma = index === envItems.length - 1 ? '' : ',';

@@ -28,14 +28,19 @@ func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, 
 }
 
 func normalizeClaudeCodeLocalApplyOptions(options ClaudeCodeLocalApplyOptions) ClaudeCodeLocalApplyOptions {
+	authField := strings.TrimSpace(options.AuthField)
+	if authField != "ANTHROPIC_AUTH_TOKEN" {
+		authField = "ANTHROPIC_API_KEY"
+	}
 	return ClaudeCodeLocalApplyOptions{
-		Model:                      strings.TrimSpace(options.Model),
-		DefaultHaikuModel:          strings.TrimSpace(options.DefaultHaikuModel),
-		DefaultSonnetModel:         strings.TrimSpace(options.DefaultSonnetModel),
-		DefaultOpusModel:           strings.TrimSpace(options.DefaultOpusModel),
-		SmallFastModel:             strings.TrimSpace(options.SmallFastModel),
-		MaxOutputTokens:            strings.TrimSpace(options.MaxOutputTokens),
-		APITimeoutMS:               strings.TrimSpace(options.APITimeoutMS),
+		AuthField:                   authField,
+		Model:                       strings.TrimSpace(options.Model),
+		DefaultHaikuModel:           strings.TrimSpace(options.DefaultHaikuModel),
+		DefaultSonnetModel:          strings.TrimSpace(options.DefaultSonnetModel),
+		DefaultOpusModel:            strings.TrimSpace(options.DefaultOpusModel),
+		SmallFastModel:              strings.TrimSpace(options.SmallFastModel),
+		MaxOutputTokens:             strings.TrimSpace(options.MaxOutputTokens),
+		APITimeoutMS:                strings.TrimSpace(options.APITimeoutMS),
 		DisableNonEssentialTraffic:  options.DisableNonEssentialTraffic,
 		ClaudeCodeAttributionHeader: options.ClaudeCodeAttributionHeader,
 	}
@@ -132,13 +137,21 @@ func buildClaudeCodeSettingsJSON(existing string, apiKey string, baseURL string,
 }
 
 func buildClaudeCodeEnvPayload(env map[string]any, apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions, result *ClaudeCodeLocalApplyResult) map[string]any {
-	if token, ok := env["ANTHROPIC_AUTH_TOKEN"]; ok && strings.TrimSpace(fmt.Sprint(token)) != "" {
-		warning := "检测到 ANTHROPIC_AUTH_TOKEN，已保留该字段；Claude Code 可能优先使用 auth token"
-		result.Warnings = append(result.Warnings, warning)
-		result.Conflicts = append(result.Conflicts, "ANTHROPIC_AUTH_TOKEN")
+	if options.AuthField != "ANTHROPIC_AUTH_TOKEN" {
+		options.AuthField = "ANTHROPIC_API_KEY"
+	}
+	if options.AuthField == "ANTHROPIC_API_KEY" {
+		if token, ok := env["ANTHROPIC_AUTH_TOKEN"]; ok && strings.TrimSpace(fmt.Sprint(token)) != "" {
+			warning := "检测到 ANTHROPIC_AUTH_TOKEN，已保留该字段；Claude Code 可能优先使用 auth token"
+			result.Warnings = append(result.Warnings, warning)
+			result.Conflicts = append(result.Conflicts, "ANTHROPIC_AUTH_TOKEN")
+		}
+		env["ANTHROPIC_API_KEY"] = apiKey
+	} else {
+		env["ANTHROPIC_AUTH_TOKEN"] = apiKey
+		env["ANTHROPIC_API_KEY"] = ""
 	}
 
-	env["ANTHROPIC_API_KEY"] = apiKey
 	env["ANTHROPIC_BASE_URL"] = baseURL
 	setClaudeCodeEnvString(env, "ANTHROPIC_MODEL", options.Model)
 	setClaudeCodeEnvString(env, "ANTHROPIC_DEFAULT_HAIKU_MODEL", options.DefaultHaikuModel)

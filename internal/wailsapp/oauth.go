@@ -108,6 +108,15 @@ func resolveReplacementCodexAuthFileName(existingName string, previousNames []st
 		return "", errors.New("缺少要回填的原账号文件名")
 	}
 
+	var existingEmail string
+	for _, file := range files {
+		if !strings.EqualFold(strings.TrimSpace(file.Name), trimmedExistingName) {
+			continue
+		}
+		existingEmail = strings.TrimSpace(file.Email)
+		break
+	}
+
 	previous := make(map[string]struct{}, len(previousNames))
 	for _, name := range previousNames {
 		trimmed := strings.TrimSpace(name)
@@ -117,6 +126,7 @@ func resolveReplacementCodexAuthFileName(existingName string, previousNames []st
 		previous[strings.ToLower(trimmed)] = struct{}{}
 	}
 
+	emailCandidates := make([]string, 0, 2)
 	candidates := make([]string, 0, 2)
 	for _, file := range files {
 		name := strings.TrimSpace(file.Name)
@@ -130,6 +140,11 @@ func resolveReplacementCodexAuthFileName(existingName string, previousNames []st
 			continue
 		}
 
+		if existingEmail != "" && strings.EqualFold(strings.TrimSpace(file.Email), existingEmail) {
+			emailCandidates = append(emailCandidates, name)
+			continue
+		}
+
 		provider := strings.TrimSpace(file.Provider)
 		if provider == "" {
 			provider = strings.TrimSpace(file.Type)
@@ -139,6 +154,14 @@ func resolveReplacementCodexAuthFileName(existingName string, previousNames []st
 		}
 
 		candidates = append(candidates, name)
+	}
+
+	switch len(emailCandidates) {
+	case 0:
+	case 1:
+		return emailCandidates[0], nil
+	default:
+		return "", fmt.Errorf("检测到多个邮箱匹配的 codex 登录结果，无法确定回填来源: %s", strings.Join(emailCandidates, ", "))
 	}
 
 	switch len(candidates) {

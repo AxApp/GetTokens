@@ -6,6 +6,7 @@ import { normalizeBaseURL, resolveVendorPresetID } from './vendorPresetHelpers.t
 import { getVendorPreset, getVendorPresets, type VendorPreset } from './vendorPresets.ts';
 
 export type AccountLocalCliTarget = 'codex' | 'claude';
+export type ClaudeCodeLocalAuthField = 'ANTHROPIC_API_KEY' | 'ANTHROPIC_AUTH_TOKEN';
 export type AccountLocalCliMappingStatus =
   | 'ready'
   | 'disabled-account'
@@ -120,6 +121,7 @@ export type AccountCliApplyDraft =
       source: Omit<AccountLocalCliMapping, 'draft'>;
       claude: {
         relayKeyIndex: number;
+        apiKey: string;
         baseUrl: string;
         model: string;
         defaultHaikuModel: string;
@@ -130,7 +132,7 @@ export type AccountCliApplyDraft =
         apiTimeoutMs: string;
         disableNonEssentialTraffic: boolean;
         claudeCodeAttributionHeader: boolean;
-        authField: 'ANTHROPIC_API_KEY';
+        authField: ClaudeCodeLocalAuthField;
       };
     };
 
@@ -144,6 +146,7 @@ const verifiedTemplateTargets: Record<string, AccountLocalCliTarget[]> = {
   aihubmix: ['claude'],
   shengsuanyun: ['claude'],
   novita: ['claude'],
+  openrouter: ['codex', 'claude'],
   openai: ['codex'],
 };
 
@@ -239,11 +242,20 @@ function buildMappingForTarget(input: ResolveAccountLocalCliMappingsInput & {
       message: 'PREVIEW ONLY：普通浏览器预览不会调用 Wails 写入本机配置。',
     });
   }
-  if (input.target === 'codex' && input.account.credentialSource !== 'auth-file') {
+  if (
+    input.target === 'codex' &&
+    input.account.credentialSource !== 'auth-file'
+  ) {
     warnings.push({
       code: 'relay-only',
       severity: 'info',
       message: 'Codex API key 模式写入当前账号的 API Key 与 base URL，不使用 GetTokens relay key。',
+    });
+  } else if (input.target === 'claude' && usesDirectAccountKeyForClaude(input.account, input.preset)) {
+    warnings.push({
+      code: 'relay-only',
+      severity: 'info',
+      message: 'Claude Code auth token 模式写入当前账号的 API Key 与上游 base URL，不使用 GetTokens relay key。',
     });
   } else {
     warnings.push({
@@ -379,6 +391,16 @@ function buildClaudeDraft(
   const haikuModel = findModelCandidate(input.account, input.preset, ['haiku']) || '';
   const sonnetModel = findModelCandidate(input.account, input.preset, ['sonnet']) || model;
   const opusModel = findModelCandidate(input.account, input.preset, ['opus']) || '';
+  const authField = resolveClaudeAuthField(input.preset);
+  const usesDirectAccountKey = usesDirectAccountKeyForClaude(input.account, input.preset);
+  const apiKey = usesDirectAccountKey ? String(input.account.apiKey || '').trim() : '';
+  if (usesDirectAccountKey && !apiKey) {
+    warnings.push({
+      code: 'missing-account-api-key',
+      severity: 'blocking',
+      message: '当前 Claude Code 模板需要账号 API Key，但账号缺少可写入本机配置的 API Key。',
+    });
+  }
   if (!haikuModel || !opusModel) {
     warnings.push({
       code: 'model-family-partial',
@@ -392,7 +414,8 @@ function buildClaudeDraft(
     source,
     claude: {
       relayKeyIndex: input.relayKeyIndex,
-      baseUrl: input.relayEndpoint.baseUrl,
+      apiKey,
+      baseUrl: usesDirectAccountKey ? source.sourceFormatBaseUrl : input.relayEndpoint.baseUrl,
       model,
       defaultHaikuModel: haikuModel,
       defaultSonnetModel: sonnetModel,
@@ -402,9 +425,17 @@ function buildClaudeDraft(
       apiTimeoutMs: '',
       disableNonEssentialTraffic: true,
       claudeCodeAttributionHeader: false,
-      authField: 'ANTHROPIC_API_KEY',
+      authField,
     },
   };
+}
+
+function resolveClaudeAuthField(preset: VendorPreset): ClaudeCodeLocalAuthField {
+  return preset.id === 'openrouter' ? 'ANTHROPIC_AUTH_TOKEN' : 'ANTHROPIC_API_KEY';
+}
+
+function usesDirectAccountKeyForClaude(account: AccountRecord, preset: VendorPreset | undefined): boolean {
+  return preset?.id === 'openrouter' && account.credentialSource !== 'auth-file';
 }
 
 function resolveSourceFormat(account: AccountRecord, preset: VendorPreset, target: AccountLocalCliTarget): ApiFormat | null {
@@ -495,6 +526,18 @@ function resolveTargetStatus(
     return baseContext;
   }
   if (target === 'claude' && relayKeyIndex < 0) {
+    const preset = resolveAccountTemplatePreset(input.account, input.vendorPresets || getVendorPresets());
+    if (usesDirectAccountKeyForClaude(input.account, preset)) {
+      if (!String(input.account.apiKey || '').trim()) {
+        return {
+          status: 'missing-account-key' as const,
+          enabled: false,
+          disabledReason: '当前账号缺少 API Key。',
+          warnings: baseContext.warnings,
+        };
+      }
+      return baseContext;
+    }
     return {
       status: 'missing-relay-key' as const,
       enabled: false,

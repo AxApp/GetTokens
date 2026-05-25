@@ -175,6 +175,8 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.sort_mode_label'), true);
   assert.equal(source.includes('accounts.sort_mode_priority'), true);
   assert.equal(source.includes('accounts.sort_mode_quota'), true);
+  assert.equal(source.includes('className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"'), true);
+  assert.equal(source.includes('text-[length:var(--font-size-ui-sm-plus)] font-black uppercase leading-none tracking-[0.12em]'), true);
 });
 
 test('AccountsToolbar filter menu keeps options in compact list mode', async () => {

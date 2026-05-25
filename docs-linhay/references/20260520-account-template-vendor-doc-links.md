@@ -39,7 +39,7 @@
 | `longcat` | Longcat | `openai_chat` + `anthropic` | https://longcat.chat/platform | needs-verification：需补官方 Claude Code / Anthropic-compatible 具体页 |
 | `xiaomimimo` | Xiaomi MiMo | `openai_chat` + `anthropic` | https://platform.xiaomimimo.com | needs-verification：需补官方 Claude Code / Anthropic-compatible 具体页 |
 | `bailing` | BaiLing | `openai_chat` + `anthropic` | https://api.tbox.cn/api/anthropic | needs-verification：只保留当前 endpoint；未找到稳定官网文档页 |
-| `openrouter` | OpenRouter | `openai_chat` + `anthropic` | https://openrouter.ai/docs / https://openrouter.ai/docs/guides/claude-code-integration | 官方文档存在 Claude Code integration；Codex 不自动启用，除非补 Codex 模板 |
+| `openrouter` | OpenRouter | `openai_chat` + `anthropic` | https://openrouter.ai/docs/cookbook/coding-agents/codex-cli / https://openrouter.ai/docs/cookbook/coding-agents/claude-code-integration | 官方明确 Codex CLI 与 Claude Code；Codex 写 `https://openrouter.ai/api/v1` + `OPENROUTER_API_KEY`，Claude Code 写 `https://openrouter.ai/api` + `ANTHROPIC_AUTH_TOKEN` 并清空 `ANTHROPIC_API_KEY` |
 | `siliconflow` | SiliconFlow | `openai_chat` + `anthropic` | https://docs.siliconflow.cn/cn/usercases/use-siliconcloud-in-ClaudeCode / https://docs.siliconflow.cn | 官方明确 Claude Code；Codex 不自动启用 |
 | `aihubmix` | AiHubMix | `openai_chat` + `anthropic` | https://docs.aihubmix.com/en/api/Claude-Code / https://docs.aihubmix.com | 官方文档存在 Claude Code；Codex 不自动启用 |
 | `shengsuanyun` | Shengsuanyun | `openai_chat` + `anthropic` | https://docs.router.shengsuanyun.com/claude-code / https://www.shengsuanyun.com | 官方文档存在 Claude Code；Codex 不自动启用 |
@@ -66,7 +66,7 @@
 
 1. DeepSeek、Zhipu、StepFun、Bailian、SiliconFlow、AiHubMix、Shengsuanyun、Novita 均有明确 Claude Code 或 Anthropic-compatible 相关文档，可作为 Claude Code 模板候选。
 2. OpenAI 是当前唯一明确可作为 Codex 官方模板基线的厂商。
-3. OpenRouter / Kimi / TheRouter 等需要在实现前再补一轮具体页面校准，避免把“支持 OpenAI-compatible”误判成“支持 Codex 应用模板”。
+3. Kimi / TheRouter 等仍需要在实现前再补一轮具体页面校准，避免把“支持 OpenAI-compatible”误判成“支持 Codex 应用模板”；OpenRouter 已按官方 Codex CLI 与 Claude Code 文档完成模板校准。
 4. `needs-verification` 厂商只能在 UI 中作为 preset / endpoint 预填，不应自动生成或展示本地 CLI 应用动作按钮。
 5. 后续实现 resolver 时，应新增类似 `localCliTemplateTargets` 的显式字段，值由本表或后续厂商文档维护，而不是从 `supportedFormats` 反推。
 6. Codex 源码校准结论：API Key 默认模式必须写 `CODEX_HOME/auth.json` 的 `auth_mode=apikey` 与 `OPENAI_API_KEY`，同时写 `CODEX_HOME/config.toml` 的 provider/model；账号 OAuth / auth-file 模式必须写所选账号的 `auth_mode=chatgpt` 与 `tokens` 到 `CODEX_HOME/auth.json`，并移除会覆盖 OAuth 的 `OPENAI_API_KEY`、`env_key`、`experimental_bearer_token`。内置 `openai` provider 在 ChatGPT auth 下不能保留 `openai_base_url` override；custom provider 应指向 `https://chatgpt.com/backend-api/codex`。Status 页保留 ChatGPT 登录态模式仍是不改写 `auth.json`、只写 custom provider 的 `experimental_bearer_token`。

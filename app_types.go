@@ -506,6 +506,7 @@ type ClaudeCodeLocalApplyResult struct {
 }
 
 type ClaudeCodeLocalApplyOptions struct {
+	AuthField                   string `json:"authField,omitempty"`
 	Model                       string `json:"model,omitempty"`
 	DefaultHaikuModel           string `json:"defaultHaikuModel,omitempty"`
 	DefaultSonnetModel          string `json:"defaultSonnetModel,omitempty"`

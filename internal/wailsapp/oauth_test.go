@@ -141,3 +141,17 @@ func TestResolveReplacementCodexAuthFileNameRejectsAmbiguousResults(t *testing.T
 		t.Fatal("expected ambiguity error, got nil")
 	}
 }
+
+func TestResolveReplacementCodexAuthFileNamePrefersMatchingEmail(t *testing.T) {
+	got, err := resolveReplacementCodexAuthFileName("expired.json", []string{"expired.json"}, []AuthFileItem{
+		{Name: "expired.json", Provider: "codex", Type: "codex", Email: "ops@example.com"},
+		{Name: "fresh-login.json", Provider: "unknown", Type: "unknown", Email: "ops@example.com"},
+		{Name: "fresh-other.json", Provider: "codex", Type: "codex", Email: "other@example.com"},
+	})
+	if err != nil {
+		t.Fatalf("resolveReplacementCodexAuthFileName returned error: %v", err)
+	}
+	if got != "fresh-login.json" {
+		t.Fatalf("resolveReplacementCodexAuthFileName() = %q, want fresh-login.json", got)
+	}
+}

@@ -281,7 +281,7 @@ Explain API 不请求上游，只运行 route engine 并返回：
 
 ## WebSocket 边界
 
-Codex WebSocket 不承诺 mid-response 迁移。支持的边界是下一条 downstream request：
+Codex WebSocket 不承诺 mid-response 迁移。已经开始向 downstream 输出 payload 后，账号切换只能发生在下一条 downstream request：
 
 1. 检查当前 pinned auth 是否被 guard 命中。
 2. 命中则释放 pin。
@@ -289,7 +289,9 @@ Codex WebSocket 不承诺 mid-response 迁移。支持的边界是下一条 down
 4. 强制 transcript replay。
 5. 重新进入 `AccountRoutingEngine.Route()`。
 
-如果 guard 命中来源是 `manual-disabled`、账号 `disabled`、全局组禁用或渠道组禁用，不能等待 sticky 自然过期；需要把当前 pinned auth 视为立即不可用。已经开始输出的 stream 不做无缝续流，但应在最近可控边界主动断开并给出 trace，后续请求再根据 retry/fallback 重新选择。反向的激活操作只影响下一轮选择，不主动恢复或替换当前连接。
+如果 pinned auth 在本条 WebSocket request 里返回 401/402/403/429 且尚未写出任何 downstream payload，应先抑制错误输出、释放 pin、关闭旧 execution session、用完整 transcript replay 立即重派，让同一次用户请求切到下一账号。若已经写出 payload，则不做无缝续流，只能在最近可控边界主动断开或等待下一条 downstream request 再根据 retry/fallback 重新选择。
+
+如果 guard 命中来源是 `manual-disabled`、账号 `disabled`、全局组禁用或渠道组禁用，不能等待 sticky 自然过期；需要把当前 pinned auth 视为立即不可用。反向的激活操作只影响下一轮选择，不主动恢复或替换当前连接。
 
 ## 上游合并边界
 
@@ -368,8 +370,18 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 - session affinity legacy path 已在 sticky selector 前复用 `RoutePolicy` / engine seam；sticky cache 和 fallback 只能在 guard 过滤后的候选池内工作。
 - session affinity 已进一步作为 manager-local `PolicyStageSticky` 接入 scheduler fast path：cache hit 通过 route engine 排序候选，cache miss 由 selector 选中后绑定结果。
 - WebSocket request-boundary 特例已收口为单一连接生命周期 helper：guarded pinned auth 释放 pin、关闭旧 execution session、强制 transcript replay。
+- WebSocket pinned auth 的 429/401/402/403 前置错误补齐透明 failover：若尚未写出 downstream payload，handler 抑制错误事件、释放 pin、关闭 execution session，并用完整 transcript 立即重派同一 request；若已开始输出，仍保持不做 mid-response 迁移。
 - `legacy-routing-cleanup-v01.md` 已更新当前 shim 状态：公共 `RoutePolicy` 兼容 API 是后续上游合并与旧 request policy 的主要兼容边界。
 
 仍未完成的项：
 
 - 完整 selector 热路径接管与旧 shim 删除。
+
+## 账号池单点刷新边界
+
+账号池页面的单点操作需要优先做局部 patch，而不是默认触发整页补偿刷新：
+
+- 删除、禁用、重命名、优先级调整、API Key 配置保存、OAuth 回填都应先更新当前卡片或本地列表，再按需选择是否刷新 supplemental 数据。
+- 只有新增、导入或显式强制刷新，才重新拉取整组 quota / usage / rate-limit 数据。
+- OAuth 回填在新旧文件名不稳定时，优先按邮箱匹配当前卡片，避免把重新登录误判成新增账号。
+- 详情页状态如果已经进入 error，不应被 usage/quota 的“成功”结果覆盖成 available。

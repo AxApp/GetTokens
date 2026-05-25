@@ -7,7 +7,7 @@ import {
   buildQuotaCurlTemplate,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
-import { formatQuotaResetDisplayWithUnix, selectQuotaWindows } from '../model/accountQuota';
+import { selectQuotaWindows } from '../model/accountQuota';
 import { buildAccountRuntimeStats } from '../model/accountDetailRuntime';
 import {
   resolveAccountOperationalState,
@@ -17,13 +17,11 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import { buildAccountEvidenceRows, type AccountEvidenceRow } from '../model/accountEvidence';
 import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
-import { BillingBalance } from './CardSections';
+import { BillingBalance, QuotaBars } from './CardSections';
 import {
   AccountDetailEvidenceGrid,
   AccountDetailPill,
   AccountDetailSection,
-  AccountDetailStatCell,
-  AccountDetailStatGrid,
 } from './AccountDetailPrimitives';
 
 export interface APIKeyVerifyState {
@@ -207,47 +205,71 @@ export function AccountCredentialsSection({
 }: AccountCredentialsSectionProps) {
   return (
     <AccountDetailSection componentName="AccountCredentialsSection" eyebrow="Credential" title="凭据">
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="space-y-1.5">
-          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">API 密钥</span>
-          <div className="flex gap-2">
-            <input
-              value={draft.apiKey}
-              onChange={(event) => setDraft((prev) => ({ ...prev, apiKey: event.target.value }))}
-              className="input-swiss flex-1 font-mono"
-            />
-            <button onClick={() => void navigator.clipboard.writeText(draft.apiKey)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-              复制
-            </button>
-          </div>
-        </label>
-
-        <label className="space-y-1.5">
-          <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">基础 URL</span>
-          <div className="flex gap-2">
-            <input
-              value={draft.baseUrl}
-              onChange={(event) => setDraft((prev) => ({ ...prev, baseUrl: event.target.value }))}
-              className="input-swiss flex-1 font-mono"
-            />
-            <button onClick={() => void navigator.clipboard.writeText(draft.baseUrl)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-              复制
-            </button>
-          </div>
-        </label>
-      </div>
-
-      <label className="space-y-1.5">
-        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">前缀</span>
-        <input
-          value={draft.prefix}
-          onChange={(event) => setDraft((prev) => ({ ...prev, prefix: event.target.value }))}
-          className="input-swiss w-full font-mono"
-          placeholder="/v1"
+      <div data-account-credential-fields="stacked" className="grid gap-3">
+        <CredentialInputField
+          label="API 密钥"
+          value={draft.apiKey}
+          onChange={(value) => setDraft((prev) => ({ ...prev, apiKey: value }))}
+          onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
         />
-      </label>
+        <CredentialInputField
+          label="基础 URL"
+          value={draft.baseUrl}
+          onChange={(value) => setDraft((prev) => ({ ...prev, baseUrl: value }))}
+          onCopy={() => void navigator.clipboard.writeText(draft.baseUrl)}
+        />
+        <CredentialInputField
+          label="前缀"
+          value={draft.prefix}
+          placeholder="/v1"
+          onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
+        />
+      </div>
     </AccountDetailSection>
+  );
+}
+
+function CredentialInputField({
+  label,
+  value,
+  placeholder,
+  onChange,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  onChange: (value: string) => void;
+  onCopy?: () => void;
+}) {
+  return (
+    <label className="block min-w-0">
+      <div className="flex min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] focus-within:border-[var(--text-primary)]">
+        <div className="relative min-w-0 flex-1">
+          <span
+            data-account-credential-field-label="embedded"
+            className="pointer-events-none absolute left-3 top-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
+          >
+            {label}
+          </span>
+          <input
+            value={value}
+            placeholder={placeholder}
+            onChange={(event) => onChange(event.target.value)}
+            className="min-h-14 w-full bg-transparent px-3 pb-2 pt-6 font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)] outline-none"
+          />
+        </div>
+        {onCopy ? (
+          <button
+            type="button"
+            onClick={onCopy}
+            className="min-h-14 shrink-0 border-l-2 border-[var(--border-color)] px-3 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] active:scale-95"
+          >
+            复制
+          </button>
+        ) : null}
+      </div>
+    </label>
   );
 }
 
@@ -461,7 +483,7 @@ export function AccountRuntimeSnapshotSection({
   billing,
 }: AccountRuntimeSnapshotSectionProps) {
   const { t } = useI18n();
-  const stats = buildAccountRuntimeStats(usageSummary, quotaDisplay, billing, t);
+  const stats = buildAccountRuntimeStats(usageSummary, t);
   const quotaWindows = quotaDisplay?.windows ?? [];
   const balances = billing?.isAvailable ? billing.balances ?? [] : [];
 
@@ -473,11 +495,7 @@ export function AccountRuntimeSnapshotSection({
       density="hero"
       meta={usageSummary?.lastActivityAt ? `LAST ${new Date(usageSummary.lastActivityAt).toLocaleString()}` : undefined}
     >
-      <AccountDetailStatGrid columns={6}>
-        {stats.map((item) => (
-          <AccountDetailStatCell key={item.id} label={item.label} value={item.value} />
-        ))}
-      </AccountDetailStatGrid>
+      <RuntimeStatStrip stats={stats} />
 
       {quotaWindows.length > 0 || balances.length > 0 ? (
         <div
@@ -489,46 +507,7 @@ export function AccountRuntimeSnapshotSection({
               <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 QUOTA
               </div>
-              <div className="grid grid-cols-[5.5rem_minmax(0,1fr)_4.5rem_8rem] border-b border-dashed border-[var(--border-color)] pb-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                <span>Window</span>
-                <span>Remaining</span>
-                <span className="text-right">Pct</span>
-                <span className="text-right">Reset</span>
-              </div>
-              {quotaWindows.map((window) => {
-                const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
-                return (
-                  <div key={window.id} className="grid gap-2 border-b border-dashed border-[var(--border-color)] py-2 md:grid-cols-[5.5rem_minmax(0,1fr)_4.5rem_8rem] md:items-center">
-                    <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                      {window.label}
-                    </div>
-                    <div
-                      className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
-                      style={{
-                        backgroundImage: window.remainingPercent === null
-                          ? 'repeating-linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 0 8px, transparent 8px 14px)'
-                          : 'none',
-                      }}
-                    >
-                      {window.remainingPercent !== null ? (
-                        <div
-                          className="absolute inset-y-0 left-0 bg-[var(--color-status-success)]"
-                          style={{ width: `${Math.max(0, window.remainingPercent)}%` }}
-                        />
-                      ) : null}
-                      {quotaDisplay?.refreshing ? (
-                        <div className="account-card-quota-refresh-skeleton pointer-events-none absolute inset-0" aria-hidden="true" />
-                      ) : null}
-                    </div>
-                    <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] md:text-right">
-                      {window.remainingPercent === null ? '--' : `${window.remainingPercent}%`}
-                    </div>
-                    <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)] md:text-right">
-                      {resetTime}
-                    </div>
-                  </div>
-                );
-              })}
+              {quotaDisplay ? <QuotaBars quotaDisplay={quotaDisplay} t={t} /> : null}
             </div>
           ) : null}
 
@@ -549,6 +528,29 @@ export function AccountRuntimeSnapshotSection({
         </div>
       ) : null}
     </AccountDetailSection>
+  );
+}
+
+function RuntimeStatStrip({ stats }: { stats: ReturnType<typeof buildAccountRuntimeStats> }) {
+  return (
+    <div
+      data-account-runtime-stat-strip="compact"
+      className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] grid-cols-2 md:grid-cols-3"
+    >
+      {stats.map((item) => (
+        <div
+          key={item.id}
+          className="flex min-w-0 items-baseline justify-between gap-2 border-b border-r border-dashed border-[var(--border-color)] px-2.5 py-1.5"
+        >
+          <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+            {item.label}
+          </div>
+          <div className="shrink-0 truncate text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tabular-nums tracking-[0.04em] text-[var(--text-primary)]">
+            {item.value}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

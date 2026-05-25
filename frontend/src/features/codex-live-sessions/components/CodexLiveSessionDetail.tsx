@@ -866,7 +866,7 @@ function isTimelineValuePresent(value: string): boolean {
 }
 
 function TimelineMetricPill({ label, value, priority }: { label: string; value: string; priority: number }) {
-  const visibilityClass = priority >= 3 ? 'hidden xl:inline-flex' : priority >= 2 ? 'hidden lg:inline-flex' : 'inline-flex';
+  const visibilityClass = priority >= 3 ? 'hidden xl:inline-flex' : priority >= 2 ? 'hidden sm:inline-flex' : 'inline-flex';
   return (
     <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 border border-[color:color-mix(in_srgb,var(--border-color)_42%,transparent)] bg-[var(--bg-main)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]`}>
       <span className="text-[var(--text-muted)]">{label}</span>

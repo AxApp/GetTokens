@@ -333,7 +333,7 @@ export default function AccountsToolbar({
                 {t('accounts.display_mode_list')}
               </DisplayModeButton>
             </div>
-            <button onClick={onToggleSelectionMode} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
+            <button onClick={onToggleSelectionMode} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]">
               {isSelectionMode ? t('accounts.unselect_all') : t('accounts.selection_mode')}
             </button>
           </div>
@@ -396,7 +396,7 @@ function ToolbarModeMenu<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+        className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"
       >
         {label} · {activeLabel}
       </button>
@@ -444,7 +444,7 @@ function DisplayModeButton({
     <button
       type="button"
       onClick={onClick}
-      className={`h-full min-h-0 px-3 text-[length:var(--font-size-ui-xs)] font-black uppercase leading-none tracking-[0.12em] ${
+      className={`h-full min-h-0 px-3 text-[length:var(--font-size-ui-sm-plus)] font-black uppercase leading-none tracking-[0.12em] ${
         bordered ? 'border-r border-[var(--border-color)]' : ''
       } ${
         active

@@ -679,6 +679,7 @@ export default function StatusFeature({
           apiKey: normalizedKey,
           baseURL: draft.baseUrl,
           options: {
+            authField: draft.authField,
             model: draft.model,
             defaultHaikuModel: draft.defaultHaikuModel,
             defaultSonnetModel: draft.defaultSonnetModel,
@@ -692,6 +693,7 @@ export default function StatusFeature({
         },
         () =>
           ApplyClaudeCodeAPIKeyConfigToLocal(normalizedKey, draft.baseUrl, {
+            authField: draft.authField,
             model: draft.model,
             defaultHaikuModel: draft.defaultHaikuModel,
             defaultSonnetModel: draft.defaultSonnetModel,

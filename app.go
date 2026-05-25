@@ -1192,6 +1192,7 @@ func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {
 
 func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions) (*ClaudeCodeLocalApplyResult, error) {
 	result, err := a.core.ApplyClaudeCodeAPIKeyConfigToLocal(apiKey, baseURL, wailsapp.ClaudeCodeLocalApplyOptions{
+		AuthField:                   options.AuthField,
 		Model:                       options.Model,
 		DefaultHaikuModel:           options.DefaultHaikuModel,
 		DefaultSonnetModel:          options.DefaultSonnetModel,

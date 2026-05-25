@@ -253,7 +253,7 @@ export default function useAccountsPageState({
     [trackRequest]
   );
 
-  const loadAccounts = useCallback(async (options: { showLoading?: boolean } = {}) => {
+  const loadAccounts = useCallback(async (options: { showLoading?: boolean; refreshSupplementalData?: boolean } = {}) => {
     if (!ready) {
       return;
     }
@@ -270,9 +270,11 @@ export default function useAccountsPageState({
       setSelectedAccountIDs((prev) =>
         filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
       );
-      void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
-      void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
-      void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
+      if (options.refreshSupplementalData ?? true) {
+        void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
+        void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
+        void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
+      }
       return;
     }
 
@@ -300,9 +302,11 @@ export default function useAccountsPageState({
       setSelectedAccountIDs((prev) =>
         filterSelectedAccountIDs(prev, resolveLoadedAccountIDs(nextAuthFileRecords, apiKeyAccounts))
       );
-      void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
-      void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
-      void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
+      if (options.refreshSupplementalData ?? true) {
+        void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
+        void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
+        void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -395,7 +399,7 @@ export default function useAccountsPageState({
           );
         }
 
-        await loadAccounts();
+        await loadAccounts({ refreshSupplementalData: false });
         setOAuthDialog(null);
         setOAuthBanner({
           tone: 'success',

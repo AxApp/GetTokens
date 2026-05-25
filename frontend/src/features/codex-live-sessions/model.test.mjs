@@ -378,6 +378,8 @@ test('codex live session detail timeline uses compact rows without horizontal ta
   assert.match(detailSource, /function TimelineSummaryRow/);
   assert.match(detailSource, /onClick=\{onOpen\}/);
   assert.match(detailSource, /formatTimelineRequestID/);
+  assert.match(detailSource, /summary\.firstTokenLabel/);
+  assert.match(detailSource, /priority >= 2 \? 'hidden sm:inline-flex' : 'inline-flex'/);
   assert.match(detailSource, /grid-cols-\[auto_auto_auto_minmax\(0,1fr\)\]/);
   assert.match(detailSource, /flex-nowrap/);
   assert.match(detailSource, /whitespace-nowrap/);

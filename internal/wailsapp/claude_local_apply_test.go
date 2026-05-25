@@ -118,13 +118,13 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesTopLevelAndEnvFields(t *test
 
 	app := &App{}
 	options := ClaudeCodeLocalApplyOptions{
-		Model:                      "claude-sonnet-test",
-		DefaultHaikuModel:          "claude-haiku-test",
-		DefaultSonnetModel:         "claude-sonnet-test",
-		DefaultOpusModel:           "claude-opus-test",
-		SmallFastModel:             "claude-haiku-test",
-		MaxOutputTokens:            "6000",
-		APITimeoutMS:               "600000",
+		Model:                       "claude-sonnet-test",
+		DefaultHaikuModel:           "claude-haiku-test",
+		DefaultSonnetModel:          "claude-sonnet-test",
+		DefaultOpusModel:            "claude-opus-test",
+		SmallFastModel:              "claude-haiku-test",
+		MaxOutputTokens:             "6000",
+		APITimeoutMS:                "600000",
 		DisableNonEssentialTraffic:  true,
 		ClaudeCodeAttributionHeader: true,
 	}
@@ -205,6 +205,54 @@ func TestApplyClaudeCodeAPIKeyConfigToLocalPreservesAuthTokenAndReturnsWarning(t
 	}
 	if !strings.Contains(content, `"ANTHROPIC_API_KEY": "sk-ant-new"`) {
 		t.Fatalf("ANTHROPIC_API_KEY should still be written:\n%s", content)
+	}
+}
+
+func TestApplyClaudeCodeAPIKeyConfigToLocalCanWriteAuthTokenMode(t *testing.T) {
+	claudeDir := filepath.Join(t.TempDir(), ".claude")
+	t.Setenv("CLAUDE_CONFIG_DIR", claudeDir)
+	t.Setenv("HOME", t.TempDir())
+
+	if err := os.MkdirAll(claudeDir, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	settingsPath := filepath.Join(claudeDir, "settings.json")
+	existing := "{\n  \"env\": {\n    \"ANTHROPIC_API_KEY\": \"old-key\",\n    \"HTTP_PROXY\": \"http://proxy.local:8080\"\n  }\n}\n"
+	if err := os.WriteFile(settingsPath, []byte(existing), 0600); err != nil {
+		t.Fatalf("WriteFile settings.json: %v", err)
+	}
+
+	app := &App{}
+	result, err := app.ApplyClaudeCodeAPIKeyConfigToLocal("sk-or-new", "https://openrouter.ai/api", ClaudeCodeLocalApplyOptions{
+		AuthField: "ANTHROPIC_AUTH_TOKEN",
+		Model:     "anthropic/claude-sonnet-4.6",
+	})
+	if err != nil {
+		t.Fatalf("ApplyClaudeCodeAPIKeyConfigToLocal returned error: %v", err)
+	}
+	if len(result.Conflicts) != 0 {
+		t.Fatalf("auth token mode should own the token field without conflict: %#v", result)
+	}
+
+	body, err := os.ReadFile(settingsPath)
+	if err != nil {
+		t.Fatalf("ReadFile settings.json: %v", err)
+	}
+	content := string(body)
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		t.Fatalf("patched settings.json should remain valid JSON: %v\n%s", err, content)
+	}
+	for _, expected := range []string{
+		`"ANTHROPIC_AUTH_TOKEN": "sk-or-new"`,
+		`"ANTHROPIC_API_KEY": ""`,
+		`"ANTHROPIC_BASE_URL": "https://openrouter.ai/api"`,
+		`"ANTHROPIC_MODEL": "anthropic/claude-sonnet-4.6"`,
+		`"HTTP_PROXY": "http://proxy.local:8080"`,
+	} {
+		if !strings.Contains(content, expected) {
+			t.Fatalf("settings.json missing %q:\n%s", expected, content)
+		}
 	}
 }
 

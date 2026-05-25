@@ -213,8 +213,12 @@ export const vendorPresets: VendorPreset[] = [
     apiFormat: 'openai_chat',
     supportedFormats: ['openai_chat', 'anthropic'],
     baseUrl: 'https://openrouter.ai/api',
+    formatBaseUrls: {
+      openai_chat: 'https://openrouter.ai/api/v1',
+      anthropic: 'https://openrouter.ai/api',
+    },
     apiKeyPlaceholder: 'sk-or-...',
-    modelSuggestions: ['anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.7'],
+    modelSuggestions: ['~openai/gpt-latest', 'anthropic/claude-sonnet-4.6', 'anthropic/claude-opus-4.7'],
     category: 'aggregator',
     icon: 'openrouter',
     iconColor: 'var(--color-provider-openrouter)',

@@ -56,7 +56,7 @@ interface UseAccountsActionsArgs {
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
   removeDeletedAccountLocally: (account: AccountRecord) => void;
   patchAccountDisabledLocally: (account: AccountRecord, disabled: boolean) => void;
-  loadAccounts: (options?: { showLoading?: boolean }) => Promise<void>;
+  loadAccounts: (options?: { showLoading?: boolean; refreshSupplementalData?: boolean }) => Promise<void>;
 }
 
 export default function useAccountsActions({
@@ -95,7 +95,7 @@ export default function useAccountsActions({
           SetAccountDisabled(account.id, nextDisabled)
         );
         patchAccountDisabledLocally(account, nextDisabled);
-        await loadAccounts({ showLoading: false });
+        await loadAccounts({ showLoading: false, refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
         setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
@@ -119,7 +119,7 @@ export default function useAccountsActions({
             setSelectedAccount(null);
           }
           removeDeletedAccountLocally(account);
-          await loadAccounts({ showLoading: false });
+          await loadAccounts({ showLoading: false, refreshSupplementalData: false });
         } catch (error) {
           console.error(error);
           setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
@@ -135,7 +135,7 @@ export default function useAccountsActions({
             setSelectedAccount(null);
           }
           removeDeletedAccountLocally(account);
-          await loadAccounts({ showLoading: false });
+          await loadAccounts({ showLoading: false, refreshSupplementalData: false });
         } catch (error) {
           console.error(error);
           setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
@@ -152,7 +152,7 @@ export default function useAccountsActions({
         await trackRequest('DeleteAuthFiles', { names: [deleteRequest.name] }, () => DeleteAuthFiles([deleteRequest.name]));
         setPendingDeleteID(null);
         removeDeletedAccountLocally(account);
-        await loadAccounts({ showLoading: false });
+        await loadAccounts({ showLoading: false, refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
         setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
@@ -391,7 +391,7 @@ export default function useAccountsActions({
                 }
               : prev
           );
-          await loadAccounts();
+          await loadAccounts({ refreshSupplementalData: false });
         } catch (error) {
           console.error(error);
         }
@@ -421,7 +421,7 @@ export default function useAccountsActions({
         );
 
         setSelectedAccount((prev) => (prev ? { ...prev, priority: nextPriority } : prev));
-        await loadAccounts();
+        await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
         setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
@@ -498,7 +498,7 @@ export default function useAccountsActions({
               }
             : prev
         );
-        await loadAccounts();
+        await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
         setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);

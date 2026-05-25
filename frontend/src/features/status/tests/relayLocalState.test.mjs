@@ -113,6 +113,27 @@ test('buildClaudeCodeSettingsDiff previews only Claude Code settings env fields'
   assert.match(diff, /permissions \/ hooks \/ statusLine/);
 });
 
+test('buildClaudeCodeSettingsDiff supports OpenRouter auth token mode', () => {
+  const diff = buildClaudeCodeSettingsDiff({
+    apiKey: 'sk-or-1234567890',
+    baseUrl: 'https://openrouter.ai/api',
+    model: 'anthropic/claude-sonnet-4.6',
+    defaultHaikuModel: '',
+    defaultSonnetModel: 'anthropic/claude-sonnet-4.6',
+    defaultOpusModel: 'anthropic/claude-opus-4.7',
+    smallFastModel: '',
+    maxOutputTokens: '',
+    apiTimeoutMs: '',
+    disableNonEssentialTraffic: true,
+    claudeCodeAttributionHeader: false,
+    authField: 'ANTHROPIC_AUTH_TOKEN',
+  });
+
+  assert.match(diff, /\+\s+"ANTHROPIC_AUTH_TOKEN": "sk-or-12\.\.\.7890"/);
+  assert.match(diff, /\+\s+"ANTHROPIC_API_KEY": ""/);
+  assert.match(diff, /https:\/\/openrouter\.ai\/api/);
+});
+
 test('updateLocalCliTargetDraft keeps Codex and Claude drafts isolated', () => {
   const initial = {
     codex: {
