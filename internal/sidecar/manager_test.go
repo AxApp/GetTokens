@@ -1,10 +1,15 @@
 package sidecar
 
 import (
+	"fmt"
+	"net"
 	"os"
+	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestSetStatusPreservesStartedAtUnixUntilStopped(t *testing.T) {
@@ -97,6 +102,75 @@ func TestProfileSpecificPortAndConfigDir(t *testing.T) {
 	if got := configDirNameForProfile("prod"); got != "gettokens" {
 		t.Fatalf("prod config dir = %q, want gettokens", got)
 	}
+}
+
+func TestPortAvailabilityMatchesWildcardSidecarBind(t *testing.T) {
+	listener, err := net.Listen("tcp6", "[::]:0")
+	if err != nil {
+		t.Skipf("tcp6 wildcard listener unavailable: %v", err)
+	}
+	defer listener.Close()
+
+	port := listener.Addr().(*net.TCPAddr).Port
+	if isPortFree(port) {
+		t.Fatalf("isPortFree(%d) = true while wildcard tcp6 listener is active", port)
+	}
+
+	if second, err := net.Listen("tcp", fmt.Sprintf(":%d", port)); err == nil {
+		_ = second.Close()
+		t.Fatalf("test setup expected wildcard bind on port %d to fail", port)
+	}
+}
+
+func TestFindOrphanedSidecarPIDsMatchesSameConfigOnly(t *testing.T) {
+	configFile := "/Users/linhey/.config/gettokens/config.yaml"
+	processes := []sidecarProcessInfo{
+		{PID: 101, PPID: 1, Command: "/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api -config /Users/linhey/.config/gettokens/config.yaml"},
+		{PID: 102, PPID: 77, Command: "/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api -config /Users/linhey/.config/gettokens/config.yaml"},
+		{PID: 103, PPID: 1, Command: "/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api -config /Users/linhey/.config/gettokens-dev/config.yaml"},
+		{PID: 104, PPID: 1, Command: "/usr/bin/other -config /Users/linhey/.config/gettokens/config.yaml"},
+		{PID: 105, PPID: 1, Command: "/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api -config=/Users/linhey/.config/gettokens/config.yaml"},
+	}
+
+	pids := findOrphanedSidecarPIDs(processes, configFile, 999)
+	if got, want := fmt.Sprint(pids), "[101 105]"; got != want {
+		t.Fatalf("orphan pids = %s, want %s", got, want)
+	}
+}
+
+func TestStopProcessKillsWhenInterruptIsIgnored(t *testing.T) {
+	cmd := exec.Command(os.Args[0], "-test.run=TestSidecarProcessHelper")
+	cmd.Env = append(os.Environ(), "GETTOKENS_SIDECAR_HELPER=ignore-interrupt")
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("start test process: %v", err)
+	}
+	done := make(chan struct{})
+	go func() {
+		_ = cmd.Wait()
+		close(done)
+	}()
+	t.Cleanup(func() {
+		if cmd.ProcessState == nil || !cmd.ProcessState.Exited() {
+			_ = cmd.Process.Kill()
+		}
+	})
+
+	stopProcess(cmd.Process, done, 100*time.Millisecond)
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("process still running after stopProcess fallback")
+	}
+}
+
+func TestSidecarProcessHelper(t *testing.T) {
+	if os.Getenv("GETTOKENS_SIDECAR_HELPER") != "ignore-interrupt" {
+		return
+	}
+	signal.Ignore(os.Interrupt)
+	time.Sleep(30 * time.Second)
+	os.Exit(0)
 }
 
 func TestNewManagerUsesDevProfileFromEnv(t *testing.T) {

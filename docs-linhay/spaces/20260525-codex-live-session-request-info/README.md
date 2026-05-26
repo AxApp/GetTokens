@@ -39,6 +39,12 @@
 - 自动化验证：
   - `node --test frontend/src/features/codex-live-sessions/model.test.mjs`
   - `npm --prefix frontend run typecheck`
+- 2026-05-26：排查线上仍显示“未知项目”。真实 `/v0/management/gettokens/live-sessions` 返回的 session 均缺少 `projectName`，但本机 `~/.codex/sessions` 可按 session id 匹配到 JSONL 并读出 `cwd`；根因不是前端 fallback，而是 `/Applications/GetTokens.app/Contents/MacOS/cli-proxy-api` 存在 2026-05-24 启动的残留 8317 进程。新 App 的端口检测只探测 `127.0.0.1:<port>`，没有识别旧 sidecar 的 wildcard IPv6 监听，导致误判默认端口可用并把健康检查打到旧进程。
+- 修复：`internal/sidecar/isPortFree` 改为按 sidecar 实际 `host: ""` 绑定语义探测 `:<port>`，并新增 `TestPortAvailabilityMatchesWildcardSidecarBind` 覆盖 wildcard IPv6 占用时不能误判端口可用。
+- 生命周期加固：App 启动时先扫描并清理同 profile `config.yaml` 的孤儿 `cli-proxy-api`，再选择端口；App 退出时对 sidecar 发送 interrupt，等待退出，超时后 force kill，避免再次留下旧运行态。
+- 运行态复验：重新拉起当前 `/Applications/GetTokens.app` 后，8317 由新 App 子进程持有；live snapshot 已返回 `projectName`，样本包含 `GetTokens` 与 `design`。
+- 自动化验证：
+  - `go test ./internal/sidecar ./internal/wailsapp -run 'TestPortAvailabilityMatchesWildcardSidecarBind|TestFindOrphanedSidecarPIDsMatchesSameConfigOnly|TestStopProcessKillsWhenInterruptIsIgnored|TestGetCodexLiveSessionsSnapshot' -count=1`
 
 ## 设计稿入口
 

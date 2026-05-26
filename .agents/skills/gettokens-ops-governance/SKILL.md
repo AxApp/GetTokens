@@ -13,6 +13,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 - **Verification**: Only claim a fix is live after verifying it in the actual desktop app window, not just the browser.
 - **Binding Boundary**: Wails binds the root `main.App`, not `internal/wailsapp.App`. Any new Wails-facing method or DTO added under `internal/wailsapp` must also be exposed through root-level `app.go`, `app_types.go`, and mappers as needed before regenerating bindings; otherwise `wails dev` will remove the frontend export.
 - **Startup Config Apply**: If a setting writes sidecar `config.yaml` while the sidecar is not yet `ready`, persist the local config first and mark the change as pending. The next `ready` callback must apply the latest config through the management API and clear the pending marker only after a successful response; failures should keep the marker for the next ready retry.
+- **Sidecar Process Binding**: The App-owned sidecar must be tied to the App lifecycle. On startup, clean orphaned `cli-proxy-api` processes that use the same profile `config.yaml` before choosing a port. On shutdown, send an interrupt, wait for exit, then force-kill if the sidecar ignores the graceful signal. When the UI appears to show stale runtime data after an app update, verify `ps/lsof` ownership and config path before debugging frontend state.
 
 ### 1.1 Browser Preview & Screenshot Loop
 - **When to use**:

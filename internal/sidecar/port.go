@@ -21,7 +21,7 @@ func (m *Manager) pickPort() (int, error) {
 }
 
 func isPortFree(port int) bool {
-	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return false
 	}

@@ -89,6 +89,8 @@ Wails 的 `menu.AppMenu()` 是默认 App 菜单 role，不等同于“可以往�
 
 2026-05-26 追加更新：该 skill 补充 `Native menu/status item detail rule`，明确左上角 App 菜单自定义项需要 AppKit bridge，状态栏按钮优先使用 template image，并记录 Go embed 图片字节传给 Objective-C 时的 `NSData` 生命周期边界。
 
+2026-05-26 追加更新：该 skill 补充 `Sidecar Process Binding`，明确 App 启动时必须清理同 profile `config.yaml` 的孤儿 `cli-proxy-api`，关闭/退出时必须 interrupt 后等待，超时再 kill。排查“最新 App 显示旧运行态”时，先核对 `ps/lsof` 中 sidecar 的 PPID、启动时间和 `-config` 路径，再进入前端状态排查。
+
 ## 后续执行入口
 
 后续遇到设置页新增 macOS 桌面生命周期能力时，先从对应 `space` README 写清验收场景，再按 `gettokens-ops-governance` 的 `macOS Runtime Residency & App Lifecycle Settings` 执行：

@@ -13,9 +13,11 @@ import (
 )
 
 const (
-	healthzPath    = "/healthz"
-	startupTimeout = 30 * time.Second
-	pollInterval   = 500 * time.Millisecond
+	healthzPath          = "/healthz"
+	startupTimeout       = 30 * time.Second
+	pollInterval         = 500 * time.Millisecond
+	sidecarShutdownGrace = 2 * time.Second
+	orphanShutdownGrace  = 1500 * time.Millisecond
 	// ManagementKey is used for local management API auth between app frontend and sidecar.
 	ManagementKey = "gettokens-local-management-key"
 )
@@ -44,6 +46,8 @@ type Status struct {
 type Manager struct {
 	mu            sync.Mutex
 	cmd           *exec.Cmd
+	done          chan struct{}
+	exitErr       error
 	port          int
 	status        Status
 	serviceAPIKey string
@@ -80,15 +84,6 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 		binaryGitHash = ""
 	}
 
-	port, err := m.pickPort()
-	if err != nil {
-		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("端口分配失败: %v", err)}, notify)
-		return
-	}
-	m.mu.Lock()
-	m.port = port
-	m.mu.Unlock()
-
 	configDir, err := ensureConfigDir(m.profile)
 	if err != nil {
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("配置目录初始化失败: %v", err)}, notify)
@@ -101,6 +96,20 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 
 	// Write YAML config file (CLIProxyAPI reads host/port from config, not CLI flags).
 	configFile := filepath.Join(configDir, "config.yaml")
+	if err := cleanupOrphanedSidecars(configFile); err != nil {
+		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("清理残留后端失败: %v", err)}, notify)
+		return
+	}
+
+	port, err := m.pickPort()
+	if err != nil {
+		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("端口分配失败: %v", err)}, notify)
+		return
+	}
+	m.mu.Lock()
+	m.port = port
+	m.mu.Unlock()
+
 	serviceAPIKey, err := writeConfig(configFile, port, configDir)
 	if err != nil {
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("写配置文件失败: %v", err)}, notify)
@@ -122,12 +131,33 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 
 	m.mu.Lock()
 	m.cmd = cmd
+	m.done = nil
+	m.exitErr = nil
 	m.mu.Unlock()
 
 	if err := cmd.Start(); err != nil {
+		m.mu.Lock()
+		if m.cmd == cmd {
+			m.cmd = nil
+		}
+		m.mu.Unlock()
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("启动失败: %v", err)}, notify)
 		return
 	}
+
+	done := make(chan struct{})
+	m.mu.Lock()
+	m.done = done
+	m.mu.Unlock()
+	go func() {
+		err := cmd.Wait()
+		m.mu.Lock()
+		if m.cmd == cmd {
+			m.exitErr = err
+		}
+		m.mu.Unlock()
+		close(done)
+	}()
 
 	startingStatus := Status{
 		Code:          StatusStarting,
@@ -145,19 +175,19 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 	if err := m.waitHealthy(ctx, healthURL); err != nil {
 		m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("健康检查超时: %v", err)}, notify)
 		_ = cmd.Process.Kill()
+		waitForDone(done, sidecarShutdownGrace)
 		return
 	}
 
 	m.setStatus(Status{Code: StatusReady, Port: port, Message: "后端服务已就绪"}, notify)
 
-	// Wait for process exit or context cancellation.
-	done := make(chan error, 1)
-	go func() { done <- cmd.Wait() }()
-
 	select {
 	case <-ctx.Done():
-		// Graceful stop triggered externally.
-	case err := <-done:
+		stopProcess(cmd.Process, done, sidecarShutdownGrace)
+	case <-done:
+		m.mu.Lock()
+		err := m.exitErr
+		m.mu.Unlock()
 		if err != nil {
 			m.setStatus(Status{Code: StatusError, Message: fmt.Sprintf("后端意外退出: %v", err)}, notify)
 		}
@@ -167,11 +197,14 @@ func (m *Manager) Start(ctx context.Context, notify func(Status)) {
 // Stop sends SIGTERM to the sidecar process.
 func (m *Manager) Stop() {
 	m.mu.Lock()
-	defer m.mu.Unlock()
-	if m.cmd != nil && m.cmd.Process != nil {
-		_ = m.cmd.Process.Signal(os.Interrupt)
-	}
+	cmd := m.cmd
+	done := m.done
 	m.status = Status{Code: StatusStopped, GitHash: m.status.GitHash}
+	m.mu.Unlock()
+
+	if cmd != nil && cmd.Process != nil {
+		stopProcess(cmd.Process, done, sidecarShutdownGrace)
+	}
 }
 
 // CurrentStatus returns the latest known status.
