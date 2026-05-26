@@ -16,8 +16,8 @@ interface AccountsToolbarProps {
   isSelectionMode: boolean;
   allFilteredSelected: boolean;
   selectedAccountCount: number;
-  displayMode: AccountListDisplayMode;
   bulkActionPending?: AccountBulkActionID | null;
+  displayMode: AccountListDisplayMode;
   groupMode: AccountGroupMode;
   sortMode: AccountSortMode;
   availablePlanTypes?: readonly AccountPlanType[];
@@ -45,8 +45,8 @@ export default function AccountsToolbar({
   isSelectionMode,
   allFilteredSelected,
   selectedAccountCount,
-  displayMode,
   bulkActionPending = null,
+  displayMode,
   groupMode,
   sortMode,
   availablePlanTypes = DEFAULT_AVAILABLE_PLAN_TYPES,
@@ -67,8 +67,8 @@ export default function AccountsToolbar({
   initialFiltersMenuOpen = false,
 }: AccountsToolbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(initialFiltersMenuOpen);
-  const menuRef = useRef<HTMLDivElement | null>(null);
   const [isBulkDeleteConfirming, setIsBulkDeleteConfirming] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const sourceAllSelected = filters.source.authFile && filters.source.apiKey;
   const resourceAllSelected = filters.resource.hasLongestQuota && filters.resource.hasBalance;
   const statusAllSelected = filters.status.error && filters.status.disabled && filters.status.requestable;
@@ -215,9 +215,9 @@ export default function AccountsToolbar({
               {buildToolbarFilterLabel(t, filters)}
             </button>
             {isMenuOpen ? (
-              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[300px] flex-col gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[4px_4px_0_var(--shadow-color)]">
-                <div className="space-y-1.5">
-                  <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[360px] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+                <div className="space-y-2">
+                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_source')}
                   </p>
                   <div className="grid gap-1">
@@ -232,8 +232,8 @@ export default function AccountsToolbar({
                     </FilterCheckOption>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="space-y-2">
+                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_resource')}
                   </p>
                   <div className="grid gap-1">
@@ -248,8 +248,8 @@ export default function AccountsToolbar({
                     </FilterCheckOption>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="space-y-2">
+                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_status')}
                   </p>
                   <div className="grid gap-1">
@@ -267,36 +267,21 @@ export default function AccountsToolbar({
                     </FilterCheckOption>
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                <div className="space-y-2">
+                  <p className="text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
                     {t('accounts.filter_group_plan')}
                   </p>
                   <div className="grid gap-1">
                     <FilterCheckOption active={planAllSelected} onClick={enableAllPlanOptions}>
                       {t('accounts.filter_all')}
                     </FilterCheckOption>
-                    <FilterCheckOption
-                      active={filters.plan.free}
-                      disabled={planAvailabilityResolved && !availablePlanTypes.includes('free')}
-                      uppercase={false}
-                      onClick={() => setPlanOption('free')}
-                    >
+                    <FilterCheckOption active={filters.plan.free} uppercase={false} onClick={() => setPlanOption('free')}>
                       free
                     </FilterCheckOption>
-                    <FilterCheckOption
-                      active={filters.plan.plus}
-                      disabled={planAvailabilityResolved && !availablePlanTypes.includes('plus')}
-                      uppercase={false}
-                      onClick={() => setPlanOption('plus')}
-                    >
+                    <FilterCheckOption active={filters.plan.plus} uppercase={false} onClick={() => setPlanOption('plus')}>
                       plus
                     </FilterCheckOption>
-                    <FilterCheckOption
-                      active={filters.plan.pro}
-                      disabled={planAvailabilityResolved && !availablePlanTypes.includes('pro')}
-                      uppercase={false}
-                      onClick={() => setPlanOption('pro')}
-                    >
+                    <FilterCheckOption active={filters.plan.pro} uppercase={false} onClick={() => setPlanOption('pro')}>
                       pro
                     </FilterCheckOption>
                   </div>
@@ -305,7 +290,7 @@ export default function AccountsToolbar({
                   <button
                     type="button"
                     onClick={() => onFiltersChange({ ...defaultAccountsFilterState })}
-                    className="btn-swiss h-7 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                    className="btn-swiss h-9 !px-2.5 !py-1 !text-[length:var(--font-size-ui-md-compact)]"
                   >
                     {t('accounts.filter_reset')}
                   </button>
@@ -577,7 +562,7 @@ function FilterCheckOption({
 }) {
   return (
     <label
-      className={`flex min-h-7 cursor-pointer items-center gap-2 px-1.5 text-[length:var(--font-size-ui-2xs)] font-black leading-none tracking-[0.1em] ${
+      className={`flex min-h-9 cursor-pointer items-center gap-2.5 px-2.5 text-[length:var(--font-size-ui-md-compact)] font-black leading-none tracking-[0.06em] ${
         uppercase ? 'uppercase' : ''
       } ${
         disabled
@@ -592,7 +577,7 @@ function FilterCheckOption({
         checked={active}
         disabled={disabled}
         onChange={onClick}
-        className="h-3.5 w-3.5 shrink-0 accent-[var(--text-primary)]"
+        className="h-4.5 w-4.5 shrink-0 accent-[var(--text-primary)]"
       />
       <span className="block min-w-0 truncate">{children}</span>
     </label>

@@ -91,6 +91,9 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	if err != nil {
 		debugRecord.Error = err.Error()
 		a.emitCodexQuotaDebugRecord(debugRecord)
+		if cachedQuota, cacheErr := accountsdomain.BuildCachedCodexQuotaResponse(body); cacheErr == nil {
+			return mapAccountsdomainCodexQuotaResponse(cachedQuota), nil
+		}
 		return nil, err
 	}
 	debugRecord.StatusCode = apiResponse.statusCode()
@@ -104,6 +107,14 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	quota, err := accountsdomain.BuildCodexQuotaResponse(body, []byte(apiResponse.Body))
 	if err != nil {
 		return nil, err
+	}
+
+	return mapAccountsdomainCodexQuotaResponse(quota), nil
+}
+
+func mapAccountsdomainCodexQuotaResponse(quota *accountsdomain.CodexQuotaResponse) *CodexQuotaResponse {
+	if quota == nil {
+		return &CodexQuotaResponse{}
 	}
 
 	windows := make([]CodexQuotaWindow, 0, len(quota.Windows))
@@ -123,7 +134,7 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	return &CodexQuotaResponse{
 		PlanType: quota.PlanType,
 		Windows:  windows,
-	}, nil
+	}
 }
 
 func (a *App) getCodexAPIKeyQuota(id string) (*CodexQuotaResponse, error) {

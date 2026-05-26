@@ -165,6 +165,31 @@ func TestParseCachedCodexQuota(t *testing.T) {
 	}
 }
 
+func TestBuildCodexQuotaResponseFallsBackToCachedQuota(t *testing.T) {
+	body := []byte(`{
+		"plan":"plus",
+		"nolon":{
+			"usage_cache":{
+				"usage":{
+					"identity":{"plan":"plus"},
+					"primary":{"usedPercent":26,"resetsAt":1710000000}
+				}
+			}
+		}
+	}`)
+
+	quota, err := BuildCodexQuotaResponse(body, []byte(`{"error":"forbidden"}`))
+	if err != nil {
+		t.Fatalf("BuildCodexQuotaResponse: %v", err)
+	}
+	if quota.PlanType != "plus" {
+		t.Fatalf("unexpected plan type: %q", quota.PlanType)
+	}
+	if len(quota.Windows) != 1 {
+		t.Fatalf("expected cached window, got %d", len(quota.Windows))
+	}
+}
+
 func TestRedactCodexQuotaHeaders(t *testing.T) {
 	headers := redactCodexQuotaHeaders(map[string]string{
 		"Authorization":      "Bearer secret-token",

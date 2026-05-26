@@ -3,6 +3,7 @@ import { GetCodexQuota } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { beginQuotaRefreshState, failQuotaRefreshState, supportsQuota } from '../model/accountQuota';
+import { persistAccountQuotaStates, readStoredAccountQuotaStates } from '../model/accountQuotaCache';
 import { getAccountsPreviewQuotaStateByKey } from '../previewData';
 import type { CodexQuotaState, TrackRequest } from '../model/types';
 
@@ -18,6 +19,11 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
       }
 
       const codexAccounts = items.filter((account) => supportsQuota(account) && account.quotaKey);
+      const quotaKeys = codexAccounts.map((account) => account.quotaKey!);
+      const cachedQuotaByName = readStoredAccountQuotaStates(
+        typeof window === 'undefined' ? null : window.localStorage,
+        quotaKeys,
+      );
       quotaRequestIdRef.current += 1;
       const requestID = quotaRequestIdRef.current;
 
@@ -28,7 +34,7 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
 
       setCodexQuotaByName(
         codexAccounts.reduce<Record<string, CodexQuotaState>>((result, account) => {
-          result[account.quotaKey!] = { status: 'loading' };
+          result[account.quotaKey!] = beginQuotaRefreshState(cachedQuotaByName[account.quotaKey!]);
           return result;
         }, {})
       );
@@ -42,7 +48,10 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
             return [account.quotaKey!, { status: 'success', quota } satisfies CodexQuotaState] as const;
           } catch (error) {
             console.error(error);
-            return [account.quotaKey!, { status: 'error' } satisfies CodexQuotaState] as const;
+            return [
+              account.quotaKey!,
+              failQuotaRefreshState(cachedQuotaByName[account.quotaKey!]) satisfies CodexQuotaState,
+            ] as const;
           }
         })
       );
@@ -51,12 +60,15 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
         return;
       }
 
-      setCodexQuotaByName(
-        results.reduce<Record<string, CodexQuotaState>>((result, [name, state]) => {
+      const nextQuotaByName = results.reduce<Record<string, CodexQuotaState>>(
+        (result, [name, state]) => {
           result[name] = state;
           return result;
-        }, {})
+        },
+        {},
       );
+      setCodexQuotaByName(nextQuotaByName);
+      persistAccountQuotaStates(typeof window === 'undefined' ? null : window.localStorage, nextQuotaByName);
     },
     [trackRequest]
   );
@@ -84,10 +96,14 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
         const quota = await trackRequest('GetCodexQuota', { name: account.quotaKey }, () =>
           GetCodexQuota(account.quotaKey!)
         );
-        setCodexQuotaByName((prev) => ({
-          ...prev,
-          [account.quotaKey!]: { status: 'success', quota },
-        }));
+        setCodexQuotaByName((prev) => {
+          const nextQuotaByName = {
+            ...prev,
+            [account.quotaKey!]: { status: 'success', quota } satisfies CodexQuotaState,
+          };
+          persistAccountQuotaStates(typeof window === 'undefined' ? null : window.localStorage, nextQuotaByName);
+          return nextQuotaByName;
+        });
       } catch (error) {
         console.error(error);
         setCodexQuotaByName((prev) => ({

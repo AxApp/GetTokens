@@ -80,6 +80,9 @@ func BuildCodexQuotaResponse(authFileBody []byte, usagePayloadBody []byte) (*Cod
 	cachedQuota := parseCachedCodexQuota(authFileBody)
 	result, err := BuildCodexQuotaResponseFromUsagePayload(usagePayloadBody, authFile.PlanType)
 	if err != nil {
+		if cachedQuota != nil {
+			return cachedQuota, nil
+		}
 		return nil, err
 	}
 	if cachedQuota != nil {
@@ -91,6 +94,14 @@ func BuildCodexQuotaResponse(authFileBody []byte, usagePayloadBody []byte) (*Cod
 		}
 	}
 	return result, nil
+}
+
+func BuildCachedCodexQuotaResponse(authFileBody []byte) (*CodexQuotaResponse, error) {
+	quota := parseCachedCodexQuota(authFileBody)
+	if quota == nil {
+		return nil, errors.New("codex 凭证未包含可用额度缓存")
+	}
+	return quota, nil
 }
 
 func fetchCodexQuotaPayload(ctx context.Context, accessToken string, accountID string, timeout time.Duration, observer func(CodexQuotaDebugRecord)) (*codexUsagePayload, error) {

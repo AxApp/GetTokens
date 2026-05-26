@@ -359,6 +359,7 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 - `ExplainChannelRouting` 现在返回 `snapshotVersion`、`policyVersion` 和可选 `shadow` diff。
 - `ListChannelRouteEvents` 输出只含安全摘要，不携带 payload / token / cookie / bearer。
 - Codex / Claude Channel Routing workbench 已加入 shadow 开关与 shadow explain 展示。
+- 2026-05-26 前端重新整理 Channel Routing workbench：从“术语块堆叠”进一步收敛为普通用户只看 `请求模式` 和 `参与账号`。配置区使用上下连续区域，先选择顺序 / 均衡，再列出当前模式下可参与的可请求账号；`Shadow`、legacy compatibility、explain steps、候选 / 过滤、最近 route ledger 和 dry-run 操作全部默认收进 `高级诊断`。默认态不再展示 `pending / policy / DRY-RUN / candidates` 技术串，也不再用图表承载普通用户不关心的过滤细节。
 
 2026-05-25 后续收敛：
 
@@ -372,7 +373,7 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 - WebSocket request-boundary 特例已收口为单一连接生命周期 helper：guarded pinned auth 释放 pin、关闭旧 execution session、强制 transcript replay。
 - WebSocket pinned auth 的 429/401/402/403 前置错误补齐透明 failover：若尚未写出 downstream payload，handler 抑制错误事件、释放 pin、关闭 execution session，并用完整 transcript 立即重派同一 request；若已开始输出，仍保持不做 mid-response 迁移。
 - `legacy-routing-cleanup-v01.md` 已更新当前 shim 状态：公共 `RoutePolicy` 兼容 API 是后续上游合并与旧 request policy 的主要兼容边界。
-- Codex 前端已把 `session-affinity` / `websocket-pin` / `route-order-header` 收进 `Legacy compatibility mask`，前端只保留总数与说明，不展开三条明细；explain 仍记录兼容遮罩摘要，不再回写到新的通道配置，避免上游合并时扩散改动面。
+- Codex 前端已把 `session-affinity` / `websocket-pin` / `route-order-header` 收进 `兼容层提示`，前端只保留总数与说明，不展开三条明细；explain 仍记录兼容遮罩摘要，不再回写到新的通道配置，避免上游合并时扩散改动面。
 
 仍未完成的项：
 

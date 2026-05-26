@@ -140,6 +140,83 @@ export interface ChannelRouteAuditEventSummary {
   redacted: boolean;
 }
 
+export interface ChannelRoutingExplainLike {
+  routeMode?: string;
+  selectedAccountID?: string;
+  candidates?: Array<{
+    id?: string;
+    displayName?: string;
+    provider?: string;
+    routeOrder?: number;
+    channelOrder?: number;
+    groupID?: string;
+    groupOrder?: number;
+    activeSessions?: number;
+  }>;
+  filtered?: Array<{
+    id?: string;
+    reason?: string;
+  }>;
+  steps?: string[];
+  snapshotVersion?: string;
+  policyVersion?: string;
+  shadow?: {
+    enabled?: boolean;
+    routeMode?: string;
+    selectedAccountID?: string;
+    diff?: boolean;
+    steps?: string[];
+  };
+}
+
+export interface ChannelRoutingExplainCandidateRow {
+  rank: number;
+  id: string;
+  title: string;
+  meta: string;
+}
+
+export interface ChannelRoutingExplainReasonRow {
+  label: string;
+  count: number;
+}
+
+export interface ChannelRoutingExplainStepRow {
+  label: string;
+  detail?: string;
+}
+
+export interface ChannelRoutingParticipantAccountLike {
+  id?: string;
+  label?: string;
+  provider?: string;
+  sourceKind?: string;
+  requestable?: boolean;
+  disabled?: boolean;
+}
+
+export interface ChannelRoutingParticipantRow {
+  rank: number;
+  id: string;
+  title: string;
+  meta: string;
+}
+
+export interface ChannelRoutingExplainDigest {
+  hasExplain: boolean;
+  modeLabel: string;
+  selectedTitle: string;
+  selectedMeta: string;
+  summaryLabel: string;
+  snapshotLabel: string;
+  policyLabel: string;
+  shadowLabel: string;
+  shadowMeta: string;
+  candidateRows: ChannelRoutingExplainCandidateRow[];
+  filteredRows: ChannelRoutingExplainReasonRow[];
+  stepRows: ChannelRoutingExplainStepRow[];
+}
+
 const CHANNELS = ['codex', 'claude'] as const;
 
 export function classifyChannelRouteMode(input: unknown): ChannelRouteModeClassification {
@@ -230,35 +307,38 @@ export function updateChannelRoutingConfig(
 }
 
 export function buildLegacyRoutingBypassSummary() {
-  return `${LEGACY_CHANNEL_ROUTING_BYPASSES.length} 个 legacy 输入已从新配置中屏蔽`;
+  return `${LEGACY_CHANNEL_ROUTING_BYPASSES.length} 个旧兼容输入已屏蔽`;
 }
 
 export function buildLegacyRoutingMaskPanel(): LegacyRoutingMaskPanel {
   return {
-    title: 'Legacy compatibility mask',
+    title: '兼容层提示',
     summary: buildLegacyRoutingBypassSummary(),
-    note: '这些信号只保留为兼容层，不写入新配置，也不影响上游合并后的主路由模型。',
+    note: '这些信号只保留为兼容层，不写入新配置，也不影响主路由判断。',
     hasDetails: false,
   };
 }
 
 export function buildChannelRouteAuditEventSummary(event: ChannelRouteAuditEvent): ChannelRouteAuditEventSummary {
-  const routeMode = String(event.routeMode || 'unknown').trim() || 'unknown';
+  const routeMode = formatChannelRouteModeLabel(event.routeMode) || '未知';
   const selected = String(event.selectedAccountID || 'none').trim() || 'none';
   const project = String(event.projectName || '').trim();
   const snapshot = String(event.snapshotVersion || 'snapshot-unknown').trim() || 'snapshot-unknown';
   const policy = String(event.policyVersion || 'policy-unknown').trim() || 'policy-unknown';
   const candidateCount = Number.isFinite(event.candidateCount) ? event.candidateCount : 0;
   const filteredCount = Number.isFinite(event.filteredCount) ? event.filteredCount : 0;
-  const title = `${routeMode} -> ${selected}`;
+  const title = `${routeMode} → ${selected}`;
   const metaParts = [
-    project ? `project:${project}` : '',
-    `${candidateCount} candidates`,
-    `${filteredCount} filtered`,
-    `${snapshot} / ${policy}`,
+    project ? `项目:${project}` : '',
+    `${candidateCount} 个候选`,
+    `${filteredCount} 个过滤`,
+    `快照 ${snapshot}`,
+    `规则 ${policy}`,
   ].filter(Boolean);
   const shadow = event.shadowEnabled
-    ? `${event.shadowRouteMode || 'shadow'} -> ${event.shadowSelectedAccountID || 'none'} / diff:${event.shadowDiff ? 'yes' : 'no'}`
+    ? `${formatChannelRouteModeLabel(event.shadowRouteMode) || 'Shadow'} → ${event.shadowSelectedAccountID || '未命中'} · 差异:${
+        event.shadowDiff ? '有' : '无'
+      }`
     : '';
   return {
     id: String(event.id || '').trim() || `${event.channel || 'channel'}:${event.recordedAt || 'unknown'}`,
@@ -304,6 +384,287 @@ export function buildPreviewChannelRouteAuditEvent(input: {
     shadowSelectedAccountID: input.explain.shadow?.selectedAccountID || '',
     shadowDiff: input.explain.shadow?.diff === true,
     redacted: true,
+  };
+}
+
+export function buildChannelRoutingExplainDigest(
+  input: ChannelRoutingExplainLike | null | undefined,
+): ChannelRoutingExplainDigest {
+  if (!input) {
+    return {
+      hasExplain: false,
+      modeLabel: '未运行',
+      selectedTitle: '尚未运行预演',
+      selectedMeta: '点击“运行预演”后会显示候选、过滤原因和最终命中。',
+      summaryLabel: '尚未运行',
+      snapshotLabel: '快照未生成',
+      policyLabel: '规则未生成',
+      shadowLabel: 'Shadow 关闭',
+      shadowMeta: '',
+      candidateRows: [],
+      filteredRows: [],
+      stepRows: [],
+    };
+  }
+
+  const candidateRows = (input.candidates || []).map((candidate, index) => {
+    const rank = index + 1;
+    const title = String(candidate.displayName || candidate.id || `候选 ${rank}`).trim() || `候选 ${rank}`;
+    const metaParts = [String(candidate.provider || '').trim(), buildChannelRoutingActiveSessionMeta(candidate.activeSessions)];
+    const meta = metaParts.filter(Boolean).join(' · ') || '无附加信息';
+    return {
+      rank,
+      id: String(candidate.id || '').trim(),
+      title,
+      meta,
+    };
+  });
+
+  const selectedAccountID = String(input.selectedAccountID || '').trim();
+  const selectedCandidate = candidateRows.find((candidate) => candidate.id === selectedAccountID);
+  const selectedTitle = selectedCandidate?.title || selectedAccountID || '未命中';
+  const selectedMeta = selectedCandidate
+    ? `命中候选 #${selectedCandidate.rank} · ${selectedCandidate.meta}`
+    : selectedAccountID
+      ? `命中账号 ${selectedAccountID}`
+      : '尚未命中';
+
+  const filteredRows = buildChannelRoutingFilteredReasonRows(input.filtered || []);
+  const stepRows = (input.steps || [])
+    .map((step) => formatChannelRoutingExplainStep(step))
+    .filter((step): step is ChannelRoutingExplainStepRow => Boolean(step));
+
+  const shadow = input.shadow;
+  const shadowEnabled = shadow?.enabled === true;
+  const shadowLabel = shadowEnabled ? 'Shadow 开启' : 'Shadow 关闭';
+  const shadowMeta = shadowEnabled
+    ? `${formatChannelRouteModeLabel(shadow.routeMode) || 'Shadow'} · ${shadow.selectedAccountID || '未命中'} · 差异:${
+        shadow.diff ? '有' : '无'
+      }`
+    : '';
+
+  return {
+    hasExplain: true,
+    modeLabel: formatChannelRouteModeLabel(input.routeMode) || '未知',
+    selectedTitle,
+    selectedMeta,
+    summaryLabel: `${candidateRows.length} 个候选 / ${filteredRows.reduce((total, item) => total + item.count, 0)} 个过滤`,
+    snapshotLabel: `快照 ${String(input.snapshotVersion || '未生成').trim() || '未生成'}`,
+    policyLabel: `规则 ${String(input.policyVersion || '未生成').trim() || '未生成'}`,
+    shadowLabel,
+    shadowMeta,
+    candidateRows,
+    filteredRows,
+    stepRows,
+  };
+}
+
+export function buildChannelRoutingParticipantRows(
+  config: Pick<ChannelRoutingConfig, 'orderedAccountIDs'>,
+  accounts: ChannelRoutingParticipantAccountLike[] = [],
+): ChannelRoutingParticipantRow[] {
+  const accountByID = new Map<string, ChannelRoutingParticipantAccountLike>();
+  const normalizedAccounts: ChannelRoutingParticipantAccountLike[] = [];
+
+  for (const account of accounts) {
+    const id = String(account.id || '').trim();
+    if (!id || accountByID.has(id)) {
+      continue;
+    }
+    const normalized = { ...account, id };
+    accountByID.set(id, normalized);
+    normalizedAccounts.push(normalized);
+  }
+
+  const orderedIDs = normalizeOrderedAccountIDs(config.orderedAccountIDs);
+  const sourceIDs = orderedIDs.length > 0 ? orderedIDs : normalizedAccounts.map((account) => String(account.id || '').trim());
+  const rows: ChannelRoutingParticipantRow[] = [];
+  const seen = new Set<string>();
+
+  for (const id of sourceIDs) {
+    if (!id || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+
+    const account = accountByID.get(id);
+    if (accountByID.size > 0 && !account) {
+      continue;
+    }
+    if (account && (account.requestable === false || account.disabled === true)) {
+      continue;
+    }
+
+    const title = String(account?.label || id).trim() || id;
+    const meta = [String(account?.provider || '').trim(), formatChannelRoutingSourceKind(account?.sourceKind)]
+      .filter(Boolean)
+      .join(' · ');
+
+    rows.push({
+      rank: rows.length + 1,
+      id,
+      title,
+      meta: meta || '可请求账号',
+    });
+  }
+
+  return rows;
+}
+
+function formatChannelRouteModeLabel(mode: unknown): string {
+  switch (String(mode || '').trim()) {
+    case 'sequential':
+      return '顺序';
+    case 'balanced':
+      return '均衡';
+    case 'project':
+      return '项目';
+    case 'preview':
+      return '预演';
+    default:
+      return String(mode || '').trim();
+  }
+}
+
+function formatChannelRoutingSourceKind(sourceKind: unknown): string {
+  switch (String(sourceKind || '').trim()) {
+    case 'codex-auth-file':
+      return 'OAuth 文件';
+    case 'codex-api-key':
+      return 'API Key';
+    case 'openai-compatible':
+      return 'OpenAI-compatible';
+    default:
+      return '';
+  }
+}
+
+function buildChannelRoutingActiveSessionMeta(activeSessions: unknown): string {
+  const count = Number(activeSessions);
+  if (!Number.isFinite(count) || count <= 0) {
+    return '';
+  }
+  return `${count} 个活跃会话`;
+}
+
+function buildChannelRoutingFilteredReasonRows(
+  filtered: Array<{
+    id?: string;
+    reason?: string;
+  }>,
+): ChannelRoutingExplainReasonRow[] {
+  const counts = new Map<string, number>();
+  const order: string[] = [];
+  for (const item of filtered) {
+    const reason = String(item.reason || '').trim() || 'unknown';
+    const label = formatChannelRoutingFilteredReason(reason);
+    if (!counts.has(label)) {
+      order.push(label);
+    }
+    counts.set(label, (counts.get(label) || 0) + 1);
+  }
+  return order.map((label) => ({
+    label,
+    count: counts.get(label) || 0,
+  }));
+}
+
+function formatChannelRoutingFilteredReason(reason: string): string {
+  switch (reason) {
+    case 'channel-unsupported':
+      return '渠道不支持';
+    case 'scope-account':
+      return '范围锁定账号';
+    case 'scope-group':
+      return '范围外账号组';
+    case 'tried':
+      return '已在本轮尝试';
+    case 'account-disabled':
+      return '账号已禁用';
+    case 'account-unrequestable':
+      return '账号暂不可请求';
+    case 'group-disabled-or-missing':
+      return '账号组不可用';
+    case 'runtime-manual-disabled':
+      return '运行态手动禁用';
+    case 'runtime-auth-error':
+      return '运行态认证错误';
+    case 'runtime-rate-limit':
+      return '运行态限流';
+    case 'runtime-cooldown':
+      return '运行态冷却';
+    case 'runtime-model-unavailable':
+      return '运行态模型不可用';
+    case 'runtime-upstream-error':
+      return '运行态上游错误';
+    default:
+      return reason;
+  }
+}
+
+function formatChannelRoutingExplainStep(step: string): ChannelRoutingExplainStepRow | null {
+  const raw = String(step || '').trim();
+  if (!raw) {
+    return null;
+  }
+  if (raw.startsWith('mode:')) {
+    return {
+      label: '当前模式',
+      detail: formatChannelRouteModeLabel(raw.slice(5)),
+    };
+  }
+  if (raw.startsWith('legacy:')) {
+    const payload = raw.slice(7);
+    const [key, value] = payload.split('=');
+    const detail = value ? `${key} 已${value === 'ignored' ? '忽略' : '屏蔽'}` : payload;
+    return {
+      label: '兼容信号',
+      detail,
+    };
+  }
+  if (raw.startsWith('candidates:')) {
+    return {
+      label: '候选池',
+      detail: `${raw.slice(11)} 个`,
+    };
+  }
+  if (raw.startsWith('sticky:hit:')) {
+    return {
+      label: '粘性命中',
+      detail: raw.slice(11),
+    };
+  }
+  if (raw.startsWith('sticky:invalidated:')) {
+    return {
+      label: '粘性失效',
+      detail: formatChannelRoutingFilteredReason(raw.slice(19)),
+    };
+  }
+  if (raw === 'sticky:miss') {
+    return {
+      label: '粘性未命中',
+    };
+  }
+  if (raw.startsWith('project:hit:')) {
+    return {
+      label: '项目命中',
+      detail: raw.slice(12),
+    };
+  }
+  if (raw === 'project:miss') {
+    return {
+      label: '项目未命中',
+    };
+  }
+  if (raw === 'project:fallback-default') {
+    return {
+      label: '项目回退',
+      detail: '默认路由',
+    };
+  }
+  return {
+    label: '步骤',
+    detail: raw,
   };
 }
 

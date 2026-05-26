@@ -5,8 +5,10 @@ import {
   CHANNEL_ROUTE_MODES,
   LEGACY_CHANNEL_ROUTING_BYPASSES,
   buildChannelRouteAuditEventSummary,
+  buildChannelRoutingParticipantRows,
   buildLegacyRoutingBypassSummary,
   buildLegacyRoutingMaskPanel,
+  buildChannelRoutingExplainDigest,
   buildPreviewChannelRouteAuditEvent,
   classifyChannelRouteMode,
   isChannelRouteMode,
@@ -60,7 +62,7 @@ test('legacy upstream routing bypasses are blocked from the GetTokens channel co
       ['route-order-header', 'ignored'],
     ],
   );
-  assert.equal(buildLegacyRoutingBypassSummary(), '3 个 legacy 输入已从新配置中屏蔽');
+  assert.equal(buildLegacyRoutingBypassSummary(), '3 个旧兼容输入已屏蔽');
 
   const normalized = normalizeChannelRoutingConfig(
     {
@@ -84,9 +86,9 @@ test('legacy upstream routing bypasses are blocked from the GetTokens channel co
 test('legacy compatibility mask panel only exposes summary text and hides detail rows', () => {
   const legacyMask = buildLegacyRoutingMaskPanel();
 
-  assert.equal(legacyMask.title, 'Legacy compatibility mask');
-  assert.equal(legacyMask.summary, '3 个 legacy 输入已从新配置中屏蔽');
-  assert.equal(legacyMask.note, '这些信号只保留为兼容层，不写入新配置，也不影响上游合并后的主路由模型。');
+  assert.equal(legacyMask.title, '兼容层提示');
+  assert.equal(legacyMask.summary, '3 个旧兼容输入已屏蔽');
+  assert.equal(legacyMask.note, '这些信号只保留为兼容层，不写入新配置，也不影响主路由判断。');
   assert.equal(legacyMask.hasDetails, false);
 });
 
@@ -232,10 +234,82 @@ test('buildChannelRouteAuditEventSummary keeps route ledger redacted and compact
     }),
     {
       id: 'route-1',
-      title: 'balanced -> codex-api-key:stable',
-      meta: 'project:GetTokens · 3 candidates · 1 filtered · snapshot-7 / channel-routing-v1',
-      shadow: 'sequential -> auth-file:backup.json / diff:yes',
+      title: '均衡 → codex-api-key:stable',
+      meta: '项目:GetTokens · 3 个候选 · 1 个过滤 · 快照 snapshot-7 · 规则 channel-routing-v1',
+      shadow: '顺序 → auth-file:backup.json · 差异:有',
       redacted: true,
+    },
+  );
+});
+
+test('buildChannelRoutingExplainDigest turns raw explain data into readable sections', () => {
+  assert.deepEqual(
+    buildChannelRoutingExplainDigest({
+      routeMode: 'balanced',
+      selectedAccountID: 'codex-api-key:stable',
+      candidates: [
+        {
+          id: 'codex-api-key:stable',
+          displayName: 'Stable',
+          provider: 'openai-compatible',
+          activeSessions: 2,
+        },
+        {
+          id: 'auth-file:backup.json',
+          displayName: 'Backup',
+          provider: 'auth-file',
+          activeSessions: 0,
+        },
+      ],
+      filtered: [
+        { id: 'auth-file:blocked.json', reason: 'account-disabled' },
+        { id: 'auth-file:cooldown.json', reason: 'runtime-rate-limit' },
+        { id: 'auth-file:cooldown-2.json', reason: 'runtime-rate-limit' },
+      ],
+      steps: ['mode:balanced', 'legacy:session-affinity=blocked', 'candidates:2', 'sticky:hit:codex-api-key:stable'],
+      snapshotVersion: 'preview',
+      policyVersion: 'channel-routing-v1',
+      shadow: {
+        enabled: true,
+        routeMode: 'sequential',
+        selectedAccountID: 'auth-file:backup.json',
+        diff: true,
+      },
+    }),
+    {
+      hasExplain: true,
+      modeLabel: '均衡',
+      selectedTitle: 'Stable',
+      selectedMeta: '命中候选 #1 · openai-compatible · 2 个活跃会话',
+      summaryLabel: '2 个候选 / 3 个过滤',
+      snapshotLabel: '快照 preview',
+      policyLabel: '规则 channel-routing-v1',
+      shadowLabel: 'Shadow 开启',
+      shadowMeta: '顺序 · auth-file:backup.json · 差异:有',
+      candidateRows: [
+        {
+          rank: 1,
+          id: 'codex-api-key:stable',
+          title: 'Stable',
+          meta: 'openai-compatible · 2 个活跃会话',
+        },
+        {
+          rank: 2,
+          id: 'auth-file:backup.json',
+          title: 'Backup',
+          meta: 'auth-file',
+        },
+      ],
+      filteredRows: [
+        { label: '账号已禁用', count: 1 },
+        { label: '运行态限流', count: 2 },
+      ],
+      stepRows: [
+        { label: '当前模式', detail: '均衡' },
+        { label: '兼容信号', detail: 'session-affinity 已屏蔽' },
+        { label: '候选池', detail: '2 个' },
+        { label: '粘性命中', detail: 'codex-api-key:stable' },
+      ],
     },
   );
 });
@@ -264,4 +338,65 @@ test('buildPreviewChannelRouteAuditEvent converts explain result into browser-on
   assert.equal(event.filteredCount, 1);
   assert.equal(event.redacted, true);
   assert.equal(event.shadowDiff, true);
+});
+
+test('buildChannelRoutingParticipantRows shows only requestable accounts in channel order', () => {
+  assert.deepEqual(
+    buildChannelRoutingParticipantRows(
+      {
+        orderedAccountIDs: [
+          'codex-api-key:stable',
+          'missing-account',
+          'auth-file:disabled.json',
+          'openai-compatible:fast',
+          'auth-file:cooldown.json',
+        ],
+      },
+      [
+        {
+          id: 'auth-file:cooldown.json',
+          label: 'Cooldown',
+          provider: 'OpenAI',
+          sourceKind: 'codex-auth-file',
+          requestable: false,
+        },
+        {
+          id: 'openai-compatible:fast',
+          label: 'Fast Relay',
+          provider: 'OpenRouter',
+          sourceKind: 'openai-compatible',
+          requestable: true,
+        },
+        {
+          id: 'codex-api-key:stable',
+          label: 'Stable Key',
+          provider: 'OpenAI',
+          sourceKind: 'codex-api-key',
+          requestable: true,
+        },
+        {
+          id: 'auth-file:disabled.json',
+          label: 'Disabled OAuth',
+          provider: 'OpenAI',
+          sourceKind: 'codex-auth-file',
+          requestable: true,
+          disabled: true,
+        },
+      ],
+    ),
+    [
+      {
+        rank: 1,
+        id: 'codex-api-key:stable',
+        title: 'Stable Key',
+        meta: 'OpenAI · API Key',
+      },
+      {
+        rank: 2,
+        id: 'openai-compatible:fast',
+        title: 'Fast Relay',
+        meta: 'OpenRouter · OpenAI-compatible',
+      },
+    ],
+  );
 });

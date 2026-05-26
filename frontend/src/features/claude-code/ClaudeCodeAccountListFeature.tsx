@@ -759,6 +759,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           message={orderDirty ? t('claude_code.account_list_unsaved') : ''}
           routeEvents={channelRouteEvents}
           routeEventsLoading={channelRouteEventsLoading}
+          accounts={orderedRows}
           onModeChange={updateChannelMode}
           onShadowEnabledChange={updateShadowEnabled}
           onShadowModeChange={updateShadowMode}

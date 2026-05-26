@@ -175,17 +175,19 @@ test('AccountsToolbar renders the grouped filter sections in the new order', asy
   assert.equal(source.includes('accounts.sort_mode_label'), true);
   assert.equal(source.includes('accounts.sort_mode_priority'), true);
   assert.equal(source.includes('accounts.sort_mode_quota'), true);
+  assert.equal(source.includes('disabled={planAvailabilityResolved'), false);
   assert.equal(source.includes('className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm-plus)]"'), true);
   assert.equal(source.includes('text-[length:var(--font-size-ui-sm-plus)] font-black uppercase leading-none tracking-[0.12em]'), true);
 });
 
 test('AccountsToolbar filter menu keeps options in compact list mode', async () => {
   const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
-  const menuPanelClass = 'mt-2 flex min-w-[300px] flex-col gap-3';
+  const menuPanelClass = 'mt-2 flex min-w-[360px] flex-col gap-3.5';
   const optionClass = source.slice(source.indexOf('function FilterCheckOption'), source.indexOf('function buildToolbarFilterLabel'));
 
   assert.equal(source.includes(menuPanelClass), true);
-  assert.equal(optionClass.includes('min-h-7'), true);
+  assert.equal(optionClass.includes('min-h-9'), true);
+  assert.equal(optionClass.includes('text-[length:var(--font-size-ui-md-compact)]'), true);
   assert.equal(optionClass.includes('border-2 border-[var(--border-color)]'), false);
 });
 

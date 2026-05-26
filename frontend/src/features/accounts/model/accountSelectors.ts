@@ -177,8 +177,26 @@ function resolveAccountPlanType(account: AccountRecord, state?: CodexQuotaState)
 
 function normalizeAccountPlanType(value: string | undefined): AccountPlanType | null {
   const normalized = String(value || '').trim().toLowerCase();
-  if (normalized === 'free' || normalized === 'plus' || normalized === 'pro') {
-    return normalized;
+  if (!normalized) {
+    return null;
+  }
+
+  const compact = normalized.replace(/[\s_-]+/g, '');
+  if (compact === 'free' || compact === 'chatgptfree' || compact === 'freeplan') {
+    return 'free';
+  }
+  if (compact === 'plus' || compact === 'chatgptplus' || compact === 'plusplan' || compact.includes('plus')) {
+    return 'plus';
+  }
+  if (
+    compact === 'pro' ||
+    compact === 'chatgptpro' ||
+    compact === 'proplan' ||
+    compact === 'professional' ||
+    compact === 'prolite' ||
+    compact.includes('pro')
+  ) {
+    return 'pro';
   }
   return null;
 }

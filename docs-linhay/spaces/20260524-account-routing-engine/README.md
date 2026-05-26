@@ -52,7 +52,9 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
   - `codex - 账号列表` 负责 Codex 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
   - `claude - 账号列表` 负责 Claude Code 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
   - Codex / Claude 可以引用同一个账号组，但各自维护渠道组启停和渠道排序。
-  - dry-run/explain 调试面板优先跟随对应渠道账号列表展示，显示“为什么选这个账号”和“为什么过滤那些账号”。
+  - dry-run/explain 保留为高级诊断能力，默认不作为普通用户主界面内容。
+  - 路由工作台已改为“请求模式 + 参与账号”的扁平布局：主路径只回答当前是什么模式、该模式下哪些账号会参与；内部只用分隔线、模式按钮和账号列表，不再做 summary rail、命中图表、过滤图表或卡中卡。
+  - Shadow 对照、兼容输入、解释步骤、候选/过滤结果和最近路由默认收进 `高级诊断`，维护者需要排查时再展开。
   - 支持 shadow mode 差异展示和策略启用状态。
   - browser preview 可用，不依赖真实 Wails runtime。
 - 文档 / 测试 / 治理：
@@ -130,8 +132,9 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 
 ## 当前状态
 - 状态：implementation-ready
-- 最近更新：2026-05-25
-- 2026-05-26 补充：Codex 账号列表的旧 `session-affinity` / `websocket-pin` / `route-order-header` 现在只作为 `Legacy compatibility mask` 的总数与说明呈现，不写入新的 `ChannelRoutingConfig`，也不展开三条明细，以便后续继续和上游代码保持最小合并面。
+- 最近更新：2026-05-26
+- 2026-05-26 补充：Codex 账号列表的旧 `session-affinity` / `websocket-pin` / `route-order-header` 现在只作为 `兼容层提示` 的总数与说明呈现，不写入新的 `ChannelRoutingConfig`，也不展开三条明细，以便后续继续和上游代码保持最小合并面。
+- 2026-05-26 补充：Codex / Claude 路由工作台主界面进一步降噪，只保留当前请求模式和参与账号列表；诊断、预演、Shadow、候选/过滤和最近路由默认隐藏。验收截图：`screenshots/20260526/codex/20260526-channel-routing-workbench-desktop-after-v05.png`、`screenshots/20260526/codex/20260526-channel-routing-workbench-mobile-collapsed-after-v05.png`。
 
 ## 实施入口
 

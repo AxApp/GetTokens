@@ -2,8 +2,11 @@ package wailsapp
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 )
 
@@ -71,5 +74,51 @@ func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
 	}
 	if got := *result.Windows[0].RemainingPercent; got != 89 {
 		t.Fatalf("primary remaining = %d, want 89", got)
+	}
+}
+
+func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T) {
+	authBody := []byte(`{
+		"account_id":"acct_cached",
+		"tokens":{"access_token":"token_cached"},
+		"plan":"plus",
+		"nolon":{
+			"usage_cache":{
+				"usage":{
+					"identity":{"plan":"plus"},
+					"primary":{"usedPercent":26,"resetsAt":1710000000}
+				}
+			}
+		}
+	}`)
+
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
+				return []byte(`{"files":[{"name":"cached.json","provider":"codex","auth_index":"1"}]}`), http.StatusOK, nil
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
+				return authBody, http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/api-call":
+				return nil, http.StatusForbidden, errors.New("api call denied")
+			default:
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	quota, err := app.GetCodexQuota("cached.json")
+	if err != nil {
+		t.Fatalf("GetCodexQuota: %v", err)
+	}
+	if quota.PlanType != "plus" {
+		t.Fatalf("PlanType = %q, want plus", quota.PlanType)
+	}
+	if len(quota.Windows) != 1 {
+		t.Fatalf("expected one cached quota window, got %d", len(quota.Windows))
+	}
+	if quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 74 {
+		t.Fatalf("unexpected cached remaining percent: %#v", quota.Windows[0].RemainingPercent)
 	}
 }

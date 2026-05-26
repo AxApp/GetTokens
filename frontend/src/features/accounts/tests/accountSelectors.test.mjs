@@ -485,6 +485,61 @@ test('filterAccounts can select accounts by plan type', () => {
   );
 });
 
+test('filterAccounts recognizes common plan type aliases from auth and quota payloads', () => {
+  const accounts = [
+    {
+      id: 'auth-file:plus',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Plus Account',
+      status: 'ACTIVE',
+      planType: 'ChatGPT Plus',
+      quotaKey: 'plus.json',
+    },
+    {
+      id: 'auth-file:pro',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Pro Account',
+      status: 'ACTIVE',
+      planType: 'free',
+      quotaKey: 'pro.json',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        plan: { free: false, plus: true, pro: false },
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:plus']
+  );
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        plan: { free: false, plus: false, pro: true },
+      },
+      codexQuotaByName: {
+        'pro.json': {
+          status: 'success',
+          quota: {
+            planType: 'pro-lite',
+            windows: [],
+          },
+        },
+      },
+    }).map((item) => item.id),
+    ['auth-file:pro']
+  );
+});
+
 test('filterAccounts separates disabled accounts from unavailable error accounts within the status group', () => {
   const accounts = [
     {
@@ -813,6 +868,38 @@ test('buildAccountsView exposes the available plan types present in account data
   });
 
   assert.deepEqual(view.availablePlanTypes, ['free', 'pro']);
+});
+
+test('buildAccountsView exposes available plan types after plan alias normalization', () => {
+  const view = buildAccountsView({
+    authFileRecords: [
+      {
+        id: 'auth-file:plus',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'Plus',
+        status: 'ACTIVE',
+        planType: 'chatgpt_plus',
+      },
+    ],
+    apiKeyRecords: [
+      {
+        id: 'api-key:pro',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Pro',
+        status: 'ACTIVE',
+        planType: 'Professional',
+      },
+    ],
+    codexQuotaByName: {},
+    searchTerm: '',
+    filters: defaultAccountsFilterState,
+    selectedAccountIDs: [],
+    t,
+  });
+
+  assert.deepEqual(view.availablePlanTypes, ['plus', 'pro']);
 });
 
 test('buildAccountsView sorts, filters, groups, and resolves selection state together', () => {

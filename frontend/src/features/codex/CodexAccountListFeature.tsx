@@ -892,6 +892,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           message={orderChanged ? t('codex.account_list_unsaved') : ''}
           routeEvents={channelRouteEvents}
           routeEventsLoading={channelRouteEventsLoading}
+          accounts={orderedRows}
           onModeChange={updateChannelMode}
           onShadowEnabledChange={updateShadowEnabled}
           onShadowModeChange={updateShadowMode}
