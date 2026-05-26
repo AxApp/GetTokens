@@ -174,7 +174,7 @@ function TimingTrendChart({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<{ startX: number; scrollLeft: number } | null>(null);
   const [autoFollowLatest, setAutoFollowLatest] = useState(true);
-  const totalAreaPath = buildTimingTrendAreaPath(
+  const totalWavePath = buildTimingTrendEcgPath(
     trend.points,
     'totalDurationMs',
     trend.maxMs,
@@ -245,27 +245,20 @@ function TimingTrendChart({
           height: `${chartHeight}px`,
           width: `${width}px`,
           backgroundImage:
-            'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), repeating-linear-gradient(to right, transparent 0, transparent 55px, var(--color-chart-grid-subtle) 55px, var(--color-chart-grid-subtle) 56px)',
+            'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), linear-gradient(to right, transparent 0, transparent 19px, var(--color-chart-grid-subtle) 19px, var(--color-chart-grid-subtle) 20px), repeating-linear-gradient(to right, transparent 0, transparent 79px, var(--color-chart-grid-subtle) 79px, var(--color-chart-grid-subtle) 80px)',
         }}
       >
         <style>{`
-          @keyframes usage-desk-curve-sweep {
-            0% { stroke-dashoffset: 1; opacity: 0.36; }
+          @keyframes codex-live-wave-sweep {
+            0% { stroke-dashoffset: 1; opacity: 0.32; }
             100% { stroke-dashoffset: 0; opacity: 1; }
           }
-          @keyframes codex-live-area-rise {
-            0% { opacity: 0; transform: translateY(8px); }
-            100% { opacity: 1; transform: translateY(0); }
+          @keyframes codex-live-pulse-pop {
+            0% { transform: translate(-50%, -50%) scale(0.86); opacity: 0.42; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
           }
         `}</style>
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <defs>
-            <linearGradient id="codex-live-total-area" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-chart-primary-area)" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="var(--color-chart-primary-area)" stopOpacity="0.03" />
-            </linearGradient>
-          </defs>
-
           {gridY.map((ratio) => {
             const y = trendChartY(ratio * trend.maxMs, trend.maxMs, height, padding);
             return (
@@ -294,25 +287,35 @@ function TimingTrendChart({
             );
           })}
 
-          {totalAreaPath ? (
+          {totalWavePath ? (
             <path
-              d={totalAreaPath}
-              fill="url(#codex-live-total-area)"
-              style={{ transformBox: 'fill-box', transformOrigin: 'center bottom', animation: 'codex-live-area-rise 320ms cubic-bezier(0.22,1,0.36,1)' }}
+              d={totalWavePath}
+              fill="none"
+              stroke="var(--color-chart-primary-area)"
+              strokeWidth="9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              opacity="0.14"
+              pathLength="1"
+              strokeDasharray="1"
+              style={{ animation: 'codex-live-wave-sweep 900ms cubic-bezier(0.22,1,0.36,1)' }}
             />
           ) : null}
 
           {timingTrendSeries.map((series) => {
-            const path = buildTimingTrendSeriesPath(
-              trend.points,
-              series.id,
-              trend.maxMs,
-              trend.startedAtMinMs,
-              trend.startedAtMaxMs,
-              width,
-              height,
-              padding,
-            );
+            const path =
+              series.id === 'totalDurationMs'
+                ? totalWavePath
+                : buildTimingTrendSeriesPath(
+                    trend.points,
+                    series.id,
+                    trend.maxMs,
+                    trend.startedAtMinMs,
+                    trend.startedAtMaxMs,
+                    width,
+                    height,
+                    padding,
+                  );
             if (!path) {
               return null;
             }
@@ -322,13 +325,13 @@ function TimingTrendChart({
                 d={path}
                 fill="none"
                 stroke={series.color}
-                strokeWidth={series.id === 'totalDurationMs' ? 4 : 2.5}
+                strokeWidth={series.id === 'totalDurationMs' ? 3.5 : 2.25}
                 strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinejoin={series.id === 'totalDurationMs' ? 'miter' : 'round'}
                 pathLength={series.id === 'totalDurationMs' ? 1 : undefined}
                 strokeDasharray={series.id === 'totalDurationMs' ? 1 : '10 8'}
                 strokeDashoffset={0}
-                style={{ animation: 'usage-desk-curve-sweep 900ms cubic-bezier(0.22,1,0.36,1)' }}
+                style={{ animation: 'codex-live-wave-sweep 900ms cubic-bezier(0.22,1,0.36,1)' }}
               />
             );
           })}
@@ -361,12 +364,12 @@ function TimingTrendChart({
                   <circle
                     cx={x}
                     cy={trendChartY(point.values.totalDurationMs ?? 0, trend.maxMs, height, padding)}
-                    r="9"
+                    r="10"
                     fill="none"
                     stroke="var(--color-chart-primary)"
                     strokeDasharray="2 3"
                     strokeWidth="1.75"
-                    opacity="0.72"
+                    opacity="0.68"
                   />
                 ) : null}
               </g>
@@ -387,11 +390,11 @@ function TimingTrendChart({
                 key={point.requestID}
                 x={x}
                 y={y}
-                label={formatDuration(totalMs)}
-                helper={`#${point.sequence}`}
-                selected={point.requestID === selectedRequestID}
-                live={point.isLive}
-              />
+              label={formatDuration(totalMs)}
+              helper={`#${point.sequence}`}
+              selected={point.requestID === selectedRequestID}
+              live={point.isLive}
+            />
             );
           })}
         </div>
@@ -422,7 +425,10 @@ function TimingTrendPoint({
   return (
     <div
       className="absolute flex items-center justify-center"
-      style={buildTimingTrendPointStyle(x, y)}
+      style={{
+        ...buildTimingTrendPointStyle(x, y),
+        animation: selected || live ? 'codex-live-pulse-pop 260ms cubic-bezier(0.22,1,0.36,1)' : undefined,
+      }}
     >
       <div
         className="absolute bottom-full mb-3 whitespace-nowrap text-center font-mono font-black transition-colors"
@@ -486,14 +492,12 @@ function buildTimingTrendSeriesPath(
     return `M ${x - 5} ${y} L ${x + 5} ${y}`;
   }
 
-  return coordinates.slice(1).reduce((path, [x, y], index) => {
-    const [previousX, previousY] = coordinates[index];
-    const controlX = previousX + (x - previousX) / 2;
-    return `${path} C ${controlX} ${previousY}, ${controlX} ${y}, ${x} ${y}`;
+  return coordinates.slice(1).reduce((path, [x, y]) => {
+    return `${path} L ${x} ${y}`;
   }, `M ${coordinates[0][0]} ${coordinates[0][1]}`);
 }
 
-function buildTimingTrendAreaPath(
+function buildTimingTrendEcgPath(
   points: readonly CodexLiveRequestTimingTrendPoint[],
   metric: CodexLiveTimingTrendMetric,
   maxMs: number,
@@ -503,7 +507,6 @@ function buildTimingTrendAreaPath(
   height: number,
   padding: { top: number; right: number; bottom: number; left: number },
 ): string {
-  const linePath = buildTimingTrendSeriesPath(points, metric, maxMs, startedAtMinMs, startedAtMaxMs, width, height, padding);
   const coordinates = points.flatMap((point) => {
     const value = point.values[metric];
     if (value === null) {
@@ -515,14 +518,27 @@ function buildTimingTrendAreaPath(
     ] as const];
   });
 
-  if (!linePath || coordinates.length === 0) {
+  if (coordinates.length === 0) {
     return '';
   }
+  if (coordinates.length === 1) {
+    const [x, y] = coordinates[0];
+    const notchY = Math.max(padding.top + 8, y - 20);
+    return `M ${x - 12} ${y} L ${x - 4} ${y} L ${x - 2} ${notchY} L ${x} ${y} L ${x + 2} ${Math.min(height - padding.bottom, y + 4)} L ${x + 6} ${y} L ${x + 12} ${y}`;
+  }
 
-  const baselineY = height - padding.bottom;
-  const firstX = coordinates[0][0];
-  const lastX = coordinates[coordinates.length - 1][0];
-  return `${linePath} L ${lastX} ${baselineY} L ${firstX} ${baselineY} Z`;
+  return coordinates.slice(1).reduce((path, [x, y], index) => {
+    const [previousX, previousY] = coordinates[index];
+    const gap = Math.max(16, x - previousX);
+    const leadInX = previousX + gap * 0.42;
+    const spikeUpX = previousX + gap * 0.54;
+    const spikePeakX = previousX + gap * 0.62;
+    const recoveryX = previousX + gap * 0.72;
+    const settleX = previousX + gap * 0.88;
+    const spikePeakY = Math.max(padding.top + 8, Math.min(previousY, y) - Math.max(16, Math.min(30, Math.abs(previousY - y) * 0.22 + 12)));
+    const recoveryY = Math.min(height - padding.bottom, y + Math.max(3, Math.min(12, Math.abs(previousY - y) * 0.12 + 3)));
+    return `${path} L ${leadInX} ${previousY} L ${spikeUpX} ${Math.max(padding.top + 8, previousY - 3)} L ${spikePeakX} ${spikePeakY} L ${recoveryX} ${recoveryY} L ${settleX} ${y} L ${x} ${y}`;
+  }, `M ${coordinates[0][0]} ${coordinates[0][1]}`);
 }
 
 function trendChartX(

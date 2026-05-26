@@ -134,6 +134,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 ## 当前状态
 - 状态：implementation-ready
 - 最近更新：2026-05-26
+- 2026-05-26 补充：sidecar 请求侧已完成 `routing.strategy` 主路径绕过，Codex / Claude 请求优先通过 `channel-routing` 快照生成候选顺序；`routing.strategy` 仅作为 legacy relay / 配置兼容边界保留。
 - 2026-05-26 补充：Codex / Claude 的 channel routing 进入“完整绕过 `routing.strategy`”收口，后续以 `channel-routing` 快照作为唯一决策源；旧 `config.yaml` 只保留 legacy relay 边界，不再参与渠道路由主路径。
 - 2026-05-26 补充：Codex 账号列表的旧 `session-affinity` / `websocket-pin` / `route-order-header` 现在只作为 `兼容层提示` 的总数与说明呈现，不写入新的 `ChannelRoutingConfig`，也不展开三条明细，以便后续继续和上游代码保持最小合并面。
 - 2026-05-26 补充：Codex / Claude 路由工作台主界面进一步降噪，只保留当前请求模式和参与账号列表；诊断、预演、Shadow、候选/过滤和最近路由默认隐藏。验收截图：`screenshots/20260526/codex/20260526-channel-routing-workbench-desktop-after-v05.png`、`screenshots/20260526/codex/20260526-channel-routing-workbench-mobile-collapsed-after-v05.png`。

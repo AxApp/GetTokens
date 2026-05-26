@@ -28,7 +28,8 @@ test('buildAccountsHeaderMenuItems keeps all add-account actions in one flat men
     ],
   );
   assert.equal(items[0].labelKey, 'accounts.add_account');
-  assert.equal(items[0].label, '+ ADD ACCOUNT');
+  assert.equal(items[0].label, 'ADD ACCOUNT');
+  assert.equal(items[0].icon, 'plus');
   assert.equal(items[0].emphasis, true);
   assert.equal(items[1].dividerBefore, true);
   assert.equal(items[5].dividerBefore, true);

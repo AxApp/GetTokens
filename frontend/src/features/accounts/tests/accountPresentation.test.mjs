@@ -44,6 +44,7 @@ test('shouldLoadAccountsData allows browser preview data without Wails bindings'
 
 test('shouldLoadAccountsData waits for ready sidecar when Wails bindings exist', () => {
   assert.equal(shouldLoadAccountsData({ code: 'running' }, true), false);
+  assert.equal(shouldLoadAccountsData({ code: 'stopped' }, true), false);
   assert.equal(shouldLoadAccountsData({ code: 'ready' }, true), true);
 });
 

@@ -449,6 +449,17 @@ test('ChannelRoutingWorkbench keeps route mode toggles in the header and removes
   assert.match(source, /onModeChange\(mode\)/);
   assert.match(source, /<header className="p-4">/);
   assert.match(source, /grid min-w-0 flex-1 gap-2 sm:max-w-\[28rem\] sm:flex-none sm:grid-cols-2/);
+  assert.doesNotMatch(source, /active \? '当前' : cue/);
   assert.doesNotMatch(source, /\bonSave\b/);
   assert.doesNotMatch(source, /\bSave\b/);
+});
+
+test('ChannelRoutingWorkbench presents route mode heading as a large status lockup', async () => {
+  const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const activeRouteMode = routeModes\.find/);
+  assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center border-2/);
+  assert.match(source, /channel === 'codex' \? 'Codex' : 'Claude Code'/);
+  assert.match(source, /\{activeRouteMode\.label\}模式/);
+  assert.match(source, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-2 py-0\.5 text-\[var\(--text-primary\)\]/);
 });

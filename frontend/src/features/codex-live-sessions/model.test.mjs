@@ -672,7 +672,7 @@ test('codex live session timing chart uses request timestamps and live refresh',
   assert.match(detailSource, /setInterval/);
   assert.match(detailSource, /nowMs/);
   assert.match(detailSource, /trendChartX\(point\.startedAtMs/);
-  assert.match(detailSource, /buildTimingTrendAreaPath/);
+  assert.match(detailSource, /buildTimingTrendEcgPath/);
   assert.match(detailSource, /strokeDasharray=\{point\.isLive/);
   assert.doesNotMatch(detailSource, /trendChartX\(index,/);
 });
@@ -696,11 +696,12 @@ test('codex live session timing chart follows Usage Desk chart styling primitive
   assert.match(detailSource, /backgroundImage:/);
   assert.match(detailSource, /var\(--color-chart-grid\)/);
   assert.match(detailSource, /var\(--color-chart-grid-subtle\)/);
-  assert.match(detailSource, /codex-live-total-area/);
-  assert.match(detailSource, /usage-desk-curve-sweep/);
+  assert.match(detailSource, /codex-live-wave-sweep/);
+  assert.match(detailSource, /codex-live-pulse-pop/);
+  assert.match(detailSource, /strokeLinejoin=\{series\.id === 'totalDurationMs' \? 'miter' : 'round'\}/);
   assert.match(detailSource, /function TimingTrendPoint/);
   assert.match(detailSource, /buildTimingTrendPointStyle/);
-  assert.doesNotMatch(detailSource, /className="mt-3 h-\[128px\] w-full overflow-visible bg-\[var\(--bg-main\)\]"/);
+  assert.doesNotMatch(detailSource, /codex-live-total-area/);
 });
 
 test('codex live session account block reuses account attribution card presentation', async () => {

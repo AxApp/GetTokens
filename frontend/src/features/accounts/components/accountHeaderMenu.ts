@@ -40,7 +40,7 @@ export function buildAccountsHeaderMenuItems({
     items.push({
       id: 'unified-compose',
       labelKey: 'accounts.add_account',
-      label: '+ ADD ACCOUNT',
+      label: 'ADD ACCOUNT',
       icon: 'plus',
       disabled: false,
       emphasis: true,
