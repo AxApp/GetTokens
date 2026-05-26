@@ -3,6 +3,16 @@
     <channel>
         <title>GetTokens</title>
         <item>
+            <title>1.0.28</title>
+            <pubDate>Tue, 26 May 2026 13:24:04 +0000</pubDate>
+            <link>https://github.com/AxApp/GetTokens</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/AxApp/GetTokens/releases/tag/v1.0.28</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1.0.28</sparkle:version>
+            <sparkle:shortVersionString>1.0.28</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.28/GetTokens_macOS_Intel.dmg" length="25220559" type="application/octet-stream" sparkle:edSignature="q4sU/oQ5qcwB3s02VYjgJvgHVCwLk7uLiF2j3zraoOSM0uAfIJhbXXnO18pz8gq4uun2sRRoj7+SS2JMSxOHAQ=="/>
+        </item>
+        <item>
             <title>1.0.26</title>
             <pubDate>Tue, 26 May 2026 05:32:25 +0000</pubDate>
             <link>https://github.com/AxApp/GetTokens</link>
@@ -21,16 +31,6 @@
             <sparkle:shortVersionString>1.0.25</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.25/GetTokens_macOS_Intel.dmg" length="25187834" type="application/octet-stream" sparkle:edSignature="ZhDaGbMHFz3dqe9pNflwkeYGcGIpne2xcH7oc25nqp55xAPVmDy8WqxTeSQ1HLZHmaLX62bMYXJERY3NCC9GCA=="/>
-        </item>
-        <item>
-            <title>1.0.24</title>
-            <pubDate>Mon, 25 May 2026 07:26:23 +0000</pubDate>
-            <link>https://github.com/AxApp/GetTokens</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/AxApp/GetTokens/releases/tag/v1.0.24</sparkle:fullReleaseNotesLink>
-            <sparkle:version>1.0.24</sparkle:version>
-            <sparkle:shortVersionString>1.0.24</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.24/GetTokens_macOS_Intel.dmg" length="25164523" type="application/octet-stream" sparkle:edSignature="b4WPkzEFqYpFyMMvsFxQuXfLsDVnWYNIlZkGiWdFHlWt4WwT9XlT8dL+stfxPCJ2RNiDTXnjlJtjUMqoOySfAw=="/>
         </item>
     </channel>
 </rss>
