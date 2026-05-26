@@ -70,6 +70,19 @@ Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是�
 
 这条边界适合继续放在 `gettokens-domain-engineering` 的 live sessions 小节里，不上升到 `AGENTS.md`。
 
+### 7. 请求耗时趋势只投影当前 active request
+
+请求耗时趋势图的数据应从请求记录推导，不能让视觉刷新本身成为数据来源。
+
+稳定边界：
+
+1. 已完成请求优先使用 `timing.totalDurationMs`；缺失时才回退到 `completedAt - startedAt`。
+2. 当前 active request 可以用 `nowMs - startedAt` 做实时投影，用于显示正在增长的 live 样本。
+3. 历史请求即使因为 cache 或 sidecar 残留仍带着 `streaming/reconnecting` 且没有 `completedAt`，也不能继续按 `nowMs` 投影；否则图上所有总耗时点会一起增长。
+4. 回归测试必须覆盖“stale streaming request + active request”并存时，只有 active request 增长。
+
+这类问题不要先调 CSS 或动画。先检查纯模型输出：`points[].values.totalDurationMs` 与 `points[].isLive` 是否已经错误增长；如果模型输出错，修模型，不修图表。
+
 ## 不纳入
 
 - 不新增独立 `gettokens-codex-live-sessions` skill；当前规则继续归入 `gettokens-domain-engineering` 的 Codex Live Sessions 小节。
@@ -88,5 +101,6 @@ Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是�
 
 - `node --test frontend/src/features/codex-live-sessions/model.test.mjs`
 - `npm --prefix frontend run typecheck`
+- `npm --prefix frontend run build`
 
 Go focused test 曾被当前工作区其他变更阻塞过：`internal/accounts/auth_file_normalize.go` 缺少 `convertSessionLikePayloadToCPA`。后续提交 live sessions 改动时，应重新确认当前工作区是否已经恢复可编译。
