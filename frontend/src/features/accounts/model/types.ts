@@ -91,6 +91,11 @@ export interface AccountsFilterState {
   };
 }
 
+export interface AccountActionNotice {
+  tone: 'success' | 'warning' | 'error';
+  message: string;
+}
+
 export type AccountsFilterPlan = AccountPlanType;
 
 export type TrackRequest = <T>(

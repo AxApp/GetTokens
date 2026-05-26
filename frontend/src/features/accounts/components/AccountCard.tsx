@@ -295,7 +295,7 @@ export default function AccountCard({
                       }}
                       disabled={!ready || isStatusPending}
                       className={`flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50 ${
-                        account.disabled ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-warning)] dark:text-[var(--color-status-warning)]'
+                        account.disabled ? 'text-[var(--text-primary)]' : 'text-[var(--color-status-danger)]'
                       }`}
                     >
                       <Power size={14} strokeWidth={3} />

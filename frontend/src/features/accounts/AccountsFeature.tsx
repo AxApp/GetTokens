@@ -58,6 +58,7 @@ import {
   shouldScheduleAccountUsageRefresh,
 } from './model/accountUsage';
 import { shouldShowAccountSkeletons } from './model/accountSnapshot';
+import { toggleAccountGroupSelection } from './model/accountSelection';
 import type { OpenAICompatibleProvider } from './model/openAICompatible';
 import type { VendorPreset } from './model/vendorPresets';
 import { emptyApiKeyForm } from './model/accountConfig';
@@ -86,6 +87,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     oauthDialog,
     oauthPendingAccountID,
     isOAuthPending,
+    accountActionNotice,
     apiKeyVerifyState,
     apiKeyFormError,
     isApiKeyModalOpen,
@@ -132,6 +134,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setIsPasteModalOpen,
     setPasteContent,
     setPasteError,
+    setAccountActionNotice,
     setSelectedAccountIDs,
     setIsHeaderActionsMenuOpen,
     uploadAccounts,
@@ -142,6 +145,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     toggleSelectAllFiltered,
     toggleSelectionMode,
     toggleAccountDisabled,
+    bulkActionPending,
+    runSelectedBulkDelete,
+    runSelectedBulkRefresh,
+    runAccountsBulkSetDisabled,
+    runSelectedBulkSetDisabled,
     exportSelectedAccounts,
     deleteAccount,
     renameSelectedApiKey,
@@ -371,6 +379,32 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     }
     window.location.hash = buildAccountListViewHash(window.location.hash, { sortMode: nextMode });
   }, [setSortMode]);
+
+  const toggleGroupSelection = useCallback(
+    (groupAccounts: AccountRecord[]) => {
+      if (!isSelectionMode || groupAccounts.length === 0) {
+        return;
+      }
+      setSelectedAccountIDs((prev) => toggleAccountGroupSelection(prev, groupAccounts));
+    },
+    [isSelectionMode, setSelectedAccountIDs],
+  );
+
+  const refreshGroupQuota = useCallback(
+    (groupAccounts: AccountRecord[]) => {
+      groupAccounts.forEach((account) => {
+        void refreshCodexQuota(account);
+      });
+    },
+    [refreshCodexQuota],
+  );
+
+  const setGroupDisabled = useCallback(
+    (groupAccounts: AccountRecord[], nextDisabled: boolean) => {
+      void runAccountsBulkSetDisabled(groupAccounts, nextDisabled);
+    },
+    [runAccountsBulkSetDisabled],
+  );
 
   const markAccountDetailInHash = useCallback((detailID: string) => {
     if (typeof window === 'undefined') {
@@ -728,6 +762,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             isSelectionMode={isSelectionMode}
             allFilteredSelected={allFilteredSelected}
             selectedAccountCount={selectedAccountIDs.length}
+            bulkActionPending={bulkActionPending}
             displayMode={displayMode}
             groupMode={groupMode}
             sortMode={sortMode}
@@ -745,7 +780,31 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             onToggleSelectAllFiltered={toggleSelectAllFiltered}
             onClearSelection={() => setSelectedAccountIDs([])}
             onExportSelected={() => void exportSelectedAccounts()}
+            onRefreshSelected={() => void runSelectedBulkRefresh()}
+            onEnableSelected={() => void runSelectedBulkSetDisabled(false)}
+            onDisableSelected={() => void runSelectedBulkSetDisabled(true)}
+            onDeleteSelected={() => void runSelectedBulkDelete()}
           />
+
+          {accountActionNotice ? (
+            <div
+              className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
+                accountActionNotice.tone === 'error'
+                  ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]'
+                  : accountActionNotice.tone === 'warning'
+                    ? 'border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] text-[var(--color-status-warning)]'
+                    : 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]'
+              }`}
+            >
+              <span>{accountActionNotice.message}</span>
+              <button
+                onClick={() => setAccountActionNotice(null)}
+                className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          ) : null}
 
           {deleteError ? (
             <div className="border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
@@ -800,6 +859,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   pendingStatusAccountID={pendingStatusAccountID}
                   displayMode={displayMode}
                   onToggleSelection={toggleAccountSelection}
+                  onToggleGroupSelection={toggleGroupSelection}
+                  onRefreshGroup={refreshGroupQuota}
+                  onSetGroupDisabled={setGroupDisabled}
                   onOpenDetails={openAccountDetail}
                   onRefreshQuota={(account) => void refreshCodexQuota(account)}
                   onStartReauth={(account) => void startCodexOAuth(account)}

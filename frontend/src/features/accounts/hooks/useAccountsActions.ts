@@ -1,4 +1,4 @@
-import { useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   CreateCodexAPIKey,
   DeleteAuthFiles,
@@ -31,8 +31,13 @@ import {
 } from '../model/accountTransfer';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
-import { canToggleRotationAccountDisabled } from '../model/accountRotation';
-import type { ApiKeyFormState, TrackRequest, Translator } from '../model/types';
+import { hasWailsAppBindings } from '../../../utils/previewMode';
+import {
+  resolveBulkQuotaRefreshTargets,
+  resolveBulkSetDisabledTargets,
+  type AccountBulkActionID,
+} from '../model/accountSelection';
+import type { AccountActionNotice, ApiKeyFormState, TrackRequest, Translator } from '../model/types';
 
 interface UseAccountsActionsArgs {
   ready: boolean;
@@ -54,8 +59,10 @@ interface UseAccountsActionsArgs {
   setPasteError: Dispatch<SetStateAction<string>>;
   setSearchTerm: Dispatch<SetStateAction<string>>;
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
+  setAccountActionNotice: Dispatch<SetStateAction<AccountActionNotice | null>>;
   removeDeletedAccountLocally: (account: AccountRecord) => void;
   patchAccountDisabledLocally: (account: AccountRecord, disabled: boolean) => void;
+  refreshAccountQuota: (account: AccountRecord) => Promise<void>;
   loadAccounts: (options?: { showLoading?: boolean; refreshSupplementalData?: boolean }) => Promise<void>;
 }
 
@@ -79,95 +86,90 @@ export default function useAccountsActions({
   setPasteError,
   setSearchTerm,
   setSelectedAccountIDs,
+  setAccountActionNotice,
   removeDeletedAccountLocally,
   patchAccountDisabledLocally,
+  refreshAccountQuota,
   loadAccounts,
 }: UseAccountsActionsArgs) {
-  const toggleAccountDisabled = useCallback(
-    async (account: AccountRecord) => {
-      if (!ready || !canToggleRotationAccountDisabled(account)) {
+  const [bulkActionPending, setBulkActionPending] = useState<AccountBulkActionID | null>(null);
+
+  const setAccountDisabled = useCallback(
+    async (account: AccountRecord, nextDisabled: boolean, options?: { reload?: boolean }) => {
+      if (!ready || !hasWailsAppBindings()) {
+        patchAccountDisabledLocally(account, nextDisabled);
         return;
       }
 
-      const nextDisabled = !account.disabled;
-      try {
-        await trackRequest('SetAccountDisabled', { id: account.id, disabled: nextDisabled }, () =>
-          SetAccountDisabled(account.id, nextDisabled)
-        );
-        patchAccountDisabledLocally(account, nextDisabled);
+      await trackRequest('SetAccountDisabled', { id: account.id, disabled: nextDisabled }, () =>
+        SetAccountDisabled(account.id, nextDisabled)
+      );
+      patchAccountDisabledLocally(account, nextDisabled);
+
+      if (options?.reload ?? true) {
         await loadAccounts({ showLoading: false, refreshSupplementalData: false });
+      }
+    },
+    [loadAccounts, patchAccountDisabledLocally, ready, trackRequest],
+  );
+
+  const toggleAccountDisabled = useCallback(
+    async (account: AccountRecord) => {
+      try {
+        await setAccountDisabled(account, !account.disabled);
       } catch (error) {
         console.error(error);
         setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
       }
     },
-    [loadAccounts, patchAccountDisabledLocally, ready, setDeleteError, trackRequest],
+    [setAccountDisabled, setDeleteError],
+  );
+
+  const executeDeleteAccount = useCallback(
+    async (account: AccountRecord, options?: { reload?: boolean }) => {
+      const deleteRequest = resolveAccountDeleteRequest(account);
+
+      if (deleteRequest.type === 'missing-auth-file-name' || deleteRequest.type === 'missing-openai-compatible-name') {
+        throw new Error(t('accounts.delete_missing_name'));
+      }
+
+      if (!hasWailsAppBindings()) {
+        setPendingDeleteID(null);
+        removeDeletedAccountLocally(account);
+        return;
+      }
+
+      if (deleteRequest.type === 'openai-compatible-provider') {
+        await trackRequest('DeleteOpenAICompatibleProvider', { name: deleteRequest.name }, () =>
+          DeleteOpenAICompatibleProvider(deleteRequest.name)
+        );
+      } else if (deleteRequest.type === 'codex-api-key') {
+        await trackRequest('DeleteCodexAPIKey', { id: deleteRequest.id }, () => DeleteCodexAPIKey(deleteRequest.id));
+      } else {
+        await trackRequest('DeleteAuthFiles', { names: [deleteRequest.name] }, () => DeleteAuthFiles([deleteRequest.name]));
+      }
+
+      setPendingDeleteID(null);
+      removeDeletedAccountLocally(account);
+
+      if (options?.reload ?? true) {
+        await loadAccounts({ showLoading: false, refreshSupplementalData: false });
+      }
+    },
+    [loadAccounts, removeDeletedAccountLocally, setPendingDeleteID, t, trackRequest],
   );
 
   const deleteAccount = useCallback(
     async (account: AccountRecord) => {
       setDeleteError('');
-      const deleteRequest = resolveAccountDeleteRequest(account);
-
-      if (deleteRequest.type === 'openai-compatible-provider') {
-        try {
-          await trackRequest('DeleteOpenAICompatibleProvider', { name: deleteRequest.name }, () =>
-            DeleteOpenAICompatibleProvider(deleteRequest.name)
-          );
-          setPendingDeleteID(null);
-          if (selectedAccount?.id === account.id) {
-            setSelectedAccount(null);
-          }
-          removeDeletedAccountLocally(account);
-          await loadAccounts({ showLoading: false, refreshSupplementalData: false });
-        } catch (error) {
-          console.error(error);
-          setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
-        }
-        return;
-      }
-
-      if (deleteRequest.type === 'codex-api-key') {
-        try {
-          await trackRequest('DeleteCodexAPIKey', { id: deleteRequest.id }, () => DeleteCodexAPIKey(deleteRequest.id));
-          setPendingDeleteID(null);
-          if (selectedAccount?.id === account.id) {
-            setSelectedAccount(null);
-          }
-          removeDeletedAccountLocally(account);
-          await loadAccounts({ showLoading: false, refreshSupplementalData: false });
-        } catch (error) {
-          console.error(error);
-          setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
-        }
-        return;
-      }
-
-      if (deleteRequest.type === 'missing-auth-file-name' || deleteRequest.type === 'missing-openai-compatible-name') {
-        setDeleteError(`DELETE ERROR: ${t('accounts.delete_missing_name')}`);
-        return;
-      }
-
       try {
-        await trackRequest('DeleteAuthFiles', { names: [deleteRequest.name] }, () => DeleteAuthFiles([deleteRequest.name]));
-        setPendingDeleteID(null);
-        removeDeletedAccountLocally(account);
-        await loadAccounts({ showLoading: false, refreshSupplementalData: false });
+        await executeDeleteAccount(account);
       } catch (error) {
         console.error(error);
         setDeleteError(`DELETE ERROR: ${toErrorMessage(error)}`);
       }
     },
-    [
-      loadAccounts,
-      removeDeletedAccountLocally,
-      selectedAccount,
-      setDeleteError,
-      setPendingDeleteID,
-      setSelectedAccount,
-      t,
-      trackRequest,
-    ]
+    [executeDeleteAccount, setDeleteError],
   );
 
   const uploadAccounts = useCallback(
@@ -508,9 +510,230 @@ export default function useAccountsActions({
     [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, t, trackRequest]
   );
 
+  const formatBulkActionMessage = useCallback(
+    (label: string, summary: { succeeded: number; skipped: number; failed: number }) => {
+      const parts = [`${t('accounts.bulk_action_success_count')} ${summary.succeeded}`];
+      if (summary.skipped > 0) {
+        parts.push(`${t('accounts.bulk_action_skipped_count')} ${summary.skipped}`);
+      }
+      if (summary.failed > 0) {
+        parts.push(`${t('accounts.bulk_action_failed_count')} ${summary.failed}`);
+      }
+      return `${label}：${parts.join(' / ')}`;
+    },
+    [t],
+  );
+
+  const runSelectedBulkDelete = useCallback(async () => {
+    if (selectedAccounts.length === 0) {
+      setAccountActionNotice({
+        tone: 'warning',
+        message: t('accounts.bulk_action_no_selection'),
+      });
+      return;
+    }
+
+    setDeleteError('');
+    setAccountActionNotice(null);
+    setBulkActionPending('delete');
+
+    let succeeded = 0;
+    let skipped = 0;
+    let failed = 0;
+    try {
+      for (const account of selectedAccounts) {
+        const deleteRequest = resolveAccountDeleteRequest(account);
+        if (deleteRequest.type === 'missing-auth-file-name' || deleteRequest.type === 'missing-openai-compatible-name') {
+          skipped += 1;
+          continue;
+        }
+
+        try {
+          await executeDeleteAccount(account, { reload: false });
+          succeeded += 1;
+        } catch (error) {
+          console.error(error);
+          failed += 1;
+        }
+      }
+
+      if (hasWailsAppBindings()) {
+        await loadAccounts({ showLoading: false, refreshSupplementalData: false });
+      }
+
+      setAccountActionNotice({
+        tone: failed > 0 ? 'error' : skipped > 0 ? 'warning' : 'success',
+        message: formatBulkActionMessage(t('accounts.bulk_delete_selected'), { succeeded, skipped, failed }),
+      });
+    } catch (error) {
+      console.error(error);
+      setAccountActionNotice({
+        tone: 'error',
+        message: `${t('accounts.bulk_delete_selected')}：${toErrorMessage(error)}`,
+      });
+    } finally {
+      setBulkActionPending(null);
+    }
+  }, [
+    executeDeleteAccount,
+    formatBulkActionMessage,
+    loadAccounts,
+    selectedAccounts,
+    setAccountActionNotice,
+    setDeleteError,
+    t,
+  ]);
+
+  const runSelectedBulkRefresh = useCallback(async () => {
+    if (selectedAccounts.length === 0) {
+      setAccountActionNotice({
+        tone: 'warning',
+        message: t('accounts.bulk_action_no_selection'),
+      });
+      return;
+    }
+
+    const resolution = resolveBulkQuotaRefreshTargets(selectedAccounts);
+    if (resolution.targets.length === 0) {
+      setAccountActionNotice({
+        tone: 'warning',
+        message: `${t('accounts.bulk_refresh_selected')}：${t('accounts.bulk_action_no_targets')}`,
+      });
+      return;
+    }
+
+    setDeleteError('');
+    setAccountActionNotice(null);
+    setBulkActionPending('refresh');
+
+    let succeeded = 0;
+    let failed = 0;
+    try {
+      for (const account of resolution.targets) {
+        try {
+          await refreshAccountQuota(account);
+          succeeded += 1;
+        } catch (error) {
+          console.error(error);
+          failed += 1;
+        }
+      }
+
+      if (hasWailsAppBindings()) {
+        await loadAccounts({ showLoading: false, refreshSupplementalData: false });
+      }
+
+      setAccountActionNotice({
+        tone: failed > 0 ? 'error' : resolution.skipped.length > 0 ? 'warning' : 'success',
+        message: formatBulkActionMessage(t('accounts.bulk_refresh_selected'), {
+          succeeded,
+          skipped: resolution.skipped.length,
+          failed,
+        }),
+      });
+    } catch (error) {
+      console.error(error);
+      setAccountActionNotice({
+        tone: 'error',
+        message: `${t('accounts.bulk_refresh_selected')}：${toErrorMessage(error)}`,
+      });
+    } finally {
+      setBulkActionPending(null);
+    }
+  }, [
+    formatBulkActionMessage,
+    loadAccounts,
+    refreshAccountQuota,
+    selectedAccounts,
+    setAccountActionNotice,
+    setDeleteError,
+    t,
+  ]);
+
+  const runAccountsBulkSetDisabled = useCallback(
+    async (targetAccounts: AccountRecord[], nextDisabled: boolean) => {
+      if (targetAccounts.length === 0) {
+        setAccountActionNotice({
+          tone: 'warning',
+          message: t('accounts.bulk_action_no_selection'),
+        });
+        return;
+      }
+
+      const resolution = resolveBulkSetDisabledTargets(targetAccounts, nextDisabled);
+      const label = nextDisabled ? t('accounts.bulk_disable_selected') : t('accounts.bulk_enable_selected');
+      if (resolution.targets.length === 0) {
+        setAccountActionNotice({
+          tone: 'warning',
+          message: `${label}：${t('accounts.bulk_action_no_targets')}`,
+        });
+        return;
+      }
+
+      setDeleteError('');
+      setAccountActionNotice(null);
+      setBulkActionPending(nextDisabled ? 'disable' : 'enable');
+
+      let succeeded = 0;
+      let failed = 0;
+      try {
+        for (const account of resolution.targets) {
+          try {
+            await setAccountDisabled(account, nextDisabled, { reload: false });
+            succeeded += 1;
+          } catch (error) {
+            console.error(error);
+            failed += 1;
+          }
+        }
+
+        if (hasWailsAppBindings()) {
+          await loadAccounts({ showLoading: false, refreshSupplementalData: false });
+        }
+
+        setAccountActionNotice({
+          tone: failed > 0 ? 'error' : resolution.skipped.length > 0 ? 'warning' : 'success',
+          message: formatBulkActionMessage(label, {
+            succeeded,
+            skipped: resolution.skipped.length,
+            failed,
+          }),
+        });
+      } catch (error) {
+        console.error(error);
+        setAccountActionNotice({
+          tone: 'error',
+          message: `${label}：${toErrorMessage(error)}`,
+        });
+      } finally {
+        setBulkActionPending(null);
+      }
+    },
+    [
+      formatBulkActionMessage,
+      loadAccounts,
+      setAccountActionNotice,
+      setAccountDisabled,
+      setDeleteError,
+      t,
+    ],
+  );
+
+  const runSelectedBulkSetDisabled = useCallback(
+    async (nextDisabled: boolean) => {
+      await runAccountsBulkSetDisabled(selectedAccounts, nextDisabled);
+    },
+    [runAccountsBulkSetDisabled, selectedAccounts],
+  );
+
   return {
     toggleAccountDisabled,
     deleteAccount,
+    bulkActionPending,
+    runSelectedBulkDelete,
+    runSelectedBulkRefresh,
+    runAccountsBulkSetDisabled,
+    runSelectedBulkSetDisabled,
     uploadAccounts,
     openApiKeyModal,
     submitApiKeyForm,

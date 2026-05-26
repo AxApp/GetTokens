@@ -61,6 +61,7 @@ import useAccountsQuotaState from './useAccountsQuotaState';
 import useAccountsRateLimitState from './useAccountsRateLimitState';
 import useAccountsUsageState from './useAccountsUsageState';
 import type {
+  AccountActionNotice,
   ApiKeyFormState,
   AccountsFilterState,
   AuthFile,
@@ -136,6 +137,7 @@ export default function useAccountsPageState({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [pasteContent, setPasteContent] = useState('');
   const [pasteError, setPasteError] = useState('');
+  const [accountActionNotice, setAccountActionNotice] = useState<AccountActionNotice | null>(null);
   const [isHeaderActionsMenuOpen, setIsHeaderActionsMenuOpen] = useState(false);
   const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
   const [oauthFlow, setOAuthFlow] = useState<OAuthFlowState>(null);
@@ -603,6 +605,11 @@ export default function useAccountsPageState({
   const {
     toggleAccountDisabled,
     deleteAccount,
+    bulkActionPending,
+    runSelectedBulkDelete,
+    runSelectedBulkRefresh,
+    runAccountsBulkSetDisabled,
+    runSelectedBulkSetDisabled,
     uploadAccounts,
     openApiKeyModal,
     submitApiKeyForm,
@@ -631,8 +638,10 @@ export default function useAccountsPageState({
     setPasteError,
     setSearchTerm,
     setSelectedAccountIDs,
+    setAccountActionNotice,
     removeDeletedAccountLocally,
     patchAccountDisabledLocally,
+    refreshAccountQuota: refreshCodexQuota,
     loadAccounts,
   });
 
@@ -663,6 +672,7 @@ export default function useAccountsPageState({
     pendingDeleteID,
     pendingStatusAccountID,
     deleteError,
+    accountActionNotice,
     apiKeyFormError,
     oauthBanner,
     oauthDialog,
@@ -720,6 +730,7 @@ export default function useAccountsPageState({
     setIsPasteModalOpen,
     setPasteContent,
     setPasteError,
+    setAccountActionNotice,
     setSelectedAccountIDs,
     setIsHeaderActionsMenuOpen,
     uploadAccounts,
@@ -732,6 +743,11 @@ export default function useAccountsPageState({
     toggleAccountDisabled: toggleAccountDisabledFromCard,
     exportSelectedAccounts,
     deleteAccount,
+    bulkActionPending,
+    runSelectedBulkDelete,
+    runSelectedBulkRefresh,
+    runAccountsBulkSetDisabled,
+    runSelectedBulkSetDisabled,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
     updateSelectedApiKeyConfig,

@@ -159,6 +159,11 @@ function AccountGroupSectionSample({
           accounts,
         }}
         displayMode={displayMode}
+        isSelectionMode={displayMode === 'list'}
+        selectedAccountIDSet={new Set(['acct-team-primary'])}
+        onToggleGroupSelection={() => undefined}
+        onRefreshGroup={() => undefined}
+        onSetGroupDisabled={() => undefined}
         renderAccount={(account) => <MockAccountCard key={account.id} account={account} displayMode={displayMode} />}
         emptyContent={
           <div className="border-2 border-dashed border-[var(--border-color)] p-8 text-center text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -200,6 +205,9 @@ function AccountGroupSectionWrapperSample({
         pendingStatusAccountID={null}
         displayMode={displayMode}
         onToggleSelection={() => undefined}
+        onToggleGroupSelection={() => undefined}
+        onRefreshGroup={() => undefined}
+        onSetGroupDisabled={() => undefined}
         onOpenDetails={() => undefined}
         onRefreshQuota={() => undefined}
         onStartReauth={() => undefined}

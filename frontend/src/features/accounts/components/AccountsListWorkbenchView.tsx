@@ -2,6 +2,7 @@ import type { MutableRefObject, ReactNode } from 'react';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import type { AccountGroupMode, AccountSortMode } from '../model/accountListLayout';
 import type { AccountGroup, AccountRecord, AccountsFilterState, Translator } from '../model/types';
+import type { AccountBulkActionID } from '../model/accountSelection';
 import type { AccountPlanType } from '../../../types';
 import AccountGroupSectionView from './AccountGroupSectionView';
 import AccountsHeader from './AccountsHeader';
@@ -28,6 +29,7 @@ interface AccountsListWorkbenchViewProps {
   isSelectionMode: boolean;
   allFilteredSelected: boolean;
   selectedAccountCount: number;
+  bulkActionPending?: AccountBulkActionID | null;
   displayMode: AccountListDisplayMode;
   groupMode: AccountGroupMode;
   sortMode: AccountSortMode;
@@ -40,6 +42,10 @@ interface AccountsListWorkbenchViewProps {
   onToggleSelectAllFiltered: () => void;
   onClearSelection: () => void;
   onExportSelected: () => void;
+  onRefreshSelected?: () => void;
+  onEnableSelected?: () => void;
+  onDisableSelected?: () => void;
+  onDeleteSelected?: () => void;
   availablePlanTypes?: readonly AccountPlanType[];
   planAvailabilityResolved?: boolean;
   groups: AccountGroup[];
@@ -68,6 +74,7 @@ export default function AccountsListWorkbenchView({
   isSelectionMode,
   allFilteredSelected,
   selectedAccountCount,
+  bulkActionPending,
   displayMode,
   groupMode,
   sortMode,
@@ -80,6 +87,10 @@ export default function AccountsListWorkbenchView({
   onToggleSelectAllFiltered,
   onClearSelection,
   onExportSelected,
+  onRefreshSelected,
+  onEnableSelected,
+  onDisableSelected,
+  onDeleteSelected,
   availablePlanTypes,
   planAvailabilityResolved,
   groups,
@@ -114,6 +125,7 @@ export default function AccountsListWorkbenchView({
           isSelectionMode={isSelectionMode}
           allFilteredSelected={allFilteredSelected}
           selectedAccountCount={selectedAccountCount}
+          bulkActionPending={bulkActionPending}
           displayMode={displayMode}
           groupMode={groupMode}
           sortMode={sortMode}
@@ -128,6 +140,10 @@ export default function AccountsListWorkbenchView({
           onToggleSelectAllFiltered={onToggleSelectAllFiltered}
           onClearSelection={onClearSelection}
           onExportSelected={onExportSelected}
+          onRefreshSelected={onRefreshSelected}
+          onEnableSelected={onEnableSelected}
+          onDisableSelected={onDisableSelected}
+          onDeleteSelected={onDeleteSelected}
         />
       </div>
 
