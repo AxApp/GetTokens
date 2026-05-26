@@ -379,7 +379,8 @@ test('codex live session detail timeline uses compact rows without horizontal ta
   assert.match(detailSource, /onClick=\{onOpen\}/);
   assert.match(detailSource, /formatTimelineRequestID/);
   assert.match(detailSource, /summary\.firstTokenLabel/);
-  assert.match(detailSource, /priority >= 2 \? 'hidden sm:inline-flex' : 'inline-flex'/);
+  assert.match(detailSource, /priority >= 3 \? 'hidden xl:inline-flex' : 'inline-flex'/);
+  assert.doesNotMatch(detailSource, /priority >= 2 \? 'hidden sm:inline-flex'/);
   assert.match(detailSource, /grid-cols-\[auto_auto_auto_minmax\(0,1fr\)\]/);
   assert.match(detailSource, /flex-nowrap/);
   assert.match(detailSource, /whitespace-nowrap/);
@@ -498,6 +499,43 @@ test('buildCodexLiveRequestTimingTrend projects active request duration from cur
   assert.equal(trend.points[0].values.totalDurationMs, 7000);
   assert.equal(trend.points[0].isLive, true);
   assert.equal(trend.maxMs, 7000);
+});
+
+test('buildCodexLiveRequestTimingTrend only projects the current active request', () => {
+  const staleStreamingRequest = {
+    requestID: 'req-stale',
+    sessionID: 'session-1',
+    sequence: 1,
+    model: 'gpt-5',
+    status: 'streaming',
+    startedAt: '2026-05-21T08:00:00Z',
+    downstreamTransport: 'websocket',
+    upstreamTransport: 'websocket',
+    timing: { totalDurationMs: 1800, firstEventMs: 400, firstTokenMs: 650 },
+    timeline: [],
+  };
+  const activeRequest = {
+    requestID: 'req-live',
+    sessionID: 'session-1',
+    sequence: 2,
+    model: 'gpt-5',
+    status: 'streaming',
+    startedAt: '2026-05-21T08:00:05Z',
+    downstreamTransport: 'websocket',
+    upstreamTransport: 'websocket',
+    timing: { firstEventMs: 420, firstTokenMs: 760 },
+    timeline: [],
+  };
+
+  const trend = buildCodexLiveRequestTimingTrend(
+    [staleStreamingRequest],
+    activeRequest,
+    { nowMs: Date.parse('2026-05-21T08:00:12Z') },
+  );
+
+  assert.deepEqual(trend.points.map((point) => point.requestID), ['req-stale', 'req-live']);
+  assert.deepEqual(trend.points.map((point) => point.values.totalDurationMs), [1800, 7000]);
+  assert.deepEqual(trend.points.map((point) => point.isLive), [false, true]);
 });
 
 test('codex live sessions preview data gives the default detail chart multiple timing samples', () => {

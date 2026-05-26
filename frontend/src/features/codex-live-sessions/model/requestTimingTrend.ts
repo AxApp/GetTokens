@@ -39,9 +39,10 @@ export function buildCodexLiveRequestTimingTrend(
   if (activeRequest) {
     byID.set(activeRequest.requestID, activeRequest);
   }
+  const activeRequestID = activeRequest?.requestID;
 
   const points = Array.from(byID.values())
-    .map((request) => buildTimingTrendPoint(request, options))
+    .map((request) => buildTimingTrendPoint(request, options, activeRequestID))
     .filter((point): point is CodexLiveRequestTimingTrendPoint => Boolean(point))
     .sort((left, right) => left.startedAtMs - right.startedAtMs || left.sequence - right.sequence);
 
@@ -69,13 +70,14 @@ export function buildCodexLiveRequestTimingTrend(
 function buildTimingTrendPoint(
   request: CodexLiveRequest,
   options: BuildCodexLiveRequestTimingTrendOptions,
+  activeRequestID?: string,
 ): CodexLiveRequestTimingTrendPoint | null {
   const startedAtMs = Date.parse(request.startedAt);
   if (!Number.isFinite(startedAtMs)) {
     return null;
   }
 
-  const isLive = isLiveRequest(request);
+  const isLive = isLiveRequest(request, activeRequestID);
   const values = {
     totalDurationMs: normalizeTimingValue(request.timing?.totalDurationMs),
     firstEventMs: normalizeTimingValue(request.timing?.firstEventMs),
@@ -106,7 +108,10 @@ function buildTimingTrendPoint(
   };
 }
 
-function isLiveRequest(request: CodexLiveRequest): boolean {
+function isLiveRequest(request: CodexLiveRequest, activeRequestID?: string): boolean {
+  if (activeRequestID && request.requestID !== activeRequestID) {
+    return false;
+  }
   return !request.completedAt && liveStatuses.has(request.status);
 }
 

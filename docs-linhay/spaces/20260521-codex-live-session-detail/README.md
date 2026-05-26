@@ -196,3 +196,15 @@ Then 详情区展示 Rate / time measurements，并包含 TTFT、first token、s
 - 选中逻辑统一使用 `getSelectedCodexLiveSession`：显式 `conversation_id` 存在时优先展示，过滤后失效或未选择时自动回落到当前列表第一条。
 - 保持正式版真实数据链路不变；mock 仍仅用于浏览器 preview / Storybook。
 - 验证：`npm --prefix frontend run typecheck`、`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run build`、`git diff --check` 已通过；Playwright / Chrome DevTools 本地页面验收因工具审批超时未拿到截图或 DOM 快照。
+
+## 2026-05-26 请求时间线三指标对齐
+
+- 请求时间线行的默认可见指标固定为 `总 / TTFT / 首`，与当前 dev 验收图一致；次级 `流` 指标只在更宽视口显示。
+- 回归测试锁定前三个指标不再被 `sm` 断点隐藏，避免线上版退回只显示总耗时。
+- 验证：`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run build` 通过；浏览器按 1192x964 视口复验，5 条请求行均可见 `总 / TTFT / 首`。
+
+## 2026-05-26 请求耗时趋势投影边界
+
+- 图表总耗时曲线的数据来源是请求级 timing：已完成请求使用 `timing.totalDurationMs` 或 `completedAt - startedAt`，当前仍在运行的请求才用 `now - startedAt` 做实时投影。
+- 修复：如果历史请求仍带着 `streaming/reconnecting` 且缺少 `completedAt`，前端不再把它们全部按 `now` 投影；只有当前 active request 可以增长并显示 live 标记。
+- 验证：新增 `buildCodexLiveRequestTimingTrend only projects the current active request` 回归测试；浏览器观察 2.2 秒，历史点 `6.0s / 5.9s / 9.2s / 4.6s` 保持不变。
