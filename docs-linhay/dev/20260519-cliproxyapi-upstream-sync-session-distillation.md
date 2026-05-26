@@ -106,3 +106,45 @@ git check-ignore -v <path>
 4. `git -C docs-linhay/references/CLIProxyAPI diff --check`
 
 本地 sidecar 已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，`build/bin/cli-proxy-api.meta.json` 记录 `commit=1c5db246`、`dirty=clean`、`goos=darwin`、`goarch=arm64`。
+
+## 2026-05-26 同步记录
+
+本轮将 `docs-linhay/references/CLIProxyAPI#gettokens/sidecar` 从 `upstream/main@50d19e20` 之后的最新上游合并到维护分支，生成 merge commit `b72ac277` 并推送到 `AxApp/CLIProxyAPI#gettokens/sidecar`。
+
+上游新增内容包括 Codex model fetch 命令、request logging 文件落盘、home request logging request id、auth file websocket 字段解析与 patch。合并前本地维护分支已有未推送补丁 `b8754677`，本轮保留该补丁并一并推送。
+
+冲突处理：
+
+1. `sdk/api/handlers/openai/openai_responses_websocket.go` 与上游 file-backed websocket timeline 变更冲突；合并时保留上游 `websocketTimelineLog` / `FileBodySource` 结构。
+2. 同一文件保留 GetTokens live-session hook、`RecordDownstreamWebsocketConnected/Disconnected/Request`、request id 注入、pinned auth retry/failover 与 wrapped status code 提取。
+3. websocket capability 继续走 fork 侧 `coreauth.AuthAllowsWebsockets(auth)`，避免上游仅检查显式 `metadata/attributes.websockets` 后收窄 Codex API key 默认 websocket 路由能力。
+
+验证：
+
+1. `go test ./sdk/api/handlers/openai`
+2. `go test ./internal/api/handlers/management ./internal/api/middleware ./internal/logging ./internal/runtime/executor ./sdk/api/handlers/openai`
+3. `go test ./...`
+4. `git diff --check`
+
+本地 sidecar 已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，`build/bin/cli-proxy-api.meta.json` 记录 `commit=b72ac277`、`dirty=clean`、`goos=darwin`、`goarch=arm64`。该 meta 文件和二进制当前未被父仓库 git 跟踪，父仓库可见变更为 CLIProxyAPI gitlink 前进到 `b72ac277`。
+
+## 2026-05-26 内存剪裁记录
+
+本轮针对 sidecar RSS 偏高做了三类剪裁：
+
+1. live sessions tracker 仍然保留最近 30 分钟窗口，但每个 session 只保留最近 50 条 request，并新增 `DELETE /v0/management/gettokens/live-sessions` 清理接口；`requestMap` 也跟着回收，避免单个长会话和索引一起无限增长。被内存裁掉的 request 会以完整 `LiveRequest` JSON 落到 `live-sessions-v1.sqlite`，并通过 `GET /v0/management/gettokens/live-sessions/history` 分页追溯；清理实时 snapshot 不删除磁盘历史。
+2. legacy `internal/usage/logger_plugin.go` 不再把 request details 长驻内存，`Snapshot()` 只保留聚合字段；细粒度数据继续通过磁盘分页接口追溯，避免 12.8 万条 detail 常驻堆上。
+3. legacy usage snapshot 文件切到 `usage-observed-v2.sqlite`，聚合快照继续落盘；首次启动若 v2 无数据但 `usage-observed-v1.sqlite` 存在，会读取 v1 聚合并回写 v2，避免升级后历史聚合归零。历史明细通过 `GET /v0/management/gettokens/usage-attribution/details` 继续追溯，不再依赖一次性回灌旧的巨大 payload JSON。
+
+新增的磁盘读取接口包括：
+
+1. `GET /v0/management/gettokens/live-sessions/history`：支持 `window / limit / offset / session_id`，用于追溯已被实时内存窗口裁掉的 live request。
+2. `GET /v0/management/gettokens/usage-attribution/details`：支持 `window / limit / offset / account_key / attribution_key`，用于后续前端按页拉取明细而不是一次性把整坨数据抬进内存。
+
+验证：
+
+1. `go test ./internal/gettokenshooks ./internal/usage ./internal/cmd`
+2. `go test ./...`
+3. `git diff --check`
+
+当前侧边车相关内存剪裁仍是可继续迭代的方向，后续若前端真要消费分页明细，再补对应 UI 和调用层。
