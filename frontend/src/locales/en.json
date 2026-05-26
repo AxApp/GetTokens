@@ -1069,6 +1069,8 @@
     "unified_compose_label_placeholder_default": "e.g. DeepSeek Proxy",
     "unified_compose_label_placeholder_suffix": "Account",
     "unified_compose_base_url_primary": "Base URL (Primary)",
+    "unified_compose_advanced": "Advanced",
+    "unified_compose_billing": "Balance",
     "unified_compose_quota_curl_placeholder": "curl -sS \"https://api.example.com/usage\" -H \"Authorization: Bearer {{apiKey}}\"",
     "unified_compose_billing_curl": "Balance cURL",
     "unified_compose_provider_aria_prefix": "Select",

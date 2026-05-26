@@ -130,6 +130,8 @@ test('unified compose copy resolves localized labels and titles', () => {
   assert.equal(copy.configureTitle, 't:accounts.unified_compose_title_configure');
   assert.equal(copy.labelLabel, 't:accounts.unified_compose_label');
   assert.equal(copy.baseUrlPrimaryLabel, 't:accounts.unified_compose_base_url_primary');
+  assert.equal(copy.advancedLabel, 't:accounts.unified_compose_advanced');
+  assert.equal(copy.billingLabel, 't:accounts.unified_compose_billing');
   assert.equal(copy.formatTargetLabels.openai_chat, 't:accounts.unified_compose_format_target_chat');
   assert.equal(resolveUnifiedComposeFormatTitle(t, 'gemini_native'), 't:accounts.unified_compose_format_title_gemini_native');
   assert.equal(buildUnifiedComposeProviderAriaLabel(t, 'OpenAI'), 't:accounts.unified_compose_provider_aria_prefix OpenAI');
@@ -149,6 +151,8 @@ test('unified compose locale keys exist in both zh and en', () => {
     'unified_compose_label_placeholder_default',
     'unified_compose_label_placeholder_suffix',
     'unified_compose_base_url_primary',
+    'unified_compose_advanced',
+    'unified_compose_billing',
     'unified_compose_quota_curl_placeholder',
     'unified_compose_billing_curl',
     'unified_compose_provider_aria_prefix',

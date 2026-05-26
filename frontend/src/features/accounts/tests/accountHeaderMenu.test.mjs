@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 import {
+  ACCOUNT_HEADER_MENU_ICON_CLASS,
   ACCOUNT_HEADER_MENU_ITEM_CLASS,
   buildAccountsHeaderMenuItems,
 } from '../components/accountHeaderMenu.ts';
@@ -56,8 +57,12 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
   const source = readFileSync(new URL('../components/AccountsHeader.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /ACCOUNT_HEADER_MENU_ITEM_CLASS/);
+  assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /text-\[length:var\(--font-size-ui-md\)\]/);
+  assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /min-h-11/);
+  assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /leading-snug/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /hover:bg-\[var\(--bg-surface\)\]/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /active:scale-\[0\.99\]/);
+  assert.match(ACCOUNT_HEADER_MENU_ICON_CLASS, /h-5 w-5/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /btn-swiss/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /shadow/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /border-2/);

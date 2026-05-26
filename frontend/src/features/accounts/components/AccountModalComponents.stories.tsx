@@ -762,6 +762,10 @@ export const CodexOAuth: Story = {
   render: () => <OAuthSample label="DS-OAUTH-READY" />,
 };
 
+export const UnifiedComposePresetList: Story = {
+  render: () => <UnifiedComposeSample label="DS-UNIFIED-PRESET-LIST" formKey="empty" />,
+};
+
 export const UnifiedCompose: Story = {
   render: () => <UnifiedComposeSample label="DS-UNIFIED-FORM-STEP" formKey="deepseek" showPresets={false} selectedPresetID="deepseek" />,
 };
