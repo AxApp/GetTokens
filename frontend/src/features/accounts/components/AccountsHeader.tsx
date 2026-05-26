@@ -1,6 +1,16 @@
 import type { MutableRefObject } from 'react';
+import { ClipboardPaste, KeyRound, LogIn, Menu, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { Translator } from '../model/types';
+import {
+  ACCOUNT_HEADER_MENU_ICON_CLASS,
+  ACCOUNT_HEADER_MENU_ITEM_CLASS,
+  ACCOUNT_HEADER_MENU_LABEL_CLASS,
+  ACCOUNT_HEADER_MENU_PANEL_CLASS,
+  ACCOUNT_HEADER_MENU_SEPARATOR_CLASS,
+  buildAccountsHeaderMenuItems,
+  type AccountHeaderMenuIcon,
+} from './accountHeaderMenu';
 
 interface AccountsHeaderProps {
   t: Translator;
@@ -37,33 +47,42 @@ export default function AccountsHeader({
   onRefresh,
   onOpenUnifiedCompose,
 }: AccountsHeaderProps) {
-  const headerImportActions = (
-    <>
-      <button onClick={onStartCodexOAuth} className="btn-swiss whitespace-nowrap" disabled={!ready || loading}>
-        {t('accounts.login_chatgpt')}
-      </button>
-      <button
-        onClick={() => {
-          fileInputRef.current?.click();
-        }}
-        className="btn-swiss whitespace-nowrap"
-        disabled={!ready || loading}
-      >
-        {t('accounts.import_auth_file')}
-      </button>
-      <button onClick={onOpenPasteModal} className="btn-swiss whitespace-nowrap" disabled={!ready || loading}>
-        {t('accounts.paste_auth_file')}
-      </button>
-      <button onClick={onOpenApiKeyModal} className="btn-swiss whitespace-nowrap">
-        {t('accounts.add_codex_api_key')}
-      </button>
-      {onOpenRotationModal ? (
-        <button onClick={onOpenRotationModal} className="btn-swiss whitespace-nowrap" disabled={!ready || loading}>
-          {t('accounts.rotation_settings')}
-        </button>
-      ) : null}
-    </>
-  );
+  const headerActionsMenuItems = buildAccountsHeaderMenuItems({
+    ready,
+    loading,
+    includeUnifiedCompose: Boolean(onOpenUnifiedCompose),
+    includeRotationSettings: Boolean(onOpenRotationModal),
+  });
+
+  function closeMenu() {
+    if (isHeaderActionsMenuOpen) {
+      onToggleMenu();
+    }
+  }
+
+  function handleMenuAction(action: () => void) {
+    closeMenu();
+    action();
+  }
+
+  function renderMenuIcon(icon: AccountHeaderMenuIcon) {
+    switch (icon) {
+      case 'plus':
+        return <Plus className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
+      case 'log-in':
+        return <LogIn className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
+      case 'upload':
+        return <Upload className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
+      case 'clipboard-paste':
+        return <ClipboardPaste className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
+      case 'key-round':
+        return <KeyRound className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
+      case 'rotate-ccw':
+        return <RotateCcw className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
+      default:
+        return null;
+    }
+  }
 
   return (
     <div className="contents">
@@ -87,47 +106,84 @@ export default function AccountsHeader({
         }
         actions={
           <>
-            {onOpenUnifiedCompose ? (
-              <button
-                onClick={onOpenUnifiedCompose}
-                className="btn-swiss whitespace-nowrap bg-[var(--text-primary)] !text-[var(--bg-main)]"
-              >
-                + ADD ACCOUNT
-              </button>
-            ) : null}
             <button
               onClick={onRefresh}
               className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
               disabled={!ready || loading}
               title={t('common.refresh')}
             >
-              <svg
-                className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="square"
-              >
-                <path d="M23 4v6h-6M1 20v-6h6" />
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-              </svg>
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} strokeWidth={3} />
             </button>
             <div ref={headerActionsMenuRef} className="relative">
               <button
                 onClick={onToggleMenu}
                 className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
                 aria-label="Open account actions menu"
+                aria-expanded={isHeaderActionsMenuOpen}
+                aria-haspopup="menu"
               >
-                <span className="flex flex-col gap-1.5">
-                  <span className="block h-0.5 w-4 bg-[var(--text-primary)]" />
-                  <span className="block h-0.5 w-4 bg-[var(--text-primary)]" />
-                  <span className="block h-0.5 w-4 bg-[var(--text-primary)]" />
-                </span>
+                <Menu className="h-5 w-5" strokeWidth={3} />
               </button>
               {isHeaderActionsMenuOpen ? (
-                <div className="absolute right-0 top-full z-20 mt-3 flex min-w-[220px] flex-col gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[8px_8px_0_var(--shadow-color)]">
-                  {headerImportActions}
+                <div className={ACCOUNT_HEADER_MENU_PANEL_CLASS}>
+                  <div className="grid gap-1">
+                    {headerActionsMenuItems.map((item) => (
+                      <div key={item.id} className="grid gap-1">
+                        {item.dividerBefore ? <div className={ACCOUNT_HEADER_MENU_SEPARATOR_CLASS} /> : null}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (item.id === 'unified-compose') {
+                              handleMenuAction(() => {
+                                onOpenUnifiedCompose?.();
+                              });
+                              return;
+                            }
+
+                            if (item.id === 'chatgpt-login') {
+                              handleMenuAction(() => {
+                                onStartCodexOAuth();
+                              });
+                              return;
+                            }
+
+                            if (item.id === 'import-auth-file') {
+                              handleMenuAction(() => {
+                                fileInputRef.current?.click();
+                              });
+                              return;
+                            }
+
+                            if (item.id === 'paste-auth-file') {
+                              handleMenuAction(() => {
+                                onOpenPasteModal();
+                              });
+                              return;
+                            }
+
+                            if (item.id === 'codex-api-key') {
+                              handleMenuAction(() => {
+                                onOpenApiKeyModal();
+                              });
+                              return;
+                            }
+
+                            if (item.id === 'rotation-settings') {
+                              handleMenuAction(() => {
+                                onOpenRotationModal?.();
+                              });
+                            }
+                          }}
+                          disabled={item.disabled}
+                          className={`${ACCOUNT_HEADER_MENU_ITEM_CLASS} ${item.emphasis ? 'bg-[var(--bg-surface)]' : ''}`}
+                          data-account-header-menu-item={item.id}
+                        >
+                          {renderMenuIcon(item.icon)}
+                          <span className={ACCOUNT_HEADER_MENU_LABEL_CLASS}>{item.label ?? t(item.labelKey)}</span>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </div>

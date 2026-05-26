@@ -1,16 +1,15 @@
 import { useState } from 'react';
 import SearchInput from '../../../components/ui/SearchInput';
 import { getVendorPreset, getVendorPresets, type VendorPreset } from '../model/vendorPresets';
-import { formatLabel } from '../model/vendorPresetHelpers';
+import { formatShortLabel } from '../model/vendorPresetHelpers';
+import { resolveVendorDisplayName } from '../model/vendorIcons';
+import {
+  buildUnifiedComposeProviderAriaLabel,
+  resolveUnifiedComposeFormatTitle,
+  resolveUnifiedComposeModalCopy,
+} from '../model/unifiedComposeCopy';
 import type { ApiKeyFormState, ClickEventLike, TextInputEvent, Translator } from '../model/types';
-
-const CATEGORY_LABELS: Record<VendorPreset['category'], string> = {
-  official: 'Official',
-  cn_official: 'Chinese Vendors',
-  aggregator: 'Aggregators',
-  third_party: 'Partners',
-  cloud_provider: 'Cloud',
-};
+import VendorLogoMark from './VendorLogoMark';
 
 const CATEGORY_ORDER: VendorPreset['category'][] = [
   'official',
@@ -59,6 +58,7 @@ export default function UnifiedComposeModal({
   const [presetSearch, setPresetSearch] = useState(initialPresetSearch);
   const [showPresets, setShowPresets] = useState(initialShowPresets);
   const [selectedPresetID, setSelectedPresetID] = useState(initialSelectedPresetID);
+  const copy = resolveUnifiedComposeModalCopy(t);
 
   const selectedPreset = selectedPresetID ? getVendorPreset(selectedPresetID) : undefined;
 
@@ -96,50 +96,60 @@ export default function UnifiedComposeModal({
       onClick={onClose}
     >
       <div
-        className="flex w-full max-w-2xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] max-h-[90vh]"
+        className="flex max-h-[90vh] w-full max-w-3xl flex-col border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event: ClickEventLike) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
           <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            ADD ACCOUNT
+            {copy.title}
           </div>
           <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
-            {showPresets ? 'Select Provider' : 'Configure Account'}
+            {showPresets ? copy.selectTitle : copy.configureTitle}
           </h3>
         </header>
 
-        <div className="overflow-y-auto p-6 space-y-6">
+        <div className="space-y-5 overflow-y-auto p-5">
           {showPresets ? (
             <div className="space-y-4">
               <SearchInput
+                clearLabel={copy.searchClearLabel}
                 value={presetSearch}
                 onChange={setPresetSearch}
-                placeholder="Search providers..."
+                placeholder={copy.searchPlaceholder}
+                aria-label={copy.searchPlaceholder}
               />
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {Array.from(presetsByCategory.entries()).map(([category, items]) => (
                   <div key={category}>
                     <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] mb-2">
-                      {CATEGORY_LABELS[category]}
+                      {copy.categoryLabels[category]}
                     </div>
-                    <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {items.map((preset) => (
                         <button
                           key={preset.id}
                           onClick={() => handleSelectPreset(preset)}
-                          className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3 text-left transition-[border-color,box-shadow] hover:border-[var(--text-primary)] hover:shadow-[4px_4px_0_var(--shadow-color)]"
+                          title={preset.name}
+                          aria-label={buildUnifiedComposeProviderAriaLabel(t, preset.name)}
+                          className="group min-h-[5.35rem] border border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 py-2.5 text-left transition-[border-color,box-shadow,transform] hover:border-[var(--text-primary)] hover:shadow-[4px_4px_0_var(--shadow-color)] active:scale-[0.98]"
                         >
-                          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
-                            {preset.name}
+                          <div className="flex min-w-0 items-center gap-2">
+                            <VendorLogoMark preset={preset} size="sm" />
+                            <div className="min-w-0">
+                              <div className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.06em] text-[var(--text-primary)]">
+                                {resolveVendorDisplayName(preset)}
+                              </div>
+                            </div>
                           </div>
-                          <div className="mt-1 flex flex-wrap gap-1">
+                          <div className="mt-2 flex flex-wrap gap-1">
                             {preset.supportedFormats.map((fmt) => (
                               <span
                                 key={fmt}
-                                className="border border-[var(--border-color)] px-1 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]"
+                                title={resolveUnifiedComposeFormatTitle(t, fmt)}
+                                className="border border-[var(--border-color)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]"
                               >
-                                {formatLabel(fmt)}
+                                {formatShortLabel(fmt)}
                               </span>
                             ))}
                           </div>
@@ -154,12 +164,26 @@ export default function UnifiedComposeModal({
             <div className="grid gap-5">
               <div className="flex items-center justify-between gap-3">
                 {selectedPreset ? (
-                  <div className="flex items-center gap-3">
-                    <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
-                      {selectedPreset.name}
-                    </span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <VendorLogoMark preset={selectedPreset} />
+                    <div className="min-w-0">
+                      <div className="truncate text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
+                        {resolveVendorDisplayName(selectedPreset)}
+                      </div>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {selectedPreset.supportedFormats.map((fmt) => (
+                          <span
+                            key={fmt}
+                            title={resolveUnifiedComposeFormatTitle(t, fmt)}
+                            className="border border-[var(--border-color)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]"
+                          >
+                            {formatShortLabel(fmt)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                     <button onClick={handleBackToPresets} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-                      Change
+                      {copy.changeLabel}
                     </button>
                   </div>
                 ) : null}
@@ -168,18 +192,18 @@ export default function UnifiedComposeModal({
               {selectedPreset && selectedPreset.supportedFormats.length > 0 ? (
                 <div className="space-y-3">
                   <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                    Endpoints — one for each format
+                    {copy.endpointsLabel}
                   </span>
-                  {selectedPreset.supportedFormats.map((fmt, i) => {
+                  {selectedPreset.supportedFormats.map((fmt) => {
                     const fmtBaseUrl = selectedPreset.formatBaseUrls?.[fmt] ?? selectedPreset.baseUrl;
                     return (
                       <div key={fmt} className="space-y-2">
                         <div className="flex items-center gap-2">
                           <span className="border border-[color:color-mix(in_srgb,var(--color-status-success)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-status-success)_5%,transparent)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-success)]">
-                            {formatLabel(fmt)}
+                            {formatShortLabel(fmt)}
                           </span>
                           <span className="text-[length:var(--font-size-ui-3xs)] font-bold uppercase tracking-[0.1em] text-[var(--text-muted)]">
-                            {fmt === 'anthropic' ? 'Claude Code' : fmt === 'openai_chat' ? 'Codex / OpenAI' : fmt === 'openai_responses' ? 'OpenAI Responses' : 'Gemini CLI'}
+                            {copy.formatTargetLabels[fmt]}
                           </span>
                         </div>
                         <input
@@ -187,34 +211,35 @@ export default function UnifiedComposeModal({
                           onChange={(e: TextInputEvent) => onFormatBaseUrlChange(fmt, e.target.value)}
                           className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
                           placeholder={fmtBaseUrl}
+                          aria-label={resolveUnifiedComposeFormatTitle(t, fmt)}
                         />
                       </div>
                     );
                   })}
-                  <p className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                    {selectedPreset.supportedFormats.includes('anthropic') && selectedPreset.supportedFormats.includes('openai_chat')
-                      ? '双端点原生支持，中继按格式自动路由，零转换开销。'
-                      : '厂商端点原生支持，中继直接透传。'}
-                  </p>
                 </div>
               ) : null}
 
               <label className="space-y-2">
                 <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Label
+                  {copy.labelLabel}
                 </span>
                 <input
                   value={form.label}
                   onChange={(e: TextInputEvent) => onFormChange('label', e.target.value)}
                   className="input-swiss w-full"
-                  placeholder={selectedPreset ? `${selectedPreset.name} Account` : 'e.g. DeepSeek Proxy'}
+                  placeholder={
+                    selectedPreset
+                      ? `${selectedPreset.name} ${copy.labelPlaceholderSuffix}`
+                      : copy.labelPlaceholderDefault
+                  }
+                  aria-label={copy.labelLabel}
                 />
               </label>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2">
                   <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    API Key
+                    {copy.apiKeyLabel}
                   </span>
                   <input
                     value={form.apiKey}
@@ -222,44 +247,48 @@ export default function UnifiedComposeModal({
                     className="input-swiss w-full"
                     type="password"
                     placeholder={selectedPreset?.apiKeyPlaceholder ?? 'sk-...'}
+                    aria-label={copy.apiKeyLabel}
                   />
                 </label>
                 <label className="space-y-2">
                   <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Base URL (primary)
+                    {copy.baseUrlPrimaryLabel}
                   </span>
                   <input
                     value={form.baseUrl}
                     onChange={(e: TextInputEvent) => onFormChange('baseUrl', e.target.value)}
                     className="input-swiss w-full"
                     placeholder={selectedPreset?.baseUrl ?? 'https://api.example.com/anthropic'}
+                    aria-label={copy.baseUrlPrimaryLabel}
                   />
                 </label>
               </div>
 
               <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-4 py-4 space-y-3">
                 <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                  Advanced
+                  {copy.advancedLabel}
                 </div>
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={form.quotaEnabled}
                     onChange={(e) => onFormChange('quotaEnabled', e.target.checked)}
+                    aria-label={copy.quotaTrackingLabel}
                   />
                   <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Quota Tracking
+                    {copy.quotaTrackingLabel}
                   </span>
                 </label>
                 <label className="space-y-2">
                   <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    Quota cURL
+                    {copy.quotaCurlLabel}
                   </span>
                   <textarea
                     value={form.quotaCurl}
                     onChange={(e) => onFormChange('quotaCurl', e.target.value)}
                     className="input-swiss min-h-20 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
-                    placeholder='curl -sS "https://api.example.com/usage" -H "Authorization: Bearer {{apiKey}}"'
+                    placeholder={copy.quotaCurlPlaceholder}
+                    aria-label={copy.quotaCurlLabel}
                   />
                 </label>
               </div>
@@ -267,17 +296,18 @@ export default function UnifiedComposeModal({
               {selectedPreset?.billingCurlTemplate ? (
                 <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]/30 px-4 py-4 space-y-3">
                   <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                    Billing
+                    {copy.billingLabel}
                   </div>
                   <label className="space-y-2">
                     <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                      Balance cURL
+                      {copy.billingCurlLabel}
                     </span>
                     <textarea
                       value={form.billingCurl}
                       onChange={(e) => onBillingCurlChange(e.target.value)}
                       className="input-swiss min-h-16 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
                       placeholder={selectedPreset.billingCurlTemplate}
+                      aria-label={copy.billingCurlLabel}
                     />
                   </label>
                 </div>
@@ -302,14 +332,14 @@ export default function UnifiedComposeModal({
               disabled={!apiKeyFilled || !baseUrlFilled}
               className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
             >
-              Add Account
+              {copy.submitLabel}
             </button>
           ) : (
             <button
               onClick={() => setShowPresets(false)}
               className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)]"
             >
-              Custom Entry
+              {copy.customEntryLabel}
             </button>
           )}
         </footer>

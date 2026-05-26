@@ -80,7 +80,7 @@ function AccountsHeaderOverview() {
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号页头</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
-          账号页头进入设计系统后，用固定 mock 检查 WorkspacePageHeader、刷新按钮、导入菜单和统一新增入口。
+          账号页头进入设计系统后，用固定 mock 检查 WorkspacePageHeader、刷新按钮和统一收敛后的添加菜单。
         </p>
       </div>
 
@@ -91,7 +91,7 @@ function AccountsHeaderOverview() {
           <AccountsHeaderSample label="DS-ACCOUNTS-HEADER-LOADING" loading />
           <AccountsHeaderSample label="DS-ACCOUNTS-HEADER-MENU" menuOpen unifiedCompose />
           <AccountsHeaderSample label="DS-ACCOUNTS-HEADER-NOT-READY" ready={false} accountCount={0} />
-          <AccountsHeaderSample label="DS-ACCOUNTS-HEADER-UNIFIED-COMPOSE" unifiedCompose rotation={false} />
+          <AccountsHeaderSample label="DS-ACCOUNTS-HEADER-MENU-ADD" menuOpen unifiedCompose rotation={false} />
         </div>
       </section>
     </div>

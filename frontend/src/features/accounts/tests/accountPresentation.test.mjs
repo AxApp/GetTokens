@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -21,6 +22,13 @@ import {
 } from '../model/accountPresentation.ts';
 import { shouldLoadAccountsData } from '../model/accountRuntime.ts';
 import { buildAccountRuntimeStats, formatRuntimeLatency, formatRuntimeTokens } from '../model/accountDetailRuntime.ts';
+import { getVendorPreset, getVendorPresets } from '../model/vendorPresets.ts';
+import { resolveVendorDisplayName, resolveVendorLogo } from '../model/vendorIcons.ts';
+import {
+  buildUnifiedComposeProviderAriaLabel,
+  resolveUnifiedComposeFormatTitle,
+  resolveUnifiedComposeModalCopy,
+} from '../model/unifiedComposeCopy.ts';
 import {
   DEFAULT_RATE_LIMIT_STRATEGIES,
   RATE_LIMIT_CALENDAR_DAY_WINDOW,
@@ -103,6 +111,91 @@ test('buildAccountAttributionBadges includes codex plan from quota before source
   assert.deepEqual(badges.map((badge) => badge.label), ['PLUS', 'OPENAI RESPONSES', 'ANTHROPIC']);
   assert.deepEqual(badges.map((badge) => badge.shortLabel || badge.label), ['PLUS', 'OAI RESP', 'ANTH']);
   assert.equal(badges[0].backgroundColor, 'color-mix(in_srgb,var(--text-primary)_6%,transparent)');
+});
+
+test('vendor preset picker uses compact provider names', () => {
+  assert.equal(resolveVendorDisplayName(getVendorPreset('anthropic')), 'Anthropic');
+  assert.equal(resolveVendorDisplayName(getVendorPreset('gemini')), 'Gemini');
+  assert.equal(resolveVendorDisplayName(getVendorPreset('kimi')), 'Kimi');
+  assert.equal(resolveVendorDisplayName(getVendorPreset('zhipu')), 'Zhipu');
+  assert.equal(resolveVendorDisplayName(getVendorPreset('aws-bedrock')), 'AWS');
+});
+
+test('unified compose copy resolves localized labels and titles', () => {
+  const t = (key) => `t:${key}`;
+  const copy = resolveUnifiedComposeModalCopy(t);
+
+  assert.equal(copy.title, 't:accounts.add_account');
+  assert.equal(copy.selectTitle, 't:accounts.unified_compose_title_select');
+  assert.equal(copy.configureTitle, 't:accounts.unified_compose_title_configure');
+  assert.equal(copy.labelLabel, 't:accounts.unified_compose_label');
+  assert.equal(copy.baseUrlPrimaryLabel, 't:accounts.unified_compose_base_url_primary');
+  assert.equal(copy.formatTargetLabels.openai_chat, 't:accounts.unified_compose_format_target_chat');
+  assert.equal(resolveUnifiedComposeFormatTitle(t, 'gemini_native'), 't:accounts.unified_compose_format_title_gemini_native');
+  assert.equal(buildUnifiedComposeProviderAriaLabel(t, 'OpenAI'), 't:accounts.unified_compose_provider_aria_prefix OpenAI');
+});
+
+test('unified compose locale keys exist in both zh and en', () => {
+  const zh = JSON.parse(readFileSync(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
+  const en = JSON.parse(readFileSync(new URL('../../../locales/en.json', import.meta.url), 'utf8'));
+  const keys = [
+    'unified_compose_title_select',
+    'unified_compose_title_configure',
+    'unified_compose_search_placeholder',
+    'unified_compose_endpoints',
+    'unified_compose_change',
+    'unified_compose_custom_entry',
+    'unified_compose_label',
+    'unified_compose_label_placeholder_default',
+    'unified_compose_label_placeholder_suffix',
+    'unified_compose_base_url_primary',
+    'unified_compose_quota_curl_placeholder',
+    'unified_compose_billing_curl',
+    'unified_compose_provider_aria_prefix',
+    'unified_compose_category_official',
+    'unified_compose_category_cn_official',
+    'unified_compose_category_aggregator',
+    'unified_compose_category_third_party',
+    'unified_compose_category_cloud_provider',
+    'unified_compose_format_target_claude',
+    'unified_compose_format_target_chat',
+    'unified_compose_format_target_responses',
+    'unified_compose_format_target_gemini',
+    'unified_compose_format_title_anthropic',
+    'unified_compose_format_title_openai_chat',
+    'unified_compose_format_title_openai_responses',
+    'unified_compose_format_title_gemini_native',
+  ];
+
+  for (const [localeName, locale] of [
+    ['zh', zh],
+    ['en', en],
+  ]) {
+    for (const key of keys) {
+      assert.ok(Object.hasOwn(locale.accounts, key), `${localeName} missing accounts.${key}`);
+    }
+  }
+});
+
+test('vendor preset picker resolves local logo specs with fallback initials', () => {
+  const anthropicLogo = resolveVendorLogo(getVendorPreset('anthropic'));
+  assert.equal(anthropicLogo.kind, 'logo');
+  assert.equal(anthropicLogo.slug, 'anthropic');
+  assert.ok(anthropicLogo.path.length > 20);
+
+  const geminiLogo = resolveVendorLogo(getVendorPreset('gemini'));
+  assert.equal(geminiLogo.kind, 'logo');
+  assert.equal(geminiLogo.slug, 'googlegemini');
+
+  const zhipuLogo = resolveVendorLogo(getVendorPreset('zhipu'));
+  assert.equal(zhipuLogo.kind, 'initials');
+  assert.equal(zhipuLogo.initials, 'ZH');
+
+  for (const preset of getVendorPresets()) {
+    const logo = resolveVendorLogo(preset);
+    assert.ok(logo.title);
+    assert.ok(logo.path || logo.initials);
+  }
 });
 
 test('mapAuthFileToRecord keeps auth file status message', () => {

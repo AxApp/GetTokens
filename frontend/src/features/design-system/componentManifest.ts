@@ -509,6 +509,17 @@ export const designSystemComponentManifest = [
     mockDataSources: ['storybook unified compose form and vendor preset mock'],
   },
   {
+    id: 'accounts-vendor-logo-mark',
+    componentName: 'VendorLogoMark',
+    sourcePath: 'frontend/src/features/accounts/components/VendorLogoMark.tsx',
+    ownerFeature: 'accounts',
+    status: 'deferred',
+    tier: 'feature-component',
+    decisionReason: '统一新增弹窗和 provider 卡片复用的品牌徽记 helper，不单独承接 Storybook，但作为可复用视觉锚点应纳入 manifest。',
+    matchedPatterns: ['InlineBrandMark'],
+    revisitTrigger: '若后续需要单独调整品牌徽记尺寸、色板或无图标兜底时再收编。',
+  },
+  {
     id: 'accounts-rotation-config-section',
     componentName: 'RotationConfigSection',
     sourcePath: 'frontend/src/features/accounts/components/account-rotation/RotationConfigSection.tsx',
