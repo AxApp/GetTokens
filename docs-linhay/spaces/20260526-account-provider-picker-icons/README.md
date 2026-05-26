@@ -43,3 +43,4 @@
 - 最近更新：2026-05-26
 - 备注：`+ ADD ACCOUNT` 已从 header 独立按钮收口到 actions menu 的第一项，后续图标与布局优化继续围绕同一入口推进。
 - 验收截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-actions-menu-after-v01.png`
+- 字号修正截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-menu-font-after-v01.png`

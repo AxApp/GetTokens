@@ -122,6 +122,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 - [Sidecar Route Policy](../../dev/20260513-sidecar-route-policy.md)
 - [Account Routing Engine 技术边界](../../dev/20260524-account-routing-engine.md)
 - [实施计划 v01](./plans/implementation-plan-v01.md)
+- [routing.strategy 完整绕过实施计划 v01](./plans/routing-strategy-bypass-v01.md)
 - [实施准备清单 v01](./plans/implementation-readiness-v01.md)
 - [实施记录 v01](./plans/implementation-log-v01.md)
 - [前端重做范围 v01](./plans/frontend-rewrite-scope-v01.md)
@@ -133,6 +134,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 ## 当前状态
 - 状态：implementation-ready
 - 最近更新：2026-05-26
+- 2026-05-26 补充：Codex / Claude 的 channel routing 进入“完整绕过 `routing.strategy`”收口，后续以 `channel-routing` 快照作为唯一决策源；旧 `config.yaml` 只保留 legacy relay 边界，不再参与渠道路由主路径。
 - 2026-05-26 补充：Codex 账号列表的旧 `session-affinity` / `websocket-pin` / `route-order-header` 现在只作为 `兼容层提示` 的总数与说明呈现，不写入新的 `ChannelRoutingConfig`，也不展开三条明细，以便后续继续和上游代码保持最小合并面。
 - 2026-05-26 补充：Codex / Claude 路由工作台主界面进一步降噪，只保留当前请求模式和参与账号列表；诊断、预演、Shadow、候选/过滤和最近路由默认隐藏。验收截图：`screenshots/20260526/codex/20260526-channel-routing-workbench-desktop-after-v05.png`、`screenshots/20260526/codex/20260526-channel-routing-workbench-mobile-collapsed-after-v05.png`。
 
