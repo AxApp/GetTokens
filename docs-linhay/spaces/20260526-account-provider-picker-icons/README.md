@@ -45,3 +45,4 @@
 - 验收截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-actions-menu-after-v01.png`
 - 字号修正截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-menu-font-after-v01.png`
 - provider picker 截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-provider-picker-icons-after-v01.png`
+- 文案修正截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-menu-label-after-v02.png`
