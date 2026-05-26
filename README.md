@@ -6,17 +6,23 @@ GetTokens is a desktop application built with Wails, React, and Go. It is used t
 
 ## 核心能力 | Core Capabilities
 
-- 统一账号池：同时管理 `auth-file` 和 `api-key` 两类凭证资产。
-- Unified account inventory: manage both `auth-file` and `api-key` credential assets in one place.
+- 统一账号资产中心：在同一界面管理 `auth-file`、`api-key`、OpenAI-Compatible 映射与本地配置草稿。
+- Unified credential hub: manage `auth-file`, `api-key`, OpenAI-compatible mappings, and local config drafts in one place.
 
-- Sidecar 状态面板：查看本地后端服务状态、端口、健康检查结果和调试请求。
-- Sidecar status panel: inspect local backend status, port, health check results, and debug requests.
+- 多模型渠道路由：支持 Codex / Claude Code 渠道路由策略、账号探测与可视化切换。
+- Multi-channel model routing: configure Codex / Claude Code routing strategies, account probing, and visual switching.
 
-- Relay 配置工作台：生成和复制接入配置，查看当前生效的轮动与重试策略。
-- Relay configuration workspace: generate and copy client config, and inspect active routing and retry strategy.
+- 账号配额与健康治理：提供额度、重置周期、可用性和失败诊断的聚合视图。
+- Account quota and health governance: provide aggregated views for quota, reset windows, availability, and failure diagnostics.
 
-- 设置与更新入口：检查新版本，并按平台触发安全的升级动作。
-- Settings and update entry: check for new versions and trigger platform-safe update actions.
+- Codex 运行时工具链：内置 Codex 二进制版本管理、技能扩展（Skills/MCP）管理与会话能力入口。
+- Codex runtime toolchain: includes Codex binary version management, Skills/MCP extensions management, and session entry points.
+
+- Sidecar 运行态观测：实时查看本地后端服务状态、端口、健康检查结果和调试请求。
+- Sidecar runtime observability: inspect backend status, port, health checks, and debug requests in real time.
+
+- Relay 与更新工作台：统一生成接入配置、查看策略生效状态，并按平台执行升级流程。
+- Relay and update workspace: generate relay configs, inspect active policy state, and execute platform-safe upgrade flows.
 
 ## 技术栈 | Tech Stack
 
