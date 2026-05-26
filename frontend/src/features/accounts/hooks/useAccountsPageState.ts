@@ -55,6 +55,13 @@ import {
   resolveLoadedAccountIDs,
   resolveLoadedAuthFileRecords,
 } from '../model/accountPresentation';
+import {
+  applyAccountDisabledChangeToRecord,
+  normalizeAccountDisabledChange,
+  readAccountDisabledOverrides,
+  subscribeAccountDisabledChanges,
+  type AccountDisabledChange,
+} from '../model/accountDisabledSync';
 import { getAccountsPreviewAPIKeyRecords, getAccountsPreviewAuthFiles } from '../previewData';
 import useAccountsActions from './useAccountsActions';
 import useAccountsQuotaState from './useAccountsQuotaState';
@@ -261,8 +268,9 @@ export default function useAccountsPageState({
     }
 
     if (!hasWailsAppBindings()) {
-      const files = getAccountsPreviewAuthFiles();
-      const apiKeyAccounts = getAccountsPreviewAPIKeyRecords();
+      const disabledOverrides = readAccountDisabledOverrides();
+      const files = applyDisabledOverridesToPreviewAuthFiles(getAccountsPreviewAuthFiles(), disabledOverrides);
+      const apiKeyAccounts = applyDisabledOverridesToPreviewAccounts(getAccountsPreviewAPIKeyRecords(), disabledOverrides);
       const nextAuthFileRecords = resolveLoadedAuthFileRecords(files, []);
       setAuthFiles(files);
       setDerivedAuthFileRecords([]);
@@ -329,30 +337,47 @@ export default function useAccountsPageState({
     [setSelectedAccountIDs],
   );
 
-  const patchAccountDisabledLocally = useCallback(
-    (account: AccountRecord, disabled: boolean) => {
-      const nextStatus = disabled
-        ? 'disabled'
-        : account.status === 'disabled' || account.status === 'DISABLED'
-          ? 'configured'
-          : account.status;
+  const patchAccountDisabledChangeLocally = useCallback(
+    (change: AccountDisabledChange) => {
+      const normalized = normalizeAccountDisabledChange(change);
+      if (!normalized) {
+        return;
+      }
       setAuthFiles((prev) =>
-        prev.map((item) =>
-          account.credentialSource === 'auth-file' && item.name === account.name
-            ? { ...item, disabled, status: nextStatus }
-            : item
-        )
+        prev.map((item) => {
+          const id = `auth-file:${item.name}`;
+          const patched = applyAccountDisabledChangeToRecord(
+            {
+              id,
+              status: String(item.status || ''),
+              disabled: item.disabled,
+            },
+            normalized,
+          );
+          return patched.id === id && patched.disabled !== item.disabled
+            ? { ...item, disabled: patched.disabled, status: patched.status }
+            : item;
+        })
       );
       setDerivedAuthFileRecords((prev) =>
-        prev.map((item) => (item.id === account.id ? { ...item, disabled, status: nextStatus } : item))
+        prev.map((item) => applyAccountDisabledChangeToRecord(item, normalized))
       );
       setApiKeyRecords((prev) =>
-        prev.map((item) => (item.id === account.id ? { ...item, disabled, status: nextStatus } : item))
+        prev.map((item) => applyAccountDisabledChangeToRecord(item, normalized))
       );
-      setSelectedAccount((prev) => (prev?.id === account.id ? { ...prev, disabled, status: nextStatus } : prev));
+      setSelectedAccount((prev) => (prev ? applyAccountDisabledChangeToRecord(prev, normalized) : prev));
     },
     [],
   );
+
+  const patchAccountDisabledLocally = useCallback(
+    (account: AccountRecord, disabled: boolean) => {
+      patchAccountDisabledChangeLocally({ id: account.id, disabled });
+    },
+    [patchAccountDisabledChangeLocally],
+  );
+
+  useEffect(() => subscribeAccountDisabledChanges(patchAccountDisabledChangeLocally), [patchAccountDisabledChangeLocally]);
 
   useEffect(() => {
     if (shouldEnsureAccountSnapshot({ ready, loaded: accountsLoaded, loading })) {
@@ -787,4 +812,34 @@ function readInitialAccountSortMode(): AccountSortMode {
   } catch {
     return DEFAULT_ACCOUNT_SORT_MODE;
   }
+}
+
+function applyDisabledOverridesToPreviewAuthFiles(files: AuthFile[], overrides: Record<string, boolean>) {
+  return files.map((file) => {
+    const id = `auth-file:${file.name}`;
+    if (!Object.prototype.hasOwnProperty.call(overrides, id)) {
+      return file;
+    }
+    const patched = applyAccountDisabledChangeToRecord(
+      {
+        id,
+        status: String(file.status || ''),
+        disabled: file.disabled,
+      },
+      { id, disabled: overrides[id] },
+    );
+    return {
+      ...file,
+      disabled: patched.disabled,
+      status: patched.status,
+    };
+  });
+}
+
+function applyDisabledOverridesToPreviewAccounts(accounts: AccountRecord[], overrides: Record<string, boolean>) {
+  return accounts.map((account) =>
+    Object.prototype.hasOwnProperty.call(overrides, account.id)
+      ? applyAccountDisabledChangeToRecord(account, { id: account.id, disabled: overrides[account.id] })
+      : account,
+  );
 }

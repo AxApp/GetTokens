@@ -29,6 +29,11 @@ import useAccountsQuotaState from '../accounts/hooks/useAccountsQuotaState';
 import useAccountsRateLimitState from '../accounts/hooks/useAccountsRateLimitState';
 import useAccountsUsageState from '../accounts/hooks/useAccountsUsageState';
 import { getAccountsPreviewCodexAccounts } from '../accounts/previewData';
+import {
+  publishAccountDisabledChange,
+  readAccountDisabledOverrides,
+  subscribeAccountDisabledChanges,
+} from '../accounts/model/accountDisabledSync';
 import { mapBackendAccountRecord } from '../accounts/model/accountPresentation';
 import {
   ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
@@ -60,6 +65,7 @@ import {
   mergeCodexAuthFileModelMappings,
   moveCodexAccountRowToEdge,
   normalizeCodexModelMappingsForProvider,
+  patchCodexAccountRowDisabled,
   reorderCodexAccountRows,
   resolveCodexRoutingProbeDefaultModel,
   type CodexAccountOrderEdge,
@@ -164,7 +170,12 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   async function reload(messageOverride?: string) {
     if (browserMode) {
       const previewAccounts = getAccountsPreviewCodexAccounts();
-      const previewRows = getCodexAccountListPreviewRows();
+      const disabledOverrides = readAccountDisabledOverrides();
+      const previewRows = getCodexAccountListPreviewRows().map((row) =>
+        Object.prototype.hasOwnProperty.call(disabledOverrides, row.id)
+          ? patchCodexAccountRowDisabled(row, disabledOverrides[row.id])
+          : row,
+      );
       const previewConfig = buildDefaultChannelRoutingConfig('codex', previewRows.map((row) => row.id));
       setChannelConfig(previewConfig);
       setOrderedRows(applyChannelOrderToRows(previewRows, previewConfig.orderedAccountIDs));
@@ -239,6 +250,16 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   useEffect(() => {
     void reload();
   }, [browserMode, loadAccountRateLimits, loadAccountUsage, loadCodexQuotas, ready]);
+
+  useEffect(
+    () =>
+      subscribeAccountDisabledChanges((event) => {
+        setOrderedRows((prev) =>
+          prev.map((row) => (row.id === event.id ? patchCodexAccountRowDisabled(row, event.disabled) : row)),
+        );
+      }),
+    [],
+  );
 
   useEffect(() => {
     if (
@@ -742,25 +763,11 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     if (!ready) {
       return;
     }
+    const nextDisabled = !row.disabled;
 
     if (browserMode) {
-      setOrderedRows((prev) =>
-        prev.map((item) => {
-          if (item.id !== row.id) {
-            return item;
-          }
-          const disabled = !item.disabled;
-          const status = disabled ? 'disabled' : item.status === 'disabled' ? 'configured' : item.status;
-          const requestable = !disabled && ['ACTIVE', 'CONFIGURED', 'LOCAL'].includes(status.trim().toUpperCase());
-          return {
-            ...item,
-            disabled,
-            requestable,
-            blockReason: requestable ? '' : disabled ? 'disabled' : item.blockReason || status,
-            status,
-          };
-        }),
-      );
+      setOrderedRows((prev) => prev.map((item) => (item.id === row.id ? patchCodexAccountRowDisabled(item, nextDisabled) : item)));
+      publishAccountDisabledChange({ id: row.id, disabled: nextDisabled }, 'codex-account-list');
       setMessage(t('codex.account_list_preview_status_updated'));
       return;
     }
@@ -768,9 +775,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     setPendingToggleID(row.id);
     setMessage('');
     try {
-      await trackRequest('SetAccountDisabled', { id: row.id, disabled: !row.disabled }, () =>
-        SetAccountDisabled(row.id, !row.disabled)
+      await trackRequest('SetAccountDisabled', { id: row.id, disabled: nextDisabled }, () =>
+        SetAccountDisabled(row.id, nextDisabled)
       );
+      publishAccountDisabledChange({ id: row.id, disabled: nextDisabled }, 'codex-account-list');
       await reload(row.disabled ? t('codex.account_list_enabled') : t('codex.account_list_disabled'));
     } catch (error) {
       console.error(error);

@@ -159,6 +159,22 @@ export function buildCodexAccountSummary(rows: Array<Pick<CodexAccountRow, 'requ
   );
 }
 
+export function patchCodexAccountRowDisabled(row: CodexAccountRow, disabled: boolean): CodexAccountRow {
+  const status = disabled
+    ? 'disabled'
+    : String(row.status || '').trim().toUpperCase() === 'DISABLED'
+      ? 'configured'
+      : row.status;
+  const requestable = !disabled && isRequestableStatus(status);
+  return {
+    ...row,
+    disabled,
+    requestable,
+    blockReason: requestable ? '' : disabled ? 'disabled' : row.blockReason || status,
+    status,
+  };
+}
+
 export function buildCodexQuotaSummaryAccount(row: CodexAccountRow): AccountRecord {
   return {
     id: row.id,

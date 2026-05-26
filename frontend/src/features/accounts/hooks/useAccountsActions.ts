@@ -31,6 +31,7 @@ import {
 } from '../model/accountTransfer';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
+import { publishAccountDisabledChange } from '../model/accountDisabledSync';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import {
   resolveBulkQuotaRefreshTargets,
@@ -98,6 +99,7 @@ export default function useAccountsActions({
     async (account: AccountRecord, nextDisabled: boolean, options?: { reload?: boolean }) => {
       if (!ready || !hasWailsAppBindings()) {
         patchAccountDisabledLocally(account, nextDisabled);
+        publishAccountDisabledChange({ id: account.id, disabled: nextDisabled }, 'accounts');
         return;
       }
 
@@ -105,6 +107,7 @@ export default function useAccountsActions({
         SetAccountDisabled(account.id, nextDisabled)
       );
       patchAccountDisabledLocally(account, nextDisabled);
+      publishAccountDisabledChange({ id: account.id, disabled: nextDisabled }, 'accounts');
 
       if (options?.reload ?? true) {
         await loadAccounts({ showLoading: false, refreshSupplementalData: false });

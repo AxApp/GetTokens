@@ -20,6 +20,7 @@ import {
   mergeCodexAuthFileModelMappings,
   moveCodexAccountRowToEdge,
   normalizeCodexModelMappingsForProvider,
+  patchCodexAccountRowDisabled,
   reorderCodexAccountRows,
   resolveCodexRoutingProbeDefaultModel,
   summarizeCodexRoutingProbeAttempt,
@@ -149,6 +150,44 @@ test('buildCodexAccountRows keeps disabled or errored accounts in order but mark
       ['auth-file:expired.json', false, 'refresh token expired'],
       ['openai-compatible:openrouter', false, 'disabled'],
     ],
+  );
+});
+
+test('patchCodexAccountRowDisabled keeps Codex requestability in sync with account disabled events', () => {
+  const row = {
+    id: 'codex-api-key:stable',
+    label: 'Stable',
+    sourceKind: 'codex-api-key',
+    provider: 'codex',
+    requestable: true,
+    blockReason: '',
+    status: 'configured',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: '',
+    keySuffix: '1111',
+    modelMappings: [],
+  };
+
+  assert.deepEqual(
+    patchCodexAccountRowDisabled(row, true),
+    {
+      ...row,
+      disabled: true,
+      requestable: false,
+      blockReason: 'disabled',
+      status: 'disabled',
+    },
+  );
+
+  assert.deepEqual(
+    patchCodexAccountRowDisabled({ ...row, disabled: true, requestable: false, blockReason: 'disabled', status: 'disabled' }, false),
+    {
+      ...row,
+      disabled: false,
+      requestable: true,
+      blockReason: '',
+      status: 'configured',
+    },
   );
 });
 
