@@ -173,7 +173,6 @@ function ProbeSample({
         routingProbeDisabled={running}
         routePolicyPreviewRows={visibleRows}
         routingProbeStreamLines={empty ? [] : fallback ? hitLines : idleLines}
-        latestUsedFallback={fallback}
         onClose={() => undefined}
         onModelChange={setModel}
         onProbeOnce={() => undefined}

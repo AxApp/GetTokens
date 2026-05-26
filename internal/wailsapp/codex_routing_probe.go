@@ -62,7 +62,6 @@ type codexRoutingRecentBucket struct {
 const (
 	codexRouteAllowHeader    = "X-GetTokens-Route-Allow"
 	codexRouteDenyHeader     = "X-GetTokens-Route-Deny"
-	codexRouteOrderHeader    = "X-GetTokens-Route-Order"
 	codexRouteFallbackHeader = "X-GetTokens-Route-Fallback"
 )
 
@@ -251,8 +250,7 @@ func buildCodexRoutingRouteHeaders(input ProbeCodexAccountRoutingInput, candidat
 
 	allowIDs := resolveCodexRoutingRouteIDs(input.AllowAccountIDs, routeIDByAccountID)
 	denyIDs := resolveCodexRoutingRouteIDs(input.DenyAccountIDs, routeIDByAccountID)
-	orderIDs := resolveCodexRoutingRouteIDs(input.OrderAccountIDs, routeIDByAccountID)
-	if len(allowIDs) == 0 && len(denyIDs) == 0 && len(orderIDs) == 0 {
+	if len(allowIDs) == 0 && len(denyIDs) == 0 {
 		return nil
 	}
 
@@ -263,14 +261,7 @@ func buildCodexRoutingRouteHeaders(input ProbeCodexAccountRoutingInput, candidat
 	if len(denyIDs) > 0 {
 		headers[codexRouteDenyHeader] = strings.Join(denyIDs, ",")
 	}
-	if len(orderIDs) > 0 {
-		headers[codexRouteOrderHeader] = strings.Join(orderIDs, ",")
-	}
-	if input.AllowFallback {
-		headers[codexRouteFallbackHeader] = "true"
-	} else {
-		headers[codexRouteFallbackHeader] = "false"
-	}
+	headers[codexRouteFallbackHeader] = "false"
 	return headers
 }
 

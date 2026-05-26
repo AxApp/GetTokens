@@ -52,6 +52,7 @@ import {
   buildCodexRoutePolicyPreview,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutingProbeModelOptions,
+  buildCodexRoutingProbeRequestInput,
   buildCodexRoutingProbeStreamLines,
   buildOpenAICompatibleModelMappings,
   canEditCodexModelMappings,
@@ -126,15 +127,14 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const orderChanged = orderDirty;
   const routingProbeModelOptions = useMemo(() => buildCodexRoutingProbeModelOptions(orderedRows), [orderedRows]);
   const requestableRows = useMemo(() => orderedRows.filter((row) => row.requestable), [orderedRows]);
-  const requestableOrderIDs = useMemo(() => requestableRows.map((row) => row.id), [requestableRows]);
   const routePolicyDraft = useMemo(
     () => ({
       allowAccountIDs: [],
       denyAccountIDs: [],
-      orderAccountIDs: requestableOrderIDs,
-      allowFallback: false,
+      orderAccountIDs: [],
+      allowFallback: true,
     }),
-    [requestableOrderIDs],
+    [],
   );
   const routePolicyPreviewRows = useMemo(
     () => buildCodexRoutePolicyPreview(orderedRows, routePolicyDraft),
@@ -159,10 +159,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   );
   const latestRoutingProbeAttempt = routingProbeAttempts[routingProbeAttempts.length - 1] || null;
   const latestRoutingProbeAccountID = latestRoutingProbeAttempt?.accountID || '';
-  const latestRoutingProbeExpectedID = routePolicyPreviewRows[0]?.id || '';
-  const latestRoutingProbeUsedFallback =
-    Boolean(latestRoutingProbeAccountID && latestRoutingProbeExpectedID) &&
-    latestRoutingProbeAccountID !== latestRoutingProbeExpectedID;
   const routingProbeDisabled = !ready || saving || routingProbeRunning || !routingProbeModel.trim();
 
   async function reload(messageOverride?: string) {
@@ -598,26 +594,31 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           channelOrder: index,
         }));
       const result = main.ChannelRoutingExplainResult.createFrom({
-          channel: 'codex',
-          routeMode: nextConfig.routeMode,
-          selectedAccountID: candidates[0]?.id || '',
-          candidates,
-          filtered: orderedRows
-            .filter((row) => !row.requestable)
-            .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : 'account-unrequestable' })),
-          steps: [`mode:${nextConfig.routeMode}`, `candidates:${candidates.length}`, 'preview:browser'],
-          snapshotVersion: 'preview',
-          policyVersion: 'channel-routing-v1',
-          shadow: nextConfig.shadowEnabled
-            ? {
-                enabled: true,
-                routeMode: nextConfig.shadowRouteMode,
-                selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
-                diff: Boolean(candidates.length > 1),
-                steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
+        channel: 'codex',
+        routeMode: nextConfig.routeMode,
+        selectedAccountID: candidates[0]?.id || '',
+        candidates,
+        filtered: orderedRows
+          .filter((row) => !row.requestable)
+          .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : 'account-unrequestable' })),
+        steps: [
+          `mode:${nextConfig.routeMode}`,
+          'legacy:compatibility-mask=blocked',
+          `candidates:${candidates.length}`,
+          'preview:browser',
+        ],
+        snapshotVersion: 'preview',
+        policyVersion: 'channel-routing-v1',
+        shadow: nextConfig.shadowEnabled
+          ? {
+              enabled: true,
+              routeMode: nextConfig.shadowRouteMode,
+              selectedAccountID: candidates[candidates.length - 1]?.id || candidates[0]?.id || '',
+              diff: Boolean(candidates.length > 1),
+              steps: [`mode:${nextConfig.shadowRouteMode}`, `candidates:${candidates.length}`, 'preview:shadow'],
             }
-            : undefined,
-        });
+          : undefined,
+      });
       setChannelExplain(result);
       const event = buildPreviewChannelRouteAuditEvent({ channel: 'codex', explain: result });
       setChannelRouteEvents((prev) => (event ? [event, ...prev].slice(0, 5) : prev));
@@ -684,14 +685,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     try {
       const collectedAttempts: CodexRoutingProbeAttemptView[] = [];
       for (let attemptIndex = 0; attemptIndex < safeAttempts; attemptIndex += 1) {
-        const routePolicyInput = {
-          model,
-          attempts: 1,
-          allowAccountIDs: [],
-          denyAccountIDs: [],
-          orderAccountIDs: requestableOrderIDs,
-          allowFallback: false,
-        };
+        const routePolicyInput = buildCodexRoutingProbeRequestInput(model, 1);
         const result = await trackRequest('ProbeCodexAccountRouting', { ...routePolicyInput, index: attemptIndex + 1 }, () =>
           ProbeCodexAccountRouting(
             main.ProbeCodexAccountRoutingInput.createFrom({
@@ -957,7 +951,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
           routePolicyPreviewRows={routePolicyPreviewRows}
           routingProbeStreamLines={routingProbeStreamLines}
-          latestUsedFallback={latestRoutingProbeUsedFallback}
           onClose={() => setRouteProbeOpen(false)}
           onModelChange={setRoutingProbeModel}
           onProbeOnce={() => void runRoutingProbe(1)}

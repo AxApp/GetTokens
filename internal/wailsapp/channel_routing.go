@@ -306,6 +306,7 @@ func explainChannelRoutingWithRuntime(accounts []accountsdomain.AccountRecord, c
 func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, normalized ChannelRoutingConfig, input ChannelRoutingExplainInput, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
 	mode := normalized.RouteMode
 	steps := []string{"mode:" + string(mode)}
+	steps = appendChannelRoutingLegacyCompatibilitySteps(steps, normalized.Channel)
 	scope := channelRouteScope{}
 	if mode == ChannelRouteModeProject {
 		binding, ok := matchChannelProjectBinding(normalized.ProjectBindings, input.ProjectName)
@@ -363,6 +364,18 @@ func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRout
 		Steps:             steps,
 		Meta:              meta,
 	}
+}
+
+func appendChannelRoutingLegacyCompatibilitySteps(steps []string, channel string) []string {
+	if strings.TrimSpace(channel) != "codex" {
+		return steps
+	}
+	return append(
+		steps,
+		"legacy:session-affinity=blocked",
+		"legacy:websocket-pin=blocked",
+		"legacy:route-order-header=ignored",
+	)
 }
 
 func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, scope channelRouteScope, runtimeStates map[string]ChannelAccountRuntimeState) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount) {

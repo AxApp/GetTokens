@@ -71,8 +71,8 @@ func TestProbeClaudeCodeAccountRoutingSendsAnthropicMessagesRequestAndRouteHeade
 		if got := headers["X-GetTokens-Route-Allow"]; got != expectedRouteID {
 			t.Fatalf("allow header = %q, want %q", got, expectedRouteID)
 		}
-		if got := headers["X-GetTokens-Route-Order"]; got != expectedRouteID {
-			t.Fatalf("order header = %q, want %q", got, expectedRouteID)
+		if got := headers["X-GetTokens-Route-Order"]; got != "" {
+			t.Fatalf("order header = %q, want empty", got)
 		}
 		if got := headers["X-GetTokens-Route-Fallback"]; got != "false" {
 			t.Fatalf("fallback header = %q, want false", got)

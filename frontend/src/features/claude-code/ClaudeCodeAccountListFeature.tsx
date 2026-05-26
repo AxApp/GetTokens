@@ -38,6 +38,7 @@ import {
   buildCodexRoutePolicyPreview,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutingProbeModelOptions,
+  buildCodexRoutingProbeRequestInput,
   buildCodexRoutingProbeStreamLines,
   mergeCodexAuthFileModelMappings,
   resolveCodexRoutingProbeDefaultModel,
@@ -114,15 +115,14 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     };
   }, [authFileModelMappings, detailRow]);
   const requestableRows = useMemo(() => orderedRows.filter((row) => row.requestable), [orderedRows]);
-  const requestableOrderIDs = useMemo(() => requestableRows.map((row) => row.id), [requestableRows]);
   const routePolicyDraft = useMemo(
     () => ({
       allowAccountIDs: [],
       denyAccountIDs: [],
-      orderAccountIDs: requestableOrderIDs,
-      allowFallback: false,
+      orderAccountIDs: [],
+      allowFallback: true,
     }),
-    [requestableOrderIDs],
+    [],
   );
   const routePolicyPreviewRows = useMemo(
     () => buildCodexRoutePolicyPreview(orderedRows, routePolicyDraft),
@@ -147,10 +147,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   );
   const latestRoutingProbeAttempt = routingProbeAttempts[routingProbeAttempts.length - 1] || null;
   const latestRoutingProbeAccountID = latestRoutingProbeAttempt?.accountID || '';
-  const latestRoutingProbeExpectedID = routePolicyPreviewRows[0]?.id || '';
-  const latestRoutingProbeUsedFallback =
-    Boolean(latestRoutingProbeAccountID && latestRoutingProbeExpectedID) &&
-    latestRoutingProbeAccountID !== latestRoutingProbeExpectedID;
   const routingProbeDisabled = !ready || saving || routingProbeRunning || !routingProbeModel.trim();
 
   async function reload(messageOverride?: string) {
@@ -593,14 +589,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
     try {
       const collectedAttempts: CodexRoutingProbeAttemptView[] = [];
       for (let attemptIndex = 0; attemptIndex < safeAttempts; attemptIndex += 1) {
-        const routePolicyInput = {
-          model,
-          attempts: 1,
-          allowAccountIDs: [],
-          denyAccountIDs: [],
-          orderAccountIDs: requestableOrderIDs,
-          allowFallback: false,
-        };
+        const routePolicyInput = buildCodexRoutingProbeRequestInput(model, 1);
         const result = await trackRequest('ProbeClaudeCodeAccountRouting', { ...routePolicyInput, index: attemptIndex + 1 }, () =>
           ProbeClaudeCodeAccountRouting(
             main.ProbeClaudeCodeAccountRoutingInput.createFrom({
@@ -829,7 +818,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
           routePolicyPreviewRows={routePolicyPreviewRows}
           routingProbeStreamLines={routingProbeStreamLines}
-          latestUsedFallback={latestRoutingProbeUsedFallback}
           onClose={() => setRouteProbeOpen(false)}
           onModelChange={setRoutingProbeModel}
           onProbeOnce={() => void runRoutingProbe(1)}

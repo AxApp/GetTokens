@@ -16,7 +16,6 @@ export function RouteProbeCard({
   routingProbeDisabled,
   routePolicyPreviewRows,
   routingProbeStreamLines,
-  latestUsedFallback,
   onClose,
   onModelChange,
   onProbeOnce,
@@ -36,7 +35,6 @@ export function RouteProbeCard({
     detail: string;
     status: CodexRoutingProbeStreamLineStatus;
   }>;
-  latestUsedFallback: boolean;
   onClose: () => void;
   onModelChange: (value: string) => void;
   onProbeOnce: () => void;
@@ -58,10 +56,8 @@ export function RouteProbeCard({
   const latestHitLine = [...routingProbeStreamLines].reverse().find((line) => line.marker.startsWith('#') && line.status === 'hit');
   const statusLabel = routingProbeRunning
     ? t('codex.account_list_probe_running')
-    : latestUsedFallback
-      ? t('codex.account_list_probe_fallback_hit')
-      : latestHitLine
-        ? latestHitLine.label
+    : latestHitLine
+      ? latestHitLine.label
       : t('codex.account_list_probe_idle');
 
   return (
@@ -92,7 +88,6 @@ export function RouteProbeCard({
               model={resolvedModel}
               candidateCount={routePolicyPreviewRows.length}
               statusLabel={statusLabel}
-              latestUsedFallback={latestUsedFallback}
             />
             <button
               type="button"
@@ -125,7 +120,6 @@ export function RouteProbeCard({
               <RouteProbeCandidateQueue rows={routePolicyPreviewRows} t={t} />
               <RouteProbeTerminal
                 lines={routingProbeStreamLines}
-                latestUsedFallback={latestUsedFallback}
                 t={t}
               />
             </div>
@@ -141,24 +135,17 @@ function ProbeStatusBar({
   model,
   candidateCount,
   statusLabel,
-  latestUsedFallback,
 }: {
   t: (key: string) => string;
   model: string;
   candidateCount: number;
   statusLabel: string;
-  latestUsedFallback: boolean;
 }) {
   return (
     <div className="hidden min-w-[28rem] grid-cols-[minmax(0,1.25fr)_7rem_minmax(0,1fr)] border-2 border-[var(--border-color)] bg-[var(--bg-main)] lg:grid">
       <ProbeMetric label={t('codex.account_list_probe_model')} value={model} />
       <ProbeMetric label={t('codex.account_list_policy_preview_count')} value={String(candidateCount).padStart(2, '0')} />
-      <ProbeMetric
-        label={t('codex.account_list_probe_result')}
-        value={statusLabel}
-        tone={latestUsedFallback ? 'critical' : 'neutral'}
-        last
-      />
+      <ProbeMetric label={t('codex.account_list_probe_result')} value={statusLabel} tone="neutral" last />
     </div>
   );
 }
@@ -321,7 +308,6 @@ function RouteProbeCandidateQueue({ rows, t }: { rows: CodexAccountRow[]; t: (ke
 
 function RouteProbeTerminal({
   lines,
-  latestUsedFallback,
   t,
 }: {
   lines: Array<{
@@ -331,7 +317,6 @@ function RouteProbeTerminal({
     detail: string;
     status: CodexRoutingProbeStreamLineStatus;
   }>;
-  latestUsedFallback: boolean;
   t: (key: string) => string;
 }) {
   return (
@@ -341,11 +326,6 @@ function RouteProbeTerminal({
           <Terminal className="h-3.5 w-3.5" strokeWidth={3} />
           {t('codex.account_list_probe_terminal')}
         </div>
-        {latestUsedFallback ? (
-          <div className="border-2 border-[var(--accent-red)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] px-2 py-1 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--accent-red)]">
-            {t('codex.account_list_probe_fallback_hit')}
-          </div>
-        ) : null}
       </div>
       <div className="max-h-[22rem] min-h-[13rem] overflow-auto bg-[var(--bg-main)] py-3 font-mono text-[length:var(--font-size-ui-md-compact)] font-black leading-6 text-[var(--text-primary)]">
         {lines.length === 0 ? (

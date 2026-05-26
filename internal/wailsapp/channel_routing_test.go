@@ -156,6 +156,9 @@ func TestExplainChannelRoutingBalancedUsesActiveSessionsThenSortOrder(t *testing
 	if result.SelectedAccountID != "auth-file:b.json" {
 		t.Fatalf("SelectedAccountID = %q, want auth-file:b.json", result.SelectedAccountID)
 	}
+	assertStepContains(t, result.Steps, "legacy:session-affinity=blocked")
+	assertStepContains(t, result.Steps, "legacy:websocket-pin=blocked")
+	assertStepContains(t, result.Steps, "legacy:route-order-header=ignored")
 }
 
 func TestExplainChannelRoutingDisabledStickyInvalidatesAndFallsBack(t *testing.T) {

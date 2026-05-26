@@ -18,6 +18,7 @@ export {
   buildCodexRoutePolicyPreview,
   buildCodexRoutePolicyRowStates,
   buildCodexRoutePolicySummary,
+  buildCodexRoutingProbeRequestInput,
   buildCodexRoutingProbeModelOptions,
   buildCodexRoutingProbeStreamLines,
   DEFAULT_CODEX_ROUTING_PROBE_MODEL,

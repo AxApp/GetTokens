@@ -18,6 +18,17 @@ export interface CodexRoutePolicyDraft {
   allowFallback: boolean;
 }
 
+export function buildCodexRoutingProbeRequestInput(model: string, attempts: number) {
+  return {
+    model: String(model || '').trim(),
+    attempts: Math.max(1, Math.min(5, Number.isFinite(attempts) ? attempts : 1)),
+    allowAccountIDs: [],
+    denyAccountIDs: [],
+    orderAccountIDs: [],
+    allowFallback: false,
+  };
+}
+
 export type CodexRoutePolicyRowMode = 'default' | 'allow' | 'deny' | 'blocked';
 
 export interface CodexRoutePolicyRowState {

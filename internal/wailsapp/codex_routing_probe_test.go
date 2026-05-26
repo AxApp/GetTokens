@@ -144,8 +144,8 @@ func TestProbeCodexAccountRoutingSendsRoutePolicyHeaders(t *testing.T) {
 		if got := headers["X-GetTokens-Route-Deny"]; got != "" {
 			t.Fatalf("deny header = %q, want empty", got)
 		}
-		if got := headers["X-GetTokens-Route-Order"]; got != expectedRouteID {
-			t.Fatalf("order header = %q, want %q", got, expectedRouteID)
+		if got := headers["X-GetTokens-Route-Order"]; got != "" {
+			t.Fatalf("order header = %q, want empty", got)
 		}
 		if got := headers["X-GetTokens-Route-Fallback"]; got != "false" {
 			t.Fatalf("fallback header = %q, want false", got)
