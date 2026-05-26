@@ -292,6 +292,7 @@
     "generated": "生成时间",
     "refresh_title": "刷新运行会话",
     "copy_diagnostic": "复制诊断摘要",
+    "copy_session_id": "复制会话 ID",
     "copied": "已复制",
     "filter_all": "全部",
     "filter_active": "运行",

@@ -15,10 +15,13 @@
 
 Live sessions 的 feed 不是完整诊断表。默认行只展示：
 
-- `sessionID / projectName`
+- 项目名
 - `account / http|ws`
+- 右侧 session id
 
 状态、模型、请求数、持续时间、TTFT、request id、execution id 和诊断摘要继续放在详情区。这样列表用于快速识别会话，详情用于排障。
+
+如果右侧 session id 支持复制，它必须是独立点击目标，并阻止冒泡触发行选择。复制成功后要给出明确可见反馈，例如短暂切换为绿色 `已复制` / `Copied`，不能只依赖 title、控制台或不可见剪贴板状态。
 
 ### 2. `projectName` 必须端到端可选传递
 

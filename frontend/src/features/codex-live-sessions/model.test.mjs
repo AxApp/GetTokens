@@ -11,6 +11,7 @@ import {
   getSelectedCodexLiveSession,
 } from './model/selectors.ts';
 import { buildSessionRowSummary } from './components/formatters.ts';
+import { copyCodexLiveSessionID } from './components/sessionClipboard.ts';
 import {
   buildLiveSessionBillingDisplay,
   buildLiveSessionQuotaDisplay,
@@ -87,20 +88,22 @@ test('buildSessionRowSummary only exposes session project, account, and short pr
   const summary = buildSessionRowSummary(session, session.requests[0], (key) => key);
 
   assert.deepEqual(summary, {
-    sessionProjectLabel: 'GetTokens / ws_sess_7a91',
+    sessionProjectLabel: 'GetTokens',
     accountTransportLabel: 'team-codex@example.com / ws',
+    sessionIDLabel: 'ws_sess_7a91',
   });
   assert.doesNotMatch(Object.values(summary).join(' '), /gpt-5\.5|streaming|8\.0s/);
 });
 
-test('buildSessionRowSummary places project name before long session ids so feed truncation keeps it visible', () => {
+test('buildSessionRowSummary keeps long session ids separate from the project title', () => {
   const session = {
     ...codexLiveSessionsPreviewSnapshot.sessions[0],
     sessionID: 'projects/-Users-linhey-Desktop-linhay-open-sources-GetTokens/sessions/2026/05/25/very-long-session-id.jsonl',
   };
   const summary = buildSessionRowSummary(session, session.requests[0], (key) => key);
 
-  assert.match(summary.sessionProjectLabel, /^GetTokens \/ projects\//);
+  assert.equal(summary.sessionProjectLabel, 'GetTokens');
+  assert.match(summary.sessionIDLabel, /^projects\//);
 });
 
 test('buildSessionRowSummary falls back to unknown project and prefers http for degraded rows', () => {
@@ -118,8 +121,33 @@ test('buildSessionRowSummary falls back to unknown project and prefers http for 
     return key;
   });
 
-  assert.equal(summary.sessionProjectLabel, '未知项目 / codex_win_48f2');
+  assert.equal(summary.sessionProjectLabel, '未知项目');
   assert.equal(summary.accountTransportLabel, 'team-codex@example.com / http');
+  assert.equal(summary.sessionIDLabel, 'codex_win_48f2');
+});
+
+test('copyCodexLiveSessionID writes the exact session id to clipboard', async () => {
+  let copiedValue = '';
+  const copied = await copyCodexLiveSessionID('codex_win_48f2', {
+    writeText: async (value) => {
+      copiedValue = value;
+    },
+  });
+
+  assert.equal(copied, true);
+  assert.equal(copiedValue, 'codex_win_48f2');
+});
+
+test('copyCodexLiveSessionID ignores blank session ids', async () => {
+  let called = false;
+  const copied = await copyCodexLiveSessionID('   ', {
+    writeText: async () => {
+      called = true;
+    },
+  });
+
+  assert.equal(copied, false);
+  assert.equal(called, false);
 });
 
 test('getPrimaryCodexLiveRequest prefers active request, then last request, then newest sequence', () => {
@@ -365,6 +393,19 @@ test('codex live session surfaces use larger typography tokens for the dense wor
   assert.match(feedSource, /font-size-ui-3xl/);
   assert.match(feedSource, /font-size-ui-2xl/);
   assert.match(feedSource, /font-size-ui-sm/);
+});
+
+test('codex live session feed renders session id as an independent copy target', async () => {
+  const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+
+  assert.match(feedSource, /copyCodexLiveSessionID/);
+  assert.match(feedSource, /onCopySessionID/);
+  assert.match(feedSource, /event\.stopPropagation\(\)/);
+  assert.match(feedSource, /ClipboardSetText/);
+  assert.match(feedSource, /document\.execCommand\('copy'\)/);
+  assert.match(feedSource, /aria-live="polite"/);
+  assert.match(feedSource, /t\('codex_live_sessions\.copied'\)/);
+  assert.match(feedSource, /codex_live_sessions\.copy_session_id/);
 });
 
 test('codex live session detail timeline renders request monitor fields instead of event-only rows', async () => {

@@ -292,6 +292,7 @@
     "generated": "Generated",
     "refresh_title": "Refresh live sessions",
     "copy_diagnostic": "Copy diagnostic summary",
+    "copy_session_id": "Copy session ID",
     "copied": "Copied",
     "filter_all": "All",
     "filter_active": "Active",

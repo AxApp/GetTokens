@@ -39,8 +39,9 @@ export function buildSessionRowSummary(
   const auth = request?.authLabel || session.authLabel || request?.authID || session.authID || t('codex_live_sessions.unknown_auth');
 
   return {
-    sessionProjectLabel: `${projectName} / ${session.sessionID}`,
+    sessionProjectLabel: projectName,
     accountTransportLabel: `${auth} / ${getShortTransportLabel(session)}`,
+    sessionIDLabel: session.sessionID,
   };
 }
 
