@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 
 import {
   CHANNEL_ROUTE_MODES,
+  LEGACY_CHANNEL_ROUTING_BYPASSES,
   buildChannelRouteAuditEventSummary,
+  buildLegacyRoutingBypassSummary,
+  buildLegacyRoutingMaskPanel,
   buildPreviewChannelRouteAuditEvent,
   classifyChannelRouteMode,
   isChannelRouteMode,
@@ -11,13 +14,12 @@ import {
   updateChannelRoutingConfig,
 } from '../model/channelRouting.ts';
 
-test('ChannelRouteMode only accepts the GetTokens three-mode routing model', () => {
-  assert.deepEqual([...CHANNEL_ROUTE_MODES], ['sequential', 'balanced', 'project']);
+test('ChannelRouteMode only accepts the GetTokens two-mode routing model', () => {
+  assert.deepEqual([...CHANNEL_ROUTE_MODES], ['sequential', 'balanced']);
   assert.equal(isChannelRouteMode('sequential'), true);
   assert.equal(isChannelRouteMode('balanced'), true);
-  assert.equal(isChannelRouteMode('project'), true);
 
-  ['dedicated', 'prefer', 'ordered', 'weighted', 'canary', 'exclude', 'round-robin'].forEach((mode) => {
+  ['project', 'dedicated', 'prefer', 'ordered', 'weighted', 'canary', 'exclude', 'round-robin'].forEach((mode) => {
     assert.equal(isChannelRouteMode(mode), false, mode);
   });
 });
@@ -49,6 +51,45 @@ test('normalizeChannelRoutingConfig keeps upstream modes out of saved channel co
   assert.deepEqual(invalidModes, []);
 });
 
+test('legacy upstream routing bypasses are blocked from the GetTokens channel config model', () => {
+  assert.deepEqual(
+    LEGACY_CHANNEL_ROUTING_BYPASSES.map((item) => [item.id, item.disposition]),
+    [
+      ['session-affinity', 'blocked'],
+      ['websocket-pin', 'blocked'],
+      ['route-order-header', 'ignored'],
+    ],
+  );
+  assert.equal(buildLegacyRoutingBypassSummary(), '3 个 legacy 输入已从新配置中屏蔽');
+
+  const normalized = normalizeChannelRoutingConfig(
+    {
+      channel: 'codex',
+      routeMode: 'balanced',
+      sessionAffinity: true,
+      websocketPin: 'auth-file:a.json',
+      orderAccountIDs: ['auth-file:a.json'],
+      routeOrderHeader: 'auth-file:a.json',
+    },
+    { channel: 'codex' },
+  );
+
+  assert.equal('sessionAffinity' in normalized.config, false);
+  assert.equal('websocketPin' in normalized.config, false);
+  assert.equal('orderAccountIDs' in normalized.config, false);
+  assert.equal('routeOrderHeader' in normalized.config, false);
+  assert.equal(normalized.config.routeMode, 'balanced');
+});
+
+test('legacy compatibility mask panel only exposes summary text and hides detail rows', () => {
+  const legacyMask = buildLegacyRoutingMaskPanel();
+
+  assert.equal(legacyMask.title, 'Legacy compatibility mask');
+  assert.equal(legacyMask.summary, '3 个 legacy 输入已从新配置中屏蔽');
+  assert.equal(legacyMask.note, '这些信号只保留为兼容层，不写入新配置，也不影响上游合并后的主路由模型。');
+  assert.equal(legacyMask.hasDetails, false);
+});
+
 test('normalizeChannelRoutingConfig keeps shadow mode explicit and separate from production route mode', () => {
   const normalized = normalizeChannelRoutingConfig(
     {
@@ -67,7 +108,7 @@ test('normalizeChannelRoutingConfig keeps shadow mode explicit and separate from
   assert.deepEqual(normalized.invalidModes, []);
 });
 
-test('project mode group fallback only allows sequential or balanced', () => {
+test('project mode inputs are downgraded while fallback stays limited to sequential or balanced', () => {
   assert.equal(
     normalizeChannelRoutingConfig(
       {
@@ -87,6 +128,7 @@ test('project mode group fallback only allows sequential or balanced', () => {
     { channel: 'claude' },
   );
 
+  assert.equal(normalized.config.routeMode, 'sequential');
   assert.equal(normalized.config.projectModeFallbackRouteMode, 'sequential');
   assert.deepEqual(normalized.invalidModes, ['project']);
 });
@@ -116,21 +158,20 @@ test('Codex and Claude channel routing configs stay isolated when patched', () =
   ).config;
 
   const nextCodex = updateChannelRoutingConfig(codex, {
-    routeMode: 'project',
     channelGroupStates: {
       shared: { enabled: false, routeOrder: 9 },
     },
   });
 
   assert.equal(nextCodex.channel, 'codex');
-  assert.equal(nextCodex.routeMode, 'project');
+  assert.equal(nextCodex.routeMode, 'sequential');
   assert.deepEqual(nextCodex.channelGroupStates.shared, { enabled: false, routeOrder: 9 });
   assert.equal(claude.channel, 'claude');
   assert.equal(claude.routeMode, 'balanced');
   assert.deepEqual(claude.channelGroupStates.shared, { enabled: true, routeOrder: 2 });
 });
 
-test('normalizeChannelRoutingConfig trims project bindings and defaults invalid fallback', () => {
+test('normalizeChannelRoutingConfig trims project bindings and drops legacy project route mode', () => {
   const normalized = normalizeChannelRoutingConfig(
     {
       channel: 'codex',
@@ -159,6 +200,7 @@ test('normalizeChannelRoutingConfig trims project bindings and defaults invalid 
     { channel: 'codex' },
   );
 
+  assert.equal(normalized.config.routeMode, 'sequential');
   assert.deepEqual(normalized.config.projectBindings, [
     {
       projectName: 'gettokens',

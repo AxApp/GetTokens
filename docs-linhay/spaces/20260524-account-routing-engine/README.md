@@ -18,7 +18,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 
 1. 建立统一 `AccountRoutingEngine`，承载账号路由决策，而不是把自定义端点路由做成普通 HTTP middleware。
 2. 把 manual-disabled、rate-limit、自定义端点路由、请求级 allow/deny/order/fallback、session affinity 归一为 policy pipeline。
-3. 简化用户可理解的路由语义：先由账号状态、排序值、归属组和组级状态/排序确定可路由账号池，再按顺序、均衡、项目三种模式选择账号。
+3. 简化用户可理解的路由语义：先由账号状态、排序值、归属组和组级状态/排序确定可路由账号池，再按顺序、均衡两种模式选择账号；项目名绑定保留为兼容数据，但不再作为当前前端可见路由模式。
 4. 支持 dry-run / explain：用户或开发者可在不请求上游的情况下看到候选账号、过滤原因、排序和最终选择。
 5. 支持 shadow mode：新策略先并行计算并记录差异，不立即接管真实请求。
 6. 将持久化账号状态、路由规则、运行态快照、请求级临时状态分层，保证热路径快速决策。
@@ -49,8 +49,8 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
   - 保持 root `main.App` 绑定边界，新增 Wails 方法必须经过 root facade 和 generated binding。
 - Frontend：
   - 总账号池只提供账号和账号组的增删改查、启停、弃用、排序和基础状态展示；不提供账号轮动编排。
-  - `codex - 账号列表` 负责 Codex 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测。
-  - `claude - 账号列表` 负责 Claude Code 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测。
+  - `codex - 账号列表` 负责 Codex 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
+  - `claude - 账号列表` 负责 Claude Code 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
   - Codex / Claude 可以引用同一个账号组，但各自维护渠道组启停和渠道排序。
   - dry-run/explain 调试面板优先跟随对应渠道账号列表展示，显示“为什么选这个账号”和“为什么过滤那些账号”。
   - 支持 shadow mode 差异展示和策略启用状态。
@@ -131,6 +131,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 ## 当前状态
 - 状态：implementation-ready
 - 最近更新：2026-05-25
+- 2026-05-26 补充：Codex 账号列表的旧 `session-affinity` / `websocket-pin` / `route-order-header` 现在只作为 `Legacy compatibility mask` 的总数与说明呈现，不写入新的 `ChannelRoutingConfig`，也不展开三条明细，以便后续继续和上游代码保持最小合并面。
 
 ## 实施入口
 

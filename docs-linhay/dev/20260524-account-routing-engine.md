@@ -165,13 +165,13 @@ Routing Engine
 
 - `codex - 账号列表`：
   - Codex 请求顺序。
-  - Codex route mode：`sequential / balanced / project`。
-  - Codex 项目名绑定账号组或账号。
+  - Codex route mode：`sequential / balanced`。
+  - Codex 项目名绑定账号组或账号（兼容保留，不作为主模式入口）。
   - Codex 路由说明、dry-run/explain、路由探测。
 - `claude - 账号列表`：
   - Claude Code 请求顺序。
-  - Claude route mode：`sequential / balanced / project`。
-  - Claude 项目名绑定账号组或账号。
+  - Claude route mode：`sequential / balanced`。
+  - Claude 项目名绑定账号组或账号（兼容保留，不作为主模式入口）。
   - Claude 路由说明、dry-run/explain、路由探测。
 
 sidecar `AccountRoutingEngine` 是执行层，读取渠道级配置和账号池快照后做决策；它不把渠道级顺序或 route mode 反写成总账号池属性。
@@ -188,8 +188,8 @@ sidecar `AccountRoutingEngine` 是执行层，读取渠道级配置和账号池�
 前端按三层模型重切页面 ownership：
 
 - `AccountsFeature` 属于 `Account Inventory`。它可以管理账号、账号组、启停、弃用、基础排序和状态展示，但不能再承载 route mode、渠道 fallback、项目绑定或路由探测。
-- `CodexAccountListFeature` 属于 Codex `Channel Routing`。它可以整页重做，主职责改为 Codex 渠道账号顺序、`sequential / balanced / project`、渠道组状态、项目绑定、dry-run/explain 和 probe。
-- `ClaudeCodeAccountListFeature` 属于 Claude `Channel Routing`。它可以整页重做，主职责改为 Claude 渠道账号顺序、`sequential / balanced / project`、渠道组状态、项目绑定、dry-run/explain 和 probe。
+- `CodexAccountListFeature` 属于 Codex `Channel Routing`。它可以整页重做，主职责改为 Codex 渠道账号顺序、`sequential / balanced`、渠道组状态、项目绑定、dry-run/explain 和 probe。
+- `ClaudeCodeAccountListFeature` 属于 Claude `Channel Routing`。它可以整页重做，主职责改为 Claude 渠道账号顺序、`sequential / balanced`、渠道组状态、项目绑定、dry-run/explain 和 probe。
 
 建议新增共享前端领域 `frontend/src/features/channel-routing/`，沉淀纯模型、校验、preview 数据和共享工作台组件；Codex / Claude 页面只装配渠道差异。共享不等于共用配置，保存接口、配置 key、preview 数据和 explain trace 必须按渠道隔离。
 
@@ -372,6 +372,7 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 - WebSocket request-boundary 特例已收口为单一连接生命周期 helper：guarded pinned auth 释放 pin、关闭旧 execution session、强制 transcript replay。
 - WebSocket pinned auth 的 429/401/402/403 前置错误补齐透明 failover：若尚未写出 downstream payload，handler 抑制错误事件、释放 pin、关闭 execution session，并用完整 transcript 立即重派同一 request；若已开始输出，仍保持不做 mid-response 迁移。
 - `legacy-routing-cleanup-v01.md` 已更新当前 shim 状态：公共 `RoutePolicy` 兼容 API 是后续上游合并与旧 request policy 的主要兼容边界。
+- Codex 前端已把 `session-affinity` / `websocket-pin` / `route-order-header` 收进 `Legacy compatibility mask`，前端只保留总数与说明，不展开三条明细；explain 仍记录兼容遮罩摘要，不再回写到新的通道配置，避免上游合并时扩散改动面。
 
 仍未完成的项：
 

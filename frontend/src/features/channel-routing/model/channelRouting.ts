@@ -1,7 +1,8 @@
-export const CHANNEL_ROUTE_MODES = ['sequential', 'balanced', 'project'] as const;
+export const CHANNEL_ROUTE_MODES = ['sequential', 'balanced'] as const;
 export const PROJECT_MODE_FALLBACK_ROUTE_MODES = ['sequential', 'balanced'] as const;
 export const CHANNEL_FALLBACK_MODES = ['fail-closed', 'fallback-default', 'fallback-global'] as const;
 export const UPSTREAM_COMPAT_ROUTE_MODES = ['dedicated', 'prefer', 'ordered', 'weighted', 'canary'] as const;
+export const LEGACY_CHANNEL_ROUTING_BYPASS_IDS = ['session-affinity', 'websocket-pin', 'route-order-header'] as const;
 
 export type ChannelID = 'codex' | 'claude';
 export type ChannelRouteMode = (typeof CHANNEL_ROUTE_MODES)[number];
@@ -69,11 +70,49 @@ export interface ChannelRoutingConfigDraft {
   shadowRouteMode?: unknown;
 }
 
+export type LegacyChannelRoutingBypassID = (typeof LEGACY_CHANNEL_ROUTING_BYPASS_IDS)[number];
+export type LegacyChannelRoutingBypassDisposition = 'blocked' | 'ignored';
+
+export interface LegacyChannelRoutingBypass {
+  id: LegacyChannelRoutingBypassID;
+  label: string;
+  disposition: LegacyChannelRoutingBypassDisposition;
+  detail: string;
+}
+
+export interface LegacyRoutingMaskPanel {
+  title: string;
+  summary: string;
+  note: string;
+  hasDetails: false;
+}
+
 export interface NormalizedChannelRoutingConfig {
   config: ChannelRoutingConfig;
   ignoredUpstreamModes: UpstreamCompatRouteMode[];
   invalidModes: string[];
 }
+
+export const LEGACY_CHANNEL_ROUTING_BYPASSES: LegacyChannelRoutingBypass[] = [
+  {
+    id: 'session-affinity',
+    label: 'Session affinity',
+    disposition: 'blocked',
+    detail: '跳过，不进入新配置；仅保留为 runtime 粘性信号',
+  },
+  {
+    id: 'websocket-pin',
+    label: 'WebSocket pin',
+    disposition: 'blocked',
+    detail: '屏蔽，不进入新配置；仅保留为连接级运行态信号',
+  },
+  {
+    id: 'route-order-header',
+    label: 'Route order header',
+    disposition: 'ignored',
+    detail: '跳过，不进入新配置；探测路径不再注入顺序头',
+  },
+];
 
 export interface ChannelRouteAuditEvent {
   id: string;
@@ -190,6 +229,19 @@ export function updateChannelRoutingConfig(
   };
 }
 
+export function buildLegacyRoutingBypassSummary() {
+  return `${LEGACY_CHANNEL_ROUTING_BYPASSES.length} 个 legacy 输入已从新配置中屏蔽`;
+}
+
+export function buildLegacyRoutingMaskPanel(): LegacyRoutingMaskPanel {
+  return {
+    title: 'Legacy compatibility mask',
+    summary: buildLegacyRoutingBypassSummary(),
+    note: '这些信号只保留为兼容层，不写入新配置，也不影响上游合并后的主路由模型。',
+    hasDetails: false,
+  };
+}
+
 export function buildChannelRouteAuditEventSummary(event: ChannelRouteAuditEvent): ChannelRouteAuditEventSummary {
   const routeMode = String(event.routeMode || 'unknown').trim() || 'unknown';
   const selected = String(event.selectedAccountID || 'none').trim() || 'none';
@@ -290,8 +342,6 @@ function normalizeProjectFallbackRouteMode(
   const classified = classifyChannelRouteMode(input);
   if (classified.kind === 'upstream-compat') {
     ignoredUpstreamModes.push(classified.mode);
-  } else if (classified.kind === 'gettokens' && classified.mode === 'project') {
-    invalidModes.push(classified.mode);
   } else if (classified.kind === 'invalid' && classified.mode) {
     invalidModes.push(classified.mode);
   }

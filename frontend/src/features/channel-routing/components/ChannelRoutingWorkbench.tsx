@@ -1,7 +1,8 @@
-import { Activity, GitBranch, History, Play, RefreshCw, Save, ShieldCheck, Shuffle, Split, Zap } from 'lucide-react';
+import { Activity, History, Play, RefreshCw, Save, ShieldCheck, Shuffle, Split, Zap } from 'lucide-react';
 import type { main } from '../../../../wailsjs/go/models';
 import {
   buildChannelRouteAuditEventSummary,
+  buildLegacyRoutingMaskPanel,
   type ChannelID,
   type ChannelRouteAuditEvent,
   type ChannelRouteMode,
@@ -33,7 +34,6 @@ const routeModes: Array<{
 }> = [
   { mode: 'sequential', icon: Split, label: '顺序' },
   { mode: 'balanced', icon: Shuffle, label: '均衡' },
-  { mode: 'project', icon: GitBranch, label: '项目' },
 ];
 
 export default function ChannelRoutingWorkbench({
@@ -57,6 +57,7 @@ export default function ChannelRoutingWorkbench({
   const filteredCount = explain?.filtered?.length ?? 0;
   const selectedID = explain?.selectedAccountID || 'none';
   const shadow = explain?.shadow;
+  const legacyMask = buildLegacyRoutingMaskPanel();
   const eventSummaries = routeEvents.slice(0, 5).map((event) => buildChannelRouteAuditEventSummary(event));
 
   return (
@@ -153,6 +154,20 @@ export default function ChannelRoutingWorkbench({
           <Metric label="顺序账号" value={config.orderedAccountIDs.length} />
           <Metric label="项目绑定" value={config.projectBindings.length} />
           <Metric label="账号组" value={config.accountGroups?.length ?? 0} />
+        </div>
+
+        <div className="border-2 border-[var(--border-color)] bg-[var(--bg-subtle)] p-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+              {legacyMask.title}
+            </div>
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+              {legacyMask.summary}
+            </div>
+          </div>
+          <div className="mt-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-5 text-[var(--text-muted)]">
+            {legacyMask.note}
+          </div>
         </div>
 
         {message ? <p className="text-[length:var(--font-size-ui-sm)] text-[var(--text-secondary)]">{message}</p> : null}
