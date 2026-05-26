@@ -80,7 +80,6 @@ export default function ChannelRoutingWorkbench({
   const legacyMask = buildLegacyRoutingMaskPanel();
   const eventSummaries = routeEvents.slice(0, 5).map((event) => buildChannelRouteAuditEventSummary(event));
   const hasExplain = explainView.hasExplain;
-  const activeRouteMode = routeModes.find((item) => item.mode === config.routeMode) ?? routeModes[0];
   const shadowPanelLabel = config.shadowEnabled ? (hasExplain ? explainView.shadowLabel : '开启') : '关闭';
   const shadowPanelMeta = config.shadowEnabled && hasExplain ? explainView.shadowMeta : '';
   const participantRows = buildChannelRoutingParticipantRows(config, accounts);
@@ -111,40 +110,33 @@ export default function ChannelRoutingWorkbench({
     >
       <header className="p-4">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]">
               <Split className="h-4 w-4" strokeWidth={4} />
             </div>
-            <div className="min-w-0">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-black leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
-                  请求模式
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setHelpOpen(true)}
-                  aria-label="查看请求模式说明"
-                  title="查看请求模式说明"
-                  aria-pressed={helpOpen}
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors active:scale-95 ${
-                    helpOpen
-                      ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                      : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
-                  }`}
-                >
-                  <CircleHelp className="h-4 w-4" strokeWidth={4} />
-                </button>
-              </div>
-              <div className="mt-1 flex min-w-0 flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-black leading-5 text-[var(--text-secondary)]">
-                <span className="text-[var(--text-primary)]">{channel === 'codex' ? 'Codex' : 'Claude Code'}</span>
-                <span aria-hidden="true">/</span>
-                <span>{activeRouteMode.label}模式</span>
-                {preview ? (
-                  <span className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-0.5 text-[var(--text-primary)]">
-                    预览
-                  </span>
-                ) : null}
-              </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-black leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
+                请求模式
+              </h2>
+              <button
+                type="button"
+                onClick={() => setHelpOpen(true)}
+                aria-label="查看请求模式说明"
+                title="查看请求模式说明"
+                aria-pressed={helpOpen}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors active:scale-95 ${
+                  helpOpen
+                    ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                    : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
+                }`}
+              >
+                <CircleHelp className="h-4 w-4" strokeWidth={4} />
+              </button>
+              {preview ? (
+                <span className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-sm)] font-black leading-4 text-[var(--text-primary)]">
+                  预览
+                </span>
+              ) : null}
             </div>
           </div>
           <div className="grid min-w-0 flex-1 gap-2 sm:max-w-[28rem] sm:flex-none sm:grid-cols-2">

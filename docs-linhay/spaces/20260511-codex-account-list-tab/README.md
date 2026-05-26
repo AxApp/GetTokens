@@ -41,6 +41,12 @@
 11. Given 用户打开 Codex OAuth/auth-file 账号详情，When 调整模型映射并保存，Then 页面写入 sidecar `oauth-model-alias[<provider>]`，支持将高等级 Codex 模型 alias 路由到低等级真实模型。
 12. Given 用户在账号列表配置允许账号、排除账号、策略顺序和 fallback，When 点击路由测试按钮，Then 后端将页面 row id 翻译为 sidecar auth id，通过 `X-GetTokens-Route-*` loopback header 控制本次测试请求的候选账号与顺序，并在页面展示最终候选顺序和实际命中账号。
 
+## 2026-05-26 请求模式标题区收口
+
+- 决策：`ChannelRoutingWorkbench` 左上角不再用“当前模式”小字解释状态，改成黑底 `Split` 徽标 + `请求模式` 主标题 + 说明按钮 + 同字号 `预览` chip；模式本身只交给右侧两个切换按钮表达。
+- 体验：这次把“选中就是当前”的反馈落到视觉上，避免标题区再额外重复状态词，也让请求模式卡的身份更像工作台锁定区。
+- 归档：验收截图保存为 `docs-linhay/spaces/20260511-codex-account-list-tab/screenshots/20260526/codex/20260526-codex-account-list-route-mode-header-after-v02.png`。
+
 ## 设计稿入口
 
 - 本期设计稿：`（未产出）`
@@ -151,7 +157,6 @@
 46. Codex 套餐徽章补齐：用户指出 `AttributionCard` badge 区可用于显示 Codex 套餐。已将账号卡 badge 构建收敛到 `buildAccountAttributionBadges(account, quotaDisplay)`，优先取 quota 返回的 `planType`，再回退账号记录的 `planType`，并继续保留格式徽章；Codex 请求顺序卡片也通过同一 `buildCodexQuotaSummaryAccount` 结果解析套餐，将 `PLUS` / `PRO` / `TEAM` 等标签显示在 badge 区。后续又把 badge 文案收敛为“短名显示 + title 全名”，格式 badge 以 `ANTH` / `OAI CHAT` / `OAI RESP` / `GEM` 形式展示，悬浮保留完整 label。已验证 `node --test frontend/src/features/accounts/tests/accountPresentation.test.mjs frontend/src/features/codex/codexAccountList.test.mjs`、`npm --prefix frontend run typecheck`。
 47. 账号筛选菜单重设计：用户要求把 `AccountsToolbar` 的筛选菜单改为四组对象状态。已将来源重做为 `全部 / AUTH FILE / API KEY`，资源重做为 `存在额度 / 存在余额`，状态重做为 `全部 / 异常 / 禁用 / 可请求`，套餐重做为 `全部 / free / plus / pro`；四组默认全选，筛选摘要按来源、资源、状态、套餐稳定展示。套餐选项根据当前账号数据中实际存在的 `availablePlanTypes` 显示和禁用，空数据时保留默认全选逻辑。已同步更新 `accountFilters`、`accountSelectors`、`AccountsFeature`、`AccountsListWorkbenchView`、本地化文案与回归测试，`npm run typecheck` 与 `npm run test:unit` 通过。
 48. 请求模式说明入口：用户反馈顺序模式下仍可能同时消耗多个账号，需要把原因写进产品说明。已在 `ChannelRoutingWorkbench` 的 `请求模式` 标题旁新增问号按钮，点击弹出 `请求模式说明` 弹层；说明明确顺序模式不是账号独占，retry / failover、运行态 guard、WebSocket pinned auth 释放、项目/组限定、多会话并发、路由探测与连续测试都可能导致后续账号被命中。该入口同时覆盖 Codex 与 Claude 共用路由工作台。已验证 `npm --prefix frontend run test:unit`、`npm --prefix frontend run typecheck`；in-app browser 打开 `http://localhost:5173/?preview=codex#frame=codex&workspace=account-list` 后确认问号入口、说明弹层、右上角关闭按钮与底层模式区域保留可见，弹层底部不再显示冗余返回按钮，375px 无横向溢出。截图归档：`screenshots/20260526/codex/20260526-codex-account-list-route-mode-help-after-v03.png`。
-
 49. 启停同步收口：`#frame=accounts` 与 `#frame=codex&workspace=account-list` 现在共用 canonical account id 的启停通道，成功写入后会广播 `auth-file:` / `codex-api-key:` / `openai-compatible:` 状态变化；浏览器 preview 还会把禁用覆盖写入同源 localStorage，确保两个页面切换后仍保持同一启停状态，不再依赖旧业务的 bare name 兼容路径。已验证 `node --test frontend/src/features/accounts/tests/accountDisabledSync.test.mjs frontend/src/features/codex/codexAccountList.test.mjs frontend/src/features/accounts/tests/accountPresentation.test.mjs`、`npm --prefix frontend run typecheck`、browser preview 交互验收。
 
 ## 当前状态

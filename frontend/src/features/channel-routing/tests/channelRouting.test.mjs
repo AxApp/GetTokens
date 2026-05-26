@@ -457,9 +457,8 @@ test('ChannelRoutingWorkbench keeps route mode toggles in the header and removes
 test('ChannelRoutingWorkbench presents route mode heading as a large status lockup', async () => {
   const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /const activeRouteMode = routeModes\.find/);
-  assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center border-2/);
-  assert.match(source, /channel === 'codex' \? 'Codex' : 'Claude Code'/);
-  assert.match(source, /\{activeRouteMode\.label\}模式/);
-  assert.match(source, /border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-2 py-0\.5 text-\[var\(--text-primary\)\]/);
+  assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center border-2 border-\[var\(--text-primary\)\] bg-\[var\(--text-primary\)\] text-\[var\(--bg-main\)\]/);
+  assert.match(source, /<h2 className="min-w-0 text-\[length:var\(--font-size-ui-lg\)\] font-black leading-5 tracking-\[0\] text-\[var\(--text-primary\)\] sm:text-\[length:var\(--font-size-heading-sm\)\] sm:leading-normal">/);
+  assert.match(source, /查看请求模式说明/);
+  assert.match(source, /<span className="border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-2 py-1 text-\[length:var\(--font-size-ui-sm\)\] font-black leading-4 text-\[var\(--text-primary\)\]">/);
 });
