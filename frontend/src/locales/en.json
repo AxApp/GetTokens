@@ -56,7 +56,11 @@
     "design_system": "DESIGN SYSTEM",
     "debug": "DEBUG",
     "collapse_sidebar": "Collapse Sidebar",
-    "expand_sidebar": "Expand Sidebar"
+    "expand_sidebar": "Expand Sidebar",
+    "update_available": "Update Available",
+    "update_now": "Update",
+    "updating": "Updating",
+    "update_failed": "Update Failed"
   },
   "design_system": {
     "title": "Design System",

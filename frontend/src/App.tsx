@@ -1,5 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
+import { ApplyUpdate, CheckUpdate } from '../wailsjs/go/main/App';
+import { BrowserOpenURL, Quit } from '../wailsjs/runtime/runtime';
 import Sidebar from './components/biz/Sidebar';
 import PageLoadingFallback from './components/ui/PageLoadingFallback';
 import { DebugProvider } from './context/DebugContext';
@@ -11,6 +13,8 @@ import { applyTextScaleVariables } from './features/settings/settingsTextScale';
 import { AccountsPageStateProvider } from './features/accounts/AccountsPageStateProvider';
 import { useAppBootstrap } from './hooks/useAppBootstrap';
 import { useAppNavigation } from './hooks/useAppNavigation';
+import { toErrorMessage } from './utils/error';
+import { hasWailsRuntime } from './utils/previewMode';
 
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 const ClaudePage = lazy(() => import('./pages/ClaudePage'));
@@ -25,6 +29,8 @@ function AppShell() {
   const { themeMode } = useTheme();
   const { textScale } = useTextScale();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [sidebarUpdateError, setSidebarUpdateError] = useState('');
+  const [isSidebarUpdateActionPending, setIsSidebarUpdateActionPending] = useState(false);
   const {
     activePage,
     setActivePage,
@@ -44,6 +50,44 @@ function AppShell() {
     usesNativeUpdaterUI,
   } = useAppBootstrap();
   const showDeveloperTools = import.meta.env.DEV;
+
+  async function handleSidebarUpdateAction() {
+    if (!availableRelease) {
+      return;
+    }
+
+    setIsSidebarUpdateActionPending(true);
+    setSidebarUpdateError('');
+    try {
+      if (usesNativeUpdaterUI) {
+        await CheckUpdate();
+        return;
+      }
+      if (canApplyUpdate) {
+        await ApplyUpdate();
+        Quit();
+        return;
+      }
+      openExternalURL(availableRelease.releaseUrl);
+    } catch (error) {
+      setSidebarUpdateError(toErrorMessage(error));
+    } finally {
+      setIsSidebarUpdateActionPending(false);
+    }
+  }
+
+  function openExternalURL(url: string) {
+    if (!url) {
+      return;
+    }
+
+    if (hasWailsRuntime()) {
+      BrowserOpenURL(url);
+      return;
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
 
   useEffect(() => {
     const isDark =
@@ -153,6 +197,12 @@ function AppShell() {
           activeClaudeWorkspace={activeClaudeWorkspace}
           setActiveClaudeWorkspace={setActiveClaudeWorkspace}
           releaseLabel={releaseLabel}
+          availableRelease={availableRelease}
+          canApplyUpdate={canApplyUpdate}
+          usesNativeUpdaterUI={usesNativeUpdaterUI}
+          isUpdateActionPending={isSidebarUpdateActionPending}
+          updateActionError={sidebarUpdateError}
+          onUpdateAction={handleSidebarUpdateAction}
           showDeveloperTools={showDeveloperTools}
           onCollapsedChange={setIsSidebarCollapsed}
         />

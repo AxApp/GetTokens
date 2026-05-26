@@ -3,7 +3,7 @@ import { CanApplyUpdate, GetReleaseLabel, GetSidecarStatus, GetVersion, UsesNati
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { useDebug } from '../context/DebugContext';
 import type { ReleaseInfo, SidecarStatus } from '../types';
-import { hasPreviewMode, hasWailsAppBindings } from '../utils/previewMode';
+import { getPreviewMode, hasPreviewMode, hasWailsAppBindings } from '../utils/previewMode';
 
 const defaultSidecarStatus: SidecarStatus = {
   code: 'stopped',
@@ -26,13 +26,25 @@ export function useAppBootstrap() {
   useEffect(() => {
     let mounted = true;
     const previewMode = hasPreviewMode();
+    const previewKey = getPreviewMode();
     const wailsRuntime = hasWailsAppBindings();
 
     async function loadInitialState() {
       if (previewMode || !wailsRuntime) {
+        const previewRelease: ReleaseInfo | null =
+          previewKey === 'sidebar-update'
+            ? {
+                version: '1.0.27',
+                releaseUrl: 'https://github.com/AxApp/GetTokens/releases/tag/v1.0.27',
+                assetName: 'GetTokens_macOS_AppleSilicon.dmg',
+                releaseNote: 'Preview release for sidebar update prompt.',
+              }
+            : null;
+
         if (!mounted) return;
         setVersion(previewMode ? 'preview' : 'browser');
         setReleaseLabel(previewMode ? 'preview' : 'browser');
+        setAvailableRelease(previewRelease);
         setCanApplyUpdate(false);
         setUsesNativeUpdaterUI(false);
         setSidecarStatus({

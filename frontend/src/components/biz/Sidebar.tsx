@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Download, ExternalLink, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useI18n } from '../../context/I18nContext';
-import type { AppPage, ClaudeWorkspace, CodexWorkspace } from '../../types';
+import type { AppPage, ClaudeWorkspace, CodexWorkspace, ReleaseInfo } from '../../types';
 import { formatSidebarVersion } from '../../utils/version';
 import { getSidebarNavItems } from './sidebarNav';
+import { resolveSidebarUpdatePrompt } from './sidebarUpdatePrompt';
 import {
   getSidebarContentMotionState,
   getOpenSidebarSection,
@@ -22,6 +23,12 @@ interface SidebarProps {
   activeClaudeWorkspace: ClaudeWorkspace;
   setActiveClaudeWorkspace: (workspace: ClaudeWorkspace) => void;
   releaseLabel: string;
+  availableRelease: ReleaseInfo | null;
+  canApplyUpdate: boolean;
+  usesNativeUpdaterUI: boolean;
+  isUpdateActionPending?: boolean;
+  updateActionError?: string;
+  onUpdateAction?: () => void;
   showDeveloperTools?: boolean;
   onCollapsedChange?: (isCollapsed: boolean) => void;
 }
@@ -57,12 +64,34 @@ export default function Sidebar({
   activeClaudeWorkspace,
   setActiveClaudeWorkspace,
   releaseLabel,
+  availableRelease,
+  canApplyUpdate,
+  usesNativeUpdaterUI,
+  isUpdateActionPending = false,
+  updateActionError = '',
+  onUpdateAction,
   showDeveloperTools = import.meta.env.DEV,
   onCollapsedChange,
 }: SidebarProps) {
   const { t } = useI18n();
   const navItems = getSidebarNavItems(showDeveloperTools);
   const sidebarVersion = formatSidebarVersion(releaseLabel);
+  const updatePrompt = resolveSidebarUpdatePrompt({
+    availableRelease,
+    canApplyUpdate,
+    usesNativeUpdaterUI,
+  });
+  const updatePromptLabel = updatePrompt ? `${t('nav.update_available')}: ${updatePrompt.releaseVersion}` : '';
+  const updatePromptTitle =
+    updatePrompt && updateActionError ? `${updatePromptLabel} / ${t('nav.update_failed')}: ${updateActionError}` : updatePromptLabel;
+  const updateButtonLabel = updateActionError
+    ? t('nav.update_failed')
+    : isUpdateActionPending
+      ? `${t('nav.updating')} ${updatePrompt?.releaseVersion ?? ''}`.trim()
+      : updatePrompt
+        ? `${t('nav.update_now')} ${updatePrompt.releaseVersion}`
+        : t('nav.update_now');
+  const UpdateActionIcon = updatePrompt?.action === 'open-release-page' ? ExternalLink : Download;
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [hoveredSection, setHoveredSection] = useState<SidebarSection | null>(null);
   const [pinnedSection, setPinnedSection] = useState<SidebarSection | null>(null);
@@ -328,17 +357,51 @@ export default function Sidebar({
       <div className={`border-t-2 border-[var(--border-color)] transition-[padding] duration-200 ease-out ${isCollapsed ? 'p-3' : 'p-6'}`}>
         <div className="grid place-items-center">
           <div
-            className={`col-start-1 row-start-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-tighter text-[var(--text-muted)] transition-[opacity,transform] duration-200 ease-out ${versionTextClassName}`}
+            className={`col-start-1 row-start-1 flex w-full flex-col items-center justify-center text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-tighter text-[var(--text-muted)] transition-[opacity,transform] duration-200 ease-out ${versionTextClassName}`}
             aria-hidden={isCollapsed}
           >
-            VERSION {sidebarVersion}
+            <div className="max-w-full truncate text-center">VERSION {sidebarVersion}</div>
+            {updatePrompt ? (
+              <>
+                <div className="mt-2 max-w-full truncate text-center text-[8px] font-black tracking-widest text-[var(--accent-green)]">
+                  {t('nav.update_available')}
+                </div>
+                <button
+                  type="button"
+                  className="mt-2 inline-flex min-h-8 w-full min-w-0 items-center justify-center gap-2 border-2 border-[var(--border-color)] bg-[var(--accent-green)] px-2 py-1 font-black uppercase tracking-widest text-[var(--text-on-accent)] shadow-[3px_3px_0_var(--shadow-color)] transition-[background-color,color,opacity,transform] duration-150 hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-70"
+                  aria-label={updatePromptLabel}
+                  title={updatePromptTitle}
+                  onClick={onUpdateAction}
+                  disabled={!onUpdateAction || isUpdateActionPending}
+                  tabIndex={isCollapsed ? -1 : 0}
+                >
+                  <UpdateActionIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span className="min-w-0 truncate">{updateButtonLabel}</span>
+                </button>
+              </>
+            ) : null}
           </div>
-          <div
-            className={`col-start-1 row-start-1 h-2.5 w-2.5 bg-[var(--accent-red)] transition-[opacity,transform] duration-200 ease-out ${versionDotClassName}`}
-            role="img"
-            aria-label={`VERSION ${sidebarVersion}`}
-            title={`VERSION ${sidebarVersion}`}
-          />
+          {updatePrompt ? (
+            <button
+              type="button"
+              className={`col-start-1 row-start-1 flex h-8 w-8 items-center justify-center border-2 border-[var(--border-color)] bg-[var(--accent-green)] text-[var(--text-on-accent)] shadow-[3px_3px_0_var(--shadow-color)] transition-[background-color,color,opacity,transform] duration-200 ease-out hover:opacity-90 active:scale-95 disabled:cursor-wait disabled:opacity-70 ${versionDotClassName}`}
+              aria-label={updatePromptLabel}
+              aria-hidden={!isCollapsed}
+              title={updatePromptTitle}
+              onClick={onUpdateAction}
+              disabled={!onUpdateAction || isUpdateActionPending}
+              tabIndex={isCollapsed ? 0 : -1}
+            >
+              <UpdateActionIcon className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          ) : (
+            <div
+              className={`col-start-1 row-start-1 h-2.5 w-2.5 bg-[var(--accent-red)] transition-[opacity,transform] duration-200 ease-out ${versionDotClassName}`}
+              role="img"
+              aria-label={`VERSION ${sidebarVersion}`}
+              title={`VERSION ${sidebarVersion}`}
+            />
+          )}
         </div>
       </div>
     </aside>
