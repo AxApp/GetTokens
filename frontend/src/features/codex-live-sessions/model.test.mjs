@@ -567,12 +567,17 @@ test('codex live session detail timeline uses compact rows without horizontal ta
 
   assert.match(detailSource, /function buildTimingMetricRows\(/);
   assert.match(detailSource, /timing_total[\s\S]*timing_ttft[\s\S]*timing_first_token[\s\S]*timing_stream[\s\S]*timing_queue[\s\S]*timing_auth[\s\S]*timing_connect/);
-  assert.match(detailSource, /reduce<Array<\[string, string\]>>/);
-  assert.match(detailSource, /entry\[1\] !== 'n\/a'/);
+  assert.match(detailSource, /reduce<TimingMetricRow\[\]>/);
+  assert.match(detailSource, /entry\.value !== 'n\/a'/);
   assert.match(detailSource, /no_timing_data/);
   assert.match(detailSource, /buildTimelineMetricItems/);
   assert.match(detailSource, /isTimelineValuePresent/);
   assert.match(detailSource, /TimelineMetricPill/);
+  assert.match(detailSource, /const requestTimelineVisibleLimit = 15/);
+  assert.match(timelineSource, /visibleRequests = sortedRequests\.slice\(0, requestTimelineVisibleLimit\)/);
+  assert.match(timelineSource, /visibleRowCount/);
+  assert.match(timelineSource, /visibleRequests\.map/);
+  assert.doesNotMatch(timelineSource, /sortedRequests\.map/);
   assert.match(detailSource, /function TimelineSummaryRow/);
   assert.match(detailSource, /onClick=\{onOpen\}/);
   assert.match(detailSource, /formatTimelineRequestID/);
@@ -617,7 +622,9 @@ test('codex live session surfaces avoid nested card shells in the dense workbenc
 test('codex live session detail header uses request timing trend chart', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
 
-  assert.match(detailSource, /<RequestTimingTrend session=\{session\} request=\{request\} t=\{t\} \/>/);
+  assert.match(detailSource, /useState<CodexLiveTimingTrendMetric>\('totalDurationMs'\)/);
+  assert.match(detailSource, /<RequestTimingTrend session=\{session\} request=\{request\} selectedMetric=\{selectedTimingMetric\} t=\{t\} \/>/);
+  assert.match(detailSource, /<TimingMetrics[\s\S]*selectedMetric=\{selectedTimingMetric\}[\s\S]*onSelectMetric=\{setSelectedTimingMetric\}/);
   assert.match(detailSource, /<RequestTimingTrend[\s\S]*?<TimingMetrics[\s\S]*?<Timeline[\s\S]*?<AccountCard/);
   assert.match(detailSource, /function RequestTimingTrend/);
   assert.match(detailSource, /buildCodexLiveRequestTimingTrend/);
@@ -840,21 +847,30 @@ test('codex live session timing chart uses request timestamps and live refresh',
   assert.match(detailSource, /nowMs/);
   assert.match(detailSource, /trendChartX\(point\.startedAtMs/);
   assert.match(detailSource, /buildTimingTrendEcgPath/);
+  assert.match(detailSource, /selectedMetric: CodexLiveTimingTrendMetric/);
+  assert.match(detailSource, /visibleStartedAtMinMs/);
+  assert.match(detailSource, /visiblePoints = trend\.points\.filter/);
+  assert.match(detailSource, /getTimingTrendMetricMax\(visiblePoints, selectedMetric\)/);
   assert.match(detailSource, /strokeDasharray=\{point\.isLive/);
   assert.doesNotMatch(detailSource, /trendChartX\(index,/);
 });
 
-test('codex live session timing chart follows latest samples unless user pans history', async () => {
+test('codex live session timing chart uses a fixed viewport without horizontal panning', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
 
-  assert.match(detailSource, /scrollContainerRef/);
-  assert.match(detailSource, /autoFollowLatest/);
-  assert.match(detailSource, /requestAnimationFrame/);
-  assert.match(detailSource, /container\.scrollLeft = container\.scrollWidth - container\.clientWidth/);
-  assert.match(detailSource, /\[autoFollowLatest, trend\.startedAtMaxMs, trend\.points\.length\]/);
-  assert.match(detailSource, /onPointerMove/);
-  assert.match(detailSource, /setAutoFollowLatest\(false\)/);
-  assert.match(detailSource, /isTimingChartScrolledToEnd/);
+  assert.match(detailSource, /chartShellRef/);
+  assert.match(detailSource, /ResizeObserver/);
+  assert.match(detailSource, /element\.clientWidth/);
+  assert.match(detailSource, /const width = Math\.max\(320, chartWidth \|\| 0\)/);
+  assert.match(detailSource, /resolveTimingTrendVisibleWindowMs/);
+  assert.match(detailSource, /timingTrendStripFullWindowWidthPx/);
+  assert.match(detailSource, /className="mt-3 overflow-hidden/);
+  assert.match(detailSource, /width: '100%'/);
+  assert.doesNotMatch(detailSource, /overflow-x-auto/);
+  assert.doesNotMatch(detailSource, /scrollContainerRef/);
+  assert.doesNotMatch(detailSource, /autoFollowLatest/);
+  assert.doesNotMatch(detailSource, /requestAnimationFrame/);
+  assert.doesNotMatch(detailSource, /onPointerMove/);
 });
 
 test('codex live session timing chart follows Usage Desk chart styling primitives', async () => {
@@ -863,14 +879,36 @@ test('codex live session timing chart follows Usage Desk chart styling primitive
   assert.match(detailSource, /backgroundImage:/);
   assert.match(detailSource, /var\(--color-chart-grid\)/);
   assert.match(detailSource, /var\(--color-chart-grid-subtle\)/);
-  assert.match(detailSource, /codex-live-wave-sweep/);
-  assert.match(detailSource, /codex-live-pulse-pop/);
-  assert.match(detailSource, /strokeLinejoin=\{series\.id === 'totalDurationMs' \? 'miter' : 'round'\}/);
+  assert.match(detailSource, /codex-live-strip-enter/);
+  assert.match(detailSource, /codex-live-point-pop/);
+  assert.match(detailSource, /codex-live-ring-breathe/);
+  assert.match(detailSource, /key=\{`\$\{selectedMetric\}-signal`\}/);
+  assert.match(detailSource, /codex-live-ring-breathe 1\.8s ease-in-out infinite/);
+  assert.match(detailSource, /strokeLinejoin="miter"/);
+  assert.match(detailSource, /selectedWavePath/);
+  assert.match(detailSource, /stroke=\{selectedSeries\.color\}/);
   assert.match(detailSource, /function TimingTrendPoint/);
   assert.match(detailSource, /buildTimingTrendPointStyle/);
   assert.match(detailSource, /buildTimingTrendEcgPath\(/);
+  assert.doesNotMatch(detailSource, /strokeDasharray="1"/);
+  assert.doesNotMatch(detailSource, /pathLength="1"/);
+  assert.doesNotMatch(detailSource, /timingTrendSeries\.map\(\(series\)[\s\S]*buildTimingTrendEcgPath/);
   assert.doesNotMatch(detailSource, /buildTimingTrendSeriesPath/);
   assert.doesNotMatch(detailSource, /codex-live-total-area/);
+});
+
+test('codex live session timing metrics switch the single trend metric', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /interface TimingMetricRow/);
+  assert.match(detailSource, /trendMetric\?: CodexLiveTimingTrendMetric/);
+  assert.match(detailSource, /onClick=\{\(\) => onSelectMetric\(trendMetric\)\}/);
+  assert.match(detailSource, /aria-pressed=\{selected\}/);
+  assert.match(detailSource, /trendMetric: 'streamDurationMs'/);
+  assert.match(detailSource, /trendMetric: 'longestEventGapMs'/);
+  assert.doesNotMatch(detailSource, /trendMetric: 'reconnectCount'/);
+  assert.doesNotMatch(detailSource, /trendMetric: 'outputTokensPerSecond'/);
+  assert.doesNotMatch(detailSource, /trendMetric: 'totalTokensPerSecond'/);
 });
 
 test('codex live session account block reuses account attribution card presentation', async () => {

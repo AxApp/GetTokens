@@ -1,6 +1,15 @@
 import type { CodexLiveRequest } from './types';
 
-export type CodexLiveTimingTrendMetric = 'totalDurationMs' | 'firstEventMs' | 'firstTokenMs';
+export type CodexLiveTimingTrendMetric =
+  | 'totalDurationMs'
+  | 'firstEventMs'
+  | 'firstTokenMs'
+  | 'streamDurationMs'
+  | 'queueWaitMs'
+  | 'authSelectMs'
+  | 'upstreamConnectMs'
+  | 'averageEventGapMs'
+  | 'longestEventGapMs';
 
 export interface CodexLiveRequestTimingTrendPoint {
   requestID: string;
@@ -58,12 +67,7 @@ export function buildCodexLiveRequestTimingTrend(
       : [];
 
   const maxMs = windowedPoints.reduce((max, point) => {
-    return Math.max(
-      max,
-      point.values.totalDurationMs ?? 0,
-      point.values.firstEventMs ?? 0,
-      point.values.firstTokenMs ?? 0,
-    );
+    return Math.max(max, ...Object.values(point.values).map((value) => value ?? 0));
   }, 0);
 
   return {
@@ -91,6 +95,12 @@ function buildTimingTrendPoint(
     totalDurationMs: normalizeTimingValue(request.timing?.totalDurationMs),
     firstEventMs: normalizeTimingValue(request.timing?.firstEventMs),
     firstTokenMs: normalizeTimingValue(request.timing?.firstTokenMs),
+    streamDurationMs: normalizeTimingValue(request.timing?.streamDurationMs),
+    queueWaitMs: normalizeTimingValue(request.timing?.queueWaitMs),
+    authSelectMs: normalizeTimingValue(request.timing?.authSelectMs),
+    upstreamConnectMs: normalizeTimingValue(request.timing?.upstreamConnectMs),
+    averageEventGapMs: normalizeTimingValue(request.timing?.averageEventGapMs),
+    longestEventGapMs: normalizeTimingValue(request.timing?.longestEventGapMs),
   };
 
   if (!values.totalDurationMs && request.completedAt) {

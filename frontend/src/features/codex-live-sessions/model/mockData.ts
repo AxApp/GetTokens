@@ -2,6 +2,9 @@ import type { CodexLiveRequest, CodexLiveSession, CodexLiveSessionSnapshot, Code
 import { snapshotWithDerivedSummary } from './selectors.ts';
 
 const generatedAt = '2026-05-21T18:36:42+08:00';
+const previewActiveRequestStartedAtMs = Date.parse('2026-05-21T18:35:10+08:00');
+const previewLiveElapsedBaseMs = 7600;
+const previewLiveElapsedCycleMs = 9000;
 
 function event(
   id: string,
@@ -417,6 +420,22 @@ export const codexLiveSessionsPreviewSnapshot: CodexLiveSessionSnapshot = snapsh
   sessions: codexLiveSessionsPreviewSessions,
 });
 
+export function buildAnimatedCodexLiveSessionsPreviewSnapshot(nowMs = Date.now()): CodexLiveSessionSnapshot {
+  const safeNowMs = Number.isFinite(nowMs) ? Math.round(nowMs) : Date.now();
+  const liveElapsedMs = previewLiveElapsedBaseMs + (safeNowMs % previewLiveElapsedCycleMs);
+  const targetActiveRequestStartedAtMs = safeNowMs - liveElapsedMs;
+  const timestampDeltaMs = targetActiveRequestStartedAtMs - previewActiveRequestStartedAtMs;
+  const sessions = codexLiveSessionsPreviewSessions.map((session) =>
+    shiftPreviewSessionTimestamps(session, timestampDeltaMs, safeNowMs),
+  );
+
+  return snapshotWithDerivedSummary({
+    ...codexLiveSessionsPreviewSnapshot,
+    generatedAt: new Date(safeNowMs).toISOString(),
+    sessions,
+  });
+}
+
 export const codexLiveSessionsEmptySnapshot: CodexLiveSessionSnapshot = snapshotWithDerivedSummary({
   generatedAt,
   sidecarReady: true,
@@ -432,6 +451,56 @@ export const codexLiveSessionsEmptySnapshot: CodexLiveSessionSnapshot = snapshot
   },
   sessions: [],
 });
+
+function shiftPreviewSessionTimestamps(session: CodexLiveSession, timestampDeltaMs: number, nowMs: number): CodexLiveSession {
+  const startedAt = shiftPreviewTimestamp(session.startedAt, timestampDeltaMs);
+  const requests = session.requests.map((request) => shiftPreviewRequestTimestamps(request, timestampDeltaMs, nowMs));
+  const activeRequest = session.activeRequestID
+    ? requests.find((request) => request.requestID === session.activeRequestID)
+    : undefined;
+  const lastEventAt = shiftPreviewTimestamp(session.lastEventAt, timestampDeltaMs);
+  const activeDurationMs = activeRequest ? Math.max(0, Math.round(nowMs - Date.parse(activeRequest.startedAt))) : null;
+  const historicalDurationMs = Math.max(0, Date.parse(lastEventAt) - Date.parse(startedAt));
+
+  return {
+    ...session,
+    startedAt,
+    lastEventAt,
+    durationMs: activeDurationMs ?? historicalDurationMs,
+    recentEvents: session.recentEvents,
+    requests,
+  };
+}
+
+function shiftPreviewRequestTimestamps(request: CodexLiveRequest, timestampDeltaMs: number, nowMs: number): CodexLiveRequest {
+  const startedAt = shiftPreviewTimestamp(request.startedAt, timestampDeltaMs);
+  const shiftedRequest = {
+    ...request,
+    startedAt,
+    completedAt: request.completedAt ? shiftPreviewTimestamp(request.completedAt, timestampDeltaMs) : undefined,
+  };
+  if (shiftedRequest.completedAt || !['active', 'streaming', 'reconnecting'].includes(shiftedRequest.status)) {
+    return shiftedRequest;
+  }
+
+  const liveElapsedMs = Math.max(0, Math.round(nowMs - Date.parse(startedAt)));
+  return {
+    ...shiftedRequest,
+    timing: {
+      ...shiftedRequest.timing,
+      totalDurationMs: liveElapsedMs,
+      streamDurationMs: Math.max(0, liveElapsedMs - (shiftedRequest.timing?.firstTokenMs ?? 0)),
+    },
+  };
+}
+
+function shiftPreviewTimestamp(value: string, timestampDeltaMs: number): string {
+  const timestampMs = Date.parse(value);
+  if (!Number.isFinite(timestampMs)) {
+    return value;
+  }
+  return new Date(timestampMs + timestampDeltaMs).toISOString();
+}
 
 export const codexLiveSessionsSidecarNotReadySnapshot: CodexLiveSessionSnapshot = {
   ...codexLiveSessionsPreviewSnapshot,

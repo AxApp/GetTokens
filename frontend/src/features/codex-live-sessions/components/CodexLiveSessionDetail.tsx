@@ -48,6 +48,8 @@ export function SessionDetail({
   errorMessage?: string;
   t: Translate;
 }) {
+  const [selectedTimingMetric, setSelectedTimingMetric] = useState<CodexLiveTimingTrendMetric>('totalDurationMs');
+
   if (!session) {
     return (
       <div className="grid w-full place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-6 shadow-[6px_6px_0_var(--shadow-color)]">
@@ -73,8 +75,13 @@ export function SessionDetail({
             ) : null}
           </div>
         ) : null}
-        <RequestTimingTrend session={session} request={request} t={t} />
-        <TimingMetrics request={request} t={t} />
+        <RequestTimingTrend session={session} request={request} selectedMetric={selectedTimingMetric} t={t} />
+        <TimingMetrics
+          request={request}
+          selectedMetric={selectedTimingMetric}
+          onSelectMetric={setSelectedTimingMetric}
+          t={t}
+        />
         <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
       </div>
 
@@ -91,15 +98,25 @@ const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: strin
   { id: 'totalDurationMs', labelKey: 'codex_live_sessions.timing_total', color: 'var(--color-chart-primary)' },
   { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--color-chart-blue)' },
   { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--color-chart-peak)' },
+  { id: 'streamDurationMs', labelKey: 'codex_live_sessions.timing_stream', color: 'var(--color-status-success)' },
+  { id: 'queueWaitMs', labelKey: 'codex_live_sessions.timing_queue', color: 'var(--color-status-warning)' },
+  { id: 'authSelectMs', labelKey: 'codex_live_sessions.timing_auth', color: 'var(--color-chart-attribution)' },
+  { id: 'upstreamConnectMs', labelKey: 'codex_live_sessions.timing_connect', color: 'var(--color-chart-secondary)' },
+  { id: 'averageEventGapMs', labelKey: 'codex_live_sessions.timing_avg_gap', color: 'var(--color-status-warning-soft)' },
+  { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--color-status-danger)' },
 ];
+const requestTimelineVisibleLimit = 15;
+const timingTrendStripFullWindowWidthPx = 520;
 
 function RequestTimingTrend({
   session,
   request,
+  selectedMetric,
   t,
 }: {
   session: CodexLiveSession;
   request?: CodexLiveRequest;
+  selectedMetric: CodexLiveTimingTrendMetric;
   t: Translate;
 }) {
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -111,6 +128,7 @@ function RequestTimingTrend({
   const trend = buildCodexLiveRequestTimingTrend(session.requests, request, { nowMs });
   const currentRequestID = request?.requestID || session.lastRequestID || session.sessionID;
   const latestPoint = trend.points[trend.points.length - 1];
+  const selectedSeries = getTimingTrendSeries(selectedMetric);
 
   return (
     <section className="min-w-0" aria-label={t('codex_live_sessions.request_timing_trend')}>
@@ -132,7 +150,12 @@ function RequestTimingTrend({
           </span>
         </div>
 
-        <TimingTrendChart trend={trend} selectedRequestID={request?.requestID || session.lastRequestID || ''} t={t} />
+        <TimingTrendChart
+          trend={trend}
+          selectedMetric={selectedMetric}
+          selectedRequestID={request?.requestID || session.lastRequestID || ''}
+          t={t}
+        />
 
         <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
           <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-2">
@@ -142,15 +165,13 @@ function RequestTimingTrend({
           </div>
 
           <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
-            {timingTrendSeries.map((series) => (
-              <div key={series.id} className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
-                <span className="h-2 w-2" style={{ backgroundColor: series.color }} />
-                <span className="font-black text-[var(--text-muted)]">{t(series.labelKey)}</span>
-                <span className="font-black text-[var(--text-primary)]">
-                  {formatOptionalDuration(latestPoint?.values[series.id] ?? undefined)}
-                </span>
-              </div>
-            ))}
+            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
+              <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
+              <span className="font-black text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
+              <span className="font-black text-[var(--text-primary)]">
+                {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -169,30 +190,34 @@ function TimingTrendFooterItem({ label, value }: { label: string; value: string 
 
 function TimingTrendChart({
   trend,
+  selectedMetric,
   selectedRequestID,
   t,
 }: {
   trend: ReturnType<typeof buildCodexLiveRequestTimingTrend>;
+  selectedMetric: CodexLiveTimingTrendMetric;
   selectedRequestID: string;
   t: Translate;
 }) {
   const chartHeight = 224;
   const chartTopInset = 38;
   const chartBottomInset = 50;
-  const chartSideInset = 54;
-  const chartPlotWidth = Math.max(372, Math.max(trend.points.length - 1, 1) * 84);
-  const width = Math.max(480, chartPlotWidth + chartSideInset * 2);
   const height = chartHeight;
-  const padding = { top: chartTopInset, right: chartSideInset, bottom: chartBottomInset, left: chartSideInset };
+  const padding = { top: chartTopInset, right: 18, bottom: chartBottomInset, left: 30 };
   const gridY = [0, 0.5, 1];
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const dragStateRef = useRef<{ startX: number; scrollLeft: number } | null>(null);
-  const [autoFollowLatest, setAutoFollowLatest] = useState(true);
-  const totalWavePath = buildTimingTrendEcgPath(
-    trend.points,
-    'totalDurationMs',
-    trend.maxMs,
-    trend.startedAtMinMs,
+  const chartShellRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+  const selectedSeries = getTimingTrendSeries(selectedMetric);
+  const width = Math.max(320, chartWidth || 0);
+  const visibleWindowMs = resolveTimingTrendVisibleWindowMs(width, padding, trend.windowMs);
+  const visibleStartedAtMinMs = Math.max(trend.startedAtMinMs, trend.startedAtMaxMs - visibleWindowMs);
+  const visiblePoints = trend.points.filter((point) => point.startedAtMs >= visibleStartedAtMinMs && point.startedAtMs <= trend.startedAtMaxMs);
+  const selectedMetricMaxMs = getTimingTrendMetricMax(visiblePoints, selectedMetric);
+  const selectedWavePath = buildTimingTrendEcgPath(
+    visiblePoints,
+    selectedMetric,
+    selectedMetricMaxMs,
+    visibleStartedAtMinMs,
     trend.startedAtMaxMs,
     width,
     height,
@@ -200,16 +225,22 @@ function TimingTrendChart({
   );
 
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container || !autoFollowLatest) {
+    const element = chartShellRef.current;
+    if (!element) {
       return;
     }
-    window.requestAnimationFrame(() => {
-      container.scrollLeft = container.scrollWidth - container.clientWidth;
-    });
-  }, [autoFollowLatest, trend.startedAtMaxMs, trend.points.length]);
+    const updateWidth = () => setChartWidth(Math.round(element.clientWidth));
+    updateWidth();
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateWidth);
+      return () => window.removeEventListener('resize', updateWidth);
+    }
+    const observer = new ResizeObserver(() => updateWidth());
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
-  if (!trend.hasData) {
+  if (!trend.hasData || selectedMetricMaxMs <= 0) {
     return (
       <div className="mt-3 grid h-[224px] place-items-center border-2 border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
         {t('codex_live_sessions.timing_trend_empty')}
@@ -219,74 +250,49 @@ function TimingTrendChart({
 
   return (
     <div
-      ref={scrollContainerRef}
-      className="mt-3 cursor-grab overflow-x-auto overflow-y-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[inset_0_12px_16px_-12px_var(--shadow-inset-color),inset_0_-12px_16px_-12px_var(--shadow-inset-color)] active:cursor-grabbing"
+      className="mt-3 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[inset_0_12px_16px_-12px_var(--shadow-inset-color),inset_0_-12px_16px_-12px_var(--shadow-inset-color)]"
       role="img"
       aria-label={t('codex_live_sessions.request_timing_trend')}
-      onScroll={(event) => setAutoFollowLatest(isTimingChartScrolledToEnd(event.currentTarget))}
-      onPointerDown={(event) => {
-        dragStateRef.current = {
-          startX: event.clientX,
-          scrollLeft: event.currentTarget.scrollLeft,
-        };
-        event.currentTarget.setPointerCapture(event.pointerId);
-      }}
-      onPointerMove={(event) => {
-        const dragState = dragStateRef.current;
-        if (!dragState) {
-          return;
-        }
-        const deltaX = event.clientX - dragState.startX;
-        if (Math.abs(deltaX) < 2) {
-          return;
-        }
-        event.currentTarget.scrollLeft = dragState.scrollLeft - deltaX;
-        setAutoFollowLatest(false);
-      }}
-      onPointerUp={(event) => {
-        dragStateRef.current = null;
-        event.currentTarget.releasePointerCapture(event.pointerId);
-        setAutoFollowLatest(isTimingChartScrolledToEnd(event.currentTarget));
-      }}
-      onPointerCancel={(event) => {
-        dragStateRef.current = null;
-        setAutoFollowLatest(isTimingChartScrolledToEnd(event.currentTarget));
-      }}
     >
       <div
-        className="relative mx-auto"
+        ref={chartShellRef}
+        className="relative h-full w-full"
         style={{
           height: `${chartHeight}px`,
-          width: `${width}px`,
+          width: '100%',
           backgroundImage:
             'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), linear-gradient(to right, transparent 0, transparent 19px, var(--color-chart-grid-subtle) 19px, var(--color-chart-grid-subtle) 20px), repeating-linear-gradient(to right, transparent 0, transparent 79px, var(--color-chart-grid-subtle) 79px, var(--color-chart-grid-subtle) 80px)',
         }}
       >
         <style>{`
-          @keyframes codex-live-wave-sweep {
-            0% { stroke-dashoffset: 1; opacity: 0.32; }
-            100% { stroke-dashoffset: 0; opacity: 1; }
+          @keyframes codex-live-strip-enter {
+            0% { opacity: 0.56; }
+            100% { opacity: 1; }
           }
-          @keyframes codex-live-pulse-pop {
+          @keyframes codex-live-point-pop {
             0% { transform: translate(-50%, -50%) scale(0.86); opacity: 0.42; }
             100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+          }
+          @keyframes codex-live-ring-breathe {
+            0%, 100% { opacity: 0.28; stroke-width: 1.25; }
+            50% { opacity: 0.82; stroke-width: 2.25; }
           }
         `}</style>
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
           {gridY.map((ratio) => {
-            const y = trendChartY(ratio * trend.maxMs, trend.maxMs, height, padding);
+            const y = trendChartY(ratio * selectedMetricMaxMs, selectedMetricMaxMs, height, padding);
             return (
               <g key={ratio}>
                 <line x1={padding.left} x2={width - padding.right} y1={y} y2={y} stroke="var(--color-chart-grid-strong)" strokeWidth="1" />
                 <text x={padding.left - 12} y={y + 4} textAnchor="end" className="fill-[var(--text-muted)] font-mono text-[10px] font-black">
-                  {formatDuration(ratio * trend.maxMs)}
+                  {formatDuration(ratio * selectedMetricMaxMs)}
                 </text>
               </g>
             );
           })}
 
-          {trend.points.map((point) => {
-            const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
+          {visiblePoints.map((point) => {
+            const x = trendChartX(point.startedAtMs, visibleStartedAtMinMs, trend.startedAtMaxMs, width, padding);
             return (
               <line
                 key={`${point.requestID}-grid`}
@@ -301,87 +307,63 @@ function TimingTrendChart({
             );
           })}
 
-          {totalWavePath ? (
+          {selectedWavePath ? (
             <path
-              d={totalWavePath}
+              key={`${selectedMetric}-halo`}
+              d={selectedWavePath}
               fill="none"
-              stroke="var(--color-chart-primary-area)"
+              stroke={selectedSeries.color}
               strokeWidth="9"
               strokeLinecap="round"
               strokeLinejoin="round"
-              opacity="0.14"
-              pathLength="1"
-              strokeDasharray="1"
-              style={{ animation: 'codex-live-wave-sweep 900ms cubic-bezier(0.22,1,0.36,1)' }}
+              opacity="0.12"
+              style={{ animation: 'codex-live-strip-enter 240ms ease-out' }}
             />
           ) : null}
 
-          {timingTrendSeries.map((series) => {
-            const path = buildTimingTrendEcgPath(
-              trend.points,
-              series.id,
-              trend.maxMs,
-              trend.startedAtMinMs,
-              trend.startedAtMaxMs,
-              width,
-              height,
-              padding,
-            );
-            if (!path) {
+          {selectedWavePath ? (
+            <path
+              key={`${selectedMetric}-signal`}
+              d={selectedWavePath}
+              fill="none"
+              stroke={selectedSeries.color}
+              strokeWidth="3.5"
+              strokeLinecap="round"
+              strokeLinejoin="miter"
+              style={{ animation: 'codex-live-strip-enter 240ms ease-out' }}
+            />
+          ) : null}
+
+          {visiblePoints.map((point) => {
+            const x = trendChartX(point.startedAtMs, visibleStartedAtMinMs, trend.startedAtMaxMs, width, padding);
+            const value = point.values[selectedMetric];
+            if (value === null) {
               return null;
             }
             return (
-              <path
-                key={series.id}
-                d={path}
-                fill="none"
-                stroke={series.color}
-                strokeWidth={series.id === 'totalDurationMs' ? 3.5 : 2}
-                strokeLinecap="round"
-                strokeLinejoin={series.id === 'totalDurationMs' ? 'miter' : 'round'}
-                pathLength={series.id === 'totalDurationMs' ? 1 : undefined}
-                strokeDasharray={series.id === 'totalDurationMs' ? 1 : undefined}
-                strokeDashoffset={0}
-                opacity={series.id === 'totalDurationMs' ? 1 : 0.72}
-                style={{ animation: 'codex-live-wave-sweep 900ms cubic-bezier(0.22,1,0.36,1)' }}
-              />
-            );
-          })}
-
-          {trend.points.map((point) => {
-            const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
-            return (
-              <g key={`${point.requestID}-auxiliary-points`}>
-                {timingTrendSeries.slice(1).map((series) => {
-                  const value = point.values[series.id];
-                  if (value === null) {
-                    return null;
-                  }
-                  return (
-                    <circle
-                      key={series.id}
-                      cx={x}
-                      cy={trendChartY(value, trend.maxMs, height, padding)}
-                      r={point.requestID === selectedRequestID ? 3.25 : 2.75}
-                      fill="var(--bg-main)"
-                      stroke={series.color}
-                      strokeDasharray={point.isLive ? '3 2' : undefined}
-                      strokeWidth="2"
-                    >
-                      <title>{`${point.label} · ${t(series.labelKey)} ${formatDuration(value)}`}</title>
-                    </circle>
-                  );
-                })}
+              <g key={`${point.requestID}-selected-point`}>
+                <circle
+                  cx={x}
+                  cy={trendChartY(value, selectedMetricMaxMs, height, padding)}
+                  r={point.requestID === selectedRequestID ? 3.75 : 3}
+                  fill="var(--bg-main)"
+                  stroke={selectedSeries.color}
+                  strokeDasharray={point.isLive ? '3 2' : undefined}
+                  strokeWidth="2"
+                >
+                  <title>{`${point.label} · ${t(selectedSeries.labelKey)} ${formatDuration(value)}`}</title>
+                </circle>
                 {point.isLive ? (
                   <circle
                     cx={x}
-                    cy={trendChartY(point.values.totalDurationMs ?? 0, trend.maxMs, height, padding)}
+                    cy={trendChartY(value, selectedMetricMaxMs, height, padding)}
                     r="10"
                     fill="none"
-                    stroke="var(--color-chart-primary)"
+                    stroke={selectedSeries.color}
                     strokeDasharray="2 3"
                     strokeWidth="1.75"
                     opacity="0.68"
+                    style={{ animation: 'codex-live-ring-breathe 1.8s ease-in-out infinite' }}
                   />
                 ) : null}
               </g>
@@ -390,23 +372,24 @@ function TimingTrendChart({
         </svg>
 
         <div className="pointer-events-none absolute inset-0">
-          {trend.points.map((point) => {
-            const totalMs = point.values.totalDurationMs;
-            if (totalMs === null) {
+          {visiblePoints.map((point) => {
+            const value = point.values[selectedMetric];
+            if (value === null) {
               return null;
             }
-            const x = trendChartX(point.startedAtMs, trend.startedAtMinMs, trend.startedAtMaxMs, width, padding);
-            const y = trendChartY(totalMs, trend.maxMs, height, padding);
+            const x = trendChartX(point.startedAtMs, visibleStartedAtMinMs, trend.startedAtMaxMs, width, padding);
+            const y = trendChartY(value, selectedMetricMaxMs, height, padding);
             return (
               <TimingTrendPoint
                 key={point.requestID}
                 x={x}
                 y={y}
-              label={formatDuration(totalMs)}
-              helper={`#${point.sequence}`}
-              selected={point.requestID === selectedRequestID}
-              live={point.isLive}
-            />
+                label={formatDuration(value)}
+                helper={`#${point.sequence}`}
+                color={selectedSeries.color}
+                selected={point.requestID === selectedRequestID}
+                live={point.isLive}
+              />
             );
           })}
         </div>
@@ -415,15 +398,12 @@ function TimingTrendChart({
   );
 }
 
-function isTimingChartScrolledToEnd(container: HTMLDivElement): boolean {
-  return container.scrollLeft + container.clientWidth >= container.scrollWidth - 2;
-}
-
 function TimingTrendPoint({
   x,
   y,
   label,
   helper,
+  color,
   selected,
   live,
 }: {
@@ -431,6 +411,7 @@ function TimingTrendPoint({
   y: number;
   label: string;
   helper: string;
+  color: string;
   selected: boolean;
   live: boolean;
 }) {
@@ -439,7 +420,7 @@ function TimingTrendPoint({
       className="absolute flex items-center justify-center"
       style={{
         ...buildTimingTrendPointStyle(x, y),
-        animation: selected || live ? 'codex-live-pulse-pop 260ms cubic-bezier(0.22,1,0.36,1)' : undefined,
+        animation: selected || live ? 'codex-live-point-pop 220ms cubic-bezier(0.22,1,0.36,1)' : undefined,
       }}
     >
       <div
@@ -456,6 +437,7 @@ function TimingTrendPoint({
         className={`relative rounded-full border-2 border-[var(--bg-main)] bg-[var(--color-chart-primary)] shadow-sm ${
           selected ? 'h-3.5 w-3.5' : live ? 'h-3 w-3' : 'h-2.5 w-2.5'
         }`}
+        style={{ backgroundColor: color }}
       />
       <div
         className="absolute top-7 whitespace-nowrap font-mono font-black uppercase text-[length:var(--font-size-ui-sm)]"
@@ -465,6 +447,24 @@ function TimingTrendPoint({
       </div>
     </div>
   );
+}
+
+function getTimingTrendSeries(metric: CodexLiveTimingTrendMetric) {
+  return timingTrendSeries.find((series) => series.id === metric) ?? timingTrendSeries[0];
+}
+
+function getTimingTrendMetricMax(points: readonly CodexLiveRequestTimingTrendPoint[], metric: CodexLiveTimingTrendMetric): number {
+  return points.reduce((max, point) => Math.max(max, point.values[metric] ?? 0), 0);
+}
+
+function resolveTimingTrendVisibleWindowMs(
+  width: number,
+  padding: { right: number; left: number },
+  maxWindowMs: number,
+): number {
+  const plotWidth = Math.max(1, width - padding.left - padding.right);
+  const msPerPixel = maxWindowMs / timingTrendStripFullWindowWidthPx;
+  return Math.max(30_000, Math.min(maxWindowMs, Math.round(plotWidth * msPerPixel)));
 }
 
 function buildTimingTrendPointStyle(x: number, y: number) {
@@ -586,7 +586,17 @@ function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[
   );
 }
 
-function TimingMetrics({ request, t }: { request?: CodexLiveRequest; t: Translate }) {
+function TimingMetrics({
+  request,
+  selectedMetric,
+  onSelectMetric,
+  t,
+}: {
+  request?: CodexLiveRequest;
+  selectedMetric: CodexLiveTimingTrendMetric;
+  onSelectMetric: (metric: CodexLiveTimingTrendMetric) => void;
+  t: Translate;
+}) {
   const metrics = buildTimingMetricRows(request, t);
 
   return (
@@ -595,45 +605,77 @@ function TimingMetrics({ request, t }: { request?: CodexLiveRequest; t: Translat
         {t('codex_live_sessions.timing')}
       </div>
       <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-3 xl:grid-cols-4">
-        {metrics.map(([label, value]) => (
-          <div key={label} className="flex min-w-0 justify-between gap-3 border-b border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] py-1 font-mono text-[length:var(--font-size-ui-sm)] uppercase">
-            <span className="font-black text-[var(--text-muted)]">{label}</span>
-            <span className="truncate font-black text-[var(--text-primary)]">{value}</span>
-          </div>
-        ))}
+        {metrics.map((metric) => {
+          const selected = metric.trendMetric === selectedMetric;
+          const rowClassName = `flex min-w-0 justify-between gap-3 border-b py-1 font-mono text-[length:var(--font-size-ui-sm)] uppercase transition-colors ${
+            selected
+              ? 'border-[var(--text-primary)] text-[var(--text-primary)]'
+              : 'border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] text-[var(--text-muted)]'
+          }`;
+
+          const trendMetric = metric.trendMetric;
+          if (!trendMetric) {
+            return (
+              <div key={metric.key} className={rowClassName}>
+                <span className="font-black">{metric.label}</span>
+                <span className="truncate font-black text-[var(--text-primary)]">{metric.value}</span>
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={metric.key}
+              type="button"
+              className={`${rowClassName} text-left active:scale-95`}
+              aria-pressed={selected}
+              onClick={() => onSelectMetric(trendMetric)}
+            >
+              <span className="font-black">{metric.label}</span>
+              <span className="truncate font-black text-[var(--text-primary)]">{metric.value}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function buildTimingMetricRows(request: CodexLiveRequest | undefined, t: Translate): Array<[string, string]> {
+interface TimingMetricRow {
+  key: string;
+  label: string;
+  value: string;
+  trendMetric?: CodexLiveTimingTrendMetric;
+}
+
+function buildTimingMetricRows(request: CodexLiveRequest | undefined, t: Translate): TimingMetricRow[] {
   const timing = request?.timing;
   if (!timing) {
-    return [[t('codex_live_sessions.no_timing_data'), 'n/a']];
+    return [{ key: 'empty', label: t('codex_live_sessions.no_timing_data'), value: 'n/a' }];
   }
 
-  const metricEntries: Array<[string, string]> = [
-    [t('codex_live_sessions.timing_total'), formatOptionalDuration(timing.totalDurationMs)],
-    [t('codex_live_sessions.timing_ttft'), formatOptionalDuration(timing.firstEventMs)],
-    [t('codex_live_sessions.timing_first_token'), formatOptionalDuration(timing.firstTokenMs)],
-    [t('codex_live_sessions.timing_stream'), formatOptionalDuration(timing.streamDurationMs)],
-    [t('codex_live_sessions.timing_queue'), formatOptionalDuration(timing.queueWaitMs)],
-    [t('codex_live_sessions.timing_auth'), formatOptionalDuration(timing.authSelectMs)],
-    [t('codex_live_sessions.timing_connect'), formatOptionalDuration(timing.upstreamConnectMs)],
-    [t('codex_live_sessions.timing_avg_gap'), formatOptionalDuration(timing.averageEventGapMs)],
-    [t('codex_live_sessions.timing_max_gap'), formatOptionalDuration(timing.longestEventGapMs)],
-    [t('codex_live_sessions.timing_reconnect'), `${timing.reconnectCount ?? 0}`],
-    [t('codex_live_sessions.timing_output_rate'), formatOptionalRate(timing.outputTokensPerSecond)],
-    [t('codex_live_sessions.timing_total_rate'), formatOptionalRate(timing.totalTokensPerSecond)],
+  const metricEntries: TimingMetricRow[] = [
+    { key: 'totalDurationMs', label: t('codex_live_sessions.timing_total'), value: formatOptionalDuration(timing.totalDurationMs), trendMetric: 'totalDurationMs' },
+    { key: 'firstEventMs', label: t('codex_live_sessions.timing_ttft'), value: formatOptionalDuration(timing.firstEventMs), trendMetric: 'firstEventMs' },
+    { key: 'firstTokenMs', label: t('codex_live_sessions.timing_first_token'), value: formatOptionalDuration(timing.firstTokenMs), trendMetric: 'firstTokenMs' },
+    { key: 'streamDurationMs', label: t('codex_live_sessions.timing_stream'), value: formatOptionalDuration(timing.streamDurationMs), trendMetric: 'streamDurationMs' },
+    { key: 'queueWaitMs', label: t('codex_live_sessions.timing_queue'), value: formatOptionalDuration(timing.queueWaitMs), trendMetric: 'queueWaitMs' },
+    { key: 'authSelectMs', label: t('codex_live_sessions.timing_auth'), value: formatOptionalDuration(timing.authSelectMs), trendMetric: 'authSelectMs' },
+    { key: 'upstreamConnectMs', label: t('codex_live_sessions.timing_connect'), value: formatOptionalDuration(timing.upstreamConnectMs), trendMetric: 'upstreamConnectMs' },
+    { key: 'averageEventGapMs', label: t('codex_live_sessions.timing_avg_gap'), value: formatOptionalDuration(timing.averageEventGapMs), trendMetric: 'averageEventGapMs' },
+    { key: 'longestEventGapMs', label: t('codex_live_sessions.timing_max_gap'), value: formatOptionalDuration(timing.longestEventGapMs), trendMetric: 'longestEventGapMs' },
+    { key: 'reconnectCount', label: t('codex_live_sessions.timing_reconnect'), value: `${timing.reconnectCount ?? 0}` },
+    { key: 'outputTokensPerSecond', label: t('codex_live_sessions.timing_output_rate'), value: formatOptionalRate(timing.outputTokensPerSecond) },
+    { key: 'totalTokensPerSecond', label: t('codex_live_sessions.timing_total_rate'), value: formatOptionalRate(timing.totalTokensPerSecond) },
   ];
-  const metrics = metricEntries.reduce<Array<[string, string]>>((acc, entry) => {
-    if (entry[1] !== 'n/a') {
+  const metrics = metricEntries.reduce<TimingMetricRow[]>((acc, entry) => {
+    if (entry.value !== 'n/a') {
       acc.push(entry);
     }
     return acc;
   }, []);
 
-  return metrics.length > 0 ? metrics : [[t('codex_live_sessions.no_timing_data'), 'n/a']];
+  return metrics.length > 0 ? metrics : [{ key: 'empty', label: t('codex_live_sessions.no_timing_data'), value: 'n/a' }];
 }
 
 function AccountCard({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {
@@ -795,6 +837,8 @@ function Timeline({
   >(null);
   const fallbackSummary = buildFallbackTimelineSummary(fallbackEvents, t);
   const sortedRequests = sortRequestTimelineRequests(requests);
+  const visibleRequests = sortedRequests.slice(0, requestTimelineVisibleLimit);
+  const visibleRowCount = requests.length > 0 ? visibleRequests.length : 1;
 
   return (
     <div className="grid gap-3">
@@ -803,7 +847,7 @@ function Timeline({
           {t('codex_live_sessions.request_timeline')}
         </div>
         <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-          {requests.length > 0 ? requests.length : 1} {t('codex_live_sessions.rows')}
+          {visibleRowCount} {t('codex_live_sessions.rows')}
         </div>
       </div>
 
@@ -815,7 +859,7 @@ function Timeline({
             onOpen={() => setDetailTarget({ type: 'fallback', events: fallbackEvents })}
           />
         ) : (
-          sortedRequests.map((request) => (
+          visibleRequests.map((request) => (
             <TimelineRequestRow
               key={request.requestID}
               summary={buildRequestTimelineSummary(request)}
