@@ -3,6 +3,17 @@
     <channel>
         <title>GetTokens</title>
         <item>
+            <title>1.0.25</title>
+            <pubDate>Tue, 26 May 2026 00:23:17 +0000</pubDate>
+            <link>https://github.com/AxApp/GetTokens</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/AxApp/GetTokens/releases/tag/v1.0.25</sparkle:fullReleaseNotesLink>
+            <sparkle:version>1.0.25</sparkle:version>
+            <sparkle:shortVersionString>1.0.25</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.25/GetTokens_macOS_AppleSilicon.dmg" length="23287101" type="application/octet-stream" sparkle:edSignature="Ixh6NyCqZL9yYhf3rST82lxmuSdjhtl6xkZcXDTrYzLFpi5ChiCzMSL3HwwxJY06CovCARAEgtAwXvO0N2dBCQ=="/>
+        </item>
+        <item>
             <title>1.0.24</title>
             <pubDate>Mon, 25 May 2026 07:26:20 +0000</pubDate>
             <link>https://github.com/AxApp/GetTokens</link>
@@ -23,17 +34,6 @@
             <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.23/GetTokens_macOS_AppleSilicon.dmg" length="23201907" type="application/octet-stream" sparkle:edSignature="BXPG+NFhZL2u+2jSzarwoqFPGLgslSXXHyOVXSLd1rBRYT4+57amu5JmVhIw14xHA+t6ReE2Mn4yfgddfBrZDA=="/>
-        </item>
-        <item>
-            <title>1.0.22</title>
-            <pubDate>Sat, 23 May 2026 11:06:35 +0000</pubDate>
-            <link>https://github.com/AxApp/GetTokens</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/AxApp/GetTokens/releases/tag/v1.0.22</sparkle:fullReleaseNotesLink>
-            <sparkle:version>1.0.22</sparkle:version>
-            <sparkle:shortVersionString>1.0.22</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>10.13.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/AxApp/GetTokens/releases/download/v1.0.22/GetTokens_macOS_AppleSilicon.dmg" length="23192811" type="application/octet-stream" sparkle:edSignature="JYQGcl7HyyhnxtPzUH7ygJnNoE188akFozLNFFNfvuR+14cbUeELPYtrtrktCdtISTRCNDRrXJFPhYcs0I9LDw=="/>
         </item>
     </channel>
 </rss>
