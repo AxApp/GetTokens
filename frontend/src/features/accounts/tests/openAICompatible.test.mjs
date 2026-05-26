@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   applyOpenAICompatibleProviderPreset,
@@ -362,4 +363,25 @@ test('shouldRefreshRemoteModels returns true only when cache is empty or stale f
   assert.equal(shouldRefreshRemoteModels(null, 1000), true);
   assert.equal(shouldRefreshRemoteModels(1000, 1000 + 60 * 60 * 1000), false);
   assert.equal(shouldRefreshRemoteModels(1000, 1000 + 24 * 60 * 60 * 1000), true);
+});
+
+test('openai compatible detail uses a single-column form stack inside the modal', async () => {
+  const source = await readFile(new URL('../components/OpenAICompatibleDetailPanel.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /<AccountDetailModuleStack layout="cards" cardColumns=\{1\}>/);
+});
+
+test('openai compatible model rows avoid narrow vertical delete buttons', async () => {
+  const source = await readFile(new URL('../components/OpenAICompatibleDetailPanel.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
+  assert.match(source, /xl:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)_auto\]/);
+  assert.match(source, /whitespace-nowrap/);
+  assert.match(source, /md:col-span-2 md:justify-self-start xl:col-span-1 xl:justify-self-end/);
+});
+
+test('openai compatible overview waits for wider viewports before splitting runtime and evidence', async () => {
+  const source = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /className="lg:grid-cols-1 2xl:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]"/);
 });

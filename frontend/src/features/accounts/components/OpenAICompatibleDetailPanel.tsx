@@ -135,7 +135,7 @@ export default function OpenAICompatibleDetailPanel({
         <AccountDetailBody>
           {leadingSections}
 
-          <AccountDetailModuleStack layout="cards">
+          <AccountDetailModuleStack layout="cards" cardColumns={1}>
           <AccountDetailSection componentName="OpenAICompatibleEndpointSection" eyebrow="Endpoint" title={t('accounts.openai_provider_name')} meta={draft.currentName}>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
@@ -253,7 +253,10 @@ export default function OpenAICompatibleDetailPanel({
 
               <div className="space-y-3">
                 {draft.models.map((row, index) => (
-                  <div key={`model-${index}`} className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                  <div
+                    key={`model-${index}`}
+                    className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                  >
                     <input
                       value={row.name}
                       onChange={(event) => {
@@ -285,7 +288,7 @@ export default function OpenAICompatibleDetailPanel({
                           verifyModel: nextVerifyModel,
                         });
                       }}
-                      className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
+                      className="btn-swiss whitespace-nowrap !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)] md:col-span-2 md:justify-self-start xl:col-span-1 xl:justify-self-end"
                       disabled={draft.models.length === 1}
                     >
                       {t('common.delete')}

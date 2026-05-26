@@ -410,6 +410,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     if (typeof window === 'undefined') {
       return;
     }
+    setAccountDetailIDFromHash(detailID);
     const nextHash = buildAccountDetailFrameHash(window.location.hash, detailID);
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
@@ -420,6 +421,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     if (typeof window === 'undefined') {
       return;
     }
+    setAccountDetailIDFromHash('');
     const nextHash = clearAccountDetailFrameHash(window.location.hash);
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;

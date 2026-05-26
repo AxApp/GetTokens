@@ -101,6 +101,7 @@ export default function OpenAICompatibleDetailModal({
         leadingSections={
           <AccountDetailOverviewGrid
             runtime={<AccountRuntimeSnapshotSection usageSummary={usageSummary} />}
+            className="lg:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
             evidence={
               <OpenAICompatibleEvidenceSection
                 t={t}

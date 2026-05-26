@@ -68,3 +68,15 @@ test('account detail deep link resolves an account by stable id', () => {
   assert.equal(findAccountDetailByID(accounts, 'auth-file:codex-pro.json')?.displayName, 'Pro');
   assert.equal(findAccountDetailByID(accounts, 'missing'), null);
 });
+
+test('account detail close clears local hash state before selected account can rehydrate', async () => {
+  const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const closeHashBlock = source.match(/const clearAccountDetailInHash = useCallback\(\(\) => \{[\s\S]*?\n  \}, \[\]\);/)?.[0] ?? '';
+
+  assert.match(closeHashBlock, /setAccountDetailIDFromHash\(''\);/);
+  assert.match(closeHashBlock, /clearAccountDetailFrameHash\(window\.location\.hash\)/);
+  assert.ok(
+    closeHashBlock.indexOf("setAccountDetailIDFromHash('');") < closeHashBlock.indexOf('clearAccountDetailFrameHash(window.location.hash)'),
+    'local detail state must be cleared before hashchange can re-run account hydration',
+  );
+});
