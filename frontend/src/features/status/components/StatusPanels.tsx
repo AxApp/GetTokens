@@ -113,6 +113,7 @@ export function StatusApplyLocalSection({
   const [activeTarget, setActiveTarget] = useState<LocalCliPanelTarget>(initialActiveTarget);
   const [modelEditorTarget, setModelEditorTarget] = useState<ModelEditorTarget | null>(null);
   const [modelEditor, setModelEditor] = useState<RelayModelEditorState | null>(null);
+  const fieldPairGridClass = 'grid gap-3 md:grid-cols-2';
   const [claudeDraft, setClaudeDraft] = useState<ClaudeCodeLocalApplyDraft>(() => ({
     relayKeyIndex: selectedKeyIndex,
     baseUrl: selectedEndpointBaseUrl,
@@ -346,11 +347,13 @@ export function StatusApplyLocalSection({
               <StatusRelayKeyPicker
                 t={t}
                 value={selectedKeyIndex}
+                selectedRelayKey={selectedRelayKey}
                 relayKeysLength={relayKeyItems.length}
                 relayKeyOptions={relayKeyOptions}
                 isReady={isReady}
                 onSelect={onSelectKeyIndex}
                 onCreate={onOpenCreateRelayKeyEditor}
+                onCopySelectedRelayKey={() => onCopyText(selectedRelayKey, t('status.service_key_copied'))}
               />
 
               <StatusEndpointPicker
@@ -364,7 +367,7 @@ export function StatusApplyLocalSection({
                 onCopyEndpointBaseUrl={onCopyEndpointBaseUrl}
               />
 
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
+              <div className={fieldPairGridClass}>
                 <ActionSelect
                   title={t('status.provider_title')}
                   value={selectedRelayProviderID}
@@ -383,7 +386,7 @@ export function StatusApplyLocalSection({
                 />
               </div>
 
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+              <div className={fieldPairGridClass}>
                 <SelectField
                   title={t('status.auth_strategy_title')}
                   value={codexLocalAuthStrategy}
@@ -403,7 +406,7 @@ export function StatusApplyLocalSection({
                 </FormField>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem]">
+              <div className={fieldPairGridClass}>
                 <StatusModelPicker
                   t={t}
                   value={selectedRelayModel}
@@ -512,11 +515,13 @@ export function StatusApplyLocalSection({
               <StatusRelayKeyPicker
                 t={t}
                 value={claudeDraft.relayKeyIndex}
+                selectedRelayKey={selectedClaudeRelayKey}
                 relayKeysLength={relayKeyItems.length}
                 relayKeyOptions={relayKeyOptions}
                 isReady={isReady}
                 onSelect={(index) => updateClaudeDraft({ relayKeyIndex: index })}
                 onCreate={onOpenCreateRelayKeyEditor}
+                onCopySelectedRelayKey={() => onCopyText(selectedClaudeRelayKey, t('status.service_key_copied'))}
               />
 
               <StatusEndpointPicker
@@ -543,7 +548,7 @@ export function StatusApplyLocalSection({
                 />
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className={fieldPairGridClass}>
                 <StatusModelPicker
                   t={t}
                   title={t('status.claude_default_haiku_model')}
@@ -598,7 +603,7 @@ export function StatusApplyLocalSection({
                 />
               </div>
 
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+              <div className={fieldPairGridClass}>
                 <TextInputField
                   title={t('status.claude_max_output_tokens')}
                   value={claudeDraft.maxOutputTokens}
@@ -613,6 +618,9 @@ export function StatusApplyLocalSection({
                   inputMode="numeric"
                   placeholder="600000"
                 />
+              </div>
+
+              <div className={fieldPairGridClass}>
                 <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
                   <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
@@ -685,21 +693,25 @@ export function StatusApplyLocalSection({
 interface StatusRelayKeyPickerProps {
   t: (key: string) => string;
   value: number;
+  selectedRelayKey: string;
   relayKeysLength: number;
   relayKeyOptions: ActionSelectOption[];
   isReady: boolean;
   onSelect: (index: number) => void;
   onCreate: () => void;
+  onCopySelectedRelayKey: () => void;
 }
 
 function StatusRelayKeyPicker({
   t,
   value,
+  selectedRelayKey,
   relayKeysLength,
   relayKeyOptions,
   isReady,
   onSelect,
   onCreate,
+  onCopySelectedRelayKey,
 }: StatusRelayKeyPickerProps) {
   const selectedIndex = Math.min(Math.max(0, value), Math.max(0, relayKeysLength - 1));
 
@@ -710,6 +722,9 @@ function StatusRelayKeyPicker({
       options={relayKeyOptions}
       onSelect={(nextValue) => onSelect(Number(nextValue))}
       onCreate={onCreate}
+      onCopy={onCopySelectedRelayKey}
+      copyDisabled={!selectedRelayKey.trim()}
+      copyTitle={t('status.service_key_copy')}
       createDisabled={!isReady}
       selectDisabled={relayKeysLength === 0}
     />

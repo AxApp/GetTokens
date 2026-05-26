@@ -694,6 +694,8 @@
     "service_key_last_used_at": "上次使用",
     "service_key_rename": "修改名称",
     "service_key_delete": "删除",
+    "service_key_copy": "复制 Relay API key",
+    "service_key_copied": "Relay API key 已复制",
     "endpoint_copied": "访问地址已复制",
     "auth_json_copied": "auth.json 已复制",
     "config_toml_copied": "config.toml 已复制",

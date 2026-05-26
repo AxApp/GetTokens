@@ -17,10 +17,12 @@ type Story = StoryObj;
 function ActionSelectSample({
   disabled = false,
   initialValue = 'codex',
+  withCopy = false,
   withDelete = false,
 }: {
   disabled?: boolean;
   initialValue?: string;
+  withCopy?: boolean;
   withDelete?: boolean;
 }) {
   const { locale } = useI18n();
@@ -43,9 +45,12 @@ function ActionSelectSample({
           options={providerOptions}
           selectDisabled={disabled}
           createDisabled={disabled}
+          copyDisabled={disabled}
           deleteDisabled={disabled}
           onSelect={setValue}
           onCreate={() => setValue('openai-compatible')}
+          onCopy={withCopy ? () => undefined : undefined}
+          copyTitle={locale === 'zh' ? '复制当前值' : 'Copy current value'}
           onDelete={withDelete ? () => setValue(providerOptions[0].value) : undefined}
         />
       </div>
@@ -104,6 +109,13 @@ function ActionSelectOverview() {
         </StatePanel>
 
         <StatePanel
+          title={zh ? '复制和创建' : 'Copy And Create'}
+          description={zh ? '选择当前项时提供复制入口，并保留新增动作。' : 'Adds a copy affordance while keeping the create action.'}
+        >
+          <ActionSelectSample withCopy />
+        </StatePanel>
+
+        <StatePanel
           title={zh ? '长内容' : 'Long Content'}
           description={zh ? '用于检查长供应商名称是否挤压右侧动作。' : 'Checks long provider names against the right-side actions.'}
         >
@@ -140,6 +152,14 @@ export const CreateAndDelete: Story = {
   render: () => (
     <div className="w-[28rem]">
       <ActionSelectSample withDelete />
+    </div>
+  ),
+};
+
+export const CopyAndCreate: Story = {
+  render: () => (
+    <div className="w-[28rem]">
+      <ActionSelectSample withCopy />
     </div>
   ),
 };

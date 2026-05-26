@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   buildClaudeCodeSettingsDiff,
@@ -276,4 +277,25 @@ test('resolveUnifiedDiffLineTone marks only real add and remove lines as red or 
   assert.equal(resolveUnifiedDiffLineTone('-"ANTHROPIC_API_KEY": "OLD"'), 'remove');
   assert.equal(resolveUnifiedDiffLineTone('# preserved: permissions'), 'meta');
   assert.equal(resolveUnifiedDiffLineTone('  "env": {'), 'context');
+});
+
+test('status Relay key picker wires a copy action to the selected key', async () => {
+  const actionSelectSource = await readFile(new URL('../../../components/ui/ActionSelect.tsx', import.meta.url), 'utf8');
+  assert.match(actionSelectSource, /onCopy\?: \(\) => void/);
+  assert.match(actionSelectSource, /copyDisabled\?: boolean/);
+  assert.match(actionSelectSource, /<Copy className=/);
+
+  const statusPanelsSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
+  assert.match(statusPanelsSource, /selectedRelayKey=\{selectedRelayKey\}/);
+  assert.match(statusPanelsSource, /selectedRelayKey=\{selectedClaudeRelayKey\}/);
+  assert.match(statusPanelsSource, /onCopySelectedRelayKey/);
+  assert.match(statusPanelsSource, /status\.service_key_copied/);
+});
+
+test('status local apply form pairs use equal-width field grids', async () => {
+  const statusPanelsSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
+
+  assert.match(statusPanelsSource, /fieldPairGridClass = 'grid gap-3 md:grid-cols-2'/);
+  assert.doesNotMatch(statusPanelsSource, /md:grid-cols-\[minmax\(0,1fr\)_12rem\]/);
+  assert.doesNotMatch(statusPanelsSource, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)_auto\]/);
 });
