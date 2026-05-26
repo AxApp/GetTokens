@@ -13,6 +13,7 @@ frontend/node_modules
 node_modules/
 .playwright-cli
 .playwright-mcp/
+output/
 output/playwright/
 .local/
 tmp/
