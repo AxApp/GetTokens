@@ -1,5 +1,7 @@
 import {
+  BookOpenText,
   ChevronDown,
+  CircleHelp,
   History,
   Play,
   RefreshCw,
@@ -8,10 +10,14 @@ import {
   Shuffle,
   SlidersHorizontal,
   Split,
+  X,
   Zap,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import ModalFrame from '../../../components/ui/ModalFrame';
 import type { main } from '../../../../wailsjs/go/models';
 import {
+  CHANNEL_ROUTE_MODE_HELP_SECTIONS,
   buildChannelRouteAuditEventSummary,
   buildChannelRoutingExplainDigest,
   buildChannelRoutingParticipantRows,
@@ -74,6 +80,7 @@ export default function ChannelRoutingWorkbench({
   onExplain,
   onRefreshEvents,
 }: ChannelRoutingWorkbenchProps) {
+  const [helpOpen, setHelpOpen] = useState(false);
   const explainView = buildChannelRoutingExplainDigest(explain);
   const legacyMask = buildLegacyRoutingMaskPanel();
   const eventSummaries = routeEvents.slice(0, 5).map((event) => buildChannelRouteAuditEventSummary(event));
@@ -84,6 +91,23 @@ export default function ChannelRoutingWorkbench({
   const participantRows = buildChannelRoutingParticipantRows(config, accounts);
   const candidateCount = explainView.candidateRows.length;
   const filteredCount = explainView.filteredRows.reduce((total, item) => total + item.count, 0);
+
+  useEffect(() => {
+    if (!helpOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setHelpOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [helpOpen]);
 
   return (
     <section
@@ -96,6 +120,20 @@ export default function ChannelRoutingWorkbench({
           <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-black leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
             请求模式
           </h2>
+          <button
+            type="button"
+            onClick={() => setHelpOpen(true)}
+            aria-label="查看请求模式说明"
+            title="查看请求模式说明"
+            aria-pressed={helpOpen}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors active:scale-95 ${
+              helpOpen
+                ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
+            }`}
+          >
+            <CircleHelp className="h-4 w-4" strokeWidth={4} />
+          </button>
           {preview ? (
             <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
               预览
@@ -257,7 +295,66 @@ export default function ChannelRoutingWorkbench({
           onRefreshEvents={onRefreshEvents}
         />
       </details>
+
+      {helpOpen ? (
+        <RouteModeHelpModal onClose={() => setHelpOpen(false)} />
+      ) : null}
     </section>
+  );
+}
+
+function RouteModeHelpModal({ onClose }: { onClose: () => void }) {
+  return (
+    <ModalFrame
+      onClose={onClose}
+      size="xl"
+      ariaLabel="请求模式说明"
+      header={
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <SectionHeading icon={BookOpenText} label="请求模式说明" />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="关闭请求模式说明"
+            className="btn-swiss flex min-h-9 items-center gap-2 !px-3 !py-1.5 !text-[length:var(--font-size-ui-sm)]"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={4} />
+            关闭
+          </button>
+        </div>
+      }
+      bodyClassName="p-4 sm:p-5"
+    >
+      <div className="border-y-2 border-[var(--border-color)] py-3">
+        <p className="max-w-3xl text-[length:var(--font-size-ui-sm)] font-black leading-6 text-[var(--text-primary)]">
+          顺序模式决定的是“每次路由怎么排序”，不是“只消耗一个账号”的独占开关。
+        </p>
+        <p className="mt-1 max-w-3xl text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
+          如果前序账号不可用、触发 retry、处于冷却，或存在多个会话并发，请求会继续命中后续账号。
+        </p>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        {CHANNEL_ROUTE_MODE_HELP_SECTIONS.map((section) => (
+          <article key={section.title} className="min-w-0 border-2 border-[var(--border-color)] p-3">
+            <h3 className="text-[length:var(--font-size-ui-md)] font-black leading-5 text-[var(--text-primary)]">
+              {section.title}
+            </h3>
+            <p className="mt-2 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-secondary)]">
+              {section.body}
+            </p>
+            <ul className="mt-3 space-y-2">
+              {section.points.map((point) => (
+                <li key={point} className="grid grid-cols-[1.25rem_minmax(0,1fr)] gap-2 text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-primary)]">
+                  <span className="mt-1 h-2 w-2 border-2 border-[var(--text-primary)]" aria-hidden="true" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </ModalFrame>
   );
 }
 

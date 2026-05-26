@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   CHANNEL_ROUTE_MODES,
+  CHANNEL_ROUTE_MODE_HELP_SECTIONS,
   LEGACY_CHANNEL_ROUTING_BYPASSES,
   buildChannelRouteAuditEventSummary,
   buildChannelRoutingParticipantRows,
@@ -411,4 +412,32 @@ test('ChannelRoutingWorkbench keeps participant account details collapsed by def
   );
   assert.match(source, /group-open\/participants:rotate-180/);
   assert.doesNotMatch(source, /<details className="group\/participants[^"]*" open/);
+});
+
+test('channel route mode help explains sequential fallback without claiming account exclusivity', () => {
+  const helpText = CHANNEL_ROUTE_MODE_HELP_SECTIONS.flatMap((section) => [
+    section.title,
+    section.body,
+    ...section.points,
+  ]).join('\n');
+
+  assert.match(helpText, /顺序模式不是账号独占/);
+  assert.match(helpText, /不保证整段会话或全应用只消耗第一个账号/);
+  assert.match(helpText, /retry 时，会排除已尝试账号/);
+  assert.match(helpText, /路由探测和连续测试会发真实 relay 请求/);
+  assert.match(helpText, /Explain \/ dry-run 只解释候选和过滤原因/);
+});
+
+test('ChannelRoutingWorkbench opens route mode help as a modal next to route mode', async () => {
+  const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /CircleHelp/);
+  assert.match(source, /aria-label="查看请求模式说明"/);
+  assert.match(source, /const \[helpOpen, setHelpOpen\] = useState\(false\)/);
+  assert.match(source, /<RouteModeHelpModal onClose=\{\(\) => setHelpOpen\(false\)\} \/>/);
+  assert.match(source, /<ModalFrame/);
+  assert.match(source, /ariaLabel="请求模式说明"/);
+  assert.match(source, /关闭请求模式说明/);
+  assert.doesNotMatch(source, /返回模式/);
+  assert.doesNotMatch(source, /view === 'help'/);
 });

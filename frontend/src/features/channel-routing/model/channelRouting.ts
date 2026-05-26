@@ -217,6 +217,42 @@ export interface ChannelRoutingExplainDigest {
   stepRows: ChannelRoutingExplainStepRow[];
 }
 
+export interface ChannelRouteModeHelpSection {
+  title: string;
+  body: string;
+  points: string[];
+}
+
+export const CHANNEL_ROUTE_MODE_HELP_SECTIONS: ChannelRouteModeHelpSection[] = [
+  {
+    title: '顺序模式不是账号独占',
+    body: '顺序模式会在每次路由决策时按参与账号顺序，从前往后选择第一个可请求账号。它不保证整段会话或全应用只消耗第一个账号。',
+    points: [
+      '同一次请求 retry 时，会排除已尝试账号并继续下一个可路由账号。',
+      '多个会话、并发请求、Codex 与 Claude 渠道会分别进入路由决策。',
+    ],
+  },
+  {
+    title: '这些情况会切到后续账号',
+    body: '账号被运行态守卫过滤后，顺序模式会继续查找下一个可请求账号。',
+    points: [
+      '401 / 402 / 403 / 429、额度耗尽、模型不可用、超时或 5xx 会触发冷却、限流或失败降级。',
+      'WebSocket pinned auth 在请求边界被释放后，会重新进入路由引擎选择账号。',
+      '项目或账号组限定会先缩小候选池，再在候选池内按顺序或均衡模式选择。',
+    ],
+  },
+  {
+    title: '探测和说明的消耗边界',
+    body: 'Explain / dry-run 只解释候选和过滤原因，不请求上游；路由探测和连续测试会发真实 relay 请求，可能命中并消耗账号额度。',
+    points: ['排查多账号消耗时，优先查看高级诊断里的最近路由和预演结果。'],
+  },
+  {
+    title: '均衡模式的差异',
+    body: '均衡模式优先选择当前活跃会话数或 in-flight 请求数更少的账号；负载相同时再按请求顺序兜底。',
+    points: ['如果想尽量先用排在前面的账号，保持顺序模式；如果更关心并发分摊，使用均衡模式。'],
+  },
+];
+
 const CHANNELS = ['codex', 'claude'] as const;
 
 export function classifyChannelRouteMode(input: unknown): ChannelRouteModeClassification {
