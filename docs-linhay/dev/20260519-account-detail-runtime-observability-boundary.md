@@ -44,6 +44,16 @@ relay request
 
 运行态模块不替代 Usage Desk，也不改变账号卡片统计。账号详情只取该账号最近若干条，服务诊断和解释。
 
+### Auth refresh recovery
+refresh 成功后，auth 的运行态失败标记必须显式回收到 `active`，至少包含：
+
+1. `Status = active`
+2. `Unavailable = false`
+3. `StatusMessage = ""`
+4. `LastError = nil`
+
+这样才能避免一次 refresh failure 后，内存里的旧异常态一直挂到下次重启才恢复。
+
 ## 账号关联
 账号详情查询以 GetTokens 资产稳定键为入口：
 
