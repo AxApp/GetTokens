@@ -11,6 +11,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - Codex 账号列表是 Codex Channel Routing 工作台，不是账号创建页，也不是总账号池。
 - 总账号池只管理 Account Inventory；Codex 账号列表拥有 Codex 渠道顺序、渠道 route mode、渠道组状态、项目绑定、dry-run/explain 和 probe。
 - Codex 渠道配置不得通过全局 `UpdateAccountPriority` 表达；渠道顺序必须保存到 Codex channel config。
+- Codex runtime routing 的唯一主路径是 `channel-routing/config.json`；旧 `routing.strategy` 只保留作 relay / compatibility 边界，不再参与 Codex 候选排序、fallback 或 balanced 计数。balanced 模式应从 live-session tracker 读取活跃会话数，而不是从展示用 snapshot 反推。
 - 新 GetTokens route mode 只允许 `sequential / balanced / project`。
 - `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入 Codex 新 UI / Wails DTO / engine policy。
 - `exclude` 不是 route mode，只能作为请求级 deny 或 pool filter。

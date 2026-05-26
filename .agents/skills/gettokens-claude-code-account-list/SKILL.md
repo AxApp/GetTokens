@@ -13,6 +13,7 @@ description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthr
 - 它是 GetTokens relay 可供 Claude Code 使用的 Anthropic 格式 Channel Routing 工作台。
 - 总账号池只管理 Account Inventory；Claude Code 账号列表拥有 Claude 渠道顺序、渠道 route mode、渠道组状态、项目绑定、dry-run/explain 和 probe。
 - Claude 渠道配置不得通过全局 `UpdateAccountPriority` 表达；渠道顺序必须保存到 Claude channel config。
+- Claude runtime routing 的唯一主路径是 `channel-routing/config.json`；旧 `routing.strategy` 只保留作 relay / compatibility 边界，不再参与 Claude 候选排序、fallback 或 balanced 计数。balanced 模式应从 live-session tracker 读取活跃会话数，而不是从展示用 snapshot 反推。
 - 新 GetTokens route mode 只允许 `sequential / balanced / project`。
 - `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入 Claude 新 UI / Wails DTO / engine policy。
 - `exclude` 不是 route mode，只能作为请求级 deny 或 pool filter。
