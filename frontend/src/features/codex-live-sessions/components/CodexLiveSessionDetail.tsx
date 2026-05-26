@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
@@ -24,6 +24,7 @@ import {
   buildFallbackTimelineSummary,
   buildRequestTimelineSummary,
   formatTimelineRequestID,
+  sortRequestTimelineRequests,
   type FallbackTimelineSummary,
   type RequestTimelineSummary,
 } from './requestTimelineSummary';
@@ -170,6 +171,9 @@ function TimingTrendChart({
   const height = chartHeight;
   const padding = { top: chartTopInset, right: chartSideInset, bottom: chartBottomInset, left: chartSideInset };
   const gridY = [0, 0.5, 1];
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{ startX: number; scrollLeft: number } | null>(null);
+  const [autoFollowLatest, setAutoFollowLatest] = useState(true);
   const totalAreaPath = buildTimingTrendAreaPath(
     trend.points,
     'totalDurationMs',
@@ -181,6 +185,16 @@ function TimingTrendChart({
     padding,
   );
 
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || !autoFollowLatest) {
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      container.scrollLeft = container.scrollWidth - container.clientWidth;
+    });
+  }, [autoFollowLatest, trend.startedAtMaxMs, trend.points.length]);
+
   if (!trend.hasData) {
     return (
       <div className="mt-3 grid h-[224px] place-items-center border-2 border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] bg-[var(--bg-main)] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
@@ -191,9 +205,39 @@ function TimingTrendChart({
 
   return (
     <div
-      className="mt-3 overflow-x-auto overflow-y-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[inset_0_12px_16px_-12px_var(--shadow-inset-color),inset_0_-12px_16px_-12px_var(--shadow-inset-color)]"
+      ref={scrollContainerRef}
+      className="mt-3 cursor-grab overflow-x-auto overflow-y-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[inset_0_12px_16px_-12px_var(--shadow-inset-color),inset_0_-12px_16px_-12px_var(--shadow-inset-color)] active:cursor-grabbing"
       role="img"
       aria-label={t('codex_live_sessions.request_timing_trend')}
+      onScroll={(event) => setAutoFollowLatest(isTimingChartScrolledToEnd(event.currentTarget))}
+      onPointerDown={(event) => {
+        dragStateRef.current = {
+          startX: event.clientX,
+          scrollLeft: event.currentTarget.scrollLeft,
+        };
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }}
+      onPointerMove={(event) => {
+        const dragState = dragStateRef.current;
+        if (!dragState) {
+          return;
+        }
+        const deltaX = event.clientX - dragState.startX;
+        if (Math.abs(deltaX) < 2) {
+          return;
+        }
+        event.currentTarget.scrollLeft = dragState.scrollLeft - deltaX;
+        setAutoFollowLatest(false);
+      }}
+      onPointerUp={(event) => {
+        dragStateRef.current = null;
+        event.currentTarget.releasePointerCapture(event.pointerId);
+        setAutoFollowLatest(isTimingChartScrolledToEnd(event.currentTarget));
+      }}
+      onPointerCancel={(event) => {
+        dragStateRef.current = null;
+        setAutoFollowLatest(isTimingChartScrolledToEnd(event.currentTarget));
+      }}
     >
       <div
         className="relative mx-auto"
@@ -354,6 +398,10 @@ function TimingTrendChart({
       </div>
     </div>
   );
+}
+
+function isTimingChartScrolledToEnd(container: HTMLDivElement): boolean {
+  return container.scrollLeft + container.clientWidth >= container.scrollWidth - 2;
 }
 
 function TimingTrendPoint({
@@ -545,21 +593,7 @@ function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[
 }
 
 function TimingMetrics({ request, t }: { request?: CodexLiveRequest; t: Translate }) {
-  const timing = request?.timing;
-  const metrics = [
-    [t('codex_live_sessions.timing_queue'), formatOptionalDuration(timing?.queueWaitMs)],
-    [t('codex_live_sessions.timing_auth'), formatOptionalDuration(timing?.authSelectMs)],
-    [t('codex_live_sessions.timing_connect'), formatOptionalDuration(timing?.upstreamConnectMs)],
-    [t('codex_live_sessions.timing_ttft'), formatOptionalDuration(timing?.firstEventMs)],
-    [t('codex_live_sessions.timing_first_token'), formatOptionalDuration(timing?.firstTokenMs)],
-    [t('codex_live_sessions.timing_stream'), formatOptionalDuration(timing?.streamDurationMs)],
-    [t('codex_live_sessions.timing_total'), formatOptionalDuration(timing?.totalDurationMs)],
-    [t('codex_live_sessions.timing_output_rate'), formatOptionalRate(timing?.outputTokensPerSecond)],
-    [t('codex_live_sessions.timing_total_rate'), formatOptionalRate(timing?.totalTokensPerSecond)],
-    [t('codex_live_sessions.timing_avg_gap'), formatOptionalDuration(timing?.averageEventGapMs)],
-    [t('codex_live_sessions.timing_max_gap'), formatOptionalDuration(timing?.longestEventGapMs)],
-    [t('codex_live_sessions.timing_reconnect'), `${timing?.reconnectCount ?? 0}`],
-  ];
+  const metrics = buildTimingMetricRows(request, t);
 
   return (
     <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
@@ -576,6 +610,36 @@ function TimingMetrics({ request, t }: { request?: CodexLiveRequest; t: Translat
       </div>
     </div>
   );
+}
+
+function buildTimingMetricRows(request: CodexLiveRequest | undefined, t: Translate): Array<[string, string]> {
+  const timing = request?.timing;
+  if (!timing) {
+    return [[t('codex_live_sessions.no_timing_data'), 'n/a']];
+  }
+
+  const metricEntries: Array<[string, string]> = [
+    [t('codex_live_sessions.timing_total'), formatOptionalDuration(timing.totalDurationMs)],
+    [t('codex_live_sessions.timing_ttft'), formatOptionalDuration(timing.firstEventMs)],
+    [t('codex_live_sessions.timing_first_token'), formatOptionalDuration(timing.firstTokenMs)],
+    [t('codex_live_sessions.timing_stream'), formatOptionalDuration(timing.streamDurationMs)],
+    [t('codex_live_sessions.timing_queue'), formatOptionalDuration(timing.queueWaitMs)],
+    [t('codex_live_sessions.timing_auth'), formatOptionalDuration(timing.authSelectMs)],
+    [t('codex_live_sessions.timing_connect'), formatOptionalDuration(timing.upstreamConnectMs)],
+    [t('codex_live_sessions.timing_avg_gap'), formatOptionalDuration(timing.averageEventGapMs)],
+    [t('codex_live_sessions.timing_max_gap'), formatOptionalDuration(timing.longestEventGapMs)],
+    [t('codex_live_sessions.timing_reconnect'), `${timing.reconnectCount ?? 0}`],
+    [t('codex_live_sessions.timing_output_rate'), formatOptionalRate(timing.outputTokensPerSecond)],
+    [t('codex_live_sessions.timing_total_rate'), formatOptionalRate(timing.totalTokensPerSecond)],
+  ];
+  const metrics = metricEntries.reduce<Array<[string, string]>>((acc, entry) => {
+    if (entry[1] !== 'n/a') {
+      acc.push(entry);
+    }
+    return acc;
+  }, []);
+
+  return metrics.length > 0 ? metrics : [[t('codex_live_sessions.no_timing_data'), 'n/a']];
 }
 
 function AccountCard({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {
@@ -736,6 +800,7 @@ function Timeline({
     | null
   >(null);
   const fallbackSummary = buildFallbackTimelineSummary(fallbackEvents, t);
+  const sortedRequests = sortRequestTimelineRequests(requests);
 
   return (
     <div className="grid gap-3">
@@ -756,7 +821,7 @@ function Timeline({
             onOpen={() => setDetailTarget({ type: 'fallback', events: fallbackEvents })}
           />
         ) : (
-          requests.map((request) => (
+          sortedRequests.map((request) => (
             <TimelineRequestRow
               key={request.requestID}
               summary={buildRequestTimelineSummary(request)}

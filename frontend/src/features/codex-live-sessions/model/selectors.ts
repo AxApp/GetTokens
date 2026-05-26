@@ -142,13 +142,13 @@ export function buildCodexLiveDiagnosticSummary(session: CodexLiveSession, reque
 
 export function formatCodexLiveTimingLine(timing: CodexLiveTimingMetrics): string {
   return [
-    `queue=${formatMetricMs(timing.queueWaitMs)}`,
-    `auth=${formatMetricMs(timing.authSelectMs)}`,
-    `connect=${formatMetricMs(timing.upstreamConnectMs)}`,
+    `total=${formatMetricMs(timing.totalDurationMs)}`,
     `ttft=${formatMetricMs(timing.firstEventMs)}`,
     `first_token=${formatMetricMs(timing.firstTokenMs)}`,
     `stream=${formatMetricMs(timing.streamDurationMs)}`,
-    `total=${formatMetricMs(timing.totalDurationMs)}`,
+    `queue=${formatMetricMs(timing.queueWaitMs)}`,
+    `auth=${formatMetricMs(timing.authSelectMs)}`,
+    `connect=${formatMetricMs(timing.upstreamConnectMs)}`,
     `avg_gap=${formatMetricMs(timing.averageEventGapMs)}`,
     `max_gap=${formatMetricMs(timing.longestEventGapMs)}`,
     `reconnects=${timing.reconnectCount ?? 0}`,

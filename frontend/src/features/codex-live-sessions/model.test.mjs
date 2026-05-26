@@ -20,6 +20,7 @@ import {
   buildRequestTimelineSummary,
   formatTimelineRequestID,
   formatTimelineTimeLabel,
+  sortRequestTimelineRequests,
 } from './components/requestTimelineSummary.ts';
 import {
   buildCodexLiveSessionsInitialSnapshot,
@@ -220,6 +221,21 @@ test('buildRequestTimelineSummary keeps timeline rows focused on time fields', (
   assert.doesNotMatch(Object.values(summary).join(' '), /team-codex|websocket|response\.output_text|21,580/);
 });
 
+test('sortRequestTimelineRequests keeps newest request rows first without mutating input', () => {
+  const session = codexLiveSessionsPreviewSnapshot.sessions[0];
+  const originalOrder = session.requests.map((request) => request.requestID);
+  const sorted = sortRequestTimelineRequests(session.requests);
+
+  assert.deepEqual(sorted.map((request) => request.requestID), [
+    'gt-req-8912',
+    'gt-req-8906',
+    'gt-req-8898',
+    'gt-req-8885',
+    'gt-req-8874',
+  ]);
+  assert.deepEqual(session.requests.map((request) => request.requestID), originalOrder);
+});
+
 test('formatTimelineTimeLabel keeps request rows to clock time', () => {
   const now = new Date('2026-05-21T20:00:00+08:00');
 
@@ -280,7 +296,7 @@ test('formatCodexLiveTimingLine exposes rate and time measurements without paylo
 
   assert.equal(
     line,
-    'queue=18ms auth=44ms connect=391ms ttft=1.6s first_token=1.8s stream=7.4s total=8.0s avg_gap=82ms max_gap=420ms reconnects=2 output_rate=430/s total_rate=2686/s',
+    'total=8.0s ttft=1.6s first_token=1.8s stream=7.4s queue=18ms auth=44ms connect=391ms avg_gap=82ms max_gap=420ms reconnects=2 output_rate=430/s total_rate=2686/s',
   );
 });
 
@@ -372,6 +388,11 @@ test('codex live session detail timeline uses compact rows without horizontal ta
     detailSource.indexOf('function TimelineRequestRow('),
   );
 
+  assert.match(detailSource, /function buildTimingMetricRows\(/);
+  assert.match(detailSource, /timing_total[\s\S]*timing_ttft[\s\S]*timing_first_token[\s\S]*timing_stream[\s\S]*timing_queue[\s\S]*timing_auth[\s\S]*timing_connect/);
+  assert.match(detailSource, /reduce<Array<\[string, string\]>>/);
+  assert.match(detailSource, /entry\[1\] !== 'n\/a'/);
+  assert.match(detailSource, /no_timing_data/);
   assert.match(detailSource, /buildTimelineMetricItems/);
   assert.match(detailSource, /isTimelineValuePresent/);
   assert.match(detailSource, /TimelineMetricPill/);
@@ -613,6 +634,19 @@ test('codex live session timing chart uses request timestamps and live refresh',
   assert.match(detailSource, /buildTimingTrendAreaPath/);
   assert.match(detailSource, /strokeDasharray=\{point\.isLive/);
   assert.doesNotMatch(detailSource, /trendChartX\(index,/);
+});
+
+test('codex live session timing chart follows latest samples unless user pans history', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /scrollContainerRef/);
+  assert.match(detailSource, /autoFollowLatest/);
+  assert.match(detailSource, /requestAnimationFrame/);
+  assert.match(detailSource, /container\.scrollLeft = container\.scrollWidth - container\.clientWidth/);
+  assert.match(detailSource, /\[autoFollowLatest, trend\.startedAtMaxMs, trend\.points\.length\]/);
+  assert.match(detailSource, /onPointerMove/);
+  assert.match(detailSource, /setAutoFollowLatest\(false\)/);
+  assert.match(detailSource, /isTimingChartScrolledToEnd/);
 });
 
 test('codex live session timing chart follows Usage Desk chart styling primitives', async () => {

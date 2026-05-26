@@ -203,8 +203,26 @@ Then 详情区展示 Rate / time measurements，并包含 TTFT、first token、s
 - 回归测试锁定前三个指标不再被 `sm` 断点隐藏，避免线上版退回只显示总耗时。
 - 验证：`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run build` 通过；浏览器按 1192x964 视口复验，5 条请求行均可见 `总 / TTFT / 首`。
 
+## 2026-05-26 请求时间线倒序
+
+- 请求时间线列表按请求开始时间倒序展示，最新请求在上方，便于先看当前或最近一次请求。
+- 排序在 `requestTimelineSummary` 纯模型层完成，组件渲染不突变原始 `session.requests`，同时间戳按 sequence 倒序兜底。
+- 验证：新增 `sortRequestTimelineRequests keeps newest request rows first without mutating input` 回归测试；浏览器复验 `#5 -> #4 -> #3 -> #2 -> #1`。
+
+## 2026-05-26 耗时指标降噪
+
+- 请求详情里的“耗时”面板按用户关注顺序展示：`总耗时 / TTFT / 首 token / 流式` 先出现，再展示 `排队 / 选号 / 连接 / 平均间隔 / 最大间隔 / 重连 / 输出/s / 总计/s`。
+- 空值指标不再占位显示 `n/a`，主表只渲染有值的项；若整组都没有耗时数据，则显示单行空态。
+- 验证：`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run build` 通过；浏览器复验主耗时面板不再出现 `n/a`。
+
 ## 2026-05-26 请求耗时趋势投影边界
 
 - 图表总耗时曲线的数据来源是请求级 timing：已完成请求使用 `timing.totalDurationMs` 或 `completedAt - startedAt`，当前仍在运行的请求才用 `now - startedAt` 做实时投影。
 - 修复：如果历史请求仍带着 `streaming/reconnecting` 且缺少 `completedAt`，前端不再把它们全部按 `now` 投影；只有当前 active request 可以增长并显示 live 标记。
 - 验证：新增 `buildCodexLiveRequestTimingTrend only projects the current active request` 回归测试；浏览器观察 2.2 秒，历史点 `6.0s / 5.9s / 9.2s / 4.6s` 保持不变。
+
+## 2026-05-26 请求耗时趋势视口跟随
+
+- 图表视口默认跟随最新 request sample；只有新的请求时间戳进入时才滚到最新点，普通 `nowMs` 刷新不会让 x 轴视口持续前进。
+- 用户横向滚动或拖动图表查看历史后，自动跟随暂停；用户回到最右侧后恢复跟随最新点。
+- 验证：新增 `codex live session timing chart follows latest samples unless user pans history` 结构回归测试；浏览器确认图表容器为横向可滚动/可拖动，并保留最新点在右侧。

@@ -70,6 +70,17 @@ export function buildFallbackTimelineSummary(
   };
 }
 
+export function sortRequestTimelineRequests(requests: readonly CodexLiveRequest[]): CodexLiveRequest[] {
+  return [...requests].sort((left, right) => {
+    const rightTime = timelineSortTime(right);
+    const leftTime = timelineSortTime(left);
+    if (rightTime !== leftTime) {
+      return rightTime - leftTime;
+    }
+    return right.sequence - left.sequence;
+  });
+}
+
 export function formatTimelineTimeLabel(value: string, _now = new Date()): string {
   const trimmed = value.trim();
   if (!trimmed) {
@@ -116,4 +127,9 @@ function formatClockTime(date: Date): string {
   const minutes = String(date.getMinutes()).padStart(2, '0');
   const seconds = String(date.getSeconds()).padStart(2, '0');
   return `${hours}:${minutes}:${seconds}`;
+}
+
+function timelineSortTime(request: CodexLiveRequest): number {
+  const parsed = new Date(request.startedAt).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
 }

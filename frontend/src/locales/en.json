@@ -380,6 +380,7 @@
     "timing_avg_gap": "Avg gap",
     "timing_max_gap": "Max gap",
     "timing_reconnect": "Reconnect",
+    "no_timing_data": "No timing data",
     "meta_session": "Session",
     "meta_execution": "Execution",
     "meta_client_request": "Client Req",

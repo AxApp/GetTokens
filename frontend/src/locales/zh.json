@@ -380,6 +380,7 @@
     "timing_avg_gap": "平均间隔",
     "timing_max_gap": "最大间隔",
     "timing_reconnect": "重连",
+    "no_timing_data": "暂无可用耗时",
     "meta_session": "会话",
     "meta_execution": "执行",
     "meta_client_request": "客户端请求",
