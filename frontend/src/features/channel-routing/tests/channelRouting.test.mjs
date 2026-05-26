@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   CHANNEL_ROUTE_MODES,
@@ -399,4 +400,15 @@ test('buildChannelRoutingParticipantRows shows only requestable accounts in chan
       },
     ],
   );
+});
+
+test('ChannelRoutingWorkbench keeps participant account details collapsed by default', async () => {
+  const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
+
+  assert.match(
+    source,
+    /<details className="group\/participants min-w-0 border-t-2 border-\[var\(--border-color\)\] p-4">/,
+  );
+  assert.match(source, /group-open\/participants:rotate-180/);
+  assert.doesNotMatch(source, /<details className="group\/participants[^"]*" open/);
 });

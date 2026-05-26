@@ -89,6 +89,11 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - 候选、跳过、阻塞状态必须在左侧状态竖条和右侧状态标签同时可见。
   - 状态色统一来自账号卡 tone 来源，不在 Codex 行内重新手写一套颜色。
   - 阻塞账号可被展示过滤隐藏，但真实排序数组和运行时请求顺序不能因此重排。
+- 请求顺序 / 路由工作台默认要降噪：
+  - `请求模式` 与 `参与账号` 放在同一 workbench 内连续展示，主路径优先回答“是什么模式”和“哪些账号会参与”。
+  - `参与账号` 默认折叠，只显示数量；用户需要核对具体账号时再展开。
+  - `更多操作` / 保存 / 过滤等控制放在标题右侧或同一 header band 内，不单独拉出一条说明栏。
+  - 账号列表区域不再额外包一层大边框或大阴影，卡片只保留自身边界，避免再次出现卡中卡。
 - 请求顺序页顶部筛选要和账号池筛选维度保持同步，但只作为展示过滤：
   - 筛选状态使用对象和 AND-style requirement 字段，不退回单一 enum，也不兼容 `*Only` 字段；至少覆盖 `source`、`requiresRequestable`、`requiresBlocked`、`requiresDisabled`、`hasBalance`、`hasLongestQuota`、`requiresError`。
   - `source` 必须区分 `codex-auth-file`、`codex-api-key`、`openai-compatible`。

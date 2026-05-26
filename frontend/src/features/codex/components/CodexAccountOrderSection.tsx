@@ -31,15 +31,13 @@ function EmptyState({ children }: { children: string }) {
 }
 
 const CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =
-  'overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]';
-const CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS = 'border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] xl:flex xl:items-stretch';
-const CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS =
-  'border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]';
+  'min-w-0';
+const CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS =
+  'flex flex-wrap items-start justify-between gap-3 border-b-2 border-[var(--border-color)] pb-4';
 
 export function CodexAccountOrderSection({
   title,
   hint,
-  message,
   ready,
   loading,
   saving,
@@ -112,7 +110,7 @@ export function CodexAccountOrderSection({
   const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => initialDensity ?? readInitialDensity());
   const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(() => normalizeCodexAccountOrderFilter(initialAccountFilter));
   const [accountSearchTerm, setAccountSearchTerm] = useState('');
-  const [useActionMenu, setUseActionMenu] = useState(false);
+  const [useActionMenu, setUseActionMenu] = useState(true);
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
   const actionAreaRef = useRef<HTMLDivElement | null>(null);
   const actionMeasureRef = useRef<HTMLDivElement | null>(null);
@@ -228,7 +226,7 @@ export function CodexAccountOrderSection({
   return (
     <section className={CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS}>
       <header className={CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS}>
-        <div className="px-5 py-4 xl:min-w-0 xl:flex-1">
+        <div className="min-w-0 flex-1">
           <h2 className="text-xl font-black uppercase leading-none tracking-normal text-[var(--text-primary)]">
             {title}
           </h2>
@@ -236,8 +234,8 @@ export function CodexAccountOrderSection({
             {hint}
           </p>
         </div>
-        <div className="flex flex-col justify-center gap-2 border-t-2 border-[var(--border-color)] px-5 py-4 xl:min-w-0 xl:flex-1 xl:border-l-2 xl:border-t-0 xl:items-end">
-          <div ref={actionAreaRef} className="relative flex w-full justify-start xl:justify-end">
+        <div className="flex min-w-[7.5rem] flex-col items-start gap-2 sm:items-end">
+          <div ref={actionAreaRef} className="relative flex w-[7.5rem] justify-start sm:justify-end">
             <div ref={actionMeasureRef} aria-hidden="true" className="pointer-events-none absolute invisible left-0 top-0">
               <InlineActionControls
                 density={density}
@@ -326,12 +324,6 @@ export function CodexAccountOrderSection({
           ) : null}
         </div>
       </header>
-
-      {message ? (
-        <div className={CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS}>
-          {message}
-        </div>
-      ) : null}
 
       {content}
     </section>

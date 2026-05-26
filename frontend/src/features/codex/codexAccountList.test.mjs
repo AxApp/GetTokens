@@ -564,9 +564,11 @@ test('filterCodexAccountOrderRows applies text search across account identity an
 });
 
 test('getCodexAccountOrderGridClass keeps list single-column and card modes adaptive', () => {
-  assert.equal(getCodexAccountOrderGridClass('list'), 'grid gap-3 p-4');
+  assert.equal(getCodexAccountOrderGridClass('list'), 'grid gap-3 pt-4');
   assert.match(getCodexAccountOrderGridClass('compact'), /codex-account-order-card-grid-compact/);
   assert.match(getCodexAccountOrderGridClass('full'), /codex-account-order-card-grid-full/);
+  assert.doesNotMatch(getCodexAccountOrderGridClass('compact'), /\bp-4\b/);
+  assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /\bp-4\b/);
   assert.doesNotMatch(getCodexAccountOrderGridClass('compact'), /xl:grid-cols-3/);
   assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /xl:grid-cols-3/);
 });
@@ -586,16 +588,15 @@ test('Codex account order section uses a lighter shell instead of a nested card 
 
   assert.match(
     source,
-    /CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =\n  'overflow-hidden border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-surface\)\]';/,
+    /CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =\n  'min-w-0';/,
   );
   assert.match(
     source,
-    /CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS = 'border-b-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] xl:flex xl:items-stretch';/,
+    /CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS =\n  'flex flex-wrap items-start justify-between gap-3 border-b-2 border-\[var\(--border-color\)\] pb-4';/,
   );
-  assert.match(
-    source,
-    /CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS =\n  'border-b-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-5 py-3 font-mono text-\[length:var\(--font-size-ui-sm\)\] font-black uppercase tracking-wide text-\[var\(--text-primary\)\]';/,
-  );
+  assert.match(source, /className="min-w-0 flex-1"/);
+  assert.doesNotMatch(source, /border-t-2 border-\[var\(--border-color\)\] px-5 py-4/);
+  assert.doesNotMatch(source, /CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS/);
   assert.doesNotMatch(
     source,
     /<section className="border-\[3px\] border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[8px_8px_0_var\(--shadow-color\)\]">/,

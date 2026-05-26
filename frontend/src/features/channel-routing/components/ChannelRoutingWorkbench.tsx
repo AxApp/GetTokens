@@ -138,15 +138,18 @@ export default function ChannelRoutingWorkbench({
           </div>
         </section>
 
-        <section className="min-w-0 border-t-2 border-[var(--border-color)] p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <details className="group/participants min-w-0 border-t-2 border-[var(--border-color)] p-4">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
             <SectionHeading icon={Split} label="参与账号" />
-            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-              {participantRows.length} 个账号
+            <span className="flex items-center gap-2">
+              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                {participantRows.length} 个账号
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open/participants:rotate-180" strokeWidth={4} />
             </span>
-          </div>
+          </summary>
           <ParticipantList mode={config.routeMode} rows={participantRows} />
-        </section>
+        </details>
       </div>
 
       {message ? (
