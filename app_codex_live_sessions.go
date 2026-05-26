@@ -20,6 +20,21 @@ type CodexLiveSessionSummary struct {
 	ErrorSessions     int `json:"errorSessions"`
 }
 
+type CodexLiveSessionHistoryInput struct {
+	SessionID string `json:"sessionID"`
+	Window    string `json:"window,omitempty"`
+	Limit     int    `json:"limit,omitempty"`
+	Offset    int    `json:"offset,omitempty"`
+}
+
+type CodexLiveSessionHistoryResponse struct {
+	Window      string             `json:"window"`
+	GeneratedAt string             `json:"generatedAt"`
+	Limit       int                `json:"limit"`
+	Offset      int                `json:"offset"`
+	Items       []CodexLiveRequest `json:"items"`
+}
+
 type CodexLiveSession struct {
 	SessionID           string                   `json:"sessionID"`
 	ProjectName         string                   `json:"projectName,omitempty"`
@@ -116,6 +131,19 @@ func (a *App) GetCodexLiveSessionsSnapshot() (*CodexLiveSessionsSnapshot, error)
 	return mapCodexLiveSessionsSnapshot(result), nil
 }
 
+func (a *App) GetCodexLiveSessionHistory(input CodexLiveSessionHistoryInput) (*CodexLiveSessionHistoryResponse, error) {
+	result, err := a.core.GetCodexLiveSessionHistory(wailsapp.CodexLiveSessionHistoryInput{
+		SessionID: input.SessionID,
+		Window:    input.Window,
+		Limit:     input.Limit,
+		Offset:    input.Offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexLiveSessionHistoryResponse(result), nil
+}
+
 func mapCodexLiveSessionsSnapshot(result *wailsapp.CodexLiveSessionsSnapshot) *CodexLiveSessionsSnapshot {
 	if result == nil {
 		return &CodexLiveSessionsSnapshot{Sessions: []CodexLiveSession{}}
@@ -170,6 +198,19 @@ func mapCodexLiveSessions(items []wailsapp.CodexLiveSession) []CodexLiveSession 
 		})
 	}
 	return out
+}
+
+func mapCodexLiveSessionHistoryResponse(result *wailsapp.CodexLiveSessionHistoryResponse) *CodexLiveSessionHistoryResponse {
+	if result == nil {
+		return &CodexLiveSessionHistoryResponse{Items: []CodexLiveRequest{}}
+	}
+	return &CodexLiveSessionHistoryResponse{
+		Window:      result.Window,
+		GeneratedAt: result.GeneratedAt,
+		Limit:       result.Limit,
+		Offset:      result.Offset,
+		Items:       mapCodexLiveRequests(result.Items),
+	}
 }
 
 func mapCodexLiveRequests(items []wailsapp.CodexLiveRequest) []CodexLiveRequest {

@@ -3,6 +3,9 @@ package wailsapp
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
 )
 
 type CodexLiveSessionsSnapshot struct {
@@ -21,6 +24,21 @@ type CodexLiveSessionSummary struct {
 	HTTPSessions      int `json:"httpSessions"`
 	DegradedSessions  int `json:"degradedSessions"`
 	ErrorSessions     int `json:"errorSessions"`
+}
+
+type CodexLiveSessionHistoryInput struct {
+	SessionID string `json:"sessionID"`
+	Window    string `json:"window,omitempty"`
+	Limit     int    `json:"limit,omitempty"`
+	Offset    int    `json:"offset,omitempty"`
+}
+
+type CodexLiveSessionHistoryResponse struct {
+	Window      string             `json:"window"`
+	GeneratedAt string             `json:"generatedAt"`
+	Limit       int                `json:"limit"`
+	Offset      int                `json:"offset"`
+	Items       []CodexLiveRequest `json:"items"`
 }
 
 type CodexLiveSession struct {
@@ -124,4 +142,33 @@ func (a *App) GetCodexLiveSessionsSnapshot() (*CodexLiveSessionsSnapshot, error)
 		snapshot.Sessions = []CodexLiveSession{}
 	}
 	return &snapshot, nil
+}
+
+func (a *App) GetCodexLiveSessionHistory(input CodexLiveSessionHistoryInput) (*CodexLiveSessionHistoryResponse, error) {
+	query := url.Values{}
+	if sessionID := strings.TrimSpace(input.SessionID); sessionID != "" {
+		query.Set("session_id", sessionID)
+	}
+	if window := strings.TrimSpace(input.Window); window != "" {
+		query.Set("window", window)
+	}
+	if input.Limit > 0 {
+		query.Set("limit", strconv.Itoa(input.Limit))
+	}
+	if input.Offset > 0 {
+		query.Set("offset", strconv.Itoa(input.Offset))
+	}
+
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/gettokens/live-sessions/history", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var history CodexLiveSessionHistoryResponse
+	if err := json.Unmarshal(body, &history); err != nil {
+		return nil, err
+	}
+	if history.Items == nil {
+		history.Items = []CodexLiveRequest{}
+	}
+	return &history, nil
 }

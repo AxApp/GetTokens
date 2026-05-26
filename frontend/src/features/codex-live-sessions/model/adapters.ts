@@ -1,6 +1,7 @@
 import type { main } from '../../../../wailsjs/go/models';
 import type {
   CodexLiveRequest,
+  CodexLiveSessionHistoryResponse,
   CodexLiveSession,
   CodexLiveSessionSnapshot,
   CodexLiveSessionSource,
@@ -42,6 +43,18 @@ export function mapBackendCodexLiveSessionsSnapshot(
       errorSessions: snapshot.summary?.errorSessions || 0,
     },
     sessions: (snapshot.sessions || []).map(mapBackendCodexLiveSession),
+  };
+}
+
+export function mapBackendCodexLiveSessionHistory(
+  response: main.CodexLiveSessionHistoryResponse,
+): CodexLiveSessionHistoryResponse {
+  return {
+    window: response.window || '',
+    generatedAt: response.generatedAt || '',
+    limit: response.limit || 0,
+    offset: response.offset || 0,
+    items: (response.items || []).map(mapBackendCodexLiveRequest),
   };
 }
 

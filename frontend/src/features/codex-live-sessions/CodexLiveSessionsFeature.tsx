@@ -1,22 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
-import { GetCodexLiveSessionsSnapshot } from '../../../wailsjs/go/main/App';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { GetCodexLiveSessionHistory, GetCodexLiveSessionsSnapshot } from '../../../wailsjs/go/main/App';
 import type { SidecarStatus } from '../../types';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import CodexLiveSessionsWorkbench from './components/CodexLiveSessionsWorkbench';
-import { mapBackendCodexLiveSessionsSnapshot } from './model/adapters';
+import { mapBackendCodexLiveSessionHistory, mapBackendCodexLiveSessionsSnapshot } from './model/adapters';
+import { buildAnimatedCodexLiveSessionsPreviewSnapshot } from './model/mockData';
 import {
-  codexLiveSessionsPreviewSnapshot,
-  codexLiveSessionsSidecarNotReadySnapshot,
-} from './model/mockData';
+  resolveCodexLiveSessionDetailPollIntervalMs,
+  resolveCodexLiveSessionsPollIntervalMs,
+} from './model/polling';
 import {
   buildCodexLiveSessionsInitialSnapshot,
   buildCodexLiveSessionsLoadFailureSnapshot,
   buildCodexLiveSessionsSidecarUnavailableSnapshot,
 } from './model/snapshotState';
-import type { CodexLiveSessionSnapshot } from './model/types';
+import type { CodexLiveRequest, CodexLiveSessionSnapshot } from './model/types';
 
 interface CodexLiveSessionsFeatureProps {
   sidecarStatus: SidecarStatus;
+}
+
+interface CodexLiveSessionDetailState {
+  sessionID?: string;
+  requests: CodexLiveRequest[];
+  generatedAt: string;
+  loading: boolean;
+  error?: string;
 }
 
 export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSessionsFeatureProps) {
@@ -25,10 +34,21 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
   const [snapshot, setSnapshot] = useState<CodexLiveSessionSnapshot>(() =>
     buildCodexLiveSessionsInitialSnapshot({ browserMode, sidecarReady }),
   );
+  const [selectedSessionID, setSelectedSessionID] = useState<string>();
+  const [detailState, setDetailState] = useState<CodexLiveSessionDetailState>({
+    requests: [],
+    generatedAt: '',
+    loading: false,
+  });
+  const [documentHidden, setDocumentHidden] = useState(() =>
+    typeof document !== 'undefined' ? document.visibilityState !== 'visible' : false,
+  );
+  const detailRequestVersionRef = useRef(0);
 
   const loadSnapshot = useCallback(async () => {
     if (browserMode) {
-      setSnapshot(sidecarReady ? codexLiveSessionsPreviewSnapshot : codexLiveSessionsSidecarNotReadySnapshot);
+      const previewSnapshot = buildAnimatedCodexLiveSessionsPreviewSnapshot();
+      setSnapshot(sidecarReady ? previewSnapshot : { ...previewSnapshot, sidecarReady: false, source: 'cache' });
       return;
     }
     if (!sidecarReady) {
@@ -39,31 +59,155 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
     setSnapshot(mapBackendCodexLiveSessionsSnapshot(nextSnapshot));
   }, [browserMode, sidecarReady]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const refresh = () => {
-      loadSnapshot().catch((error) => {
-        if (cancelled) {
-          return;
-        }
-        console.error(error);
-        setSnapshot((current) => buildCodexLiveSessionsLoadFailureSnapshot(current));
-      });
-    };
+  const refreshSnapshot = useCallback(async () => {
+    try {
+      await loadSnapshot();
+    } catch (error) {
+      console.error(error);
+      setSnapshot((current) => buildCodexLiveSessionsLoadFailureSnapshot(current));
+    }
+  }, [loadSnapshot]);
 
-    refresh();
-    if (browserMode || !sidecarReady) {
-      return () => {
-        cancelled = true;
-      };
+  const loadDetail = useCallback(async () => {
+    if (!selectedSessionID) {
+      detailRequestVersionRef.current += 1;
+      setDetailState({ sessionID: undefined, requests: [], generatedAt: '', loading: false });
+      return;
+    }
+    if (browserMode) {
+      detailRequestVersionRef.current += 1;
+      const previewSession = snapshot.sessions.find((session) => session.sessionID === selectedSessionID);
+      setDetailState({
+        sessionID: selectedSessionID,
+        requests: previewSession?.requests ?? [],
+        generatedAt: snapshot.generatedAt,
+        loading: false,
+      });
+      return;
+    }
+    if (!sidecarReady) {
+      detailRequestVersionRef.current += 1;
+      setDetailState((current) => ({
+        sessionID: selectedSessionID,
+        requests: current.sessionID === selectedSessionID ? current.requests : [],
+        generatedAt: current.generatedAt,
+        loading: false,
+        error: current.error,
+      }));
+      return;
     }
 
-    const timer = window.setInterval(refresh, 2000);
+    setDetailState((current) => ({
+      sessionID: selectedSessionID,
+      requests: current.sessionID === selectedSessionID ? current.requests : [],
+      generatedAt: current.generatedAt,
+      loading: true,
+    }));
+    const requestVersion = detailRequestVersionRef.current + 1;
+    detailRequestVersionRef.current = requestVersion;
+
+    try {
+      const nextHistory = await GetCodexLiveSessionHistory({
+        sessionID: selectedSessionID,
+        window: 'all',
+        limit: 50,
+        offset: 0,
+      });
+      const history = mapBackendCodexLiveSessionHistory(nextHistory);
+      if (detailRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      setDetailState({
+        sessionID: selectedSessionID,
+        requests: history.items,
+        generatedAt: history.generatedAt,
+        loading: false,
+      });
+    } catch (error) {
+      if (detailRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      console.error(error);
+      setDetailState((current) => ({
+        sessionID: selectedSessionID,
+        requests: current.sessionID === selectedSessionID ? current.requests : [],
+        generatedAt: current.generatedAt,
+        loading: false,
+        error: error instanceof Error ? error.message : 'detail-load-failed',
+      }));
+    }
+  }, [browserMode, selectedSessionID, sidecarReady, snapshot.generatedAt, snapshot.sessions]);
+
+  useEffect(() => {
+    refreshSnapshot();
+  }, [refreshSnapshot]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return undefined;
+    }
+    const handleVisibilityChange = () => setDocumentHidden(document.visibilityState !== 'visible');
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
-      cancelled = true;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const pollMs = resolveCodexLiveSessionsPollIntervalMs({
+      browserMode,
+      sidecarReady,
+      hidden: documentHidden,
+      activeSessionCount: snapshot.summary.activeSessions,
+    });
+    if (pollMs === null) {
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      void refreshSnapshot();
+    }, pollMs);
+    return () => {
       window.clearInterval(timer);
     };
-  }, [browserMode, loadSnapshot, sidecarReady]);
+  }, [browserMode, documentHidden, refreshSnapshot, sidecarReady, snapshot.summary.activeSessions]);
 
-  return <CodexLiveSessionsWorkbench snapshot={snapshot} onRefresh={loadSnapshot} />;
+  useEffect(() => {
+    if (browserMode || selectedSessionID !== detailState.sessionID) {
+      void loadDetail();
+    }
+  }, [browserMode, detailState.sessionID, loadDetail, selectedSessionID]);
+
+  useEffect(() => {
+    const pollMs = resolveCodexLiveSessionDetailPollIntervalMs({
+      browserMode,
+      sidecarReady,
+      hidden: documentHidden,
+      hasSelection: Boolean(selectedSessionID),
+    });
+    if (pollMs === null) {
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      void loadDetail();
+    }, pollMs);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [browserMode, documentHidden, loadDetail, selectedSessionID, sidecarReady]);
+
+  const handleRefresh = useCallback(() => {
+    void refreshSnapshot();
+    void loadDetail();
+  }, [loadDetail, refreshSnapshot]);
+
+  return (
+    <CodexLiveSessionsWorkbench
+      snapshot={snapshot}
+      detailRequests={detailState.sessionID === selectedSessionID ? detailState.requests : []}
+      detailLoading={detailState.loading}
+      detailError={detailState.sessionID === selectedSessionID ? detailState.error : undefined}
+      onRefresh={handleRefresh}
+      onSelectionChange={setSelectedSessionID}
+    />
+  );
 }

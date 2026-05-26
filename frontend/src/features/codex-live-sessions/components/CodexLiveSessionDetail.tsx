@@ -38,10 +38,14 @@ import {
 export function SessionDetail({
   session,
   request,
+  loading = false,
+  errorMessage,
   t,
 }: {
   session?: CodexLiveSession;
   request?: CodexLiveRequest;
+  loading?: boolean;
+  errorMessage?: string;
   t: Translate;
 }) {
   if (!session) {
@@ -59,6 +63,16 @@ export function SessionDetail({
   return (
     <div className="grid min-w-0 w-full gap-5">
       <div className="grid min-w-0 gap-5">
+        {loading || errorMessage ? (
+          <div className="flex min-h-10 items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase">
+            <span className="text-[var(--text-muted)]">
+              {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
+            </span>
+            {errorMessage ? (
+              <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span>
+            ) : null}
+          </div>
+        ) : null}
         <RequestTimingTrend session={session} request={request} t={t} />
         <TimingMetrics request={request} t={t} />
         <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
@@ -303,19 +317,16 @@ function TimingTrendChart({
           ) : null}
 
           {timingTrendSeries.map((series) => {
-            const path =
-              series.id === 'totalDurationMs'
-                ? totalWavePath
-                : buildTimingTrendSeriesPath(
-                    trend.points,
-                    series.id,
-                    trend.maxMs,
-                    trend.startedAtMinMs,
-                    trend.startedAtMaxMs,
-                    width,
-                    height,
-                    padding,
-                  );
+            const path = buildTimingTrendEcgPath(
+              trend.points,
+              series.id,
+              trend.maxMs,
+              trend.startedAtMinMs,
+              trend.startedAtMaxMs,
+              width,
+              height,
+              padding,
+            );
             if (!path) {
               return null;
             }
@@ -325,12 +336,13 @@ function TimingTrendChart({
                 d={path}
                 fill="none"
                 stroke={series.color}
-                strokeWidth={series.id === 'totalDurationMs' ? 3.5 : 2.25}
+                strokeWidth={series.id === 'totalDurationMs' ? 3.5 : 2}
                 strokeLinecap="round"
                 strokeLinejoin={series.id === 'totalDurationMs' ? 'miter' : 'round'}
                 pathLength={series.id === 'totalDurationMs' ? 1 : undefined}
-                strokeDasharray={series.id === 'totalDurationMs' ? 1 : '10 8'}
+                strokeDasharray={series.id === 'totalDurationMs' ? 1 : undefined}
                 strokeDashoffset={0}
+                opacity={series.id === 'totalDurationMs' ? 1 : 0.72}
                 style={{ animation: 'codex-live-wave-sweep 900ms cubic-bezier(0.22,1,0.36,1)' }}
               />
             );
@@ -461,40 +473,6 @@ function buildTimingTrendPointStyle(x: number, y: number) {
     top: `${y}px`,
     transform: 'translate(-50%, -50%)',
   };
-}
-
-function buildTimingTrendSeriesPath(
-  points: readonly CodexLiveRequestTimingTrendPoint[],
-  metric: CodexLiveTimingTrendMetric,
-  maxMs: number,
-  startedAtMinMs: number,
-  startedAtMaxMs: number,
-  width: number,
-  height: number,
-  padding: { top: number; right: number; bottom: number; left: number },
-): string {
-  const coordinates = points.flatMap((point) => {
-    const value = point.values[metric];
-    if (value === null) {
-      return [];
-    }
-    return [[
-      trendChartX(point.startedAtMs, startedAtMinMs, startedAtMaxMs, width, padding),
-      trendChartY(value, maxMs, height, padding),
-    ] as const];
-  });
-
-  if (coordinates.length === 0) {
-    return '';
-  }
-  if (coordinates.length === 1) {
-    const [x, y] = coordinates[0];
-    return `M ${x - 5} ${y} L ${x + 5} ${y}`;
-  }
-
-  return coordinates.slice(1).reduce((path, [x, y]) => {
-    return `${path} L ${x} ${y}`;
-  }, `M ${coordinates[0][0]} ${coordinates[0][1]}`);
 }
 
 function buildTimingTrendEcgPath(

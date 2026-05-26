@@ -75,5 +75,14 @@ Given live sessions 列表接口稳定 2xx 且响应未变，When 前端持续�
   - `docs-linhay/spaces/20260525-codex-live-session-request-info/README.md`
 
 ## 当前状态
-- 状态：draft
+- 状态：implemented-browser-smoked
 - 最近更新：2026-05-27
+- 已实现：
+  1. sidecar live-session 列表改成 row feed，默认不再返回 `requests[]` / request `timeline[]`
+  2. GetTokens 新增 live-session history Wails/root binding，前端详情改为按 `session_id` 懒加载
+  3. 前端轮询按页面可见性与 active session 数调频，详情刷新独立于列表
+  4. projectName 补全移出 snapshot 同步热路径，改为后台缓存刷新
+  5. `/gettokens/live-sessions` 成功且快速的 2xx 管理轮询 access log 默认降噪
+  6. 浏览器 preview 冒烟已完成，截图产物：`output/playwright/20260527-codex-live-sessions-runtime-optimization-smoke.png`
+- 待补：
+  1. 真实 Wails 桌面窗口 smoke / screenshot 尚未执行；当前只完成 browser preview 验收

@@ -158,6 +158,10 @@ export function GetCodexFeatureConfig() {
   return window['go']['main']['App']['GetCodexFeatureConfig']();
 }
 
+export function GetCodexLiveSessionHistory(arg1) {
+  return window['go']['main']['App']['GetCodexLiveSessionHistory'](arg1);
+}
+
 export function GetCodexLiveSessionsSnapshot() {
   return window['go']['main']['App']['GetCodexLiveSessionsSnapshot']();
 }

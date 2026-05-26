@@ -127,6 +127,14 @@ export interface CodexLiveSessionSummary {
   errorSessions: number;
 }
 
+export interface CodexLiveSessionHistoryResponse {
+  window: string;
+  generatedAt: string;
+  limit: number;
+  offset: number;
+  items: CodexLiveRequest[];
+}
+
 export interface CodexLiveSessionSnapshot {
   generatedAt: string;
   sidecarReady: boolean;

@@ -27,8 +27,15 @@ import {
   buildCodexLiveSessionsInitialSnapshot,
   buildCodexLiveSessionsLoadFailureSnapshot,
 } from './model/snapshotState.ts';
-import { mapBackendCodexLiveSessionsSnapshot } from './model/adapters.ts';
-import { codexLiveSessionsPreviewSnapshot } from './model/mockData.ts';
+import { mapBackendCodexLiveSessionHistory, mapBackendCodexLiveSessionsSnapshot } from './model/adapters.ts';
+import {
+  buildAnimatedCodexLiveSessionsPreviewSnapshot,
+  codexLiveSessionsPreviewSnapshot,
+} from './model/mockData.ts';
+import {
+  resolveCodexLiveSessionDetailPollIntervalMs,
+  resolveCodexLiveSessionsPollIntervalMs,
+} from './model/polling.ts';
 import { buildCodexLiveRequestTimingTrend } from './model/requestTimingTrend.ts';
 
 test('filterCodexLiveSessions searches request ids and keeps active sessions first', () => {
@@ -44,6 +51,20 @@ test('filterCodexLiveSessions searches request ids and keeps active sessions fir
     sessions: codexLiveSessionsPreviewSnapshot.sessions,
   });
   assert.deepEqual(sorted.slice(0, 3).map((session) => session.status), ['streaming', 'reconnecting', 'degraded_http']);
+});
+
+test('filterCodexLiveSessions still matches row-feed request ids without embedded request arrays', () => {
+  const rowOnlySession = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0],
+    requests: [],
+  };
+  const rows = filterCodexLiveSessions({
+    sessions: [rowOnlySession],
+    query: rowOnlySession.activeRequestID,
+  });
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].sessionID, rowOnlySession.sessionID);
 });
 
 test('filterCodexLiveSessions filters degraded and transport state conservatively', () => {
@@ -382,6 +403,121 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
   assert.equal(snapshot.sessions[0].recentEvents[0].severity, 'info');
 });
 
+test('mapBackendCodexLiveSessionHistory normalizes request detail history payloads', () => {
+  const history = mapBackendCodexLiveSessionHistory({
+    window: 'all',
+    generatedAt: '2026-05-21T08:00:00Z',
+    limit: 20,
+    offset: 0,
+    items: [
+      {
+        requestID: 'req-1',
+        sessionID: 'ws-session-1',
+        sequence: 1,
+        model: 'gpt-5.5',
+        status: 'completed',
+        startedAt: '2026-05-21T08:00:00Z',
+        completedAt: '2026-05-21T08:00:02Z',
+        downstreamTransport: 'websocket',
+        upstreamTransport: 'websocket',
+        timing: { firstTokenMs: 800, outputTokensPerSecond: 42 },
+        timeline: [],
+      },
+    ],
+  });
+
+  assert.equal(history.window, 'all');
+  assert.equal(history.items.length, 1);
+  assert.equal(history.items[0].timing?.outputTokensPerSecond, 42);
+});
+
+test('resolveCodexLiveSessionsPollIntervalMs follows workspace visibility and activity', () => {
+  assert.equal(
+    resolveCodexLiveSessionsPollIntervalMs({
+      browserMode: false,
+      sidecarReady: true,
+      hidden: false,
+      activeSessionCount: 1,
+    }),
+    2000,
+  );
+  assert.equal(
+    resolveCodexLiveSessionsPollIntervalMs({
+      browserMode: false,
+      sidecarReady: true,
+      hidden: false,
+      activeSessionCount: 0,
+    }),
+    8000,
+  );
+  assert.equal(
+    resolveCodexLiveSessionsPollIntervalMs({
+      browserMode: false,
+      sidecarReady: true,
+      hidden: true,
+      activeSessionCount: 1,
+    }),
+    30000,
+  );
+  assert.equal(
+    resolveCodexLiveSessionsPollIntervalMs({
+      browserMode: true,
+      sidecarReady: true,
+      hidden: false,
+      activeSessionCount: 1,
+    }),
+    1000,
+  );
+  assert.equal(
+    resolveCodexLiveSessionsPollIntervalMs({
+      browserMode: true,
+      sidecarReady: false,
+      hidden: false,
+      activeSessionCount: 0,
+    }),
+    1000,
+  );
+});
+
+test('resolveCodexLiveSessionDetailPollIntervalMs pauses detail polling without a selected session', () => {
+  assert.equal(
+    resolveCodexLiveSessionDetailPollIntervalMs({
+      browserMode: false,
+      sidecarReady: true,
+      hidden: false,
+      hasSelection: true,
+    }),
+    4000,
+  );
+  assert.equal(
+    resolveCodexLiveSessionDetailPollIntervalMs({
+      browserMode: false,
+      sidecarReady: true,
+      hidden: true,
+      hasSelection: true,
+    }),
+    30000,
+  );
+  assert.equal(
+    resolveCodexLiveSessionDetailPollIntervalMs({
+      browserMode: false,
+      sidecarReady: true,
+      hidden: false,
+      hasSelection: false,
+    }),
+    null,
+  );
+  assert.equal(
+    resolveCodexLiveSessionDetailPollIntervalMs({
+      browserMode: true,
+      sidecarReady: false,
+      hidden: false,
+      hasSelection: true,
+    }),
+    1000,
+  );
+});
+
 test('codex live session surfaces use larger typography tokens for the dense workbench', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
@@ -489,6 +625,17 @@ test('codex live session detail header uses request timing trend chart', async (
   assert.match(detailSource, /TimingTrendFooterItem label=\{t\('codex_live_sessions\.duration'\)\}/);
   assert.doesNotMatch(detailSource, /min-h-\[166px\][^"]*border[^"]*bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(detailSource, /font-size-ui-5xl/);
+});
+
+test('codex live sessions feature splits row snapshot polling from detail history loading', async () => {
+  const featureSource = await readFile(new URL('./CodexLiveSessionsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /GetCodexLiveSessionsSnapshot/);
+  assert.match(featureSource, /GetCodexLiveSessionHistory/);
+  assert.match(featureSource, /document\.visibilityState/);
+  assert.match(featureSource, /resolveCodexLiveSessionsPollIntervalMs/);
+  assert.match(featureSource, /resolveCodexLiveSessionDetailPollIntervalMs/);
+  assert.match(featureSource, /detailRequestVersionRef/);
 });
 
 test('buildCodexLiveRequestTimingTrend orders request timing metrics by request start time', () => {
@@ -666,6 +813,26 @@ test('codex live sessions preview data gives the default detail chart fixed-wind
   assert.equal(trend.startedAtMaxMs, Date.parse('2026-05-21T18:35:10+08:00'));
 });
 
+test('buildAnimatedCodexLiveSessionsPreviewSnapshot keeps browser preview live over time', () => {
+  const first = buildAnimatedCodexLiveSessionsPreviewSnapshot(Date.parse('2026-05-27T10:00:00+08:00'));
+  const second = buildAnimatedCodexLiveSessionsPreviewSnapshot(Date.parse('2026-05-27T10:00:06+08:00'));
+
+  const firstSession = getSelectedCodexLiveSession(first.sessions);
+  const secondSession = getSelectedCodexLiveSession(second.sessions);
+  const firstRequest = getPrimaryCodexLiveRequest(firstSession);
+  const secondRequest = getPrimaryCodexLiveRequest(secondSession);
+
+  assert.ok(firstSession);
+  assert.ok(secondSession);
+  assert.ok(firstRequest);
+  assert.ok(secondRequest);
+  assert.equal(first.source, 'preview');
+  assert.equal(second.source, 'preview');
+  assert.equal(firstSession.startedAt, secondSession.startedAt);
+  assert.ok((secondSession.durationMs ?? 0) > (firstSession.durationMs ?? 0));
+  assert.ok((secondRequest?.timing?.totalDurationMs ?? 0) > (firstRequest?.timing?.totalDurationMs ?? 0));
+});
+
 test('codex live session timing chart uses request timestamps and live refresh', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
 
@@ -701,6 +868,8 @@ test('codex live session timing chart follows Usage Desk chart styling primitive
   assert.match(detailSource, /strokeLinejoin=\{series\.id === 'totalDurationMs' \? 'miter' : 'round'\}/);
   assert.match(detailSource, /function TimingTrendPoint/);
   assert.match(detailSource, /buildTimingTrendPointStyle/);
+  assert.match(detailSource, /buildTimingTrendEcgPath\(/);
+  assert.doesNotMatch(detailSource, /buildTimingTrendSeriesPath/);
   assert.doesNotMatch(detailSource, /codex-live-total-area/);
 });
 

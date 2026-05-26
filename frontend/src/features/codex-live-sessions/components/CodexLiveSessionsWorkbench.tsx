@@ -11,6 +11,7 @@ import {
   getSelectedCodexLiveSession,
 } from '../model/selectors';
 import type {
+  CodexLiveRequest,
   CodexLiveSessionFilter,
   CodexLiveSessionSnapshot,
   CodexLiveTransportFilter,
@@ -21,8 +22,12 @@ import { SourceBadge } from './CodexLiveSessionSummary';
 
 interface CodexLiveSessionsWorkbenchProps {
   snapshot: CodexLiveSessionSnapshot;
+  detailRequests?: readonly CodexLiveRequest[];
+  detailLoading?: boolean;
+  detailError?: string;
   initialSelectedSessionID?: string;
   onRefresh?: () => void;
+  onSelectionChange?: (sessionID?: string) => void;
 }
 
 const transportOptions: ReadonlyArray<SegmentedOption<CodexLiveTransportFilter>> = [
@@ -34,8 +39,12 @@ const transportOptions: ReadonlyArray<SegmentedOption<CodexLiveTransportFilter>>
 
 export default function CodexLiveSessionsWorkbench({
   snapshot,
+  detailRequests = [],
+  detailLoading = false,
+  detailError,
   initialSelectedSessionID,
   onRefresh,
+  onSelectionChange,
 }: CodexLiveSessionsWorkbenchProps) {
   const { t } = useI18n();
   const [query, setQuery] = useState('');
@@ -63,9 +72,25 @@ export default function CodexLiveSessionsWorkbench({
     [query, snapshot.sessions, statusFilter, transportFilter],
   );
   const selectedSession = getSelectedCodexLiveSession(sessions, selectedSessionID);
-  const selectedRequest = selectedSession ? getPrimaryCodexLiveRequest(selectedSession) : undefined;
-  const diagnostic = selectedSession ? buildCodexLiveDiagnosticSummary(selectedSession, selectedRequest) : '';
+  const selectedSessionWithDetail = useMemo(
+    () =>
+      selectedSession
+        ? {
+            ...selectedSession,
+            requests: detailRequests.length > 0 ? [...detailRequests] : selectedSession.requests,
+          }
+        : undefined,
+    [detailRequests, selectedSession],
+  );
+  const selectedRequest = selectedSessionWithDetail ? getPrimaryCodexLiveRequest(selectedSessionWithDetail) : undefined;
+  const diagnostic = selectedSessionWithDetail
+    ? buildCodexLiveDiagnosticSummary(selectedSessionWithDetail, selectedRequest)
+    : '';
   const filterLabel = buildCodexLiveFilterLabel(t, statusFilter, transportFilter, statusOptions, transportOptions);
+
+  useEffect(() => {
+    onSelectionChange?.(selectedSession?.sessionID);
+  }, [onSelectionChange, selectedSession?.sessionID]);
 
   useEffect(() => {
     if (!isFilterMenuOpen) {
@@ -217,7 +242,13 @@ export default function CodexLiveSessionsWorkbench({
             t={t}
           />
           <div className="min-w-0 xl:sticky xl:top-5">
-            <SessionDetail session={selectedSession} request={selectedRequest} t={t} />
+            <SessionDetail
+              session={selectedSessionWithDetail}
+              request={selectedRequest}
+              loading={detailLoading}
+              errorMessage={detailError}
+              t={t}
+            />
           </div>
         </div>
       </div>
