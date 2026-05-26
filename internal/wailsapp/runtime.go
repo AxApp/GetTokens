@@ -3,12 +3,18 @@ package wailsapp
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/sparkle"
 	"github.com/linhay/gettokens/internal/updater"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+const updateCheckInterval = 6 * time.Hour
+
+type updateAvailabilityCheckFunc func(context.Context) (*updater.ReleaseInfo, bool, error)
+type updateAvailabilityEmitFunc func(*updater.ReleaseInfo)
 
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
@@ -45,14 +51,54 @@ func (a *App) Startup(ctx context.Context) {
 	}()
 
 	if !usesNativeUpdaterUI() {
-		go func() {
-			release, ok, err := a.updater.Check(ctx)
-			if err != nil || !ok {
+		a.startUpdateAvailabilityLoop(ctx)
+	}
+}
+
+func (a *App) startUpdateAvailabilityLoop(ctx context.Context) {
+	ticker := time.NewTicker(updateCheckInterval)
+	go func() {
+		defer ticker.Stop()
+		runUpdateAvailabilityLoop(ctx, ticker.C, a.updater.Check, func(release *updater.ReleaseInfo) {
+			wailsRuntime.EventsEmit(ctx, "updater:available", release)
+		})
+	}()
+}
+
+func runUpdateAvailabilityLoop(
+	ctx context.Context,
+	ticks <-chan time.Time,
+	check updateAvailabilityCheckFunc,
+	emit updateAvailabilityEmitFunc,
+) {
+	checkAndEmitAvailableUpdate(ctx, check, emit)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case _, ok := <-ticks:
+			if !ok {
 				return
 			}
-			wailsRuntime.EventsEmit(ctx, "updater:available", release)
-		}()
+			checkAndEmitAvailableUpdate(ctx, check, emit)
+		}
 	}
+}
+
+func checkAndEmitAvailableUpdate(
+	ctx context.Context,
+	check updateAvailabilityCheckFunc,
+	emit updateAvailabilityEmitFunc,
+) {
+	if check == nil || emit == nil {
+		return
+	}
+
+	release, ok, err := check(ctx)
+	if err != nil || !ok || release == nil {
+		return
+	}
+	emit(release)
 }
 
 func (a *App) Shutdown() {
