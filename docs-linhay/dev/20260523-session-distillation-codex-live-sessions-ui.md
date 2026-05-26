@@ -79,7 +79,9 @@ Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是�
 1. 已完成请求优先使用 `timing.totalDurationMs`；缺失时才回退到 `completedAt - startedAt`。
 2. 当前 active request 可以用 `nowMs - startedAt` 做实时投影，用于显示正在增长的 live 样本。
 3. 历史请求即使因为 cache 或 sidecar 残留仍带着 `streaming/reconnecting` 且没有 `completedAt`，也不能继续按 `nowMs` 投影；否则图上所有总耗时点会一起增长。
-4. 回归测试必须覆盖“stale streaming request + active request”并存时，只有 active request 增长。
+4. 图表只展示固定最近窗口内的请求点，默认窗口为 5 分钟；窗口外请求既不参与曲线，也不参与 y 轴最大值。
+5. x 轴域固定为 `latestStartedAt - windowMs` 到 `latestStartedAt`，不能再用当前样本 min/max 自动撑满，否则稀疏请求会被视觉上拉成等距。
+6. 回归测试必须覆盖“stale streaming request + active request”并存时，只有 active request 增长，并覆盖窗口外旧请求被过滤。
 
 这类问题不要先调 CSS 或动画。先检查纯模型输出：`points[].values.totalDurationMs` 与 `points[].isLive` 是否已经错误增长；如果模型输出错，修模型，不修图表。
 

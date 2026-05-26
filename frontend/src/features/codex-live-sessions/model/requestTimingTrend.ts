@@ -18,12 +18,15 @@ export interface CodexLiveRequestTimingTrend {
   hasData: boolean;
   startedAtMinMs: number;
   startedAtMaxMs: number;
+  windowMs: number;
 }
 
 interface BuildCodexLiveRequestTimingTrendOptions {
   nowMs?: number;
+  windowMs?: number;
 }
 
+export const codexLiveRequestTimingTrendWindowMs = 5 * 60 * 1000;
 const liveElapsedMaxMs = 2 * 60 * 60 * 1000;
 const liveStatuses: ReadonlySet<CodexLiveRequest['status']> = new Set(['active', 'streaming', 'reconnecting']);
 
@@ -45,8 +48,16 @@ export function buildCodexLiveRequestTimingTrend(
     .map((request) => buildTimingTrendPoint(request, options, activeRequestID))
     .filter((point): point is CodexLiveRequestTimingTrendPoint => Boolean(point))
     .sort((left, right) => left.startedAtMs - right.startedAtMs || left.sequence - right.sequence);
+  const windowMs = normalizeTimingWindowMs(options.windowMs);
+  const latestStartedAtMs = points.reduce((latest, point) => Math.max(latest, point.startedAtMs), 0);
+  const startedAtMaxMs = latestStartedAtMs || 0;
+  const startedAtMinMs = startedAtMaxMs > 0 ? startedAtMaxMs - windowMs : 0;
+  const windowedPoints =
+    startedAtMaxMs > 0
+      ? points.filter((point) => point.startedAtMs >= startedAtMinMs && point.startedAtMs <= startedAtMaxMs)
+      : [];
 
-  const maxMs = points.reduce((max, point) => {
+  const maxMs = windowedPoints.reduce((max, point) => {
     return Math.max(
       max,
       point.values.totalDurationMs ?? 0,
@@ -54,16 +65,14 @@ export function buildCodexLiveRequestTimingTrend(
       point.values.firstTokenMs ?? 0,
     );
   }, 0);
-  const startedAtValues = points.map((point) => point.startedAtMs);
-  const startedAtMinMs = startedAtValues.length > 0 ? Math.min(...startedAtValues) : 0;
-  const startedAtMaxMs = startedAtValues.length > 0 ? Math.max(...startedAtValues) : 0;
 
   return {
-    points,
+    points: windowedPoints,
     maxMs,
     hasData: maxMs > 0,
     startedAtMinMs,
     startedAtMaxMs,
+    windowMs,
   };
 }
 
@@ -118,6 +127,13 @@ function isLiveRequest(request: CodexLiveRequest, activeRequestID?: string): boo
 function normalizeTimingValue(value: number | undefined): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     return null;
+  }
+  return Math.round(value);
+}
+
+function normalizeTimingWindowMs(value: number | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    return codexLiveRequestTimingTrendWindowMs;
   }
   return Math.round(value);
 }

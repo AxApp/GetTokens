@@ -538,7 +538,55 @@ test('buildCodexLiveRequestTimingTrend only projects the current active request'
   assert.deepEqual(trend.points.map((point) => point.isLive), [false, true]);
 });
 
-test('codex live sessions preview data gives the default detail chart multiple timing samples', () => {
+test('buildCodexLiveRequestTimingTrend keeps only requests inside a fixed time window', () => {
+  const trend = buildCodexLiveRequestTimingTrend(
+    [
+      {
+        requestID: 'req-old',
+        sessionID: 'session-1',
+        sequence: 1,
+        model: 'gpt-5',
+        status: 'completed',
+        startedAt: '2026-05-21T08:00:00Z',
+        downstreamTransport: 'websocket',
+        upstreamTransport: 'websocket',
+        timing: { totalDurationMs: 12000, firstEventMs: 400, firstTokenMs: 650 },
+        timeline: [],
+      },
+      {
+        requestID: 'req-recent',
+        sessionID: 'session-1',
+        sequence: 2,
+        model: 'gpt-5',
+        status: 'completed',
+        startedAt: '2026-05-21T08:09:00Z',
+        downstreamTransport: 'websocket',
+        upstreamTransport: 'websocket',
+        timing: { totalDurationMs: 2400, firstEventMs: 520, firstTokenMs: 760 },
+        timeline: [],
+      },
+    ],
+    {
+      requestID: 'req-latest',
+      sessionID: 'session-1',
+      sequence: 3,
+      model: 'gpt-5',
+      status: 'streaming',
+      startedAt: '2026-05-21T08:10:00Z',
+      downstreamTransport: 'websocket',
+      upstreamTransport: 'websocket',
+      timing: { totalDurationMs: 4200, firstEventMs: 620, firstTokenMs: 900 },
+      timeline: [],
+    },
+  );
+
+  assert.deepEqual(trend.points.map((point) => point.requestID), ['req-recent', 'req-latest']);
+  assert.equal(trend.maxMs, 4200);
+  assert.equal(trend.startedAtMinMs, Date.parse('2026-05-21T08:05:00Z'));
+  assert.equal(trend.startedAtMaxMs, Date.parse('2026-05-21T08:10:00Z'));
+});
+
+test('codex live sessions preview data gives the default detail chart fixed-window timing samples', () => {
   const selectedSession = getSelectedCodexLiveSession(codexLiveSessionsPreviewSnapshot.sessions);
   assert.ok(selectedSession);
   const selectedRequest = getPrimaryCodexLiveRequest(selectedSession);
@@ -547,14 +595,13 @@ test('codex live sessions preview data gives the default detail chart multiple t
   assert.equal(selectedSession.sessionID, 'ws_sess_7a91');
   assert.equal(selectedRequest?.requestID, 'gt-req-8912');
   assert.equal(selectedSession.requestCount, selectedSession.requests.length);
-  assert.ok(trend.points.length >= 5);
   assert.deepEqual(trend.points.map((point) => point.requestID), [
-    'gt-req-8874',
-    'gt-req-8885',
     'gt-req-8898',
     'gt-req-8906',
     'gt-req-8912',
   ]);
+  assert.equal(trend.startedAtMinMs, Date.parse('2026-05-21T18:30:10+08:00'));
+  assert.equal(trend.startedAtMaxMs, Date.parse('2026-05-21T18:35:10+08:00'));
 });
 
 test('codex live session timing chart uses request timestamps and live refresh', async () => {
