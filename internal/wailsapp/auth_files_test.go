@@ -98,6 +98,135 @@ func TestNeedsAuthFileMetadataInference(t *testing.T) {
 	}
 }
 
+func TestListAuthFilesCachesInferredMetadataAcrossRepeatedCalls(t *testing.T) {
+	app := New("", "", "")
+	downloadCount := 0
+	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
+			return []byte(`{"files":[{"name":"codex-team.json","type":"unknown","provider":"unknown","size":91,"modified":1760000000}],"total":1}`), http.StatusOK, nil
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
+			if got := query.Get("name"); got != "codex-team.json" {
+				t.Fatalf("download name = %q, want codex-team.json", got)
+			}
+			downloadCount++
+			return []byte(`{"type":"codex","email":"team@example.com","plan_type":"plus","priority":7}`), http.StatusOK, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+			return nil, 0, nil
+		}
+	}
+
+	first, err := app.ListAuthFiles()
+	if err != nil {
+		t.Fatalf("first ListAuthFiles: %v", err)
+	}
+	second, err := app.ListAuthFiles()
+	if err != nil {
+		t.Fatalf("second ListAuthFiles: %v", err)
+	}
+
+	if downloadCount != 1 {
+		t.Fatalf("download count = %d, want 1", downloadCount)
+	}
+	for label, response := range map[string]*AuthFilesResponse{"first": first, "second": second} {
+		if len(response.Files) != 1 {
+			t.Fatalf("%s files = %d, want 1", label, len(response.Files))
+		}
+		file := response.Files[0]
+		if file.Provider != "codex" || file.Type != "codex" || file.Email != "team@example.com" || file.PlanType != "plus" || file.Priority != 7 {
+			t.Fatalf("%s file metadata not inferred from cache/content: %#v", label, file)
+		}
+	}
+}
+
+func TestListAuthFilesDoesNotRedownloadWhenCachedMetadataRemainsIncomplete(t *testing.T) {
+	app := New("", "", "")
+	downloadCount := 0
+	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
+			return []byte(`{"files":[{"name":"codex-minimal.json","type":"unknown","provider":"unknown","size":42,"modified":1760000000}],"total":1}`), http.StatusOK, nil
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
+			downloadCount++
+			return []byte(`{"type":"codex"}`), http.StatusOK, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+			return nil, 0, nil
+		}
+	}
+
+	first, err := app.ListAuthFiles()
+	if err != nil {
+		t.Fatalf("first ListAuthFiles: %v", err)
+	}
+	second, err := app.ListAuthFiles()
+	if err != nil {
+		t.Fatalf("second ListAuthFiles: %v", err)
+	}
+
+	if downloadCount != 1 {
+		t.Fatalf("download count = %d, want 1 after incomplete metadata is cached", downloadCount)
+	}
+	for label, response := range map[string]*AuthFilesResponse{"first": first, "second": second} {
+		file := response.Files[0]
+		if file.Provider != "codex" || file.Type != "codex" {
+			t.Fatalf("%s provider/type = %q/%q, want codex/codex", label, file.Provider, file.Type)
+		}
+	}
+}
+
+func TestListAuthFilesRefreshesMetadataCacheWhenFingerprintChanges(t *testing.T) {
+	app := New("", "", "")
+	downloadCount := 0
+	modified := int64(1760000000)
+	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
+			payload, _ := json.Marshal(map[string]any{
+				"files": []map[string]any{{
+					"name":     "codex-team.json",
+					"type":     "unknown",
+					"provider": "unknown",
+					"size":     91,
+					"modified": modified,
+				}},
+				"total": 1,
+			})
+			return payload, http.StatusOK, nil
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
+			downloadCount++
+			if downloadCount == 1 {
+				return []byte(`{"type":"codex","email":"team@example.com","plan_type":"plus","priority":7}`), http.StatusOK, nil
+			}
+			return []byte(`{"type":"codex","email":"team@example.com","plan_type":"pro","priority":9}`), http.StatusOK, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+			return nil, 0, nil
+		}
+	}
+
+	first, err := app.ListAuthFiles()
+	if err != nil {
+		t.Fatalf("first ListAuthFiles: %v", err)
+	}
+	modified = 1760000001
+	second, err := app.ListAuthFiles()
+	if err != nil {
+		t.Fatalf("second ListAuthFiles: %v", err)
+	}
+
+	if downloadCount != 2 {
+		t.Fatalf("download count = %d, want 2 after fingerprint change", downloadCount)
+	}
+	if first.Files[0].PlanType != "plus" || first.Files[0].Priority != 7 {
+		t.Fatalf("first metadata = %#v, want plus priority 7", first.Files[0])
+	}
+	if second.Files[0].PlanType != "pro" || second.Files[0].Priority != 9 {
+		t.Fatalf("second metadata = %#v, want pro priority 9", second.Files[0])
+	}
+}
+
 func TestUniqueAuthFileUploadName(t *testing.T) {
 	existing := map[string]struct{}{
 		"auth.json": {},

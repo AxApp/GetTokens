@@ -26,6 +26,8 @@ type App struct {
 	managementAPI            func() *cliproxyapi.Client
 	sidecarProxyMu           sync.Mutex
 	sidecarProxyPendingApply bool
+	authFileCacheMu          sync.RWMutex
+	authFileMetadataCache    map[string]authFileMetadataCacheEntry
 	localUsageMu             sync.RWMutex
 	localUsage               localUsageRuntimeState
 	claudeLocalUsage         localUsageRuntimeState
@@ -53,12 +55,13 @@ type sidecarRelayRequestFunc func(method string, path string, body io.Reader, co
 
 func New(version string, releaseLabel string, repo string) *App {
 	return &App{
-		sidecar:      sidecar.NewManager(),
-		updater:      updater.New(repo, version),
-		version:      version,
-		releaseLabel: releaseLabel,
-		codexBinary:  codexbinary.NewService(codexbinary.ServiceOptions{}),
-		menuBar:      menubar.NewController(),
+		sidecar:               sidecar.NewManager(),
+		updater:               updater.New(repo, version),
+		version:               version,
+		releaseLabel:          releaseLabel,
+		codexBinary:           codexbinary.NewService(codexbinary.ServiceOptions{}),
+		menuBar:               menubar.NewController(),
+		authFileMetadataCache: map[string]authFileMetadataCacheEntry{},
 	}
 }
 

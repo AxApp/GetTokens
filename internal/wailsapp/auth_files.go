@@ -30,7 +30,14 @@ func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
 
 	for index := range result.Files {
 		file := &result.Files[index]
+		if cached, ok := a.cachedAuthFileMetadata(*file); ok {
+			applyCachedAuthFileMetadata(file, cached)
+			a.storeAuthFileMetadata(*file)
+			continue
+		}
+
 		if !needsAuthFileMetadataInference(*file) {
+			a.storeAuthFileMetadata(*file)
 			continue
 		}
 
@@ -55,6 +62,7 @@ func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
 			file.PlanType = profile.PlanType
 		}
 		file.Priority = accountsdomain.ExtractAuthFilePriority(body)
+		a.storeAuthFileMetadata(*file)
 	}
 
 	return &result, nil
@@ -93,6 +101,9 @@ func (a *App) SetAuthFileStatus(name string, disabled bool) error {
 		return err
 	}
 	_, _, err = a.SidecarRequest(http.MethodPatch, ManagementAPIPrefix+"/auth-files/status", nil, bytes.NewReader(b), "application/json")
+	if err == nil {
+		a.invalidateAuthFileMetadataCache(name)
+	}
 	return err
 }
 
@@ -105,6 +116,9 @@ func (a *App) DeleteAuthFiles(names []string) error {
 		return err
 	}
 	_, _, err = a.SidecarRequest(http.MethodDelete, ManagementAPIPrefix+"/auth-files", nil, bytes.NewReader(b), "application/json")
+	if err == nil {
+		a.invalidateAuthFileMetadataCache(names...)
+	}
 	return err
 }
 
@@ -120,6 +134,7 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
+	resolvedNames := make([]string, 0, len(files))
 
 	for _, f := range files {
 		if strings.TrimSpace(f.Name) == "" || strings.TrimSpace(f.ContentBase64) == "" {
@@ -133,6 +148,7 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 			decoded = normalized
 		}
 		resolvedName := uniqueAuthFileUploadName(f.Name, existingNames)
+		resolvedNames = append(resolvedNames, resolvedName)
 		part, err := w.CreateFormFile("file", resolvedName)
 		if err != nil {
 			return err
@@ -147,6 +163,9 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 	}
 
 	_, _, err = a.SidecarRequest(http.MethodPost, ManagementAPIPrefix+"/auth-files", nil, &buf, w.FormDataContentType())
+	if err == nil {
+		a.invalidateAuthFileMetadataCache(resolvedNames...)
+	}
 	return err
 }
 
