@@ -295,6 +295,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Do not put cards inside account details just to create section boundaries. Use section density (`standard`, `dense`, `hero`), table/grid rows, and overview evidence modules instead.
   - Save actions for detail-page modules should follow the page/modal footer when the edit affects persistent account configuration. Individual sections may keep local actions such as add row, delete draft row, verify, fetch models, or copy.
   - OpenAI-compatible and Codex route-row details are account detail variants; keep them visually aligned with `UnifiedAccountDetailModal` even when their controller/state logic remains separate.
+  - Account creation/configuration modals such as `UnifiedComposeModal` should reuse account detail primitives instead of hand-rolled form shells. Keep configuration flows in named sections, localize visible menu labels and section eyebrows, and preserve the existing submit callbacks while changing layout.
 - **Rotation Cards**: `AccountRotationModal` is a variant of the account card, not a second visual system. Reuse the account-card content hierarchy and only replace the bottom action strip plus rotation-only affordances such as rank rail and drag marker.
 - **Rotation Disable Semantics**:
   - Disabled accounts stay in the saved rotation order.

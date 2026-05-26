@@ -118,7 +118,7 @@ export default function AccountsHeader({
               <button
                 onClick={onToggleMenu}
                 className="btn-swiss flex h-11 w-11 items-center justify-center !px-0"
-                aria-label="Open account actions menu"
+                aria-label={t('accounts.header_actions_menu')}
                 aria-expanded={isHeaderActionsMenuOpen}
                 aria-haspopup="menu"
               >
@@ -179,7 +179,7 @@ export default function AccountsHeader({
                           data-account-header-menu-item={item.id}
                         >
                           {renderMenuIcon(item.icon)}
-                          <span className={ACCOUNT_HEADER_MENU_LABEL_CLASS}>{item.label ?? t(item.labelKey)}</span>
+                          <span className={ACCOUNT_HEADER_MENU_LABEL_CLASS}>{t(item.labelKey)}</span>
                         </button>
                       </div>
                     ))}

@@ -3,7 +3,6 @@ export type AccountHeaderMenuIcon = 'plus' | 'log-in' | 'upload' | 'clipboard-pa
 export interface AccountHeaderMenuItem {
   id: 'unified-compose' | 'chatgpt-login' | 'import-auth-file' | 'paste-auth-file' | 'codex-api-key' | 'rotation-settings';
   labelKey: string;
-  label?: string;
   icon: AccountHeaderMenuIcon;
   disabled: boolean;
   dividerBefore?: boolean;
@@ -40,7 +39,6 @@ export function buildAccountsHeaderMenuItems({
     items.push({
       id: 'unified-compose',
       labelKey: 'accounts.add_account',
-      label: 'ADD ACCOUNT',
       icon: 'plus',
       disabled: false,
       emphasis: true,

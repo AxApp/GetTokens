@@ -40,9 +40,11 @@
 
 ## 当前状态
 - 状态：completed
-- 最近更新：2026-05-26
-- 备注：添加账号入口已从 header 独立按钮收口到 actions menu 的第一项；首项保留加号图标，文案不再额外带 `+`；统一新增弹窗已完成 provider 图标 / 字母徽记、短名称、短格式标签和中英本地化收口。
+- 最近更新：2026-05-27
+- 备注：添加账号入口已从 header 独立按钮收口到 actions menu 的第一项；首项保留加号图标并改为 locale 文案；统一新增弹窗已完成 provider 图标 / 字母徽记、短名称、短格式标签和中英本地化收口；配置步骤也已收敛为详情页式模块栈，和账号详情页保持同一套布局语气。
 - 验收截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-actions-menu-after-v01.png`
 - 字号修正截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-menu-font-after-v01.png`
 - provider picker 截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-provider-picker-icons-after-v01.png`
+- 配置步骤截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-unified-compose-config-after-v01.png`
+- 本地化复核截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260527/accounts/20260527-accounts-unified-compose-config-localized-after-v01.png`
 - 文案修正截图：`docs-linhay/spaces/20260526-account-provider-picker-icons/screenshots/20260526/accounts/20260526-accounts-header-menu-label-after-v02.png`

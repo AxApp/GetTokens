@@ -28,7 +28,7 @@ test('buildAccountsHeaderMenuItems keeps all add-account actions in one flat men
     ],
   );
   assert.equal(items[0].labelKey, 'accounts.add_account');
-  assert.equal(items[0].label, 'ADD ACCOUNT');
+  assert.equal(items[0].label, undefined);
   assert.equal(items[0].icon, 'plus');
   assert.equal(items[0].emphasis, true);
   assert.equal(items[1].dividerBefore, true);
@@ -64,8 +64,24 @@ test('AccountsHeader menu row styles stay flat instead of card-like', () => {
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /hover:bg-\[var\(--bg-surface\)\]/);
   assert.match(ACCOUNT_HEADER_MENU_ITEM_CLASS, /active:scale-\[0\.99\]/);
   assert.match(ACCOUNT_HEADER_MENU_ICON_CLASS, /h-5 w-5/);
+  assert.match(source, /aria-label=\{t\('accounts\.header_actions_menu'\)\}/);
+  assert.match(source, /\{t\(item\.labelKey\)\}/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /btn-swiss/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /shadow/);
   assert.doesNotMatch(ACCOUNT_HEADER_MENU_ITEM_CLASS, /border-2/);
   assert.doesNotMatch(source, /btn-swiss whitespace-nowrap bg-\[var\(--text-primary\)\]/);
+});
+
+test('AccountsHeader menu visible labels are localized from locale files', () => {
+  const zh = JSON.parse(readFileSync(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
+  const en = JSON.parse(readFileSync(new URL('../../../locales/en.json', import.meta.url), 'utf8'));
+
+  for (const locale of [zh, en]) {
+    assert.ok(Object.hasOwn(locale.accounts, 'header_actions_menu'));
+    assert.ok(Object.hasOwn(locale.accounts, 'add_account'));
+    assert.ok(Object.hasOwn(locale.accounts, 'login_chatgpt'));
+    assert.ok(Object.hasOwn(locale.accounts, 'import_auth_file'));
+    assert.ok(Object.hasOwn(locale.accounts, 'paste_auth_file'));
+    assert.ok(Object.hasOwn(locale.accounts, 'add_codex_api_key'));
+  }
 });
