@@ -30,6 +30,12 @@ function EmptyState({ children }: { children: string }) {
   );
 }
 
+const CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =
+  'overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]';
+const CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS = 'border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] xl:flex xl:items-stretch';
+const CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS =
+  'border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]';
+
 export function CodexAccountOrderSection({
   title,
   hint,
@@ -220,8 +226,8 @@ export function CodexAccountOrderSection({
   }
 
   return (
-    <section className="border-[3px] border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
-      <header className="border-b-[3px] border-[var(--border-color)] bg-[var(--bg-surface)] xl:flex xl:items-stretch">
+    <section className={CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS}>
+      <header className={CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS}>
         <div className="px-5 py-4 xl:min-w-0 xl:flex-1">
           <h2 className="text-xl font-black uppercase leading-none tracking-normal text-[var(--text-primary)]">
             {title}
@@ -322,7 +328,7 @@ export function CodexAccountOrderSection({
       </header>
 
       {message ? (
-        <div className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] px-5 py-3 font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
+        <div className={CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS}>
           {message}
         </div>
       ) : null}

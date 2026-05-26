@@ -100,6 +100,7 @@
 14. 后端新增 `ProbeCodexAccountRouting`：使用 relay API key 向 sidecar `/v1/chat/completions` 发送最小测试请求，通过请求前后 `auth-files` 与 `api-key-usage` 的 recent request 差量识别命中的 auth-file、codex-api-key 或 openai-compatible provider。
 15. OAuth/auth-file 账号详情的模型区域已从只读兼容模型改为可编辑模型映射：加载时合并 `GetAuthFileModels` 与 `ListOAuthModelAliases(provider)`，保存时调用 `UpdateOAuthModelAliases` 写回 `oauth-model-alias`；该配置按 provider/channel 生效，同一 `codex` OAuth 通道共享映射。
 16. 路由策略调试区按 Gemini 评审方案重构为“控制台 + 内联策略编辑”：默认先展示测试模型、测试按钮、候选顺序和最近路由命中；点击 `编辑策略` 后不再渲染第二套账号清单，而是在既有请求顺序账号行内直接显示默认/允许/排除与策略上移/下移控件；账号列表行同步显示 `路由 NN`、`跳过` 和策略模式，避免重复账号列表打断配置路径。
+17. 请求顺序 section 去掉外层重卡阴影，改为 `bg-surface` 承载、`bg-main` 标题/消息带和内层账号卡的层级组合，减少“卡中卡”观感，但不改账号行本身的卡片交互与排序逻辑。
 
 ## 验证记录
 1. `npm run typecheck`

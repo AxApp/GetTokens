@@ -581,6 +581,27 @@ test('Codex account order cards reuse the account attribution card and keep cust
   assert.match(source, /CodexAccountSpecialActionBar/);
 });
 
+test('Codex account order section uses a lighter shell instead of a nested card shell', async () => {
+  const source = await readFile(new URL('./components/CodexAccountOrderSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(
+    source,
+    /CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =\n  'overflow-hidden border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-surface\)\]';/,
+  );
+  assert.match(
+    source,
+    /CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS = 'border-b-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] xl:flex xl:items-stretch';/,
+  );
+  assert.match(
+    source,
+    /CODEX_ACCOUNT_ORDER_SECTION_MESSAGE_CLASS =\n  'border-b-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-5 py-3 font-mono text-\[length:var\(--font-size-ui-sm\)\] font-black uppercase tracking-wide text-\[var\(--text-primary\)\]';/,
+  );
+  assert.doesNotMatch(
+    source,
+    /<section className="border-\[3px\] border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[8px_8px_0_var\(--shadow-color\)\]">/,
+  );
+});
+
 test('Codex account order row exposes direct top and bottom reorder actions', async () => {
   const source = await readFile(new URL('./components/CodexAccountOrderRow.tsx', import.meta.url), 'utf8');
 
