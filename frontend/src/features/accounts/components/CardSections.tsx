@@ -183,7 +183,7 @@ export function AccountMiniMetrics({ usageSummary, quotaDisplay, t }: AccountMin
       : '—';
 
   return (
-    <div className="account-card-list-metrics grid min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+    <div className="account-card-list-metrics grid min-w-0 gap-0">
       <AccountMiniMetric label={t('accounts.recent_requests')} value={formatCountMetric(usageSummary?.requestCount ?? 0)} />
       <AccountMiniMetric label={t('accounts.total_tokens')} value={formatTokenMetric(usageSummary?.totalTokens ?? 0)} />
       <AccountMiniMetric label={firstQuotaWindow?.label || t('accounts.quota_remaining')} value={quotaValue} />
@@ -193,7 +193,7 @@ export function AccountMiniMetrics({ usageSummary, quotaDisplay, t }: AccountMin
 
 export function AccountMiniMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0 border-r border-[var(--border-color)] px-2 py-2 last:border-r-0">
+    <div className="account-card-list-metric-cell min-w-0 border-l border-dashed border-[var(--border-color)] px-2 py-1.5 first:border-l-0">
       <div className="truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
         {label}
       </div>
@@ -558,7 +558,7 @@ function resolveUsageSourceLabel(summary?: AccountUsageSummary) {
   return 'NONE';
 }
 
-function formatCountMetric(value: number) {
+export function formatCountMetric(value: number) {
   const normalized = Math.max(0, Number(value || 0));
   if (normalized >= 1000000000) {
     return `${trimDecimal(normalized / 1000000000)}B`;
@@ -572,7 +572,7 @@ function formatCountMetric(value: number) {
   return new Intl.NumberFormat('zh-CN').format(normalized);
 }
 
-function formatTokenMetric(value: number | null | undefined) {
+export function formatTokenMetric(value: number | null | undefined) {
   const normalized = Math.max(0, Number(value || 0));
   if (normalized >= 1000000) {
     return `${trimDecimal(normalized / 1000000)}M`;

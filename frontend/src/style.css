@@ -399,7 +399,7 @@
   @container (min-width: 46rem) {
     .account-card-list-row {
       align-items: center;
-      grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.45fr) auto;
+      grid-template-columns: minmax(0, 1fr) auto;
     }
 
     .account-card-list-actions {
@@ -419,8 +419,13 @@
       padding-top: 0.75rem;
     }
 
-    .account-card-list-metrics {
-      grid-template-columns: minmax(0, 1fr);
+    .account-card-list-metric-cell {
+      border-left: 0;
+      border-bottom: 1px dashed var(--border-color);
+    }
+
+    .account-card-list-metric-cell:last-child {
+      border-bottom: 0;
     }
 
     .account-card-usage-metrics {

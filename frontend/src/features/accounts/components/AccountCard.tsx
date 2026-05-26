@@ -17,6 +17,7 @@ import { rateLimitStateTone, type RateLimitState } from '../model/rateLimit';
 import type { AccountListDisplayMode } from '../model/accountListLayout';
 import { canToggleRotationAccountDisabled } from '../model/accountRotation';
 import AttributionCard, { type AttributionCardBadge } from './AttributionCard';
+import { buildAccountDeleteOverlay } from './accountDeleteOverlay';
 
 interface AccountCardProps {
   t: Translator;
@@ -193,6 +194,16 @@ export default function AccountCard({
     : canReauth
       ? 'account-card-action-grid-2'
       : 'account-card-action-grid-1';
+  const deleteOverlay = isPendingDelete
+    ? buildAccountDeleteOverlay({
+        t,
+        account,
+        primaryLabel,
+        density,
+        onCancelDelete,
+        onConfirmDelete,
+      })
+    : undefined;
 
   return (
     <AttributionCard
@@ -211,6 +222,7 @@ export default function AccountCard({
       cardID={account.id}
       style={minHeight ? { minHeight: `${minHeight}px` } : undefined}
       interactive={!isSelectionMode && !isPendingDelete}
+      overlay={deleteOverlay}
       topActions={
         <div className="flex shrink-0 flex-col items-end gap-2">
           {isSelectionMode ? (
@@ -330,30 +342,7 @@ export default function AccountCard({
         </div>
       }
       footer={
-        isPendingDelete ? (
-          <div
-            className="flex items-center justify-between gap-3 border-t border-dashed border-[var(--border-color)] pt-3"
-            data-account-card-ignore-click="true"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <div className="shrink-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide text-[var(--color-status-danger)]">
-              {t('common.confirm_delete')}
-            </div>
-            <div className="flex gap-2">
-              <button type="button" onClick={onCancelDelete} className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)]">
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                onClick={() => onConfirmDelete(account)}
-                className="btn-swiss !px-3 !py-1 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        ) : density === 'list' ? undefined : (
+        isPendingDelete || density === 'list' ? undefined : (
           <div
             className={`account-card-action-grid grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}
             data-account-card-ignore-click="true"

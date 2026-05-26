@@ -59,6 +59,28 @@ test('account card grids keep empty tracks so single-card groups match page card
   );
 });
 
+test('list density keeps only the plan badge before metrics and actions', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(source, /account-card-list-identity/);
+  assert.match(source, /account-card-list-status/);
+  assert.match(source, /account-card-list-endpoint/);
+  assert.match(source, /badges\.find\(\(badge\) => badge\.backgroundColor\)/);
+  assert.match(source, /join\(' · '\)/);
+  assert.match(source, /formatCountMetric\(usageSummary\?\.requestCount \?\? 0\)/);
+  assert.match(source, /formatTokenMetric\(usageSummary\?\.totalTokens \?\? 0\)/);
+  assert.match(source, /quotaDisplay\?\.status === 'unsupported'/);
+  assert.doesNotMatch(source, /AccountMiniMetrics usageSummary=\{usageSummary\}/);
+  assert.doesNotMatch(source, /account-card-list-metrics/);
+  assert.doesNotMatch(source, /account-card-list-badges/);
+  assert.match(styleSource, /grid-template-columns:\s*minmax\(0,\s*1fr\)\s*auto/);
+  assert.doesNotMatch(styleSource, /\.account-card-list-row\s*\{[^}]*minmax\(18rem,\s*1\.35fr\)/s);
+  assert.match(sectionsSource, /account-card-list-metric-cell/);
+  assert.match(sectionsSource, /first:border-l-0/);
+});
+
 test('quota bars render reset time from quota windows', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
