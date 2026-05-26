@@ -573,6 +573,15 @@ test('getCodexAccountOrderGridClass keeps list single-column and card modes adap
   assert.doesNotMatch(getCodexAccountOrderGridClass('full'), /xl:grid-cols-3/);
 });
 
+test('Codex account list switches routing mode through immediate config persistence', async () => {
+  const source = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /async function persistChannelRoutingConfig/);
+  assert.match(source, /updateChannelMode\(mode: ChannelRouteMode\)/);
+  assert.match(source, /void persistChannelRoutingConfig\(nextConfig/);
+  assert.doesNotMatch(source, /onSave=\{\(\) => void saveOrder\(\)\}/);
+});
+
 test('Codex account order cards reuse the account attribution card and keep custom controls in the footer', async () => {
   const source = await readFile(new URL('./components/CodexAccountOrderRow.tsx', import.meta.url), 'utf8');
 

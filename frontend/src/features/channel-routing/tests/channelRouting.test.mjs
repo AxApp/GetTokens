@@ -441,3 +441,14 @@ test('ChannelRoutingWorkbench opens route mode help as a modal next to route mod
   assert.doesNotMatch(source, /返回模式/);
   assert.doesNotMatch(source, /view === 'help'/);
 });
+
+test('ChannelRoutingWorkbench keeps route mode toggles in the header and removes the save button', async () => {
+  const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /routeModes\.map/);
+  assert.match(source, /onModeChange\(mode\)/);
+  assert.match(source, /<header className="p-4">/);
+  assert.match(source, /grid min-w-0 flex-1 gap-2 sm:max-w-\[28rem\] sm:flex-none sm:grid-cols-2/);
+  assert.doesNotMatch(source, /\bonSave\b/);
+  assert.doesNotMatch(source, /\bSave\b/);
+});

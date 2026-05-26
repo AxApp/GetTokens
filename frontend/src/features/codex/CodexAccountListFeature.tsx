@@ -518,15 +518,17 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     };
   }, []);
 
-  async function saveOrder() {
-    if (!ready || !orderChanged || saving) {
+  async function persistChannelRoutingConfig(
+    nextConfig: ChannelRoutingConfig,
+    options: { reloadAfterSave?: boolean } = {},
+  ) {
+    if (!ready || saving) {
       return;
     }
 
     setSaving(true);
     setMessage('');
     try {
-      const nextConfig = withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id));
       if (!browserMode) {
         await trackRequest('SaveChannelRoutingConfig', { channel: 'codex', mode: nextConfig.routeMode }, () =>
           SaveChannelRoutingConfig(main.ChannelRoutingConfig.createFrom(nextConfig)),
@@ -536,8 +538,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       setOrderDirty(false);
       if (browserMode) {
         setMessage(t('codex.account_list_preview_saved'));
-      } else {
+      } else if (options.reloadAfterSave) {
         await reload(t('codex.account_list_saved'));
+      } else {
+        setMessage('');
       }
     } catch (error) {
       console.error(error);
@@ -545,6 +549,15 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     } finally {
       setSaving(false);
     }
+  }
+
+  async function saveOrder() {
+    if (!ready || !orderChanged || saving) {
+      return;
+    }
+
+    const nextConfig = withCurrentChannelOrder(channelConfig, orderedRows.map((row) => row.id));
+    await persistChannelRoutingConfig(nextConfig, { reloadAfterSave: !browserMode });
   }
 
   useEffect(() => {
@@ -560,24 +573,30 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   }, [autoSaveOrderRequested, channelConfig, draggedID, orderChanged, orderedRows, saving]);
 
   function updateChannelMode(mode: ChannelRouteMode) {
-    setChannelConfig((prev) => updateChannelRoutingConfig(prev, { routeMode: mode }));
-    setOrderDirty(true);
+    const nextConfig = withCurrentChannelOrder(
+      updateChannelRoutingConfig(channelConfig, { routeMode: mode }),
+      orderedRows.map((row) => row.id),
+    );
     setChannelExplain(null);
-    setMessage(t('codex.account_list_unsaved'));
+    void persistChannelRoutingConfig(nextConfig);
   }
 
   function updateShadowEnabled(enabled: boolean) {
-    setChannelConfig((prev) => updateChannelRoutingConfig(prev, { shadowEnabled: enabled }));
-    setOrderDirty(true);
+    const nextConfig = withCurrentChannelOrder(
+      updateChannelRoutingConfig(channelConfig, { shadowEnabled: enabled }),
+      orderedRows.map((row) => row.id),
+    );
     setChannelExplain(null);
-    setMessage(t('codex.account_list_unsaved'));
+    void persistChannelRoutingConfig(nextConfig);
   }
 
   function updateShadowMode(mode: ChannelRouteMode) {
-    setChannelConfig((prev) => updateChannelRoutingConfig(prev, { shadowRouteMode: mode }));
-    setOrderDirty(true);
+    const nextConfig = withCurrentChannelOrder(
+      updateChannelRoutingConfig(channelConfig, { shadowRouteMode: mode }),
+      orderedRows.map((row) => row.id),
+    );
     setChannelExplain(null);
-    setMessage(t('codex.account_list_unsaved'));
+    void persistChannelRoutingConfig(nextConfig);
   }
 
   async function runChannelExplain() {
@@ -896,7 +915,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onModeChange={updateChannelMode}
           onShadowEnabledChange={updateShadowEnabled}
           onShadowModeChange={updateShadowMode}
-          onSave={() => void saveOrder()}
           onExplain={() => void runChannelExplain()}
           onRefreshEvents={() => void loadChannelRouteEvents()}
         />

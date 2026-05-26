@@ -5,10 +5,8 @@ import {
   History,
   Play,
   RefreshCw,
-  Save,
   ShieldCheck,
   Shuffle,
-  SlidersHorizontal,
   Split,
   X,
   Zap,
@@ -45,7 +43,6 @@ interface ChannelRoutingWorkbenchProps {
   onModeChange: (mode: ChannelRouteMode) => void;
   onShadowEnabledChange: (enabled: boolean) => void;
   onShadowModeChange: (mode: ChannelRouteMode) => void;
-  onSave: () => void;
   onExplain: () => void;
   onRefreshEvents?: () => void;
 }
@@ -76,7 +73,6 @@ export default function ChannelRoutingWorkbench({
   onModeChange,
   onShadowEnabledChange,
   onShadowModeChange,
-  onSave,
   onExplain,
   onRefreshEvents,
 }: ChannelRoutingWorkbenchProps) {
@@ -85,7 +81,6 @@ export default function ChannelRoutingWorkbench({
   const legacyMask = buildLegacyRoutingMaskPanel();
   const eventSummaries = routeEvents.slice(0, 5).map((event) => buildChannelRouteAuditEventSummary(event));
   const hasExplain = explainView.hasExplain;
-  const routeModeLabel = resolveRouteModeLabel(config.routeMode);
   const shadowPanelLabel = config.shadowEnabled ? (hasExplain ? explainView.shadowLabel : '开启') : '关闭';
   const shadowPanelMeta = config.shadowEnabled && hasExplain ? explainView.shadowMeta : '';
   const participantRows = buildChannelRoutingParticipantRows(config, accounts);
@@ -114,53 +109,34 @@ export default function ChannelRoutingWorkbench({
       aria-label={`${channel} 请求模式`}
       className="overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
     >
-      <header className="flex flex-wrap items-center justify-between gap-3 p-4">
-        <div className="flex min-w-0 items-center gap-2">
-          <Zap className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={3} />
-          <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-black leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
-            请求模式
-          </h2>
-          <button
-            type="button"
-            onClick={() => setHelpOpen(true)}
-            aria-label="查看请求模式说明"
-            title="查看请求模式说明"
-            aria-pressed={helpOpen}
-            className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors active:scale-95 ${
-              helpOpen
-                ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
-            }`}
-          >
-            <CircleHelp className="h-4 w-4" strokeWidth={4} />
-          </button>
-          {preview ? (
-            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-              预览
-            </span>
-          ) : null}
-        </div>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={disabled || saving}
-          className="btn-swiss flex min-h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
-        >
-          <Save className="h-3.5 w-3.5" strokeWidth={4} />
-          {saving ? '保存中' : '保存'}
-        </button>
-      </header>
-
-      <div className="border-t-2 border-[var(--border-color)]">
-        <section className="min-w-0 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <SectionHeading icon={SlidersHorizontal} label="当前模式" />
-            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-              {routeModeLabel}
-            </span>
+      <header className="p-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <Zap className="h-4 w-4 shrink-0 text-[var(--text-secondary)]" strokeWidth={3} />
+            <h2 className="min-w-0 text-[length:var(--font-size-ui-lg)] font-black leading-5 tracking-[0] text-[var(--text-primary)] sm:text-[length:var(--font-size-heading-sm)] sm:leading-normal">
+              请求模式
+            </h2>
+            <button
+              type="button"
+              onClick={() => setHelpOpen(true)}
+              aria-label="查看请求模式说明"
+              title="查看请求模式说明"
+              aria-pressed={helpOpen}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center border-2 transition-colors active:scale-95 ${
+                helpOpen
+                  ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                  : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
+              }`}
+            >
+              <CircleHelp className="h-4 w-4" strokeWidth={4} />
+            </button>
+            {preview ? (
+              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
+                预览
+              </span>
+            ) : null}
           </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          <div className="grid min-w-0 flex-1 gap-2 sm:max-w-[28rem] sm:flex-none sm:grid-cols-2">
             {routeModes.map((item) => (
               <StrategyButton
                 key={item.mode}
@@ -169,13 +145,15 @@ export default function ChannelRoutingWorkbench({
                 label={item.label}
                 cue={item.cue}
                 active={config.routeMode === item.mode}
-                disabled={disabled}
+                disabled={disabled || saving}
                 onModeChange={onModeChange}
               />
             ))}
           </div>
-        </section>
+        </div>
+      </header>
 
+      <div className="border-t-2 border-[var(--border-color)]">
         <details className="group/participants min-w-0 border-t-2 border-[var(--border-color)] p-4">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
             <SectionHeading icon={Split} label="参与账号" />
@@ -381,14 +359,14 @@ function StrategyButton({
       onClick={() => onModeChange(mode)}
       disabled={disabled}
       aria-pressed={active}
-      className={`grid min-h-14 grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-3 border-2 px-3 py-2 text-left transition-colors active:scale-[0.98] ${
+      className={`grid min-h-10 grid-cols-[1.5rem_minmax(0,1fr)_auto] items-center gap-2 border-2 px-3 py-2 text-left transition-colors active:scale-[0.98] ${
         active
           ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
           : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] [@media(hover:hover)]:hover:border-[var(--text-primary)]'
       }`}
     >
-      <Icon className="h-4 w-4 shrink-0" strokeWidth={4} />
-      <span className="min-w-0 text-[length:var(--font-size-ui-md)] font-black">{label}</span>
+      <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={4} />
+      <span className="min-w-0 truncate text-[length:var(--font-size-ui-sm)] font-black">{label}</span>
       <span
         className={`min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide ${
           active ? 'text-[var(--bg-main)]/75' : 'text-[var(--text-muted)]'
