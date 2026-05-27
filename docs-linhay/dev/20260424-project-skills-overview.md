@@ -46,6 +46,21 @@
 4. `.agents/skills/gettokens-subagent-supervision`
    **监督交付触发入口**。当用户明确要求“用 subagent 做、主控 agent 监督到完成”时，用这个 skill 直接把会话切到监督交付模式；具体执行细节继续复用 `gettokens-ops-governance`。
 
+## 20260527 更新：安装外部 Taste Skill 包
+
+本次按用户要求将 `https://github.com/Leonxlnx/taste-skill.git` 的全部 `skills/` 子目录安装到项目级 `.agents/skills/`。
+
+固定来源哈希：
+
+- `main@3c7017d636c3a4aad378433ea6d0cfa6c921da4a`
+
+配套记录：
+
+1. `.agents/skills/taste-skill.lock.json`：机器可读的来源、commit 与安装目录清单。
+2. `docs-linhay/dev/20260527-taste-skill-project-install.md`：人工可读的安装范围与后续更新流程。
+
+注意：这些是外部通用前端/图像生成 skills，不属于 GetTokens 领域规则本体。若后续出现 skill discovery 预算告警，应优先评估是否保留全量 taste-skill 包，或收敛为实际高频使用的子集。
+
 ## 为什么进行整合
 
 1. **解决预算告警**：原先 9 个技能的描述总和超出了 CLI 的上下文配额，导致描述被截断。

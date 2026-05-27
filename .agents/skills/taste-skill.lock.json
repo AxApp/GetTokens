@@ -1,0 +1,78 @@
+{
+  "source": {
+    "type": "github",
+    "url": "https://github.com/Leonxlnx/taste-skill.git",
+    "repo": "Leonxlnx/taste-skill",
+    "ref": "main",
+    "commit": "3c7017d636c3a4aad378433ea6d0cfa6c921da4a"
+  },
+  "installedAt": "2026-05-27",
+  "installedInto": ".agents/skills",
+  "installedPaths": [
+    {
+      "sourcePath": "skills/taste-skill",
+      "localPath": ".agents/skills/taste-skill",
+      "skillName": "design-taste-frontend"
+    },
+    {
+      "sourcePath": "skills/taste-skill-v1",
+      "localPath": ".agents/skills/taste-skill-v1",
+      "skillName": "design-taste-frontend-v1"
+    },
+    {
+      "sourcePath": "skills/gpt-tasteskill",
+      "localPath": ".agents/skills/gpt-tasteskill",
+      "skillName": "gpt-taste"
+    },
+    {
+      "sourcePath": "skills/image-to-code-skill",
+      "localPath": ".agents/skills/image-to-code-skill",
+      "skillName": "image-to-code"
+    },
+    {
+      "sourcePath": "skills/imagegen-frontend-web",
+      "localPath": ".agents/skills/imagegen-frontend-web",
+      "skillName": "imagegen-frontend-web"
+    },
+    {
+      "sourcePath": "skills/imagegen-frontend-mobile",
+      "localPath": ".agents/skills/imagegen-frontend-mobile",
+      "skillName": "imagegen-frontend-mobile"
+    },
+    {
+      "sourcePath": "skills/brandkit",
+      "localPath": ".agents/skills/brandkit",
+      "skillName": "brandkit"
+    },
+    {
+      "sourcePath": "skills/redesign-skill",
+      "localPath": ".agents/skills/redesign-skill",
+      "skillName": "redesign-existing-projects"
+    },
+    {
+      "sourcePath": "skills/soft-skill",
+      "localPath": ".agents/skills/soft-skill",
+      "skillName": "high-end-visual-design"
+    },
+    {
+      "sourcePath": "skills/output-skill",
+      "localPath": ".agents/skills/output-skill",
+      "skillName": "full-output-enforcement"
+    },
+    {
+      "sourcePath": "skills/minimalist-skill",
+      "localPath": ".agents/skills/minimalist-skill",
+      "skillName": "minimalist-ui"
+    },
+    {
+      "sourcePath": "skills/brutalist-skill",
+      "localPath": ".agents/skills/brutalist-skill",
+      "skillName": "industrial-brutalist-ui"
+    },
+    {
+      "sourcePath": "skills/stitch-skill",
+      "localPath": ".agents/skills/stitch-skill",
+      "skillName": "stitch-design-taste"
+    }
+  ]
+}

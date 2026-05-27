@@ -31,6 +31,16 @@ description: GetTokens Codex Skills / MCP 扩展管理：源码校准解析、�
   - `tk://gitlab.com/<namespace>/<repo>?ref=<ref>&path=<skill-dir>`
 - 自建 GitLab 需要 allowlist；凭据不得写入 manifest。
 
+### 2.1 External Project Skill Packages
+- 将外部 Git skill 包安装进项目级 `.agents/skills/` 时，必须记录可复现来源：
+  - source URL / repo / ref
+  - resolved commit hash
+  - source path -> local path -> skill name 清单
+- 优先把来源记录写成机器可读 lock，例如 `.agents/skills/<package>.lock.json`，再补 `docs-linhay/dev/` 人工说明。
+- 如果外部仓库包含多个 `skills/*/SKILL.md`，用户给的是仓库 URL 且未指定子 skill 时，按全量安装处理；后续如出现 skill discovery 预算告警，再收敛为高频子集。
+- 更新脚本默认只能检查哈希；替换本地 skill 目录必须显式传 `--update` 或等价确认参数。
+- 收尾必须更新 memory，并运行 `qmd update` 与 `qmd embed`，确保后续能按包名、commit、脚本名检索。
+
 ## 3. MCP Rules
 - Transport 由字段推断：`command` => `stdio`，`url` => `streamable_http`。
 - `command` 与 `url` 同时存在时不能保存。
