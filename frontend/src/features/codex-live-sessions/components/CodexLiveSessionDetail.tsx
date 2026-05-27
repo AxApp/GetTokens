@@ -109,6 +109,10 @@ const requestTimelineVisibleLimit = 15;
 const timingTrendAudioBarStepPx = 12;
 const timingTrendAudioMinVisibleBars = 12;
 const timingTrendAudioAxisLabelEvery = 5;
+const timingTrendYAxisLabelSafeWidthPx = 48;
+const timingTrendLiveRingMaxRadiusPx = 28;
+const timingTrendLiveRingSafeInsetPx = timingTrendLiveRingMaxRadiusPx + 10;
+const timingTrendAxisLabelMinGapPx = 36;
 
 function RequestTimingTrend({
   session,
@@ -203,9 +207,9 @@ function TimingTrendChart({
 }) {
   const chartHeight = 224;
   const chartTopInset = 38;
-  const chartBottomInset = 50;
+  const chartBottomInset = 54;
   const height = chartHeight;
-  const padding = { top: chartTopInset, right: 18, bottom: chartBottomInset, left: 30 };
+  const padding = resolveTimingTrendChartPadding(chartTopInset, chartBottomInset);
   const gridY = [0, 0.5, 1];
   const chartShellRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
@@ -216,6 +220,7 @@ function TimingTrendChart({
   const selectedMetricMaxMs = getTimingTrendMetricMax(visiblePoints, selectedMetric);
   const waveformBars = buildTimingTrendWaveformBars(visiblePoints, selectedMetric, selectedMetricMaxMs, width, height, padding);
   const waveformMarkers = waveformBars.filter((bar, index) => shouldShowTimingTrendMarker(bar.point, index, waveformBars.length, selectedRequestID));
+  const axisLabelIndexes = resolveTimingTrendAxisLabelIndexes(waveformBars, selectedRequestID);
 
   useEffect(() => {
     const element = chartShellRef.current;
@@ -285,7 +290,7 @@ function TimingTrendChart({
           })}
 
           {waveformBars.map(({ point, x }, index) => {
-            const showAxisLabel = shouldShowTimingTrendAxisLabel(point, index, waveformBars.length, selectedRequestID);
+            const showAxisLabel = axisLabelIndexes.has(index);
             return (
               <g key={`${point.requestID}-axis`}>
                 {showAxisLabel ? (
@@ -442,6 +447,15 @@ function getTimingTrendMetricMax(points: readonly CodexLiveRequestTimingTrendPoi
   return points.reduce((max, point) => Math.max(max, point.values[metric] ?? 0), 0);
 }
 
+function resolveTimingTrendChartPadding(top: number, bottom: number) {
+  return {
+    top,
+    right: timingTrendLiveRingSafeInsetPx,
+    bottom,
+    left: timingTrendYAxisLabelSafeWidthPx + 8,
+  };
+}
+
 interface TimingTrendWaveformBar {
   point: CodexLiveRequestTimingTrendPoint;
   x: number;
@@ -511,19 +525,49 @@ function shouldShowTimingTrendMarker(
   return visibleCount <= 8 || point.requestID === selectedRequestID || point.isLive || index === visibleCount - 1;
 }
 
+function resolveTimingTrendAxisLabelIndexes(
+  bars: readonly TimingTrendWaveformBar[],
+  selectedRequestID: string,
+): Set<number> {
+  const labelIndexes = new Set<number>();
+  if (bars.length <= 8) {
+    bars.forEach((_, index) => labelIndexes.add(index));
+    return labelIndexes;
+  }
+
+  const canAddBar = (bar: TimingTrendWaveformBar) => {
+    const existingXs = Array.from(labelIndexes, (existingIndex) => bars[existingIndex]?.x ?? Number.NEGATIVE_INFINITY);
+    return existingXs.every((existingX) => Math.abs(bar.x - existingX) >= timingTrendAxisLabelMinGapPx);
+  };
+  const addLabelIndex = (index: number, force = false) => {
+    const bar = bars[index];
+    if (!bar) {
+      return;
+    }
+    if (force || canAddBar(bar)) {
+      labelIndexes.add(index);
+    }
+  };
+
+  addLabelIndex(bars.length - 1, true);
+  bars.forEach((bar, index) => {
+    if (bar.point.isLive || bar.point.requestID === selectedRequestID) {
+      addLabelIndex(index, index === bars.length - 1);
+    }
+  });
+  for (let index = bars.length - 1; index >= 0; index -= 1) {
+    const bar = bars[index];
+    if (bar && shouldShowTimingTrendAxisLabel(bar.point)) {
+      addLabelIndex(index);
+    }
+  }
+  return labelIndexes;
+}
+
 function shouldShowTimingTrendAxisLabel(
   point: CodexLiveRequestTimingTrendPoint,
-  index: number,
-  visibleCount: number,
-  selectedRequestID: string,
 ): boolean {
-  return (
-    visibleCount <= 8 ||
-    point.requestID === selectedRequestID ||
-    point.isLive ||
-    index === visibleCount - 1 ||
-    point.sequence % timingTrendAudioAxisLabelEvery === 0
-  );
+  return point.sequence % timingTrendAudioAxisLabelEvery === 0;
 }
 
 function buildTimingTrendPointStyle(x: number, y: number) {

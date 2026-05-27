@@ -256,7 +256,7 @@ test('buildRequestTimelineSummary keeps timeline rows focused on time fields', (
 
   assert.deepEqual(summary, {
     requestID: 'gt-req-8912',
-    sequenceLabel: '#5',
+    sequenceLabel: '#50',
     modelLabel: 'gpt-5.5',
     startedAtLabel: '18:35:10',
     completedAtLabel: '-',
@@ -275,13 +275,15 @@ test('sortRequestTimelineRequests keeps newest request rows first without mutati
   const originalOrder = session.requests.map((request) => request.requestID);
   const sorted = sortRequestTimelineRequests(session.requests);
 
-  assert.deepEqual(sorted.map((request) => request.requestID), [
+  assert.equal(sorted.length, 50);
+  assert.deepEqual(sorted.slice(0, 5).map((request) => request.requestID), [
     'gt-req-8912',
-    'gt-req-8906',
-    'gt-req-8898',
-    'gt-req-8885',
-    'gt-req-8874',
+    'gt-req-8911',
+    'gt-req-8910',
+    'gt-req-8909',
+    'gt-req-8908',
   ]);
+  assert.deepEqual(sorted.slice(-3).map((request) => request.requestID), ['gt-req-8865', 'gt-req-8864', 'gt-req-8863']);
   assert.deepEqual(session.requests.map((request) => request.requestID), originalOrder);
 });
 
@@ -811,11 +813,12 @@ test('codex live sessions preview data gives the default detail chart fixed-wind
   assert.equal(selectedSession.sessionID, 'ws_sess_7a91');
   assert.equal(selectedRequest?.requestID, 'gt-req-8912');
   assert.equal(selectedSession.requestCount, selectedSession.requests.length);
-  assert.deepEqual(trend.points.map((point) => point.requestID), [
-    'gt-req-8898',
-    'gt-req-8906',
-    'gt-req-8912',
-  ]);
+  assert.equal(selectedSession.requests.length, 50);
+  assert.equal(trend.points.length, 50);
+  assert.deepEqual(trend.points.slice(0, 3).map((point) => point.requestID), ['gt-req-8863', 'gt-req-8864', 'gt-req-8865']);
+  assert.deepEqual(trend.points.slice(-3).map((point) => point.requestID), ['gt-req-8910', 'gt-req-8911', 'gt-req-8912']);
+  assert.deepEqual(trend.points.slice(-3).map((point) => point.sequence), [48, 49, 50]);
+  assert.equal(trend.points[trend.points.length - 1]?.isLive, true);
   assert.equal(trend.startedAtMinMs, Date.parse('2026-05-21T18:30:10+08:00'));
   assert.equal(trend.startedAtMaxMs, Date.parse('2026-05-21T18:35:10+08:00'));
 });
@@ -857,6 +860,28 @@ test('codex live session timing chart uses request sequence bars and live refres
   assert.doesNotMatch(detailSource, /trendChartX/);
   assert.doesNotMatch(detailSource, /visibleStartedAtMinMs/);
   assert.doesNotMatch(detailSource, /resolveTimingTrendPointXMs/);
+});
+
+test('codex live session timing chart reserves safe insets for axis labels and live rings', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /timingTrendYAxisLabelSafeWidthPx/);
+  assert.match(detailSource, /timingTrendLiveRingMaxRadiusPx = 28/);
+  assert.match(detailSource, /timingTrendLiveRingSafeInsetPx/);
+  assert.match(detailSource, /function resolveTimingTrendChartPadding/);
+  assert.match(detailSource, /const padding = resolveTimingTrendChartPadding\(/);
+  assert.doesNotMatch(detailSource, /padding = \{ top: chartTopInset, right: 18, bottom: chartBottomInset, left: 30 \}/);
+});
+
+test('codex live session timing chart sparsifies request sequence labels by screen space', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+
+  assert.match(detailSource, /timingTrendAxisLabelMinGapPx/);
+  assert.match(detailSource, /function resolveTimingTrendAxisLabelIndexes/);
+  assert.match(detailSource, /axisLabelIndexes = resolveTimingTrendAxisLabelIndexes\(waveformBars, selectedRequestID\)/);
+  assert.match(detailSource, /axisLabelIndexes\.has\(index\)/);
+  assert.match(detailSource, /Math\.abs\(bar\.x - existingX\) >= timingTrendAxisLabelMinGapPx/);
+  assert.doesNotMatch(detailSource, /shouldShowTimingTrendAxisLabel\(point, index, waveformBars\.length, selectedRequestID\)/);
 });
 
 test('codex live session timing chart uses a fixed viewport without horizontal panning', async () => {
