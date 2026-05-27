@@ -245,6 +245,36 @@ qmd update && qmd embed
 3. `M3 frontend display`：UI 优先 sidecar summary，fallback 兼容，前端测试通过。
 4. `M4 acceptance`：浏览器截图与真实 sidecar 验收完成，文档记忆同步。
 
+## 执行结果
+
+### 已完成
+
+- `M1 sidecar summary contract`：已在 CLIProxyAPI fork 增加 `LiveTimingSummary` 与 retained requests 聚合构建器，focused live-session 测试通过。
+- `M2 GetTokens DTO bridge`：已在 `internal/wailsapp`、root `main.App`、`frontend/wailsjs/go/models.ts` 增加 timing summary DTO 与 mapper，Wails focused 测试通过。
+- `M3 frontend display`：前端类型、adapter、preview mock、summary resolver 和详情 UI 已接入；`耗时均值` 优先展示 sidecar summary，缺失时 fallback 本地估算。
+- `M4 acceptance`：已完成浏览器预览验收与截图归档；文档、memory、领域 skill 已写回。
+
+### 最终验证
+
+```bash
+go test ./internal/gettokenshooks -run 'LiveSessions.*TimingSummary|TimingSummary' -count=1
+go test ./internal/gettokenshooks -run 'LiveSessions' -count=1
+go test ./internal/wailsapp -run 'CodexLiveSessions' -count=1
+node --test frontend/src/features/codex-live-sessions/model.test.mjs
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+```
+
+浏览器预览验收：
+
+- URL：`http://localhost:5173/#frame=codex&workspace=live-sessions`
+- 截图：`../screenshots/20260527/codex-live-sessions/20260527-codex-live-sessions-timing-summary-after-v01.png`
+- DOM 结果：详情区显示 `耗时均值` 与 `最近请求 50 · #36-#85 · SIDECAR 汇总`，timeline 仍显示最新单请求耗时。
+
+### 未覆盖项
+
+- 未重启真实桌面 app 并发起真实 Codex 请求做端到端 runtime 验收。本期验证覆盖 sidecar fork 单元测试、Wails DTO、前端模型/构建和浏览器预览。
+
 ## 开放问题
 
 1. `timingSummary` 放在 session 级即可，还是 request detail/history response 也要独立返回同一 summary？

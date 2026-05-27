@@ -117,6 +117,21 @@ Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是�
 
 本轮 browser cache 验证中，最新请求时间线仍显示 `#50 总 8.0s / TTFT 562ms / 首 810ms`，而耗时指标块显示 `总耗时 7.1s / TTFT 740ms / 首 token 1.2s`，口径已区分。
 
+### 10.1 耗时均值摘要由 sidecar 声明
+
+趋势窗口平均值的权威口径应由 CLIProxyAPI live-session tracker 返回，而不是只在前端页面进入后临时解释。
+
+稳定边界：
+
+1. session 级 `timingSummary` 是耗时均值的优先数据源，窗口固定描述为 `retained_requests`。
+2. summary 必须包含 `sampleCount`、`sequenceFrom / sequenceTo`、`activeIncluded`、`generatedAt` 和 `averages`，让 UI 可以解释样本范围与 active request 投影。
+3. active request 只允许用 sidecar 的生成时刻投影 `totalDurationMs`；不要凭空生成 first event / first token 等未出现的字段。
+4. 历史 stale streaming / reconnecting request 只能使用已记录 timing 或 `completedAt - startedAt`，不能因为 snapshot 刷新继续增长。
+5. 前端 `resolveCodexLiveTimingMetricSummary` 优先使用 sidecar summary；缺失时才回退本地 retained request window 聚合，并在 UI 标记 `本地估算`。
+6. summary 只能包含计数、序号、时间与速率字段，不能包含 payload、headers、token、cookie 或未脱敏错误体。
+
+浏览器预览数据也应带 `timingSummary`，避免 preview 永远只覆盖 fallback 分支。结构差分合并时要把 `timingSummary.generatedAt` 和 active 投影导致的 summary 总耗时/流式耗时变化视为 clock-only refresh，避免高频轮询闪烁。
+
 ### 11. 右侧详情列要自包含滚动
 
 长运行会话的详情内容会明显高于视口。宽屏双栏布局下，右侧详情列不能只靠外层 workbench 滚动访问底部，否则用户在请求耗时趋势或请求时间线附近滚动时，会把页头、搜索栏和左侧列表一起卷走。

@@ -1,4 +1,4 @@
-import type { CodexLiveRequest } from './types';
+import type { CodexLiveRequest, CodexLiveSession, CodexLiveTimingMetrics } from './types';
 
 export type CodexLiveTimingTrendMetric =
   | 'totalDurationMs'
@@ -45,6 +45,11 @@ export type CodexLiveTimingMetricAverageKey =
 export interface CodexLiveTimingMetricAverages {
   values: Partial<Record<CodexLiveTimingMetricAverageKey, number>>;
   sampleCount: number;
+  sequenceFrom?: number;
+  sequenceTo?: number;
+  activeIncluded?: boolean;
+  generatedAt?: string;
+  source: 'sidecar' | 'fallback';
 }
 
 export const codexLiveRequestTimingTrendMaxPoints = 50;
@@ -133,7 +138,50 @@ export function buildCodexLiveRequestTimingMetricAverages(
   return {
     values,
     sampleCount: trend.points.length,
+    sequenceFrom: trend.points[0]?.sequence,
+    sequenceTo: trend.points[trend.points.length - 1]?.sequence,
+    activeIncluded: trend.points.some((point) => point.isLive),
+    generatedAt: typeof options.nowMs === 'number' && Number.isFinite(options.nowMs) ? new Date(options.nowMs).toISOString() : undefined,
+    source: 'fallback',
   };
+}
+
+export function resolveCodexLiveTimingMetricSummary(
+  session: CodexLiveSession,
+  activeRequest?: CodexLiveRequest,
+  options: BuildCodexLiveRequestTimingTrendOptions = {},
+): CodexLiveTimingMetricAverages {
+  if (session.timingSummary && session.timingSummary.sampleCount > 0) {
+    return {
+      values: normalizeTimingSummaryAverages(session.timingSummary.averages),
+      sampleCount: session.timingSummary.sampleCount,
+      sequenceFrom: session.timingSummary.sequenceFrom,
+      sequenceTo: session.timingSummary.sequenceTo,
+      activeIncluded: Boolean(session.timingSummary.activeIncluded),
+      generatedAt: session.timingSummary.generatedAt,
+      source: 'sidecar',
+    };
+  }
+  return buildCodexLiveRequestTimingMetricAverages(session.requests, activeRequest, options);
+}
+
+function normalizeTimingSummaryAverages(
+  averages: CodexLiveTimingMetrics,
+): Partial<Record<CodexLiveTimingMetricAverageKey, number>> {
+  const values: Partial<Record<CodexLiveTimingMetricAverageKey, number>> = {};
+  for (const metric of timingTrendMetrics) {
+    const value = normalizeTimingValue(averages[metric]);
+    if (value !== null) {
+      values[metric] = value;
+    }
+  }
+  for (const metric of requestTimingMetrics) {
+    const value = normalizeTimingValue(averages[metric]);
+    if (value !== null) {
+      values[metric] = value;
+    }
+  }
+  return values;
 }
 
 function buildTimingTrendPoint(

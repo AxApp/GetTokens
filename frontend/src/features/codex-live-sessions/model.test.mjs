@@ -39,6 +39,7 @@ import {
 import {
   buildCodexLiveRequestTimingMetricAverages,
   buildCodexLiveRequestTimingTrend,
+  resolveCodexLiveTimingMetricSummary,
 } from './model/requestTimingTrend.ts';
 import { mergeCodexLiveSessionsSnapshot } from './model/snapshotMerge.ts';
 
@@ -383,6 +384,19 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
         downstreamTransport: 'websocket',
         upstreamTransport: 'websocket',
         fallbackConfidence: 'not-a-confidence',
+        timingSummary: {
+          window: 'retained_requests',
+          sampleCount: 2,
+          sequenceFrom: 4,
+          sequenceTo: 5,
+          activeIncluded: true,
+          generatedAt: '2026-05-21T08:00:02Z',
+          averages: {
+            totalDurationMs: 2500,
+            firstEventMs: 450,
+            outputTokensPerSecond: 30,
+          },
+        },
         recentEvents: [{ id: 'evt-1', at: '16:00:00.000', lane: 'bad-lane', kind: 'received', label: 'ok', severity: 'bad-severity' }],
         requests: [
           {
@@ -405,6 +419,10 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
   assert.equal(snapshot.source, 'live');
   assert.equal(snapshot.sessions[0].requests[0].timing?.outputTokensPerSecond, 42);
   assert.equal(snapshot.sessions[0].fallbackConfidence, undefined);
+  assert.equal(snapshot.sessions[0].timingSummary?.sampleCount, 2);
+  assert.equal(snapshot.sessions[0].timingSummary?.sequenceFrom, 4);
+  assert.equal(snapshot.sessions[0].timingSummary?.sequenceTo, 5);
+  assert.equal(snapshot.sessions[0].timingSummary?.averages.totalDurationMs, 2500);
   assert.equal(snapshot.sessions[0].recentEvents[0].lane, 'sidecar');
   assert.equal(snapshot.sessions[0].recentEvents[0].severity, 'info');
 });
@@ -893,6 +911,62 @@ test('buildCodexLiveRequestTimingMetricAverages summarizes the timing trend wind
   assert.equal(averages.sampleCount, 3);
 });
 
+test('resolveCodexLiveTimingMetricSummary prefers sidecar summary over local request averages', () => {
+  const summary = resolveCodexLiveTimingMetricSummary(
+    {
+      sessionID: 'session-1',
+      status: 'streaming',
+      startedAt: '2026-05-21T08:00:00Z',
+      lastEventAt: '2026-05-21T08:04:07Z',
+      durationMs: 247000,
+      requestCount: 2,
+      activeRequestID: 'req-b',
+      lastRequestID: 'req-b',
+      model: 'gpt-5',
+      downstreamTransport: 'websocket',
+      upstreamTransport: 'websocket',
+      recentEvents: [],
+      timingSummary: {
+        window: 'retained_requests',
+        sampleCount: 2,
+        sequenceFrom: 10,
+        sequenceTo: 11,
+        activeIncluded: true,
+        generatedAt: '2026-05-21T08:04:07Z',
+        averages: {
+          totalDurationMs: 1234,
+          firstEventMs: 456,
+          outputTokensPerSecond: 78,
+        },
+      },
+      requests: [
+        {
+          requestID: 'req-a',
+          sessionID: 'session-1',
+          sequence: 10,
+          model: 'gpt-5',
+          status: 'completed',
+          startedAt: '2026-05-21T08:00:00Z',
+          downstreamTransport: 'websocket',
+          upstreamTransport: 'websocket',
+          timing: { totalDurationMs: 9000, firstEventMs: 900 },
+          timeline: [],
+        },
+      ],
+    },
+    undefined,
+    { nowMs: Date.parse('2026-05-21T08:04:07Z') },
+  );
+
+  assert.equal(summary.source, 'sidecar');
+  assert.equal(summary.sampleCount, 2);
+  assert.equal(summary.sequenceFrom, 10);
+  assert.equal(summary.sequenceTo, 11);
+  assert.equal(summary.values.totalDurationMs, 1234);
+  assert.equal(summary.values.firstEventMs, 456);
+  assert.equal(summary.values.outputTokensPerSecond, 78);
+});
+
 test('buildCodexLiveRequestTimingTrend keeps only latest requests inside a fixed count window', () => {
   const trend = buildCodexLiveRequestTimingTrend(
     [
@@ -1113,6 +1187,9 @@ test('codex live session timing metrics switch the single trend metric', async (
   assert.match(detailSource, /aria-pressed=\{selected\}/);
   assert.match(detailSource, /trendMetric: 'streamDurationMs'/);
   assert.match(detailSource, /trendMetric: 'longestEventGapMs'/);
+  assert.match(detailSource, /timing_average/);
+  assert.match(detailSource, /timing_summary_sidecar/);
+  assert.match(detailSource, /timing_summary_fallback/);
   assert.doesNotMatch(detailSource, /trendMetric: 'reconnectCount'/);
   assert.doesNotMatch(detailSource, /trendMetric: 'outputTokensPerSecond'/);
   assert.doesNotMatch(detailSource, /trendMetric: 'totalTokensPerSecond'/);

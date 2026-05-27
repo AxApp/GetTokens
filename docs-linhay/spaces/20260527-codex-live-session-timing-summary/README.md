@@ -128,5 +128,25 @@
 - 相关 workspace：`#frame=codex&workspace=live-sessions`
 
 ## 当前状态
-- 状态：requirements-ready
+- 状态：implemented-tested
 - 最近更新：2026-05-27
+
+## 实施记录
+
+- CLIProxyAPI fork 已在 session 级返回 `timingSummary`，窗口为 `retained_requests`，包含样本数、sequence 范围、active 是否纳入、生成时间和各 timing 字段均值。
+- active request 只投影 `totalDurationMs`；历史 stale streaming / reconnecting request 不随 snapshot 刷新继续增长。
+- GetTokens `internal/wailsapp`、root `main.App`、`frontend/wailsjs/go/models.ts` 和前端 adapter 已端到端透传 `timingSummary`。
+- 前端 `TimingMetrics` 优先使用 sidecar summary；缺失时回退本地 retained request window 聚合，并在 UI 标注 `Sidecar 汇总` 或 `本地估算`。
+- 浏览器验收截图：`screenshots/20260527/codex-live-sessions/20260527-codex-live-sessions-timing-summary-after-v01.png`。
+
+## 验证记录
+
+- `go test ./internal/gettokenshooks -run 'LiveSessions.*TimingSummary|TimingSummary' -count=1`
+- `go test ./internal/gettokenshooks -run 'LiveSessions' -count=1`
+- `go test ./internal/wailsapp -run 'CodexLiveSessions' -count=1`
+- `node --test frontend/src/features/codex-live-sessions/model.test.mjs`
+- `npm --prefix frontend run typecheck`
+- `npm --prefix frontend run build`
+- Playwright 验收 `http://localhost:5173/#frame=codex&workspace=live-sessions`：详情区显示 `耗时均值` 与 `最近请求 50 · #36-#85 · SIDECAR 汇总`，timeline 仍显示最新单请求耗时。
+
+未执行真实桌面 app 重启与真实 Codex 请求验收；当前完成的是 sidecar fork 单元测试、Wails DTO 测试、前端构建和浏览器预览验收。

@@ -2076,6 +2076,82 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CodexLiveTimingSummaryAverages {
+	    queueWaitMs?: number;
+	    authSelectMs?: number;
+	    upstreamConnectMs?: number;
+	    firstEventMs?: number;
+	    firstTokenMs?: number;
+	    averageEventGapMs?: number;
+	    longestEventGapMs?: number;
+	    streamDurationMs?: number;
+	    totalDurationMs?: number;
+	    reconnectCount?: number;
+	    outputTokensPerSecond?: number;
+	    totalTokensPerSecond?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveTimingSummaryAverages(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.queueWaitMs = source["queueWaitMs"];
+	        this.authSelectMs = source["authSelectMs"];
+	        this.upstreamConnectMs = source["upstreamConnectMs"];
+	        this.firstEventMs = source["firstEventMs"];
+	        this.firstTokenMs = source["firstTokenMs"];
+	        this.averageEventGapMs = source["averageEventGapMs"];
+	        this.longestEventGapMs = source["longestEventGapMs"];
+	        this.streamDurationMs = source["streamDurationMs"];
+	        this.totalDurationMs = source["totalDurationMs"];
+	        this.reconnectCount = source["reconnectCount"];
+	        this.outputTokensPerSecond = source["outputTokensPerSecond"];
+	        this.totalTokensPerSecond = source["totalTokensPerSecond"];
+	    }
+	}
+	export class CodexLiveTimingSummary {
+	    window: string;
+	    sampleCount: number;
+	    sequenceFrom?: number;
+	    sequenceTo?: number;
+	    activeIncluded?: boolean;
+	    generatedAt: string;
+	    averages: CodexLiveTimingSummaryAverages;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexLiveTimingSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.window = source["window"];
+	        this.sampleCount = source["sampleCount"];
+	        this.sequenceFrom = source["sequenceFrom"];
+	        this.sequenceTo = source["sequenceTo"];
+	        this.activeIncluded = source["activeIncluded"];
+	        this.generatedAt = source["generatedAt"];
+	        this.averages = this.convertValues(source["averages"], CodexLiveTimingSummaryAverages);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class CodexLiveSession {
 	    sessionID: string;
 	    projectName?: string;
@@ -2098,6 +2174,7 @@ export namespace main {
 	    fallbackInferred?: boolean;
 	    fallbackConfidence?: string;
 	    fallbackReason?: string;
+	    timingSummary?: CodexLiveTimingSummary;
 	    recentEvents: CodexLiveTimelineEvent[];
 	    requests: CodexLiveRequest[];
 
@@ -2128,6 +2205,7 @@ export namespace main {
 	        this.fallbackInferred = source["fallbackInferred"];
 	        this.fallbackConfidence = source["fallbackConfidence"];
 	        this.fallbackReason = source["fallbackReason"];
+	        this.timingSummary = this.convertValues(source["timingSummary"], CodexLiveTimingSummary);
 	        this.recentEvents = this.convertValues(source["recentEvents"], CodexLiveTimelineEvent);
 	        this.requests = this.convertValues(source["requests"], CodexLiveRequest);
 	    }
@@ -2268,9 +2346,6 @@ export namespace main {
 		    return a;
 		}
 	}
-
-
-
 	export class CodexMcpChange {
 	    key: string;
 	    before: string;
@@ -4709,7 +4784,6 @@ export namespace main {
 	}
 
 }
-
 export namespace sidecar {
 
 	export class Status {

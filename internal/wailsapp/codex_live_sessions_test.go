@@ -33,12 +33,21 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 				"requestCount":1,
 				"activeRequestID":"req-1",
 				"model":"gpt-5.5",
-				"authID":"auth-file:team",
-				"downstreamTransport":"websocket",
-				"upstreamTransport":"websocket",
-				"recentEvents":[]
-			}]
-		}`), http.StatusOK, nil
+					"authID":"auth-file:team",
+					"downstreamTransport":"websocket",
+					"upstreamTransport":"websocket",
+					"timingSummary":{
+						"window":"retained_requests",
+						"sampleCount":2,
+						"sequenceFrom":4,
+						"sequenceTo":5,
+						"activeIncluded":true,
+						"generatedAt":"2026-05-21T08:00:02Z",
+						"averages":{"totalDurationMs":2500,"firstEventMs":450,"outputTokensPerSecond":30}
+					},
+					"recentEvents":[]
+				}]
+			}`), http.StatusOK, nil
 	}
 
 	snapshot, err := app.GetCodexLiveSessionsSnapshot()
@@ -54,6 +63,12 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 	session := snapshot.Sessions[0]
 	if session.SessionID != "ws-session-1" || session.ProjectName != "GetTokens" || len(session.Requests) != 0 {
 		t.Fatalf("unexpected session payload: %#v", session)
+	}
+	if session.TimingSummary == nil || session.TimingSummary.SampleCount != 2 || session.TimingSummary.SequenceFrom != 4 || session.TimingSummary.SequenceTo != 5 {
+		t.Fatalf("unexpected timing summary: %#v", session.TimingSummary)
+	}
+	if session.TimingSummary.Averages.TotalDurationMs == nil || *session.TimingSummary.Averages.TotalDurationMs != 2500 {
+		t.Fatalf("unexpected timing summary averages: %#v", session.TimingSummary.Averages)
 	}
 }
 

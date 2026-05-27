@@ -1,5 +1,6 @@
-import type { CodexLiveRequest, CodexLiveSession, CodexLiveSessionSnapshot, CodexLiveTimelineEvent } from './types';
+import { buildCodexLiveRequestTimingMetricAverages } from './requestTimingTrend.ts';
 import { snapshotWithDerivedSummary } from './selectors.ts';
+import type { CodexLiveRequest, CodexLiveSession, CodexLiveSessionSnapshot, CodexLiveTimelineEvent, CodexLiveTimingSummary } from './types';
 
 const generatedAt = '2026-05-21T18:36:42+08:00';
 const previewActiveRequestStartedAtMs = Date.parse('2026-05-21T18:35:10+08:00');
@@ -140,6 +141,7 @@ export const codexLiveSessionsPreviewSessions: CodexLiveSession[] = [
     downstreamTransport: 'websocket',
     upstreamTransport: 'websocket',
     recentEvents: activeTimeline,
+    timingSummary: buildPreviewTimingSummary(activeRequests, activeRequests[activeRequests.length - 1], generatedAt),
     requests: activeRequests,
   },
   {
@@ -395,7 +397,41 @@ function shiftPreviewSessionTimestamps(session: CodexLiveSession, timestampDelta
     lastEventAt,
     durationMs: activeDurationMs ?? historicalDurationMs,
     recentEvents: session.recentEvents,
+    timingSummary: buildPreviewTimingSummary(requests, activeRequest, new Date(nowMs).toISOString()),
     requests,
+  };
+}
+
+function buildPreviewTimingSummary(
+  requests: readonly CodexLiveRequest[],
+  activeRequest: CodexLiveRequest | undefined,
+  generatedAtValue: string,
+): CodexLiveTimingSummary | undefined {
+  if (requests.length === 0) {
+    return undefined;
+  }
+  const summary = buildCodexLiveRequestTimingMetricAverages(requests, activeRequest, { nowMs: Date.parse(generatedAtValue) });
+  return {
+    window: 'retained_requests',
+    sampleCount: summary.sampleCount,
+    sequenceFrom: summary.sequenceFrom,
+    sequenceTo: summary.sequenceTo,
+    activeIncluded: summary.activeIncluded,
+    generatedAt: generatedAtValue,
+    averages: {
+      totalDurationMs: summary.values.totalDurationMs,
+      firstEventMs: summary.values.firstEventMs,
+      firstTokenMs: summary.values.firstTokenMs,
+      streamDurationMs: summary.values.streamDurationMs,
+      queueWaitMs: summary.values.queueWaitMs,
+      authSelectMs: summary.values.authSelectMs,
+      upstreamConnectMs: summary.values.upstreamConnectMs,
+      averageEventGapMs: summary.values.averageEventGapMs,
+      longestEventGapMs: summary.values.longestEventGapMs,
+      reconnectCount: summary.values.reconnectCount,
+      outputTokensPerSecond: summary.values.outputTokensPerSecond,
+      totalTokensPerSecond: summary.values.totalTokensPerSecond,
+    },
   };
 }
 

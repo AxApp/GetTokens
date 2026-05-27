@@ -30,8 +30,8 @@ import {
 } from './requestTimelineSummary';
 import type { Translate } from './types';
 import {
-  buildCodexLiveRequestTimingMetricAverages,
   buildCodexLiveRequestTimingTrend,
+  resolveCodexLiveTimingMetricSummary,
   type CodexLiveTimingMetricAverages,
   type CodexLiveRequestTimingTrendPoint,
   type CodexLiveTimingTrendMetric,
@@ -652,13 +652,21 @@ function TimingMetrics({
     return () => window.clearInterval(refreshID);
   }, []);
 
-  const averages = buildCodexLiveRequestTimingMetricAverages(session.requests, request, { nowMs });
+  const averages = resolveCodexLiveTimingMetricSummary(session, request, { nowMs });
   const metrics = buildTimingMetricRows(averages, t);
+  const summaryMeta = buildTimingSummaryMeta(averages, t);
 
   return (
     <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-        {t('codex_live_sessions.timing')}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          {t('codex_live_sessions.timing_average')}
+        </div>
+        {summaryMeta ? (
+          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+            {summaryMeta}
+          </div>
+        ) : null}
       </div>
       <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-3 xl:grid-cols-4">
         {metrics.map((metric) => {
@@ -695,6 +703,18 @@ function TimingMetrics({
       </div>
     </div>
   );
+}
+
+function buildTimingSummaryMeta(summary: CodexLiveTimingMetricAverages, t: Translate): string {
+  if (summary.sampleCount <= 0) {
+    return '';
+  }
+  const parts = [`${t('codex_live_sessions.timing_summary_recent')} ${summary.sampleCount}`];
+  if (typeof summary.sequenceFrom === 'number' && typeof summary.sequenceTo === 'number') {
+    parts.push(`#${summary.sequenceFrom}-#${summary.sequenceTo}`);
+  }
+  parts.push(t(summary.source === 'sidecar' ? 'codex_live_sessions.timing_summary_sidecar' : 'codex_live_sessions.timing_summary_fallback'));
+  return parts.join(' · ');
 }
 
 interface TimingMetricRow {

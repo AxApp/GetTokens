@@ -63,6 +63,7 @@ type CodexLiveSession struct {
 	FallbackInferred    bool                     `json:"fallbackInferred,omitempty"`
 	FallbackConfidence  string                   `json:"fallbackConfidence,omitempty"`
 	FallbackReason      string                   `json:"fallbackReason,omitempty"`
+	TimingSummary       *CodexLiveTimingSummary  `json:"timingSummary,omitempty"`
 	RecentEvents        []CodexLiveTimelineEvent `json:"recentEvents"`
 	Requests            []CodexLiveRequest       `json:"requests"`
 }
@@ -110,6 +111,31 @@ type CodexLiveTimingMetrics struct {
 	ReconnectCount        int     `json:"reconnectCount,omitempty"`
 	OutputTokensPerSecond float64 `json:"outputTokensPerSecond,omitempty"`
 	TotalTokensPerSecond  float64 `json:"totalTokensPerSecond,omitempty"`
+}
+
+type CodexLiveTimingSummary struct {
+	Window         string                         `json:"window"`
+	SampleCount    int                            `json:"sampleCount"`
+	SequenceFrom   int                            `json:"sequenceFrom,omitempty"`
+	SequenceTo     int                            `json:"sequenceTo,omitempty"`
+	ActiveIncluded bool                           `json:"activeIncluded,omitempty"`
+	GeneratedAt    string                         `json:"generatedAt"`
+	Averages       CodexLiveTimingSummaryAverages `json:"averages"`
+}
+
+type CodexLiveTimingSummaryAverages struct {
+	QueueWaitMs           *int64   `json:"queueWaitMs,omitempty"`
+	AuthSelectMs          *int64   `json:"authSelectMs,omitempty"`
+	UpstreamConnectMs     *int64   `json:"upstreamConnectMs,omitempty"`
+	FirstEventMs          *int64   `json:"firstEventMs,omitempty"`
+	FirstTokenMs          *int64   `json:"firstTokenMs,omitempty"`
+	AverageEventGapMs     *int64   `json:"averageEventGapMs,omitempty"`
+	LongestEventGapMs     *int64   `json:"longestEventGapMs,omitempty"`
+	StreamDurationMs      *int64   `json:"streamDurationMs,omitempty"`
+	TotalDurationMs       *int64   `json:"totalDurationMs,omitempty"`
+	ReconnectCount        *int     `json:"reconnectCount,omitempty"`
+	OutputTokensPerSecond *float64 `json:"outputTokensPerSecond,omitempty"`
+	TotalTokensPerSecond  *float64 `json:"totalTokensPerSecond,omitempty"`
 }
 
 type CodexLiveErrorSummary struct {

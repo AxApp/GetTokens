@@ -6,6 +6,8 @@ import type {
   CodexLiveSessionSnapshot,
   CodexLiveSessionSource,
   CodexLiveSessionStatus,
+  CodexLiveTimingMetrics,
+  CodexLiveTimingSummary,
   CodexLiveTimelineEvent,
   CodexLiveTransport,
 } from './types';
@@ -81,6 +83,7 @@ function mapBackendCodexLiveSession(session: main.CodexLiveSession): CodexLiveSe
     fallbackInferred: Boolean(session.fallbackInferred),
     fallbackConfidence: normalizeFallbackConfidence(session.fallbackConfidence),
     fallbackReason: session.fallbackReason || undefined,
+    timingSummary: mapBackendTimingSummary((session as any).timingSummary),
     recentEvents: (session.recentEvents || []).map(mapBackendTimelineEvent),
     requests: (session.requests || []).map(mapBackendCodexLiveRequest),
   };
@@ -154,6 +157,42 @@ function mapBackendCodexLiveRequest(request: main.CodexLiveRequest): CodexLiveRe
   };
 }
 
+function mapBackendTimingSummary(summary: any): CodexLiveTimingSummary | undefined {
+  if (!summary || typeof summary !== 'object') {
+    return undefined;
+  }
+  const averages = mapBackendTimingMetrics(summary.averages);
+  return {
+    window: summary.window || '',
+    sampleCount: normalizeOptionalNumber(summary.sampleCount) ?? 0,
+    sequenceFrom: normalizeOptionalNumber(summary.sequenceFrom),
+    sequenceTo: normalizeOptionalNumber(summary.sequenceTo),
+    activeIncluded: Boolean(summary.activeIncluded),
+    generatedAt: summary.generatedAt || undefined,
+    averages,
+  };
+}
+
+function mapBackendTimingMetrics(timing: any): CodexLiveTimingMetrics {
+  if (!timing || typeof timing !== 'object') {
+    return {};
+  }
+  return {
+    queueWaitMs: normalizeOptionalNumber(timing.queueWaitMs),
+    authSelectMs: normalizeOptionalNumber(timing.authSelectMs),
+    upstreamConnectMs: normalizeOptionalNumber(timing.upstreamConnectMs),
+    firstEventMs: normalizeOptionalNumber(timing.firstEventMs),
+    firstTokenMs: normalizeOptionalNumber(timing.firstTokenMs),
+    averageEventGapMs: normalizeOptionalNumber(timing.averageEventGapMs),
+    longestEventGapMs: normalizeOptionalNumber(timing.longestEventGapMs),
+    streamDurationMs: normalizeOptionalNumber(timing.streamDurationMs),
+    totalDurationMs: normalizeOptionalNumber(timing.totalDurationMs),
+    reconnectCount: normalizeOptionalNumber(timing.reconnectCount),
+    outputTokensPerSecond: normalizeOptionalNumber(timing.outputTokensPerSecond),
+    totalTokensPerSecond: normalizeOptionalNumber(timing.totalTokensPerSecond),
+  };
+}
+
 function mapBackendTimelineEvent(event: main.CodexLiveTimelineEvent): CodexLiveTimelineEvent {
   return {
     id: event.id || '',
@@ -168,6 +207,13 @@ function mapBackendTimelineEvent(event: main.CodexLiveTimelineEvent): CodexLiveT
       : 'info',
     detail: event.detail || undefined,
   };
+}
+
+function normalizeOptionalNumber(value: unknown): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return undefined;
+  }
+  return value;
 }
 
 function normalizeStatus(value: string): CodexLiveSessionStatus {

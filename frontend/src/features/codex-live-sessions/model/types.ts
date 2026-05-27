@@ -57,6 +57,16 @@ export interface CodexLiveTimingMetrics {
   totalTokensPerSecond?: number;
 }
 
+export interface CodexLiveTimingSummary {
+  window: string;
+  sampleCount: number;
+  sequenceFrom?: number;
+  sequenceTo?: number;
+  activeIncluded?: boolean;
+  generatedAt?: string;
+  averages: CodexLiveTimingMetrics;
+}
+
 export interface CodexLiveTimelineEvent {
   id: string;
   at: string;
@@ -114,6 +124,7 @@ export interface CodexLiveSession {
   fallbackInferred?: boolean;
   fallbackConfidence?: 'high' | 'medium' | 'low';
   fallbackReason?: string;
+  timingSummary?: CodexLiveTimingSummary;
   recentEvents: CodexLiveTimelineEvent[];
   requests: CodexLiveRequest[];
 }

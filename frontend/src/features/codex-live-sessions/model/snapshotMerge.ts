@@ -4,6 +4,7 @@ import type {
   CodexLiveSessionSnapshot,
   CodexLiveSessionSource,
   CodexLiveTimingMetrics,
+  CodexLiveTimingSummary,
   CodexLiveTimelineEvent,
 } from './types';
 
@@ -106,6 +107,7 @@ function normalizeSessionForDiff(session: CodexLiveSession, source: CodexLiveSes
     ...session,
     requests: session.requests.map((request) => normalizeRequestForDiff(request, source)),
     recentEvents: session.recentEvents.map((event) => normalizeTimelineEventForDiff(event, source)),
+    timingSummary: normalizeTimingSummaryForDiff(session.timingSummary, source, session),
   };
 
   if (isPreviewLikeSource(source)) {
@@ -116,6 +118,26 @@ function normalizeSessionForDiff(session: CodexLiveSession, source: CodexLiveSes
     delete normalized.durationMs;
   }
 
+  return normalized;
+}
+
+function normalizeTimingSummaryForDiff(
+  summary: CodexLiveTimingSummary | undefined,
+  source: CodexLiveSessionSource,
+  session: CodexLiveSession,
+): CodexLiveTimingSummary | undefined {
+  if (!summary) {
+    return undefined;
+  }
+  const normalized: CodexLiveTimingSummary = {
+    ...summary,
+    averages: { ...summary.averages },
+  };
+  delete normalized.generatedAt;
+  if (isPreviewLikeSource(source) || (Boolean(summary.activeIncluded) && isLiveStatus(session.status))) {
+    delete normalized.averages.totalDurationMs;
+    delete normalized.averages.streamDurationMs;
+  }
   return normalized;
 }
 

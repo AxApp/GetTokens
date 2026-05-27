@@ -57,6 +57,7 @@ type CodexLiveSession struct {
 	FallbackInferred    bool                     `json:"fallbackInferred,omitempty"`
 	FallbackConfidence  string                   `json:"fallbackConfidence,omitempty"`
 	FallbackReason      string                   `json:"fallbackReason,omitempty"`
+	TimingSummary       *CodexLiveTimingSummary  `json:"timingSummary,omitempty"`
 	RecentEvents        []CodexLiveTimelineEvent `json:"recentEvents"`
 	Requests            []CodexLiveRequest       `json:"requests"`
 }
@@ -104,6 +105,31 @@ type CodexLiveTimingMetrics struct {
 	ReconnectCount        int     `json:"reconnectCount,omitempty"`
 	OutputTokensPerSecond float64 `json:"outputTokensPerSecond,omitempty"`
 	TotalTokensPerSecond  float64 `json:"totalTokensPerSecond,omitempty"`
+}
+
+type CodexLiveTimingSummary struct {
+	Window         string                         `json:"window"`
+	SampleCount    int                            `json:"sampleCount"`
+	SequenceFrom   int                            `json:"sequenceFrom,omitempty"`
+	SequenceTo     int                            `json:"sequenceTo,omitempty"`
+	ActiveIncluded bool                           `json:"activeIncluded,omitempty"`
+	GeneratedAt    string                         `json:"generatedAt"`
+	Averages       CodexLiveTimingSummaryAverages `json:"averages"`
+}
+
+type CodexLiveTimingSummaryAverages struct {
+	QueueWaitMs           *int64   `json:"queueWaitMs,omitempty"`
+	AuthSelectMs          *int64   `json:"authSelectMs,omitempty"`
+	UpstreamConnectMs     *int64   `json:"upstreamConnectMs,omitempty"`
+	FirstEventMs          *int64   `json:"firstEventMs,omitempty"`
+	FirstTokenMs          *int64   `json:"firstTokenMs,omitempty"`
+	AverageEventGapMs     *int64   `json:"averageEventGapMs,omitempty"`
+	LongestEventGapMs     *int64   `json:"longestEventGapMs,omitempty"`
+	StreamDurationMs      *int64   `json:"streamDurationMs,omitempty"`
+	TotalDurationMs       *int64   `json:"totalDurationMs,omitempty"`
+	ReconnectCount        *int     `json:"reconnectCount,omitempty"`
+	OutputTokensPerSecond *float64 `json:"outputTokensPerSecond,omitempty"`
+	TotalTokensPerSecond  *float64 `json:"totalTokensPerSecond,omitempty"`
 }
 
 type CodexLiveErrorSummary struct {
@@ -193,6 +219,7 @@ func mapCodexLiveSessions(items []wailsapp.CodexLiveSession) []CodexLiveSession 
 			FallbackInferred:    item.FallbackInferred,
 			FallbackConfidence:  item.FallbackConfidence,
 			FallbackReason:      item.FallbackReason,
+			TimingSummary:       mapCodexLiveTimingSummary(item.TimingSummary),
 			RecentEvents:        mapCodexLiveTimelineEvents(item.RecentEvents),
 			Requests:            mapCodexLiveRequests(item.Requests),
 		})
@@ -271,6 +298,34 @@ func mapCodexLiveTiming(item wailsapp.CodexLiveTimingMetrics) CodexLiveTimingMet
 		ReconnectCount:        item.ReconnectCount,
 		OutputTokensPerSecond: item.OutputTokensPerSecond,
 		TotalTokensPerSecond:  item.TotalTokensPerSecond,
+	}
+}
+
+func mapCodexLiveTimingSummary(item *wailsapp.CodexLiveTimingSummary) *CodexLiveTimingSummary {
+	if item == nil {
+		return nil
+	}
+	return &CodexLiveTimingSummary{
+		Window:         item.Window,
+		SampleCount:    item.SampleCount,
+		SequenceFrom:   item.SequenceFrom,
+		SequenceTo:     item.SequenceTo,
+		ActiveIncluded: item.ActiveIncluded,
+		GeneratedAt:    item.GeneratedAt,
+		Averages: CodexLiveTimingSummaryAverages{
+			QueueWaitMs:           item.Averages.QueueWaitMs,
+			AuthSelectMs:          item.Averages.AuthSelectMs,
+			UpstreamConnectMs:     item.Averages.UpstreamConnectMs,
+			FirstEventMs:          item.Averages.FirstEventMs,
+			FirstTokenMs:          item.Averages.FirstTokenMs,
+			AverageEventGapMs:     item.Averages.AverageEventGapMs,
+			LongestEventGapMs:     item.Averages.LongestEventGapMs,
+			StreamDurationMs:      item.Averages.StreamDurationMs,
+			TotalDurationMs:       item.Averages.TotalDurationMs,
+			ReconnectCount:        item.Averages.ReconnectCount,
+			OutputTokensPerSecond: item.Averages.OutputTokensPerSecond,
+			TotalTokensPerSecond:  item.Averages.TotalTokensPerSecond,
+		},
 	}
 }
 
