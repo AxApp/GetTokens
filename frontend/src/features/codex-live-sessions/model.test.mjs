@@ -840,19 +840,23 @@ test('buildAnimatedCodexLiveSessionsPreviewSnapshot keeps browser preview live o
   assert.ok((secondRequest?.timing?.totalDurationMs ?? 0) > (firstRequest?.timing?.totalDurationMs ?? 0));
 });
 
-test('codex live session timing chart uses request timestamps and live refresh', async () => {
+test('codex live session timing chart uses request sequence bars and live refresh', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
 
   assert.match(detailSource, /setInterval/);
   assert.match(detailSource, /nowMs/);
-  assert.match(detailSource, /trendChartX\(point\.startedAtMs/);
-  assert.match(detailSource, /buildTimingTrendEcgPath/);
+  assert.match(detailSource, /buildTimingTrendWaveformBars/);
   assert.match(detailSource, /selectedMetric: CodexLiveTimingTrendMetric/);
-  assert.match(detailSource, /visibleStartedAtMinMs/);
-  assert.match(detailSource, /visiblePoints = trend\.points\.filter/);
+  assert.match(detailSource, /timingTrendAudioBarStepPx/);
+  assert.match(detailSource, /visibleRequestCount = resolveTimingTrendVisibleRequestCount\(width, padding\)/);
+  assert.match(detailSource, /visiblePoints = trend\.points\.slice\(-visibleRequestCount\)/);
   assert.match(detailSource, /getTimingTrendMetricMax\(visiblePoints, selectedMetric\)/);
   assert.match(detailSource, /strokeDasharray=\{point\.isLive/);
-  assert.doesNotMatch(detailSource, /trendChartX\(index,/);
+  assert.match(detailSource, /resolveTimingTrendBarX\(index, points\.length, width, padding\)/);
+  assert.match(detailSource, /#\{point\.sequence\}/);
+  assert.doesNotMatch(detailSource, /trendChartX/);
+  assert.doesNotMatch(detailSource, /visibleStartedAtMinMs/);
+  assert.doesNotMatch(detailSource, /resolveTimingTrendPointXMs/);
 });
 
 test('codex live session timing chart uses a fixed viewport without horizontal panning', async () => {
@@ -862,10 +866,13 @@ test('codex live session timing chart uses a fixed viewport without horizontal p
   assert.match(detailSource, /ResizeObserver/);
   assert.match(detailSource, /element\.clientWidth/);
   assert.match(detailSource, /const width = Math\.max\(320, chartWidth \|\| 0\)/);
-  assert.match(detailSource, /resolveTimingTrendVisibleWindowMs/);
-  assert.match(detailSource, /timingTrendStripFullWindowWidthPx/);
+  assert.match(detailSource, /resolveTimingTrendVisibleRequestCount/);
+  assert.match(detailSource, /timingTrendAudioMinVisibleBars/);
+  assert.match(detailSource, /timingTrendAudioBarStepPx/);
   assert.match(detailSource, /className="mt-3 overflow-hidden/);
   assert.match(detailSource, /width: '100%'/);
+  assert.doesNotMatch(detailSource, /resolveTimingTrendVisibleWindowMs/);
+  assert.doesNotMatch(detailSource, /timingTrendStripFullWindowWidthPx/);
   assert.doesNotMatch(detailSource, /overflow-x-auto/);
   assert.doesNotMatch(detailSource, /scrollContainerRef/);
   assert.doesNotMatch(detailSource, /autoFollowLatest/);
@@ -873,7 +880,7 @@ test('codex live session timing chart uses a fixed viewport without horizontal p
   assert.doesNotMatch(detailSource, /onPointerMove/);
 });
 
-test('codex live session timing chart follows Usage Desk chart styling primitives', async () => {
+test('codex live session timing chart follows audio waveform styling primitives', async () => {
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
 
   assert.match(detailSource, /backgroundImage:/);
@@ -882,17 +889,31 @@ test('codex live session timing chart follows Usage Desk chart styling primitive
   assert.match(detailSource, /codex-live-strip-enter/);
   assert.match(detailSource, /codex-live-point-pop/);
   assert.match(detailSource, /codex-live-ring-breathe/);
-  assert.match(detailSource, /key=\{`\$\{selectedMetric\}-signal`\}/);
+  assert.match(detailSource, /key=\{`\$\{selectedMetric\}-audio-waveform-layer`\}/);
   assert.match(detailSource, /codex-live-ring-breathe 1\.8s ease-in-out infinite/);
-  assert.match(detailSource, /strokeLinejoin="miter"/);
-  assert.match(detailSource, /selectedWavePath/);
+  assert.match(detailSource, /function buildTimingTrendWaveformBars/);
+  assert.match(detailSource, /interface TimingTrendWaveformBar/);
+  assert.match(detailSource, /centerY: number/);
+  assert.match(detailSource, /amplitude: number/);
+  assert.match(detailSource, /y1=\{topY\}/);
+  assert.match(detailSource, /y2=\{bottomY\}/);
+  assert.match(detailSource, /strokeWidth=\{point\.requestID === selectedRequestID \? 10 : 7\}/);
   assert.match(detailSource, /stroke=\{selectedSeries\.color\}/);
   assert.match(detailSource, /function TimingTrendPoint/);
   assert.match(detailSource, /buildTimingTrendPointStyle/);
-  assert.match(detailSource, /buildTimingTrendEcgPath\(/);
+  assert.match(detailSource, /shouldShowTimingTrendMarker/);
+  assert.match(detailSource, /shouldShowTimingTrendAxisLabel/);
+  assert.doesNotMatch(detailSource, /barShape/);
+  assert.doesNotMatch(detailSource, /primary: boolean/);
+  assert.doesNotMatch(detailSource, /buildTimingTrendEcgPath/);
+  assert.doesNotMatch(detailSource, /buildTimingTrendLollipopPoints/);
+  assert.doesNotMatch(detailSource, /lollipop/i);
+  assert.doesNotMatch(detailSource, /heartbeat strip/i);
+  assert.doesNotMatch(detailSource, /selectedWavePath/);
+  assert.doesNotMatch(detailSource, /strokeLinejoin="miter"/);
   assert.doesNotMatch(detailSource, /strokeDasharray="1"/);
   assert.doesNotMatch(detailSource, /pathLength="1"/);
-  assert.doesNotMatch(detailSource, /timingTrendSeries\.map\(\(series\)[\s\S]*buildTimingTrendEcgPath/);
+  assert.doesNotMatch(detailSource, /timingTrendSeries\.map\(\(series\)[\s\S]*buildTimingTrendWaveformBars/);
   assert.doesNotMatch(detailSource, /buildTimingTrendSeriesPath/);
   assert.doesNotMatch(detailSource, /codex-live-total-area/);
 });

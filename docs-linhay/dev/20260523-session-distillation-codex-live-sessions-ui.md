@@ -82,23 +82,23 @@ Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是�
 1. 已完成请求优先使用 `timing.totalDurationMs`；缺失时才回退到 `completedAt - startedAt`。
 2. 当前 active request 可以用 `nowMs - startedAt` 做实时投影，用于显示正在增长的 live 样本。
 3. 历史请求即使因为 cache 或 sidecar 残留仍带着 `streaming/reconnecting` 且没有 `completedAt`，也不能继续按 `nowMs` 投影；否则图上所有总耗时点会一起增长。
-4. 图表只展示固定最近窗口内的请求点，默认窗口为 5 分钟；窗口外请求既不参与曲线，也不参与 y 轴最大值。
-5. x 轴域固定为 `latestStartedAt - windowMs` 到 `latestStartedAt`，不能再用当前样本 min/max 自动撑满，否则稀疏请求会被视觉上拉成等距。
-6. 图表类型按 `heartbeat strip chart / rolling strip chart` 处理：最新 request 锚在右侧，时间密度稳定；宽容器能回看更长最近窗口，窄容器只显示更近样本，不提供横向滚动或拖动。
-7. 回归测试必须覆盖“stale streaming request + active request”并存时，只有 active request 增长，并覆盖窗口外旧请求被过滤；组件结构测试需覆盖非滚动 fixed viewport 边界。
+4. 纯模型仍负责过滤最近窗口内的请求点，窗口外请求不参与 y 轴最大值；视图层不再用真实时间间隔决定 x 位置。
+5. x 轴语义固定为请求序号：按 `startedAt` 排序后的最近请求以等距密集柱形展示，标签使用 `#sequence`，不能再把稀疏请求按真实时间拉开。
+6. 图表类型按 forward-moving audio waveform 处理：一柱一请求，最新 request 锚在右侧；宽容器显示更多最近请求，窄容器显示更少请求，不提供横向滚动或拖动。
+7. 回归测试必须覆盖“stale streaming request + active request”并存时，只有 active request 增长，并覆盖窗口外旧请求被过滤；组件结构测试需覆盖非滚动 fixed viewport、请求序号 x 轴和一请求一柱边界。
 
 这类问题不要先调 CSS 或动画。先检查纯模型输出：`points[].values.totalDurationMs` 与 `points[].isLive` 是否已经错误增长；如果模型输出错，修模型，不修图表。
 
-### 8. 请求耗时趋势图更像 ECG，不像平滑面积图
+### 8. 请求耗时趋势图更像音频波形，不像平滑面积图
 
 最新的视觉反馈说明这块图如果画得太“顺”，会更像普通仪表盘趋势图，而不是 live sessions 里应该有的监护波形。现在更稳的表达是：
 
-1. 继续保留 timestamp 驱动的 x 轴和 metric 驱动的 y 轴，不改数据语义。
-2. 图表一次只显示一个 timing metric，对应一条更尖锐的心电波形；不要把多个维度同时叠在图里一起动。
+1. 保留 request timing 记录和 metric 驱动的 y 轴，但 x 轴改为请求序号等距排列，不再按 timestamp 间隔排布。
+2. 图表一次只显示一个 timing metric，对应一组垂直振幅条；一根柱只代表一个 request，不再给同一个 request 生成副柱。
 3. 下方“耗时”指标块负责维度切换，`总耗时 / TTFT / 首 token / 流式 / 排队 / 选号 / 连接 / 平均间隔 / 最大间隔` 都可以切换图表。
 4. 仍然保留 live request 的光圈标记，让正在增长的样本一眼可见。
-5. TTFT / first-token 等次级指标切换后也保持同一套 ECG 波形语言，不再回到虚线趋势图或多线叠加。
-6. 动画只表达状态变化：切换指标时整条 strip 短暂淡入，实时刷新时只让最新 live 点光圈轻微呼吸；不要每秒重扫整条曲线。
+5. TTFT / first-token 等次级指标切换后也保持同一套音频波形语言，不再回到虚线趋势图或多线叠加。
+6. 动画只表达状态变化：切换指标时整组波形短暂淡入，实时刷新时只让最新 live 点光圈轻微呼吸；不要每秒重扫整条波形。
 
 ### 9. 请求时间线只展示最近 15 条
 

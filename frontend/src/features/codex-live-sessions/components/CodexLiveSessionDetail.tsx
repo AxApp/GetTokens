@@ -106,7 +106,9 @@ const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: strin
   { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--color-status-danger)' },
 ];
 const requestTimelineVisibleLimit = 15;
-const timingTrendStripFullWindowWidthPx = 520;
+const timingTrendAudioBarStepPx = 12;
+const timingTrendAudioMinVisibleBars = 12;
+const timingTrendAudioAxisLabelEvery = 5;
 
 function RequestTimingTrend({
   session,
@@ -209,20 +211,11 @@ function TimingTrendChart({
   const [chartWidth, setChartWidth] = useState(0);
   const selectedSeries = getTimingTrendSeries(selectedMetric);
   const width = Math.max(320, chartWidth || 0);
-  const visibleWindowMs = resolveTimingTrendVisibleWindowMs(width, padding, trend.windowMs);
-  const visibleStartedAtMinMs = Math.max(trend.startedAtMinMs, trend.startedAtMaxMs - visibleWindowMs);
-  const visiblePoints = trend.points.filter((point) => point.startedAtMs >= visibleStartedAtMinMs && point.startedAtMs <= trend.startedAtMaxMs);
+  const visibleRequestCount = resolveTimingTrendVisibleRequestCount(width, padding);
+  const visiblePoints = trend.points.slice(-visibleRequestCount);
   const selectedMetricMaxMs = getTimingTrendMetricMax(visiblePoints, selectedMetric);
-  const selectedWavePath = buildTimingTrendEcgPath(
-    visiblePoints,
-    selectedMetric,
-    selectedMetricMaxMs,
-    visibleStartedAtMinMs,
-    trend.startedAtMaxMs,
-    width,
-    height,
-    padding,
-  );
+  const waveformBars = buildTimingTrendWaveformBars(visiblePoints, selectedMetric, selectedMetricMaxMs, width, height, padding);
+  const waveformMarkers = waveformBars.filter((bar, index) => shouldShowTimingTrendMarker(bar.point, index, waveformBars.length, selectedRequestID));
 
   useEffect(() => {
     const element = chartShellRef.current;
@@ -291,73 +284,73 @@ function TimingTrendChart({
             );
           })}
 
-          {visiblePoints.map((point) => {
-            const x = trendChartX(point.startedAtMs, visibleStartedAtMinMs, trend.startedAtMaxMs, width, padding);
+          {waveformBars.map(({ point, x }, index) => {
+            const showAxisLabel = shouldShowTimingTrendAxisLabel(point, index, waveformBars.length, selectedRequestID);
             return (
-              <line
-                key={`${point.requestID}-grid`}
-                x1={x}
-                x2={x}
-                y1={padding.top}
-                y2={height - padding.bottom}
-                stroke="var(--color-chart-grid-strong)"
-                strokeWidth={point.isLive ? 1.5 : 1}
-                strokeDasharray={point.isLive ? '4 3' : undefined}
-              />
+              <g key={`${point.requestID}-axis`}>
+                {showAxisLabel ? (
+                  <>
+                    <line
+                      x1={x}
+                      x2={x}
+                      y1={padding.top}
+                      y2={height - padding.bottom + 7}
+                      stroke="var(--color-chart-grid-strong)"
+                      strokeWidth={point.isLive ? 1.5 : 1}
+                      strokeDasharray={point.isLive ? '4 3' : undefined}
+                    />
+                    <text
+                      x={x}
+                      y={height - 18}
+                      textAnchor="middle"
+                      className="fill-[var(--text-muted)] font-mono text-[10px] font-black"
+                    >
+                      #{point.sequence}
+                    </text>
+                  </>
+                ) : null}
+              </g>
             );
           })}
 
-          {selectedWavePath ? (
-            <path
-              key={`${selectedMetric}-halo`}
-              d={selectedWavePath}
-              fill="none"
-              stroke={selectedSeries.color}
-              strokeWidth="9"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity="0.12"
-              style={{ animation: 'codex-live-strip-enter 240ms ease-out' }}
-            />
-          ) : null}
-
-          {selectedWavePath ? (
-            <path
-              key={`${selectedMetric}-signal`}
-              d={selectedWavePath}
-              fill="none"
-              stroke={selectedSeries.color}
-              strokeWidth="3.5"
-              strokeLinecap="round"
-              strokeLinejoin="miter"
-              style={{ animation: 'codex-live-strip-enter 240ms ease-out' }}
-            />
-          ) : null}
-
-          {visiblePoints.map((point) => {
-            const x = trendChartX(point.startedAtMs, visibleStartedAtMinMs, trend.startedAtMaxMs, width, padding);
-            const value = point.values[selectedMetric];
-            if (value === null) {
-              return null;
-            }
-            return (
-              <g key={`${point.requestID}-selected-point`}>
+          <g key={`${selectedMetric}-audio-waveform-layer`} style={{ animation: 'codex-live-strip-enter 240ms ease-out' }}>
+            {waveformBars.map(({ point, x, centerY, topY, bottomY, amplitude, value }) => (
+              <g key={`${point.requestID}-waveform-bar`}>
+                <line
+                  x1={x}
+                  x2={x}
+                  y1={topY}
+                  y2={bottomY}
+                  stroke={selectedSeries.color}
+                  strokeLinecap="round"
+                  strokeWidth={point.requestID === selectedRequestID ? 10 : 7}
+                  opacity={point.requestID === selectedRequestID ? 0.8 : 0.5}
+                />
+                <line
+                  x1={x}
+                  x2={x}
+                  y1={centerY - Math.max(3, amplitude * 0.22)}
+                  y2={centerY + Math.max(3, amplitude * 0.22)}
+                  stroke={selectedSeries.color}
+                  strokeLinecap="round"
+                  strokeWidth={point.requestID === selectedRequestID ? 3 : 2}
+                  opacity="0.9"
+                />
                 <circle
                   cx={x}
-                  cy={trendChartY(value, selectedMetricMaxMs, height, padding)}
-                  r={point.requestID === selectedRequestID ? 3.75 : 3}
+                  cy={centerY}
+                  r={point.requestID === selectedRequestID ? 3.6 : 2.8}
                   fill="var(--bg-main)"
                   stroke={selectedSeries.color}
-                  strokeDasharray={point.isLive ? '3 2' : undefined}
-                  strokeWidth="2"
+                  strokeWidth={point.requestID === selectedRequestID ? 2.5 : 2}
                 >
                   <title>{`${point.label} · ${t(selectedSeries.labelKey)} ${formatDuration(value)}`}</title>
                 </circle>
                 {point.isLive ? (
                   <circle
                     cx={x}
-                    cy={trendChartY(value, selectedMetricMaxMs, height, padding)}
-                    r="10"
+                    cy={centerY}
+                    r={Math.max(12, Math.min(28, amplitude + 6))}
                     fill="none"
                     stroke={selectedSeries.color}
                     strokeDasharray="2 3"
@@ -367,31 +360,23 @@ function TimingTrendChart({
                   />
                 ) : null}
               </g>
-            );
-          })}
+            ))}
+          </g>
         </svg>
 
         <div className="pointer-events-none absolute inset-0">
-          {visiblePoints.map((point) => {
-            const value = point.values[selectedMetric];
-            if (value === null) {
-              return null;
-            }
-            const x = trendChartX(point.startedAtMs, visibleStartedAtMinMs, trend.startedAtMaxMs, width, padding);
-            const y = trendChartY(value, selectedMetricMaxMs, height, padding);
-            return (
+          {waveformMarkers.map(({ point, x, topY, value }) => (
               <TimingTrendPoint
                 key={point.requestID}
                 x={x}
-                y={y}
+                y={topY}
                 label={formatDuration(value)}
                 helper={`#${point.sequence}`}
                 color={selectedSeries.color}
                 selected={point.requestID === selectedRequestID}
                 live={point.isLive}
               />
-            );
-          })}
+          ))}
         </div>
       </div>
     </div>
@@ -457,14 +442,88 @@ function getTimingTrendMetricMax(points: readonly CodexLiveRequestTimingTrendPoi
   return points.reduce((max, point) => Math.max(max, point.values[metric] ?? 0), 0);
 }
 
-function resolveTimingTrendVisibleWindowMs(
+interface TimingTrendWaveformBar {
+  point: CodexLiveRequestTimingTrendPoint;
+  x: number;
+  centerY: number;
+  topY: number;
+  bottomY: number;
+  amplitude: number;
+  value: number;
+}
+
+function buildTimingTrendWaveformBars(
+  points: readonly CodexLiveRequestTimingTrendPoint[],
+  metric: CodexLiveTimingTrendMetric,
+  maxMs: number,
+  width: number,
+  height: number,
+  padding: { top: number; right: number; bottom: number; left: number },
+): TimingTrendWaveformBar[] {
+  const chartHeight = height - padding.top - padding.bottom;
+  const centerY = padding.top + chartHeight / 2;
+  const maxAmplitude = Math.max(6, chartHeight / 2 - 8);
+  return points.flatMap((point, index) => {
+    const value = point.values[metric];
+    if (value === null) {
+      return [];
+    }
+    const ratio = maxMs > 0 ? Math.min(1, Math.max(0, value / maxMs)) : 0;
+    const amplitude = Math.max(4, maxAmplitude * ratio);
+    const x = resolveTimingTrendBarX(index, points.length, width, padding);
+    return {
+      point,
+      value,
+      x,
+      centerY,
+      amplitude,
+      topY: centerY - amplitude,
+      bottomY: centerY + amplitude,
+    };
+  });
+}
+
+function resolveTimingTrendVisibleRequestCount(
   width: number,
   padding: { right: number; left: number },
-  maxWindowMs: number,
 ): number {
   const plotWidth = Math.max(1, width - padding.left - padding.right);
-  const msPerPixel = maxWindowMs / timingTrendStripFullWindowWidthPx;
-  return Math.max(30_000, Math.min(maxWindowMs, Math.round(plotWidth * msPerPixel)));
+  return Math.max(timingTrendAudioMinVisibleBars, Math.floor(plotWidth / timingTrendAudioBarStepPx));
+}
+
+function resolveTimingTrendBarX(
+  index: number,
+  visibleCount: number,
+  width: number,
+  padding: { right: number; left: number },
+): number {
+  const plotRight = width - padding.right;
+  const visibleWidth = Math.max(0, (visibleCount - 1) * timingTrendAudioBarStepPx);
+  return plotRight - visibleWidth + index * timingTrendAudioBarStepPx;
+}
+
+function shouldShowTimingTrendMarker(
+  point: CodexLiveRequestTimingTrendPoint,
+  index: number,
+  visibleCount: number,
+  selectedRequestID: string,
+): boolean {
+  return visibleCount <= 8 || point.requestID === selectedRequestID || point.isLive || index === visibleCount - 1;
+}
+
+function shouldShowTimingTrendAxisLabel(
+  point: CodexLiveRequestTimingTrendPoint,
+  index: number,
+  visibleCount: number,
+  selectedRequestID: string,
+): boolean {
+  return (
+    visibleCount <= 8 ||
+    point.requestID === selectedRequestID ||
+    point.isLive ||
+    index === visibleCount - 1 ||
+    point.sequence % timingTrendAudioAxisLabelEvery === 0
+  );
 }
 
 function buildTimingTrendPointStyle(x: number, y: number) {
@@ -473,65 +532,6 @@ function buildTimingTrendPointStyle(x: number, y: number) {
     top: `${y}px`,
     transform: 'translate(-50%, -50%)',
   };
-}
-
-function buildTimingTrendEcgPath(
-  points: readonly CodexLiveRequestTimingTrendPoint[],
-  metric: CodexLiveTimingTrendMetric,
-  maxMs: number,
-  startedAtMinMs: number,
-  startedAtMaxMs: number,
-  width: number,
-  height: number,
-  padding: { top: number; right: number; bottom: number; left: number },
-): string {
-  const coordinates = points.flatMap((point) => {
-    const value = point.values[metric];
-    if (value === null) {
-      return [];
-    }
-    return [[
-      trendChartX(point.startedAtMs, startedAtMinMs, startedAtMaxMs, width, padding),
-      trendChartY(value, maxMs, height, padding),
-    ] as const];
-  });
-
-  if (coordinates.length === 0) {
-    return '';
-  }
-  if (coordinates.length === 1) {
-    const [x, y] = coordinates[0];
-    const notchY = Math.max(padding.top + 8, y - 20);
-    return `M ${x - 12} ${y} L ${x - 4} ${y} L ${x - 2} ${notchY} L ${x} ${y} L ${x + 2} ${Math.min(height - padding.bottom, y + 4)} L ${x + 6} ${y} L ${x + 12} ${y}`;
-  }
-
-  return coordinates.slice(1).reduce((path, [x, y], index) => {
-    const [previousX, previousY] = coordinates[index];
-    const gap = Math.max(16, x - previousX);
-    const leadInX = previousX + gap * 0.42;
-    const spikeUpX = previousX + gap * 0.54;
-    const spikePeakX = previousX + gap * 0.62;
-    const recoveryX = previousX + gap * 0.72;
-    const settleX = previousX + gap * 0.88;
-    const spikePeakY = Math.max(padding.top + 8, Math.min(previousY, y) - Math.max(16, Math.min(30, Math.abs(previousY - y) * 0.22 + 12)));
-    const recoveryY = Math.min(height - padding.bottom, y + Math.max(3, Math.min(12, Math.abs(previousY - y) * 0.12 + 3)));
-    return `${path} L ${leadInX} ${previousY} L ${spikeUpX} ${Math.max(padding.top + 8, previousY - 3)} L ${spikePeakX} ${spikePeakY} L ${recoveryX} ${recoveryY} L ${settleX} ${y} L ${x} ${y}`;
-  }, `M ${coordinates[0][0]} ${coordinates[0][1]}`);
-}
-
-function trendChartX(
-  startedAtMs: number,
-  startedAtMinMs: number,
-  startedAtMaxMs: number,
-  width: number,
-  padding: { right: number; left: number },
-): number {
-  const chartWidth = width - padding.left - padding.right;
-  if (startedAtMaxMs <= startedAtMinMs) {
-    return padding.left + chartWidth / 2;
-  }
-  const ratio = Math.min(1, Math.max(0, (startedAtMs - startedAtMinMs) / (startedAtMaxMs - startedAtMinMs)));
-  return padding.left + chartWidth * ratio;
 }
 
 function trendChartY(
