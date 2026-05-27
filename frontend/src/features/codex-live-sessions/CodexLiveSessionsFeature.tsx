@@ -14,6 +14,7 @@ import {
   buildCodexLiveSessionsLoadFailureSnapshot,
   buildCodexLiveSessionsSidecarUnavailableSnapshot,
 } from './model/snapshotState';
+import { mergeCodexLiveSessionsSnapshot } from './model/snapshotMerge';
 import type { CodexLiveRequest, CodexLiveSessionSnapshot } from './model/types';
 
 interface CodexLiveSessionsFeatureProps {
@@ -48,15 +49,20 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
   const loadSnapshot = useCallback(async () => {
     if (browserMode) {
       const previewSnapshot = buildAnimatedCodexLiveSessionsPreviewSnapshot();
-      setSnapshot(sidecarReady ? previewSnapshot : { ...previewSnapshot, sidecarReady: false, source: 'cache' });
+      setSnapshot((current) =>
+        mergeCodexLiveSessionsSnapshot(
+          current,
+          sidecarReady ? previewSnapshot : { ...previewSnapshot, sidecarReady: false, source: 'cache' },
+        ),
+      );
       return;
     }
     if (!sidecarReady) {
-      setSnapshot(buildCodexLiveSessionsSidecarUnavailableSnapshot());
+      setSnapshot((current) => mergeCodexLiveSessionsSnapshot(current, buildCodexLiveSessionsSidecarUnavailableSnapshot()));
       return;
     }
     const nextSnapshot = await GetCodexLiveSessionsSnapshot();
-    setSnapshot(mapBackendCodexLiveSessionsSnapshot(nextSnapshot));
+    setSnapshot((current) => mergeCodexLiveSessionsSnapshot(current, mapBackendCodexLiveSessionsSnapshot(nextSnapshot)));
   }, [browserMode, sidecarReady]);
 
   const refreshSnapshot = useCallback(async () => {

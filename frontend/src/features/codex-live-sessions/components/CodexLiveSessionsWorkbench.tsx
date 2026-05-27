@@ -1,5 +1,6 @@
-import { Copy, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Copy, SlidersHorizontal } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import SearchInput from '../../../components/ui/SearchInput';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../../context/I18nContext';
@@ -138,15 +139,13 @@ export default function CodexLiveSessionsWorkbench({
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
               <SourceBadge snapshot={snapshot} />
-              <button
-                type="button"
-                className="btn-swiss flex items-center gap-2 !px-3 !py-2 text-[length:var(--font-size-ui-xs)]"
+              <RefreshActionButton
                 onClick={onRefresh}
+                label={t('common.refresh')}
                 title={t('codex_live_sessions.refresh_title')}
-              >
-                <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
-                {t('common.refresh')}
-              </button>
+                iconStrokeWidth={2.5}
+                className="text-[length:var(--font-size-ui-xs)]"
+              />
               <button
                 type="button"
                 className="btn-swiss flex items-center gap-2 !px-3 !py-2 text-[length:var(--font-size-ui-xs)]"
@@ -241,7 +240,7 @@ export default function CodexLiveSessionsWorkbench({
             }}
             t={t}
           />
-          <div className="min-w-0 xl:sticky xl:top-5">
+          <div className="min-w-0 xl:sticky xl:top-5 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-1 scrollbar-stable">
             <SessionDetail
               session={selectedSessionWithDetail}
               request={selectedRequest}

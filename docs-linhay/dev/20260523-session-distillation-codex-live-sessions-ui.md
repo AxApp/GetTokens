@@ -82,10 +82,11 @@ Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是�
 1. 已完成请求优先使用 `timing.totalDurationMs`；缺失时才回退到 `completedAt - startedAt`。
 2. 当前 active request 可以用 `nowMs - startedAt` 做实时投影，用于显示正在增长的 live 样本。
 3. 历史请求即使因为 cache 或 sidecar 残留仍带着 `streaming/reconnecting` 且没有 `completedAt`，也不能继续按 `nowMs` 投影；否则图上所有总耗时点会一起增长。
-4. 纯模型仍负责过滤最近窗口内的请求点，窗口外请求不参与 y 轴最大值；视图层不再用真实时间间隔决定 x 位置。
+4. 纯模型仍负责过滤最近窗口内的请求点，但窗口语义是固定数量上限，不是固定时间段；窗口外请求不参与 y 轴最大值。
 5. x 轴语义固定为请求序号：按 `startedAt` 排序后的最近请求以等距密集柱形展示，标签使用 `#sequence`，不能再把稀疏请求按真实时间拉开。
-6. 图表类型按 forward-moving audio waveform 处理：一柱一请求，最新 request 锚在右侧；宽容器显示更多最近请求，窄容器显示更少请求，不提供横向滚动或拖动。
-7. 回归测试必须覆盖“stale streaming request + active request”并存时，只有 active request 增长，并覆盖窗口外旧请求被过滤；组件结构测试需覆盖非滚动 fixed viewport、请求序号 x 轴和一请求一柱边界。
+6. `sequence` 的真实源头在 CLIProxyAPI live tracker。内存裁剪只允许删除旧 request，不能把 retained requests 重新编号成 `1..50`；否则前端固定数量窗口永远只能显示到 `#50`，无法表达长会话继续推进。
+7. 图表类型按 forward-moving audio waveform 处理：一柱一请求，最新 request 锚在右侧；宽容器显示更多最近请求，窄容器显示更少请求，不提供横向滚动或拖动。
+8. 回归测试必须覆盖“stale streaming request + active request”并存时，只有 active request 增长，并覆盖固定数量窗口只保留最新请求；组件结构测试需覆盖非滚动 fixed viewport、请求序号 x 轴和一请求一柱边界。
 
 这类问题不要先调 CSS 或动画。先检查纯模型输出：`points[].values.totalDurationMs` 与 `points[].isLive` 是否已经错误增长；如果模型输出错，修模型，不修图表。
 
@@ -98,11 +99,37 @@ Live sessions 的 detail 面板和筛选区本质上是工作台容器，不是�
 3. 下方“耗时”指标块负责维度切换，`总耗时 / TTFT / 首 token / 流式 / 排队 / 选号 / 连接 / 平均间隔 / 最大间隔` 都可以切换图表。
 4. 仍然保留 live request 的光圈标记，让正在增长的样本一眼可见。
 5. TTFT / first-token 等次级指标切换后也保持同一套音频波形语言，不再回到虚线趋势图或多线叠加。
-6. 动画只表达状态变化：切换指标时整组波形短暂淡入，实时刷新时只让最新 live 点光圈轻微呼吸；不要每秒重扫整条波形。
+6. 标签需要随请求序号向后推进，但窗口数据量保持恒定上限。新请求进入后丢弃最老请求，`最新样本` 和右侧轴标签从 `#50` 继续推进到 `#51/#52/...`。
+7. 动画只表达状态变化：切换指标时整组波形短暂淡入，实时刷新时只让最新 live 点光圈轻微呼吸；不要每秒重扫整条波形。
 
 ### 9. 请求时间线只展示最近 15 条
 
 `请求时间线` 是 detail 面板的扫描区，不是完整历史列表。完整历史仍由 detail/history 数据承载，但页面内只显示排序后的最近 15 条 request，标题行数也以实际展示数量为准，避免 live session 长时间运行后面板无限变长。
+
+### 10. 右侧详情列要自包含滚动
+
+长运行会话的详情内容会明显高于视口。宽屏双栏布局下，右侧详情列不能只靠外层 workbench 滚动访问底部，否则用户在请求耗时趋势或请求时间线附近滚动时，会把页头、搜索栏和左侧列表一起卷走。
+
+稳定边界：
+
+1. 右侧详情列继续保持 sticky，让详情上下文跟随左侧列表扫描。
+2. sticky 容器本身设置 viewport 高度上限，并启用纵向内部滚动。
+3. 使用 overscroll containment 阻止滚到详情列边界后继续把外层 workbench 带走。
+4. 回归测试至少锁住详情列的 `max-height`、`overflow-y-auto` 与 overscroll containment，浏览器验收要检查 detail 容器为独立 scroll container。
+
+### 11. 刷新用结构差分合并，不用整包替换
+
+Live sessions 是高频轮询页面，刷新时不能把每秒变化的时钟字段当成整页数据变化。否则即使业务结构没有变，React 也会反复替换 snapshot、列表和详情引用，表现为会话列表与图表区域持续闪烁。
+
+稳定边界：
+
+1. `CodexLiveSessionsFeature` 加载 snapshot 后先进入纯模型合并层，而不是直接 `setSnapshot(next)`。
+2. 仅 `generatedAt`、preview/cache 时间戳、active session duration、active request streaming duration 等时钟型变化时，复用旧 snapshot 引用。
+3. 如果只有某个 session 或 request 发生结构变化，只替换该节点；未变化的 session / request 继续复用旧对象引用。
+4. browser preview/cache 下的 detail polling 不应每秒重写 detail state；图表需要增长感时，通过 `nowMs` 投影当前 active request。
+5. 回归测试要覆盖 clock-only refresh、cache preview clock refresh、局部结构变化三类场景，并验证未变化节点引用保持稳定。
+
+本轮浏览器验收在 `#frame=codex&workspace=live-sessions` 的 CACHE 页面连续采样 4 次、约 3.6 秒，`来源 CACHE`、会话列表片段、`最新样本#50` 与页面滚动位置均保持稳定。
 
 ## 不纳入
 

@@ -36,7 +36,7 @@ export function resolveCodexLiveSessionDetailPollIntervalMs(input: CodexLiveDeta
     return null;
   }
   if (input.browserMode) {
-    return input.hidden ? HIDDEN_POLL_INTERVAL_MS : BROWSER_PREVIEW_POLL_INTERVAL_MS;
+    return null;
   }
   if (!input.sidecarReady) {
     return null;

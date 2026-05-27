@@ -5,6 +5,11 @@ const generatedAt = '2026-05-21T18:36:42+08:00';
 const previewActiveRequestStartedAtMs = Date.parse('2026-05-21T18:35:10+08:00');
 const previewLiveElapsedBaseMs = 7600;
 const previewLiveElapsedCycleMs = 9000;
+const previewRequestWindowSize = 50;
+const previewRequestStepMs = 6000;
+const previewBaseLatestSequence = 50;
+const previewBaseRequestNumberOffset = 8862;
+const previewAnimationAnchorMs = Date.now();
 
 function event(
   id: string,
@@ -59,13 +64,14 @@ function request(input: Partial<CodexLiveRequest> & Pick<CodexLiveRequest, 'requ
   };
 }
 
-function buildActivePreviewRequests(): CodexLiveRequest[] {
-  const firstRequestStartedAtMs = previewActiveRequestStartedAtMs - 49 * 6000;
-  return Array.from({ length: 50 }, (_, index) => {
-    const sequence = index + 1;
-    const requestNumber = 8863 + index;
-    const startedAtMs = firstRequestStartedAtMs + index * 6000;
-    const isLive = sequence === 50;
+function buildActivePreviewRequests(latestSequence = previewBaseLatestSequence): CodexLiveRequest[] {
+  const safeLatestSequence = Math.max(previewRequestWindowSize, Math.round(latestSequence));
+  const firstSequence = safeLatestSequence - previewRequestWindowSize + 1;
+  return Array.from({ length: previewRequestWindowSize }, (_, index) => {
+    const sequence = firstSequence + index;
+    const requestNumber = previewBaseRequestNumberOffset + sequence;
+    const startedAtMs = previewActiveRequestStartedAtMs + (sequence - previewBaseLatestSequence) * previewRequestStepMs;
+    const isLive = sequence === safeLatestSequence;
     const totalDurationMs = isLive ? 8034 : 3200 + ((index * 937) % 7600);
     const firstEventMs = isLive ? 562 : 360 + ((index * 47) % 760);
     const firstTokenMs = isLive ? 810 : firstEventMs + 180 + ((index * 31) % 520);
@@ -317,12 +323,30 @@ export const codexLiveSessionsPreviewSnapshot: CodexLiveSessionSnapshot = snapsh
   sessions: codexLiveSessionsPreviewSessions,
 });
 
-export function buildAnimatedCodexLiveSessionsPreviewSnapshot(nowMs = Date.now()): CodexLiveSessionSnapshot {
+export function buildAnimatedCodexLiveSessionsPreviewSnapshot(
+  nowMs = Date.now(),
+  animationAnchorMs = previewAnimationAnchorMs,
+): CodexLiveSessionSnapshot {
   const safeNowMs = Number.isFinite(nowMs) ? Math.round(nowMs) : Date.now();
+  const latestSequence = resolveAnimatedPreviewLatestSequence(safeNowMs, animationAnchorMs);
+  const rollingActiveRequestStartedAtMs =
+    previewActiveRequestStartedAtMs + (latestSequence - previewBaseLatestSequence) * previewRequestStepMs;
   const liveElapsedMs = previewLiveElapsedBaseMs + (safeNowMs % previewLiveElapsedCycleMs);
   const targetActiveRequestStartedAtMs = safeNowMs - liveElapsedMs;
-  const timestampDeltaMs = targetActiveRequestStartedAtMs - previewActiveRequestStartedAtMs;
-  const sessions = codexLiveSessionsPreviewSessions.map((session) =>
+  const timestampDeltaMs = targetActiveRequestStartedAtMs - rollingActiveRequestStartedAtMs;
+  const latestRequestID = `gt-req-${previewBaseRequestNumberOffset + latestSequence}`;
+  const rollingSessions = codexLiveSessionsPreviewSessions.map((session) =>
+    session.sessionID === 'ws_sess_7a91'
+      ? {
+          ...session,
+          activeRequestID: latestRequestID,
+          lastRequestID: latestRequestID,
+          requestCount: previewRequestWindowSize,
+          requests: buildActivePreviewRequests(latestSequence),
+        }
+      : session,
+  );
+  const sessions = rollingSessions.map((session) =>
     shiftPreviewSessionTimestamps(session, timestampDeltaMs, safeNowMs),
   );
 
@@ -331,6 +355,12 @@ export function buildAnimatedCodexLiveSessionsPreviewSnapshot(nowMs = Date.now()
     generatedAt: new Date(safeNowMs).toISOString(),
     sessions,
   });
+}
+
+function resolveAnimatedPreviewLatestSequence(nowMs: number, animationAnchorMs: number): number {
+  const safeAnchorMs = Number.isFinite(animationAnchorMs) ? Math.round(animationAnchorMs) : nowMs;
+  const elapsedMs = Math.max(0, nowMs - safeAnchorMs);
+  return previewBaseLatestSequence + Math.floor(elapsedMs / previewRequestStepMs);
 }
 
 export const codexLiveSessionsEmptySnapshot: CodexLiveSessionSnapshot = snapshotWithDerivedSummary({

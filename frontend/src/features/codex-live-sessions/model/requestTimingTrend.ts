@@ -28,14 +28,15 @@ export interface CodexLiveRequestTimingTrend {
   startedAtMinMs: number;
   startedAtMaxMs: number;
   windowMs: number;
+  maxPoints: number;
 }
 
 interface BuildCodexLiveRequestTimingTrendOptions {
+  maxPoints?: number;
   nowMs?: number;
-  windowMs?: number;
 }
 
-export const codexLiveRequestTimingTrendWindowMs = 5 * 60 * 1000;
+export const codexLiveRequestTimingTrendMaxPoints = 50;
 const liveElapsedMaxMs = 2 * 60 * 60 * 1000;
 const liveStatuses: ReadonlySet<CodexLiveRequest['status']> = new Set(['active', 'streaming', 'reconnecting']);
 
@@ -57,14 +58,11 @@ export function buildCodexLiveRequestTimingTrend(
     .map((request) => buildTimingTrendPoint(request, options, activeRequestID))
     .filter((point): point is CodexLiveRequestTimingTrendPoint => Boolean(point))
     .sort((left, right) => left.startedAtMs - right.startedAtMs || left.sequence - right.sequence);
-  const windowMs = normalizeTimingWindowMs(options.windowMs);
-  const latestStartedAtMs = points.reduce((latest, point) => Math.max(latest, point.startedAtMs), 0);
-  const startedAtMaxMs = latestStartedAtMs || 0;
-  const startedAtMinMs = startedAtMaxMs > 0 ? startedAtMaxMs - windowMs : 0;
-  const windowedPoints =
-    startedAtMaxMs > 0
-      ? points.filter((point) => point.startedAtMs >= startedAtMinMs && point.startedAtMs <= startedAtMaxMs)
-      : [];
+  const maxPoints = normalizeTimingMaxPoints(options.maxPoints);
+  const windowedPoints = points.slice(-maxPoints);
+  const startedAtMinMs = windowedPoints[0]?.startedAtMs ?? 0;
+  const startedAtMaxMs = windowedPoints[windowedPoints.length - 1]?.startedAtMs ?? 0;
+  const windowMs = Math.max(0, startedAtMaxMs - startedAtMinMs);
 
   const maxMs = windowedPoints.reduce((max, point) => {
     return Math.max(max, ...Object.values(point.values).map((value) => value ?? 0));
@@ -77,6 +75,7 @@ export function buildCodexLiveRequestTimingTrend(
     startedAtMinMs,
     startedAtMaxMs,
     windowMs,
+    maxPoints,
   };
 }
 
@@ -141,11 +140,11 @@ function normalizeTimingValue(value: number | undefined): number | null {
   return Math.round(value);
 }
 
-function normalizeTimingWindowMs(value: number | undefined): number {
+function normalizeTimingMaxPoints(value: number | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
-    return codexLiveRequestTimingTrendWindowMs;
+    return codexLiveRequestTimingTrendMaxPoints;
   }
-  return Math.round(value);
+  return Math.max(1, Math.round(value));
 }
 
 function buildTimingTrendLabel(request: CodexLiveRequest, startedAtMs: number): string {
