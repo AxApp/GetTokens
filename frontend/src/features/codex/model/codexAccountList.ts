@@ -279,6 +279,7 @@ function mapOpenAICompatibleProviderToCodexRow(provider: OpenAICompatibleProvide
     apiKeys: provider.apiKeys || [],
     headers: provider.headers || {},
     proxyUrl: String(provider.proxyUrl || ''),
+    supportedFormats: ['openai_chat'],
     modelMappings: buildOpenAICompatibleModelMappings(provider),
   };
 }

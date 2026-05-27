@@ -1,15 +1,13 @@
 import type { AccountRecord } from './types';
-import { resolveAccountPrimaryLabel } from './accountPresentation.ts';
 import { ACCOUNT_CARD_IMPORT_SCHEMA } from './accountTransfer.ts';
 
-export function buildAccountCardCopyText(account: AccountRecord): string {
-  return resolveAccountPrimaryLabel(account);
-}
-
 export function buildAccountCardContentText(account: AccountRecord, authFileContent?: unknown): string {
+  const isOpenAICompatible = account.id.startsWith('openai-compatible:');
+  const credentialSource = isOpenAICompatible ? 'openai-compatible' : account.credentialSource;
+  const openAICompatibleName = isOpenAICompatible ? account.id.replace(/^openai-compatible:/, '') : '';
   const payload = {
     schema: ACCOUNT_CARD_IMPORT_SCHEMA,
-    credentialSource: account.credentialSource,
+    credentialSource,
     account: {
       id: account.id,
       provider: account.provider,
@@ -32,7 +30,7 @@ export function buildAccountCardContentText(account: AccountRecord, authFileCont
           }
         : undefined,
     codexAPIKey:
-      account.credentialSource === 'api-key'
+      account.credentialSource === 'api-key' && !isOpenAICompatible
         ? {
             label: account.displayName || '',
             apiKey: account.apiKey || '',
@@ -40,6 +38,18 @@ export function buildAccountCardContentText(account: AccountRecord, authFileCont
             prefix: account.prefix || '',
           }
         : undefined,
+    openAICompatibleProvider: isOpenAICompatible
+      ? {
+          name: openAICompatibleName || account.provider || account.displayName || '',
+          apiKey: account.apiKey || '',
+          apiKeys: account.apiKeys || [],
+          baseUrl: account.baseUrl || '',
+          prefix: account.prefix || '',
+          proxyUrl: account.proxyUrl || '',
+          headers: account.headers || {},
+          models: account.models || [],
+        }
+      : undefined,
   };
 
   return JSON.stringify(payload, null, 2);

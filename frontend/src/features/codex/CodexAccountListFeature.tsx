@@ -63,12 +63,10 @@ import {
   canEditCodexModelMappings,
   DEFAULT_CODEX_ROUTING_PROBE_MODEL,
   mergeCodexAuthFileModelMappings,
-  moveCodexAccountRowToEdge,
   normalizeCodexModelMappingsForProvider,
   patchCodexAccountRowDisabled,
   reorderCodexAccountRows,
   resolveCodexRoutingProbeDefaultModel,
-  type CodexAccountOrderEdge,
   type CodexAccountRow,
   type CodexModelMappingRow,
   type CodexRoutingProbeAttemptView,
@@ -203,7 +201,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       ];
       void loadAccountUsage(previewUsageAccounts);
       void loadAccountRateLimits(previewUsageAccounts);
-      setMessage(messageOverride || t('codex.account_list_preview_loaded'));
+      setMessage(messageOverride || t('codex.account_list_loaded'));
       return;
     }
 
@@ -465,18 +463,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     setAutoSaveOrderRequested(true);
   }
 
-  function moveAccountToOrderEdge(rowID: string, edge: CodexAccountOrderEdge) {
-    const rowIndex = orderedRows.findIndex((row) => row.id === rowID);
-    if (rowIndex < 0 || (edge === 'top' && rowIndex === 0) || (edge === 'bottom' && rowIndex === orderedRows.length - 1)) {
-      return;
-    }
-
-    setOrderDirty(true);
-    setOrderedRows((prev) => moveCodexAccountRowToEdge(prev, rowID, edge));
-    setMessage(t('codex.account_list_unsaved'));
-    setAutoSaveOrderRequested(true);
-  }
-
   function handleDragEnd() {
     setDraggedID(null);
     window.setTimeout(() => {
@@ -558,7 +544,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       setChannelConfig(nextConfig);
       setOrderDirty(false);
       if (browserMode) {
-        setMessage(t('codex.account_list_preview_saved'));
+        setMessage(t('codex.account_list_saved'));
       } else if (options.reloadAfterSave) {
         await reload(t('codex.account_list_saved'));
       } else {
@@ -768,7 +754,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     if (browserMode) {
       setOrderedRows((prev) => prev.map((item) => (item.id === row.id ? patchCodexAccountRowDisabled(item, nextDisabled) : item)));
       publishAccountDisabledChange({ id: row.id, disabled: nextDisabled }, 'codex-account-list');
-      setMessage(t('codex.account_list_preview_status_updated'));
+      setMessage(nextDisabled ? t('codex.account_list_disabled') : t('codex.account_list_enabled'));
       return;
     }
 
@@ -915,7 +901,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           explain={channelExplain}
           disabled={!ready || saving}
           saving={saving}
-          preview={browserMode}
           message={orderChanged ? t('codex.account_list_unsaved') : ''}
           routeEvents={channelRouteEvents}
           routeEventsLoading={channelRouteEventsLoading}
@@ -929,13 +914,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
 
         <CodexAccountOrderSection
           title={t('codex.account_list_order')}
-          hint={
-            browserMode
-              ? t('codex.account_list_browser_hint')
-              : ready
-                ? t('codex.account_list_order_hint')
-                : t('codex.account_list_waiting_ready')
-          }
+          hint={ready ? t('codex.account_list_order_hint') : t('codex.account_list_waiting_ready')}
           message={message}
           ready={ready}
           loading={loading}
@@ -965,8 +944,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onDrop={handleDrop}
           onOpenDetail={openDetail}
           onToggle={(row) => void toggleAccount(row)}
-          onMoveToTop={(rowID) => moveAccountToOrderEdge(rowID, 'top')}
-          onMoveToBottom={(rowID) => moveAccountToOrderEdge(rowID, 'bottom')}
         />
       </div>
       {routeProbeOpen ? (

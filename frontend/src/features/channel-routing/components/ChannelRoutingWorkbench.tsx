@@ -4,7 +4,6 @@ import {
   CircleHelp,
   History,
   Play,
-  RefreshCw,
   ShieldCheck,
   Shuffle,
   Split,
@@ -12,12 +11,12 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
+import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import type { main } from '../../../../wailsjs/go/models';
 import {
   CHANNEL_ROUTE_MODE_HELP_SECTIONS,
   buildChannelRouteAuditEventSummary,
   buildChannelRoutingExplainDigest,
-  buildChannelRoutingParticipantRows,
   buildLegacyRoutingMaskPanel,
   type ChannelID,
   type ChannelRouteAuditEvent,
@@ -25,7 +24,6 @@ import {
   type ChannelRoutingConfig,
   type ChannelRoutingExplainStepRow,
   type ChannelRoutingParticipantAccountLike,
-  type ChannelRoutingParticipantRow,
 } from '../model/channelRouting';
 
 interface ChannelRoutingWorkbenchProps {
@@ -34,7 +32,6 @@ interface ChannelRoutingWorkbenchProps {
   explain?: main.ChannelRoutingExplainResult | null;
   disabled?: boolean;
   saving?: boolean;
-  preview?: boolean;
   message?: string;
   routeEvents?: ChannelRouteAuditEvent[];
   routeEventsLoading?: boolean;
@@ -64,11 +61,9 @@ export default function ChannelRoutingWorkbench({
   explain,
   disabled = false,
   saving = false,
-  preview = false,
   message = '',
   routeEvents = [],
   routeEventsLoading = false,
-  accounts = [],
   onModeChange,
   onShadowEnabledChange,
   onShadowModeChange,
@@ -82,7 +77,6 @@ export default function ChannelRoutingWorkbench({
   const hasExplain = explainView.hasExplain;
   const shadowPanelLabel = config.shadowEnabled ? (hasExplain ? explainView.shadowLabel : '开启') : '关闭';
   const shadowPanelMeta = config.shadowEnabled && hasExplain ? explainView.shadowMeta : '';
-  const participantRows = buildChannelRoutingParticipantRows(config, accounts);
   const candidateCount = explainView.candidateRows.length;
   const filteredCount = explainView.filteredRows.reduce((total, item) => total + item.count, 0);
 
@@ -132,11 +126,6 @@ export default function ChannelRoutingWorkbench({
               >
                 <CircleHelp className="h-4 w-4" strokeWidth={4} />
               </button>
-              {preview ? (
-                <span className="border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-2 py-1 text-[length:var(--font-size-ui-sm)] font-black leading-4 text-[var(--text-primary)]">
-                  预览
-                </span>
-              ) : null}
             </div>
           </div>
           <div className="grid min-w-0 flex-1 gap-2 sm:max-w-[28rem] sm:flex-none sm:grid-cols-2">
@@ -155,21 +144,6 @@ export default function ChannelRoutingWorkbench({
           </div>
         </div>
       </header>
-
-      <div className="border-t-2 border-[var(--border-color)]">
-        <details className="group/participants min-w-0 border-t-2 border-[var(--border-color)] p-4">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-            <SectionHeading icon={Split} label="参与账号" />
-            <span className="flex items-center gap-2">
-              <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-                {participantRows.length} 个账号
-              </span>
-              <ChevronDown className="h-3.5 w-3.5 shrink-0 transition-transform group-open/participants:rotate-180" strokeWidth={4} />
-            </span>
-          </summary>
-          <ParticipantList mode={config.routeMode} rows={participantRows} />
-        </details>
-      </div>
 
       {message ? (
         <p className="border-t-2 border-[var(--border-color)] px-4 py-3 text-[length:var(--font-size-ui-sm)] text-[var(--text-secondary)]">
@@ -374,39 +348,6 @@ function StrategyButton({
   );
 }
 
-function ParticipantList({ mode, rows }: { mode: ChannelRouteMode; rows: ChannelRoutingParticipantRow[] }) {
-  if (rows.length === 0) {
-    return <Placeholder text="暂无可请求账号参与" />;
-  }
-
-  const isSequential = mode === 'sequential';
-  return (
-    <div className="mt-3 divide-y divide-[var(--border-color)] border-t border-[var(--border-color)]">
-      {rows.map((row) => (
-        <div key={row.id} className="grid min-h-14 grid-cols-[2.75rem_minmax(0,1fr)] items-center gap-3 px-2 py-3">
-          <div
-            className={`flex h-8 w-8 items-center justify-center border-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black ${
-              isSequential && row.rank === 1
-                ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
-                : 'border-[var(--border-color)] text-[var(--text-primary)]'
-            }`}
-          >
-            {String(row.rank).padStart(2, '0')}
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-[length:var(--font-size-ui-md)] font-black text-[var(--text-primary)]">
-              {row.title}
-            </div>
-            <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-wide text-[var(--text-muted)]">
-              {row.meta}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function RouteEventLedger({
   events,
   disabled,
@@ -422,15 +363,16 @@ function RouteEventLedger({
     <section className="min-w-0 border-t-2 border-[var(--border-color)] p-4">
       <div className="flex items-center justify-between gap-2">
         <SectionHeading icon={History} label="最近路由" />
-        <button
-          type="button"
+        <RefreshActionButton
           onClick={onRefreshEvents}
           disabled={disabled || loading || !onRefreshEvents}
-          className="btn-swiss flex min-h-8 items-center gap-1 !px-2 !py-1 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} strokeWidth={4} />
-          {loading ? '加载中' : '刷新'}
-        </button>
+          label="刷新"
+          loading={loading}
+          loadingLabel="加载中"
+          size="sm"
+          iconStrokeWidth={4}
+          className="min-h-8 gap-1"
+        />
       </div>
 
       <div className="mt-3 border-t border-[var(--border-color)]">

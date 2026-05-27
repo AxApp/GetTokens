@@ -92,6 +92,13 @@ func codexAPIKeyFileName(apiKey string, baseURL string, prefix string) string {
 	return fmt.Sprintf("%s-%s-%s.json", fingerprint, base, pfx)
 }
 
+func codexAPIKeyFileNameForInput(item cliproxyapi.CodexAPIKeyInput) string {
+	if localID := strings.TrimSpace(item.LocalID); localID != "" {
+		return sanitizeFileToken(localID) + ".json"
+	}
+	return codexAPIKeyFileName(item.APIKey, item.BaseURL, item.Prefix)
+}
+
 func sanitizeFileToken(value string) string {
 	replacer := strings.NewReplacer("/", "-", ":", "-", "@", "-", "#", "-", "?", "-", "&", "-", "=", "-", "\\", "-")
 	clean := replacer.Replace(strings.TrimSpace(value))
@@ -155,7 +162,7 @@ func saveStoredCodexAPIKey(item cliproxyapi.CodexAPIKeyInput) error {
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(dir, codexAPIKeyFileName(item.APIKey, item.BaseURL, item.Prefix))
+	path := filepath.Join(dir, codexAPIKeyFileNameForInput(item))
 	data, err := json.MarshalIndent(item, "", "  ")
 	if err != nil {
 		return err
@@ -177,9 +184,17 @@ func deleteStoredCodexAPIKey(id string) error {
 		if codexAPIKeyAssetIDFromInput(item) != strings.TrimSpace(id) {
 			continue
 		}
-		path := filepath.Join(dir, codexAPIKeyFileName(item.APIKey, item.BaseURL, item.Prefix))
-		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-			return err
+		paths := []string{
+			filepath.Join(dir, codexAPIKeyFileNameForInput(item)),
+			filepath.Join(dir, codexAPIKeyFileName(item.APIKey, item.BaseURL, item.Prefix)),
+		}
+		for index, path := range paths {
+			if index > 0 && path == paths[0] {
+				continue
+			}
+			if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+				return err
+			}
 		}
 		return nil
 	}
@@ -267,7 +282,7 @@ func ensureCodexAPIKeyLocalID(item *cliproxyapi.CodexAPIKeyInput) error {
 func mergeCodexAPIKeyInputs(stored []cliproxyapi.CodexAPIKeyInput, sidecarItems []cliproxyapi.CodexAPIKey) ([]cliproxyapi.CodexAPIKeyInput, bool) {
 	merged := make([]cliproxyapi.CodexAPIKeyInput, 0, len(stored)+len(sidecarItems))
 	seenIDs := make(map[string]struct{}, len(stored)+len(sidecarItems))
-	seenConfigIdentities := make(map[string]struct{}, len(stored)+len(sidecarItems))
+	seenStoredConfigIdentities := make(map[string]struct{}, len(stored))
 
 	for _, item := range stored {
 		normalizeCodexAPIKeyInput(&item)
@@ -276,11 +291,8 @@ func mergeCodexAPIKeyInputs(stored []cliproxyapi.CodexAPIKeyInput, sidecarItems 
 		if _, ok := seenIDs[id]; ok {
 			continue
 		}
-		if _, ok := seenConfigIdentities[configIdentity]; ok {
-			continue
-		}
 		seenIDs[id] = struct{}{}
-		seenConfigIdentities[configIdentity] = struct{}{}
+		seenStoredConfigIdentities[configIdentity] = struct{}{}
 		merged = append(merged, item)
 	}
 
@@ -292,11 +304,18 @@ func mergeCodexAPIKeyInputs(stored []cliproxyapi.CodexAPIKeyInput, sidecarItems 
 		if _, ok := seenIDs[id]; ok {
 			continue
 		}
-		if _, ok := seenConfigIdentities[configIdentity]; ok {
+		if strings.TrimSpace(input.LocalID) == "" {
+			if _, ok := seenStoredConfigIdentities[configIdentity]; ok {
+				continue
+			}
+		}
+		if strings.TrimSpace(input.LocalID) == "" {
+			seenStoredConfigIdentities[configIdentity] = struct{}{}
+		}
+		if _, ok := seenIDs[id]; ok {
 			continue
 		}
 		seenIDs[id] = struct{}{}
-		seenConfigIdentities[configIdentity] = struct{}{}
 		migrated = true
 		merged = append(merged, input)
 	}
@@ -323,7 +342,7 @@ func persistCodexAPIKeySet(items []cliproxyapi.CodexAPIKeyInput) error {
 		if err := ensureCodexAPIKeyLocalID(&item); err != nil {
 			return err
 		}
-		fileName := codexAPIKeyFileName(item.APIKey, item.BaseURL, item.Prefix)
+		fileName := codexAPIKeyFileNameForInput(item)
 		expected[fileName] = struct{}{}
 		if err := saveStoredCodexAPIKey(item); err != nil {
 			return err

@@ -39,10 +39,8 @@ const copy = {
     'status.service_key_create_submit': '创建',
     'status.provider_title': '模型供应商',
     'status.provider_create_title': '新增供应商',
-    'status.provider_id_label': 'Provider ID',
-    'status.provider_id_placeholder': 'openai-compatible',
-    'status.provider_name_label': '显示名称',
-    'status.provider_name_placeholder': 'OpenAI Compatible',
+    'status.provider_id_label': 'model_provider',
+    'status.provider_id_placeholder': 'gettokens',
     'status.provider_create_submit': '添加供应商',
     'status.model_name_title': '模型名称',
     'status.model_name_create_title': '新增模型名称',
@@ -64,10 +62,8 @@ const copy = {
     'status.service_key_create_submit': 'Create',
     'status.provider_title': 'Model provider',
     'status.provider_create_title': 'Add provider',
-    'status.provider_id_label': 'Provider ID',
-    'status.provider_id_placeholder': 'openai-compatible',
-    'status.provider_name_label': 'Display name',
-    'status.provider_name_placeholder': 'OpenAI Compatible',
+    'status.provider_id_label': 'model_provider',
+    'status.provider_id_placeholder': 'gettokens',
     'status.provider_create_submit': 'Add provider',
     'status.model_name_title': 'Model name',
     'status.model_name_create_title': 'Add model name',
@@ -128,8 +124,8 @@ function KeyEditorSample({
 function ProviderEditorSample({ error = '' }: { error?: string }) {
   const { t } = useStoryCopy();
   const [editor, setEditor] = useState<RelayProviderEditorState>({
-    providerID: 'openai-compatible',
-    providerName: 'OpenAI Compatible',
+    providerID: 'gettokens',
+    providerName: 'gettokens',
     error,
   });
 

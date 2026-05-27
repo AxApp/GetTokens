@@ -134,12 +134,12 @@ Enable account / group
 - 总账号池不负责编排账号轮动，不保存渠道级 route mode，不解释渠道级 fallback。
 - `codex - 账号列表` 负责 Codex 渠道：
   - Codex 请求顺序。
-  - Codex route mode：`sequential / balanced / project`。
+  - Codex route mode：`sequential / balanced`。
   - Codex 项目名绑定账号组或账号。
   - Codex 路由说明、dry-run/explain、路由探测。
 - `claude - 账号列表` 负责 Claude Code 渠道：
   - Claude 请求顺序。
-  - Claude route mode：`sequential / balanced / project`。
+  - Claude route mode：`sequential / balanced`。
   - Claude 项目名绑定账号组或账号。
   - Claude 路由说明、dry-run/explain、路由探测。
 - sidecar `AccountRoutingEngine` 执行渠道规则，但不把渠道规则反写成总账号池属性。
@@ -162,13 +162,13 @@ Enable account / group
   - `description`
 - 定义渠道级路由配置模型：
   - `channel`: `codex` / `claude` / later provider channels。
-  - `routeMode`: `sequential` / `balanced` / `project`。
+  - `routeMode`: `sequential` / `balanced`。
   - `orderedAccountIDs`: 渠道内请求顺序。
   - `groupBindings`: 渠道内可使用的账号组。
   - `channelGroupStates`: group id -> enabled / routeOrder override。
   - `projectBindings`: projectName -> account group / account id。
   - `fallbackMode`: `fail-closed` / `fallback-default` / `fallback-global`。
-  - `projectModeFallbackRouteMode`: `sequential` / `balanced`，项目模式命中组后用于组内选择。
+  - `projectModeFallbackRouteMode`: `sequential` / `balanced`，仅用于旧项目绑定兼容路径命中组后的组内选择。
   - `explainCopy`: 渠道页面展示用说明。
 - 定义可路由账号池构建顺序：
   - 请求范围过滤：provider / model / endpoint / transport / format。
@@ -183,10 +183,10 @@ Enable account / group
   - 5xx / timeout / network error -> `upstream-error` 短期冷却，保留最近错误摘要。
   - model unavailable -> `model-unavailable`，按模型探测或配置变更恢复。
   - 用户手动禁用 -> `manual-disabled`，不被自动恢复逻辑清除。
-- 定义三种核心路由模式：
+- 定义两种核心路由模式：
   - `sequential`：按有效排序值从低到高尝试；retry 排除已尝试账号后继续下一个。
   - `balanced`：按账号当前会话数 / in-flight 请求数最少优先；相同负载再按有效排序。
-  - `project`：按请求中的项目名绑定到账号组或账号；项目模式只负责限定目标池，命中组后再按 `projectModeFallbackRouteMode` 使用顺序或均衡选账号；绑定不可用时按规则选择 fail-closed 或 fallback 到默认模式。
+- 定义项目绑定范围约束：按请求中的项目名绑定到账号组或账号；项目绑定只负责限定目标池，命中组后再按 `sequential` 或 `balanced` 选账号；绑定不可用时按兼容 fallback 规则处理。
 - 定义端点路由规则模型：
   - `endpoint`
   - `provider(s)`
@@ -209,7 +209,7 @@ Enable account / group
 - 上游兼容语义处理：
   - `dedicated / prefer / ordered / weighted / canary` 不进入新路由模型，不在 UI、Wails DTO 或 engine policy 中作为可配置模式暴露。
   - 若后续合并上游带来这些字段，只在兼容边界解析、保留或忽略，并转换为 trace 中的 `ignored_upstream_mode` / `upstream_compat` 说明。
-  - 新逻辑只接受 `sequential / balanced / project` 三种 route mode。
+  - 新逻辑只接受 `sequential / balanced` 两种 route mode。
   - `exclude` 不作为 route mode；仅允许作为请求级 deny 或目标池过滤条件进入 `RequestPolicy` / pool filter。
 - 将 endpoint policy 输出为统一 `RouteDecision`，不直接调用 executor。
 
@@ -220,14 +220,14 @@ Enable account / group
 - Claude 排序和 route mode 保存后不影响 Codex 渠道配置。
 - 总账号组禁用后，对引用该组的所有渠道都生效；渠道内排序本身不被重写。
 - 渠道组禁用只影响当前渠道，不影响其他渠道对同一全局组的使用。
-- 项目模式命中账号组后，组内选择继续使用 `sequential` 或 `balanced`，不引入第四种选择器。
+- 项目绑定命中账号组后，组内选择继续使用 `sequential` 或 `balanced`，不引入第三种选择器。
 - 账号 active/requestable 才进入候选；disabled/error/cooldown/rate-limited 只出现在 explain 的过滤结果中。
 - 组 disabled 时该组候选为空；账号多组归属时只在命中的启用组下参与路由。
 - 账号排序值越低越先路由；相同排序值按 stable account id 排序。
 - 顺序模式失败后按有效顺序尝试下一个账号。
 - 均衡模式选择当前会话数最低账号；负载相同按有效排序。
-- 项目模式按 projectName 命中账号组或账号；绑定不可用时按 fallback 策略处理。
-- 上游 `dedicated/prefer/ordered/weighted/canary` 字段不会改变新 engine 的三模式决策；若输入存在，trace 明确标记兼容处理。
+- 项目绑定按 projectName 命中账号组或账号；绑定不可用时按 fallback 策略处理。
+- 上游 `dedicated/prefer/ordered/weighted/canary` 字段不会改变新 engine 的两模式决策；若输入存在，trace 明确标记兼容处理。
 - `exclude` 请求级过滤不会排空后绕过 hard guard，也不会作为第四种路由模式持久化。
 - sticky 绑定账号被禁用后，禁用优先级高于 sticky 与失败降级；当前 sticky 被清理，后续按 hard filter 结果重选或失败。
 - 激活账号只重新进入可路由账号池；已有 stream / sticky 不因激活而迁移或抢占。
@@ -297,7 +297,7 @@ Enable account / group
 前端模型拆分：
 
 - `features/channel-routing/model/channelRouting.ts`：渠道路由配置、模式、fallback、项目绑定 DTO。
-- `features/channel-routing/model/channelRoutingValidation.ts`：三模式校验、上游兼容模式过滤、项目模式字段组合校验。
+- `features/channel-routing/model/channelRoutingValidation.ts`：两模式校验、上游兼容模式过滤、项目绑定字段组合校验。
 - `features/channel-routing/model/channelRoutingSelectors.ts`：账号池预览、过滤原因、排序展示模型。
 - `features/channel-routing/model/channelRoutingPreviewData.ts`：Codex / Claude browser preview 数据。
 - `features/channel-routing/components/ChannelRoutingWorkbench.tsx`：共享渠道路由工作台。
@@ -314,9 +314,9 @@ Enable account / group
 - Account Inventory 不渲染 `AccountRotationModal`，也不写渠道 route mode。
 - Codex route mode / 顺序 / 项目绑定保存只影响 Codex channel config。
 - Claude route mode / 顺序 / 项目绑定保存只影响 Claude channel config。
-- `ChannelRouteMode` 只接受 `sequential / balanced / project`。
+- `ChannelRouteMode` 只接受 `sequential / balanced`。
 - 上游 `dedicated/prefer/ordered/weighted/canary` 不进入新 UI 配置保存。
-- 项目模式命中账号组后，组内选择只允许 `sequential / balanced`。
+- 项目绑定命中账号组后，组内选择只允许 `sequential / balanced`。
 - 规则 draft normalize 单测。
 - mode 字段组合校验单测。
 - trace rendering 单测。

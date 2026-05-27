@@ -131,12 +131,8 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		return err
 	}
 
-	newID := accountsdomain.CodexAPIKeyAssetID(input.APIKey, input.BaseURL, input.Prefix)
 	items := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current)+1)
 	for _, existing := range current {
-		if codexAPIKeyConfigIdentityFromInput(existing) == newID {
-			return errors.New("账号已存在")
-		}
 		items = append(items, existing)
 	}
 
@@ -213,7 +209,6 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 
 	found := false
 	next := make([]cliproxyapi.CodexAPIKeyInput, 0, len(current))
-	nextIdentity := accountsdomain.CodexAPIKeyAssetID(nextAPIKey, nextBaseURL, nextPrefix)
 	for _, existing := range current {
 		if codexAPIKeyInputMatchesID(existing, targetID) {
 			existing.APIKey = nextAPIKey
@@ -226,8 +221,6 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 			existing.BillingCurl = strings.TrimSpace(input.BillingCurl)
 			existing.BillingEnabled = input.BillingEnabled && existing.BillingCurl != ""
 			found = true
-		} else if codexAPIKeyConfigIdentityFromInput(existing) == nextIdentity {
-			return errors.New("账号已存在")
 		}
 		next = append(next, existing)
 	}

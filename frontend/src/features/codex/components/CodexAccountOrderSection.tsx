@@ -1,5 +1,6 @@
 import { MoreHorizontal } from 'lucide-react';
 import { type DragEvent, type ReactNode, useEffect, useRef, useState } from 'react';
+import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import SearchInput from '../../../components/ui/SearchInput';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
 import { type CodexAccountRow, type CodexRoutePolicyRowState } from '../model/codexAccountList';
@@ -12,14 +13,15 @@ import {
   DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE,
   DEFAULT_CODEX_ACCOUNT_ORDER_FILTER,
   applyCodexAccountOrderFilter,
+  chooseCodexOrderSectionActionLayout,
   filterCodexAccountOrderRows,
   getCodexAccountOrderGridClass,
   normalizeCodexAccountOrderFilter,
   parseCodexAccountOrderDisplayMode,
   summarizeCodexAccountOrderFilter,
-  shouldUseCodexOrderSectionActionMenu,
   type CodexAccountOrderFilter,
   type CodexAccountOrderDisplayMode,
+  type CodexOrderSectionActionLayout,
 } from '../model/codexAccountOrderSectionLayout';
 
 function EmptyState({ children }: { children: string }) {
@@ -33,7 +35,7 @@ function EmptyState({ children }: { children: string }) {
 const CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS =
   'min-w-0';
 const CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS =
-  'flex flex-wrap items-start justify-between gap-3 border-b-2 border-[var(--border-color)] pb-4';
+  'relative flex flex-wrap items-start justify-between gap-3 border-b-2 border-[var(--border-color)] pb-4';
 
 export function CodexAccountOrderSection({
   title,
@@ -66,8 +68,6 @@ export function CodexAccountOrderSection({
   onDrop,
   onOpenDetail,
   onToggle,
-  onMoveToTop,
-  onMoveToBottom,
   initialDensity,
   initialAccountFilter,
 }: {
@@ -102,27 +102,29 @@ export function CodexAccountOrderSection({
   onDrop: () => void;
   onOpenDetail: (id: string) => void;
   onToggle: (row: CodexAccountRow) => void;
-  onMoveToTop: (id: string) => void;
-  onMoveToBottom: (id: string) => void;
   initialDensity?: CodexAccountOrderDisplayMode;
   initialAccountFilter?: CodexAccountOrderFilter | 'all';
 }) {
   const [density, setDensity] = useState<CodexAccountOrderDisplayMode>(() => initialDensity ?? readInitialDensity());
   const [accountFilter, setAccountFilter] = useState<CodexAccountOrderFilter>(() => normalizeCodexAccountOrderFilter(initialAccountFilter));
   const [accountSearchTerm, setAccountSearchTerm] = useState('');
-  const [useActionMenu, setUseActionMenu] = useState(true);
+  const [actionLayout, setActionLayout] = useState<CodexOrderSectionActionLayout>('menu');
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const titleRef = useRef<HTMLDivElement | null>(null);
+  const titleMeasureRef = useRef<HTMLDivElement | null>(null);
   const actionAreaRef = useRef<HTMLDivElement | null>(null);
   const actionMeasureRef = useRef<HTMLDivElement | null>(null);
   const actionMenuRef = useRef<HTMLDivElement | null>(null);
-  const visibleRows = filterCodexAccountOrderRows(rows, accountFilter, codexQuotaByName, accountSearchTerm);
+  const visibleRows = filterCodexAccountOrderRows(rows, accountFilter, codexQuotaByName, accountSearchTerm, routePolicyRowStates);
   const rowOrderIndexByID = new Map(rows.map((row, index) => [row.id, index]));
 
   useEffect(() => {
     function updateActionLayout() {
-      const containerWidth = actionAreaRef.current?.clientWidth || 0;
+      const headerWidth = headerRef.current?.clientWidth || 0;
+      const titleWidth = titleMeasureRef.current?.scrollWidth || titleRef.current?.scrollWidth || 0;
       const inlineActionsWidth = actionMeasureRef.current?.scrollWidth || 0;
-      setUseActionMenu(shouldUseCodexOrderSectionActionMenu(containerWidth, inlineActionsWidth));
+      setActionLayout(chooseCodexOrderSectionActionLayout({ headerWidth, titleWidth, inlineActionsWidth }));
     }
 
     updateActionLayout();
@@ -132,6 +134,15 @@ export function CodexAccountOrderSection({
 
     const frameID = window.requestAnimationFrame(updateActionLayout);
     const observer = new ResizeObserver(() => updateActionLayout());
+    if (headerRef.current) {
+      observer.observe(headerRef.current);
+    }
+    if (titleRef.current) {
+      observer.observe(titleRef.current);
+    }
+    if (titleMeasureRef.current) {
+      observer.observe(titleMeasureRef.current);
+    }
     if (actionAreaRef.current) {
       observer.observe(actionAreaRef.current);
     }
@@ -147,10 +158,10 @@ export function CodexAccountOrderSection({
   }, [accountFilter, accountSearchTerm, loading, loadingLabel, refreshLabel, saving]);
 
   useEffect(() => {
-    if (!useActionMenu) {
+    if (actionLayout !== 'menu') {
       setIsActionMenuOpen(false);
     }
-  }, [useActionMenu]);
+  }, [actionLayout]);
 
   useEffect(() => {
     if (!isActionMenuOpen) {
@@ -199,8 +210,6 @@ export function CodexAccountOrderSection({
               density={density}
               dragged={draggedID === row.id}
               pending={pendingToggleID === row.id}
-              canMoveToTop={rowOrderIndex > 0}
-              canMoveToBottom={rowOrderIndex < rows.length - 1}
               t={t}
               onDragStart={onDragStart}
               onDragOver={onDragOver}
@@ -209,8 +218,6 @@ export function CodexAccountOrderSection({
               onDrop={onDrop}
               onOpenDetail={() => onOpenDetail(row.id)}
               onToggle={() => onToggle(row)}
-              onMoveToTop={() => onMoveToTop(row.id)}
-              onMoveToBottom={() => onMoveToBottom(row.id)}
               probeHit={latestRoutingProbeAccountID === row.id}
               routePolicyState={routePolicyRowStates[row.id]}
               quotaState={row.quotaKey ? codexQuotaByName[row.quotaKey] : undefined}
@@ -225,8 +232,8 @@ export function CodexAccountOrderSection({
 
   return (
     <section className={CODEX_ACCOUNT_ORDER_SECTION_SHELL_CLASS}>
-      <header className={CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS}>
-        <div className="min-w-0 flex-1">
+      <header ref={headerRef} className={CODEX_ACCOUNT_ORDER_SECTION_HEADER_CLASS}>
+        <div ref={titleMeasureRef} aria-hidden="true" className="pointer-events-none absolute invisible left-0 top-0 w-max max-w-full">
           <h2 className="text-xl font-black uppercase leading-none tracking-normal text-[var(--text-primary)]">
             {title}
           </h2>
@@ -234,8 +241,16 @@ export function CodexAccountOrderSection({
             {hint}
           </p>
         </div>
-        <div className="flex min-w-[7.5rem] flex-col items-start gap-2 sm:items-end">
-          <div ref={actionAreaRef} className="relative flex w-[7.5rem] justify-start sm:justify-end">
+        <div ref={titleRef} className={`min-w-0 ${actionLayout === 'wrapped' ? 'w-full' : 'flex-1'}`}>
+          <h2 className="text-xl font-black uppercase leading-none tracking-normal text-[var(--text-primary)]">
+            {title}
+          </h2>
+          <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+            {hint}
+          </p>
+        </div>
+        <div className={`flex min-w-0 flex-col items-start gap-2 sm:items-end ${actionLayout === 'wrapped' ? 'w-full' : actionLayout === 'inline' ? 'flex-none' : 'min-w-[7.5rem]'}`}>
+          <div ref={actionAreaRef} className={`relative flex min-w-0 ${actionLayout === 'wrapped' ? 'w-full justify-start' : actionLayout === 'inline' ? 'w-auto justify-end' : 'w-[7.5rem] justify-start sm:justify-end'}`}>
             <div ref={actionMeasureRef} aria-hidden="true" className="pointer-events-none absolute invisible left-0 top-0">
               <InlineActionControls
                 density={density}
@@ -247,6 +262,7 @@ export function CodexAccountOrderSection({
                 routingProbeRunning={routingProbeRunning}
                 refreshLabel={refreshLabel}
                 loadingLabel={loadingLabel}
+                measuring
                 t={t}
                 onReload={onReload}
                 onAccountFilterChange={setAccountFilter}
@@ -254,7 +270,7 @@ export function CodexAccountOrderSection({
                 onDensityChange={(nextDensity) => updateDensity(nextDensity, setDensity)}
               />
             </div>
-            {useActionMenu ? (
+            {actionLayout === 'menu' ? (
               <div ref={actionMenuRef} className="relative">
                 <button
                   type="button"
@@ -381,6 +397,7 @@ function InlineActionControls({
   refreshLabel,
   loadingLabel,
   stacked = false,
+  measuring = false,
   t,
   onReload,
   onAccountFilterChange,
@@ -397,6 +414,7 @@ function InlineActionControls({
   refreshLabel: string;
   loadingLabel: string;
   stacked?: boolean;
+  measuring?: boolean;
   t: (key: string) => string;
   onReload: () => void;
   onAccountFilterChange: (filter: CodexAccountOrderFilter) => void;
@@ -440,7 +458,7 @@ function InlineActionControls({
     onAccountFilterChange(applyCodexAccountOrderFilter(accountFilter, patch));
   }
 
-  function toggleFilter(key: 'requiresRequestable' | 'requiresBlocked' | 'requiresDisabled' | 'hasBalance' | 'hasLongestQuota' | 'requiresError') {
+  function toggleFilter(key: 'requiresParticipating' | 'requiresSkipped' | 'requiresRequestable' | 'requiresBlocked' | 'requiresDisabled' | 'hasBalance' | 'hasLongestQuota' | 'requiresError') {
     updateFilter({ [key]: !accountFilter[key] });
   }
 
@@ -449,7 +467,9 @@ function InlineActionControls({
       className={
         stacked
           ? 'grid w-full gap-2'
-          : 'grid grid-cols-[minmax(12rem,17rem)_5.75rem_minmax(12rem,auto)_12.5rem] items-center gap-2'
+          : measuring
+            ? 'flex w-max flex-nowrap items-center gap-2'
+            : 'flex w-full flex-wrap items-center gap-2'
       }
     >
       <SearchInput
@@ -458,30 +478,41 @@ function InlineActionControls({
         disabled={disabled}
         placeholder={t('codex.account_list_search_placeholder')}
         clearLabel={t('common.clear_search')}
-        className={stacked ? 'w-full' : 'w-full'}
+        className={stacked ? 'w-full' : measuring ? 'w-[19rem] flex-none' : 'min-w-[18rem] flex-[1_1_18rem]'}
       />
-      <button
-        type="button"
+      <RefreshActionButton
         onClick={onReload}
         disabled={disabled || loading || saving || routingProbeRunning}
-        className={`btn-swiss min-w-0 !min-h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)] disabled:cursor-not-allowed disabled:opacity-50 ${
-          stacked ? 'w-full justify-center' : 'shrink-0'
-        }`}
-      >
-        <span className="min-w-0 truncate">{loading ? loadingLabel : refreshLabel}</span>
-      </button>
-      <div ref={filterMenuRef} className="relative min-w-0">
+        label={refreshLabel}
+        loading={loading}
+        loadingLabel={loadingLabel}
+        fullWidth={stacked}
+        iconOnly={!stacked}
+        className="!min-h-10"
+      />
+      <div ref={filterMenuRef} className={`relative min-w-0 ${stacked ? '' : 'shrink-0'}`}>
         <button
           type="button"
           onClick={() => setIsFilterMenuOpen((prev) => !prev)}
           disabled={disabled}
-          className="btn-swiss flex h-10 w-full min-w-0 items-center justify-center !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
+          className={`btn-swiss flex h-10 min-w-0 items-center justify-center !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50 ${stacked ? 'w-full' : 'w-auto max-w-[18rem]'}`}
           aria-expanded={isFilterMenuOpen}
         >
           <span className="min-w-0 truncate">{buildCodexOrderFilterLabel(t, accountFilter)}</span>
         </button>
         {isFilterMenuOpen ? (
           <div className="absolute right-0 top-[calc(100%+0.75rem)] z-30 grid min-w-[22rem] gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[6px_6px_0_var(--shadow-color)]">
+            <div className="grid gap-2">
+              <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {t('codex.account_list_filter_group_route')}
+              </p>
+              <FilterCheckOption checked={accountFilter.requiresParticipating} onChange={() => toggleFilter('requiresParticipating')}>
+                {t('codex.account_list_filter_participating_match')}
+              </FilterCheckOption>
+              <FilterCheckOption checked={accountFilter.requiresSkipped} onChange={() => toggleFilter('requiresSkipped')}>
+                {t('codex.account_list_filter_skipped_match')}
+              </FilterCheckOption>
+            </div>
             <div className="grid gap-2">
               <p className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 {t('accounts.filter_group_status')}
@@ -539,11 +570,12 @@ function InlineActionControls({
           </div>
         ) : null}
       </div>
-      <div className="min-w-0 [--gt-control-segmented-padding-inline:0.35rem]">
+      <div className={`min-w-0 [--gt-control-segmented-padding-inline:0.35rem] ${stacked ? '' : 'w-auto shrink-0'}`}>
         <SegmentedControl
           options={densityOptions}
           value={density}
           onChange={onDensityChange}
+          fitContent={!stacked}
         />
       </div>
     </div>

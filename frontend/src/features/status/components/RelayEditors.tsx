@@ -117,16 +117,16 @@ export function RelayProviderEditorModal({
         onClick={(event) => event.stopPropagation()}
       >
         <header className="border-b-2 border-[var(--border-color)] px-6 py-4">
-          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black tracking-[0.2em] text-[var(--text-muted)]">
             {t('status.provider_title')}
           </div>
-          <h3 className="mt-1 text-sm font-black uppercase italic tracking-tight text-[var(--text-primary)]">
+          <h3 className="mt-1 text-sm font-black italic tracking-tight text-[var(--text-primary)]">
             {t('status.provider_create_title')}
           </h3>
         </header>
         <div className="space-y-4 p-6">
           <label className="space-y-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black tracking-[0.18em] text-[var(--text-muted)]">
               {t('status.provider_id_label')}
             </span>
             <input
@@ -134,17 +134,6 @@ export function RelayProviderEditorModal({
               onChange={(event) => onChange({ ...editor, providerID: event.target.value, error: '' })}
               className="input-swiss w-full"
               placeholder={t('status.provider_id_placeholder')}
-            />
-          </label>
-          <label className="space-y-2">
-            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              {t('status.provider_name_label')}
-            </span>
-            <input
-              value={editor.providerName}
-              onChange={(event) => onChange({ ...editor, providerName: event.target.value, error: '' })}
-              className="input-swiss w-full"
-              placeholder={t('status.provider_name_placeholder')}
             />
           </label>
           {editor.error ? (

@@ -5,6 +5,9 @@ import {
   ACCOUNT_CARD_IMPORT_SCHEMA,
   buildAccountsExportFilename,
   parseAccountCardImportPayload,
+  resolveCopiedAuthFileName,
+  resolveCopiedOpenAICompatibleProviderName,
+  resolveNumberedDuplicateTitle,
   resolvePastedAuthFileName,
 } from '../model/accountTransfer.ts';
 import { buildAccountCardContentText } from '../model/accountCardActions.ts';
@@ -105,4 +108,57 @@ test('copied auth file card content can be pasted as an import payload', () => {
     name: 'codex-auth.json',
     content: '{\n  "type": "codex",\n  "access_token": "token"\n}',
   });
+});
+
+test('copied openai-compatible card content can be pasted as an import payload', () => {
+  const copiedText = buildAccountCardContentText({
+    id: 'openai-compatible:deepseek',
+    provider: 'deepseek',
+    credentialSource: 'api-key',
+    displayName: 'OPENAI-COMPATIBLE · DEEPSEEK',
+    status: 'configured',
+    apiKey: 'sk-test-deepseek',
+    apiKeys: ['sk-test-deepseek', 'sk-test-backup'],
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: 'ds',
+    proxyUrl: 'socks5://127.0.0.1:7890',
+    headers: { 'X-Provider': 'deepseek' },
+    models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
+  });
+
+  assert.deepEqual(parseAccountCardImportPayload(JSON.parse(copiedText)), {
+    type: 'openai-compatible',
+    name: 'deepseek',
+    apiKey: 'sk-test-deepseek',
+    apiKeys: ['sk-test-deepseek', 'sk-test-backup'],
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: 'ds',
+    proxyUrl: 'socks5://127.0.0.1:7890',
+    headers: { 'X-Provider': 'deepseek' },
+    models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
+  });
+});
+
+test('resolveCopiedAuthFileName creates a new auth-file asset name when importing into existing accounts', () => {
+  assert.equal(resolveCopiedAuthFileName('codex-auth.json', []), 'codex-auth.json');
+  assert.equal(resolveCopiedAuthFileName('codex-auth.json', ['codex-auth.json']), 'codex-auth #2.json');
+  assert.equal(
+    resolveCopiedAuthFileName('codex-auth.json', ['codex-auth.json', 'codex-auth #2.json']),
+    'codex-auth #3.json',
+  );
+});
+
+test('resolveCopiedOpenAICompatibleProviderName creates a new provider name when importing into existing accounts', () => {
+  assert.equal(resolveCopiedOpenAICompatibleProviderName('deepseek', []), 'deepseek');
+  assert.equal(resolveCopiedOpenAICompatibleProviderName('deepseek', ['deepseek']), 'deepseek #2');
+  assert.equal(
+    resolveCopiedOpenAICompatibleProviderName('deepseek', ['deepseek', 'deepseek #2']),
+    'deepseek #3',
+  );
+});
+
+test('resolveNumberedDuplicateTitle starts from #2 and keeps incrementing from the base title', () => {
+  assert.equal(resolveNumberedDuplicateTitle('deepseek', ['deepseek']), 'deepseek #2');
+  assert.equal(resolveNumberedDuplicateTitle('deepseek', ['deepseek', 'deepseek #2']), 'deepseek #3');
+  assert.equal(resolveNumberedDuplicateTitle('deepseek #2', ['deepseek', 'deepseek #2']), 'deepseek #3');
 });

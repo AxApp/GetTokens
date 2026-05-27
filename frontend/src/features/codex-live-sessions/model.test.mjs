@@ -36,7 +36,10 @@ import {
   resolveCodexLiveSessionDetailPollIntervalMs,
   resolveCodexLiveSessionsPollIntervalMs,
 } from './model/polling.ts';
-import { buildCodexLiveRequestTimingTrend } from './model/requestTimingTrend.ts';
+import {
+  buildCodexLiveRequestTimingMetricAverages,
+  buildCodexLiveRequestTimingTrend,
+} from './model/requestTimingTrend.ts';
 import { mergeCodexLiveSessionsSnapshot } from './model/snapshotMerge.ts';
 
 test('filterCodexLiveSessions searches request ids and keeps active sessions first', () => {
@@ -816,6 +819,78 @@ test('buildCodexLiveRequestTimingTrend only projects the current active request'
   assert.deepEqual(trend.points.map((point) => point.requestID), ['req-stale', 'req-live']);
   assert.deepEqual(trend.points.map((point) => point.values.totalDurationMs), [1800, 7000]);
   assert.deepEqual(trend.points.map((point) => point.isLive), [false, true]);
+});
+
+test('buildCodexLiveRequestTimingMetricAverages summarizes the timing trend window', () => {
+  const averages = buildCodexLiveRequestTimingMetricAverages(
+    [
+      {
+        requestID: 'req-a',
+        sessionID: 'session-1',
+        sequence: 1,
+        model: 'gpt-5',
+        status: 'completed',
+        startedAt: '2026-05-21T08:00:00Z',
+        downstreamTransport: 'websocket',
+        upstreamTransport: 'websocket',
+        timing: {
+          totalDurationMs: 1800,
+          firstEventMs: 400,
+          firstTokenMs: 650,
+          outputTokensPerSecond: 20,
+          totalTokensPerSecond: 200,
+          reconnectCount: 0,
+        },
+        timeline: [],
+      },
+      {
+        requestID: 'req-b',
+        sessionID: 'session-1',
+        sequence: 2,
+        model: 'gpt-5',
+        status: 'completed',
+        startedAt: '2026-05-21T08:02:00Z',
+        downstreamTransport: 'websocket',
+        upstreamTransport: 'websocket',
+        timing: {
+          totalDurationMs: 2400,
+          firstEventMs: 520,
+          firstTokenMs: 760,
+          outputTokensPerSecond: 40,
+          totalTokensPerSecond: 400,
+          reconnectCount: 1,
+        },
+        timeline: [],
+      },
+    ],
+    {
+      requestID: 'req-live',
+      sessionID: 'session-1',
+      sequence: 3,
+      model: 'gpt-5',
+      status: 'streaming',
+      startedAt: '2026-05-21T08:04:00Z',
+      downstreamTransport: 'websocket',
+      upstreamTransport: 'websocket',
+      timing: {
+        firstEventMs: 420,
+        firstTokenMs: 900,
+        outputTokensPerSecond: 60,
+        totalTokensPerSecond: 600,
+        reconnectCount: 0,
+      },
+      timeline: [],
+    },
+    { nowMs: Date.parse('2026-05-21T08:04:07Z') },
+  );
+
+  assert.equal(averages.values.totalDurationMs, 3733);
+  assert.equal(averages.values.firstEventMs, 447);
+  assert.equal(averages.values.firstTokenMs, 770);
+  assert.equal(averages.values.outputTokensPerSecond, 40);
+  assert.equal(averages.values.totalTokensPerSecond, 400);
+  assert.equal(averages.values.reconnectCount, 0);
+  assert.equal(averages.sampleCount, 3);
 });
 
 test('buildCodexLiveRequestTimingTrend keeps only latest requests inside a fixed count window', () => {

@@ -77,7 +77,7 @@ base_url = "http://relay-b/v1"
 
 func TestParseLocalCodexModelProviderStateReadsCurrentProvider(t *testing.T) {
 	state := parseLocalCodexModelProviderState(`
-model = "gpt-5.5"
+model = "gpt-5.5-codex"
 model_provider = "corp"
 
 [model_providers.corp]
@@ -85,6 +85,12 @@ name = "Corp Relay"
 base_url = "http://relay.example/v1"
 `)
 
+	if state.CurrentModel != "gpt-5.5-codex" {
+		t.Fatalf("CurrentModel = %q, want gpt-5.5-codex", state.CurrentModel)
+	}
+	if !state.HasExplicitCurrentModel {
+		t.Fatalf("HasExplicitCurrentModel = false, want true")
+	}
 	if state.CurrentProviderID != "corp" {
 		t.Fatalf("CurrentProviderID = %q, want corp", state.CurrentProviderID)
 	}
@@ -97,15 +103,22 @@ base_url = "http://relay.example/v1"
 	if !state.CurrentProviderExists {
 		t.Fatalf("CurrentProviderExists = false, want true")
 	}
+	if !state.HasExplicitCurrentProvider {
+		t.Fatalf("HasExplicitCurrentProvider = false, want true")
+	}
 }
 
 func TestParseLocalCodexModelProviderStateDefaultsToBuiltinOpenAI(t *testing.T) {
-	state := parseLocalCodexModelProviderState(`
-model = "gpt-5.5"
-`)
+	state := parseLocalCodexModelProviderState(``)
 
 	if state.CurrentProviderID != "openai" {
 		t.Fatalf("CurrentProviderID = %q, want openai", state.CurrentProviderID)
+	}
+	if state.CurrentModel != relayCodexDefaultModel {
+		t.Fatalf("CurrentModel = %q, want %s", state.CurrentModel, relayCodexDefaultModel)
+	}
+	if state.HasExplicitCurrentModel {
+		t.Fatalf("HasExplicitCurrentModel = true, want false")
 	}
 	if state.CurrentProviderName != "OpenAI" {
 		t.Fatalf("CurrentProviderName = %q, want OpenAI", state.CurrentProviderName)
@@ -115,6 +128,9 @@ model = "gpt-5.5"
 	}
 	if !state.CurrentProviderExists {
 		t.Fatalf("CurrentProviderExists = false, want true")
+	}
+	if state.HasExplicitCurrentProvider {
+		t.Fatalf("HasExplicitCurrentProvider = true, want false")
 	}
 }
 
@@ -137,6 +153,9 @@ name = "Other Relay"
 	}
 	if state.CurrentProviderExists {
 		t.Fatalf("CurrentProviderExists = true, want false")
+	}
+	if !state.HasExplicitCurrentProvider {
+		t.Fatalf("HasExplicitCurrentProvider = false, want true")
 	}
 }
 
@@ -165,5 +184,11 @@ name = "Relay A"
 	}
 	if state.CurrentProviderID != "relay_a" || state.CurrentProviderName != "Relay A" {
 		t.Fatalf("unexpected current provider: %#v", state)
+	}
+	if state.CurrentModel != relayCodexDefaultModel {
+		t.Fatalf("CurrentModel = %q, want %s", state.CurrentModel, relayCodexDefaultModel)
+	}
+	if !state.HasExplicitCurrentProvider {
+		t.Fatalf("HasExplicitCurrentProvider = false, want true")
 	}
 }

@@ -1,6 +1,6 @@
 ---
 name: gettokens-claude-code-account-list
-description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthropic 格式账号筛选、请求顺序、三模式路由、项目绑定、路由探测、模型映射、官方默认模型 profile 与 local apply 边界。
+description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthropic 格式账号筛选、请求顺序、两模式路由、项目绑定兼容边界、路由探测、模型映射、官方默认模型 profile 与 local apply 边界。
 ---
 
 # GetTokens Claude Code Account List
@@ -14,7 +14,8 @@ description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthr
 - 总账号池只管理 Account Inventory；Claude Code 账号列表拥有 Claude 渠道顺序、渠道 route mode、渠道组状态、项目绑定、dry-run/explain 和 probe。
 - Claude 渠道配置不得通过全局 `UpdateAccountPriority` 表达；渠道顺序必须保存到 Claude channel config。
 - Claude runtime routing 的唯一主路径是 `channel-routing/config.json`；旧 `routing.strategy` 只保留作 relay / compatibility 边界，不再参与 Claude 候选排序、fallback 或 balanced 计数。balanced 模式应从 live-session tracker 读取活跃会话数，而不是从展示用 snapshot 反推。
-- 新 GetTokens route mode 只允许 `sequential / balanced / project`。
+- 新 GetTokens route mode 主路径只允许 `sequential / balanced`。
+- `project` 已从可配置 route mode 下线；历史 `projectBindings` 只作为项目名到账号/账号组的范围约束或兼容数据保留，不能作为新的模式入口扩展。
 - `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入 Claude 新 UI / Wails DTO / engine policy。
 - `exclude` 不是 route mode，只能作为请求级 deny 或 pool filter。
 - 旧 allow / deny / order / fallback 只作为请求级兼容 policy，不作为新页面主配置模型。
@@ -36,7 +37,7 @@ description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthr
   - 运行时请求候选只包含当前可请求账号
   - 拖拽排序写回 Claude channel config
   - 启停写回 `SetAccountDisabled`
-- 项目模式只限定目标账号或账号组；命中账号组后，组内选择继续使用 `sequential` 或 `balanced`。
+- 项目绑定只限定目标账号或账号组；命中账号组后，组内选择继续使用 `sequential` 或 `balanced`。
 - 浏览器 preview 必须在缺少 Wails runtime 时稳定显示 preview 数据。
 
 ## 3. 模型映射语义
@@ -84,5 +85,5 @@ description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthr
   - 同一真实模型多个 Claude alias
   - 官方默认 profile 不覆盖用户映射
   - Claude channel config 保存不影响 Codex channel config
-  - `ChannelRouteMode` 只接受 `sequential / balanced / project`
+  - `ChannelRouteMode` 只接受 `sequential / balanced`；`project` 输入必须降级或标记为旧兼容输入
   - 上游兼容模式不进入 Claude 新配置保存

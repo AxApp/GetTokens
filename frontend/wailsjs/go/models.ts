@@ -48,11 +48,11 @@ export namespace codexbinary {
 	    errorCode?: string;
 	    errorMessage?: string;
 	    updatedAt: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new DownloadTaskView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -89,11 +89,11 @@ export namespace codexbinary {
 	    task?: DownloadTaskView;
 	    primaryAction: string;
 	    secondaryAction?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new VersionRowView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.rowID = source["rowID"];
@@ -115,7 +115,7 @@ export namespace codexbinary {
 	        this.primaryAction = source["primaryAction"];
 	        this.secondaryAction = source["secondaryAction"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -146,11 +146,11 @@ export namespace codexbinary {
 	    publishedAt?: string;
 	    isPrerelease: boolean;
 	    isInstalled: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RemoteVersionView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sourceID = source["sourceID"];
@@ -180,11 +180,11 @@ export namespace codexbinary {
 	    existsOnDisk: boolean;
 	    binaryRelativePath?: string;
 	    binaryPath?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new VersionView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -211,11 +211,11 @@ export namespace codexbinary {
 	    isPathConfigured: boolean;
 	    resolvedCodexPath?: string;
 	    isResolvedToManaged: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ManagedConfigView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.binDir = source["binDir"];
@@ -240,11 +240,11 @@ export namespace codexbinary {
 	    downloadTasks: DownloadTaskView[];
 	    sources: SourceView[];
 	    doctor: DoctorSummary;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Snapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.manifestPath = source["manifestPath"];
@@ -259,7 +259,7 @@ export namespace codexbinary {
 	        this.sources = this.convertValues(source["sources"], SourceView);
 	        this.doctor = this.convertValues(source["doctor"], DoctorSummary);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -281,17 +281,17 @@ export namespace codexbinary {
 	export class DeleteVersionResult {
 	    deletedVersionID: string;
 	    snapshot: Snapshot;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new DeleteVersionResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.deletedVersionID = source["deletedVersionID"];
 	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -310,16 +310,16 @@ export namespace codexbinary {
 		    return a;
 		}
 	}
-	
+
 	export class DownloadInput {
 	    sourceID: string;
 	    tag: string;
 	    activateAfterInstall: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new DownloadInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sourceID = source["sourceID"];
@@ -332,11 +332,11 @@ export namespace codexbinary {
 	    alreadyInstalled: boolean;
 	    activated: boolean;
 	    snapshot: Snapshot;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new DownloadResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.version = this.convertValues(source["version"], VersionView);
@@ -344,7 +344,7 @@ export namespace codexbinary {
 	        this.activated = source["activated"];
 	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -363,18 +363,18 @@ export namespace codexbinary {
 		    return a;
 		}
 	}
-	
+
 	export class EnableManagedPathResult {
 	    profilePath: string;
 	    backupPath?: string;
 	    changed: boolean;
 	    messages: string[];
 	    snapshot: Snapshot;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new EnableManagedPathResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.profilePath = source["profilePath"];
@@ -383,7 +383,7 @@ export namespace codexbinary {
 	        this.messages = source["messages"];
 	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -409,11 +409,11 @@ export namespace codexbinary {
 	    SourceURL: string;
 	    ReleaseTag: string;
 	    ActivateAfterInstall: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ImportLocalInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.Path = source["Path"];
@@ -428,18 +428,18 @@ export namespace codexbinary {
 	    version: VersionView;
 	    alreadyInstalled: boolean;
 	    activated: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new InstallResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.version = this.convertValues(source["version"], VersionView);
 	        this.alreadyInstalled = source["alreadyInstalled"];
 	        this.activated = source["activated"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -458,18 +458,18 @@ export namespace codexbinary {
 		    return a;
 		}
 	}
-	
-	
-	
-	
+
+
+
+
 	export class UseInput {
 	    versionID: string;
 	    expectedCurrentVersionID?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UseInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.versionID = source["versionID"];
@@ -479,17 +479,17 @@ export namespace codexbinary {
 	export class UseResult {
 	    selectedVersionID: string;
 	    snapshot: Snapshot;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UseResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.selectedVersionID = source["selectedVersionID"];
 	        this.snapshot = this.convertValues(source["snapshot"], Snapshot);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -510,11 +510,11 @@ export namespace codexbinary {
 	}
 	export class VersionActionInput {
 	    versionID: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new VersionActionInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.versionID = source["versionID"];
@@ -523,11 +523,11 @@ export namespace codexbinary {
 	export class VersionNotesInput {
 	    sourceID: string;
 	    tag: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new VersionNotesInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sourceID = source["sourceID"];
@@ -546,11 +546,11 @@ export namespace codexbinary {
 	    source: string;
 	    truncated: boolean;
 	    fetchedAt?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new VersionNotesView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sourceID = source["sourceID"];
@@ -566,22 +566,22 @@ export namespace codexbinary {
 	        this.fetchedAt = source["fetchedAt"];
 	    }
 	}
-	
+
 
 }
 
 export namespace main {
-	
+
 	export class OpenAICompatibleModel {
 	    name: string;
 	    alias?: string;
 	    supportedReasoningEfforts?: string[];
 	    defaultReasoningEffort?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new OpenAICompatibleModel(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -620,11 +620,11 @@ export namespace main {
 	    formatBaseUrls?: Record<string, string>;
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new AccountRecord(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -657,7 +657,7 @@ export namespace main {
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -683,11 +683,11 @@ export namespace main {
 	    closeAction: string;
 	    menuBarResident: boolean;
 	    configPath?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new AppRuntimeSettings(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.launchAtLogin = source["launchAtLogin"];
@@ -713,11 +713,11 @@ export namespace main {
 	    statusMessage?: string;
 	    lastRefresh?: any;
 	    modified?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new AuthFileItem(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -739,17 +739,17 @@ export namespace main {
 	export class AuthFilesResponse {
 	    files: AuthFileItem[];
 	    total?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new AuthFilesResponse(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.files = this.convertValues(source["files"], AuthFileItem);
 	        this.total = source["total"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -774,11 +774,11 @@ export namespace main {
 	    enabled: boolean;
 	    routeOrder?: number;
 	    accountIDs: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelAccountGroup(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -794,11 +794,11 @@ export namespace main {
 	    model?: string;
 	    expiresAt?: string;
 	    updatedAt?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRuntimeStateSource(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.source = source["source"];
@@ -812,18 +812,18 @@ export namespace main {
 	    accountID: string;
 	    sources?: Record<string, ChannelRuntimeStateSource>;
 	    updatedAt?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelAccountRuntimeState(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accountID = source["accountID"];
 	        this.sources = this.convertValues(source["sources"], ChannelRuntimeStateSource, true);
 	        this.updatedAt = source["updatedAt"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -845,11 +845,11 @@ export namespace main {
 	export class ChannelGroupState {
 	    enabled: boolean;
 	    routeOrder?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelGroupState(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.enabled = source["enabled"];
@@ -861,11 +861,11 @@ export namespace main {
 	    targetType: string;
 	    targetID: string;
 	    fallbackMode: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelProjectBinding(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projectName = source["projectName"];
@@ -881,11 +881,11 @@ export namespace main {
 	    reason?: string;
 	    cooldownSeconds?: number;
 	    model?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRouteAccountResultInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accountID = source["accountID"];
@@ -912,11 +912,11 @@ export namespace main {
 	    shadowSelectedAccountID?: string;
 	    shadowDiff?: boolean;
 	    redacted: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRouteEvent(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -939,11 +939,11 @@ export namespace main {
 	export class ChannelRouteEventsInput {
 	    channel?: string;
 	    limit?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRouteEventsInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.channel = source["channel"];
@@ -959,11 +959,11 @@ export namespace main {
 	    groupOrder?: number;
 	    channelOrder?: number;
 	    activeSessions?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingCandidate(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -987,11 +987,11 @@ export namespace main {
 	    fallbackMode: string;
 	    shadowEnabled?: boolean;
 	    shadowRouteMode?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingConfig(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.channel = source["channel"];
@@ -1005,7 +1005,7 @@ export namespace main {
 	        this.shadowEnabled = source["shadowEnabled"];
 	        this.shadowRouteMode = source["shadowRouteMode"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1027,11 +1027,11 @@ export namespace main {
 	export class ChannelRoutingConfigMeta {
 	    ignoredUpstreamModes?: string[];
 	    invalidModes?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingConfigMeta(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.ignoredUpstreamModes = source["ignoredUpstreamModes"];
@@ -1044,11 +1044,11 @@ export namespace main {
 	    triedAccountIDs?: string[];
 	    activeSessions?: Record<string, number>;
 	    stickyAccountID?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingExplainInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.channel = source["channel"];
@@ -1064,11 +1064,11 @@ export namespace main {
 	    selectedAccountID?: string;
 	    diff: boolean;
 	    steps?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingShadowDecision(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.enabled = source["enabled"];
@@ -1081,11 +1081,11 @@ export namespace main {
 	export class ChannelRoutingFilteredAccount {
 	    id: string;
 	    reason: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingFilteredAccount(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -1103,11 +1103,11 @@ export namespace main {
 	    snapshotVersion?: string;
 	    policyVersion?: string;
 	    shadow?: ChannelRoutingShadowDecision;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ChannelRoutingExplainResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.channel = source["channel"];
@@ -1121,7 +1121,7 @@ export namespace main {
 	        this.policyVersion = source["policyVersion"];
 	        this.shadow = this.convertValues(source["shadow"], ChannelRoutingShadowDecision);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1140,9 +1140,9 @@ export namespace main {
 		    return a;
 		}
 	}
-	
-	
-	
+
+
+
 	export class ClaudeCodeAccountRoutingProbeAttempt {
 	    index: number;
 	    success: boolean;
@@ -1155,11 +1155,11 @@ export namespace main {
 	    responseBody?: string;
 	    startedAt?: string;
 	    finishedAt?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeAccountRoutingProbeAttempt(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.index = source["index"];
@@ -1178,17 +1178,17 @@ export namespace main {
 	export class ClaudeCodeAccountRoutingProbeResult {
 	    model: string;
 	    attempts: ClaudeCodeAccountRoutingProbeAttempt[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeAccountRoutingProbeResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.model = source["model"];
 	        this.attempts = this.convertValues(source["attempts"], ClaudeCodeAccountRoutingProbeAttempt);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1218,11 +1218,11 @@ export namespace main {
 	    secretState: string;
 	    dirty?: boolean;
 	    shadowedBy?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeMcpAsset(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -1252,11 +1252,11 @@ export namespace main {
 	    previewMarkdown?: string;
 	    frontmatterError?: string;
 	    legacyCommandSource?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeSkillAsset(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -1282,11 +1282,11 @@ export namespace main {
 	    skills: ClaudeCodeSkillAsset[];
 	    mcpServers: ClaudeCodeMcpAsset[];
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeExtensionsSnapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.claudeConfigDirPath = source["claudeConfigDirPath"];
@@ -1296,7 +1296,7 @@ export namespace main {
 	        this.mcpServers = this.convertValues(source["mcpServers"], ClaudeCodeMcpAsset);
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1326,11 +1326,11 @@ export namespace main {
 	    apiTimeoutMs?: string;
 	    disableNonEssentialTraffic?: boolean;
 	    claudeCodeAttributionHeader?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeLocalApplyOptions(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.authField = source["authField"];
@@ -1350,11 +1350,11 @@ export namespace main {
 	    settingsPath: string;
 	    warnings?: string[];
 	    conflicts?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeLocalApplyResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.claudeConfigDirPath = source["claudeConfigDirPath"];
@@ -1363,16 +1363,16 @@ export namespace main {
 	        this.conflicts = source["conflicts"];
 	    }
 	}
-	
+
 	export class ClaudeCodeMcpChange {
 	    key: string;
 	    before: string;
 	    after: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeMcpChange(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
@@ -1385,11 +1385,11 @@ export namespace main {
 	    resolved: string;
 	    exists: boolean;
 	    depth: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeMemoryFileImportDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.raw = source["raw"];
@@ -1407,11 +1407,11 @@ export namespace main {
 	    content?: string;
 	    contentTruncated?: boolean;
 	    size: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeMemoryFileRecordDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.scope = source["scope"];
@@ -1423,7 +1423,7 @@ export namespace main {
 	        this.contentTruncated = source["contentTruncated"];
 	        this.size = source["size"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1446,18 +1446,18 @@ export namespace main {
 	    projectPath: string;
 	    files: ClaudeCodeMemoryFileRecordDTO[];
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeMemoryFilesSnapshotDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projectPath = source["projectPath"];
 	        this.files = this.convertValues(source["files"], ClaudeCodeMemoryFileRecordDTO);
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1480,11 +1480,11 @@ export namespace main {
 	    key: string;
 	    before: any;
 	    after: any;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeSettingsChangeDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
@@ -1497,11 +1497,11 @@ export namespace main {
 	    permissions?: Record<string, any>;
 	    disableAllHooks?: boolean;
 	    outputStyle?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeSettingsFieldsDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.env = source["env"];
@@ -1516,11 +1516,11 @@ export namespace main {
 	    exists: boolean;
 	    parseError?: string;
 	    knownFields?: ClaudeCodeSettingsFieldsDTO;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeSettingsLayer(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.scope = source["scope"];
@@ -1529,7 +1529,7 @@ export namespace main {
 	        this.parseError = source["parseError"];
 	        this.knownFields = this.convertValues(source["knownFields"], ClaudeCodeSettingsFieldsDTO);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1552,18 +1552,18 @@ export namespace main {
 	    projectPath: string;
 	    layers: ClaudeCodeSettingsLayer[];
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeSettingsSnapshotDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projectPath = source["projectPath"];
 	        this.layers = this.convertValues(source["layers"], ClaudeCodeSettingsLayer);
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1582,7 +1582,7 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
 	export class ClaudeCodeSubagentRecordDTO {
 	    name: string;
 	    description: string;
@@ -1597,11 +1597,11 @@ export namespace main {
 	    bodyPreview?: string;
 	    isPlugin?: boolean;
 	    ignoredFields?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeSubagentRecordDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -1624,11 +1624,11 @@ export namespace main {
 	    projectPath: string;
 	    agents: ClaudeCodeSubagentRecordDTO[];
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ClaudeCodeSubagentsSnapshotDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.userPath = source["userPath"];
@@ -1636,7 +1636,7 @@ export namespace main {
 	        this.agents = this.convertValues(source["agents"], ClaudeCodeSubagentRecordDTO);
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1667,11 +1667,11 @@ export namespace main {
 	    responseBody?: string;
 	    startedAt?: string;
 	    finishedAt?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexAccountRoutingProbeAttempt(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.index = source["index"];
@@ -1690,17 +1690,17 @@ export namespace main {
 	export class CodexAccountRoutingProbeResult {
 	    model: string;
 	    attempts: CodexAccountRoutingProbeAttempt[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexAccountRoutingProbeResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.model = source["model"];
 	        this.attempts = this.convertValues(source["attempts"], CodexAccountRoutingProbeAttempt);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1726,11 +1726,11 @@ export namespace main {
 	    path?: string[];
 	    valueType?: string;
 	    value?: any;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexConfigChangeInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -1745,11 +1745,11 @@ export namespace main {
 	    configPath: string;
 	    content: string;
 	    exists: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexConfigTomlDocument(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -1768,11 +1768,11 @@ export namespace main {
 	    nextEnabled?: boolean;
 	    previousValue?: any;
 	    nextValue?: any;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureConfigChange(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -1793,11 +1793,11 @@ export namespace main {
 	    changes: CodexFeatureConfigChange[];
 	    preview: string;
 	    warnings: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureConfigPreview(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -1806,7 +1806,7 @@ export namespace main {
 	        this.preview = source["preview"];
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1840,11 +1840,11 @@ export namespace main {
 	    legacyAlias?: boolean;
 	    readOnly?: boolean;
 	    unsupported?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureDefinition(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.section = source["section"];
@@ -1875,11 +1875,11 @@ export namespace main {
 	    unknownSections?: Record<string, string>;
 	    raw: string;
 	    warnings: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexFeatureConfigSnapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.codexHomePath = source["codexHomePath"];
@@ -1894,7 +1894,7 @@ export namespace main {
 	        this.raw = source["raw"];
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -1913,17 +1913,17 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
 	export class CodexLiveErrorSummary {
 	    statusCode?: number;
 	    code?: string;
 	    message: string;
 	    retryable?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveErrorSummary(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.statusCode = source["statusCode"];
@@ -1940,11 +1940,11 @@ export namespace main {
 	    label: string;
 	    severity: string;
 	    detail?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveTimelineEvent(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -1969,11 +1969,11 @@ export namespace main {
 	    reconnectCount?: number;
 	    outputTokensPerSecond?: number;
 	    totalTokensPerSecond?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveTimingMetrics(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.queueWaitMs = source["queueWaitMs"];
@@ -1995,11 +1995,11 @@ export namespace main {
 	    cachedInputTokens: number;
 	    outputTokens: number;
 	    totalTokens: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveTokenUsage(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.inputTokens = source["inputTokens"];
@@ -2029,11 +2029,11 @@ export namespace main {
 	    timing?: CodexLiveTimingMetrics;
 	    error?: CodexLiveErrorSummary;
 	    timeline: CodexLiveTimelineEvent[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveRequest(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.requestID = source["requestID"];
@@ -2057,7 +2057,7 @@ export namespace main {
 	        this.error = this.convertValues(source["error"], CodexLiveErrorSummary);
 	        this.timeline = this.convertValues(source["timeline"], CodexLiveTimelineEvent);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2100,11 +2100,11 @@ export namespace main {
 	    fallbackReason?: string;
 	    recentEvents: CodexLiveTimelineEvent[];
 	    requests: CodexLiveRequest[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveSession(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sessionID = source["sessionID"];
@@ -2131,7 +2131,7 @@ export namespace main {
 	        this.recentEvents = this.convertValues(source["recentEvents"], CodexLiveTimelineEvent);
 	        this.requests = this.convertValues(source["requests"], CodexLiveRequest);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2213,11 +2213,11 @@ export namespace main {
 	    httpSessions: number;
 	    degradedSessions: number;
 	    errorSessions: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveSessionSummary(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.activeSessions = source["activeSessions"];
@@ -2235,11 +2235,11 @@ export namespace main {
 	    retentionLabel: string;
 	    summary: CodexLiveSessionSummary;
 	    sessions: CodexLiveSession[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexLiveSessionsSnapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.generatedAt = source["generatedAt"];
@@ -2249,7 +2249,7 @@ export namespace main {
 	        this.summary = this.convertValues(source["summary"], CodexLiveSessionSummary);
 	        this.sessions = this.convertValues(source["sessions"], CodexLiveSession);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2268,18 +2268,18 @@ export namespace main {
 		    return a;
 		}
 	}
-	
-	
-	
+
+
+
 	export class CodexMcpChange {
 	    key: string;
 	    before: string;
 	    after: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexMcpChange(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
@@ -2290,11 +2290,11 @@ export namespace main {
 	export class CodexMcpEnvRow {
 	    key: string;
 	    value: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexMcpEnvRow(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.key = source["key"];
@@ -2304,11 +2304,11 @@ export namespace main {
 	export class CodexMcpToolRow {
 	    name: string;
 	    approvalMode?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexMcpToolRow(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -2346,11 +2346,11 @@ export namespace main {
 	    sourcePath: string;
 	    status: string;
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexMcpServer(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -2384,7 +2384,7 @@ export namespace main {
 	        this.status = source["status"];
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2409,11 +2409,11 @@ export namespace main {
 	    exists: boolean;
 	    servers: CodexMcpServer[];
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexMcpServersSnapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.codexHomePath = source["codexHomePath"];
@@ -2422,7 +2422,7 @@ export namespace main {
 	        this.servers = this.convertValues(source["servers"], CodexMcpServer);
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2441,17 +2441,17 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
 	export class CodexQuotaBillingBalanceInfo {
 	    currency: string;
 	    totalBalance: string;
 	    grantedBalance: string;
 	    toppedUpBalance: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaBillingBalanceInfo(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.currency = source["currency"];
@@ -2463,17 +2463,17 @@ export namespace main {
 	export class CodexQuotaBillingInfo {
 	    isAvailable: boolean;
 	    balanceInfos: CodexQuotaBillingBalanceInfo[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaBillingInfo(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.isAvailable = source["isAvailable"];
 	        this.balanceInfos = this.convertValues(source["balanceInfos"], CodexQuotaBillingBalanceInfo);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2501,11 +2501,11 @@ export namespace main {
 	    remainingTokens?: number;
 	    resetLabel: string;
 	    resetAtUnix?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaWindow(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -2522,18 +2522,18 @@ export namespace main {
 	    planType?: string;
 	    windows: CodexQuotaWindow[];
 	    billing?: CodexQuotaBillingInfo;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaResponse(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.planType = source["planType"];
 	        this.windows = this.convertValues(source["windows"], CodexQuotaWindow);
 	        this.billing = this.convertValues(source["billing"], CodexQuotaBillingInfo);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2552,17 +2552,17 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
 	export class CodexSkillFile {
 	    path: string;
 	    kind: string;
 	    content?: string;
 	    previewable: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexSkillFile(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -2585,11 +2585,11 @@ export namespace main {
 	    skillMarkdown: string;
 	    previewMarkdown: string;
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexSkillRecord(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -2606,7 +2606,7 @@ export namespace main {
 	        this.previewMarkdown = source["previewMarkdown"];
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2630,11 +2630,11 @@ export namespace main {
 	    path: string;
 	    sourceKind: string;
 	    exists: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexSkillRoot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.label = source["label"];
@@ -2649,11 +2649,11 @@ export namespace main {
 	    roots: CodexSkillRoot[];
 	    skills: CodexSkillRecord[];
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CodexSkillsSnapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.codexHomePath = source["codexHomePath"];
@@ -2662,7 +2662,7 @@ export namespace main {
 	        this.skills = this.convertValues(source["skills"], CodexSkillRecord);
 	        this.warnings = source["warnings"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2684,11 +2684,11 @@ export namespace main {
 	export class CompleteCodexOAuthInput {
 	    existingName: string;
 	    previousNames: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CompleteCodexOAuthInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.existingName = source["existingName"];
@@ -2710,11 +2710,11 @@ export namespace main {
 	    quotaEnabled?: boolean;
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CreateCodexAPIKeyInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
@@ -2732,7 +2732,7 @@ export namespace main {
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2756,11 +2756,11 @@ export namespace main {
 	    baseUrl: string;
 	    prefix?: string;
 	    apiKey: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new CreateOpenAICompatibleProviderInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -2772,11 +2772,11 @@ export namespace main {
 	export class DeleteClaudeCodeSubagentInputDTO {
 	    scope: string;
 	    path: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new DeleteClaudeCodeSubagentInputDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.scope = source["scope"];
@@ -2785,11 +2785,11 @@ export namespace main {
 	}
 	export class DeleteRateLimitRuleInput {
 	    id: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new DeleteRateLimitRuleInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -2798,11 +2798,11 @@ export namespace main {
 	export class DownloadFileResponse {
 	    name: string;
 	    contentBase64: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new DownloadFileResponse(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -2813,11 +2813,11 @@ export namespace main {
 	    baseUrl: string;
 	    apiKey: string;
 	    headers?: Record<string, string>;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new FetchOpenAICompatibleProviderModelsInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.baseUrl = source["baseUrl"];
@@ -2830,11 +2830,11 @@ export namespace main {
 	    statusCode?: number;
 	    message?: string;
 	    responseBody?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new FetchOpenAICompatibleProviderModelsResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
@@ -2842,7 +2842,7 @@ export namespace main {
 	        this.message = source["message"];
 	        this.responseBody = source["responseBody"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -2864,11 +2864,11 @@ export namespace main {
 	export class FetchProxySubscriptionInput {
 	    url: string;
 	    sourceLabel?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new FetchProxySubscriptionInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
@@ -2879,11 +2879,11 @@ export namespace main {
 	    url: string;
 	    sourceLabel: string;
 	    content: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new FetchProxySubscriptionResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
@@ -2894,11 +2894,11 @@ export namespace main {
 	export class GetCodexSkillFilePreviewInput {
 	    skillPath: string;
 	    filePath: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new GetCodexSkillFilePreviewInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.skillPath = source["skillPath"];
@@ -2909,11 +2909,11 @@ export namespace main {
 	    path: string;
 	    content?: string;
 	    previewable: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new GetCodexSkillFilePreviewResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -2931,11 +2931,11 @@ export namespace main {
 	    planType?: string;
 	    canPreserveChatGPTAuth: boolean;
 	    warnings?: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new LocalCodexAuthState(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.authFilePath = source["authFilePath"];
@@ -2952,11 +2952,11 @@ export namespace main {
 	export class LocalCodexModelProviderView {
 	    providerID: string;
 	    providerName: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new LocalCodexModelProviderView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.providerID = source["providerID"];
@@ -2964,25 +2964,31 @@ export namespace main {
 	    }
 	}
 	export class LocalCodexModelProviderStateView {
+	    currentModel: string;
+	    hasExplicitCurrentModel: boolean;
 	    currentProviderID: string;
 	    currentProviderName: string;
 	    currentProviderIsBuiltin: boolean;
 	    currentProviderExists: boolean;
+	    hasExplicitCurrentProvider: boolean;
 	    providers: LocalCodexModelProviderView[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new LocalCodexModelProviderStateView(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.currentModel = source["currentModel"];
+	        this.hasExplicitCurrentModel = source["hasExplicitCurrentModel"];
 	        this.currentProviderID = source["currentProviderID"];
 	        this.currentProviderName = source["currentProviderName"];
 	        this.currentProviderIsBuiltin = source["currentProviderIsBuiltin"];
 	        this.currentProviderExists = source["currentProviderExists"];
+	        this.hasExplicitCurrentProvider = source["hasExplicitCurrentProvider"];
 	        this.providers = this.convertValues(source["providers"], LocalCodexModelProviderView);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3001,7 +3007,7 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
 	export class LocalProjectedUsageDetail {
 	    timestamp: string;
 	    provider: string;
@@ -3013,11 +3019,11 @@ export namespace main {
 	    cachedInputTokens: number;
 	    outputTokens: number;
 	    requestCount: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new LocalProjectedUsageDetail(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.timestamp = source["timestamp"];
@@ -3041,11 +3047,11 @@ export namespace main {
 	    fullRebuildFiles?: number;
 	    fileMissingFiles?: number;
 	    details: LocalProjectedUsageDetail[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new LocalProjectedUsageResponse(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.provider = source["provider"];
@@ -3057,7 +3063,7 @@ export namespace main {
 	        this.fileMissingFiles = source["fileMissingFiles"];
 	        this.details = this.convertValues(source["details"], LocalProjectedUsageDetail);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3078,11 +3084,11 @@ export namespace main {
 	}
 	export class LocalProjectedUsageSettings {
 	    refreshIntervalMinutes: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new LocalProjectedUsageSettings(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.refreshIntervalMinutes = source["refreshIntervalMinutes"];
@@ -3091,11 +3097,11 @@ export namespace main {
 	export class OAuthStartResult {
 	    url: string;
 	    state?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new OAuthStartResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
@@ -3105,18 +3111,18 @@ export namespace main {
 	export class OAuthStatusResult {
 	    status: string;
 	    error?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new OAuthStatusResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.status = source["status"];
 	        this.error = source["error"];
 	    }
 	}
-	
+
 	export class OpenAICompatibleProvider {
 	    name: string;
 	    priority?: number;
@@ -3131,11 +3137,11 @@ export namespace main {
 	    keyCount?: number;
 	    modelCount?: number;
 	    hasHeaders?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new OpenAICompatibleProvider(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -3152,7 +3158,7 @@ export namespace main {
 	        this.modelCount = source["modelCount"];
 	        this.hasHeaders = source["hasHeaders"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3173,11 +3179,11 @@ export namespace main {
 	}
 	export class OpenCodexConfigTomlResult {
 	    configPath: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new OpenCodexConfigTomlResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -3185,11 +3191,11 @@ export namespace main {
 	}
 	export class OpenCodexSkillInFinderInput {
 	    path: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new OpenCodexSkillInFinderInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -3197,11 +3203,11 @@ export namespace main {
 	}
 	export class OpenCodexSkillInFinderResult {
 	    path: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new OpenCodexSkillInFinderResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -3211,11 +3217,11 @@ export namespace main {
 	    scope: string;
 	    path: string;
 	    patches: Record<string, any>;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new PatchClaudeCodeSettingsInputDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.scope = source["scope"];
@@ -3227,18 +3233,18 @@ export namespace main {
 	    configPath: string;
 	    preview: string;
 	    changes: ClaudeCodeSettingsChangeDTO[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new PatchClaudeCodeSettingsResultDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
 	        this.preview = source["preview"];
 	        this.changes = this.convertValues(source["changes"], ClaudeCodeSettingsChangeDTO);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3264,11 +3270,11 @@ export namespace main {
 	    denyAccountIDs?: string[];
 	    orderAccountIDs?: string[];
 	    allowFallback?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ProbeClaudeCodeAccountRoutingInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.model = source["model"];
@@ -3286,11 +3292,11 @@ export namespace main {
 	    denyAccountIDs?: string[];
 	    orderAccountIDs?: string[];
 	    allowFallback?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ProbeCodexAccountRoutingInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.model = source["model"];
@@ -3304,11 +3310,11 @@ export namespace main {
 	export class ProbeProxyNodeInput {
 	    proxyUrl: string;
 	    targetUrl?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ProbeProxyNodeInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.proxyUrl = source["proxyUrl"];
@@ -3323,11 +3329,11 @@ export namespace main {
 	    latencyMs: number;
 	    checkedAt: string;
 	    message: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ProbeProxyNodeResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.proxyUrl = source["proxyUrl"];
@@ -3352,11 +3358,11 @@ export namespace main {
 	    blocked: boolean;
 	    reason?: string;
 	    triggeredAt: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitEvent(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -3376,11 +3382,11 @@ export namespace main {
 	export class RateLimitEventsInput {
 	    accountKey?: string;
 	    limit?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitEventsInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accountKey = source["accountKey"];
@@ -3399,11 +3405,11 @@ export namespace main {
 	    label?: string;
 	    createdAt?: number;
 	    updatedAt?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitRule(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -3425,11 +3431,11 @@ export namespace main {
 	    reason?: string;
 	    usagePct: number;
 	    currentUsage: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitRuleState(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.rule = this.convertValues(source["rule"], RateLimitRule);
@@ -3438,7 +3444,7 @@ export namespace main {
 	        this.usagePct = source["usagePct"];
 	        this.currentUsage = source["currentUsage"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3459,11 +3465,11 @@ export namespace main {
 	}
 	export class RateLimitRulesInput {
 	    accountKey?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitRulesInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accountKey = source["accountKey"];
@@ -3476,11 +3482,11 @@ export namespace main {
 	    blockReason?: string;
 	    rules: RateLimitRuleState[];
 	    updatedAt?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitState(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accountKey = source["accountKey"];
@@ -3490,7 +3496,7 @@ export namespace main {
 	        this.rules = this.convertValues(source["rules"], RateLimitRuleState);
 	        this.updatedAt = source["updatedAt"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3511,11 +3517,11 @@ export namespace main {
 	}
 	export class RateLimitStatusInput {
 	    accountKey: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitStatusInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accountKey = source["accountKey"];
@@ -3525,11 +3531,11 @@ export namespace main {
 	    id: string;
 	    name: string;
 	    supportedWindows: string[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RateLimitStrategyMeta(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -3548,11 +3554,11 @@ export namespace main {
 	    supportsWebsockets: boolean;
 	    authStrategy: string;
 	    skipRelayKeyMetadata?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RelayLocalApplyInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
@@ -3571,11 +3577,11 @@ export namespace main {
 	    codexHomePath: string;
 	    authFilePath: string;
 	    configPath: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RelayLocalApplyResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.codexHomePath = source["codexHomePath"];
@@ -3593,11 +3599,11 @@ export namespace main {
 	    switchProject: boolean;
 	    switchPreviewModel: boolean;
 	    antigravityCredits: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RelayRoutingConfig(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.strategy = source["strategy"];
@@ -3615,11 +3621,11 @@ export namespace main {
 	    value: string;
 	    createdAt?: string;
 	    lastUsedAt?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RelayServiceAPIKeyItem(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.value = source["value"];
@@ -3632,11 +3638,11 @@ export namespace main {
 	    kind: string;
 	    host: string;
 	    baseUrl: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RelayServiceEndpoint(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -3649,18 +3655,18 @@ export namespace main {
 	    apiKeys: string[];
 	    apiKeyItems: RelayServiceAPIKeyItem[];
 	    endpoints: RelayServiceEndpoint[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RelayServiceConfig(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKeys = source["apiKeys"];
 	        this.apiKeyItems = this.convertValues(source["apiKeyItems"], RelayServiceAPIKeyItem);
 	        this.endpoints = this.convertValues(source["endpoints"], RelayServiceEndpoint);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3679,19 +3685,19 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
 	export class RelaySupportedModelsResult {
 	    models: OpenAICompatibleModel[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RelaySupportedModelsResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3712,11 +3718,11 @@ export namespace main {
 	}
 	export class RemoveCodexSkillInput {
 	    path: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RemoveCodexSkillInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -3726,11 +3732,11 @@ export namespace main {
 	    configPath: string;
 	    removedPath: string;
 	    preview: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new RemoveCodexSkillResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -3740,16 +3746,16 @@ export namespace main {
 	}
 	export class SaveClaudeCodeMcpServerInput {
 	    server: ClaudeCodeMcpAsset;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveClaudeCodeMcpServerInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.server = this.convertValues(source["server"], ClaudeCodeMcpAsset);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3773,11 +3779,11 @@ export namespace main {
 	    server: ClaudeCodeMcpAsset;
 	    preview: string;
 	    changes: ClaudeCodeMcpChange[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveClaudeCodeMcpServerResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -3785,7 +3791,7 @@ export namespace main {
 	        this.preview = source["preview"];
 	        this.changes = this.convertValues(source["changes"], ClaudeCodeMcpChange);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3807,11 +3813,11 @@ export namespace main {
 	export class SaveClaudeCodeMemoryFileInputDTO {
 	    path: string;
 	    content: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveClaudeCodeMemoryFileInputDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -3822,11 +3828,11 @@ export namespace main {
 	    path: string;
 	    size: number;
 	    warning?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveClaudeCodeMemoryFileResultDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -3842,11 +3848,11 @@ export namespace main {
 	    knownFields?: Record<string, any>;
 	    unknownFields?: Record<string, any>;
 	    body: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveClaudeCodeSubagentInputDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.scope = source["scope"];
@@ -3861,11 +3867,11 @@ export namespace main {
 	export class SaveClaudeCodeSubagentResultDTO {
 	    path: string;
 	    preview: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveClaudeCodeSubagentResultDTO(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -3874,11 +3880,11 @@ export namespace main {
 	}
 	export class SaveCodexConfigTomlInput {
 	    content: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveCodexConfigTomlInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.content = source["content"];
@@ -3887,11 +3893,11 @@ export namespace main {
 	export class SaveCodexConfigTomlResult {
 	    configPath: string;
 	    content: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveCodexConfigTomlResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -3901,17 +3907,17 @@ export namespace main {
 	export class SaveCodexFeatureConfigInput {
 	    values?: Record<string, boolean>;
 	    changes?: CodexConfigChangeInput[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveCodexFeatureConfigInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.values = source["values"];
 	        this.changes = this.convertValues(source["changes"], CodexConfigChangeInput);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3932,16 +3938,16 @@ export namespace main {
 	}
 	export class SaveCodexMcpServerInput {
 	    server: CodexMcpServer;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveCodexMcpServerInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.server = this.convertValues(source["server"], CodexMcpServer);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -3965,11 +3971,11 @@ export namespace main {
 	    server: CodexMcpServer;
 	    preview: string;
 	    changes: CodexMcpChange[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveCodexMcpServerResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -3977,7 +3983,7 @@ export namespace main {
 	        this.preview = source["preview"];
 	        this.changes = this.convertValues(source["changes"], CodexMcpChange);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4000,11 +4006,11 @@ export namespace main {
 	    path: string;
 	    name?: string;
 	    enabled: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveCodexSkillEnabledInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.path = source["path"];
@@ -4015,11 +4021,11 @@ export namespace main {
 	export class SaveCodexSkillEnabledResult {
 	    configPath: string;
 	    preview: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SaveCodexSkillEnabledResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.configPath = source["configPath"];
@@ -4035,11 +4041,11 @@ export namespace main {
 	    summary: string;
 	    content: string;
 	    truncated?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SessionManagementMessageRecord(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -4071,11 +4077,11 @@ export namespace main {
 	    currentMessageLabel: string;
 	    provider: string;
 	    model?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SessionManagementSessionRecord(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -4108,11 +4114,11 @@ export namespace main {
 	    lastActiveAt: string;
 	    providerSummary: string;
 	    sessions: SessionManagementSessionRecord[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SessionManagementProjectRecord(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -4125,7 +4131,7 @@ export namespace main {
 	        this.providerSummary = source["providerSummary"];
 	        this.sessions = this.convertValues(source["sessions"], SessionManagementSessionRecord);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4163,11 +4169,11 @@ export namespace main {
 	    startedAt: string;
 	    updatedAt: string;
 	    messages: SessionManagementMessageRecord[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SessionManagementSessionDetail(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sessionID = source["sessionID"];
@@ -4189,7 +4195,7 @@ export namespace main {
 	        this.updatedAt = source["updatedAt"];
 	        this.messages = this.convertValues(source["messages"], SessionManagementMessageRecord);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4208,7 +4214,7 @@ export namespace main {
 		    return a;
 		}
 	}
-	
+
 	export class SessionManagementSnapshot {
 	    projectCount: number;
 	    sessionCount: number;
@@ -4217,11 +4223,11 @@ export namespace main {
 	    lastScanAt: string;
 	    providerCounts: Record<string, number>;
 	    projects: SessionManagementProjectRecord[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SessionManagementSnapshot(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projectCount = source["projectCount"];
@@ -4232,7 +4238,7 @@ export namespace main {
 	        this.providerCounts = source["providerCounts"];
 	        this.projects = this.convertValues(source["projects"], SessionManagementProjectRecord);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4255,11 +4261,11 @@ export namespace main {
 	    useSystemProxy: boolean;
 	    configPath: string;
 	    appliedToRunningSidecar: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SidecarProxySettings(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.useSystemProxy = source["useSystemProxy"];
@@ -4275,11 +4281,11 @@ export namespace main {
 	    cachedInputTokens: number;
 	    outputTokens: number;
 	    totalTokens: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SidecarUsageAttributionBucket(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.start = source["start"];
@@ -4295,11 +4301,11 @@ export namespace main {
 	    window?: string;
 	    bucket?: string;
 	    includeUnresolved?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SidecarUsageAttributionInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.window = source["window"];
@@ -4323,11 +4329,11 @@ export namespace main {
 	    totalTokens: number;
 	    lastActivityAt?: string;
 	    buckets: SidecarUsageAttributionBucket[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SidecarUsageAttributionItem(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.attributionKey = source["attributionKey"];
@@ -4346,7 +4352,7 @@ export namespace main {
 	        this.lastActivityAt = source["lastActivityAt"];
 	        this.buckets = this.convertValues(source["buckets"], SidecarUsageAttributionBucket);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4371,11 +4377,11 @@ export namespace main {
 	    generatedAt: string;
 	    items: SidecarUsageAttributionItem[];
 	    unresolved?: SidecarUsageAttributionItem[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new SidecarUsageAttributionResponse(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.window = source["window"];
@@ -4384,7 +4390,7 @@ export namespace main {
 	        this.items = this.convertValues(source["items"], SidecarUsageAttributionItem);
 	        this.unresolved = this.convertValues(source["unresolved"], SidecarUsageAttributionItem);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4408,11 +4414,11 @@ export namespace main {
 	    baseUrl: string;
 	    prefix?: string;
 	    quotaCurl: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new TestCodexAPIKeyQuotaCurlInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.apiKey = source["apiKey"];
@@ -4424,11 +4430,11 @@ export namespace main {
 	export class UpdateAccountPriorityInput {
 	    id: string;
 	    priority?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateAccountPriorityInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -4446,11 +4452,11 @@ export namespace main {
 	    quotaEnabled?: boolean;
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyConfigInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -4464,7 +4470,7 @@ export namespace main {
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4486,11 +4492,11 @@ export namespace main {
 	export class UpdateCodexAPIKeyLabelInput {
 	    id: string;
 	    label?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyLabelInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -4500,11 +4506,11 @@ export namespace main {
 	export class UpdateCodexAPIKeyPriorityInput {
 	    id: string;
 	    priority?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyPriorityInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -4514,17 +4520,17 @@ export namespace main {
 	export class UpdateOAuthModelAliasesInput {
 	    channel: string;
 	    models?: OpenAICompatibleModel[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateOAuthModelAliasesInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.channel = source["channel"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4553,11 +4559,11 @@ export namespace main {
 	    apiKeys?: string[];
 	    headers?: Record<string, string>;
 	    models?: OpenAICompatibleModel[];
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateOpenAICompatibleProviderInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.currentName = source["currentName"];
@@ -4570,7 +4576,7 @@ export namespace main {
 	        this.headers = source["headers"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4592,11 +4598,11 @@ export namespace main {
 	export class UpdateSessionProviderMapping {
 	    sourceProvider: string;
 	    targetProvider: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateSessionProviderMapping(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.sourceProvider = source["sourceProvider"];
@@ -4607,18 +4613,18 @@ export namespace main {
 	    projectID: string;
 	    mappings: UpdateSessionProviderMapping[];
 	    snapshot?: SessionManagementSnapshot;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UpdateSessionProvidersInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.projectID = source["projectID"];
 	        this.mappings = this.convertValues(source["mappings"], UpdateSessionProviderMapping);
 	        this.snapshot = this.convertValues(source["snapshot"], SessionManagementSnapshot);
 	    }
-	
+
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -4640,11 +4646,11 @@ export namespace main {
 	export class UploadFilePayload {
 	    name: string;
 	    contentBase64: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UploadFilePayload(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.name = source["name"];
@@ -4654,11 +4660,11 @@ export namespace main {
 	export class UsageStatisticsResponse {
 	    usage: Record<string, any>;
 	    failedRequests?: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new UsageStatisticsResponse(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.usage = source["usage"];
@@ -4670,11 +4676,11 @@ export namespace main {
 	    apiKey: string;
 	    model: string;
 	    headers?: Record<string, string>;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new VerifyOpenAICompatibleProviderInput(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.baseUrl = source["baseUrl"];
@@ -4688,11 +4694,11 @@ export namespace main {
 	    statusCode?: number;
 	    message?: string;
 	    responseBody?: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new VerifyOpenAICompatibleProviderResult(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.success = source["success"];
@@ -4705,7 +4711,7 @@ export namespace main {
 }
 
 export namespace sidecar {
-	
+
 	export class Status {
 	    code: string;
 	    port: number;
@@ -4713,11 +4719,11 @@ export namespace sidecar {
 	    version: string;
 	    gitHash: string;
 	    startedAtUnix: number;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new Status(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.code = source["code"];
@@ -4732,17 +4738,17 @@ export namespace sidecar {
 }
 
 export namespace updater {
-	
+
 	export class ReleaseInfo {
 	    version: string;
 	    releaseUrl: string;
 	    assetName: string;
 	    releaseNote: string;
-	
+
 	    static createFrom(source: any = {}) {
 	        return new ReleaseInfo(source);
 	    }
-	
+
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.version = source["version"];

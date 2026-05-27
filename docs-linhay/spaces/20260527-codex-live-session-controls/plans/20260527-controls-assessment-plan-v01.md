@@ -61,3 +61,12 @@
 3. kill 后该 session 不再继续产生活跃请求或连接事件。
 4. 清 tracker 与断连接两件事必须分开验收。
 5. browser preview/cache 场景只展示 disabled/no-op 控制入口或 mock 行为，不能发真实管理请求。
+
+## 暂缓记录
+
+本需求先作为后续 backlog 记录，不在本轮实现。恢复施工前需要先确认：
+
+1. 验收目标是真实 desktop/runtime 模式，不是 browser preview/cache。
+2. dev sidecar 有可复现的真实 active session。
+3. 正式 App / `8317` 不作为验证或止血对象。
+4. 先补 sidecar 单会话控制测试，再接 Wails/root/frontend 控制入口。

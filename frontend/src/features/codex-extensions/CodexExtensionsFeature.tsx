@@ -1,4 +1,4 @@
-import { Download, FilePenLine, RefreshCw } from 'lucide-react';
+import { Download, FilePenLine } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   GetCodexConfigToml,
@@ -12,6 +12,7 @@ import {
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
 import AssetWorkbenchShell from '../../components/ui/AssetWorkbenchShell';
+import RefreshActionButton from '../../components/ui/RefreshActionButton';
 import SearchInput from '../../components/ui/SearchInput';
 import SegmentedControl from '../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
@@ -284,10 +285,13 @@ Path: ${parsedGitSource.path}`,
               <Download className="h-3.5 w-3.5" />
               {t('codex_extensions.add_skill')}
             </button>
-            <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => void reloadSkills()} disabled={loading}>
-              <RefreshCw className="h-3.5 w-3.5" />
-              {loading ? t('common.loading') : t('common.refresh')}
-            </button>
+            <RefreshActionButton
+              onClick={() => void reloadSkills()}
+              disabled={loading}
+              label={t('common.refresh')}
+              loading={loading}
+              loadingLabel={t('common.loading')}
+            />
           </div>
         }
         toolbar={
@@ -574,10 +578,13 @@ function CodexMcpServersWorkspace() {
               <FilePenLine className="h-3.5 w-3.5" />
               {configEditor.loading ? t('common.loading') : t('codex_extensions.edit_config_toml')}
             </button>
-            <button type="button" className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]" onClick={() => void reloadServers()} disabled={loading}>
-              <RefreshCw className="h-3.5 w-3.5" />
-              {loading ? t('common.loading') : t('common.refresh')}
-            </button>
+            <RefreshActionButton
+              onClick={() => void reloadServers()}
+              disabled={loading}
+              label={t('common.refresh')}
+              loading={loading}
+              loadingLabel={t('common.loading')}
+            />
           </div>
         }
         toolbar={

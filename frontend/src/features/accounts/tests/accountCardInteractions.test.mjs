@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
-import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions.ts';
+import { buildAccountCardContentText } from '../model/accountCardActions.ts';
 import { shouldOpenAccountDetailsFromTarget } from '../model/accountCardInteractions.ts';
 
 function node(tagName, parentElement = null, dataset) {
@@ -38,20 +39,6 @@ test('shouldOpenAccountDetailsFromTarget respects explicit ignore markers', () =
   assert.equal(shouldOpenAccountDetailsFromTarget(inner, card), false);
 });
 
-test('buildAccountCardCopyText returns the account primary label', () => {
-  assert.equal(
-    buildAccountCardCopyText({
-      id: 'codex-api-key:stable-001',
-      provider: 'codex',
-      credentialSource: 'api-key',
-      displayName: 'Primary API Key',
-      status: 'configured',
-      keySuffix: '1234',
-    }),
-    'Primary API Key',
-  );
-});
-
 test('buildAccountCardContentText returns structured account summary json', () => {
   const content = buildAccountCardContentText({
     id: 'codex-api-key:stable-001',
@@ -82,4 +69,28 @@ test('buildAccountCardContentText returns structured account summary json', () =
       prefix: 'team-a',
     },
   });
+});
+
+test('account card action menu uses explicit copy labels', async () => {
+  const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /t\('accounts\.copy_account_config'\)/);
+  assert.match(source, /writeAccountClipboardText/);
+  assert.doesNotMatch(source, /t\('accounts\.copy_account_name'\)/);
+  assert.doesNotMatch(source, /t\('common\.copy_content'\)/);
+  assert.doesNotMatch(source, /navigator\.clipboard\.writeText/);
+});
+
+test('accounts paste modal opens with app-local copied account payload when available', async () => {
+  const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /readAccountClipboardFallback/);
+  assert.match(source, /setPasteContent\(readAccountClipboardFallback\(\)\)/);
+});
+
+test('pasted codex api key copies use numbered duplicate titles', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+
+  assert.match(source, /resolveNumberedDuplicateTitle\(copiedAccount\.label/);
+  assert.match(source, /label,/);
 });

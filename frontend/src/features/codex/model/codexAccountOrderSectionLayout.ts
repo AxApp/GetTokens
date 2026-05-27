@@ -6,14 +6,17 @@ export const CODEX_ORDER_SECTION_ACTION_MENU_GAP = 24;
 export const CODEX_ACCOUNT_ORDER_DISPLAY_MODE_STORAGE_KEY = 'gettokens.codex.account-order-display-mode';
 
 export type CodexAccountOrderDisplayMode = 'full' | 'compact' | 'list';
+export type CodexOrderSectionActionLayout = 'inline' | 'wrapped' | 'menu';
 export const DEFAULT_CODEX_ACCOUNT_ORDER_DISPLAY_MODE: CodexAccountOrderDisplayMode = 'compact';
 export type CodexAccountOrderFilterSource = 'all' | 'codex-auth-file' | 'codex-api-key' | 'openai-compatible';
 export interface CodexAccountOrderFilterSummaryPart {
-  kind: 'status' | 'resource' | 'source';
+  kind: 'route' | 'status' | 'resource' | 'source';
   label: string;
 }
 export interface CodexAccountOrderFilter {
   source: CodexAccountOrderFilterSource;
+  requiresParticipating: boolean;
+  requiresSkipped: boolean;
   requiresRequestable: boolean;
   requiresBlocked: boolean;
   requiresDisabled: boolean;
@@ -23,6 +26,8 @@ export interface CodexAccountOrderFilter {
 }
 export const DEFAULT_CODEX_ACCOUNT_ORDER_FILTER: CodexAccountOrderFilter = {
   source: 'all',
+  requiresParticipating: false,
+  requiresSkipped: false,
   requiresRequestable: false,
   requiresBlocked: false,
   requiresDisabled: false,
@@ -63,6 +68,34 @@ export function shouldUseCodexOrderSectionActionMenu(containerWidth: number, inl
   return containerWidth < inlineActionsWidth + CODEX_ORDER_SECTION_ACTION_MENU_GAP;
 }
 
+export function chooseCodexOrderSectionActionLayout({
+  headerWidth,
+  titleWidth,
+  inlineActionsWidth,
+}: {
+  headerWidth: number;
+  titleWidth: number;
+  inlineActionsWidth: number;
+}): CodexOrderSectionActionLayout {
+  if (
+    !Number.isFinite(headerWidth) ||
+    headerWidth <= 0 ||
+    !Number.isFinite(inlineActionsWidth) ||
+    inlineActionsWidth <= 0
+  ) {
+    return 'menu';
+  }
+  const safeTitleWidth = Number.isFinite(titleWidth) && titleWidth > 0 ? titleWidth : 0;
+  const spacing = CODEX_ORDER_SECTION_ACTION_MENU_GAP;
+  if (headerWidth >= safeTitleWidth + inlineActionsWidth + spacing) {
+    return 'inline';
+  }
+  if (headerWidth >= inlineActionsWidth + spacing) {
+    return 'wrapped';
+  }
+  return 'menu';
+}
+
 export function parseCodexAccountOrderDisplayMode(value: string | null | undefined): CodexAccountOrderDisplayMode {
   if (value === 'compact' || value === 'list') {
     return value;
@@ -89,6 +122,8 @@ export function normalizeCodexAccountOrderFilter(
   }
   return {
     source: resolveCodexAccountOrderFilterSource(filter.source),
+    requiresParticipating: filter.requiresParticipating === true,
+    requiresSkipped: filter.requiresSkipped === true,
     requiresRequestable: filter.requiresRequestable === true,
     requiresBlocked: filter.requiresBlocked === true,
     requiresDisabled: filter.requiresDisabled === true,
@@ -115,6 +150,12 @@ export function summarizeCodexAccountOrderFilter(
   const normalizedFilter = normalizeCodexAccountOrderFilter(filter);
   const parts: CodexAccountOrderFilterSummaryPart[] = [];
 
+  if (normalizedFilter.requiresParticipating) {
+    parts.push({ kind: 'route', label: t('codex.account_list_filter_participating_match') });
+  }
+  if (normalizedFilter.requiresSkipped) {
+    parts.push({ kind: 'route', label: t('codex.account_list_filter_skipped_match') });
+  }
   if (normalizedFilter.requiresRequestable) {
     parts.push({ kind: 'status', label: t('codex.account_list_filter_requestable_match') });
   }
@@ -151,11 +192,18 @@ export function filterCodexAccountOrderRows<T extends CodexAccountOrderFilterabl
   filter: CodexAccountOrderFilter,
   codexQuotaByName: Record<string, CodexQuotaState> = {},
   query = '',
+  routePolicyRowStates: Record<string, { participates?: boolean } | undefined> = {},
 ) {
   const normalizedFilter = normalizeCodexAccountOrderFilter(filter);
   const normalizedQuery = normalizeCodexOrderSearchQuery(query);
   return rows.filter((row) => {
     if (normalizedFilter.source !== 'all' && row.sourceKind !== normalizedFilter.source) {
+      return false;
+    }
+    if (normalizedFilter.requiresParticipating && routePolicyRowStates[row.id]?.participates !== true) {
+      return false;
+    }
+    if (normalizedFilter.requiresSkipped && routePolicyRowStates[row.id]?.participates !== false) {
       return false;
     }
     if (normalizedFilter.requiresRequestable && row.requestable === false) {

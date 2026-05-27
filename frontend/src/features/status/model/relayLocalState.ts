@@ -1,6 +1,7 @@
 import {
   CODEX_CHATGPT_BACKEND_BASE_URL,
   normalizeRelayProviderOption,
+  RELAY_CODEX_DEFAULT_MODEL,
   RELAY_CODEX_DEFAULT_REASONING_EFFORT,
   RELAY_CODEX_OPENAI_PROVIDER_ID,
   RELAY_CODEX_PROVIDER_ID,
@@ -151,9 +152,18 @@ const relaySelectedProviderStorageKey = 'gettokens.status.selected-relay-provide
 const relaySelectedReasoningEffortStorageKey = 'gettokens.status.selected-relay-reasoning-effort';
 const codexLocalAuthStrategyStorageKey = 'gettokens.status.codex-local-auth-strategy';
 
-export const defaultRelayModelOptions = ['GT', 'gpt-5.4'];
+export const defaultRelayModelOptions = [RELAY_CODEX_DEFAULT_MODEL];
 export const defaultRelayReasoningEffortOptions = [...RELAY_CODEX_REASONING_EFFORT_OPTIONS];
 export const defaultCodexLocalAuthStrategy: CodexLocalAuthStrategy = 'replace_auth_with_apikey';
+
+const legacyRelayModelOptionIDs = new Set(['GT']);
+
+function normalizeRelayModelOptionList(values: unknown[]) {
+  const normalized = values
+    .map((item) => String(item || '').trim())
+    .filter((item) => item && !legacyRelayModelOptionIDs.has(item));
+  return Array.from(new Set(normalized));
+}
 
 export function toRelayProviderOption(input: {
   providerID?: string;
@@ -509,10 +519,8 @@ export function loadRelayModelOptions() {
     if (!Array.isArray(parsed)) {
       return defaultRelayModelOptions;
     }
-    const normalized = parsed
-      .map((item) => String(item || '').trim())
-      .filter(Boolean);
-    return Array.from(new Set(normalized));
+    const normalized = normalizeRelayModelOptionList(parsed);
+    return normalized.length ? normalized : defaultRelayModelOptions;
   } catch (error) {
     console.error(error);
     return defaultRelayModelOptions;
@@ -525,7 +533,8 @@ export function saveRelayModelOptions(values: string[]) {
   }
 
   try {
-    window.localStorage.setItem(relayModelOptionsStorageKey, JSON.stringify(values));
+    const normalized = normalizeRelayModelOptionList(values);
+    window.localStorage.setItem(relayModelOptionsStorageKey, JSON.stringify(normalized.length ? normalized : defaultRelayModelOptions));
   } catch (error) {
     console.error(error);
   }
@@ -579,17 +588,48 @@ export function saveRelayProviderOptions(values: RelayProviderOption[]) {
   }
 }
 
+export interface ResolveInitialRelayModelSelectionInput {
+  modelOptions: string[];
+  storedModel?: string;
+  activeModel?: string;
+  hasExplicitActiveModel?: boolean;
+  fallbackModel?: string;
+}
+
+export function resolveInitialRelayModelSelection(input: ResolveInitialRelayModelSelectionInput) {
+  const modelOptions = input.modelOptions || [];
+  const fallbackModel = String(input.fallbackModel || defaultRelayModelOptions[0] || RELAY_CODEX_DEFAULT_MODEL).trim() || RELAY_CODEX_DEFAULT_MODEL;
+  const activeModel = String(input.activeModel || '').trim();
+  if (input.hasExplicitActiveModel && activeModel) {
+    return activeModel;
+  }
+
+  if (modelOptions.includes(fallbackModel)) {
+    return fallbackModel;
+  }
+
+  const storedModel = String(input.storedModel || '').trim();
+  if (storedModel && modelOptions.includes(storedModel)) {
+    return storedModel;
+  }
+
+  return modelOptions[0] || fallbackModel;
+}
+
 export function loadSelectedRelayModel(modelOptions: string[]) {
   if (typeof window === 'undefined') {
-    return modelOptions[0] || 'GT';
+    return resolveInitialRelayModelSelection({ modelOptions });
   }
 
   try {
     const raw = String(window.localStorage.getItem(relaySelectedModelStorageKey) || '').trim();
-    return raw || modelOptions[0] || 'GT';
+    return resolveInitialRelayModelSelection({
+      modelOptions,
+      storedModel: raw,
+    });
   } catch (error) {
     console.error(error);
-    return modelOptions[0] || 'GT';
+    return resolveInitialRelayModelSelection({ modelOptions });
   }
 }
 
@@ -605,19 +645,48 @@ export function saveSelectedRelayModel(value: string) {
   }
 }
 
+export interface ResolveInitialRelayProviderSelectionInput {
+  providerOptions: RelayProviderOption[];
+  storedProviderID?: string;
+  activeProviderID?: string;
+  hasExplicitActiveProvider?: boolean;
+  fallbackProviderID?: string;
+}
+
+export function resolveInitialRelayProviderSelection(input: ResolveInitialRelayProviderSelectionInput) {
+  const providerOptions = input.providerOptions || [];
+  const fallbackProviderID = String(input.fallbackProviderID || RELAY_CODEX_PROVIDER_ID).trim() || RELAY_CODEX_PROVIDER_ID;
+  const activeProviderID = String(input.activeProviderID || '').trim();
+  if (input.hasExplicitActiveProvider && activeProviderID) {
+    return activeProviderID;
+  }
+
+  if (providerOptions.some((option) => option.id === fallbackProviderID)) {
+    return fallbackProviderID;
+  }
+
+  const storedProviderID = String(input.storedProviderID || '').trim();
+  if (storedProviderID && providerOptions.some((option) => option.id === storedProviderID)) {
+    return storedProviderID;
+  }
+
+  return providerOptions[0]?.id || fallbackProviderID;
+}
+
 export function loadSelectedRelayProvider(providerOptions: RelayProviderOption[]) {
   if (typeof window === 'undefined') {
-    return providerOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID;
+    return resolveInitialRelayProviderSelection({ providerOptions });
   }
 
   try {
     const raw = String(window.localStorage.getItem(relaySelectedProviderStorageKey) || '').trim();
-    return raw && providerOptions.some((option) => option.id === raw)
-      ? raw
-      : (providerOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID);
+    return resolveInitialRelayProviderSelection({
+      providerOptions,
+      storedProviderID: raw,
+    });
   } catch (error) {
     console.error(error);
-    return providerOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID;
+    return resolveInitialRelayProviderSelection({ providerOptions });
   }
 }
 

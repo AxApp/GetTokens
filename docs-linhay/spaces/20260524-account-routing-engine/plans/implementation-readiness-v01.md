@@ -19,10 +19,10 @@
 1. `Account Inventory` 只管理账号、账号组、启停、弃用、基础排序和状态展示。
 2. `Channel Routing` 由 Codex / Claude 账号列表分别负责，两个渠道配置互不影响。
 3. `Routing Engine` 是 sidecar 执行层，读取账号池快照和渠道配置，产出 `RouteDecision + Trace`。
-4. 新 GetTokens 路由模式只保留 `sequential / balanced / project`。
+4. 当前 GetTokens 路由模式只保留 `sequential / balanced`。
 5. `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入新 UI / Wails DTO / engine policy。
 6. `exclude` 不是 route mode，只是请求级 deny 或 pool filter。
-7. 项目模式只限定目标账号或账号组；命中组后仍通过 `sequential` 或 `balanced` 做组内选择。
+7. 项目绑定只限定目标账号或账号组；命中组后仍通过 `sequential` 或 `balanced` 做组内选择，不能作为独立 route mode 入口。
 8. 账号或有效组禁用立即生效，高于 session sticky、失败降级和 retry；已有流式连接在最近可控边界断开。
 9. 账号或有效组激活只重新进入可路由账号池，等待下一轮 route / retry 选择，不抢占当前 stream / sticky。
 10. 失败冷却状态必须持久化到运行态或 guard source；自动恢复只清对应 source，不清用户禁用。
@@ -52,7 +52,7 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 - 为启停实时性补测试：禁用清理 sticky / pinned auth 并断开当前流；激活只进入下一轮候选池，不抢占当前连接。
 - 为失败冷却持久化补测试：429/5xx 写入运行态后，后续 route explain 和真实 route 都能过滤该账号。
 - 为 hook 安装点补测试：route policy、usage attribution、rate-limit hook 必须在生产启动链路安装。
-- 为前端模型补测试：`ChannelRouteMode` 只接受 `sequential / balanced / project`。
+- 为前端模型补测试：`ChannelRouteMode` 只接受 `sequential / balanced`，`project` 输入降级或标记为旧兼容输入。
 - 为前端边界补测试：Account Inventory 不渲染 rotation orchestration 入口。
 
 通过标准：
@@ -100,7 +100,7 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 - 账号或账号组激活后只进入下一轮候选池，不抢占已有 stream / sticky。
 - Codex WebSocket pinned auth 被 guard 命中后释放 pin、关闭旧 upstream、重新进入 engine。
 
-### Phase 3：Routeable Account Pool 与三模式
+### Phase 3：Routeable Account Pool 与两模式
 
 目标：实现用户可理解的可路由账号池和核心路由模式。
 
@@ -112,14 +112,14 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 - 建立渠道路由配置：`routeMode / orderedAccountIDs / channelGroupStates / projectBindings / fallbackMode`。
 - 实现 `sequential`：有效排序从低到高，retry 排除已尝试账号。
 - 实现 `balanced`：当前会话数或 in-flight 最少优先，同负载按有效排序。
-- 实现 `project`：项目名绑定账号或账号组，组内委托 `sequential / balanced`。
+- 实现项目绑定范围约束：项目名绑定账号或账号组，组内委托 `sequential / balanced`。
 
 通过标准：
 
 - 总账号池 CRUD 不创建或修改 Codex / Claude 渠道路由配置。
 - Codex 保存不影响 Claude，Claude 保存不影响 Codex。
 - 全局组禁用影响所有渠道，渠道组禁用只影响当前渠道。
-- 上游兼容模式不会改变三模式决策，只出现在 trace 兼容说明中。
+- 上游兼容模式不会改变两模式决策，只出现在 trace 兼容说明中。
 
 ### Phase 4：Wails / Management API
 
@@ -227,7 +227,7 @@ qmd embed
 - Codex / Claude 账号列表从“请求顺序页面”升级为“渠道路由工作台”。
 - 渠道顺序不再写全局 `UpdateAccountPriority`。
 - 旧 allow / deny / order / fallback 只作为请求级兼容 policy。
-- 新模式只接受 `sequential / balanced / project`。
+- 新模式只接受 `sequential / balanced`。
 
 暂不升级到 `AGENTS.md`：
 

@@ -31,20 +31,40 @@
 - 前后端统一优先使用这个 `LocalID` 作为 `AccountRecord.id`
 - 配置三元组只保留为“配置身份”和去重判断依据
 
-### 1.2 去重规则不能跟着稳定 ID 一起放松
+### 1.2 当前复制语义允许相同配置多资产
 
-虽然记录 id 稳定了，但“账号是否重复”仍然按归一化后的配置身份判断：
+2026-05-27 更新：用户复制账号配置后需要能直接导入为一份新结构，再按需修改配置。因此，本地用户创建或复制出来的 Codex API Key 记录可以共享同一个归一化配置身份：
 
 - `NormalizeBaseURL(baseUrl)`
 - `NormalizePrefix(prefix)`
 - `apiKey`
 
-也就是说：
+实现边界：
 
-- 更新同一条记录时，允许它改配置
-- 但不能改成另一条记录已经占用的配置身份
+- `AccountRecord.id` 继续优先使用稳定 `LocalID`
+- 本地 `codex-api-keys` store 文件名优先按 `LocalID` 落盘，避免同配置副本互相覆盖
+- 编辑同一条记录时，仍保持 `LocalID` 不变
+- 只有 sidecar 返回的旧镜像数据缺少 `local-id` 时，才允许用归一化配置身份与本地记录去重，避免历史“双卡片”问题回归
 
-这样可以同时满足“可编辑”与“不会把两条上游资产合并污染”。
+这样可以同时满足“复制为新资产后可编辑”和“旧 sidecar 镜像不重复污染列表”。
+
+### 1.3 复制导入的标题与剪贴板边界
+
+2026-05-27 更新：账号卡复制导入是账号资产复制能力，不是简单复制展示名称。复制 payload 需要覆盖：
+
+- `auth-file`
+- `codex-api-key`
+- `openai-compatible`
+
+导入时如果标题、provider 名或 auth-file 文件名同名，使用用户可读的编号后缀：
+
+- `deepseek` -> `deepseek #2`
+- `deepseek #2` 再复制，且已有 `deepseek` / `deepseek #2` 时 -> `deepseek #3`
+- `codex-auth.json` -> `codex-auth #2.json`
+
+这里刻意不使用 `-copy` 后缀，因为用户希望副本标题更像自然列表项，而不是工程内部标识。
+
+浏览器预览、Wails WebView 和普通浏览器对系统剪贴板权限不一致。账号卡组件不应直接调用 `navigator.clipboard.writeText`；复制逻辑应走共享 helper，并至少覆盖 DOM copy、Web Clipboard、Wails runtime 和 app-local fallback。app-local fallback 用于保证“复制账号配置 -> 粘贴账号内容导入”在系统剪贴板被拒绝时仍能闭环。
 
 ## 2. 轮动禁用语义边界
 

@@ -36,9 +36,36 @@ interface BuildCodexLiveRequestTimingTrendOptions {
   nowMs?: number;
 }
 
+export type CodexLiveTimingMetricAverageKey =
+  | CodexLiveTimingTrendMetric
+  | 'reconnectCount'
+  | 'outputTokensPerSecond'
+  | 'totalTokensPerSecond';
+
+export interface CodexLiveTimingMetricAverages {
+  values: Partial<Record<CodexLiveTimingMetricAverageKey, number>>;
+  sampleCount: number;
+}
+
 export const codexLiveRequestTimingTrendMaxPoints = 50;
 const liveElapsedMaxMs = 2 * 60 * 60 * 1000;
 const liveStatuses: ReadonlySet<CodexLiveRequest['status']> = new Set(['active', 'streaming', 'reconnecting']);
+const timingTrendMetrics: ReadonlyArray<CodexLiveTimingTrendMetric> = [
+  'totalDurationMs',
+  'firstEventMs',
+  'firstTokenMs',
+  'streamDurationMs',
+  'queueWaitMs',
+  'authSelectMs',
+  'upstreamConnectMs',
+  'averageEventGapMs',
+  'longestEventGapMs',
+];
+const requestTimingMetrics: ReadonlyArray<'reconnectCount' | 'outputTokensPerSecond' | 'totalTokensPerSecond'> = [
+  'reconnectCount',
+  'outputTokensPerSecond',
+  'totalTokensPerSecond',
+];
 
 export function buildCodexLiveRequestTimingTrend(
   requests: readonly CodexLiveRequest[],
@@ -76,6 +103,36 @@ export function buildCodexLiveRequestTimingTrend(
     startedAtMaxMs,
     windowMs,
     maxPoints,
+  };
+}
+
+export function buildCodexLiveRequestTimingMetricAverages(
+  requests: readonly CodexLiveRequest[],
+  activeRequest?: CodexLiveRequest,
+  options: BuildCodexLiveRequestTimingTrendOptions = {},
+): CodexLiveTimingMetricAverages {
+  const trend = buildCodexLiveRequestTimingTrend(requests, activeRequest, options);
+  const requestsByID = new Map<string, CodexLiveRequest>();
+  for (const request of requests) {
+    requestsByID.set(request.requestID, request);
+  }
+  if (activeRequest) {
+    requestsByID.set(activeRequest.requestID, activeRequest);
+  }
+
+  const values: Partial<Record<CodexLiveTimingMetricAverageKey, number>> = {};
+  for (const metric of timingTrendMetrics) {
+    values[metric] = averageNumericValues(trend.points.map((point) => point.values[metric]));
+  }
+  for (const metric of requestTimingMetrics) {
+    values[metric] = averageNumericValues(
+      trend.points.map((point) => normalizeTimingValue(requestsByID.get(point.requestID)?.timing?.[metric])),
+    );
+  }
+
+  return {
+    values,
+    sampleCount: trend.points.length,
   };
 }
 
@@ -138,6 +195,15 @@ function normalizeTimingValue(value: number | undefined): number | null {
     return null;
   }
   return Math.round(value);
+}
+
+function averageNumericValues(values: Array<number | null>): number | undefined {
+  const presentValues = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  if (presentValues.length === 0) {
+    return undefined;
+  }
+  const total = presentValues.reduce((sum, value) => sum + value, 0);
+  return Math.round(total / presentValues.length);
 }
 
 function normalizeTimingMaxPoints(value: number | undefined): number {

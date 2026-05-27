@@ -97,7 +97,7 @@ group.routeOrder -> account.routeOrder -> stable account id
 
 ### 路由模式
 
-核心模式只保留三类：
+当前主路径核心模式只保留两类：
 
 1. `sequential` 顺序模式
    - 按有效排序从低到高尝试。
@@ -106,17 +106,14 @@ group.routeOrder -> account.routeOrder -> stable account id
    - 按账号当前会话数或 in-flight 请求数最少优先。
    - 负载相同再按有效排序。
    - WebSocket session 和长请求应计入当前会话数；短 HTTP 请求计入 in-flight。
-3. `project` 项目模式
-   - 从请求元数据提取 projectName。
-   - projectName 可绑定到账号组或账号。
-   - 绑定目标不可用时按配置 fail-closed 或 fallback 到默认模式。
+项目名绑定不再作为 route mode 暴露。历史 `projectBindings` 可作为项目名到账号组或账号的范围约束/兼容数据保留；命中绑定后仍交给 `sequential` 或 `balanced` 在目标池内选择账号。
 
 `dedicated / prefer / ordered / weighted / canary` 不进入新的 GetTokens 路由模型。它们只用于合并上游功能时的兼容边界：
 
 - 不在 UI、Wails DTO 或 engine policy 中作为可配置模式暴露。
 - 不映射为新的 route mode。
-- 不影响 `sequential / balanced / project` 的决策结果。
-- 如上游输入携带这些字段，只在 trace 中标记为 `upstream_compat` 或 `ignored_upstream_mode`，再按 GetTokens 三模式继续处理。
+- 不影响 `sequential / balanced` 的决策结果。
+- 如上游输入携带这些字段，只在 trace 中标记为 `upstream_compat` 或 `ignored_upstream_mode`，再按 GetTokens 两模式继续处理。
 
 `exclude` 也不作为路由模式；它只允许作为请求级 deny 或目标池过滤条件出现。
 
@@ -219,7 +216,7 @@ AND channelGroup.enabled
 AND supports channel/provider/model/endpoint
 ```
 
-项目模式只负责把请求限定到某个账号组或账号。若项目绑定命中账号组，组内选择仍使用 `sequential` 或 `balanced`；因此项目模式需要一个 `projectModeFallbackRouteMode` 字段，取值为 `sequential` 或 `balanced`。
+项目绑定只负责把请求限定到某个账号组或账号，不再作为独立路由模式。若项目绑定命中账号组，组内选择仍使用 `sequential` 或 `balanced`；历史 `projectModeFallbackRouteMode` 仅用于兼容旧配置，不能作为新自定义模式的扩展点。
 
 ## 快照与持久化
 

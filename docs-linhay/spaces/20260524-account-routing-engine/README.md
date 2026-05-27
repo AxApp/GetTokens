@@ -41,7 +41,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
   - 清理既有 `RoutePolicy` / `AccountRouteGuardStore` / `rateLimitPolicy` 的重复职责，明确哪些保留为兼容层、哪些迁移为 engine policy。
   - 建立 `RouteableAccountPool` 规则：账号激活状态、请求可用状态、账号排序、账号归属组、组级启停和组级排序共同决定可路由账号池和基础顺序。
   - 区分 `inventoryGroup.enabled` 与 `channelGroup.enabled`，避免 Codex / Claude 共用账号组时互相影响渠道启停范围。
-  - 建立三类核心路由模式：`sequential`、`balanced`、`project`。`dedicated / prefer / ordered / weighted / canary` 不进入新的 GetTokens 路由逻辑，只作为合并上游功能时的兼容语义保留在边界层；`exclude` 仅作为请求级 deny / 过滤输入，不作为路由模式。
+  - 建立两类核心路由模式：`sequential`、`balanced`。`project` 已从可配置 route mode 下线，项目绑定只作为项目名到账号/账号组的范围约束或兼容数据保留；`dedicated / prefer / ordered / weighted / canary` 不进入新的 GetTokens 路由逻辑，只作为合并上游功能时的兼容语义保留在边界层；`exclude` 仅作为请求级 deny / 过滤输入，不作为路由模式。
   - 保留 Codex WebSocket 请求边界特例：释放 pinned auth、关闭旧 upstream、transcript replay、重新选择。
 - GetTokens backend / Wails：
   - 暴露自定义端点路由规则的读取、保存、验证、dry-run/explain API。
@@ -122,14 +122,14 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 19. Given 某账号所在目标组被禁用，When 该组被路由规则选中，Then 该账号不进入该组的可路由池；如果账号也属于其他启用组，只有其他组被选中时才可参与路由。
 20. Given 路由模式为顺序模式，When 请求失败且允许 retry，Then 按有效顺序尝试下一个可路由账号。
 21. Given 路由模式为均衡模式，When 多个账号可用，Then 优先选择当前会话数最低的账号；会话数相同再按有效排序值决定。
-22. Given 路由模式为项目模式，When 请求携带项目名且项目绑定了账号组或账号，Then 优先使用该绑定；绑定目标不可用时按配置决定失败或回退到默认模式。
+22. Given 请求携带项目名且存在项目绑定，When 项目绑定命中账号组或账号，Then 该绑定只限定目标池，最终账号选择仍按当前渠道的 `sequential` 或 `balanced` 执行；绑定目标不可用时按兼容 fallback 配置处理。
 23. Given 用户在总账号池修改账号或账号组，When 保存成功，Then 只影响账号资产、账号组资产、启停/弃用和基础排序，不直接修改 Codex 或 Claude 的渠道轮动配置。
 24. Given 用户在 Codex 账号列表调整排序或路由模式，When 保存成功，Then 只影响 Codex 渠道路由，不改变 Claude 渠道排序，也不改变总账号池的资产排序。
 25. Given 用户在 Claude 账号列表调整排序或路由模式，When 保存成功，Then 只影响 Claude 渠道路由，不改变 Codex 渠道排序，也不改变总账号池的资产排序。
 26. Given 用户查看路由说明，When 当前在 Codex 或 Claude 账号列表，Then 页面解释的是该渠道的可路由池、排序、模式和 fallback，而不是总账号池的全局排序。
 27. Given 总账号池禁用某账号组，When Codex 或 Claude 引用该组，Then 两个渠道都不能从该组产生候选。
 28. Given Codex 渠道禁用某账号组，When Claude 渠道仍启用该组，Then Codex 不从该组产生候选，但 Claude 仍可按自身渠道配置使用该组。
-29. Given 项目模式命中账号组，When 该组内有多个可路由账号，Then 项目绑定只负责限定目标池，组内选择继续按该渠道配置的 `sequential` 或 `balanced` 执行。
+29. Given 项目绑定命中账号组，When 该组内有多个可路由账号，Then 项目绑定只负责限定目标池，组内选择继续按该渠道配置的 `sequential` 或 `balanced` 执行。
 30. Given 某账号已被 session sticky 或 WebSocket pinned auth 占用，When 用户禁用该账号或其有效组，Then sticky / pin 立即失效；当前流式连接在最近可控边界断开，后续请求重新进入 route engine。
 31. Given 某账号或账号组从禁用切回激活，When 当前已有其他账号承载 stream / sticky，Then 不主动抢占或迁移当前连接；该账号只进入下一轮 route / retry 的可路由账号池。
 32. Given 某账号因 401/429/5xx/model-unavailable 进入失败冷却，When 后续请求进入路由引擎，Then 该冷却状态从持久化运行态或 guard source 读取；冷却到期只恢复对应 source，不清除用户禁用状态。

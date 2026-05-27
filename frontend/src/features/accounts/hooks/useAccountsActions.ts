@@ -1,6 +1,7 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
 import {
   CreateCodexAPIKey,
+  CreateOpenAICompatibleProvider,
   DeleteAuthFiles,
   DeleteCodexAPIKey,
   DeleteOpenAICompatibleProvider,
@@ -10,6 +11,7 @@ import {
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
   UpdateCodexAPIKeyPriority,
+  UpdateOpenAICompatibleProvider,
   UploadAuthFiles,
 } from '../../../../wailsjs/go/main/App';
 import { main } from '../../../../wailsjs/go/models';
@@ -27,6 +29,9 @@ import {
   encodeUTF8Base64,
   parseAccountCardImportPayload,
   readUploadFiles,
+  resolveCopiedAuthFileName,
+  resolveCopiedOpenAICompatibleProviderName,
+  resolveNumberedDuplicateTitle,
   resolvePastedAuthFileName,
 } from '../model/accountTransfer';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
@@ -270,13 +275,20 @@ export default function useAccountsActions({
     try {
       if (copiedAccount?.type === 'codex-api-key') {
         const lowestPriority = accounts.reduce((min, account) => Math.min(min, Number(account.priority || 0)), 0);
+        const existingApiKeyTitles = accounts.flatMap((account) => {
+          if (account.credentialSource !== 'api-key' || account.id.startsWith('openai-compatible:')) {
+            return [];
+          }
+          return account.displayName || account.name || '';
+        });
+        const label = resolveNumberedDuplicateTitle(copiedAccount.label || 'Codex API Key', existingApiKeyTitles);
         await trackRequest(
           'CreateCodexAPIKey',
           { baseUrl: copiedAccount.baseUrl, source: 'account-card-paste' },
           () =>
             CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom({
               apiKey: copiedAccount.apiKey,
-              label: copiedAccount.label,
+              label,
               baseUrl: copiedAccount.baseUrl,
               priority: lowestPriority - 1,
               prefix: copiedAccount.prefix,
@@ -289,7 +301,57 @@ export default function useAccountsActions({
         return;
       }
 
-      const name = copiedAccount?.type === 'auth-file' ? copiedAccount.name : resolvePastedAuthFileName(parsed);
+      if (copiedAccount?.type === 'openai-compatible') {
+        const existingProviderNames = accounts.flatMap((account) => {
+          if (!account.id.startsWith('openai-compatible:')) {
+            return [];
+          }
+          return account.id.replace(/^openai-compatible:/, '') || account.provider;
+        });
+        const name = resolveCopiedOpenAICompatibleProviderName(copiedAccount.name, existingProviderNames);
+        await trackRequest(
+          'CreateOpenAICompatibleProvider',
+          { name, source: 'account-card-paste' },
+          () =>
+            CreateOpenAICompatibleProvider(main.CreateOpenAICompatibleProviderInput.createFrom({
+              name,
+              apiKey: copiedAccount.apiKey,
+              baseUrl: copiedAccount.baseUrl,
+              prefix: copiedAccount.prefix,
+            }))
+        );
+        await trackRequest(
+          'UpdateOpenAICompatibleProvider',
+          { name, source: 'account-card-paste' },
+          () =>
+            UpdateOpenAICompatibleProvider(main.UpdateOpenAICompatibleProviderInput.createFrom({
+              currentName: name,
+              name,
+              apiKey: copiedAccount.apiKey,
+              apiKeys: copiedAccount.apiKeys,
+              baseUrl: copiedAccount.baseUrl,
+              prefix: copiedAccount.prefix,
+              proxyUrl: copiedAccount.proxyUrl || undefined,
+              headers: copiedAccount.headers,
+              models: copiedAccount.models,
+            }))
+        );
+        setIsPasteModalOpen(false);
+        setPasteContent('');
+        setPasteError('');
+        await loadAccounts();
+        return;
+      }
+
+      const existingAuthFileNames = accounts.flatMap((account) => {
+        if (account.credentialSource !== 'auth-file') {
+          return [];
+        }
+        return account.name || account.id.replace(/^auth-file:/, '');
+      });
+      const name = copiedAccount?.type === 'auth-file'
+        ? resolveCopiedAuthFileName(copiedAccount.name, existingAuthFileNames)
+        : resolvePastedAuthFileName(parsed);
       const uploadContent = copiedAccount?.type === 'auth-file' ? copiedAccount.content : content;
       const payload = [{ name, contentBase64: encodeUTF8Base64(uploadContent) }];
 

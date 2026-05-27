@@ -435,11 +435,14 @@ type LocalCodexModelProviderView struct {
 }
 
 type LocalCodexModelProviderStateView struct {
-	CurrentProviderID        string                        `json:"currentProviderID"`
-	CurrentProviderName      string                        `json:"currentProviderName"`
-	CurrentProviderIsBuiltin bool                          `json:"currentProviderIsBuiltin"`
-	CurrentProviderExists    bool                          `json:"currentProviderExists"`
-	Providers                []LocalCodexModelProviderView `json:"providers"`
+	CurrentModel               string                        `json:"currentModel"`
+	HasExplicitCurrentModel    bool                          `json:"hasExplicitCurrentModel"`
+	CurrentProviderID          string                        `json:"currentProviderID"`
+	CurrentProviderName        string                        `json:"currentProviderName"`
+	CurrentProviderIsBuiltin   bool                          `json:"currentProviderIsBuiltin"`
+	CurrentProviderExists      bool                          `json:"currentProviderExists"`
+	HasExplicitCurrentProvider bool                          `json:"hasExplicitCurrentProvider"`
+	Providers                  []LocalCodexModelProviderView `json:"providers"`
 }
 
 type RelayServiceEndpoint struct {

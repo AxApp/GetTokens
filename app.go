@@ -1051,11 +1051,14 @@ func (a *App) GetLocalCodexModelProviderStateView() (*LocalCodexModelProviderSta
 	}
 
 	return &LocalCodexModelProviderStateView{
-		CurrentProviderID:        result.CurrentProviderID,
-		CurrentProviderName:      result.CurrentProviderName,
-		CurrentProviderIsBuiltin: result.CurrentProviderIsBuiltin,
-		CurrentProviderExists:    result.CurrentProviderExists,
-		Providers:                mapLocalCodexModelProviderViews(result.Providers),
+		CurrentModel:               result.CurrentModel,
+		HasExplicitCurrentModel:    result.HasExplicitCurrentModel,
+		CurrentProviderID:          result.CurrentProviderID,
+		CurrentProviderName:        result.CurrentProviderName,
+		CurrentProviderIsBuiltin:   result.CurrentProviderIsBuiltin,
+		CurrentProviderExists:      result.CurrentProviderExists,
+		HasExplicitCurrentProvider: result.HasExplicitCurrentProvider,
+		Providers:                  mapLocalCodexModelProviderViews(result.Providers),
 	}, nil
 }
 

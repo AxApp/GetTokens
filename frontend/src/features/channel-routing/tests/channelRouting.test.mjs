@@ -403,15 +403,13 @@ test('buildChannelRoutingParticipantRows shows only requestable accounts in chan
   );
 });
 
-test('ChannelRoutingWorkbench keeps participant account details collapsed by default', async () => {
+test('ChannelRoutingWorkbench leaves participant account filtering to the account order list', async () => {
   const source = await readFile(new URL('../components/ChannelRoutingWorkbench.tsx', import.meta.url), 'utf8');
 
-  assert.match(
-    source,
-    /<details className="group\/participants min-w-0 border-t-2 border-\[var\(--border-color\)\] p-4">/,
-  );
-  assert.match(source, /group-open\/participants:rotate-180/);
-  assert.doesNotMatch(source, /<details className="group\/participants[^"]*" open/);
+  assert.doesNotMatch(source, /group\/participants/);
+  assert.doesNotMatch(source, /ParticipantList/);
+  assert.doesNotMatch(source, /buildChannelRoutingParticipantRows/);
+  assert.doesNotMatch(source, /label="参与账号"/);
 });
 
 test('channel route mode help explains sequential fallback without claiming account exclusivity', () => {
@@ -460,5 +458,6 @@ test('ChannelRoutingWorkbench presents route mode heading as a large status lock
   assert.match(source, /flex h-11 w-11 shrink-0 items-center justify-center border-2 border-\[var\(--text-primary\)\] bg-\[var\(--text-primary\)\] text-\[var\(--bg-main\)\]/);
   assert.match(source, /<h2 className="min-w-0 text-\[length:var\(--font-size-ui-lg\)\] font-black leading-5 tracking-\[0\] text-\[var\(--text-primary\)\] sm:text-\[length:var\(--font-size-heading-sm\)\] sm:leading-normal">/);
   assert.match(source, /查看请求模式说明/);
-  assert.match(source, /<span className="border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] px-2 py-1 text-\[length:var\(--font-size-ui-sm\)\] font-black leading-4 text-\[var\(--text-primary\)\]">/);
+  assert.doesNotMatch(source, /preview\?: boolean/);
+  assert.doesNotMatch(source, />\s*预览\s*</);
 });

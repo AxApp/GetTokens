@@ -10,7 +10,14 @@ interface AccountCardFrameProps {
   onOpen: () => void;
 }
 
-export default function AccountCardFrame({ children, className = '', cardID, style, interactive = true, onOpen }: AccountCardFrameProps) {
+export default function AccountCardFrame({
+  children,
+  className = '',
+  cardID,
+  style,
+  interactive = true,
+  onOpen,
+}: AccountCardFrameProps) {
   function handleClick(event: MouseEvent<HTMLDivElement>) {
     if (!interactive || !shouldOpenAccountDetailsFromTarget(event.target, event.currentTarget)) {
       return;

@@ -36,6 +36,7 @@ interface AttributionCardProps {
   title: string;
   subtitle?: string;
   eyebrow?: string;
+  eyebrowPrefix?: string;
   failureReason?: string;
   badges?: AttributionCardBadge[];
   usageSummary?: AccountUsageSummary;
@@ -61,6 +62,7 @@ export default function AttributionCard({
   title,
   subtitle = '',
   eyebrow = '',
+  eyebrowPrefix = '',
   failureReason = '',
   badges = [],
   usageSummary,
@@ -102,8 +104,9 @@ export default function AttributionCard({
       : quotaDisplay?.status === 'unsupported'
         ? t('accounts.quota_unsupported')
         : '';
+    const listEyebrow = [eyebrowPrefix, eyebrow].filter(Boolean).join(' ');
     const listStatusText = [
-      eyebrow,
+      listEyebrow,
       planBadge ? (planBadge.shortLabel || planBadge.label) : '',
       `${t('accounts.recent_requests')} ${formatCountMetric(usageSummary?.requestCount ?? 0)}`,
       `${t('accounts.total_tokens')} ${formatTokenMetric(usageSummary?.totalTokens ?? 0)}`,
@@ -126,7 +129,7 @@ export default function AttributionCard({
             <div className="account-card-list-status flex min-w-0 items-center gap-2">
               <span className={`h-2.5 w-2.5 shrink-0 ${accentFillClass}`} />
               <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                {listStatusText || eyebrow}
+                {listStatusText || listEyebrow}
               </span>
             </div>
             <h3 className="truncate text-[length:var(--font-size-ui-xl)] font-black uppercase leading-tight tracking-normal text-[var(--text-primary)]">
@@ -165,9 +168,12 @@ export default function AttributionCard({
       <div className="account-card-header relative flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
         {leadingAction ? <div className="shrink-0">{leadingAction}</div> : null}
         <div className={`min-w-0 flex-1 space-y-3 ${topActions ? 'pr-10' : ''}`}>
-          {eyebrow ? (
-            <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-              {eyebrow}
+          {eyebrow || eyebrowPrefix ? (
+            <div className="flex min-w-0 items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              {eyebrowPrefix ? (
+                <span className="shrink-0 tracking-normal text-[var(--text-primary)]">{eyebrowPrefix}</span>
+              ) : null}
+              {eyebrow ? <span className="min-w-0 truncate">{eyebrow}</span> : null}
             </div>
           ) : null}
           <div className="space-y-2">

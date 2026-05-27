@@ -56,7 +56,7 @@ export function FieldLabel({ children }: { children: ReactNode }) {
     <span
       data-design-system-component="true"
       data-design-system-component-name="FieldLabel"
-      className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
+      className="text-[length:var(--font-size-ui-xs)] font-black tracking-[0.18em] text-[var(--text-muted)]"
     >
       {children}
     </span>

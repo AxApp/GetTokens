@@ -12,7 +12,7 @@ import {
 } from '../model/relayLocalState';
 import type { RelayResolvedModelOption } from '../model/relayModelCatalog';
 import type { RelayProviderOption } from '../model/relayProviderCatalog';
-import { StatusApplyLocalSection } from './StatusPanels';
+import { formatRelayProviderSelectLabel, StatusApplyLocalSection } from './StatusPanels';
 import StatusSnippetPanel from './StatusSnippetPanel';
 
 const meta = {
@@ -458,7 +458,7 @@ function AccountTemplateLocalApplyConfirmSample({ label }: { label: string }) {
                   <select value={providerID} onChange={(event) => setProviderID(event.target.value)} className="select-swiss">
                     {providerOptions.map((provider) => (
                       <option key={provider.id} value={provider.id}>
-                        {provider.name} / {provider.id}
+                        {formatRelayProviderSelectLabel(provider)}
                       </option>
                     ))}
                   </select>

@@ -160,6 +160,64 @@ func TestSetAccountDisabledSupportsOpenAICompatibleProvider(t *testing.T) {
 	}
 }
 
+func TestCreateCodexAPIKeyAllowsDuplicateConfigAsSeparateAccounts(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	var syncPayloads [][]cliproxyapi.CodexAPIKeyInput
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method != "PUT" || path != "/v0/management/codex-api-key" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read body: %v", err)
+				}
+				var items []cliproxyapi.CodexAPIKeyInput
+				if err := json.Unmarshal(payload, &items); err != nil {
+					t.Fatalf("unmarshal payload: %v", err)
+				}
+				syncPayloads = append(syncPayloads, items)
+				return nil, 200, nil
+			})
+		},
+	}
+
+	input := CreateCodexAPIKeyInput{
+		APIKey:  "sk-test-duplicate",
+		Label:   "Primary",
+		BaseURL: "https://api.openai.com/v1",
+		Prefix:  "team-a",
+	}
+	if err := app.CreateCodexAPIKey(input); err != nil {
+		t.Fatalf("first CreateCodexAPIKey: %v", err)
+	}
+	input.Label = "Copied"
+	if err := app.CreateCodexAPIKey(input); err != nil {
+		t.Fatalf("second CreateCodexAPIKey with same config: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 stored duplicate config accounts, got %d: %#v", len(items), items)
+	}
+	if items[0].LocalID == "" || items[1].LocalID == "" || items[0].LocalID == items[1].LocalID {
+		t.Fatalf("expected duplicate config accounts to have distinct local ids, got %#v", items)
+	}
+	for _, item := range items {
+		if item.APIKey != "sk-test-duplicate" || item.BaseURL != "https://api.openai.com/v1" || item.Prefix != "team-a" {
+			t.Fatalf("unexpected duplicate item config: %#v", item)
+		}
+	}
+	if len(syncPayloads) != 2 || len(syncPayloads[1]) != 2 {
+		t.Fatalf("expected second sidecar sync to contain both copied accounts, got %#v", syncPayloads)
+	}
+}
+
 func TestUpdateCodexAPIKeyConfigPreservesStableID(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 

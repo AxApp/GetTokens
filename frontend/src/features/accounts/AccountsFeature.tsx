@@ -33,6 +33,7 @@ import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
 import { useAccountsPageStateContext } from './AccountsPageStateProvider';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
 import { isCodexAuthFile } from './model/accountPresentation';
+import { readAccountClipboardFallback } from './model/accountClipboard';
 import { findAccountDetailByID } from './model/accountDetailSelection';
 import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
@@ -237,10 +238,13 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           canPreserveChatGPTAuth: true,
         }));
         setLocalCodexProviderState(main.LocalCodexModelProviderStateView.createFrom({
+          currentModel: 'gpt-5.4',
+          hasExplicitCurrentModel: true,
           currentProviderID: 'team-codex-relay',
           currentProviderName: 'Team Codex Relay',
           currentProviderIsBuiltin: false,
           currentProviderExists: true,
+          hasExplicitCurrentProvider: true,
           providers: [{ providerID: 'team-codex-relay', providerName: 'Team Codex Relay' }],
         }));
         return;
@@ -741,7 +745,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             onToggleMenu={() => setIsHeaderActionsMenuOpen((prev) => !prev)}
             onOpenPasteModal={() => {
               setPasteError('');
-              setPasteContent('');
+              setPasteContent(readAccountClipboardFallback());
               setIsPasteModalOpen(true);
               setIsHeaderActionsMenuOpen(false);
             }}

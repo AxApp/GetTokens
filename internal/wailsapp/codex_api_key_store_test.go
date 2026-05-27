@@ -60,6 +60,35 @@ func TestStoredCodexAPIKeysRoundTrip(t *testing.T) {
 	}
 }
 
+func TestPersistCodexAPIKeySetKeepsDuplicateConfigWithDistinctLocalIDs(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+
+	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{
+		{LocalID: "codex-api-key:first", APIKey: "sk-test-1111", BaseURL: "https://api.openai.com/v1", Prefix: "team-a", Label: "Primary"},
+		{LocalID: "codex-api-key:second", APIKey: "sk-test-1111", BaseURL: "https://api.openai.com/v1", Prefix: "team-a", Label: "Copied"},
+	}); err != nil {
+		t.Fatalf("persistCodexAPIKeySet: %v", err)
+	}
+
+	items, err := loadStoredCodexAPIKeys()
+	if err != nil {
+		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 duplicate config items, got %d: %#v", len(items), items)
+	}
+	labels := map[string]bool{}
+	for _, item := range items {
+		labels[item.Label] = true
+		if item.APIKey != "sk-test-1111" || item.BaseURL != "https://api.openai.com/v1" || item.Prefix != "team-a" {
+			t.Fatalf("unexpected duplicate item config: %#v", item)
+		}
+	}
+	if !labels["Primary"] || !labels["Copied"] {
+		t.Fatalf("expected both duplicate labels to round-trip, got %#v", items)
+	}
+}
+
 func TestMergeCodexAPIKeyInputsMigratesSidecarOnlyItems(t *testing.T) {
 	stored := []cliproxyapi.CodexAPIKeyInput{
 		{APIKey: "sk-test-1111", BaseURL: "https://api.openai.com/v1", Prefix: "team-a", Label: "PRIMARY"},

@@ -1,6 +1,6 @@
 ---
 name: gettokens-codex-account-list
-description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求顺序、三模式路由、项目绑定、路由探测、模型映射、OAuth 透传语义、openai-compatible 映射保存与浏览器预览。
+description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求顺序、两模式路由、项目绑定兼容边界、路由探测、模型映射、OAuth 透传语义、openai-compatible 映射保存与浏览器预览。
 ---
 
 # GetTokens Codex Account List
@@ -12,7 +12,8 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 总账号池只管理 Account Inventory；Codex 账号列表拥有 Codex 渠道顺序、渠道 route mode、渠道组状态、项目绑定、dry-run/explain 和 probe。
 - Codex 渠道配置不得通过全局 `UpdateAccountPriority` 表达；渠道顺序必须保存到 Codex channel config。
 - Codex runtime routing 的唯一主路径是 `channel-routing/config.json`；旧 `routing.strategy` 只保留作 relay / compatibility 边界，不再参与 Codex 候选排序、fallback 或 balanced 计数。balanced 模式应从 live-session tracker 读取活跃会话数，而不是从展示用 snapshot 反推。
-- 新 GetTokens route mode 只允许 `sequential / balanced / project`。
+- 新 GetTokens route mode 主路径只允许 `sequential / balanced`。
+- `project` 已从可配置 route mode 下线；历史 `projectBindings` 只作为项目名到账号/账号组的范围约束或兼容数据保留，不能作为新的模式入口扩展。
 - `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入 Codex 新 UI / Wails DTO / engine policy。
 - `exclude` 不是 route mode，只能作为请求级 deny 或 pool filter。
 - 旧 `allowAccountIDs / denyAccountIDs / orderAccountIDs / allowFallback` 只作为请求级兼容 policy，不作为新页面主配置模型。
@@ -25,7 +26,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 禁用优先级高于 session sticky、失败降级和 retry；Codex WebSocket pinned auth 命中禁用后必须释放 pin、断开旧 upstream，并在下一请求边界重新进入 route engine。
 - 激活账号只重新进入可路由账号池，等待下一轮 route / retry，不抢占当前 stream / sticky。
 - 失败冷却状态必须持久化到运行态或 guard source；401/429/5xx/model-unavailable 后续请求和 explain 都应读取同一冷却状态，自动恢复不能清 `manual-disabled`。
-- 项目模式只限定目标账号或账号组；命中账号组后，组内选择继续使用 `sequential` 或 `balanced`。
+- 项目绑定只限定目标账号或账号组；命中账号组后，组内选择继续使用 `sequential` 或 `balanced`。
 
 ## 2. 前端结构
 - `CodexAccountListFeature.tsx` 保持为 controller：
@@ -83,7 +84,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 保持 Swiss-industrial 风格：硬边框、黑白灰、紧凑高密度、monospace 辅助信息。
 - 账号行固定为单一 Codex 渠道顺序列表，不再额外渲染重复策略账号列表。
 - 账号行主体点击打开详情；嵌套按钮、switch、combobox、策略控件必须阻止冒泡。
-- 新主控件应围绕 `sequential / balanced / project`、渠道组范围、项目绑定和 explain；旧“默认 / 允许 / 排除”只用于请求级兼容探测入口。
+- 新主控件应围绕 `sequential / balanced`、渠道组范围、项目绑定和 explain；旧“默认 / 允许 / 排除”只用于请求级兼容探测入口。
 - 路由探测卡片独立于账号顺序卡片；测试流常驻显示，不使用卡中卡文本模块。
 - 请求顺序列表模式用于高密度排序，不再做卡片式信息堆叠：
   - 左侧 rail 固定承载顺位与拖拽柄，顺位数字和拖拽柄横向排列。
@@ -95,6 +96,10 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - `参与账号` 默认折叠，只显示数量；用户需要核对具体账号时再展开。
   - `更多操作` / 保存 / 过滤等控制放在标题右侧或同一 header band 内，不单独拉出一条说明栏。
   - 账号列表区域不再额外包一层大边框或大阴影，卡片只保留自身边界，避免再次出现卡中卡。
+- 请求顺序卡片必须直接复用账号池 `AccountCard`，不要再维护一个“像账号池”的分叉卡片：
+  - Codex 页特有信息只通过 opt-in props 叠加，例如 `extraBadges`、`eyebrowPrefix`、`showDeleteAction=false`、`showFooterActions=false`。
+  - 非列表模式通过拖动整张卡排序；激活/禁用继续使用账号池卡片菜单，不额外暴露独立 toggle 或置顶/置底按钮。
+  - 同一 grid 行内保持账号池式等高卡片；状态行前可显示当前请求顺序前缀，例如 `#1 可用`，但该前缀只属于 Codex 请求顺序页。
 - 请求模式说明入口：
   - `请求模式` 标题旁使用问号图标按钮打开说明，说明作为 modal 弹层出现，不替换当前工作台主内容。
   - 说明必须明确 sequential 只是“每次路由决策的账号排序”，不是账号独占；retry/failover、运行态 guard/cooldown、WebSocket pinned auth 释放、项目/组限定、多会话并发、路由探测与连续测试都可能命中后续账号。
@@ -135,7 +140,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - 涉及公共 DTO 或绑定时重新生成 `frontend/wailsjs` 并跑类型检查。
 - Account Routing Engine rollout 额外覆盖：
   - Codex channel config 保存不影响 Claude channel config。
-  - `ChannelRouteMode` 只接受 `sequential / balanced / project`。
+  - `ChannelRouteMode` 只接受 `sequential / balanced`；`project` 输入必须降级或标记为旧兼容输入。
   - 上游兼容模式不进入 Codex 新配置保存。
 - 视觉截图放到 `docs-linhay/spaces/20260511-codex-account-list-tab/screenshots/<YYYYMMDD>/codex/`。
 

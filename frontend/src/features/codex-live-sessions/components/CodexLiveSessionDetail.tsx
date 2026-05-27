@@ -30,7 +30,9 @@ import {
 } from './requestTimelineSummary';
 import type { Translate } from './types';
 import {
+  buildCodexLiveRequestTimingMetricAverages,
   buildCodexLiveRequestTimingTrend,
+  type CodexLiveTimingMetricAverages,
   type CodexLiveRequestTimingTrendPoint,
   type CodexLiveTimingTrendMetric,
 } from '../model/requestTimingTrend';
@@ -77,6 +79,7 @@ export function SessionDetail({
         ) : null}
         <RequestTimingTrend session={session} request={request} selectedMetric={selectedTimingMetric} t={t} />
         <TimingMetrics
+          session={session}
           request={request}
           selectedMetric={selectedTimingMetric}
           onSelectMetric={setSelectedTimingMetric}
@@ -631,17 +634,26 @@ function TransportLane({ events, t }: { events: readonly CodexLiveTimelineEvent[
 }
 
 function TimingMetrics({
+  session,
   request,
   selectedMetric,
   onSelectMetric,
   t,
 }: {
+  session: CodexLiveSession;
   request?: CodexLiveRequest;
   selectedMetric: CodexLiveTimingTrendMetric;
   onSelectMetric: (metric: CodexLiveTimingTrendMetric) => void;
   t: Translate;
 }) {
-  const metrics = buildTimingMetricRows(request, t);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const refreshID = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(refreshID);
+  }, []);
+
+  const averages = buildCodexLiveRequestTimingMetricAverages(session.requests, request, { nowMs });
+  const metrics = buildTimingMetricRows(averages, t);
 
   return (
     <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
@@ -692,9 +704,9 @@ interface TimingMetricRow {
   trendMetric?: CodexLiveTimingTrendMetric;
 }
 
-function buildTimingMetricRows(request: CodexLiveRequest | undefined, t: Translate): TimingMetricRow[] {
-  const timing = request?.timing;
-  if (!timing) {
+function buildTimingMetricRows(averages: CodexLiveTimingMetricAverages, t: Translate): TimingMetricRow[] {
+  const timing = averages.values;
+  if (averages.sampleCount <= 0) {
     return [{ key: 'empty', label: t('codex_live_sessions.no_timing_data'), value: 'n/a' }];
   }
 
@@ -708,7 +720,7 @@ function buildTimingMetricRows(request: CodexLiveRequest | undefined, t: Transla
     { key: 'upstreamConnectMs', label: t('codex_live_sessions.timing_connect'), value: formatOptionalDuration(timing.upstreamConnectMs), trendMetric: 'upstreamConnectMs' },
     { key: 'averageEventGapMs', label: t('codex_live_sessions.timing_avg_gap'), value: formatOptionalDuration(timing.averageEventGapMs), trendMetric: 'averageEventGapMs' },
     { key: 'longestEventGapMs', label: t('codex_live_sessions.timing_max_gap'), value: formatOptionalDuration(timing.longestEventGapMs), trendMetric: 'longestEventGapMs' },
-    { key: 'reconnectCount', label: t('codex_live_sessions.timing_reconnect'), value: `${timing.reconnectCount ?? 0}` },
+    { key: 'reconnectCount', label: t('codex_live_sessions.timing_reconnect'), value: formatOptionalCount(timing.reconnectCount) },
     { key: 'outputTokensPerSecond', label: t('codex_live_sessions.timing_output_rate'), value: formatOptionalRate(timing.outputTokensPerSecond) },
     { key: 'totalTokensPerSecond', label: t('codex_live_sessions.timing_total_rate'), value: formatOptionalRate(timing.totalTokensPerSecond) },
   ];
@@ -720,6 +732,13 @@ function buildTimingMetricRows(request: CodexLiveRequest | undefined, t: Transla
   }, []);
 
   return metrics.length > 0 ? metrics : [{ key: 'empty', label: t('codex_live_sessions.no_timing_data'), value: 'n/a' }];
+}
+
+function formatOptionalCount(value: number | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return 'n/a';
+  }
+  return `${Math.round(value)}`;
 }
 
 function AccountCard({ session, request, t }: { session: CodexLiveSession; request?: CodexLiveRequest; t: Translate }) {

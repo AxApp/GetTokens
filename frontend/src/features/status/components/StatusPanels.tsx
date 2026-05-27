@@ -19,8 +19,14 @@ import {
 import type { RelayResolvedModelOption } from '../model/relayModelCatalog';
 import { sortRelayModelCatalogByNameDesc } from '../model/relayModelCatalog';
 import type { RelayProviderOption } from '../model/relayProviderCatalog';
+import { RELAY_CODEX_DEFAULT_MODEL } from '../../accounts/model/accountConfig';
 
 type LocalCliPanelTarget = 'codex' | 'claude';
+
+export function formatRelayProviderSelectLabel(provider: RelayProviderOption) {
+  const providerID = provider.id.trim();
+  return providerID;
+}
 
 interface StatusApplyLocalSectionProps {
   t: (key: string) => string;
@@ -247,11 +253,11 @@ export function StatusApplyLocalSection({
 
   const relayModelSelectOptions = sortedRelayModels.some((model) => model.name === selectedRelayModel)
     ? sortedRelayModels
-    : [{ name: selectedRelayModel || 'GT' }, ...sortedRelayModels];
+    : [{ name: selectedRelayModel || RELAY_CODEX_DEFAULT_MODEL }, ...sortedRelayModels];
   const relayModelSelectOptionNames = relayModelSelectOptions.map((model) => model.name);
   const relayProviderSelectOptions = relayProviderOptions.map((provider) => ({
     value: provider.id,
-    label: provider.name === provider.id ? provider.id : `${provider.name} / ${provider.id}`,
+    label: formatRelayProviderSelectLabel(provider),
   }));
   const codexLocalAuthStrategyOptions = [
     { value: 'replace_auth_with_apikey', label: t('status.auth_strategy_replace_apikey') },
@@ -420,7 +426,7 @@ export function StatusApplyLocalSection({
 
               {selectedRelayProvider.id !== 'openai' ? (
                 <div className="flex items-center justify-between">
-                  <span className="text-[length:var(--font-size-ui-lg)] font-bold uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                  <span className="text-[length:var(--font-size-ui-lg)] font-bold tracking-[0.08em] text-[var(--text-primary)]">
                     supports_websockets
                   </span>
                   <ToggleSwitch
@@ -434,7 +440,7 @@ export function StatusApplyLocalSection({
               ) : null}
 
               {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
                   {t('status.codex_local_preserve_hint')}
                   {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
                 </div>
@@ -442,7 +448,7 @@ export function StatusApplyLocalSection({
 
               {codexLocalApplyGuidance ? (
                 <div className="grid gap-3 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
-                  <div className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                  <div className="text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
                     {codexLocalApplyGuidance}
                     {localCodexAuthState?.warnings?.length ? ` / ${localCodexAuthState.warnings.join(' / ')}` : ''}
                   </div>
@@ -485,7 +491,7 @@ export function StatusApplyLocalSection({
               ) : null}
 
               {localApplyMessage ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
                   {localApplyMessage}
                 </div>
               ) : null}
@@ -622,7 +628,7 @@ export function StatusApplyLocalSection({
 
               <div className={fieldPairGridClass}>
                 <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
-                  <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                  <span className="text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]">
                     {t('status.claude_disable_nonessential_traffic')}
                   </span>
                   <ToggleSwitch
@@ -634,7 +640,7 @@ export function StatusApplyLocalSection({
                   />
                 </div>
                 <div className="flex items-center justify-between gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2 md:min-h-[2.875rem]">
-                  <span className="text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                  <span className="text-[length:var(--font-size-ui-sm)] font-black tracking-[0.12em] text-[var(--text-primary)]">
                     {t('status.claude_code_attribution_header')}
                   </span>
                   <ToggleSwitch
@@ -648,7 +654,7 @@ export function StatusApplyLocalSection({
               </div>
 
               {claudeApplyMessage ? (
-                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
+                <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
                   {claudeApplyMessage}
                 </div>
               ) : null}
@@ -781,7 +787,7 @@ function StatusEndpointPicker({
               key={endpoint.id}
               type="button"
               onClick={() => onSelectEndpointID(endpoint.id)}
-              className={`border-2 px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] ${
+              className={`border-2 px-2.5 py-1.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.18em] ${
                 isSelected
                   ? 'border-[var(--border-color)] bg-[var(--text-primary)] text-[var(--bg-main)]'
                   : 'border-[var(--border-color)] bg-[var(--bg-surface)] text-[var(--text-primary)]'
@@ -793,7 +799,7 @@ function StatusEndpointPicker({
         })}
       </div>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-        <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--text-primary)]">
+        <span className="truncate font-mono text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
           {selectedEndpointBaseUrl}
         </span>
         <button type="button" onClick={onCopyEndpointBaseUrl} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-xs)]">

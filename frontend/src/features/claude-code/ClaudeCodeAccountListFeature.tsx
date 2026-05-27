@@ -49,11 +49,9 @@ import {
   buildClaudeCodeAccountRows,
   buildClaudeCodeAccountSummary,
   buildClaudeCodeModelMappings,
-  moveClaudeCodeAccountRowToEdge,
   normalizeClaudeCodeModelMappingsForProvider,
   reorderClaudeCodeAccountRows,
   resolveClaudeCodeProviderProfile,
-  type ClaudeCodeAccountOrderEdge,
   type ClaudeCodeAccountRow,
 } from './model/claudeCodeAccountList';
 import { getClaudeCodeAccountListPreviewAccounts, getClaudeCodeAccountListPreviewRows } from './previewData';
@@ -347,18 +345,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
   function handleDrop() {
     suppressNextDetailClickRef.current = true;
     setDraggedID(null);
-    setAutoSaveOrderRequested(true);
-  }
-
-  function moveAccountToOrderEdge(rowID: string, edge: ClaudeCodeAccountOrderEdge) {
-    const rowIndex = orderedRows.findIndex((row) => row.id === rowID);
-    if (rowIndex < 0 || (edge === 'top' && rowIndex === 0) || (edge === 'bottom' && rowIndex === orderedRows.length - 1)) {
-      return;
-    }
-
-    setOrderDirty(true);
-    setOrderedRows((prev) => moveClaudeCodeAccountRowToEdge(prev, rowID, edge));
-    setMessage(t('claude_code.account_list_unsaved'));
     setAutoSaveOrderRequested(true);
   }
 
@@ -774,7 +760,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           explain={channelExplain}
           disabled={!ready || saving}
           saving={saving}
-          preview={browserMode}
           message={orderDirty ? t('claude_code.account_list_unsaved') : ''}
           routeEvents={channelRouteEvents}
           routeEventsLoading={channelRouteEventsLoading}
@@ -824,8 +809,6 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           onDrop={handleDrop}
           onOpenDetail={openDetail}
           onToggle={(row) => void toggleAccount(row as ClaudeCodeAccountRow)}
-          onMoveToTop={(rowID) => moveAccountToOrderEdge(rowID, 'top')}
-          onMoveToBottom={(rowID) => moveAccountToOrderEdge(rowID, 'bottom')}
         />
       </div>
       {routeProbeOpen ? (

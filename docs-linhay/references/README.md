@@ -13,7 +13,7 @@
 
 | 项目 | 本地路径 | 用途 |
 |------|----------|------|
-| `cc-switch` | `docs-linhay/references/cc-switch/` | Claude Code provider、MCP、skills、settings、session、usage 等桌面管理参考。 |
+| `cc-switch` | `docs-linhay/references/cc-switch/` | Claude Code provider、MCP、skills、settings、session、usage 等桌面管理参考；已更新到 2026-05-27 `origin/main` HEAD `3c3d417457a4c3420139488c19718b7415641584`，版本 `3.15.0`。 |
 | `CLIProxyAPI` | `docs-linhay/references/CLIProxyAPI/` | GetTokens sidecar fork，relay、Anthropic/OpenAI 协议转换、账号路由参考。 |
 | `Cli-Proxy-API-Management-Center` | `docs-linhay/references/Cli-Proxy-API-Management-Center/` | Web 管理中心，Claude provider、模型映射、usage UI 参考。 |
 | `cherry-studio` | `docs-linhay/references/cherry-studio/` | Skills 同步、MCP server、agent/skill 资产组织参考。 |

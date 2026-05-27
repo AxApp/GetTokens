@@ -49,7 +49,7 @@
 新职责：
 
 - Codex 渠道账号顺序。
-- Codex route mode：`sequential / balanced / project`。
+- Codex route mode：`sequential / balanced`。
 - Codex 渠道组启停与渠道组排序 override。
 - Codex 项目名绑定账号组或账号。
 - Codex fallback：`fail-closed / fallback-default / fallback-global`。
@@ -69,7 +69,7 @@
 新职责：
 
 - Claude Code 渠道账号顺序。
-- Claude route mode：`sequential / balanced / project`。
+- Claude route mode：`sequential / balanced`。
 - Claude 渠道组启停与渠道组排序 override。
 - Claude 项目名绑定账号组或账号。
 - Claude fallback：`fail-closed / fallback-default / fallback-global`。
@@ -125,7 +125,7 @@ frontend/src/features/claude-code/ClaudeCodeAccountListFeature.tsx
 ## 新前端配置模型
 
 ```ts
-type ChannelRouteMode = 'sequential' | 'balanced' | 'project';
+type ChannelRouteMode = 'sequential' | 'balanced';
 type ProjectModeFallbackRouteMode = 'sequential' | 'balanced';
 type ChannelFallbackMode = 'fail-closed' | 'fallback-default' | 'fallback-global';
 
@@ -148,7 +148,7 @@ interface ChannelRoutingConfig {
 }
 ```
 
-`ChannelRouteMode` 只允许三种值。上游兼容模式进入前端时只能显示为兼容提示或 trace，不得保存为新配置。
+`ChannelRouteMode` 只允许两种值。`project` 作为旧输入进入前端时必须降级或显示为兼容提示，不得保存为新配置；上游兼容模式只能显示为兼容提示或 trace。
 
 ## UI 信息架构
 
@@ -173,7 +173,7 @@ interface ChannelRoutingConfig {
 3. Given 用户在 Claude 账号列表调整渠道组启停，When 保存成功，Then 只影响 Claude 渠道，不影响 Codex 使用同一全局组。
 4. Given 全局账号组被禁用，When Codex / Claude explain 路由，Then 两个渠道都显示该组被 `inventoryGroup.enabled=false` 过滤。
 5. Given Codex 渠道组被禁用，When Codex explain 路由，Then Codex 不产生该组候选；When Claude explain 同一组，Then Claude 仍可使用自身启用的渠道组。
-6. Given 项目模式绑定到账号组，When dry-run 命中该项目名，Then explain 显示项目绑定只限定目标池，组内选择继续使用 `sequential` 或 `balanced`。
+6. Given 项目绑定指向账号组，When dry-run 命中该项目名，Then explain 显示项目绑定只限定目标池，组内选择继续使用 `sequential` 或 `balanced`。
 7. Given 页面读取到上游兼容模式 `weighted`，When 渲染新配置 UI，Then 不把它作为可编辑 route mode，只在兼容提示或 trace 中标记。
 8. Given 普通浏览器没有 Wails runtime，When 打开 Codex / Claude 账号列表 preview，Then 页面可显示 preview 数据、编辑草稿、运行 mock explain，不空白。
 
@@ -181,9 +181,9 @@ interface ChannelRoutingConfig {
 
 P0 模型测试：
 
-- `ChannelRouteMode` 只接受 `sequential / balanced / project`。
+- `ChannelRouteMode` 只接受 `sequential / balanced`。
 - `dedicated / prefer / ordered / weighted / canary` 被识别为 upstream compat，不进入配置保存。
-- 项目模式命中组后，组内 fallback mode 只能是 `sequential / balanced`。
+- 项目绑定命中组后，组内选择只能是 `sequential / balanced`。
 - Codex / Claude 配置对象互不污染。
 
 P1 页面行为测试：

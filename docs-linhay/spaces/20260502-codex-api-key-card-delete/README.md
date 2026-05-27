@@ -9,7 +9,8 @@ Codex API key 模式中，添加账号后账号池会同时出现两张卡片；
 - 账号池展示与删除都必须把“稳定本地 ID”和“配置派生 ID”视为同一资产。
 
 ## 目标
-- 添加 Codex API key 后，同一 `apiKey + baseUrl + prefix` 只展示一张账号卡。
+- 对缺少 `local-id` 的 sidecar 旧镜像，同一 `apiKey + baseUrl + prefix` 只展示一张账号卡。
+- 对用户主动创建或复制导入的 Codex API key，本地稳定 `local-id` 代表独立账号资产；即使 `apiKey + baseUrl + prefix` 完全相同，也允许展示为两张可分别编辑的账号卡。
 - 删除 Codex API key 时，无论前端传入稳定本地 ID 还是配置派生 ID，都能删除对应本地记录并同步 sidecar。
 - 保持稳定本地 ID 规则：编辑 `apiKey / baseUrl / prefix` 不改变已有记录 ID。
 
@@ -26,7 +27,8 @@ Codex API key 模式中，添加账号后账号池会同时出现两张卡片；
 1. Given 本地 store 已有一条带 `local-id` 的 Codex API key，When sidecar 返回同一 `apiKey + baseUrl + prefix` 但没有 `local-id`，Then `ListAccounts` / 合并结果只产生一条 API key 记录。
 2. Given 本地 store 已有一条带 `local-id` 的 Codex API key，When 删除请求传入该配置的派生 ID，Then 本地 store 删除该记录，sidecar 收到空的 Codex API key 列表。
 3. Given 本地 store 有多条 Codex API key，When 删除其中一条，Then 其他记录保留并继续同步到 sidecar。
-4. 相关 Go 测试通过。
+4. Given 用户复制导入完全相同的 Codex API key 配置，When 后端创建记录，Then 生成不同 `local-id` 并作为两条账号资产持久化。
+5. 相关 Go 测试通过。
 
 ## 设计稿入口
 

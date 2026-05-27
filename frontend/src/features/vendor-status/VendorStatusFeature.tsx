@@ -1,7 +1,8 @@
-import { AlertTriangle, CheckCircle2, ExternalLink, History, LoaderCircle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, History, LoaderCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { FetchVendorStatusRSS } from '../../../wailsjs/go/main/App';
 import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
+import RefreshActionButton from '../../components/ui/RefreshActionButton';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import type { LocaleCode } from '../../types';
@@ -377,14 +378,11 @@ export default function VendorStatusFeature() {
           subtitle={t('vendor_status.subtitle')}
           actions={
             <div className="flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
+              <RefreshActionButton
                 onClick={() => setRefreshToken((current) => current + 1)}
-                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                {t('vendor_status.refresh')}
-              </button>
+                label={t('vendor_status.refresh')}
+                className="!text-[length:var(--font-size-ui-xs)]"
+              />
               <a
                 href={data?.subscribeUrl || 'https://status.openai.com/'}
                 target="_blank"

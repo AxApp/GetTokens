@@ -4,8 +4,8 @@ import {
   ApplyRelayServiceConfigToLocal,
   ApplyRelayServiceConfigToLocalV2,
   GetLocalCodexAuthState,
+  GetLocalCodexModelProviderStateView,
   GetRelayServiceConfig,
-  ListLocalCodexProviderViews,
   ListRelaySupportedModels,
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
@@ -20,7 +20,7 @@ import {
 import {
   StatusApplyLocalSection,
 } from './components/StatusPanels';
-import { RELAY_CODEX_OPENAI_PROVIDER_ID } from '../accounts/model/accountConfig';
+import { RELAY_CODEX_DEFAULT_MODEL, RELAY_CODEX_PROVIDER_ID } from '../accounts/model/accountConfig';
 import {
   defaultRelayProviderOptions,
   defaultRelayReasoningEffortOptions,
@@ -33,6 +33,8 @@ import {
   loadSelectedRelayModel,
   loadSelectedRelayProvider,
   loadSelectedRelayReasoningEffort,
+  resolveInitialRelayModelSelection,
+  resolveInitialRelayProviderSelection,
   saveCodexLocalAuthStrategy,
   saveLANAccessEnabled,
   saveRelayKeyAliases,
@@ -110,6 +112,8 @@ export default function StatusFeature({
   const selectedKey = relayKeys[selectedKeyIndex] || '';
   const selectedRelayProvider =
     relayProviderOptions.find((option) => option.id === selectedRelayProviderID) ||
+    relayProviderOptions.find((option) => option.id === RELAY_CODEX_PROVIDER_ID) ||
+    defaultRelayProviderOptions.find((option) => option.id === RELAY_CODEX_PROVIDER_ID) ||
     relayProviderOptions[0] ||
     defaultRelayProviderOptions[0];
   const selectedEndpoint =
@@ -236,15 +240,49 @@ export default function StatusFeature({
 
     async function loadLocalCodexModelProviders() {
       try {
-        const localProviders = await trackRequest('ListLocalCodexProviderViews', { args: [] }, () =>
-          ListLocalCodexProviderViews()
+        const providerState = await trackRequest('GetLocalCodexModelProviderStateView', { args: [] }, () =>
+          GetLocalCodexModelProviderStateView()
         );
         if (cancelled) {
           return;
         }
-        setRelayProviderOptions((prev) =>
-          mergeRelayProviderCatalog(defaultRelayProviderOptions, prev, localProviders || [])
-        );
+        const activeProvider =
+          providerState?.currentProviderID
+            ? [
+                {
+                  providerID: providerState.currentProviderID,
+                  providerName: providerState.currentProviderName || providerState.currentProviderID,
+                },
+              ]
+            : [];
+        setRelayProviderOptions((prev) => {
+          const next = mergeRelayProviderCatalog(
+            defaultRelayProviderOptions,
+            prev,
+            providerState?.providers || [],
+            activeProvider
+          );
+          setSelectedRelayProviderID(
+            resolveInitialRelayProviderSelection({
+              providerOptions: next,
+              activeProviderID: providerState?.currentProviderID,
+              hasExplicitActiveProvider: Boolean(providerState?.hasExplicitCurrentProvider),
+            })
+          );
+          return next;
+        });
+        const activeModel = providerState?.hasExplicitCurrentModel ? providerState.currentModel : '';
+        setRelayModelOptions((prev) => {
+          const next = activeModel ? Array.from(new Set([...prev, activeModel])) : prev;
+          setSelectedRelayModel(
+            resolveInitialRelayModelSelection({
+              modelOptions: next,
+              activeModel: providerState?.currentModel,
+              hasExplicitActiveModel: Boolean(providerState?.hasExplicitCurrentModel),
+            })
+          );
+          return next;
+        });
       } catch (error) {
         console.error(error);
       }
@@ -340,7 +378,7 @@ export default function StatusFeature({
   useEffect(() => {
     const trimmedSelectedRelayModel = selectedRelayModel.trim();
     if (!trimmedSelectedRelayModel) {
-      setSelectedRelayModel(resolvedRelayModelNames[0] || 'GT');
+      setSelectedRelayModel(resolvedRelayModelNames[0] || RELAY_CODEX_DEFAULT_MODEL);
       return;
     }
     if (trimmedSelectedRelayModel !== selectedRelayModel) {
@@ -360,7 +398,7 @@ export default function StatusFeature({
 
   useEffect(() => {
     if (!relayProviderOptions.some((option) => option.id === selectedRelayProviderID)) {
-      setSelectedRelayProviderID(relayProviderOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID);
+      setSelectedRelayProviderID(resolveInitialRelayProviderSelection({ providerOptions: relayProviderOptions }));
       return;
     }
     saveSelectedRelayProvider(selectedRelayProviderID);
@@ -552,7 +590,7 @@ export default function StatusFeature({
   function commitRelayModelSelection(rawValue: string) {
     const nextValue = rawValue.trim();
     if (!nextValue) {
-      const fallback = selectedRelayModel.trim() || resolvedRelayModelNames[0] || 'GT';
+      const fallback = selectedRelayModel.trim() || resolvedRelayModelNames[0] || RELAY_CODEX_DEFAULT_MODEL;
       setSelectedRelayModel(fallback);
       return;
     }
@@ -572,7 +610,7 @@ export default function StatusFeature({
 
     const nextProvider = toRelayProviderOption({
       providerID: relayProviderEditor.providerID,
-      providerName: relayProviderEditor.providerName,
+      providerName: relayProviderEditor.providerID,
     });
     if (!nextProvider.id) {
       setRelayProviderEditor((prev) => (prev ? { ...prev, error: t('status.provider_id_required') } : prev));
@@ -598,7 +636,7 @@ export default function StatusFeature({
 
     setRelayProviderOptions(nextOptions);
     if (selectedRelayProviderID === providerID) {
-      setSelectedRelayProviderID(nextOptions[0]?.id || RELAY_CODEX_OPENAI_PROVIDER_ID);
+      setSelectedRelayProviderID(resolveInitialRelayProviderSelection({ providerOptions: nextOptions }));
     }
     setLocalApplyMessage(t('status.provider_deleted'));
   }
@@ -643,12 +681,46 @@ export default function StatusFeature({
       try {
         const refreshed = await trackRequest('GetRelayServiceConfig', { args: [] }, () => GetRelayServiceConfig());
         setRelayKeyItems(refreshed.apiKeyItems || (refreshed.apiKeys || []).map((value) => ({ value })));
-        const localProviders = await trackRequest('ListLocalCodexProviderViews', { args: [] }, () =>
-          ListLocalCodexProviderViews()
+        const providerState = await trackRequest('GetLocalCodexModelProviderStateView', { args: [] }, () =>
+          GetLocalCodexModelProviderStateView()
         );
-        setRelayProviderOptions((prev) =>
-          mergeRelayProviderCatalog(defaultRelayProviderOptions, prev, localProviders || [])
-        );
+        const activeProvider =
+          providerState?.currentProviderID
+            ? [
+                {
+                  providerID: providerState.currentProviderID,
+                  providerName: providerState.currentProviderName || providerState.currentProviderID,
+                },
+              ]
+            : [];
+        setRelayProviderOptions((prev) => {
+          const next = mergeRelayProviderCatalog(
+            defaultRelayProviderOptions,
+            prev,
+            providerState?.providers || [],
+            activeProvider
+          );
+          setSelectedRelayProviderID(
+            resolveInitialRelayProviderSelection({
+              providerOptions: next,
+              activeProviderID: providerState?.currentProviderID,
+              hasExplicitActiveProvider: Boolean(providerState?.hasExplicitCurrentProvider),
+            })
+          );
+          return next;
+        });
+        const activeModel = providerState?.hasExplicitCurrentModel ? providerState.currentModel : '';
+        setRelayModelOptions((prev) => {
+          const next = activeModel ? Array.from(new Set([...prev, activeModel])) : prev;
+          setSelectedRelayModel(
+            resolveInitialRelayModelSelection({
+              modelOptions: next,
+              activeModel: providerState?.currentModel,
+              hasExplicitActiveModel: Boolean(providerState?.hasExplicitCurrentModel),
+            })
+          );
+          return next;
+        });
         const refreshedAuthState = await trackRequest('GetLocalCodexAuthState', { args: [] }, () =>
           GetLocalCodexAuthState()
         );
@@ -745,7 +817,7 @@ export default function StatusFeature({
           actionsClassName="shrink-0"
           actions={
             <div
-              className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black uppercase tracking-widest ${
+              className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black tracking-widest ${
                 sidecarStatus.code === 'ready' && !healthzHasError
                   ? 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
                   : 'border-[var(--color-status-danger)] bg-[var(--bg-main)] text-[var(--color-status-danger)]'

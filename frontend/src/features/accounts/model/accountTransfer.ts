@@ -7,7 +7,7 @@ export const ACCOUNT_CARD_IMPORT_SCHEMA = 'gettokens.account-card.v1';
 
 export interface AccountCardImportPayload {
   schema: typeof ACCOUNT_CARD_IMPORT_SCHEMA;
-  credentialSource: 'auth-file' | 'api-key';
+  credentialSource: 'auth-file' | 'api-key' | 'openai-compatible';
   account?: {
     id?: string;
     provider?: string;
@@ -23,6 +23,16 @@ export interface AccountCardImportPayload {
     baseUrl?: string;
     prefix?: string;
   };
+  openAICompatibleProvider?: {
+    name?: string;
+    apiKey?: string;
+    apiKeys?: string[];
+    baseUrl?: string;
+    prefix?: string;
+    proxyUrl?: string;
+    headers?: Record<string, string>;
+    models?: Array<{ name?: string; alias?: string }>;
+  };
 }
 
 export type ParsedAccountCardImport =
@@ -37,6 +47,17 @@ export type ParsedAccountCardImport =
       apiKey: string;
       baseUrl: string;
       prefix: string;
+    }
+  | {
+      type: 'openai-compatible';
+      name: string;
+      apiKey: string;
+      apiKeys: string[];
+      baseUrl: string;
+      prefix: string;
+      proxyUrl: string;
+      headers: Record<string, string>;
+      models: Array<{ name: string; alias?: string }>;
     };
 
 export function resolvePastedAuthFileName(parsed: Record<string, unknown>) {
@@ -47,6 +68,40 @@ export function resolvePastedAuthFileName(parsed: Record<string, unknown>) {
     return `${parsed.email.split('@')[0]}-auth.json`;
   }
   return 'pasted-auth.json';
+}
+
+export function resolveCopiedAuthFileName(name: string, existingNames: readonly string[]): string {
+  const normalizedName = normalizeAuthFileName(name);
+  const stem = normalizedName.slice(0, -'.json'.length);
+  const existingStems = existingNames.map((item) => normalizeAuthFileName(item).slice(0, -'.json'.length));
+  const nextStem = resolveNumberedDuplicateTitle(stem, existingStems);
+  return `${nextStem}.json`;
+}
+
+export function resolveNumberedDuplicateTitle(title: string, existingTitles: readonly string[]): string {
+  const normalizedTitle = String(title || '').trim() || 'Untitled';
+  const baseTitle = stripNumberedDuplicateSuffix(normalizedTitle);
+  const occupied = new Set(existingTitles.map((item) => String(item || '').trim().toLowerCase()).filter(Boolean));
+  if (!occupied.has(normalizedTitle.toLowerCase())) {
+    return normalizedTitle;
+  }
+
+  for (let index = 2; index < 1000; index += 1) {
+    const candidate = `${baseTitle} #${index}`;
+    if (!occupied.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+  }
+  return `${baseTitle} #${Date.now()}`;
+}
+
+export function resolveCopiedOpenAICompatibleProviderName(name: string, existingNames: readonly string[]): string {
+  const normalizedName = String(name || '').trim() || 'openai-compatible';
+  return resolveNumberedDuplicateTitle(normalizedName, existingNames);
+}
+
+function stripNumberedDuplicateSuffix(title: string): string {
+  return title.replace(/\s+#\d+$/, '').trim() || title;
 }
 
 export function parseAccountCardImportPayload(parsed: unknown): ParsedAccountCardImport | null {
@@ -73,6 +128,27 @@ export function parseAccountCardImportPayload(parsed: unknown): ParsedAccountCar
     };
   }
 
+  if (payload.credentialSource === 'openai-compatible') {
+    const provider = payload.openAICompatibleProvider;
+    const apiKeys = normalizeStringList([provider?.apiKey, ...(provider?.apiKeys ?? [])]);
+    const apiKey = apiKeys[0] || '';
+    const baseUrl = String(provider?.baseUrl || '').trim();
+    if (!apiKey || !baseUrl) {
+      return null;
+    }
+    return {
+      type: 'openai-compatible',
+      name: String(provider?.name || payload.account?.provider || payload.account?.displayName || '').trim(),
+      apiKey,
+      apiKeys,
+      baseUrl,
+      prefix: String(provider?.prefix || '').trim(),
+      proxyUrl: String(provider?.proxyUrl || '').trim(),
+      headers: normalizeHeaders(provider?.headers),
+      models: normalizeModels(provider?.models),
+    };
+  }
+
   if (payload.credentialSource === 'auth-file') {
     const rawContent = payload.authFile?.content;
     if (rawContent === undefined || rawContent === null) {
@@ -88,6 +164,63 @@ export function parseAccountCardImportPayload(parsed: unknown): ParsedAccountCar
   }
 
   return null;
+}
+
+function normalizeStringList(items: unknown[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of items) {
+    const value = String(item || '').trim();
+    if (!value || seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    out.push(value);
+  }
+  return out;
+}
+
+function normalizeHeaders(headers: unknown): Record<string, string> {
+  if (!headers || typeof headers !== 'object' || Array.isArray(headers)) {
+    return {};
+  }
+  const out: Record<string, string> = {};
+  for (const [key, value] of Object.entries(headers)) {
+    const nextKey = String(key || '').trim();
+    const nextValue = String(value || '').trim();
+    if (nextKey && nextValue) {
+      out[nextKey] = nextValue;
+    }
+  }
+  return out;
+}
+
+function normalizeModels(models: unknown): Array<{ name: string; alias?: string }> {
+  if (!Array.isArray(models)) {
+    return [];
+  }
+  const out: Array<{ name: string; alias?: string }> = [];
+  const seen = new Set<string>();
+  for (const model of models) {
+    if (!model || typeof model !== 'object') {
+      continue;
+    }
+    const item = model as { name?: unknown; alias?: unknown };
+    const name = String(item.name || '').trim();
+    const alias = String(item.alias || '').trim();
+    const key = `${name}\x00${alias}`;
+    if (!name || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    out.push(alias ? { name, alias } : { name });
+  }
+  return out;
+}
+
+function normalizeAuthFileName(name: string) {
+  const trimmed = String(name || '').trim() || 'pasted-auth.json';
+  return trimmed.endsWith('.json') ? trimmed : `${trimmed}.json`;
 }
 
 export function buildAccountsExportFilename(date = new Date()) {

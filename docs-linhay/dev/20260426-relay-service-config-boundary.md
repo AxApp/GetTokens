@@ -269,6 +269,10 @@ sidecar 顶层 `api-keys` 原生支持列表，因此状态页不能再只建模
 2. model 目录优先来自账号池聚合结果
 3. 若账号池聚合目录为空，再回退 `~/.codex/models_cache.json` 作为本地工作台兜底
 4. 这条 `models_cache` fallback 只用于状态页工作台可用性，不反向声明 sidecar 真实支持这些模型
+5. provider 下拉展示 `model_provider` id 本身，不再把显示名与 id 拼成 `Name / id`
+6. 新增 provider 只输入一个 `model_provider` 值；除非后续需求明确引入显示名，否则内部 `providerName` 与 `providerID` 同源
+7. model 下拉优先遵守 `config.toml` 的显式 root `model`；没有显式值时回落到 `RELAY_CODEX_DEFAULT_MODEL`
+8. `GT` 属于历史 UI 兜底值，只作为旧 localStorage 迁移输入过滤掉，不能继续作为默认选项注入
 
 ### 9. 状态页配置面板里的弹层验收不能只靠代码推断
 

@@ -1,4 +1,5 @@
-import { RefreshCw, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import type { CodexBinarySnapshot } from '../model';
 
 export default function CodexBinarySummaryPanel({
@@ -54,15 +55,14 @@ export default function CodexBinarySummaryPanel({
               {managedBusy ? t('codex_binary.managing') : t('codex_binary.enable_managed')}
             </button>
           ) : null}
-          <button
-            type="button"
+          <RefreshActionButton
             onClick={onRefresh}
             disabled={loading}
-            className="btn-swiss whitespace-nowrap !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
-            {t('codex_binary.refresh')}
-          </button>
+            label={t('codex_binary.refresh')}
+            loading={loading}
+            size="sm"
+            className="!px-2.5 !py-1.5"
+          />
         </div>
       </div>
       {snapshot?.managedConfig ? (

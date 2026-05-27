@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Copy, FileText, MoreVertical, Power, Terminal, Trash2 } from 'lucide-react';
+import { FileText, MoreVertical, Power, Terminal, Trash2 } from 'lucide-react';
 import { buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
-import { buildAccountCardContentText, buildAccountCardCopyText } from '../model/accountCardActions';
+import { buildAccountCardContentText } from '../model/accountCardActions';
+import { writeAccountClipboardText } from '../model/accountClipboard';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import {
   buildAccountAttributionBadges,
@@ -44,6 +45,10 @@ interface AccountCardProps {
   downloadAuthFile?: (accountName: string) => Promise<{ contentBase64: string }>;
   localCliActions?: ReadonlyArray<AccountCardLocalCliAction>;
   defaultActionMenuOpen?: boolean;
+  extraBadges?: AttributionCardBadge[];
+  eyebrowPrefix?: string;
+  showDeleteAction?: boolean;
+  showFooterActions?: boolean;
 }
 
 export interface AccountCardLocalCliAction {
@@ -80,6 +85,10 @@ export default function AccountCard({
   downloadAuthFile,
   localCliActions = [],
   defaultActionMenuOpen = false,
+  extraBadges = [],
+  eyebrowPrefix = '',
+  showDeleteAction = true,
+  showFooterActions = true,
 }: AccountCardProps) {
   const [isActionMenuOpen, setIsActionMenuOpen] = useState(defaultActionMenuOpen);
   const [copyState, setCopyState] = useState<'idle' | 'success' | 'error'>('idle');
@@ -106,7 +115,7 @@ export default function AccountCard({
         : statusTone === 'warning' || guardTone === 'warning'
           ? 'warning'
           : 'critical';
-  const badges: AttributionCardBadge[] = buildAccountAttributionBadges(account, quotaDisplay);
+  const badges: AttributionCardBadge[] = [...buildAccountAttributionBadges(account, quotaDisplay), ...extraBadges];
   if (account.disabled) {
     badges.push({ label: t('accounts.rotation_disabled_badge'), tone: 'critical' });
   }
@@ -153,9 +162,10 @@ export default function AccountCard({
 
   async function copyText(value: string) {
     try {
-      await navigator.clipboard.writeText(value);
+      await writeAccountClipboardText(value);
       setCopyState('success');
-    } catch {
+    } catch (error) {
+      console.warn('Account card copy failed.', error);
       setCopyState('error');
     }
 
@@ -211,6 +221,7 @@ export default function AccountCard({
       title={primaryLabel}
       subtitle={account.baseUrl || ''}
       eyebrow={operationalState.label}
+      eyebrowPrefix={eyebrowPrefix}
       failureReason={failureReason}
       badges={badges}
       usageSummary={usageSummary}
@@ -257,20 +268,11 @@ export default function AccountCard({
                   <button
                     type="button"
                     role="menuitem"
-                    onClick={() => void copyText(buildAccountCardCopyText(account))}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
-                  >
-                    <Copy size={14} strokeWidth={3} />
-                    {t('common.copy')}
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
                     onClick={() => void copyAccountContent()}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
                   >
                     <FileText size={14} strokeWidth={3} />
-                    {t('common.copy_content')}
+                    {t('accounts.copy_account_config')}
                   </button>
                   {localCliActions.length > 0 ? (
                     <>
@@ -314,18 +316,20 @@ export default function AccountCard({
                       {isStatusPending ? t('common.loading') : account.disabled ? t('common.enable') : t('common.disable')}
                     </button>
                   ) : null}
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsActionMenuOpen(false);
-                      onRequestDelete(account.id);
-                    }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
-                  >
-                    <Trash2 size={14} strokeWidth={3} />
-                    {t('accounts.card_delete')}
-                  </button>
+                  {showDeleteAction ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsActionMenuOpen(false);
+                        onRequestDelete(account.id);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
+                    >
+                      <Trash2 size={14} strokeWidth={3} />
+                      {t('accounts.card_delete')}
+                    </button>
+                  ) : null}
                   {copyState !== 'idle' ? (
                     <div
                       className={`border-t border-dashed border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
@@ -342,7 +346,7 @@ export default function AccountCard({
         </div>
       }
       footer={
-        isPendingDelete || density === 'list' ? undefined : (
+        !showFooterActions || isPendingDelete || density === 'list' ? undefined : (
           <div
             className={`account-card-action-grid grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}
             data-account-card-ignore-click="true"

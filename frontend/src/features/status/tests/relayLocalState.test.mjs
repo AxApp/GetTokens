@@ -6,10 +6,37 @@ import {
   buildClaudeCodeSettingsDiff,
   buildCodexLocalApplyDiff,
   getCodexLocalApplyPreflight,
+  loadRelayModelOptions,
+  resolveInitialRelayModelSelection,
+  resolveInitialRelayProviderSelection,
   resolveCodexLocalApplyState,
   resolveUnifiedDiffLineTone,
+  saveRelayModelOptions,
   updateLocalCliTargetDraft,
 } from '../model/relayLocalState.ts';
+
+function installLocalStorageMock(initial = {}) {
+  const store = new Map(Object.entries(initial));
+  const previousWindow = globalThis.window;
+  globalThis.window = {
+    localStorage: {
+      getItem: (key) => (store.has(key) ? store.get(key) : null),
+      setItem: (key, value) => {
+        store.set(key, String(value));
+      },
+    },
+  };
+  return {
+    store,
+    restore: () => {
+      if (previousWindow === undefined) {
+        delete globalThis.window;
+      } else {
+        globalThis.window = previousWindow;
+      }
+    },
+  };
+}
 
 test('buildCodexLocalApplyDiff includes Codex auth and config controlled fields', () => {
   const diff = buildCodexLocalApplyDiff({
@@ -27,6 +54,100 @@ test('buildCodexLocalApplyDiff includes Codex auth and config controlled fields'
   assert.match(diff, /\+model = "gpt-5.4"/);
   assert.match(diff, / model_provider = "gettokens" # current user provider preserved/);
   assert.match(diff, /\+wire_api = "responses"/);
+});
+
+test('resolveInitialRelayProviderSelection follows explicit Codex config provider before stored UI state', () => {
+  assert.equal(
+    resolveInitialRelayProviderSelection({
+      providerOptions: [
+        { id: 'openai', name: 'OpenAI' },
+        { id: 'gettokens', name: 'GetTokens' },
+        { id: 'corp', name: 'Corp Relay' },
+      ],
+      storedProviderID: 'openai',
+      activeProviderID: 'corp',
+      hasExplicitActiveProvider: true,
+    }),
+    'corp'
+  );
+});
+
+test('resolveInitialRelayProviderSelection defaults to GetTokens when Codex config has no explicit provider', () => {
+  assert.equal(
+    resolveInitialRelayProviderSelection({
+      providerOptions: [
+        { id: 'openai', name: 'OpenAI' },
+        { id: 'gettokens', name: 'GetTokens' },
+      ],
+      storedProviderID: 'openai',
+      activeProviderID: 'openai',
+      hasExplicitActiveProvider: false,
+    }),
+    'gettokens'
+  );
+});
+
+test('resolveInitialRelayProviderSelection preserves explicit missing provider IDs from Codex config', () => {
+  assert.equal(
+    resolveInitialRelayProviderSelection({
+      providerOptions: [
+        { id: 'openai', name: 'OpenAI' },
+        { id: 'gettokens', name: 'GetTokens' },
+      ],
+      activeProviderID: 'missing-relay',
+      hasExplicitActiveProvider: true,
+    }),
+    'missing-relay'
+  );
+});
+
+test('resolveInitialRelayModelSelection follows explicit Codex config model before stored UI state', () => {
+  assert.equal(
+    resolveInitialRelayModelSelection({
+      modelOptions: ['gpt-5.4', 'gpt-5.5-codex'],
+      storedModel: 'gpt-5.4',
+      activeModel: 'gpt-5.5-codex',
+      hasExplicitActiveModel: true,
+    }),
+    'gpt-5.5-codex'
+  );
+});
+
+test('resolveInitialRelayModelSelection defaults to gpt-5.4 when Codex config has no explicit model', () => {
+  assert.equal(
+    resolveInitialRelayModelSelection({
+      modelOptions: ['gpt-5.4'],
+      storedModel: 'legacy-ui-model',
+      activeModel: 'gpt-5.4',
+      hasExplicitActiveModel: false,
+    }),
+    'gpt-5.4'
+  );
+});
+
+test('resolveInitialRelayModelSelection preserves explicit missing model names from Codex config', () => {
+  assert.equal(
+    resolveInitialRelayModelSelection({
+      modelOptions: ['gpt-5.4'],
+      activeModel: 'team-model',
+      hasExplicitActiveModel: true,
+    }),
+    'team-model'
+  );
+});
+
+test('loadRelayModelOptions migrates legacy GT option to gpt-5.4', () => {
+  const storage = installLocalStorageMock({
+    'gettokens.status.relay-model-options': JSON.stringify(['GT', 'gpt-5.4', 'gpt-5.4']),
+  });
+
+  try {
+    assert.deepEqual(loadRelayModelOptions(), ['gpt-5.4']);
+    saveRelayModelOptions(['GT']);
+    assert.deepEqual(JSON.parse(storage.store.get('gettokens.status.relay-model-options')), ['gpt-5.4']);
+  } finally {
+    storage.restore();
+  }
 });
 
 test('buildCodexLocalApplyDiff preserves ChatGPT auth and writes experimental bearer token in preserve mode', () => {

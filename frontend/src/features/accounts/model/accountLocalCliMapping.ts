@@ -52,10 +52,13 @@ export interface AccountLocalCliRelayEndpointLike {
 }
 
 export interface LocalCodexModelProviderStateLike {
+  currentModel?: string;
+  hasExplicitCurrentModel?: boolean;
   currentProviderID?: string;
   currentProviderName?: string;
   currentProviderIsBuiltin?: boolean;
   currentProviderExists?: boolean;
+  hasExplicitCurrentProvider?: boolean;
   providers?: Array<{
     providerID?: string;
     providerName?: string;
