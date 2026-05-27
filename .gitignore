@@ -24,5 +24,10 @@ tmp/
 # Local reference project clones. Keep root markdown index files in git, but do not
 # add vendored source trees under docs-linhay/references by default.
 docs-linhay/references/*/
+# CLIProxyAPI is the maintained sidecar source. Keep only its gitlink in this
+# repository; do not vendor its files into the parent repo.
+!docs-linhay/references/CLIProxyAPI
+!docs-linhay/references/CLIProxyAPI/
+docs-linhay/references/CLIProxyAPI/*
 !docs-linhay/references/*.md
 docs-linhay/references/codex/
