@@ -8,6 +8,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -225,6 +226,105 @@ func TestListAuthFilesRefreshesMetadataCacheWhenFingerprintChanges(t *testing.T)
 	if second.Files[0].PlanType != "pro" || second.Files[0].Priority != 9 {
 		t.Fatalf("second metadata = %#v, want pro priority 9", second.Files[0])
 	}
+}
+
+func TestAuthFileMetadataCacheUsesNameForIdentityAndFingerprintForFreshness(t *testing.T) {
+	app := New("", "", "")
+	first := AuthFileItem{
+		Name:     " codex-team.json ",
+		Size:     91,
+		Modified: 1760000000,
+		Type:     "codex",
+		Provider: "codex",
+		Email:    "team@example.com",
+		PlanType: "plus",
+		Priority: 7,
+	}
+	second := first
+	second.Size = 92
+	second.Modified = 1760000001
+	second.PlanType = "pro"
+	second.Priority = 9
+
+	app.storeAuthFileMetadata(first)
+	if _, ok := app.cachedAuthFileMetadata(AuthFileItem{Name: "codex-team.json", Size: 91, Modified: 1760000000}); !ok {
+		t.Fatal("expected original fingerprint to hit the metadata cache")
+	}
+
+	app.storeAuthFileMetadata(second)
+	if len(app.authFileMetadataCache) != 1 {
+		t.Fatalf("metadata cache entries = %d, want 1 keyed by auth-file name", len(app.authFileMetadataCache))
+	}
+	if _, ok := app.cachedAuthFileMetadata(AuthFileItem{Name: "codex-team.json", Size: 91, Modified: 1760000000}); ok {
+		t.Fatal("old fingerprint should miss after the same auth-file name is refreshed")
+	}
+	cached, ok := app.cachedAuthFileMetadata(AuthFileItem{Name: "codex-team.json", Size: 92, Modified: 1760000001})
+	if !ok {
+		t.Fatal("expected refreshed fingerprint to hit the metadata cache")
+	}
+	if cached.PlanType != "pro" || cached.Priority != 9 {
+		t.Fatalf("cached metadata = %#v, want refreshed pro priority 9", cached)
+	}
+}
+
+func BenchmarkAuthFileMetadataCacheSameNameFingerprintChurn(b *testing.B) {
+	files := buildAuthFileMetadataCacheBenchmarkFiles(10_000)
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		app := New("", "", "")
+		for _, file := range files {
+			app.storeAuthFileMetadata(file)
+		}
+		if got := len(app.authFileMetadataCache); got != 1 {
+			b.Fatalf("metadata cache entries = %d, want 1 keyed by auth-file name", got)
+		}
+	}
+}
+
+func BenchmarkAuthFileMetadataCacheCompositeKeyFingerprintChurnBaseline(b *testing.B) {
+	files := buildAuthFileMetadataCacheBenchmarkFiles(10_000)
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		cache := map[string]authFileMetadataCacheEntry{}
+		for _, file := range files {
+			name := authFileMetadataCacheName(file.Name)
+			cache[authFileMetadataCompositeKeyBaseline(name, file.Size, file.Modified)] = authFileMetadataCacheEntry{
+				Name:        name,
+				Fingerprint: authFileMetadataFingerprintFor(file),
+				Type:        file.Type,
+				Provider:    file.Provider,
+				Priority:    file.Priority,
+				Email:       file.Email,
+				PlanType:    file.PlanType,
+			}
+		}
+		if got := len(cache); got != len(files) {
+			b.Fatalf("baseline metadata cache entries = %d, want %d", got, len(files))
+		}
+	}
+}
+
+func buildAuthFileMetadataCacheBenchmarkFiles(count int) []AuthFileItem {
+	files := make([]AuthFileItem, 0, count)
+	for index := 0; index < count; index++ {
+		files = append(files, AuthFileItem{
+			Name:     "codex-team.json",
+			Size:     int64(91 + index),
+			Modified: int64(1760000000 + index),
+			Type:     "codex",
+			Provider: "codex",
+			Email:    "team@example.com",
+			PlanType: "plus",
+			Priority: 7,
+		})
+	}
+	return files
+}
+
+func authFileMetadataCompositeKeyBaseline(name string, size int64, modified int64) string {
+	return name + "|" + strconv.FormatInt(size, 10) + "|" + strconv.FormatInt(modified, 10)
 }
 
 func TestUniqueAuthFileUploadName(t *testing.T) {

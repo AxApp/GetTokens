@@ -49,7 +49,8 @@
 
 ### 2026-05-27
 
-- 在 `internal/wailsapp` 增加 auth-file 元数据进程缓存，缓存键为 `name + size + modified`。
+- 在 `internal/wailsapp` 增加 auth-file 元数据进程缓存；缓存身份按 canonical `name` 归一，`size + modified` 只作为 freshness fingerprint。
 - `ListAuthFiles` 对普通列表场景优先使用缓存；首次 fresh 下载后只缓存展示元数据，不缓存完整 auth 原文。
 - 上传、删除、启停状态修改成功后按文件名失效缓存；文件大小或修改时间变化会自然绕过旧缓存。
 - 补充 sidecar mock 测试，覆盖重复列表不重复下载、元数据仍不完整也不重复下载、fingerprint 变化后重新下载。
+- 补充同名 fingerprint churn 构造测试与 benchmark，确认同一 auth-file 名称不会因 `size/modified` 变化累积多条 cache entry。

@@ -1,61 +1,69 @@
 package wailsapp
 
 import (
-	"fmt"
 	"strings"
 )
 
-type authFileMetadataCacheEntry struct {
-	Name     string
+type authFileMetadataFingerprint struct {
 	Size     int64
 	Modified int64
-	Type     string
-	Provider string
-	Priority int
-	Email    string
-	PlanType string
 }
 
-func authFileMetadataCacheKey(name string, size int64, modified int64) string {
-	return fmt.Sprintf("%s|%d|%d", strings.TrimSpace(name), size, modified)
+type authFileMetadataCacheEntry struct {
+	Name        string
+	Fingerprint authFileMetadataFingerprint
+	Type        string
+	Provider    string
+	Priority    int
+	Email       string
+	PlanType    string
+}
+
+func authFileMetadataCacheName(name string) string {
+	return strings.TrimSpace(name)
+}
+
+func authFileMetadataFingerprintFor(file AuthFileItem) authFileMetadataFingerprint {
+	return authFileMetadataFingerprint{
+		Size:     file.Size,
+		Modified: file.Modified,
+	}
 }
 
 func (a *App) cachedAuthFileMetadata(file AuthFileItem) (authFileMetadataCacheEntry, bool) {
-	name := strings.TrimSpace(file.Name)
+	name := authFileMetadataCacheName(file.Name)
 	if name == "" {
 		return authFileMetadataCacheEntry{}, false
 	}
-	key := authFileMetadataCacheKey(name, file.Size, file.Modified)
+	fingerprint := authFileMetadataFingerprintFor(file)
 	a.authFileCacheMu.RLock()
-	entry, ok := a.authFileMetadataCache[key]
+	entry, ok := a.authFileMetadataCache[name]
 	a.authFileCacheMu.RUnlock()
-	if !ok {
+	if !ok || entry.Fingerprint != fingerprint {
 		return authFileMetadataCacheEntry{}, false
 	}
 	return entry, true
 }
 
 func (a *App) storeAuthFileMetadata(file AuthFileItem) {
-	name := strings.TrimSpace(file.Name)
+	name := authFileMetadataCacheName(file.Name)
 	if name == "" {
 		return
 	}
 	entry := authFileMetadataCacheEntry{
-		Name:     name,
-		Size:     file.Size,
-		Modified: file.Modified,
-		Type:     strings.TrimSpace(file.Type),
-		Provider: strings.TrimSpace(file.Provider),
-		Priority: file.Priority,
-		Email:    strings.TrimSpace(file.Email),
-		PlanType: strings.TrimSpace(file.PlanType),
+		Name:        name,
+		Fingerprint: authFileMetadataFingerprintFor(file),
+		Type:        strings.TrimSpace(file.Type),
+		Provider:    strings.TrimSpace(file.Provider),
+		Priority:    file.Priority,
+		Email:       strings.TrimSpace(file.Email),
+		PlanType:    strings.TrimSpace(file.PlanType),
 	}
-	key := authFileMetadataCacheKey(name, file.Size, file.Modified)
 	a.authFileCacheMu.Lock()
 	if a.authFileMetadataCache == nil {
 		a.authFileMetadataCache = map[string]authFileMetadataCacheEntry{}
 	}
-	a.authFileMetadataCache[key] = entry
+	a.authFileMetadataCache[name] = entry
 	a.authFileCacheMu.Unlock()
 }
 
@@ -94,16 +102,16 @@ func (a *App) invalidateAuthFileMetadataCache(names ...string) {
 	}
 	targets := map[string]struct{}{}
 	for _, name := range names {
-		if trimmed := strings.TrimSpace(name); trimmed != "" {
+		if trimmed := authFileMetadataCacheName(name); trimmed != "" {
 			targets[trimmed] = struct{}{}
 		}
 	}
 	if len(targets) == 0 {
 		return
 	}
-	for key, entry := range a.authFileMetadataCache {
-		if _, ok := targets[entry.Name]; ok {
-			delete(a.authFileMetadataCache, key)
+	for name := range targets {
+		if _, ok := a.authFileMetadataCache[name]; ok {
+			delete(a.authFileMetadataCache, name)
 		}
 	}
 }
