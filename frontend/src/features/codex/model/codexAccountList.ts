@@ -35,6 +35,16 @@ export {
 } from './codexRoutePolicy.ts';
 
 export type CodexAccountSourceKind = 'codex-auth-file' | 'codex-api-key' | 'openai-compatible';
+export type CodexAccountDetailModuleID =
+  | 'credentials'
+  | 'auth-file-actions'
+  | 'models'
+  | 'proxy-route'
+  | 'rate-limit'
+  | 'verify'
+  | 'quota'
+  | 'billing'
+  | 'model-routing';
 
 export interface CodexAccountRow {
   id: string;
@@ -83,6 +93,16 @@ export interface CodexAccountSummary {
 
 export function canEditCodexModelMappings(sourceKind: CodexAccountSourceKind): boolean {
   return sourceKind === 'openai-compatible' || sourceKind === 'codex-auth-file' || sourceKind === 'codex-api-key';
+}
+
+export function buildCodexAccountDetailModulePlan(
+  row: Pick<CodexAccountRow, 'sourceKind'>,
+): CodexAccountDetailModuleID[] {
+  if (row.sourceKind === 'codex-auth-file') {
+    return ['auth-file-actions', 'models', 'rate-limit', 'model-routing'];
+  }
+
+  return ['credentials', 'proxy-route', 'rate-limit', 'verify', 'quota', 'billing', 'model-routing'];
 }
 
 export function buildCodexAccountRows(input: BuildCodexAccountRowsInput): CodexAccountRow[] {

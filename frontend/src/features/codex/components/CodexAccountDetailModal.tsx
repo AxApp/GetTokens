@@ -1,7 +1,20 @@
 import { Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import {
+  CreateRateLimitRule,
+  DeleteRateLimitRule,
+  ListRateLimitRules,
+  UpdateRateLimitRule,
+} from '../../../../wailsjs/go/main/App';
 import AccountDetailModalFrame from '../../accounts/components/AccountDetailModalFrame';
-import { AccountRuntimeSnapshotSection } from '../../accounts/components/AccountDetailSections';
+import {
+  AccountBillingSection,
+  AccountCredentialsSection,
+  AccountQuotaSection,
+  AccountRuntimeSnapshotSection,
+  AccountVerifySection,
+  type APIKeyVerifyState,
+} from '../../accounts/components/AccountDetailSections';
 import {
   AccountDetailBody,
   AccountDetailEvidenceGrid,
@@ -12,13 +25,23 @@ import {
   AccountDetailPill,
   AccountDetailSection,
 } from '../../accounts/components/AccountDetailPrimitives';
+import AccountProxyRouteSection from '../../accounts/components/AccountProxyRouteSection';
+import RateLimitRulesSection, { type RateLimitRulesSectionHandle } from '../../accounts/components/RateLimitRulesSection';
+import {
+  buildApiKeyConfigDraft,
+  hasApiKeyConfigChanges,
+  listApiKeyConfigMissingFields,
+  type ApiKeyConfigDraft,
+} from '../../accounts/model/accountDetailConfig';
 import { buildQuotaDisplay, extractBilling } from '../../accounts/model/accountQuota';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
+import type { RateLimitState, RateLimitStrategyMeta } from '../../accounts/model/rateLimit';
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { toErrorMessage } from '../../../utils/error';
 import { ModelCombobox } from './ModelCombobox';
 import { buildEndpointLabel, sourceKindLabel } from './codexAccountPresentation';
 import {
+  buildCodexAccountDetailModulePlan,
   buildCodexQuotaSummaryAccount,
   buildCodexModelAliasOptionNames,
   buildCodexModelOptionNames,
@@ -32,6 +55,9 @@ export function CodexAccountDetailModal({
   t,
   quotaState,
   usageSummary,
+  rateLimitStatus,
+  rateLimitStrategies,
+  verifyState,
   savingMappings,
   loadingModelMappings,
   modelMappingError,
@@ -40,12 +66,17 @@ export function CodexAccountDetailModal({
   loadingModelOptions,
   modelOptionError,
   onClose,
+  onSaveConfig,
+  onRateLimitRulesChanged,
   onSaveModelMappings,
 }: {
   row: CodexAccountRow;
   t: (key: string) => string;
   quotaState?: CodexQuotaState;
   usageSummary?: AccountUsageSummary;
+  rateLimitStatus?: RateLimitState;
+  rateLimitStrategies?: RateLimitStrategyMeta[];
+  verifyState?: APIKeyVerifyState;
   savingMappings: boolean;
   loadingModelMappings: boolean;
   modelMappingError: string;
@@ -54,12 +85,22 @@ export function CodexAccountDetailModal({
   loadingModelOptions: boolean;
   modelOptionError: string;
   onClose: () => void;
+  onSaveConfig?: (draft: ApiKeyConfigDraft, mappings: CodexModelMappingRow[]) => Promise<void>;
+  onRateLimitRulesChanged?: () => void;
   onSaveModelMappings: (mappings: CodexModelMappingRow[]) => Promise<void>;
 }) {
+  const account = useMemo(() => buildCodexQuotaSummaryAccount(row), [row]);
   const endpointLabel = buildEndpointLabel(row);
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
+  const modulePlan = useMemo(() => buildCodexAccountDetailModulePlan(row), [row]);
+  const isApiLikeAccount = row.sourceKind !== 'codex-auth-file';
+  const [configDraft, setConfigDraft] = useState<ApiKeyConfigDraft>(() => buildApiKeyConfigDraft(account));
   const [mappingDraft, setMappingDraft] = useState<CodexModelMappingRow[]>(() => buildEditableModelMappings(row));
   const [mappingError, setMappingError] = useState('');
+  const [proxyRouteError, setProxyRouteError] = useState('');
+  const [rateLimitDirty, setRateLimitDirty] = useState(false);
+  const [savingDetail, setSavingDetail] = useState(false);
+  const rateLimitRulesRef = useRef<RateLimitRulesSectionHandle>(null);
   const editableModelMappings = canEditCodexModelMappings(row.sourceKind);
   const showModelMappings = editableModelMappings;
   const displayedModelMappings = editableModelMappings ? mappingDraft : row.modelMappings;
@@ -70,13 +111,32 @@ export function CodexAccountDetailModal({
     ...mappingDraft,
   ]);
   const quotaDisplay = useMemo(
-    () => buildQuotaDisplay(buildCodexQuotaSummaryAccount(row), quotaState),
-    [quotaState, row],
+    () => buildQuotaDisplay(account, quotaState),
+    [account, quotaState],
   );
   const billing = useMemo(
     () => (quotaState?.quota ? extractBilling(quotaState.quota) : undefined),
     [quotaState],
   );
+  const configDirty = useMemo(
+    () => (isApiLikeAccount ? hasApiKeyConfigChanges(account, configDraft) : false),
+    [account, configDraft, isApiLikeAccount],
+  );
+  const mappingDirty = useMemo(
+    () => JSON.stringify(buildEditableModelMappings(row)) !== JSON.stringify(mappingDraft),
+    [mappingDraft, row],
+  );
+  const missingFields = useMemo(() => {
+    if (!isApiLikeAccount) {
+      return proxyRouteError ? [proxyRouteError] : [];
+    }
+    const fields = listApiKeyConfigMissingFields(configDraft);
+    if (proxyRouteError) {
+      fields.push(proxyRouteError);
+    }
+    return fields;
+  }, [configDraft, isApiLikeAccount, proxyRouteError]);
+  const hasDetailChanges = configDirty || mappingDirty || rateLimitDirty;
   const modelSectionTitle = t('codex.account_list_model_mapping');
   const evidenceRows: Array<{ label: string; value: string; title?: string }> = [
     ['Asset', row.id],
@@ -92,9 +152,12 @@ export function CodexAccountDetailModal({
   ].map(([label, value]) => ({ label, value, title: value }));
 
   useEffect(() => {
+    setConfigDraft(buildApiKeyConfigDraft(account));
     setMappingDraft(buildEditableModelMappings(row));
     setMappingError('');
-  }, [row.id, row.modelMappings]);
+    setProxyRouteError('');
+    setRateLimitDirty(false);
+  }, [account, row]);
 
   function updateMappingDraft(index: number, patch: Partial<CodexModelMappingRow>) {
     setMappingDraft((prev) => prev.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
@@ -111,12 +174,120 @@ export function CodexAccountDetailModal({
     });
   }
 
-  async function saveMappingDraft() {
+  async function saveDetail() {
+    if (savingDetail || savingMappings || missingFields.length > 0) {
+      return;
+    }
+
+    setSavingDetail(true);
     try {
       setMappingError('');
-      await onSaveModelMappings(mappingDraft);
+      if (configDirty && onSaveConfig) {
+        await onSaveConfig(configDraft, mappingDraft);
+      } else if (mappingDirty) {
+        await onSaveModelMappings(mappingDraft);
+      }
+      if (rateLimitDirty) {
+        await rateLimitRulesRef.current?.save();
+      }
     } catch (error) {
       setMappingError(toErrorMessage(error));
+      throw error;
+    } finally {
+      setSavingDetail(false);
+    }
+  }
+
+  function renderDetailModule(moduleID: ReturnType<typeof buildCodexAccountDetailModulePlan>[number]) {
+    switch (moduleID) {
+      case 'credentials':
+        return (
+          <AccountCredentialsSection
+            key={moduleID}
+            draft={configDraft}
+            setDraft={setConfigDraft}
+          />
+        );
+      case 'auth-file-actions':
+        return <CodexAuthFileSummarySection key={moduleID} account={account} />;
+      case 'models':
+        return <CodexAuthFileModelsSection key={moduleID} row={row} />;
+      case 'proxy-route':
+        return (
+          <AccountProxyRouteSection
+            key={moduleID}
+            proxyUrl={configDraft.proxyUrl}
+            onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
+            onValidityChange={setProxyRouteError}
+          />
+        );
+      case 'rate-limit':
+        return (
+          <CodexRateLimitSection
+            key={moduleID}
+            row={row}
+            usageSummary={usageSummary}
+            rateLimitStatus={rateLimitStatus}
+            rateLimitStrategies={rateLimitStrategies}
+            rateLimitRulesRef={rateLimitRulesRef}
+            onRateLimitDirtyChange={setRateLimitDirty}
+            onRateLimitRulesChanged={onRateLimitRulesChanged}
+            t={t}
+          />
+        );
+      case 'verify':
+        return (
+          <AccountVerifySection
+            key={moduleID}
+            draft={configDraft}
+            verifyState={verifyState}
+            modelNames={modelOptionNames}
+          />
+        );
+      case 'quota':
+        return (
+          <AccountQuotaSection
+            key={moduleID}
+            account={account}
+            draft={configDraft}
+            setDraft={setConfigDraft}
+            quotaState={quotaState}
+          />
+        );
+      case 'billing':
+        return (
+          <AccountBillingSection
+            key={moduleID}
+            account={account}
+            draft={configDraft}
+            setDraft={setConfigDraft}
+            liveBilling={billing}
+          />
+        );
+      case 'model-routing':
+        return (
+          <CodexModelRoutingSection
+            key={moduleID}
+            t={t}
+            row={row}
+            title={modelSectionTitle}
+            editableModelMappings={editableModelMappings}
+            showModelMappings={showModelMappings}
+            displayedModelMappings={displayedModelMappings}
+            loadingModelMappings={loadingModelMappings}
+            modelMappingError={modelMappingError}
+            loadingModelOptions={loadingModelOptions}
+            modelOptionError={modelOptionError}
+            mappingError={mappingError}
+            modelOptionNames={modelOptionNames}
+            codexModelOptionNames={codexModelOptionNames}
+            onAddMapping={addMappingDraft}
+            onUpdateMapping={updateMappingDraft}
+            onRemoveMapping={removeMappingDraft}
+          />
+        );
+      default:
+        return null;
     }
   }
 
@@ -147,19 +318,21 @@ export function CodexAccountDetailModal({
         </div>
       }
       footer={
-        editableModelMappings ? (
+        isApiLikeAccount || editableModelMappings || rateLimitDirty ? (
           <>
             <div className="min-w-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.15em] text-[var(--text-muted)] sm:max-w-[70%]">
-              {mappingError || modelMappingError || modelOptionError || (loadingModelOptions ? t('accounts.openai_provider_models_fetch_running') : modelSectionTitle)}
+              {missingFields.length > 0
+                ? `缺少字段 ${missingFields.join(', ')}`
+                : mappingError || modelMappingError || modelOptionError || (loadingModelOptions ? t('accounts.openai_provider_models_fetch_running') : hasDetailChanges ? t('codex.account_list_unsaved') : modelSectionTitle)}
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => void saveMappingDraft()}
-                disabled={savingMappings}
+                onClick={() => void saveDetail()}
+                disabled={savingMappings || savingDetail || missingFields.length > 0}
                 className="btn-swiss bg-[var(--text-primary)] !text-[var(--bg-main)] disabled:cursor-wait disabled:opacity-50"
               >
-                {savingMappings ? t('codex.account_list_saving') : t('common.save')}
+                {savingMappings || savingDetail ? t('codex.account_list_saving') : t('common.save')}
               </button>
               <button type="button" onClick={onClose} className="btn-swiss">
                 {t('common.cancel')}
@@ -188,123 +361,7 @@ export function CodexAccountDetailModal({
         />
 
         <AccountDetailModuleStack layout="cards">
-          <AccountDetailSection
-            componentName="CodexModelRoutingSection"
-            eyebrow="Model Routing"
-            title={modelSectionTitle}
-            meta={showModelMappings ? String(displayedModelMappings.length) : undefined}
-            span="wide"
-            actions={editableModelMappings ? (
-              <button
-                type="button"
-                onClick={addMappingDraft}
-                className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-              >
-                <Plus className="h-3.5 w-3.5" strokeWidth={4} />
-                {t('accounts.openai_provider_add_model')}
-              </button>
-            ) : undefined}
-          >
-          {showModelMappings ? (
-            loadingModelMappings ? (
-              <AccountDetailEmptyState>
-                {t('accounts.ui_loading_short')}
-              </AccountDetailEmptyState>
-            ) : displayedModelMappings.length > 0 ? (
-              <div className="border-2 border-[var(--border-color)]">
-                <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  <span>{t('codex.account_list_real_model')}</span>
-                  <span className="text-center">-&gt;</span>
-                  <span className="text-right">{t('codex.account_list_codex_model')}</span>
-                  <span />
-                </div>
-                <div className="divide-y divide-[var(--border-color)]">
-                  {displayedModelMappings.map((mapping, index) => (
-                    <div
-                      key={`mapping-${index}`}
-                      className="grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]"
-                    >
-                      {editableModelMappings ? (
-                        <ModelCombobox
-                          value={mapping.realModel}
-                          options={modelOptionNames}
-                          onChange={(value) => updateMappingDraft(index, { realModel: value })}
-                          placeholder={modelOptionNames[0] || 'deepseek-chat'}
-                        />
-                      ) : (
-                        <span className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
-                          {mapping.realModel}
-                        </span>
-                      )}
-                      <span className="text-center font-black text-[var(--text-muted)]">-&gt;</span>
-                      {editableModelMappings ? (
-                        <ModelCombobox
-                          value={mapping.codexModel}
-                          options={codexModelOptionNames}
-                          onChange={(value) => updateMappingDraft(index, { codexModel: value })}
-                          placeholder={codexModelOptionNames[0] || mapping.realModel || 'codex-deepseek'}
-                          align="right"
-                        />
-                      ) : (
-                        <span className="min-w-0 break-all text-right font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
-                          {mapping.codexModel}
-                        </span>
-                      )}
-                      {editableModelMappings ? (
-                        <button
-                          type="button"
-                          onClick={() => removeMappingDraft(index)}
-                          className="btn-swiss !p-1.5 !shadow-none hover:bg-[var(--bg-surface)]"
-                          aria-label={t('common.delete')}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" strokeWidth={3} />
-                        </button>
-                      ) : (
-                        <span />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <AccountDetailEmptyState>
-                {row.sourceKind === 'codex-auth-file'
-                  ? t('codex.account_list_oauth_passthrough_mapping')
-                  : editableModelMappings
-                    ? t('codex.account_list_no_model_mapping')
-                    : t('codex.account_list_default_model_mapping')}
-              </AccountDetailEmptyState>
-            )
-          ) : (
-            <AccountDetailEmptyState>
-              {t('codex.account_list_default_model_mapping')}
-            </AccountDetailEmptyState>
-          )}
-
-          {modelMappingError ? (
-            <div className="border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
-              {modelMappingError}
-            </div>
-          ) : null}
-
-          {editableModelMappings && (loadingModelOptions || modelOptionError) ? (
-            <div
-              className={`border-l-2 pl-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
-                modelOptionError
-                  ? 'border-[var(--accent-red)] text-[var(--accent-red)]'
-                  : 'border-[var(--border-color)] text-[var(--text-muted)]'
-              }`}
-            >
-              {modelOptionError || t('accounts.openai_provider_models_fetch_running')}
-            </div>
-          ) : null}
-
-          {editableModelMappings && mappingError ? (
-            <div className="border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
-              {mappingError}
-            </div>
-          ) : null}
-          </AccountDetailSection>
+          {modulePlan.map(renderDetailModule)}
         </AccountDetailModuleStack>
       </AccountDetailBody>
     </AccountDetailModalFrame>
@@ -319,6 +376,243 @@ function CodexAccountEvidenceSection({
   return (
     <AccountDetailSection componentName="CodexAccountEvidenceSection" density="dense" muted eyebrow="Audit" title="EVIDENCE">
       <AccountDetailEvidenceGrid rows={rows} />
+    </AccountDetailSection>
+  );
+}
+
+function CodexRateLimitSection({
+  row,
+  usageSummary,
+  rateLimitStatus,
+  rateLimitStrategies,
+  rateLimitRulesRef,
+  onRateLimitDirtyChange,
+  onRateLimitRulesChanged,
+  t,
+}: {
+  row: CodexAccountRow;
+  usageSummary?: AccountUsageSummary;
+  rateLimitStatus?: RateLimitState;
+  rateLimitStrategies?: RateLimitStrategyMeta[];
+  rateLimitRulesRef: RefObject<RateLimitRulesSectionHandle>;
+  onRateLimitDirtyChange: (dirty: boolean) => void;
+  onRateLimitRulesChanged?: () => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <RateLimitRulesSection
+      ref={rateLimitRulesRef}
+      accountKey={row.id}
+      matchKey={usageSummary?.attributionKey}
+      rateLimitStatus={rateLimitStatus}
+      rateLimitStrategies={rateLimitStrategies ?? []}
+      rateLimitRulesAPI={{
+        list: ListRateLimitRules,
+        create: CreateRateLimitRule,
+        update: UpdateRateLimitRule,
+        delete: DeleteRateLimitRule,
+      }}
+      onDirtyChange={onRateLimitDirtyChange}
+      onRateLimitRulesChanged={onRateLimitRulesChanged ?? (() => {})}
+      t={t}
+    />
+  );
+}
+
+function CodexAuthFileSummarySection({ account }: { account: ReturnType<typeof buildCodexQuotaSummaryAccount> }) {
+  return (
+    <AccountDetailSection componentName="CodexAuthFileSummarySection" eyebrow="Auth File" title="文件摘要">
+      <div className="grid gap-3">
+        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          {account.name || account.displayName || account.id}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <AccountDetailPill>OAUTH</AccountDetailPill>
+          <AccountDetailPill>{account.email || 'NO EMAIL'}</AccountDetailPill>
+          <AccountDetailPill>{account.planType || 'UNKNOWN PLAN'}</AccountDetailPill>
+        </div>
+      </div>
+    </AccountDetailSection>
+  );
+}
+
+function CodexAuthFileModelsSection({ row }: { row: CodexAccountRow }) {
+  const modelNames = row.modelMappings.map((mapping) => mapping.realModel).filter(Boolean);
+
+  return (
+    <AccountDetailSection
+      componentName="CodexAuthFileModelsSection"
+      eyebrow="Model Catalog"
+      title="模型目录"
+      meta={modelNames.length > 0 ? `${modelNames.length} 个模型` : undefined}
+    >
+      {modelNames.length === 0 ? (
+        <AccountDetailEmptyState>暂无模型数据</AccountDetailEmptyState>
+      ) : (
+        <div className="flex max-h-28 flex-wrap gap-1.5 overflow-auto pr-1">
+          {modelNames.map((modelName) => (
+            <AccountDetailPill key={modelName}>
+              {modelName}
+            </AccountDetailPill>
+          ))}
+        </div>
+      )}
+    </AccountDetailSection>
+  );
+}
+
+function CodexModelRoutingSection({
+  t,
+  row,
+  title,
+  editableModelMappings,
+  showModelMappings,
+  displayedModelMappings,
+  loadingModelMappings,
+  modelMappingError,
+  loadingModelOptions,
+  modelOptionError,
+  mappingError,
+  modelOptionNames,
+  codexModelOptionNames,
+  onAddMapping,
+  onUpdateMapping,
+  onRemoveMapping,
+}: {
+  t: (key: string) => string;
+  row: CodexAccountRow;
+  title: string;
+  editableModelMappings: boolean;
+  showModelMappings: boolean;
+  displayedModelMappings: CodexModelMappingRow[];
+  loadingModelMappings: boolean;
+  modelMappingError: string;
+  loadingModelOptions: boolean;
+  modelOptionError: string;
+  mappingError: string;
+  modelOptionNames: string[];
+  codexModelOptionNames: string[];
+  onAddMapping: () => void;
+  onUpdateMapping: (index: number, patch: Partial<CodexModelMappingRow>) => void;
+  onRemoveMapping: (index: number) => void;
+}) {
+  return (
+    <AccountDetailSection
+      componentName="CodexModelRoutingSection"
+      eyebrow="Model Routing"
+      title={title}
+      meta={showModelMappings ? String(displayedModelMappings.length) : undefined}
+      span="wide"
+      actions={editableModelMappings ? (
+        <button
+          type="button"
+          onClick={onAddMapping}
+          className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+        >
+          <Plus className="h-3.5 w-3.5" strokeWidth={4} />
+          {t('accounts.openai_provider_add_model')}
+        </button>
+      ) : undefined}
+    >
+      {showModelMappings ? (
+        loadingModelMappings ? (
+          <AccountDetailEmptyState>
+            {t('accounts.ui_loading_short')}
+          </AccountDetailEmptyState>
+        ) : displayedModelMappings.length > 0 ? (
+          <div className="border-2 border-[var(--border-color)]">
+            <div className="grid grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              <span>{t('codex.account_list_real_model')}</span>
+              <span className="text-center">-&gt;</span>
+              <span className="text-right">{t('codex.account_list_codex_model')}</span>
+              <span />
+            </div>
+            <div className="divide-y divide-[var(--border-color)]">
+              {displayedModelMappings.map((mapping, index) => (
+                <div
+                  key={`mapping-${index}`}
+                  className="grid min-h-[2.75rem] grid-cols-[minmax(0,1fr)_2.5rem_minmax(0,1fr)_2.25rem] items-center gap-2 px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-primary)]"
+                >
+                  {editableModelMappings ? (
+                    <ModelCombobox
+                      value={mapping.realModel}
+                      options={modelOptionNames}
+                      onChange={(value) => onUpdateMapping(index, { realModel: value })}
+                      placeholder={modelOptionNames[0] || 'deepseek-chat'}
+                    />
+                  ) : (
+                    <span className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+                      {mapping.realModel}
+                    </span>
+                  )}
+                  <span className="text-center font-black text-[var(--text-muted)]">-&gt;</span>
+                  {editableModelMappings ? (
+                    <ModelCombobox
+                      value={mapping.codexModel}
+                      options={codexModelOptionNames}
+                      onChange={(value) => onUpdateMapping(index, { codexModel: value })}
+                      placeholder={codexModelOptionNames[0] || mapping.realModel || 'codex-deepseek'}
+                      align="right"
+                    />
+                  ) : (
+                    <span className="min-w-0 break-all text-right font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
+                      {mapping.codexModel}
+                    </span>
+                  )}
+                  {editableModelMappings ? (
+                    <button
+                      type="button"
+                      onClick={() => onRemoveMapping(index)}
+                      className="btn-swiss !p-1.5 !shadow-none hover:bg-[var(--bg-surface)]"
+                      aria-label={t('common.delete')}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" strokeWidth={3} />
+                    </button>
+                  ) : (
+                    <span />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <AccountDetailEmptyState>
+            {row.sourceKind === 'codex-auth-file'
+              ? t('codex.account_list_oauth_passthrough_mapping')
+              : editableModelMappings
+                ? t('codex.account_list_no_model_mapping')
+                : t('codex.account_list_default_model_mapping')}
+          </AccountDetailEmptyState>
+        )
+      ) : (
+        <AccountDetailEmptyState>
+          {t('codex.account_list_default_model_mapping')}
+        </AccountDetailEmptyState>
+      )}
+
+      {modelMappingError ? (
+        <div className="border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+          {modelMappingError}
+        </div>
+      ) : null}
+
+      {editableModelMappings && (loadingModelOptions || modelOptionError) ? (
+        <div
+          className={`border-l-2 pl-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
+            modelOptionError
+              ? 'border-[var(--accent-red)] text-[var(--accent-red)]'
+              : 'border-[var(--border-color)] text-[var(--text-muted)]'
+          }`}
+        >
+          {modelOptionError || t('accounts.openai_provider_models_fetch_running')}
+        </div>
+      ) : null}
+
+      {editableModelMappings && mappingError ? (
+        <div className="border-l-2 border-[var(--accent-red)] pl-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide text-[var(--accent-red)]">
+          {mappingError}
+        </div>
+      ) : null}
     </AccountDetailSection>
   );
 }

@@ -29,6 +29,7 @@ import useAccountsQuotaState from '../accounts/hooks/useAccountsQuotaState';
 import useAccountsRateLimitState from '../accounts/hooks/useAccountsRateLimitState';
 import useAccountsUsageState from '../accounts/hooks/useAccountsUsageState';
 import { getAccountsPreviewCodexAccounts } from '../accounts/previewData';
+import type { ApiKeyConfigDraft } from '../accounts/model/accountDetailConfig';
 import {
   publishAccountDisabledChange,
   readAccountDisabledOverrides,
@@ -113,7 +114,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const suppressNextDetailClickRef = useRef(false);
   const { codexQuotaByName, loadCodexQuotas } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
-  const { accountRateLimitByID, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
+  const { accountRateLimitByID, rateLimitStrategies, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
 
   const detailRow = useMemo(
     () => orderedRows.find((row) => row.id === detailRowID) || null,
@@ -774,6 +775,90 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     }
   }
 
+  async function saveDetailConfig(row: CodexAccountRow, draft: ApiKeyConfigDraft, mappings: CodexModelMappingRow[]) {
+    if (!canEditCodexModelMappings(row.sourceKind) || row.sourceKind === 'codex-auth-file') {
+      return;
+    }
+
+    const normalizedModels = normalizeCodexModelMappingsForProvider(mappings);
+    const nextMappings = buildOpenAICompatibleModelMappings({ models: normalizedModels });
+    const nextAPIKey = draft.apiKey.trim();
+    const nextBaseURL = draft.baseUrl.trim();
+    const nextPrefix = draft.prefix.trim();
+    const nextProxyURL = draft.proxyUrl.trim();
+    const nextQuotaCurl = draft.quotaCurl.trim();
+    const nextBillingCurl = draft.billingCurl.trim();
+
+    if (browserMode) {
+      setOrderedRows((prev) =>
+        prev.map((item) =>
+          item.id === row.id
+            ? {
+                ...item,
+                apiKey: nextAPIKey,
+                apiKeys: nextAPIKey ? [nextAPIKey] : item.apiKeys,
+                baseUrl: nextBaseURL,
+                prefix: nextPrefix,
+                proxyUrl: nextProxyURL,
+                quotaCurl: nextQuotaCurl,
+                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+                billingCurl: nextBillingCurl,
+                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                modelMappings: nextMappings,
+              }
+            : item,
+        ),
+      );
+      setMessage(t('codex.account_list_model_mapping_saved'));
+      return;
+    }
+
+    setPendingMappingID(row.id);
+    try {
+      if (row.sourceKind === 'openai-compatible') {
+        await trackRequest('UpdateOpenAICompatibleProvider', { id: row.id, baseUrl: nextBaseURL, models: normalizedModels }, () =>
+          UpdateOpenAICompatibleProvider(
+            main.UpdateOpenAICompatibleProviderInput.createFrom({
+              currentName: row.provider,
+              name: row.provider,
+              baseUrl: nextBaseURL,
+              prefix: nextPrefix,
+              apiKey: nextAPIKey,
+              apiKeys: nextAPIKey ? [nextAPIKey] : [],
+              proxyUrl: nextProxyURL,
+              headers: row.headers || {},
+              models: normalizedModels,
+            }),
+          ),
+        );
+      } else {
+        await trackRequest('UpdateCodexAPIKeyConfig', { id: row.id, baseUrl: nextBaseURL, models: normalizedModels }, () =>
+          UpdateCodexAPIKeyConfig(
+            main.UpdateCodexAPIKeyConfigInput.createFrom({
+              id: row.id,
+              apiKey: nextAPIKey,
+              baseUrl: nextBaseURL,
+              prefix: nextPrefix,
+              proxyUrl: nextProxyURL,
+              models: normalizedModels,
+              quotaCurl: nextQuotaCurl,
+              quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+              billingCurl: nextBillingCurl,
+              billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+            }),
+          ),
+        );
+      }
+      await reload(t('codex.account_list_model_mapping_saved'));
+    } catch (error) {
+      console.error(error);
+      setMessage(`${t('codex.account_list_model_mapping_save_failed')}: ${toErrorMessage(error)}`);
+      throw error;
+    } finally {
+      setPendingMappingID(null);
+    }
+  }
+
   async function saveModelMappings(row: CodexAccountRow, mappings: CodexModelMappingRow[]) {
     if (!canEditCodexModelMappings(row.sourceKind)) {
       return;
@@ -968,6 +1053,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           t={t}
           quotaState={detailRowWithModels.quotaKey ? codexQuotaByName[detailRowWithModels.quotaKey] : undefined}
           usageSummary={accountUsageByID[detailRowWithModels.id]}
+          rateLimitStatus={accountRateLimitByID[detailRowWithModels.id]}
+          rateLimitStrategies={rateLimitStrategies}
           savingMappings={pendingMappingID === detailRowWithModels.id}
           loadingModelMappings={loadingAuthFileModelID === detailRowWithModels.id}
           modelMappingError={authFileModelErrors[detailRowWithModels.id] || ''}
@@ -982,6 +1069,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           loadingModelOptions={loadingOpenAICompatibleModelID === detailRowWithModels.id}
           modelOptionError={openAICompatibleModelErrors[detailRowWithModels.id] || ''}
           onClose={closeDetail}
+          onSaveConfig={(draft, mappings) => saveDetailConfig(detailRowWithModels, draft, mappings)}
+          onRateLimitRulesChanged={() => void loadAccountRateLimits(orderedRows.map(buildCodexQuotaSummaryAccount))}
           onSaveModelMappings={(mappings) => saveModelMappings(detailRowWithModels, mappings)}
         />
       ) : null}

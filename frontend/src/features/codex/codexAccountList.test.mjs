@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   applyCodexAccountPriorities,
+  buildCodexAccountDetailModulePlan,
   buildCodexAuthFileModelMappings,
   buildCodexModelAliasOptionNames,
   buildCodexModelOptionNames,
@@ -119,6 +120,21 @@ test('canEditCodexModelMappings allows codex api key mappings in detail modal ed
   assert.equal(canEditCodexModelMappings('openai-compatible'), true);
   assert.equal(canEditCodexModelMappings('codex-auth-file'), true);
   assert.equal(canEditCodexModelMappings('codex-api-key'), true);
+});
+
+test('buildCodexAccountDetailModulePlan merges account detail modules with model routing by account type', () => {
+  assert.deepEqual(
+    buildCodexAccountDetailModulePlan({ sourceKind: 'openai-compatible' }),
+    ['credentials', 'proxy-route', 'rate-limit', 'verify', 'quota', 'billing', 'model-routing'],
+  );
+  assert.deepEqual(
+    buildCodexAccountDetailModulePlan({ sourceKind: 'codex-api-key' }),
+    ['credentials', 'proxy-route', 'rate-limit', 'verify', 'quota', 'billing', 'model-routing'],
+  );
+  assert.deepEqual(
+    buildCodexAccountDetailModulePlan({ sourceKind: 'codex-auth-file' }),
+    ['auth-file-actions', 'models', 'rate-limit', 'model-routing'],
+  );
 });
 
 test('buildCodexAccountRows keeps disabled or errored accounts in order but marks them not requestable', () => {
