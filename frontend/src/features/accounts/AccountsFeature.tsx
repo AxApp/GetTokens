@@ -22,7 +22,7 @@ import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountLocalCliApplyConfirm from './components/AccountLocalCliApplyConfirm';
 import AccountGroupSection from './components/AccountGroupSection';
 import AccountsHeader from './components/AccountsHeader';
-import AccountsToolbar from './components/AccountsToolbar';
+import AccountsToolbar, { AccountsSelectionActions } from './components/AccountsToolbar';
 import ApiKeyComposeModal from './components/ApiKeyComposeModal';
 import CodexOAuthModal from './components/CodexOAuthModal';
 import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeModal';
@@ -770,6 +770,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             sortMode={sortMode}
             availablePlanTypes={availablePlanTypes}
             planAvailabilityResolved={accountsLoaded}
+            renderSelectionActions={false}
             onSearchChange={(value) => {
               setSearchTerm(value);
               setPendingDeleteID(null);
@@ -787,6 +788,27 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             onDisableSelected={() => void runSelectedBulkSetDisabled(true)}
             onDeleteSelected={() => void runSelectedBulkDelete()}
           />
+
+          {isSelectionMode ? (
+            <div
+              data-account-selection-toolbar-sticky="true"
+              className="sticky -top-12 z-40 -mx-12 !mt-4 bg-[var(--bg-surface)] px-12 py-1.5"
+            >
+              <AccountsSelectionActions
+                t={t}
+                allFilteredSelected={allFilteredSelected}
+                selectedAccountCount={selectedAccountIDs.length}
+                bulkActionPending={bulkActionPending}
+                onToggleSelectAllFiltered={toggleSelectAllFiltered}
+                onClearSelection={() => setSelectedAccountIDs([])}
+                onExportSelected={() => void exportSelectedAccounts()}
+                onRefreshSelected={() => void runSelectedBulkRefresh()}
+                onEnableSelected={() => void runSelectedBulkSetDisabled(false)}
+                onDisableSelected={() => void runSelectedBulkSetDisabled(true)}
+                onDeleteSelected={() => void runSelectedBulkDelete()}
+              />
+            </div>
+          ) : null}
 
           {accountActionNotice ? (
             <div
@@ -843,7 +865,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               {t('accounts.empty')}
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className={isSelectionMode ? 'space-y-8 !mt-4' : 'space-y-8'}>
               {groupedAccounts.map((group) => (
                 <AccountGroupSection
                   key={group.id}

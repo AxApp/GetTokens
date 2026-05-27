@@ -1,9 +1,14 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
-import { Power, RefreshCw, Trash2 } from 'lucide-react';
+import { Download, MoreVertical, Power, RefreshCw, Trash2 } from 'lucide-react';
 import SearchInput from '../../../components/ui/SearchInput';
 import { applyAccountsFilterState, defaultAccountsFilterState, summarizeAccountsFilterState } from '../model/accountFilters';
 import type { AccountPlanType } from '../../../types';
-import type { AccountGroupMode, AccountListDisplayMode, AccountSortMode } from '../model/accountListLayout';
+import {
+  shouldUseAccountsSelectionActionMenu,
+  type AccountGroupMode,
+  type AccountListDisplayMode,
+  type AccountSortMode,
+} from '../model/accountListLayout';
 import type { AccountsFilterState, Translator } from '../model/types';
 import type { AccountBulkActionID } from '../model/accountSelection';
 
@@ -36,6 +41,21 @@ interface AccountsToolbarProps {
   onDisableSelected?: () => void;
   onDeleteSelected?: () => void;
   initialFiltersMenuOpen?: boolean;
+  renderSelectionActions?: boolean;
+}
+
+interface AccountsSelectionActionsProps {
+  t: Translator;
+  allFilteredSelected: boolean;
+  selectedAccountCount: number;
+  bulkActionPending?: AccountBulkActionID | null;
+  onToggleSelectAllFiltered: () => void;
+  onClearSelection: () => void;
+  onExportSelected: () => void;
+  onRefreshSelected?: () => void;
+  onEnableSelected?: () => void;
+  onDisableSelected?: () => void;
+  onDeleteSelected?: () => void;
 }
 
 export default function AccountsToolbar({
@@ -65,20 +85,14 @@ export default function AccountsToolbar({
   onDisableSelected,
   onDeleteSelected,
   initialFiltersMenuOpen = false,
+  renderSelectionActions = true,
 }: AccountsToolbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(initialFiltersMenuOpen);
-  const [isBulkDeleteConfirming, setIsBulkDeleteConfirming] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const sourceAllSelected = filters.source.authFile && filters.source.apiKey;
   const resourceAllSelected = filters.resource.hasLongestQuota && filters.resource.hasBalance;
   const statusAllSelected = filters.status.error && filters.status.disabled && filters.status.requestable;
   const planAllSelected = filters.plan.free && filters.plan.plus && filters.plan.pro;
-
-  useEffect(() => {
-    if (selectedAccountCount === 0) {
-      setIsBulkDeleteConfirming(false);
-    }
-  }, [selectedAccountCount]);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -342,110 +356,365 @@ export default function AccountsToolbar({
             </button>
           </div>
         </div>
-        {isSelectionMode ? (
-          <div className="border-t border-dashed border-[var(--border-color)] pt-4">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button onClick={onToggleSelectAllFiltered} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
-                {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
-              </button>
-              <button
-                onClick={onClearSelection}
-                className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]"
-                disabled={selectedAccountCount === 0}
-              >
-                {t('accounts.clear_selection')}
-              </button>
-              <button
-                onClick={onExportSelected}
-                className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]"
-                disabled={selectedAccountCount === 0}
-              >
-                {t('accounts.export_selected')}
-              </button>
-              <span className="ml-auto flex h-10 items-center px-2 text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
-                {selectedAccountCount} {t('accounts.selected_count')}
-              </span>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed border-[var(--border-color)] pt-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBulkDeleteConfirming(false);
-                  onRefreshSelected?.();
-                }}
-                disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onRefreshSelected}
-                className="btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
-              >
-                <RefreshCw size={14} strokeWidth={3} />
-                {bulkActionPending === 'refresh' ? t('common.loading') : t('accounts.bulk_refresh_selected')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBulkDeleteConfirming(false);
-                  onEnableSelected?.();
-                }}
-                disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onEnableSelected}
-                className="btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
-              >
-                <Power size={14} strokeWidth={3} />
-                {bulkActionPending === 'enable' ? t('common.loading') : t('accounts.bulk_enable_selected')}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBulkDeleteConfirming(false);
-                  onDisableSelected?.();
-                }}
-                disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onDisableSelected}
-                className="btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
-              >
-                <Power size={14} strokeWidth={3} />
-                {bulkActionPending === 'disable' ? t('common.loading') : t('accounts.bulk_disable_selected')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsBulkDeleteConfirming((prev) => !prev)}
-                disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onDeleteSelected}
-                className="btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
-              >
-                <Trash2 size={14} strokeWidth={3} />
-                {t('accounts.bulk_remove_selected')}
-              </button>
-            </div>
-
-            {isBulkDeleteConfirming ? (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-[var(--border-color)] pt-3">
-                <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
-                  {t('accounts.bulk_remove_confirm')} · {selectedAccountCount}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsBulkDeleteConfirming(false)}
-                    className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsBulkDeleteConfirming(false);
-                      onDeleteSelected?.();
-                    }}
-                    disabled={bulkActionPending !== null || !onDeleteSelected}
-                    className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
-                  >
-                    {bulkActionPending === 'delete' ? t('common.loading') : t('accounts.bulk_remove_confirm_action')}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
+        {isSelectionMode && renderSelectionActions ? (
+          <AccountsSelectionActions
+            t={t}
+            allFilteredSelected={allFilteredSelected}
+            selectedAccountCount={selectedAccountCount}
+            bulkActionPending={bulkActionPending}
+            onToggleSelectAllFiltered={onToggleSelectAllFiltered}
+            onClearSelection={onClearSelection}
+            onExportSelected={onExportSelected}
+            onRefreshSelected={onRefreshSelected}
+            onEnableSelected={onEnableSelected}
+            onDisableSelected={onDisableSelected}
+            onDeleteSelected={onDeleteSelected}
+          />
         ) : null}
       </div>
     </section>
+  );
+}
+
+export function AccountsSelectionActions({
+  t,
+  allFilteredSelected,
+  selectedAccountCount,
+  bulkActionPending = null,
+  onToggleSelectAllFiltered,
+  onClearSelection,
+  onExportSelected,
+  onRefreshSelected,
+  onEnableSelected,
+  onDisableSelected,
+  onDeleteSelected,
+}: AccountsSelectionActionsProps) {
+  const [isBulkDeleteConfirming, setIsBulkDeleteConfirming] = useState(false);
+  const [isBulkMenuOpen, setIsBulkMenuOpen] = useState(false);
+  const [useBulkActionMenu, setUseBulkActionMenu] = useState(false);
+  const selectionActionsRef = useRef<HTMLDivElement | null>(null);
+  const inlineActionsMeasureRef = useRef<HTMLDivElement | null>(null);
+  const bulkMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (selectedAccountCount === 0) {
+      setIsBulkDeleteConfirming(false);
+      setIsBulkMenuOpen(false);
+    }
+  }, [selectedAccountCount]);
+
+  useEffect(() => {
+    if (!isBulkMenuOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!bulkMenuRef.current?.contains(event.target as Node)) {
+        setIsBulkMenuOpen(false);
+        setIsBulkDeleteConfirming(false);
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setIsBulkMenuOpen(false);
+        setIsBulkDeleteConfirming(false);
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isBulkMenuOpen]);
+
+  useEffect(() => {
+    const toolbar = selectionActionsRef.current;
+    const measure = inlineActionsMeasureRef.current;
+    if (!toolbar || !measure) {
+      return;
+    }
+    const toolbarElement = toolbar;
+    const measureElement = measure;
+
+    function updateActionLayout() {
+      const containerWidth = Math.ceil(toolbarElement.getBoundingClientRect().width);
+      const fullInlineWidth = Math.ceil(measureElement.getBoundingClientRect().width);
+      setUseBulkActionMenu(shouldUseAccountsSelectionActionMenu(containerWidth, fullInlineWidth));
+    }
+
+    updateActionLayout();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateActionLayout);
+      return () => {
+        window.removeEventListener('resize', updateActionLayout);
+      };
+    }
+
+    const observer = new ResizeObserver(updateActionLayout);
+    observer.observe(toolbarElement);
+    observer.observe(measureElement);
+    return () => {
+      observer.disconnect();
+    };
+  }, [allFilteredSelected, bulkActionPending, selectedAccountCount, t]);
+
+  function handleRefreshSelected() {
+    setIsBulkDeleteConfirming(false);
+    onRefreshSelected?.();
+  }
+
+  function handleExportSelected() {
+    setIsBulkMenuOpen(false);
+    onExportSelected();
+  }
+
+  function handleEnableSelected() {
+    setIsBulkMenuOpen(false);
+    setIsBulkDeleteConfirming(false);
+    onEnableSelected?.();
+  }
+
+  function handleDisableSelected() {
+    setIsBulkMenuOpen(false);
+    setIsBulkDeleteConfirming(false);
+    onDisableSelected?.();
+  }
+
+  function handleOpenDeleteConfirm() {
+    setIsBulkMenuOpen(true);
+    setIsBulkDeleteConfirming(true);
+  }
+
+  function renderBulkMenu() {
+    return (
+      <div className="absolute right-0 top-full z-30 mt-3 grid min-w-[240px] gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3 shadow-[8px_8px_0_var(--shadow-color)]">
+        <p className="px-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          {t('common.more_actions')}
+        </p>
+        <BulkMenuAction
+          icon={<Download size={14} strokeWidth={3} />}
+          label={t('accounts.export_selected')}
+          disabled={selectedAccountCount === 0}
+          onClick={handleExportSelected}
+        />
+        <BulkMenuAction
+          icon={<Power size={14} strokeWidth={3} />}
+          label={bulkActionPending === 'enable' ? t('common.loading') : t('accounts.bulk_enable_selected')}
+          disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onEnableSelected}
+          onClick={handleEnableSelected}
+        />
+        <BulkMenuAction
+          icon={<Power size={14} strokeWidth={3} />}
+          label={bulkActionPending === 'disable' ? t('common.loading') : t('accounts.bulk_disable_selected')}
+          disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onDisableSelected}
+          onClick={handleDisableSelected}
+        />
+        <BulkMenuAction
+          icon={<Trash2 size={14} strokeWidth={3} />}
+          label={t('accounts.bulk_remove_selected')}
+          tone="danger"
+          disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onDeleteSelected}
+          onClick={handleOpenDeleteConfirm}
+        />
+
+        {isBulkDeleteConfirming ? (
+          <div className="mt-1 grid gap-2 border-2 border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] p-2">
+            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--color-status-danger)]">
+              {t('accounts.bulk_remove_confirm')} · {selectedAccountCount}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteConfirming(false)}
+                className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)]"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBulkDeleteConfirming(false);
+                  setIsBulkMenuOpen(false);
+                  onDeleteSelected?.();
+                }}
+                disabled={bulkActionPending !== null || !onDeleteSelected}
+                className="btn-swiss !px-2 !py-2 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)]"
+              >
+                {bulkActionPending === 'delete' ? t('common.loading') : t('accounts.bulk_remove_confirm_action')}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  function renderBulkRefreshAction() {
+    return (
+      <button
+        type="button"
+        onClick={handleRefreshSelected}
+        disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onRefreshSelected}
+        className="btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+      >
+        <RefreshCw size={14} strokeWidth={3} />
+        {bulkActionPending === 'refresh' ? t('common.loading') : t('accounts.bulk_refresh_selected')}
+      </button>
+    );
+  }
+
+  function renderInlineBulkActions() {
+    return (
+      <>
+        {renderBulkRefreshAction()}
+        <BulkInlineAction
+          icon={<Download size={14} strokeWidth={3} />}
+          label={t('accounts.export_selected')}
+          disabled={selectedAccountCount === 0}
+          onClick={handleExportSelected}
+        />
+        <BulkInlineAction
+          icon={<Power size={14} strokeWidth={3} />}
+          label={bulkActionPending === 'enable' ? t('common.loading') : t('accounts.bulk_enable_selected')}
+          disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onEnableSelected}
+          onClick={handleEnableSelected}
+        />
+        <BulkInlineAction
+          icon={<Power size={14} strokeWidth={3} />}
+          label={bulkActionPending === 'disable' ? t('common.loading') : t('accounts.bulk_disable_selected')}
+          disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onDisableSelected}
+          onClick={handleDisableSelected}
+        />
+        <BulkInlineAction
+          icon={<Trash2 size={14} strokeWidth={3} />}
+          label={t('accounts.bulk_remove_selected')}
+          tone="danger"
+          disabled={selectedAccountCount === 0 || bulkActionPending !== null || !onDeleteSelected}
+          onClick={handleOpenDeleteConfirm}
+        />
+      </>
+    );
+  }
+
+  return (
+    <div ref={selectionActionsRef} className="relative flex min-h-12 flex-wrap items-center gap-2">
+      <div
+        ref={inlineActionsMeasureRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute left-0 top-0 -z-10 flex w-max items-center gap-2 opacity-0"
+        style={{ visibility: 'hidden' }}
+      >
+        <span className="mr-1 flex h-10 shrink-0 items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
+          {selectedAccountCount} {t('accounts.selected_count')}
+        </span>
+        <button type="button" className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+          {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
+        </button>
+        <button type="button" className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+          {t('accounts.clear_selection')}
+        </button>
+        {renderInlineBulkActions()}
+      </div>
+      <span className="mr-1 flex h-10 shrink-0 items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.1em] text-[var(--text-primary)]">
+        {selectedAccountCount} {t('accounts.selected_count')}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+        <button onClick={onToggleSelectAllFiltered} className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]">
+          {allFilteredSelected ? t('accounts.unselect_all') : t('accounts.select_all')}
+        </button>
+        <button
+          onClick={onClearSelection}
+          className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-md)]"
+          disabled={selectedAccountCount === 0}
+        >
+          {t('accounts.clear_selection')}
+        </button>
+      </div>
+      <div ref={bulkMenuRef} className="relative ml-auto flex shrink-0 items-center gap-2">
+        {useBulkActionMenu ? (
+          <>
+            {renderBulkRefreshAction()}
+            <button
+              type="button"
+              aria-expanded={isBulkMenuOpen}
+              aria-label={t('common.more_actions')}
+              title={t('common.more_actions')}
+              onClick={() => {
+                setIsBulkMenuOpen((prev) => !prev);
+                setIsBulkDeleteConfirming(false);
+              }}
+              disabled={selectedAccountCount === 0 || bulkActionPending !== null}
+              className="btn-swiss flex h-10 w-10 items-center justify-center !p-0 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <MoreVertical size={18} strokeWidth={3} />
+            </button>
+          </>
+        ) : (
+          renderInlineBulkActions()
+        )}
+        {isBulkMenuOpen ? renderBulkMenu() : null}
+      </div>
+    </div>
+  );
+}
+
+function BulkInlineAction({
+  icon,
+  label,
+  disabled = false,
+  tone = 'default',
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  disabled?: boolean;
+  tone?: 'default' | 'danger';
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`btn-swiss flex h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
+        tone === 'danger' ? '!text-[var(--color-status-danger)]' : ''
+      }`}
+    >
+      {icon}
+      <span className="whitespace-nowrap">{label}</span>
+    </button>
+  );
+}
+
+function BulkMenuAction({
+  icon,
+  label,
+  disabled = false,
+  tone = 'default',
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  disabled?: boolean;
+  tone?: 'default' | 'danger';
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`btn-swiss flex h-9 w-full items-center justify-start gap-2 !px-2.5 !py-2 !text-left !text-[length:var(--font-size-ui-2xs)] disabled:cursor-not-allowed disabled:opacity-50 ${
+        tone === 'danger' ? '!text-[var(--color-status-danger)]' : ''
+      }`}
+    >
+      {icon}
+      <span className="truncate">{label}</span>
+    </button>
   );
 }
 

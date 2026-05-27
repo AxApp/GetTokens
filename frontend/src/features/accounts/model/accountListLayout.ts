@@ -9,6 +9,7 @@ export type AccountSortMode = 'priority' | 'name' | 'status' | 'quota' | 'reset'
 export const DEFAULT_ACCOUNT_LIST_DISPLAY_MODE: AccountListDisplayMode = 'full';
 export const DEFAULT_ACCOUNT_GROUP_MODE: AccountGroupMode = 'plan';
 export const DEFAULT_ACCOUNT_SORT_MODE: AccountSortMode = 'priority';
+export const ACCOUNTS_SELECTION_ACTION_MENU_GAP = 16;
 
 export function parseAccountListDisplayMode(value: string | null | undefined): AccountListDisplayMode {
   if (value === 'compact' || value === 'list' || value === 'full') {
@@ -29,6 +30,16 @@ export function parseAccountSortMode(value: string | null | undefined): AccountS
     return value;
   }
   return DEFAULT_ACCOUNT_SORT_MODE;
+}
+
+export function shouldUseAccountsSelectionActionMenu(containerWidth: number, inlineActionsWidth: number): boolean {
+  if (!Number.isFinite(containerWidth) || containerWidth <= 0) {
+    return false;
+  }
+  if (!Number.isFinite(inlineActionsWidth) || inlineActionsWidth <= 0) {
+    return false;
+  }
+  return containerWidth < inlineActionsWidth + ACCOUNTS_SELECTION_ACTION_MENU_GAP;
 }
 
 export function buildAccountListDisplayModeHash(

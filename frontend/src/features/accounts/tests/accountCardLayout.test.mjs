@@ -46,17 +46,19 @@ test('resolveAccountCardColumnHeights equalizes cards by rendered column', () =>
   );
 });
 
-test('account card grids keep empty tracks so single-card groups match page card width', async () => {
+test('account card grids collapse empty tracks so single-card groups do not leave blank lanes', async () => {
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
   assert.match(
     styleSource,
-    /\.account-card-grid-full\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,/s,
+    /\.account-card-grid-full\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,/s,
   );
   assert.match(
     styleSource,
-    /\.account-card-grid-compact\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fill,/s,
+    /\.account-card-grid-compact\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,/s,
   );
+  assert.doesNotMatch(styleSource, /\.account-card-grid-full\s*\{[^}]*repeat\(auto-fill,/s);
+  assert.doesNotMatch(styleSource, /\.account-card-grid-compact\s*\{[^}]*repeat\(auto-fill,/s);
 });
 
 test('list density keeps only the plan badge before metrics and actions', async () => {
