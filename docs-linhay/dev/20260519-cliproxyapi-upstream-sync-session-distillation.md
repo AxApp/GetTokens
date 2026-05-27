@@ -64,6 +64,18 @@ gh repo fork router-for-me/CLIProxyAPI --org AxApp --fork-name CLIProxyAPI --clo
 7. 父仓库只提交 gitlink、必要 docs/memory、必要构建产物；不要把无关前端/文档改动混入。
 8. 写回 memory，执行 `qmd update`、`qmd embed`，并用 `qmd query` 抽查可检索性。
 
+## Subagent 审核合并模式
+
+当 fork 已经明显偏离 upstream，或用户明确要求 subagent 审核时，不直接相信上游 PR 说明，也不只看 `HEAD..upstream/main` 的整体 diff。该 diff 会把 GetTokens fork 独有目录显示成大面积删除，容易误判为上游要移除本地能力。
+
+推荐拆成三类只读 subagent：
+
+1. 总体 upstream commit 审核：用 `git log --cherry-pick --right-only --no-merges HEAD...upstream/main` 和每个 `git show` 判断真实变更，区分内容提交与 merge commit。
+2. 高风险运行时审核：专盯 WebSocket、route guard、channel routing、live sessions、usage ledger、system proxy 等 GetTokens fork 运行时补丁。
+3. 兼容面审核：专盯 Gemini / Images / translator / config diff / payload config 等 upstream 行为变化。
+
+主控 agent 负责合并、集成、验证和最终判断；subagent 只输出接受 / 调整后接受 / 拒绝 / cherry-pick 建议。若 subagent 指出某个已接受 upstream 行为缺少直接测试，必须在 fork 内补窄回归测试后再关闭合并。例如本轮 `gpt-image-2-base-model` 合入后，补了 config diff 与 Codex image body 使用配置 base model 的测试。
+
 ## 构建产物判断
 
 未跟踪文件不要凭文件名直接提交。先执行：
@@ -148,3 +160,22 @@ git check-ignore -v <path>
 3. `git diff --check`
 
 当前侧边车相关内存剪裁仍是可继续迭代的方向，后续若前端真要消费分页明细，再补对应 UI 和调用层。
+
+## 2026-05-27 subagent 审核同步记录
+
+本轮按监督模式处理 `upstream/main@4b681031` 合并。4 路只读 subagent 审核结论一致：整包 merge 可接受，重点验证 `de280d99` Responses WebSocket tool repair 与 `e399edd3` GPT Image 2 base model / SSE。
+
+执行结果：
+
+1. `gettokens/sidecar` 合并 upstream，生成 `57ab8229 Merge upstream/main into gettokens sidecar`。
+2. 按 subagent 指出的测试缺口追加 `ef93d8c0 test: cover configurable codex image base model`，覆盖 `gpt-image-2-base-model` config diff 和 Codex image body 使用配置 base model / invalid fallback。
+3. `origin/gettokens/sidecar` 已推送到 `ef93d8c0`，本地 sidecar 通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，meta 为 `ef93d8c0:clean:38d316f7921dcdec1d5dc70aa8552a0b47f58b303455df4d0055b37bc821d276:darwin:arm64`。
+
+验证：
+
+1. 合并前 focused baseline。
+2. 合并后 WebSocket failover / route guard / channel routing / image / config / payload focused tests。
+3. `go test ./...`
+4. `git diff --check`
+
+沉淀结论：该流程属于 CLIProxyAPI fork 领域维护规则，已补入 `gettokens-domain-engineering`；不升级 `AGENTS.md`。
