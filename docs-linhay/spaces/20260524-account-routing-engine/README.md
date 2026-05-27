@@ -71,6 +71,34 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 - 不要求一次性重写所有 scheduler / selector 代码；先建立 seam 和兼容层，再逐步迁移。
 - 不把请求 payload、凭证、bearer token、cookie 或完整错误体写入 route event ledger。
 
+## 2026-05-27 备选方案：Codex HTTP 入站 + GetTokens 上游 WebSocket
+
+记录一个后续可选实现，近期不做。
+
+链路设想：
+
+`Codex -> HTTP/SSE /v1/responses -> GetTokens/CLIProxyAPI -> OpenAI Responses WebSocket -> SSE 回传 Codex`
+
+核心判断：
+
+- Codex 客户端如果因为自身 session / transport fallback 改走 HTTP/SSE 到 GetTokens，不需要强行让 Codex 在同一 session 内切回 WebSocket。
+- GetTokens 可以在代理层接住 Codex 的 HTTP Responses 请求，再由 CLIProxyAPI 内部新建上游 OpenAI Responses WebSocket，并把上游事件映射回 Codex 期望的 SSE 流。
+- 这样可把上游传输策略留在 GetTokens 控制范围内，避免依赖 Codex 客户端内部的 WebSocket 重连状态机。
+
+实现边界：
+
+- 这是代理桥接方案，不是 Codex 客户端透明切回 WebSocket。
+- 需要建立 SSE 与 WebSocket event 的双向映射，包括 request item、response delta、tool call、done、error、usage 等事件。
+- 请求开始前可以重建上游 WebSocket、换账号或 replay transcript；一旦已经向 Codex 写出 SSE 字节，不做无感 mid-response 切换。
+- 上游 `426 Upgrade Required` 不直接暴露给 Codex；GetTokens 应在内部决定是否重建 WebSocket、换账号、重试或转换为可解释错误。
+- Codex 自身的 HTTP retry 仍可触发下一次 GetTokens 内部新建 WebSocket。
+- 账号路由、guard、cooldown、sticky / pinned auth 仍应通过 Account Routing Engine 或其兼容 seam 决策，不能绕开统一路由入口。
+
+当前状态：
+
+- `backlog`：仅作为未来传输桥接设计备忘。
+- 近期不实现，不改 Codex 参考源码，不改 CLIProxyAPI，不新增测试。
+
 ## 验收标准
 
 1. Given 用户配置自定义端点路由规则，When 请求进入 sidecar，Then 规则通过 `AccountRoutingEngine` 改写候选账号，而不是在 HTTP handler 中直接返回失败。
@@ -134,6 +162,7 @@ sidecar 现有账号轮动能力已经包含 `round-robin`、`fill-first`、prio
 ## 当前状态
 - 状态：implementation-ready
 - 最近更新：2026-05-26
+- 2026-05-27 补充：记录 `Codex HTTP/SSE 入站 + GetTokens 上游 OpenAI Responses WebSocket` 作为 backlog 备选方案，近期不做实现；该方案属于代理层桥接，不要求 Codex 客户端在同一 session 内透明切回 WebSocket。
 - 2026-05-26 补充：sidecar 请求侧已完成 `routing.strategy` 主路径绕过，Codex / Claude 请求优先通过 `channel-routing` 快照生成候选顺序；`routing.strategy` 仅作为 legacy relay / 配置兼容边界保留。
 - 2026-05-26 补充：Codex / Claude 的 channel routing 进入“完整绕过 `routing.strategy`”收口，后续以 `channel-routing` 快照作为唯一决策源；旧 `config.yaml` 只保留 legacy relay 边界，不再参与渠道路由主路径。
 - 2026-05-26 补充：Codex 账号列表的旧 `session-affinity` / `websocket-pin` / `route-order-header` 现在只作为 `兼容层提示` 的总数与说明呈现，不写入新的 `ChannelRoutingConfig`，也不展开三条明细，以便后续继续和上游代码保持最小合并面。
