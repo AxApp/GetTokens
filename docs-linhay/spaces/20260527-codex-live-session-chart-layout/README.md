@@ -75,7 +75,8 @@ Given 修复完成，When 在 browser preview 与真实 Wails runtime 中打开 
 - 状态：implemented
 - 最近更新：2026-05-27
 - 记录：已完成前端修复与验证。`TimingTrendChart` 已改为集中计算安全 padding：左侧为 y 轴标签预留 56px，右侧按 live ring 最大半径 28px 加余量预留 38px，底部刻度区提升到 54px；x 轴 `#sequence` 标签改为基于实际 x 坐标和 36px 最小间距稀疏显示，保留最新/live/选中样本优先级，避免 50 request 长会话下按序号直接铺满。
+- 追加修复：用户继续反馈少量数据时文字/点位与图形不对齐。根因是图表首帧在 `chartWidth=0` 时用 `320px` fallback 坐标绘制，随后 SVG 被真实容器宽度拉伸，而 HTML overlay marker 仍按 fallback 坐标定位；现已改用 `useLayoutEffect` 测量容器宽度，测量完成前隐藏绘制层，并用实测 `chartWidth` 统一 SVG `viewBox` 与 overlay 坐标。
 - 样本：browser preview 的首个 live session 已伪造为 50 条近 5 分钟 request，保留 `gt-req-8912` 作为最新 live 请求，序号为 `#50`，用于稳定复现长会话图表密度。
-- 验证：已先补红灯测试，再完成实现并通过 `node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run build`、`git diff --check`。50 request browser preview DOM 验收结果为 `labelOverflow=[]`、`xLabelOverlap=[]`、`liveRingOverflow=false`，可见 x 轴标签为 `#20/#25/#30/#35/#40/#45/#50`。
-- 截图：`screenshots/20260527/codex-live-sessions/20260527-codex-live-sessions-chart-layout-after-v02.png`。
+- 验证：已先补红灯测试，再完成实现并通过 `node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run build`、`git diff --check`。50 request browser preview DOM 验收结果为 `labelOverflow=[]`、`xLabelOverlap=[]`、`liveRingOverflow=false`，可见 x 轴标签为 `#20/#25/#30/#35/#40/#45/#50`；首帧对齐复验结果为 `shellWidth=884`、`svg viewBox=0 0 884 224`、选中 marker 与 SVG 圆点 X 轴中心差 `0px`。
+- 截图：`screenshots/20260527/codex-live-sessions/20260527-codex-live-sessions-chart-layout-after-v02.png`、`screenshots/20260527/codex-live-sessions/20260527-codex-live-sessions-chart-first-frame-after-v01.png`。
 - 待补：真实 Wails active session 当前未复现到可用样本；本轮已用 preview 伪造 50 request 完成浏览器长会话验收，后续有真实 runtime 样本时可再补 Wails 截图。

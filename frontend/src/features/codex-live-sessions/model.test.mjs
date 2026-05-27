@@ -1123,9 +1123,13 @@ test('codex live session timing chart uses a fixed viewport without horizontal p
   const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
 
   assert.match(detailSource, /chartShellRef/);
+  assert.match(detailSource, /useLayoutEffect/);
+  assert.match(detailSource, /isTimingTrendChartMeasured/);
+  assert.match(detailSource, /visibility: isTimingTrendChartMeasured \? 'visible' : 'hidden'/);
   assert.match(detailSource, /ResizeObserver/);
   assert.match(detailSource, /element\.clientWidth/);
-  assert.match(detailSource, /const width = Math\.max\(320, chartWidth \|\| 0\)/);
+  assert.match(detailSource, /const width = isTimingTrendChartMeasured \? chartWidth : 320/);
+  assert.doesNotMatch(detailSource, /chartWidth \|\| 0/);
   assert.match(detailSource, /resolveTimingTrendVisibleRequestCount/);
   assert.match(detailSource, /timingTrendAudioMinVisibleBars/);
   assert.match(detailSource, /timingTrendAudioBarStepPx/);

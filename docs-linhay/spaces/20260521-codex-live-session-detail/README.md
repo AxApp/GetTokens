@@ -226,3 +226,11 @@ Then 详情区展示 Rate / time measurements，并包含 TTFT、first token、s
 - 图表视口默认跟随最新 request sample；只有新的请求时间戳进入时才滚到最新点，普通 `nowMs` 刷新不会让 x 轴视口持续前进。
 - 用户横向滚动或拖动图表查看历史后，自动跟随暂停；用户回到最右侧后恢复跟随最新点。
 - 验证：新增 `codex live session timing chart follows latest samples unless user pans history` 结构回归测试；浏览器确认图表容器为横向可滚动/可拖动，并保留最新点在右侧。
+
+## 2026-05-27 请求耗时趋势少量数据首帧对齐
+
+- 修复少量 request sample 时图表首帧可能出现文字/点位与柱形不对齐的问题：`TimingTrendChart` 改为 `useLayoutEffect` 测量容器宽度，并在测量完成前隐藏绘制层，避免首帧以 `320px` fallback 坐标绘制后被真实容器拉伸。
+- SVG `viewBox` 与 HTML overlay marker 统一使用已测得的 `chartWidth`，不再使用 `chartWidth || 0` 参与坐标计算，避免宽屏或窄屏下 SVG 与绝对定位层落入不同坐标系。
+- 回归测试：`codex live session timing chart uses a fixed viewport without horizontal panning` 新增测量门禁断言；验证 `node --test src/features/codex-live-sessions/model.test.mjs`、`npm run typecheck`、`npm run build` 通过。
+- 浏览器验收：本地 `http://localhost:5173/#frame=codex&workspace=live-sessions` 复验 `shellWidth=884`、`svg viewBox=0 0 884 224`、选中 marker 与 SVG 圆点 X 轴中心差 `0px`。
+- 截图证据：`docs-linhay/spaces/20260521-codex-live-session-detail/screenshots/20260527/live-sessions/20260527-live-sessions-timing-trend-after-v01.png`。

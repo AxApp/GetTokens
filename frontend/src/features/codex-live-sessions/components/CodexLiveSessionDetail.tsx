@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
@@ -217,7 +217,8 @@ function TimingTrendChart({
   const chartShellRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
   const selectedSeries = getTimingTrendSeries(selectedMetric);
-  const width = Math.max(320, chartWidth || 0);
+  const isTimingTrendChartMeasured = chartWidth > 0;
+  const width = isTimingTrendChartMeasured ? chartWidth : 320;
   const visibleRequestCount = resolveTimingTrendVisibleRequestCount(width, padding);
   const visiblePoints = trend.points.slice(-visibleRequestCount);
   const selectedMetricMaxMs = getTimingTrendMetricMax(visiblePoints, selectedMetric);
@@ -225,7 +226,7 @@ function TimingTrendChart({
   const waveformMarkers = waveformBars.filter((bar, index) => shouldShowTimingTrendMarker(bar.point, index, waveformBars.length, selectedRequestID));
   const axisLabelIndexes = resolveTimingTrendAxisLabelIndexes(waveformBars, selectedRequestID);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = chartShellRef.current;
     if (!element) {
       return;
@@ -261,6 +262,7 @@ function TimingTrendChart({
         style={{
           height: `${chartHeight}px`,
           width: '100%',
+          visibility: isTimingTrendChartMeasured ? 'visible' : 'hidden',
           backgroundImage:
             'linear-gradient(to bottom, transparent 0, transparent calc(25% - 1px), var(--color-chart-grid) calc(25% - 1px), var(--color-chart-grid) 25%, transparent 25%), linear-gradient(to bottom, transparent 0, transparent calc(50% - 1px), var(--color-chart-grid) calc(50% - 1px), var(--color-chart-grid) 50%, transparent 50%), linear-gradient(to bottom, transparent 0, transparent calc(75% - 1px), var(--color-chart-grid) calc(75% - 1px), var(--color-chart-grid) 75%, transparent 75%), linear-gradient(to right, transparent 0, transparent 19px, var(--color-chart-grid-subtle) 19px, var(--color-chart-grid-subtle) 20px), repeating-linear-gradient(to right, transparent 0, transparent 79px, var(--color-chart-grid-subtle) 79px, var(--color-chart-grid-subtle) 80px)',
         }}
