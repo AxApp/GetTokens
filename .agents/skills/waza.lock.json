@@ -1,0 +1,61 @@
+{
+  "source": {
+    "type": "github",
+    "url": "https://github.com/tw93/Waza.git",
+    "repo": "tw93/Waza",
+    "ref": "main",
+    "version": "3.26.0",
+    "commit": "24e207c87daf7123e5e7ce22bf81bcb69bfa3e9e"
+  },
+  "installedAt": "2026-05-27",
+  "installedInto": ".agents/skills",
+  "sharedInto": ".agents/rules",
+  "installedPaths": [
+    {
+      "sourcePath": "skills/think",
+      "localPath": ".agents/skills/think",
+      "skillName": "think"
+    },
+    {
+      "sourcePath": "skills/design",
+      "localPath": ".agents/skills/design",
+      "skillName": "design"
+    },
+    {
+      "sourcePath": "skills/check",
+      "localPath": ".agents/skills/check",
+      "skillName": "check"
+    },
+    {
+      "sourcePath": "skills/hunt",
+      "localPath": ".agents/skills/hunt",
+      "skillName": "hunt"
+    },
+    {
+      "sourcePath": "skills/write",
+      "localPath": ".agents/skills/write",
+      "skillName": "write"
+    },
+    {
+      "sourcePath": "skills/learn",
+      "localPath": ".agents/skills/learn",
+      "skillName": "learn"
+    },
+    {
+      "sourcePath": "skills/read",
+      "localPath": ".agents/skills/read",
+      "skillName": "read"
+    },
+    {
+      "sourcePath": "skills/health",
+      "localPath": ".agents/skills/health",
+      "skillName": "health"
+    }
+  ],
+  "sharedPaths": [
+    {
+      "sourcePath": "rules",
+      "localPath": ".agents/rules"
+    }
+  ]
+}

@@ -61,6 +61,20 @@
 
 注意：这些是外部通用前端/图像生成 skills，不属于 GetTokens 领域规则本体。若后续出现 skill discovery 预算告警，应优先评估是否保留全量 taste-skill 包，或收敛为实际高频使用的子集。
 
+## 20260527 更新：安装外部 Waza Skill 包
+
+本次按用户要求将 `https://github.com/tw93/Waza.git` 的 8 个直接 coding skills 安装到项目级 `.agents/skills/`，并同步共享 `rules/` 到 `.agents/rules/`。
+
+固定来源版本：
+
+- `main@24e207c87daf7123e5e7ce22bf81bcb69bfa3e9e`
+- 版本号：`3.26.0`
+
+配套记录：
+
+1. `.agents/skills/waza.lock.json`：机器可读的来源、commit、version、安装目录和共享规则目录清单。
+2. `docs-linhay/dev/20260527-waza-project-install.md`：人工可读的安装范围与后续更新流程。
+
 ## 为什么进行整合
 
 1. **解决预算告警**：原先 9 个技能的描述总和超出了 CLI 的上下文配额，导致描述被截断。
