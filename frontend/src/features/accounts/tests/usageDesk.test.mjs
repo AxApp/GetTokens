@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   buildUsageDeskChartValueScale,
@@ -55,6 +56,31 @@ test('projected surface view options include a local sessions mode', () => {
     usageDeskProjectedSurfaceViewOptions.map((option) => option.id),
     ['daily', 'minute', 'projects', 'sessions'],
   );
+});
+
+test('usage desk chart controls stay on one line and expose compact overflow', async () => {
+  const featureSource = await readFile(new URL('../UsageDeskFeature.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /usage-desk-control-bar/);
+  assert.match(featureSource, /usage-desk-overflow-menu/);
+  assert.match(featureSource, /usage-desk-secondary-surface-option/);
+  assert.match(featureSource, /usage-desk-metric-group/);
+  assert.match(styleSource, /\.usage-desk-control-bar\s*\{[^}]*flex-wrap:\s*nowrap/s);
+  assert.match(styleSource, /\.usage-desk-segment\s*\{[^}]*white-space:\s*nowrap/s);
+  assert.match(styleSource, /@container\s*\(max-width:\s*760px\)\s*\{[^}]*\.usage-desk-secondary-surface-option/s);
+  assert.match(styleSource, /@container\s*\(max-width:\s*620px\)\s*\{[^}]*\.usage-desk-metric-group/s);
+  assert.match(styleSource, /@container\s*\(max-width:\s*520px\)\s*\{[^}]*\.usage-desk-range-slot/s);
+});
+
+test('usage desk detail selection starts from summary state and supports toggling off', async () => {
+  const hookSource = await readFile(new URL('../hooks/useUsageDeskFeature.ts', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(hookSource, /return hasCurrent \? current : firstRowKey/);
+  assert.doesNotMatch(hookSource, /return hasCurrent \? current : firstChartPointKey/);
+  assert.match(hookSource, /if\s*\(\s*selectedDetailRowKey === rowKey\s*\)/);
+  assert.match(hookSource, /if\s*\(\s*selectedChartPointKey === chartSelectionKey\s*\)/);
+  assert.match(hookSource, /setProjectedSurfaceView\('chart'\)/);
 });
 
 test('session drilldown columns keep table order stable', () => {

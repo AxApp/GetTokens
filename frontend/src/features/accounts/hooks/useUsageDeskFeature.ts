@@ -572,10 +572,6 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   }, [activeDetailRows, projectedDrilldownDayKey, selectedDetailRowKey, source]);
 
   useEffect(() => {
-    const firstRow = activeDetailRows[0] ?? null;
-    const firstRowKey = firstRow ? buildUsageDetailRowKey(firstRow) : '';
-    const firstChartPointKey = resolveUsageDeskChartSelectionKey(firstRow);
-
     if (activeDetailRows.length === 0) {
       setSelectedDetailRowKey('');
       setSelectedChartPointKey('');
@@ -583,12 +579,18 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
     }
 
     setSelectedDetailRowKey((current) => {
+      if (!current) {
+        return '';
+      }
       const hasCurrent = activeDetailRows.some((row) => buildUsageDetailRowKey(row) === current);
-      return hasCurrent ? current : firstRowKey;
+      return hasCurrent ? current : '';
     });
     setSelectedChartPointKey((current) => {
+      if (!current) {
+        return '';
+      }
       const hasCurrent = activeDetailRows.some((row) => resolveUsageDeskChartSelectionKey(row) === current);
-      return hasCurrent ? current : firstChartPointKey;
+      return hasCurrent ? current : '';
     });
   }, [activeDetailRows]);
 
@@ -633,6 +635,14 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   }, [activeObservedDayKey, activeProjectedDayKey, range, source]);
 
   function handleDetailRowSelect(rowKey: string, chartPointKey: string) {
+    if (selectedDetailRowKey === rowKey) {
+      setSelectedDetailRowKey('');
+      setSelectedChartPointKey('');
+      if (source === 'projected') {
+        setProjectedSurfaceView('chart');
+      }
+      return;
+    }
     setSelectedDetailRowKey(rowKey);
     setSelectedChartPointKey(chartPointKey);
     if (shouldOpenUsageDeskProjectedSessionSurface(source, rowKey)) {
@@ -641,6 +651,14 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
   }
 
   function handleChartPointSelect(chartSelectionKey: string) {
+    if (selectedChartPointKey === chartSelectionKey) {
+      setSelectedChartPointKey('');
+      setSelectedDetailRowKey('');
+      if (source === 'projected') {
+        setProjectedSurfaceView('chart');
+      }
+      return;
+    }
     setSelectedChartPointKey(chartSelectionKey);
     const nextRowKey = resolveUsageDeskLinkedRowKey(activeDetailRows, chartSelectionKey);
     if (nextRowKey) {
@@ -650,9 +668,6 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
 
   function handleViewScaleChange(nextScale: 'daily' | 'minute') {
     if (viewScale === nextScale) return;
-    if (nextScale === 'daily' && selectedDayKey) {
-      setSelectedChartPointKey(selectedDayKey);
-    }
     setViewScale(nextScale);
   }
 
@@ -674,6 +689,8 @@ export function useUsageDeskFeature(sidecarStatus: SidecarStatus, workspace: Usa
       return;
     }
     setRange(option);
+    setSelectedDetailRowKey('');
+    setSelectedChartPointKey('');
     setRangeAnimationVersion((current) => current + 1);
     const nextDayKey = resolveUsageDeskRangeDrilldownDayKey(
       option,

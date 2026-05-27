@@ -312,6 +312,233 @@
     box-shadow: 4px 4px 0px 0px var(--shadow-color);
   }
 
+  .usage-desk-control-bar {
+    container-type: inline-size;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--shadow-color);
+    background-color: var(--bg-main);
+    padding: 0.625rem 1rem;
+  }
+
+  .usage-desk-control-cluster {
+    display: flex;
+    min-width: 0;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-left: auto;
+  }
+
+  .usage-desk-range-slot {
+    position: relative;
+    display: flex;
+    height: 2rem;
+    width: 15.5rem;
+    flex: 0 0 15.5rem;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .usage-desk-range-layer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    transition: opacity 180ms ease, transform 180ms ease;
+  }
+
+  .usage-desk-range-layer.is-visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .usage-desk-range-layer.is-hidden-left {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+    pointer-events: none;
+  }
+
+  .usage-desk-range-layer.is-hidden-right {
+    opacity: 0;
+    transform: translateX(0.75rem);
+    pointer-events: none;
+  }
+
+  .usage-desk-segmented {
+    display: flex;
+    height: 2rem;
+    min-width: 0;
+    flex: 0 0 auto;
+    align-items: stretch;
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-surface);
+    padding: 0.125rem;
+  }
+
+  .usage-desk-range-slot .usage-desk-segmented {
+    width: 100%;
+  }
+
+  .usage-desk-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    white-space: nowrap;
+    border: 0;
+    background-color: transparent;
+    padding: 0 0.625rem;
+    color: var(--text-primary);
+    font-size: var(--font-size-ui-md-compact);
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    transition: background-color 120ms ease, color 120ms ease, opacity 120ms ease;
+  }
+
+  .usage-desk-range-slot .usage-desk-segment {
+    flex: 1 1 0;
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .usage-desk-segment.is-active {
+    background-color: var(--text-primary);
+    color: var(--bg-main);
+    opacity: 1;
+  }
+
+  .usage-desk-segment.is-muted {
+    opacity: 0.42;
+  }
+
+  .usage-desk-segment.is-muted:hover {
+    opacity: 1;
+  }
+
+  .usage-desk-overflow-menu {
+    position: relative;
+    display: none;
+    flex: 0 0 auto;
+  }
+
+  .usage-desk-overflow-menu > summary {
+    list-style: none;
+  }
+
+  .usage-desk-overflow-menu > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .usage-desk-overflow-trigger {
+    display: flex;
+    width: 2rem;
+    height: 2rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+  }
+
+  .usage-desk-overflow-menu[open] .usage-desk-overflow-trigger {
+    background-color: var(--text-primary);
+    color: var(--bg-main);
+  }
+
+  .usage-desk-overflow-panel {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    display: grid;
+    min-width: 11rem;
+    gap: 0.5rem;
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-main);
+    padding: 0.5rem;
+    box-shadow: 4px 4px 0 var(--shadow-color);
+  }
+
+  .usage-desk-overflow-section {
+    display: none;
+    gap: 0.25rem;
+  }
+
+  .usage-desk-overflow-heading {
+    padding: 0.125rem 0.375rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-ui-xs);
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .usage-desk-overflow-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: flex-start;
+    border: 0;
+    background-color: transparent;
+    padding: 0.5rem 0.625rem;
+    color: var(--text-primary);
+    font-size: var(--font-size-ui-md-compact);
+    font-weight: 900;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .usage-desk-overflow-item.is-active {
+    background-color: var(--text-primary);
+    color: var(--bg-main);
+  }
+
+  @container (max-width: 760px) {
+    .usage-desk-secondary-surface-option {
+      display: none;
+    }
+
+    .usage-desk-projected-overflow-menu {
+      display: block;
+    }
+
+    .usage-desk-surface-overflow-section {
+      display: grid;
+    }
+  }
+
+  @container (max-width: 620px) {
+    .usage-desk-metric-group {
+      display: none;
+    }
+
+    .usage-desk-metric-overflow-section {
+      display: grid;
+    }
+  }
+
+  @container (max-width: 520px) {
+    .usage-desk-range-slot {
+      display: none;
+    }
+
+    .usage-desk-compact-overflow-menu {
+      display: block;
+    }
+
+    .usage-desk-range-overflow-section {
+      display: grid;
+    }
+  }
+
   [data-account-card] {
     container-type: inline-size;
   }
