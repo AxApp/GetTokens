@@ -157,3 +157,44 @@
 
 - 曾有两个重复并发 push 因远端已经由另一条 push 更新到 `ef93d8c0` 而被 remote lock 拒绝；最终有效 push 已成功，`HEAD` 与 `refs/remotes/origin/gettokens/sidecar` 均为 `ef93d8c0`。
 - 父仓库当前仍有大量无关未提交改动，本轮只应纳入 `docs-linhay/references/CLIProxyAPI` gitlink、此 space 与 memory 相关改动。
+
+## 2026-05-28 日常同步记录
+
+### 上游增量
+
+- `upstream/main` 从 `4b681031` 前进到 `94c1b251`，新增 tag `v7.1.24`。
+- 新增 upstream 提交：
+  1. `11f0f906 feat(logging): add SetTranslatedReasoningEffort to track reasoning levels in usage reporting`
+  2. `94c1b251 feat(executor): add TTFT tracking and reporting for enhanced performance metrics`
+- 增量集中在 executor usage reporting：`SetTranslatedReasoningEffort`、TTFT 计时、`usage_helpers` 和相关 executor 调用点。
+
+### 合并结果
+
+- 合并前 fork 状态：`gettokens/sidecar` 干净，领先 `origin/gettokens/sidecar` 2 个本地提交：
+  - `952cf213 fix: preserve live session request sequence`
+  - `b0cbe42c feat: add live session timing summary`
+- 预合并检查：`git merge-tree --write-tree HEAD upstream/main` 暴露 `internal/runtime/executor/codex_websockets_executor.go` 文本冲突。
+- 冲突处理：保留 GetTokens `RecordCodexLiveUpstreamConnected` / `RecordCodexLiveFirstEvent` live-session 记录，同时接入 upstream `reporter.StartResponseTTFT()` / `reporter.MarkFirstResponseByte()`。
+- fork 合并提交：`d21a74b5 Merge remote-tracking branch 'upstream/main' into gettokens/sidecar`
+- 远端推送：`origin/gettokens/sidecar` 已更新到 `d21a74b5`。
+- 父仓库 sidecar gitlink 从 `b0cbe42` 前进到 `d21a74b5`。
+- 本地 sidecar：已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，meta 为 `d21a74b5:clean:cf463a7d5e44405ccd2ea5d5fca12ec5f8e956645fd1b6a610d17ad5edc58df0:darwin:arm64`。
+
+### 验证记录
+
+合并前基线：
+
+- `go test ./internal/runtime/executor ./sdk/api/handlers/openai ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy/auth`
+
+合并后验证：
+
+- `go test ./internal/runtime/executor ./sdk/api/handlers/openai ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy/auth`
+- `go test ./...`
+- `git diff --check`
+- `./scripts/ensure-sidecar.sh darwin arm64`
+
+### 注意事项
+
+- 这次 upstream 增量没有触碰父仓库 Wails DTO、frontend binding 或用户可见配置面。
+- 冲突点位于 Codex WebSocket executor，是 GetTokens live sessions 与 upstream TTFT usage reporting 的相邻逻辑；后续若该文件继续冲突，仍优先同时保留 live-session 生命周期事件和 upstream usage timing。
+- 父仓库仍有大量无关未提交改动，本次日常同步只应纳入 `docs-linhay/references/CLIProxyAPI` gitlink、此执行记录和 memory 写回。

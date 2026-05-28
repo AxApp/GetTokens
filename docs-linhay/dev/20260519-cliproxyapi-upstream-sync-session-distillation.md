@@ -101,6 +101,23 @@ git check-ignore -v <path>
 - `server` 文件本体不归档、不提交。
 - 不把该流程升级到 `AGENTS.md`；它属于 CLIProxyAPI fork 领域维护流程，已沉淀到 `gettokens-domain-engineering` skill。
 
+## 2026-05-28 后续触发约定
+
+用户后续只要说“合并上游分支”“同步上游”或“每日合并 CLIProxyAPI”，默认按 CLIProxyAPI upstream sync workflow 执行，除非明确指定其它仓库。执行入口固定为 `docs-linhay/references/CLIProxyAPI#gettokens/sidecar`，并按 fork 提交、sidecar 重建、父仓库 gitlink/docs/memory 提交的两层闭环收口。
+
+固定执行顺序：
+
+1. 父仓库和 fork 分别检查 `git status --short --branch`，父仓库只保护并 stage 本轮合并相关文件。
+2. fork 内 `git fetch upstream origin`，用 `git log --cherry-pick --right-only --no-merges HEAD...upstream/main` 识别真实 upstream-only commits；必要时用 `git merge-tree --write-tree HEAD upstream/main` 预判冲突。
+3. 合并前对高风险面跑 focused baseline；合并后先跑 touched surfaces 的 focused tests，再跑 `go test ./...` 和 `git diff --check`。
+4. 冲突处理优先保护 GetTokens 运行时面：`internal/gettokenshooks`、`internal/gettokensrouting`、`sdk/cliproxy/auth`、Codex WebSocket executor、usage / TTFT / reasoning、system proxy、config diff。
+5. fork 内提交并推送 `origin/gettokens/sidecar` 后，父仓库执行 `./scripts/ensure-sidecar.sh darwin arm64`，确认 meta 为新 fork commit 且 `dirty=clean`。
+6. 父仓库只提交 gitlink、space、dev 文档、memory 和必要构建产物；最后运行 `qmd update`、`qmd embed`，用 `qmd query` 抽查可检索。
+
+本轮新增的性能与重复劳动规则：当 upstream 改到 telemetry、TTFT 或 reasoning extraction，不在多个入口重复解析或重复启动计时。`TrackHTTPClient` 和 `ObserveResponse` 这类路径应共用 body 包裹逻辑；`SetTranslatedReasoningEffort` 只有在 translated payload 真正提取到 effort 时才覆盖 context 中已有值。
+
+`ttft_ms` 当前按 telemetry 字段对待，先通过 payload 测试锁定序列化，不默认扩展 UI/报表消费。若未来 WebSocket executor 再冲突，必须同时验证 `RecordCodexLiveUpstreamConnected`、`RecordCodexLiveFirstEvent`、`StartResponseTTFT`、`MarkFirstResponseByte` 四个时序点。
+
 ## 2026-05-24 同步记录
 
 本轮将 `docs-linhay/references/CLIProxyAPI#gettokens/sidecar` 从 `upstream/main@50d19e20`（`v7.1.20-1-g50d19e20`）合并到维护分支，生成 merge commit `1c5db246` 并推送到 `AxApp/CLIProxyAPI#gettokens/sidecar`。
