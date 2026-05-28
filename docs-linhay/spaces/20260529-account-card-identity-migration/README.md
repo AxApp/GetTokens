@@ -93,6 +93,9 @@
 - GetTokens frontend：`npm run typecheck`
 - GetTokens frontend：`npm run build`
 - GetTokens frontend：`npm run test:unit`
+- Build smoke：`CLI_PROXY_SOURCE_DIR=../CLIProxyAPI-worktrees/20260529-account-card-identity-migration ./scripts/wails-cli.sh build`，确认打包产物使用 sidecar 提交 `3837f0a3`。
+- Dev runtime smoke：以 `GETTOKENS_APP_PROFILE=dev` 启动构建产物，sidecar 监听 `18317`，`/healthz` 返回 200。
+- Rate-limit management smoke：对 dev sidecar 执行 `strategies -> create rule -> status -> events -> delete rule -> list`，状态码均为 200，临时规则 `runtime-smoke-delete-me` 已删除。
 - `playwright-cli` preview：打开 `?preview=accounts#frame=accounts&detail=codex-api-key%3Astable-001`，确认无 `Cannot read properties of undefined`，summary 为单行，点击编辑进入配置表单态。
 - 截图：
   - `docs-linhay/spaces/20260529-account-card-identity-migration/screenshots/20260529/accounts/20260529-accounts-rate-limit-summary-after-v01.png`
