@@ -555,14 +555,17 @@
         }
         if (release && release.tag_name) {
           document.getElementById('version-badge').textContent = release.tag_name;
-          // Set direct download links from release assets
+          // Set direct download links (releases/download/ triggers direct file download)
           if (release.assets) {
+            const tag = release.tag_name;
             for (const asset of release.assets) {
               const name = asset.name.toLowerCase();
               if (name.includes('applesilicon') && name.endsWith('.dmg')) {
-                document.getElementById('dl-mac-arm64').href = asset.browser_download_url;
+                document.getElementById('dl-mac-arm64').href =
+                  `https://github.com/AxApp/GetTokens/releases/download/${tag}/${asset.name}`;
               } else if (name.includes('intel') && name.endsWith('.dmg')) {
-                document.getElementById('dl-mac-x64').href = asset.browser_download_url;
+                document.getElementById('dl-mac-x64').href =
+                  `https://github.com/AxApp/GetTokens/releases/download/${tag}/${asset.name}`;
               }
             }
           }
