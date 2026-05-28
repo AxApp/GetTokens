@@ -32,8 +32,9 @@
 
 ## 设计稿入口
 
-- 设计系统入口：`frontend/src/features/session-management/components/SessionPluginConsolePanel.stories.tsx`
+- 设计系统入口：`http://localhost:5173/#frame=design-system` 的“业务组件预览”
 - 设计系统组件：`frontend/src/features/session-management/components/SessionPluginConsolePanel.tsx`
+- 5173 业务预览注册：`frontend/src/features/design-system/businessComponentPreviews.tsx`
 - 源草图：[session-plugin-console-design-v01.html](session-plugin-console-design-v01.html)
 - 约束：单期只保留一个 HTML 文件；若存在多稿对比，也必须收敛在同一个 HTML 文件内。
 
@@ -49,6 +50,7 @@
 - 技术说明：[session-management 插件系统设计](../../dev/20260528-session-management-plugin-system.md)
 - 迭代计划：[session-management 插件系统路线图](plans/20260528-session-plugin-system-roadmap-v01.md)
 - 验收截图：[20260528-session-plugin-host-web-after-v01.png](screenshots/20260528/session-management/20260528-session-plugin-host-web-after-v01.png)
+- 5173 设计系统截图：[20260528-session-plugin-console-5173-design-system-after-v01.png](screenshots/20260528/session-management/20260528-session-plugin-console-5173-design-system-after-v01.png)
 
 ## 当前状态
 - 状态：phase-1-mvp-done / design-system-admitted

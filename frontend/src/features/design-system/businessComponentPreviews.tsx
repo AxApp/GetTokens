@@ -1,22 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import DesignSystemStoryFrame from '../../design-system/DesignSystemStoryFrame';
-import SessionPluginConsolePanel from './SessionPluginConsolePanel';
+import type { ReactNode } from 'react';
+import SessionPluginConsolePanel from '../session-management/components/SessionPluginConsolePanel';
 import type {
   SessionPluginConsoleMode,
   SessionPluginConsolePanelProps,
-} from './SessionPluginConsolePanel';
+} from '../session-management/components/SessionPluginConsolePanel';
+import {
+  businessDesignSystemPreviewCatalog,
+  type BusinessDesignSystemPreviewCatalogEntry,
+} from './businessComponentPreviewCatalog';
 
-const meta = {
-  title: 'Design System/业务组件/会话插件控制台',
-  parameters: {
-    layout: 'fullscreen',
-  },
-} satisfies Meta;
+export interface BusinessDesignSystemPreview extends BusinessDesignSystemPreviewCatalogEntry {
+  render: () => ReactNode;
+}
 
-export default meta;
-type Story = StoryObj;
-
-const commonConsoleProps: Omit<SessionPluginConsolePanelProps, 'mode' | 'execution'> = {
+const sessionPluginConsoleCommonProps: Omit<SessionPluginConsolePanelProps, 'mode' | 'execution'> = {
   pluginHostTitle: '会话插件',
   pluginHostSubtitle: 'CODEX / SESSION MANAGEMENT / 426 sessions / 19 projects',
   pluginHint: '会话深度分析作为第一个内置插件，后续复盘、对比和导出复用同一宿主协议。',
@@ -66,22 +63,9 @@ const commonConsoleProps: Omit<SessionPluginConsolePanelProps, 'mode' | 'executi
     },
   ],
   scopes: [
-    {
-      id: 'project',
-      title: '当前项目',
-      subtitle: 'GetTokens / 86 sessions',
-      active: true,
-    },
-    {
-      id: 'recent',
-      title: '最近 20 条',
-      subtitle: 'visible sessions slice',
-    },
-    {
-      id: 'all',
-      title: '全部会话',
-      subtitle: '426 sessions, async batch',
-    },
+    { id: 'project', title: '当前项目', subtitle: 'GetTokens / 86 sessions', active: true },
+    { id: 'recent', title: '最近 20 条', subtitle: 'visible sessions slice' },
+    { id: 'all', title: '全部会话', subtitle: '426 sessions, async batch' },
   ],
   sessions: [
     {
@@ -163,7 +147,7 @@ const commonConsoleProps: Omit<SessionPluginConsolePanelProps, 'mode' | 'executi
   ],
 };
 
-const executions: Record<SessionPluginConsoleMode, SessionPluginConsolePanelProps['execution']> = {
+const sessionPluginConsoleExecutions: Record<SessionPluginConsoleMode, SessionPluginConsolePanelProps['execution']> = {
   ready: {
     dialLabel: '0%',
     progress: 0,
@@ -188,53 +172,33 @@ const executions: Record<SessionPluginConsoleMode, SessionPluginConsolePanelProp
   },
 };
 
-function buildConsoleProps(mode: SessionPluginConsoleMode): SessionPluginConsolePanelProps {
+function buildSessionPluginConsoleProps(mode: SessionPluginConsoleMode): SessionPluginConsolePanelProps {
   return {
-    ...commonConsoleProps,
+    ...sessionPluginConsoleCommonProps,
     mode,
-    execution: executions[mode],
+    execution: sessionPluginConsoleExecutions[mode],
     actionStatusLabel: mode,
   };
 }
 
-function ConsoleSample({ label, mode }: { label: string; mode: SessionPluginConsoleMode }) {
+function SessionPluginConsolePreview() {
   return (
-    <DesignSystemStoryFrame label={label}>
-      <div className="min-w-0 bg-[var(--bg-surface)] p-5">
-        <SessionPluginConsolePanel {...buildConsoleProps(mode)} />
-      </div>
-    </DesignSystemStoryFrame>
-  );
-}
-
-function SessionPluginConsoleOverview() {
-  return (
-    <div className="grid gap-6 bg-[var(--bg-surface)] p-6">
-      <div>
-        <h2 className="text-2xl font-black uppercase italic tracking-normal">会话插件控制台</h2>
-        <p className="mt-2 max-w-4xl text-[length:var(--font-size-ui-md)] font-bold leading-relaxed text-[var(--text-muted)]">
-          会话插件控制台把插件注册表、分析作用域、执行状态、会话选择、队列和结果输出收敛到一个业务组件，用于后续替换 session-management 的临时分析面板。
-        </p>
-      </div>
-      <ConsoleSample label="DS-SESSION-PLUGIN-CONSOLE-READY" mode="ready" />
-      <ConsoleSample label="DS-SESSION-PLUGIN-CONSOLE-RUNNING" mode="running" />
-      <ConsoleSample label="DS-SESSION-PLUGIN-CONSOLE-DONE" mode="done" />
+    <div className="grid gap-5">
+      {(['ready', 'running', 'done'] as const).map((mode) => (
+        <section key={mode} className="grid gap-3">
+          <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            DS-SESSION-PLUGIN-CONSOLE-{mode.toUpperCase()}
+          </div>
+          <SessionPluginConsolePanel {...buildSessionPluginConsoleProps(mode)} />
+        </section>
+      ))}
     </div>
   );
 }
 
-export const Overview: Story = {
-  render: () => <SessionPluginConsoleOverview />,
-};
-
-export const Ready: Story = {
-  render: () => <ConsoleSample label="DS-SESSION-PLUGIN-CONSOLE-READY" mode="ready" />,
-};
-
-export const Running: Story = {
-  render: () => <ConsoleSample label="DS-SESSION-PLUGIN-CONSOLE-RUNNING" mode="running" />,
-};
-
-export const Done: Story = {
-  render: () => <ConsoleSample label="DS-SESSION-PLUGIN-CONSOLE-DONE" mode="done" />,
-};
+export const businessDesignSystemPreviews = [
+  {
+    ...businessDesignSystemPreviewCatalog[0],
+    render: () => <SessionPluginConsolePreview />,
+  },
+] as const satisfies readonly BusinessDesignSystemPreview[];

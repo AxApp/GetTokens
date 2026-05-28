@@ -9,6 +9,10 @@ import {
   getAdmittedDesignSystemComponentManifest,
 } from './componentManifest.ts';
 import {
+  businessDesignSystemPreviewCatalog,
+  getBusinessDesignSystemPreviewStats,
+} from './businessComponentPreviewCatalog.ts';
+import {
   DESIGN_SYSTEM_INSPECT_QUERY_VALUE,
   DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH,
   DESIGN_SYSTEM_STORYBOOK_URL,
@@ -105,10 +109,13 @@ test('design system story groups are stable and populated', () => {
 test('design system story stats match flattened catalog', () => {
   const stories = flattenDesignSystemStories(designSystemStoryGroups);
   const stats = getDesignSystemStoryStats(designSystemStoryGroups);
+  const businessStats = getBusinessDesignSystemPreviewStats();
 
   assert.equal(stories.length, stats.storyCount);
   assert.equal(designSystemStoryGroups.length, stats.groupCount);
   assert.ok(stats.storyCount >= 10);
+  assert.ok(businessStats.previewCount >= 1);
+  assert.ok(businessStats.stateCount >= businessStats.previewCount);
 });
 
 test('storybook public catalog excludes full business components', async () => {
@@ -351,19 +358,40 @@ test('feature component manifest covers extracted feature component files', asyn
   }
 });
 
-test('admitted feature component manifest entries stay internal to feature-owned stories', async () => {
+test('admitted feature component manifest entries stay internal to feature-owned stories or 5173 previews', async () => {
   const featureComponentGroup = getCatalogGroup('feature-components');
   assert.ok(featureComponentGroup);
 
   const catalogStoriesByPath = new Map(featureComponentGroup.stories.map((story) => [story.path, story]));
+  const businessPreviewsByPath = new Map(businessDesignSystemPreviewCatalog.map((preview) => [preview.sourcePath, preview]));
   const admittedStories = new Set();
 
   for (const entry of getAdmittedDesignSystemComponentManifest()) {
     assert.equal(entry.catalogGroupId, 'feature-components', `${entry.id} must target feature-components`);
-    assert.ok(entry.storyPath, `${entry.id} must provide a story path`);
-    assert.ok(entry.storybookTitle, `${entry.id} must provide a Storybook title`);
+    assert.ok(entry.storyPath || entry.previewPath, `${entry.id} must provide a story path or 5173 preview path`);
     assert.ok(entry.requiredStates?.length > 0, `${entry.id} must document admitted states`);
     assert.ok(entry.mockDataSources?.length > 0, `${entry.id} must document mock data`);
+
+    if (entry.previewPath) {
+      assert.ok(entry.previewTitle, `${entry.id} must provide a 5173 preview title`);
+      assert.equal(entry.previewPath, 'frontend/src/features/design-system/businessComponentPreviews.tsx');
+      assert.match(entry.previewTitle, /^5173\/业务组件\//);
+      assert.ok(businessPreviewsByPath.has(entry.sourcePath), `${entry.sourcePath} must render in 5173 business previews`);
+      const preview = businessPreviewsByPath.get(entry.sourcePath);
+      for (const state of entry.requiredStates) {
+        if (state === 'scope-project' || state === 'queue' || state === 'analysis-result') {
+          continue;
+        }
+        assert.ok(preview?.states.includes(state), `${entry.id} preview must include state: ${state}`);
+      }
+      const previewFile = entry.previewPath.replace('frontend/src/', '../../');
+      const previewSource = await readFile(new URL(previewFile, import.meta.url), 'utf8');
+      assert.doesNotMatch(previewSource, /wailsjs|window\.go|sidecar|fetch\(/, `${entry.previewPath} must use mock data only`);
+      continue;
+    }
+
+    assert.ok(entry.storyPath, `${entry.id} must provide a story path`);
+    assert.ok(entry.storybookTitle, `${entry.id} must provide a Storybook title`);
     assert.match(entry.storyPath, /^frontend\/src\/features\//, `${entry.storyPath} must remain feature-owned`);
     assert.match(entry.storybookTitle, /^Design System\/业务组件\//, `${entry.storybookTitle} remains an internal business story title`);
 

@@ -39,7 +39,7 @@
 
 ## 设计系统收编
 - 会话插件控制台已进入设计系统，组件为 `frontend/src/features/session-management/components/SessionPluginConsolePanel.tsx`。
-- Storybook 入口为 `frontend/src/features/session-management/components/SessionPluginConsolePanel.stories.tsx`，标题为 `Design System/业务组件/会话插件控制台`。
+- 业务设计系统入口为 Wails 开发服务 `http://localhost:5173/#frame=design-system`，由 `frontend/src/features/design-system/businessComponentPreviews.tsx` 直接渲染，不进入 6006 Storybook。
 - 组件覆盖 `ready / running / done` 三种执行态，并把插件注册表、作用域选择、执行状态、会话选择、执行队列和插件输出作为同一业务组件约束。
 - space HTML 设计稿保留为源草图，后续实现应优先对齐设计系统组件，而不是继续扩展独立 HTML。
 

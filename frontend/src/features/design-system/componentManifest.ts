@@ -13,6 +13,8 @@ export interface DesignSystemComponentManifestEntry {
   suggestedDesignComponent?: string;
   storyPath?: string;
   storybookTitle?: string;
+  previewPath?: string;
+  previewTitle?: string;
   catalogGroupId?: string;
   requiredStates?: readonly string[];
   mockDataSources?: readonly string[];
@@ -79,8 +81,6 @@ const codexAccountOrderStoryPath = 'frontend/src/features/codex/components/Codex
 const codexAccountOrderStorybookTitle = 'Design System/业务组件/Codex 账号顺序';
 const codexLiveSessionsStoryPath = 'frontend/src/features/codex-live-sessions/components/CodexLiveSessionsComponents.stories.tsx';
 const codexLiveSessionsStorybookTitle = 'Design System/业务组件/Codex 运行会话';
-const sessionPluginConsoleStoryPath = 'frontend/src/features/session-management/components/SessionPluginConsolePanel.stories.tsx';
-const sessionPluginConsoleStorybookTitle = 'Design System/业务组件/会话插件控制台';
 
 export const designSystemComponentManifest = [
   {
@@ -871,11 +871,11 @@ export const designSystemComponentManifest = [
     tier: 'feature-component',
     decisionReason: '会话插件控制台已从 space HTML 设计稿收编为纯展示组件，覆盖插件注册表、作用域选择、执行状态、会话选择、队列和插件输出，作为 session-management 插件宿主的设计系统基准。',
     matchedPatterns: ['DesignSystemStoryFrame', 'WorkspacePageHeader', 'DebugPanel grouped list'],
-    storyPath: sessionPluginConsoleStoryPath,
-    storybookTitle: sessionPluginConsoleStorybookTitle,
+    previewPath: 'frontend/src/features/design-system/businessComponentPreviews.tsx',
+    previewTitle: '5173/业务组件/会话插件控制台',
     catalogGroupId: 'feature-components',
     requiredStates: ['ready', 'running', 'done', 'scope-project', 'queue', 'analysis-result'],
-    mockDataSources: ['storybook session-management plugin/analysis/session mock'],
+    mockDataSources: ['5173 businessComponentPreviews session-management plugin/analysis/session mock'],
   },
   {
     id: 'codex-model-combobox',

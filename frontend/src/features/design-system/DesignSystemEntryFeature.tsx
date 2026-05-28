@@ -4,6 +4,10 @@ import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import { hasWailsRuntime } from '../../utils/previewMode';
 import {
+  businessDesignSystemPreviews,
+} from './businessComponentPreviews';
+import { getBusinessDesignSystemPreviewStats } from './businessComponentPreviewCatalog';
+import {
   DESIGN_SYSTEM_SCREENSHOT_PATH,
   DESIGN_SYSTEM_STORYBOOK_COMMAND,
   DESIGN_SYSTEM_STORYBOOK_URL,
@@ -17,6 +21,7 @@ import {
 export default function DesignSystemEntryFeature() {
   const { t } = useI18n();
   const stats = getDesignSystemStoryStats();
+  const businessStats = getBusinessDesignSystemPreviewStats();
   const storybookOpenURL = resolveDesignSystemStorybookOpenURL({
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
@@ -105,8 +110,54 @@ export default function DesignSystemEntryFeature() {
             <div className="grid grid-cols-2 gap-3">
               <Metric label={t('design_system.groups')} value={stats.groupCount} />
               <Metric label={t('design_system.stories')} value={stats.storyCount} />
+              <Metric label="业务预览" value={businessStats.previewCount} />
+              <Metric label="业务状态" value={businessStats.stateCount} />
             </div>
           </aside>
+        </section>
+
+        <section className="grid gap-4">
+          <div className="card-swiss !p-0">
+            <div className="border-b-2 border-[var(--border-color)] px-5 py-4">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-black uppercase italic tracking-normal">业务组件预览</h3>
+                  <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-normal text-[var(--text-muted)]">
+                    业务组件在 5173 应用内设计系统直接渲染，不进入 6006 Storybook。
+                  </p>
+                </div>
+                <span className="border-2 border-[var(--border-color)] px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black">
+                  {businessDesignSystemPreviews.length} {t('design_system.items')}
+                </span>
+              </div>
+            </div>
+            <div className="grid gap-6 bg-[var(--bg-surface)] p-5">
+              {businessDesignSystemPreviews.map((preview) => (
+                <section key={preview.id} className="grid gap-4">
+                  <div className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
+                    <div className="text-lg font-black uppercase italic tracking-normal">{preview.title}</div>
+                    <p className="text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+                      {preview.description}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {preview.states.map((state) => (
+                        <span
+                          key={`${preview.id}-${state}`}
+                          className="border border-[var(--border-color)] px-2 py-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em]"
+                        >
+                          {state}
+                        </span>
+                      ))}
+                    </div>
+                    <code className="break-all font-mono text-[length:var(--font-size-ui-xs)] font-bold text-[var(--text-muted)]">
+                      {preview.sourcePath}
+                    </code>
+                  </div>
+                  <div className="min-w-0">{preview.render()}</div>
+                </section>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="grid gap-4">
