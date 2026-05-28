@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GetTokens — 桌面端 AI 凭证资产管理</title>
+    <meta name="description" content="GetTokens 是一个桌面应用，统一管理 AI 凭证资产、查看 sidecar 运行状态、维护中转服务配置。" />
+    <meta name="keywords" content="GetTokens, AI, API key, auth, credential management, desktop app" />
+    <meta name="author" content="linhay" />
+    <meta name="theme-color" content="#00A8F0" />
+    <link rel="icon" type="image/png" href="assets/icon-192.png" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://gettokens.dev/" />
+    <meta property="og:title" content="GetTokens — 桌面端 AI 凭证资产管理" />
+    <meta property="og:description" content="统一管理 AI 凭证资产、查看 sidecar 运行状态、维护中转服务配置。" />
+    <meta property="og:image" content="https://gettokens.dev/assets/og-image.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&display=swap" rel="stylesheet" />
+
+    <style>
+      :root {
+        --blue: #00a8f0;
+        --blue-deep: #0078c8;
+        --blue-ink: #003b6f;
+        --sky-50: #f2fafe;
+        --sky-100: #e1f3fd;
+        --sky-200: #c2e6fb;
+        --ink-900: #0a1b2e;
+        --ink-700: #233a53;
+        --ink-500: #5b7186;
+        --ink-300: #94a8bc;
+        --ink-200: #c5d2de;
+        --ink-100: #e5ecf2;
+        --paper: #fafcfe;
+        --cloud: #ffffff;
+        --gold: #f4b740;
+        --leaf: #6ec56a;
+        --coral: #ff7a6b;
+      }
+
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html { scroll-behavior: smooth; }
+      body {
+        font-family: 'Geist', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+        background: var(--paper);
+        color: var(--ink-900);
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        overflow-x: hidden;
+      }
+      ::selection { background: rgba(0, 168, 240, 0.25); color: var(--ink-900); }
+      a { color: inherit; text-decoration: none; }
+      img { max-width: 100%; display: block; }
+      [hidden] { display: none !important; }
+
+      /* i18n */
+      .lang-zh [data-en] { display: none; }
+      .lang-en [data-zh] { display: none; }
+
+      /* nav */
+      .nav {
+        position: sticky; top: 0; z-index: 50;
+        background: rgba(250, 252, 254, 0.88);
+        backdrop-filter: saturate(180%) blur(14px);
+        -webkit-backdrop-filter: saturate(180%) blur(14px);
+        border-bottom: 1px solid rgba(229, 236, 242, 0.6);
+      }
+      .nav-inner {
+        max-width: 1120px; margin: 0 auto; padding: 14px 24px;
+        display: flex; align-items: center; gap: 24px;
+      }
+      .brand {
+        display: flex; align-items: center; gap: 10px;
+        font-weight: 600; font-size: 18px; letter-spacing: -0.01em;
+      }
+      .brand-icon {
+        width: 28px; height: 28px; border-radius: 7px;
+        background: var(--blue); display: grid; place-items: center;
+        color: white; font-size: 15px; font-weight: 700;
+      }
+      .nav-links { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+      .nav-link {
+        padding: 8px 12px; font-size: 13.5px; color: var(--ink-500);
+        border-radius: 8px; transition: color 0.15s, background 0.15s; cursor: pointer;
+      }
+      .nav-link:hover { color: var(--ink-900); background: rgba(229, 236, 242, 0.55); }
+      .lang-toggle {
+        padding: 6px 10px; font-size: 12px; font-weight: 600; color: var(--ink-500);
+        border: 1px solid var(--ink-100); border-radius: 8px;
+        background: transparent; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+      }
+      .lang-toggle:hover { color: var(--ink-900); border-color: var(--ink-200); }
+      .gh-star {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 6px 12px; font-size: 12.5px; font-weight: 600;
+        color: var(--ink-700); border: 1px solid var(--ink-100);
+        border-radius: 8px; transition: border-color 0.15s, color 0.15s;
+      }
+      .gh-star:hover { border-color: var(--ink-200); color: var(--ink-900); }
+      .gh-star svg { width: 16px; height: 16px; }
+      .gh-star-count {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11.5px; color: var(--ink-500);
+      }
+
+      /* buttons */
+      .btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        font-weight: 600; font-size: 14px; padding: 10px 18px;
+        border-radius: 10px; border: 1.5px solid transparent;
+        transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.15s, background 0.15s, color 0.15s, border-color 0.15s;
+        cursor: pointer;
+      }
+      .btn:active { transform: scale(0.98); }
+      .btn-primary {
+        background: var(--blue); color: white;
+        box-shadow: 0 8px 22px -8px rgba(0, 120, 200, 0.55);
+      }
+      .btn-primary:hover { background: var(--blue-deep); }
+      .btn-ghost {
+        background: transparent; color: var(--ink-700); border-color: var(--ink-100);
+      }
+      .btn-ghost:hover { background: var(--cloud); border-color: var(--ink-200); }
+
+      .version-badge {
+        display: inline-block;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11.5px; padding: 3px 10px; border-radius: 999px;
+        background: var(--sky-50); color: var(--blue-deep); border: 1px solid var(--sky-100);
+      }
+
+      /* hero */
+      .hero-bg {
+        position: relative; width: 100%; background: var(--sky-50); overflow: hidden;
+      }
+      .hero-sky { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+      .hero-sky svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .hero {
+        max-width: 1120px; margin: 0 auto; padding: 104px 24px 72px;
+        text-align: center; position: relative; z-index: 1;
+      }
+      .eyebrow {
+        display: inline-flex; align-items: center; gap: 10px;
+        font-size: 12.5px; font-weight: 600; color: var(--blue-deep);
+        background: var(--sky-50); border: 1px solid var(--sky-100);
+        padding: 6px 12px; border-radius: 999px; margin-bottom: 22px;
+      }
+      .eyebrow .dot {
+        width: 6px; height: 6px; background: var(--leaf); border-radius: 50%;
+        box-shadow: 0 0 0 4px rgba(110, 197, 106, 0.18);
+        animation: pulse-soft 2s ease-in-out infinite;
+      }
+      @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+      h1 {
+        font-family: 'Iowan Old Style', 'Apple Garamond', Georgia, serif;
+        font-size: clamp(36px, 4.6vw, 56px); line-height: 1.18;
+        letter-spacing: -0.012em; font-weight: 400; margin: 0 auto; max-width: 760px;
+      }
+      h1 em { font-style: italic; font-weight: 400; color: var(--blue-deep); }
+      .lede {
+        margin: 28px auto 0; max-width: 560px;
+        font-size: clamp(15px, 1.4vw, 16.5px); color: var(--ink-500); line-height: 1.7;
+      }
+      .hero-cta {
+        margin: 44px 0 16px; display: inline-flex; flex-wrap: wrap;
+        justify-content: center; gap: 12px;
+      }
+      .hero-note { font-size: 12.5px; color: var(--ink-300); }
+
+      /* carousel */
+      .chrome { max-width: 1080px; margin: 56px auto 0; padding: 0 24px; }
+      .carousel {
+        position: relative; overflow: hidden; border-radius: 12px;
+        box-shadow: 0 28px 48px rgba(10, 30, 60, 0.18), 0 8px 16px rgba(10, 30, 60, 0.12);
+      }
+      .carousel-track {
+        display: flex; transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .carousel-slide {
+        flex: 0 0 100%; min-width: 0;
+      }
+      .carousel-slide img {
+        width: 100%; height: auto; display: block;
+      }
+      .carousel-arrow {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(255,255,255,0.9); border: 1px solid var(--ink-100);
+        display: grid; place-items: center; cursor: pointer; z-index: 2;
+        box-shadow: 0 4px 12px rgba(10,30,60,0.12);
+        transition: background 0.15s, box-shadow 0.15s;
+        color: var(--ink-700);
+      }
+      .carousel-arrow:hover { background: #fff; box-shadow: 0 6px 16px rgba(10,30,60,0.18); }
+      .carousel-arrow svg { width: 18px; height: 18px; }
+      .carousel-arrow.prev { left: 16px; }
+      .carousel-arrow.next { right: 16px; }
+      .carousel-dots {
+        display: flex; justify-content: center; gap: 8px; margin-top: 20px;
+      }
+      .carousel-dot {
+        width: 8px; height: 8px; border-radius: 50%; background: var(--ink-200);
+        border: none; cursor: pointer; padding: 0;
+        transition: background 0.2s, transform 0.2s;
+      }
+      .carousel-dot.active { background: var(--blue); transform: scale(1.3); }
+
+      /* sections */
+      section { max-width: 1120px; margin: 0 auto; padding: 80px 24px; }
+      .section-eyebrow {
+        font-size: 12.5px; font-weight: 700; color: var(--blue-deep);
+        text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; text-align: center;
+      }
+      h2 {
+        font-family: 'Iowan Old Style', 'Apple Garamond', Georgia, serif;
+        font-size: clamp(34px, 4.2vw, 52px); line-height: 1.08;
+        letter-spacing: -0.02em; font-weight: 400; text-align: center;
+        max-width: 780px; margin: 0 auto 16px;
+      }
+      h2 em { font-style: italic; font-weight: 400; color: var(--blue-deep); }
+      .section-lede {
+        text-align: center; color: var(--ink-500); font-size: 16px;
+        max-width: 580px; margin: 0 auto 48px;
+      }
+
+      /* feature cards */
+      .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+      .card {
+        background: var(--cloud); border: 1px solid var(--ink-100); border-radius: 16px;
+        padding: 26px; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s;
+      }
+      .card:hover { transform: translateY(-3px); box-shadow: 0 24px 40px -20px rgba(10, 30, 60, 0.18); }
+      .card-icon {
+        width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+        font-size: 19px; margin-bottom: 16px; background: var(--sky-50);
+        color: var(--blue-deep); border: 1px solid var(--sky-100);
+      }
+      .card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.01em; }
+      .card p { color: var(--ink-500); font-size: 14px; line-height: 1.55; }
+
+      /* download */
+      .download-wrap {
+        background: linear-gradient(135deg, var(--sky-50) 0%, var(--cloud) 100%);
+        border: 1px solid var(--sky-100); border-radius: 24px; padding: 56px 32px; text-align: center;
+      }
+      .platforms { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
+      .platform {
+        display: inline-flex; align-items: center; gap: 10px; background: var(--cloud);
+        border: 1.5px solid var(--ink-100); border-radius: 12px; padding: 12px 18px;
+        font-size: 14px; font-weight: 600; color: var(--ink-700);
+        transition: border-color 0.15s, transform 0.15s, color 0.15s; cursor: pointer;
+      }
+      .platform:hover { border-color: var(--blue); color: var(--blue-deep); transform: translateY(-2px); }
+      .platform .arch { font-size: 11px; color: var(--ink-300); font-weight: 500; }
+      .platform svg { width: 18px; height: 18px; }
+
+      /* footer */
+      footer {
+        max-width: 1120px; margin: 40px auto 0; padding: 32px 24px 48px;
+        border-top: 1px solid var(--ink-100); display: flex; flex-wrap: wrap;
+        justify-content: space-between; align-items: center; gap: 12px;
+        font-size: 12.5px; color: var(--ink-300);
+      }
+      footer a:hover { color: var(--ink-700); }
+      .foot-links { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+      .foot-link {
+        display: inline-flex; align-items: center; gap: 6px;
+        font-weight: 600; color: var(--ink-500); transition: color 0.15s;
+      }
+      .foot-link:hover { color: var(--ink-900); }
+      .foot-link svg { width: 16px; height: 16px; }
+
+      /* mobile */
+      @media (max-width: 720px) {
+        .nav-inner { padding: 12px 16px; gap: 12px; }
+        .brand { font-size: 16px; }
+        .nav-links .nav-link { display: none; }
+        .nav-links .btn { padding: 8px 14px; font-size: 13px; }
+        .hero { padding: 64px 18px 48px; }
+        .lede { margin-top: 22px; font-size: 15px; line-height: 1.6; }
+        .hero-cta { margin: 32px 0 12px; gap: 10px; width: 100%; }
+        .hero-cta .btn { width: 100%; justify-content: center; }
+        .chrome { margin-top: 36px; padding: 0 16px; }
+        section { padding: 56px 18px; }
+        .section-lede { font-size: 15px; margin-bottom: 32px; }
+        .features { gap: 14px; grid-template-columns: 1fr; }
+        .card { padding: 22px; }
+        .download-wrap { padding: 40px 18px; border-radius: 18px; }
+        .platforms { gap: 10px; margin-top: 22px; }
+        .platform { width: 100%; justify-content: flex-start; padding: 12px 16px; }
+        footer { padding: 24px 18px 36px; justify-content: center; text-align: center; }
+      }
+    </style>
+  </head>
+  <body class="lang-zh">
+
+    <!-- NAV -->
+    <nav class="nav">
+      <div class="nav-inner">
+        <a class="brand" href="/">
+          <span class="brand-icon">G</span>
+          <span>GetTokens</span>
+        </a>
+        <div class="nav-links">
+          <a class="nav-link" href="#features" data-zh>功能</a>
+          <a class="nav-link" href="#features" data-en>Features</a>
+          <a class="nav-link" href="#download" data-zh>下载</a>
+          <a class="nav-link" href="#download" data-en>Download</a>
+          <a class="gh-star" href="https://github.com/AxApp/GetTokens" target="_blank" rel="noopener">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            <span>Star</span>
+            <span class="gh-star-count" id="gh-star-count"></span>
+          </a>
+          <button class="lang-toggle" id="lang-toggle" title="切换语言 / Toggle language">EN</button>
+          <a class="btn btn-primary" href="#download" style="margin-left: 8px;">
+            <span data-zh>下载</span>
+            <span data-en>Download</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <div class="hero-bg">
+      <div class="hero-sky" aria-hidden="true">
+        <svg viewBox="0 0 1440 720" preserveAspectRatio="xMidYMid slice">
+          <defs>
+            <filter id="cloud-soft" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="18" />
+            </filter>
+          </defs>
+          <g fill="#ffffff" filter="url(#cloud-soft)">
+            <g opacity="0.9" transform="translate(180,110)">
+              <ellipse cx="0" cy="0" rx="120" ry="38" />
+              <ellipse cx="80" cy="-20" rx="80" ry="32" />
+              <ellipse cx="-70" cy="-12" rx="70" ry="28" />
+            </g>
+            <g opacity="0.7" transform="translate(1180,180)">
+              <ellipse cx="0" cy="0" rx="110" ry="30" />
+              <ellipse cx="60" cy="-12" rx="65" ry="22" />
+            </g>
+            <g opacity="0.55" transform="translate(720,80)">
+              <ellipse cx="0" cy="0" rx="70" ry="20" />
+              <ellipse cx="35" cy="-8" rx="40" ry="14" />
+            </g>
+          </g>
+        </svg>
+      </div>
+      <header class="hero">
+        <div class="eyebrow">
+          <span class="dot"></span>
+          <span data-zh>开源 · 桌面端 AI 凭证管理</span>
+          <span data-en>Open Source · Desktop AI Credential Manager</span>
+        </div>
+        <h1>
+          <span data-zh>Manage your AI tokens, <em>effortlessly</em>.</span>
+          <span data-en>Manage your AI tokens, <em>effortlessly</em>.</span>
+        </h1>
+        <p class="lede">
+          <span data-zh>GetTokens 是一个桌面应用，统一管理 auth-file 和 api-key 凭证资产，查看 sidecar 运行状态，维护中转服务配置。</span>
+          <span data-en>A desktop app to manage auth-file and api-key credential assets in one place, inspect sidecar status, and maintain relay configurations.</span>
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#download">
+            <span data-zh>下载 GetTokens</span>
+            <span data-en>Download GetTokens</span>
+            <span aria-hidden="true">↓</span>
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/AxApp/GetTokens" target="_blank" rel="noopener">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" style="width:16px;height:16px;">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            <span data-zh>查看源码</span>
+            <span data-en>View Source</span>
+          </a>
+        </div>
+        <p class="hero-note">
+          <span data-zh>免费开源 · 目前支持 macOS</span>
+          <span data-en>Free & Open Source · macOS supported</span>
+        </p>
+      </header>
+    </div>
+
+    <!-- PRODUCT SCREENSHOTS -->
+    <div class="chrome">
+      <div class="carousel" id="carousel">
+        <div class="carousel-track">
+          <div class="carousel-slide">
+            <img src="assets/screenshot-accounts.png" alt="GetTokens Accounts" loading="lazy" />
+          </div>
+          <div class="carousel-slide">
+            <img src="assets/screenshot-status.png" alt="GetTokens Sidecar Status" loading="lazy" />
+          </div>
+          <div class="carousel-slide">
+            <img src="assets/screenshot-codex.png" alt="GetTokens Codex" loading="lazy" />
+          </div>
+          <div class="carousel-slide">
+            <img src="assets/screenshot-proxy-pool.png" alt="GetTokens Proxy Pool" loading="lazy" />
+          </div>
+          <div class="carousel-slide">
+            <img src="assets/screenshot-settings.png" alt="GetTokens Settings" loading="lazy" />
+          </div>
+        </div>
+        <button class="carousel-arrow prev" aria-label="Previous">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="carousel-arrow next" aria-label="Next">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+      <div class="carousel-dots" id="carousel-dots"></div>
+    </div>
+
+    <!-- FEATURES -->
+    <section id="features">
+      <div class="section-eyebrow">
+        <span data-zh>核心功能</span>
+        <span data-en>Core Features</span>
+      </div>
+      <h2>
+        <span data-zh>Not just a key store. <em>A credential workspace.</em></span>
+        <span data-en>Not just a key store. <em>A credential workspace.</em></span>
+      </h2>
+      <p class="section-lede">
+        <span data-zh>统一管理所有 AI 凭证，一个桌面应用搞定。</span>
+        <span data-en>All your AI credentials, one desktop app.</span>
+      </p>
+
+      <div class="features">
+        <div class="card">
+          <div class="card-icon"> </div>
+          <h3 data-zh>统一账号池</h3>
+          <h3 data-en>Unified Account Pool</h3>
+          <p data-zh>同时管理 auth-file 和 api-key 两类凭证资产，集中维护、快速切换。</p>
+          <p data-en>Manage both auth-file and api-key credential assets in one place, with easy switching.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"> </div>
+          <h3 data-zh>Sidecar 状态面板</h3>
+          <h3 data-en>Sidecar Status Panel</h3>
+          <p data-zh>查看本地后端服务状态、端口、健康检查结果和调试请求。</p>
+          <p data-en>Inspect local backend status, port, health check results, and debug requests.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon">⚙️</div>
+          <h3 data-zh>Relay 配置工作台</h3>
+          <h3 data-en>Relay Configuration</h3>
+          <p data-zh>生成和复制接入配置，查看当前生效的轮动与重试策略。</p>
+          <p data-en>Generate and copy client config, inspect active routing and retry strategy.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"> </div>
+          <h3 data-zh>Deep Link 导入</h3>
+          <h3 data-en>Deep Link Import</h3>
+          <p data-zh>通过 gettokens:// 协议一键导入凭证，无需手动复制粘贴。</p>
+          <p data-en>Import credentials via gettokens:// protocol — no copy-paste needed.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"> </div>
+          <h3 data-zh>自动更新</h3>
+          <h3 data-en>Auto Update</h3>
+          <p data-zh>内置安全更新机制，保持最新版本，无需手动下载。</p>
+          <p data-en>Built-in safe update mechanism keeps you on the latest version.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon"> </div>
+          <h3 data-zh>跨平台支持</h3>
+          <h3 data-en>Cross-Platform</h3>
+          <p data-zh>macOS 现已支持，Windows 和 Linux 即将推出。</p>
+          <p data-en>macOS available now. Windows and Linux coming soon.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- DOWNLOAD -->
+    <section id="download">
+      <div class="download-wrap">
+        <div class="section-eyebrow" style="margin-bottom: 10px;">
+          <span data-zh>免费开源</span>
+          <span data-en>Free & Open Source</span>
+        </div>
+        <h2 style="margin-bottom: 14px;">
+          <span data-zh>下载 GetTokens</span>
+          <span data-en>Download GetTokens</span>
+        </h2>
+        <p class="section-lede" style="margin-bottom: 24px;">
+          <span data-zh>macOS 桌面应用，支持 Apple Silicon 和 Intel 芯片。</span>
+          <span data-en>macOS desktop app for Apple Silicon and Intel.</span>
+        </p>
+        <p style="text-align: center; margin: 8px 0 4px;">
+          <span class="version-badge" id="version-badge">v0.0.0</span>
+        </p>
+        <div class="platforms">
+          <a class="platform download-btn" id="dl-mac-arm64" href="https://github.com/AxApp/GetTokens/releases" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.6.9-.8 0-1.9-.9-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.1 1.7 2.4 2.9 2.4 1.2 0 1.6-.7 3-.7 1.4 0 1.8.7 3 .7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.4-1-2.4-3.9zm-2.4-7c.6-.8 1.1-1.9 1-3-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2-.5 2.7-1.3z"/></svg>
+            macOS <span class="arch">Apple Silicon</span>
+          </a>
+          <a class="platform download-btn" id="dl-mac-x64" href="https://github.com/AxApp/GetTokens/releases" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.6.9-.8 0-1.9-.9-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.1 1.7 2.4 2.9 2.4 1.2 0 1.6-.7 3-.7 1.4 0 1.8.7 3 .7 1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7 0 0-2.4-1-2.4-3.9zm-2.4-7c.6-.8 1.1-1.9 1-3-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2-.5 2.7-1.3z"/></svg>
+            macOS <span class="arch">Intel</span>
+          </a>
+        </div>
+        <p style="margin-top: 20px;">
+          <a class="foot-link" href="https://github.com/AxApp/GetTokens/releases" target="_blank" rel="noopener" style="font-size: 13px;">
+            <span data-zh>查看所有版本 →</span>
+            <span data-en>View all releases →</span>
+          </a>
+        </p>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <div>© 2026 GetTokens · MIT License</div>
+      <div class="foot-links">
+        <a href="https://github.com/AxApp/GetTokens" target="_blank" rel="noopener" class="foot-link">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+        <a href="https://github.com/AxApp/GetTokens/releases" target="_blank" rel="noopener" class="foot-link">
+          <span data-zh>更新日志</span>
+          <span data-en>Changelog</span>
+        </a>
+      </div>
+    </footer>
+
+    <script>
+      // i18n toggle
+      const body = document.body;
+      const langToggle = document.getElementById('lang-toggle');
+      langToggle.addEventListener('click', () => {
+        const isZh = body.classList.contains('lang-zh');
+        body.classList.toggle('lang-zh', !isZh);
+        body.classList.toggle('lang-en', isZh);
+        langToggle.textContent = isZh ? '中' : 'EN';
+        document.documentElement.lang = isZh ? 'en' : 'zh-CN';
+      });
+
+      // GitHub stars + version + direct download links
+      Promise.all([
+        fetch('https://api.github.com/repos/AxApp/GetTokens').then(r => r.ok ? r.json() : null),
+        fetch('https://api.github.com/repos/AxApp/GetTokens/releases/latest').then(r => r.ok ? r.json() : null),
+      ]).then(([repo, release]) => {
+        if (repo && repo.stargazers_count != null) {
+          document.getElementById('gh-star-count').textContent = repo.stargazers_count;
+        }
+        if (release && release.tag_name) {
+          document.getElementById('version-badge').textContent = release.tag_name;
+          // Set direct download links (releases/download/ triggers direct file download)
+          if (release.assets) {
+            const tag = release.tag_name;
+            for (const asset of release.assets) {
+              const name = asset.name.toLowerCase();
+              if (name.includes('applesilicon') && name.endsWith('.dmg')) {
+                document.getElementById('dl-mac-arm64').href =
+                  `https://github.com/AxApp/GetTokens/releases/download/${tag}/${asset.name}`;
+              } else if (name.includes('intel') && name.endsWith('.dmg')) {
+                document.getElementById('dl-mac-x64').href =
+                  `https://github.com/AxApp/GetTokens/releases/download/${tag}/${asset.name}`;
+              }
+            }
+          }
+        }
+      }).catch(() => {});
+
+      // Carousel
+      (function () {
+        const track = document.querySelector('.carousel-track');
+        const slides = document.querySelectorAll('.carousel-slide');
+        const dotsWrap = document.getElementById('carousel-dots');
+        const total = slides.length;
+        let current = 0;
+        let timer;
+
+        // build dots
+        for (let i = 0; i < total; i++) {
+          const dot = document.createElement('button');
+          dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+          dot.setAttribute('aria-label', `Slide ${i + 1}`);
+          dot.addEventListener('click', () => go(i));
+          dotsWrap.appendChild(dot);
+        }
+
+        function go(i) {
+          current = (i + total) % total;
+          track.style.transform = `translateX(-${current * 100}%)`;
+          dotsWrap.querySelectorAll('.carousel-dot').forEach((d, j) => d.classList.toggle('active', j === current));
+          resetTimer();
+        }
+
+        document.querySelector('.carousel-arrow.prev').addEventListener('click', () => go(current - 1));
+        document.querySelector('.carousel-arrow.next').addEventListener('click', () => go(current + 1));
+
+        function resetTimer() { clearInterval(timer); timer = setInterval(() => go(current + 1), 4000); }
+        resetTimer();
+      })();
+
+      // Smooth scroll
+      document.querySelectorAll('a[href^="#"]').forEach(a => {
+        a.addEventListener('click', e => {
+          const href = a.getAttribute('href');
+          if (!href || href === '#') return;
+          const target = document.querySelector(href);
+          if (target) { e.preventDefault(); target.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        });
+      });
+    </script>
+  </body>
+</html>
