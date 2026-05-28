@@ -167,7 +167,7 @@ export const designSystemStoryGroups = [
   {
     id: 'feature-components',
     title: '业务组件',
-    description: '已用 mock 数据纳入设计系统的业务级组件。',
+    description: '已用 mock 数据纳入 5173 应用开发态设计系统的业务级组件。',
     stories: [
       {
         id: 'debug-panel-components',

@@ -109,6 +109,32 @@ test('design system story stats match flattened catalog', () => {
   assert.ok(stats.storyCount >= 10);
 });
 
+test('storybook public catalog excludes full business components', async () => {
+  const storybookConfigSource = await readFile(new URL('../../../.storybook/main.ts', import.meta.url), 'utf8');
+  const storybookStoryPaths = Array.from(storybookConfigSource.matchAll(/'([^']+\.stories\.\@\(ts\|tsx\|mdx\))'/g))
+    .map((match) => match[1]);
+  const featureComponentGroup = getCatalogGroup('feature-components');
+
+  assert.deepEqual(storybookStoryPaths, [
+    '../src/stories/tokens/**/*.stories.@(ts|tsx|mdx)',
+    '../src/stories/primitives/**/*.stories.@(ts|tsx|mdx)',
+    '../src/components/ui/**/*.stories.@(ts|tsx|mdx)',
+  ]);
+  assert.doesNotMatch(storybookConfigSource, /\.\.\/src\/\*\*\/\*\.stories/);
+  assert.doesNotMatch(storybookConfigSource, /features\/\*\*/);
+  assert.ok(featureComponentGroup, 'business design-system catalog stays assigned to the 5173 app entry');
+
+  for (const story of featureComponentGroup.stories) {
+    assert.match(story.path, /frontend\/src\/features\//, `${story.path} must stay in the 5173 business design-system catalog`);
+    assert.match(story.storybookTitle, /Design System\/业务组件/, `${story.storybookTitle} must remain a business design-system title`);
+  }
+
+  for (const story of flattenDesignSystemStories(designSystemStoryGroups).filter((item) => item.path.includes('/components/ui/') || item.path.includes('/stories/'))) {
+    assert.doesNotMatch(story.path, /frontend\/src\/features\//, `${story.path} must stay out of the public Storybook catalog`);
+    assert.doesNotMatch(story.storybookTitle, /Design System\/业务组件/, `${story.storybookTitle} must stay out of Storybook 6006`);
+  }
+});
+
 test('modal frame is admitted as a shared design-system component', () => {
   const componentsGroup = getCatalogGroup('components');
   assert.ok(componentsGroup);
