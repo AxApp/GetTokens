@@ -9,6 +9,7 @@ import {
   DESIGN_SYSTEM_STORYBOOK_URL,
   designSystemStoryGroups,
   getDesignSystemStoryStats,
+  resolveDesignSystemInspectOpenURL,
   resolveDesignSystemStorybookOpenURL,
   resolveDesignSystemWebOpenURL,
 } from './storyCatalog';
@@ -20,6 +21,9 @@ export default function DesignSystemEntryFeature() {
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
   const webOpenURL = resolveDesignSystemWebOpenURL({
+    origin: typeof window === 'undefined' ? undefined : window.location.origin,
+  });
+  const inspectOpenURL = resolveDesignSystemInspectOpenURL({
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
   const showDevWebOpen = import.meta.env.DEV;
@@ -51,15 +55,26 @@ export default function DesignSystemEntryFeature() {
                 {t('design_system.open_storybook')}
               </a>
               {showDevWebOpen ? (
-                <a
-                  className="btn-swiss"
-                  href={webOpenURL}
-                  onClick={(event) => openExternalURL(event, webOpenURL)}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t('design_system.open_web')}
-                </a>
+                <>
+                  <a
+                    className="btn-swiss"
+                    href={inspectOpenURL}
+                    onClick={(event) => openExternalURL(event, inspectOpenURL)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('design_system.inspect_elements')}
+                  </a>
+                  <a
+                    className="btn-swiss"
+                    href={webOpenURL}
+                    onClick={(event) => openExternalURL(event, webOpenURL)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('design_system.open_web')}
+                  </a>
+                </>
               ) : null}
             </div>
           }

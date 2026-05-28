@@ -141,9 +141,7 @@ export default function useAccountsPageState({
   const [apiKeyFormError, setApiKeyFormError] = useState('');
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [apiKeyForm, setApiKeyForm] = useState<ApiKeyFormState>(emptyApiKeyForm);
-  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
-  const [pasteContent, setPasteContent] = useState('');
-  const [pasteError, setPasteError] = useState('');
+  const [isAccountImportModalOpen, setIsAccountImportModalOpen] = useState(false);
   const [accountActionNotice, setAccountActionNotice] = useState<AccountActionNotice | null>(null);
   const [isHeaderActionsMenuOpen, setIsHeaderActionsMenuOpen] = useState(false);
   const [oauthBanner, setOAuthBanner] = useState<OAuthBanner>(null);
@@ -635,10 +633,9 @@ export default function useAccountsPageState({
     runSelectedBulkRefresh,
     runAccountsBulkSetDisabled,
     runSelectedBulkSetDisabled,
-    uploadAccounts,
     openApiKeyModal,
     submitApiKeyForm,
-    submitPasteImport,
+    submitAccountImport,
     exportSelectedAccounts,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,
@@ -649,7 +646,6 @@ export default function useAccountsPageState({
     trackRequest,
     apiKeyForm,
     accounts,
-    pasteContent,
     selectedAccount,
     selectedAccounts,
     setSelectedAccount,
@@ -658,9 +654,6 @@ export default function useAccountsPageState({
     setApiKeyFormError,
     setIsApiKeyModalOpen,
     setApiKeyForm,
-    setIsPasteModalOpen,
-    setPasteContent,
-    setPasteError,
     setSearchTerm,
     setSelectedAccountIDs,
     setAccountActionNotice,
@@ -714,9 +707,7 @@ export default function useAccountsPageState({
           },
     isApiKeyModalOpen,
     apiKeyForm,
-    isPasteModalOpen,
-    pasteContent,
-    pasteError,
+    isAccountImportModalOpen,
     codexQuotaByName,
     accountUsageByID,
     accountRateLimitByID,
@@ -752,16 +743,13 @@ export default function useAccountsPageState({
     setOAuthDialog,
     setIsApiKeyModalOpen,
     setApiKeyForm,
-    setIsPasteModalOpen,
-    setPasteContent,
-    setPasteError,
+    setIsAccountImportModalOpen,
     setAccountActionNotice,
     setSelectedAccountIDs,
     setIsHeaderActionsMenuOpen,
-    uploadAccounts,
     openApiKeyModal,
     submitApiKeyForm,
-    submitPasteImport,
+    submitAccountImport,
     toggleAccountSelection,
     toggleSelectAllFiltered,
     toggleSelectionMode,

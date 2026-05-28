@@ -9,19 +9,15 @@ import {
 import AccountDetailModalFrame from '../../accounts/components/AccountDetailModalFrame';
 import {
   AccountBillingSection,
-  AccountCredentialsSection,
+  AccountCredentialVerifySection,
   AccountQuotaSection,
-  AccountRuntimeSnapshotSection,
-  AccountVerifySection,
   type APIKeyVerifyState,
 } from '../../accounts/components/AccountDetailSections';
 import {
   AccountDetailBody,
-  AccountDetailEvidenceGrid,
   AccountDetailEmptyState,
   AccountDetailModuleStack,
   AccountDetailNotice,
-  AccountDetailOverviewGrid,
   AccountDetailPill,
   AccountDetailSection,
 } from '../../accounts/components/AccountDetailPrimitives';
@@ -39,7 +35,7 @@ import type { RateLimitState, RateLimitStrategyMeta } from '../../accounts/model
 import type { CodexQuotaState } from '../../accounts/model/types';
 import { toErrorMessage } from '../../../utils/error';
 import { ModelCombobox } from './ModelCombobox';
-import { buildEndpointLabel, sourceKindLabel } from './codexAccountPresentation';
+import { buildEndpointLabel } from './codexAccountPresentation';
 import {
   buildCodexAccountDetailModulePlan,
   buildCodexQuotaSummaryAccount,
@@ -49,6 +45,80 @@ import {
   type CodexAccountRow,
   type CodexModelMappingRow,
 } from '../model/codexAccountList';
+import { sourceKindLabel } from './codexAccountPresentation';
+
+export function CodexAccountDetailHeader({
+  row,
+  t,
+  onClose,
+}: {
+  row: CodexAccountRow;
+  t: (key: string) => string;
+  onClose: () => void;
+}) {
+  const endpointLabel = buildEndpointLabel(row);
+
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0 space-y-4">
+        <div className="flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-mono uppercase tracking-[0.18em] text-[var(--text-muted)]">
+          <span>{sourceKindLabel(t, row.sourceKind)}</span>
+          <span>·</span>
+          <span className="break-all">{row.id}</span>
+        </div>
+
+        <div className="flex min-w-0 flex-wrap items-center gap-3">
+          <h3 className="truncate text-lg font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
+            {row.label}
+          </h3>
+          <AccountDetailPill tone={row.requestable ? 'success' : 'danger'}>
+            {row.requestable ? t('codex.account_list_state_requestable') : t('codex.account_list_state_blocked')}
+          </AccountDetailPill>
+        </div>
+
+        <dl
+          data-codex-account-detail-header="summary"
+          className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-5"
+        >
+          <AccountDetailHeaderMeta label={t('common.type')} value={sourceKindLabel(t, row.sourceKind)} />
+          <AccountDetailHeaderMeta label={t('common.status')} value={row.status || '—'} />
+          <AccountDetailHeaderMeta label={t('codex.account_list_route')} value={endpointLabel || '—'} />
+          <AccountDetailHeaderMeta
+            label={t('codex.account_list_priority')}
+            value={row.priority === undefined ? '—' : `#${row.priority}`}
+          />
+          <AccountDetailHeaderMeta
+            label={t('common.enable')}
+            value={row.disabled ? t('common.no') : t('common.yes')}
+          />
+        </dl>
+      </div>
+
+      <button type="button" onClick={onClose} className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]" aria-label={t('common.close')}>
+        <X className="h-4 w-4" strokeWidth={4} />
+      </button>
+    </div>
+  );
+}
+
+function AccountDetailHeaderMeta({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        {label}
+      </div>
+      <div className="mt-1 break-words font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-primary)]">
+        {value}
+      </div>
+    </div>
+  );
+}
 
 export function CodexAccountDetailModal({
   row,
@@ -90,7 +160,6 @@ export function CodexAccountDetailModal({
   onSaveModelMappings: (mappings: CodexModelMappingRow[]) => Promise<void>;
 }) {
   const account = useMemo(() => buildCodexQuotaSummaryAccount(row), [row]);
-  const endpointLabel = buildEndpointLabel(row);
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
   const modulePlan = useMemo(() => buildCodexAccountDetailModulePlan(row), [row]);
   const isApiLikeAccount = row.sourceKind !== 'codex-auth-file';
@@ -138,18 +207,6 @@ export function CodexAccountDetailModal({
   }, [configDraft, isApiLikeAccount, proxyRouteError]);
   const hasDetailChanges = configDirty || mappingDirty || rateLimitDirty;
   const modelSectionTitle = t('codex.account_list_model_mapping');
-  const evidenceRows: Array<{ label: string; value: string; title?: string }> = [
-    ['Asset', row.id],
-    [t('common.type'), sourceKindLabel(t, row.sourceKind)],
-    [t('common.status'), row.status || '—'],
-    [t('codex.account_list_route'), endpointLabel || '—'],
-    [t('codex.account_list_priority'), row.priority === undefined ? '—' : String(row.priority)],
-    [
-      t('codex.account_list_request_state'),
-      row.requestable ? t('codex.account_list_state_requestable') : t('codex.account_list_state_blocked'),
-    ],
-    [t('common.enable'), row.disabled ? t('common.no') : t('common.yes')],
-  ].map(([label, value]) => ({ label, value, title: value }));
 
   useEffect(() => {
     setConfigDraft(buildApiKeyConfigDraft(account));
@@ -202,10 +259,12 @@ export function CodexAccountDetailModal({
     switch (moduleID) {
       case 'credentials':
         return (
-          <AccountCredentialsSection
+          <AccountCredentialVerifySection
             key={moduleID}
             draft={configDraft}
             setDraft={setConfigDraft}
+            verifyState={verifyState}
+            modelNames={modelOptionNames}
           />
         );
       case 'auth-file-actions':
@@ -235,15 +294,6 @@ export function CodexAccountDetailModal({
             t={t}
           />
         );
-      case 'verify':
-        return (
-          <AccountVerifySection
-            key={moduleID}
-            draft={configDraft}
-            verifyState={verifyState}
-            modelNames={modelOptionNames}
-          />
-        );
       case 'quota':
         return (
           <AccountQuotaSection
@@ -252,6 +302,7 @@ export function CodexAccountDetailModal({
             draft={configDraft}
             setDraft={setConfigDraft}
             quotaState={quotaState}
+            quotaDisplay={quotaDisplay}
           />
         );
       case 'billing':
@@ -294,29 +345,7 @@ export function CodexAccountDetailModal({
   return (
     <AccountDetailModalFrame
       onClose={onClose}
-      header={
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 space-y-2">
-            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-              {t('codex.account_list_detail_title')}
-            </div>
-            <h3 className="truncate text-lg font-black uppercase italic tracking-tighter text-[var(--text-primary)]">
-              {row.label}
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              <AccountDetailPill>
-                {sourceKindLabel(t, row.sourceKind)}
-              </AccountDetailPill>
-              <AccountDetailPill tone={row.requestable ? 'success' : 'danger'}>
-                {row.requestable ? t('codex.account_list_state_requestable') : t('codex.account_list_state_blocked')}
-              </AccountDetailPill>
-            </div>
-          </div>
-          <button type="button" onClick={onClose} className="btn-swiss !p-1 !shadow-none hover:bg-[var(--bg-surface)]" aria-label={t('common.close')}>
-            <X className="h-4 w-4" strokeWidth={4} />
-          </button>
-        </div>
-      }
+      header={<CodexAccountDetailHeader row={row} t={t} onClose={onClose} />}
       footer={
         isApiLikeAccount || editableModelMappings || rateLimitDirty ? (
           <>
@@ -349,34 +378,11 @@ export function CodexAccountDetailModal({
           </AccountDetailNotice>
         ) : null}
 
-        <AccountDetailOverviewGrid
-          runtime={
-            <AccountRuntimeSnapshotSection
-              usageSummary={usageSummary}
-              quotaDisplay={quotaDisplay}
-              billing={billing}
-            />
-          }
-          evidence={<CodexAccountEvidenceSection rows={evidenceRows} />}
-        />
-
         <AccountDetailModuleStack layout="cards">
           {modulePlan.map(renderDetailModule)}
         </AccountDetailModuleStack>
       </AccountDetailBody>
     </AccountDetailModalFrame>
-  );
-}
-
-function CodexAccountEvidenceSection({
-  rows,
-}: {
-  rows: Array<{ label: string; value: string; title?: string }>;
-}) {
-  return (
-    <AccountDetailSection componentName="CodexAccountEvidenceSection" density="dense" muted eyebrow="Audit" title="EVIDENCE">
-      <AccountDetailEvidenceGrid rows={rows} />
-    </AccountDetailSection>
   );
 }
 

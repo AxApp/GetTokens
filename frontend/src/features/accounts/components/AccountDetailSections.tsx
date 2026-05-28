@@ -17,7 +17,7 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import { buildAccountEvidenceRows, type AccountEvidenceRow } from '../model/accountEvidence';
 import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
-import { BillingBalance, QuotaBars } from './CardSections';
+import { QuotaBars } from './CardSections';
 import {
   AccountDetailEvidenceGrid,
   AccountDetailPill,
@@ -40,12 +40,15 @@ export interface AccountDetailHeaderProps {
   isReauthing?: boolean;
 }
 
-export interface AccountCredentialsSectionProps {
+export interface AccountCredentialVerifySectionProps {
   draft: ApiKeyConfigDraft;
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
+  verifyState?: APIKeyVerifyState;
+  modelNames?: string[];
+  onVerify?: (input: { apiKey: string; baseUrl: string; model: string }) => void;
 }
 
-export interface AccountVerifySectionProps {
+interface VerifyConnectionPanelProps {
   draft: ApiKeyConfigDraft;
   verifyState?: APIKeyVerifyState;
   modelNames?: string[];
@@ -57,6 +60,7 @@ export interface AccountQuotaSectionProps {
   draft: ApiKeyConfigDraft;
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
   quotaState?: CodexQuotaState;
+  quotaDisplay?: QuotaDisplay;
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }) => Promise<any>;
 }
 
@@ -199,30 +203,51 @@ export function AccountDetailHeader({
   );
 }
 
-export function AccountCredentialsSection({
+export function AccountCredentialVerifySection({
   draft,
   setDraft,
-}: AccountCredentialsSectionProps) {
+  verifyState,
+  modelNames,
+  onVerify,
+}: AccountCredentialVerifySectionProps) {
   return (
-    <AccountDetailSection componentName="AccountCredentialsSection" eyebrow="Credential" title="凭据">
-      <div data-account-credential-fields="stacked" className="grid gap-3">
-        <CredentialInputField
-          label="API 密钥"
-          value={draft.apiKey}
-          onChange={(value) => setDraft((prev) => ({ ...prev, apiKey: value }))}
-          onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
-        />
-        <CredentialInputField
-          label="基础 URL"
-          value={draft.baseUrl}
-          onChange={(value) => setDraft((prev) => ({ ...prev, baseUrl: value }))}
-          onCopy={() => void navigator.clipboard.writeText(draft.baseUrl)}
-        />
-        <CredentialInputField
-          label="前缀"
-          value={draft.prefix}
-          placeholder="/v1"
-          onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
+    <AccountDetailSection
+      componentName="AccountCredentialVerifySection"
+      eyebrow="Credential / Connection"
+      title="凭据与验证"
+    >
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <section data-account-credential-verify-layout="combined" className="grid gap-3">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            CREDENTIAL
+          </div>
+          <div data-account-credential-fields="stacked" className="grid gap-3">
+            <CredentialInputField
+              label="API 密钥"
+              value={draft.apiKey}
+              onChange={(value) => setDraft((prev) => ({ ...prev, apiKey: value }))}
+              onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
+            />
+            <CredentialInputField
+              label="基础 URL"
+              value={draft.baseUrl}
+              onChange={(value) => setDraft((prev) => ({ ...prev, baseUrl: value }))}
+              onCopy={() => void navigator.clipboard.writeText(draft.baseUrl)}
+            />
+            <CredentialInputField
+              label="前缀"
+              value={draft.prefix}
+              placeholder="/v1"
+              onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
+            />
+          </div>
+        </section>
+
+        <VerifyConnectionPanel
+          draft={draft}
+          verifyState={verifyState}
+          modelNames={modelNames}
+          onVerify={onVerify}
         />
       </div>
     </AccountDetailSection>
@@ -273,12 +298,12 @@ function CredentialInputField({
   );
 }
 
-export function AccountVerifySection({
+function VerifyConnectionPanel({
   draft,
   verifyState,
   modelNames,
   onVerify,
-}: AccountVerifySectionProps) {
+}: VerifyConnectionPanelProps) {
   const [verifyModel, setVerifyModel] = useState(DEFAULT_VERIFY_MODEL);
   const modelMenuRef = useRef<HTMLDivElement | null>(null);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
@@ -316,7 +341,13 @@ export function AccountVerifySection({
   }, [isModelMenuOpen]);
 
   return (
-    <AccountDetailSection componentName="AccountVerifySection" eyebrow="Connection" title="验证连接">
+    <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        CONNECTION
+      </div>
+      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+        验证连接
+      </div>
       {vs.lastVerifiedAt ? (
         <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
           上次验证：{new Date(vs.lastVerifiedAt).toLocaleString()}
@@ -380,7 +411,7 @@ export function AccountVerifySection({
           {vs.message}
         </div>
       ) : null}
-    </AccountDetailSection>
+    </section>
   );
 }
 
@@ -389,12 +420,15 @@ export function AccountQuotaSection({
   draft,
   setDraft,
   quotaState,
+  quotaDisplay,
   onTestQuotaCurl,
 }: AccountQuotaSectionProps) {
+  const { t } = useI18n();
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
   const liveWindows = quotaState?.quota ? selectQuotaWindows(quotaState.quota) : [];
+  const quotaWindows = quotaDisplay?.windows ?? [];
 
   useEffect(() => {
     setTestStatus('idle');
@@ -428,6 +462,15 @@ export function AccountQuotaSection({
       title="额度追踪"
       meta={liveWindows.length > 0 ? `实时 ${liveWindows.length} 个窗口` : undefined}
     >
+
+      {quotaWindows.length > 0 ? (
+        <div className="grid gap-2">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            QUOTA
+          </div>
+          {quotaDisplay ? <QuotaBars quotaDisplay={quotaDisplay} t={t} /> : null}
+        </div>
+      ) : null}
 
       <label className="flex items-center gap-2">
         <input
@@ -610,15 +653,20 @@ export function AccountBillingSection({
       meta={liveBilling ? '实时余额已就绪' : undefined}
     >
 
-      {liveBilling ? (
-        <div className="border-2 border-[var(--border-color)]">
-          <BillingBalance billing={liveBilling} />
+      {liveBilling?.isAvailable && liveBilling.balances.length > 0 ? (
+        <div className="grid gap-2 content-start">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            BALANCE
+          </div>
+          {liveBilling.balances.map((balance, index) => (
+            <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
+              <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
+              <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
+              <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
+            </div>
+          ))}
         </div>
-      ) : (
-        <div className="border-2 border-dashed border-[var(--border-color)] px-4 py-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
-          当前账号暂无余额数据。
-        </div>
-      )}
+      ) : null}
 
       <label className="flex items-center gap-2">
         <input
@@ -651,8 +699,17 @@ export function AccountBillingSection({
       </div>
 
       {testStatus === 'success' && testBilling ? (
-        <div className="border-2 border-[var(--border-color)]">
-          <BillingBalance billing={testBilling} />
+        <div className="grid gap-2 content-start">
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            BALANCE (TEST)
+          </div>
+          {testBilling.balances.map((balance, index) => (
+            <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
+              <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
+              <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
+              <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
+            </div>
+          ))}
         </div>
       ) : null}
       {testStatus === 'success' && testMessage ? (

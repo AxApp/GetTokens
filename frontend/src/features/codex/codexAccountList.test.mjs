@@ -125,16 +125,29 @@ test('canEditCodexModelMappings allows codex api key mappings in detail modal ed
 test('buildCodexAccountDetailModulePlan merges account detail modules with model routing by account type', () => {
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'openai-compatible' }),
-    ['credentials', 'proxy-route', 'rate-limit', 'verify', 'quota', 'billing', 'model-routing'],
+    ['credentials', 'proxy-route', 'rate-limit', 'quota', 'billing', 'model-routing'],
   );
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'codex-api-key' }),
-    ['credentials', 'proxy-route', 'rate-limit', 'verify', 'quota', 'billing', 'model-routing'],
+    ['credentials', 'proxy-route', 'rate-limit', 'quota', 'billing', 'model-routing'],
   );
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'codex-auth-file' }),
     ['auth-file-actions', 'models', 'rate-limit', 'model-routing'],
   );
+});
+
+test('codex account detail header keeps labeled identity and metadata blocks', async () => {
+  const source = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /export function CodexAccountDetailHeader/);
+  assert.match(source, /sourceKindLabel\(t, row\.sourceKind\)/);
+  assert.match(source, /data-codex-account-detail-header="summary"/);
+  assert.match(source, /t\('common\.type'\)/);
+  assert.match(source, /t\('common\.status'\)/);
+  assert.match(source, /t\('codex\.account_list_route'\)/);
+  assert.match(source, /t\('codex\.account_list_priority'\)/);
+  assert.match(source, /t\('common\.enable'\)/);
 });
 
 test('buildCodexAccountRows keeps disabled or errored accounts in order but marks them not requestable', () => {

@@ -1065,6 +1065,244 @@ export async function loadClaudeSessionManagementDetail(sessionID) {
   return (await parseClaudeSessionFile(claudeProjectsRoot, absolutePath)).detail;
 }
 
+const ANALYSIS_STOP_WORDS = new Set([
+  '一个', '一些', '不是', '不会', '不应', '以及', '但是', '已经', '我们', '这个', '那个', '需要', '应该', '可以', '进行', '通过', '如果', '因为', '所以', '然后', '当前', '页面',
+  'the', 'and', 'for', 'with', 'from', 'this', 'that', 'into', 'true', 'false',
+]);
+
+function tokenizeAnalysisText(text) {
+  return String(text || '')
+    .toLowerCase()
+    .replace(/[^\p{Script=Han}\p{Letter}\p{Number}_\-.]+/gu, ' ')
+    .split(/\s+/)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 1 && !ANALYSIS_STOP_WORDS.has(term) && /[\p{Script=Han}\p{Letter}]/u.test(term));
+}
+
+function topAnalysisKeywords(termCounts, termSessions, limit) {
+  const items = Array.from(termCounts.entries()).map(([term, count]) => ({
+    term,
+    count,
+    sessionCount: termSessions.get(term)?.size || 0,
+    score: Math.round(count * (1 + Math.log1p(termSessions.get(term)?.size || 0)) * 100) / 100,
+  }));
+  items.sort((left, right) => {
+    if (right.count !== left.count) return right.count - left.count;
+    if (right.sessionCount !== left.sessionCount) return right.sessionCount - left.sessionCount;
+    return left.term.localeCompare(right.term);
+  });
+  return limit > 0 ? items.slice(0, limit) : items;
+}
+
+function roleContributions(roleMessages, roleTerms, totalTerms) {
+  return Array.from(roleMessages.entries())
+    .map(([role, messageCount]) => {
+      const termCount = roleTerms.get(role) || 0;
+      return {
+        role,
+        messageCount,
+        termCount,
+        share: totalTerms > 0 ? Math.round((termCount / totalTerms) * 100) / 100 : 0,
+      };
+    })
+    .sort((left, right) => {
+      if (right.termCount !== left.termCount) return right.termCount - left.termCount;
+      if (right.messageCount !== left.messageCount) return right.messageCount - left.messageCount;
+      return left.role.localeCompare(right.role);
+    });
+}
+
+function addTermSession(termSessions, term, sessionID) {
+  let sessions = termSessions.get(term);
+  if (!sessions) {
+    sessions = new Set();
+    termSessions.set(term, sessions);
+  }
+  sessions.add(sessionID);
+}
+
+function analyzeSessionDetailForDev(detail) {
+  const termCounts = new Map();
+  const termSessions = new Map();
+  const roleMessages = new Map();
+  const roleTerms = new Map();
+  let messageCount = 0;
+  let termCount = 0;
+
+  for (const message of detail.messages || []) {
+    if (!['user', 'assistant', 'reasoning', 'tool_call', 'tool_result'].includes(message.role)) {
+      continue;
+    }
+    const terms = tokenizeAnalysisText(`${message.title || ''} ${message.summary || ''} ${message.content || ''}`);
+    if (!terms.length) {
+      continue;
+    }
+    messageCount += 1;
+    termCount += terms.length;
+    roleMessages.set(message.role, (roleMessages.get(message.role) || 0) + 1);
+    roleTerms.set(message.role, (roleTerms.get(message.role) || 0) + terms.length);
+    for (const term of terms) {
+      termCounts.set(term, (termCounts.get(term) || 0) + 1);
+      addTermSession(termSessions, term, detail.sessionID);
+    }
+  }
+
+  const keywords = topAnalysisKeywords(termCounts, termSessions, 10);
+  return {
+    sessionID: detail.sessionID,
+    projectID: detail.projectID,
+    projectName: detail.projectName || detail.projectID,
+    title: detail.title,
+    status: detail.status,
+    provider: detail.provider || 'unknown',
+    model: detail.model || '',
+    messageCount,
+    termCount,
+    topicLine: keywords.slice(0, 5).map((item) => item.term).join(' / ') || '—',
+    keywords,
+    roleContributions: roleContributions(roleMessages, roleTerms, termCount),
+  };
+}
+
+export async function analyzeCodexSessions(input = {}) {
+  const snapshot = await loadSessionManagementSnapshot();
+  const selectedIDs = new Set(Array.isArray(input.sessionIDs) ? input.sessionIDs.map(String) : []);
+  const projectID = String(input.projectID || '').trim();
+  const limit = Number.isFinite(Number(input.limit)) ? Number(input.limit) : 0;
+  const candidates = [];
+  for (const project of snapshot.projects || []) {
+    if (projectID && project.id !== projectID) {
+      continue;
+    }
+    for (const session of project.sessions || []) {
+      if (selectedIDs.size > 0 && !selectedIDs.has(session.sessionID || session.id)) {
+        continue;
+      }
+      candidates.push(session.sessionID || session.id);
+    }
+  }
+
+  const analyzeInParallel = limit <= 0 && candidates.length > 1;
+  const globalTermCounts = new Map();
+  const globalTermSessions = new Map();
+  const globalRoleMessages = new Map();
+  const globalRoleTerms = new Map();
+  const projectDrafts = new Map();
+  const sessions = [];
+  let totalMessages = 0;
+  let totalTerms = 0;
+  let skippedSessionCount = 0;
+
+  const summaries = analyzeInParallel
+    ? await mapWithConcurrency(candidates, Math.min(24, Math.max(4, os.cpus().length - 1)), async (sessionID) => {
+      const summary = analyzeSessionDetailForDev(await loadSessionManagementDetail(sessionID));
+      return summary.termCount === 0 ? null : summary;
+    })
+    : [];
+
+  if (analyzeInParallel) {
+    for (const summary of summaries) {
+      if (!summary) {
+        skippedSessionCount += 1;
+        continue;
+      }
+      sessions.push(summary);
+      totalMessages += summary.messageCount;
+      totalTerms += summary.termCount;
+      let project = projectDrafts.get(summary.projectID);
+      if (!project) {
+        project = {
+          projectID: summary.projectID,
+          projectName: summary.projectName,
+          sessionCount: 0,
+          messageCount: 0,
+          termCount: 0,
+          termCounts: new Map(),
+          termSessions: new Map(),
+        };
+        projectDrafts.set(summary.projectID, project);
+      }
+      project.sessionCount += 1;
+      project.messageCount += summary.messageCount;
+      project.termCount += summary.termCount;
+      for (const keyword of summary.keywords) {
+        globalTermCounts.set(keyword.term, (globalTermCounts.get(keyword.term) || 0) + keyword.count);
+        addTermSession(globalTermSessions, keyword.term, summary.sessionID);
+        project.termCounts.set(keyword.term, (project.termCounts.get(keyword.term) || 0) + keyword.count);
+        addTermSession(project.termSessions, keyword.term, summary.sessionID);
+      }
+      for (const contribution of summary.roleContributions) {
+        globalRoleMessages.set(contribution.role, (globalRoleMessages.get(contribution.role) || 0) + contribution.messageCount);
+        globalRoleTerms.set(contribution.role, (globalRoleTerms.get(contribution.role) || 0) + contribution.termCount);
+      }
+    }
+  } else {
+    for (const sessionID of candidates) {
+      if (limit > 0 && sessions.length >= limit) {
+        skippedSessionCount += 1;
+        continue;
+      }
+      const summary = analyzeSessionDetailForDev(await loadSessionManagementDetail(sessionID));
+      if (summary.termCount === 0) {
+        skippedSessionCount += 1;
+        continue;
+      }
+      sessions.push(summary);
+      totalMessages += summary.messageCount;
+      totalTerms += summary.termCount;
+      let project = projectDrafts.get(summary.projectID);
+      if (!project) {
+        project = {
+          projectID: summary.projectID,
+          projectName: summary.projectName,
+          sessionCount: 0,
+          messageCount: 0,
+          termCount: 0,
+          termCounts: new Map(),
+          termSessions: new Map(),
+        };
+        projectDrafts.set(summary.projectID, project);
+      }
+      project.sessionCount += 1;
+      project.messageCount += summary.messageCount;
+      project.termCount += summary.termCount;
+      for (const keyword of summary.keywords) {
+        globalTermCounts.set(keyword.term, (globalTermCounts.get(keyword.term) || 0) + keyword.count);
+        addTermSession(globalTermSessions, keyword.term, summary.sessionID);
+        project.termCounts.set(keyword.term, (project.termCounts.get(keyword.term) || 0) + keyword.count);
+        addTermSession(project.termSessions, keyword.term, summary.sessionID);
+      }
+      for (const contribution of summary.roleContributions) {
+        globalRoleMessages.set(contribution.role, (globalRoleMessages.get(contribution.role) || 0) + contribution.messageCount);
+        globalRoleTerms.set(contribution.role, (globalRoleTerms.get(contribution.role) || 0) + contribution.termCount);
+      }
+    }
+  }
+
+  return {
+    scope: input.scope || (selectedIDs.size > 0 ? 'selected' : 'all'),
+    generatedAt: formatTimestamp(new Date().toISOString()),
+    requestedSessionCount: candidates.length,
+    analyzedSessionCount: sessions.length,
+    skippedSessionCount,
+    totalMessages,
+    totalTerms,
+    keywords: topAnalysisKeywords(globalTermCounts, globalTermSessions, 20),
+    roleContributions: roleContributions(globalRoleMessages, globalRoleTerms, totalTerms),
+    projects: Array.from(projectDrafts.values())
+      .map((project) => ({
+        projectID: project.projectID,
+        projectName: project.projectName,
+        sessionCount: project.sessionCount,
+        messageCount: project.messageCount,
+        termCount: project.termCount,
+        keywords: topAnalysisKeywords(project.termCounts, project.termSessions, 8),
+      }))
+      .sort((left, right) => right.sessionCount - left.sessionCount || left.projectName.localeCompare(right.projectName)),
+    sessions,
+  };
+}
+
 export async function updateSessionManagementProviders({ projectID, mappings }) {
   const normalizedProjectID = String(projectID || '').trim();
   if (!normalizedProjectID) {

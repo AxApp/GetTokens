@@ -19,6 +19,7 @@ import { main } from '../../../wailsjs/go/models';
 import { useDebug } from '../../context/DebugContext';
 import { useI18n } from '../../context/I18nContext';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
+import AccountImportModal from './components/AccountImportModal';
 import AccountLocalCliApplyConfirm from './components/AccountLocalCliApplyConfirm';
 import AccountGroupSection from './components/AccountGroupSection';
 import AccountsHeader from './components/AccountsHeader';
@@ -27,7 +28,6 @@ import ApiKeyComposeModal from './components/ApiKeyComposeModal';
 import CodexOAuthModal from './components/CodexOAuthModal';
 import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeModal';
 import OpenAICompatibleDetailModal from './components/OpenAICompatibleDetailModal';
-import PasteAuthModal from './components/PasteAuthModal';
 import UnifiedComposeModal, { type UnifiedComposeFormState } from './components/UnifiedComposeModal';
 import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
 import { useAccountsPageStateContext } from './AccountsPageStateProvider';
@@ -73,7 +73,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const { t } = useI18n();
   const { trackRequest } = useDebug();
   const pageRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [initialImportPasteContent, setInitialImportPasteContent] = useState('');
   const {
     loading,
     accountsLoaded,
@@ -93,9 +93,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     apiKeyFormError,
     isApiKeyModalOpen,
     apiKeyForm,
-    isPasteModalOpen,
-    pasteContent,
-    pasteError,
+    isAccountImportModalOpen,
     codexQuotaByName,
     accountUsageByID,
     accountRateLimitByID,
@@ -132,16 +130,13 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setOAuthDialog,
     setIsApiKeyModalOpen,
     setApiKeyForm,
-    setIsPasteModalOpen,
-    setPasteContent,
-    setPasteError,
+    setIsAccountImportModalOpen,
     setAccountActionNotice,
     setSelectedAccountIDs,
     setIsHeaderActionsMenuOpen,
-    uploadAccounts,
     openApiKeyModal,
     submitApiKeyForm,
-    submitPasteImport,
+    submitAccountImport,
     toggleAccountSelection,
     toggleSelectAllFiltered,
     toggleSelectionMode,
@@ -739,14 +734,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             ready={ready}
             loading={loading}
             isHeaderActionsMenuOpen={isHeaderActionsMenuOpen}
-            fileInputRef={fileInputRef}
             headerActionsMenuRef={headerActionsMenuRef}
-            onUploadAccounts={uploadAccounts}
             onToggleMenu={() => setIsHeaderActionsMenuOpen((prev) => !prev)}
-            onOpenPasteModal={() => {
-              setPasteError('');
-              setPasteContent(readAccountClipboardFallback());
-              setIsPasteModalOpen(true);
+            onOpenImportModal={() => {
+              setInitialImportPasteContent(readAccountClipboardFallback());
+              setIsAccountImportModalOpen(true);
               setIsHeaderActionsMenuOpen(false);
             }}
             onOpenApiKeyModal={() => {
@@ -1029,17 +1021,18 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         />
       ) : null}
 
-      {isPasteModalOpen ? (
-        <PasteAuthModal
+      {isAccountImportModalOpen ? (
+        <AccountImportModal
           t={t}
-          pasteContent={pasteContent}
-          pasteError={pasteError}
-          onClose={() => setIsPasteModalOpen(false)}
-          onChange={(value) => {
-            setPasteContent(value);
-            setPasteError('');
+          initialPasteContent={initialImportPasteContent}
+          onClose={() => {
+            setIsAccountImportModalOpen(false);
+            setInitialImportPasteContent('');
           }}
-          onSubmit={submitPasteImport}
+          onSubmit={async (items) => {
+            await submitAccountImport(items);
+            setInitialImportPasteContent('');
+          }}
         />
       ) : null}
 

@@ -7,7 +7,7 @@ import { findAccountDetailByID } from '../model/accountDetailSelection.ts';
 test('account detail overview keeps runtime snapshot and evidence as a 50/50 desktop split', async () => {
   const source = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /data-account-detail-overview-layout="split-50-50"/);
+  assert.match(source, /data-account-detail-overview-layout.*'split-50-50'/);
   assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(source, /xl:grid-cols-\[minmax\(0,1fr\)_24rem\]/);
 });
@@ -47,15 +47,19 @@ test('runtime stats render as a compact strip instead of a large stat grid', asy
 test('api key credential fields stack vertically with embedded labels', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
 
+  assert.match(source, /export function AccountCredentialVerifySection/);
   assert.match(source, /data-account-credential-fields="stacked"/);
   assert.match(source, /data-account-credential-field-label="embedded"/);
+  assert.match(source, /data-account-credential-verify-layout="combined"/);
+  assert.doesNotMatch(source, /export function AccountCredentialsSection/);
+  assert.doesNotMatch(source, /export function AccountVerifySection/);
   assert.doesNotMatch(source, /md:grid-cols-2/);
 });
 
 test('account detail preserves api-key edit modules', () => {
   assert.deepEqual(
     buildAccountDetailModulePlan({ credentialSource: 'api-key' }),
-    ['credentials', 'proxy-route', 'rate-limit', 'verify', 'quota', 'billing'],
+    ['credentials', 'proxy-route', 'rate-limit', 'quota', 'billing'],
   );
 });
 

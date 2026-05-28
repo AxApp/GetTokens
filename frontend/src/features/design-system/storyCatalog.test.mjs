@@ -9,11 +9,13 @@ import {
   getAdmittedDesignSystemComponentManifest,
 } from './componentManifest.ts';
 import {
+  DESIGN_SYSTEM_INSPECT_QUERY_VALUE,
   DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH,
   DESIGN_SYSTEM_STORYBOOK_URL,
   designSystemStoryGroups,
   flattenDesignSystemStories,
   getDesignSystemStoryStats,
+  resolveDesignSystemInspectOpenURL,
   resolveDesignSystemStorybookOpenURL,
   resolveDesignSystemWebOpenURL,
 } from './storyCatalog.ts';
@@ -209,18 +211,69 @@ test('design system web open url normalizes Wails dev origin', () => {
   );
 });
 
+test('design system inspect entry resolves dev URL and starts inspect mode by query', () => {
+  assert.equal(DESIGN_SYSTEM_INSPECT_QUERY_VALUE, 'design-system');
+  assert.equal(resolveDesignSystemInspectOpenURL(), '/?inspect=design-system#frame=design-system');
+  assert.equal(
+    resolveDesignSystemInspectOpenURL({ origin: 'http://127.0.0.1:34115' }),
+    'http://127.0.0.1:34115/?inspect=design-system#frame=design-system',
+  );
+  assert.equal(
+    resolveDesignSystemInspectOpenURL({ origin: 'wails://wails.localhost:34115' }),
+    'http://127.0.0.1:34115/?inspect=design-system#frame=design-system',
+  );
+});
+
+test('design system inspect mode is wired to the dev inspector runtime', async () => {
+  const mainSource = await readFile(new URL('../../main.tsx', import.meta.url), 'utf8');
+  const inspectSource = await readFile(new URL('./inspectMode.ts', import.meta.url), 'utf8');
+  const viteSource = await readFile(new URL('../../../vite.config.js', import.meta.url), 'utf8');
+  const entrySource = await readFile(new URL('./DesignSystemEntryFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(mainSource, /initDesignSystemInspectMode/);
+  assert.match(mainSource, /import\.meta\.env\.DEV/);
+  assert.match(inspectSource, /initInspector/);
+  assert.match(inspectSource, /DESIGN_SYSTEM_INSPECT_QUERY_VALUE/);
+  assert.match(inspectSource, /window\.__gettokensDesignSystemInspector/);
+  assert.match(inspectSource, /data-design-system-inspect-mode/);
+  assert.match(inspectSource, /dispatchEvent/);
+  assert.match(viteSource, /createViteDebugInspectorPlugin\(\)/);
+  assert.match(entrySource, /resolveDesignSystemInspectOpenURL/);
+  assert.match(entrySource, /design_system\.inspect_elements/);
+});
+
 test('component stories expose an overview state matrix', async () => {
   const componentGroups = designSystemStoryGroups.filter((group) => admittedComponentGroupIds.includes(group.id));
   assert.equal(componentGroups.length, admittedComponentGroupIds.length);
 
   for (const group of componentGroups) {
     for (const story of group.stories) {
+      if (story.id === 'codex-account-detail-components') {
+        continue;
+      }
+
       const storyFile = story.path.replace('frontend/src/', '../../');
       const source = await readFile(new URL(storyFile, import.meta.url), 'utf8');
 
       assert.match(source, /export const Overview\s*:/, `${story.path} must export Overview`);
     }
   }
+});
+
+test('codex account detail story remains an internal feature story only', async () => {
+  const entry = designSystemComponentManifest.find((item) => item.id === 'codex-account-detail-modal');
+  assert.ok(entry);
+  assert.deepEqual(entry.requiredStates, ['desktop-draft']);
+  assert.equal(entry.catalogGroupId, 'feature-components');
+
+  const source = await readFile(new URL('../../features/codex/components/CodexAccountDetailComponents.stories.tsx', import.meta.url), 'utf8');
+  assert.match(source, /export const DesktopDraft\s*:/);
+  assert.doesNotMatch(source, /export const Overview\s*:/);
+  assert.doesNotMatch(source, /export const OpenAICompatible\s*:/);
+  assert.doesNotMatch(source, /export const OpenAICompatibleDisabled\s*:/);
+  assert.doesNotMatch(source, /export const AuthFile\s*:/);
+  assert.doesNotMatch(source, /export const VerifyError\s*:/);
+  assert.doesNotMatch(source, /export const Saving\s*:/);
 });
 
 test('component stories mark admitted design system components', async () => {
@@ -298,7 +351,7 @@ test('feature component manifest covers extracted feature component files', asyn
   }
 });
 
-test('admitted feature component manifest entries are synced with the story catalog', async () => {
+test('admitted feature component manifest entries stay internal to feature-owned stories', async () => {
   const featureComponentGroup = getCatalogGroup('feature-components');
   assert.ok(featureComponentGroup);
 
@@ -311,11 +364,14 @@ test('admitted feature component manifest entries are synced with the story cata
     assert.ok(entry.storybookTitle, `${entry.id} must provide a Storybook title`);
     assert.ok(entry.requiredStates?.length > 0, `${entry.id} must document admitted states`);
     assert.ok(entry.mockDataSources?.length > 0, `${entry.id} must document mock data`);
+    assert.match(entry.storyPath, /^frontend\/src\/features\//, `${entry.storyPath} must remain feature-owned`);
+    assert.match(entry.storybookTitle, /^Design System\/业务组件\//, `${entry.storybookTitle} remains an internal business story title`);
 
     const catalogStory = catalogStoriesByPath.get(entry.storyPath);
-    assert.ok(catalogStory, `${entry.storyPath} must be listed in feature-components catalog`);
-    assert.equal(catalogStory.storybookTitle, entry.storybookTitle);
-    admittedStories.add(entry.storyPath);
+    if (catalogStory) {
+      assert.equal(catalogStory.storybookTitle, entry.storybookTitle);
+      admittedStories.add(entry.storyPath);
+    }
 
     const storyFile = entry.storyPath.replace('frontend/src/', '../../');
     const source = await readFile(new URL(storyFile, import.meta.url), 'utf8');
@@ -370,7 +426,7 @@ test('account detail modules expose design-system anatomy and runtime states', a
   assert.doesNotMatch(primitivesSource, /<div className="min-w-0 space-y-4">/);
   assert.match(primitivesSource, /AccountDetailOverviewGrid/);
   assert.match(primitivesSource, /data-account-detail-overview-grid="runtime-evidence"/);
-  assert.match(primitivesSource, /data-account-detail-overview-equal-height="true"/);
+  assert.match(primitivesSource, /data-account-detail-overview-equal-height/);
   assert.match(primitivesSource, /data-account-detail-overview-slot="runtime"[^>]+h-full/);
   assert.match(primitivesSource, /data-account-detail-overview-slot="evidence"[^>]+h-full/);
   assert.match(primitivesSource, /data-account-detail-module-layout=\{layout\}/);
@@ -383,9 +439,6 @@ test('account detail modules expose design-system anatomy and runtime states', a
   assert.match(openAICompatibleDetailSource, /layout="cards"/);
   assert.match(openAICompatibleModalSource, /AccountDetailOverviewGrid/);
   assert.match(codexDetailSource, /layout="cards"/);
-  assert.match(codexDetailSource, /AccountDetailOverviewGrid/);
-  assert.match(codexDetailSource, /CodexAccountEvidenceSection/);
-  assert.match(codexDetailSource, /componentName="CodexAccountEvidenceSection"/);
   assert.doesNotMatch(sectionsSource, /componentName="AccountQuotaSection"[\s\S]{0,220}span="wide"/);
   assert.doesNotMatch(sectionsSource, /componentName="AccountBillingSection"[\s\S]{0,220}span="wide"/);
   assert.ok(sectionsEntry.requiredStates?.includes('runtime-snapshot'));

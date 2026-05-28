@@ -445,11 +445,17 @@ func buildRelayCodexConfigToml(baseURL string, model string, reasoningEffort str
 func mergeRelayCodexConfigToml(existing string, input RelayLocalApplyInput) string {
 	lines, newline := splitTomlDocument(existing)
 
+	currentProviderID, hasExplicitCurrentProvider := parseLocalCodexRootStringKey(existing, "model_provider")
+	targetProviderID := input.ProviderID
+	if hasExplicitCurrentProvider && strings.TrimSpace(currentProviderID) != "" {
+		targetProviderID = strings.TrimSpace(currentProviderID)
+	}
+
 	hasModelProvider := rootTomlKeyExists(lines, "model_provider")
 	lines = upsertRootTomlKey(lines, "model", quoteTomlString(strings.TrimSpace(input.Model)), true)
 	lines = upsertRootTomlKey(lines, "model_reasoning_effort", quoteTomlString(input.ReasoningEffort), true)
 
-	if input.ProviderID == relayCodexOpenAIProviderID {
+	if targetProviderID == relayCodexOpenAIProviderID {
 		if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
 			lines = deleteTomlRootKey(lines, "openai_base_url")
 		} else {
@@ -459,8 +465,10 @@ func mergeRelayCodexConfigToml(existing string, input RelayLocalApplyInput) stri
 			lines = upsertRootTomlKey(lines, "model_provider", quoteTomlString(relayCodexOpenAIProviderID), false)
 		}
 	} else {
-		lines = upsertRootTomlKey(lines, "model_provider", quoteTomlString(input.ProviderID), true)
-		sectionName := fmt.Sprintf("model_providers.%s", input.ProviderID)
+		if !hasExplicitCurrentProvider {
+			lines = upsertRootTomlKey(lines, "model_provider", quoteTomlString(targetProviderID), true)
+		}
+		sectionName := fmt.Sprintf("model_providers.%s", targetProviderID)
 		providerBaseURL := strings.TrimSpace(input.BaseURL)
 		if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
 			providerBaseURL = relayCodexChatGPTBackendBaseURL

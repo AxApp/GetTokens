@@ -60,6 +60,14 @@ export type ParsedAccountCardImport =
       models: Array<{ name: string; alias?: string }>;
     };
 
+export type AccountImportPayloadItem =
+  | {
+      type: 'upload-file';
+      name: string;
+      contentBase64: string;
+    }
+  | ParsedAccountCardImport;
+
 export function resolvePastedAuthFileName(parsed: Record<string, unknown>) {
   if (typeof parsed.name === 'string' && parsed.name) {
     return parsed.name.endsWith('.json') ? parsed.name : `${parsed.name}.json`;
@@ -164,6 +172,88 @@ export function parseAccountCardImportPayload(parsed: unknown): ParsedAccountCar
   }
 
   return null;
+}
+
+export function parseAccountImportPayloads(parsed: unknown): ParsedAccountCardImport[] | null {
+  const items: ParsedAccountCardImport[] = [];
+
+  function collect(value: unknown): boolean {
+    if (Array.isArray(value)) {
+      if (value.length === 0) {
+        return false;
+      }
+      return value.every((item) => collect(item));
+    }
+
+    const item = parseSingleAccountImportPayload(value);
+    if (!item) {
+      return false;
+    }
+    items.push(item);
+    return true;
+  }
+
+  return collect(parsed) ? items : null;
+}
+
+export function resolveAccountImportPayloadPreview(item: AccountImportPayloadItem): string {
+  if (item.type === 'upload-file') {
+    return normalizeAccountImportPreview(decodeBase64Text(item.contentBase64) || item.name);
+  }
+  if (item.type === 'auth-file') {
+    return normalizeAccountImportPreview(item.content);
+  }
+  return normalizeAccountImportPreview(JSON.stringify(item, null, 2));
+}
+
+function parseSingleAccountImportPayload(parsed: unknown): ParsedAccountCardImport | null {
+  const copiedAccount = parseAccountCardImportPayload(parsed);
+  if (copiedAccount) {
+    return copiedAccount;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    return null;
+  }
+
+  const payload = parsed as Record<string, unknown>;
+  if (payload.schema === ACCOUNT_CARD_IMPORT_SCHEMA) {
+    return null;
+  }
+
+  return {
+    type: 'auth-file',
+    name: resolvePastedAuthFileName(payload),
+    content: JSON.stringify(payload, null, 2),
+  };
+}
+
+function normalizeAccountImportPreview(value: string, limit = 420): string {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) {
+    return '(empty)';
+  }
+  if (trimmed.length <= limit) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, limit).trimEnd()}…`;
+}
+
+function decodeBase64Text(value: string, maxBase64PreviewLength = 8192): string {
+  try {
+    const chunk = value.length > maxBase64PreviewLength ? value.slice(0, maxBase64PreviewLength) : value;
+    const alignedChunk = chunk.length === value.length ? chunk : chunk.slice(0, chunk.length - (chunk.length % 4));
+    if (!alignedChunk) {
+      return '';
+    }
+    const binary = atob(alignedChunk);
+    if (!binary) {
+      return '';
+    }
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  } catch {
+    return '';
+  }
 }
 
 function normalizeStringList(items: unknown[]): string[] {

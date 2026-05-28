@@ -73,10 +73,14 @@ const claudeCodeMemoryFilesPanelStorybookTitle = 'Design System/业务组件/Cla
 const claudeCodeSettingsScopeStackStorybookTitle = 'Design System/业务组件/Claude Code Settings Scope Stack';
 const codexRouteProbeStoryPath = 'frontend/src/features/codex/components/CodexRouteProbeCard.stories.tsx';
 const codexRouteProbeStorybookTitle = 'Design System/业务组件/Codex 路由探测';
+const codexAccountDetailStoryPath = 'frontend/src/features/codex/components/CodexAccountDetailComponents.stories.tsx';
+const codexAccountDetailStorybookTitle = 'Design System/业务组件/Codex 账号详情';
 const codexAccountOrderStoryPath = 'frontend/src/features/codex/components/CodexAccountOrderComponents.stories.tsx';
 const codexAccountOrderStorybookTitle = 'Design System/业务组件/Codex 账号顺序';
 const codexLiveSessionsStoryPath = 'frontend/src/features/codex-live-sessions/components/CodexLiveSessionsComponents.stories.tsx';
 const codexLiveSessionsStorybookTitle = 'Design System/业务组件/Codex 运行会话';
+const sessionPluginConsoleStoryPath = 'frontend/src/features/session-management/components/SessionPluginConsolePanel.stories.tsx';
+const sessionPluginConsoleStorybookTitle = 'Design System/业务组件/会话插件控制台';
 
 export const designSystemComponentManifest = [
   {
@@ -221,13 +225,28 @@ export const designSystemComponentManifest = [
     ownerFeature: 'accounts',
     status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '账号模板本地 CLI 应用确认页已按文件预览器布局实现，复用 ModalFrame 与 StatusSnippetPanel，设计系统账号卡片 story 覆盖 Codex API Key、Codex OAuth preserve 和 Claude Code 文件 diff。',
-    matchedPatterns: ['ModalFrame', 'StatusSnippetPanel', 'SnippetPre'],
+    decisionReason: '账号模板本地 CLI 应用确认页已按文件预览器布局实现，复用 ModalFrame 与 StatusSnippetPanel；deep link 入口通过 DeepLinkCodexApplyAdapter 复用同一确认页，只补来源、providerScope 和账号草稿摘要。',
+    matchedPatterns: ['ModalFrame', 'StatusSnippetPanel', 'SnippetPre', 'DeepLinkCodexApplyAdapter'],
     storyPath: accountCardStoryPath,
     storybookTitle: accountCardStorybookTitle,
     catalogGroupId: 'feature-components',
-    requiredStates: ['codex-api-key', 'codex-oauth-preserve', 'claude-code', 'blocking-warning', 'preview-only'],
+    requiredStates: ['codex-api-key', 'codex-oauth-preserve', 'claude-code', 'deep-link-adapter', 'blocking-warning', 'preview-only'],
     mockDataSources: ['storybook AccountCliApplyDraft/relay key mock', 'browser preview runtime fallback'],
+  },
+  {
+    id: 'accounts-deep-link-codex-apply-adapter',
+    componentName: 'DeepLinkCodexApplyAdapter',
+    sourcePath: 'frontend/src/features/accounts/components/DeepLinkCodexApplyAdapter.tsx',
+    ownerFeature: 'accounts',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: 'Deep link Codex 配置导入只作为 AccountLocalCliApplyConfirm 的适配层，禁止另起 ModalFrame；账号卡片 story 与 deep-link 设计稿共同覆盖来源、providerScope、providerRewriteMode 和账号草稿摘要。',
+    matchedPatterns: ['AccountLocalCliApplyConfirm', 'StatusSnippetPanel'],
+    storyPath: accountCardStoryPath,
+    storybookTitle: accountCardStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['codex-config', 'codex-setup', 'account-only-action', 'preview-only'],
+    mockDataSources: ['DeepLinkApplyContext preview DTO', 'AccountCliApplyDraft mock'],
   },
   {
     id: 'accounts-account-proxy-route-section',
@@ -452,19 +471,19 @@ export const designSystemComponentManifest = [
     mockDataSources: ['storybook openai-compatible provider/verify/remote-models mock'],
   },
   {
-    id: 'accounts-paste-auth-modal',
-    componentName: 'PasteAuthModal',
-    sourcePath: 'frontend/src/features/accounts/components/PasteAuthModal.tsx',
+    id: 'accounts-account-import-modal',
+    componentName: 'AccountImportModal',
+    sourcePath: 'frontend/src/features/accounts/components/AccountImportModal.tsx',
     ownerFeature: 'accounts',
     status: 'admitted',
     tier: 'feature-component',
-    decisionReason: '粘贴导入弹窗已通过 Account Modals story 收编，覆盖空内容、已填内容和 JSON 错误状态。',
-    matchedPatterns: ['DebugPanel details'],
+    decisionReason: '统一导入弹窗已通过 Account Modals story 收编，覆盖空队列、粘贴 JSON 数组和混合候选队列状态。',
+    matchedPatterns: ['ModalFrame', 'input-swiss', 'btn-swiss'],
     storyPath: accountModalStoryPath,
     storybookTitle: accountModalStorybookTitle,
     catalogGroupId: 'feature-components',
-    requiredStates: ['empty', 'invalid-json', 'ready'],
-    mockDataSources: ['storybook pasted auth payload mock'],
+    requiredStates: ['empty', 'paste-array', 'queued'],
+    mockDataSources: ['storybook account import file/paste payload mock'],
   },
   {
     id: 'accounts-rate-limit-rules-section',
@@ -718,13 +737,13 @@ export const designSystemComponentManifest = [
     ownerFeature: 'codex',
     status: 'admitted',
     tier: 'feature-component',
-    decisionReason: 'Codex 账号详情弹窗已通过 Codex Account Order story 收编，覆盖运行快照/evidence 顶部概览、映射编辑、空映射说明和页脚保存中状态。',
+    decisionReason: 'Codex 账号详情 story 已移除旧状态矩阵，先收敛为一个桌面新版草稿，用于调整 OpenAI-compatible 详情的信息密度、凭据验证、路由、额度、余额和模型映射布局。',
     matchedPatterns: ['AccountDetailModalFrame', 'AccountDetailSection', 'Combobox'],
-    storyPath: codexAccountOrderStoryPath,
-    storybookTitle: codexAccountOrderStorybookTitle,
+    storyPath: codexAccountDetailStoryPath,
+    storybookTitle: codexAccountDetailStorybookTitle,
     catalogGroupId: 'feature-components',
-    requiredStates: ['runtime-snapshot', 'runtime-evidence-overview', 'evidence', 'card-mode', 'mapped', 'empty-models', 'footer-saving'],
-    mockDataSources: ['storybook codex account row and model mapping mock'],
+    requiredStates: ['desktop-draft'],
+    mockDataSources: ['storybook DeepSeek openai-compatible account row, quota, billing, verify, model mapping mock'],
   },
   {
     id: 'codex-account-list-view',
@@ -842,6 +861,21 @@ export const designSystemComponentManifest = [
     catalogGroupId: 'feature-components',
     requiredStates: ['live', 'cache', 'unavailable'],
     mockDataSources: ['codexLiveSessionsPreviewSnapshot', 'codexLiveSessionsHighVolumeSnapshot'],
+  },
+  {
+    id: 'session-plugin-console-panel',
+    componentName: 'SessionPluginConsolePanel',
+    sourcePath: 'frontend/src/features/session-management/components/SessionPluginConsolePanel.tsx',
+    ownerFeature: 'session-management',
+    status: 'admitted',
+    tier: 'feature-component',
+    decisionReason: '会话插件控制台已从 space HTML 设计稿收编为纯展示组件，覆盖插件注册表、作用域选择、执行状态、会话选择、队列和插件输出，作为 session-management 插件宿主的设计系统基准。',
+    matchedPatterns: ['DesignSystemStoryFrame', 'WorkspacePageHeader', 'DebugPanel grouped list'],
+    storyPath: sessionPluginConsoleStoryPath,
+    storybookTitle: sessionPluginConsoleStorybookTitle,
+    catalogGroupId: 'feature-components',
+    requiredStates: ['ready', 'running', 'done', 'scope-project', 'queue', 'analysis-result'],
+    mockDataSources: ['storybook session-management plugin/analysis/session mock'],
   },
   {
     id: 'codex-model-combobox',

@@ -1,5 +1,5 @@
 import type { MutableRefObject } from 'react';
-import { ClipboardPaste, KeyRound, LogIn, Menu, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
+import { KeyRound, LogIn, Menu, Plus, RefreshCw, RotateCcw, Upload } from 'lucide-react';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import type { Translator } from '../model/types';
 import {
@@ -18,11 +18,9 @@ interface AccountsHeaderProps {
   ready: boolean;
   loading: boolean;
   isHeaderActionsMenuOpen: boolean;
-  fileInputRef: MutableRefObject<HTMLInputElement | null>;
   headerActionsMenuRef: MutableRefObject<HTMLDivElement | null>;
-  onUploadAccounts: (files: FileList | null) => Promise<void> | void;
   onToggleMenu: () => void;
-  onOpenPasteModal: () => void;
+  onOpenImportModal: () => void;
   onOpenApiKeyModal: () => void;
   onOpenRotationModal?: () => void;
   onStartCodexOAuth: () => void;
@@ -36,11 +34,9 @@ export default function AccountsHeader({
   ready,
   loading,
   isHeaderActionsMenuOpen,
-  fileInputRef,
   headerActionsMenuRef,
-  onUploadAccounts,
   onToggleMenu,
-  onOpenPasteModal,
+  onOpenImportModal,
   onOpenApiKeyModal,
   onOpenRotationModal,
   onStartCodexOAuth,
@@ -73,8 +69,6 @@ export default function AccountsHeader({
         return <LogIn className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
       case 'upload':
         return <Upload className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
-      case 'clipboard-paste':
-        return <ClipboardPaste className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
       case 'key-round':
         return <KeyRound className={ACCOUNT_HEADER_MENU_ICON_CLASS} strokeWidth={3} />;
       case 'rotate-ccw':
@@ -86,17 +80,6 @@ export default function AccountsHeader({
 
   return (
     <div className="contents">
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        className="hidden"
-        hidden
-        onChange={(event) => {
-          void onUploadAccounts(event.target.files);
-          event.target.value = '';
-        }}
-      />
       <WorkspacePageHeader
         title={t('accounts.title')}
         subtitle={
@@ -147,16 +130,9 @@ export default function AccountsHeader({
                               return;
                             }
 
-                            if (item.id === 'import-auth-file') {
+                            if (item.id === 'account-import') {
                               handleMenuAction(() => {
-                                fileInputRef.current?.click();
-                              });
-                              return;
-                            }
-
-                            if (item.id === 'paste-auth-file') {
-                              handleMenuAction(() => {
-                                onOpenPasteModal();
+                                onOpenImportModal();
                               });
                               return;
                             }

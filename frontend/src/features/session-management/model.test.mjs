@@ -2,15 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  buildSessionAnalysisInput,
   formatProviderSummary,
   getRoleSummaryLabel,
+  mapSessionAnalysisResultResponse,
   mapSessionDetailResponse,
+  mapSessionMessageRawJSONResponse,
+  mapSessionMessagePageResponse,
   mapSessionManagementSnapshotResponse,
 } from './model.ts';
 import {
+  analyzeCodexSessions,
   getCodexSessionDetail,
   getCodexSessionManagementSnapshot,
   getSessionDetail,
+  getSessionMessagePage,
+  getSessionMessageRawJSON,
   getSessionManagementSnapshot,
   refreshCodexSessionManagementSnapshot,
   refreshSessionManagementSnapshot,
@@ -82,6 +89,104 @@ test('formatSessionMetadataDate keeps current year compact and older years expli
   assert.equal(formatSessionMetadataDate('2025-12-09 08:10', now), '2025/12/09');
   assert.equal(formatSessionMetadataDate('2026/5/7', now), '05/07');
   assert.equal(formatSessionMetadataDate('unknown', now), 'unknown');
+});
+
+test('mapSessionAnalysisResultResponse normalizes batch analysis payloads', () => {
+  const result = mapSessionAnalysisResultResponse({
+    scope: 'all',
+    generatedAt: '2026-05-27 12:00',
+    requestedSessionCount: '3',
+    analyzedSessionCount: 2,
+    skippedSessionCount: 1,
+    totalMessages: 8,
+    totalTerms: 42,
+    keywords: [{ term: '会话', count: 4, sessionCount: 2, score: 8.4 }],
+    roleContributions: [{ role: 'assistant', messageCount: 4, termCount: 24, share: 0.57 }],
+    projects: [
+      {
+        projectID: 'gettokens',
+        projectName: 'GetTokens',
+        sessionCount: 2,
+        messageCount: 8,
+        termCount: 42,
+        keywords: [{ term: '分词', count: 2, sessionCount: 1, score: 3.4 }],
+      },
+    ],
+    sessions: [
+      {
+        sessionID: 'sessions/a.jsonl',
+        projectID: 'gettokens',
+        projectName: 'GetTokens',
+        title: '批量分析',
+        status: 'active',
+        provider: 'openai',
+        messageCount: 4,
+        termCount: 20,
+        topicLine: '会话 / 分词',
+        keywords: [{ term: '会话', count: 2, sessionCount: 1, score: 3.4 }],
+        roleContributions: [{ role: 'user', messageCount: 2, termCount: 10, share: 0.5 }],
+      },
+    ],
+  });
+
+  assert.equal(result.requestedSessionCount, 3);
+  assert.equal(result.keywords[0].term, '会话');
+  assert.equal(result.projects[0].keywords[0].term, '分词');
+  assert.equal(result.sessions[0].status, 'active');
+  assert.equal(result.sessions[0].model, '');
+});
+
+test('buildSessionAnalysisInput maps plugin modes to runtime payloads', () => {
+  assert.deepEqual(buildSessionAnalysisInput({ mode: 'all' }), { scope: 'all' });
+  assert.deepEqual(buildSessionAnalysisInput({ mode: 'project', projectID: ' gettokens ' }), {
+    scope: 'project',
+    projectID: 'gettokens',
+  });
+  assert.deepEqual(
+    buildSessionAnalysisInput({
+      mode: 'recent',
+      recentLimit: 3,
+      sessionIDs: ['a', 'b', 'a', 'c', 'd'],
+    }),
+    {
+      scope: 'selected',
+      sessionIDs: ['a', 'b', 'c'],
+    },
+  );
+});
+
+test('analyzeCodexSessions calls runtime batch analysis binding', async () => {
+  let runtimeInput = null;
+  globalThis.window = {
+    go: {
+      main: {
+        App: {
+          async AnalyzeCodexSessions(input) {
+            runtimeInput = input;
+            return {
+              scope: input.scope,
+              generatedAt: '2026-05-27 12:00',
+              requestedSessionCount: 1,
+              analyzedSessionCount: 1,
+              skippedSessionCount: 0,
+              totalMessages: 2,
+              totalTerms: 8,
+              keywords: [{ term: '会话', count: 2, sessionCount: 1, score: 3.4 }],
+              roleContributions: [],
+              projects: [],
+              sessions: [],
+            };
+          },
+        },
+      },
+    },
+  };
+
+  const result = await analyzeCodexSessions({ scope: 'project', projectID: 'gettokens' });
+
+  assert.deepEqual(runtimeInput, { scope: 'project', projectID: 'gettokens' });
+  assert.equal(result.analyzedSessionCount, 1);
+  assert.equal(result.keywords[0].term, '会话');
 });
 
 test('mapSessionManagementSnapshotResponse builds provider summary and does not invent rewrite metrics', () => {
@@ -178,6 +283,40 @@ test('mapSessionDetailResponse accepts extended message roles', () => {
 
   assert.equal(detail.messages[1].role, 'tool_call');
   assert.equal(detail.messages[2].role, 'tool_result');
+});
+
+test('mapSessionMessagePageResponse keeps content and pagination metadata', () => {
+  const page = mapSessionMessagePageResponse({
+    sessionID: 'session-1',
+    offset: 50,
+    limit: 2,
+    messageCount: 53,
+    nextOffset: 52,
+    hasMore: true,
+    messages: [
+      { id: 'm-51', lineNumber: 88, role: 'assistant', timeLabel: '11:50', title: 'reply', summary: 'short', content: 'full content', truncated: true },
+    ],
+  });
+
+  assert.equal(page.sessionID, 'session-1');
+  assert.equal(page.offset, 50);
+  assert.equal(page.nextOffset, 52);
+  assert.equal(page.hasMore, true);
+  assert.equal(page.messages[0].lineNumber, 88);
+  assert.equal(page.messages[0].content, 'full content');
+  assert.equal(page.messages[0].truncated, true);
+});
+
+test('mapSessionMessageRawJSONResponse keeps raw json payload', () => {
+  const raw = mapSessionMessageRawJSONResponse({
+    sessionID: 'session-1',
+    lineNumber: 88,
+    rawJSON: '{"type":"response_item"}',
+  });
+
+  assert.equal(raw.sessionID, 'session-1');
+  assert.equal(raw.lineNumber, 88);
+  assert.equal(raw.rawJSON, '{"type":"response_item"}');
 });
 
 test('getCodexSessionManagementSnapshot throws a clear error when bridge is missing', async () => {
@@ -433,6 +572,57 @@ test('localhost dev mode posts provider merge to http bridge', async () => {
   globalThis.fetch = originalFetch;
 });
 
+test('localhost dev mode uses a long timeout for batch analysis', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalSetTimeout = globalThis.setTimeout;
+  const fetchCalls = [];
+  const timeoutCalls = [];
+  globalThis.window = {
+    location: {
+      href: 'http://127.0.0.1:34115/#frame=session-management',
+    },
+  };
+  globalThis.setTimeout = (handler, timeout, ...args) => {
+    timeoutCalls.push(timeout);
+    return originalSetTimeout(handler, 0, ...args);
+  };
+  try {
+    globalThis.fetch = async (url) => {
+      fetchCalls.push(String(url));
+      if (String(url).includes('127.0.0.1:5173/__dev/session-management/analysis')) {
+        return {
+          ok: true,
+          async json() {
+            return {
+              scope: 'all',
+              generatedAt: '2026-05-27 12:00',
+              requestedSessionCount: 1,
+              analyzedSessionCount: 1,
+              skippedSessionCount: 0,
+              totalMessages: 2,
+              totalTerms: 8,
+              keywords: [{ term: '会话', count: 2, sessionCount: 1, score: 3.4 }],
+              roleContributions: [],
+              projects: [],
+              sessions: [],
+            };
+          },
+        };
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    };
+
+    const result = await analyzeCodexSessions({ scope: 'all' });
+
+    assert.equal(result.analyzedSessionCount, 1);
+    assert.equal(fetchCalls[0], 'http://127.0.0.1:5173/__dev/session-management/analysis?scope=all');
+    assert.equal(timeoutCalls[0], 300000);
+  } finally {
+    globalThis.fetch = originalFetch;
+    globalThis.setTimeout = originalSetTimeout;
+  }
+});
+
 test('localhost desktop mode prefers runtime bridge when Wails bindings exist', async () => {
   const originalFetch = globalThis.fetch;
   let runtimeCalled = false;
@@ -586,6 +776,24 @@ test('getCodexSessionDetail maps runtime bridge payloads', async () => {
               messages: [{ id: 'm-1', role: 'user', timeLabel: '11:00', title: 'ask', summary: 'hello' }],
             };
           },
+          async GetCodexSessionMessagePage(sessionID, input) {
+            return {
+              sessionID,
+              offset: input.offset,
+              limit: input.limit,
+              messageCount: 2,
+              nextOffset: 1,
+              hasMore: true,
+              messages: [{ id: 'm-1', role: 'user', timeLabel: '11:00', title: 'ask', summary: 'hello', content: 'hello content' }],
+            };
+          },
+          async GetCodexSessionMessageRawJSON(sessionID, input) {
+            return {
+              sessionID,
+              lineNumber: input.lineNumber,
+              rawJSON: '{"message":"hello"}',
+            };
+          },
         },
       },
     },
@@ -600,6 +808,58 @@ test('getCodexSessionDetail maps runtime bridge payloads', async () => {
   const refreshed = await refreshCodexSessionManagementSnapshot();
   assert.equal(refreshed.stats.projectCount, 1);
   assert.equal(refreshed.stats.sessionCount, 2);
+});
+
+test('getSessionMessagePage maps runtime bridge payloads', async () => {
+  globalThis.window = {
+    go: {
+      main: {
+        App: {
+          async GetCodexSessionMessagePage(sessionID, input) {
+            return {
+              sessionID,
+              offset: input.offset,
+              limit: input.limit,
+              messageCount: 3,
+              nextOffset: input.offset + 1,
+              hasMore: true,
+              messages: [{ id: 'm-2', role: 'assistant', timeLabel: '11:01', title: 'reply', summary: 'world', content: 'world content' }],
+            };
+          },
+        },
+      },
+    },
+  };
+
+  const page = await getSessionMessagePage('codex', 'session-a', { offset: 1, limit: 1 });
+
+  assert.equal(page.sessionID, 'session-a');
+  assert.equal(page.messageCount, 3);
+  assert.equal(page.messages[0].content, 'world content');
+});
+
+test('getSessionMessageRawJSON maps runtime bridge payloads', async () => {
+  globalThis.window = {
+    go: {
+      main: {
+        App: {
+          async GetCodexSessionMessageRawJSON(sessionID, input) {
+            return {
+              sessionID,
+              lineNumber: input.lineNumber,
+              rawJSON: '{"message":"world"}',
+            };
+          },
+        },
+      },
+    },
+  };
+
+  const raw = await getSessionMessageRawJSON('codex', 'session-a', 12);
+
+  assert.equal(raw.sessionID, 'session-a');
+  assert.equal(raw.lineNumber, 12);
+  assert.equal(raw.rawJSON, '{"message":"world"}');
 });
 
 test('summary helpers accept arrays and objects', () => {

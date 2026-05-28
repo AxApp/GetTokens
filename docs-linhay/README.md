@@ -81,3 +81,7 @@ qmd update && qmd embed
 6. 文档改动完成后：运行 `check-docs.sh`
 7. memory 写回完成后：运行 `qmd update && qmd embed`
 8. 需求进入并行实现后：为对应 `space-key` 创建同 key 的 branch 和 `worktree`
+
+## 当前 Space
+
+- [20260528-account-import-unified-modal](spaces/20260528-account-import-unified-modal/README.md)

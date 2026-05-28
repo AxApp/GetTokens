@@ -27,13 +27,12 @@ import type { CodexQuotaState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
 import {
   AccountBillingSection,
-  AccountCredentialsSection,
+  AccountCredentialVerifySection,
   AccountDetailFooter,
   AccountDetailHeader,
   AccountEvidenceSection,
   AccountQuotaSection,
   AccountRuntimeSnapshotSection,
-  AccountVerifySection,
   type APIKeyVerifyState,
 } from './AccountDetailSections';
 import {
@@ -187,10 +186,13 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
             switch (moduleID) {
               case 'credentials':
                 return (
-                  <AccountCredentialsSection
+                  <AccountCredentialVerifySection
                     key={moduleID}
                     draft={configDraft}
                     setDraft={setConfigDraft}
+                    verifyState={props.verifyState}
+                    modelNames={props.modelNames}
+                    onVerify={props.onVerify}
                   />
                 );
               case 'auth-file-actions':
@@ -213,16 +215,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     {...props}
                     rateLimitRulesRef={rateLimitRulesRef}
                     onRateLimitDirtyChange={setRateLimitDirty}
-                  />
-                );
-              case 'verify':
-                return (
-                  <AccountVerifySection
-                    key={moduleID}
-                    draft={configDraft}
-                    verifyState={props.verifyState}
-                    modelNames={props.modelNames}
-                    onVerify={props.onVerify}
                   />
                 );
               case 'quota':

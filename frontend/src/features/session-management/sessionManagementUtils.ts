@@ -23,6 +23,13 @@ export const INITIAL_DETAIL_STATE: SessionDetailState = {
   detail: null,
   loading: false,
   refreshing: false,
+  messagePageLoading: false,
+  messagePageError: null,
+  hasMoreMessages: false,
+  nextMessageOffset: 0,
+  rawJSONByMessageID: {},
+  rawJSONLoadingMessageID: null,
+  rawJSONError: null,
   error: null,
 };
 

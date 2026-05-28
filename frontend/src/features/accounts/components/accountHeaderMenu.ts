@@ -1,7 +1,7 @@
-export type AccountHeaderMenuIcon = 'plus' | 'log-in' | 'upload' | 'clipboard-paste' | 'key-round' | 'rotate-ccw';
+export type AccountHeaderMenuIcon = 'plus' | 'log-in' | 'upload' | 'key-round' | 'rotate-ccw';
 
 export interface AccountHeaderMenuItem {
-  id: 'unified-compose' | 'chatgpt-login' | 'import-auth-file' | 'paste-auth-file' | 'codex-api-key' | 'rotation-settings';
+  id: 'unified-compose' | 'chatgpt-login' | 'account-import' | 'codex-api-key' | 'rotation-settings';
   labelKey: string;
   icon: AccountHeaderMenuIcon;
   disabled: boolean;
@@ -54,15 +54,9 @@ export function buildAccountsHeaderMenuItems({
       dividerBefore: includeUnifiedCompose,
     },
     {
-      id: 'import-auth-file',
-      labelKey: 'accounts.import_auth_file',
+      id: 'account-import',
+      labelKey: 'accounts.import_accounts',
       icon: 'upload',
-      disabled: importDisabled,
-    },
-    {
-      id: 'paste-auth-file',
-      labelKey: 'accounts.paste_auth_file',
-      icon: 'clipboard-paste',
       disabled: importDisabled,
     },
     {

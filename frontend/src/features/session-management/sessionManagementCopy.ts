@@ -80,5 +80,22 @@ export function createSessionManagementCopy(
     searchPlaceholder: isEnglish ? 'Search projects & sessions…' : '搜索项目或会话…',
     searchNoResults: isEnglish ? 'No results.' : '无匹配结果。',
     sessionActions: resolve('common.more_actions', '更多操作', 'More actions'),
+    pluginHostTitle: isEnglish ? 'Session Plugins' : '会话插件',
+    analysisPluginName: isEnglish ? 'Built-in Plugin' : '内置插件',
+    analysisPluginHint: isEnglish ? 'Session analysis runs as the first plugin.' : '会话深度分析是第一个内置插件。',
+    analysisTitle: isEnglish ? 'Session Analysis' : '会话分析',
+    analysisAll: isEnglish ? 'Analyze All' : '分析全部',
+    analysisProject: isEnglish ? 'Analyze Project' : '分析当前项目',
+    analysisRecent: (limit: number) => (isEnglish ? `Analyze Recent ${limit}` : `分析最近 ${limit} 条`),
+    analysisRunning: isEnglish ? 'Analyzing' : '分析中',
+    analysisEmpty: isEnglish ? 'Run analysis to extract keywords and topics.' : '运行分析后展示关键词、主题和角色贡献。',
+    analysisKeywords: isEnglish ? 'Keywords' : '关键词',
+    analysisProjects: isEnglish ? 'Projects' : '项目分布',
+    analysisRoles: isEnglish ? 'Roles' : '角色贡献',
+    analysisTopics: isEnglish ? 'Topics' : '主题线索',
+    loadMoreMessages: isEnglish ? 'Load More' : '加载更多',
+    messagePageLoading: isEnglish ? 'Loading Messages' : '加载消息中',
+    messageLoadedLine: (loaded: number, total: number) =>
+      isEnglish ? `${loaded} / ${total} messages loaded` : `已加载 ${loaded} / ${total} 条消息`,
   };
 }

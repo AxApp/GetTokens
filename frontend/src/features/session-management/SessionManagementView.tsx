@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowRight, Check, MoreVertical, Pencil, RefreshCw, X } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { ArrowRight, BarChart3, Check, MoreVertical, Pencil, RefreshCw, X } from 'lucide-react';
 import { Combobox } from '../../components/ui/Combobox.tsx';
 import SearchInput from '../../components/ui/SearchInput';
 import type {
@@ -7,6 +8,7 @@ import type {
   ProjectSummary,
   SessionDetail,
   SessionFilter,
+  SessionAnalysisResult,
   SessionManagementSnapshot,
   SessionSummary,
 } from './model.ts';
@@ -65,6 +67,22 @@ export interface SessionManagementCopy {
   searchPlaceholder: string;
   searchNoResults: string;
   sessionActions: string;
+  pluginHostTitle: string;
+  analysisPluginName: string;
+  analysisPluginHint: string;
+  analysisTitle: string;
+  analysisAll: string;
+  analysisProject: string;
+  analysisRecent: (limit: number) => string;
+  analysisRunning: string;
+  analysisEmpty: string;
+  analysisKeywords: string;
+  analysisProjects: string;
+  analysisRoles: string;
+  analysisTopics: string;
+  loadMoreMessages: string;
+  messagePageLoading: string;
+  messageLoadedLine: (loaded: number, total: number) => string;
 }
 
 export interface ProviderMergeRow {
@@ -79,6 +97,13 @@ export interface SessionDetailState {
   detail: SessionDetail | null;
   loading: boolean;
   refreshing: boolean;
+  messagePageLoading: boolean;
+  messagePageError: string | null;
+  hasMoreMessages: boolean;
+  nextMessageOffset: number;
+  rawJSONByMessageID: Record<string, string>;
+  rawJSONLoadingMessageID: string | null;
+  rawJSONError: string | null;
   error: string | null;
 }
 
@@ -337,6 +362,165 @@ export function ProjectListPanel({
         />
       )}
     </section>
+  );
+}
+
+export function SessionAnalysisPanel({
+  copy,
+  result,
+  loading,
+  error,
+  activeProjectName,
+  canAnalyze,
+  canAnalyzeRecent,
+  recentLimit,
+  onAnalyzeAll,
+  onAnalyzeProject,
+  onAnalyzeRecent,
+}: {
+  copy: SessionManagementCopy;
+  result: SessionAnalysisResult | null;
+  loading: boolean;
+  error: string | null;
+  activeProjectName: string;
+  canAnalyze: boolean;
+  canAnalyzeRecent: boolean;
+  recentLimit: number;
+  onAnalyzeAll: () => void;
+  onAnalyzeProject: () => void;
+  onAnalyzeRecent: () => void;
+}) {
+  return (
+    <section className="shrink-0 border-b-4 border-[var(--border-color)] bg-[var(--bg-main)]">
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.22em]">
+            <BarChart3 className="h-4 w-4" strokeWidth={2.5} />
+            <span>{copy.pluginHostTitle}</span>
+          </div>
+          <div className="mt-1 truncate text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+            {result
+              ? `${result.analyzedSessionCount} ${copy.sessionsUnit} / ${result.totalMessages} ${copy.metaMessages} / ${result.generatedAt}`
+              : `${copy.analysisPluginName} / ${activeProjectName}`}
+          </div>
+          <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            {copy.analysisPluginHint}
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {loading ? (
+            <span className="animate-pulse text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              {copy.analysisRunning}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={onAnalyzeProject}
+            disabled={!canAnalyze || loading}
+            className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+          >
+            {copy.analysisProject}
+          </button>
+          <button
+            type="button"
+            onClick={onAnalyzeRecent}
+            disabled={!canAnalyzeRecent || loading}
+            className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+          >
+            {copy.analysisRecent(recentLimit)}
+          </button>
+          <button
+            type="button"
+            onClick={onAnalyzeAll}
+            disabled={!canAnalyze || loading}
+            className="btn-swiss text-[length:var(--font-size-ui-xs)] opacity-80 disabled:opacity-50"
+          >
+            {copy.analysisAll}
+          </button>
+        </div>
+      </div>
+      {error ? (
+        <div className="border-t border-[var(--border-color)] px-5 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+          {copy.loadFailed} / {error}
+        </div>
+      ) : null}
+      {result ? (
+        <div className="grid gap-0 border-t border-[var(--border-color)] lg:grid-cols-[1.2fr_1fr_1fr]">
+          <AnalysisColumn title={copy.analysisKeywords}>
+            {result.keywords.slice(0, 10).map((keyword) => (
+              <AnalysisMetricRow
+                key={keyword.term}
+                label={keyword.term}
+                value={`${keyword.count}`}
+                meta={`${keyword.sessionCount} ${copy.sessionsUnit}`}
+              />
+            ))}
+          </AnalysisColumn>
+          <AnalysisColumn title={copy.analysisProjects}>
+            {result.projects.slice(0, 6).map((project) => (
+              <AnalysisMetricRow
+                key={project.projectID}
+                label={project.projectName}
+                value={`${project.sessionCount}`}
+                meta={`${project.termCount} terms`}
+              />
+            ))}
+          </AnalysisColumn>
+          <AnalysisColumn title={copy.analysisRoles}>
+            {result.roleContributions.slice(0, 6).map((role) => (
+              <AnalysisMetricRow
+                key={role.role}
+                label={role.role}
+                value={`${Math.round(role.share * 100)}%`}
+                meta={`${role.messageCount} ${copy.metaMessages}`}
+              />
+            ))}
+          </AnalysisColumn>
+          <div className="border-t border-[var(--border-color)] px-4 py-3 lg:col-span-3">
+            <div className="mb-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              {copy.analysisTopics}
+            </div>
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {result.sessions.slice(0, 6).map((session) => (
+                <div key={session.sessionID} className="min-w-0 border border-[var(--border-color)] px-3 py-2">
+                  <div className="truncate text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">
+                    {session.title || getFileName(session.sessionID, copy.unavailable)}
+                  </div>
+                  <div className="mt-1 truncate text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    {session.topicLine}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : !loading ? (
+        <div className="border-t border-[var(--border-color)] px-5 py-3 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          {copy.analysisEmpty}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function AnalysisColumn({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="border-b border-[var(--border-color)] px-4 py-3 lg:border-b-0 lg:border-r">
+      <div className="mb-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+        {title}
+      </div>
+      <div className="space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function AnalysisMetricRow({ label, value, meta }: { label: string; value: string; meta: string }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 text-[length:var(--font-size-ui-xs)]">
+      <span className="truncate font-black uppercase tracking-[0.12em]">{label}</span>
+      <span className="font-black tabular-nums">{value}</span>
+      <span className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">{meta}</span>
+    </div>
   );
 }
 
@@ -756,6 +940,8 @@ export function SessionDetailModal({
   onClose,
   onRefresh,
   onRetry,
+  onLoadMoreMessages,
+  onViewRawJSON,
   renderRoleLabel,
 }: {
   copy: SessionManagementCopy;
@@ -767,8 +953,38 @@ export function SessionDetailModal({
   onClose: () => void;
   onRefresh: () => void;
   onRetry: () => void;
+  onLoadMoreMessages: () => void;
+  onViewRawJSON: (message: SessionDetail['messages'][number]) => void;
   renderRoleLabel: (role: MessageRole) => string;
 }) {
+  const messagesScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const container = messagesScrollRef.current;
+    if (!container || !detailState.hasMoreMessages || detailState.messagePageLoading) {
+      return;
+    }
+
+    const loadMoreThreshold = 240;
+    const handleScroll = () => {
+      const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+      if (distanceToBottom <= loadMoreThreshold) {
+        onLoadMoreMessages();
+      }
+    };
+
+    handleScroll();
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [
+    detailState.hasMoreMessages,
+    detailState.messagePageLoading,
+    selectedSessionDetail?.messages.length,
+    onLoadMoreMessages,
+  ]);
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 sm:p-6"
@@ -851,7 +1067,7 @@ export function SessionDetailModal({
             {copy.loadFailed} / {detailState.error}
           </div>
         ) : null}
-        <div className="min-h-0 overflow-y-auto">
+        <div ref={messagesScrollRef} className="min-h-0 overflow-y-auto">
           {detailState.loading && !selectedSessionDetail ? (
             <div className="px-5 py-3">
               {Array.from({ length: 5 }).map((_, index) => (
@@ -870,28 +1086,68 @@ export function SessionDetailModal({
               ))}
             </div>
           ) : selectedSessionDetail?.messages.length ? (
-            selectedSessionDetail.messages.map((message, index) => (
-              <div
-                key={message.id}
-                className="border-b border-[var(--border-color)] px-5 py-3"
-              >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em]">
-                  <span className="text-[var(--text-muted)]/50">#{String(index + 1).padStart(2, '0')}</span>
-                  <span className="text-[var(--text-muted)]">{message.timeLabel}</span>
-                  <span className={roleTone(message.role)}>{renderRoleLabel(message.role)}</span>
-                </div>
+            <>
+              {selectedSessionDetail.messages.map((message, index) => (
                 <div
-                  className="mt-2 overflow-hidden text-[length:var(--font-size-ui-md-compact)] leading-5 text-[var(--text-primary)]"
-                  style={{
-                    display: '-webkit-box',
-                    WebkitBoxOrient: 'vertical',
-                    WebkitLineClamp: 2,
-                  }}
+                  key={message.id}
+                  onClick={() => onViewRawJSON(message)}
+                  className="cursor-pointer border-b border-[var(--border-color)] px-5 py-3 transition-colors hover:bg-[var(--bg-surface)]"
                 >
-                  {message.summary}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em]">
+                    <span className="text-[var(--text-muted)]/50">#{String(index + 1).padStart(2, '0')}</span>
+                    <span className="text-[var(--text-muted)]">{message.timeLabel}</span>
+                    <span className={roleTone(message.role)}>{renderRoleLabel(message.role)}</span>
+                    {message.truncated ? (
+                      <span className="text-[var(--text-muted)]/50">TRUNCATED</span>
+                    ) : null}
+                    {message.lineNumber ? (
+                      <span className="text-[var(--text-muted)]/50">JSONL:{message.lineNumber}</span>
+                    ) : null}
+                    {detailState.rawJSONLoadingMessageID === message.id ? (
+                      <span className="animate-pulse text-[var(--text-muted)]/50">RAW JSON</span>
+                    ) : null}
+                  </div>
+                  <pre className="mt-2 max-h-80 overflow-y-auto whitespace-pre-wrap break-words font-mono text-[length:var(--font-size-ui-sm)] leading-5 text-[var(--text-primary)]">
+                    {message.content || message.summary}
+                  </pre>
+                  {detailState.rawJSONByMessageID[message.id] ? (
+                    <div className="mt-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+                      <div className="border-b border-[var(--border-color)] px-3 py-1.5 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                        RAW JSON
+                      </div>
+                      <pre className="max-h-96 overflow-auto whitespace-pre-wrap break-words p-3 font-mono text-[length:var(--font-size-ui-xs)] leading-5 text-[var(--text-primary)]">
+                        {detailState.rawJSONByMessageID[message.id]}
+                      </pre>
+                    </div>
+                  ) : null}
                 </div>
+              ))}
+              {detailState.rawJSONError ? (
+                <div className="border-b border-[var(--border-color)] px-5 py-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+                  {copy.loadFailed} / {detailState.rawJSONError}
+                </div>
+              ) : null}
+              <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  {copy.messageLoadedLine(selectedSessionDetail.messages.length, selectedSessionDetail.messageCount)}
+                </div>
+                {detailState.messagePageError ? (
+                  <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+                    {copy.loadFailed} / {detailState.messagePageError}
+                  </div>
+                ) : null}
+                {detailState.hasMoreMessages ? (
+                  <button
+                    type="button"
+                    onClick={onLoadMoreMessages}
+                    disabled={detailState.messagePageLoading}
+                    className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+                  >
+                    {detailState.messagePageLoading ? copy.messagePageLoading : copy.loadMoreMessages}
+                  </button>
+                ) : null}
               </div>
-            ))
+            </>
           ) : detailState.error ? (
             <StatePanel title={copy.loadFailed} description={detailState.error} actionLabel={copy.retry} onAction={onRetry} />
           ) : (

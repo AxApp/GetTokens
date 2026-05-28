@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
+import { analyzeCodexSessions } from './api.ts';
 import { getSessionManagementPreviewDetailID } from './previewData.ts';
 import { createSessionManagementCopy } from './sessionManagementCopy.ts';
 import {
@@ -13,12 +14,16 @@ import { useSessionManagementDetail } from './useSessionManagementDetail.ts';
 import type { SessionManagementWorkspace } from '../../types';
 import type {
   MessageRole,
+  SessionAnalysisPluginMode,
+  SessionAnalysisResult,
   SessionFilter,
 } from './model.ts';
+import { buildSessionAnalysisInput } from './model.ts';
 import {
   InitialLoadingShell,
   ProjectListPanel,
   ProviderMergeModal,
+  SessionAnalysisPanel,
   SessionDetailModal,
   SessionManagementSearchBar,
   SessionsPanel,
@@ -27,6 +32,8 @@ import {
 interface SessionManagementFeatureProps {
   workspace?: SessionManagementWorkspace;
 }
+
+const SESSION_ANALYSIS_RECENT_LIMIT = 20;
 
 export default function SessionManagementFeature({ workspace = 'codex' }: SessionManagementFeatureProps) {
   const { locale, t } = useI18n();
@@ -39,6 +46,9 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   );
   const [compactSessionsOpen, setCompactSessionsOpen] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<SessionAnalysisResult | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const {
     snapshot: rawSnapshot,
     snapshotLoading,
@@ -50,6 +60,8 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   const {
     detailState,
     loadDetail,
+    loadMoreMessages,
+    loadMessageRawJSON,
     clearDetail,
   } = useSessionManagementDetail(workspace, copy.loadFailed);
 
@@ -121,6 +133,10 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   const selectedSessionSummary = useMemo(
     () => activeProject?.sessions.find((session) => session.id === selectedSessionId) ?? null,
     [activeProject, selectedSessionId],
+  );
+  const recentAnalysisSessionIDs = useMemo(
+    () => visibleSessions.slice(0, SESSION_ANALYSIS_RECENT_LIMIT).map((session) => session.id),
+    [visibleSessions],
   );
 
   const selectedSessionDetail =
@@ -263,6 +279,34 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
     ],
   );
 
+  const runAnalysis = useCallback(
+    async (mode: SessionAnalysisPluginMode) => {
+      if (workspace !== 'codex') {
+        return;
+      }
+      setAnalysisLoading(true);
+      setAnalysisError(null);
+      try {
+        const input = buildSessionAnalysisInput({
+          mode,
+          projectID: activeProject?.id,
+          sessionIDs: recentAnalysisSessionIDs,
+          recentLimit: SESSION_ANALYSIS_RECENT_LIMIT,
+        });
+        if (mode === 'recent' && !input.sessionIDs?.length) {
+          throw new Error(copy.noSessions);
+        }
+        const result = await analyzeCodexSessions(input);
+        setAnalysisResult(result);
+      } catch (error) {
+        setAnalysisError(error instanceof Error && error.message ? error.message : copy.loadFailed);
+      } finally {
+        setAnalysisLoading(false);
+      }
+    },
+    [activeProject?.id, copy.loadFailed, copy.noSessions, recentAnalysisSessionIDs, workspace],
+  );
+
   if (snapshotLoading && !projects.length && !snapshotError) {
     return <InitialLoadingShell copy={copy} />;
   }
@@ -298,6 +342,21 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
+        {workspace === 'codex' ? (
+          <SessionAnalysisPanel
+            copy={copy}
+            result={analysisResult}
+            loading={analysisLoading}
+            error={analysisError}
+            activeProjectName={activeProject?.name ?? copy.unavailable}
+            canAnalyze={projects.length > 0}
+            canAnalyzeRecent={recentAnalysisSessionIDs.length > 0}
+            recentLimit={SESSION_ANALYSIS_RECENT_LIMIT}
+            onAnalyzeAll={() => void runAnalysis('all')}
+            onAnalyzeProject={() => void runAnalysis('project')}
+            onAnalyzeRecent={() => void runAnalysis('recent')}
+          />
+        ) : null}
         <div className={`flex min-h-0 flex-1 ${compactLayout ? 'flex-col' : 'flex-row'}`}>
           <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-4' : 'w-[20rem] shrink-0 border-r-4'}`}>
             <ProjectListPanel
@@ -419,6 +478,8 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
               void loadDetail(selectedSessionId);
             }
           }}
+          onLoadMoreMessages={() => void loadMoreMessages()}
+          onViewRawJSON={(message) => void loadMessageRawJSON(message)}
           renderRoleLabel={renderRoleLabel}
         />
       ) : null}

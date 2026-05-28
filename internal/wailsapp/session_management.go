@@ -31,6 +31,8 @@ const sessionManagementDetailCacheDirName = ".gettokens-session-management-detai
 const sessionManagementDetailMemoryCacheMaxEntries = 6
 const sessionManagementDetailMemoryCacheMaxBytes = 16 * 1024 * 1024
 const sessionManagementDetailPayloadMaxMessages = 1000
+const sessionManagementMessagePageDefaultLimit = 50
+const sessionManagementMessagePageMaxLimit = 100
 
 type SessionManagementSnapshot struct {
 	ProjectCount         int                              `json:"projectCount"`
@@ -102,14 +104,40 @@ type SessionManagementSessionDetail struct {
 }
 
 type SessionManagementMessageRecord struct {
-	ID        string `json:"id"`
-	Role      string `json:"role"`
-	TimeLabel string `json:"timeLabel"`
-	Timestamp string `json:"timestamp,omitempty"`
-	Title     string `json:"title"`
-	Summary   string `json:"summary"`
-	Content   string `json:"content"`
-	Truncated bool   `json:"truncated,omitempty"`
+	ID         string `json:"id"`
+	LineNumber int    `json:"lineNumber,omitempty"`
+	Role       string `json:"role"`
+	TimeLabel  string `json:"timeLabel"`
+	Timestamp  string `json:"timestamp,omitempty"`
+	Title      string `json:"title"`
+	Summary    string `json:"summary"`
+	Content    string `json:"content"`
+	Truncated  bool   `json:"truncated,omitempty"`
+}
+
+type SessionManagementMessageRawJSONInput struct {
+	LineNumber int `json:"lineNumber"`
+}
+
+type SessionManagementMessageRawJSON struct {
+	SessionID  string `json:"sessionID"`
+	LineNumber int    `json:"lineNumber"`
+	RawJSON    string `json:"rawJSON"`
+}
+
+type SessionManagementMessagePageInput struct {
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+}
+
+type SessionManagementMessagePage struct {
+	SessionID    string                           `json:"sessionID"`
+	Offset       int                              `json:"offset"`
+	Limit        int                              `json:"limit"`
+	MessageCount int                              `json:"messageCount"`
+	NextOffset   int                              `json:"nextOffset"`
+	HasMore      bool                             `json:"hasMore"`
+	Messages     []SessionManagementMessageRecord `json:"messages"`
 }
 
 type sessionMetaEnvelope struct {
@@ -264,17 +292,18 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 	relativeSlash := filepath.ToSlash(relativePath)
 	cacheKey := sessionManagementDetailCacheKey("codex", relativeSlash)
 	if cached := a.readCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano()); cached != nil {
-		return cached, nil
+		return compactSessionManagementDetailForUI(cached), nil
 	}
 	if cached, err := readSessionManagementDetailDiskCache(codexHome, "codex", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano()); err == nil && cached != nil {
-		a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), cached)
-		return cached, nil
+		detail := compactSessionManagementDetailForUI(cached)
+		a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
+		return detail, nil
 	}
 	threadNames, err := loadSessionThreadNames(codexHome)
 	if err != nil {
 		return nil, err
 	}
-	result, err := parseSessionFile(codexHome, absolutePath, relativeSlash, threadNames, true)
+	result, err := parseSessionFile(codexHome, absolutePath, relativeSlash, threadNames, false)
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +311,38 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 	a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
 	_ = writeSessionManagementDetailDiskCache(codexHome, "codex", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
 	return detail, nil
+}
+
+func (a *App) GetCodexSessionMessagePage(sessionID string, input SessionManagementMessagePageInput) (*SessionManagementMessagePage, error) {
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil, err
+	}
+	absolutePath, err := resolveSessionAbsolutePath(codexHome, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	relativePath, err := filepath.Rel(codexHome, absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	return parseSessionMessagePage(codexHome, absolutePath, filepath.ToSlash(relativePath), normalizeSessionManagementMessagePageInput(input))
+}
+
+func (a *App) GetCodexSessionMessageRawJSON(sessionID string, input SessionManagementMessageRawJSONInput) (*SessionManagementMessageRawJSON, error) {
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil, err
+	}
+	absolutePath, err := resolveSessionAbsolutePath(codexHome, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	relativePath, err := filepath.Rel(codexHome, absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	return readSessionMessageRawJSONLine(absolutePath, filepath.ToSlash(relativePath), input.LineNumber)
 }
 
 func (a *App) GetClaudeCodeSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
@@ -312,13 +373,14 @@ func (a *App) GetClaudeCodeSessionDetail(sessionID string) (*SessionManagementSe
 	relativeSlash := filepath.ToSlash(relativePath)
 	cacheKey := sessionManagementDetailCacheKey("claude", relativeSlash)
 	if cached := a.readCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano()); cached != nil {
-		return cached, nil
+		return compactSessionManagementDetailForUI(cached), nil
 	}
 	if cached, err := readSessionManagementDetailDiskCache(claudeConfigDir, "claude", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano()); err == nil && cached != nil {
-		a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), cached)
-		return cached, nil
+		detail := compactSessionManagementDetailForUI(cached)
+		a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
+		return detail, nil
 	}
-	result, err := parseClaudeCodeSessionFile(claudeConfigDir, absolutePath, relativeSlash, true)
+	result, err := parseClaudeCodeSessionFile(claudeConfigDir, absolutePath, relativeSlash, false)
 	if err != nil {
 		return nil, err
 	}
@@ -326,6 +388,38 @@ func (a *App) GetClaudeCodeSessionDetail(sessionID string) (*SessionManagementSe
 	a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
 	_ = writeSessionManagementDetailDiskCache(claudeConfigDir, "claude", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
 	return detail, nil
+}
+
+func (a *App) GetClaudeCodeSessionMessagePage(sessionID string, input SessionManagementMessagePageInput) (*SessionManagementMessagePage, error) {
+	claudeConfigDir, err := resolveClaudeConfigDirPath()
+	if err != nil {
+		return nil, err
+	}
+	absolutePath, err := resolveClaudeCodeSessionAbsolutePath(claudeConfigDir, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	relativePath, err := filepath.Rel(claudeConfigDir, absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	return parseClaudeCodeSessionMessagePage(claudeConfigDir, absolutePath, filepath.ToSlash(relativePath), normalizeSessionManagementMessagePageInput(input))
+}
+
+func (a *App) GetClaudeCodeSessionMessageRawJSON(sessionID string, input SessionManagementMessageRawJSONInput) (*SessionManagementMessageRawJSON, error) {
+	claudeConfigDir, err := resolveClaudeConfigDirPath()
+	if err != nil {
+		return nil, err
+	}
+	absolutePath, err := resolveClaudeCodeSessionAbsolutePath(claudeConfigDir, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	relativePath, err := filepath.Rel(claudeConfigDir, absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	return readSessionMessageRawJSONLine(absolutePath, filepath.ToSlash(relativePath), input.LineNumber)
 }
 
 func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*SessionManagementSnapshot, error) {
@@ -530,14 +624,7 @@ func compactSessionManagementDetailForUI(detail *SessionManagementSessionDetail)
 		return nil
 	}
 
-	messages := cloned.Messages
-	if len(messages) > sessionManagementDetailPayloadMaxMessages {
-		messages = messages[len(messages)-sessionManagementDetailPayloadMaxMessages:]
-	}
-	for index := range messages {
-		messages[index].Content = ""
-	}
-	cloned.Messages = messages
+	cloned.Messages = []SessionManagementMessageRecord{}
 	return cloned
 }
 
@@ -705,6 +792,50 @@ func writeSessionManagementDetailDiskCache(root string, provider string, session
 		return err
 	}
 	return os.WriteFile(sessionManagementDetailDiskCachePath(root, provider, sessionID), content, 0600)
+}
+
+func normalizeSessionManagementMessagePageInput(input SessionManagementMessagePageInput) SessionManagementMessagePageInput {
+	if input.Offset < 0 {
+		input.Offset = 0
+	}
+	if input.Limit <= 0 {
+		input.Limit = sessionManagementMessagePageDefaultLimit
+	}
+	if input.Limit > sessionManagementMessagePageMaxLimit {
+		input.Limit = sessionManagementMessagePageMaxLimit
+	}
+	return input
+}
+
+func readSessionMessageRawJSONLine(absolutePath string, relativePath string, lineNumber int) (*SessionManagementMessageRawJSON, error) {
+	if lineNumber <= 0 {
+		return nil, errors.New("缺少有效的消息行号")
+	}
+	file, err := os.Open(absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	reader := bufio.NewReaderSize(file, 1024*128)
+	currentLine := 0
+	for {
+		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			currentLine++
+			if currentLine == lineNumber {
+				return &SessionManagementMessageRawJSON{
+					SessionID:  relativePath,
+					LineNumber: lineNumber,
+					RawJSON:    strings.TrimRight(string(line), "\r\n"),
+				}, nil
+			}
+		}
+		if err != nil {
+			break
+		}
+	}
+	return nil, errors.New("未找到对应的消息 JSON 行")
 }
 
 func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
@@ -1553,6 +1684,185 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 		startedAtRaw: firstTimestamp,
 		updatedAtRaw: lastTimestamp,
 	}, nil
+}
+
+func parseSessionMessagePage(codexHome string, absolutePath string, relativePath string, input SessionManagementMessagePageInput) (*SessionManagementMessagePage, error) {
+	file, err := os.Open(absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	page := &SessionManagementMessagePage{
+		SessionID: relativePath,
+		Offset:    input.Offset,
+		Limit:     input.Limit,
+		Messages:  make([]SessionManagementMessageRecord, 0, input.Limit),
+	}
+	shouldStop := false
+	appendRecord := func(lineNumber int, timestamp time.Time, role string, title string, raw string) {
+		title, summary, content, truncated := buildSessionMessageContent(role, title, raw)
+		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
+			return
+		}
+		messageIndex := page.MessageCount
+		page.MessageCount++
+		if messageIndex < input.Offset || len(page.Messages) >= input.Limit {
+			if messageIndex >= input.Offset+input.Limit {
+				page.HasMore = true
+				shouldStop = true
+			}
+			return
+		}
+		page.Messages = append(page.Messages, SessionManagementMessageRecord{
+			ID:         fmt.Sprintf("%s:%d", filepath.Base(relativePath), messageIndex+1),
+			LineNumber: lineNumber,
+			Role:       role,
+			TimeLabel:  formatSessionManagementTime(timestamp),
+			Timestamp:  formatSessionManagementTimestamp(timestamp),
+			Title:      title,
+			Summary:    summary,
+			Content:    content,
+			Truncated:  truncated,
+		})
+	}
+
+	reader := bufio.NewReaderSize(file, 1024*128)
+	lineNumber := 0
+	for {
+		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			lineNumber++
+			var envelope struct {
+				Timestamp string          `json:"timestamp"`
+				Type      string          `json:"type"`
+				Payload   json.RawMessage `json:"payload"`
+			}
+			if unmarshalErr := json.Unmarshal(line, &envelope); unmarshalErr == nil {
+				messageTimestamp := time.Time{}
+				if parsed, parseErr := time.Parse(time.RFC3339Nano, envelope.Timestamp); parseErr == nil {
+					messageTimestamp = parsed
+				}
+				switch envelope.Type {
+				case "session_meta":
+					var meta sessionMetaEnvelope
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &meta); unmarshalErr == nil {
+						appendRecord(lineNumber, messageTimestamp, "system", "会话元数据", formatSessionMetaSummary(meta))
+					}
+				case "turn_context":
+					var turnContext turnContextEnvelope
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &turnContext); unmarshalErr == nil {
+						appendRecord(lineNumber, messageTimestamp, "system", "上下文更新", formatTurnContextSummary(turnContext))
+					}
+				case "response_item":
+					var item responseItemEnvelope
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &item); unmarshalErr == nil {
+						role, title, text, ok := extractResponseItemRecord(item)
+						if ok {
+							appendRecord(lineNumber, messageTimestamp, role, title, text)
+						}
+					}
+				case "event_msg":
+					var eventPayload eventMessageEnvelope
+					if unmarshalErr := json.Unmarshal(envelope.Payload, &eventPayload); unmarshalErr == nil {
+						role, title, text, ok := extractEventRecord(eventPayload)
+						if ok {
+							appendRecord(lineNumber, messageTimestamp, role, title, text)
+						}
+					}
+				}
+			}
+		}
+		if shouldStop || err != nil {
+			break
+		}
+	}
+
+	page.NextOffset = input.Offset + len(page.Messages)
+	if !page.HasMore {
+		page.HasMore = page.NextOffset < page.MessageCount
+	}
+	return page, nil
+}
+
+func parseClaudeCodeSessionMessagePage(claudeConfigDir string, absolutePath string, relativePath string, input SessionManagementMessagePageInput) (*SessionManagementMessagePage, error) {
+	file, err := os.Open(absolutePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	page := &SessionManagementMessagePage{
+		SessionID: relativePath,
+		Offset:    input.Offset,
+		Limit:     input.Limit,
+		Messages:  make([]SessionManagementMessageRecord, 0, input.Limit),
+	}
+	shouldStop := false
+	appendRecord := func(lineNumber int, timestamp time.Time, role string, title string, raw string) {
+		title, summary, content, truncated := buildSessionMessageContent(role, title, raw)
+		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
+			return
+		}
+		messageIndex := page.MessageCount
+		page.MessageCount++
+		if messageIndex < input.Offset || len(page.Messages) >= input.Limit {
+			if messageIndex >= input.Offset+input.Limit {
+				page.HasMore = true
+				shouldStop = true
+			}
+			return
+		}
+		page.Messages = append(page.Messages, SessionManagementMessageRecord{
+			ID:         fmt.Sprintf("%s:%d", filepath.Base(relativePath), messageIndex+1),
+			LineNumber: lineNumber,
+			Role:       role,
+			TimeLabel:  formatSessionManagementTime(timestamp),
+			Timestamp:  formatSessionManagementTimestamp(timestamp),
+			Title:      title,
+			Summary:    summary,
+			Content:    content,
+			Truncated:  truncated,
+		})
+	}
+
+	reader := bufio.NewReaderSize(file, 1024*128)
+	lineNumber := 0
+	for {
+		line, err := reader.ReadBytes('\n')
+		if len(line) > 0 {
+			lineNumber++
+			var envelope claudeCodeSessionLineEnvelope
+			if unmarshalErr := json.Unmarshal(line, &envelope); unmarshalErr == nil {
+				messageTimestamp := time.Time{}
+				if parsed, parseErr := time.Parse(time.RFC3339Nano, envelope.Timestamp); parseErr == nil {
+					messageTimestamp = parsed
+				}
+				switch envelope.Type {
+				case "attachment":
+					appendRecord(lineNumber, messageTimestamp, "system", "Claude 会话元数据", formatClaudeCodeSessionMetaSummary(envelope.Cwd, envelope.SessionID))
+				case "system":
+					if !envelope.IsMeta {
+						appendRecord(lineNumber, messageTimestamp, "system", "Claude 系统事件", extractClaudeCodeSystemContent(line))
+					}
+				case "user", "assistant":
+					role, title, text, _, ok := extractClaudeCodeMessageRecord(envelope)
+					if ok {
+						appendRecord(lineNumber, messageTimestamp, role, title, text)
+					}
+				}
+			}
+		}
+		if shouldStop || err != nil {
+			break
+		}
+	}
+
+	page.NextOffset = input.Offset + len(page.Messages)
+	if !page.HasMore {
+		page.HasMore = page.NextOffset < page.MessageCount
+	}
+	return page, nil
 }
 
 func loadSessionParseResultsConcurrently(

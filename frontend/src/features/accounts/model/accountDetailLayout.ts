@@ -6,13 +6,12 @@ export type AccountDetailModuleID =
   | 'models'
   | 'proxy-route'
   | 'rate-limit'
-  | 'verify'
   | 'quota'
   | 'billing';
 
 export function buildAccountDetailModulePlan(account: Pick<AccountRecord, 'credentialSource'>): AccountDetailModuleID[] {
   if (account.credentialSource === 'api-key') {
-    return ['credentials', 'proxy-route', 'rate-limit', 'verify', 'quota', 'billing'];
+    return ['credentials', 'proxy-route', 'rate-limit', 'quota', 'billing'];
   }
 
   if (account.credentialSource === 'auth-file') {

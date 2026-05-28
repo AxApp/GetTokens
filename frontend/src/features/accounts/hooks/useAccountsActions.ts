@@ -25,14 +25,12 @@ import {
 } from '../model/accountConfig';
 import { fallbackAPIKeyDisplayName } from '../model/accountPresentation';
 import {
+  type AccountImportPayloadItem,
   buildAccountsExportFilename,
   encodeUTF8Base64,
-  parseAccountCardImportPayload,
-  readUploadFiles,
   resolveCopiedAuthFileName,
   resolveCopiedOpenAICompatibleProviderName,
   resolveNumberedDuplicateTitle,
-  resolvePastedAuthFileName,
 } from '../model/accountTransfer';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
@@ -51,7 +49,6 @@ interface UseAccountsActionsArgs {
   trackRequest: TrackRequest;
   apiKeyForm: ApiKeyFormState;
   accounts: AccountRecord[];
-  pasteContent: string;
   selectedAccount: AccountRecord | null;
   selectedAccounts: AccountRecord[];
   setSelectedAccount: Dispatch<SetStateAction<AccountRecord | null>>;
@@ -60,9 +57,6 @@ interface UseAccountsActionsArgs {
   setApiKeyFormError: Dispatch<SetStateAction<string>>;
   setIsApiKeyModalOpen: Dispatch<SetStateAction<boolean>>;
   setApiKeyForm: Dispatch<SetStateAction<ApiKeyFormState>>;
-  setIsPasteModalOpen: Dispatch<SetStateAction<boolean>>;
-  setPasteContent: Dispatch<SetStateAction<string>>;
-  setPasteError: Dispatch<SetStateAction<string>>;
   setSearchTerm: Dispatch<SetStateAction<string>>;
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
   setAccountActionNotice: Dispatch<SetStateAction<AccountActionNotice | null>>;
@@ -78,7 +72,6 @@ export default function useAccountsActions({
   trackRequest,
   apiKeyForm,
   accounts,
-  pasteContent,
   selectedAccount,
   selectedAccounts,
   setSelectedAccount,
@@ -87,9 +80,6 @@ export default function useAccountsActions({
   setApiKeyFormError,
   setIsApiKeyModalOpen,
   setApiKeyForm,
-  setIsPasteModalOpen,
-  setPasteContent,
-  setPasteError,
   setSearchTerm,
   setSelectedAccountIDs,
   setAccountActionNotice,
@@ -180,27 +170,6 @@ export default function useAccountsActions({
     [executeDeleteAccount, setDeleteError],
   );
 
-  const uploadAccounts = useCallback(
-    async (files: FileList | null) => {
-      if (!files?.length) {
-        return;
-      }
-
-      setDeleteError('');
-      try {
-        const payload = await readUploadFiles(files);
-        await trackRequest('UploadAuthFiles', { files: payload.map((item) => ({ name: item.name })) }, () =>
-          UploadAuthFiles(payload)
-        );
-        await loadAccounts();
-      } catch (error) {
-        console.error(error);
-        setDeleteError(`UPLOAD ERROR: ${toErrorMessage(error)}`);
-      }
-    },
-    [loadAccounts, setDeleteError, trackRequest]
-  );
-
   const openApiKeyModal = useCallback(() => {
     setApiKeyFormError('');
     setApiKeyForm(emptyApiKeyForm);
@@ -255,93 +224,14 @@ export default function useAccountsActions({
     trackRequest,
   ]);
 
-  const submitPasteImport = useCallback(async () => {
-    const content = pasteContent.trim();
-    if (!content) {
-      setPasteError(t('accounts.paste_auth_file_required'));
-      return;
-    }
-
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      setPasteError(t('accounts.paste_auth_file_invalid'));
-      return;
-    }
-
-    const copiedAccount = parseAccountCardImportPayload(parsed);
-
-    try {
-      if (copiedAccount?.type === 'codex-api-key') {
-        const lowestPriority = accounts.reduce((min, account) => Math.min(min, Number(account.priority || 0)), 0);
-        const existingApiKeyTitles = accounts.flatMap((account) => {
-          if (account.credentialSource !== 'api-key' || account.id.startsWith('openai-compatible:')) {
-            return [];
-          }
-          return account.displayName || account.name || '';
-        });
-        const label = resolveNumberedDuplicateTitle(copiedAccount.label || 'Codex API Key', existingApiKeyTitles);
-        await trackRequest(
-          'CreateCodexAPIKey',
-          { baseUrl: copiedAccount.baseUrl, source: 'account-card-paste' },
-          () =>
-            CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom({
-              apiKey: copiedAccount.apiKey,
-              label,
-              baseUrl: copiedAccount.baseUrl,
-              priority: lowestPriority - 1,
-              prefix: copiedAccount.prefix,
-            }))
-        );
-        setIsPasteModalOpen(false);
-        setPasteContent('');
-        setPasteError('');
-        await loadAccounts();
-        return;
+  const submitAccountImport = useCallback(
+    async (items: readonly AccountImportPayloadItem[]) => {
+      if (items.length === 0) {
+        throw new Error(t('accounts.import_account_queue_required'));
       }
 
-      if (copiedAccount?.type === 'openai-compatible') {
-        const existingProviderNames = accounts.flatMap((account) => {
-          if (!account.id.startsWith('openai-compatible:')) {
-            return [];
-          }
-          return account.id.replace(/^openai-compatible:/, '') || account.provider;
-        });
-        const name = resolveCopiedOpenAICompatibleProviderName(copiedAccount.name, existingProviderNames);
-        await trackRequest(
-          'CreateOpenAICompatibleProvider',
-          { name, source: 'account-card-paste' },
-          () =>
-            CreateOpenAICompatibleProvider(main.CreateOpenAICompatibleProviderInput.createFrom({
-              name,
-              apiKey: copiedAccount.apiKey,
-              baseUrl: copiedAccount.baseUrl,
-              prefix: copiedAccount.prefix,
-            }))
-        );
-        await trackRequest(
-          'UpdateOpenAICompatibleProvider',
-          { name, source: 'account-card-paste' },
-          () =>
-            UpdateOpenAICompatibleProvider(main.UpdateOpenAICompatibleProviderInput.createFrom({
-              currentName: name,
-              name,
-              apiKey: copiedAccount.apiKey,
-              apiKeys: copiedAccount.apiKeys,
-              baseUrl: copiedAccount.baseUrl,
-              prefix: copiedAccount.prefix,
-              proxyUrl: copiedAccount.proxyUrl || undefined,
-              headers: copiedAccount.headers,
-              models: copiedAccount.models,
-            }))
-        );
-        setIsPasteModalOpen(false);
-        setPasteContent('');
-        setPasteError('');
-        await loadAccounts();
-        return;
-      }
+      setDeleteError('');
+      let mutated = false;
 
       const existingAuthFileNames = accounts.flatMap((account) => {
         if (account.credentialSource !== 'auth-file') {
@@ -349,22 +239,110 @@ export default function useAccountsActions({
         }
         return account.name || account.id.replace(/^auth-file:/, '');
       });
-      const name = copiedAccount?.type === 'auth-file'
-        ? resolveCopiedAuthFileName(copiedAccount.name, existingAuthFileNames)
-        : resolvePastedAuthFileName(parsed);
-      const uploadContent = copiedAccount?.type === 'auth-file' ? copiedAccount.content : content;
-      const payload = [{ name, contentBase64: encodeUTF8Base64(uploadContent) }];
+      const authFilePayload = items.flatMap((item) => {
+        if (item.type === 'upload-file') {
+          return [{ name: item.name, contentBase64: item.contentBase64 }];
+        }
+        if (item.type !== 'auth-file') {
+          return [];
+        }
+        const name = resolveCopiedAuthFileName(item.name, existingAuthFileNames);
+        existingAuthFileNames.push(name);
+        return [{ name, contentBase64: encodeUTF8Base64(item.content) }];
+      });
 
-      await trackRequest('UploadAuthFiles', { files: [{ name }] }, () => UploadAuthFiles(payload));
-      setIsPasteModalOpen(false);
-      setPasteContent('');
-      setPasteError('');
-      await loadAccounts();
-    } catch (error) {
-      console.error(error);
-      setPasteError(toErrorMessage(error));
-    }
-  }, [accounts, loadAccounts, pasteContent, setIsPasteModalOpen, setPasteContent, setPasteError, t, trackRequest]);
+      try {
+        if (authFilePayload.length > 0) {
+          await trackRequest(
+            'UploadAuthFiles',
+            { files: authFilePayload.map((item) => ({ name: item.name })) },
+            () => UploadAuthFiles(authFilePayload),
+          );
+          mutated = true;
+        }
+
+        const existingApiKeyTitles = accounts.flatMap((account) => {
+          if (account.credentialSource !== 'api-key' || account.id.startsWith('openai-compatible:')) {
+            return [];
+          }
+          return account.displayName || account.name || '';
+        });
+        let nextPriority = accounts.reduce((min, account) => Math.min(min, Number(account.priority || 0)), 0) - 1;
+
+        for (const item of items) {
+          if (item.type !== 'codex-api-key') {
+            continue;
+          }
+          const label = resolveNumberedDuplicateTitle(item.label || 'Codex API Key', existingApiKeyTitles);
+          existingApiKeyTitles.push(label);
+          await trackRequest(
+            'CreateCodexAPIKey',
+            { baseUrl: item.baseUrl, source: 'account-import' },
+            () =>
+              CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom({
+                apiKey: item.apiKey,
+                label,
+                baseUrl: item.baseUrl,
+                priority: nextPriority,
+                prefix: item.prefix,
+              })),
+          );
+          mutated = true;
+          nextPriority -= 1;
+        }
+
+        const existingProviderNames = accounts.flatMap((account) => {
+          if (!account.id.startsWith('openai-compatible:')) {
+            return [];
+          }
+          return account.id.replace(/^openai-compatible:/, '') || account.provider;
+        });
+
+        for (const item of items) {
+          if (item.type !== 'openai-compatible') {
+            continue;
+          }
+          const name = resolveCopiedOpenAICompatibleProviderName(item.name, existingProviderNames);
+          existingProviderNames.push(name);
+          await trackRequest(
+            'CreateOpenAICompatibleProvider',
+            { name, source: 'account-import' },
+            () =>
+              CreateOpenAICompatibleProvider(main.CreateOpenAICompatibleProviderInput.createFrom({
+                name,
+                apiKey: item.apiKey,
+                baseUrl: item.baseUrl,
+                prefix: item.prefix,
+              })),
+          );
+          mutated = true;
+          await trackRequest(
+            'UpdateOpenAICompatibleProvider',
+            { name, source: 'account-import' },
+            () =>
+              UpdateOpenAICompatibleProvider(main.UpdateOpenAICompatibleProviderInput.createFrom({
+                currentName: name,
+                name,
+                apiKey: item.apiKey,
+                apiKeys: item.apiKeys,
+                baseUrl: item.baseUrl,
+                prefix: item.prefix,
+                proxyUrl: item.proxyUrl || undefined,
+                headers: item.headers,
+                models: item.models,
+              })),
+          );
+          mutated = true;
+        }
+      } finally {
+        if (mutated) {
+          setSearchTerm('');
+          await loadAccounts();
+        }
+      }
+    },
+    [accounts, loadAccounts, setDeleteError, setSearchTerm, t, trackRequest],
+  );
 
   const exportSelectedAccounts = useCallback(async () => {
     if (selectedAccounts.length === 0) {
@@ -799,10 +777,9 @@ export default function useAccountsActions({
     runSelectedBulkRefresh,
     runAccountsBulkSetDisabled,
     runSelectedBulkSetDisabled,
-    uploadAccounts,
     openApiKeyModal,
     submitApiKeyForm,
-    submitPasteImport,
+    submitAccountImport,
     exportSelectedAccounts,
     renameSelectedApiKey,
     updateSelectedApiKeyPriority,

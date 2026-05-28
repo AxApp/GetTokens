@@ -5,6 +5,8 @@ import {
   ACCOUNT_CARD_IMPORT_SCHEMA,
   buildAccountsExportFilename,
   parseAccountCardImportPayload,
+  parseAccountImportPayloads,
+  resolveAccountImportPayloadPreview,
   resolveCopiedAuthFileName,
   resolveCopiedOpenAICompatibleProviderName,
   resolveNumberedDuplicateTitle,
@@ -137,6 +139,114 @@ test('copied openai-compatible card content can be pasted as an import payload',
     headers: { 'X-Provider': 'deepseek' },
     models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
   });
+});
+
+test('parseAccountImportPayloads keeps single copied account-card payload compatibility', () => {
+  assert.deepEqual(
+    parseAccountImportPayloads({
+      schema: ACCOUNT_CARD_IMPORT_SCHEMA,
+      credentialSource: 'api-key',
+      account: { displayName: 'Primary Key' },
+      codexAPIKey: {
+        apiKey: 'sk-test-1111',
+        baseUrl: 'https://api.openai.com/v1',
+      },
+    }),
+    [
+      {
+        type: 'codex-api-key',
+        label: 'Primary Key',
+        apiKey: 'sk-test-1111',
+        baseUrl: 'https://api.openai.com/v1',
+        prefix: '',
+      },
+    ],
+  );
+});
+
+test('parseAccountImportPayloads splits pasted json arrays into import candidates', () => {
+  assert.deepEqual(
+    parseAccountImportPayloads([
+      {
+        schema: ACCOUNT_CARD_IMPORT_SCHEMA,
+        credentialSource: 'auth-file',
+        authFile: {
+          name: 'copied-auth',
+          content: { type: 'codex', access_token: 'copied-token' },
+        },
+      },
+      {
+        name: 'raw-auth',
+        type: 'codex',
+        access_token: 'raw-token',
+      },
+    ]),
+    [
+      {
+        type: 'auth-file',
+        name: 'copied-auth.json',
+        content: '{\n  "type": "codex",\n  "access_token": "copied-token"\n}',
+      },
+      {
+        type: 'auth-file',
+        name: 'raw-auth.json',
+        content: '{\n  "name": "raw-auth",\n  "type": "codex",\n  "access_token": "raw-token"\n}',
+      },
+    ],
+  );
+});
+
+test('parseAccountImportPayloads rejects malformed copied account-card payloads', () => {
+  assert.equal(
+    parseAccountImportPayloads({
+      schema: ACCOUNT_CARD_IMPORT_SCHEMA,
+      credentialSource: 'api-key',
+      codexAPIKey: {
+        apiKey: '',
+        baseUrl: '',
+      },
+    }),
+    null,
+  );
+});
+
+test('resolveAccountImportPayloadPreview shows decoded upload file content', () => {
+  const payload = {
+    type: 'upload-file',
+    name: 'chatgpt-session.json',
+    contentBase64: Buffer.from(
+      JSON.stringify(
+        {
+          type: 'codex',
+          email: 'team-codex@example.com',
+          access_token: 'preview-access-token',
+        },
+        null,
+        2,
+      ),
+      'utf8',
+    ).toString('base64'),
+  };
+
+  assert.match(resolveAccountImportPayloadPreview(payload), /"email": "team-codex@example.com"/);
+  assert.match(resolveAccountImportPayloadPreview(payload), /"access_token": "preview-access-token"/);
+});
+
+test('resolveAccountImportPayloadPreview shows parsed card payload content', () => {
+  assert.match(
+    resolveAccountImportPayloadPreview({
+      type: 'openai-compatible',
+      name: 'deepseek',
+      apiKey: 'sk-preview-deepseek',
+      apiKeys: ['sk-preview-deepseek', 'sk-preview-backup'],
+      baseUrl: 'https://api.deepseek.com/v1',
+      prefix: '',
+      proxyUrl: '',
+      headers: {},
+      models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
+    }),
+    /"baseUrl": "https:\/\/api.deepseek.com\/v1"/,
+  );
 });
 
 test('resolveCopiedAuthFileName creates a new auth-file asset name when importing into existing accounts', () => {

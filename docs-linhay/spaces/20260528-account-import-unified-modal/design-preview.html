@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="data:," />
+  <title>GetTokens / Account Import Unified Modal / Design Preview</title>
+  <style>
+    :root {
+      --bg-main: #ffffff;
+      --bg-surface: #f7f7f2;
+      --bg-muted: #eeeeea;
+      --border-color: #101010;
+      --text-primary: #101010;
+      --text-muted: #66665c;
+      --shadow-color: #d8d8d0;
+      --danger: #c72626;
+      --success: #0f7b4f;
+      --accent: #ffd342;
+      --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      padding: 32px;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    .page {
+      display: grid;
+      gap: 22px;
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: grid;
+      gap: 8px;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    h1 {
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 0.96;
+      font-style: italic;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      color: var(--text-muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .workspace {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .modal {
+      display: grid;
+      min-height: 680px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: 12px 12px 0 var(--shadow-color);
+    }
+
+    .modal-head,
+    .modal-foot {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 2px solid var(--border-color);
+      padding: 20px 24px;
+    }
+
+    .modal-foot {
+      border-top: 2px solid var(--border-color);
+      border-bottom: 0;
+      background: var(--bg-surface);
+    }
+
+    .title-stack {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      border: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 5px 8px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .badge.ready {
+      background: var(--accent);
+    }
+
+    .modal-body {
+      display: grid;
+      gap: 18px;
+      padding: 22px;
+      background: linear-gradient(180deg, var(--bg-main), var(--bg-surface));
+    }
+
+    .input-grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    }
+
+    .panel {
+      min-width: 0;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: 5px 5px 0 var(--shadow-color);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 12px 14px;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .panel-count {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .panel-body {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .drop-zone {
+      display: grid;
+      gap: 12px;
+      place-items: center;
+      min-height: 170px;
+      border: 2px dashed var(--border-color);
+      background: var(--bg-surface);
+      padding: 18px;
+      text-align: center;
+    }
+
+    .drop-zone strong {
+      font-size: 15px;
+      font-weight: 900;
+      font-style: italic;
+      text-transform: uppercase;
+    }
+
+    .drop-zone span {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      padding: 12px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 800;
+      outline: none;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      min-height: 38px;
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      padding: 8px 12px;
+      box-shadow: 4px 4px 0 var(--shadow-color);
+      color: var(--text-primary);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .btn.primary {
+      background: var(--text-primary);
+      color: var(--bg-main);
+      box-shadow: 4px 4px 0 var(--accent);
+    }
+
+    .queue {
+      border: 2px solid var(--border-color);
+      background: var(--bg-main);
+      box-shadow: 5px 5px 0 var(--shadow-color);
+    }
+
+    .queue-head {
+      display: grid;
+      gap: 4px;
+      border-bottom: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 14px 16px;
+    }
+
+    .queue-grid {
+      display: grid;
+      gap: 0;
+    }
+
+    .queue-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) 118px 74px;
+      gap: 12px;
+      align-items: center;
+      min-height: 62px;
+      border-bottom: 1px dashed var(--border-color);
+      padding: 11px 14px;
+    }
+
+    .queue-row:last-child {
+      border-bottom: 0;
+    }
+
+    .index {
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 2px solid var(--border-color);
+      background: var(--accent);
+      font-weight: 900;
+    }
+
+    .candidate {
+      min-width: 0;
+      display: grid;
+      gap: 4px;
+    }
+
+    .candidate-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .candidate-meta {
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .type-pill {
+      justify-self: start;
+      border: 2px solid var(--border-color);
+      background: var(--bg-surface);
+      padding: 5px 7px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .type-pill.ok {
+      color: var(--success);
+    }
+
+    .remove {
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 820px) {
+      body {
+        padding: 16px;
+      }
+
+      .input-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .queue-row {
+        grid-template-columns: 34px minmax(0, 1fr);
+      }
+
+      .type-pill,
+      .remove {
+        grid-column: 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="header">
+      <div class="eyebrow">Design System / Account Import</div>
+      <h1>统一账号导入 Modal</h1>
+      <p class="subtitle">上传和粘贴在同一工作台内完成，所有输入先进入候选队列，再统一导入。</p>
+    </header>
+
+    <section class="workspace">
+      <div class="modal">
+        <header class="modal-head">
+          <div class="title-stack">
+            <div class="eyebrow">ACCOUNT IMPORT</div>
+            <h2 class="modal-title">导入账号内容</h2>
+          </div>
+          <div class="badge-row">
+            <span class="badge ready">AUTO DETECT</span>
+            <span class="badge">FILES + PASTE</span>
+            <span class="badge">JSON ARRAY</span>
+          </div>
+        </header>
+
+        <div class="modal-body">
+          <div class="input-grid">
+            <section class="panel">
+              <div class="panel-head">
+                <h3 class="panel-title">文件输入</h3>
+                <span class="panel-count">3 FILES</span>
+              </div>
+              <div class="panel-body">
+                <div class="drop-zone">
+                  <strong>添加多个文件</strong>
+                  <span>支持 ChatGPT Session / 9router OAuth / CPA / Codex Auth JSON</span>
+                </div>
+                <div class="btn-row">
+                  <button class="btn primary">选择文件</button>
+                  <button class="btn">追加文件</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <h3 class="panel-title">粘贴输入</h3>
+                <span class="panel-count">ARRAY READY</span>
+              </div>
+              <div class="panel-body">
+                <textarea spellcheck="false">[
+  { "schema": "gettokens.account-card.v1", "credentialSource": "auth-file" },
+  { "type": "codex", "email": "team@example.com" },
+  { "accessToken": "session-token", "account": { "planType": "plus" } }
+]</textarea>
+                <div class="btn-row">
+                  <button class="btn primary">添加到队列</button>
+                  <button class="btn">清空粘贴</button>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section class="queue">
+            <div class="queue-head">
+              <h3 class="panel-title">候选队列</h3>
+              <p class="candidate-meta">每个候选项都可以在提交前移除；真正 CPA 转换仍由 app 内现有上传链路执行。</p>
+            </div>
+            <div class="queue-grid">
+              <div class="queue-row">
+                <div class="index">1</div>
+                <div class="candidate">
+                  <div class="candidate-name">chatgpt-session.json</div>
+                  <div class="candidate-meta">来自文件 / 需要自动识别</div>
+                </div>
+                <span class="type-pill ok">AUTH FILE</span>
+                <button class="remove">移除</button>
+              </div>
+              <div class="queue-row">
+                <div class="index">2</div>
+                <div class="candidate">
+                  <div class="candidate-name">team@example.com</div>
+                  <div class="candidate-meta">来自粘贴数组 / Raw auth JSON</div>
+                </div>
+                <span class="type-pill ok">CPA TARGET</span>
+                <button class="remove">移除</button>
+              </div>
+              <div class="queue-row">
+                <div class="index">3</div>
+                <div class="candidate">
+                  <div class="candidate-name">OpenAI Compatible / DeepSeek</div>
+                  <div class="candidate-meta">来自复制账号卡 / Provider payload</div>
+                </div>
+                <span class="type-pill">PROVIDER</span>
+                <button class="remove">移除</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="modal-foot">
+          <div class="candidate-meta">3 candidates / no changes applied until import</div>
+          <div class="btn-row">
+            <button class="btn">取消</button>
+            <button class="btn primary">导入 3 项</button>
+          </div>
+        </footer>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

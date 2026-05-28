@@ -21,8 +21,7 @@ test('buildAccountsHeaderMenuItems keeps all add-account actions in one flat men
     [
       'unified-compose',
       'chatgpt-login',
-      'import-auth-file',
-      'paste-auth-file',
+      'account-import',
       'codex-api-key',
       'rotation-settings',
     ],
@@ -32,7 +31,7 @@ test('buildAccountsHeaderMenuItems keeps all add-account actions in one flat men
   assert.equal(items[0].icon, 'plus');
   assert.equal(items[0].emphasis, true);
   assert.equal(items[1].dividerBefore, true);
-  assert.equal(items[5].dividerBefore, true);
+  assert.equal(items[4].dividerBefore, true);
   assert.equal(items[1].disabled, false);
   assert.equal(items[2].disabled, false);
   assert.equal(items[3].disabled, false);
@@ -49,9 +48,8 @@ test('buildAccountsHeaderMenuItems disables import actions when the page is not 
   assert.equal(items[0].disabled, false);
   assert.equal(items[1].disabled, true);
   assert.equal(items[2].disabled, true);
-  assert.equal(items[3].disabled, true);
-  assert.equal(items[4].disabled, false);
-  assert.equal(items[5].disabled, true);
+  assert.equal(items[3].disabled, false);
+  assert.equal(items[4].disabled, true);
 });
 
 test('AccountsHeader menu row styles stay flat instead of card-like', () => {
@@ -80,8 +78,7 @@ test('AccountsHeader menu visible labels are localized from locale files', () =>
     assert.ok(Object.hasOwn(locale.accounts, 'header_actions_menu'));
     assert.ok(Object.hasOwn(locale.accounts, 'add_account'));
     assert.ok(Object.hasOwn(locale.accounts, 'login_chatgpt'));
-    assert.ok(Object.hasOwn(locale.accounts, 'import_auth_file'));
-    assert.ok(Object.hasOwn(locale.accounts, 'paste_auth_file'));
+    assert.ok(Object.hasOwn(locale.accounts, 'import_accounts'));
     assert.ok(Object.hasOwn(locale.accounts, 'add_codex_api_key'));
   }
 });

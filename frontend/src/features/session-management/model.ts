@@ -11,10 +11,19 @@ export type MessageRole =
 
 export interface SessionMessage {
   id: string;
+  lineNumber?: number;
   role: MessageRole;
   timeLabel: string;
   title: string;
   summary: string;
+  content?: string;
+  truncated?: boolean;
+}
+
+export interface SessionMessageRawJSON {
+  sessionID: string;
+  lineNumber: number;
+  rawJSON: string;
 }
 
 export interface SessionSummary {
@@ -66,6 +75,119 @@ export interface SessionDetail {
   currentMessageLabel: string;
   provider: string;
   messages: SessionMessage[];
+}
+
+export interface SessionMessagePageInput {
+  offset: number;
+  limit: number;
+}
+
+export interface SessionMessagePage {
+  sessionID: string;
+  offset: number;
+  limit: number;
+  messageCount: number;
+  nextOffset: number;
+  hasMore: boolean;
+  messages: SessionMessage[];
+}
+
+export interface AnalyzeCodexSessionsInput {
+  scope: 'all' | 'project' | 'selected';
+  projectID?: string;
+  sessionIDs?: string[];
+  limit?: number;
+}
+
+export type SessionAnalysisPluginMode = 'all' | 'project' | 'recent';
+
+export interface SessionAnalysisPluginRequest {
+  mode: SessionAnalysisPluginMode;
+  projectID?: string;
+  sessionIDs?: string[];
+  recentLimit?: number;
+}
+
+export interface SessionAnalysisKeyword {
+  term: string;
+  count: number;
+  sessionCount: number;
+  score: number;
+}
+
+export interface SessionAnalysisRoleContribution {
+  role: string;
+  messageCount: number;
+  termCount: number;
+  share: number;
+}
+
+export interface SessionAnalysisProjectSummary {
+  projectID: string;
+  projectName: string;
+  sessionCount: number;
+  messageCount: number;
+  termCount: number;
+  keywords: SessionAnalysisKeyword[];
+}
+
+export interface SessionAnalysisSessionSummary {
+  sessionID: string;
+  projectID: string;
+  projectName: string;
+  title: string;
+  status: SessionStatus;
+  provider: string;
+  model: string;
+  messageCount: number;
+  termCount: number;
+  topicLine: string;
+  keywords: SessionAnalysisKeyword[];
+  roleContributions: SessionAnalysisRoleContribution[];
+}
+
+export interface SessionAnalysisResult {
+  scope: string;
+  generatedAt: string;
+  requestedSessionCount: number;
+  analyzedSessionCount: number;
+  skippedSessionCount: number;
+  totalMessages: number;
+  totalTerms: number;
+  keywords: SessionAnalysisKeyword[];
+  roleContributions: SessionAnalysisRoleContribution[];
+  projects: SessionAnalysisProjectSummary[];
+  sessions: SessionAnalysisSessionSummary[];
+}
+
+export function buildSessionAnalysisInput(request: SessionAnalysisPluginRequest): AnalyzeCodexSessionsInput {
+  if (request.mode === 'project') {
+    return {
+      scope: 'project',
+      projectID: getOptionalText(request.projectID),
+    };
+  }
+
+  if (request.mode === 'recent') {
+    const recentLimit = Number.isFinite(request.recentLimit) && (request.recentLimit ?? 0) > 0
+      ? Math.floor(request.recentLimit ?? 0)
+      : 20;
+    const sessionIDs = Array.from(
+      new Set(
+        (request.sessionIDs || [])
+          .map((sessionID) => getOptionalText(sessionID))
+          .filter(Boolean),
+      ),
+    ).slice(0, recentLimit);
+    return {
+      scope: 'selected',
+      sessionIDs,
+    };
+  }
+
+  return {
+    scope: 'all',
+  };
 }
 
 const EMPTY_VALUE = '—';
@@ -218,10 +340,13 @@ function mapSessionMessage(raw: unknown, index: number): SessionMessage {
   const source = isRecord(raw) ? raw : {};
   return {
     id: getText(source.id, `message-${index + 1}`),
+    lineNumber: getCount(source.lineNumber),
     role: getMessageRole(source.role),
     timeLabel: getText(source.timeLabel),
     title: getText(source.title),
     summary: getText(source.summary),
+    content: getOptionalText(source.content),
+    truncated: source.truncated === true,
   };
 }
 
@@ -289,5 +414,102 @@ export function mapSessionDetailResponse(raw: unknown): SessionDetail {
     currentMessageLabel: getText(source.currentMessageLabel),
     provider: getText(source.provider),
     messages,
+  };
+}
+
+export function mapSessionMessagePageResponse(raw: unknown): SessionMessagePage {
+  const source = isRecord(raw) ? raw : {};
+  const messages = Array.isArray(source.messages)
+    ? source.messages.map((message, index) => mapSessionMessage(message, index))
+    : [];
+  const offset = getCount(source.offset);
+  return {
+    sessionID: getText(source.sessionID ?? source.id, ''),
+    offset,
+    limit: getCount(source.limit, messages.length),
+    messageCount: getCount(source.messageCount, messages.length),
+    nextOffset: getCount(source.nextOffset, offset + messages.length),
+    hasMore: source.hasMore === true,
+    messages,
+  };
+}
+
+export function mapSessionMessageRawJSONResponse(raw: unknown): SessionMessageRawJSON {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    sessionID: getText(source.sessionID ?? source.id, ''),
+    lineNumber: getCount(source.lineNumber),
+    rawJSON: getOptionalText(source.rawJSON),
+  };
+}
+
+function mapSessionAnalysisKeyword(raw: unknown): SessionAnalysisKeyword {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    term: getText(source.term, ''),
+    count: getCount(source.count),
+    sessionCount: getCount(source.sessionCount),
+    score: typeof source.score === 'number' && Number.isFinite(source.score) ? source.score : 0,
+  };
+}
+
+function mapSessionAnalysisRoleContribution(raw: unknown): SessionAnalysisRoleContribution {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    role: getText(source.role, ''),
+    messageCount: getCount(source.messageCount),
+    termCount: getCount(source.termCount),
+    share: typeof source.share === 'number' && Number.isFinite(source.share) ? source.share : 0,
+  };
+}
+
+function mapSessionAnalysisProject(raw: unknown): SessionAnalysisProjectSummary {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    projectID: getText(source.projectID, ''),
+    projectName: getText(source.projectName),
+    sessionCount: getCount(source.sessionCount),
+    messageCount: getCount(source.messageCount),
+    termCount: getCount(source.termCount),
+    keywords: Array.isArray(source.keywords) ? source.keywords.map(mapSessionAnalysisKeyword) : [],
+  };
+}
+
+function mapSessionAnalysisSession(raw: unknown): SessionAnalysisSessionSummary {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    sessionID: getText(source.sessionID, ''),
+    projectID: getText(source.projectID, ''),
+    projectName: getText(source.projectName),
+    title: getText(source.title),
+    status: getStatus(source.status),
+    provider: getText(source.provider),
+    model: getOptionalText(source.model),
+    messageCount: getCount(source.messageCount),
+    termCount: getCount(source.termCount),
+    topicLine: getText(source.topicLine),
+    keywords: Array.isArray(source.keywords) ? source.keywords.map(mapSessionAnalysisKeyword) : [],
+    roleContributions: Array.isArray(source.roleContributions)
+      ? source.roleContributions.map(mapSessionAnalysisRoleContribution)
+      : [],
+  };
+}
+
+export function mapSessionAnalysisResultResponse(raw: unknown): SessionAnalysisResult {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    scope: getText(source.scope, 'all'),
+    generatedAt: getText(source.generatedAt),
+    requestedSessionCount: getCount(source.requestedSessionCount),
+    analyzedSessionCount: getCount(source.analyzedSessionCount),
+    skippedSessionCount: getCount(source.skippedSessionCount),
+    totalMessages: getCount(source.totalMessages),
+    totalTerms: getCount(source.totalTerms),
+    keywords: Array.isArray(source.keywords) ? source.keywords.map(mapSessionAnalysisKeyword) : [],
+    roleContributions: Array.isArray(source.roleContributions)
+      ? source.roleContributions.map(mapSessionAnalysisRoleContribution)
+      : [],
+    projects: Array.isArray(source.projects) ? source.projects.map(mapSessionAnalysisProject) : [],
+    sessions: Array.isArray(source.sessions) ? source.sessions.map(mapSessionAnalysisSession) : [],
   };
 }

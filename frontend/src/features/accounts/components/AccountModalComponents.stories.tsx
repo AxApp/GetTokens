@@ -9,13 +9,12 @@ import type { AccountRecord, ApiKeyFormState } from '../model/types';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
 import {
   AccountBillingSection,
-  AccountCredentialsSection,
+  AccountCredentialVerifySection,
   AccountDetailFooter,
   AccountDetailHeader,
   AccountEvidenceSection,
   AccountQuotaSection,
   AccountRuntimeSnapshotSection,
-  AccountVerifySection,
 } from './AccountDetailSections';
 import {
   AccountDetailBody,
@@ -25,9 +24,10 @@ import {
 import ApiKeyDetailModal, { type APIKeyVerifyState } from './ApiKeyDetailModal';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
 import CodexOAuthModal from './CodexOAuthModal';
-import PasteAuthModal from './PasteAuthModal';
+import AccountImportModal from './AccountImportModal';
 import type { RateLimitRulesAPI } from './RateLimitRulesSection';
 import UnifiedComposeModal, { type UnifiedComposeFormState } from './UnifiedComposeModal';
+import type { AccountImportPayloadItem } from '../model/accountTransfer';
 
 const meta = {
   title: 'Design System/业务组件/账号弹窗',
@@ -174,25 +174,24 @@ function ModalSample({
   );
 }
 
-function PasteAuthSample({
+function AccountImportSample({
   content = '',
-  error = '',
+  items = [],
   label,
 }: {
   content?: string;
-  error?: string;
+  items?: AccountImportPayloadItem[];
   label: string;
 }) {
   const { t } = useI18n();
   return (
     <ModalViewport label={label}>
-      <PasteAuthModal
+      <AccountImportModal
         t={t}
-        pasteContent={content}
-        pasteError={error}
+        initialPasteContent={content}
+        initialItems={items}
         onClose={() => undefined}
-        onChange={() => undefined}
-        onSubmit={() => undefined}
+        onSubmit={async () => undefined}
       />
     </ModalViewport>
   );
@@ -209,6 +208,52 @@ const pastedAuthContent = JSON.stringify(
   null,
   2,
 );
+
+const pastedAuthArrayContent = JSON.stringify(
+  [
+    {
+      type: 'codex',
+      email: 'team-codex@example.com',
+      access_token: 'preview-access-token',
+      refresh_token: 'preview-refresh-token',
+    },
+    {
+      schema: 'gettokens.account-card.v1',
+      credentialSource: 'openai-compatible',
+      openAICompatibleProvider: {
+        name: 'deepseek',
+        apiKey: 'sk-preview-deepseek',
+        baseUrl: 'https://api.deepseek.com/v1',
+      },
+    },
+  ],
+  null,
+  2,
+);
+
+const accountImportItems: AccountImportPayloadItem[] = [
+  {
+    type: 'upload-file',
+    name: 'chatgpt-session.json',
+    contentBase64: 'eyJ0eXBlIjoiY29kZXgifQ==',
+  },
+  {
+    type: 'auth-file',
+    name: 'team-codex.json',
+    content: pastedAuthContent,
+  },
+  {
+    type: 'openai-compatible',
+    name: 'deepseek',
+    apiKey: 'sk-preview-deepseek',
+    apiKeys: ['sk-preview-deepseek', 'sk-preview-backup'],
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: '',
+    proxyUrl: '',
+    headers: {},
+    models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
+  },
+];
 
 const apiKeyForms: Record<'empty' | 'filled' | 'error', ApiKeyFormState> = {
   empty: {
@@ -526,9 +571,9 @@ function AccountDetailSectionsSample({
             }
           />
           <AccountDetailModuleStack layout="cards">
-            <AccountCredentialsSection draft={draft} setDraft={setDraft} />
-            <AccountVerifySection
+            <AccountCredentialVerifySection
               draft={draft}
+              setDraft={setDraft}
               verifyState={apiKeyVerifyStates.success}
               modelNames={['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2']}
               onVerify={() => undefined}
@@ -656,11 +701,11 @@ function AccountModalsOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">粘贴认证状态</h3>
+        <h3 className="text-sm font-black uppercase italic tracking-normal">统一导入状态</h3>
         <div className="grid gap-4 xl:grid-cols-3">
-          <PasteAuthSample label="DS-PASTE-EMPTY" />
-          <PasteAuthSample label="DS-PASTE-READY" content={pastedAuthContent} />
-          <PasteAuthSample label="DS-PASTE-ERROR" content="{ broken auth payload" error="JSON 解析失败：缺少结束括号" />
+          <AccountImportSample label="DS-IMPORT-EMPTY" />
+          <AccountImportSample label="DS-IMPORT-PASTE-ARRAY" content={pastedAuthArrayContent} />
+          <AccountImportSample label="DS-IMPORT-QUEUE" items={accountImportItems} />
         </div>
       </section>
 
@@ -742,8 +787,8 @@ export const Error: Story = {
   render: () => <ModalSample error />,
 };
 
-export const PasteAuth: Story = {
-  render: () => <PasteAuthSample label="DS-PASTE-READY" content={pastedAuthContent} />,
+export const AccountImport: Story = {
+  render: () => <AccountImportSample label="DS-IMPORT-QUEUE" items={accountImportItems} />,
 };
 
 export const ApiKeyCompose: Story = {

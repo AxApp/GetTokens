@@ -14,11 +14,9 @@ interface AccountsListWorkbenchViewProps {
   ready: boolean;
   loading: boolean;
   isHeaderActionsMenuOpen: boolean;
-  fileInputRef: MutableRefObject<HTMLInputElement | null>;
   headerActionsMenuRef: MutableRefObject<HTMLDivElement | null>;
-  onUploadAccounts: (files: FileList | null) => Promise<void> | void;
   onToggleMenu: () => void;
-  onOpenPasteModal: () => void;
+  onOpenImportModal: () => void;
   onOpenApiKeyModal: () => void;
   onOpenRotationModal?: () => void;
   onStartCodexOAuth: () => void;
@@ -59,11 +57,9 @@ export default function AccountsListWorkbenchView({
   ready,
   loading,
   isHeaderActionsMenuOpen,
-  fileInputRef,
   headerActionsMenuRef,
-  onUploadAccounts,
   onToggleMenu,
-  onOpenPasteModal,
+  onOpenImportModal,
   onOpenApiKeyModal,
   onOpenRotationModal,
   onStartCodexOAuth,
@@ -105,11 +101,9 @@ export default function AccountsListWorkbenchView({
         ready={ready}
         loading={loading}
         isHeaderActionsMenuOpen={isHeaderActionsMenuOpen}
-        fileInputRef={fileInputRef}
         headerActionsMenuRef={headerActionsMenuRef}
-        onUploadAccounts={onUploadAccounts}
         onToggleMenu={onToggleMenu}
-        onOpenPasteModal={onOpenPasteModal}
+        onOpenImportModal={onOpenImportModal}
         onOpenApiKeyModal={onOpenApiKeyModal}
         onOpenRotationModal={onOpenRotationModal}
         onStartCodexOAuth={onStartCodexOAuth}

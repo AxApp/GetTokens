@@ -21,9 +21,9 @@ const sectionDensityClassNames: Record<AccountDetailSectionDensity, string> = {
 };
 
 const cardSectionDensityClassNames: Record<AccountDetailSectionDensity, string> = {
-  standard: 'gap-2.5 p-3',
-  dense: 'gap-2 p-2.5',
-  hero: 'gap-3 p-4',
+  standard: 'gap-2.5 p-4',
+  dense: 'gap-2 p-3',
+  hero: 'gap-3 p-5',
 };
 
 const sectionBodyDensityClassNames: Record<AccountDetailSectionDensity, string> = {
@@ -141,7 +141,7 @@ export function AccountDetailBody({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div {...props} data-account-detail-body="module-surface" className={`space-y-5 bg-[var(--bg-main)] px-6 py-5 ${className}`}>
+    <div {...props} data-account-detail-body="module-surface" className={`space-y-6 bg-[var(--bg-main)] px-6 py-6 ${className}`}>
       {children}
     </div>
   );
@@ -156,18 +156,23 @@ export function AccountDetailOverviewGrid({
   evidence?: ReactNode;
   className?: string;
 }) {
+  const hasEvidence = Boolean(evidence);
+  const gridClassName = hasEvidence
+    ? 'grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'
+    : 'min-w-0';
+
   return (
     <AccountDetailModuleLayoutContext.Provider value="cards">
       <div
         data-account-detail-overview-grid="runtime-evidence"
-        data-account-detail-overview-layout="split-50-50"
-        data-account-detail-overview-equal-height="true"
-        className={`grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] ${className}`}
+        data-account-detail-overview-layout={hasEvidence ? 'split-50-50' : 'single'}
+        data-account-detail-overview-equal-height={hasEvidence ? 'true' : undefined}
+        className={`${gridClassName} ${className}`}
       >
-        <div data-account-detail-overview-slot="runtime" className="min-w-0 h-full">
+        <div data-account-detail-overview-slot="runtime" className={hasEvidence ? 'min-w-0 h-full' : 'min-w-0'}>
           {runtime}
         </div>
-        {evidence ? (
+        {hasEvidence ? (
           <aside data-account-detail-overview-slot="evidence" className="min-w-0 h-full">
             {evidence}
           </aside>
@@ -363,18 +368,33 @@ export function AccountDetailEmptyState({
 
 export function AccountDetailEvidenceGrid({
   rows,
+  compact = false,
 }: {
   rows: Array<{ label: ReactNode; value: ReactNode; title?: string }>;
+  compact?: boolean;
 }) {
+  const outerClassName = compact
+    ? 'grid mt-2'
+    : 'grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]';
+  const rowClassName = compact
+    ? 'grid gap-1 py-1 md:grid-cols-[6rem_minmax(0,1fr)] md:items-start'
+    : 'grid gap-2 border-b border-dashed border-[var(--border-color)] px-3 py-2.5 last:border-b-0 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start';
+  const labelClassName = compact
+    ? 'font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]'
+    : 'font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]';
+  const valueClassName = compact
+    ? 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-2xs)] text-[var(--text-primary)]'
+    : 'min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]';
+
   return (
-    <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+    <div className={outerClassName}>
       {rows.map((row, index) => (
-        <div key={`${String(row.label)}-${index}`} className="grid gap-2 border-b border-dashed border-[var(--border-color)] px-3 py-2.5 last:border-b-0 md:grid-cols-[8rem_minmax(0,1fr)] md:items-start">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+        <div key={`${String(row.label)}-${index}`} className={rowClassName}>
+          <div className={labelClassName}>
             {row.label}
           </div>
           <div
-            className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]"
+            className={valueClassName}
             title={row.title}
           >
             {row.value}

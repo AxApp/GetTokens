@@ -194,11 +194,64 @@ func TestApplyRelayServiceConfigToLocalPreservesExistingConfigOrderAndExtraEntri
 	if !strings.Contains(content, `model_reasoning_effort = "low"`) {
 		t.Fatalf("reasoning effort not inserted: %s", content)
 	}
-	if !strings.Contains(content, `openai_base_url = "http://127.0.0.1:8317/v1"`) {
-		t.Fatalf("openai_base_url not inserted: %s", content)
+	if !strings.Contains(content, `model_provider = "legacy-relay" # keep line position`) {
+		t.Fatalf("existing model_provider line should be preserved in place: %s", content)
 	}
-	if !strings.Contains(content, `model_provider = "openai" # keep line position`) {
-		t.Fatalf("existing model_provider line should be updated in place and preserve trailing comment: %s", content)
+	if strings.Contains(content, `openai_base_url =`) {
+		t.Fatalf("openai_base_url should not be written when an active provider already exists: %s", content)
+	}
+	if !strings.Contains(content, `[model_providers.legacy-relay]`) || !strings.Contains(content, `name = "OpenAI"`) || !strings.Contains(content, `base_url = "http://127.0.0.1:8317/v1"`) {
+		t.Fatalf("existing provider section should be patched in place: %s", content)
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalKeepsExistingActiveProviderWhenCustomProviderDiffers(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+
+	configPath := filepath.Join(codexHome, "config.toml")
+	existing := strings.Join([]string{
+		`model = "old-model"`,
+		`model_provider = "legacy-relay" # keep line position`,
+		``,
+		`[model_providers.legacy-relay]`,
+		`name = "Legacy Relay"`,
+		`base_url = "http://legacy/v1"`,
+		`wire_api = "chat_completions"`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(existing), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	if _, err := applyRelayServiceConfigToLocal("sk-relay-test", "http://127.0.0.1:8317/v1", "gpt-5.5", "low", "team-relay", "Team Relay", false); err != nil {
+		t.Fatalf("applyRelayServiceConfigToLocal returned error: %v", err)
+	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	content := string(body)
+
+	if !strings.Contains(content, `model_provider = "legacy-relay" # keep line position`) {
+		t.Fatalf("existing model_provider should be preserved: %s", content)
+	}
+	if strings.Contains(content, `[model_providers.team-relay]`) {
+		t.Fatalf("apply should not create a new provider section when an active provider already exists: %s", content)
+	}
+	if !strings.Contains(content, `[model_providers.legacy-relay]`) {
+		t.Fatalf("existing provider section should be kept: %s", content)
+	}
+	if !strings.Contains(content, `base_url = "http://127.0.0.1:8317/v1"`) {
+		t.Fatalf("existing provider section should be updated in place: %s", content)
+	}
+	if !strings.Contains(content, `wire_api = "responses"`) {
+		t.Fatalf("existing provider section should receive relay-specific fields: %s", content)
 	}
 }
 

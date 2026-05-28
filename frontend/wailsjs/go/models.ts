@@ -676,6 +676,24 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class AnalyzeCodexSessionsInput {
+	    scope: string;
+	    projectID?: string;
+	    sessionIDs?: string[];
+	    limit?: number;
+
+	    static createFrom(source: any = {}) {
+	        return new AnalyzeCodexSessionsInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.scope = source["scope"];
+	        this.projectID = source["projectID"];
+	        this.sessionIDs = source["sessionIDs"];
+	        this.limit = source["limit"];
+	    }
+	}
 	export class AppRuntimeSettings {
 	    launchAtLogin: boolean;
 	    launchAtLoginSupported: boolean;
@@ -2346,6 +2364,11 @@ export namespace main {
 		    return a;
 		}
 	}
+
+
+
+
+
 	export class CodexMcpChange {
 	    key: string;
 	    before: string;
@@ -4107,8 +4130,189 @@ export namespace main {
 	        this.preview = source["preview"];
 	    }
 	}
+	export class SessionAnalysisKeyword {
+	    term: string;
+	    count: number;
+	    sessionCount: number;
+	    score: number;
+
+	    static createFrom(source: any = {}) {
+	        return new SessionAnalysisKeyword(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.term = source["term"];
+	        this.count = source["count"];
+	        this.sessionCount = source["sessionCount"];
+	        this.score = source["score"];
+	    }
+	}
+	export class SessionAnalysisProjectSummary {
+	    projectID: string;
+	    projectName: string;
+	    sessionCount: number;
+	    messageCount: number;
+	    termCount: number;
+	    keywords: SessionAnalysisKeyword[];
+
+	    static createFrom(source: any = {}) {
+	        return new SessionAnalysisProjectSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.projectID = source["projectID"];
+	        this.projectName = source["projectName"];
+	        this.sessionCount = source["sessionCount"];
+	        this.messageCount = source["messageCount"];
+	        this.termCount = source["termCount"];
+	        this.keywords = this.convertValues(source["keywords"], SessionAnalysisKeyword);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SessionAnalysisSessionSummary {
+	    sessionID: string;
+	    projectID: string;
+	    projectName: string;
+	    title: string;
+	    status: string;
+	    provider: string;
+	    model?: string;
+	    messageCount: number;
+	    termCount: number;
+	    topicLine: string;
+	    keywords: SessionAnalysisKeyword[];
+	    roleContributions: SessionAnalysisRoleContribution[];
+
+	    static createFrom(source: any = {}) {
+	        return new SessionAnalysisSessionSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionID = source["sessionID"];
+	        this.projectID = source["projectID"];
+	        this.projectName = source["projectName"];
+	        this.title = source["title"];
+	        this.status = source["status"];
+	        this.provider = source["provider"];
+	        this.model = source["model"];
+	        this.messageCount = source["messageCount"];
+	        this.termCount = source["termCount"];
+	        this.topicLine = source["topicLine"];
+	        this.keywords = this.convertValues(source["keywords"], SessionAnalysisKeyword);
+	        this.roleContributions = this.convertValues(source["roleContributions"], SessionAnalysisRoleContribution);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SessionAnalysisRoleContribution {
+	    role: string;
+	    messageCount: number;
+	    termCount: number;
+	    share: number;
+
+	    static createFrom(source: any = {}) {
+	        return new SessionAnalysisRoleContribution(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.role = source["role"];
+	        this.messageCount = source["messageCount"];
+	        this.termCount = source["termCount"];
+	        this.share = source["share"];
+	    }
+	}
+	export class SessionAnalysisResult {
+	    scope: string;
+	    generatedAt: string;
+	    requestedSessionCount: number;
+	    analyzedSessionCount: number;
+	    skippedSessionCount: number;
+	    totalMessages: number;
+	    totalTerms: number;
+	    keywords: SessionAnalysisKeyword[];
+	    roleContributions: SessionAnalysisRoleContribution[];
+	    projects: SessionAnalysisProjectSummary[];
+	    sessions: SessionAnalysisSessionSummary[];
+
+	    static createFrom(source: any = {}) {
+	        return new SessionAnalysisResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.scope = source["scope"];
+	        this.generatedAt = source["generatedAt"];
+	        this.requestedSessionCount = source["requestedSessionCount"];
+	        this.analyzedSessionCount = source["analyzedSessionCount"];
+	        this.skippedSessionCount = source["skippedSessionCount"];
+	        this.totalMessages = source["totalMessages"];
+	        this.totalTerms = source["totalTerms"];
+	        this.keywords = this.convertValues(source["keywords"], SessionAnalysisKeyword);
+	        this.roleContributions = this.convertValues(source["roleContributions"], SessionAnalysisRoleContribution);
+	        this.projects = this.convertValues(source["projects"], SessionAnalysisProjectSummary);
+	        this.sessions = this.convertValues(source["sessions"], SessionAnalysisSessionSummary);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
 	export class SessionManagementMessageRecord {
 	    id: string;
+	    lineNumber?: number;
 	    role: string;
 	    timeLabel: string;
 	    timestamp?: string;
@@ -4124,6 +4328,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	        this.lineNumber = source["lineNumber"];
 	        this.role = source["role"];
 	        this.timeLabel = source["timeLabel"];
 	        this.timestamp = source["timestamp"];
@@ -4133,6 +4338,91 @@ export namespace main {
 	        this.truncated = source["truncated"];
 	    }
 	}
+	export class SessionManagementMessagePage {
+	    sessionID: string;
+	    offset: number;
+	    limit: number;
+	    messageCount: number;
+	    nextOffset: number;
+	    hasMore: boolean;
+	    messages: SessionManagementMessageRecord[];
+
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementMessagePage(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionID = source["sessionID"];
+	        this.offset = source["offset"];
+	        this.limit = source["limit"];
+	        this.messageCount = source["messageCount"];
+	        this.nextOffset = source["nextOffset"];
+	        this.hasMore = source["hasMore"];
+	        this.messages = this.convertValues(source["messages"], SessionManagementMessageRecord);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class SessionManagementMessagePageInput {
+	    offset: number;
+	    limit: number;
+
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementMessagePageInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.offset = source["offset"];
+	        this.limit = source["limit"];
+	    }
+	}
+	export class SessionManagementMessageRawJSON {
+	    sessionID: string;
+	    lineNumber: number;
+	    rawJSON: string;
+
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementMessageRawJSON(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sessionID = source["sessionID"];
+	        this.lineNumber = source["lineNumber"];
+	        this.rawJSON = source["rawJSON"];
+	    }
+	}
+	export class SessionManagementMessageRawJSONInput {
+	    lineNumber: number;
+
+	    static createFrom(source: any = {}) {
+	        return new SessionManagementMessageRawJSONInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.lineNumber = source["lineNumber"];
+	    }
+	}
+
 	export class SessionManagementSessionRecord {
 	    id: string;
 	    sessionID: string;
@@ -4784,6 +5074,7 @@ export namespace main {
 	}
 
 }
+
 export namespace sidecar {
 
 	export class Status {

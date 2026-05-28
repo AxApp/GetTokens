@@ -16,15 +16,32 @@ interface AccountLocalCliApplyConfirmProps {
   applying: boolean;
   resultMessage: string;
   previewMode: boolean;
+  deepLinkContext?: DeepLinkApplyContext;
   onClose: () => void;
   onDraftChange: (draft: AccountCliApplyDraft) => void;
   onApply: (draft: AccountCliApplyDraft) => void;
+  onImportAccountOnly?: () => void;
 }
 
 interface PreviewFile {
   id: string;
   path: string;
   diff: string;
+}
+
+export interface DeepLinkApplyContext {
+  source?: string;
+  resource: 'codex-config' | 'codex-setup';
+  providerScope: 'current-active' | 'create-new';
+  providerRewriteMode?: 'keep-current' | 'patch-current' | 'create-new';
+  providerCompatibility?: 'compatible' | 'blocked_builtin_openai' | 'missing_chatgpt_auth' | 'missing_provider_section';
+  redactedURL?: string;
+  accountDraft?: {
+    accountType: string;
+    title: string;
+    baseUrl?: string;
+    apiKeyPreview?: string;
+  };
 }
 
 type ClaudeDraft = Extract<AccountCliApplyDraft, { target: 'claude' }>['claude'];
@@ -46,9 +63,11 @@ export default function AccountLocalCliApplyConfirm({
   applying,
   resultMessage,
   previewMode,
+  deepLinkContext,
   onClose,
   onDraftChange,
   onApply,
+  onImportAccountOnly,
 }: AccountLocalCliApplyConfirmProps) {
   const previewFiles = useMemo(() => buildPreviewFiles(draft, relayKeyItems), [draft, relayKeyItems]);
   const [selectedFileID, setSelectedFileID] = useState(previewFiles[0]?.id || '');
@@ -124,8 +143,19 @@ export default function AccountLocalCliApplyConfirm({
               <SummaryBadge label="模板" value={draft.source.templateName} />
               <SummaryBadge label="模式" value={modeLabel} />
               <SummaryBadge label={draft.target === 'codex' ? '当前 provider' : '写入目标'} value={providerLabel} />
+              {deepLinkContext ? <SummaryBadge label="外部来源" value={deepLinkContext.source || 'DEEP LINK'} tone="warning" /> : null}
+              {deepLinkContext ? <SummaryBadge label="resource" value={deepLinkContext.resource} /> : null}
+              {deepLinkContext ? <SummaryBadge label="providerScope" value={deepLinkContext.providerScope} /> : null}
+              {deepLinkContext?.providerRewriteMode ? (
+                <SummaryBadge label="providerRewriteMode" value={deepLinkContext.providerRewriteMode} />
+              ) : null}
               {previewMode ? <SummaryBadge label="运行环境" value="PREVIEW ONLY" tone="warning" /> : null}
             </div>
+            {deepLinkContext?.redactedURL ? (
+              <div className="mt-3 max-w-full truncate border-2 border-dashed border-[var(--border-muted)] bg-[var(--bg-surface)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                {deepLinkContext.redactedURL}
+              </div>
+            ) : null}
           </div>
           <button type="button" onClick={onClose} className="btn-swiss active:scale-95">
             关闭
@@ -141,6 +171,16 @@ export default function AccountLocalCliApplyConfirm({
             <div className="max-w-xl truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
               {resultMessage || (blockingWarnings[0]?.message ?? (previewMode ? 'PREVIEW ONLY / 未写入' : '等待确认 / 未写入'))}
             </div>
+            {onImportAccountOnly ? (
+              <button
+                type="button"
+                disabled={applying}
+                onClick={onImportAccountOnly}
+                className="btn-swiss !px-3 !py-2 !text-[length:var(--font-size-ui-xs)] active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                只导入账号
+              </button>
+            ) : null}
             <button
               type="button"
               disabled={!canApply}
@@ -156,6 +196,7 @@ export default function AccountLocalCliApplyConfirm({
     >
       <div className="grid h-[clamp(24rem,calc(100vh-12rem),38rem)] min-h-0 gap-0 overflow-hidden lg:grid-cols-[18rem_minmax(0,1fr)]">
         <div className="grid min-h-0 content-start gap-3 overflow-auto border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 lg:border-b-0 lg:border-r-2">
+          {deepLinkContext ? <DeepLinkAdapterPanel context={deepLinkContext} /> : null}
           {draft.target === 'claude' ? (
             <div className="grid gap-3 border-2 border-[var(--border-muted)] bg-[var(--bg-surface)] p-3">
               <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -340,6 +381,45 @@ function SummaryBadge({
       <span className="text-[var(--text-muted)]">{label}</span>
       <span className="truncate">{value}</span>
     </span>
+  );
+}
+
+function DeepLinkAdapterPanel({ context }: { context: DeepLinkApplyContext }) {
+  return (
+    <div className="grid gap-3 border-2 border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] p-3">
+      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--color-status-warning)]">
+        Deep link adapter
+      </div>
+      <div className="text-[length:var(--font-size-ui-sm)] font-black leading-snug text-[var(--text-primary)]">
+        外部链接已转换为 Codex local apply 草稿。
+      </div>
+      <div className="grid gap-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+        <span>resource: {context.resource}</span>
+        <span>providerScope: {context.providerScope}</span>
+        {context.providerRewriteMode ? <span>providerRewriteMode: {context.providerRewriteMode}</span> : null}
+        {context.providerCompatibility ? <span>providerCompatibility: {context.providerCompatibility}</span> : null}
+      </div>
+      {context.accountDraft ? (
+        <div className="grid gap-1 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-3">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            账号草稿
+          </div>
+          <div className="break-words text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
+            {context.accountDraft.accountType} / {context.accountDraft.title}
+          </div>
+          {context.accountDraft.baseUrl ? (
+            <div className="break-all font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">
+              base_url: {context.accountDraft.baseUrl}
+            </div>
+          ) : null}
+          {context.accountDraft.apiKeyPreview ? (
+            <div className="break-all font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-muted)]">
+              api_key: {context.accountDraft.apiKeyPreview}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Session Plugin Console Design V01</title>
+  <style>
+    :root {
+      --bg-main: #ffffff;
+      --bg-surface: #f6f6f3;
+      --bg-muted: #ecece7;
+      --border: #0b0b0c;
+      --text: #0b0b0c;
+      --muted: #676761;
+      --blue: #1f6feb;
+      --green: #168a4a;
+      --orange: #d97706;
+      --red: #d92d20;
+      --violet: #6f42c1;
+      --shadow: #d9d9d2;
+      --font-ui: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(11, 11, 12, 0.035) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(11, 11, 12, 0.035) 1px, transparent 1px),
+        var(--bg-main);
+      background-size: 24px 24px;
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 12px;
+      line-height: 1.45;
+      letter-spacing: 0;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      letter-spacing: 0;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 18px;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      min-height: calc(100vh - 36px);
+      border: 4px solid var(--border);
+      background: var(--bg-main);
+      box-shadow: 10px 10px 0 var(--shadow);
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 68px;
+      border-bottom: 4px solid var(--border);
+      padding: 12px 16px;
+      background: var(--bg-surface);
+    }
+
+    .titleline {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mark {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border: 2px solid var(--border);
+      background: var(--text);
+      color: var(--bg-main);
+      font-weight: 900;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: clamp(18px, 2vw, 28px);
+      line-height: 1.05;
+      font-weight: 950;
+    }
+
+    .subline {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .top-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      min-height: 36px;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 2px solid var(--border);
+      border-radius: 2px;
+      background: var(--bg-main);
+      color: var(--text);
+      padding: 0 12px;
+      font-weight: 900;
+      box-shadow: 4px 4px 0 var(--shadow);
+      cursor: default;
+    }
+
+    .btn.primary {
+      background: var(--text);
+      color: var(--bg-main);
+      box-shadow: 4px 4px 0 #bdbdb6;
+    }
+
+    .btn.ghost {
+      box-shadow: none;
+      background: var(--bg-surface);
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 260px minmax(480px, 1fr) 380px;
+      min-height: 0;
+    }
+
+    .rail,
+    .center,
+    .output {
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .rail {
+      border-right: 4px solid var(--border);
+      background: var(--bg-main);
+    }
+
+    .center {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      background: var(--bg-main);
+    }
+
+    .output {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      border-left: 4px solid var(--border);
+      background: var(--bg-surface);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 46px;
+      border-bottom: 2px solid var(--border);
+      padding: 10px 12px;
+    }
+
+    .panel-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .count {
+      display: inline-flex;
+      min-width: 28px;
+      height: 22px;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--border);
+      background: var(--bg-main);
+      font-size: 10px;
+      font-weight: 950;
+    }
+
+    .plugin-list {
+      display: grid;
+      gap: 0;
+    }
+
+    .plugin {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      border-bottom: 2px solid var(--border);
+      padding: 12px;
+      background: var(--bg-main);
+    }
+
+    .plugin.active {
+      background: #eef4ff;
+      box-shadow: inset 6px 0 0 var(--blue);
+    }
+
+    .plugin.disabled {
+      color: var(--muted);
+      background: var(--bg-surface);
+    }
+
+    .plugin-icon {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border: 2px solid var(--border);
+      background: var(--bg-main);
+      font-size: 15px;
+      font-weight: 950;
+    }
+
+    .plugin h2 {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .plugin p {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .tagrow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .tag {
+      display: inline-flex;
+      min-height: 20px;
+      align-items: center;
+      border: 1px solid var(--border);
+      background: var(--bg-main);
+      padding: 0 6px;
+      color: var(--text);
+      font-size: 9px;
+      font-weight: 950;
+    }
+
+    .scope-board {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 12px;
+      border-bottom: 4px solid var(--border);
+      padding: 14px;
+      background: var(--bg-surface);
+    }
+
+    .scope-box,
+    .run-box,
+    .result-block {
+      border: 2px solid var(--border);
+      background: var(--bg-main);
+    }
+
+    .scope-box {
+      display: grid;
+      grid-template-rows: auto auto;
+      min-height: 148px;
+    }
+
+    .box-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 2px solid var(--border);
+      padding: 9px 10px;
+      background: var(--bg-main);
+    }
+
+    .box-title {
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .mode {
+      min-height: 82px;
+      border: 2px solid var(--border);
+      background: var(--bg-surface);
+      padding: 9px;
+    }
+
+    .mode.active {
+      background: var(--text);
+      color: var(--bg-main);
+    }
+
+    .mode strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .mode span {
+      display: block;
+      margin-top: 7px;
+      font-size: 10px;
+      font-weight: 800;
+      color: inherit;
+      opacity: 0.72;
+    }
+
+    .run-box {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 148px;
+    }
+
+    .run-meter {
+      display: grid;
+      grid-template-columns: 74px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
+      padding: 12px;
+    }
+
+    .dial {
+      display: grid;
+      width: 74px;
+      height: 74px;
+      place-items: center;
+      border: 8px solid var(--blue);
+      border-right-color: var(--bg-muted);
+      border-radius: 50%;
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .run-lines {
+      display: grid;
+      gap: 8px;
+    }
+
+    .run-line {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .bar {
+      height: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-muted);
+    }
+
+    .bar > i {
+      display: block;
+      height: 100%;
+      background: var(--blue);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      min-height: 0;
+    }
+
+    .sessions {
+      min-width: 0;
+      border-right: 2px solid var(--border);
+    }
+
+    .queue {
+      min-width: 0;
+      background: var(--bg-surface);
+    }
+
+    .session-row {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 64px;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      background: var(--bg-main);
+    }
+
+    .session-row.selected {
+      background: #fff6df;
+      box-shadow: inset 0 -4px 0 rgba(217, 119, 6, 0.28);
+    }
+
+    .checkbox {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border: 2px solid var(--border);
+      background: var(--bg-main);
+      font-weight: 950;
+    }
+
+    .session-main {
+      min-width: 0;
+    }
+
+    .session-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 950;
+    }
+
+    .session-meta {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .score {
+      min-width: 54px;
+      border: 2px solid var(--border);
+      background: var(--bg-surface);
+      padding: 4px 6px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .queue-list {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .queue-item {
+      border: 2px solid var(--border);
+      background: var(--bg-main);
+      padding: 9px;
+    }
+
+    .queue-item.active {
+      background: #eef4ff;
+    }
+
+    .queue-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 10px;
+      font-weight: 950;
+    }
+
+    .queue-text {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .state-dot {
+      width: 8px;
+      height: 8px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--green);
+    }
+
+    .state-dot.blue {
+      background: var(--blue);
+    }
+
+    .state-dot.orange {
+      background: var(--orange);
+    }
+
+    .output-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .result-block {
+      margin-bottom: 12px;
+    }
+
+    .result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 2px solid var(--border);
+      padding: 9px 10px;
+    }
+
+    .result-title {
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0;
+    }
+
+    .metric {
+      min-height: 70px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+    }
+
+    .metric:nth-child(2n) {
+      border-right: 0;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 950;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+    }
+
+    .keyword-list,
+    .topic-list {
+      display: grid;
+      gap: 7px;
+      padding: 10px;
+    }
+
+    .keyword {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 38px;
+      gap: 8px;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 950;
+    }
+
+    .keyword-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .keyword-track {
+      height: 9px;
+      border: 1px solid var(--border);
+      background: var(--bg-muted);
+    }
+
+    .keyword-track > i {
+      display: block;
+      height: 100%;
+      background: var(--green);
+    }
+
+    .topic {
+      border: 1px solid var(--border);
+      background: var(--bg-main);
+      padding: 8px;
+    }
+
+    .topic strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10px;
+      font-weight: 950;
+    }
+
+    .topic span {
+      display: block;
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    .state-tabs {
+      display: inline-flex;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background: var(--bg-main);
+    }
+
+    .state-tabs button {
+      min-height: 30px;
+      border: 0;
+      border-right: 1px solid var(--border);
+      background: transparent;
+      padding: 0 10px;
+      font-size: 10px;
+      font-weight: 950;
+      color: var(--muted);
+    }
+
+    .state-tabs button:last-child {
+      border-right: 0;
+    }
+
+    .state-tabs button.active {
+      background: var(--text);
+      color: var(--bg-main);
+    }
+
+    .state-view {
+      display: none;
+    }
+
+    .state-view.active {
+      display: contents;
+    }
+
+    .small-only {
+      display: none;
+    }
+
+    @media (max-width: 1180px) {
+      .content {
+        grid-template-columns: 230px minmax(0, 1fr);
+      }
+
+      .output {
+        grid-column: 1 / -1;
+        border-left: 0;
+        border-top: 4px solid var(--border);
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 10px;
+      }
+
+      .shell {
+        min-height: calc(100vh - 20px);
+        box-shadow: 6px 6px 0 var(--shadow);
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .top-actions {
+        justify-content: stretch;
+      }
+
+      .top-actions .btn {
+        flex: 1 1 130px;
+      }
+
+      .content,
+      .scope-board,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .rail,
+      .sessions,
+      .output {
+        border-right: 0;
+        border-left: 0;
+      }
+
+      .rail,
+      .queue,
+      .output {
+        border-top: 4px solid var(--border);
+      }
+
+      .mode-grid,
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metric,
+      .metric:nth-child(2n) {
+        border-right: 0;
+      }
+
+      .session-row {
+        grid-template-columns: 30px minmax(0, 1fr);
+      }
+
+      .score {
+        grid-column: 2;
+        justify-self: start;
+      }
+
+      .wide-only {
+        display: none;
+      }
+
+      .small-only {
+        display: block;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <main class="shell">
+      <header class="topbar">
+        <div class="titleline">
+          <div class="mark">SP</div>
+          <div class="titlecopy">
+            <h1>会话插件</h1>
+            <p class="subline">CODEx / SESSION MANAGEMENT / 426 sessions / 19 projects</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <div class="state-tabs" aria-label="状态预览">
+            <button class="tab active" data-state="ready">就绪</button>
+            <button class="tab" data-state="running">运行中</button>
+            <button class="tab" data-state="done">完成</button>
+          </div>
+          <button class="btn ghost">刷新</button>
+          <button class="btn primary">运行当前插件</button>
+        </div>
+      </header>
+
+      <section class="content">
+        <aside class="rail">
+          <div class="panel-head">
+            <div class="panel-title">插件注册表</div>
+            <span class="count">04</span>
+          </div>
+          <div class="plugin-list">
+            <article class="plugin active">
+              <div class="plugin-icon">分</div>
+              <div>
+                <h2>会话深度分析</h2>
+                <p>jieba keywords, roles, topics</p>
+                <div class="tagrow">
+                  <span class="tag">内置</span>
+                  <span class="tag">Go</span>
+                  <span class="tag">批量</span>
+                </div>
+              </div>
+            </article>
+            <article class="plugin">
+              <div class="plugin-icon">复</div>
+              <div>
+                <h2>行动项复盘</h2>
+                <p>extract decisions and next steps</p>
+                <div class="tagrow">
+                  <span class="tag">草案</span>
+                  <span class="tag">LLM</span>
+                </div>
+              </div>
+            </article>
+            <article class="plugin">
+              <div class="plugin-icon">比</div>
+              <div>
+                <h2>项目对比</h2>
+                <p>compare topic drift between projects</p>
+                <div class="tagrow">
+                  <span class="tag">草案</span>
+                  <span class="tag">趋势</span>
+                </div>
+              </div>
+            </article>
+            <article class="plugin disabled">
+              <div class="plugin-icon">导</div>
+              <div>
+                <h2>归档导出</h2>
+                <p>markdown bundle and evidence pack</p>
+                <div class="tagrow">
+                  <span class="tag">未启用</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </aside>
+
+        <section class="center">
+          <div class="scope-board">
+            <section class="scope-box">
+              <div class="box-head">
+                <div class="box-title">分析作用域</div>
+                <span class="tag">sessionIDs -> plugin input</span>
+              </div>
+              <div class="mode-grid">
+                <div class="mode active">
+                  <strong>当前项目</strong>
+                  <span>GetTokens / 86 sessions</span>
+                </div>
+                <div class="mode">
+                  <strong>最近 20 条</strong>
+                  <span>visible sessions slice</span>
+                </div>
+                <div class="mode">
+                  <strong>全部会话</strong>
+                  <span>426 sessions, async batch</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="run-box">
+              <div class="box-head">
+                <div class="box-title">执行状态</div>
+                <span class="tag">plugin: session-analysis</span>
+              </div>
+              <div class="state-view active" data-panel="ready">
+                <div class="run-meter">
+                  <div class="dial">0%</div>
+                  <div class="run-lines">
+                    <div class="run-line"><span>等待输入</span><b>ready</b></div>
+                    <div class="bar"><i style="width: 0%"></i></div>
+                    <div class="run-line"><span>预计样本</span><b>86 sessions</b></div>
+                  </div>
+                </div>
+              </div>
+              <div class="state-view" data-panel="running">
+                <div class="run-meter">
+                  <div class="dial">64%</div>
+                  <div class="run-lines">
+                    <div class="run-line"><span>分词聚合</span><b>277 / 426</b></div>
+                    <div class="bar"><i style="width: 64%"></i></div>
+                    <div class="run-line"><span>可取消任务</span><b>esc</b></div>
+                  </div>
+                </div>
+              </div>
+              <div class="state-view" data-panel="done">
+                <div class="run-meter">
+                  <div class="dial">100%</div>
+                  <div class="run-lines">
+                    <div class="run-line"><span>完成</span><b>14:33:08</b></div>
+                    <div class="bar"><i style="width: 100%; background: var(--green)"></i></div>
+                    <div class="run-line"><span>缓存命中键</span><b>scope/project</b></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="workspace">
+            <section class="sessions">
+              <div class="panel-head">
+                <div class="panel-title">会话列表</div>
+                <span class="tag">selected 20 / visible 86</span>
+              </div>
+              <article class="session-row selected">
+                <div class="checkbox">✓</div>
+                <div class="session-main">
+                  <div class="session-title">整理 session-management 插件系统</div>
+                  <div class="session-meta">2026-05-28 / codex / 118 messages / docs + Go analysis</div>
+                </div>
+                <div class="score">96</div>
+              </article>
+              <article class="session-row selected">
+                <div class="checkbox">✓</div>
+                <div class="session-main">
+                  <div class="session-title">jieba 批量分析接入</div>
+                  <div class="session-meta">2026-05-28 / Go side / keywords, roles, project spread</div>
+                </div>
+                <div class="score">91</div>
+              </article>
+              <article class="session-row">
+                <div class="checkbox"></div>
+                <div class="session-main">
+                  <div class="session-title">账号导入统一弹窗</div>
+                  <div class="session-meta">2026-05-28 / unrelated workspace / ignored by plugin scope</div>
+                </div>
+                <div class="score">44</div>
+              </article>
+              <article class="session-row selected">
+                <div class="checkbox">✓</div>
+                <div class="session-main">
+                  <div class="session-title">插件注册表和执行状态模型讨论</div>
+                  <div class="session-meta">2026-05-28 / roadmap / host protocol</div>
+                </div>
+                <div class="score">88</div>
+              </article>
+              <article class="session-row">
+                <div class="checkbox"></div>
+                <div class="session-main">
+                  <div class="session-title">release packaging cleanup</div>
+                  <div class="session-meta">2026-05-27 / release / outside current scope</div>
+                </div>
+                <div class="score">32</div>
+              </article>
+            </section>
+
+            <aside class="queue">
+              <div class="panel-head">
+                <div class="panel-title">执行队列</div>
+                <span class="count">03</span>
+              </div>
+              <div class="queue-list">
+                <div class="queue-item active">
+                  <div class="queue-top"><span>深度分析</span><span class="state-dot blue"></span></div>
+                  <div class="queue-text">scope=current project, limit=86</div>
+                </div>
+                <div class="queue-item">
+                  <div class="queue-top"><span>结果缓存</span><span class="state-dot orange"></span></div>
+                  <div class="queue-text">waiting for stable cache key</div>
+                </div>
+                <div class="queue-item">
+                  <div class="queue-top"><span>复盘插件</span><span class="state-dot"></span></div>
+                  <div class="queue-text">disabled until contract lands</div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <aside class="output">
+          <div class="panel-head">
+            <div class="panel-title">插件输出</div>
+            <span class="tag">analysis result</span>
+          </div>
+          <div class="output-body">
+            <section class="result-block">
+              <div class="result-head">
+                <div class="result-title">摘要指标</div>
+                <span class="tag">generated 14:33</span>
+              </div>
+              <div class="metric-grid">
+                <div class="metric"><strong>86</strong><span>sessions analyzed</span></div>
+                <div class="metric"><strong>9.4k</strong><span>messages scanned</span></div>
+                <div class="metric"><strong>312</strong><span>keywords kept</span></div>
+                <div class="metric"><strong>7</strong><span>topic clusters</span></div>
+              </div>
+            </section>
+
+            <section class="result-block">
+              <div class="result-head">
+                <div class="result-title">关键词</div>
+                <span class="tag">top 6</span>
+              </div>
+              <div class="keyword-list">
+                <div class="keyword"><span class="keyword-name">插件系统</span><div class="keyword-track"><i style="width: 96%"></i></div></div>
+                <div class="keyword"><span class="keyword-name">会话分析</span><div class="keyword-track"><i style="width: 88%"></i></div></div>
+                <div class="keyword"><span class="keyword-name">jieba 分词</span><div class="keyword-track"><i style="width: 78%"></i></div></div>
+                <div class="keyword"><span class="keyword-name">执行状态</span><div class="keyword-track"><i style="width: 72%"></i></div></div>
+                <div class="keyword"><span class="keyword-name">结果缓存</span><div class="keyword-track"><i style="width: 61%"></i></div></div>
+                <div class="keyword"><span class="keyword-name">space 治理</span><div class="keyword-track"><i style="width: 48%"></i></div></div>
+              </div>
+            </section>
+
+            <section class="result-block">
+              <div class="result-head">
+                <div class="result-title">主题线索</div>
+                <span class="tag">reviewable</span>
+              </div>
+              <div class="topic-list">
+                <div class="topic">
+                  <strong>Go 侧批处理优先</strong>
+                  <span>批量会话分析不适合放在前端 runtime 中长期占用线程。</span>
+                </div>
+                <div class="topic">
+                  <strong>插件宿主统一入口</strong>
+                  <span>会话列表、详情、选择作用域和执行队列由宿主负责。</span>
+                </div>
+                <div class="topic">
+                  <strong>一期先让深度分析成型</strong>
+                  <span>后续插件复用相同输入输出结构，不重写会话管理面板。</span>
+                </div>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const panels = Array.from(document.querySelectorAll('.state-view'));
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const state = tab.dataset.state;
+        tabs.forEach((item) => item.classList.toggle('active', item === tab));
+        panels.forEach((panel) => panel.classList.toggle('active', panel.dataset.panel === state));
+      });
+    });
+  </script>
+</body>
+</html>

@@ -6,6 +6,7 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.0
 	github.com/creativeprojects/go-selfupdate v1.4.0
 	github.com/wailsapp/wails/v2 v2.12.0
+	github.com/yanyiwu/gojieba v1.4.7
 	golang.org/x/net v0.35.0
 	gopkg.in/yaml.v3 v3.0.1
 	modernc.org/sqlite v1.50.0

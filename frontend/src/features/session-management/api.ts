@@ -1,7 +1,15 @@
 import {
+  mapSessionAnalysisResultResponse,
   mapSessionDetailResponse,
+  mapSessionMessageRawJSONResponse,
+  mapSessionMessagePageResponse,
   mapSessionManagementSnapshotResponse,
+  type AnalyzeCodexSessionsInput,
   type SessionDetail,
+  type SessionMessagePage,
+  type SessionMessagePageInput,
+  type SessionMessageRawJSON,
+  type SessionAnalysisResult,
   type SessionManagementSnapshot,
 } from './model.ts';
 import {
@@ -12,12 +20,17 @@ import {
 import type { SessionManagementWorkspace } from '../../types';
 
 interface SessionManagementRuntimeApp {
+  AnalyzeCodexSessions?: (input: AnalyzeCodexSessionsInput) => Promise<unknown>;
   GetCodexSessionManagementSnapshot?: () => Promise<unknown>;
   RefreshCodexSessionManagementSnapshot?: () => Promise<unknown>;
   GetCodexSessionDetail?: (sessionID: string) => Promise<unknown>;
+  GetCodexSessionMessagePage?: (sessionID: string, input: SessionMessagePageInput) => Promise<unknown>;
+  GetCodexSessionMessageRawJSON?: (sessionID: string, input: { lineNumber: number }) => Promise<unknown>;
   GetClaudeCodeSessionManagementSnapshot?: () => Promise<unknown>;
   RefreshClaudeCodeSessionManagementSnapshot?: () => Promise<unknown>;
   GetClaudeCodeSessionDetail?: (sessionID: string) => Promise<unknown>;
+  GetClaudeCodeSessionMessagePage?: (sessionID: string, input: SessionMessagePageInput) => Promise<unknown>;
+  GetClaudeCodeSessionMessageRawJSON?: (sessionID: string, input: { lineNumber: number }) => Promise<unknown>;
   UpdateCodexSessionProviders?: (input: {
     projectID: string;
     mappings: Array<{ sourceProvider: string; targetProvider: string }>;
@@ -127,13 +140,13 @@ function resolveDevBridgeURLs(path: string) {
   return Array.from(urls);
 }
 
-async function fetchDevPayload(path: string) {
+async function fetchDevPayload(path: string, timeoutMs = 5000) {
   const candidates = resolveDevBridgeURLs(path);
   let lastError: Error | null = null;
 
   for (const candidate of candidates) {
     const controller = new AbortController();
-    const timeoutID = globalThis.setTimeout(() => controller.abort(), 5000);
+    const timeoutID = globalThis.setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetch(candidate, { signal: controller.signal });
       const payload = await response.json();
@@ -174,6 +187,38 @@ async function loadDevDetail(workspace: SessionManagementWorkspace, sessionID: s
   return fetchDevPayload(`/__dev/session-management/detail?${query.toString()}`);
 }
 
+async function loadDevMessagePage(workspace: SessionManagementWorkspace, sessionID: string, input: SessionMessagePageInput) {
+  const detail = mapSessionDetailResponse(await loadDevDetail(workspace, sessionID));
+  const offset = Math.max(0, Math.floor(input.offset || 0));
+  const limit = Math.max(1, Math.floor(input.limit || 50));
+  const messages = detail.messages.slice(offset, offset + limit).map((message, index) => ({
+    ...message,
+    lineNumber: message.lineNumber || offset + index + 1,
+  }));
+  return {
+    sessionID: detail.id,
+    offset,
+    limit,
+    messageCount: detail.messageCount,
+    nextOffset: offset + messages.length,
+    hasMore: offset + messages.length < detail.messageCount,
+    messages,
+  };
+}
+
+async function loadDevRawJSON(workspace: SessionManagementWorkspace, sessionID: string, lineNumber: number) {
+  return {
+    sessionID,
+    lineNumber,
+    rawJSON: JSON.stringify({
+      preview: true,
+      workspace,
+      sessionID,
+      lineNumber,
+    }, null, 2),
+  };
+}
+
 async function loadLegacyDevSnapshot(forceRefresh = false) {
   const path = forceRefresh
     ? '/__dev/session-management/snapshot?refresh=1'
@@ -210,6 +255,21 @@ async function updateDevProviders(projectID: string, mappings: Array<{ sourcePro
   }
 
   throw lastError ?? new Error('session management provider merge unavailable');
+}
+
+async function analyzeDevSessions(input: AnalyzeCodexSessionsInput) {
+  const query = new URLSearchParams();
+  query.set('scope', input.scope);
+  if (input.projectID) {
+    query.set('projectID', input.projectID);
+  }
+  if (input.limit) {
+    query.set('limit', String(input.limit));
+  }
+  if (input.sessionIDs?.length) {
+    query.set('sessionIDs', input.sessionIDs.join(','));
+  }
+  return fetchDevPayload(`/__dev/session-management/analysis?${query.toString()}`, 300000);
 }
 
 function addProviderCount(counts: Record<string, number>, provider: string) {
@@ -284,6 +344,108 @@ export async function refreshCodexSessionManagementSnapshot(): Promise<SessionMa
 
 export async function getCodexSessionDetail(sessionID: string): Promise<SessionDetail> {
   return getSessionDetail('codex', sessionID);
+}
+
+export async function getSessionMessagePage(
+  workspace: SessionManagementWorkspace,
+  sessionID: string,
+  input: SessionMessagePageInput,
+): Promise<SessionMessagePage> {
+  if (hasSessionManagementPreviewMode()) {
+    const detail = await getSessionManagementPreviewDetail(sessionID);
+    const offset = Math.max(0, Math.floor(input.offset || 0));
+    const limit = Math.max(1, Math.floor(input.limit || 50));
+    const messages = detail.messages.slice(offset, offset + limit).map((message, index) => ({
+      ...message,
+      lineNumber: message.lineNumber || offset + index + 1,
+    }));
+    return {
+      sessionID: detail.id,
+      offset,
+      limit,
+      messageCount: detail.messageCount,
+      nextOffset: offset + messages.length,
+      hasMore: offset + messages.length < detail.messageCount,
+      messages,
+    };
+  }
+
+  if (workspace === 'claude') {
+    const getPage = getRuntimeMethod('GetClaudeCodeSessionMessagePage');
+    if (getPage) {
+      return mapSessionMessagePageResponse(await getPage(sessionID, input));
+    }
+    if (canUseSessionManagementDevHTTP()) {
+      return loadDevMessagePage(workspace, sessionID, input);
+    }
+    const missingPage = resolveRuntimeMethod('GetClaudeCodeSessionMessagePage');
+    return mapSessionMessagePageResponse(await missingPage(sessionID, input));
+  }
+
+  const getPage = getRuntimeMethod('GetCodexSessionMessagePage');
+  if (getPage) {
+    return mapSessionMessagePageResponse(await getPage(sessionID, input));
+  }
+  if (canUseSessionManagementDevHTTP()) {
+    return loadDevMessagePage('codex', sessionID, input);
+  }
+  const missingPage = resolveRuntimeMethod('GetCodexSessionMessagePage');
+  return mapSessionMessagePageResponse(await missingPage(sessionID, input));
+}
+
+export async function getSessionMessageRawJSON(
+  workspace: SessionManagementWorkspace,
+  sessionID: string,
+  lineNumber: number,
+): Promise<SessionMessageRawJSON> {
+  if (!Number.isFinite(lineNumber) || lineNumber <= 0) {
+    throw new Error('缺少有效的消息行号');
+  }
+
+  if (hasSessionManagementPreviewMode()) {
+    return loadDevRawJSON(workspace, sessionID, lineNumber);
+  }
+
+  const input = { lineNumber };
+  if (workspace === 'claude') {
+    const getRawJSON = getRuntimeMethod('GetClaudeCodeSessionMessageRawJSON');
+    if (getRawJSON) {
+      return mapSessionMessageRawJSONResponse(await getRawJSON(sessionID, input));
+    }
+    if (canUseSessionManagementDevHTTP()) {
+      return loadDevRawJSON(workspace, sessionID, lineNumber);
+    }
+    const missingRawJSON = resolveRuntimeMethod('GetClaudeCodeSessionMessageRawJSON');
+    return mapSessionMessageRawJSONResponse(await missingRawJSON(sessionID, input));
+  }
+
+  const getRawJSON = getRuntimeMethod('GetCodexSessionMessageRawJSON');
+  if (getRawJSON) {
+    return mapSessionMessageRawJSONResponse(await getRawJSON(sessionID, input));
+  }
+  if (canUseSessionManagementDevHTTP()) {
+    return loadDevRawJSON('codex', sessionID, lineNumber);
+  }
+  const missingRawJSON = resolveRuntimeMethod('GetCodexSessionMessageRawJSON');
+  return mapSessionMessageRawJSONResponse(await missingRawJSON(sessionID, input));
+}
+
+export async function analyzeCodexSessions(input: AnalyzeCodexSessionsInput): Promise<SessionAnalysisResult> {
+  if (hasSessionManagementPreviewMode()) {
+    throw new Error('preview 模式不支持批量分析');
+  }
+  const analyze = getRuntimeMethod('AnalyzeCodexSessions');
+  if (analyze) {
+    const raw = await analyze(input);
+    return mapSessionAnalysisResultResponse(raw);
+  }
+  if (canUseSessionManagementDevHTTP()) {
+    return mapSessionAnalysisResultResponse(await analyzeDevSessions(input));
+  }
+
+  const missingAnalyze = resolveRuntimeMethod('AnalyzeCodexSessions');
+  const raw = await missingAnalyze(input);
+  return mapSessionAnalysisResultResponse(raw);
 }
 
 export async function getSessionManagementSnapshot(

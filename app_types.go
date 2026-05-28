@@ -1017,6 +1017,65 @@ type UpdateSessionProvidersInput struct {
 	Snapshot  *SessionManagementSnapshot     `json:"snapshot,omitempty"`
 }
 
+type AnalyzeCodexSessionsInput struct {
+	Scope      string   `json:"scope"`
+	ProjectID  string   `json:"projectID,omitempty"`
+	SessionIDs []string `json:"sessionIDs,omitempty"`
+	Limit      int      `json:"limit,omitempty"`
+}
+
+type SessionAnalysisResult struct {
+	Scope                 string                            `json:"scope"`
+	GeneratedAt           string                            `json:"generatedAt"`
+	RequestedSessionCount int                               `json:"requestedSessionCount"`
+	AnalyzedSessionCount  int                               `json:"analyzedSessionCount"`
+	SkippedSessionCount   int                               `json:"skippedSessionCount"`
+	TotalMessages         int                               `json:"totalMessages"`
+	TotalTerms            int                               `json:"totalTerms"`
+	Keywords              []SessionAnalysisKeyword          `json:"keywords"`
+	RoleContributions     []SessionAnalysisRoleContribution `json:"roleContributions"`
+	Projects              []SessionAnalysisProjectSummary   `json:"projects"`
+	Sessions              []SessionAnalysisSessionSummary   `json:"sessions"`
+}
+
+type SessionAnalysisKeyword struct {
+	Term         string  `json:"term"`
+	Count        int     `json:"count"`
+	SessionCount int     `json:"sessionCount"`
+	Score        float64 `json:"score"`
+}
+
+type SessionAnalysisRoleContribution struct {
+	Role         string  `json:"role"`
+	MessageCount int     `json:"messageCount"`
+	TermCount    int     `json:"termCount"`
+	Share        float64 `json:"share"`
+}
+
+type SessionAnalysisProjectSummary struct {
+	ProjectID    string                   `json:"projectID"`
+	ProjectName  string                   `json:"projectName"`
+	SessionCount int                      `json:"sessionCount"`
+	MessageCount int                      `json:"messageCount"`
+	TermCount    int                      `json:"termCount"`
+	Keywords     []SessionAnalysisKeyword `json:"keywords"`
+}
+
+type SessionAnalysisSessionSummary struct {
+	SessionID         string                            `json:"sessionID"`
+	ProjectID         string                            `json:"projectID"`
+	ProjectName       string                            `json:"projectName"`
+	Title             string                            `json:"title"`
+	Status            string                            `json:"status"`
+	Provider          string                            `json:"provider"`
+	Model             string                            `json:"model,omitempty"`
+	MessageCount      int                               `json:"messageCount"`
+	TermCount         int                               `json:"termCount"`
+	TopicLine         string                            `json:"topicLine"`
+	Keywords          []SessionAnalysisKeyword          `json:"keywords"`
+	RoleContributions []SessionAnalysisRoleContribution `json:"roleContributions"`
+}
+
 type SessionManagementSnapshot struct {
 	ProjectCount         int                              `json:"projectCount"`
 	SessionCount         int                              `json:"sessionCount"`
@@ -1087,14 +1146,40 @@ type SessionManagementSessionDetail struct {
 }
 
 type SessionManagementMessageRecord struct {
-	ID        string `json:"id"`
-	Role      string `json:"role"`
-	TimeLabel string `json:"timeLabel"`
-	Timestamp string `json:"timestamp,omitempty"`
-	Title     string `json:"title"`
-	Summary   string `json:"summary"`
-	Content   string `json:"content"`
-	Truncated bool   `json:"truncated,omitempty"`
+	ID         string `json:"id"`
+	LineNumber int    `json:"lineNumber,omitempty"`
+	Role       string `json:"role"`
+	TimeLabel  string `json:"timeLabel"`
+	Timestamp  string `json:"timestamp,omitempty"`
+	Title      string `json:"title"`
+	Summary    string `json:"summary"`
+	Content    string `json:"content"`
+	Truncated  bool   `json:"truncated,omitempty"`
+}
+
+type SessionManagementMessageRawJSONInput struct {
+	LineNumber int `json:"lineNumber"`
+}
+
+type SessionManagementMessageRawJSON struct {
+	SessionID  string `json:"sessionID"`
+	LineNumber int    `json:"lineNumber"`
+	RawJSON    string `json:"rawJSON"`
+}
+
+type SessionManagementMessagePageInput struct {
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+}
+
+type SessionManagementMessagePage struct {
+	SessionID    string                           `json:"sessionID"`
+	Offset       int                              `json:"offset"`
+	Limit        int                              `json:"limit"`
+	MessageCount int                              `json:"messageCount"`
+	NextOffset   int                              `json:"nextOffset"`
+	HasMore      bool                             `json:"hasMore"`
+	Messages     []SessionManagementMessageRecord `json:"messages"`
 }
 
 // CLAUDE.md Memory File types

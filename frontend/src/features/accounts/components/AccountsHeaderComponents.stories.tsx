@@ -49,7 +49,6 @@ function AccountsHeaderSample({
   rotation?: boolean;
 }) {
   const { t } = useI18n();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   return (
     <HeaderViewport label={label}>
@@ -59,11 +58,9 @@ function AccountsHeaderSample({
         ready={ready}
         loading={loading}
         isHeaderActionsMenuOpen={menuOpen}
-        fileInputRef={fileInputRef}
         headerActionsMenuRef={menuRef}
-        onUploadAccounts={() => undefined}
         onToggleMenu={() => undefined}
-        onOpenPasteModal={() => undefined}
+        onOpenImportModal={() => undefined}
         onOpenApiKeyModal={() => undefined}
         onOpenRotationModal={rotation ? () => undefined : undefined}
         onStartCodexOAuth={() => undefined}

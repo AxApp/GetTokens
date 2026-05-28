@@ -5,6 +5,8 @@ import {updater} from '../models';
 import {codexbinary} from '../models';
 import {sidecar} from '../models';
 
+export function AnalyzeCodexSessions(arg1:main.AnalyzeCodexSessionsInput):Promise<main.SessionAnalysisResult>;
+
 export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:main.ClaudeCodeLocalApplyOptions):Promise<main.ClaudeCodeLocalApplyResult>;
 
 export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean):Promise<main.RelayLocalApplyResult>;
@@ -67,6 +69,10 @@ export function GetClaudeCodeSessionDetail(arg1:string):Promise<main.SessionMana
 
 export function GetClaudeCodeSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
 
+export function GetClaudeCodeSessionMessagePage(arg1:string,arg2:main.SessionManagementMessagePageInput):Promise<main.SessionManagementMessagePage>;
+
+export function GetClaudeCodeSessionMessageRawJSON(arg1:string,arg2:main.SessionManagementMessageRawJSONInput):Promise<main.SessionManagementMessageRawJSON>;
+
 export function GetClaudeCodeSettingsSnapshot():Promise<main.ClaudeCodeSettingsSnapshotDTO>;
 
 export function GetClaudeCodeSubagentsSnapshot():Promise<main.ClaudeCodeSubagentsSnapshotDTO>;
@@ -96,6 +102,10 @@ export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 export function GetCodexSessionDetail(arg1:string):Promise<main.SessionManagementSessionDetail>;
 
 export function GetCodexSessionManagementSnapshot():Promise<main.SessionManagementSnapshot>;
+
+export function GetCodexSessionMessagePage(arg1:string,arg2:main.SessionManagementMessagePageInput):Promise<main.SessionManagementMessagePage>;
+
+export function GetCodexSessionMessageRawJSON(arg1:string,arg2:main.SessionManagementMessageRawJSONInput):Promise<main.SessionManagementMessageRawJSON>;
 
 export function GetCodexSkillFilePreview(arg1:main.GetCodexSkillFilePreviewInput):Promise<main.GetCodexSkillFilePreviewResult>;
 

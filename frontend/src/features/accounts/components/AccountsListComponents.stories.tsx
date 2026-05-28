@@ -265,7 +265,6 @@ function AccountsListSample({
   loading?: boolean;
 }) {
   const { t } = useI18n();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const headerActionsMenuRef = useRef<HTMLDivElement | null>(null);
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [filters, setFilters] = useState(initialFilters);
@@ -299,11 +298,9 @@ function AccountsListSample({
           ready
           loading={loading}
           isHeaderActionsMenuOpen={menuOpen}
-          fileInputRef={fileInputRef}
           headerActionsMenuRef={headerActionsMenuRef}
-          onUploadAccounts={() => undefined}
           onToggleMenu={() => undefined}
-          onOpenPasteModal={() => undefined}
+          onOpenImportModal={() => undefined}
           onOpenApiKeyModal={() => undefined}
           onOpenRotationModal={() => undefined}
           onStartCodexOAuth={() => undefined}

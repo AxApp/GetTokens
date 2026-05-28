@@ -618,12 +618,67 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 	return mapSessionManagementSessionDetail(result), nil
 }
 
+func (a *App) GetCodexSessionMessagePage(sessionID string, input SessionManagementMessagePageInput) (*SessionManagementMessagePage, error) {
+	result, err := a.core.GetCodexSessionMessagePage(sessionID, wailsapp.SessionManagementMessagePageInput{
+		Offset: input.Offset,
+		Limit:  input.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementMessagePage(result), nil
+}
+
+func (a *App) GetCodexSessionMessageRawJSON(sessionID string, input SessionManagementMessageRawJSONInput) (*SessionManagementMessageRawJSON, error) {
+	result, err := a.core.GetCodexSessionMessageRawJSON(sessionID, wailsapp.SessionManagementMessageRawJSONInput{
+		LineNumber: input.LineNumber,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementMessageRawJSON(result), nil
+}
+
+func (a *App) AnalyzeCodexSessions(input AnalyzeCodexSessionsInput) (*SessionAnalysisResult, error) {
+	result, err := a.core.AnalyzeCodexSessions(wailsapp.AnalyzeCodexSessionsInput{
+		Scope:      input.Scope,
+		ProjectID:  input.ProjectID,
+		SessionIDs: append([]string(nil), input.SessionIDs...),
+		Limit:      input.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionAnalysisResult(result), nil
+}
+
 func (a *App) GetClaudeCodeSessionDetail(sessionID string) (*SessionManagementSessionDetail, error) {
 	result, err := a.core.GetClaudeCodeSessionDetail(sessionID)
 	if err != nil {
 		return nil, err
 	}
 	return mapSessionManagementSessionDetail(result), nil
+}
+
+func (a *App) GetClaudeCodeSessionMessagePage(sessionID string, input SessionManagementMessagePageInput) (*SessionManagementMessagePage, error) {
+	result, err := a.core.GetClaudeCodeSessionMessagePage(sessionID, wailsapp.SessionManagementMessagePageInput{
+		Offset: input.Offset,
+		Limit:  input.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementMessagePage(result), nil
+}
+
+func (a *App) GetClaudeCodeSessionMessageRawJSON(sessionID string, input SessionManagementMessageRawJSONInput) (*SessionManagementMessageRawJSON, error) {
+	result, err := a.core.GetClaudeCodeSessionMessageRawJSON(sessionID, wailsapp.SessionManagementMessageRawJSONInput{
+		LineNumber: input.LineNumber,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return mapSessionManagementMessageRawJSON(result), nil
 }
 
 func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*SessionManagementSnapshot, error) {

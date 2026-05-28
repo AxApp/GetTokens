@@ -309,6 +309,103 @@ func TestCodexSessionSnapshotParsingSanitizesDerivedTitle(t *testing.T) {
 	}
 }
 
+func TestGetCodexSessionMessagePageReturnsRequestedSliceWithContent(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	sessionsDir := filepath.Join(codexHome, "sessions", "2026", "05", "28")
+	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
+		t.Fatalf("mkdir sessions dir: %v", err)
+	}
+	relativePath := filepath.ToSlash(filepath.Join("sessions", "2026", "05", "28", "rollout-2026-05-28T10-00-00-page.jsonl"))
+	if err := os.WriteFile(filepath.Join(codexHome, relativePath), []byte(sessionFixture(
+		"2026-05-28T10:00:00.000Z",
+		"GetTokens",
+		"openai",
+		"第一页用户消息",
+		"第一页助手消息",
+	)), 0600); err != nil {
+		t.Fatalf("write session file: %v", err)
+	}
+	t.Setenv("CODEX_HOME", codexHome)
+
+	app := &App{}
+	page, err := app.GetCodexSessionMessagePage(relativePath, SessionManagementMessagePageInput{Offset: 1, Limit: 1})
+	if err != nil {
+		t.Fatalf("GetCodexSessionMessagePage returned error: %v", err)
+	}
+	if page.MessageCount != 3 {
+		t.Fatalf("message count = %d, want full count 3", page.MessageCount)
+	}
+	if len(page.Messages) != 1 {
+		t.Fatalf("page messages = %d, want 1", len(page.Messages))
+	}
+	if page.Messages[0].Role != "user" || !strings.Contains(page.Messages[0].Content, "第一页用户消息") {
+		t.Fatalf("paged message = %#v, want user content", page.Messages[0])
+	}
+	if page.Messages[0].LineNumber != 2 {
+		t.Fatalf("paged message line number = %d, want 2", page.Messages[0].LineNumber)
+	}
+	if page.NextOffset != 2 || !page.HasMore {
+		t.Fatalf("next offset/has more = %d/%v, want 2/true", page.NextOffset, page.HasMore)
+	}
+	raw, err := app.GetCodexSessionMessageRawJSON(relativePath, SessionManagementMessageRawJSONInput{LineNumber: page.Messages[0].LineNumber})
+	if err != nil {
+		t.Fatalf("GetCodexSessionMessageRawJSON returned error: %v", err)
+	}
+	if !strings.Contains(raw.RawJSON, "第一页用户消息") {
+		t.Fatalf("raw json = %q, want original user json", raw.RawJSON)
+	}
+}
+
+func TestGetClaudeCodeSessionMessagePageReturnsRequestedSliceWithContent(t *testing.T) {
+	home := t.TempDir()
+	claudeDir := filepath.Join(home, ".claude")
+	projectDir := filepath.Join(claudeDir, "projects", "-Users-linhey-Desktop-GetTokens")
+	if err := os.MkdirAll(projectDir, 0755); err != nil {
+		t.Fatalf("mkdir claude project dir: %v", err)
+	}
+	relativeID := filepath.ToSlash(filepath.Join("projects", "-Users-linhey-Desktop-GetTokens", "session-page.jsonl"))
+	if err := os.WriteFile(filepath.Join(claudeDir, relativeID), []byte(claudeSessionFixture(
+		"session-page",
+		"/Users/linhey/Desktop/GetTokens",
+		"2026-05-21T11:00:00.000Z",
+		"Claude 用户消息",
+		"Claude 助手消息",
+	)), 0600); err != nil {
+		t.Fatalf("write claude session: %v", err)
+	}
+	t.Setenv("CLAUDE_CONFIG_DIR", claudeDir)
+
+	app := &App{}
+	page, err := app.GetClaudeCodeSessionMessagePage(relativeID, SessionManagementMessagePageInput{Offset: 4, Limit: 10})
+	if err != nil {
+		t.Fatalf("GetClaudeCodeSessionMessagePage returned error: %v", err)
+	}
+	if page.MessageCount != 5 {
+		t.Fatalf("message count = %d, want full count 5", page.MessageCount)
+	}
+	if len(page.Messages) != 1 {
+		t.Fatalf("page messages = %d, want last message only", len(page.Messages))
+	}
+	if page.Messages[0].Role != "assistant" || !strings.Contains(page.Messages[0].Content, "Claude 助手消息") {
+		t.Fatalf("paged message = %#v, want assistant content", page.Messages[0])
+	}
+	if page.Messages[0].LineNumber != 5 {
+		t.Fatalf("paged message line number = %d, want 5", page.Messages[0].LineNumber)
+	}
+	if page.HasMore {
+		t.Fatalf("has more = true, want false")
+	}
+	raw, err := app.GetClaudeCodeSessionMessageRawJSON(relativeID, SessionManagementMessageRawJSONInput{LineNumber: page.Messages[0].LineNumber})
+	if err != nil {
+		t.Fatalf("GetClaudeCodeSessionMessageRawJSON returned error: %v", err)
+	}
+	if !strings.Contains(raw.RawJSON, "Claude 助手消息") {
+		t.Fatalf("raw json = %q, want original claude assistant json", raw.RawJSON)
+	}
+}
+
 func TestSessionManagementDetailMemoryCacheIsBounded(t *testing.T) {
 	app := &App{}
 	for index := 0; index < sessionManagementDetailMemoryCacheMaxEntries+2; index++ {
@@ -347,7 +444,7 @@ func TestSessionManagementDetailMemoryCacheSkipsOversizedDetails(t *testing.T) {
 	}
 }
 
-func TestCompactSessionManagementDetailForUIDropsContentAndCapsMessages(t *testing.T) {
+func TestCompactSessionManagementDetailForUIDropsMessages(t *testing.T) {
 	messages := make([]SessionManagementMessageRecord, 0, sessionManagementDetailPayloadMaxMessages+3)
 	for index := 0; index < sessionManagementDetailPayloadMaxMessages+3; index++ {
 		messages = append(messages, SessionManagementMessageRecord{
@@ -366,13 +463,8 @@ func TestCompactSessionManagementDetailForUIDropsContentAndCapsMessages(t *testi
 	if detail.MessageCount != sessionManagementDetailPayloadMaxMessages+3 {
 		t.Fatalf("message count = %d, want original total", detail.MessageCount)
 	}
-	if len(detail.Messages) != sessionManagementDetailPayloadMaxMessages {
-		t.Fatalf("returned messages = %d, want capped %d", len(detail.Messages), sessionManagementDetailPayloadMaxMessages)
-	}
-	for _, message := range detail.Messages {
-		if message.Content != "" {
-			t.Fatalf("compacted ui detail kept content: %#v", message)
-		}
+	if len(detail.Messages) != 0 {
+		t.Fatalf("compacted ui detail kept message rows: %#v", detail.Messages)
 	}
 }
 
@@ -541,39 +633,46 @@ func TestGetCodexSessionDetailMasksSensitiveTextAndKeepsMessageRows(t *testing.T
 	if detail.CurrentMessageLabel != "09 / 事件" {
 		t.Fatalf("current message label = %q, want 09 / 事件", detail.CurrentMessageLabel)
 	}
-	if detail.Messages[1].Role != "system" || detail.Messages[1].Summary != "系统与环境约束已载入（已脱敏）" {
-		t.Fatalf("system message = %#v, want masked system summary", detail.Messages[1])
+	if len(detail.Messages) != 0 {
+		t.Fatalf("detail metadata should not keep message rows in memory: %#v", detail.Messages)
 	}
-	if !detail.Messages[1].Truncated {
-		t.Fatalf("system message should be flagged truncated: %#v", detail.Messages[1])
+	page, err := app.GetCodexSessionMessagePage(relativePath, SessionManagementMessagePageInput{Offset: 0, Limit: 20})
+	if err != nil {
+		t.Fatalf("GetCodexSessionMessagePage returned error: %v", err)
 	}
-	if detail.Messages[2].Content != "" {
-		t.Fatalf("ui detail should not keep full message content in memory: %q", detail.Messages[2].Content)
+	if len(page.Messages) != 9 {
+		t.Fatalf("page messages = %d, want 9", len(page.Messages))
 	}
-	if strings.Contains(detail.Messages[2].Summary, "/Users/linhey") {
-		t.Fatalf("user message summary leaked absolute path: %q", detail.Messages[2].Summary)
+	if page.Messages[1].Role != "system" || page.Messages[1].Summary != "系统与环境约束已载入（已脱敏）" {
+		t.Fatalf("system message = %#v, want masked system summary", page.Messages[1])
 	}
-	if strings.Contains(detail.Messages[2].Summary, "call_abc123") {
-		t.Fatalf("user message summary leaked call id: %q", detail.Messages[2].Summary)
+	if !page.Messages[1].Truncated {
+		t.Fatalf("system message should be flagged truncated: %#v", page.Messages[1])
 	}
-	if !strings.Contains(detail.Messages[2].Summary, "<redacted-path>") {
-		t.Fatalf("user message summary missing redacted path placeholder: %q", detail.Messages[2].Summary)
+	if strings.Contains(page.Messages[2].Content, "/Users/linhey") {
+		t.Fatalf("user message content leaked absolute path: %q", page.Messages[2].Content)
 	}
-	if detail.Messages[4].Role != "tool_call" || !strings.Contains(detail.Messages[4].Summary, "exec_command") {
-		t.Fatalf("tool call message = %#v, want exec_command summary", detail.Messages[4])
+	if strings.Contains(page.Messages[2].Content, "call_abc123") {
+		t.Fatalf("user message content leaked call id: %q", page.Messages[2].Content)
 	}
-	if detail.Messages[5].Role != "tool_result" || !strings.Contains(detail.Messages[5].Summary, "<redacted-path>") {
-		t.Fatalf("tool result message = %#v, want redacted path output", detail.Messages[5])
+	if !strings.Contains(page.Messages[2].Content, "<redacted-path>") {
+		t.Fatalf("user message content missing redacted path placeholder: %q", page.Messages[2].Content)
 	}
-	if detail.Messages[6].Role != "reasoning" || !strings.Contains(detail.Messages[6].Summary, "完整会话行集") {
-		t.Fatalf("reasoning message = %#v, want reasoning summary", detail.Messages[6])
+	if page.Messages[4].Role != "tool_call" || !strings.Contains(page.Messages[4].Summary, "exec_command") {
+		t.Fatalf("tool call message = %#v, want exec_command summary", page.Messages[4])
 	}
-	if !strings.Contains(detail.Messages[7].Summary, "session-management") {
-		t.Fatalf("assistant message summary = %q, want implementation summary", detail.Messages[7].Summary)
+	if page.Messages[5].Role != "tool_result" || !strings.Contains(page.Messages[5].Content, "<redacted-path>") {
+		t.Fatalf("tool result message = %#v, want redacted path output", page.Messages[5])
+	}
+	if page.Messages[6].Role != "reasoning" || !strings.Contains(page.Messages[6].Summary, "完整会话行集") {
+		t.Fatalf("reasoning message = %#v, want reasoning summary", page.Messages[6])
+	}
+	if !strings.Contains(page.Messages[7].Content, "session-management") {
+		t.Fatalf("assistant message content = %q, want implementation content", page.Messages[7].Content)
 	}
 }
 
-func TestCompactSessionManagementDetailForUIKeepsSummariesOnly(t *testing.T) {
+func TestCompactSessionManagementDetailForUIDropsMessageRows(t *testing.T) {
 	messages := make([]SessionManagementMessageRecord, 0, sessionManagementDetailPayloadMaxMessages+2)
 	for index := 0; index < sessionManagementDetailPayloadMaxMessages+2; index++ {
 		messages = append(messages, SessionManagementMessageRecord{
@@ -593,16 +692,8 @@ func TestCompactSessionManagementDetailForUIKeepsSummariesOnly(t *testing.T) {
 	if compacted == nil {
 		t.Fatal("compacted detail is nil")
 	}
-	if len(compacted.Messages) != sessionManagementDetailPayloadMaxMessages {
-		t.Fatalf("compacted message count = %d, want %d", len(compacted.Messages), sessionManagementDetailPayloadMaxMessages)
-	}
-	for _, message := range compacted.Messages {
-		if message.Summary != "summary" {
-			t.Fatalf("message summary = %q, want retained summary", message.Summary)
-		}
-		if message.Content != "" {
-			t.Fatalf("message content should be removed from compacted UI payload: %q", message.Content)
-		}
+	if len(compacted.Messages) != 0 {
+		t.Fatalf("compacted detail should not retain message rows: %#v", compacted.Messages)
 	}
 	if source.Messages[0].Content != "large content" {
 		t.Fatalf("source detail should not be mutated: %#v", source.Messages[0])
@@ -703,7 +794,14 @@ func TestGetClaudeCodeSessionDetailMasksMessagesAndToolPayloads(t *testing.T) {
 	if !strings.Contains(detail.Preview, "claude --resume detail-session") {
 		t.Fatalf("detail preview missing resume command: %q", detail.Preview)
 	}
-	for _, message := range detail.Messages {
+	if len(detail.Messages) != 0 {
+		t.Fatalf("detail metadata should not keep claude message rows in memory: %#v", detail.Messages)
+	}
+	page, err := app.GetClaudeCodeSessionMessagePage(relativeID, SessionManagementMessagePageInput{Offset: 0, Limit: 10})
+	if err != nil {
+		t.Fatalf("GetClaudeCodeSessionMessagePage returned error: %v", err)
+	}
+	for _, message := range page.Messages {
 		if strings.Contains(message.Content, "/Users/linhey") || strings.Contains(message.Summary, "/Users/linhey") {
 			t.Fatalf("message leaked path: %#v", message)
 		}
@@ -711,11 +809,11 @@ func TestGetClaudeCodeSessionDetailMasksMessagesAndToolPayloads(t *testing.T) {
 			t.Fatalf("message leaked token: %#v", message)
 		}
 	}
-	if detail.Messages[2].Role != "tool_call" {
-		t.Fatalf("third message role = %q, want tool_call: %#v", detail.Messages[2].Role, detail.Messages)
+	if page.Messages[2].Role != "tool_call" {
+		t.Fatalf("third message role = %q, want tool_call: %#v", page.Messages[2].Role, page.Messages)
 	}
-	if detail.Messages[3].Role != "tool_result" {
-		t.Fatalf("fourth message role = %q, want tool_result: %#v", detail.Messages[3].Role, detail.Messages)
+	if page.Messages[3].Role != "tool_result" {
+		t.Fatalf("fourth message role = %q, want tool_result: %#v", page.Messages[3].Role, page.Messages)
 	}
 }
 
@@ -951,6 +1049,129 @@ func TestUpdateCodexSessionProvidersUsesProvidedSnapshotWhenCacheIsCold(t *testi
 	if !strings.Contains(string(content), `"model_provider":"openai"`) {
 		t.Fatalf("rewritten rollout missing updated provider: %s", string(content))
 	}
+}
+
+func TestAnalyzeCodexSessionsAggregatesAllSessionsWithJiebaTerms(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	sessionsDir := filepath.Join(codexHome, "sessions", "2026", "05", "27")
+	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
+		t.Fatalf("mkdir sessions dir: %v", err)
+	}
+
+	gettokensPath := filepath.Join(sessionsDir, "rollout-2026-05-27T10-00-00-gettokens.jsonl")
+	cliproxyPath := filepath.Join(sessionsDir, "rollout-2026-05-27T10-05-00-cliproxyapi.jsonl")
+	if err := os.WriteFile(gettokensPath, []byte(sessionFixture(
+		"2026-05-27T10:00:00.000Z",
+		"GetTokens",
+		"openai",
+		"会话 深度分析 需要 jieba 分词 和 批量 主题 提取",
+		"jieba 分词 可以 聚合 会话 关键词 和 角色 贡献",
+	)), 0600); err != nil {
+		t.Fatalf("write gettokens rollout: %v", err)
+	}
+	if err := os.WriteFile(cliproxyPath, []byte(sessionFixture(
+		"2026-05-27T10:05:00.000Z",
+		"CLIProxyAPI",
+		"openai",
+		"批量 会话 分析 需要 过滤 噪声 和 token",
+		"项目 维度 应该 汇总 会话 主题 和 关键词",
+	)), 0600); err != nil {
+		t.Fatalf("write cliproxy rollout: %v", err)
+	}
+
+	t.Setenv("CODEX_HOME", codexHome)
+	app := &App{}
+	result, err := app.AnalyzeCodexSessions(AnalyzeCodexSessionsInput{Scope: "all"})
+	if err != nil {
+		t.Fatalf("AnalyzeCodexSessions returned error: %v", err)
+	}
+
+	if result.AnalyzedSessionCount != 2 {
+		t.Fatalf("analyzed session count = %d, want 2", result.AnalyzedSessionCount)
+	}
+	if result.TotalMessages != 4 {
+		t.Fatalf("total messages = %d, want 4", result.TotalMessages)
+	}
+	if len(result.Projects) != 2 {
+		t.Fatalf("project summaries len = %d, want 2: %#v", len(result.Projects), result.Projects)
+	}
+	if !analysisHasKeyword(result.Keywords, "会话", 4, 2) {
+		t.Fatalf("global keywords missing 会话 count/session coverage: %#v", result.Keywords)
+	}
+	if !analysisHasKeyword(result.Keywords, "分词", 2, 1) {
+		t.Fatalf("global keywords missing 分词 count/session coverage: %#v", result.Keywords)
+	}
+	if result.RoleContributions[0].Role != "assistant" || result.RoleContributions[0].MessageCount != 2 {
+		t.Fatalf("top role contribution = %#v, want assistant with 2 messages", result.RoleContributions)
+	}
+	if result.Sessions[0].TopicLine == "" || result.Sessions[0].TopicLine == "—" {
+		t.Fatalf("session topic line should be populated: %#v", result.Sessions[0])
+	}
+}
+
+func TestAnalyzeCodexSessionsCanTargetSelectedSessionIDs(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	codexHome := filepath.Join(home, ".codex")
+	sessionsDir := filepath.Join(codexHome, "sessions", "2026", "05", "27")
+	if err := os.MkdirAll(sessionsDir, 0755); err != nil {
+		t.Fatalf("mkdir sessions dir: %v", err)
+	}
+
+	selectedRelativePath := filepath.ToSlash(filepath.Join("sessions", "2026", "05", "27", "selected.jsonl"))
+	ignoredRelativePath := filepath.ToSlash(filepath.Join("sessions", "2026", "05", "27", "ignored.jsonl"))
+	if err := os.WriteFile(filepath.Join(codexHome, selectedRelativePath), []byte(sessionFixture(
+		"2026-05-27T11:00:00.000Z",
+		"GetTokens",
+		"openai",
+		"指定 会话 只 分析 选中 批次",
+		"选中 会话 输出 关键词",
+	)), 0600); err != nil {
+		t.Fatalf("write selected rollout: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(codexHome, ignoredRelativePath), []byte(sessionFixture(
+		"2026-05-27T11:05:00.000Z",
+		"GetTokens",
+		"openai",
+		"忽略 会话 不应 进入 结果",
+		"忽略 关键词 不应 出现",
+	)), 0600); err != nil {
+		t.Fatalf("write ignored rollout: %v", err)
+	}
+
+	t.Setenv("CODEX_HOME", codexHome)
+	app := &App{}
+	result, err := app.AnalyzeCodexSessions(AnalyzeCodexSessionsInput{
+		Scope:      "selected",
+		SessionIDs: []string{selectedRelativePath},
+	})
+	if err != nil {
+		t.Fatalf("AnalyzeCodexSessions selected returned error: %v", err)
+	}
+
+	if result.AnalyzedSessionCount != 1 {
+		t.Fatalf("analyzed session count = %d, want 1", result.AnalyzedSessionCount)
+	}
+	if result.Sessions[0].SessionID != selectedRelativePath {
+		t.Fatalf("analyzed session id = %q, want selected relative path", result.Sessions[0].SessionID)
+	}
+	if analysisHasKeyword(result.Keywords, "忽略", 1, 1) {
+		t.Fatalf("selected analysis included ignored session keyword: %#v", result.Keywords)
+	}
+	if !analysisHasKeyword(result.Keywords, "选中", 2, 1) {
+		t.Fatalf("selected analysis missing selected keyword: %#v", result.Keywords)
+	}
+}
+
+func analysisHasKeyword(items []SessionAnalysisKeyword, term string, minCount int, minSessionCount int) bool {
+	for _, item := range items {
+		if item.Term == term && item.Count >= minCount && item.SessionCount >= minSessionCount {
+			return true
+		}
+	}
+	return false
 }
 
 func sessionFixture(timestamp string, projectName string, modelProvider string, userText string, assistantText string) string {

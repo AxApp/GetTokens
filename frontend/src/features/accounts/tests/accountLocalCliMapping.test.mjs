@@ -317,6 +317,20 @@ test('AccountLocalCliApplyConfirm exposes editable Claude Code draft fields', as
   assert.match(featureSource, /setLocalCliDraft\(nextDraft\)/);
 });
 
+test('deep link Codex apply adapter reuses AccountLocalCliApplyConfirm shell', async () => {
+  const adapterSource = await readFile(new URL('../components/DeepLinkCodexApplyAdapter.tsx', import.meta.url), 'utf8');
+  const confirmSource = await readFile(new URL('../components/AccountLocalCliApplyConfirm.tsx', import.meta.url), 'utf8');
+
+  assert.match(adapterSource, /AccountLocalCliApplyConfirm/);
+  assert.doesNotMatch(adapterSource, /ModalFrame/);
+  assert.match(adapterSource, /deepLinkContext/);
+  assert.match(confirmSource, /DeepLinkApplyContext/);
+  assert.match(confirmSource, /providerScope/);
+  assert.match(confirmSource, /providerRewriteMode/);
+  assert.match(confirmSource, /onImportAccountOnly/);
+  assert.match(confirmSource, /只导入账号/);
+});
+
 function account(overrides = {}) {
   return {
     id: 'codex-api-key:test',

@@ -81,16 +81,16 @@ test('account card action menu uses explicit copy labels', async () => {
   assert.doesNotMatch(source, /navigator\.clipboard\.writeText/);
 });
 
-test('accounts paste modal opens with app-local copied account payload when available', async () => {
+test('accounts import modal opens with app-local copied account payload when available', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /readAccountClipboardFallback/);
-  assert.match(source, /setPasteContent\(readAccountClipboardFallback\(\)\)/);
+  assert.match(source, /setInitialImportPasteContent\(readAccountClipboardFallback\(\)\)/);
 });
 
 test('pasted codex api key copies use numbered duplicate titles', async () => {
   const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
 
-  assert.match(source, /resolveNumberedDuplicateTitle\(copiedAccount\.label/);
+  assert.match(source, /resolveNumberedDuplicateTitle\(item\.label/);
   assert.match(source, /label,/);
 });

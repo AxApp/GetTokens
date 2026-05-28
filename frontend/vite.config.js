@@ -98,6 +98,25 @@ function sessionManagementDevBridgePlugin() {
           writeJSON(res, 500, { error: error instanceof Error ? error.message : 'detail load failed' })
         }
       })
+
+      server.middlewares.use('/__dev/session-management/analysis', async (req, res) => {
+        try {
+          const url = new URL(req.url || '', 'http://127.0.0.1')
+          const { analyzeCodexSessions } = await import('./dev/sessionManagementDevData.js')
+          const payload = await analyzeCodexSessions({
+            scope: url.searchParams.get('scope') || 'all',
+            projectID: url.searchParams.get('projectID') || '',
+            sessionIDs: (url.searchParams.get('sessionIDs') || '')
+              .split(',')
+              .map((item) => item.trim())
+              .filter(Boolean),
+            limit: Number.parseInt(url.searchParams.get('limit') || '0', 10) || 0,
+          })
+          writeJSON(res, 200, payload)
+        } catch (error) {
+          writeJSON(res, 500, { error: error instanceof Error ? error.message : 'analysis failed' })
+        }
+      })
     },
   }
 }

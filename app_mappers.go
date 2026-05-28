@@ -902,14 +902,15 @@ func mapSessionManagementSessionDetail(result *wailsapp.SessionManagementSession
 	messages := make([]SessionManagementMessageRecord, 0, len(result.Messages))
 	for _, message := range result.Messages {
 		messages = append(messages, SessionManagementMessageRecord{
-			ID:        message.ID,
-			Role:      message.Role,
-			TimeLabel: message.TimeLabel,
-			Timestamp: message.Timestamp,
-			Title:     message.Title,
-			Summary:   message.Summary,
-			Content:   message.Content,
-			Truncated: message.Truncated,
+			ID:         message.ID,
+			LineNumber: message.LineNumber,
+			Role:       message.Role,
+			TimeLabel:  message.TimeLabel,
+			Timestamp:  message.Timestamp,
+			Title:      message.Title,
+			Summary:    message.Summary,
+			Content:    message.Content,
+			Truncated:  message.Truncated,
 		})
 	}
 
@@ -933,6 +934,135 @@ func mapSessionManagementSessionDetail(result *wailsapp.SessionManagementSession
 		UpdatedAt:           result.UpdatedAt,
 		Messages:            messages,
 	}
+}
+
+func mapSessionManagementMessagePage(result *wailsapp.SessionManagementMessagePage) *SessionManagementMessagePage {
+	if result == nil {
+		return &SessionManagementMessagePage{
+			Messages: []SessionManagementMessageRecord{},
+		}
+	}
+	messages := make([]SessionManagementMessageRecord, 0, len(result.Messages))
+	for _, message := range result.Messages {
+		messages = append(messages, SessionManagementMessageRecord{
+			ID:         message.ID,
+			LineNumber: message.LineNumber,
+			Role:       message.Role,
+			TimeLabel:  message.TimeLabel,
+			Timestamp:  message.Timestamp,
+			Title:      message.Title,
+			Summary:    message.Summary,
+			Content:    message.Content,
+			Truncated:  message.Truncated,
+		})
+	}
+	return &SessionManagementMessagePage{
+		SessionID:    result.SessionID,
+		Offset:       result.Offset,
+		Limit:        result.Limit,
+		MessageCount: result.MessageCount,
+		NextOffset:   result.NextOffset,
+		HasMore:      result.HasMore,
+		Messages:     messages,
+	}
+}
+
+func mapSessionManagementMessageRawJSON(result *wailsapp.SessionManagementMessageRawJSON) *SessionManagementMessageRawJSON {
+	if result == nil {
+		return &SessionManagementMessageRawJSON{}
+	}
+	return &SessionManagementMessageRawJSON{
+		SessionID:  result.SessionID,
+		LineNumber: result.LineNumber,
+		RawJSON:    result.RawJSON,
+	}
+}
+
+func mapSessionAnalysisResult(result *wailsapp.SessionAnalysisResult) *SessionAnalysisResult {
+	if result == nil {
+		return &SessionAnalysisResult{
+			Keywords:          []SessionAnalysisKeyword{},
+			RoleContributions: []SessionAnalysisRoleContribution{},
+			Projects:          []SessionAnalysisProjectSummary{},
+			Sessions:          []SessionAnalysisSessionSummary{},
+		}
+	}
+
+	projects := make([]SessionAnalysisProjectSummary, 0, len(result.Projects))
+	for _, project := range result.Projects {
+		projects = append(projects, SessionAnalysisProjectSummary{
+			ProjectID:    project.ProjectID,
+			ProjectName:  project.ProjectName,
+			SessionCount: project.SessionCount,
+			MessageCount: project.MessageCount,
+			TermCount:    project.TermCount,
+			Keywords:     mapSessionAnalysisKeywords(project.Keywords),
+		})
+	}
+
+	sessions := make([]SessionAnalysisSessionSummary, 0, len(result.Sessions))
+	for _, session := range result.Sessions {
+		sessions = append(sessions, SessionAnalysisSessionSummary{
+			SessionID:         session.SessionID,
+			ProjectID:         session.ProjectID,
+			ProjectName:       session.ProjectName,
+			Title:             session.Title,
+			Status:            session.Status,
+			Provider:          session.Provider,
+			Model:             session.Model,
+			MessageCount:      session.MessageCount,
+			TermCount:         session.TermCount,
+			TopicLine:         session.TopicLine,
+			Keywords:          mapSessionAnalysisKeywords(session.Keywords),
+			RoleContributions: mapSessionAnalysisRoleContributions(session.RoleContributions),
+		})
+	}
+
+	return &SessionAnalysisResult{
+		Scope:                 result.Scope,
+		GeneratedAt:           result.GeneratedAt,
+		RequestedSessionCount: result.RequestedSessionCount,
+		AnalyzedSessionCount:  result.AnalyzedSessionCount,
+		SkippedSessionCount:   result.SkippedSessionCount,
+		TotalMessages:         result.TotalMessages,
+		TotalTerms:            result.TotalTerms,
+		Keywords:              mapSessionAnalysisKeywords(result.Keywords),
+		RoleContributions:     mapSessionAnalysisRoleContributions(result.RoleContributions),
+		Projects:              projects,
+		Sessions:              sessions,
+	}
+}
+
+func mapSessionAnalysisKeywords(items []wailsapp.SessionAnalysisKeyword) []SessionAnalysisKeyword {
+	if len(items) == 0 {
+		return []SessionAnalysisKeyword{}
+	}
+	out := make([]SessionAnalysisKeyword, 0, len(items))
+	for _, item := range items {
+		out = append(out, SessionAnalysisKeyword{
+			Term:         item.Term,
+			Count:        item.Count,
+			SessionCount: item.SessionCount,
+			Score:        item.Score,
+		})
+	}
+	return out
+}
+
+func mapSessionAnalysisRoleContributions(items []wailsapp.SessionAnalysisRoleContribution) []SessionAnalysisRoleContribution {
+	if len(items) == 0 {
+		return []SessionAnalysisRoleContribution{}
+	}
+	out := make([]SessionAnalysisRoleContribution, 0, len(items))
+	for _, item := range items {
+		out = append(out, SessionAnalysisRoleContribution{
+			Role:         item.Role,
+			MessageCount: item.MessageCount,
+			TermCount:    item.TermCount,
+			Share:        item.Share,
+		})
+	}
+	return out
 }
 
 func cloneProviderCountMap(source map[string]int) map[string]int {
