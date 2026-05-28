@@ -1054,6 +1054,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           usageSummary={accountUsageByID[selectedAccount.id]}
           rateLimitStatus={accountRateLimitByID[selectedAccount.id]}
           rateLimitStrategies={rateLimitStrategies}
+          rateLimitRulesAPI={previewMode
+            ? undefined
+            : {
+                list: ListRateLimitRules,
+                create: CreateRateLimitRule,
+                update: UpdateRateLimitRule,
+                delete: DeleteRateLimitRule,
+              }}
           verifyState={apiKeyVerifyState}
           modelNames={relayModelNames}
           onClose={closeAccountDetail}
@@ -1078,12 +1086,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           usageSummary={accountUsageByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
           rateLimitStatus={accountRateLimitByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
           rateLimitStrategies={rateLimitStrategies}
-          rateLimitRulesAPI={{
-            list: ListRateLimitRules,
-            create: CreateRateLimitRule,
-            update: UpdateRateLimitRule,
-            delete: DeleteRateLimitRule,
-          }}
+          rateLimitRulesAPI={previewMode
+            ? undefined
+            : {
+                list: ListRateLimitRules,
+                create: CreateRateLimitRule,
+                update: UpdateRateLimitRule,
+                delete: DeleteRateLimitRule,
+              }}
           verifyState={
             openAICompatibleState.verifyStates[openAICompatibleState.detailDraft.currentName] ?? {
               model: openAICompatibleState.detailDraft.verifyModel,

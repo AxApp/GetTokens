@@ -31,7 +31,6 @@ import {
 
 interface RateLimitRulesSectionProps {
   accountKey: string;
-  matchKey?: string;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
   rateLimitRulesAPI?: RateLimitRulesAPI;
@@ -52,13 +51,9 @@ export interface RateLimitRulesAPI {
   delete: (input: { id: string }) => Promise<unknown>;
 }
 
-const ROW_GRID_CLASS =
-  'grid grid-cols-[10rem_13rem_9rem_10rem_8rem_6rem_10rem_5rem] items-center gap-2';
-
 const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitRulesSectionProps>(function RateLimitRulesSection(
   {
     accountKey,
-    matchKey,
     rateLimitStatus,
     rateLimitStrategies,
     rateLimitRulesAPI,
@@ -75,11 +70,16 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
   const [rateLimitMessage, setRateLimitMessage] = useState('');
   const [rateLimitMessageTone, setRateLimitMessageTone] = useState<'danger' | 'success' | 'neutral'>('danger');
   const [savingRules, setSavingRules] = useState(false);
+  const [rateLimitViewMode, setRateLimitViewMode] = useState<'summary' | 'config'>('summary');
   const dirtyRef = useRef(false);
 
   const dirty = useMemo(
     () => deletedRuleIDs.length > 0 || serializeRateLimitRules(ruleDrafts) !== serializeRateLimitRules(baselineRuleDrafts),
     [baselineRuleDrafts, deletedRuleIDs, ruleDrafts],
+  );
+  const rateLimitSummaryText = useMemo(
+    () => buildRateLimitSummaryText(ruleDrafts, rateLimitStatus, t),
+    [rateLimitStatus, ruleDrafts, t],
   );
 
   useEffect(() => {
@@ -142,7 +142,6 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       ...prev,
       {
         accountKey,
-        matchKey: matchKey || rateLimitStatus?.matchKey || '',
         strategy: strategy.id,
         window,
         limitValue: strategy.id === 'request-window' ? 100 : 1000000,
@@ -151,6 +150,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
         label: '',
       },
     ]);
+    setRateLimitViewMode('config');
     setRateLimitMessage('');
   }
 
@@ -185,12 +185,17 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       commitRuleDrafts(previewRules);
       setRateLimitMessage(t('accounts.rate_limit_preview_only'));
       setRateLimitMessageTone('neutral');
+      setRateLimitViewMode('summary');
       setSavingRules(false);
       return true;
     }
 
     try {
-      const baselineByID = new Map(baselineRuleDrafts.filter((draft) => draft.id).map((draft) => [draft.id, draft]));
+      const baselineByID = new Map<string, RateLimitRule>(
+        baselineRuleDrafts
+          .filter((draft): draft is RateLimitRule & { id: string } => Boolean(draft.id))
+          .map((draft) => [draft.id, draft]),
+      );
       for (const id of deletedRuleIDs) {
         await rateLimitRulesAPI.delete({ id });
       }
@@ -206,6 +211,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       commitRuleDrafts(rules ?? []);
       setRateLimitMessage(t('accounts.rate_limit_save_success'));
       setRateLimitMessageTone('success');
+      setRateLimitViewMode('summary');
       onRateLimitRulesChanged();
       return true;
     } catch (error) {
@@ -234,14 +240,26 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       meta={`${t('accounts.rate_limit_cache')} ${rateLimitStatus?.updatedAt ? new Date(rateLimitStatus.updatedAt).toLocaleString() : '-'}`}
       span="wide"
       actions={
-        <button
-          type="button"
-          onClick={addRateLimitRule}
-          className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-          disabled={savingRules}
-        >
-          {t('accounts.rate_limit_add_rule')}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {rateLimitViewMode === 'config' ? (
+            <button
+              type="button"
+              onClick={addRateLimitRule}
+              className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+              disabled={savingRules}
+            >
+              {t('accounts.rate_limit_add_rule')}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setRateLimitViewMode((prev) => (prev === 'summary' ? 'config' : 'summary'))}
+            className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+            disabled={savingRules || (rateLimitViewMode === 'config' && dirty)}
+          >
+            {rateLimitViewMode === 'summary' ? t('accounts.rate_limit_edit_rules') : t('accounts.rate_limit_done')}
+          </button>
+        </div>
       }
     >
       <div className="space-y-3">
@@ -257,23 +275,37 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
           </AccountDetailNotice>
         ) : null}
 
-        {ruleDrafts.length === 0 ? (
-          <AccountDetailEmptyState>
-            {t('accounts.rate_limit_no_local_rule')}
-          </AccountDetailEmptyState>
+        {rateLimitViewMode === 'summary' ? (
+          <div
+            data-rate-limit-view-mode="summary"
+            className="min-w-0 border-y-2 border-[var(--border-color)] px-2 py-2"
+          >
+            <button
+              type="button"
+              onClick={() => setRateLimitViewMode('config')}
+              className="block w-full min-w-0 text-left"
+              title={rateLimitSummaryText}
+            >
+              <span className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                {rateLimitSummaryText}
+              </span>
+            </button>
+          </div>
+        ) : ruleDrafts.length === 0 ? (
+          <div data-rate-limit-view-mode="config">
+            <AccountDetailEmptyState>
+              <button
+                type="button"
+                onClick={addRateLimitRule}
+                className="font-mono font-black uppercase tracking-[0.12em] text-[var(--text-primary)] underline decoration-dashed underline-offset-4"
+                disabled={savingRules}
+              >
+                {t('accounts.rate_limit_no_local_rule')}
+              </button>
+            </AccountDetailEmptyState>
+          </div>
         ) : (
-          <div className="overflow-x-auto border-y-2 border-[var(--border-color)]" role="list">
-            <div className="min-w-[76rem]">
-              <div className={`${ROW_GRID_CLASS} border-b border-dashed border-[var(--border-color)] px-2 py-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]`}>
-                <div>{t('accounts.rate_limit_label')}</div>
-                <div>{t('accounts.rate_limit_strategy')}</div>
-                <div>{t('accounts.rate_limit_window')}</div>
-                <div>{t('accounts.rate_limit_limit')}</div>
-                <div>{t('accounts.rate_limit_action')}</div>
-                <div>{t('accounts.rate_limit_enabled_short')}</div>
-                <div>{t('accounts.rate_limit_not_evaluated')}</div>
-                <div />
-              </div>
+          <div data-rate-limit-view-mode="config" className="space-y-2" role="list">
               {ruleDrafts.map((draft, index) => {
                 const strategy = strategies.find((item) => item.id === draft.strategy) || strategies[0];
                 const windows = supportedWindowsForStrategy(strategy);
@@ -282,14 +314,21 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                 return (
                   <fieldset
                     key={draft.id || `new-${index}`}
-                    className={`${ROW_GRID_CLASS} border-b border-[var(--border-color)] px-2 py-2 last:border-b-0`}
+                    className="grid min-w-0 gap-3 border-y-2 border-[var(--border-color)] px-2 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)] xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)_minmax(7rem,0.7fr)_minmax(9rem,0.9fr)_auto]"
                     role="listitem"
                     disabled={savingRules}
                   >
                     <legend className="sr-only">{t('accounts.rate_limit_rule_legend')}</legend>
-                    <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]" title={rateLimitRuleLabel(draft)}>
-                      {rateLimitRuleLabel(draft)}
-                    </div>
+                    <RuleField label={t('accounts.rate_limit_label')} htmlFor={`${ruleDomID}-label`}>
+                      <input
+                        id={`${ruleDomID}-label`}
+                        type="text"
+                        value={draft.label || ''}
+                        placeholder={rateLimitRuleLabel(draft)}
+                        onChange={(event) => updateRateLimitDraft(index, { label: event.target.value })}
+                        className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
+                      />
+                    </RuleField>
                     <RuleField label={t('accounts.rate_limit_strategy')} htmlFor={`${ruleDomID}-strategy`}>
                       <select
                         id={`${ruleDomID}-strategy`}
@@ -356,7 +395,10 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                         <option value="warn">{t('accounts.rate_limit_action_warn')}</option>
                       </select>
                     </RuleField>
-                    <div className="flex justify-start">
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        {t('accounts.rate_limit_enabled_short')}
+                      </div>
                       <ToggleSwitch
                         label={t('accounts.rate_limit_enabled')}
                         checked={draft.enabled}
@@ -366,7 +408,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                       />
                     </div>
                     <div
-                      className={`min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] ${
+                      className={`min-w-0 self-end truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] xl:self-center ${
                         ruleState?.exceeded ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
                       }`}
                       title={ruleState ? `${formatRateLimitMetric(ruleState.currentUsage)} / ${formatRateLimitMetric(ruleState.rule.limitValue)} (${Math.round(ruleState.usagePct)}%)` : undefined}
@@ -378,7 +420,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                     <button
                       type="button"
                       onClick={() => deleteRateLimitRule(index)}
-                      className="btn-swiss h-9 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)]"
+                      className="btn-swiss h-9 self-end !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)] xl:self-center"
                       disabled={savingRules}
                     >
                       {t('common.delete')}
@@ -386,7 +428,6 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                   </fieldset>
                 );
               })}
-            </div>
           </div>
         )}
       </div>
@@ -400,7 +441,6 @@ function normalizeRateLimitRuleDraft(rule: RateLimitRule, accountKey: string): R
   return {
     id: String(rule?.id || '').trim() || undefined,
     accountKey: String(rule?.accountKey || accountKey).trim(),
-    matchKey: String(rule?.matchKey || '').trim(),
     strategy: String(rule?.strategy || DEFAULT_RATE_LIMIT_STRATEGIES[0].id).trim(),
     window: String(rule?.window || '24h').trim(),
     limitValue: Math.max(0, Number(rule?.limitValue || 0)),
@@ -444,7 +484,6 @@ function compactRateLimitRule(rule: RateLimitRule) {
   return {
     id: String(rule.id || ''),
     accountKey: String(rule.accountKey || ''),
-    matchKey: String(rule.matchKey || ''),
     strategy: String(rule.strategy || ''),
     window: String(rule.window || ''),
     limitValue: Math.max(0, Number(rule.limitValue || 0)),
@@ -454,10 +493,38 @@ function compactRateLimitRule(rule: RateLimitRule) {
   };
 }
 
+function buildRateLimitSummaryText(
+  rules: RateLimitRule[],
+  status: RateLimitState | undefined,
+  t: Translator,
+) {
+  if (rules.length === 0) {
+    return t('accounts.rate_limit_no_local_rule');
+  }
+  const enabledCount = rules.filter((rule) => rule.enabled).length;
+  const evaluatedRules = status?.rules ?? [];
+  const exceededCount = evaluatedRules.filter((item) => item.exceeded).length;
+  const hottestRule = evaluatedRules.reduce<(typeof evaluatedRules)[number] | undefined>((current, item) => {
+    if (!current || item.usagePct > current.usagePct) {
+      return item;
+    }
+    return current;
+  }, undefined);
+  const usageText = hottestRule
+    ? `${Math.round(hottestRule.usagePct)}% ${formatRateLimitMetric(hottestRule.currentUsage)}/${formatRateLimitMetric(hottestRule.rule.limitValue)}`
+    : t('accounts.rate_limit_not_evaluated');
+  const statusText = status?.blocked
+    ? `${t('accounts.rate_limit_summary_blocked')} ${Math.max(exceededCount, 1)}`
+    : t('accounts.rate_limit_summary_enabled');
+  return `${statusText} / ${t('accounts.rate_limit_summary_rules')} ${rules.length} / ${t('accounts.rate_limit_summary_active')} ${enabledCount} / ${usageText}`;
+}
+
 function RuleField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {
   return (
-    <label htmlFor={htmlFor} className="block min-w-0">
-      <span className="sr-only">{label}</span>
+    <label htmlFor={htmlFor} className="block min-w-0 space-y-1">
+      <span className="block font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        {label}
+      </span>
       {children}
     </label>
   );

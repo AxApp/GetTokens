@@ -61,7 +61,6 @@ export default function OpenAICompatibleDetailModal({
   const rateLimitRulesRef = useRef<RateLimitRulesSectionHandle>(null);
   const rateLimitAccountName = draft.currentName || draft.name;
   const rateLimitAccountKey = `openai-compatible:${rateLimitAccountName}`;
-  const rateLimitMatchKey = rateLimitStatus?.matchKey || `provider:${rateLimitAccountName.trim().toLowerCase()}`;
 
   useEffect(() => {
     setRateLimitDirty(false);
@@ -116,7 +115,6 @@ export default function OpenAICompatibleDetailModal({
             <RateLimitRulesSection
               ref={rateLimitRulesRef}
               accountKey={rateLimitAccountKey}
-              matchKey={rateLimitMatchKey}
               rateLimitStatus={rateLimitStatus}
               rateLimitStrategies={rateLimitStrategies}
               rateLimitRulesAPI={rateLimitRulesAPI}

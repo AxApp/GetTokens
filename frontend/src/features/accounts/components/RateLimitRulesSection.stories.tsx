@@ -19,7 +19,6 @@ const rules: RateLimitRule[] = [
   {
     id: 'tokens-24h',
     accountKey: 'account-card-primary',
-    matchKey: 'codex-workbench',
     strategy: 'token-window',
     window: '24h',
     limitValue: 1000000,
@@ -32,7 +31,6 @@ const rules: RateLimitRule[] = [
   {
     id: 'requests-1h',
     accountKey: 'account-card-primary',
-    matchKey: 'codex-workbench',
     strategy: 'request-window',
     window: '1h',
     limitValue: 120,
@@ -46,7 +44,6 @@ const rules: RateLimitRule[] = [
 
 const rateLimitStatus: RateLimitState = {
   accountKey: 'account-card-primary',
-  matchKey: 'codex-workbench',
   blocked: true,
   blockReason: '1H REQUEST LIMIT',
   updatedAt: '2026-05-19 22:20',
@@ -103,7 +100,6 @@ function RateLimitRulesSample({
     <RateLimitViewport label={label}>
       <RateLimitRulesSection
         accountKey="account-card-primary"
-        matchKey="codex-workbench"
         rateLimitStatus={status}
         rateLimitRulesAPI={api}
         onRateLimitRulesChanged={() => undefined}

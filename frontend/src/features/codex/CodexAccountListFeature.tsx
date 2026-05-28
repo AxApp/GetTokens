@@ -1,6 +1,8 @@
 import { type DragEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Terminal } from 'lucide-react';
 import {
+  CreateRateLimitRule,
+  DeleteRateLimitRule,
   FetchOpenAICompatibleProviderModels,
   ExplainChannelRouting,
   GetAuthFileModels,
@@ -9,10 +11,12 @@ import {
   ListOAuthModelAliases,
   ListAccounts,
   ListOpenAICompatibleProviders,
+  ListRateLimitRules,
   ListRelaySupportedModels,
   ProbeCodexAccountRouting,
   SaveChannelRoutingConfig,
   SetAccountDisabled,
+  UpdateRateLimitRule,
   UpdateOAuthModelAliases,
   UpdateCodexAPIKeyConfig,
   UpdateOpenAICompatibleProvider,
@@ -1055,6 +1059,14 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           usageSummary={accountUsageByID[detailRowWithModels.id]}
           rateLimitStatus={accountRateLimitByID[detailRowWithModels.id]}
           rateLimitStrategies={rateLimitStrategies}
+          rateLimitRulesAPI={browserMode
+            ? undefined
+            : {
+                list: ListRateLimitRules,
+                create: CreateRateLimitRule,
+                update: UpdateRateLimitRule,
+                delete: DeleteRateLimitRule,
+              }}
           savingMappings={pendingMappingID === detailRowWithModels.id}
           loadingModelMappings={loadingAuthFileModelID === detailRowWithModels.id}
           modelMappingError={authFileModelErrors[detailRowWithModels.id] || ''}

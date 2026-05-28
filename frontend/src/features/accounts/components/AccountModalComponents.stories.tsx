@@ -335,7 +335,6 @@ const apiKeyUsageSummary: AccountUsageSummary = {
 
 const apiKeyRateLimitStatus: RateLimitState = {
   accountKey: 'codex-api-key-preview',
-  matchKey: 'codex-api-key-preview',
   blocked: false,
   rules: [
     {

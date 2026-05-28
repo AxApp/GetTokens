@@ -106,7 +106,6 @@ type RateLimitStrategyMeta struct {
 type RateLimitRule struct {
 	ID         string `json:"id,omitempty"`
 	AccountKey string `json:"account_key"`
-	MatchKey   string `json:"match_key,omitempty"`
 	Strategy   string `json:"strategy"`
 	Window     string `json:"window"`
 	LimitValue int64  `json:"limit_value"`
@@ -127,7 +126,6 @@ type RateLimitRuleState struct {
 
 type RateLimitState struct {
 	AccountKey  string               `json:"account_key"`
-	MatchKey    string               `json:"match_key,omitempty"`
 	Blocked     bool                 `json:"blocked"`
 	BlockReason string               `json:"block_reason,omitempty"`
 	Rules       []RateLimitRuleState `json:"rules"`
@@ -137,7 +135,6 @@ type RateLimitState struct {
 type RateLimitEvent struct {
 	ID          string `json:"id"`
 	AccountKey  string `json:"account_key"`
-	MatchKey    string `json:"match_key,omitempty"`
 	RuleID      string `json:"rule_id"`
 	Strategy    string `json:"strategy"`
 	Window      string `json:"window"`

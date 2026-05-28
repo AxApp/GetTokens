@@ -3868,7 +3868,6 @@ export namespace main {
 	export class RateLimitEvent {
 	    id: string;
 	    accountKey: string;
-	    matchKey?: string;
 	    ruleID: string;
 	    strategy: string;
 	    window: string;
@@ -3887,7 +3886,6 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.accountKey = source["accountKey"];
-	        this.matchKey = source["matchKey"];
 	        this.ruleID = source["ruleID"];
 	        this.strategy = source["strategy"];
 	        this.window = source["window"];
@@ -3916,7 +3914,6 @@ export namespace main {
 	export class RateLimitRule {
 	    id?: string;
 	    accountKey: string;
-	    matchKey?: string;
 	    strategy: string;
 	    window: string;
 	    limitValue: number;
@@ -3934,7 +3931,6 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.accountKey = source["accountKey"];
-	        this.matchKey = source["matchKey"];
 	        this.strategy = source["strategy"];
 	        this.window = source["window"];
 	        this.limitValue = source["limitValue"];
@@ -3997,7 +3993,6 @@ export namespace main {
 	}
 	export class RateLimitState {
 	    accountKey: string;
-	    matchKey?: string;
 	    blocked: boolean;
 	    blockReason?: string;
 	    rules: RateLimitRuleState[];
@@ -4010,7 +4005,6 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.accountKey = source["accountKey"];
-	        this.matchKey = source["matchKey"];
 	        this.blocked = source["blocked"];
 	        this.blockReason = source["blockReason"];
 	        this.rules = this.convertValues(source["rules"], RateLimitRuleState);
@@ -5450,7 +5444,6 @@ export namespace main {
 	        this.responseBody = source["responseBody"];
 	    }
 	}
-
 }
 
 export namespace sidecar {
