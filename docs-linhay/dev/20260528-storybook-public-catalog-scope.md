@@ -24,3 +24,16 @@
 2. Storybook 配置不能包含 `features/**`。
 3. 5173 应用内 catalog 必须保留 `feature-components`，用于承接业务设计系统任务。
 4. 6006 的 Storybook 配置和构建产物不能包含 `Design System/业务组件`、`feature-components` 或 `frontend/src/features/`。
+
+## 会话沉淀
+本轮沉淀到项目级 skill 的稳定模式是“设计系统双入口分工”：
+
+1. `6006` 是公开基础 Storybook，只服务 tokens、primitives、`components/ui`。
+2. `5173/#frame=design-system` 是应用开发态设计系统入口，继续承接业务组件、inspect 模式和 feature-owned catalog。
+3. 后续处理业务组件设计系统时，不要为了让 6006 变干净而删除 `feature-components`、`componentManifest.ts` 记录或 feature-owned story 文件。
+4. 回归验证必须同时检查 6006 的排除结果和 5173 的保留结果，避免“从一个入口移除”误变成“从设计系统移除”。
+
+不纳入长期规则的内容：
+
+1. 本轮截图文件名、具体 story 数量 `36` 只是本次验收事实，不作为长期固定值。
+2. 本轮在脏工作区中用定向暂存提交，是通用 Git 卫生动作，不额外提升为设计系统规则。

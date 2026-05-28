@@ -286,6 +286,9 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - **Professional Tooling Bias**: When a mature, domain-standard frontend tool directly solves a design-system, component-workbench, accessibility, visual-regression, or interaction-preview problem, recommend it explicitly even if it is outside the user's stated vocabulary. Do not default to self-building a weaker internal version just because it avoids a new tool.
 - **Storybook Baseline**: For GetTokens design-system work, Storybook is the default primary component workbench. Use `@storybook/react-vite` for the current React + Vite stack. Keep any in-app `design-system` route as a discovery/entry page unless a later requirement explicitly needs production-embedded component previews.
 - **Storybook Scope**:
+  - Treat `http://127.0.0.1:6006/` as the public foundation Storybook, not the full business design-system surface. Its `frontend/.storybook/main.ts` story globs should stay limited to tokens, primitives, and `frontend/src/components/ui`; do not reintroduce `../src/**/*.stories` or `features/**` there.
+  - Business design-system work belongs to the Vite app entry `http://127.0.0.1:5173/#frame=design-system`. Keep `storyCatalog.ts` / `componentManifest.ts` able to list `feature-components` for 5173 even when those stories are excluded from 6006.
+  - When verifying this boundary, check both sides: `6006/index.json` must not contain `Design System/业务组件`, `feature-components`, or `frontend/src/features`; the 5173 design-system catalog must still retain `feature-components`.
   - Stories must render real components, not copied static HTML.
   - Stories must use mock data and must not call Wails bindings or sidecar APIs.
   - Load `frontend/src/style.css` and the relevant providers in Storybook preview so CSS variables, theme behavior, text scale, and localization are visible.
