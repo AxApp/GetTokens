@@ -198,3 +198,60 @@
 - 这次 upstream 增量没有触碰父仓库 Wails DTO、frontend binding 或用户可见配置面。
 - 冲突点位于 Codex WebSocket executor，是 GetTokens live sessions 与 upstream TTFT usage reporting 的相邻逻辑；后续若该文件继续冲突，仍优先同时保留 live-session 生命周期事件和 upstream usage timing。
 - 父仓库仍有大量无关未提交改动，本次日常同步只应纳入 `docs-linhay/references/CLIProxyAPI` gitlink、此执行记录和 memory 写回。
+
+## 2026-05-28 二次同步记录
+
+### 上游增量
+
+- `upstream/main` 从 `94c1b251` 前进到 `c65275fd`，最新 tag 到 `v7.1.28`。
+- 新增 upstream 提交：
+  1. `d9c01a63 chore(models): remove deprecated GPT-5.x models from codex-free catalog`
+  2. `2bcc7622 feat(logging): improve file-backed source cleanup and directory recreation logic`
+  3. `65e760aa feat(usage): include cache tokens in total token calculation and add tests`
+  4. `71c185f6 feat(usage): add service tier tracking and defaults in usage reporting`
+  5. `b3d6d5d7 refactor: extract signature validation`
+  6. `c65275fd Merge pull request #3591 from sususu98/feat/signature-check-extraction`
+
+### 合并结果
+
+- 合并前 fork 状态：`gettokens/sidecar` 干净，当前 HEAD 为 `fbcf3bb5 fix: harden usage reasoning and ttft reporting`。
+- 冲突文件：
+  - `internal/runtime/executor/helps/usage_helpers.go`
+  - `internal/runtime/executor/helps/usage_helpers_test.go`
+  - `internal/redisqueue/plugin_test.go`
+- 冲突处理：
+  - `SetTranslatedReasoningEffort` 保留 fork 的“没有 translated reasoning 时不清空 context reasoning effort”修复，同时接入 upstream `service_tier` 提取与默认值。
+  - redisqueue payload 测试同时锁定 fork 的 `ttft_ms` 和 upstream 的 `service_tier` 字段。
+- fork 合并提交：`e2ec7262 Merge upstream CLIProxyAPI main`
+- 远端推送：`origin/gettokens/sidecar` 已更新到 `e2ec7262`。
+- 父仓库 sidecar gitlink 从 `fbcf3bb5` 前进到 `e2ec7262`。
+- 本地 sidecar：已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，meta 为 `e2ec7262:clean:01d5ae7eed81e5c11ea0cc01902a1361fc75b449a7aa3ee84c18fba0cc76a181:darwin:arm64`。
+
+### 验证记录
+
+合并前基线：
+
+- `go test ./internal/runtime/executor`
+- `go test ./sdk/api/handlers/openai`
+- `go test ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy/auth`
+
+冲突解决后局部验证：
+
+- `go test ./internal/runtime/executor/helps`
+- `go test ./internal/redisqueue`
+- `go test ./sdk/cliproxy/usage ./internal/logging`
+
+合并后验证：
+
+- `go test ./internal/runtime/executor`
+- `go test ./internal/translator/claude/openai/responses ./internal/translator/openai/openai/responses`
+- `go test ./sdk/api/handlers/openai`
+- `go test ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy/auth`
+- `go test ./...`
+- `git diff --check`
+- `./scripts/ensure-sidecar.sh darwin arm64`
+
+### 注意事项
+
+- 这次同步没有新增父仓库 Wails DTO、frontend binding 或用户可见配置面。
+- 后续若 upstream usage telemetry 继续调整，`reasoning_effort`、`service_tier`、`ttft_ms` 需要作为同一条 usage record contract 联合验证，不能只跑其中一个入口。

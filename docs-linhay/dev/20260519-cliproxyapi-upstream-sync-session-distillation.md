@@ -196,3 +196,21 @@ git check-ignore -v <path>
 4. `git diff --check`
 
 沉淀结论：该流程属于 CLIProxyAPI fork 领域维护规则，已补入 `gettokens-domain-engineering`；不升级 `AGENTS.md`。
+
+## 2026-05-28 v7.1.28 同步记录
+
+本轮将 `docs-linhay/references/CLIProxyAPI#gettokens/sidecar` 从 `fbcf3bb5` 合并到 `upstream/main@c65275fd`（tag `v7.1.28`），生成 merge commit `e2ec7262` 并推送到 `AxApp/CLIProxyAPI#gettokens/sidecar`。
+
+上游增量集中在 usage telemetry、file-backed logging cleanup、signature validation 抽取和 codex-free 模型目录清理。冲突点都在 usage telemetry 相邻逻辑：
+
+1. `internal/runtime/executor/helps/usage_helpers.go`：保留 fork 的 translated reasoning 非空才覆盖逻辑，同时接入 upstream `service_tier` 提取。
+2. `internal/runtime/executor/helps/usage_helpers_test.go`：同时保留 reasoning preservation 测试和 upstream service tier 测试。
+3. `internal/redisqueue/plugin_test.go`：payload 同时断言 `ttft_ms` 与 `service_tier`。
+
+验证：
+
+1. 合并前 focused baseline：`go test ./internal/runtime/executor`、`go test ./sdk/api/handlers/openai`、`go test ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy/auth`。
+2. 冲突解决后局部验证：`go test ./internal/runtime/executor/helps`、`go test ./internal/redisqueue`、`go test ./sdk/cliproxy/usage ./internal/logging`。
+3. 合并后验证：`go test ./internal/runtime/executor`、`go test ./internal/translator/claude/openai/responses ./internal/translator/openai/openai/responses`、`go test ./sdk/api/handlers/openai`、`go test ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy/auth`、`go test ./...`、`git diff --check`。
+
+本地 sidecar 已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，`build/bin/cli-proxy-api.meta.json` 记录 `commit=e2ec7262`、`dirty=clean`、`goos=darwin`、`goarch=arm64`。本次仍属于既有 CLIProxyAPI fork 同步流程，不升级 `AGENTS.md`。
