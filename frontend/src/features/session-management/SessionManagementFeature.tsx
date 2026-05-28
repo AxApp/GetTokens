@@ -263,6 +263,10 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
     ],
   );
 
+  if (snapshotLoading && !projects.length && !snapshotError) {
+    return <InitialLoadingShell copy={copy} />;
+  }
+
   return (
     <section className="flex h-full min-h-0 flex-col bg-[var(--bg-surface)] px-6 py-6 text-[var(--text-primary)] select-text">
       <WorkspacePageHeader

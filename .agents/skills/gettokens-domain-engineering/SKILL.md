@@ -142,6 +142,13 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Frontend Usage Desk rendering must branch by `source === 'observed'` vs `source === 'projected'`, not by workspace. A workspace-specific override such as `workspace === 'claude'` inside the observed branch can make a projected button visually selected while still rendering observed data.
   - `usage-local:*` events must carry and filter `provider`, so Codex rollout projection and Claude session projection do not overwrite each other's page state.
   - Verification for this class of change must include fixture tests, generated binding assertions, preview projected rows, and a real local-file sanity check that reports counts/totals without reading or printing sensitive message content.
+- **Session Management Local Files**:
+  - Treat `~/.codex/sessions`, `~/.codex/archived_sessions`, and `~/.claude/projects` as potentially multi-GB local stores. Never make page entry depend on synchronous full-file parsing when a bounded snapshot or stale cache can satisfy the first paint.
+  - Snapshot/list APIs should return summaries only. Do not carry full message bodies, raw tool payloads, or per-message `content` through snapshot DTOs.
+  - Detail APIs used by the UI must be payload-bounded. Keep full parsing inside backend-only analysis paths when needed, but UI detail responses should prefer summary rows, cap message count, and avoid returning full `content` unless a scoped requirement explicitly needs it.
+  - Any in-process cache for session details must have both entry-count and approximate-byte limits. Oversized details should use disk cache only, not stay resident in `App`.
+  - Disk caches must invalidate by file fingerprint such as size plus mtime. Do not use session id alone as a cache key for mutable JSONL files.
+  - Regression coverage for this class should include cache hit, stale-cache invalidation, payload compaction, memory-bound eviction, and at least one live benchmark path gated by an explicit environment variable so CI never reads a developer's real sessions.
 - **Codex Live Sessions**: For `#frame=codex&workspace=live-sessions`, treat the feature as runtime observability, not local session-file management. Use this when surfacing in-flight request/session state from CLIProxyAPI.
   - Data ownership starts in the CLIProxyAPI fork. Add an in-memory runtime tracker and a read-only management endpoint first; then expose it through `internal/wailsapp`, root `main.App`, generated `frontend/wailsjs`, and finally the React feature.
   - Keep the UI read-only. Do not add request cancel, replay, forced WebSocket recovery, or full payload display unless a later requirement explicitly scopes the action and safety model.

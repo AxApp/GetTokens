@@ -45,9 +45,12 @@ type localUsageRuntimeState struct {
 }
 
 type sessionManagementRuntimeState struct {
-	cachedSnapshot *SessionManagementSnapshot
-	cachedAt       time.Time
-	refreshRunning bool
+	cachedSnapshot    *SessionManagementSnapshot
+	cachedAt          time.Time
+	refreshRunning    bool
+	cachedDetails     map[string]*sessionManagementDetailCacheEntry
+	cachedDetailOrder []string
+	cachedDetailBytes int
 }
 
 type sidecarRequestFunc func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error)

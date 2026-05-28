@@ -2,14 +2,18 @@ package wailsapp
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -21,6 +25,12 @@ var (
 	sessionSecretPattern     = regexp.MustCompile(`(?i)\b(?:sk-ant|sk-proj|sk|token|api[_-]?key)[A-Za-z0-9._=-]*\b`)
 	sessionCodeFencePattern  = regexp.MustCompile("(?s)```.*?```")
 )
+
+const sessionManagementSnapshotCacheFileName = ".gettokens-session-management-snapshot-cache.json"
+const sessionManagementDetailCacheDirName = ".gettokens-session-management-detail-cache"
+const sessionManagementDetailMemoryCacheMaxEntries = 6
+const sessionManagementDetailMemoryCacheMaxBytes = 16 * 1024 * 1024
+const sessionManagementDetailPayloadMaxMessages = 1000
 
 type SessionManagementSnapshot struct {
 	ProjectCount         int                              `json:"projectCount"`
@@ -193,9 +203,39 @@ type projectAggregate struct {
 	Sessions       []SessionManagementSessionRecord
 }
 
+type sessionManagementDetailCacheEntry struct {
+	FileSize            int64                           `json:"fileSize"`
+	FileModTimeUnixNano int64                           `json:"fileModTimeUnixNano"`
+	ApproxBytes         int                             `json:"approxBytes"`
+	Detail              *SessionManagementSessionDetail `json:"detail"`
+}
+
+type sessionManagementDetailDiskCache struct {
+	FileSize            int64                           `json:"fileSize"`
+	FileModTimeUnixNano int64                           `json:"fileModTimeUnixNano"`
+	Detail              *SessionManagementSessionDetail `json:"detail"`
+}
+
+type sessionFileParser func(codexHome string, absolutePath string, relativePath string, threadNames map[string]string, collectMessages bool) (*sessionParseResult, error)
+
 func (a *App) GetCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
 	if cached := a.readCachedSessionManagementSnapshot(); cached != nil {
 		return cached, nil
+	}
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil, err
+	}
+	if cached, err := readSessionManagementSnapshotDiskCache(codexHome); err == nil && cached != nil {
+		a.sessionMgmtMu.Lock()
+		a.sessionMgmt.cachedSnapshot = cloneSessionManagementSnapshot(cached)
+		a.sessionMgmt.cachedAt = time.Now()
+		result := cloneSessionManagementSnapshot(a.sessionMgmt.cachedSnapshot)
+		a.sessionMgmtMu.Unlock()
+		go func() {
+			_, _ = a.refreshCodexSessionManagementSnapshot()
+		}()
+		return result, nil
 	}
 	return a.refreshCodexSessionManagementSnapshot()
 }
@@ -209,10 +249,6 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 	if err != nil {
 		return nil, err
 	}
-	threadNames, err := loadSessionThreadNames(codexHome)
-	if err != nil {
-		return nil, err
-	}
 	absolutePath, err := resolveSessionAbsolutePath(codexHome, sessionID)
 	if err != nil {
 		return nil, err
@@ -221,11 +257,31 @@ func (a *App) GetCodexSessionDetail(sessionID string) (*SessionManagementSession
 	if err != nil {
 		return nil, err
 	}
-	result, err := parseSessionFile(codexHome, absolutePath, filepath.ToSlash(relativePath), threadNames)
+	fileInfo, err := os.Stat(absolutePath)
 	if err != nil {
 		return nil, err
 	}
-	return &result.detail, nil
+	relativeSlash := filepath.ToSlash(relativePath)
+	cacheKey := sessionManagementDetailCacheKey("codex", relativeSlash)
+	if cached := a.readCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano()); cached != nil {
+		return cached, nil
+	}
+	if cached, err := readSessionManagementDetailDiskCache(codexHome, "codex", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano()); err == nil && cached != nil {
+		a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), cached)
+		return cached, nil
+	}
+	threadNames, err := loadSessionThreadNames(codexHome)
+	if err != nil {
+		return nil, err
+	}
+	result, err := parseSessionFile(codexHome, absolutePath, relativeSlash, threadNames, true)
+	if err != nil {
+		return nil, err
+	}
+	detail := compactSessionManagementDetailForUI(&result.detail)
+	a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
+	_ = writeSessionManagementDetailDiskCache(codexHome, "codex", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
+	return detail, nil
 }
 
 func (a *App) GetClaudeCodeSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
@@ -249,11 +305,27 @@ func (a *App) GetClaudeCodeSessionDetail(sessionID string) (*SessionManagementSe
 	if err != nil {
 		return nil, err
 	}
-	result, err := parseClaudeCodeSessionFile(claudeConfigDir, absolutePath, filepath.ToSlash(relativePath))
+	fileInfo, err := os.Stat(absolutePath)
 	if err != nil {
 		return nil, err
 	}
-	return &result.detail, nil
+	relativeSlash := filepath.ToSlash(relativePath)
+	cacheKey := sessionManagementDetailCacheKey("claude", relativeSlash)
+	if cached := a.readCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano()); cached != nil {
+		return cached, nil
+	}
+	if cached, err := readSessionManagementDetailDiskCache(claudeConfigDir, "claude", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano()); err == nil && cached != nil {
+		a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), cached)
+		return cached, nil
+	}
+	result, err := parseClaudeCodeSessionFile(claudeConfigDir, absolutePath, relativeSlash, true)
+	if err != nil {
+		return nil, err
+	}
+	detail := compactSessionManagementDetailForUI(&result.detail)
+	a.storeCachedSessionManagementDetail(cacheKey, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
+	_ = writeSessionManagementDetailDiskCache(claudeConfigDir, "claude", relativeSlash, fileInfo.Size(), fileInfo.ModTime().UnixNano(), detail)
+	return detail, nil
 }
 
 func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*SessionManagementSnapshot, error) {
@@ -335,6 +407,7 @@ func (a *App) UpdateCodexSessionProviders(input UpdateSessionProvidersInput) (*S
 	a.sessionMgmt.cachedAt = time.Now()
 	cached := cloneSessionManagementSnapshot(a.sessionMgmt.cachedSnapshot)
 	a.sessionMgmtMu.Unlock()
+	_ = writeSessionManagementSnapshotDiskCache(codexHome, cached)
 	return cached, nil
 }
 
@@ -362,6 +435,11 @@ func (a *App) refreshCodexSessionManagementSnapshot() (*SessionManagementSnapsho
 	a.sessionMgmtMu.Unlock()
 
 	snapshot, err := a.loadCodexSessionManagementSnapshot()
+	if err == nil {
+		if codexHome, resolveErr := resolveCodexHomePath(); resolveErr == nil {
+			_ = writeSessionManagementSnapshotDiskCache(codexHome, snapshot)
+		}
+	}
 
 	a.sessionMgmtMu.Lock()
 	a.sessionMgmt.refreshRunning = false
@@ -433,6 +511,202 @@ func cloneSessionManagementSnapshot(snapshot *SessionManagementSnapshot) *Sessio
 	}
 }
 
+func cloneSessionManagementSessionDetail(detail *SessionManagementSessionDetail) *SessionManagementSessionDetail {
+	if detail == nil {
+		return nil
+	}
+
+	messages := make([]SessionManagementMessageRecord, len(detail.Messages))
+	copy(messages, detail.Messages)
+
+	cloned := *detail
+	cloned.Messages = messages
+	return &cloned
+}
+
+func compactSessionManagementDetailForUI(detail *SessionManagementSessionDetail) *SessionManagementSessionDetail {
+	cloned := cloneSessionManagementSessionDetail(detail)
+	if cloned == nil {
+		return nil
+	}
+
+	messages := cloned.Messages
+	if len(messages) > sessionManagementDetailPayloadMaxMessages {
+		messages = messages[len(messages)-sessionManagementDetailPayloadMaxMessages:]
+	}
+	for index := range messages {
+		messages[index].Content = ""
+	}
+	cloned.Messages = messages
+	return cloned
+}
+
+func sessionManagementDetailCacheKey(provider string, sessionID string) string {
+	return provider + "\x00" + sessionID
+}
+
+func (a *App) readCachedSessionManagementDetail(cacheKey string, fileSize int64, fileModTimeUnixNano int64) *SessionManagementSessionDetail {
+	a.sessionMgmtMu.RLock()
+	defer a.sessionMgmtMu.RUnlock()
+	if a.sessionMgmt.cachedDetails == nil {
+		return nil
+	}
+	entry := a.sessionMgmt.cachedDetails[cacheKey]
+	if entry == nil {
+		return nil
+	}
+	if entry.FileSize != fileSize || entry.FileModTimeUnixNano != fileModTimeUnixNano || entry.Detail == nil {
+		return nil
+	}
+	return cloneSessionManagementSessionDetail(entry.Detail)
+}
+
+func (a *App) storeCachedSessionManagementDetail(cacheKey string, fileSize int64, fileModTimeUnixNano int64, detail *SessionManagementSessionDetail) {
+	if detail == nil {
+		return
+	}
+	approxBytes := estimateSessionManagementDetailBytes(detail)
+	if approxBytes > sessionManagementDetailMemoryCacheMaxBytes {
+		a.sessionMgmtMu.Lock()
+		a.evictCachedSessionManagementDetailLocked(cacheKey)
+		a.sessionMgmtMu.Unlock()
+		return
+	}
+
+	a.sessionMgmtMu.Lock()
+	if a.sessionMgmt.cachedDetails == nil {
+		a.sessionMgmt.cachedDetails = map[string]*sessionManagementDetailCacheEntry{}
+	}
+	a.evictCachedSessionManagementDetailLocked(cacheKey)
+	a.sessionMgmt.cachedDetails[cacheKey] = &sessionManagementDetailCacheEntry{
+		FileSize:            fileSize,
+		FileModTimeUnixNano: fileModTimeUnixNano,
+		ApproxBytes:         approxBytes,
+		Detail:              cloneSessionManagementSessionDetail(detail),
+	}
+	a.sessionMgmt.cachedDetailOrder = append(a.sessionMgmt.cachedDetailOrder, cacheKey)
+	a.sessionMgmt.cachedDetailBytes += approxBytes
+	a.trimSessionManagementDetailCacheLocked()
+	a.sessionMgmtMu.Unlock()
+}
+
+func (a *App) evictCachedSessionManagementDetailLocked(cacheKey string) {
+	if a.sessionMgmt.cachedDetails == nil {
+		return
+	}
+	if entry := a.sessionMgmt.cachedDetails[cacheKey]; entry != nil {
+		a.sessionMgmt.cachedDetailBytes -= entry.ApproxBytes
+		delete(a.sessionMgmt.cachedDetails, cacheKey)
+	}
+	for index := 0; index < len(a.sessionMgmt.cachedDetailOrder); {
+		if a.sessionMgmt.cachedDetailOrder[index] == cacheKey {
+			a.sessionMgmt.cachedDetailOrder = append(a.sessionMgmt.cachedDetailOrder[:index], a.sessionMgmt.cachedDetailOrder[index+1:]...)
+			continue
+		}
+		index++
+	}
+	if a.sessionMgmt.cachedDetailBytes < 0 {
+		a.sessionMgmt.cachedDetailBytes = 0
+	}
+}
+
+func (a *App) trimSessionManagementDetailCacheLocked() {
+	for len(a.sessionMgmt.cachedDetailOrder) > 0 &&
+		(len(a.sessionMgmt.cachedDetailOrder) > sessionManagementDetailMemoryCacheMaxEntries ||
+			a.sessionMgmt.cachedDetailBytes > sessionManagementDetailMemoryCacheMaxBytes) {
+		oldest := a.sessionMgmt.cachedDetailOrder[0]
+		a.evictCachedSessionManagementDetailLocked(oldest)
+	}
+}
+
+func estimateSessionManagementDetailBytes(detail *SessionManagementSessionDetail) int {
+	if detail == nil {
+		return 0
+	}
+	total := len(detail.SessionID) + len(detail.ProjectID) + len(detail.ProjectName) + len(detail.Title) +
+		len(detail.Status) + len(detail.FileLabel) + len(detail.CurrentMessageLabel) + len(detail.RoleSummary) +
+		len(detail.Topic) + len(detail.Preview) + len(detail.Provider) + len(detail.Model) + len(detail.StartedAt) + len(detail.UpdatedAt)
+	for _, message := range detail.Messages {
+		total += len(message.ID) + len(message.Role) + len(message.TimeLabel) + len(message.Timestamp) +
+			len(message.Title) + len(message.Summary) + len(message.Content)
+	}
+	return total
+}
+
+func sessionManagementSnapshotCachePath(codexHome string) string {
+	return filepath.Join(codexHome, sessionManagementSnapshotCacheFileName)
+}
+
+func readSessionManagementSnapshotDiskCache(codexHome string) (*SessionManagementSnapshot, error) {
+	content, err := os.ReadFile(sessionManagementSnapshotCachePath(codexHome))
+	if err != nil {
+		return nil, err
+	}
+	var snapshot SessionManagementSnapshot
+	if err := json.Unmarshal(content, &snapshot); err != nil {
+		return nil, err
+	}
+	if snapshot.Projects == nil {
+		snapshot.Projects = []SessionManagementProjectRecord{}
+	}
+	if snapshot.ProviderCounts == nil {
+		snapshot.ProviderCounts = map[string]int{}
+	}
+	return cloneSessionManagementSnapshot(&snapshot), nil
+}
+
+func writeSessionManagementSnapshotDiskCache(codexHome string, snapshot *SessionManagementSnapshot) error {
+	if snapshot == nil {
+		return nil
+	}
+	content, err := json.Marshal(snapshot)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(sessionManagementSnapshotCachePath(codexHome), content, 0600)
+}
+
+func sessionManagementDetailDiskCachePath(root string, provider string, sessionID string) string {
+	sum := sha256.Sum256([]byte(sessionManagementDetailCacheKey(provider, sessionID)))
+	filename := hex.EncodeToString(sum[:]) + ".json"
+	return filepath.Join(root, sessionManagementDetailCacheDirName, filename)
+}
+
+func readSessionManagementDetailDiskCache(root string, provider string, sessionID string, fileSize int64, fileModTimeUnixNano int64) (*SessionManagementSessionDetail, error) {
+	content, err := os.ReadFile(sessionManagementDetailDiskCachePath(root, provider, sessionID))
+	if err != nil {
+		return nil, err
+	}
+	var cache sessionManagementDetailDiskCache
+	if err := json.Unmarshal(content, &cache); err != nil {
+		return nil, err
+	}
+	if cache.FileSize != fileSize || cache.FileModTimeUnixNano != fileModTimeUnixNano || cache.Detail == nil {
+		return nil, errors.New("session detail cache mismatch")
+	}
+	return cloneSessionManagementSessionDetail(cache.Detail), nil
+}
+
+func writeSessionManagementDetailDiskCache(root string, provider string, sessionID string, fileSize int64, fileModTimeUnixNano int64, detail *SessionManagementSessionDetail) error {
+	if detail == nil {
+		return nil
+	}
+	cache := sessionManagementDetailDiskCache{
+		FileSize:            fileSize,
+		FileModTimeUnixNano: fileModTimeUnixNano,
+		Detail:              cloneSessionManagementSessionDetail(detail),
+	}
+	content, err := json.Marshal(cache)
+	if err != nil {
+		return err
+	}
+	dir := filepath.Join(root, sessionManagementDetailCacheDirName)
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		return err
+	}
+	return os.WriteFile(sessionManagementDetailDiskCachePath(root, provider, sessionID), content, 0600)
+}
+
 func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, error) {
 	codexHome, err := resolveCodexHomePath()
 	if err != nil {
@@ -448,6 +722,11 @@ func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, 
 		return nil, err
 	}
 
+	results, err := loadSessionParseResultsConcurrently(codexHome, rolloutPaths, threadNames, false, parseSessionFile)
+	if err != nil {
+		return nil, err
+	}
+
 	projects := make(map[string]*projectAggregate)
 	providerCounts := map[string]int{}
 	snapshot := &SessionManagementSnapshot{
@@ -455,23 +734,15 @@ func (a *App) loadCodexSessionManagementSnapshot() (*SessionManagementSnapshot, 
 		ProviderCounts: map[string]int{},
 	}
 
-	for _, absolutePath := range rolloutPaths {
-		relativePath, err := filepath.Rel(codexHome, absolutePath)
-		if err != nil {
-			return nil, err
-		}
-		relativePath = filepath.ToSlash(relativePath)
-
-		result, err := parseSessionFile(codexHome, absolutePath, relativePath, threadNames)
-		if err != nil {
-			return nil, err
+	for _, result := range results {
+		if result == nil {
+			continue
 		}
 
 		projectID := result.session.ProjectID
 		if projectID == "" {
 			projectID = "unknown"
 			result.session.ProjectID = projectID
-			result.detail.ProjectID = projectID
 		}
 
 		project := projects[projectID]
@@ -547,6 +818,13 @@ func (a *App) loadClaudeCodeSessionManagementSnapshot() (*SessionManagementSnaps
 		return nil, err
 	}
 
+	results, err := loadSessionParseResultsConcurrently(claudeConfigDir, sessionPaths, map[string]string{}, false, func(codexHome string, absolutePath string, relativePath string, _ map[string]string, collectMessages bool) (*sessionParseResult, error) {
+		return parseClaudeCodeSessionFile(codexHome, absolutePath, relativePath, collectMessages)
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	projects := make(map[string]*projectAggregate)
 	providerCounts := map[string]int{}
 	snapshot := &SessionManagementSnapshot{
@@ -554,21 +832,14 @@ func (a *App) loadClaudeCodeSessionManagementSnapshot() (*SessionManagementSnaps
 		ProviderCounts: map[string]int{},
 	}
 
-	for _, absolutePath := range sessionPaths {
-		relativePath, err := filepath.Rel(claudeConfigDir, absolutePath)
-		if err != nil {
-			return nil, err
-		}
-		relativePath = filepath.ToSlash(relativePath)
-		result, err := parseClaudeCodeSessionFile(claudeConfigDir, absolutePath, relativePath)
-		if err != nil {
-			return nil, err
+	for _, result := range results {
+		if result == nil {
+			continue
 		}
 		projectID := result.session.ProjectID
 		if projectID == "" {
 			projectID = "unknown"
 			result.session.ProjectID = projectID
-			result.detail.ProjectID = projectID
 		}
 		project := projects[projectID]
 		if project == nil {
@@ -830,7 +1101,7 @@ func rewriteSessionMetaProvider(absolutePath string, targetProvider string) erro
 	return os.WriteFile(absolutePath, []byte(output), 0600)
 }
 
-func parseSessionFile(codexHome string, absolutePath string, relativePath string, threadNames map[string]string) (*sessionParseResult, error) {
+func parseSessionFile(codexHome string, absolutePath string, relativePath string, threadNames map[string]string, collectMessages bool) (*sessionParseResult, error) {
 	file, err := os.Open(absolutePath)
 	if err != nil {
 		return nil, err
@@ -842,7 +1113,10 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	model := ""
 	var meta sessionMetaEnvelope
 	currentCWD := ""
-	messageRecords := make([]SessionManagementMessageRecord, 0, 32)
+	var messageRecords []SessionManagementMessageRecord
+	if collectMessages {
+		messageRecords = make([]SessionManagementMessageRecord, 0, 32)
+	}
 	roleCounts := map[string]int{
 		"user":        0,
 		"assistant":   0,
@@ -855,25 +1129,54 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	firstUserText := ""
 	lastSummary := ""
 	lastPrimarySummary := ""
+	lastSnapshotSummaryRaw := ""
+	lastSnapshotSummaryRole := ""
+	lastSnapshotPrimaryRaw := ""
+	lastSnapshotPrimaryRole := ""
+	lastRole := "system"
 	firstTimestamp := time.Time{}
 	lastTimestamp := time.Time{}
+	messageCount := 0
 
 	appendRecord := func(timestamp time.Time, role string, title string, raw string) {
+		if !collectMessages {
+			messageCount++
+			lastRole = role
+			roleCounts[role]++
+			raw = strings.TrimSpace(raw)
+			if role == "user" && firstUserText == "" {
+				firstUserText = raw
+			}
+			if raw != "" {
+				lastSnapshotSummaryRaw = raw
+				lastSnapshotSummaryRole = role
+				if role != "event" && role != "system" {
+					lastSnapshotPrimaryRaw = raw
+					lastSnapshotPrimaryRole = role
+				}
+			}
+			return
+		}
+
 		title, summary, content, truncated := buildSessionMessageContent(role, title, raw)
 		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
 			return
 		}
-		record := SessionManagementMessageRecord{
-			ID:        fmt.Sprintf("%s:%d", filepath.Base(relativePath), len(messageRecords)+1),
-			Role:      role,
-			TimeLabel: formatSessionManagementTime(timestamp),
-			Timestamp: formatSessionManagementTimestamp(timestamp),
-			Title:     title,
-			Summary:   summary,
-			Content:   content,
-			Truncated: truncated,
+		messageCount++
+		lastRole = role
+		if collectMessages {
+			record := SessionManagementMessageRecord{
+				ID:        fmt.Sprintf("%s:%d", filepath.Base(relativePath), len(messageRecords)+1),
+				Role:      role,
+				TimeLabel: formatSessionManagementTime(timestamp),
+				Timestamp: formatSessionManagementTimestamp(timestamp),
+				Title:     title,
+				Summary:   summary,
+				Content:   content,
+				Truncated: truncated,
+			}
+			messageRecords = append(messageRecords, record)
 		}
-		messageRecords = append(messageRecords, record)
 		roleCounts[role]++
 		if role == "user" && firstUserText == "" {
 			firstUserText = content
@@ -957,7 +1260,10 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	status := resolveSessionStatus(relativePath)
 	archived := status == "archived"
 	projectID := slugifySessionProjectName(projectName)
-	currentMessageLabel := formatCurrentMessageLabel(messageRecords)
+	currentMessageLabel := formatCurrentMessageLabelByCount(messageCount, lastRole)
+	if collectMessages {
+		currentMessageLabel = formatCurrentMessageLabel(messageRecords)
+	}
 	if firstTimestamp.IsZero() {
 		firstTimestamp = lastTimestamp
 	}
@@ -969,6 +1275,14 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 			}
 		}
 	}
+	if !collectMessages {
+		firstUserText = buildSessionSnapshotSummary("user", firstUserText)
+		lastPrimarySummary = buildSessionSnapshotSummary(lastSnapshotPrimaryRole, lastSnapshotPrimaryRaw)
+		lastSummary = buildSessionSnapshotSummary(lastSnapshotSummaryRole, lastSnapshotSummaryRaw)
+	}
+	if sessionTitle == "" {
+		sessionTitle = deriveSessionTitle(firstUserText, lastPrimarySummary, fileLabel)
+	}
 	preview := chooseNonEmpty(lastPrimarySummary, lastSummary, fileLabel)
 
 	sessionRecord := SessionManagementSessionRecord{
@@ -979,7 +1293,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 		Title:               sessionTitle,
 		Status:              status,
 		Archived:            archived,
-		MessageCount:        len(messageRecords),
+		MessageCount:        messageCount,
 		RoleSummary:         roleSummary,
 		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
 		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
@@ -1000,7 +1314,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 		Status:              status,
 		Archived:            archived,
 		FileLabel:           fileLabel,
-		MessageCount:        len(messageRecords),
+		MessageCount:        messageCount,
 		Masked:              true,
 		CurrentMessageLabel: currentMessageLabel,
 		RoleSummary:         roleSummary,
@@ -1023,7 +1337,7 @@ func parseSessionFile(codexHome string, absolutePath string, relativePath string
 	}, nil
 }
 
-func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, relativePath string) (*sessionParseResult, error) {
+func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, relativePath string, collectMessages bool) (*sessionParseResult, error) {
 	file, err := os.Open(absolutePath)
 	if err != nil {
 		return nil, err
@@ -1034,7 +1348,10 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 	projectCWD := ""
 	sessionID := strings.TrimSuffix(filepath.Base(relativePath), filepath.Ext(relativePath))
 	model := ""
-	messageRecords := make([]SessionManagementMessageRecord, 0, 32)
+	var messageRecords []SessionManagementMessageRecord
+	if collectMessages {
+		messageRecords = make([]SessionManagementMessageRecord, 0, 32)
+	}
 	roleCounts := map[string]int{
 		"user":        0,
 		"assistant":   0,
@@ -1047,26 +1364,55 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 	firstUserText := ""
 	lastSummary := ""
 	lastPrimarySummary := ""
+	lastSnapshotSummaryRaw := ""
+	lastSnapshotSummaryRole := ""
+	lastSnapshotPrimaryRaw := ""
+	lastSnapshotPrimaryRole := ""
 	customTitle := ""
+	lastRole := "system"
 	firstTimestamp := time.Time{}
 	lastTimestamp := time.Time{}
+	messageCount := 0
 
 	appendRecord := func(timestamp time.Time, role string, title string, raw string) {
+		if !collectMessages {
+			messageCount++
+			lastRole = role
+			roleCounts[role]++
+			raw = strings.TrimSpace(raw)
+			if role == "user" && firstUserText == "" {
+				firstUserText = raw
+			}
+			if raw != "" {
+				lastSnapshotSummaryRaw = raw
+				lastSnapshotSummaryRole = role
+				if role != "event" && role != "system" {
+					lastSnapshotPrimaryRaw = raw
+					lastSnapshotPrimaryRole = role
+				}
+			}
+			return
+		}
+
 		title, summary, content, truncated := buildSessionMessageContent(role, title, raw)
 		if strings.TrimSpace(title) == "" && strings.TrimSpace(content) == "" {
 			return
 		}
-		record := SessionManagementMessageRecord{
-			ID:        fmt.Sprintf("%s:%d", filepath.Base(relativePath), len(messageRecords)+1),
-			Role:      role,
-			TimeLabel: formatSessionManagementTime(timestamp),
-			Timestamp: formatSessionManagementTimestamp(timestamp),
-			Title:     title,
-			Summary:   summary,
-			Content:   content,
-			Truncated: truncated,
+		messageCount++
+		lastRole = role
+		if collectMessages {
+			record := SessionManagementMessageRecord{
+				ID:        fmt.Sprintf("%s:%d", filepath.Base(relativePath), len(messageRecords)+1),
+				Role:      role,
+				TimeLabel: formatSessionManagementTime(timestamp),
+				Timestamp: formatSessionManagementTimestamp(timestamp),
+				Title:     title,
+				Summary:   summary,
+				Content:   content,
+				Truncated: truncated,
+			}
+			messageRecords = append(messageRecords, record)
 		}
-		messageRecords = append(messageRecords, record)
 		roleCounts[role]++
 		if role == "user" && firstUserText == "" {
 			firstUserText = content
@@ -1140,6 +1486,11 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 		projectName = fallbackClaudeCodeProjectName(relativePath)
 	}
 	fileLabel := formatClaudeCodeSessionFileLabel(relativePath)
+	if !collectMessages {
+		firstUserText = buildSessionSnapshotSummary("user", firstUserText)
+		lastPrimarySummary = buildSessionSnapshotSummary(lastSnapshotPrimaryRole, lastSnapshotPrimaryRaw)
+		lastSummary = buildSessionSnapshotSummary(lastSnapshotSummaryRole, lastSnapshotSummaryRaw)
+	}
 	title := strings.TrimSpace(customTitle)
 	if title == "" {
 		title = deriveSessionTitle(firstUserText, lastPrimarySummary, fileLabel)
@@ -1149,7 +1500,10 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 	preview = strings.TrimSpace(preview + " / " + resumeCommand)
 	projectID := slugifySessionProjectName(projectName)
 	roleSummary := formatSessionRoleSummary(roleCounts)
-	currentMessageLabel := formatCurrentMessageLabel(messageRecords)
+	currentMessageLabel := formatCurrentMessageLabelByCount(messageCount, lastRole)
+	if collectMessages {
+		currentMessageLabel = formatCurrentMessageLabel(messageRecords)
+	}
 
 	sessionRecord := SessionManagementSessionRecord{
 		ID:                  relativePath,
@@ -1159,7 +1513,7 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 		Title:               title,
 		Status:              "active",
 		Archived:            false,
-		MessageCount:        len(messageRecords),
+		MessageCount:        messageCount,
 		RoleSummary:         roleSummary,
 		StartedAt:           formatSessionManagementTimestamp(firstTimestamp),
 		UpdatedAt:           formatSessionManagementTimestamp(lastTimestamp),
@@ -1179,7 +1533,7 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 		Status:              "active",
 		Archived:            false,
 		FileLabel:           fileLabel,
-		MessageCount:        len(messageRecords),
+		MessageCount:        messageCount,
 		Masked:              true,
 		CurrentMessageLabel: currentMessageLabel,
 		RoleSummary:         roleSummary,
@@ -1199,6 +1553,78 @@ func parseClaudeCodeSessionFile(claudeConfigDir string, absolutePath string, rel
 		startedAtRaw: firstTimestamp,
 		updatedAtRaw: lastTimestamp,
 	}, nil
+}
+
+func loadSessionParseResultsConcurrently(
+	codexHome string,
+	paths []string,
+	threadNames map[string]string,
+	collectMessages bool,
+	parser sessionFileParser,
+) ([]*sessionParseResult, error) {
+	if len(paths) == 0 {
+		return []*sessionParseResult{}, nil
+	}
+
+	workerCount := runtime.GOMAXPROCS(0)
+	if workerCount > 8 {
+		workerCount = 8
+	}
+	if workerCount < 1 {
+		workerCount = 1
+	}
+	if workerCount > len(paths) {
+		workerCount = len(paths)
+	}
+
+	results := make([]*sessionParseResult, len(paths))
+	var firstErr error
+	var firstErrMu sync.Mutex
+	var wg sync.WaitGroup
+	jobs := make(chan int)
+
+	worker := func() {
+		defer wg.Done()
+		for index := range jobs {
+			absolutePath := paths[index]
+			relativePath, err := filepath.Rel(codexHome, absolutePath)
+			if err != nil {
+				firstErrMu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				firstErrMu.Unlock()
+				continue
+			}
+			relativePath = filepath.ToSlash(relativePath)
+			result, err := parser(codexHome, absolutePath, relativePath, threadNames, collectMessages)
+			if err != nil {
+				firstErrMu.Lock()
+				if firstErr == nil {
+					firstErr = err
+				}
+				firstErrMu.Unlock()
+				continue
+			}
+			results[index] = result
+		}
+	}
+
+	wg.Add(workerCount)
+	for i := 0; i < workerCount; i++ {
+		go worker()
+	}
+
+	for index := range paths {
+		jobs <- index
+	}
+	close(jobs)
+	wg.Wait()
+
+	if firstErr != nil {
+		return nil, firstErr
+	}
+	return results, nil
 }
 
 func extractClaudeCodeMessageRecord(envelope claudeCodeSessionLineEnvelope) (string, string, string, string, bool) {
@@ -1440,6 +1866,17 @@ func buildSessionMessageContent(role string, fallbackTitle string, raw string) (
 	return title, firstRunes(content, 180), content, truncated
 }
 
+func buildSessionSnapshotSummary(role string, raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	if role == "system" && looksLikeSensitiveSystemPrompt(raw) {
+		return "系统与环境约束已载入（已脱敏）"
+	}
+	return firstRunes(sanitizeSessionText(raw), 180)
+}
+
 func sanitizeSessionText(raw string) string {
 	text := strings.TrimSpace(raw)
 	if text == "" {
@@ -1595,6 +2032,26 @@ func formatCurrentMessageLabel(messages []SessionManagementMessageRecord) string
 		roleLabel = "系统"
 	}
 	return fmt.Sprintf("%02d / %s", len(messages), roleLabel)
+}
+
+func formatCurrentMessageLabelByCount(count int, role string) string {
+	if count <= 0 {
+		return "00 / 系统"
+	}
+
+	roleLabel := map[string]string{
+		"user":        "用户",
+		"assistant":   "助手",
+		"system":      "系统",
+		"reasoning":   "推理",
+		"tool_call":   "工具调用",
+		"tool_result": "工具结果",
+		"event":       "事件",
+	}[role]
+	if roleLabel == "" {
+		roleLabel = "系统"
+	}
+	return fmt.Sprintf("%02d / %s", count, roleLabel)
 }
 
 func formatSessionMetaSummary(meta sessionMetaEnvelope) string {
