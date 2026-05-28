@@ -64,6 +64,12 @@ gh repo fork router-for-me/CLIProxyAPI --org AxApp --fork-name CLIProxyAPI --clo
 7. 父仓库只提交 gitlink、必要 docs/memory、必要构建产物；不要把无关前端/文档改动混入。
 8. 写回 memory，执行 `qmd update`、`qmd embed`，并用 `qmd query` 抽查可检索性。
 
+## Sidecar 自治状态规则
+
+sidecar 已经承载 GetTokens 的运行态自治：账号选择、rate-limit、route guard、live sessions、usage attribution、system proxy、Codex WebSocket session 切换等状态必须在 `AxApp/CLIProxyAPI#gettokens/sidecar` 或其 GetTokens hook/routing 层内成立。Wails 和前端可以展示、触发配置和读取 snapshot，但不能用本地补偿把“sidecar 尚未处理”的状态伪装成已处理。
+
+上游 PR / commit 只能作为候选输入。只要上游实现会冲击上述自治状态，或会把 GetTokens 领域逻辑塞回通用 upstream core，就不要整包照搬；应在 sidecar 维护分支内按 GetTokens 边界重新实现合理逻辑，补对应的窄回归测试，推送 `origin/gettokens/sidecar`，重建 sidecar 并确认 meta 为 clean，然后再把父仓库的 gitlink、Wails/frontend 接入、docs 和 memory 合回主分支（当前为 `master`）。
+
 ## Subagent 审核合并模式
 
 当 fork 已经明显偏离 upstream，或用户明确要求 subagent 审核时，不直接相信上游 PR 说明，也不只看 `HEAD..upstream/main` 的整体 diff。该 diff 会把 GetTokens fork 独有目录显示成大面积删除，容易误判为上游要移除本地能力。
@@ -99,7 +105,7 @@ git check-ignore -v <path>
 
 - 本轮具体上游功能列表不沉淀为规则，只保留在 git 历史和 memory 中。
 - `server` 文件本体不归档、不提交。
-- 不把该流程升级到 `AGENTS.md`；它属于 CLIProxyAPI fork 领域维护流程，已沉淀到 `gettokens-domain-engineering` skill。
+- 常规 CLIProxyAPI 上游功能列表不升级到 `AGENTS.md`；它们属于 fork 领域维护流程，继续沉淀到 `gettokens-domain-engineering` skill。2026-05-29 起，sidecar 自治状态和高风险上游重实现规则已升级为 repo-wide 约束，并写入 `AGENTS.md`。
 
 ## 2026-05-28 后续触发约定
 
@@ -195,7 +201,7 @@ git check-ignore -v <path>
 3. `go test ./...`
 4. `git diff --check`
 
-沉淀结论：该流程属于 CLIProxyAPI fork 领域维护规则，已补入 `gettokens-domain-engineering`；不升级 `AGENTS.md`。
+沉淀结论：该轮具体上游合并流程属于 CLIProxyAPI fork 领域维护规则，已补入 `gettokens-domain-engineering`；当时未升级 `AGENTS.md`。2026-05-29 起，sidecar 自治状态本身已升级为 repo-wide 约束。
 
 ## 2026-05-28 v7.1.28 同步记录
 
@@ -213,4 +219,4 @@ git check-ignore -v <path>
 2. 冲突解决后局部验证：`go test ./internal/runtime/executor/helps`、`go test ./internal/redisqueue`、`go test ./sdk/cliproxy/usage ./internal/logging`。
 3. 合并后验证：`go test ./internal/runtime/executor`、`go test ./internal/translator/claude/openai/responses ./internal/translator/openai/openai/responses`、`go test ./sdk/api/handlers/openai`、`go test ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy/auth`、`go test ./...`、`git diff --check`。
 
-本地 sidecar 已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，`build/bin/cli-proxy-api.meta.json` 记录 `commit=e2ec7262`、`dirty=clean`、`goos=darwin`、`goarch=arm64`。本次仍属于既有 CLIProxyAPI fork 同步流程，不升级 `AGENTS.md`。
+本地 sidecar 已通过 `./scripts/ensure-sidecar.sh darwin arm64` 重建，`build/bin/cli-proxy-api.meta.json` 记录 `commit=e2ec7262`、`dirty=clean`、`goos=darwin`、`goarch=arm64`。该轮具体上游同步仍属于既有 CLIProxyAPI fork 流程；sidecar 自治状态本身已在 2026-05-29 升级为 `AGENTS.md` 规则。

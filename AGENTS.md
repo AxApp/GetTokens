@@ -44,6 +44,8 @@
 13. 当某个 `space` 的需求施工结束并进入整理期时，默认执行一次行为保持的收尾整理：识别大文件和大数据结构，优先按稳定边界拆分文件；同步提取可复用流程到项目级 `skills`，仅把 repo-wide 且长期稳定的规则写入 `AGENTS.md`；最后更新 space、dev 文档、memory 并重建 qmd 索引。
 14. 本地 Web / Wails 预览验收默认使用无头浏览器、DOM 断言和文件截图；除非用户明确要求可见窗口，否则不得把 Playwright、Chrome 或其他浏览器验收窗口打开到用户当前激活显示器。确需可见窗口时必须先询问，或放到非激活副屏。
 15. 通用看板产品线按固定节奏推进：新建 `space` -> 设计需求 -> 技术细节补充 -> 回到需求调整 -> 调整设计系统的稿子 -> 执行开发 -> 冒烟测试 -> 交付用户测试。
+16. sidecar 是 GetTokens 运行态自治层。账号选择、rate-limit、route guard、live sessions、usage attribution、system proxy、Codex WebSocket 等热路径状态优先在 `CLIProxyAPI#gettokens/sidecar` 内闭环，不通过前端或 Wails 临时补偿来伪造 sidecar 已处理状态。
+17. 合并 CLIProxyAPI 上游提交时，若上游实现对 GetTokens sidecar 自治状态存在风险，不能整包照搬。必须在 sidecar 维护分支上按 GetTokens 边界重新实现合理逻辑、补窄测试、重建 sidecar，再把 fork 提交与父仓库变更合回主分支（当前为 `master`）。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。

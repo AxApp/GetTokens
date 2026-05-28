@@ -23,6 +23,12 @@ GetTokens 不引入用户实体。业务归属实体只有账号卡，账号卡 
 - auth-file：`Auth.AccountKey = auth-file:<file-name>`。
 - OpenAI-compatible provider：`Auth.AccountKey = openai-compatible:<provider-name>`。
 
+## Sidecar 自治边界
+
+账号卡身份不是前端展示字段，而是 sidecar 热路径状态。rate-limit、usage attribution、route guard 和 runtime auth selection 必须直接使用 `Auth.AccountKey` / `account_key` 完成闭环。Wails 和前端只负责配置编辑、snapshot 展示和用户操作入口，不能在 sidecar 之外用 `auth-id`、`attribution_key`、email 或 API key hash 重新推断业务身份。
+
+后续同步 CLIProxyAPI 上游时，如果上游提交和账号卡身份、限流、路由或运行态观测存在冲突，按 sidecar 自治规则处理：拒绝整包照搬，在 `gettokens/sidecar` 内重新实现合理逻辑并补测试，再重建 sidecar 和合回 GetTokens 主分支。
+
 ## Rate-limit 规则
 
 Rate-limit 是账号卡资产级策略：
