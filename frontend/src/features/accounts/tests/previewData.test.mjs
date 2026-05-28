@@ -43,7 +43,8 @@ test('accounts preview rate limit exposes blocked guard state by account id', ()
 
   assert.equal(stateByID['codex-api-key:gray-canary'].blocked, true);
   assert.equal(stateByID['codex-api-key:gray-canary'].blockReason, '1h requests 已满');
-  assert.equal(stateByID['codex-api-key:missing'], undefined);
+  assert.equal(stateByID['codex-api-key:missing'].blocked, false);
+  assert.deepEqual(stateByID['codex-api-key:missing'].rules, []);
 });
 
 test('accounts preview providers remain available for aggregate workspace preview', () => {
@@ -51,8 +52,41 @@ test('accounts preview providers remain available for aggregate workspace previe
 
   assert.deepEqual(
     providers.map((provider) => provider.name),
-    ['deepseek', 'openrouter'],
+    ['openai', 'deepseek', 'siliconflow', 'zhipu', 'moonshot', 'dashscope', 'openrouter', 'groq', 'together', 'doubao'],
   );
+});
+
+test('accounts preview inventory covers full account list states and providers', () => {
+  const authRecords = getAccountsPreviewAuthFileRecords();
+  const apiRecords = getAccountsPreviewAPIKeyRecords();
+  const allRecords = [...authRecords, ...apiRecords];
+  const ids = allRecords.map((account) => account.id);
+  const providers = new Set(allRecords.map((account) => account.provider));
+  const statuses = new Set(allRecords.map((account) => String(account.status).toUpperCase()));
+
+  assert.equal(new Set(ids).size, ids.length);
+  assert.ok(authRecords.length >= 6);
+  assert.ok(apiRecords.length >= 12);
+  assert.ok(statuses.has('ACTIVE'));
+  assert.ok(statuses.has('CONFIGURED'));
+  assert.ok(statuses.has('DISABLED'));
+  assert.ok(statuses.has('ERROR'));
+
+  for (const provider of [
+    'codex',
+    'openai',
+    'deepseek',
+    'siliconflow',
+    'zhipu',
+    'moonshot',
+    'dashscope',
+    'openrouter',
+    'groq',
+    'together',
+    'doubao',
+  ]) {
+    assert.ok(providers.has(provider), `missing preview provider: ${provider}`);
+  }
 });
 
 test('usage desk preview observed usage includes attributed and unresolved codex traffic', () => {

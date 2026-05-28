@@ -18,6 +18,16 @@ const PREVIEW_AUTH_FILES: AuthFile[] = [
     disabled: false,
   },
   {
+    name: 'codex-plus-nightly.json',
+    type: 'codex',
+    provider: 'codex',
+    status: 'active',
+    priority: 7,
+    email: 'nightly-plus@example.com',
+    planType: 'plus',
+    disabled: false,
+  },
+  {
     name: 'codex-team.json',
     type: 'codex',
     provider: 'codex',
@@ -28,6 +38,27 @@ const PREVIEW_AUTH_FILES: AuthFile[] = [
     disabled: false,
   },
   {
+    name: 'codex-free-low.json',
+    type: 'codex',
+    provider: 'codex',
+    status: 'active',
+    priority: 3,
+    email: 'free-low@example.com',
+    planType: 'free',
+    disabled: false,
+  },
+  {
+    name: 'codex-disabled.json',
+    type: 'codex',
+    provider: 'codex',
+    status: 'disabled',
+    statusMessage: 'manual route guard enabled',
+    priority: 1,
+    email: 'disabled-route@example.com',
+    planType: 'pro',
+    disabled: true,
+  },
+  {
     name: 'codex-expired.json',
     type: 'codex',
     provider: 'codex',
@@ -36,6 +67,26 @@ const PREVIEW_AUTH_FILES: AuthFile[] = [
     priority: 2,
     email: 'legacy-expired@example.com',
     planType: 'free',
+    disabled: false,
+  },
+  {
+    name: 'claude-relay.json',
+    type: 'claude',
+    provider: 'claude',
+    status: 'active',
+    priority: 6,
+    email: 'claude-relay@example.com',
+    planType: 'pro',
+    disabled: false,
+  },
+  {
+    name: 'gemini-oauth.json',
+    type: 'gemini',
+    provider: 'gemini',
+    status: 'active',
+    priority: 4,
+    email: 'gemini-oauth@example.com',
+    planType: 'plus',
     disabled: false,
   },
 ];
@@ -56,6 +107,13 @@ const PREVIEW_API_KEY_ACCOUNTS: AccountRecord[] = [
     quotaKey: 'codex-api-key:stable-001',
     quotaEnabled: true,
     quotaCurl: 'curl -s https://api.openai.com/dashboard/billing/usage',
+    billingEnabled: true,
+    billingCurl: 'curl -s https://api.openai.com/dashboard/billing/credit_grants',
+    supportedFormats: ['anthropic', 'openai_responses'],
+    models: [
+      { name: 'gpt-5.4', alias: 'GPT 5.4' },
+      { name: 'gpt-5.4-mini', alias: 'GPT 5.4 Mini' },
+    ],
   },
   {
     id: 'codex-api-key:gray-canary',
@@ -72,10 +130,73 @@ const PREVIEW_API_KEY_ACCOUNTS: AccountRecord[] = [
     quotaKey: 'codex-api-key:gray-canary',
     quotaEnabled: true,
     quotaCurl: 'curl -s https://api.openai.com/dashboard/billing/usage',
+    billingEnabled: true,
+    billingCurl: 'curl -s https://api.openai.com/dashboard/billing/credit_grants',
+    supportedFormats: ['anthropic', 'openai_responses'],
+    models: [
+      { name: 'gpt-5.4-mini', alias: 'GPT 5.4 Mini' },
+      { name: 'o4-mini', alias: 'O4 Mini' },
+    ],
+  },
+  {
+    id: 'codex-api-key:billing-usd',
+    provider: 'openai',
+    credentialSource: 'api-key',
+    displayName: 'Billing USD Pool',
+    status: 'configured',
+    priority: 6,
+    apiKey: 'sk-preview-billing-usd',
+    keySuffix: '9A42',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: 'billing-usd',
+    proxyUrl: '',
+    quotaKey: 'codex-api-key:billing-usd',
+    quotaEnabled: false,
+    quotaCurl: '',
+    billingEnabled: true,
+    billingCurl: 'curl -s https://api.openai.com/dashboard/billing/credit_grants',
+    supportedFormats: ['anthropic', 'openai_responses'],
+    models: [
+      { name: 'gpt-5.4', alias: 'GPT 5.4' },
+      { name: 'gpt-5.2', alias: 'GPT 5.2' },
+    ],
+  },
+  {
+    id: 'codex-api-key:manual-disabled',
+    provider: 'codex',
+    credentialSource: 'api-key',
+    displayName: 'Manual Disabled',
+    status: 'disabled',
+    statusMessage: 'manual disable preview',
+    priority: 1,
+    disabled: true,
+    apiKey: 'sk-preview-disabled',
+    keySuffix: '7B20',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: 'manual-disabled',
+    proxyUrl: 'http://127.0.0.1:8080',
+    quotaKey: 'codex-api-key:manual-disabled',
+    quotaEnabled: true,
+    quotaCurl: 'curl -s https://api.openai.com/dashboard/billing/usage',
+    supportedFormats: ['anthropic', 'openai_responses'],
   },
 ];
 
 const PREVIEW_OPENAI_COMPATIBLE_PROVIDERS: OpenAICompatibleProvider[] = [
+  previewProvider({
+    name: 'openai',
+    priority: 11,
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: 'sk-preview-openai-compatible',
+    proxyUrl: '',
+    keyCount: 2,
+    modelCount: 3,
+    models: [
+      { alias: 'codex-gpt-5-4', name: 'gpt-5.4' },
+      { alias: 'codex-gpt-5-mini', name: 'gpt-5.4-mini' },
+      { alias: 'codex-o4', name: 'o4-mini' },
+    ],
+  }),
   previewProvider({
     name: 'deepseek',
     priority: 10,
@@ -87,6 +208,62 @@ const PREVIEW_OPENAI_COMPATIBLE_PROVIDERS: OpenAICompatibleProvider[] = [
     models: [
       { alias: 'codex-deepseek', name: 'deepseek-chat' },
       { alias: 'codex-reasoner', name: 'deepseek-reasoner' },
+    ],
+  }),
+  previewProvider({
+    name: 'siliconflow',
+    priority: 9,
+    baseUrl: 'https://api.siliconflow.cn/v1',
+    apiKey: 'sk-preview-siliconflow',
+    proxyUrl: '',
+    keyCount: 2,
+    modelCount: 3,
+    models: [
+      { alias: 'sf-deepseek-v3', name: 'deepseek-ai/DeepSeek-V3.2' },
+      { alias: 'sf-qwen3', name: 'Qwen/Qwen3-8B' },
+      { alias: '', name: 'moonshotai/Kimi-K2-Instruct' },
+    ],
+  }),
+  previewProvider({
+    name: 'zhipu',
+    priority: 8,
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    apiKey: 'sk-preview-zhipu',
+    proxyUrl: 'http://127.0.0.1:7890',
+    keyCount: 1,
+    modelCount: 3,
+    models: [
+      { alias: 'glm-5', name: 'glm-5' },
+      { alias: 'glm-flash', name: 'glm-4.5-flash' },
+      { alias: '', name: 'glm-4.7' },
+    ],
+  }),
+  previewProvider({
+    name: 'moonshot',
+    priority: 7,
+    baseUrl: 'https://api.moonshot.cn/v1',
+    apiKey: 'sk-preview-moonshot',
+    proxyUrl: '',
+    keyCount: 1,
+    modelCount: 3,
+    models: [
+      { alias: 'kimi-auto', name: 'moonshot-v1-auto' },
+      { alias: 'kimi-k2', name: 'kimi-k2.5' },
+      { alias: 'kimi-thinking', name: 'kimi-k2-thinking' },
+    ],
+  }),
+  previewProvider({
+    name: 'dashscope',
+    priority: 6,
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    apiKey: 'sk-preview-dashscope',
+    proxyUrl: '',
+    keyCount: 2,
+    modelCount: 3,
+    models: [
+      { alias: 'qwen-plus', name: 'qwen3.5-plus' },
+      { alias: 'qwen-flash', name: 'qwen3.5-flash' },
+      { alias: 'deepseek-r1', name: 'deepseek-r1' },
     ],
   }),
   previewProvider({
@@ -102,6 +279,46 @@ const PREVIEW_OPENAI_COMPATIBLE_PROVIDERS: OpenAICompatibleProvider[] = [
       { alias: '', name: 'openai/gpt-5.4-mini' },
     ],
   }),
+  previewProvider({
+    name: 'groq',
+    priority: 2,
+    baseUrl: 'https://api.groq.com/openai/v1',
+    apiKey: 'gsk_preview_groq',
+    proxyUrl: '',
+    keyCount: 1,
+    modelCount: 2,
+    models: [
+      { alias: 'groq-llama-8b', name: 'llama3-8b-8192' },
+      { alias: 'groq-llama-70b', name: 'llama3-70b-8192' },
+    ],
+  }),
+  previewProvider({
+    name: 'together',
+    priority: 2,
+    baseUrl: 'https://api.together.xyz/v1',
+    apiKey: 'sk-preview-together',
+    proxyUrl: '',
+    keyCount: 1,
+    modelCount: 2,
+    models: [
+      { alias: 'together-llama-vision', name: 'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo' },
+      { alias: 'together-gemma', name: 'google/gemma-2-27b-it' },
+    ],
+  }),
+  previewProvider({
+    name: 'doubao',
+    priority: 1,
+    baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+    apiKey: 'sk-preview-doubao',
+    proxyUrl: 'socks5://127.0.0.1:7890',
+    keyCount: 1,
+    modelCount: 3,
+    models: [
+      { alias: 'doubao-seed', name: 'doubao-seed-1-8-251228' },
+      { alias: 'doubao-pro', name: 'doubao-1-5-pro-32k-250115' },
+      { alias: 'doubao-r1', name: 'deepseek-r1-250120' },
+    ],
+  }),
 ];
 
 const PREVIEW_QUOTA_BY_KEY: Record<string, CodexQuotaState> = {
@@ -115,6 +332,16 @@ const PREVIEW_QUOTA_BY_KEY: Record<string, CodexQuotaState> = {
       ],
     }),
   },
+  'codex-plus-nightly.json': {
+    status: 'success',
+    quota: previewQuota({
+      planType: 'PLUS',
+      windows: [
+        { id: 'five-hour', label: '5H', remainingPercent: 18, resetLabel: '2026-05-15 15:25', resetAtUnix: 1747293900 },
+        { id: 'weekly', label: '7D', remainingPercent: 35, resetLabel: '2026-05-19 06:30', resetAtUnix: 1747607400 },
+      ],
+    }),
+  },
   'codex-team.json': {
     status: 'success',
     quota: previewQuota({
@@ -122,6 +349,26 @@ const PREVIEW_QUOTA_BY_KEY: Record<string, CodexQuotaState> = {
       windows: [
         { id: 'five-hour', label: '5H', remainingPercent: 41, resetLabel: '2026-05-15 17:15', resetAtUnix: 1747300500 },
         { id: 'weekly', label: '7D', remainingPercent: 58, resetLabel: '2026-05-20 09:00', resetAtUnix: 1747702800 },
+      ],
+    }),
+  },
+  'codex-free-low.json': {
+    status: 'success',
+    quota: previewQuota({
+      planType: 'FREE',
+      windows: [
+        { id: 'five-hour', label: '5H', remainingPercent: 6, resetLabel: '2026-05-15 14:45', resetAtUnix: 1747291500 },
+        { id: 'weekly', label: '7D', remainingPercent: 14, resetLabel: '2026-05-17 23:00', resetAtUnix: 1747494000 },
+      ],
+    }),
+  },
+  'codex-disabled.json': {
+    status: 'success',
+    quota: previewQuota({
+      planType: 'PRO',
+      windows: [
+        { id: 'five-hour', label: '5H', remainingPercent: 76, resetLabel: '2026-05-15 18:30', resetAtUnix: 1747305000 },
+        { id: 'weekly', label: '7D', remainingPercent: 91, resetLabel: '2026-05-21 12:00', resetAtUnix: 1747800000 },
       ],
     }),
   },
@@ -145,6 +392,34 @@ const PREVIEW_QUOTA_BY_KEY: Record<string, CodexQuotaState> = {
       windows: [
         { id: 'five-hour', label: '5H', remainingPercent: 22, resetLabel: '2026-05-15 15:10', resetAtUnix: 1747293000 },
         { id: 'weekly', label: '7D', remainingPercent: 49, resetLabel: '2026-05-18 02:00', resetAtUnix: 1747519200 },
+      ],
+    }),
+  },
+  'codex-api-key:billing-usd': {
+    status: 'success',
+    quota: previewQuota({
+      planType: 'BILLING',
+      windows: [],
+      billing: {
+        isAvailable: true,
+        balanceInfos: [
+          {
+            currency: 'usd',
+            totalBalance: '124.60',
+            grantedBalance: '24.60',
+            toppedUpBalance: '100.00',
+          },
+        ],
+      },
+    }),
+  },
+  'codex-api-key:manual-disabled': {
+    status: 'success',
+    quota: previewQuota({
+      planType: 'KEY',
+      windows: [
+        { id: 'five-hour', label: '5H', remainingPercent: 96, resetLabel: '2026-05-15 18:00', resetAtUnix: 1747303200 },
+        { id: 'weekly', label: '7D', remainingPercent: 88, resetLabel: '2026-05-20 19:00', resetAtUnix: 1747738800 },
       ],
     }),
   },
@@ -353,22 +628,26 @@ export function getAccountsPreviewQuotaStateByKey(accounts: AccountRecord[]): Re
   }, {});
 }
 
-export function getAccountsPreviewUsageByID(accounts: Array<Pick<AccountRecord, 'id'>>): Record<string, AccountUsageSummary> {
+export function getAccountsPreviewUsageByID(
+  accounts: Array<Pick<AccountRecord, 'id'> & Partial<Pick<AccountRecord, 'provider'>>>,
+): Record<string, AccountUsageSummary> {
   return accounts.reduce<Record<string, AccountUsageSummary>>((result, account) => {
-    const summary = PREVIEW_USAGE_BY_ID[account.id];
-    if (summary) {
-      result[account.id] = cloneUsageSummary(summary);
-    }
+    const summary = PREVIEW_USAGE_BY_ID[account.id] || createFallbackUsageSummary(account);
+    result[account.id] = cloneUsageSummary(summary);
     return result;
   }, {});
 }
 
 export function getAccountsPreviewRateLimitByID(accounts: Array<Pick<AccountRecord, 'id'>>): Record<string, RateLimitState> {
   return accounts.reduce<Record<string, RateLimitState>>((result, account) => {
-    const state = PREVIEW_RATE_LIMIT_BY_ID[account.id];
-    if (state) {
-      result[account.id] = cloneRateLimitState(state);
-    }
+    const state =
+      PREVIEW_RATE_LIMIT_BY_ID[account.id] ||
+      previewRateLimitState({
+        accountKey: account.id,
+        updatedAt: '2026-05-15T14:00:00+08:00',
+        rules: [],
+      });
+    result[account.id] = cloneRateLimitState(state);
     return result;
   }, {});
 }
@@ -570,6 +849,80 @@ function createUsageSummary(input: {
   };
 }
 
+function createFallbackUsageSummary(
+  account: Pick<AccountRecord, 'id'> & Partial<Pick<AccountRecord, 'provider'>>,
+): AccountUsageSummary {
+  const provider = String(account.provider || inferProviderFromPreviewID(account.id)).trim() || 'unknown';
+  const seed = hashPreviewID(account.id);
+  const requestCount = 8 + (seed % 54);
+  const failedCount = seed % 5;
+  const latency = 520 + (seed % 900);
+  const totalTokens = Array.from({ length: 8 }, (_, index) => 6000 + ((seed + index * 7919) % 48000));
+  return createUsageSummary({
+    id: account.id,
+    provider,
+    attributionKey: account.id,
+    requestCount,
+    failedCount,
+    latency,
+    totalTokens,
+    requestedModels: previewModelsForProvider(provider),
+    lastActivityOffsetMs: (5 + (seed % 95)) * 60 * 1000,
+  });
+}
+
+function inferProviderFromPreviewID(id: string) {
+  if (id.startsWith('openai-compatible:')) {
+    return id.replace('openai-compatible:', '');
+  }
+  if (id.startsWith('auth-file:')) {
+    const name = id.replace('auth-file:', '');
+    if (name.startsWith('claude')) return 'claude';
+    if (name.startsWith('gemini')) return 'gemini';
+    return 'codex';
+  }
+  if (id.startsWith('codex-api-key:billing')) return 'openai';
+  if (id.startsWith('codex-api-key:')) return 'codex';
+  return 'unknown';
+}
+
+function previewModelsForProvider(provider: string) {
+  switch (provider) {
+    case 'deepseek':
+      return ['deepseek-chat', 'deepseek-reasoner'];
+    case 'siliconflow':
+      return ['deepseek-ai/DeepSeek-V3.2'];
+    case 'zhipu':
+      return ['glm-5'];
+    case 'moonshot':
+      return ['kimi-k2.5'];
+    case 'dashscope':
+      return ['qwen3.5-plus'];
+    case 'openrouter':
+      return ['openai/gpt-5.4-mini'];
+    case 'groq':
+      return ['llama3-70b-8192'];
+    case 'together':
+      return ['google/gemma-2-27b-it'];
+    case 'doubao':
+      return ['doubao-seed-1-8-251228'];
+    case 'claude':
+      return ['claude-sonnet-4-6'];
+    case 'gemini':
+      return ['gemini-2.5-pro'];
+    default:
+      return ['gpt-5.4-mini'];
+  }
+}
+
+function hashPreviewID(id: string) {
+  let hash = 0;
+  for (let index = 0; index < id.length; index += 1) {
+    hash = (hash * 31 + id.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
 function cloneQuotaState(state: CodexQuotaState): CodexQuotaState {
   if (state.status !== 'success' || !state.quota) {
     return { ...state };
@@ -740,6 +1093,15 @@ function previewProvider(input: Omit<OpenAICompatibleProvider, 'convertValues'>)
 
 function previewQuota(input: {
   planType?: string;
+  billing?: {
+    isAvailable: boolean;
+    balanceInfos: Array<{
+      currency: string;
+      totalBalance: string;
+      grantedBalance: string;
+      toppedUpBalance: string;
+    }>;
+  };
   windows: Array<{
     id: string;
     label: string;
@@ -750,6 +1112,12 @@ function previewQuota(input: {
 }): NonNullable<CodexQuotaState['quota']> {
   return {
     ...input,
+    billing: input.billing
+      ? {
+          ...input.billing,
+          balanceInfos: input.billing.balanceInfos.map((item) => ({ ...item })),
+        }
+      : undefined,
     windows: input.windows.map((window) => ({ ...window })),
     convertValues(value: unknown) {
       return value;
