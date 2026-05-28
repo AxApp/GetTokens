@@ -526,7 +526,6 @@ export default function ApiKeyDetailModal({
             <RateLimitRulesSection
               ref={rateLimitRulesRef}
               accountKey={account.id}
-              matchKey={usageSummary?.attributionKey}
               rateLimitStatus={rateLimitStatus}
               rateLimitStrategies={rateLimitStrategies}
               rateLimitRulesAPI={rateLimitRulesAPI}

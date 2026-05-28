@@ -9,7 +9,6 @@ export interface RateLimitStrategyMeta {
 export interface RateLimitRule {
   id?: string;
   accountKey: string;
-  matchKey?: string;
   strategy: string;
   window: string;
   limitValue: number;
@@ -30,7 +29,6 @@ export interface RateLimitRuleState {
 
 export interface RateLimitState {
   accountKey: string;
-  matchKey?: string;
   blocked: boolean;
   blockReason?: string;
   rules: RateLimitRuleState[];
@@ -40,7 +38,6 @@ export interface RateLimitState {
 export interface RateLimitEvent {
   id: string;
   accountKey: string;
-  matchKey?: string;
   ruleID: string;
   strategy: string;
   window: string;
@@ -74,7 +71,6 @@ export function buildRateLimitStatusMap(items: RateLimitState[] | undefined) {
 export function normalizeRateLimitState(input: RateLimitState): RateLimitState {
   return {
     accountKey: String(input.accountKey || '').trim(),
-    matchKey: String(input.matchKey || '').trim(),
     blocked: Boolean(input.blocked),
     blockReason: String(input.blockReason || '').trim(),
     updatedAt: String(input.updatedAt || '').trim(),
@@ -86,7 +82,6 @@ export function normalizeRateLimitState(input: RateLimitState): RateLimitState {
       rule: {
         id: String(ruleState.rule?.id || '').trim(),
         accountKey: String(ruleState.rule?.accountKey || input.accountKey || '').trim(),
-        matchKey: String(ruleState.rule?.matchKey || '').trim(),
         strategy: String(ruleState.rule?.strategy || '').trim(),
         window: String(ruleState.rule?.window || '').trim(),
         limitValue: Number.isFinite(Number(ruleState.rule?.limitValue)) ? Number(ruleState.rule.limitValue) : 0,

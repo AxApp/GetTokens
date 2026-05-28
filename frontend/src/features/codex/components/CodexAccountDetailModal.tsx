@@ -1,11 +1,5 @@
 import { Plus, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import {
-  CreateRateLimitRule,
-  DeleteRateLimitRule,
-  ListRateLimitRules,
-  UpdateRateLimitRule,
-} from '../../../../wailsjs/go/main/App';
 import AccountDetailModalFrame from '../../accounts/components/AccountDetailModalFrame';
 import {
   AccountBillingSection,
@@ -22,7 +16,7 @@ import {
   AccountDetailSection,
 } from '../../accounts/components/AccountDetailPrimitives';
 import AccountProxyRouteSection from '../../accounts/components/AccountProxyRouteSection';
-import RateLimitRulesSection, { type RateLimitRulesSectionHandle } from '../../accounts/components/RateLimitRulesSection';
+import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from '../../accounts/components/RateLimitRulesSection';
 import {
   buildApiKeyConfigDraft,
   hasApiKeyConfigChanges,
@@ -127,6 +121,7 @@ export function CodexAccountDetailModal({
   usageSummary,
   rateLimitStatus,
   rateLimitStrategies,
+  rateLimitRulesAPI,
   verifyState,
   savingMappings,
   loadingModelMappings,
@@ -146,6 +141,7 @@ export function CodexAccountDetailModal({
   usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
+  rateLimitRulesAPI?: RateLimitRulesAPI;
   verifyState?: APIKeyVerifyState;
   savingMappings: boolean;
   loadingModelMappings: boolean;
@@ -285,10 +281,10 @@ export function CodexAccountDetailModal({
           <CodexRateLimitSection
             key={moduleID}
             row={row}
-            usageSummary={usageSummary}
-            rateLimitStatus={rateLimitStatus}
-            rateLimitStrategies={rateLimitStrategies}
-            rateLimitRulesRef={rateLimitRulesRef}
+          rateLimitStatus={rateLimitStatus}
+          rateLimitStrategies={rateLimitStrategies}
+          rateLimitRulesAPI={rateLimitRulesAPI}
+          rateLimitRulesRef={rateLimitRulesRef}
             onRateLimitDirtyChange={setRateLimitDirty}
             onRateLimitRulesChanged={onRateLimitRulesChanged}
             t={t}
@@ -388,18 +384,18 @@ export function CodexAccountDetailModal({
 
 function CodexRateLimitSection({
   row,
-  usageSummary,
   rateLimitStatus,
   rateLimitStrategies,
+  rateLimitRulesAPI,
   rateLimitRulesRef,
   onRateLimitDirtyChange,
   onRateLimitRulesChanged,
   t,
 }: {
   row: CodexAccountRow;
-  usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
+  rateLimitRulesAPI?: RateLimitRulesAPI;
   rateLimitRulesRef: RefObject<RateLimitRulesSectionHandle>;
   onRateLimitDirtyChange: (dirty: boolean) => void;
   onRateLimitRulesChanged?: () => void;
@@ -409,15 +405,9 @@ function CodexRateLimitSection({
     <RateLimitRulesSection
       ref={rateLimitRulesRef}
       accountKey={row.id}
-      matchKey={usageSummary?.attributionKey}
       rateLimitStatus={rateLimitStatus}
       rateLimitStrategies={rateLimitStrategies ?? []}
-      rateLimitRulesAPI={{
-        list: ListRateLimitRules,
-        create: CreateRateLimitRule,
-        update: UpdateRateLimitRule,
-        delete: DeleteRateLimitRule,
-      }}
+      rateLimitRulesAPI={rateLimitRulesAPI}
       onDirtyChange={onRateLimitDirtyChange}
       onRateLimitRulesChanged={onRateLimitRulesChanged ?? (() => {})}
       t={t}

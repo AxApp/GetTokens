@@ -490,7 +490,6 @@ func mapRateLimitRuleToCore(input RateLimitRule) wailsapp.RateLimitRule {
 	return wailsapp.RateLimitRule{
 		ID:         input.ID,
 		AccountKey: input.AccountKey,
-		MatchKey:   input.MatchKey,
 		Strategy:   input.Strategy,
 		Window:     input.Window,
 		LimitValue: input.LimitValue,
@@ -517,7 +516,6 @@ func mapRateLimitRule(item wailsapp.RateLimitRule) RateLimitRule {
 	return RateLimitRule{
 		ID:         item.ID,
 		AccountKey: item.AccountKey,
-		MatchKey:   item.MatchKey,
 		Strategy:   item.Strategy,
 		Window:     item.Window,
 		LimitValue: item.LimitValue,
@@ -535,7 +533,6 @@ func mapRateLimitState(input *wailsapp.RateLimitState) *RateLimitState {
 	}
 	return &RateLimitState{
 		AccountKey:  input.AccountKey,
-		MatchKey:    input.MatchKey,
 		Blocked:     input.Blocked,
 		BlockReason: input.BlockReason,
 		Rules:       mapRateLimitRuleStates(input.Rules),
@@ -581,7 +578,6 @@ func mapRateLimitEvents(items []wailsapp.RateLimitEvent) []RateLimitEvent {
 		out = append(out, RateLimitEvent{
 			ID:          item.ID,
 			AccountKey:  item.AccountKey,
-			MatchKey:    item.MatchKey,
 			RuleID:      item.RuleID,
 			Strategy:    item.Strategy,
 			Window:      item.Window,

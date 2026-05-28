@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import {
-  CreateRateLimitRule,
-  DeleteRateLimitRule,
   DownloadAuthFile,
   GetAuthFileModels,
-  ListRateLimitRules,
   NormalizeAuthFileContent,
-  UpdateRateLimitRule,
 } from '../../../../wailsjs/go/main/App';
 import { useDebug } from '../../../context/DebugContext';
 import { useI18n } from '../../../context/I18nContext';
@@ -45,7 +41,7 @@ import {
   AccountDetailSection,
 } from './AccountDetailPrimitives';
 import AccountProxyRouteSection from './AccountProxyRouteSection';
-import RateLimitRulesSection, { type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
+import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 
 export type { APIKeyVerifyState } from './AccountDetailSections';
 
@@ -55,6 +51,7 @@ export interface UnifiedAccountDetailProps {
   usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
+  rateLimitRulesAPI?: RateLimitRulesAPI;
   verifyState?: APIKeyVerifyState;
   modelNames?: string[];
   onClose: () => void;
@@ -268,9 +265,9 @@ function AccountDetailStatusNotice({
 
 function RateLimitSection({
   account,
-  usageSummary,
   rateLimitStatus,
   rateLimitStrategies,
+  rateLimitRulesAPI,
   onRateLimitRulesChanged,
   rateLimitRulesRef,
   onRateLimitDirtyChange,
@@ -284,15 +281,9 @@ function RateLimitSection({
     <RateLimitRulesSection
       ref={rateLimitRulesRef}
       accountKey={account.id}
-      matchKey={usageSummary?.attributionKey}
       rateLimitStatus={rateLimitStatus}
       rateLimitStrategies={rateLimitStrategies ?? []}
-      rateLimitRulesAPI={{
-        list: ListRateLimitRules,
-        create: CreateRateLimitRule,
-        update: UpdateRateLimitRule,
-        delete: DeleteRateLimitRule,
-      }}
+      rateLimitRulesAPI={rateLimitRulesAPI}
       onDirtyChange={onRateLimitDirtyChange}
       onRateLimitRulesChanged={onRateLimitRulesChanged ?? (() => {})}
       t={t}
