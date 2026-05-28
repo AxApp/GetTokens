@@ -9,5 +9,14 @@
   "author": {
     "name": "linhey",
     "email": "is.linhey@outlook.com"
+  },
+  "info": {
+    "protocols": [
+      {
+        "scheme": "gettokens",
+        "description": "GetTokens deep link import",
+        "role": "Viewer"
+      }
+    ]
   }
 }

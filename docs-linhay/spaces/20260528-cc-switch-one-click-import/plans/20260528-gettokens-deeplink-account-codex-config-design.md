@@ -106,6 +106,16 @@ gettokens://v1/import?channel=codex&resource=codex-setup&...
 
 `config` 的 canonical 形式不是一组散落字段，而是一个 `documents[]` 补丁包。`account` / `codexConfig` 这类对象只是便捷语法，最终都要编译成对 `auth.json`、`config.toml` 或未来扩展文件的文档级 patch。
 
+### 字段覆盖语义
+
+Codex config patch 统一采用 presence 语义：
+
+1. 字段在 query、`codexConfig` 或 `documents[]` operation 中显式出现时，才覆盖对应的本地字段。
+2. 字段未出现时，保留用户现有 `auth.json` / `config.toml` 内容，不用默认值回填。
+3. `false`、空字符串以外的零值都不能被当作“未出现”；例如 `supportsWebsockets=false` 和 `requires_openai_auth=false` 必须写入 `false`。
+4. `providerID` 只作为身份值；本机已有显式 `model_provider` 时不改 root `model_provider`，只把显式字段 patch 到当前激活 provider section。
+5. 手动“应用模板到 Codex”不是 deep link patch，它会把当前表单值作为显式字段提交，保持原有一键应用体验。
+
 ## 通用文件改写格式
 
 ```json
@@ -246,7 +256,7 @@ gettokens://v1/import?channel=codex&resource=codex-setup&...
 | `baseUrl` | 按 mode | custom provider base URL，可写入 `auth.json` 或 `config.toml` |
 | `apiKey` | `api-key` 必填 | 写入 `auth.json` 或 bearer token 草稿 |
 | `accountRef` | 否 | `auth-file:<name>` / `codex-api-key:<id>` / `openai-compatible:<name>` |
-| `supportsWebsockets` | 否 | patch `supports_websockets` |
+| `supportsWebsockets` | 否 | patch `supports_websockets`；遵循 presence 语义，`false` 也是显式写入 |
 | `providerScope` | 否 | `current-active` / `create-new`，显式标识沿用当前激活 provider 还是创建新 provider |
 | `providerCompatibility` | 否 | 预览结果 | `compatible` / `blocked_builtin_openai` / `missing_chatgpt_auth` / `missing_provider_section` |
 | `providerRewriteMode` | 否 | 预览结果 | `keep-current` / `patch-current` / `create-new` |
@@ -367,7 +377,7 @@ gettokens://v1/import?channel=codex&resource=codex-config&mode=api-key&model=gpt
 | `providerName` | 否 | `[model_providers.<id>].name` |
 | `baseUrl` | 按模式 | custom provider base URL，可写入 `config.toml` 文档 |
 | `apiKey` | `api-key` 必填 | 只用于 auth 写入或 bearer token 草稿，可写入 `auth.json` 文档 |
-| `supportsWebsockets` | 否 | patch `supports_websockets` |
+| `supportsWebsockets` | 否 | patch `supports_websockets`；遵循 presence 语义，`false` 也是显式写入 |
 | `accountRef` | 否 | 指向刚导入或已有账号，如 `codex-api-key:<id>` |
 
 模式语义：
@@ -398,6 +408,7 @@ gettokens://v1/import?channel=codex&resource=codex-config&mode=api-key&model=gpt
 5. 当本地 `config.toml` 已存在当前激活 provider section 时，deep link 只 patch 当前 section，不静默清空其他 provider section。
 6. 当当前 provider section 缺失但符合兼容性要求时，确认页可以提示“将补齐当前 provider section”；只有 `providerScope=create-new` 时才提示“将创建新的 provider”。
 7. 若当前 provider 不存在、为 builtin `openai`，或与 preserve 模式冲突，则预览阶段必须给出和 status 页一致的阻断/警告文案。
+8. 所有受控字段都采用 presence 语义：显式出现才覆盖，未出现就保留；`supports_websockets=false`、`requires_openai_auth=false` 这类布尔 false 也必须写入。
 
 兼容性结果沿用状态页的心智，建议至少分成：
 
@@ -665,17 +676,27 @@ When 打开 deep link 预览
 Then 页面能展示解析结果和确认布局
 And 写入按钮不可执行
 
+### 场景 10：字段 presence 覆盖
+
+Given deep link 只提供部分 `auth.json` / `config.toml` 字段
+When 用户确认应用 Codex 配置
+Then 显式提供的字段覆盖本地配置
+And 未提供的字段保留用户现有值
+And `false` 被视为显式值，例如 `supports_websockets=false` 与 `requires_openai_auth=false` 都写入 false
+
 ## 测试计划
 
 ### Go 单元测试
 
-1. `TestParseDeepLinkAccountCodexAPIKey`
-2. `TestParseDeepLinkAccountOpenAICompatible`
-3. `TestParseDeepLinkAccountAuthFileFromConfig`
-4. `TestParseDeepLinkCodexConfigRejectsRemoteURL`
-5. `TestPreviewDeepLinkRedactsSecrets`
-6. `TestApplyDeepLinkCodexSetupKeepsAccountWhenConfigFails`
-7. `TestDeepLinkCodexConfigPatchesCurrentProviderByDefault`
+1. `TestParseDeepLinkImportMergesConfigAndQueryWins`
+2. `TestParseDeepLinkImportRejectsUnsupportedFieldsAndNonCodexChannel`
+3. `TestPreviewDeepLinkImportRedactsURLAndKeepsCurrentActiveProvider`
+4. `TestPreviewDeepLinkImportCreatesProviderOnlyWhenNoExplicitActiveProvider`
+5. `TestPreviewDeepLinkImportBuildsCodexConfigFromDocuments`
+6. `TestPreviewDeepLinkImportPreservesUnspecifiedConfigTomlFields`
+7. `TestApplyDeepLinkImportCodexSetupReportsPartialSuccess`
+8. `TestApplyRelayServiceConfigToLocalV2WritesExplicitSupportsWebsocketsFalse`
+9. `TestApplyRelayServiceConfigToLocalV2PreservesSupportsWebsocketsWhenUnset`
 
 ### 前端单测
 
@@ -721,7 +742,8 @@ Patch A（本机已有激活 `model_provider`，不改用户默认值）:
         { "op": "set", "path": "model", "value": "gpt-5-codex" },
         { "op": "set", "path": "model_providers.<current-provider-id>.base_url", "value": "https://api.example.com/v1" },
         { "op": "set", "path": "model_providers.<current-provider-id>.requires_openai_auth", "value": true },
-        { "op": "set", "path": "model_providers.<current-provider-id>.wire_api", "value": "responses" }
+        { "op": "set", "path": "model_providers.<current-provider-id>.wire_api", "value": "responses" },
+        { "op": "set", "path": "model_providers.<current-provider-id>.supports_websockets", "value": false }
       ]
     }
   ]

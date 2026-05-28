@@ -111,6 +111,32 @@ func TestConsumeLoginItemArgReportsMissingArg(t *testing.T) {
 	}
 }
 
+func TestConsumeDeepLinkArgsRemovesGetTokensURLsBeforeWailsParsesFlags(t *testing.T) {
+	args, links := consumeDeepLinkArgs([]string{
+		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",
+		"gettokens://v1/import?channel=codex&resource=account",
+		"-loglevel",
+		"Info",
+		"GETTOKENS://v1/import?channel=codex&resource=codex-config",
+	})
+
+	wantArgs := []string{
+		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",
+		"-loglevel",
+		"Info",
+	}
+	if strings.Join(args, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("consumeDeepLinkArgs args = %v, want %v", args, wantArgs)
+	}
+	wantLinks := []string{
+		"gettokens://v1/import?channel=codex&resource=account",
+		"GETTOKENS://v1/import?channel=codex&resource=codex-config",
+	}
+	if strings.Join(links, "\x00") != strings.Join(wantLinks, "\x00") {
+		t.Fatalf("consumeDeepLinkArgs links = %v, want %v", links, wantLinks)
+	}
+}
+
 func TestMapAccountRecordPreservesStatusMessage(t *testing.T) {
 	record := mapAccountRecord(accountsdomain.AccountRecord{
 		ID:               "auth-file:broken.json",

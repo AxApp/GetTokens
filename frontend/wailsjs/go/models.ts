@@ -2867,6 +2867,428 @@ export namespace main {
 	        this.apiKey = source["apiKey"];
 	    }
 	}
+	export class DeepLinkAccountDraft {
+	    accountType: string;
+	    name?: string;
+	    label?: string;
+	    apiKey?: string;
+	    apiKeys?: string[];
+	    baseUrl?: string;
+	    prefix?: string;
+	    proxyUrl?: string;
+	    models?: OpenAICompatibleModel[];
+	    formatBaseUrls?: Record<string, string>;
+	    quotaCurl?: string;
+	    quotaEnabled?: boolean;
+	    billingCurl?: string;
+	    billingEnabled?: boolean;
+	    authFileName?: string;
+	    authFileJSON?: string;
+	    enabled?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkAccountDraft(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountType = source["accountType"];
+	        this.name = source["name"];
+	        this.label = source["label"];
+	        this.apiKey = source["apiKey"];
+	        this.apiKeys = source["apiKeys"];
+	        this.baseUrl = source["baseUrl"];
+	        this.prefix = source["prefix"];
+	        this.proxyUrl = source["proxyUrl"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	        this.formatBaseUrls = source["formatBaseUrls"];
+	        this.quotaCurl = source["quotaCurl"];
+	        this.quotaEnabled = source["quotaEnabled"];
+	        this.billingCurl = source["billingCurl"];
+	        this.billingEnabled = source["billingEnabled"];
+	        this.authFileName = source["authFileName"];
+	        this.authFileJSON = source["authFileJSON"];
+	        this.enabled = source["enabled"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DeepLinkAccountSummary {
+	    accountType: string;
+	    title: string;
+	    baseUrl?: string;
+	    apiKeyPreview?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkAccountSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountType = source["accountType"];
+	        this.title = source["title"];
+	        this.baseUrl = source["baseUrl"];
+	        this.apiKeyPreview = source["apiKeyPreview"];
+	    }
+	}
+	export class RelayLocalApplyResult {
+	    codexHomePath: string;
+	    authFilePath: string;
+	    configPath: string;
+
+	    static createFrom(source: any = {}) {
+	        return new RelayLocalApplyResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.codexHomePath = source["codexHomePath"];
+	        this.authFilePath = source["authFilePath"];
+	        this.configPath = source["configPath"];
+	    }
+	}
+	export class DeepLinkApplyResult {
+	    status: string;
+	    accountApplied?: boolean;
+	    codexConfigApplied?: boolean;
+	    accountError?: string;
+	    codexConfigError?: string;
+	    localApplyResult?: RelayLocalApplyResult;
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkApplyResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.accountApplied = source["accountApplied"];
+	        this.codexConfigApplied = source["codexConfigApplied"];
+	        this.accountError = source["accountError"];
+	        this.codexConfigError = source["codexConfigError"];
+	        this.localApplyResult = this.convertValues(source["localApplyResult"], RelayLocalApplyResult);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DeepLinkCodexConfig {
+	    mode: string;
+	    accountRef?: string;
+	    model?: string;
+	    modelSet?: boolean;
+	    reasoningEffort?: string;
+	    reasoningEffortSet?: boolean;
+	    providerID?: string;
+	    providerIDSet?: boolean;
+	    providerName?: string;
+	    providerNameSet?: boolean;
+	    providerScope?: string;
+	    baseUrl?: string;
+	    baseUrlSet?: boolean;
+	    apiKey?: string;
+	    apiKeySet?: boolean;
+	    requiresOpenAIAuth?: boolean;
+	    requiresOpenAIAuthSet?: boolean;
+	    wireAPI?: string;
+	    wireAPISet?: boolean;
+	    supportsWebsockets?: boolean;
+	    supportsWebsocketsSet?: boolean;
+	    apply?: boolean;
+	    authFileContentBase64?: string;
+	    authFileContentSet?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkCodexConfig(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.mode = source["mode"];
+	        this.accountRef = source["accountRef"];
+	        this.model = source["model"];
+	        this.modelSet = source["modelSet"];
+	        this.reasoningEffort = source["reasoningEffort"];
+	        this.reasoningEffortSet = source["reasoningEffortSet"];
+	        this.providerID = source["providerID"];
+	        this.providerIDSet = source["providerIDSet"];
+	        this.providerName = source["providerName"];
+	        this.providerNameSet = source["providerNameSet"];
+	        this.providerScope = source["providerScope"];
+	        this.baseUrl = source["baseUrl"];
+	        this.baseUrlSet = source["baseUrlSet"];
+	        this.apiKey = source["apiKey"];
+	        this.apiKeySet = source["apiKeySet"];
+	        this.requiresOpenAIAuth = source["requiresOpenAIAuth"];
+	        this.requiresOpenAIAuthSet = source["requiresOpenAIAuthSet"];
+	        this.wireAPI = source["wireAPI"];
+	        this.wireAPISet = source["wireAPISet"];
+	        this.supportsWebsockets = source["supportsWebsockets"];
+	        this.supportsWebsocketsSet = source["supportsWebsocketsSet"];
+	        this.apply = source["apply"];
+	        this.authFileContentBase64 = source["authFileContentBase64"];
+	        this.authFileContentSet = source["authFileContentSet"];
+	    }
+	}
+	export class DeepLinkPatchOperation {
+	    op: string;
+	    path: string;
+	    value?: any;
+	    valueEncoding?: string;
+	    allowCreate?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkPatchOperation(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.op = source["op"];
+	        this.path = source["path"];
+	        this.value = source["value"];
+	        this.valueEncoding = source["valueEncoding"];
+	        this.allowCreate = source["allowCreate"];
+	    }
+	}
+	export class DeepLinkDocumentPatch {
+	    target: string;
+	    format: string;
+	    mode?: string;
+	    operations?: DeepLinkPatchOperation[];
+	    preserveUnknown?: boolean;
+	    backup?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkDocumentPatch(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.target = source["target"];
+	        this.format = source["format"];
+	        this.mode = source["mode"];
+	        this.operations = this.convertValues(source["operations"], DeepLinkPatchOperation);
+	        this.preserveUnknown = source["preserveUnknown"];
+	        this.backup = source["backup"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class RelayLocalApplyInput {
+	    preserveUnspecifiedFields?: boolean;
+	    apiKey: string;
+	    apiKeySet?: boolean;
+	    authFileContentBase64?: string;
+	    authFileContentSet?: boolean;
+	    baseURL: string;
+	    baseURLSet?: boolean;
+	    model: string;
+	    modelSet?: boolean;
+	    reasoningEffort: string;
+	    reasoningEffortSet?: boolean;
+	    providerID: string;
+	    providerIDSet?: boolean;
+	    providerName: string;
+	    providerNameSet?: boolean;
+	    requiresOpenAIAuth?: boolean;
+	    requiresOpenAIAuthSet?: boolean;
+	    wireAPI?: string;
+	    wireAPISet?: boolean;
+	    supportsWebsockets: boolean;
+	    supportsWebsocketsSet?: boolean;
+	    authStrategy: string;
+	    skipRelayKeyMetadata?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new RelayLocalApplyInput(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.preserveUnspecifiedFields = source["preserveUnspecifiedFields"];
+	        this.apiKey = source["apiKey"];
+	        this.apiKeySet = source["apiKeySet"];
+	        this.authFileContentBase64 = source["authFileContentBase64"];
+	        this.authFileContentSet = source["authFileContentSet"];
+	        this.baseURL = source["baseURL"];
+	        this.baseURLSet = source["baseURLSet"];
+	        this.model = source["model"];
+	        this.modelSet = source["modelSet"];
+	        this.reasoningEffort = source["reasoningEffort"];
+	        this.reasoningEffortSet = source["reasoningEffortSet"];
+	        this.providerID = source["providerID"];
+	        this.providerIDSet = source["providerIDSet"];
+	        this.providerName = source["providerName"];
+	        this.providerNameSet = source["providerNameSet"];
+	        this.requiresOpenAIAuth = source["requiresOpenAIAuth"];
+	        this.requiresOpenAIAuthSet = source["requiresOpenAIAuthSet"];
+	        this.wireAPI = source["wireAPI"];
+	        this.wireAPISet = source["wireAPISet"];
+	        this.supportsWebsockets = source["supportsWebsockets"];
+	        this.supportsWebsocketsSet = source["supportsWebsocketsSet"];
+	        this.authStrategy = source["authStrategy"];
+	        this.skipRelayKeyMetadata = source["skipRelayKeyMetadata"];
+	    }
+	}
+	export class DeepLinkImportRequest {
+	    rawURL?: string;
+	    redactedURL?: string;
+	    channel: string;
+	    version: string;
+	    resource: string;
+	    source?: string;
+	    nonce?: string;
+	    apply?: boolean;
+	    enabled?: boolean;
+	    account?: DeepLinkAccountDraft;
+	    codexConfig?: DeepLinkCodexConfig;
+	    documents?: DeepLinkDocumentPatch[];
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkImportRequest(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rawURL = source["rawURL"];
+	        this.redactedURL = source["redactedURL"];
+	        this.channel = source["channel"];
+	        this.version = source["version"];
+	        this.resource = source["resource"];
+	        this.source = source["source"];
+	        this.nonce = source["nonce"];
+	        this.apply = source["apply"];
+	        this.enabled = source["enabled"];
+	        this.account = this.convertValues(source["account"], DeepLinkAccountDraft);
+	        this.codexConfig = this.convertValues(source["codexConfig"], DeepLinkCodexConfig);
+	        this.documents = this.convertValues(source["documents"], DeepLinkDocumentPatch);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class DeepLinkImportPreview {
+	    request: DeepLinkImportRequest;
+	    redactedURL: string;
+	    resource: string;
+	    source?: string;
+	    accountSummary?: DeepLinkAccountSummary;
+	    providerScope?: string;
+	    providerRewriteMode?: string;
+	    providerCompatibility?: string;
+	    effectiveProviderID?: string;
+	    effectiveProviderName?: string;
+	    authJSONPreview?: string;
+	    configTomlPreview?: string;
+	    localApplyInput?: RelayLocalApplyInput;
+	    warnings?: string[];
+	    blockingWarnings?: string[];
+
+	    static createFrom(source: any = {}) {
+	        return new DeepLinkImportPreview(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.request = this.convertValues(source["request"], DeepLinkImportRequest);
+	        this.redactedURL = source["redactedURL"];
+	        this.resource = source["resource"];
+	        this.source = source["source"];
+	        this.accountSummary = this.convertValues(source["accountSummary"], DeepLinkAccountSummary);
+	        this.providerScope = source["providerScope"];
+	        this.providerRewriteMode = source["providerRewriteMode"];
+	        this.providerCompatibility = source["providerCompatibility"];
+	        this.effectiveProviderID = source["effectiveProviderID"];
+	        this.effectiveProviderName = source["effectiveProviderName"];
+	        this.authJSONPreview = source["authJSONPreview"];
+	        this.configTomlPreview = source["configTomlPreview"];
+	        this.localApplyInput = this.convertValues(source["localApplyInput"], RelayLocalApplyInput);
+	        this.warnings = source["warnings"];
+	        this.blockingWarnings = source["blockingWarnings"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
 	export class DeleteClaudeCodeSubagentInputDTO {
 	    scope: string;
 	    path: string;
@@ -3641,52 +4063,8 @@ export namespace main {
 	        this.supportedWindows = source["supportedWindows"];
 	    }
 	}
-	export class RelayLocalApplyInput {
-	    apiKey: string;
-	    authFileContentBase64?: string;
-	    baseURL: string;
-	    model: string;
-	    reasoningEffort: string;
-	    providerID: string;
-	    providerName: string;
-	    supportsWebsockets: boolean;
-	    authStrategy: string;
-	    skipRelayKeyMetadata?: boolean;
 
-	    static createFrom(source: any = {}) {
-	        return new RelayLocalApplyInput(source);
-	    }
 
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.apiKey = source["apiKey"];
-	        this.authFileContentBase64 = source["authFileContentBase64"];
-	        this.baseURL = source["baseURL"];
-	        this.model = source["model"];
-	        this.reasoningEffort = source["reasoningEffort"];
-	        this.providerID = source["providerID"];
-	        this.providerName = source["providerName"];
-	        this.supportsWebsockets = source["supportsWebsockets"];
-	        this.authStrategy = source["authStrategy"];
-	        this.skipRelayKeyMetadata = source["skipRelayKeyMetadata"];
-	    }
-	}
-	export class RelayLocalApplyResult {
-	    codexHomePath: string;
-	    authFilePath: string;
-	    configPath: string;
-
-	    static createFrom(source: any = {}) {
-	        return new RelayLocalApplyResult(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.codexHomePath = source["codexHomePath"];
-	        this.authFilePath = source["authFilePath"];
-	        this.configPath = source["configPath"];
-	    }
-	}
 	export class RelayRoutingConfig {
 	    strategy: string;
 	    sessionAffinity: boolean;

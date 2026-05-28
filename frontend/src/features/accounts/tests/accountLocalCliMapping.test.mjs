@@ -5,6 +5,9 @@ import { readFile } from 'node:fs/promises';
 import {
   resolveAccountLocalCliMappings,
 } from '../model/accountLocalCliMapping.ts';
+import {
+  resolveAccountImportPayloadPreview,
+} from '../model/accountTransfer.ts';
 
 const relayKeyItems = [{ value: 'sk-gettokens-test' }];
 const relayEndpoint = { id: 'localhost', baseUrl: 'http://127.0.0.1:8317/v1' };
@@ -320,6 +323,7 @@ test('AccountLocalCliApplyConfirm exposes editable Claude Code draft fields', as
 test('deep link Codex apply adapter reuses AccountLocalCliApplyConfirm shell', async () => {
   const adapterSource = await readFile(new URL('../components/DeepLinkCodexApplyAdapter.tsx', import.meta.url), 'utf8');
   const confirmSource = await readFile(new URL('../components/AccountLocalCliApplyConfirm.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
   assert.match(adapterSource, /AccountLocalCliApplyConfirm/);
   assert.doesNotMatch(adapterSource, /ModalFrame/);
@@ -329,6 +333,39 @@ test('deep link Codex apply adapter reuses AccountLocalCliApplyConfirm shell', a
   assert.match(confirmSource, /providerRewriteMode/);
   assert.match(confirmSource, /onImportAccountOnly/);
   assert.match(confirmSource, /只导入账号/);
+  assert.match(featureSource, /buildDeepLinkAccountImportItems/);
+  assert.match(featureSource, /account\.accountType === 'auth-file'/);
+  assert.match(featureSource, /account\.authFileJSON/);
+});
+
+test('account import preview redacts auth-file and api-key secrets', () => {
+  const authPreview = resolveAccountImportPayloadPreview({
+    type: 'auth-file',
+    name: 'team-auth.json',
+    content: JSON.stringify({
+      auth_mode: 'chatgpt',
+      tokens: {
+        access_token: 'access-secret',
+        refresh_token: 'refresh-secret',
+        id_token: 'id-secret',
+      },
+      user: { email: 'team@example.com' },
+    }),
+  });
+
+  assert.doesNotMatch(authPreview, /access-secret|refresh-secret|id-secret/);
+  assert.match(authPreview, /\[REDACTED\]/);
+  assert.match(authPreview, /team@example.com/);
+
+  const apiKeyPreview = resolveAccountImportPayloadPreview({
+    type: 'codex-api-key',
+    label: 'Team Relay',
+    apiKey: 'sk-secret',
+    baseUrl: 'https://api.example.com/v1',
+    prefix: '',
+  });
+  assert.doesNotMatch(apiKeyPreview, /sk-secret/);
+  assert.match(apiKeyPreview, /\[REDACTED\]/);
 });
 
 function account(overrides = {}) {

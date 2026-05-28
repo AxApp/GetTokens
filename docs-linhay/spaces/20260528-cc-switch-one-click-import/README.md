@@ -80,11 +80,15 @@ And 能明确哪些字段只允许确认预览、哪些字段允许写入
 - cc-switch provider 导入实现：`docs-linhay/references/cc-switch/src-tauri/src/deeplink/provider.rs`
 
 ## 当前状态
-- 状态：frontend-adapter-started
+- 状态：backend-and-desktop-entry-implemented
 - 最近更新：2026-05-28
 
 ## 实施记录
 
 - 2026-05-28：前端先落 thin adapter 边界，新增 `DeepLinkCodexApplyAdapter`，复用 `AccountLocalCliApplyConfirm` 作为 deep link Codex 配置确认页。
 - 2026-05-28：`AccountLocalCliApplyConfirm` 增加可选 `deepLinkContext` 和 `onImportAccountOnly`，只补外部来源、resource、providerScope、providerRewriteMode、账号草稿摘要和“只导入账号”动作。
-- 2026-05-28：本步尚未接入 URL scheme / Wails deep link 事件，也未实现后端 parser / apply。
+- 2026-05-28：后端新增 `gettokens://v1/import` parser / preview / apply，支持 `resource=account`、`resource=codex-config`、`resource=codex-setup`，拒绝 `configUrl`、`usageScript`、headers 和非 `channel=codex`。
+- 2026-05-28：Codex config preview / apply 编译为既有 `RelayLocalApplyInput`，继续走 `ApplyRelayServiceConfigToLocalV2`；当用户已有显式 `model_provider` 时沿用当前激活 provider，只 patch 当前 provider section，没有显式值时才创建 deep link 的 provider。
+- 2026-05-28：桌面入口已在 `wails.json` 注册 `gettokens` URL scheme，并通过 Wails `SingleInstanceLock` 把初始启动和二次启动参数中的 deep link 转发到前端 `deeplink:import` 事件；前端消费后复用“应用模板到 Codex”确认页。
+- 2026-05-28：Codex config patch 改为统一 presence 语义：`auth.json` 和 `config.toml` 的每个受控字段只有在 query、`codexConfig` 或 `documents[]` 中显式出现时才覆盖；字段缺失时保留用户现有值。手动“应用模板到 Codex”继续把表单值作为显式字段写入。
+- 2026-05-28：验证通过：`go test ./internal/wailsapp -run 'TestPreviewDeepLinkImport|TestApplyRelayServiceConfigToLocalV2' -count=1`、`go test ./...`、`node --test frontend/src/features/accounts/tests/accountLocalCliMapping.test.mjs`、`node --test frontend/src/features/status/tests/relayLocalState.test.mjs`、`npm --prefix frontend run typecheck`、`./scripts/wails-cli.sh build`。

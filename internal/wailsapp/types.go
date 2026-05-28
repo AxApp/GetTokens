@@ -84,16 +84,29 @@ type RelayLocalApplyResult struct {
 }
 
 type RelayLocalApplyInput struct {
-	APIKey                string `json:"apiKey"`
-	AuthFileContentBase64 string `json:"authFileContentBase64,omitempty"`
-	BaseURL               string `json:"baseURL"`
-	Model                 string `json:"model"`
-	ReasoningEffort       string `json:"reasoningEffort"`
-	ProviderID            string `json:"providerID"`
-	ProviderName          string `json:"providerName"`
-	SupportsWebsockets    bool   `json:"supportsWebsockets"`
-	AuthStrategy          string `json:"authStrategy"`
-	SkipRelayKeyMetadata  bool   `json:"skipRelayKeyMetadata,omitempty"`
+	PreserveUnspecifiedFields bool   `json:"preserveUnspecifiedFields,omitempty"`
+	APIKey                    string `json:"apiKey"`
+	APIKeySet                 bool   `json:"apiKeySet,omitempty"`
+	AuthFileContentBase64     string `json:"authFileContentBase64,omitempty"`
+	AuthFileContentSet        bool   `json:"authFileContentSet,omitempty"`
+	BaseURL                   string `json:"baseURL"`
+	BaseURLSet                bool   `json:"baseURLSet,omitempty"`
+	Model                     string `json:"model"`
+	ModelSet                  bool   `json:"modelSet,omitempty"`
+	ReasoningEffort           string `json:"reasoningEffort"`
+	ReasoningEffortSet        bool   `json:"reasoningEffortSet,omitempty"`
+	ProviderID                string `json:"providerID"`
+	ProviderIDSet             bool   `json:"providerIDSet,omitempty"`
+	ProviderName              string `json:"providerName"`
+	ProviderNameSet           bool   `json:"providerNameSet,omitempty"`
+	RequiresOpenAIAuth        bool   `json:"requiresOpenAIAuth,omitempty"`
+	RequiresOpenAIAuthSet     bool   `json:"requiresOpenAIAuthSet,omitempty"`
+	WireAPI                   string `json:"wireAPI,omitempty"`
+	WireAPISet                bool   `json:"wireAPISet,omitempty"`
+	SupportsWebsockets        bool   `json:"supportsWebsockets"`
+	SupportsWebsocketsSet     bool   `json:"supportsWebsocketsSet,omitempty"`
+	AuthStrategy              string `json:"authStrategy"`
+	SkipRelayKeyMetadata      bool   `json:"skipRelayKeyMetadata,omitempty"`
 }
 
 type LocalCodexAuthState struct {

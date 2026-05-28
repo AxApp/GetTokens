@@ -109,12 +109,24 @@ export type AccountCliApplyDraft =
         relayKeyIndex: number;
         endpointID: string;
         apiKey: string;
+        apiKeySet?: boolean;
+        authFileContentSet?: boolean;
         baseUrl: string;
+        baseUrlSet?: boolean;
         model: string;
+        modelSet?: boolean;
         providerID: string;
+        providerIDSet?: boolean;
         providerName: string;
+        providerNameSet?: boolean;
         reasoningEffort: string;
+        reasoningEffortSet?: boolean;
+        requiresOpenAIAuth?: boolean;
+        requiresOpenAIAuthSet?: boolean;
+        wireAPI?: string;
+        wireAPISet?: boolean;
         supportsWebsockets: boolean;
+        supportsWebsocketsSet?: boolean;
         authStrategy: 'replace_auth_with_apikey' | 'preserve_chatgpt_auth' | 'replace_auth_with_oauth';
         authFileName?: string;
       };
@@ -357,12 +369,23 @@ function buildCodexDraft(
       relayKeyIndex: input.relayKeyIndex,
       endpointID: input.relayEndpoint.id,
       apiKey,
+      apiKeySet: true,
       baseUrl: authStrategy === 'replace_auth_with_oauth' ? CODEX_CHATGPT_BACKEND_BASE_URL : source.sourceFormatBaseUrl,
+      baseUrlSet: true,
       model,
+      modelSet: true,
       providerID: providerState.currentProviderID,
+      providerIDSet: true,
       providerName: providerState.currentProviderName,
+      providerNameSet: true,
       reasoningEffort: input.selectedReasoningEffort?.trim() || 'medium',
+      reasoningEffortSet: true,
+      requiresOpenAIAuth: true,
+      requiresOpenAIAuthSet: true,
+      wireAPI: 'responses',
+      wireAPISet: true,
       supportsWebsockets: input.supportsWebsockets ?? true,
+      supportsWebsocketsSet: true,
       authStrategy,
       authFileName,
     },

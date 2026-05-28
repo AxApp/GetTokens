@@ -25,14 +25,25 @@ const (
 
 func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) (*RelayLocalApplyResult, error) {
 	return a.ApplyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
-		APIKey:             apiKey,
-		BaseURL:            baseURL,
-		Model:              model,
-		ReasoningEffort:    reasoningEffort,
-		ProviderID:         providerID,
-		ProviderName:       providerName,
-		SupportsWebsockets: supportsWebsockets,
-		AuthStrategy:       relayLocalAuthStrategyReplaceAuthWithAPIKey,
+		APIKey:                apiKey,
+		APIKeySet:             true,
+		BaseURL:               baseURL,
+		BaseURLSet:            true,
+		Model:                 model,
+		ModelSet:              true,
+		ReasoningEffort:       reasoningEffort,
+		ReasoningEffortSet:    true,
+		ProviderID:            providerID,
+		ProviderIDSet:         true,
+		ProviderName:          providerName,
+		ProviderNameSet:       true,
+		RequiresOpenAIAuth:    true,
+		RequiresOpenAIAuthSet: true,
+		WireAPI:               "responses",
+		WireAPISet:            true,
+		SupportsWebsockets:    supportsWebsockets,
+		SupportsWebsocketsSet: true,
+		AuthStrategy:          relayLocalAuthStrategyReplaceAuthWithAPIKey,
 	})
 }
 
@@ -42,7 +53,7 @@ func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*Rel
 		return nil, err
 	}
 
-	result, err := applyRelayServiceConfigToLocalV2(normalized)
+	result, err := applyRelayServiceConfigToLocalV2Normalized(normalized)
 	if err != nil {
 		return nil, err
 	}
@@ -69,18 +80,37 @@ func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {
 
 func applyRelayServiceConfigToLocal(apiKey string, baseURL string, model string, reasoningEffort string, providerID string, providerName string, supportsWebsockets bool) (*RelayLocalApplyResult, error) {
 	return applyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
-		APIKey:             apiKey,
-		BaseURL:            baseURL,
-		Model:              model,
-		ReasoningEffort:    reasoningEffort,
-		ProviderID:         providerID,
-		ProviderName:       providerName,
-		SupportsWebsockets: supportsWebsockets,
-		AuthStrategy:       relayLocalAuthStrategyReplaceAuthWithAPIKey,
+		APIKey:                apiKey,
+		APIKeySet:             true,
+		BaseURL:               baseURL,
+		BaseURLSet:            true,
+		Model:                 model,
+		ModelSet:              true,
+		ReasoningEffort:       reasoningEffort,
+		ReasoningEffortSet:    true,
+		ProviderID:            providerID,
+		ProviderIDSet:         true,
+		ProviderName:          providerName,
+		ProviderNameSet:       true,
+		RequiresOpenAIAuth:    true,
+		RequiresOpenAIAuthSet: true,
+		WireAPI:               "responses",
+		WireAPISet:            true,
+		SupportsWebsockets:    supportsWebsockets,
+		SupportsWebsocketsSet: true,
+		AuthStrategy:          relayLocalAuthStrategyReplaceAuthWithAPIKey,
 	})
 }
 
 func applyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalApplyResult, error) {
+	normalized, err := normalizeRelayLocalApplyInput(input)
+	if err != nil {
+		return nil, err
+	}
+	return applyRelayServiceConfigToLocalV2Normalized(normalized)
+}
+
+func applyRelayServiceConfigToLocalV2Normalized(input RelayLocalApplyInput) (*RelayLocalApplyResult, error) {
 	codexHome, err := resolveCodexHomePath()
 	if err != nil {
 		return nil, err
@@ -92,7 +122,7 @@ func applyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalAp
 	authPath := filepath.Join(codexHome, "auth.json")
 	configPath := filepath.Join(codexHome, "config.toml")
 
-	if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithAPIKey {
+	if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithAPIKey && input.APIKeySet {
 		authPayload, err := buildRelayCodexAuthJSON(input.APIKey)
 		if err != nil {
 			return nil, err
@@ -100,7 +130,7 @@ func applyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalAp
 		if err := writeFileAtomically(authPath, authPayload, 0600); err != nil {
 			return nil, err
 		}
-	} else if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
+	} else if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth && input.AuthFileContentSet {
 		authPayload, err := buildRelayCodexOAuthAuthJSON(input.AuthFileContentBase64)
 		if err != nil {
 			return nil, err
@@ -108,7 +138,7 @@ func applyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalAp
 		if err := writeFileAtomically(authPath, authPayload, 0600); err != nil {
 			return nil, err
 		}
-	} else {
+	} else if input.AuthStrategy == relayLocalAuthStrategyPreserveChatGPTAuth {
 		if input.ProviderID == relayCodexOpenAIProviderID {
 			return nil, errors.New("preserve_chatgpt_auth 模式不支持内置 openai provider，请改用自定义 provider id")
 		}
@@ -143,28 +173,68 @@ func normalizeRelayLocalApplyInput(input RelayLocalApplyInput) (RelayLocalApplyI
 		return RelayLocalApplyInput{}, errors.New("缺少 authStrategy")
 	}
 
+	apiKeySet := input.APIKeySet || strings.TrimSpace(input.APIKey) != ""
+	authFileContentSet := input.AuthFileContentSet || strings.TrimSpace(input.AuthFileContentBase64) != ""
+	baseURLSet := input.BaseURLSet || strings.TrimSpace(input.BaseURL) != ""
+	modelSet := input.ModelSet || strings.TrimSpace(input.Model) != ""
+	reasoningEffortSet := input.ReasoningEffortSet || strings.TrimSpace(input.ReasoningEffort) != ""
+	providerIDSet := input.ProviderIDSet || strings.TrimSpace(input.ProviderID) != ""
+	providerNameSet := input.ProviderNameSet || strings.TrimSpace(input.ProviderName) != ""
+	requiresOpenAIAuthSet := input.RequiresOpenAIAuthSet
+	requiresOpenAIAuth := input.RequiresOpenAIAuth
+	wireAPI := strings.TrimSpace(input.WireAPI)
+	wireAPISet := input.WireAPISet || wireAPI != ""
+	supportsWebsocketsSet := input.SupportsWebsocketsSet || input.SupportsWebsockets
+	if !input.PreserveUnspecifiedFields {
+		if !requiresOpenAIAuthSet {
+			requiresOpenAIAuth = true
+			requiresOpenAIAuthSet = true
+		}
+		if !wireAPISet {
+			wireAPI = "responses"
+			wireAPISet = true
+		}
+	}
+
 	normalizedAPIKey := strings.TrimSpace(input.APIKey)
-	if normalizedAPIKey == "" && authStrategy != relayLocalAuthStrategyReplaceAuthWithOAuth {
+	if apiKeySet && normalizedAPIKey == "" {
 		return RelayLocalApplyInput{}, errors.New("缺少 API KEY")
+	}
+	normalizedAuthFileContent := strings.TrimSpace(input.AuthFileContentBase64)
+	if authFileContentSet && normalizedAuthFileContent == "" {
+		return RelayLocalApplyInput{}, errors.New("缺少 Codex OAuth auth.json 内容")
 	}
 
 	normalizedBaseURL := normalizeRelayLocalBaseURL(input.BaseURL)
-	if normalizedBaseURL == "" {
+	if baseURLSet && normalizedBaseURL == "" {
 		return RelayLocalApplyInput{}, errors.New("缺少 BASE URL")
 	}
 
 	normalizedProviderID, normalizedProviderName := normalizeRelayLocalProvider(input.ProviderID, input.ProviderName)
 	return RelayLocalApplyInput{
-		APIKey:                normalizedAPIKey,
-		AuthFileContentBase64: strings.TrimSpace(input.AuthFileContentBase64),
-		BaseURL:               normalizedBaseURL,
-		Model:                 normalizeRelayLocalModel(input.Model),
-		ReasoningEffort:       normalizeRelayLocalReasoningEffort(input.ReasoningEffort),
-		ProviderID:            normalizedProviderID,
-		ProviderName:          normalizedProviderName,
-		SupportsWebsockets:    input.SupportsWebsockets,
-		AuthStrategy:          authStrategy,
-		SkipRelayKeyMetadata:  input.SkipRelayKeyMetadata,
+		APIKey:                    normalizedAPIKey,
+		APIKeySet:                 apiKeySet,
+		AuthFileContentBase64:     normalizedAuthFileContent,
+		AuthFileContentSet:        authFileContentSet,
+		BaseURL:                   normalizedBaseURL,
+		BaseURLSet:                baseURLSet,
+		Model:                     normalizeRelayLocalModel(input.Model, modelSet),
+		ModelSet:                  modelSet,
+		ReasoningEffort:           normalizeRelayLocalReasoningEffort(input.ReasoningEffort, reasoningEffortSet),
+		ReasoningEffortSet:        reasoningEffortSet,
+		ProviderID:                normalizedProviderID,
+		ProviderIDSet:             providerIDSet,
+		ProviderName:              normalizedProviderName,
+		ProviderNameSet:           providerNameSet,
+		PreserveUnspecifiedFields: input.PreserveUnspecifiedFields,
+		RequiresOpenAIAuth:        requiresOpenAIAuth,
+		RequiresOpenAIAuthSet:     requiresOpenAIAuthSet,
+		WireAPI:                   wireAPI,
+		WireAPISet:                wireAPISet,
+		SupportsWebsockets:        input.SupportsWebsockets,
+		SupportsWebsocketsSet:     supportsWebsocketsSet,
+		AuthStrategy:              authStrategy,
+		SkipRelayKeyMetadata:      input.SkipRelayKeyMetadata,
 	}, nil
 }
 
@@ -184,15 +254,21 @@ func normalizeRelayLocalBaseURL(value string) string {
 	return strings.TrimRight(trimmed, "/")
 }
 
-func normalizeRelayLocalModel(value string) string {
+func normalizeRelayLocalModel(value string, isSet bool) string {
 	trimmed := strings.TrimSpace(value)
+	if !isSet {
+		return ""
+	}
 	if trimmed == "" {
 		return relayCodexDefaultModel
 	}
 	return trimmed
 }
 
-func normalizeRelayLocalReasoningEffort(value string) string {
+func normalizeRelayLocalReasoningEffort(value string, isSet bool) string {
+	if !isSet {
+		return ""
+	}
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "none", "minimal", "low", "medium", "high", "xhigh":
 		return strings.ToLower(strings.TrimSpace(value))
@@ -452,20 +528,24 @@ func mergeRelayCodexConfigToml(existing string, input RelayLocalApplyInput) stri
 	}
 
 	hasModelProvider := rootTomlKeyExists(lines, "model_provider")
-	lines = upsertRootTomlKey(lines, "model", quoteTomlString(strings.TrimSpace(input.Model)), true)
-	lines = upsertRootTomlKey(lines, "model_reasoning_effort", quoteTomlString(input.ReasoningEffort), true)
+	if input.ModelSet {
+		lines = upsertRootTomlKey(lines, "model", quoteTomlString(strings.TrimSpace(input.Model)), true)
+	}
+	if input.ReasoningEffortSet {
+		lines = upsertRootTomlKey(lines, "model_reasoning_effort", quoteTomlString(input.ReasoningEffort), true)
+	}
 
 	if targetProviderID == relayCodexOpenAIProviderID {
-		if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
+		if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth && input.BaseURLSet {
 			lines = deleteTomlRootKey(lines, "openai_base_url")
-		} else {
+		} else if input.BaseURLSet {
 			lines = upsertRootTomlKey(lines, "openai_base_url", quoteTomlString(strings.TrimSpace(input.BaseURL)), true)
 		}
-		if hasModelProvider {
+		if hasModelProvider && input.ProviderIDSet {
 			lines = upsertRootTomlKey(lines, "model_provider", quoteTomlString(relayCodexOpenAIProviderID), false)
 		}
 	} else {
-		if !hasExplicitCurrentProvider {
+		if !hasExplicitCurrentProvider && input.ProviderIDSet {
 			lines = upsertRootTomlKey(lines, "model_provider", quoteTomlString(targetProviderID), true)
 		}
 		sectionName := fmt.Sprintf("model_providers.%s", targetProviderID)
@@ -473,23 +553,35 @@ func mergeRelayCodexConfigToml(existing string, input RelayLocalApplyInput) stri
 		if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
 			providerBaseURL = relayCodexChatGPTBackendBaseURL
 		}
-		lines = upsertTomlSectionKey(lines, sectionName, "name", quoteTomlString(input.ProviderName), true)
-		lines = upsertTomlSectionKey(lines, sectionName, "base_url", quoteTomlString(providerBaseURL), true)
-		lines = upsertTomlSectionKey(lines, sectionName, "requires_openai_auth", "true", true)
-		lines = upsertTomlSectionKey(lines, sectionName, "wire_api", quoteTomlString("responses"), true)
+		if input.ProviderNameSet {
+			lines = upsertTomlSectionKey(lines, sectionName, "name", quoteTomlString(input.ProviderName), true)
+		}
+		if input.BaseURLSet {
+			lines = upsertTomlSectionKey(lines, sectionName, "base_url", quoteTomlString(providerBaseURL), true)
+		}
+		if input.RequiresOpenAIAuthSet {
+			lines = upsertTomlSectionKey(lines, sectionName, "requires_openai_auth", fmt.Sprintf("%t", input.RequiresOpenAIAuth), true)
+		}
+		if input.WireAPISet {
+			lines = upsertTomlSectionKey(lines, sectionName, "wire_api", quoteTomlString(input.WireAPI), true)
+		}
 		if input.AuthStrategy == relayLocalAuthStrategyPreserveChatGPTAuth {
 			lines = deleteTomlSectionKey(lines, sectionName, "env_key")
-			lines = upsertTomlSectionKey(lines, sectionName, "experimental_bearer_token", quoteTomlString(input.APIKey), true)
+			if input.APIKeySet {
+				lines = upsertTomlSectionKey(lines, sectionName, "experimental_bearer_token", quoteTomlString(input.APIKey), true)
+			}
 		} else if input.AuthStrategy == relayLocalAuthStrategyReplaceAuthWithOAuth {
 			lines = deleteTomlSectionKey(lines, sectionName, "env_key")
 			lines = deleteTomlSectionKey(lines, sectionName, "experimental_bearer_token")
-		} else {
+		} else if input.APIKeySet {
 			lines = deleteTomlSectionKey(lines, sectionName, "experimental_bearer_token")
 		}
-		if input.SupportsWebsockets {
-			lines = upsertTomlSectionKey(lines, sectionName, "supports_websockets", "true", true)
-		} else {
-			lines = deleteTomlSectionKey(lines, sectionName, "supports_websockets")
+		if input.SupportsWebsocketsSet {
+			if input.SupportsWebsockets {
+				lines = upsertTomlSectionKey(lines, sectionName, "supports_websockets", "true", true)
+			} else {
+				lines = upsertTomlSectionKey(lines, sectionName, "supports_websockets", "false", true)
+			}
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log"
 	"os"
+	"strings"
 
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
 	"github.com/wailsapp/wails/v2"
@@ -18,8 +19,11 @@ var assets embed.FS
 func main() {
 	var loginItemLaunch bool
 	os.Args, loginItemLaunch = consumeLoginItemArg(os.Args)
+	var initialDeepLinks []string
+	os.Args, initialDeepLinks = consumeDeepLinkArgs(os.Args)
 
 	app := NewApp()
+	app.queueDeepLinks(initialDeepLinks)
 
 	err := wails.Run(&options.App{
 		Title:            "GetTokens",
@@ -36,6 +40,12 @@ func main() {
 		OnStartup:     app.startup,
 		OnShutdown:    app.shutdown,
 		OnBeforeClose: app.beforeClose,
+		SingleInstanceLock: &options.SingleInstanceLock{
+			UniqueId: "com.linhay.gettokens",
+			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
+				app.queueDeepLinks(secondInstanceData.Args)
+			},
+		},
 		Bind: []interface{}{
 			app,
 		},
@@ -65,4 +75,17 @@ func consumeLoginItemArg(args []string) ([]string, bool) {
 		filtered = append(filtered, arg)
 	}
 	return filtered, found
+}
+
+func consumeDeepLinkArgs(args []string) ([]string, []string) {
+	filtered := make([]string, 0, len(args))
+	links := make([]string, 0)
+	for _, arg := range args {
+		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(arg)), "gettokens://") {
+			links = append(links, arg)
+			continue
+		}
+		filtered = append(filtered, arg)
+	}
+	return filtered, links
 }

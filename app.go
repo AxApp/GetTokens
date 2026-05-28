@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/linhay/gettokens/internal/codexbinary"
 	"github.com/linhay/gettokens/internal/sidecar"
 	"github.com/linhay/gettokens/internal/updater"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
+	wailsruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // Version is injected at build time via -ldflags
@@ -23,7 +26,10 @@ var ReleaseLabel = ""
 const GitHubRepo = "AxApp/GetTokens"
 
 type App struct {
-	core *wailsapp.App
+	core               *wailsapp.App
+	ctx                context.Context
+	pendingDeepLinkMu  sync.Mutex
+	pendingDeepLinkURL []string
 }
 
 func mapCodexConfigChangeInputs(inputs []CodexConfigChangeInput) []wailsapp.CodexConfigChangeInput {
@@ -51,8 +57,10 @@ func NewApp() *App {
 }
 
 func (a *App) startup(ctx context.Context) {
+	a.ctx = ctx
 	a.core.Startup(ctx)
 	installNativeApplicationMenuUpdateItem(a)
+	a.emitQueuedDeepLinks()
 }
 
 func (a *App) shutdown(ctx context.Context) {
@@ -117,6 +125,48 @@ func (a *App) FetchVendorStatusRSS(url string) (string, error) {
 	}
 
 	return string(body), nil
+}
+
+func (a *App) queueDeepLinks(urls []string) {
+	links := filterDeepLinkURLs(urls)
+	if len(links) == 0 {
+		return
+	}
+	a.pendingDeepLinkMu.Lock()
+	a.pendingDeepLinkURL = append(a.pendingDeepLinkURL, links...)
+	a.pendingDeepLinkMu.Unlock()
+	a.emitQueuedDeepLinks()
+}
+
+func (a *App) ConsumePendingDeepLinks() []string {
+	a.pendingDeepLinkMu.Lock()
+	defer a.pendingDeepLinkMu.Unlock()
+	links := append([]string(nil), a.pendingDeepLinkURL...)
+	a.pendingDeepLinkURL = nil
+	return links
+}
+
+func (a *App) emitQueuedDeepLinks() {
+	if a.ctx == nil {
+		return
+	}
+	a.pendingDeepLinkMu.Lock()
+	links := append([]string(nil), a.pendingDeepLinkURL...)
+	a.pendingDeepLinkMu.Unlock()
+	for _, link := range links {
+		wailsruntime.EventsEmit(a.ctx, "deeplink:import", link)
+	}
+}
+
+func filterDeepLinkURLs(values []string) []string {
+	links := make([]string, 0, len(values))
+	for _, value := range values {
+		trimmed := strings.TrimSpace(value)
+		if strings.HasPrefix(strings.ToLower(trimmed), "gettokens://") {
+			links = append(links, trimmed)
+		}
+	}
+	return links
 }
 
 func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
@@ -1207,16 +1257,29 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, mode
 
 func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalApplyResult, error) {
 	result, err := a.core.ApplyRelayServiceConfigToLocalV2(wailsapp.RelayLocalApplyInput{
-		APIKey:                input.APIKey,
-		AuthFileContentBase64: input.AuthFileContentBase64,
-		BaseURL:               input.BaseURL,
-		Model:                 input.Model,
-		ReasoningEffort:       input.ReasoningEffort,
-		ProviderID:            input.ProviderID,
-		ProviderName:          input.ProviderName,
-		SupportsWebsockets:    input.SupportsWebsockets,
-		AuthStrategy:          input.AuthStrategy,
-		SkipRelayKeyMetadata:  input.SkipRelayKeyMetadata,
+		PreserveUnspecifiedFields: input.PreserveUnspecifiedFields,
+		APIKey:                    input.APIKey,
+		APIKeySet:                 input.APIKeySet,
+		AuthFileContentBase64:     input.AuthFileContentBase64,
+		AuthFileContentSet:        input.AuthFileContentSet,
+		BaseURL:                   input.BaseURL,
+		BaseURLSet:                input.BaseURLSet,
+		Model:                     input.Model,
+		ModelSet:                  input.ModelSet,
+		ReasoningEffort:           input.ReasoningEffort,
+		ReasoningEffortSet:        input.ReasoningEffortSet,
+		ProviderID:                input.ProviderID,
+		ProviderIDSet:             input.ProviderIDSet,
+		ProviderName:              input.ProviderName,
+		ProviderNameSet:           input.ProviderNameSet,
+		RequiresOpenAIAuth:        input.RequiresOpenAIAuth,
+		RequiresOpenAIAuthSet:     input.RequiresOpenAIAuthSet,
+		WireAPI:                   input.WireAPI,
+		WireAPISet:                input.WireAPISet,
+		SupportsWebsockets:        input.SupportsWebsockets,
+		SupportsWebsocketsSet:     input.SupportsWebsocketsSet,
+		AuthStrategy:              input.AuthStrategy,
+		SkipRelayKeyMetadata:      input.SkipRelayKeyMetadata,
 	})
 	if err != nil {
 		return nil, err
@@ -1246,6 +1309,31 @@ func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {
 		CanPreserveChatGPTAuth: result.CanPreserveChatGPTAuth,
 		Warnings:               append([]string(nil), result.Warnings...),
 	}, nil
+}
+
+func (a *App) ParseDeepLink(rawURL string) (*DeepLinkImportRequest, error) {
+	result, err := a.core.ParseDeepLink(rawURL)
+	if err != nil {
+		return nil, err
+	}
+	mapped := mapDeepLinkImportRequest(*result)
+	return &mapped, nil
+}
+
+func (a *App) PreviewDeepLinkImport(rawURL string) (*DeepLinkImportPreview, error) {
+	result, err := a.core.PreviewDeepLinkImport(rawURL)
+	if err != nil {
+		return nil, err
+	}
+	return mapDeepLinkImportPreview(result), nil
+}
+
+func (a *App) ApplyDeepLinkImport(rawURL string) (*DeepLinkApplyResult, error) {
+	result, err := a.core.ApplyDeepLinkImportURL(rawURL)
+	if err != nil {
+		return nil, err
+	}
+	return mapDeepLinkApplyResult(result), nil
 }
 
 func (a *App) ApplyClaudeCodeAPIKeyConfigToLocal(apiKey string, baseURL string, options ClaudeCodeLocalApplyOptions) (*ClaudeCodeLocalApplyResult, error) {

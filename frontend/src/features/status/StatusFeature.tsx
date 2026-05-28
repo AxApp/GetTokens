@@ -668,12 +668,23 @@ export default function StatusFeature({
         () =>
           ApplyRelayServiceConfigToLocalV2({
             apiKey: normalizedKey,
+            apiKeySet: true,
             baseURL: selectedEndpoint.baseUrl,
+            baseURLSet: true,
             model: selectedRelayModel,
+            modelSet: true,
             reasoningEffort: selectedRelayReasoningEffort,
+            reasoningEffortSet: true,
             providerID: selectedRelayProvider.id,
+            providerIDSet: true,
             providerName: selectedRelayProvider.name,
+            providerNameSet: true,
+            requiresOpenAIAuth: true,
+            requiresOpenAIAuthSet: true,
+            wireAPI: 'responses',
+            wireAPISet: true,
             supportsWebsockets,
+            supportsWebsocketsSet: true,
             authStrategy: codexLocalAuthStrategy,
           })
       );

@@ -10,6 +10,10 @@ export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1, arg2, arg3) {
   return window['go']['main']['App']['ApplyClaudeCodeAPIKeyConfigToLocal'](arg1, arg2, arg3);
 }
 
+export function ApplyDeepLinkImport(arg1) {
+  return window['go']['main']['App']['ApplyDeepLinkImport'](arg1);
+}
+
 export function ApplyRelayServiceConfigToLocal(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['ApplyRelayServiceConfigToLocal'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
@@ -28,6 +32,10 @@ export function CanApplyUpdate() {
 
 export function CheckUpdate() {
   return window['go']['main']['App']['CheckUpdate']();
+}
+
+export function ConsumePendingDeepLinks() {
+  return window['go']['main']['App']['ConsumePendingDeepLinks']();
 }
 
 export function CreateCodexAPIKey(arg1) {
@@ -326,12 +334,20 @@ export function OpenCodexSkillInFinder(arg1) {
   return window['go']['main']['App']['OpenCodexSkillInFinder'](arg1);
 }
 
+export function ParseDeepLink(arg1) {
+  return window['go']['main']['App']['ParseDeepLink'](arg1);
+}
+
 export function PatchClaudeCodeSettings(arg1) {
   return window['go']['main']['App']['PatchClaudeCodeSettings'](arg1);
 }
 
 export function PreviewCodexFeatureConfig(arg1) {
   return window['go']['main']['App']['PreviewCodexFeatureConfig'](arg1);
+}
+
+export function PreviewDeepLinkImport(arg1) {
+  return window['go']['main']['App']['PreviewDeepLinkImport'](arg1);
 }
 
 export function ProbeClaudeCodeAccountRouting(arg1) {

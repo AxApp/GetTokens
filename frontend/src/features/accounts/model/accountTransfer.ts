@@ -198,12 +198,12 @@ export function parseAccountImportPayloads(parsed: unknown): ParsedAccountCardIm
 
 export function resolveAccountImportPayloadPreview(item: AccountImportPayloadItem): string {
   if (item.type === 'upload-file') {
-    return normalizeAccountImportPreview(decodeBase64Text(item.contentBase64) || item.name);
+    return normalizeAccountImportPreview(redactSensitiveAccountImportPreview(decodeBase64Text(item.contentBase64) || item.name));
   }
   if (item.type === 'auth-file') {
-    return normalizeAccountImportPreview(item.content);
+    return normalizeAccountImportPreview(redactSensitiveAccountImportPreview(item.content));
   }
-  return normalizeAccountImportPreview(JSON.stringify(item, null, 2));
+  return normalizeAccountImportPreview(redactSensitiveAccountImportPreview(JSON.stringify(item, null, 2)));
 }
 
 function parseSingleAccountImportPayload(parsed: unknown): ParsedAccountCardImport | null {
@@ -236,6 +236,39 @@ function normalizeAccountImportPreview(value: string, limit = 420): string {
     return trimmed;
   }
   return `${trimmed.slice(0, limit).trimEnd()}…`;
+}
+
+function redactSensitiveAccountImportPreview(value: string): string {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+  try {
+    const parsed = JSON.parse(trimmed);
+    return JSON.stringify(redactSensitiveAccountImportValue(parsed), null, 2);
+  } catch {
+    return trimmed
+      .replace(/("(?:access_token|refresh_token|id_token|api[_-]?key|apiKey|OPENAI_API_KEY|ANTHROPIC_API_KEY|authorization)"\s*:\s*)"[^"]*"/gi, '$1"[REDACTED]"')
+      .replace(/((?:access_token|refresh_token|id_token|api[_-]?key|apiKey|OPENAI_API_KEY|ANTHROPIC_API_KEY|authorization)=)[^&\s]+/gi, '$1[REDACTED]');
+  }
+}
+
+function redactSensitiveAccountImportValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => redactSensitiveAccountImportValue(item));
+  }
+  if (!value || typeof value !== 'object') {
+    return value;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    out[key] = isSensitiveAccountImportKey(key) ? '[REDACTED]' : redactSensitiveAccountImportValue(item);
+  }
+  return out;
+}
+
+function isSensitiveAccountImportKey(key: string) {
+  return /(?:access[_-]?token|refresh[_-]?token|id[_-]?token|api[_-]?key|apikey|openai_api_key|anthropic_api_key|authorization)/i.test(key);
 }
 
 function decodeBase64Text(value: string, maxBase64PreviewLength = 8192): string {

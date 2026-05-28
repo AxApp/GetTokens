@@ -75,12 +75,24 @@ export interface LocalCliTargetDrafts {
 
 export interface CodexLocalApplyDiffInput {
   apiKey: string;
+  apiKeySet?: boolean;
+  authFileContentSet?: boolean;
   baseUrl: string;
+  baseUrlSet?: boolean;
   model: string;
+  modelSet?: boolean;
   reasoningEffort: string;
+  reasoningEffortSet?: boolean;
   providerID: string;
+  providerIDSet?: boolean;
   providerName: string;
+  providerNameSet?: boolean;
+  requiresOpenAIAuth?: boolean;
+  requiresOpenAIAuthSet?: boolean;
+  wireAPI?: string;
+  wireAPISet?: boolean;
   supportsWebsockets: boolean;
+  supportsWebsocketsSet?: boolean;
   authStrategy: CodexLocalAuthStrategy;
 }
 
@@ -209,22 +221,34 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
   const authStrategy = input.authStrategy || defaultCodexLocalAuthStrategy;
   const providerBaseUrl = authStrategy === 'replace_auth_with_oauth' ? CODEX_CHATGPT_BACKEND_BASE_URL : baseUrl;
   const customProviderLines = [
-    ` model_provider = ${quoteConfigString(providerID)} # current user provider preserved unless explicitly switched`,
-    '',
     `+[model_providers.${providerID}]`,
-    `+name = ${quoteConfigString(providerName)}`,
-    `+base_url = ${quoteConfigString(providerBaseUrl)}`,
   ];
+  if (input.providerIDSet !== false) {
+    customProviderLines.unshift('', ` model_provider = ${quoteConfigString(providerID)} # current user provider preserved unless explicitly switched`);
+  }
+  if (input.providerNameSet !== false) {
+    customProviderLines.push(`+name = ${quoteConfigString(providerName)}`);
+  }
+  if (input.baseUrlSet !== false) {
+    customProviderLines.push(`+base_url = ${quoteConfigString(providerBaseUrl)}`);
+  }
   if (authStrategy === 'preserve_chatgpt_auth') {
-    customProviderLines.push(`+experimental_bearer_token = ${quoteConfigString(maskedKey)}`);
+    if (input.apiKeySet !== false) {
+      customProviderLines.push(`+experimental_bearer_token = ${quoteConfigString(maskedKey)}`);
+    }
     customProviderLines.push('-env_key = "OPENAI_API_KEY"');
   } else if (authStrategy === 'replace_auth_with_oauth') {
     customProviderLines.push('-env_key = "OPENAI_API_KEY"');
     customProviderLines.push('-experimental_bearer_token = "<previous token>"');
   }
-  customProviderLines.push('+requires_openai_auth = true', '+wire_api = "responses"');
-  if (input.supportsWebsockets) {
-    customProviderLines.push('+supports_websockets = true');
+  if (input.requiresOpenAIAuthSet !== false) {
+    customProviderLines.push(`+requires_openai_auth = ${input.requiresOpenAIAuth === false ? 'false' : 'true'}`);
+  }
+  if (input.wireAPISet !== false) {
+    customProviderLines.push(`+wire_api = ${quoteConfigString(input.wireAPI || 'responses')}`);
+  }
+  if (input.supportsWebsocketsSet !== false) {
+    customProviderLines.push(`+supports_websockets = ${input.supportsWebsockets ? 'true' : 'false'}`);
   }
   const providerLines =
     providerID === RELAY_CODEX_OPENAI_PROVIDER_ID
@@ -252,26 +276,38 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
             '--- CODEX_HOME/auth.json',
             '+++ CODEX_HOME/auth.json',
             '@@ oauth auth fields @@',
-            ' {',
-            '+"auth_mode": "chatgpt",',
-            '+"tokens": "<selected OAuth account tokens>"',
-            '-"OPENAI_API_KEY": "<previous api key if present>"',
-            ' }',
+            ...(input.authFileContentSet === false
+              ? ['# preserved: deep link did not provide OAuth auth-file content']
+              : [
+                  ' {',
+                  '+"auth_mode": "chatgpt",',
+                  '+"tokens": "<selected OAuth account tokens>"',
+                  '-"OPENAI_API_KEY": "<previous api key if present>"',
+                  ' }',
+                ]),
           ]
       : [
           '--- CODEX_HOME/auth.json',
           '+++ CODEX_HOME/auth.json',
           '@@ auth fields @@',
-          ' {',
-          '+"auth_mode": "apikey",',
-          `+"OPENAI_API_KEY": ${quoteConfigString(maskedKey)}`,
-          '-"tokens": "<previous OAuth tokens if present>"',
-          '-"last_refresh": "<previous OAuth refresh timestamp if present>"',
-          '-"agent_identity": "<previous agent identity if present>"',
-          '-"user": "<previous ChatGPT account metadata if present>"',
-          ' }',
-          '# API key mode rewrites auth.json to Codex CLI minimal fields only',
+          ...(input.apiKeySet === false
+            ? ['# preserved: deep link did not provide OPENAI_API_KEY']
+            : [
+                ' {',
+                '+"auth_mode": "apikey",',
+                `+"OPENAI_API_KEY": ${quoteConfigString(maskedKey)}`,
+                '-"tokens": "<previous OAuth tokens if present>"',
+                '-"last_refresh": "<previous OAuth refresh timestamp if present>"',
+                '-"agent_identity": "<previous agent identity if present>"',
+                '-"user": "<previous ChatGPT account metadata if present>"',
+                ' }',
+                '# API key mode rewrites auth.json to Codex CLI minimal fields only',
+              ]),
         ];
+  const rootLines = [
+    ...(input.modelSet === false ? [] : [`+model = ${quoteConfigString(model)}`]),
+    ...(input.reasoningEffortSet === false ? [] : [`+model_reasoning_effort = ${quoteConfigString(reasoningEffort)}`]),
+  ];
 
   return [
     ...authLines,
@@ -280,8 +316,7 @@ export function buildCodexLocalApplyDiff(input: CodexLocalApplyDiffInput) {
     '+++ CODEX_HOME/config.toml',
     '@@ root keys @@',
     '# existing comments stay where they are',
-    `+model = ${quoteConfigString(model)}`,
-    `+model_reasoning_effort = ${quoteConfigString(reasoningEffort)}`,
+    ...rootLines,
     ...providerLines,
     '',
     '# preserved: [mcp_servers.*] / [profiles.*] / unknown provider keys',

@@ -454,12 +454,24 @@ function buildPreviewFiles(draft: AccountCliApplyDraft, relayKeyItems: AccountLo
     : relayKey;
   const diff = buildCodexLocalApplyDiff({
     apiKey: codexAPIKey,
+    apiKeySet: draft.codex.apiKeySet,
+    authFileContentSet: draft.codex.authFileContentSet,
     baseUrl: draft.codex.baseUrl,
+    baseUrlSet: draft.codex.baseUrlSet,
     model: draft.codex.model,
+    modelSet: draft.codex.modelSet,
     reasoningEffort: draft.codex.reasoningEffort,
+    reasoningEffortSet: draft.codex.reasoningEffortSet,
     providerID: draft.codex.providerID,
+    providerIDSet: draft.codex.providerIDSet,
     providerName: draft.codex.providerName,
+    providerNameSet: draft.codex.providerNameSet,
+    requiresOpenAIAuth: draft.codex.requiresOpenAIAuth,
+    requiresOpenAIAuthSet: draft.codex.requiresOpenAIAuthSet,
+    wireAPI: draft.codex.wireAPI,
+    wireAPISet: draft.codex.wireAPISet,
     supportsWebsockets: draft.codex.supportsWebsockets,
+    supportsWebsocketsSet: draft.codex.supportsWebsocketsSet,
     authStrategy: draft.codex.authStrategy,
   });
   const configDiffStart = diff.indexOf('--- CODEX_HOME/config.toml');

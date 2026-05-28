@@ -189,6 +189,22 @@ test('buildCodexLocalApplyDiff writes OAuth auth and ChatGPT Codex backend in OA
   assert.match(diff, /-env_key = "OPENAI_API_KEY"/);
 });
 
+test('buildCodexLocalApplyDiff writes explicit supports_websockets false when provided', () => {
+  const diff = buildCodexLocalApplyDiff({
+    apiKey: 'sk-gettokens-1234567890abcdef',
+    baseUrl: 'http://127.0.0.1:8317/v1',
+    model: 'gpt-5.4',
+    reasoningEffort: 'high',
+    providerID: 'relay-bridge',
+    providerName: 'Relay Bridge',
+    supportsWebsockets: false,
+    supportsWebsocketsSet: true,
+    authStrategy: 'replace_auth_with_apikey',
+  });
+
+  assert.match(diff, /\+supports_websockets = false/);
+});
+
 test('buildCodexLocalApplyDiff removes openai_base_url in builtin OpenAI OAuth mode', () => {
   const diff = buildCodexLocalApplyDiff({
     apiKey: '',

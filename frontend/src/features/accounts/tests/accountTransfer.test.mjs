@@ -228,25 +228,28 @@ test('resolveAccountImportPayloadPreview shows decoded upload file content', () 
     ).toString('base64'),
   };
 
-  assert.match(resolveAccountImportPayloadPreview(payload), /"email": "team-codex@example.com"/);
-  assert.match(resolveAccountImportPayloadPreview(payload), /"access_token": "preview-access-token"/);
+  const preview = resolveAccountImportPayloadPreview(payload);
+  assert.match(preview, /"email": "team-codex@example.com"/);
+  assert.match(preview, /"access_token": "\[REDACTED\]"/);
+  assert.doesNotMatch(preview, /preview-access-token/);
 });
 
 test('resolveAccountImportPayloadPreview shows parsed card payload content', () => {
-  assert.match(
-    resolveAccountImportPayloadPreview({
-      type: 'openai-compatible',
-      name: 'deepseek',
-      apiKey: 'sk-preview-deepseek',
-      apiKeys: ['sk-preview-deepseek', 'sk-preview-backup'],
-      baseUrl: 'https://api.deepseek.com/v1',
-      prefix: '',
-      proxyUrl: '',
-      headers: {},
-      models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
-    }),
-    /"baseUrl": "https:\/\/api.deepseek.com\/v1"/,
-  );
+  const preview = resolveAccountImportPayloadPreview({
+    type: 'openai-compatible',
+    name: 'deepseek',
+    apiKey: 'sk-preview-deepseek',
+    apiKeys: ['sk-preview-deepseek', 'sk-preview-backup'],
+    baseUrl: 'https://api.deepseek.com/v1',
+    prefix: '',
+    proxyUrl: '',
+    headers: {},
+    models: [{ name: 'deepseek-chat', alias: 'codex-deepseek' }],
+  });
+
+  assert.match(preview, /"baseUrl": "https:\/\/api.deepseek.com\/v1"/);
+  assert.match(preview, /"apiKey": "\[REDACTED\]"/);
+  assert.doesNotMatch(preview, /sk-preview-deepseek/);
 });
 
 test('resolveCopiedAuthFileName creates a new auth-file asset name when importing into existing accounts', () => {

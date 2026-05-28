@@ -9,6 +9,8 @@ export function AnalyzeCodexSessions(arg1:main.AnalyzeCodexSessionsInput):Promis
 
 export function ApplyClaudeCodeAPIKeyConfigToLocal(arg1:string,arg2:string,arg3:main.ClaudeCodeLocalApplyOptions):Promise<main.ClaudeCodeLocalApplyResult>;
 
+export function ApplyDeepLinkImport(arg1:string):Promise<main.DeepLinkApplyResult>;
+
 export function ApplyRelayServiceConfigToLocal(arg1:string,arg2:string,arg3:string,arg4:string,arg5:string,arg6:string,arg7:boolean):Promise<main.RelayLocalApplyResult>;
 
 export function ApplyRelayServiceConfigToLocalV2(arg1:main.RelayLocalApplyInput):Promise<main.RelayLocalApplyResult>;
@@ -18,6 +20,8 @@ export function ApplyUpdate():Promise<void>;
 export function CanApplyUpdate():Promise<boolean>;
 
 export function CheckUpdate():Promise<updater.ReleaseInfo>;
+
+export function ConsumePendingDeepLinks():Promise<Array<string>>;
 
 export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
 
@@ -167,9 +171,13 @@ export function OpenCodexConfigToml():Promise<main.OpenCodexConfigTomlResult>;
 
 export function OpenCodexSkillInFinder(arg1:main.OpenCodexSkillInFinderInput):Promise<main.OpenCodexSkillInFinderResult>;
 
+export function ParseDeepLink(arg1:string):Promise<main.DeepLinkImportRequest>;
+
 export function PatchClaudeCodeSettings(arg1:main.PatchClaudeCodeSettingsInputDTO):Promise<main.PatchClaudeCodeSettingsResultDTO>;
 
 export function PreviewCodexFeatureConfig(arg1:main.SaveCodexFeatureConfigInput):Promise<main.CodexFeatureConfigPreview>;
+
+export function PreviewDeepLinkImport(arg1:string):Promise<main.DeepLinkImportPreview>;
 
 export function ProbeClaudeCodeAccountRouting(arg1:main.ProbeClaudeCodeAccountRoutingInput):Promise<main.ClaudeCodeAccountRoutingProbeResult>;
 

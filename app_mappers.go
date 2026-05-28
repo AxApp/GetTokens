@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
@@ -67,6 +69,233 @@ func mapAccountRecordModels(items []cliproxyapi.CodexModel) []OpenAICompatibleMo
 			Name:  item.Name,
 			Alias: item.Alias,
 		})
+	}
+	return out
+}
+
+func mapDeepLinkImportRequest(result wailsapp.DeepLinkImportRequest) DeepLinkImportRequest {
+	return DeepLinkImportRequest{
+		RawURL:      result.RawURL,
+		RedactedURL: result.RedactedURL,
+		Channel:     result.Channel,
+		Version:     result.Version,
+		Resource:    result.Resource,
+		Source:      result.Source,
+		Nonce:       result.Nonce,
+		Apply:       result.Apply,
+		Enabled:     result.Enabled,
+		Account:     mapDeepLinkAccountDraft(result.Account),
+		CodexConfig: mapDeepLinkCodexConfig(result.CodexConfig),
+		Documents:   mapDeepLinkDocumentPatches(result.Documents),
+	}
+}
+
+func mapDeepLinkAccountDraft(result *wailsapp.DeepLinkAccountDraft) *DeepLinkAccountDraft {
+	if result == nil {
+		return nil
+	}
+	return &DeepLinkAccountDraft{
+		AccountType:    result.AccountType,
+		Name:           result.Name,
+		Label:          result.Label,
+		APIKey:         result.APIKey,
+		APIKeys:        append([]string(nil), result.APIKeys...),
+		BaseURL:        result.BaseURL,
+		Prefix:         result.Prefix,
+		ProxyURL:       result.ProxyURL,
+		Models:         mapWailsOpenAICompatibleModels(result.Models),
+		FormatBaseURLs: cloneStringMap(result.FormatBaseURLs),
+		QuotaCurl:      result.QuotaCurl,
+		QuotaEnabled:   result.QuotaEnabled,
+		BillingCurl:    result.BillingCurl,
+		BillingEnabled: result.BillingEnabled,
+		AuthFileName:   result.AuthFileName,
+		AuthFileJSON:   result.AuthFileJSON,
+		Enabled:        result.Enabled,
+	}
+}
+
+func mapDeepLinkCodexConfig(result *wailsapp.DeepLinkCodexConfig) *DeepLinkCodexConfig {
+	if result == nil {
+		return nil
+	}
+	return &DeepLinkCodexConfig{
+		Mode:                  result.Mode,
+		AccountRef:            result.AccountRef,
+		Model:                 result.Model,
+		ModelSet:              result.ModelSet,
+		ReasoningEffort:       result.ReasoningEffort,
+		ReasoningEffortSet:    result.ReasoningEffortSet,
+		ProviderID:            result.ProviderID,
+		ProviderIDSet:         result.ProviderIDSet,
+		ProviderName:          result.ProviderName,
+		ProviderNameSet:       result.ProviderNameSet,
+		ProviderScope:         result.ProviderScope,
+		BaseURL:               result.BaseURL,
+		BaseURLSet:            result.BaseURLSet,
+		APIKey:                result.APIKey,
+		APIKeySet:             result.APIKeySet,
+		RequiresOpenAIAuth:    result.RequiresOpenAIAuth,
+		RequiresOpenAIAuthSet: result.RequiresOpenAIAuthSet,
+		WireAPI:               result.WireAPI,
+		WireAPISet:            result.WireAPISet,
+		SupportsWebsockets:    result.SupportsWebsockets,
+		SupportsWebsocketsSet: result.SupportsWebsocketsSet,
+		Apply:                 result.Apply,
+		AuthFileContentBase64: result.AuthFileContentBase64,
+		AuthFileContentSet:    result.AuthFileContentSet,
+	}
+}
+
+func mapDeepLinkDocumentPatches(items []wailsapp.DeepLinkDocumentPatch) []DeepLinkDocumentPatch {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DeepLinkDocumentPatch, 0, len(items))
+	for _, item := range items {
+		out = append(out, DeepLinkDocumentPatch{
+			Target:          item.Target,
+			Format:          item.Format,
+			Mode:            item.Mode,
+			Operations:      mapDeepLinkPatchOperations(item.Operations),
+			PreserveUnknown: item.PreserveUnknown,
+			Backup:          item.Backup,
+		})
+	}
+	return out
+}
+
+func mapDeepLinkPatchOperations(items []wailsapp.DeepLinkPatchOperation) []DeepLinkPatchOperation {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DeepLinkPatchOperation, 0, len(items))
+	for _, item := range items {
+		out = append(out, DeepLinkPatchOperation{
+			Op:            item.Op,
+			Path:          item.Path,
+			Value:         decodeRawJSONValue(item.Value),
+			ValueEncoding: item.ValueEncoding,
+			AllowCreate:   item.AllowCreate,
+		})
+	}
+	return out
+}
+
+func mapDeepLinkImportPreview(result *wailsapp.DeepLinkImportPreview) *DeepLinkImportPreview {
+	if result == nil {
+		return nil
+	}
+	return &DeepLinkImportPreview{
+		Request:               mapDeepLinkImportRequest(result.Request),
+		RedactedURL:           result.RedactedURL,
+		Resource:              result.Resource,
+		Source:                result.Source,
+		AccountSummary:        mapDeepLinkAccountSummary(result.AccountSummary),
+		ProviderScope:         result.ProviderScope,
+		ProviderRewriteMode:   result.ProviderRewriteMode,
+		ProviderCompatibility: result.ProviderCompatibility,
+		EffectiveProviderID:   result.EffectiveProviderID,
+		EffectiveProviderName: result.EffectiveProviderName,
+		AuthJSONPreview:       result.AuthJSONPreview,
+		ConfigTomlPreview:     result.ConfigTomlPreview,
+		LocalApplyInput:       mapRelayLocalApplyInput(result.LocalApplyInput),
+		Warnings:              append([]string(nil), result.Warnings...),
+		BlockingWarnings:      append([]string(nil), result.BlockingWarnings...),
+	}
+}
+
+func mapDeepLinkAccountSummary(result *wailsapp.DeepLinkAccountSummary) *DeepLinkAccountSummary {
+	if result == nil {
+		return nil
+	}
+	return &DeepLinkAccountSummary{
+		AccountType:   result.AccountType,
+		Title:         result.Title,
+		BaseURL:       result.BaseURL,
+		APIKeyPreview: result.APIKeyPreview,
+	}
+}
+
+func mapDeepLinkApplyResult(result *wailsapp.DeepLinkApplyResult) *DeepLinkApplyResult {
+	if result == nil {
+		return nil
+	}
+	return &DeepLinkApplyResult{
+		Status:             result.Status,
+		AccountApplied:     result.AccountApplied,
+		CodexConfigApplied: result.CodexConfigApplied,
+		AccountError:       result.AccountError,
+		CodexConfigError:   result.CodexConfigError,
+		LocalApplyResult:   mapRelayLocalApplyResult(result.LocalApplyResult),
+	}
+}
+
+func mapWailsOpenAICompatibleModels(items []wailsapp.OpenAICompatibleModel) []OpenAICompatibleModel {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]OpenAICompatibleModel, 0, len(items))
+	for _, item := range items {
+		out = append(out, OpenAICompatibleModel{
+			Name:                      item.Name,
+			Alias:                     item.Alias,
+			SupportedReasoningEfforts: append([]string(nil), item.SupportedReasoningEfforts...),
+			DefaultReasoningEffort:    item.DefaultReasoningEffort,
+		})
+	}
+	return out
+}
+
+func mapRelayLocalApplyInput(result *wailsapp.RelayLocalApplyInput) *RelayLocalApplyInput {
+	if result == nil {
+		return nil
+	}
+	return &RelayLocalApplyInput{
+		PreserveUnspecifiedFields: result.PreserveUnspecifiedFields,
+		APIKey:                    result.APIKey,
+		APIKeySet:                 result.APIKeySet,
+		AuthFileContentBase64:     result.AuthFileContentBase64,
+		AuthFileContentSet:        result.AuthFileContentSet,
+		BaseURL:                   result.BaseURL,
+		BaseURLSet:                result.BaseURLSet,
+		Model:                     result.Model,
+		ModelSet:                  result.ModelSet,
+		ReasoningEffort:           result.ReasoningEffort,
+		ReasoningEffortSet:        result.ReasoningEffortSet,
+		ProviderID:                result.ProviderID,
+		ProviderIDSet:             result.ProviderIDSet,
+		ProviderName:              result.ProviderName,
+		ProviderNameSet:           result.ProviderNameSet,
+		RequiresOpenAIAuth:        result.RequiresOpenAIAuth,
+		RequiresOpenAIAuthSet:     result.RequiresOpenAIAuthSet,
+		WireAPI:                   result.WireAPI,
+		WireAPISet:                result.WireAPISet,
+		SupportsWebsockets:        result.SupportsWebsockets,
+		SupportsWebsocketsSet:     result.SupportsWebsocketsSet,
+		AuthStrategy:              result.AuthStrategy,
+		SkipRelayKeyMetadata:      result.SkipRelayKeyMetadata,
+	}
+}
+
+func mapRelayLocalApplyResult(result *wailsapp.RelayLocalApplyResult) *RelayLocalApplyResult {
+	if result == nil {
+		return nil
+	}
+	return &RelayLocalApplyResult{
+		CodexHomePath: result.CodexHomePath,
+		AuthFilePath:  result.AuthFilePath,
+		ConfigPath:    result.ConfigPath,
+	}
+}
+
+func decodeRawJSONValue(value json.RawMessage) interface{} {
+	if len(value) == 0 {
+		return nil
+	}
+	var out interface{}
+	if err := json.Unmarshal(value, &out); err != nil {
+		return string(value)
 	}
 	return out
 }

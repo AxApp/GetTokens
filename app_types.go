@@ -477,16 +477,29 @@ type RelayLocalApplyResult struct {
 }
 
 type RelayLocalApplyInput struct {
-	APIKey                string `json:"apiKey"`
-	AuthFileContentBase64 string `json:"authFileContentBase64,omitempty"`
-	BaseURL               string `json:"baseURL"`
-	Model                 string `json:"model"`
-	ReasoningEffort       string `json:"reasoningEffort"`
-	ProviderID            string `json:"providerID"`
-	ProviderName          string `json:"providerName"`
-	SupportsWebsockets    bool   `json:"supportsWebsockets"`
-	AuthStrategy          string `json:"authStrategy"`
-	SkipRelayKeyMetadata  bool   `json:"skipRelayKeyMetadata,omitempty"`
+	PreserveUnspecifiedFields bool   `json:"preserveUnspecifiedFields,omitempty"`
+	APIKey                    string `json:"apiKey"`
+	APIKeySet                 bool   `json:"apiKeySet,omitempty"`
+	AuthFileContentBase64     string `json:"authFileContentBase64,omitempty"`
+	AuthFileContentSet        bool   `json:"authFileContentSet,omitempty"`
+	BaseURL                   string `json:"baseURL"`
+	BaseURLSet                bool   `json:"baseURLSet,omitempty"`
+	Model                     string `json:"model"`
+	ModelSet                  bool   `json:"modelSet,omitempty"`
+	ReasoningEffort           string `json:"reasoningEffort"`
+	ReasoningEffortSet        bool   `json:"reasoningEffortSet,omitempty"`
+	ProviderID                string `json:"providerID"`
+	ProviderIDSet             bool   `json:"providerIDSet,omitempty"`
+	ProviderName              string `json:"providerName"`
+	ProviderNameSet           bool   `json:"providerNameSet,omitempty"`
+	RequiresOpenAIAuth        bool   `json:"requiresOpenAIAuth,omitempty"`
+	RequiresOpenAIAuthSet     bool   `json:"requiresOpenAIAuthSet,omitempty"`
+	WireAPI                   string `json:"wireAPI,omitempty"`
+	WireAPISet                bool   `json:"wireAPISet,omitempty"`
+	SupportsWebsockets        bool   `json:"supportsWebsockets"`
+	SupportsWebsocketsSet     bool   `json:"supportsWebsocketsSet,omitempty"`
+	AuthStrategy              string `json:"authStrategy"`
+	SkipRelayKeyMetadata      bool   `json:"skipRelayKeyMetadata,omitempty"`
 }
 
 type LocalCodexAuthState struct {
@@ -499,6 +512,119 @@ type LocalCodexAuthState struct {
 	PlanType               string   `json:"planType,omitempty"`
 	CanPreserveChatGPTAuth bool     `json:"canPreserveChatGPTAuth"`
 	Warnings               []string `json:"warnings,omitempty"`
+}
+
+type DeepLinkImportRequest struct {
+	RawURL      string                  `json:"rawURL,omitempty"`
+	RedactedURL string                  `json:"redactedURL,omitempty"`
+	Channel     string                  `json:"channel"`
+	Version     string                  `json:"version"`
+	Resource    string                  `json:"resource"`
+	Source      string                  `json:"source,omitempty"`
+	Nonce       string                  `json:"nonce,omitempty"`
+	Apply       bool                    `json:"apply,omitempty"`
+	Enabled     bool                    `json:"enabled,omitempty"`
+	Account     *DeepLinkAccountDraft   `json:"account,omitempty"`
+	CodexConfig *DeepLinkCodexConfig    `json:"codexConfig,omitempty"`
+	Documents   []DeepLinkDocumentPatch `json:"documents,omitempty"`
+}
+
+type DeepLinkAccountDraft struct {
+	AccountType    string                  `json:"accountType"`
+	Name           string                  `json:"name,omitempty"`
+	Label          string                  `json:"label,omitempty"`
+	APIKey         string                  `json:"apiKey,omitempty"`
+	APIKeys        []string                `json:"apiKeys,omitempty"`
+	BaseURL        string                  `json:"baseUrl,omitempty"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	ProxyURL       string                  `json:"proxyUrl,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
+	QuotaCurl      string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl    string                  `json:"billingCurl,omitempty"`
+	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
+	AuthFileName   string                  `json:"authFileName,omitempty"`
+	AuthFileJSON   string                  `json:"authFileJSON,omitempty"`
+	Enabled        bool                    `json:"enabled,omitempty"`
+}
+
+type DeepLinkCodexConfig struct {
+	Mode                  string `json:"mode"`
+	AccountRef            string `json:"accountRef,omitempty"`
+	Model                 string `json:"model,omitempty"`
+	ModelSet              bool   `json:"modelSet,omitempty"`
+	ReasoningEffort       string `json:"reasoningEffort,omitempty"`
+	ReasoningEffortSet    bool   `json:"reasoningEffortSet,omitempty"`
+	ProviderID            string `json:"providerID,omitempty"`
+	ProviderIDSet         bool   `json:"providerIDSet,omitempty"`
+	ProviderName          string `json:"providerName,omitempty"`
+	ProviderNameSet       bool   `json:"providerNameSet,omitempty"`
+	ProviderScope         string `json:"providerScope,omitempty"`
+	BaseURL               string `json:"baseUrl,omitempty"`
+	BaseURLSet            bool   `json:"baseUrlSet,omitempty"`
+	APIKey                string `json:"apiKey,omitempty"`
+	APIKeySet             bool   `json:"apiKeySet,omitempty"`
+	RequiresOpenAIAuth    bool   `json:"requiresOpenAIAuth,omitempty"`
+	RequiresOpenAIAuthSet bool   `json:"requiresOpenAIAuthSet,omitempty"`
+	WireAPI               string `json:"wireAPI,omitempty"`
+	WireAPISet            bool   `json:"wireAPISet,omitempty"`
+	SupportsWebsockets    bool   `json:"supportsWebsockets,omitempty"`
+	SupportsWebsocketsSet bool   `json:"supportsWebsocketsSet,omitempty"`
+	Apply                 bool   `json:"apply,omitempty"`
+	AuthFileContentBase64 string `json:"authFileContentBase64,omitempty"`
+	AuthFileContentSet    bool   `json:"authFileContentSet,omitempty"`
+}
+
+type DeepLinkDocumentPatch struct {
+	Target          string                   `json:"target"`
+	Format          string                   `json:"format"`
+	Mode            string                   `json:"mode,omitempty"`
+	Operations      []DeepLinkPatchOperation `json:"operations,omitempty"`
+	PreserveUnknown *bool                    `json:"preserveUnknown,omitempty"`
+	Backup          *bool                    `json:"backup,omitempty"`
+}
+
+type DeepLinkPatchOperation struct {
+	Op            string      `json:"op"`
+	Path          string      `json:"path"`
+	Value         interface{} `json:"value,omitempty"`
+	ValueEncoding string      `json:"valueEncoding,omitempty"`
+	AllowCreate   *bool       `json:"allowCreate,omitempty"`
+}
+
+type DeepLinkImportPreview struct {
+	Request               DeepLinkImportRequest   `json:"request"`
+	RedactedURL           string                  `json:"redactedURL"`
+	Resource              string                  `json:"resource"`
+	Source                string                  `json:"source,omitempty"`
+	AccountSummary        *DeepLinkAccountSummary `json:"accountSummary,omitempty"`
+	ProviderScope         string                  `json:"providerScope,omitempty"`
+	ProviderRewriteMode   string                  `json:"providerRewriteMode,omitempty"`
+	ProviderCompatibility string                  `json:"providerCompatibility,omitempty"`
+	EffectiveProviderID   string                  `json:"effectiveProviderID,omitempty"`
+	EffectiveProviderName string                  `json:"effectiveProviderName,omitempty"`
+	AuthJSONPreview       string                  `json:"authJSONPreview,omitempty"`
+	ConfigTomlPreview     string                  `json:"configTomlPreview,omitempty"`
+	LocalApplyInput       *RelayLocalApplyInput   `json:"localApplyInput,omitempty"`
+	Warnings              []string                `json:"warnings,omitempty"`
+	BlockingWarnings      []string                `json:"blockingWarnings,omitempty"`
+}
+
+type DeepLinkAccountSummary struct {
+	AccountType   string `json:"accountType"`
+	Title         string `json:"title"`
+	BaseURL       string `json:"baseUrl,omitempty"`
+	APIKeyPreview string `json:"apiKeyPreview,omitempty"`
+}
+
+type DeepLinkApplyResult struct {
+	Status             string                 `json:"status"`
+	AccountApplied     bool                   `json:"accountApplied,omitempty"`
+	CodexConfigApplied bool                   `json:"codexConfigApplied,omitempty"`
+	AccountError       string                 `json:"accountError,omitempty"`
+	CodexConfigError   string                 `json:"codexConfigError,omitempty"`
+	LocalApplyResult   *RelayLocalApplyResult `json:"localApplyResult,omitempty"`
 }
 
 type ClaudeCodeLocalApplyResult struct {

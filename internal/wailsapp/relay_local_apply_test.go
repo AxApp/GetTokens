@@ -732,6 +732,90 @@ func TestApplyRelayServiceConfigToLocalV2ReplaceAuthWithAPIKeyRemovesExperimenta
 	}
 }
 
+func TestApplyRelayServiceConfigToLocalV2WritesExplicitSupportsWebsocketsFalse(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	existingConfig := strings.Join([]string{
+		`model_provider = "team-relay"`,
+		``,
+		`[model_providers.team-relay]`,
+		`name = "Team Relay"`,
+		`base_url = "https://old.example.com/v1"`,
+		`supports_websockets = true`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(existingConfig), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	result, err := applyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:                "sk-relay-test",
+		BaseURL:               "https://relay.example.com/v1",
+		Model:                 "gpt-5-codex",
+		ProviderID:            "team-relay",
+		ProviderName:          "Team Relay",
+		SupportsWebsockets:    false,
+		SupportsWebsocketsSet: true,
+		AuthStrategy:          relayLocalAuthStrategyReplaceAuthWithAPIKey,
+	})
+	if err != nil {
+		t.Fatalf("applyRelayServiceConfigToLocalV2 returned error: %v", err)
+	}
+
+	configBody, err := os.ReadFile(result.ConfigPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if !strings.Contains(string(configBody), `supports_websockets = false`) {
+		t.Fatalf("config.toml should write explicit supports_websockets=false:\n%s", string(configBody))
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalV2PreservesSupportsWebsocketsWhenUnset(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	existingConfig := strings.Join([]string{
+		`model_provider = "team-relay"`,
+		``,
+		`[model_providers.team-relay]`,
+		`name = "Team Relay"`,
+		`base_url = "https://old.example.com/v1"`,
+		`supports_websockets = true`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(existingConfig), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	result, err := applyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:       "sk-relay-test",
+		BaseURL:      "https://relay.example.com/v1",
+		Model:        "gpt-5-codex",
+		ProviderID:   "team-relay",
+		ProviderName: "Team Relay",
+		AuthStrategy: relayLocalAuthStrategyReplaceAuthWithAPIKey,
+	})
+	if err != nil {
+		t.Fatalf("applyRelayServiceConfigToLocalV2 returned error: %v", err)
+	}
+
+	configBody, err := os.ReadFile(result.ConfigPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if !strings.Contains(string(configBody), `supports_websockets = true`) {
+		t.Fatalf("config.toml should preserve existing supports_websockets when unset:\n%s", string(configBody))
+	}
+}
+
 func fakeChatGPTIDToken(email string, planType string, accountID string) string {
 	header, _ := json.Marshal(map[string]any{
 		"alg": "none",
