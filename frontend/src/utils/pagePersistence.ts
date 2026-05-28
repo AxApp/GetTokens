@@ -23,6 +23,7 @@ interface PageAvailabilityOptions {
 const productionAppPages: ReadonlySet<AppPage> = new Set([
   'status',
   'accounts',
+  'account-import',
   'session-management',
   'vendor-status',
   'proxy-pool',

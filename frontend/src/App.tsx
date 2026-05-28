@@ -16,6 +16,7 @@ import { useAppNavigation } from './hooks/useAppNavigation';
 import { toErrorMessage } from './utils/error';
 import { hasWailsRuntime } from './utils/previewMode';
 
+const AccountImportPage = lazy(() => import('./pages/AccountImportPage'));
 const AccountsPage = lazy(() => import('./pages/AccountsPage'));
 const ClaudePage = lazy(() => import('./pages/ClaudePage'));
 const CodexPage = lazy(() => import('./pages/CodexPage'));
@@ -141,6 +142,9 @@ function AppShell() {
     }
     if (activePage === 'design-system') {
       return <DesignSystemPage />;
+    }
+    if (activePage === 'account-import') {
+      return <AccountImportPage onDone={() => setActivePage('accounts')} />;
     }
     if (activePage === 'proxy-pool') {
       return <ProxyPoolPage />;

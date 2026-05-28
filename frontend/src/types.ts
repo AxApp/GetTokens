@@ -3,6 +3,7 @@ import type { main, sidecar, updater } from '../wailsjs/go/models';
 export type AppPage =
   | 'status'
   | 'accounts'
+  | 'account-import'
   | 'session-management'
   | 'vendor-status'
   | 'proxy-pool'

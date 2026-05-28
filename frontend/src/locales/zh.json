@@ -22,7 +22,8 @@
     "no": "否",
     "confirm_delete": "确认删除此记录吗？",
     "loading": "数据加载中...",
-    "more_actions": "更多操作"
+    "more_actions": "更多操作",
+    "back": "返回"
   },
   "nav": {
     "status": "运行状态",
