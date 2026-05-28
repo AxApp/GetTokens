@@ -140,6 +140,57 @@ func TestGetClaudeCodeExtensionsSnapshotHandlesMissingAssets(t *testing.T) {
 	}
 }
 
+func TestGetClaudeCodeExtensionsSnapshotScansAgentSkillRoots(t *testing.T) {
+	base := t.TempDir()
+	home := filepath.Join(base, "home")
+	project := filepath.Join(base, "project")
+	claudeConfigDir := filepath.Join(home, ".claude")
+	t.Setenv("HOME", home)
+	t.Setenv("CLAUDE_CONFIG_DIR", claudeConfigDir)
+	mustMkdirAll(t, project)
+
+	previousCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd: %v", err)
+	}
+	if err := os.Chdir(project); err != nil {
+		t.Fatalf("Chdir project: %v", err)
+	}
+	project, err = os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd project: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(previousCwd)
+	})
+
+	writeTextFile(t, filepath.Join(home, ".agents", "skills", "user-agent-skill", "SKILL.md"), strings.Join([]string{
+		"---",
+		"name: user-agent-skill",
+		"description: User agent skill.",
+		"---",
+		"",
+		"# User Agent Skill",
+	}, "\n"))
+	writeTextFile(t, filepath.Join(project, ".agents", "skills", "project-agent-skill", "SKILL.md"), strings.Join([]string{
+		"---",
+		"name: project-agent-skill",
+		"description: Project agent skill.",
+		"---",
+		"",
+		"# Project Agent Skill",
+	}, "\n"))
+
+	app := &App{}
+	snapshot, err := app.GetClaudeCodeExtensionsSnapshot()
+	if err != nil {
+		t.Fatalf("GetClaudeCodeExtensionsSnapshot returned error: %v", err)
+	}
+
+	assertClaudeSkill(t, snapshot.Skills, "user-agent-skill", "user", "auto", "enabled", "valid")
+	assertClaudeSkill(t, snapshot.Skills, "project-agent-skill", "project", "auto", "enabled", "valid")
+}
+
 func TestSaveClaudeCodeMcpServerPatchesProjectServerPreservingUnknownFields(t *testing.T) {
 	base := t.TempDir()
 	home := filepath.Join(base, "home")

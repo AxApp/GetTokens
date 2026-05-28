@@ -241,11 +241,16 @@ type claudeCodeSkillRoot struct {
 }
 
 func scanClaudeCodeSkills(claudeConfigDir string, projectPath string) ([]ClaudeCodeSkillAsset, []string) {
+	home, homeErr := os.UserHomeDir()
 	roots := []claudeCodeSkillRoot{
 		{scope: "user", path: filepath.Join(claudeConfigDir, "skills"), removable: true},
 	}
+	if homeErr == nil && home != "" {
+		roots = append(roots, claudeCodeSkillRoot{scope: "user", path: filepath.Join(home, ".agents", "skills"), removable: true})
+	}
 	if projectPath != "" {
 		roots = append(roots,
+			claudeCodeSkillRoot{scope: "project", path: filepath.Join(projectPath, ".agents", "skills")},
 			claudeCodeSkillRoot{scope: "project", path: filepath.Join(projectPath, ".claude", "skills")},
 			claudeCodeSkillRoot{scope: "legacy-command", path: filepath.Join(projectPath, ".claude", "commands"), commands: true},
 		)

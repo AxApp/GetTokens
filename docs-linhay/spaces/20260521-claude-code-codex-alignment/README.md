@@ -80,7 +80,7 @@ GetTokens 已经把 Claude Code 账号列表从旧判断里的“单 key 本地�
 ### P0：Claude Code 扩展资产工作台
 
 - 新增 Claude workspace：`skills`、`mcp-servers`；旧 `extensions` 作为兼容 hash 迁移到 `skills`。
-- Skills 覆盖用户级 `~/.claude/skills/`、项目级 `.claude/skills/`、兼容 `.claude/commands/` 只读展示与迁移提示。
+- Skills 覆盖用户级 `~/.claude/skills/`、统一用户级 `~/.agents/skills/`、项目级 `.agents/skills/`、项目级 `.claude/skills/`、兼容 `.claude/commands/` 只读展示与迁移提示。
 - MCP 覆盖 user/local `~/.claude.json` 与 project `.mcp.json`，支持 stdio / http、env、headers、tool 限制和 scope 标记。
 - 新增通用 target adapter：`codex` 使用 TOML adapter，`claude` 使用 JSON / directory adapter；前端组件尽量复用现有 Codex Extensions。
 
