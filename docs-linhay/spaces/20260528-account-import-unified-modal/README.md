@@ -83,6 +83,7 @@ And 已有账户列表不受影响
 
 - 前序 space：[多格式自动检测转 CPA 上传](../20260523-cpa-auto-detect-upload/README.md)
 - 实施计划：[Plan v01](plans/20260528-account-import-unified-modal-plan-v01.md)
+- 交接说明：[账号导入统一 modal 交接说明](handoff-20260528-account-import-preview.md)
 - 账户页实现：`frontend/src/features/accounts/`
 - 账户导入解析：`frontend/src/features/accounts/model/accountTransfer.ts`
 - 账户导入弹窗：`frontend/src/features/accounts/components/AccountImportModal.tsx`
@@ -99,6 +100,8 @@ And 已有账户列表不受影响
 4. 文件候选和粘贴 auth-file 候选继续走 `UploadAuthFiles`，CPA 自动转换仍复用现有 app 内后端归一化路径。
 5. 设计系统侧已用 `AccountModalComponents.stories.tsx` 和 `componentManifest.ts` 收编统一导入 modal。
 6. 队列项现在直接展示解析后的内容预览，便于提交前核对导入对象。
+7. 2026-05-28 追加：候选队列项从普通分隔列表行改为复用账号卡片视觉骨架，外层使用 `data-account-card` 与 `card-swiss`，顶部展示标题、来源和类型 badge，底部保留解析内容预览。
+8. 2026-05-28 追加：导入 modal 主体改为左右布局，左侧合并“选择文件”和“粘贴输入”，右侧固定为账号预览候选队列。
 
 ## 验证
 
@@ -109,3 +112,7 @@ And 已有账户列表不受影响
 - `npm --prefix frontend run build-storybook`
 - 队列预览截图：`docs-linhay/screenshots/20260528/accounts/20260528-accounts-import-modal-preview-after-v01.png`
 - 2026-05-28 追补验证：账号导入 targeted tests、`npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit`、`npm --prefix frontend run build`、`npm --prefix frontend run build-storybook` 通过。
+- 交接前复核：`npm --prefix frontend run test:unit` 通过，完整单测 `602 pass / 0 fail`。
+- 2026-05-28 账号卡片与左右布局追加验证：`node --test frontend/src/features/accounts/tests/accountTransfer.test.mjs frontend/src/features/accounts/tests/accountHeaderMenu.test.mjs frontend/src/features/accounts/tests/accountCardInteractions.test.mjs` 通过，`30 pass / 0 fail`；`npm --prefix frontend run typecheck` 通过；`npm --prefix frontend run test:unit` 通过，完整单测 `609 pass / 0 fail`。
+- 2026-05-28 浏览器预览 DOM 验收：`http://127.0.0.1:4173/?preview=accounts#frame=accounts` 中打开导入 modal，粘贴 auth JSON 后候选项渲染为 `data-account-card` / `card-swiss ... flex ... p-0`，并显示 `AUTH FILE` 与脱敏内容预览。
+- 2026-05-28 功能冒烟：浏览器预览中“账号操作菜单 -> 导入账号”可打开 modal；粘贴 auth JSON 可加入候选队列，预览敏感字段脱敏；点击“移除候选”后队列恢复为空且提交按钮重新禁用。

@@ -188,9 +188,12 @@ export default function AccountImportModal({
         </>
       }
     >
-      <div className="grid gap-5 p-6">
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)]">
-          <section className="grid min-w-0 gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+      <div className="grid gap-5 p-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-start">
+        <section
+          data-account-import-input-panel
+          className="grid min-w-0 gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]"
+        >
+          <div className="grid gap-3 border-b-2 border-dashed border-[var(--border-color)] pb-4">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <FilePlus className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
@@ -229,9 +232,9 @@ export default function AccountImportModal({
                 </span>
               </span>
             </button>
-          </section>
+          </div>
 
-          <section className="grid min-w-0 gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
+          <div className="grid gap-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
                 <ClipboardPaste className="h-4 w-4 shrink-0 text-[var(--text-muted)]" strokeWidth={3} />
@@ -269,8 +272,8 @@ export default function AccountImportModal({
                 {t('accounts.import_account_clear_paste')}
               </button>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
         <section className="grid min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
           <header className="border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
@@ -286,39 +289,46 @@ export default function AccountImportModal({
               {t('accounts.import_account_queue_empty')}
             </div>
           ) : (
-            <div className="grid">
+            <div className="grid gap-3 bg-[var(--bg-surface)] p-4">
               {queueItems.map((item, index) => (
                 <div
                   key={item.id}
-                  className="grid min-h-16 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-3 last:border-b-0 sm:grid-cols-[2.25rem_minmax(0,1fr)_9rem_auto]"
+                  data-account-card
+                  className="card-swiss relative flex min-w-0 max-w-full flex-col overflow-visible bg-[var(--bg-main)] p-0"
                 >
-                  <span className="grid h-8 w-8 place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] font-mono text-[length:var(--font-size-ui-xs)] font-black">
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0">
-                    <div className="truncate text-[length:var(--font-size-ui-sm)] font-black text-[var(--text-primary)]">
-                      {resolveQueueItemTitle(item.payload)}
+                  <div className="grid gap-3 border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-surface)] font-mono text-[length:var(--font-size-ui-xs)] font-black">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="truncate text-[length:var(--font-size-ui-sm)] font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                          {resolveQueueItemTitle(item.payload)}
+                        </div>
+                        <div className="mt-1 flex min-w-0 flex-wrap gap-2">
+                          <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                            {item.source === 'file' ? t('accounts.import_account_source_file') : t('accounts.import_account_source_paste')}
+                          </span>
+                          <span className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-0.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+                            {resolveQueueItemKind(item.payload)}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                      {item.source === 'file' ? t('accounts.import_account_source_file') : t('accounts.import_account_source_paste')}
-                    </div>
-                    <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-words font-mono text-[length:var(--font-size-ui-2xs)] leading-relaxed text-[var(--text-secondary)]">
-                      {resolveAccountImportPayloadPreview(item.payload)}
-                    </pre>
+                    <button
+                      type="button"
+                      onClick={() => setQueueItems((prev) => prev.filter((candidate) => candidate.id !== item.id))}
+                      disabled={submitting}
+                      className="justify-self-end border-0 bg-transparent p-1 text-[var(--color-status-danger)] transition-transform active:scale-95 disabled:opacity-45"
+                      aria-label={t('accounts.import_account_remove_item')}
+                      title={t('accounts.import_account_remove_item')}
+                    >
+                      <Trash2 className="h-4 w-4" strokeWidth={3} />
+                    </button>
                   </div>
-                  <span className="hidden justify-self-start border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] sm:block">
-                    {resolveQueueItemKind(item.payload)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setQueueItems((prev) => prev.filter((candidate) => candidate.id !== item.id))}
-                    disabled={submitting}
-                    className="justify-self-end border-0 bg-transparent p-1 text-[var(--color-status-danger)] transition-transform active:scale-95 disabled:opacity-45"
-                    aria-label={t('accounts.import_account_remove_item')}
-                    title={t('accounts.import_account_remove_item')}
-                  >
-                    <Trash2 className="h-4 w-4" strokeWidth={3} />
-                  </button>
+                  <pre className="max-h-28 overflow-auto whitespace-pre-wrap break-words border-0 bg-[var(--bg-surface)] px-4 py-3 font-mono text-[length:var(--font-size-ui-2xs)] leading-relaxed text-[var(--text-secondary)]">
+                    {resolveAccountImportPayloadPreview(item.payload)}
+                  </pre>
                 </div>
               ))}
             </div>

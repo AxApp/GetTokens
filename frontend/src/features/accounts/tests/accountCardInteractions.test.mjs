@@ -88,6 +88,31 @@ test('accounts import modal opens with app-local copied account payload when ava
   assert.match(source, /setInitialImportPasteContent\(readAccountClipboardFallback\(\)\)/);
 });
 
+test('account import queue candidates render with account card styling', async () => {
+  const source = await readFile(new URL('../components/AccountImportModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-card/);
+  assert.match(source, /className="card-swiss[^"]*flex[^"]*p-0"/);
+  assert.match(source, /resolveAccountImportPayloadPreview\(item\.payload\)/);
+  assert.doesNotMatch(source, /grid-cols-\[2\.25rem_minmax\(0,1fr\)_auto\]/);
+});
+
+test('account import modal uses merged input panel beside account preview', async () => {
+  const source = await readFile(new URL('../components/AccountImportModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-import-input-panel/);
+  assert.match(source, /lg:grid-cols-\[minmax\(0,0\.92fr\)_minmax\(0,1\.08fr\)\]/);
+  assert.equal((source.match(/data-account-import-input-panel/g) || []).length, 1);
+
+  const inputPanelIndex = source.indexOf('data-account-import-input-panel');
+  const fileIndex = source.indexOf("t('accounts.import_account_files')");
+  const pasteIndex = source.indexOf("t('accounts.import_account_paste')");
+  const queueIndex = source.indexOf("t('accounts.import_account_queue')");
+  assert.ok(inputPanelIndex >= 0 && inputPanelIndex < fileIndex);
+  assert.ok(fileIndex < pasteIndex);
+  assert.ok(pasteIndex < queueIndex);
+});
+
 test('pasted codex api key copies use numbered duplicate titles', async () => {
   const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
 
