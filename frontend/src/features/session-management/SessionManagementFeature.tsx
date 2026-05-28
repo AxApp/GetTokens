@@ -18,7 +18,11 @@ import type {
   SessionAnalysisResult,
   SessionFilter,
 } from './model.ts';
-import { buildSessionAnalysisInput } from './model.ts';
+import {
+  buildSessionAnalysisInput,
+  filterSessionManagementProjects,
+  filterSessionManagementSessions,
+} from './model.ts';
 import {
   InitialLoadingShell,
   ProjectListPanel,
@@ -74,17 +78,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   const stats = snapshot.stats;
 
   const filteredProjects = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return projects;
-    return projects.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.sessions.some(
-          (s) =>
-            s.title.toLowerCase().includes(q) ||
-            s.summary.toLowerCase().includes(q),
-        ),
-    );
+    return filterSessionManagementProjects(projects, searchQuery);
   }, [projects, searchQuery]);
 
   const activeProject = useMemo(
@@ -115,19 +109,11 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
     if (!activeProject) {
       return [];
     }
-    const q = searchQuery.trim().toLowerCase();
     let sessions = activeProject.sessions;
     if (activeFilter !== 'all') {
       sessions = sessions.filter((session) => session.status === activeFilter);
     }
-    if (q) {
-      sessions = sessions.filter(
-        (s) =>
-          s.title.toLowerCase().includes(q) ||
-          s.summary.toLowerCase().includes(q),
-      );
-    }
-    return sessions;
+    return filterSessionManagementSessions(activeProject, searchQuery, sessions);
   }, [activeFilter, activeProject, searchQuery]);
 
   const selectedSessionSummary = useMemo(

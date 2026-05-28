@@ -72,6 +72,16 @@ test('filterCodexLiveSessions still matches row-feed request ids without embedde
   assert.equal(rows[0].sessionID, rowOnlySession.sessionID);
 });
 
+test('filterCodexLiveSessions matches project names case-insensitively', () => {
+  const rows = filterCodexLiveSessions({
+    sessions: codexLiveSessionsPreviewSnapshot.sessions,
+    query: 'gettokens',
+  });
+
+  assert.ok(rows.length > 0);
+  assert.ok(rows.every((session) => session.projectName === 'GetTokens'));
+});
+
 test('filterCodexLiveSessions filters degraded and transport state conservatively', () => {
   const degraded = filterCodexLiveSessions({
     sessions: codexLiveSessionsPreviewSnapshot.sessions,

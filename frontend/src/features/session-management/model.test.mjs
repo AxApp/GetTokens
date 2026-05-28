@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   buildSessionAnalysisInput,
+  filterSessionManagementProjects,
+  filterSessionManagementSessions,
   formatProviderSummary,
   getRoleSummaryLabel,
   mapSessionAnalysisResultResponse,
@@ -80,6 +82,45 @@ test('sessions panel uses compact metadata only when row width is constrained', 
   assert.equal(shouldUseCompactSessionMetadata(SESSIONS_PANEL_COMPACT_META_MAX_WIDTH), true);
   assert.equal(shouldUseCompactSessionMetadata(SESSIONS_PANEL_COMPACT_META_MAX_WIDTH + 1), false);
   assert.equal(shouldUseCompactSessionMetadata(0), false);
+});
+
+test('session management search matches project names case-insensitively', () => {
+  const [project] = createProviderMergeSnapshotFixture().projects;
+
+  assert.deepEqual(
+    filterSessionManagementProjects([project], 'gettokens').map((item) => item.id),
+    ['gettokens'],
+  );
+  assert.deepEqual(
+    filterSessionManagementSessions(project, 'gettokens').map((session) => session.id),
+    ['sessions/2026/04/30/rollout-2026-04-30T23-40-00-gemini.jsonl'],
+  );
+});
+
+test('session management search matches session ids and file labels case-insensitively', () => {
+  const [project] = createProviderMergeSnapshotFixture().projects;
+  const sessionID = '019e689a-2f07-7771-ba6e-840b63e5cd69';
+  const projectWithSessionID = {
+    ...project,
+    sessions: [
+      {
+        ...project.sessions[0],
+        id: `projects/gettokens/sessions/${sessionID}.jsonl`,
+        fileLabel: `${sessionID.toUpperCase()}.jsonl`,
+        title: 'unrelated title',
+        summary: 'unrelated summary',
+      },
+    ],
+  };
+
+  assert.deepEqual(
+    filterSessionManagementProjects([projectWithSessionID], sessionID).map((item) => item.id),
+    ['gettokens'],
+  );
+  assert.deepEqual(
+    filterSessionManagementSessions(projectWithSessionID, sessionID).map((session) => session.id),
+    [`projects/gettokens/sessions/${sessionID}.jsonl`],
+  );
 });
 
 test('formatSessionMetadataDate keeps current year compact and older years explicit', () => {

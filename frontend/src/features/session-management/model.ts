@@ -160,6 +160,37 @@ export interface SessionAnalysisResult {
   sessions: SessionAnalysisSessionSummary[];
 }
 
+export function filterSessionManagementProjects(
+  projects: readonly ProjectSummary[],
+  query: string,
+): ProjectSummary[] {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) {
+    return [...projects];
+  }
+  return projects.filter((project) => {
+    if (normalizeSearchText(project.name).includes(normalizedQuery)) {
+      return true;
+    }
+    return project.sessions.some((session) => sessionMatchesQuery(session, normalizedQuery));
+  });
+}
+
+export function filterSessionManagementSessions(
+  project: ProjectSummary,
+  query: string,
+  sessions: readonly SessionSummary[] = project.sessions,
+): SessionSummary[] {
+  const normalizedQuery = normalizeSearchText(query);
+  if (!normalizedQuery) {
+    return [...sessions];
+  }
+  if (normalizeSearchText(project.name).includes(normalizedQuery)) {
+    return [...sessions];
+  }
+  return sessions.filter((session) => sessionMatchesQuery(session, normalizedQuery));
+}
+
 export function buildSessionAnalysisInput(request: SessionAnalysisPluginRequest): AnalyzeCodexSessionsInput {
   if (request.mode === 'project') {
     return {
@@ -374,6 +405,21 @@ function mapProjectSummary(raw: unknown): ProjectSummary {
       formatProviderSummary(source.providerCounts),
     sessions,
   };
+}
+
+function sessionMatchesQuery(session: SessionSummary, normalizedQuery: string): boolean {
+  return [
+    session.id,
+    session.title,
+    session.fileLabel,
+    session.summary,
+    session.provider,
+    session.roleSummary,
+  ].some((value) => normalizeSearchText(value).includes(normalizedQuery));
+}
+
+function normalizeSearchText(value: string | undefined): string {
+  return (value ?? '').trim().toLowerCase();
 }
 
 export function mapSessionManagementSnapshotResponse(raw: unknown): SessionManagementSnapshot {

@@ -203,6 +203,7 @@ function buildSessionSearchText(session: CodexLiveSession): string {
   return normalizeSearch(
     [
       session.sessionID,
+      session.projectName,
       session.executionSessionID,
       session.downstreamSessionID,
       session.codexWindowID,

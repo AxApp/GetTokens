@@ -320,7 +320,7 @@
     "summary_http": "HTTP",
     "summary_degraded": "Degraded",
     "summary_failed": "Failed",
-    "search_placeholder": "Search request id / session id / auth / model",
+    "search_placeholder": "Search project / request id / session id / auth / model",
     "clear_search": "Clear search",
     "session_feed": "Session Feed",
     "session_feed_hint": "Single-list view for session and project, account and protocol. Select a row to show or hide technical details.",

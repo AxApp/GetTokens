@@ -320,7 +320,7 @@
     "summary_http": "HTTP",
     "summary_degraded": "降级",
     "summary_failed": "失败",
-    "search_placeholder": "搜索 request id / session id / auth / model",
+    "search_placeholder": "搜索项目 / request id / session id / auth / model",
     "clear_search": "清空搜索",
     "session_feed": "会话列表",
     "session_feed_hint": "单列表仅展示会话与项目、账号与协议；点击一行查看或收起技术详情。",
