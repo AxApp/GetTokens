@@ -46,14 +46,26 @@ test('runtime stats render as a compact strip instead of a large stat grid', asy
 
 test('api key credential fields stack vertically with embedded labels', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /export function AccountCredentialVerifySection/);
   assert.match(source, /data-account-credential-fields="stacked"/);
   assert.match(source, /data-account-credential-field-label="embedded"/);
   assert.match(source, /data-account-credential-verify-layout="combined"/);
+  assert.match(modalSource, /<AccountCredentialVerifySection[\s\S]*?span="wide"/);
   assert.doesNotMatch(source, /export function AccountCredentialsSection/);
   assert.doesNotMatch(source, /export function AccountVerifySection/);
   assert.doesNotMatch(source, /md:grid-cols-2/);
+});
+
+test('browser preview account detail uses local detail data without Wails bindings', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const detailSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /getAccountsPreviewRelayModelNames/);
+  assert.match(featureSource, /if \(!hasWailsAppBindings\(\)\) \{/);
+  assert.match(detailSource, /getAccountsPreviewAuthFileContent/);
+  assert.match(detailSource, /getAccountsPreviewAuthFileModels/);
 });
 
 test('account detail preserves api-key edit modules', () => {

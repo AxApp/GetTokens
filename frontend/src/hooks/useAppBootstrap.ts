@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CanApplyUpdate, GetReleaseLabel, GetSidecarStatus, GetVersion, UsesNativeUpdaterUI } from '../../wailsjs/go/main/App';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
-import { useDebug } from '../context/DebugContext';
+import { useDebug } from '../context/useDebug';
 import type { ReleaseInfo, SidecarStatus } from '../types';
 import { getPreviewMode, hasPreviewMode, hasWailsAppBindings } from '../utils/previewMode';
 

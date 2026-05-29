@@ -137,6 +137,22 @@ func TestConsumeDeepLinkArgsRemovesGetTokensURLsBeforeWailsParsesFlags(t *testin
 	}
 }
 
+func TestAppSingleInstanceUniqueIDUsesDevProfileLock(t *testing.T) {
+	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
+
+	if got := appSingleInstanceUniqueID(); got != "com.linhay.gettokens.dev" {
+		t.Fatalf("appSingleInstanceUniqueID() = %q, want dev lock id", got)
+	}
+}
+
+func TestAppSingleInstanceUniqueIDDefaultsToProductionLock(t *testing.T) {
+	t.Setenv("GETTOKENS_APP_PROFILE", "")
+
+	if got := appSingleInstanceUniqueID(); got != "com.linhay.gettokens" {
+		t.Fatalf("appSingleInstanceUniqueID() = %q, want production lock id", got)
+	}
+}
+
 func TestMapAccountRecordPreservesStatusMessage(t *testing.T) {
 	record := mapAccountRecord(accountsdomain.AccountRecord{
 		ID:               "auth-file:broken.json",

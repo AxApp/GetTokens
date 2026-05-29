@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useDebug } from '../../../context/DebugContext';
+import { useDebug } from '../../../context/useDebug';
 import { buildDebugEntryViewModels } from '../model/debugModel';
 
 export function useDebugFeature() {

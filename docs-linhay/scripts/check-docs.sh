@@ -18,13 +18,12 @@ check_space_structure() {
   name="$(basename "$space_dir")"
 
   [[ -f "$space_dir/README.md" ]] || report_error "$name is missing README.md"
-  [[ -d "$space_dir/plans" ]] || report_error "$name is missing plans/"
-  [[ -d "$space_dir/screenshots" ]] || report_error "$name is missing screenshots/"
-  [[ -d "$space_dir/debate" ]] || report_error "$name is missing debate/"
 }
 
 check_screenshot_files() {
   local space_dir="$1"
+  [[ -d "$space_dir/screenshots" ]] || return 0
+
   while IFS= read -r -d '' file; do
     local rel base
     rel="${file#"$space_dir/screenshots/"}"
@@ -36,6 +35,8 @@ check_screenshot_files() {
 
 check_debate_files() {
   local space_dir="$1"
+  [[ -d "$space_dir/debate" ]] || return 0
+
   while IFS= read -r -d '' file; do
     local rel base
     rel="${file#"$space_dir/debate/"}"

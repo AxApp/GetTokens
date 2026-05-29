@@ -14,7 +14,7 @@ import SegmentedControl from '../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../components/ui/ToggleSwitch';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import SettingsReleasePanel from './components/SettingsReleasePanel';
-import { useDebug } from '../../context/DebugContext';
+import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import { useTextScale } from '../../context/TextScaleContext';
 import { useTheme } from '../../context/ThemeContext';

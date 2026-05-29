@@ -563,6 +563,41 @@ const PREVIEW_RATE_LIMIT_BY_ID: Record<string, RateLimitState> = {
   }),
 };
 
+const PREVIEW_AUTH_FILE_CONTENT_BY_NAME: Record<string, string> = {
+  'codex-pro.json': JSON.stringify(
+    {
+      email: 'ops-pro@example.com',
+      plan_type: 'pro',
+      account_key: 'auth-file:codex-pro.json',
+      refresh_token: '[PREVIEW_REFRESH_TOKEN]',
+    },
+    null,
+    2,
+  ),
+  'codex-plus-nightly.json': JSON.stringify(
+    {
+      email: 'nightly-plus@example.com',
+      plan_type: 'plus',
+      account_key: 'auth-file:codex-plus-nightly.json',
+      refresh_token: '[PREVIEW_REFRESH_TOKEN]',
+    },
+    null,
+    2,
+  ),
+};
+
+const PREVIEW_AUTH_FILE_MODELS_BY_NAME: Record<string, Array<{ name: string; display_name?: string }>> = {
+  'codex-pro.json': [
+    { name: 'gpt-5.4', display_name: 'GPT 5.4' },
+    { name: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
+    { name: 'o4-mini', display_name: 'O4 Mini' },
+  ],
+  'codex-plus-nightly.json': [
+    { name: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
+    { name: 'o4-mini', display_name: 'O4 Mini' },
+  ],
+};
+
 export function getAccountsPreviewAuthFiles(): AuthFile[] {
   return PREVIEW_AUTH_FILES.map((account) => ({ ...account }));
 }
@@ -650,6 +685,53 @@ export function getAccountsPreviewRateLimitByID(accounts: Array<Pick<AccountReco
     result[account.id] = cloneRateLimitState(state);
     return result;
   }, {});
+}
+
+export function getAccountsPreviewRelayModelNames(): string[] {
+  const names = new Set<string>();
+  for (const account of PREVIEW_API_KEY_ACCOUNTS) {
+    for (const model of account.models ?? []) {
+      if (model.name) {
+        names.add(model.name);
+      }
+    }
+  }
+  for (const provider of PREVIEW_OPENAI_COMPATIBLE_PROVIDERS) {
+    for (const model of provider.models ?? []) {
+      if (model.name) {
+        names.add(model.name);
+      }
+      if (model.alias) {
+        names.add(model.alias);
+      }
+    }
+  }
+  for (const models of Object.values(PREVIEW_AUTH_FILE_MODELS_BY_NAME)) {
+    for (const model of models) {
+      names.add(model.name);
+    }
+  }
+  return Array.from(names).sort((a, b) => a.localeCompare(b));
+}
+
+export function getAccountsPreviewAuthFileContent(name: string): string {
+  return (
+    PREVIEW_AUTH_FILE_CONTENT_BY_NAME[name] ??
+    JSON.stringify(
+      {
+        email: `${name.replace(/\.json$/i, '')}@example.com`,
+        account_key: `auth-file:${name}`,
+        refresh_token: '[PREVIEW_REFRESH_TOKEN]',
+      },
+      null,
+      2,
+    )
+  );
+}
+
+export function getAccountsPreviewAuthFileModels(name: string): Array<{ name: string; display_name?: string }> {
+  const models = PREVIEW_AUTH_FILE_MODELS_BY_NAME[name] ?? PREVIEW_AUTH_FILE_MODELS_BY_NAME['codex-pro.json'];
+  return models.map((model) => ({ ...model }));
 }
 
 export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' = 'codex') {

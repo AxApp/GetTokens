@@ -41,7 +41,7 @@ func main() {
 		OnShutdown:    app.shutdown,
 		OnBeforeClose: app.beforeClose,
 		SingleInstanceLock: &options.SingleInstanceLock{
-			UniqueId: "com.linhay.gettokens",
+			UniqueId: appSingleInstanceUniqueID(),
 			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
 				app.queueDeepLinks(secondInstanceData.Args)
 			},
@@ -62,6 +62,13 @@ func main() {
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
+}
+
+func appSingleInstanceUniqueID() string {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("GETTOKENS_APP_PROFILE")), "dev") {
+		return "com.linhay.gettokens.dev"
+	}
+	return "com.linhay.gettokens"
 }
 
 func consumeLoginItemArg(args []string) ([]string, bool) {

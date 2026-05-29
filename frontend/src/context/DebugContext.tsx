@@ -1,8 +1,6 @@
 import {
-  createContext,
   useEffect,
   useCallback,
-  useContext,
   useMemo,
   useRef,
   useState,
@@ -10,56 +8,7 @@ import {
 } from 'react';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 import { hasPreviewMode, hasWailsRuntime } from '../utils/previewMode';
-
-export interface DebugEntry {
-  id: string;
-  name: string;
-  transport: 'wails' | 'http';
-  status: 'pending' | 'success' | 'error';
-  request: unknown;
-  response?: unknown;
-  error?: string;
-  startedAt: string;
-  endedAt?: string;
-  durationMs?: number;
-}
-
-declare global {
-  interface WindowEventMap {
-    'debug:inject-entries': CustomEvent<DebugEntry[]>;
-  }
-}
-
-interface TrackRequestOptions<T> {
-  transport?: 'wails' | 'http';
-  mapSuccess?: (result: T) => unknown;
-}
-
-interface DebugEventPayload {
-  id?: string;
-  name: string;
-  transport?: 'wails' | 'http';
-  status: 'pending' | 'success' | 'error';
-  request: unknown;
-  response?: unknown;
-  error?: string;
-  startedAt?: string;
-  endedAt?: string;
-  durationMs?: number;
-}
-
-interface DebugContextValue {
-  entries: DebugEntry[];
-  clearEntries: () => void;
-  trackRequest: <T>(
-    name: string,
-    request: unknown,
-    executor: () => Promise<T>,
-    options?: TrackRequestOptions<T>
-  ) => Promise<T>;
-}
-
-const DebugContext = createContext<DebugContextValue | null>(null);
+import { DebugContext, type DebugEntry, type DebugEventPayload, type TrackRequestOptions } from './DebugContextValue';
 
 function normalizeError(error: unknown) {
   if (error instanceof Error) {
@@ -209,12 +158,4 @@ export function DebugProvider({ children }: { children?: ReactNode }) {
   );
 
   return <DebugContext.Provider value={value}>{children}</DebugContext.Provider>;
-}
-
-export function useDebug() {
-  const context = useContext(DebugContext);
-  if (!context) {
-    throw new Error('useDebug must be used within DebugProvider');
-  }
-  return context;
 }

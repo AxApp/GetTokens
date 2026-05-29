@@ -6,7 +6,7 @@ import {
   UpdateRelayRoutingConfig,
 } from '../../../../wailsjs/go/main/App';
 import type { main } from '../../../../wailsjs/go/models';
-import { useDebug } from '../../../context/DebugContext';
+import { useDebug } from '../../../context/useDebug';
 import { useI18n } from '../../../context/I18nContext';
 import { toErrorMessage } from '../../../utils/error';
 import type { AccountRecord } from '../../../types';

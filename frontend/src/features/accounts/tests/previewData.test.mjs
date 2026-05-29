@@ -6,6 +6,9 @@ import {
   getAccountsPreviewAuthFileRecords,
   getAccountsPreviewOpenAICompatibleProviders,
   getAccountsPreviewQuotaStateByKey,
+  getAccountsPreviewAuthFileContent,
+  getAccountsPreviewAuthFileModels,
+  getAccountsPreviewRelayModelNames,
   getUsageDeskPreviewObservedUsage,
   getUsageDeskPreviewProjectedUsage,
   getAccountsPreviewUsageByID,
@@ -54,6 +57,18 @@ test('accounts preview providers remain available for aggregate workspace previe
     providers.map((provider) => provider.name),
     ['openai', 'deepseek', 'siliconflow', 'zhipu', 'moonshot', 'dashscope', 'openrouter', 'groq', 'together', 'doubao'],
   );
+});
+
+test('accounts preview detail data covers api-key verification and auth-file metadata', () => {
+  const relayModels = getAccountsPreviewRelayModelNames();
+  const authContent = getAccountsPreviewAuthFileContent('codex-pro.json');
+  const authModels = getAccountsPreviewAuthFileModels('codex-pro.json');
+
+  assert.ok(relayModels.includes('gpt-5.4-mini'));
+  assert.ok(relayModels.includes('o4-mini'));
+  assert.match(authContent, /ops-pro@example\.com/);
+  assert.ok(authModels.some((model) => model.name === 'gpt-5.4'));
+  assert.ok(authModels.some((model) => model.display_name === 'GPT 5.4 Mini'));
 });
 
 test('accounts preview inventory covers full account list states and providers', () => {

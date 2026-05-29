@@ -22,6 +22,7 @@ import {
   AccountDetailEvidenceGrid,
   AccountDetailPill,
   AccountDetailSection,
+  type AccountDetailSectionSpan,
 } from './AccountDetailPrimitives';
 
 export interface APIKeyVerifyState {
@@ -45,6 +46,7 @@ export interface AccountCredentialVerifySectionProps {
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
   verifyState?: APIKeyVerifyState;
   modelNames?: string[];
+  span?: AccountDetailSectionSpan;
   onVerify?: (input: { apiKey: string; baseUrl: string; model: string }) => void;
 }
 
@@ -208,6 +210,7 @@ export function AccountCredentialVerifySection({
   setDraft,
   verifyState,
   modelNames,
+  span,
   onVerify,
 }: AccountCredentialVerifySectionProps) {
   return (
@@ -215,6 +218,7 @@ export function AccountCredentialVerifySection({
       componentName="AccountCredentialVerifySection"
       eyebrow="Credential / Connection"
       title="凭据与验证"
+      span={span}
     >
       <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <section data-account-credential-verify-layout="combined" className="grid gap-3">

@@ -20,7 +20,7 @@ import {
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
 import { EventsOn } from '../../../wailsjs/runtime/runtime';
-import { useDebug } from '../../context/DebugContext';
+import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountImportModal from './components/AccountImportModal';
@@ -35,8 +35,9 @@ import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeMo
 import OpenAICompatibleDetailModal from './components/OpenAICompatibleDetailModal';
 import UnifiedComposeModal, { type UnifiedComposeFormState } from './components/UnifiedComposeModal';
 import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
-import { useAccountsPageStateContext } from './AccountsPageStateProvider';
+import { useAccountsPageStateContext } from './AccountsPageStateContext';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
+import { getAccountsPreviewRelayModelNames } from './previewData';
 import { isCodexAuthFile } from './model/accountPresentation';
 import { readAccountClipboardFallback } from './model/accountClipboard';
 import { findAccountDetailByID } from './model/accountDetailSelection';
@@ -189,6 +190,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
+    if (!hasWailsAppBindings()) {
+      setRelayModelNames(getAccountsPreviewRelayModelNames());
+      return;
+    }
     if (!ready) {
       setRelayModelNames([]);
       return;

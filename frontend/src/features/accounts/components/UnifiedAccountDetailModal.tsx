@@ -4,9 +4,10 @@ import {
   GetAuthFileModels,
   NormalizeAuthFileContent,
 } from '../../../../wailsjs/go/main/App';
-import { useDebug } from '../../../context/DebugContext';
+import { useDebug } from '../../../context/useDebug';
 import { useI18n } from '../../../context/I18nContext';
 import type { AccountRecord } from '../../../types';
+import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import {
@@ -42,6 +43,7 @@ import {
 } from './AccountDetailPrimitives';
 import AccountProxyRouteSection from './AccountProxyRouteSection';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
+import { getAccountsPreviewAuthFileContent, getAccountsPreviewAuthFileModels } from '../previewData';
 
 export type { APIKeyVerifyState } from './AccountDetailSections';
 
@@ -189,6 +191,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     setDraft={setConfigDraft}
                     verifyState={props.verifyState}
                     modelNames={props.modelNames}
+                    span="wide"
                     onVerify={props.onVerify}
                   />
                 );
@@ -305,6 +308,12 @@ function AuthFileSummarySection({ account }: { account: AccountRecord }) {
     setLoading(true);
     void (async () => {
       try {
+        if (!hasWailsAppBindings()) {
+          const content = getAccountsPreviewAuthFileContent(account.name!);
+          if (cancelled) return;
+          setRawContent(content);
+          return;
+        }
         const result = await trackRequest('DownloadAuthFile', { name: account.name }, () => DownloadAuthFile(account.name!));
         if (cancelled) return;
         const decoded = decodeBase64Utf8(result?.contentBase64 ?? '');
@@ -399,6 +408,12 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
     setLoading(true);
     void (async () => {
       try {
+        if (!hasWailsAppBindings()) {
+          const previewModels = getAccountsPreviewAuthFileModels(account.name!);
+          if (cancelled) return;
+          setModels(previewModels);
+          return;
+        }
         const result = await trackRequest('GetAuthFileModels', { name: account.name }, () => GetAuthFileModels(account.name!));
         if (cancelled) return;
         setModels((result as any)?.models ?? []);

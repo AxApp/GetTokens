@@ -3,7 +3,7 @@ import { createContext, useContext, type HTMLAttributes, type ReactNode } from '
 type AccountDetailTone = 'neutral' | 'success' | 'warning' | 'danger';
 export type AccountDetailSectionDensity = 'standard' | 'dense' | 'hero';
 export type AccountDetailModuleStackLayout = 'flow' | 'cards';
-type AccountDetailSectionSpan = 'auto' | 'wide';
+export type AccountDetailSectionSpan = 'auto' | 'wide';
 
 const AccountDetailModuleLayoutContext = createContext<AccountDetailModuleStackLayout>('flow');
 

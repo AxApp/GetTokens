@@ -3,7 +3,7 @@ import { FetchProxySubscription, ProbeProxyNode } from '../../../wailsjs/go/main
 
 import SearchInput from '../../components/ui/SearchInput';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
-import { useDebug } from '../../context/DebugContext';
+import { useDebug } from '../../context/useDebug';
 import { toErrorMessage } from '../../utils/error';
 import {
   applyProxyProbeResult,
