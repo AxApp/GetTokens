@@ -51,6 +51,7 @@
 ## 最终方案
 
 - 执行入口：`plans/20260529-final-sidecar-account-store-plan-v01.md`
+- 执行计划：`plans/20260529-execution-plan-v01.md`
 - 技术设计：`docs-linhay/dev/account-credential-sqlite-store-design.md`
 - 过程材料：
   - `plans/20260529-research-report-v01.md`
