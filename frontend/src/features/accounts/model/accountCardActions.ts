@@ -2,9 +2,14 @@ import type { AccountRecord } from './types';
 import { ACCOUNT_CARD_IMPORT_SCHEMA } from './accountTransfer.ts';
 
 export function buildAccountCardContentText(account: AccountRecord, authFileContent?: unknown): string {
-  const isOpenAICompatible = account.id.startsWith('openai-compatible:');
+  const isOpenAICompatible = account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:');
+  const isCodexAPIKey = account.accountKind === 'codex-api-key' || (
+    !account.accountKind &&
+    account.credentialSource === 'api-key' &&
+    !account.id.startsWith('openai-compatible:')
+  );
   const credentialSource = isOpenAICompatible ? 'openai-compatible' : account.credentialSource;
-  const openAICompatibleName = isOpenAICompatible ? account.id.replace(/^openai-compatible:/, '') : '';
+  const openAICompatibleName = account.id.startsWith('openai-compatible:') ? account.id.replace(/^openai-compatible:/, '') : account.provider;
   const payload = {
     schema: ACCOUNT_CARD_IMPORT_SCHEMA,
     credentialSource,
@@ -30,7 +35,7 @@ export function buildAccountCardContentText(account: AccountRecord, authFileCont
           }
         : undefined,
     codexAPIKey:
-      account.credentialSource === 'api-key' && !isOpenAICompatible
+      isCodexAPIKey
         ? {
             label: account.displayName || '',
             apiKey: account.apiKey || '',

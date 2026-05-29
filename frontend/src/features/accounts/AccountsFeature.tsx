@@ -423,9 +423,27 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     }
     const account = findAccountDetailByID(accounts, accountDetailIDFromHash);
     if (account) {
+      if (isOpenAICompatibleAccount(account)) {
+        const provider = openAICompatibleState.providers.find(
+          (item) =>
+            item.accountKey === account.id ||
+            item.name.trim().toLowerCase() === account.provider.trim().toLowerCase(),
+        );
+        if (provider) {
+          openAICompatibleState.openDetailModal(provider);
+          return;
+        }
+      }
       setSelectedAccount(account);
     }
-  }, [accountDetailIDFromHash, accounts, selectedAccount?.id, setSelectedAccount]);
+  }, [
+    accountDetailIDFromHash,
+    accounts,
+    openAICompatibleState.openDetailModal,
+    openAICompatibleState.providers,
+    selectedAccount?.id,
+    setSelectedAccount,
+  ]);
 
   const updateDisplayMode = useCallback((nextMode: AccountListDisplayMode) => {
     setDisplayMode(nextMode);
@@ -506,10 +524,15 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const openAccountDetail = useCallback(
     (account: AccountRecord) => {
-      if (account.id.startsWith('openai-compatible:')) {
-        const providerName = account.id.slice('openai-compatible:'.length).trim().toLowerCase();
+      if (isOpenAICompatibleAccount(account)) {
+        const providerName = account.id.startsWith('openai-compatible:')
+          ? account.id.slice('openai-compatible:'.length).trim().toLowerCase()
+          : account.provider.trim().toLowerCase();
         const provider = openAICompatibleState.providers.find(
-          (item) => item.name.trim().toLowerCase() === providerName || item.name.trim().toLowerCase() === account.provider.trim().toLowerCase(),
+          (item) =>
+            item.accountKey === account.id ||
+            item.name.trim().toLowerCase() === providerName ||
+            item.name.trim().toLowerCase() === account.provider.trim().toLowerCase(),
         );
         if (provider) {
           openAICompatibleState.openDetailModal(provider);
@@ -606,7 +629,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const openOpenAICompatibleDetail = useCallback(
     (provider: OpenAICompatibleProvider) => {
       openAICompatibleState.openDetailModal(provider);
-      markAccountDetailInHash(`openai-compatible:${provider.name}`);
+      markAccountDetailInHash(provider.accountKey || `openai-compatible:${provider.name}`);
     },
     [markAccountDetailInHash, openAICompatibleState],
   );
@@ -615,6 +638,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     openAICompatibleState.closeDetailModal();
     clearAccountDetailInHash();
   }, [clearAccountDetailInHash, openAICompatibleState]);
+
+  const selectedAccountIsCodexAPIKey = selectedAccount ? isCodexAPIKeyAccount(selectedAccount) : false;
 
   const resolveLocalCliMappingsForAccount = useCallback(
     (account: AccountRecord) =>
@@ -1065,13 +1090,13 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           verifyState={apiKeyVerifyState}
           modelNames={relayModelNames}
           onClose={closeAccountDetail}
-          onRename={renameSelectedApiKey}
-          onSaveConfig={selectedAccount.credentialSource === 'api-key' && selectedAccount.id.startsWith('codex-api-key:')
+          onRename={selectedAccountIsCodexAPIKey ? renameSelectedApiKey : undefined}
+          onSaveConfig={selectedAccountIsCodexAPIKey
             ? (draft) => updateSelectedApiKeyConfig(draft)
             : undefined}
-          onVerify={selectedAccount.credentialSource === 'api-key' ? (input) => void verifySelectedApiKey(input) : undefined}
-          onTestQuotaCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyQuotaCurl(input) : undefined}
-          onTestBillingCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyBillingCurl(input) : undefined}
+          onVerify={selectedAccountIsCodexAPIKey ? (input) => void verifySelectedApiKey(input) : undefined}
+          onTestQuotaCurl={selectedAccountIsCodexAPIKey ? (input) => testSelectedApiKeyQuotaCurl(input) : undefined}
+          onTestBillingCurl={selectedAccountIsCodexAPIKey ? (input) => testSelectedApiKeyBillingCurl(input) : undefined}
           onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
           onStartReauth={isCodexAuthFile(selectedAccount) ? () => { void startCodexOAuth(selectedAccount); } : undefined}
           onCancelReauth={cancelCodexOAuth}
@@ -1404,4 +1429,15 @@ function readAccountDetailIDFromHash() {
     return '';
   }
   return readFrameHashState(window.location.hash)?.accountDetailID ?? '';
+}
+
+function isOpenAICompatibleAccount(account: Pick<AccountRecord, 'accountKind' | 'id'>): boolean {
+  return account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:');
+}
+
+function isCodexAPIKeyAccount(account: Pick<AccountRecord, 'accountKind' | 'credentialSource' | 'id'>): boolean {
+  if (account.accountKind) {
+    return account.accountKind === 'codex-api-key';
+  }
+  return account.credentialSource === 'api-key' && !account.id.startsWith('openai-compatible:');
 }

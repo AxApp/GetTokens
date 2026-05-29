@@ -21,6 +21,10 @@ test('normalizeAccountDisabledChange accepts only canonical account ids', () => 
     id: 'openai-compatible:deepseek',
     disabled: true,
   });
+  assert.deepEqual(normalizeAccountDisabledChange({ id: 'acct_00000000-0000-4000-8000-000000000001', disabled: true }), {
+    id: 'acct_00000000-0000-4000-8000-000000000001',
+    disabled: true,
+  });
   assert.equal(normalizeAccountDisabledChange({ id: 'auth-file:codex.json', disabled: 'false' }), null);
   assert.equal(normalizeAccountDisabledChange({ id: 'auth-file:codex.json', disabled: 1 }), null);
   assert.equal(normalizeAccountDisabledChange({ id: 'codex.json', disabled: true }), null);
@@ -67,9 +71,11 @@ test('account disabled overrides persist canonical ids for browser preview reloa
   rememberAccountDisabledChange({ id: 'codex-api-key:stable', disabled: true }, storage);
   rememberAccountDisabledChange({ id: 'legacy-stable', disabled: true }, storage);
   rememberAccountDisabledChange({ id: 'openai-compatible:deepseek', disabled: false }, storage);
+  rememberAccountDisabledChange({ id: 'acct_00000000-0000-4000-8000-000000000001', disabled: true }, storage);
 
   assert.deepEqual(readAccountDisabledOverrides(storage), {
     'codex-api-key:stable': true,
     'openai-compatible:deepseek': false,
+    'acct_00000000-0000-4000-8000-000000000001': true,
   });
 });

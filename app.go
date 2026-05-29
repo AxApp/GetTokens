@@ -1098,6 +1098,7 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 	providers := make([]OpenAICompatibleProvider, 0, len(result))
 	for _, item := range result {
 		providers = append(providers, OpenAICompatibleProvider{
+			AccountKey: item.AccountKey,
 			Name:       item.Name,
 			Priority:   item.Priority,
 			Disabled:   item.Disabled,

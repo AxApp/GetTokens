@@ -53,6 +53,7 @@ export type ApiFormat = 'anthropic' | 'openai_chat' | 'openai_responses' | 'gemi
 
 export interface AccountRecord {
   id: string;
+  accountKind?: 'auth-file' | 'codex-api-key' | 'openai-compatible' | string;
   provider: string;
   credentialSource: CredentialSource;
   displayName: string;
