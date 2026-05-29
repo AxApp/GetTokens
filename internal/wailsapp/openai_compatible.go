@@ -11,6 +11,7 @@ import (
 )
 
 type OpenAICompatibleProvider struct {
+	AccountKey string                  `json:"accountKey,omitempty"`
 	Name       string                  `json:"name"`
 	Priority   int                     `json:"priority,omitempty"`
 	Disabled   bool                    `json:"disabled,omitempty"`
@@ -80,53 +81,16 @@ type FetchOpenAICompatibleProviderModelsResult struct {
 }
 
 func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error) {
-	items, err := a.managementClient().ListOpenAICompatibleProviders()
+	accounts, err := a.managementClient().ListAccounts()
 	if err != nil {
 		return nil, err
 	}
-
-	providers := make([]OpenAICompatibleProvider, 0, len(items))
-	for _, item := range items {
-		apiKey := ""
-		proxyURL := ""
-		apiKeys := make([]string, 0, len(item.APIKeyEntries))
-		models := make([]OpenAICompatibleModel, 0, len(item.Models))
-		if len(item.APIKeyEntries) > 0 {
-			apiKey = strings.TrimSpace(item.APIKeyEntries[0].APIKey)
-			proxyURL = strings.TrimSpace(item.APIKeyEntries[0].ProxyURL)
+	providers := make([]OpenAICompatibleProvider, 0, len(accounts))
+	for _, account := range accounts {
+		if account.Kind != cliproxyapi.AccountKindOpenAICompatible {
+			continue
 		}
-		for _, entry := range item.APIKeyEntries {
-			trimmedAPIKey := strings.TrimSpace(entry.APIKey)
-			if trimmedAPIKey == "" {
-				continue
-			}
-			apiKeys = append(apiKeys, trimmedAPIKey)
-		}
-		for _, model := range item.Models {
-			trimmedName := strings.TrimSpace(model.Name)
-			if trimmedName == "" {
-				continue
-			}
-			models = append(models, OpenAICompatibleModel{
-				Name:  trimmedName,
-				Alias: strings.TrimSpace(model.Alias),
-			})
-		}
-		providers = append(providers, OpenAICompatibleProvider{
-			Name:       strings.TrimSpace(item.Name),
-			Priority:   item.Priority,
-			Disabled:   item.Disabled,
-			BaseURL:    strings.TrimSpace(item.BaseURL),
-			Prefix:     strings.TrimSpace(item.Prefix),
-			ProxyURL:   proxyURL,
-			APIKey:     apiKey,
-			APIKeys:    apiKeys,
-			Models:     models,
-			Headers:    cloneHeaders(item.Headers),
-			KeyCount:   len(item.APIKeyEntries),
-			ModelCount: len(item.Models),
-			HasHeaders: len(item.Headers) > 0,
-		})
+		providers = append(providers, openAICompatibleProviderFromUnifiedAccount(account))
 	}
 	return providers, nil
 }
@@ -135,7 +99,6 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 	name := strings.TrimSpace(input.Name)
 	baseURL := strings.TrimSpace(input.BaseURL)
 	apiKey := strings.TrimSpace(input.APIKey)
-	prefix := strings.TrimSpace(input.Prefix)
 
 	switch {
 	case name == "":
@@ -146,29 +109,21 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 		return errors.New("api key 不能为空")
 	}
 
-	current, err := a.managementClient().ListOpenAICompatibleProviders()
-	if err != nil {
+	if err := a.ensureOpenAICompatibleProviderNameAvailable(name, ""); err != nil {
 		return err
 	}
-
-	for _, item := range current {
-		if strings.EqualFold(strings.TrimSpace(item.Name), name) {
-			return errors.New("provider name 已存在")
-		}
-	}
-
-	current = append(current, cliproxyapi.OpenAICompatibleProvider{
-		Name:     name,
-		BaseURL:  baseURL,
-		Prefix:   prefix,
-		Priority: 0,
-		Disabled: false,
-		APIKeyEntries: []cliproxyapi.OpenAICompatibleAPIKeyEntry{
-			{APIKey: apiKey},
-		},
-	})
-
-	return a.managementClient().PutOpenAICompatibleProviders(current)
+	_, err := a.managementClient().CreateAccount(openAICompatibleAccountWrite(
+		name,
+		name,
+		0,
+		false,
+		baseURL,
+		strings.TrimSpace(input.Prefix),
+		[]cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: apiKey}},
+		nil,
+		nil,
+	))
+	return err
 }
 
 func (a *App) DeleteOpenAICompatibleProvider(name string) error {
@@ -176,7 +131,11 @@ func (a *App) DeleteOpenAICompatibleProvider(name string) error {
 	if trimmed == "" {
 		return errors.New("name 不能为空")
 	}
-	return a.managementClient().DeleteOpenAICompatibleProvider(trimmed)
+	account, err := a.findOpenAICompatibleAccount(trimmed)
+	if err != nil {
+		return err
+	}
+	return a.managementClient().DeleteAccount(account.AccountKey)
 }
 
 func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) error {
@@ -199,52 +158,52 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		return errors.New("api key 不能为空")
 	}
 
-	current, err := a.managementClient().ListOpenAICompatibleProviders()
+	target, err := a.findOpenAICompatibleAccount(currentName)
 	if err != nil {
 		return err
 	}
-
-	targetIndex := -1
-	for index, item := range current {
-		trimmedName := strings.TrimSpace(item.Name)
-		if strings.EqualFold(trimmedName, currentName) {
-			targetIndex = index
-			continue
-		}
-		if strings.EqualFold(trimmedName, name) {
-			return errors.New("provider name 已存在")
-		}
-	}
-
-	if targetIndex < 0 {
+	if target.OpenAICompatible == nil {
 		return errors.New("provider 不存在")
 	}
+	if err := a.ensureOpenAICompatibleProviderNameAvailable(name, target.AccountKey); err != nil {
+		return err
+	}
 
-	target := current[targetIndex]
-	target.Name = name
-	target.BaseURL = baseURL
-	target.Prefix = prefix
-	target.Headers = normalizeVerifyHeaders(input.Headers)
-	target.Models = make([]cliproxyapi.OpenAICompatibleModel, 0, len(models))
+	nextModels := make([]cliproxyapi.OpenAICompatibleModel, 0, len(models))
 	for _, model := range models {
-		target.Models = append(target.Models, cliproxyapi.OpenAICompatibleModel{
+		nextModels = append(nextModels, cliproxyapi.OpenAICompatibleModel{
 			Name:  model.Name,
 			Alias: model.Alias,
 		})
 	}
-	target.APIKeyEntries = make([]cliproxyapi.OpenAICompatibleAPIKeyEntry, 0, len(apiKeys))
+	previous := unifiedOpenAICompatibleProvider(*target)
+	entries := make([]cliproxyapi.OpenAICompatibleAPIKeyEntry, 0, len(apiKeys))
 	for index, item := range apiKeys {
 		entry := cliproxyapi.OpenAICompatibleAPIKeyEntry{APIKey: item}
 		if index == 0 && input.ProxyURL != nil {
 			entry.ProxyURL = strings.TrimSpace(*input.ProxyURL)
-		} else if index < len(current[targetIndex].APIKeyEntries) {
-			entry.ProxyURL = strings.TrimSpace(current[targetIndex].APIKeyEntries[index].ProxyURL)
+		} else if index < len(previous.APIKeyEntries) {
+			entry.ProxyURL = strings.TrimSpace(previous.APIKeyEntries[index].ProxyURL)
 		}
-		target.APIKeyEntries = append(target.APIKeyEntries, entry)
+		entries = append(entries, entry)
 	}
-	current[targetIndex] = target
 
-	return a.managementClient().PutOpenAICompatibleProviders(current)
+	title := strings.TrimSpace(target.Title)
+	if title == "" || strings.EqualFold(title, strings.TrimSpace(target.Provider)) || strings.EqualFold(title, strings.TrimSpace(target.OpenAICompatible.ProviderName)) {
+		title = name
+	}
+	_, err = a.managementClient().PatchAccount(target.AccountKey, openAICompatibleAccountWrite(
+		title,
+		name,
+		target.Priority,
+		target.Disabled,
+		baseURL,
+		prefix,
+		entries,
+		normalizeVerifyHeaders(input.Headers),
+		nextModels,
+	))
+	return err
 }
 
 func (a *App) UpdateOpenAICompatibleProviderPriority(name string, priority int) error {
@@ -252,27 +211,12 @@ func (a *App) UpdateOpenAICompatibleProviderPriority(name string, priority int) 
 	if trimmedName == "" {
 		return errors.New("provider name 不能为空")
 	}
-
-	current, err := a.managementClient().ListOpenAICompatibleProviders()
+	account, err := a.findOpenAICompatibleAccount(trimmedName)
 	if err != nil {
 		return err
 	}
-
-	found := false
-	for index := range current {
-		if !strings.EqualFold(strings.TrimSpace(current[index].Name), trimmedName) {
-			continue
-		}
-		current[index].Priority = priority
-		found = true
-		break
-	}
-
-	if !found {
-		return errors.New("provider 不存在")
-	}
-
-	return a.managementClient().PutOpenAICompatibleProviders(current)
+	_, err = a.managementClient().PatchAccountPriority(account.AccountKey, priority)
+	return err
 }
 
 func (a *App) SetOpenAICompatibleProviderStatus(name string, disabled bool) error {
@@ -280,27 +224,12 @@ func (a *App) SetOpenAICompatibleProviderStatus(name string, disabled bool) erro
 	if trimmedName == "" {
 		return errors.New("provider name 不能为空")
 	}
-
-	current, err := a.managementClient().ListOpenAICompatibleProviders()
+	account, err := a.findOpenAICompatibleAccount(trimmedName)
 	if err != nil {
 		return err
 	}
-
-	found := false
-	for index := range current {
-		if !strings.EqualFold(strings.TrimSpace(current[index].Name), trimmedName) {
-			continue
-		}
-		current[index].Disabled = disabled
-		found = true
-		break
-	}
-
-	if !found {
-		return errors.New("provider 不存在")
-	}
-
-	return a.managementClient().PutOpenAICompatibleProviders(current)
+	_, err = a.managementClient().PatchAccountStatus(account.AccountKey, disabled)
+	return err
 }
 
 func (a *App) VerifyOpenAICompatibleProvider(input VerifyOpenAICompatibleProviderInput) (*VerifyOpenAICompatibleProviderResult, error) {
@@ -585,6 +514,163 @@ func normalizeProviderModels(items []OpenAICompatibleModel) []OpenAICompatibleMo
 		})
 	}
 	return normalized
+}
+
+func (a *App) findOpenAICompatibleAccount(name string) (*cliproxyapi.UnifiedAccount, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return nil, errors.New("provider name 不能为空")
+	}
+	if isUnifiedAccountID(trimmed) {
+		account, err := a.managementClient().GetAccount(trimmed)
+		if err != nil {
+			return nil, err
+		}
+		if account == nil || account.Kind != cliproxyapi.AccountKindOpenAICompatible {
+			return nil, errors.New("provider 不存在")
+		}
+		return account, nil
+	}
+	accounts, err := a.managementClient().ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+	for index := range accounts {
+		account := accounts[index]
+		if account.Kind != cliproxyapi.AccountKindOpenAICompatible {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(account.Provider), trimmed) {
+			return &accounts[index], nil
+		}
+		if account.OpenAICompatible != nil && strings.EqualFold(strings.TrimSpace(account.OpenAICompatible.ProviderName), trimmed) {
+			return &accounts[index], nil
+		}
+	}
+	return nil, errors.New("provider 不存在")
+}
+
+func openAICompatibleProviderFromSidecarConfig(item cliproxyapi.OpenAICompatibleProvider) OpenAICompatibleProvider {
+	apiKey := ""
+	proxyURL := ""
+	apiKeys := make([]string, 0, len(item.APIKeyEntries))
+	models := make([]OpenAICompatibleModel, 0, len(item.Models))
+	if len(item.APIKeyEntries) > 0 {
+		apiKey = strings.TrimSpace(item.APIKeyEntries[0].APIKey)
+		proxyURL = strings.TrimSpace(item.APIKeyEntries[0].ProxyURL)
+	}
+	for _, entry := range item.APIKeyEntries {
+		trimmedAPIKey := strings.TrimSpace(entry.APIKey)
+		if trimmedAPIKey == "" {
+			continue
+		}
+		apiKeys = append(apiKeys, trimmedAPIKey)
+	}
+	for _, model := range item.Models {
+		trimmedName := strings.TrimSpace(model.Name)
+		if trimmedName == "" {
+			continue
+		}
+		models = append(models, OpenAICompatibleModel{
+			Name:  trimmedName,
+			Alias: strings.TrimSpace(model.Alias),
+		})
+	}
+	return OpenAICompatibleProvider{
+		Name:       strings.TrimSpace(item.Name),
+		Priority:   item.Priority,
+		Disabled:   item.Disabled,
+		BaseURL:    strings.TrimSpace(item.BaseURL),
+		Prefix:     strings.TrimSpace(item.Prefix),
+		ProxyURL:   proxyURL,
+		APIKey:     apiKey,
+		APIKeys:    apiKeys,
+		Models:     models,
+		Headers:    cloneHeaders(item.Headers),
+		KeyCount:   len(item.APIKeyEntries),
+		ModelCount: len(item.Models),
+		HasHeaders: len(item.Headers) > 0,
+	}
+}
+
+func unifiedOpenAICompatibleProvider(account cliproxyapi.UnifiedAccount) cliproxyapi.OpenAICompatibleProvider {
+	provider := cliproxyapi.OpenAICompatibleProvider{
+		Name:     strings.TrimSpace(account.Provider),
+		Priority: account.Priority,
+		Disabled: account.Disabled,
+	}
+	if account.OpenAICompatible == nil {
+		return provider
+	}
+	if name := strings.TrimSpace(account.OpenAICompatible.ProviderName); name != "" {
+		provider.Name = name
+	}
+	provider.BaseURL = strings.TrimSpace(account.OpenAICompatible.BaseURL)
+	provider.Prefix = strings.TrimSpace(account.OpenAICompatible.Prefix)
+	_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.APIKeyEntriesJSON)), &provider.APIKeyEntries)
+	_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.HeadersJSON)), &provider.Headers)
+	_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.ModelsJSON)), &provider.Models)
+	return provider
+}
+
+func openAICompatibleProviderFromUnifiedAccount(account cliproxyapi.UnifiedAccount) OpenAICompatibleProvider {
+	provider := openAICompatibleProviderFromSidecarConfig(unifiedOpenAICompatibleProvider(account))
+	provider.AccountKey = strings.TrimSpace(account.AccountKey)
+	return provider
+}
+
+func (a *App) ensureOpenAICompatibleProviderNameAvailable(name string, exceptAccountKey string) error {
+	trimmedName := strings.TrimSpace(name)
+	accounts, err := a.managementClient().ListAccounts()
+	if err != nil {
+		return err
+	}
+	for _, account := range accounts {
+		if account.Kind != cliproxyapi.AccountKindOpenAICompatible {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(account.AccountKey), strings.TrimSpace(exceptAccountKey)) {
+			continue
+		}
+		providerName := strings.TrimSpace(account.Provider)
+		if account.OpenAICompatible != nil && strings.TrimSpace(account.OpenAICompatible.ProviderName) != "" {
+			providerName = strings.TrimSpace(account.OpenAICompatible.ProviderName)
+		}
+		if strings.EqualFold(providerName, trimmedName) {
+			return errors.New("provider name 已存在")
+		}
+	}
+	return nil
+}
+
+func openAICompatibleAccountWrite(
+	title string,
+	name string,
+	priority int,
+	disabled bool,
+	baseURL string,
+	prefix string,
+	entries []cliproxyapi.OpenAICompatibleAPIKeyEntry,
+	headers map[string]string,
+	models []cliproxyapi.OpenAICompatibleModel,
+) cliproxyapi.AccountWriteRequest {
+	trimmedName := strings.TrimSpace(name)
+	return cliproxyapi.AccountWriteRequest{
+		Kind:     cliproxyapi.AccountKindOpenAICompatible,
+		Title:    strings.TrimSpace(title),
+		Provider: trimmedName,
+		Priority: priority,
+		Disabled: disabled,
+		OpenAICompatible: &cliproxyapi.OpenAICompatibleAccountCredential{
+			ProviderName:       trimmedName,
+			RuntimeProviderKey: "",
+			BaseURL:            strings.TrimSpace(baseURL),
+			Prefix:             strings.TrimSpace(prefix),
+			APIKeyEntriesJSON:  mustJSONString(entries),
+			HeadersJSON:        mustJSONString(headers),
+			ModelsJSON:         mustJSONString(models),
+		},
+	}
 }
 
 func normalizeReasoningEfforts(items []string) []string {

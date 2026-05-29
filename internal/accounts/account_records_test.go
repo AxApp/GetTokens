@@ -32,6 +32,9 @@ func TestBuildCodexAPIKeyAccountRecordPrefersPersistedLabel(t *testing.T) {
 	if got := record.DisplayName; got != "PRIMARY PROD KEY" {
 		t.Fatalf("DisplayName = %q, want PRIMARY PROD KEY", got)
 	}
+	if got := record.AccountKind; got != AccountKindCodexAPIKey {
+		t.Fatalf("AccountKind = %q, want %q", got, AccountKindCodexAPIKey)
+	}
 }
 
 func TestBuildCodexAPIKeyAccountRecordKeepsDisabledState(t *testing.T) {
@@ -75,6 +78,9 @@ func TestBuildOpenAICompatibleProviderAccountRecordUsesProviderPriority(t *testi
 	if got := record.ID; got != "openai-compatible:deepseek" {
 		t.Fatalf("ID = %q, want openai-compatible:deepseek", got)
 	}
+	if got := record.AccountKind; got != AccountKindOpenAICompatible {
+		t.Fatalf("AccountKind = %q, want %q", got, AccountKindOpenAICompatible)
+	}
 	if got := record.Priority; got != 9 {
 		t.Fatalf("Priority = %d, want 9", got)
 	}
@@ -83,6 +89,30 @@ func TestBuildOpenAICompatibleProviderAccountRecordUsesProviderPriority(t *testi
 	}
 	if got := record.DisplayName; got != "OPENAI-COMPATIBLE · DEEPSEEK" {
 		t.Fatalf("DisplayName = %q, want OPENAI-COMPATIBLE · DEEPSEEK", got)
+	}
+}
+
+func TestBuildUnifiedOpenAICompatibleAccountRecordKeepsAccountKeyAndKind(t *testing.T) {
+	record := BuildUnifiedAccountRecord(cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_00000000-0000-4000-8000-000000000001",
+		Kind:       cliproxyapi.AccountKindOpenAICompatible,
+		Title:      "DeepSeek Team",
+		Provider:   "deepseek",
+		OpenAICompatible: &cliproxyapi.OpenAICompatibleAccountCredential{
+			ProviderName:      "deepseek",
+			BaseURL:           "https://api.deepseek.com/v1",
+			APIKeyEntriesJSON: `[{"api-key":"sk-test-987654"}]`,
+		},
+	})
+
+	if got := record.ID; got != "acct_00000000-0000-4000-8000-000000000001" {
+		t.Fatalf("ID = %q, want account key", got)
+	}
+	if got := record.AccountKind; got != AccountKindOpenAICompatible {
+		t.Fatalf("AccountKind = %q, want %q", got, AccountKindOpenAICompatible)
+	}
+	if got := record.DisplayName; got != "DeepSeek Team" {
+		t.Fatalf("DisplayName = %q, want DeepSeek Team", got)
 	}
 }
 

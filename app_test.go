@@ -156,6 +156,7 @@ func TestAppSingleInstanceUniqueIDDefaultsToProductionLock(t *testing.T) {
 func TestMapAccountRecordPreservesStatusMessage(t *testing.T) {
 	record := mapAccountRecord(accountsdomain.AccountRecord{
 		ID:               "auth-file:broken.json",
+		AccountKind:      "auth-file",
 		Provider:         "codex",
 		CredentialSource: "auth-file",
 		DisplayName:      "broken.json",
@@ -165,6 +166,9 @@ func TestMapAccountRecordPreservesStatusMessage(t *testing.T) {
 
 	if got := record.StatusMessage; got != "refresh token expired" {
 		t.Fatalf("StatusMessage = %q, want refresh token expired", got)
+	}
+	if got := record.AccountKind; got != "auth-file" {
+		t.Fatalf("AccountKind = %q, want auth-file", got)
 	}
 }
 

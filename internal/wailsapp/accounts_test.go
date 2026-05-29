@@ -49,13 +49,14 @@ func TestUpdateCodexAPIKeyLabelPersistsToStore(t *testing.T) {
 }
 
 func TestUpdateAccountPrioritySupportsOpenAICompatibleProvider(t *testing.T) {
+	account := testOpenAICompatibleAccount("acct_deepseek", "deepseek", 1, false, "https://api.deepseek.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-old"}}, nil, nil)
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
 			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method == "GET" && path == "/v0/management/openai-compatibility" {
-					return []byte(`{"openai-compatibility":[{"name":"deepseek","priority":1,"base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-old"}]}]}`), 200, nil
+				if method == "GET" && path == "/v0/management/accounts" {
+					return testAccountsResponse(t, account), 200, nil
 				}
-				if method == "PUT" && path == "/v0/management/openai-compatibility" {
+				if method == "PATCH" && path == "/v0/management/accounts/acct_deepseek/priority" {
 					payload, err := io.ReadAll(body)
 					if err != nil {
 						t.Fatalf("read body: %v", err)
@@ -63,7 +64,7 @@ func TestUpdateAccountPrioritySupportsOpenAICompatibleProvider(t *testing.T) {
 					if !strings.Contains(string(payload), `"priority":5`) {
 						t.Fatalf("unexpected payload: %s", payload)
 					}
-					return nil, 200, nil
+					return testAccountResponse(t, account), 200, nil
 				}
 				t.Fatalf("unexpected request: %s %s", method, path)
 				return nil, 0, nil
@@ -129,25 +130,28 @@ func TestSetAccountDisabledSupportsCodexAPIKey(t *testing.T) {
 }
 
 func TestSetAccountDisabledSupportsOpenAICompatibleProvider(t *testing.T) {
+	account := testOpenAICompatibleAccount("acct_deepseek", "deepseek", 0, false, "https://api.deepseek.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-old"}}, nil, nil)
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
 			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method == "GET" && path == "/v0/management/openai-compatibility" {
-					return []byte(`{"openai-compatibility":[{"name":"deepseek","base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-old"}]}]}`), 200, nil
+				if method == "GET" && path == "/v0/management/accounts" {
+					return testAccountsResponse(t, account), 200, nil
 				}
-				if method == "PUT" && path == "/v0/management/openai-compatibility" {
+				if method == "PATCH" && path == "/v0/management/accounts/acct_deepseek/status" {
 					payload, err := io.ReadAll(body)
 					if err != nil {
 						t.Fatalf("read body: %v", err)
 					}
-					var items []cliproxyapi.OpenAICompatibleProvider
-					if err := json.Unmarshal(payload, &items); err != nil {
+					var update struct {
+						Disabled bool `json:"disabled"`
+					}
+					if err := json.Unmarshal(payload, &update); err != nil {
 						t.Fatalf("unmarshal payload: %v", err)
 					}
-					if len(items) != 1 || !items[0].Disabled {
-						t.Fatalf("expected provider to be disabled, got %#v", items)
+					if !update.Disabled {
+						t.Fatalf("expected provider to be disabled, got %#v", update)
 					}
-					return nil, 200, nil
+					return testAccountResponse(t, account), 200, nil
 				}
 				t.Fatalf("unexpected request: %s %s", method, path)
 				return nil, 0, nil
@@ -163,23 +167,23 @@ func TestSetAccountDisabledSupportsOpenAICompatibleProvider(t *testing.T) {
 func TestCreateCodexAPIKeyAllowsDuplicateConfigAsSeparateAccounts(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
-	var syncPayloads [][]cliproxyapi.CodexAPIKeyInput
+	var creates []cliproxyapi.AccountWriteRequest
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
 			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method != "PUT" || path != "/v0/management/codex-api-key" {
+				if method != "POST" || path != "/v0/management/accounts" {
 					t.Fatalf("unexpected request: %s %s", method, path)
 				}
 				payload, err := io.ReadAll(body)
 				if err != nil {
 					t.Fatalf("read body: %v", err)
 				}
-				var items []cliproxyapi.CodexAPIKeyInput
-				if err := json.Unmarshal(payload, &items); err != nil {
+				var item cliproxyapi.AccountWriteRequest
+				if err := json.Unmarshal(payload, &item); err != nil {
 					t.Fatalf("unmarshal payload: %v", err)
 				}
-				syncPayloads = append(syncPayloads, items)
-				return nil, 200, nil
+				creates = append(creates, item)
+				return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"created","provider":"codex","codex_api_key":{"api_key":"sk-test-duplicate","base_url":"https://api.openai.com/v1","prefix":"team-a","websockets":true}}`), 200, nil
 			})
 		},
 	}
@@ -198,23 +202,19 @@ func TestCreateCodexAPIKeyAllowsDuplicateConfigAsSeparateAccounts(t *testing.T) 
 		t.Fatalf("second CreateCodexAPIKey with same config: %v", err)
 	}
 
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+	if len(creates) != 2 {
+		t.Fatalf("expected 2 sidecar account creates, got %#v", creates)
 	}
-	if len(items) != 2 {
-		t.Fatalf("expected 2 stored duplicate config accounts, got %d: %#v", len(items), items)
+	if creates[0].Title != "Primary" || creates[1].Title != "Copied" {
+		t.Fatalf("unexpected create titles: %#v", creates)
 	}
-	if items[0].LocalID == "" || items[1].LocalID == "" || items[0].LocalID == items[1].LocalID {
-		t.Fatalf("expected duplicate config accounts to have distinct local ids, got %#v", items)
-	}
-	for _, item := range items {
-		if item.APIKey != "sk-test-duplicate" || item.BaseURL != "https://api.openai.com/v1" || item.Prefix != "team-a" {
+	for _, item := range creates {
+		if item.Kind != cliproxyapi.AccountKindCodexAPIKey || item.CodexAPIKey == nil {
+			t.Fatalf("unexpected account write: %#v", item)
+		}
+		if item.CodexAPIKey.APIKey != "sk-test-duplicate" || item.CodexAPIKey.BaseURL != "https://api.openai.com/v1" || item.CodexAPIKey.Prefix != "team-a" {
 			t.Fatalf("unexpected duplicate item config: %#v", item)
 		}
-	}
-	if len(syncPayloads) != 2 || len(syncPayloads[1]) != 2 {
-		t.Fatalf("expected second sidecar sync to contain both copied accounts, got %#v", syncPayloads)
 	}
 }
 

@@ -43,6 +43,7 @@ export interface OpenAICompatibleModelRow {
 }
 
 export interface OpenAICompatibleProviderDraft extends OpenAICompatibleProviderFormState {
+  accountKey?: string;
   currentName: string;
   headersText: string;
   models: OpenAICompatibleModelRow[];
@@ -229,7 +230,9 @@ export function buildOpenAICompatibleProviderDraft(
     name: provider.name,
     baseUrl: provider.baseUrl,
   });
+  const accountKey = String(provider.accountKey || '').trim();
   return {
+    ...(accountKey ? { accountKey } : {}),
     currentName: provider.name,
     name: provider.name,
     baseUrl: provider.baseUrl,

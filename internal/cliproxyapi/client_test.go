@@ -144,6 +144,57 @@ func TestDeleteOpenAICompatibleProvider(t *testing.T) {
 	}
 }
 
+func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == "GET" && path == "/v0/management/accounts":
+			return []byte(`{"accounts":[{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"Primary","provider":"codex","codex_api_key":{"api_key":"sk-test","base_url":"https://api.example.com/v1","websockets":true}}]}`), 200, nil
+		case method == "GET" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001":
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"Primary","provider":"codex"}`), 200, nil
+		case method == "POST" && path == "/v0/management/accounts":
+			assertJSONContains(t, body, `"kind":"codex-api-key"`)
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000002","kind":"codex-api-key","title":"Created","provider":"codex"}`), 200, nil
+		case method == "PATCH" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001":
+			assertJSONContains(t, body, `"title":"Updated"`)
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","title":"Updated","provider":"codex"}`), 200, nil
+		case method == "PATCH" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001/status":
+			assertJSONContains(t, body, `"disabled":true`)
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","disabled":true}`), 200, nil
+		case method == "PATCH" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001/priority":
+			assertJSONContains(t, body, `"priority":9`)
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","kind":"codex-api-key","priority":9}`), 200, nil
+		case method == "DELETE" && path == "/v0/management/accounts/acct_00000000-0000-4000-8000-000000000001":
+			return []byte(`{"ok":true}`), 200, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return nil, 404, nil
+	})
+
+	accounts, err := client.ListAccounts()
+	if err != nil || len(accounts) != 1 || accounts[0].AccountKey == "" {
+		t.Fatalf("ListAccounts = %#v, err = %v", accounts, err)
+	}
+	if account, err := client.GetAccount("acct_00000000-0000-4000-8000-000000000001"); err != nil || account.AccountKey == "" {
+		t.Fatalf("GetAccount = %#v, err = %v", account, err)
+	}
+	if account, err := client.CreateAccount(AccountWriteRequest{Kind: AccountKindCodexAPIKey, Title: "Created"}); err != nil || account.AccountKey == "" {
+		t.Fatalf("CreateAccount = %#v, err = %v", account, err)
+	}
+	if account, err := client.PatchAccount("acct_00000000-0000-4000-8000-000000000001", AccountWriteRequest{Kind: AccountKindCodexAPIKey, Title: "Updated"}); err != nil || account.Title != "Updated" {
+		t.Fatalf("PatchAccount = %#v, err = %v", account, err)
+	}
+	if account, err := client.PatchAccountStatus("acct_00000000-0000-4000-8000-000000000001", true); err != nil || !account.Disabled {
+		t.Fatalf("PatchAccountStatus = %#v, err = %v", account, err)
+	}
+	if account, err := client.PatchAccountPriority("acct_00000000-0000-4000-8000-000000000001", 9); err != nil || account.Priority != 9 {
+		t.Fatalf("PatchAccountPriority = %#v, err = %v", account, err)
+	}
+	if err := client.DeleteAccount("acct_00000000-0000-4000-8000-000000000001"); err != nil {
+		t.Fatalf("DeleteAccount returned error: %v", err)
+	}
+}
+
 func TestRateLimitClientCRUDStatusAndEvents(t *testing.T) {
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		switch {

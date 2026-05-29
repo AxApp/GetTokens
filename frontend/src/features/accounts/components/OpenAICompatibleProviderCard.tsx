@@ -153,7 +153,7 @@ export default function OpenAICompatibleProviderCard({
           </button>
           <button
             type="button"
-            onClick={() => onDelete(provider.name)}
+            onClick={() => onDelete(openAICompatibleProviderIdentity(provider))}
             className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-[var(--color-status-danger)]"
             disabled={pendingDelete}
           >
@@ -165,6 +165,14 @@ export default function OpenAICompatibleProviderCard({
       onOpen={() => onOpenDetail(provider)}
     />
   );
+}
+
+function openAICompatibleProviderIdentity(provider: OpenAICompatibleProvider): string {
+  const accountKey = String(provider.accountKey || '').trim();
+  if (accountKey) {
+    return accountKey;
+  }
+  return String(provider.name || '').trim();
 }
 
 function RegionHead({ label, value, wrap = false }: { label: string; value: string; wrap?: boolean }) {

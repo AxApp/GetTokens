@@ -3,6 +3,7 @@ package accounts
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"net/url"
 	"strings"
 
@@ -12,6 +13,12 @@ import (
 const (
 	CredentialSourceAuthFile = "auth-file"
 	CredentialSourceAPIKey   = "api-key"
+)
+
+const (
+	AccountKindAuthFile         = "auth-file"
+	AccountKindCodexAPIKey      = "codex-api-key"
+	AccountKindOpenAICompatible = "openai-compatible"
 )
 
 const (
@@ -59,6 +66,7 @@ type AuthFileRecord struct {
 
 type AccountRecord struct {
 	ID               string                   `json:"id"`
+	AccountKind      string                   `json:"accountKind,omitempty"`
 	Provider         string                   `json:"provider"`
 	CredentialSource string                   `json:"credentialSource"`
 	DisplayName      string                   `json:"displayName"`
@@ -135,6 +143,7 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 
 	return AccountRecord{
 		ID:               OpenAICompatibleProviderAssetID(name),
+		AccountKind:      AccountKindOpenAICompatible,
 		Provider:         name,
 		CredentialSource: CredentialSourceAPIKey,
 		DisplayName:      "OPENAI-COMPATIBLE · " + strings.ToUpper(name),
@@ -179,6 +188,7 @@ func BuildAuthFileAccountRecord(file AuthFileRecord) AccountRecord {
 
 	return AccountRecord{
 		ID:               "auth-file:" + strings.TrimSpace(file.Name),
+		AccountKind:      AccountKindAuthFile,
 		Provider:         provider,
 		CredentialSource: CredentialSourceAuthFile,
 		DisplayName:      displayName,
@@ -218,6 +228,7 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 
 	return AccountRecord{
 		ID:               codexAPIKeyRecordID(key),
+		AccountKind:      AccountKindCodexAPIKey,
 		Provider:         "codex",
 		CredentialSource: CredentialSourceAPIKey,
 		DisplayName:      displayName,
@@ -244,6 +255,154 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 	}
 }
 
+func BuildUnifiedAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
+	switch account.Kind {
+	case cliproxyapi.AccountKindAuthFile:
+		return buildUnifiedAuthFileAccountRecord(account)
+	case cliproxyapi.AccountKindCodexAPIKey:
+		return buildUnifiedCodexAPIKeyAccountRecord(account)
+	case cliproxyapi.AccountKindOpenAICompatible:
+		return buildUnifiedOpenAICompatibleAccountRecord(account)
+	default:
+		return AccountRecord{
+			ID:               strings.TrimSpace(account.AccountKey),
+			AccountKind:      string(account.Kind),
+			Provider:         strings.TrimSpace(account.Provider),
+			CredentialSource: CredentialSourceAPIKey,
+			DisplayName:      unifiedDisplayName(account, "ACCOUNT"),
+			Status:           unifiedStatus(account),
+			Priority:         account.Priority,
+			Disabled:         account.Disabled,
+		}
+	}
+}
+
+func BuildUnifiedAccountRecords(accounts []cliproxyapi.UnifiedAccount) []AccountRecord {
+	records := make([]AccountRecord, 0, len(accounts))
+	seen := make(map[string]struct{}, len(accounts))
+	for _, account := range accounts {
+		record := BuildUnifiedAccountRecord(account)
+		if strings.TrimSpace(record.ID) == "" {
+			continue
+		}
+		if _, ok := seen[record.ID]; ok {
+			continue
+		}
+		seen[record.ID] = struct{}{}
+		records = append(records, record)
+	}
+	return records
+}
+
+func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
+	credential := account.AuthFile
+	file := AuthFileRecord{
+		Name:     strings.TrimSpace(account.Title),
+		Provider: strings.TrimSpace(account.Provider),
+		Priority: account.Priority,
+		Disabled: account.Disabled,
+		Status:   unifiedStatus(account),
+	}
+	if credential != nil {
+		if name := strings.TrimSpace(credential.SourceFileName); name != "" {
+			file.Name = name
+		}
+		file.Type = strings.TrimSpace(credential.AuthType)
+		file.Email = strings.TrimSpace(credential.Email)
+		file.PlanType = strings.TrimSpace(credential.PlanType)
+		file.Modified = credential.ModifiedUnixMs
+		file.Size = credential.SizeBytes
+	}
+	record := BuildAuthFileAccountRecord(file)
+	record.ID = strings.TrimSpace(account.AccountKey)
+	record.DisplayName = unifiedDisplayName(account, record.DisplayName)
+	record.AuthIndex = strings.TrimSpace(account.AccountKey)
+	record.QuotaKey = strings.TrimSpace(account.AccountKey)
+	record.LocalOnly = false
+	return record
+}
+
+func buildUnifiedCodexAPIKeyAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
+	credential := account.CodexAPIKey
+	key := cliproxyapi.CodexAPIKey{
+		LocalID:  strings.TrimSpace(account.AccountKey),
+		Label:    strings.TrimSpace(account.Title),
+		Priority: account.Priority,
+		Disabled: account.Disabled,
+	}
+	if credential != nil {
+		key.APIKey = strings.TrimSpace(credential.APIKey)
+		key.BaseURL = strings.TrimSpace(credential.BaseURL)
+		key.Prefix = strings.TrimSpace(credential.Prefix)
+		key.ProxyURL = strings.TrimSpace(credential.ProxyURL)
+		key.Websockets = credential.Websockets
+		key.QuotaCurl = strings.TrimSpace(credential.QuotaCurl)
+		key.QuotaEnabled = credential.QuotaEnabled && key.QuotaCurl != ""
+		key.BillingCurl = strings.TrimSpace(credential.BillingCurl)
+		key.BillingEnabled = credential.BillingEnabled && key.BillingCurl != ""
+		key.FormatBaseURLs = parseStringMapJSON(credential.FormatBaseURLsJSON)
+		key.Headers = parseStringMapJSON(credential.HeadersJSON)
+		key.Models = parseCodexModelsJSON(credential.ModelsJSON)
+		key.ExcludedModels = parseStringListJSON(credential.ExcludedModelsJSON)
+	}
+	record := BuildCodexAPIKeyAccountRecord(key)
+	record.Status = unifiedStatus(account)
+	record.AuthIndex = strings.TrimSpace(account.AccountKey)
+	record.QuotaKey = strings.TrimSpace(account.AccountKey)
+	record.DisplayName = unifiedDisplayName(account, record.DisplayName)
+	return record
+}
+
+func buildUnifiedOpenAICompatibleAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
+	credential := account.OpenAICompatible
+	provider := cliproxyapi.OpenAICompatibleProvider{
+		Name:     strings.TrimSpace(account.Provider),
+		Priority: account.Priority,
+		Disabled: account.Disabled,
+	}
+	if credential != nil {
+		if name := strings.TrimSpace(credential.ProviderName); name != "" {
+			provider.Name = name
+		}
+		provider.BaseURL = strings.TrimSpace(credential.BaseURL)
+		provider.Prefix = strings.TrimSpace(credential.Prefix)
+		provider.APIKeyEntries = parseOpenAICompatibleAPIKeyEntriesJSON(credential.APIKeyEntriesJSON)
+		provider.Headers = parseStringMapJSON(credential.HeadersJSON)
+		provider.Models = parseOpenAICompatibleModelsJSON(credential.ModelsJSON)
+	}
+	record := BuildOpenAICompatibleProviderAccountRecord(provider)
+	record.ID = strings.TrimSpace(account.AccountKey)
+	record.Status = unifiedStatus(account)
+	record.DisplayName = unifiedDisplayName(account, record.DisplayName)
+	record.AuthIndex = strings.TrimSpace(account.AccountKey)
+	record.QuotaKey = strings.TrimSpace(account.AccountKey)
+	return record
+}
+
+func unifiedDisplayName(account cliproxyapi.UnifiedAccount, fallback string) string {
+	if title := strings.TrimSpace(account.Title); title != "" {
+		return title
+	}
+	if fallback != "" {
+		return fallback
+	}
+	return strings.TrimSpace(account.AccountKey)
+}
+
+func unifiedStatus(account cliproxyapi.UnifiedAccount) string {
+	if account.Disabled {
+		return "disabled"
+	}
+	switch strings.TrimSpace(account.RuntimeApplyStatus) {
+	case "failed":
+		return "error"
+	case "pending":
+		return "configured"
+	default:
+		return "active"
+	}
+}
+
 func cloneCodexModels(items []cliproxyapi.CodexModel) []cliproxyapi.CodexModel {
 	out := make([]cliproxyapi.CodexModel, 0, len(items))
 	seen := make(map[string]struct{}, len(items))
@@ -261,6 +420,46 @@ func cloneCodexModels(items []cliproxyapi.CodexModel) []cliproxyapi.CodexModel {
 		out = append(out, cliproxyapi.CodexModel{Name: name, Alias: alias})
 	}
 	return out
+}
+
+func parseCodexModelsJSON(raw string) []cliproxyapi.CodexModel {
+	var items []cliproxyapi.CodexModel
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &items); err != nil {
+		return nil
+	}
+	return cloneCodexModels(items)
+}
+
+func parseOpenAICompatibleModelsJSON(raw string) []cliproxyapi.OpenAICompatibleModel {
+	var items []cliproxyapi.OpenAICompatibleModel
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &items); err != nil {
+		return nil
+	}
+	return items
+}
+
+func parseOpenAICompatibleAPIKeyEntriesJSON(raw string) []cliproxyapi.OpenAICompatibleAPIKeyEntry {
+	var items []cliproxyapi.OpenAICompatibleAPIKeyEntry
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &items); err != nil {
+		return nil
+	}
+	return items
+}
+
+func parseStringMapJSON(raw string) map[string]string {
+	var items map[string]string
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &items); err != nil {
+		return nil
+	}
+	return cloneStringMap(items)
+}
+
+func parseStringListJSON(raw string) []string {
+	var items []string
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &items); err != nil {
+		return nil
+	}
+	return normalizeStringList(items)
 }
 
 func openAICompatibleModelsToCodexModels(items []cliproxyapi.OpenAICompatibleModel) []cliproxyapi.CodexModel {

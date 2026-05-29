@@ -152,7 +152,7 @@ export function subscribeAccountDisabledChanges(listener: (event: AccountDisable
 }
 
 function isCanonicalAccountID(id: string) {
-  return id.startsWith('auth-file:') || id.startsWith('codex-api-key:') || id.startsWith('openai-compatible:');
+  return id.startsWith('acct_') || id.startsWith('auth-file:') || id.startsWith('codex-api-key:') || id.startsWith('openai-compatible:');
 }
 
 function readBrowserStorage(): DisabledSyncStorage | null {

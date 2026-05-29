@@ -823,7 +823,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         await trackRequest('UpdateOpenAICompatibleProvider', { id: row.id, baseUrl: nextBaseURL, models: normalizedModels }, () =>
           UpdateOpenAICompatibleProvider(
             main.UpdateOpenAICompatibleProviderInput.createFrom({
-              currentName: row.provider,
+              currentName: row.id.startsWith('acct_') ? row.id : row.provider,
               name: row.provider,
               baseUrl: nextBaseURL,
               prefix: nextPrefix,
@@ -922,7 +922,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         await trackRequest('UpdateOpenAICompatibleProvider', { id: row.id, models: normalizedModels }, () =>
           UpdateOpenAICompatibleProvider(
             main.UpdateOpenAICompatibleProviderInput.createFrom({
-              currentName: row.provider,
+              currentName: row.id.startsWith('acct_') ? row.id : row.provider,
               name: row.provider,
               baseUrl: row.baseUrl,
               prefix: row.prefix,
