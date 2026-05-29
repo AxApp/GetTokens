@@ -833,29 +833,99 @@ func (s *Service) saveVersionNotesLocked(notes VersionNotesView) error {
 	return writeJSON(s.versionNotesPath(notes.SourceID, notes.Tag), notes)
 }
 
-func (s *Service) VersionNotes(input VersionNotesInput) (*VersionNotesView, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+func (s *Service) VersionNotes(ctx context.Context, input VersionNotesInput) (*VersionNotesView, error) {
 	if input.SourceID == "" || input.Tag == "" {
 		return nil, errors.New("source id and tag are required")
 	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	cached, cacheErr := s.cachedVersionNotes(input)
+	source, sourceErr := s.sourceByID(input.SourceID)
+	if sourceErr == nil {
+		if notes, err := s.fetchVersionNotes(ctx, source, input.Tag); err == nil {
+			return notes, nil
+		}
+	}
+	if cached != nil {
+		return cached, nil
+	}
+	if cacheErr != nil && !errors.Is(cacheErr, os.ErrNotExist) {
+		return nil, cacheErr
+	}
+	if sourceErr != nil {
+		return nil, sourceErr
+	}
+	return &VersionNotesView{
+		SourceID:      input.SourceID,
+		Tag:           input.Tag,
+		Title:         input.Tag,
+		BodyMarkdown:  "",
+		BodyPlainText: "",
+		Source:        "local",
+	}, nil
+}
+
+func (s *Service) cachedVersionNotes(input VersionNotesInput) (*VersionNotesView, error) {
 	var notes VersionNotesView
 	if err := readJSON(s.versionNotesPath(input.SourceID, input.Tag), &notes); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return &VersionNotesView{
-				SourceID:      input.SourceID,
-				Tag:           input.Tag,
-				Title:         input.Tag,
-				BodyMarkdown:  "",
-				BodyPlainText: "",
-				Source:        "local",
-			}, nil
-		}
 		return nil, err
 	}
 	notes.Source = "cache"
 	return &notes, nil
+}
+
+func (s *Service) sourceByID(sourceID string) (Source, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	manifest, err := s.loadManifest()
+	if err != nil {
+		return Source{}, err
+	}
+	for _, source := range manifest.Sources {
+		if source.ID == sourceID {
+			return source, nil
+		}
+	}
+	return Source{}, fmt.Errorf("codex_binary_source_missing: %s", sourceID)
+}
+
+func (s *Service) fetchVersionNotes(ctx context.Context, source Source, tag string) (*VersionNotesView, error) {
+	releases, err := s.releaseClient.ListReleases(ctx, source)
+	if err != nil {
+		return nil, err
+	}
+	for _, release := range releases {
+		if release.TagName != tag || release.Draft {
+			continue
+		}
+		version := strings.TrimPrefix(release.TagName, source.TagPrefix)
+		title := release.Name
+		if strings.TrimSpace(title) == "" {
+			title = release.TagName
+		}
+		notes := VersionNotesView{
+			SourceID:      source.ID,
+			Tag:           release.TagName,
+			Version:       version,
+			Title:         title,
+			HTMLURL:       release.HTMLURL,
+			PublishedAt:   formatOptionalTime(release.PublishedAt),
+			BodyMarkdown:  release.Body,
+			BodyPlainText: plainTextFromMarkdown(release.Body),
+			Source:        "remote",
+			FetchedAt:     s.now().UTC().Format(time.RFC3339),
+		}
+		s.mu.Lock()
+		saveErr := s.saveVersionNotesLocked(notes)
+		s.mu.Unlock()
+		if saveErr != nil {
+			return nil, saveErr
+		}
+		return &notes, nil
+	}
+	return nil, fmt.Errorf("codex_binary_release_missing: %s", tag)
 }
 
 func (s *Service) useLocked(manifest *Manifest, versionID string, expectedCurrent string) error {
@@ -1082,13 +1152,15 @@ func (s *Service) managedConfig() ManagedConfigView {
 	binPath := filepath.Join(binDir, "codex")
 	resolved, _ := exec.LookPath("codex")
 	profilePath, profileKind, _ := s.resolveShellProfile()
+	processPathConfigured := pathContainsDir(os.Getenv("PATH"), binDir)
+	profilePathConfigured := managedProfileContainsBinDir(profilePath, binDir)
 	return ManagedConfigView{
 		BinDir:              binDir,
 		BinPath:             binPath,
 		EnableCommand:       managedPathCommand(binDir, profilePath),
 		ProfilePath:         profilePath,
 		ProfileKind:         profileKind,
-		IsPathConfigured:    pathContainsDir(os.Getenv("PATH"), binDir),
+		IsPathConfigured:    processPathConfigured || profilePathConfigured,
 		ResolvedCodexPath:   resolved,
 		IsResolvedToManaged: samePath(resolved, binPath),
 	}
@@ -2348,6 +2420,24 @@ func pathContainsDir(pathValue string, dir string) bool {
 		}
 	}
 	return false
+}
+
+func managedProfileContainsBinDir(profilePath string, binDir string) bool {
+	if profilePath == "" || binDir == "" {
+		return false
+	}
+	content, err := os.ReadFile(profilePath)
+	if err != nil {
+		return false
+	}
+	text := string(content)
+	start := strings.Index(text, managedPathBlockStart)
+	end := strings.Index(text, managedPathBlockEnd)
+	if start < 0 || end < start {
+		return false
+	}
+	block := text[start : end+len(managedPathBlockEnd)]
+	return strings.Contains(block, shellQuote(binDir)) || strings.Contains(block, binDir)
 }
 
 func samePath(left string, right string) bool {

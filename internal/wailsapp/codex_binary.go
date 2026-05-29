@@ -51,7 +51,11 @@ func (a *App) DeleteCodexBinaryVersion(input codexbinary.VersionActionInput) (*c
 }
 
 func (a *App) GetCodexBinaryVersionNotes(input codexbinary.VersionNotesInput) (*codexbinary.VersionNotesView, error) {
-	return a.codexBinary.VersionNotes(input)
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return a.codexBinary.VersionNotes(ctx, input)
 }
 
 func (a *App) GetCodexBinaryDoctor() (*codexbinary.DoctorSummary, error) {

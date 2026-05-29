@@ -143,6 +143,18 @@
 - 2026-05-21 已补齐摘要面板和版本 cell 的设计系统运行时圈定：
   - `CodexBinarySummaryPanel` 与 `CodexBinaryVersionCell` 根节点新增 `data-design-system-component="true"` 和对应 `data-design-system-component-name`，项目页设计系统高亮可直接定位 Codex Binary 业务组件。
   - `storyCatalog.test.mjs` 将这两个业务组件纳入 runtime marker 门禁，避免后续重构移除标记。
+- 2026-05-29 Codex 接管该页面维护：
+  - 当前责任边界：Codex Binary 页面继续按 `.agents/skills/gettokens-codex-binary-management/SKILL.md` 维护，保持独立业务，不混入账号池、local apply、用量、会话或路由策略。
+  - 接管基线：工作区干净；`frontend/src/features/codex-binary` 已拆为 controller、summary panel、version list、version cell、model 与 presentation 工具。
+  - 验证基线：已运行 `npm --prefix frontend run test:unit -- src/features/codex-binary/model.test.mjs`，实际触发完整 frontend unit suite，613 个测试全通过。
+  - 补充验证：`npm --prefix frontend run typecheck`、`npm --prefix frontend run build`、`go test ./internal/codexbinary ./internal/wailsapp` 均通过；build 仅有既有 chunk size warning。
+  - 治理补齐：新增可跟踪的 `screenshots/.gitkeep`，并调整 `.gitignore` 为忽略截图内容但允许保留截图目录骨架。
+- 2026-05-29 已修复托管 PATH 与 release notes 两个回归：
+  - 根因 1：`managedConfig()` 只检查当前 App 进程的 `PATH`。macOS GUI App 重启后通常不会 source shell profile，导致 profile 里已有 GetTokens managed block 时仍显示“一键托管”。
+  - 修复 1：托管状态改为同时检查进程 `PATH` 和目标 profile 中的 GetTokens managed block；新增 `TestManagedPathSnapshotUsesProfileBlockAfterAppRestart`。
+  - 根因 2：`VersionNotes()` 只读 `cache/release-notes`，有缓存就标记为 `cache`，无缓存就返回 `local` 空内容，点击版本行不会请求 GitHub。
+  - 修复 2：`GetCodexBinaryVersionNotes` 进入后端时优先通过 release client 拉取对应 GitHub release body，成功后刷新本地缓存；远端失败时才回退缓存；新增 `TestVersionNotesPrefersRemoteWhenCacheExists` 和 `TestVersionNotesFallsBackToCacheWhenRemoteFails`。
+  - 验证：`go test ./internal/codexbinary ./internal/wailsapp`、`go test ./...`、`npm --prefix frontend run test:unit -- src/features/codex-binary/model.test.mjs`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run build` 均通过；build 仅有既有 chunk size warning。
 - 本切片未完成项：
   - 取消下载、下载 event 推送仍为后续实现项；当前下载进度通过 snapshot 轮询展示。
 
@@ -220,5 +232,5 @@
   - `docs-linhay/dev/codex-binary-management-design-2026-05-11.md`
 
 ## 当前状态
-- 状态：design-system-runtime-marker-admitted
-- 最近更新：2026-05-21
+- 状态：codex-owned-maintenance
+- 最近更新：2026-05-29
