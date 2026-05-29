@@ -173,29 +173,77 @@ func TestDeleteVersionRejectsSelectedVersion(t *testing.T) {
 	}
 }
 
-func TestVersionNotesUsesCacheWhenPresent(t *testing.T) {
+func TestVersionNotesPrefersRemoteWhenCacheExists(t *testing.T) {
 	root := t.TempDir()
-	service := NewService(ServiceOptions{RootDir: root, Now: fixedNow})
+	service := NewService(ServiceOptions{
+		RootDir: root,
+		Now:     fixedNow,
+		ReleaseClient: fakeReleaseClient{releases: []GitHubRelease{{
+			TagName:     "rust-v0.120.0",
+			Name:        "rust-v0.120.0",
+			Body:        "## Changed\n- Remote body",
+			HTMLURL:     "https://github.com/openai/codex/releases/tag/rust-v0.120.0",
+			PublishedAt: fixedNow(),
+			Assets: []GitHubReleaseAsset{{
+				Name:        "codex-aarch64-apple-darwin.tar.gz",
+				DownloadURL: "https://example.com/codex-aarch64-apple-darwin.tar.gz",
+				Size:        10,
+			}}},
+		}},
+		GOOS:   "darwin",
+		GOARCH: "arm64",
+	})
 	if err := service.SaveVersionNotes(VersionNotesView{
 		SourceID:      "openai-codex-github",
 		Tag:           "rust-v0.120.0",
 		Version:       "0.120.0",
 		Title:         "rust-v0.120.0",
-		BodyMarkdown:  "## Changed\n- Faster startup",
-		BodyPlainText: "Changed\nFaster startup",
+		BodyMarkdown:  "## Changed\n- Cached body",
+		BodyPlainText: "Changed\nCached body",
 		Source:        "remote",
 	}); err != nil {
 		t.Fatalf("SaveVersionNotes() error = %v", err)
 	}
 
-	notes, err := service.VersionNotes(VersionNotesInput{SourceID: "openai-codex-github", Tag: "rust-v0.120.0"})
+	notes, err := service.VersionNotes(context.Background(), VersionNotesInput{SourceID: "openai-codex-github", Tag: "rust-v0.120.0"})
+	if err != nil {
+		t.Fatalf("VersionNotes() error = %v", err)
+	}
+	if notes.Source != "remote" {
+		t.Fatalf("Source = %q, want remote", notes.Source)
+	}
+	if !strings.Contains(notes.BodyMarkdown, "Remote body") {
+		t.Fatalf("BodyMarkdown = %q, want remote body", notes.BodyMarkdown)
+	}
+}
+
+func TestVersionNotesFallsBackToCacheWhenRemoteFails(t *testing.T) {
+	root := t.TempDir()
+	service := NewService(ServiceOptions{
+		RootDir:       root,
+		Now:           fixedNow,
+		ReleaseClient: fakeReleaseClient{err: errors.New("rate limited")},
+	})
+	if err := service.SaveVersionNotes(VersionNotesView{
+		SourceID:      "openai-codex-github",
+		Tag:           "rust-v0.120.0",
+		Version:       "0.120.0",
+		Title:         "rust-v0.120.0",
+		BodyMarkdown:  "## Changed\n- Cached body",
+		BodyPlainText: "Changed\nCached body",
+		Source:        "remote",
+	}); err != nil {
+		t.Fatalf("SaveVersionNotes() error = %v", err)
+	}
+
+	notes, err := service.VersionNotes(context.Background(), VersionNotesInput{SourceID: "openai-codex-github", Tag: "rust-v0.120.0"})
 	if err != nil {
 		t.Fatalf("VersionNotes() error = %v", err)
 	}
 	if notes.Source != "cache" {
 		t.Fatalf("Source = %q, want cache", notes.Source)
 	}
-	if !strings.Contains(notes.BodyMarkdown, "Faster startup") {
+	if !strings.Contains(notes.BodyMarkdown, "Cached body") {
 		t.Fatalf("BodyMarkdown = %q, want cached body", notes.BodyMarkdown)
 	}
 }
@@ -726,6 +774,34 @@ func TestEnableManagedPathIsIdempotent(t *testing.T) {
 	}
 	if count := strings.Count(string(content), managedPathBlockStart); count != 1 {
 		t.Fatalf("managed block count = %d, want 1", count)
+	}
+}
+
+func TestManagedPathSnapshotUsesProfileBlockAfterAppRestart(t *testing.T) {
+	root := t.TempDir()
+	profilePath := filepath.Join(root, ".zshrc")
+	service := NewService(ServiceOptions{
+		RootDir:          filepath.Join(root, "codex"),
+		Now:              fixedNow,
+		ShellProfilePath: profilePath,
+	})
+	t.Setenv("PATH", "/usr/bin:/bin")
+	if _, err := service.EnableManagedPath(); err != nil {
+		t.Fatalf("EnableManagedPath() error = %v", err)
+	}
+
+	t.Setenv("PATH", "/usr/bin:/bin")
+	restarted := NewService(ServiceOptions{
+		RootDir:          filepath.Join(root, "codex"),
+		Now:              fixedNow,
+		ShellProfilePath: profilePath,
+	})
+	snapshot, err := restarted.Snapshot()
+	if err != nil {
+		t.Fatalf("Snapshot() error = %v", err)
+	}
+	if !snapshot.ManagedConfig.IsPathConfigured {
+		t.Fatalf("IsPathConfigured = false after restart, want true from managed profile block")
 	}
 }
 
