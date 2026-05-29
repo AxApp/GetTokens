@@ -34,6 +34,10 @@ export function CheckUpdate() {
   return window['go']['main']['App']['CheckUpdate']();
 }
 
+export function CommitAccountMigration() {
+  return window['go']['main']['App']['CommitAccountMigration']();
+}
+
 export function ConsumePendingDeepLinks() {
   return window['go']['main']['App']['ConsumePendingDeepLinks']();
 }
@@ -64,6 +68,10 @@ export function DeleteCodexAPIKey(arg1) {
 
 export function DeleteCodexBinaryVersion(arg1) {
   return window['go']['main']['App']['DeleteCodexBinaryVersion'](arg1);
+}
+
+export function DeleteLegacyAccountSources() {
+  return window['go']['main']['App']['DeleteLegacyAccountSources']();
 }
 
 export function DeleteOpenAICompatibleProvider(arg1) {
@@ -104,6 +112,10 @@ export function FetchVendorStatusRSS(arg1) {
 
 export function FinalizeCodexOAuth(arg1) {
   return window['go']['main']['App']['FinalizeCodexOAuth'](arg1);
+}
+
+export function GetAccountMigrationPreview() {
+  return window['go']['main']['App']['GetAccountMigrationPreview']();
 }
 
 export function GetAllRateLimitStatuses() {

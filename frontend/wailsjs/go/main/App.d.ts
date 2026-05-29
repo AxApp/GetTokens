@@ -21,6 +21,8 @@ export function CanApplyUpdate():Promise<boolean>;
 
 export function CheckUpdate():Promise<updater.ReleaseInfo>;
 
+export function CommitAccountMigration():Promise<main.AccountMigrationCommitResult>;
+
 export function ConsumePendingDeepLinks():Promise<Array<string>>;
 
 export function CreateCodexAPIKey(arg1:main.CreateCodexAPIKeyInput):Promise<void>;
@@ -36,6 +38,8 @@ export function DeleteClaudeCodeSubagent(arg1:main.DeleteClaudeCodeSubagentInput
 export function DeleteCodexAPIKey(arg1:string):Promise<void>;
 
 export function DeleteCodexBinaryVersion(arg1:codexbinary.VersionActionInput):Promise<codexbinary.DeleteVersionResult>;
+
+export function DeleteLegacyAccountSources():Promise<main.AccountMigrationDeleteResult>;
 
 export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
 
@@ -56,6 +60,8 @@ export function FetchProxySubscription(arg1:main.FetchProxySubscriptionInput):Pr
 export function FetchVendorStatusRSS(arg1:string):Promise<string>;
 
 export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<void>;
+
+export function GetAccountMigrationPreview():Promise<main.AccountMigrationPreview>;
 
 export function GetAllRateLimitStatuses():Promise<Array<main.RateLimitState>>;
 

@@ -111,6 +111,18 @@ func TestConsumeLoginItemArgReportsMissingArg(t *testing.T) {
 	}
 }
 
+func TestAppSingleInstanceUniqueIDSeparatesDevAndProd(t *testing.T) {
+	if got := appSingleInstanceUniqueIDFrom("", "/Applications/GetTokens.app/Contents/MacOS/GetTokens"); got != "com.linhay.gettokens" {
+		t.Fatalf("prod single instance id = %q", got)
+	}
+	if got := appSingleInstanceUniqueIDFrom("dev", "/Applications/GetTokens.app/Contents/MacOS/GetTokens"); got != "com.linhay.gettokens.dev" {
+		t.Fatalf("dev env single instance id = %q", got)
+	}
+	if got := appSingleInstanceUniqueIDFrom("", "/repo/build/bin/GetTokens.app/Contents/MacOS/GetTokens"); got != "com.linhay.gettokens.dev" {
+		t.Fatalf("dev bundle single instance id = %q", got)
+	}
+}
+
 func TestConsumeDeepLinkArgsRemovesGetTokensURLsBeforeWailsParsesFlags(t *testing.T) {
 	args, links := consumeDeepLinkArgs([]string{
 		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",

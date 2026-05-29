@@ -173,6 +173,46 @@ type UnifiedAccountsResponse struct {
 	Items []UnifiedAccount `json:"accounts"`
 }
 
+type AccountMigrationCandidate struct {
+	AccountKey        string                  `json:"account_key"`
+	Kind              AccountKind             `json:"kind"`
+	Title             string                  `json:"title"`
+	Provider          string                  `json:"provider"`
+	CredentialSource  AccountCredentialSource `json:"credential_source"`
+	Priority          int                     `json:"priority"`
+	Disabled          bool                    `json:"disabled"`
+	LegacyID          string                  `json:"legacy_id"`
+	SourcePath        string                  `json:"source_path,omitempty"`
+	SourceKey         string                  `json:"source_key,omitempty"`
+	SourceFingerprint string                  `json:"source_fingerprint,omitempty"`
+}
+
+type AccountMigrationReport struct {
+	GeneratedAtUnixMs int64                       `json:"generated_at_unix_ms"`
+	Candidates        []AccountMigrationCandidate `json:"candidates"`
+	Warnings          []string                    `json:"warnings,omitempty"`
+}
+
+type AccountMigrationCommitReport struct {
+	Imported int      `json:"imported"`
+	Skipped  int      `json:"skipped"`
+	Errors   []string `json:"errors,omitempty"`
+}
+
+type AccountMigrationDeleteResult struct {
+	Deleted   int                                `json:"deleted"`
+	BackupDir string                             `json:"backup_dir,omitempty"`
+	Items     []AccountMigrationDeleteResultItem `json:"items,omitempty"`
+}
+
+type AccountMigrationDeleteResultItem struct {
+	ID         string `json:"id"`
+	SourceKind string `json:"source_kind"`
+	SourcePath string `json:"source_path,omitempty"`
+	BackupPath string `json:"backup_path,omitempty"`
+	Deleted    bool   `json:"deleted"`
+}
+
 type AccountWriteRequest struct {
 	Kind             AccountKind                        `json:"kind"`
 	Title            string                             `json:"title,omitempty"`

@@ -58,30 +58,43 @@
 ## 阶段 2：GetTokens App / Wails 接入
 
 - [x] `internal/cliproxyapi` 增加统一账号 API client 与 DTO。
+- [x] `internal/cliproxyapi` 增加 account migration dry-run / commit / delete legacy client 与摘要 DTO。
 - [x] Wails 账号列表优先读取 sidecar `/v0/management/accounts`。
+- [x] Wails 增加启动迁移桥接：`GetAccountMigrationPreview`、`CommitAccountMigration`、`DeleteLegacyAccountSources`。
 - [x] Codex API key 账号的创建、更新、删除、禁用、优先级优先走统一账号 API。
 - [x] OpenAI-compatible provider 的列表、创建、编辑、删除、禁用、优先级走统一账号 API。
-- [x] root Wails DTO / mapper / bindings 同步透出统一账号字段。
+- [x] root Wails DTO / mapper / bindings 同步透出统一账号字段与迁移摘要字段。
 - [x] `AccountRecord` 透出 `accountKind`，避免继续依赖旧 ID 前缀判断账号类型。
 
 验收：
 
 - 父仓 `go test ./internal/...` 通过。
 - Wails 绑定文件已更新。
+- 迁移 preview 只向前端暴露账号数、候选数、类型摘要、警告和备份提示，不传凭证、auth JSON、raw candidate 或 secret。
+- delete legacy 前 Wails 侧再次检查 SQLite 账号数不为 0，前端还需要用户显式勾选确认。
 - 旧 ID 分支只作为迁移前残留卡片和既有测试兼容路径，不再作为新事实源。
 
-## 阶段 3：Web 侧账号身份适配
+## 阶段 3：Web 侧账号身份适配与启动迁移引导
 
 - [x] 前端账号类型判断优先使用 `accountKind`。
 - [x] OpenAI-compatible 前端模型透出 `accountKey`。
 - [x] 详情保存、卡片操作、hash、Codex/Claude 列表优先使用 `acct_*`。
 - [x] 旧 `auth-file:` / `codex-api-key:` / `openai-compatible:` 前缀只保留为迁移前兜底。
+- [x] App 启动完成且 sidecar `ready` 后检查账号迁移 preview。
+- [x] 启动流程收敛为：App 启动 -> 加载动画 -> 如有旧账号源则显示迁移页 -> 用户点确认 -> 执行迁移并清理旧源 -> 进入主页面。
+- [x] 当 preview 为 `needs-migration` 或 `ready-to-delete-legacy` 时，显示覆盖整个 App shell 的整屏 modal，阻断进入工作台；preview 未返回前只显示 `PageLoadingFallback`。
+- [x] 浏览器预览支持 `?preview=account-migration`，用于不连接 Wails/sidecar 时做桌面布局截图。
+- [x] 迁移 modal 只展示保迁/重做/删除范围、SQLite 账号数、旧源候选数和类型摘要；不展示任何敏感凭证内容。
+- [x] 迁移页使用单确认按钮：`needs-migration` 时先 commit，再在 SQLite 账号已写入后自动 delete legacy sources；`ready-to-delete-legacy` 时只执行 delete legacy sources。
 
 验收：
 
 - `npm run typecheck` 通过。
 - `npm run test:unit` 通过。
 - `npm run build` 通过；当前仅存在 Vite chunk size warning。
+- 桌面截图已归档：`docs-linhay/spaces/20260529-account-credential-sqlite-store/screenshots/20260529/account-migration/20260529-account-migration-startup-modal-desktop-after-v01.png`。
+- 浏览器预览点击验证：点击 `确认迁移` 后迁移页消失，主框架 `[data-collaboration-id="MAIN_FRAME"]` 存在。
+- GetTokens 默认不做移动端适配和移动端截图验收，当前启动迁移 modal 按 macOS/Wails 桌面工作台验收。
 
 ## 阶段 4：文档、记忆与提交
 
@@ -143,18 +156,19 @@
 ## 阶段 7：发布前最终回归
 
 - [x] sidecar：`go test ./internal/...`。
-- [x] 父仓：`go test ./internal/...`。
-- [x] 前端：`npm run typecheck`。
-- [x] 前端：`npm run test:unit`。
-- [x] 前端：`npm run build`。
+- [x] 父仓：`go test ./...`。
+- [x] 前端：`npm --prefix frontend run typecheck`。
+- [x] 前端：`npm --prefix frontend run test:unit`。
+- [x] 前端：`npm --prefix frontend run build`。
+- [x] 浏览器桌面预览截图：`?preview=account-migration#frame=accounts`。
 - [ ] 真实桌面验收：账号池三类账号展示、创建、编辑、禁用、priority、删除、重启恢复。
 
 验收：
 
 - 所有自动化门禁通过。
 - 本轮测试执行时间：2026-05-29。
-- `npm run test:unit` 结果：614 passed。
-- `npm run build` 结果：通过，仅保留 Vite chunk size warning。
+- `npm --prefix frontend run test:unit` 结果：620 passed。
+- `npm --prefix frontend run build` 结果：通过，仅保留 Vite chunk size warning。
 - `docs-linhay/scripts/check-docs.sh` 结果：失败，原因是历史 spaces 缺 `plans/screenshots/debate`；当前 `20260529-account-credential-sqlite-store` space 结构齐全，未出现在错误列表。
 - 桌面 App 侧显示的账号卡 ID 均优先为 `acct_*`。
 - 旧账号事实源删除后，新建和更新账号不会再写回旧 JSON store 或 `config.yaml` 账号段。

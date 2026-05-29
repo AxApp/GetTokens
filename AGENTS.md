@@ -46,6 +46,7 @@
 15. 通用看板产品线按固定节奏推进：新建 `space` -> 设计需求 -> 技术细节补充 -> 回到需求调整 -> 调整设计系统的稿子 -> 执行开发 -> 冒烟测试 -> 交付用户测试。
 16. sidecar 是 GetTokens 运行态自治层。账号选择、rate-limit、route guard、live sessions、usage attribution、system proxy、Codex WebSocket 等热路径状态优先在 `CLIProxyAPI#gettokens/sidecar` 内闭环，不通过前端或 Wails 临时补偿来伪造 sidecar 已处理状态。
 17. 从账号与凭证 SQLite 统一存储版本开始，GetTokens sidecar 不再跟随 CLIProxyAPI 上游做合并式同步。上游提交和功能只能作为参考输入；需要的能力必须在 GetTokens sidecar 边界内重新设计、实现、补窄测试并重建 sidecar。management API 可以按 GetTokens 需求破坏性调整，不为了上游兼容保留旧合约。
+18. GetTokens 是 macOS/Wails 桌面工作台产品，默认不做移动端适配、移动端截图或 375/390px 宽度验收。前端与视觉改动默认按桌面窗口、Wails 容器和可用的桌面浏览器预览验收；只有用户在当前需求中明确提出移动端目标时，才增加移动端布局与截图门禁。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。

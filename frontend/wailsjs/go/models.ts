@@ -572,6 +572,134 @@ export namespace codexbinary {
 
 export namespace main {
 
+	export class AccountMigrationKindSummary {
+	    kind: string;
+	    count: number;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountMigrationKindSummary(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.kind = source["kind"];
+	        this.count = source["count"];
+	    }
+	}
+	export class AccountMigrationPreview {
+	    status: string;
+	    accountCount: number;
+	    candidateCount: number;
+	    kindSummary: AccountMigrationKindSummary[];
+	    warnings?: string[];
+	    generatedAtUnixMs?: number;
+	    backupHint: string;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountMigrationPreview(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.status = source["status"];
+	        this.accountCount = source["accountCount"];
+	        this.candidateCount = source["candidateCount"];
+	        this.kindSummary = this.convertValues(source["kindSummary"], AccountMigrationKindSummary);
+	        this.warnings = source["warnings"];
+	        this.generatedAtUnixMs = source["generatedAtUnixMs"];
+	        this.backupHint = source["backupHint"];
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class AccountMigrationCommitResult {
+	    imported: number;
+	    skipped: number;
+	    errors?: string[];
+	    preview?: AccountMigrationPreview;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountMigrationCommitResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.imported = source["imported"];
+	        this.skipped = source["skipped"];
+	        this.errors = source["errors"];
+	        this.preview = this.convertValues(source["preview"], AccountMigrationPreview);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	export class AccountMigrationDeleteResult {
+	    deleted: number;
+	    backupDir?: string;
+	    preview?: AccountMigrationPreview;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountMigrationDeleteResult(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.deleted = source["deleted"];
+	        this.backupDir = source["backupDir"];
+	        this.preview = this.convertValues(source["preview"], AccountMigrationPreview);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
+
 	export class OpenAICompatibleModel {
 	    name: string;
 	    alias?: string;
@@ -5448,6 +5576,7 @@ export namespace main {
 	        this.responseBody = source["responseBody"];
 	    }
 	}
+
 }
 
 export namespace sidecar {
