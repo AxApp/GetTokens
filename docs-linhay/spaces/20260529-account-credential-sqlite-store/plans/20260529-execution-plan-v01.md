@@ -94,7 +94,7 @@
 验收：
 
 - sidecar fork 和父仓提交后均为 clean。
-- 当前两个仓库各自 `ahead 1`，尚未 push。
+- sidecar fork 和父仓功能分支已 push。
 - `docs-linhay/scripts/check-docs.sh` 失败原因是历史 space 缺少 `plans/screenshots/debate`，不是本 space 新增问题。
 
 ## 阶段 5：推送与合并
@@ -109,7 +109,8 @@
 - 远端可获取 sidecar commit `a4896197`。
 - 远端可获取父仓 commit `6ef891f`。
 - 父仓 gitlink 指向 sidecar commit `a489619720a2627473c8c8d7d1c9923d00d2562f`，该 commit 已存在于远端 `gettokens/sidecar`。
-- PR：`https://github.com/AxApp/GetTokens/pull/4`。
+- PR：`https://github.com/AxApp/GetTokens/pull/4`，已合并。
+- merge commit：`5c5f31a00e0db146e5dbb5d0a2fa49f20cd72182`。
 - CI 或本地复验可从源码重建 sidecar，不依赖 CLIProxyAPI 上游 release 资产。
 
 ## 阶段 6：真实账号迁移与旧源删除

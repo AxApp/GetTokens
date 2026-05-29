@@ -77,5 +77,5 @@
 - Codex API key 账号池架构：`docs-linhay/dev/20260425-account-pool-codex-api-key-architecture.md`
 
 ## 当前状态
-- 状态：finalized
+- 状态：merged
 - 最近更新：2026-05-29
