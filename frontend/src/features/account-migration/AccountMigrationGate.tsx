@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Database, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { Database, Loader2, RefreshCw } from 'lucide-react';
 import {
   CommitAccountMigration,
   DeleteLegacyAccountSources,
@@ -12,7 +12,6 @@ import { toErrorMessage } from '../../utils/error';
 import { hasPreviewMode, hasWailsAppBindings } from '../../utils/previewMode';
 import {
   canCommitAccountMigration,
-  canDeleteLegacyAccountSources,
   formatAccountMigrationKind,
   resolveAccountMigrationStepState,
   shouldCheckAccountMigration,
@@ -71,7 +70,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
     setError('');
     setMessage('');
     try {
-      if (preview?.status === 'needs-migration') {
+      if (preview?.status === 'needs-migration' || preview?.status === 'ready-to-delete-legacy') {
         if (!canCommitAccountMigration(preview, false)) {
           return;
         }
@@ -99,18 +98,6 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
         setBusyAction('delete');
         await deleteLegacySourcesAfterConfirm(nextPreview);
         return;
-      }
-      if (preview?.status === 'ready-to-delete-legacy') {
-        if (!canDeleteLegacyAccountSources(preview, false)) {
-          return;
-        }
-        setBusyAction('delete');
-        if (previewMode) {
-          setPreview(buildPreviewAccountMigrationState('ready'));
-          setMessage('已删除 12 个旧账号来源，进入主页面。');
-          return;
-        }
-        await deleteLegacySourcesAfterConfirm(preview);
       }
     } catch (nextError) {
       setError(toErrorMessage(nextError));
@@ -168,10 +155,10 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
         }
       : preview?.status === 'ready-to-delete-legacy'
         ? {
-            label: busyAction === 'delete' ? '清理中' : '确认清理旧源',
-            icon: busyAction === 'delete' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />,
+            label: busyAction ? '处理中' : '确认迁移并清理旧源',
+            icon: busyAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />,
             onClick: handleConfirmMigration,
-            disabled: !canDeleteLegacyAccountSources(preview, busyAction !== null),
+            disabled: !canCommitAccountMigration(preview, busyAction !== null),
           }
         : null;
 
@@ -253,7 +240,7 @@ export default function AccountMigrationGate({ sidecarStatus, children }: Accoun
                 <MigrationStat label="SQLite 账号" value={`${migratedAccounts}`} />
                 <MigrationStat
                   label="当前阶段"
-                  value={stepState.cleanup === 'active' ? '清理旧源' : stepState.commit === 'active' ? '写入 SQLite' : '检查中'}
+                  value={stepState.commit === 'active' ? '写入 SQLite' : stepState.cleanup === 'done' ? '完成' : '检查中'}
                 />
               </div>
             </div>

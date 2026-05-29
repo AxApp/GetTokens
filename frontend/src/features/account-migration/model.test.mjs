@@ -27,7 +27,7 @@ test('shouldShowAccountMigrationGate blocks only migration and cleanup states', 
 test('canCommitAccountMigration requires candidates and idle state', () => {
   assert.equal(canCommitAccountMigration({ status: 'needs-migration', candidateCount: 2 }, false), true);
   assert.equal(canCommitAccountMigration({ status: 'needs-migration', candidateCount: 0 }, false), false);
-  assert.equal(canCommitAccountMigration({ status: 'ready-to-delete-legacy', candidateCount: 2 }, false), false);
+  assert.equal(canCommitAccountMigration({ status: 'ready-to-delete-legacy', candidateCount: 2 }, false), true);
   assert.equal(canCommitAccountMigration({ status: 'needs-migration', candidateCount: 2 }, true), false);
 });
 
@@ -41,7 +41,7 @@ test('canDeleteLegacyAccountSources requires migrated accounts, candidates and i
 test('resolveAccountMigrationStepState maps preview status to the three-step gate', () => {
   assert.deepEqual(resolveAccountMigrationStepState(null), { inspect: 'active', commit: 'pending', cleanup: 'pending' });
   assert.deepEqual(resolveAccountMigrationStepState({ status: 'needs-migration' }), { inspect: 'done', commit: 'active', cleanup: 'pending' });
-  assert.deepEqual(resolveAccountMigrationStepState({ status: 'ready-to-delete-legacy' }), { inspect: 'done', commit: 'done', cleanup: 'active' });
+  assert.deepEqual(resolveAccountMigrationStepState({ status: 'ready-to-delete-legacy' }), { inspect: 'done', commit: 'active', cleanup: 'pending' });
   assert.deepEqual(resolveAccountMigrationStepState({ status: 'ready' }), { inspect: 'done', commit: 'done', cleanup: 'done' });
 });
 

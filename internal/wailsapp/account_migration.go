@@ -2,6 +2,7 @@ package wailsapp
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
@@ -70,14 +71,22 @@ func (a *App) CommitAccountMigration() (*AccountMigrationCommitResult, error) {
 }
 
 func (a *App) DeleteLegacyAccountSources() (*AccountMigrationDeleteResult, error) {
-	accounts, err := a.managementClient().ListAccounts()
+	client := a.managementClient()
+	commitReport, err := client.CommitAccountMigration()
+	if err != nil {
+		return nil, err
+	}
+	if len(commitReport.Errors) > 0 {
+		return nil, errors.New(strings.Join(commitReport.Errors, "\n"))
+	}
+	accounts, err := client.ListAccounts()
 	if err != nil {
 		return nil, err
 	}
 	if len(accounts) == 0 {
 		return nil, errors.New("迁移后账号为空，禁止删除旧账号事实源")
 	}
-	result, err := a.managementClient().DeleteLegacyAccountSources()
+	result, err := client.DeleteLegacyAccountSources()
 	if err != nil {
 		return nil, err
 	}

@@ -99,15 +99,67 @@ func TestDeleteLegacyAccountSourcesRequiresMigratedAccounts(t *testing.T) {
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
 			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if path != "/v0/management/accounts" {
+				switch path {
+				case "/v0/management/account-migration/commit":
+					return []byte(`{"imported":0,"skipped":0}`), 200, nil
+				case "/v0/management/accounts":
+					return []byte(`{"accounts":[]}`), 200, nil
+				default:
 					t.Fatalf("unexpected request: %s %s", method, path)
 				}
-				return []byte(`{"accounts":[]}`), 200, nil
+				return nil, 404, nil
 			})
 		},
 	}
 
 	if _, err := app.DeleteLegacyAccountSources(); err == nil {
 		t.Fatal("expected DeleteLegacyAccountSources to reject empty migrated accounts")
+	}
+}
+
+func TestDeleteLegacyAccountSourcesCommitsBeforeDeleting(t *testing.T) {
+	paths := []string{}
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				paths = append(paths, path)
+				switch path {
+				case "/v0/management/account-migration/commit":
+					return []byte(`{"imported":11,"skipped":1}`), 200, nil
+				case "/v0/management/accounts":
+					return []byte(`{"accounts":[{"account_key":"acct_1","kind":"auth-file","title":"codex","provider":"codex"}]}`), 200, nil
+				case "/v0/management/account-migration/delete-legacy-sources":
+					return []byte(`{"deleted":12,"backup_dir":"/tmp/backup"}`), 200, nil
+				case "/v0/management/account-migration/dry-run":
+					return []byte(`{"generated_at_unix_ms":1780000000000,"candidates":[]}`), 200, nil
+				default:
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				return nil, 404, nil
+			})
+		},
+	}
+
+	result, err := app.DeleteLegacyAccountSources()
+	if err != nil {
+		t.Fatalf("DeleteLegacyAccountSources: %v", err)
+	}
+	if result.Deleted != 12 {
+		t.Fatalf("deleted = %d", result.Deleted)
+	}
+	want := []string{
+		"/v0/management/account-migration/commit",
+		"/v0/management/accounts",
+		"/v0/management/account-migration/delete-legacy-sources",
+		"/v0/management/accounts",
+		"/v0/management/account-migration/dry-run",
+	}
+	if len(paths) != len(want) {
+		t.Fatalf("paths = %#v", paths)
+	}
+	for i := range want {
+		if paths[i] != want[i] {
+			t.Fatalf("paths = %#v", paths)
+		}
 	}
 }

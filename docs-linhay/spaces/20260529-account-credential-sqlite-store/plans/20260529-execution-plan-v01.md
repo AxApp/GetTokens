@@ -170,6 +170,7 @@
 - `npm --prefix frontend run test:unit` 结果：620 passed。
 - `npm --prefix frontend run build` 结果：通过，仅保留 Vite chunk size warning。
 - `docs-linhay/scripts/check-docs.sh` 结果：feature worktree 验证时因历史 spaces 缺 `plans/screenshots/debate` 失败；合并到当前 `master` 后，主分支已采用只强制 README 的文档门禁，复跑结果通过。
+- 迁移页部分迁移回归：当 SQLite 中已有账号但旧候选仍存在时，前端不得直接进入“只清理旧源”；必须先执行一次 commit，再按新 preview 清理旧源。Wails delete binding 同样先做 idempotent commit 兜底，避免绕过前端误删旧源。
 - 桌面 App 侧显示的账号卡 ID 均优先为 `acct_*`。
 - 旧账号事实源删除后，新建和更新账号不会再写回旧 JSON store 或 `config.yaml` 账号段。
 

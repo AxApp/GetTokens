@@ -21,7 +21,11 @@ export function shouldShowAccountMigrationGate(preview: AccountMigrationPreview 
 }
 
 export function canCommitAccountMigration(preview: AccountMigrationPreview | null, busy: boolean) {
-  return !busy && preview?.status === 'needs-migration' && Number(preview?.candidateCount ?? 0) > 0;
+  return (
+    !busy &&
+    (preview?.status === 'needs-migration' || preview?.status === 'ready-to-delete-legacy') &&
+    Number(preview?.candidateCount ?? 0) > 0
+  );
 }
 
 export function canDeleteLegacyAccountSources(preview: AccountMigrationPreview | null, busy: boolean) {
@@ -54,18 +58,11 @@ export function resolveAccountMigrationStepState(preview: AccountMigrationPrevie
       cleanup: 'pending',
     } as const;
   }
-  if (preview.status === 'needs-migration') {
+  if (preview.status === 'needs-migration' || preview.status === 'ready-to-delete-legacy') {
     return {
       inspect: 'done',
       commit: 'active',
       cleanup: 'pending',
-    } as const;
-  }
-  if (preview.status === 'ready-to-delete-legacy') {
-    return {
-      inspect: 'done',
-      commit: 'done',
-      cleanup: 'active',
     } as const;
   }
   return {
