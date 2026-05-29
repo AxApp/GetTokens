@@ -28,15 +28,6 @@ export function canCommitAccountMigration(preview: AccountMigrationPreview | nul
   );
 }
 
-export function canDeleteLegacyAccountSources(preview: AccountMigrationPreview | null, busy: boolean) {
-  return (
-    !busy &&
-    preview?.status === 'ready-to-delete-legacy' &&
-    Number(preview?.accountCount ?? 0) > 0 &&
-    Number(preview?.candidateCount ?? 0) > 0
-  );
-}
-
 export function formatAccountMigrationKind(kind: string) {
   switch (kind) {
     case 'auth-file':
