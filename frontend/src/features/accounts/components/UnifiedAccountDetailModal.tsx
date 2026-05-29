@@ -7,6 +7,7 @@ import {
 import { useDebug } from '../../../context/useDebug';
 import { useI18n } from '../../../context/I18nContext';
 import type { AccountRecord } from '../../../types';
+import type { AccountDetailScriptRoute } from '../../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import type { AccountUsageSummary } from '../model/accountUsage';
@@ -41,7 +42,6 @@ import {
   AccountDetailPill,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
-import AccountProxyRouteSection from './AccountProxyRouteSection';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 import { getAccountsPreviewAuthFileContent, getAccountsPreviewAuthFileModels } from '../previewData';
 
@@ -63,6 +63,9 @@ export interface UnifiedAccountDetailProps {
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }) => Promise<any>;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => Promise<any>;
   onRateLimitRulesChanged?: () => void;
+  activeScriptEditor?: AccountDetailScriptRoute | '';
+  onOpenScriptEditor?: (script: AccountDetailScriptRoute) => void;
+  onCloseScriptEditor?: () => void;
   onStartReauth?: () => void;
   onCancelReauth?: () => void;
   isReauthing?: boolean;
@@ -140,8 +143,12 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         await onSaveConfig(configDraft);
       }
       if (rateLimitDirty) {
-        await rateLimitRulesRef.current?.save();
+        const saved = await rateLimitRulesRef.current?.save();
+        if (saved === false) {
+          return;
+        }
       }
+      onClose();
     } finally {
       setSavingConfig(false);
     }
@@ -193,21 +200,13 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     modelNames={props.modelNames}
                     span="wide"
                     onVerify={props.onVerify}
+                    onProxyValidityChange={setProxyRouteError}
                   />
                 );
               case 'auth-file-actions':
                 return <AuthFileSummarySection key={moduleID} account={account} />;
               case 'models':
                 return <CompatibleModelsSection key={moduleID} account={account} />;
-              case 'proxy-route':
-                return (
-                  <AccountProxyRouteSection
-                    key={moduleID}
-                    proxyUrl={configDraft.proxyUrl}
-                    onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
-                    onValidityChange={setProxyRouteError}
-                  />
-                );
               case 'rate-limit':
                 return (
                   <RateLimitSection
@@ -225,6 +224,9 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     draft={configDraft}
                     setDraft={setConfigDraft}
                     quotaState={quotaState}
+                    editorOpen={props.activeScriptEditor === 'quota'}
+                    onOpenEditor={() => props.onOpenScriptEditor?.('quota')}
+                    onCloseEditor={props.onCloseScriptEditor}
                     onTestQuotaCurl={props.onTestQuotaCurl}
                   />
                 );
@@ -236,6 +238,9 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     draft={configDraft}
                     setDraft={setConfigDraft}
                     liveBilling={liveBilling}
+                    editorOpen={props.activeScriptEditor === 'billing'}
+                    onOpenEditor={() => props.onOpenScriptEditor?.('billing')}
+                    onCloseEditor={props.onCloseScriptEditor}
                     onTestBillingCurl={props.onTestBillingCurl}
                   />
                 );
@@ -312,6 +317,7 @@ function AuthFileSummarySection({ account }: { account: AccountRecord }) {
           const content = getAccountsPreviewAuthFileContent(account.name!);
           if (cancelled) return;
           setRawContent(content);
+          setLoading(false);
           return;
         }
         const result = await trackRequest('DownloadAuthFile', { name: account.name }, () => DownloadAuthFile(account.name!));
@@ -412,6 +418,7 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
           const previewModels = getAccountsPreviewAuthFileModels(account.name!);
           if (cancelled) return;
           setModels(previewModels);
+          setLoading(false);
           return;
         }
         const result = await trackRequest('GetAuthFileModels', { name: account.name }, () => GetAuthFileModels(account.name!));

@@ -182,6 +182,49 @@ const PREVIEW_API_KEY_ACCOUNTS: AccountRecord[] = [
   },
 ];
 
+const PREVIEW_AUTH_FILE_CONTENT_BY_NAME: Record<string, string> = {
+  'codex-pro.json': JSON.stringify({
+    account_id: 'acct_preview_ops_pro',
+    email: 'ops-pro@example.com',
+    plan_type: 'pro',
+    access_token: 'preview-access-token-redacted',
+    refresh_token: 'preview-refresh-token-redacted',
+    expires_at: '2026-05-15T18:40:00+08:00',
+  }, null, 2),
+  'codex-plus-nightly.json': JSON.stringify({
+    account_id: 'acct_preview_nightly_plus',
+    email: 'nightly-plus@example.com',
+    plan_type: 'plus',
+    access_token: 'preview-access-token-redacted',
+    refresh_token: 'preview-refresh-token-redacted',
+    expires_at: '2026-05-15T16:25:00+08:00',
+  }, null, 2),
+  'codex-team.json': JSON.stringify({
+    account_id: 'acct_preview_team',
+    email: 'team-routing@example.com',
+    plan_type: 'team',
+    access_token: 'preview-access-token-redacted',
+    refresh_token: 'preview-refresh-token-redacted',
+    expires_at: '2026-05-20T09:00:00+08:00',
+  }, null, 2),
+};
+
+const PREVIEW_AUTH_FILE_MODELS_BY_NAME: Record<string, Array<{ name: string; display_name?: string }>> = {
+  'codex-pro.json': [
+    { name: 'gpt-5.4', display_name: 'GPT 5.4' },
+    { name: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
+    { name: 'o4-mini', display_name: 'O4 Mini' },
+  ],
+  'codex-plus-nightly.json': [
+    { name: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
+    { name: 'gpt-5.2', display_name: 'GPT 5.2' },
+  ],
+  'codex-team.json': [
+    { name: 'gpt-5.4', display_name: 'GPT 5.4' },
+    { name: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
+  ],
+};
+
 const PREVIEW_OPENAI_COMPATIBLE_PROVIDERS: OpenAICompatibleProvider[] = [
   previewProvider({
     name: 'openai',
@@ -561,41 +604,6 @@ const PREVIEW_RATE_LIMIT_BY_ID: Record<string, RateLimitState> = {
       },
     ],
   }),
-};
-
-const PREVIEW_AUTH_FILE_CONTENT_BY_NAME: Record<string, string> = {
-  'codex-pro.json': JSON.stringify(
-    {
-      email: 'ops-pro@example.com',
-      plan_type: 'pro',
-      account_key: 'auth-file:codex-pro.json',
-      refresh_token: '[PREVIEW_REFRESH_TOKEN]',
-    },
-    null,
-    2,
-  ),
-  'codex-plus-nightly.json': JSON.stringify(
-    {
-      email: 'nightly-plus@example.com',
-      plan_type: 'plus',
-      account_key: 'auth-file:codex-plus-nightly.json',
-      refresh_token: '[PREVIEW_REFRESH_TOKEN]',
-    },
-    null,
-    2,
-  ),
-};
-
-const PREVIEW_AUTH_FILE_MODELS_BY_NAME: Record<string, Array<{ name: string; display_name?: string }>> = {
-  'codex-pro.json': [
-    { name: 'gpt-5.4', display_name: 'GPT 5.4' },
-    { name: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
-    { name: 'o4-mini', display_name: 'O4 Mini' },
-  ],
-  'codex-plus-nightly.json': [
-    { name: 'gpt-5.4-mini', display_name: 'GPT 5.4 Mini' },
-    { name: 'o4-mini', display_name: 'O4 Mini' },
-  ],
 };
 
 export function getAccountsPreviewAuthFiles(): AuthFile[] {

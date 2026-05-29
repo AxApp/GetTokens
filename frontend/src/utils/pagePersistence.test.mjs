@@ -11,10 +11,13 @@ import {
   USAGE_DESK_SOURCE_STORAGE_KEY,
   USAGE_DESK_RANGE_STORAGE_KEY,
   buildAccountDetailFrameHash,
+  buildAccountDetailScriptFrameHash,
   buildCodexDetailFrameHash,
   buildFrameHash,
   clearAccountDetailFrameHash,
+  clearAccountDetailScriptFrameHash,
   clearCodexDetailFrameHash,
+  isAccountDetailScriptRoute,
   isAccountWorkspace,
   isDeveloperAppPage,
   isAppPage,
@@ -166,6 +169,13 @@ test('isAccountWorkspace only accepts all', () => {
   assert.equal(isAccountWorkspace('openai-compatible'), false);
   assert.equal(isAccountWorkspace('unknown'), false);
   assert.equal(isAccountWorkspace(null), false);
+});
+
+test('isAccountDetailScriptRoute only accepts quota and billing editor routes', () => {
+  assert.equal(isAccountDetailScriptRoute('quota'), true);
+  assert.equal(isAccountDetailScriptRoute('billing'), true);
+  assert.equal(isAccountDetailScriptRoute('rate-limit'), false);
+  assert.equal(isAccountDetailScriptRoute(null), false);
 });
 
 test('resolveInitialAccountWorkspace falls back to all for non-all values', () => {
@@ -508,6 +518,27 @@ test('readFrameHashState parses accounts workspace and falls back to all for leg
     workspace: 'all',
     accountDetailID: 'api-key:local-1',
   });
+  assert.deepEqual(readFrameHashState('#frame=accounts&detail=api-key%3Alocal-1&script=quota'), {
+    page: 'accounts',
+    workspace: 'all',
+    accountDetailID: 'api-key:local-1',
+    accountDetailScript: 'quota',
+  });
+  assert.deepEqual(readFrameHashState('#frame=accounts&detail=api-key%3Alocal-1&script=billing'), {
+    page: 'accounts',
+    workspace: 'all',
+    accountDetailID: 'api-key:local-1',
+    accountDetailScript: 'billing',
+  });
+  assert.deepEqual(readFrameHashState('#frame=accounts&detail=api-key%3Alocal-1&script=rate-limit'), {
+    page: 'accounts',
+    workspace: 'all',
+    accountDetailID: 'api-key:local-1',
+  });
+  assert.deepEqual(readFrameHashState('#frame=accounts&script=quota'), {
+    page: 'accounts',
+    workspace: 'all',
+  });
   assert.deepEqual(readFrameHashState('#frame=accounts'), {
     page: 'accounts',
     workspace: 'all',
@@ -631,8 +662,26 @@ test('account detail hash helpers add and remove modal marker', () => {
     buildAccountDetailFrameHash('#frame=accounts&workspace=openai-compatible', 'openai-compatible:deepseek'),
     '#frame=accounts&workspace=openai-compatible&detail=openai-compatible%3Adeepseek',
   );
-  assert.equal(buildAccountDetailFrameHash('#frame=accounts', 'api-key:local-1'), '#frame=accounts&detail=api-key%3Alocal-1');
-  assert.equal(clearAccountDetailFrameHash('#frame=accounts&workspace=codex&detail=api-key%3Alocal-1'), '#frame=accounts&workspace=codex');
+  assert.equal(
+    buildAccountDetailFrameHash('#frame=accounts&script=quota', 'api-key:local-1'),
+    '#frame=accounts&detail=api-key%3Alocal-1',
+  );
+  assert.equal(
+    buildAccountDetailScriptFrameHash('#frame=accounts&detail=api-key%3Alocal-1', 'api-key:local-1', 'quota'),
+    '#frame=accounts&detail=api-key%3Alocal-1&script=quota',
+  );
+  assert.equal(
+    buildAccountDetailScriptFrameHash('#frame=accounts&workspace=codex', 'api-key:local-1', 'billing'),
+    '#frame=accounts&workspace=codex&detail=api-key%3Alocal-1&script=billing',
+  );
+  assert.equal(
+    clearAccountDetailScriptFrameHash('#frame=accounts&workspace=codex&detail=api-key%3Alocal-1&script=quota'),
+    '#frame=accounts&workspace=codex&detail=api-key%3Alocal-1',
+  );
+  assert.equal(
+    clearAccountDetailFrameHash('#frame=accounts&workspace=codex&detail=api-key%3Alocal-1&script=billing'),
+    '#frame=accounts&workspace=codex',
+  );
 });
 
 test('codex detail hash helpers add and remove modal marker', () => {
@@ -729,5 +778,11 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(
     buildFrameHash('accounts', 'codex', 'feature-config', 'codex', 'codex', 'api-key:local-1'),
     '#frame=accounts&workspace=codex&detail=api-key%3Alocal-1',
+  );
+  assert.equal(
+    buildFrameHash('accounts', 'all', 'feature-config', 'codex', 'codex', 'api-key:local-1', {
+      accountDetailScript: 'quota',
+    }),
+    '#frame=accounts&detail=api-key%3Alocal-1&script=quota',
   );
 });

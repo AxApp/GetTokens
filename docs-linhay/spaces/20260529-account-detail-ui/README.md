@@ -24,7 +24,9 @@
 1. 打开 `http://localhost:5173/#frame=accounts&detail=codex-api-key%3Astable-001`，API Key 详情展示全宽凭据/验证工作区，模型下拉有浏览器预览数据。
 2. 打开 `http://localhost:5173/#frame=accounts&detail=auth-file%3Acodex-pro.json`，auth-file 详情展示预览内容状态和模型目录，不依赖 Wails。
 3. 账号详情关闭仍清理 `detail` hash，不出现二次弹回。
-4. focused unit tests、`typecheck` 通过；浏览器截图落入本 space。
+4. Quota / Billing 的 curl 编辑弹窗中，默认变量按钮在 textarea 有光标时插入到光标处；无光标时显示复制并复制变量 token。
+5. Quota / Billing 的 curl 编辑弹窗支持独立 URL 路由：`script=quota` / `script=billing` 可直接打开对应弹窗，关闭弹窗只回到账户详情页。
+6. focused unit tests、`typecheck` 通过；浏览器截图落入本 space。
 
 ## 设计稿入口
 
@@ -37,7 +39,11 @@
 - worktree：`../GetTokens-worktrees/20260529-account-detail-ui/`
 
 ## 相关链接
+- `screenshots/20260529/accounts/20260529-accounts-detail-web-after-v01.png`
+- `screenshots/20260529/accounts/20260529-accounts-detail-curl-modal-after-v01.png`
+- `screenshots/20260529/accounts/20260529-accounts-curl-editor-variable-insert-after-v01.png`
+- `screenshots/20260529/accounts/20260529-accounts-detail-authfile-after-v01.png`
 
 ## 当前状态
-- 状态：in-progress
+- 状态：done
 - 最近更新：2026-05-29

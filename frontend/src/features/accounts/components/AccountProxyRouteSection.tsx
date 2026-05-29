@@ -150,63 +150,93 @@ export default function AccountProxyRouteSection({
         </AccountDetailPill>
       }
     >
+      <AccountProxyRouteEditor
+        readonlyReason={readonlyReason}
+        draft={draft}
+        proxyOptions={proxyOptions}
+        hasDetachedCurrentURL={hasDetachedCurrentURL}
+        onModeChange={changeMode}
+        onProxySelect={selectProxy}
+      />
+    </AccountDetailSection>
+  );
+}
 
-      {isReadonly ? (
-        <AccountDetailEmptyState className="py-3 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
-          {readonlyReason}
-        </AccountDetailEmptyState>
-      ) : (
-        <>
-          <div className="grid grid-cols-3 border-2 border-[var(--border-color)]">
-            {(['inherit', 'direct', 'custom'] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => changeMode(mode)}
-                className={`min-h-9 border-r-2 border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] last:border-r-0 ${
-                  draft.mode === mode
-                    ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-                    : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-                }`}
-              >
-                {mode === 'inherit'
-                  ? t('accounts.proxy_route_inherit')
-                  : mode === 'direct'
-                    ? t('accounts.proxy_route_direct')
-                    : t('accounts.proxy_route_custom')}
-              </button>
+export function AccountProxyRouteEditor({
+  readonlyReason,
+  draft,
+  proxyOptions,
+  hasDetachedCurrentURL,
+  onModeChange,
+  onProxySelect,
+}: {
+  readonlyReason?: string;
+  draft: AccountProxyRouteDraft;
+  proxyOptions: Array<{ node: ProxyNodeRecord; proxyUrl: string }>;
+  hasDetachedCurrentURL: boolean;
+  onModeChange: (mode: AccountProxyMode) => void;
+  onProxySelect: (proxyUrl: string) => void;
+}) {
+  const { t } = useI18n();
+
+  if (readonlyReason) {
+    return (
+      <AccountDetailEmptyState className="py-3 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+        {readonlyReason}
+      </AccountDetailEmptyState>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-3 border-2 border-[var(--border-color)]">
+        {(['inherit', 'direct', 'custom'] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            onClick={() => onModeChange(mode)}
+            className={`min-h-9 border-r-2 border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] last:border-r-0 ${
+              draft.mode === mode
+                ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+                : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            {mode === 'inherit'
+              ? t('accounts.proxy_route_inherit')
+              : mode === 'direct'
+                ? t('accounts.proxy_route_direct')
+                : t('accounts.proxy_route_custom')}
+          </button>
+        ))}
+      </div>
+
+      {draft.mode === 'custom' ? (
+        <div className="space-y-2">
+          <select
+            value={draft.proxyUrl}
+            onChange={(event) => onProxySelect(event.target.value)}
+            disabled={proxyOptions.length === 0 && !hasDetachedCurrentURL}
+            className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
+          >
+            {draft.proxyUrl ? null : <option value="">{t('accounts.proxy_route_select_placeholder')}</option>}
+            {hasDetachedCurrentURL ? (
+              <option value={draft.proxyUrl}>
+                {t('accounts.proxy_route_current_url')}: {draft.proxyUrl}
+              </option>
+            ) : null}
+            {proxyOptions.map(({ node, proxyUrl: nodeProxyURL }) => (
+              <option key={node.id} value={nodeProxyURL}>
+                {node.name} · {node.protocol} · {node.host}:{node.port} · {node.latencyMs}ms
+              </option>
             ))}
-          </div>
-
-          {draft.mode === 'custom' ? (
-            <div className="space-y-2">
-              <select
-                value={draft.proxyUrl}
-                onChange={(event) => selectProxy(event.target.value)}
-                disabled={proxyOptions.length === 0 && !hasDetachedCurrentURL}
-                className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
-              >
-                {draft.proxyUrl ? null : <option value="">{t('accounts.proxy_route_select_placeholder')}</option>}
-                {hasDetachedCurrentURL ? (
-                  <option value={draft.proxyUrl}>
-                    {t('accounts.proxy_route_current_url')}: {draft.proxyUrl}
-                  </option>
-                ) : null}
-                {proxyOptions.map(({ node, proxyUrl: nodeProxyURL }) => (
-                  <option key={node.id} value={nodeProxyURL}>
-                    {node.name} · {node.protocol} · {node.host}:{node.port} · {node.latencyMs}ms
-                  </option>
-                ))}
-              </select>
-              {proxyOptions.length === 0 && !draft.proxyUrl ? (
-                <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  {t('accounts.proxy_route_no_nodes')}
-                </div>
-              ) : null}
+          </select>
+          {proxyOptions.length === 0 && !draft.proxyUrl ? (
+            <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              {t('accounts.proxy_route_no_nodes')}
             </div>
           ) : null}
-        </>
-      )}
-    </AccountDetailSection>
+        </div>
+      ) : null}
+    </>
   );
 }

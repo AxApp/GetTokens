@@ -7,6 +7,17 @@ import {
   buildQuotaCurlTemplate,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
+import {
+  buildProxyURLFromNode,
+  readStoredProxyNodes,
+  type ProxyNodeRecord,
+} from '../../proxy-pool/model.ts';
+import {
+  buildAccountProxyRouteDraft,
+  formatAccountProxySummary,
+  type AccountProxyMode,
+  type AccountProxyRouteDraft,
+} from '../model/accountProxyRoute.ts';
 import { selectQuotaWindows } from '../model/accountQuota';
 import { buildAccountRuntimeStats } from '../model/accountDetailRuntime';
 import {
@@ -24,6 +35,13 @@ import {
   AccountDetailSection,
   type AccountDetailSectionSpan,
 } from './AccountDetailPrimitives';
+import { AccountProxyRouteEditor } from './AccountProxyRouteSection';
+import {
+  AccountCurlEditorModal,
+  buildBillingCurlTemplates,
+  buildCurlVariables,
+  buildQuotaCurlTemplates,
+} from './AccountCurlEditorModal';
 
 export interface APIKeyVerifyState {
   model: string;
@@ -48,6 +66,7 @@ export interface AccountCredentialVerifySectionProps {
   modelNames?: string[];
   span?: AccountDetailSectionSpan;
   onVerify?: (input: { apiKey: string; baseUrl: string; model: string }) => void;
+  onProxyValidityChange?: (message: string) => void;
 }
 
 interface VerifyConnectionPanelProps {
@@ -63,6 +82,9 @@ export interface AccountQuotaSectionProps {
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
   quotaState?: CodexQuotaState;
   quotaDisplay?: QuotaDisplay;
+  editorOpen?: boolean;
+  onOpenEditor?: () => void;
+  onCloseEditor?: () => void;
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }) => Promise<any>;
 }
 
@@ -71,6 +93,9 @@ export interface AccountBillingSectionProps {
   draft: ApiKeyConfigDraft;
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
   liveBilling?: BillingDisplay;
+  editorOpen?: boolean;
+  onOpenEditor?: () => void;
+  onCloseEditor?: () => void;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => Promise<any>;
 }
 
@@ -212,6 +237,7 @@ export function AccountCredentialVerifySection({
   modelNames,
   span,
   onVerify,
+  onProxyValidityChange,
 }: AccountCredentialVerifySectionProps) {
   return (
     <AccountDetailSection
@@ -220,8 +246,8 @@ export function AccountCredentialVerifySection({
       title="凭据与验证"
       span={span}
     >
-      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-        <section data-account-credential-verify-layout="combined" className="grid gap-3">
+      <div data-account-credential-verify-layout="combined" className="grid min-w-0 gap-4">
+        <section data-account-credential-list-item="credential" className="grid gap-3 border-b border-dashed border-[var(--border-color)] pb-4">
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             CREDENTIAL
           </div>
@@ -253,9 +279,145 @@ export function AccountCredentialVerifySection({
           modelNames={modelNames}
           onVerify={onVerify}
         />
+
+        <CredentialProxyRoutePanel
+          proxyUrl={draft.proxyUrl}
+          onProxyUrlChange={(nextProxyURL) => setDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
+          onValidityChange={onProxyValidityChange}
+        />
       </div>
     </AccountDetailSection>
   );
+}
+
+function CredentialProxyRoutePanel({
+  proxyUrl,
+  onProxyUrlChange,
+  onValidityChange,
+}: {
+  proxyUrl?: string;
+  onProxyUrlChange?: (proxyUrl: string) => void;
+  onValidityChange?: (message: string) => void;
+}) {
+  const { t } = useI18n();
+  const [storedProxyNodes, setStoredProxyNodes] = useState<ProxyNodeRecord[]>(() => readCredentialProxyNodes());
+  const [draft, setDraft] = useState<AccountProxyRouteDraft>(() =>
+    buildAccountProxyRouteDraft({ id: 'account-credential-proxy-route', proxyUrl }, storedProxyNodes),
+  );
+
+  useEffect(() => {
+    setDraft(buildAccountProxyRouteDraft({ id: 'account-credential-proxy-route', proxyUrl }, storedProxyNodes));
+  }, [storedProxyNodes, proxyUrl]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    function refreshProxyNodes() {
+      setStoredProxyNodes(readCredentialProxyNodes());
+    }
+    window.addEventListener('storage', refreshProxyNodes);
+    window.addEventListener('focus', refreshProxyNodes);
+    return () => {
+      window.removeEventListener('storage', refreshProxyNodes);
+      window.removeEventListener('focus', refreshProxyNodes);
+    };
+  }, []);
+
+  const proxyOptions = useMemo(
+    () =>
+      storedProxyNodes
+        .map((node) => ({
+          node,
+          proxyUrl: buildProxyURLFromNode(node),
+        }))
+        .sort((a, b) => {
+          if (a.node.status !== b.node.status) {
+            return a.node.status === 'available' ? -1 : 1;
+          }
+          return a.node.latencyMs - b.node.latencyMs;
+        }),
+    [storedProxyNodes],
+  );
+  const summary = useMemo(() => formatAccountProxySummary(draft.proxyUrl, storedProxyNodes), [draft.proxyUrl, storedProxyNodes]);
+  const customMissing = draft.mode === 'custom' && !draft.proxyUrl.trim();
+  const hasDetachedCurrentURL = Boolean(
+    draft.proxyUrl && !proxyOptions.some((item) => item.proxyUrl === draft.proxyUrl),
+  );
+
+  useEffect(() => {
+    onValidityChange?.(customMissing ? t('accounts.proxy_route_invalid') : '');
+  }, [customMissing, onValidityChange, t]);
+
+  function commitDraft(nextDraft: AccountProxyRouteDraft, shouldCommitURL: boolean) {
+    setDraft(nextDraft);
+    if (shouldCommitURL) {
+      onProxyUrlChange?.(nextDraft.proxyUrl);
+    }
+  }
+
+  function changeMode(mode: AccountProxyMode) {
+    if (mode === 'inherit') {
+      commitDraft({ mode, proxyNodeID: '', proxyUrl: '' }, true);
+      return;
+    }
+    if (mode === 'direct') {
+      commitDraft({ mode, proxyNodeID: '', proxyUrl: 'direct' }, true);
+      return;
+    }
+
+    const selected = proxyOptions[0];
+    if (!selected) {
+      commitDraft({ mode, proxyNodeID: '', proxyUrl: '' }, false);
+      return;
+    }
+    commitDraft({ mode, proxyNodeID: selected.node.id, proxyUrl: selected.proxyUrl }, true);
+  }
+
+  function selectProxy(nextProxyURL: string) {
+    const selected = proxyOptions.find((item) => item.proxyUrl === nextProxyURL);
+    commitDraft(
+      {
+        mode: 'custom',
+        proxyNodeID: selected?.node.id || '',
+        proxyUrl: nextProxyURL,
+      },
+      true,
+    );
+  }
+
+  return (
+    <section data-account-credential-list-item="proxy-route" className="grid gap-3 border-t border-dashed border-[var(--border-color)] pt-4">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            ROUTE
+          </div>
+          <div className="mt-1 text-[length:var(--font-size-ui-xs)] font-black uppercase italic tracking-[0.06em] text-[var(--text-primary)]">
+            {t('accounts.proxy_route_title')}
+          </div>
+        </div>
+        <AccountDetailPill className="!border-2 !text-[var(--text-primary)]">
+          {summary.label}
+        </AccountDetailPill>
+      </div>
+
+      <AccountProxyRouteEditor
+        draft={draft}
+        proxyOptions={proxyOptions}
+        hasDetachedCurrentURL={hasDetachedCurrentURL}
+        onModeChange={changeMode}
+        onProxySelect={selectProxy}
+      />
+    </section>
+  );
+}
+
+function readCredentialProxyNodes(): ProxyNodeRecord[] {
+  if (typeof window === 'undefined') {
+    return [];
+  }
+  return readStoredProxyNodes(window.localStorage);
 }
 
 function CredentialInputField({
@@ -345,7 +507,7 @@ function VerifyConnectionPanel({
   }, [isModelMenuOpen]);
 
   return (
-    <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+    <section data-account-credential-list-item="connection" className="grid gap-3 border-b border-dashed border-[var(--border-color)] pb-4">
       <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         CONNECTION
       </div>
@@ -358,7 +520,7 @@ function VerifyConnectionPanel({
         </div>
       ) : null}
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div ref={modelMenuRef} className="relative flex-1">
           <div className="flex items-center gap-2">
             <input
@@ -425,14 +587,47 @@ export function AccountQuotaSection({
   setDraft,
   quotaState,
   quotaDisplay,
+  editorOpen: routedEditorOpen,
+  onOpenEditor,
+  onCloseEditor,
   onTestQuotaCurl,
 }: AccountQuotaSectionProps) {
   const { t } = useI18n();
+  const [localEditorOpen, setLocalEditorOpen] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
   const liveWindows = quotaState?.quota ? selectQuotaWindows(quotaState.quota) : [];
   const quotaWindows = quotaDisplay?.windows ?? [];
+  const quotaTemplate = useMemo(
+    () => buildQuotaCurlTemplate({
+      displayName: account.displayName,
+      provider: account.provider,
+      baseUrl: draft.baseUrl,
+    }),
+    [account.displayName, account.provider, draft.baseUrl],
+  );
+  const quotaTemplates = useMemo(
+    () => buildQuotaCurlTemplates(draft.baseUrl, quotaTemplate),
+    [draft.baseUrl, quotaTemplate],
+  );
+  const editorOpen = routedEditorOpen ?? localEditorOpen;
+
+  function openEditor() {
+    if (onOpenEditor) {
+      onOpenEditor();
+      return;
+    }
+    setLocalEditorOpen(true);
+  }
+
+  function closeEditor() {
+    if (onCloseEditor) {
+      onCloseEditor();
+      return;
+    }
+    setLocalEditorOpen(false);
+  }
 
   useEffect(() => {
     setTestStatus('idle');
@@ -476,37 +671,26 @@ export function AccountQuotaSection({
         </div>
       ) : null}
 
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={draft.quotaEnabled}
-          onChange={(event) => setDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))}
-        />
-        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用</span>
-      </label>
-
-      <textarea
-        value={draft.quotaCurl}
-        onChange={(event) => setDraft((prev) => ({ ...prev, quotaCurl: event.target.value }))}
-        className="input-swiss min-h-20 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
-        placeholder='curl -sS "https://api.example.com/usage" -H "Authorization: Bearer {{apiKey}}"'
-      />
+      <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={draft.quotaEnabled}
+              onChange={(event) => setDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))}
+            />
+            <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用</span>
+          </label>
+          <button onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+            编辑脚本
+          </button>
+        </div>
+        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.quotaCurl || undefined}>
+          {draft.quotaCurl || '未配置额度脚本'}
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          onClick={() => setDraft((prev) => ({
-            ...prev,
-            quotaCurl: buildQuotaCurlTemplate({
-              displayName: account.displayName,
-              provider: account.provider,
-              baseUrl: draft.baseUrl,
-            }),
-            quotaEnabled: true,
-          }))}
-          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
-        >
-          使用模板
-        </button>
         <button onClick={runQuotaTest} disabled={testStatus === 'loading' || !draft.quotaCurl.trim()} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
           {testStatus === 'loading' ? '测试中...' : '测试'}
         </button>
@@ -519,6 +703,21 @@ export function AccountQuotaSection({
       ) : null}
       {testStatus === 'error' ? (
         <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
+      ) : null}
+
+      {editorOpen ? (
+        <AccountCurlEditorModal
+          title="额度脚本"
+          value={draft.quotaCurl}
+          enabled={draft.quotaEnabled}
+          variables={buildCurlVariables(draft)}
+          templates={quotaTemplates}
+          placeholder='curl -sS "{{baseUrl}}/usage" -H "Authorization: Bearer {{apiKey}}"'
+          onValueChange={(value) => setDraft((prev) => ({ ...prev, quotaCurl: value }))}
+          onEnabledChange={(enabled) => setDraft((prev) => ({ ...prev, quotaEnabled: enabled }))}
+          onApplyTemplate={(template) => setDraft((prev) => ({ ...prev, quotaCurl: template, quotaEnabled: true }))}
+          onClose={closeEditor}
+        />
       ) : null}
     </AccountDetailSection>
   );
@@ -606,8 +805,12 @@ export function AccountBillingSection({
   draft,
   setDraft,
   liveBilling,
+  editorOpen: routedEditorOpen,
+  onOpenEditor,
+  onCloseEditor,
   onTestBillingCurl,
 }: AccountBillingSectionProps) {
+  const [localEditorOpen, setLocalEditorOpen] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
   const [testBilling, setTestBilling] = useState<BillingDisplay | undefined>(undefined);
@@ -619,6 +822,27 @@ export function AccountBillingSection({
     }),
     [account.displayName, account.provider, draft.baseUrl],
   );
+  const billingTemplates = useMemo(
+    () => buildBillingCurlTemplates(draft.baseUrl, billingTemplate),
+    [billingTemplate, draft.baseUrl],
+  );
+  const editorOpen = routedEditorOpen ?? localEditorOpen;
+
+  function openEditor() {
+    if (onOpenEditor) {
+      onOpenEditor();
+      return;
+    }
+    setLocalEditorOpen(true);
+  }
+
+  function closeEditor() {
+    if (onCloseEditor) {
+      onCloseEditor();
+      return;
+    }
+    setLocalEditorOpen(false);
+  }
 
   useEffect(() => {
     setTestStatus('idle');
@@ -672,31 +896,26 @@ export function AccountBillingSection({
         </div>
       ) : null}
 
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={draft.billingEnabled}
-          onChange={(event) => setDraft((prev) => ({ ...prev, billingEnabled: event.target.checked }))}
-        />
-        <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用余额</span>
-      </label>
-
-      <textarea
-        value={draft.billingCurl}
-        onChange={(event) => setDraft((prev) => ({ ...prev, billingCurl: event.target.value }))}
-        className="input-swiss min-h-20 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
-        placeholder={billingTemplate || 'curl -sS "https://api.example.com/billing" -H "Authorization: Bearer {{apiKey}}"'}
-      />
+      <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={draft.billingEnabled}
+              onChange={(event) => setDraft((prev) => ({ ...prev, billingEnabled: event.target.checked }))}
+            />
+            <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用余额</span>
+          </label>
+          <button onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+            编辑脚本
+          </button>
+        </div>
+        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.billingCurl || undefined}>
+          {draft.billingCurl || '未配置余额脚本'}
+        </div>
+      </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {billingTemplate ? (
-          <button
-            onClick={() => setDraft((prev) => ({ ...prev, billingCurl: billingTemplate, billingEnabled: true }))}
-            className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
-          >
-            使用供应商模板
-          </button>
-        ) : null}
         <button onClick={runBillingTest} disabled={testStatus === 'loading' || !draft.billingCurl.trim()} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
           {testStatus === 'loading' ? '测试中...' : '测试余额'}
         </button>
@@ -721,6 +940,21 @@ export function AccountBillingSection({
       ) : null}
       {testStatus === 'error' ? (
         <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
+      ) : null}
+
+      {editorOpen ? (
+        <AccountCurlEditorModal
+          title="余额脚本"
+          value={draft.billingCurl}
+          enabled={draft.billingEnabled}
+          variables={buildCurlVariables(draft)}
+          templates={billingTemplates}
+          placeholder={billingTemplate || 'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'}
+          onValueChange={(value) => setDraft((prev) => ({ ...prev, billingCurl: value }))}
+          onEnabledChange={(enabled) => setDraft((prev) => ({ ...prev, billingEnabled: enabled }))}
+          onApplyTemplate={(template) => setDraft((prev) => ({ ...prev, billingCurl: template, billingEnabled: true }))}
+          onClose={closeEditor}
+        />
       ) : null}
     </AccountDetailSection>
   );
