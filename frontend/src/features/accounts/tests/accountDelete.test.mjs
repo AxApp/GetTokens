@@ -50,6 +50,18 @@ test('resolveAccountDeleteRequest routes openai-compatible provider assets by id
   );
 });
 
+test('resolveAccountDeleteRequest routes unified openai-compatible accounts by account kind', () => {
+  assert.deepEqual(
+    resolveAccountDeleteRequest({
+      id: 'acct_00000000-0000-4000-8000-000000000001',
+      accountKind: 'openai-compatible',
+      provider: 'deepseek',
+      credentialSource: 'api-key',
+    }),
+    { type: 'openai-compatible-provider', name: 'acct_00000000-0000-4000-8000-000000000001' }
+  );
+});
+
 test('resolveAccountDeleteRequest keeps codex api key assets on codex delete path', () => {
   assert.deepEqual(
     resolveAccountDeleteRequest({

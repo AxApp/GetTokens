@@ -10,10 +10,12 @@ export type AccountDeleteRequest =
 const OPENAI_COMPATIBLE_ACCOUNT_PREFIX = 'openai-compatible:';
 
 export function resolveAccountDeleteRequest(
-  account: Pick<AccountRecord, 'credentialSource' | 'id' | 'name' | 'provider'>,
+  account: Pick<AccountRecord, 'accountKind' | 'credentialSource' | 'id' | 'name' | 'provider'>,
 ): AccountDeleteRequest {
-  if (account.id.startsWith(OPENAI_COMPATIBLE_ACCOUNT_PREFIX)) {
-    const name = account.id.slice(OPENAI_COMPATIBLE_ACCOUNT_PREFIX.length).trim() || account.provider.trim();
+  if (account.accountKind === 'openai-compatible' || account.id.startsWith(OPENAI_COMPATIBLE_ACCOUNT_PREFIX)) {
+    const name = account.accountKind === 'openai-compatible'
+      ? account.id.trim()
+      : account.id.slice(OPENAI_COMPATIBLE_ACCOUNT_PREFIX.length).trim() || account.provider.trim();
     return name
       ? { type: 'openai-compatible-provider', name }
       : { type: 'missing-openai-compatible-name' };

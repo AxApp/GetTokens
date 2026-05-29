@@ -31,6 +31,7 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 	}
 	return AccountRecord{
 		ID:               record.ID,
+		AccountKind:      record.AccountKind,
 		Provider:         record.Provider,
 		CredentialSource: record.CredentialSource,
 		DisplayName:      record.DisplayName,

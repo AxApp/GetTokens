@@ -592,6 +592,7 @@ export namespace main {
 	}
 	export class AccountRecord {
 	    id: string;
+	    accountKind?: string;
 	    provider: string;
 	    credentialSource: string;
 	    displayName: string;
@@ -628,6 +629,7 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
+	        this.accountKind = source["accountKind"];
 	        this.provider = source["provider"];
 	        this.credentialSource = source["credentialSource"];
 	        this.displayName = source["displayName"];
@@ -3644,6 +3646,7 @@ export namespace main {
 	}
 
 	export class OpenAICompatibleProvider {
+	    accountKey?: string;
 	    name: string;
 	    priority?: number;
 	    disabled?: boolean;
@@ -3664,6 +3667,7 @@ export namespace main {
 
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
 	        this.name = source["name"];
 	        this.priority = source["priority"];
 	        this.disabled = source["disabled"];

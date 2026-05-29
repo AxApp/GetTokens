@@ -280,9 +280,10 @@ function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
 
 function mapOpenAICompatibleProviderToCodexRow(provider: OpenAICompatibleProvider): CodexAccountRow {
   const name = String(provider.name || '').trim();
+  const accountKey = String(provider.accountKey || '').trim();
   const disabled = Boolean(provider.disabled);
   return {
-    id: `openai-compatible:${name}`,
+    id: accountKey || `openai-compatible:${name}`,
     label: name || 'openai-compatible',
     sourceKind: 'openai-compatible',
     provider: name || 'openai-compatible',

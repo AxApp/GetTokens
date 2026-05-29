@@ -115,18 +115,19 @@ export default function OpenAICompatibleWorkspace({
                 cachedRemoteModelsState?.configSignature === providerConfigSignature ? cachedRemoteModelsState : undefined;
               const effectiveModelCount =
                 remoteModelsState?.status === 'success' ? remoteModelsState.models.length : provider.modelCount || 0;
+              const providerID = openAICompatibleProviderIdentity(provider);
 
               return (
                 <OpenAICompatibleProviderCard
-                  key={provider.name}
+                  key={providerID}
                   t={t}
                   provider={provider}
                   verifyState={verifyState}
                   effectiveModelCount={effectiveModelCount}
-                  usageSummary={accountUsageByID[`openai-compatible:${provider.name}`]}
-                  rateLimitStatus={accountRateLimitByID[`openai-compatible:${provider.name}`]}
-                  pendingDelete={pendingDeleteName === provider.name}
-                  pendingStatus={pendingStatusName === provider.name}
+                  usageSummary={accountUsageByID[providerID] || accountUsageByID[`openai-compatible:${provider.name}`]}
+                  rateLimitStatus={accountRateLimitByID[providerID] || accountRateLimitByID[`openai-compatible:${provider.name}`]}
+                  pendingDelete={pendingDeleteName === providerID || pendingDeleteName === provider.name}
+                  pendingStatus={pendingStatusName === providerID || pendingStatusName === provider.name}
                   onOpenDetail={onOpenDetail}
                   onDelete={onDelete}
                   onToggleDisabled={onToggleDisabled}
@@ -147,4 +148,12 @@ export default function OpenAICompatibleWorkspace({
       <div className="mx-auto max-w-6xl space-y-8 pb-32">{content}</div>
     </div>
   );
+}
+
+function openAICompatibleProviderIdentity(provider: OpenAICompatibleProvider): string {
+  const accountKey = String(provider.accountKey || '').trim();
+  if (accountKey) {
+    return accountKey;
+  }
+  return `openai-compatible:${String(provider.name || '').trim()}`;
 }

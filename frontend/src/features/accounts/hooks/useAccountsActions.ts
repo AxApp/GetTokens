@@ -262,7 +262,7 @@ export default function useAccountsActions({
         }
 
         const existingApiKeyTitles = accounts.flatMap((account) => {
-          if (account.credentialSource !== 'api-key' || account.id.startsWith('openai-compatible:')) {
+          if (!isCodexAPIKeyAccount(account)) {
             return [];
           }
           return account.displayName || account.name || '';
@@ -292,10 +292,12 @@ export default function useAccountsActions({
         }
 
         const existingProviderNames = accounts.flatMap((account) => {
-          if (!account.id.startsWith('openai-compatible:')) {
+          if (!isOpenAICompatibleAccount(account)) {
             return [];
           }
-          return account.id.replace(/^openai-compatible:/, '') || account.provider;
+          return account.id.startsWith('openai-compatible:')
+            ? account.id.replace(/^openai-compatible:/, '') || account.provider
+            : account.provider;
         });
 
         for (const item of items) {
@@ -413,7 +415,7 @@ export default function useAccountsActions({
 
   const renameSelectedApiKey = useCallback(
     (nextName: string) => {
-      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
+      if (!selectedAccount?.id || !isCodexAPIKeyAccount(selectedAccount)) {
         return;
       }
       const trimmedName = nextName.trim();
@@ -447,7 +449,7 @@ export default function useAccountsActions({
 
   const updateSelectedApiKeyPriority = useCallback(
     async (priorityDraft: string) => {
-      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
+      if (!selectedAccount?.id || !isCodexAPIKeyAccount(selectedAccount)) {
         return;
       }
 
@@ -477,7 +479,7 @@ export default function useAccountsActions({
 
   const updateSelectedApiKeyConfig = useCallback(
     async (draft: ApiKeyConfigDraft) => {
-      if (!selectedAccount?.id || selectedAccount.credentialSource !== 'api-key') {
+      if (!selectedAccount?.id || !isCodexAPIKeyAccount(selectedAccount)) {
         return;
       }
 
@@ -785,4 +787,15 @@ export default function useAccountsActions({
     updateSelectedApiKeyPriority,
     updateSelectedApiKeyConfig,
   };
+}
+
+function isOpenAICompatibleAccount(account: Pick<AccountRecord, 'accountKind' | 'id'>): boolean {
+  return account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:');
+}
+
+function isCodexAPIKeyAccount(account: Pick<AccountRecord, 'accountKind' | 'credentialSource' | 'id'>): boolean {
+  if (account.accountKind) {
+    return account.accountKind === 'codex-api-key';
+  }
+  return account.credentialSource === 'api-key' && !account.id.startsWith('openai-compatible:');
 }
