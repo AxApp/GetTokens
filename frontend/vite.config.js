@@ -1,10 +1,15 @@
 import { execSync, spawn } from 'node:child_process'
+import { promises as fs } from 'node:fs'
+import path from 'node:path'
 import { createViteDebugInspectorPlugin } from '@linhey/react-debug-inspector'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
 const DESIGN_SYSTEM_STORYBOOK_PORT = 6006
 const DESIGN_SYSTEM_STORYBOOK_URL = `http://127.0.0.1:${DESIGN_SYSTEM_STORYBOOK_PORT}`
+const WAILS_GENERATED_RETRY_TIMEOUT_MS = 2000
+const WAILS_GENERATED_RETRY_INTERVAL_MS = 50
+const WAILS_GENERATED_FILE_EXTENSIONS = new Set(['.js', '.ts'])
 let storybookProcess = null
 
 function resolveBuildGitHash() {
@@ -153,6 +158,52 @@ function writeJSON(res, statusCode, payload) {
   res.end(JSON.stringify(payload))
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function isMissingFileError(error) {
+  return error && typeof error === 'object' && error.code === 'ENOENT'
+}
+
+function cleanViteID(id) {
+  return id.split('?')[0]
+}
+
+function isWailsGeneratedFileID(id) {
+  const filePath = path.normalize(cleanViteID(id))
+  const wailsDir = path.join(process.cwd(), 'wailsjs') + path.sep
+  return filePath.startsWith(wailsDir) && WAILS_GENERATED_FILE_EXTENSIONS.has(path.extname(filePath))
+}
+
+async function readWailsGeneratedFileWithRetry(filePath) {
+  const startedAt = Date.now()
+
+  while (true) {
+    try {
+      return await fs.readFile(filePath, 'utf8')
+    } catch (error) {
+      if (!isMissingFileError(error) || Date.now() - startedAt >= WAILS_GENERATED_RETRY_TIMEOUT_MS) {
+        throw error
+      }
+      await sleep(WAILS_GENERATED_RETRY_INTERVAL_MS)
+    }
+  }
+}
+
+function wailsGeneratedFileRetryPlugin() {
+  return {
+    name: 'wails-generated-file-retry',
+    enforce: 'pre',
+    async load(id) {
+      if (!isWailsGeneratedFileID(id)) {
+        return null
+      }
+      return readWailsGeneratedFileWithRetry(cleanViteID(id))
+    },
+  }
+}
+
 function writeStorybookOpeningPage(res) {
   res.statusCode = 200
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
@@ -247,6 +298,7 @@ export default defineConfig(({ command }) => ({
     'import.meta.env.VITE_GIT_HASH': JSON.stringify(resolveBuildGitHash()),
   },
   plugins: [
+    command === 'serve' ? wailsGeneratedFileRetryPlugin() : null,
     command === 'serve' ? createViteDebugInspectorPlugin() : null,
     command === 'serve' ? sessionManagementDevBridgePlugin() : null,
     command === 'serve' ? designSystemStorybookDevBridgePlugin() : null,

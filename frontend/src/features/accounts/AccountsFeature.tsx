@@ -20,7 +20,7 @@ import {
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
 import { EventsOn } from '../../../wailsjs/runtime/runtime';
-import { useDebug } from '../../context/DebugContext';
+import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountImportModal from './components/AccountImportModal';
@@ -35,14 +35,22 @@ import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeMo
 import OpenAICompatibleDetailModal from './components/OpenAICompatibleDetailModal';
 import UnifiedComposeModal, { type UnifiedComposeFormState } from './components/UnifiedComposeModal';
 import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
-import { useAccountsPageStateContext } from './AccountsPageStateProvider';
+import { useAccountsPageStateContext } from './AccountsPageStateContext';
 import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
+import { getAccountsPreviewRelayModelNames } from './previewData';
 import { isCodexAuthFile } from './model/accountPresentation';
 import { readAccountClipboardFallback } from './model/accountClipboard';
 import { findAccountDetailByID } from './model/accountDetailSelection';
 import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
 import useGroupCardHeights from './hooks/useGroupCardHeights';
-import { buildAccountDetailFrameHash, clearAccountDetailFrameHash, readFrameHashState } from '../../utils/pagePersistence';
+import {
+  buildAccountDetailFrameHash,
+  buildAccountDetailScriptFrameHash,
+  clearAccountDetailFrameHash,
+  clearAccountDetailScriptFrameHash,
+  readFrameHashState,
+  type AccountDetailScriptRoute,
+} from '../../utils/pagePersistence';
 import { hasWailsAppBindings, hasWailsRuntime } from '../../utils/previewMode';
 import type { AccountRecord } from './model/types';
 import {
@@ -186,9 +194,14 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const [deepLinkApplyMessage, setDeepLinkApplyMessage] = useState('');
   const [isApplyingDeepLink, setIsApplyingDeepLink] = useState(false);
   const [accountDetailIDFromHash, setAccountDetailIDFromHash] = useState(() => readAccountDetailIDFromHash());
+  const [accountDetailScriptFromHash, setAccountDetailScriptFromHash] = useState<AccountDetailScriptRoute | ''>(() => readAccountDetailScriptFromHash());
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
   const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
+    if (!hasWailsAppBindings()) {
+      setRelayModelNames(getAccountsPreviewRelayModelNames());
+      return;
+    }
     if (!ready) {
       setRelayModelNames([]);
       return;
@@ -408,7 +421,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       return;
     }
     function syncDetailIDFromHash() {
-      setAccountDetailIDFromHash(readAccountDetailIDFromHash());
+      const hashState = readFrameHashState(window.location.hash);
+      setAccountDetailIDFromHash(hashState?.accountDetailID ?? '');
+      setAccountDetailScriptFromHash(hashState?.accountDetailScript ?? '');
     }
     window.addEventListener('hashchange', syncDetailIDFromHash);
     return () => window.removeEventListener('hashchange', syncDetailIDFromHash);
@@ -487,6 +502,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       return;
     }
     setAccountDetailIDFromHash(detailID);
+    setAccountDetailScriptFromHash('');
     const nextHash = buildAccountDetailFrameHash(window.location.hash, detailID);
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
@@ -498,7 +514,31 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       return;
     }
     setAccountDetailIDFromHash('');
+    setAccountDetailScriptFromHash('');
     const nextHash = clearAccountDetailFrameHash(window.location.hash);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }, []);
+
+  const openAccountDetailScriptRoute = useCallback((script: AccountDetailScriptRoute) => {
+    if (typeof window === 'undefined' || !selectedAccount) {
+      return;
+    }
+    setAccountDetailIDFromHash(selectedAccount.id);
+    setAccountDetailScriptFromHash(script);
+    const nextHash = buildAccountDetailScriptFrameHash(window.location.hash, selectedAccount.id, script);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }, [selectedAccount]);
+
+  const closeAccountDetailScriptRoute = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    setAccountDetailScriptFromHash('');
+    const nextHash = clearAccountDetailScriptFrameHash(window.location.hash);
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
     }
@@ -1073,6 +1113,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           onTestQuotaCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyQuotaCurl(input) : undefined}
           onTestBillingCurl={selectedAccount.credentialSource === 'api-key' ? (input) => testSelectedApiKeyBillingCurl(input) : undefined}
           onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
+          activeScriptEditor={selectedAccount.id === accountDetailIDFromHash ? accountDetailScriptFromHash : ''}
+          onOpenScriptEditor={openAccountDetailScriptRoute}
+          onCloseScriptEditor={closeAccountDetailScriptRoute}
           onStartReauth={isCodexAuthFile(selectedAccount) ? () => { void startCodexOAuth(selectedAccount); } : undefined}
           onCancelReauth={cancelCodexOAuth}
           isReauthing={oauthPendingAccountID === selectedAccount.id}
@@ -1404,4 +1447,11 @@ function readAccountDetailIDFromHash() {
     return '';
   }
   return readFrameHashState(window.location.hash)?.accountDetailID ?? '';
+}
+
+function readAccountDetailScriptFromHash(): AccountDetailScriptRoute | '' {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return readFrameHashState(window.location.hash)?.accountDetailScript ?? '';
 }

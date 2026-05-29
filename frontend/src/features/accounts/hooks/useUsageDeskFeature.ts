@@ -12,7 +12,7 @@ import {
   RefreshCodexLocalUsage,
 } from '../../../../wailsjs/go/main/App';
 import { EventsOn } from '../../../../wailsjs/runtime/runtime';
-import { useDebug } from '../../../context/DebugContext';
+import { useDebug } from '../../../context/useDebug';
 import type { SidecarStatus, UsageDeskWorkspace as UsageDeskWorkspaceID } from '../../../types';
 import { hasPreviewMode, hasWailsAppBindings } from '../../../utils/previewMode';
 import {

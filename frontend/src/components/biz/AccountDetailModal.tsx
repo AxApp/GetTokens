@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DownloadAuthFile, GetAuthFileModels, NormalizeAuthFileContent } from '../../../wailsjs/go/main/App';
-import { useDebug } from '../../context/DebugContext';
+import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import type { AuthFile, AuthModel } from '../../types';
 import { toErrorMessage } from '../../utils/error';

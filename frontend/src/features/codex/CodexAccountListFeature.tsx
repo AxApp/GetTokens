@@ -23,7 +23,7 @@ import {
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
-import { useDebug } from '../../context/DebugContext';
+import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import type { AccountRecord, SidecarStatus } from '../../types';
 import { toErrorMessage } from '../../utils/error';

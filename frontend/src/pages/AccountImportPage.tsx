@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ClipboardPaste, FilePlus, Loader2, Trash2, Upload } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
-import { useAccountsPageStateContext } from '../features/accounts/AccountsPageStateProvider';
+import { useAccountsPageStateContext } from '../features/accounts/AccountsPageStateContext';
 import {
   parseAccountImportPayloads,
   readUploadFiles,

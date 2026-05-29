@@ -126,6 +126,7 @@ export function useAppNavigation() {
       activeUsageDeskWorkspace,
       detailID,
       {
+        accountDetailScript: hashState?.accountDetailScript ?? null,
         claudeWorkspace: activeClaudeWorkspace,
         density: activePage === 'accounts' ? readCurrentHashParam('density') : null,
         group: activePage === 'accounts' ? readCurrentHashParam('group') : null,
@@ -203,6 +204,7 @@ function buildCanonicalFrameHashFromState(hashState: NonNullable<ReturnType<type
     hashState.usageDeskWorkspace ?? 'codex',
     hashState.accountDetailID ?? null,
     {
+      accountDetailScript: hashState.accountDetailScript ?? null,
       claudeWorkspace: hashState.claudeWorkspace ?? 'account-list',
       density: hashState.page === 'accounts' ? readCurrentHashParam('density') : null,
       group: hashState.page === 'accounts' ? readCurrentHashParam('group') : null,

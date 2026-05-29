@@ -53,14 +53,17 @@ const sessionManagementWorkspaces: ReadonlySet<SessionManagementWorkspace> = new
 const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', 'claude']);
 const usageDeskSources = new Set(['observed', 'projected'] as const);
 const usageDeskRanges = new Set(['TODAY', '7D', '14D', '30D', '全部'] as const);
+const accountDetailScriptRoutes = new Set(['quota', 'billing'] as const);
 
 export type UsageDeskSourceStorageValue = 'observed' | 'projected';
 export type UsageDeskRangeStorageValue = 'TODAY' | '7D' | '14D' | '30D' | '全部';
+export type AccountDetailScriptRoute = 'quota' | 'billing';
 
 export interface FrameHashState {
   page: AppPage;
   workspace?: AccountWorkspace;
   accountDetailID?: string;
+  accountDetailScript?: AccountDetailScriptRoute;
   codexWorkspace?: CodexWorkspace;
   claudeWorkspace?: ClaudeWorkspace;
   sessionManagementWorkspace?: SessionManagementWorkspace;
@@ -68,6 +71,7 @@ export interface FrameHashState {
 }
 
 interface FrameHashOptions {
+  accountDetailScript?: AccountDetailScriptRoute | null;
   claudeWorkspace?: ClaudeWorkspace;
   density?: string | null;
   group?: string | null;
@@ -122,6 +126,10 @@ export function isUsageDeskSourceStorageValue(value: string | null | undefined):
 
 export function isUsageDeskRangeStorageValue(value: string | null | undefined): value is UsageDeskRangeStorageValue {
   return typeof value === 'string' && usageDeskRanges.has(value as UsageDeskRangeStorageValue);
+}
+
+export function isAccountDetailScriptRoute(value: string | null | undefined): value is AccountDetailScriptRoute {
+  return typeof value === 'string' && accountDetailScriptRoutes.has(value as AccountDetailScriptRoute);
 }
 
 export function resolveInitialActivePage(
@@ -328,12 +336,16 @@ export function readFrameHashState(
   if (page === 'accounts') {
     const workspace = params.get('workspace');
     const detail = params.get('detail');
+    const script = params.get('script');
     const state: FrameHashState = {
       page,
       workspace: isAccountWorkspace(workspace) ? workspace : 'all',
     };
     if (detail && detail.trim()) {
       state.accountDetailID = detail;
+      if (isAccountDetailScriptRoute(script)) {
+        state.accountDetailScript = script;
+      }
     }
     return state;
   }
@@ -420,6 +432,9 @@ export function buildFrameHash(
   if (detailID && detailID.trim()) {
     params.set('detail', detailID);
   }
+  if (page === 'accounts' && detailID && isAccountDetailScriptRoute(options?.accountDetailScript)) {
+    params.set('script', options.accountDetailScript);
+  }
   return `#${params.toString()}`;
 }
 
@@ -428,6 +443,7 @@ export function buildAccountDetailFrameHash(hash: string | null | undefined, det
   const params = new URLSearchParams(normalized);
   params.set('frame', 'accounts');
   params.set('detail', detailID);
+  params.delete('script');
   return `#${params.toString()}`;
 }
 
@@ -435,6 +451,27 @@ export function clearAccountDetailFrameHash(hash: string | null | undefined): st
   const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
   const params = new URLSearchParams(normalized);
   params.delete('detail');
+  params.delete('script');
+  return `#${params.toString()}`;
+}
+
+export function buildAccountDetailScriptFrameHash(
+  hash: string | null | undefined,
+  detailID: string,
+  script: AccountDetailScriptRoute,
+): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.set('frame', 'accounts');
+  params.set('detail', detailID);
+  params.set('script', script);
+  return `#${params.toString()}`;
+}
+
+export function clearAccountDetailScriptFrameHash(hash: string | null | undefined): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.delete('script');
   return `#${params.toString()}`;
 }
 

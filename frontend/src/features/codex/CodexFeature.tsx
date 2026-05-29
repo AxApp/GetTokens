@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import SearchInput from '../../components/ui/SearchInput';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
-import { useDebug } from '../../context/DebugContext';
+import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import type { CodexWorkspace } from '../../types';
 import { toErrorMessage } from '../../utils/error';

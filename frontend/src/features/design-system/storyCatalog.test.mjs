@@ -249,6 +249,30 @@ test('design system inspect mode is wired to the dev inspector runtime', async (
   assert.match(entrySource, /design_system\.inspect_elements/);
 });
 
+test('vite dev retries Wails generated bindings during regeneration window', async () => {
+  const viteSource = await readFile(new URL('../../../vite.config.js', import.meta.url), 'utf8');
+
+  assert.match(viteSource, /wailsGeneratedFileRetryPlugin/);
+  assert.match(viteSource, /wails-generated-file-retry/);
+  assert.match(viteSource, /wailsjs/);
+  assert.match(viteSource, /ENOENT/);
+  assert.match(viteSource, /command === 'serve' \? wailsGeneratedFileRetryPlugin\(\) : null/);
+});
+
+test('provider modules keep React Fast Refresh compatible exports', async () => {
+  const debugProviderSource = await readFile(new URL('../../context/DebugContext.tsx', import.meta.url), 'utf8');
+  const accountsProviderSource = await readFile(new URL('../accounts/AccountsPageStateProvider.tsx', import.meta.url), 'utf8');
+  const accountsFeatureSource = await readFile(new URL('../accounts/AccountsFeature.tsx', import.meta.url), 'utf8');
+  const accountImportSource = await readFile(new URL('../../pages/AccountImportPage.tsx', import.meta.url), 'utf8');
+
+  assert.match(debugProviderSource, /export function DebugProvider/);
+  assert.doesNotMatch(debugProviderSource, /export function useDebug/);
+  assert.match(accountsProviderSource, /export function AccountsPageStateProvider/);
+  assert.doesNotMatch(accountsProviderSource, /export function useAccountsPageStateContext/);
+  assert.match(accountsFeatureSource, /from '\.\/AccountsPageStateContext'/);
+  assert.match(accountImportSource, /from '\.\.\/features\/accounts\/AccountsPageStateContext'/);
+});
+
 test('component stories expose an overview state matrix', async () => {
   const componentGroups = designSystemStoryGroups.filter((group) => admittedComponentGroupIds.includes(group.id));
   assert.equal(componentGroups.length, admittedComponentGroupIds.length);

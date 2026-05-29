@@ -492,6 +492,25 @@ export default function useAccountsActions({
         return;
       }
 
+      if (!hasWailsAppBindings()) {
+        setSelectedAccount((prev) =>
+          prev
+            ? {
+                ...prev,
+                apiKey: nextAPIKey,
+                baseUrl: nextBaseURL,
+                prefix: nextPrefix,
+                quotaCurl: nextQuotaCurl,
+                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+                billingCurl: nextBillingCurl,
+                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                proxyUrl: nextProxyURL,
+              }
+            : prev
+        );
+        return;
+      }
+
       try {
         if (draft.quotaEnabled && nextQuotaCurl) {
           await trackRequest(
