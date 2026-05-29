@@ -195,6 +195,52 @@ func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 	}
 }
 
+func TestAccountMigrationClientEndpoints(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "POST" {
+			t.Fatalf("expected POST, got %s", method)
+		}
+		if contentType != "application/json" {
+			t.Fatalf("unexpected content type: %s", contentType)
+		}
+		switch path {
+		case "/v0/management/account-migration/dry-run":
+			return []byte(`{"generated_at_unix_ms":1780000000000,"candidates":[{"account_key":"acct_1","kind":"auth-file","title":"codex-pro","credential_source":"legacy-auth-file"},{"account_key":"acct_2","kind":"codex-api-key","title":"API","credential_source":"legacy-gettokens-codex-api-key"}],"warnings":["sample"]}`), 200, nil
+		case "/v0/management/account-migration/commit":
+			return []byte(`{"imported":2,"skipped":1}`), 200, nil
+		case "/v0/management/account-migration/delete-legacy-sources":
+			return []byte(`{"deleted":2,"backup_dir":"/tmp/backup","items":[{"id":"migration-source:1","source_kind":"auth-file","deleted":true}]}`), 200, nil
+		default:
+			t.Fatalf("unexpected path: %s", path)
+		}
+		return nil, 404, nil
+	})
+
+	dryRun, err := client.DryRunAccountMigration()
+	if err != nil {
+		t.Fatalf("DryRunAccountMigration: %v", err)
+	}
+	if dryRun.GeneratedAtUnixMs == 0 || len(dryRun.Candidates) != 2 || dryRun.Candidates[0].Kind != AccountKindAuthFile {
+		t.Fatalf("unexpected dry-run report: %#v", dryRun)
+	}
+
+	commit, err := client.CommitAccountMigration()
+	if err != nil {
+		t.Fatalf("CommitAccountMigration: %v", err)
+	}
+	if commit.Imported != 2 || commit.Skipped != 1 {
+		t.Fatalf("unexpected commit report: %#v", commit)
+	}
+
+	deleted, err := client.DeleteLegacyAccountSources()
+	if err != nil {
+		t.Fatalf("DeleteLegacyAccountSources: %v", err)
+	}
+	if deleted.Deleted != 2 || deleted.BackupDir != "/tmp/backup" || len(deleted.Items) != 1 {
+		t.Fatalf("unexpected delete result: %#v", deleted)
+	}
+}
+
 func TestRateLimitClientCRUDStatusAndEvents(t *testing.T) {
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		switch {

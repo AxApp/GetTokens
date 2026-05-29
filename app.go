@@ -1089,6 +1089,30 @@ func (a *App) ListAccounts() ([]AccountRecord, error) {
 	return records, nil
 }
 
+func (a *App) GetAccountMigrationPreview() (*AccountMigrationPreview, error) {
+	result, err := a.core.GetAccountMigrationPreview()
+	if err != nil {
+		return nil, err
+	}
+	return mapAccountMigrationPreview(result), nil
+}
+
+func (a *App) CommitAccountMigration() (*AccountMigrationCommitResult, error) {
+	result, err := a.core.CommitAccountMigration()
+	if err != nil {
+		return nil, err
+	}
+	return mapAccountMigrationCommitResult(result), nil
+}
+
+func (a *App) DeleteLegacyAccountSources() (*AccountMigrationDeleteResult, error) {
+	result, err := a.core.DeleteLegacyAccountSources()
+	if err != nil {
+		return nil, err
+	}
+	return mapAccountMigrationDeleteResult(result), nil
+}
+
 func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error) {
 	result, err := a.core.ListOpenAICompatibleProviders()
 	if err != nil {

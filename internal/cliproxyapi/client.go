@@ -254,6 +254,55 @@ func (c *Client) DeleteAccount(accountKey string) error {
 	return err
 }
 
+func (c *Client) DryRunAccountMigration() (*AccountMigrationReport, error) {
+	var report AccountMigrationReport
+	if err := c.postAccountMigration("/v0/management/account-migration/dry-run", nil, &report); err != nil {
+		return nil, err
+	}
+	if report.Candidates == nil {
+		report.Candidates = []AccountMigrationCandidate{}
+	}
+	return &report, nil
+}
+
+func (c *Client) CommitAccountMigration() (*AccountMigrationCommitReport, error) {
+	var report AccountMigrationCommitReport
+	if err := c.postAccountMigration("/v0/management/account-migration/commit", nil, &report); err != nil {
+		return nil, err
+	}
+	return &report, nil
+}
+
+func (c *Client) DeleteLegacyAccountSources() (*AccountMigrationDeleteResult, error) {
+	var result AccountMigrationDeleteResult
+	if err := c.postAccountMigration("/v0/management/account-migration/delete-legacy-sources", nil, &result); err != nil {
+		return nil, err
+	}
+	if result.Items == nil {
+		result.Items = []AccountMigrationDeleteResultItem{}
+	}
+	return &result, nil
+}
+
+func (c *Client) postAccountMigration(path string, payload any, result any) error {
+	var body io.Reader
+	if payload != nil {
+		data, err := json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+		body = bytes.NewReader(data)
+	}
+	response, _, err := c.request("POST", path, nil, body, "application/json")
+	if err != nil {
+		return err
+	}
+	if result == nil || len(response) == 0 {
+		return nil
+	}
+	return json.Unmarshal(response, result)
+}
+
 func (c *Client) PatchAccountStatus(accountKey string, disabled bool) (*UnifiedAccount, error) {
 	payload, err := json.Marshal(struct {
 		Disabled bool `json:"disabled"`

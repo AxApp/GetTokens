@@ -63,6 +63,58 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 	}
 }
 
+func mapAccountMigrationPreview(result *wailsapp.AccountMigrationPreview) *AccountMigrationPreview {
+	if result == nil {
+		return nil
+	}
+	return &AccountMigrationPreview{
+		Status:            result.Status,
+		AccountCount:      result.AccountCount,
+		CandidateCount:    result.CandidateCount,
+		KindSummary:       mapAccountMigrationKindSummary(result.KindSummary),
+		Warnings:          append([]string(nil), result.Warnings...),
+		GeneratedAtUnixMs: result.GeneratedAtUnixMs,
+		BackupHint:        result.BackupHint,
+	}
+}
+
+func mapAccountMigrationKindSummary(items []wailsapp.AccountMigrationKindSummary) []AccountMigrationKindSummary {
+	if len(items) == 0 {
+		return nil
+	}
+	result := make([]AccountMigrationKindSummary, 0, len(items))
+	for _, item := range items {
+		result = append(result, AccountMigrationKindSummary{
+			Kind:  item.Kind,
+			Count: item.Count,
+		})
+	}
+	return result
+}
+
+func mapAccountMigrationCommitResult(result *wailsapp.AccountMigrationCommitResult) *AccountMigrationCommitResult {
+	if result == nil {
+		return nil
+	}
+	return &AccountMigrationCommitResult{
+		Imported: result.Imported,
+		Skipped:  result.Skipped,
+		Errors:   append([]string(nil), result.Errors...),
+		Preview:  mapAccountMigrationPreview(result.Preview),
+	}
+}
+
+func mapAccountMigrationDeleteResult(result *wailsapp.AccountMigrationDeleteResult) *AccountMigrationDeleteResult {
+	if result == nil {
+		return nil
+	}
+	return &AccountMigrationDeleteResult{
+		Deleted:   result.Deleted,
+		BackupDir: result.BackupDir,
+		Preview:   mapAccountMigrationPreview(result.Preview),
+	}
+}
+
 func mapAccountRecordModels(items []cliproxyapi.CodexModel) []OpenAICompatibleModel {
 	out := make([]OpenAICompatibleModel, 0, len(items))
 	for _, item := range items {

@@ -109,6 +109,34 @@ type AccountRecord struct {
 	BillingEnabled   bool                    `json:"billingEnabled,omitempty"`
 }
 
+type AccountMigrationPreview struct {
+	Status            string                        `json:"status"`
+	AccountCount      int                           `json:"accountCount"`
+	CandidateCount    int                           `json:"candidateCount"`
+	KindSummary       []AccountMigrationKindSummary `json:"kindSummary"`
+	Warnings          []string                      `json:"warnings,omitempty"`
+	GeneratedAtUnixMs int64                         `json:"generatedAtUnixMs,omitempty"`
+	BackupHint        string                        `json:"backupHint"`
+}
+
+type AccountMigrationKindSummary struct {
+	Kind  string `json:"kind"`
+	Count int    `json:"count"`
+}
+
+type AccountMigrationCommitResult struct {
+	Imported int                      `json:"imported"`
+	Skipped  int                      `json:"skipped"`
+	Errors   []string                 `json:"errors,omitempty"`
+	Preview  *AccountMigrationPreview `json:"preview,omitempty"`
+}
+
+type AccountMigrationDeleteResult struct {
+	Deleted   int                      `json:"deleted"`
+	BackupDir string                   `json:"backupDir,omitempty"`
+	Preview   *AccountMigrationPreview `json:"preview,omitempty"`
+}
+
 type CreateCodexAPIKeyInput struct {
 	APIKey         string                  `json:"apiKey"`
 	Label          string                  `json:"label,omitempty"`

@@ -4,6 +4,7 @@ import (
 	"embed"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	wailsapp "github.com/linhay/gettokens/internal/wailsapp"
@@ -65,10 +66,30 @@ func main() {
 }
 
 func appSingleInstanceUniqueID() string {
-	if strings.EqualFold(strings.TrimSpace(os.Getenv("GETTOKENS_APP_PROFILE")), "dev") {
+	return appSingleInstanceUniqueIDFrom(os.Getenv("GETTOKENS_APP_PROFILE"), executablePath())
+}
+
+func appSingleInstanceUniqueIDFrom(profile string, exePath string) string {
+	if isDevAppProfile(profile, exePath) {
 		return "com.linhay.gettokens.dev"
 	}
 	return "com.linhay.gettokens"
+}
+
+func isDevAppProfile(profile string, exePath string) bool {
+	if strings.EqualFold(strings.TrimSpace(profile), "dev") {
+		return true
+	}
+	normalizedPath := filepath.ToSlash(strings.ToLower(strings.TrimSpace(exePath)))
+	return strings.Contains(normalizedPath, "/build/bin/gettokens.app/contents/macos/gettokens")
+}
+
+func executablePath() string {
+	exe, err := os.Executable()
+	if err != nil {
+		return ""
+	}
+	return exe
 }
 
 func consumeLoginItemArg(args []string) ([]string, bool) {
