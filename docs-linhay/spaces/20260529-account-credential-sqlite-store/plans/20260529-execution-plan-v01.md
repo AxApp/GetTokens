@@ -101,7 +101,7 @@
 
 - [x] push sidecar fork 分支 `gettokens/sidecar`。
 - [x] push 父仓当前分支 `账号与凭证统一存储方案`。
-- [ ] 按项目流程创建 PR 或合并回主线。
+- [x] 按项目流程创建 PR 或合并回主线。
 - [x] 合并前确认父仓 gitlink 指向已推送的 sidecar fork commit。
 
 验收：
@@ -109,6 +109,7 @@
 - 远端可获取 sidecar commit `a4896197`。
 - 远端可获取父仓 commit `6ef891f`。
 - 父仓 gitlink 指向 sidecar commit `a489619720a2627473c8c8d7d1c9923d00d2562f`，该 commit 已存在于远端 `gettokens/sidecar`。
+- PR：`https://github.com/AxApp/GetTokens/pull/4`。
 - CI 或本地复验可从源码重建 sidecar，不依赖 CLIProxyAPI 上游 release 资产。
 
 ## 阶段 6：真实账号迁移与旧源删除
