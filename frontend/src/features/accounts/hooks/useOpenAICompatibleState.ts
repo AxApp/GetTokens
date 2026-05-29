@@ -208,10 +208,11 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
 
   const toggleProviderDisabled = useCallback(
     async (provider: OpenAICompatibleProvider) => {
+      const providerID = openAICompatibleProviderIdentity(provider);
       try {
-        setPendingStatusName(provider.name);
-        await trackRequest('SetAccountDisabled', { id: `openai-compatible:${provider.name}`, disabled: !provider.disabled }, () =>
-          SetAccountDisabled(`openai-compatible:${provider.name}`, !provider.disabled),
+        setPendingStatusName(providerID);
+        await trackRequest('SetAccountDisabled', { id: providerID, disabled: !provider.disabled }, () =>
+          SetAccountDisabled(providerID, !provider.disabled),
         );
         await loadProviders();
       } finally {
@@ -232,7 +233,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
       await trackRequest('UpdateOpenAICompatibleProvider', { ...detailDraft }, () =>
         UpdateOpenAICompatibleProvider(
           main.UpdateOpenAICompatibleProviderInput.createFrom({
-            currentName: detailDraft.currentName,
+            currentName: detailDraft.accountKey || detailDraft.currentName,
             name: detailDraft.name,
             baseUrl: detailDraft.baseUrl,
             prefix: '',
@@ -252,6 +253,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
         prev
           ? {
               ...prev,
+              accountKey: prev.accountKey,
               currentName: prev.name,
             }
           : prev,
@@ -395,4 +397,12 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     applyFetchedModelsToDetailDraft,
     loadProviders,
   };
+}
+
+function openAICompatibleProviderIdentity(provider: OpenAICompatibleProvider): string {
+  const accountKey = String(provider.accountKey || '').trim();
+  if (accountKey) {
+    return accountKey;
+  }
+  return `openai-compatible:${String(provider.name || '').trim()}`;
 }

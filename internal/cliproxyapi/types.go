@@ -97,6 +97,93 @@ type OpenAICompatibleProvidersResponse struct {
 	Items []OpenAICompatibleProvider `json:"openai-compatibility"`
 }
 
+type AccountKind string
+
+const (
+	AccountKindAuthFile         AccountKind = "auth-file"
+	AccountKindCodexAPIKey      AccountKind = "codex-api-key"
+	AccountKindOpenAICompatible AccountKind = "openai-compatible"
+)
+
+type AccountCredentialSource string
+
+const (
+	AccountCredentialSourceSidecarManagementAPI AccountCredentialSource = "sidecar-management-api"
+)
+
+type AuthFileAccountCredential struct {
+	SourceFileName string `json:"source_file_name,omitempty"`
+	AuthJSON       string `json:"auth_json,omitempty"`
+	AuthType       string `json:"auth_type,omitempty"`
+	Email          string `json:"email,omitempty"`
+	PlanType       string `json:"plan_type,omitempty"`
+	ModifiedUnixMs int64  `json:"modified_unix_ms,omitempty"`
+	SizeBytes      int64  `json:"size_bytes,omitempty"`
+}
+
+type CodexAPIKeyAccountCredential struct {
+	APIKey             string `json:"api_key"`
+	APIKeyFingerprint  string `json:"api_key_fingerprint,omitempty"`
+	BaseURL            string `json:"base_url"`
+	Prefix             string `json:"prefix,omitempty"`
+	ProxyURL           string `json:"proxy_url,omitempty"`
+	Websockets         bool   `json:"websockets"`
+	QuotaCurl          string `json:"quota_curl,omitempty"`
+	QuotaEnabled       bool   `json:"quota_enabled,omitempty"`
+	BillingCurl        string `json:"billing_curl,omitempty"`
+	BillingEnabled     bool   `json:"billing_enabled,omitempty"`
+	FormatBaseURLsJSON string `json:"format_base_urls_json,omitempty"`
+	HeadersJSON        string `json:"headers_json,omitempty"`
+	ModelsJSON         string `json:"models_json,omitempty"`
+	ExcludedModelsJSON string `json:"excluded_models_json,omitempty"`
+}
+
+type OpenAICompatibleAccountCredential struct {
+	ProviderName       string `json:"provider_name"`
+	RuntimeProviderKey string `json:"runtime_provider_key,omitempty"`
+	BaseURL            string `json:"base_url"`
+	Prefix             string `json:"prefix,omitempty"`
+	APIKeyEntriesJSON  string `json:"api_key_entries_json"`
+	HeadersJSON        string `json:"headers_json,omitempty"`
+	ModelsJSON         string `json:"models_json,omitempty"`
+}
+
+type UnifiedAccount struct {
+	AccountKey         string                  `json:"account_key"`
+	Kind               AccountKind             `json:"kind"`
+	Title              string                  `json:"title"`
+	Provider           string                  `json:"provider"`
+	CredentialSource   AccountCredentialSource `json:"credential_source"`
+	Priority           int                     `json:"priority"`
+	Disabled           bool                    `json:"disabled"`
+	Revision           int                     `json:"revision"`
+	MetadataJSON       string                  `json:"metadata_json,omitempty"`
+	CreatedAtUnixMs    int64                   `json:"created_at_unix_ms,omitempty"`
+	UpdatedAtUnixMs    int64                   `json:"updated_at_unix_ms,omitempty"`
+	DeletedAtUnixMs    int64                   `json:"deleted_at_unix_ms,omitempty"`
+	RuntimeApplyStatus string                  `json:"runtime_apply_status,omitempty"`
+	RuntimeApplyError  string                  `json:"runtime_apply_error,omitempty"`
+
+	AuthFile         *AuthFileAccountCredential         `json:"auth_file,omitempty"`
+	CodexAPIKey      *CodexAPIKeyAccountCredential      `json:"codex_api_key,omitempty"`
+	OpenAICompatible *OpenAICompatibleAccountCredential `json:"openai_compatible,omitempty"`
+}
+
+type UnifiedAccountsResponse struct {
+	Items []UnifiedAccount `json:"accounts"`
+}
+
+type AccountWriteRequest struct {
+	Kind             AccountKind                        `json:"kind"`
+	Title            string                             `json:"title,omitempty"`
+	Provider         string                             `json:"provider,omitempty"`
+	Priority         int                                `json:"priority,omitempty"`
+	Disabled         bool                               `json:"disabled,omitempty"`
+	AuthFile         *AuthFileAccountCredential         `json:"auth_file,omitempty"`
+	CodexAPIKey      *CodexAPIKeyAccountCredential      `json:"codex_api_key,omitempty"`
+	OpenAICompatible *OpenAICompatibleAccountCredential `json:"openai_compatible,omitempty"`
+}
+
 type RateLimitStrategyMeta struct {
 	ID               string   `json:"id"`
 	Name             string   `json:"name"`

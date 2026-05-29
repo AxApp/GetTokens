@@ -78,6 +78,7 @@ type CodexQuotaBillingBalanceInfo struct {
 
 type AccountRecord struct {
 	ID               string                  `json:"id"`
+	AccountKind      string                  `json:"accountKind,omitempty"`
 	Provider         string                  `json:"provider"`
 	CredentialSource string                  `json:"credentialSource"`
 	DisplayName      string                  `json:"displayName"`
@@ -351,6 +352,7 @@ type ClaudeCodeAccountRoutingProbeAttempt struct {
 }
 
 type OpenAICompatibleProvider struct {
+	AccountKey string                  `json:"accountKey,omitempty"`
 	Name       string                  `json:"name"`
 	Priority   int                     `json:"priority,omitempty"`
 	Disabled   bool                    `json:"disabled,omitempty"`

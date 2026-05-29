@@ -272,7 +272,7 @@ function mapAccountRecordToClaudeCodeRow(account: AccountRecord): ClaudeCodeAcco
 }
 
 function resolveSourceKind(account: AccountRecord): ClaudeCodeAccountSourceKind {
-  if (account.id.startsWith('openai-compatible:')) {
+  if (account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:')) {
     return 'openai-compatible';
   }
   return account.credentialSource === 'auth-file' ? 'codex-auth-file' : 'codex-api-key';

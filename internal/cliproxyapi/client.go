@@ -186,6 +186,112 @@ func (c *Client) DeleteOpenAICompatibleProvider(name string) error {
 	return err
 }
 
+func (c *Client) ListAccounts() ([]UnifiedAccount, error) {
+	body, _, err := c.request("GET", "/v0/management/accounts", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var response UnifiedAccountsResponse
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []UnifiedAccount{}, nil
+	}
+	return response.Items, nil
+}
+
+func (c *Client) GetAccount(accountKey string) (*UnifiedAccount, error) {
+	body, _, err := c.request("GET", "/v0/management/accounts/"+url.PathEscape(accountKey), nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+
+	var account UnifiedAccount
+	if err := json.Unmarshal(body, &account); err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+
+func (c *Client) CreateAccount(input AccountWriteRequest) (*UnifiedAccount, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/accounts", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+
+	var account UnifiedAccount
+	if err := json.Unmarshal(body, &account); err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+
+func (c *Client) PatchAccount(accountKey string, input AccountWriteRequest) (*UnifiedAccount, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("PATCH", "/v0/management/accounts/"+url.PathEscape(accountKey), nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+
+	var account UnifiedAccount
+	if err := json.Unmarshal(body, &account); err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+
+func (c *Client) DeleteAccount(accountKey string) error {
+	_, _, err := c.request("DELETE", "/v0/management/accounts/"+url.PathEscape(accountKey), nil, nil, "")
+	return err
+}
+
+func (c *Client) PatchAccountStatus(accountKey string, disabled bool) (*UnifiedAccount, error) {
+	payload, err := json.Marshal(struct {
+		Disabled bool `json:"disabled"`
+	}{Disabled: disabled})
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("PATCH", "/v0/management/accounts/"+url.PathEscape(accountKey)+"/status", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+
+	var account UnifiedAccount
+	if err := json.Unmarshal(body, &account); err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+
+func (c *Client) PatchAccountPriority(accountKey string, priority int) (*UnifiedAccount, error) {
+	payload, err := json.Marshal(struct {
+		Priority int `json:"priority"`
+	}{Priority: priority})
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("PATCH", "/v0/management/accounts/"+url.PathEscape(accountKey)+"/priority", nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+
+	var account UnifiedAccount
+	if err := json.Unmarshal(body, &account); err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+
 func (c *Client) RequestCodexAuthURL(isWebUI bool) (*OAuthStartResponse, error) {
 	query := url.Values{}
 	if isWebUI {
