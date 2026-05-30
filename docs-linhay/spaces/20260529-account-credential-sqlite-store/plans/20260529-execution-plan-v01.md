@@ -63,6 +63,7 @@
 - [x] Wails 增加启动迁移桥接：`GetAccountMigrationPreview`、`CommitAccountMigration`、`DeleteLegacyAccountSources`。
 - [x] Codex API key 账号的创建、更新、删除、禁用、优先级优先走统一账号 API。
 - [x] OpenAI-compatible provider 的列表、创建、编辑、删除、禁用、优先级走统一账号 API。
+- [x] 账号池导入 auth-file 账号走统一账号 API：公开 `UploadAuthFiles` 入口创建 SQLite `kind=auth-file` 账号，不再通过旧 `/v0/management/auth-files` 创建 auth-dir 文件；旧文件上传仅保留给 legacy replace/OAuth 文件回填内部兼容链路。
 - [x] root Wails DTO / mapper / bindings 同步透出统一账号字段与迁移摘要字段。
 - [x] `AccountRecord` 透出 `accountKind`，避免继续依赖旧 ID 前缀判断账号类型。
 

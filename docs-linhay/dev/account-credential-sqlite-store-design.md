@@ -58,6 +58,7 @@ account-store-db: /Users/<user>/.config/gettokens/accounts-v1.sqlite
 - sidecar `coreauth.Manager.Update()` 持久化链路已接入 account store：运行中 Codex token refresh 成功后，会通过 `Auth.AccountKey=acct_*` 定位原 `auth-file` 账号并更新 `auth_file_accounts.auth_json`；不会再把迁移后的账号凭证写回旧 auth-file。account store 内的非 `auth-file` 账号也不会 fallback 到旧文件 store。
 - GetTokens 父仓已新增统一账号 API client 和 `UnifiedAccount -> AccountRecord` 映射，`acct_*` Codex API key 更新、删除、disabled、priority 走 sidecar `/v0/management/accounts`。
 - GetTokens 父仓 OpenAI-compatible 管理已从旧 `/v0/management/openai-compatibility` 收敛到统一账号 API：列表过滤 `kind=openai-compatible`，创建走 `POST /v0/management/accounts`，编辑走 `PATCH /v0/management/accounts/{account_key}`，删除、disabled、priority 走对应统一账号端点。
+- GetTokens 账号池导入 auth-file 账号已从旧 `/v0/management/auth-files` 上传文件链路改为 `POST /v0/management/accounts` 创建 `kind=auth-file` 账号；公开导入入口不再创建 `codex-*.json`。旧 `/auth-files` 上传只保留给迁移前文件替换和兼容流程内部使用。
 - 前端 OpenAI-compatible DTO 暴露 `accountKey`，账号卡操作和 Codex 账号列表模型优先使用 `acct_*`；provider name 仅作为迁移前旧卡片解析兜底。
 - `AccountRecord` 增加 `accountKind`，取值为 `auth-file | codex-api-key | openai-compatible`。前端删除、禁用同步、复制导入、详情编辑门禁和 Claude/Codex 账号列表分类必须优先使用 `accountKind`，不能再只靠 `auth-file:*`、`codex-api-key:*`、`openai-compatible:*` 旧 ID 前缀推断账号类型。
 - Wails 层仍有旧 ID 兼容分支，目标仅是迁移前残留状态可回退；新账号卡身份必须使用 sidecar 分配的 `acct_*`。

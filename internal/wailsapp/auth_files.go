@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
 func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
@@ -127,7 +128,39 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 		return errors.New("未选择文件")
 	}
 
-	existingNames, err := a.listExistingAuthFileNames()
+	existingNames, err := a.listExistingAccountStoreAuthFileNames()
+	if err != nil {
+		return err
+	}
+
+	client := a.managementClient()
+	for _, f := range files {
+		if strings.TrimSpace(f.Name) == "" || strings.TrimSpace(f.ContentBase64) == "" {
+			continue
+		}
+		decoded, err := base64.StdEncoding.DecodeString(f.ContentBase64)
+		if err != nil {
+			return fmt.Errorf("文件 %s base64 解码失败: %w", f.Name, err)
+		}
+		if normalized, _, normalizeErr := accountsdomain.NormalizeAuthFileForSidecar(decoded); normalizeErr == nil {
+			decoded = normalized
+		}
+		resolvedName := uniqueAuthFileUploadName(f.Name, existingNames)
+		write := authFileCreateAccountWrite(resolvedName, decoded)
+		if _, err := client.CreateAccount(write); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *App) uploadLegacyAuthFiles(files []UploadFilePayload) error {
+	if len(files) == 0 {
+		return errors.New("未选择文件")
+	}
+
+	existingNames, err := a.listExistingLegacyAuthFileNames()
 	if err != nil {
 		return err
 	}
@@ -167,6 +200,34 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 		a.invalidateAuthFileMetadataCache(resolvedNames...)
 	}
 	return err
+}
+
+func authFileCreateAccountWrite(sourceFileName string, authJSON []byte) cliproxyapi.AccountWriteRequest {
+	sourceFileName = uniqueAuthFileNameFallback(sourceFileName)
+	provider := accountsdomain.InferAuthFileKind(authJSON)
+	if provider == "" {
+		provider = "codex"
+	}
+	profile := accountsdomain.ExtractAuthFileProfile(authJSON)
+	return cliproxyapi.AccountWriteRequest{
+		Kind:     cliproxyapi.AccountKindAuthFile,
+		Title:    sourceFileName,
+		Provider: provider,
+		Priority: accountsdomain.ExtractAuthFilePriority(authJSON),
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: sourceFileName,
+			AuthJSON:       string(authJSON),
+			AuthType:       provider,
+			Email:          strings.TrimSpace(profile.Email),
+			PlanType:       strings.TrimSpace(profile.PlanType),
+			SizeBytes:      int64(len(authJSON)),
+		},
+	}
+}
+
+func uniqueAuthFileNameFallback(name string) string {
+	existing := map[string]struct{}{}
+	return uniqueAuthFileUploadName(name, existing)
 }
 
 func (a *App) updateAuthFilePriority(name string, priority int) error {
@@ -229,13 +290,13 @@ func (a *App) replaceAuthFile(name string, content []byte) error {
 		return err
 	}
 
-	return a.UploadAuthFiles([]UploadFilePayload{{
+	return a.uploadLegacyAuthFiles([]UploadFilePayload{{
 		Name:          name,
 		ContentBase64: base64.StdEncoding.EncodeToString(content),
 	}})
 }
 
-func (a *App) listExistingAuthFileNames() (map[string]struct{}, error) {
+func (a *App) listExistingLegacyAuthFileNames() (map[string]struct{}, error) {
 	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
 	if err != nil {
 		return nil, err
@@ -253,6 +314,24 @@ func (a *App) listExistingAuthFileNames() (map[string]struct{}, error) {
 	names := make(map[string]struct{}, len(result.Files))
 	for _, file := range result.Files {
 		if trimmed := strings.TrimSpace(file.Name); trimmed != "" {
+			names[strings.ToLower(trimmed)] = struct{}{}
+		}
+	}
+	return names, nil
+}
+
+func (a *App) listExistingAccountStoreAuthFileNames() (map[string]struct{}, error) {
+	accounts, err := a.managementClient().ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	names := make(map[string]struct{}, len(accounts))
+	for _, account := range accounts {
+		if account.Kind != cliproxyapi.AccountKindAuthFile || account.AuthFile == nil {
+			continue
+		}
+		if trimmed := strings.TrimSpace(account.AuthFile.SourceFileName); trimmed != "" {
 			names[strings.ToLower(trimmed)] = struct{}{}
 		}
 	}

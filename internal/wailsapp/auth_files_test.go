@@ -4,8 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
-	"mime"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -356,33 +354,30 @@ func TestUploadAuthFilesConvertsChatGPTSessionToCPA(t *testing.T) {
   "sessionToken": "session-token"
 }`
 
-	var uploadedName string
-	var uploadedPayload map[string]interface{}
+	var accountWrite map[string]interface{}
+	var authFileCredential map[string]interface{}
 
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			switch {
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
-				return []byte(`{"files":[],"total":0}`), http.StatusOK, nil
-			case method == http.MethodPost && path == ManagementAPIPrefix+"/auth-files":
-				_, params, err := mime.ParseMediaType(contentType)
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				return []byte(`{"accounts":[]}`), http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/accounts":
+				raw, err := io.ReadAll(body)
 				if err != nil {
-					t.Fatalf("ParseMediaType: %v", err)
+					t.Fatalf("ReadAll account body: %v", err)
 				}
-				reader := multipart.NewReader(body, params["boundary"])
-				part, err := reader.NextPart()
+				if err := json.Unmarshal(raw, &accountWrite); err != nil {
+					t.Fatalf("account payload is invalid json: %v; raw=%s", err, raw)
+				}
+				rawCredential, err := json.Marshal(accountWrite["auth_file"])
 				if err != nil {
-					t.Fatalf("NextPart: %v", err)
+					t.Fatalf("Marshal auth_file: %v", err)
 				}
-				uploadedName = part.FileName()
-				raw, err := io.ReadAll(part)
-				if err != nil {
-					t.Fatalf("ReadAll upload part: %v", err)
+				if err := json.Unmarshal(rawCredential, &authFileCredential); err != nil {
+					t.Fatalf("auth_file payload is invalid json: %v; raw=%s", err, rawCredential)
 				}
-				if err := json.Unmarshal(raw, &uploadedPayload); err != nil {
-					t.Fatalf("uploaded payload is invalid json: %v; raw=%s", err, raw)
-				}
-				return []byte(`{"status":"ok"}`), http.StatusOK, nil
+				return []byte(`{"account_key":"acct_imported","kind":"auth-file","title":"chatgpt-session.json","provider":"codex","auth_file":{"source_file_name":"chatgpt-session.json"}}`), http.StatusOK, nil
 			default:
 				t.Fatalf("unexpected request: %s %s", method, path)
 				return nil, 0, nil
@@ -398,8 +393,20 @@ func TestUploadAuthFilesConvertsChatGPTSessionToCPA(t *testing.T) {
 		t.Fatalf("UploadAuthFiles: %v", err)
 	}
 
-	if uploadedName != "chatgpt-session.json" {
-		t.Fatalf("uploaded filename = %q, want chatgpt-session.json", uploadedName)
+	if got := accountWrite["kind"]; got != "auth-file" {
+		t.Fatalf("kind = %#v, want auth-file", got)
+	}
+	if got := accountWrite["title"]; got != "chatgpt-session.json" {
+		t.Fatalf("title = %#v, want chatgpt-session.json", got)
+	}
+	if got := authFileCredential["source_file_name"]; got != "chatgpt-session.json" {
+		t.Fatalf("source_file_name = %#v, want chatgpt-session.json", got)
+	}
+	uploadedPayload := map[string]interface{}{}
+	if raw, ok := authFileCredential["auth_json"].(string); !ok {
+		t.Fatalf("auth_json = %#v, want string", authFileCredential["auth_json"])
+	} else if err := json.Unmarshal([]byte(raw), &uploadedPayload); err != nil {
+		t.Fatalf("auth_json is invalid json: %v; raw=%s", err, raw)
 	}
 	if got := uploadedPayload["type"]; got != "codex" {
 		t.Fatalf("type = %#v, want codex", got)

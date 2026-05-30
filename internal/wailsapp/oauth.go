@@ -88,7 +88,7 @@ func (a *App) FinalizeCodexOAuth(input CompleteCodexOAuthInput) error {
 		return err
 	}
 
-	if err := a.UploadAuthFiles([]UploadFilePayload{{
+	if err := a.uploadLegacyAuthFiles([]UploadFilePayload{{
 		Name:          existingName,
 		ContentBase64: base64.StdEncoding.EncodeToString(replacementBody),
 	}}); err != nil {
