@@ -252,6 +252,22 @@ func TestResolveCodexQuotaRequestInfo(t *testing.T) {
 	}
 }
 
+func TestResolveCodexQuotaRequestInfoReadsRuntimeMetadataAccountID(t *testing.T) {
+	body := []byte(`{
+		"id":"codex-plus.json",
+		"provider":"codex",
+		"metadata":{"account_id":"account_from_metadata","email":"plus@example.com"}
+	}`)
+
+	info, err := ResolveCodexQuotaRequestInfo(body)
+	if err != nil {
+		t.Fatalf("ResolveCodexQuotaRequestInfo: %v", err)
+	}
+	if info.ChatGPTAccountID != "account_from_metadata" {
+		t.Fatalf("ChatGPTAccountID = %q, want account_from_metadata", info.ChatGPTAccountID)
+	}
+}
+
 func TestBuildCodexQuotaResponse(t *testing.T) {
 	authBody := []byte(`{"planType":"plus","tokens":{"account_id":"acct_1"}}`)
 	usageBody := []byte(`{

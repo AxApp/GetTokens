@@ -62,6 +62,7 @@ account-store-db: /Users/<user>/.config/gettokens/accounts-v1.sqlite
 - 导入和登录链路复查结论：前端导入、deep link 导入、Wails `UploadAuthFiles`、Codex OAuth start/status/finalize、sidecar OAuth token save、runtime token refresh 均已进入 account store。生产代码扫描不再存在 GetTokens/Wails/frontend 对旧 `/v0/management/auth-files*` 的调用；旧端点只保留 410 防线和测试覆盖。
 - Codex OAuth 重新登录存在两种合法成功形态：sidecar 直接命中已有 `account_key` 并原地更新 `auth_file_accounts.auth_json`，或产生一张临时新账号后由 Wails 回填旧账号并删除临时账号。第一种形态下 Wails finalize 不再要求出现 replacement auth-file。
 - OAuth 重新登录命中已有账号卡时必须保留原 `account_key`、`title`、`source_file_name`、`priority`、`disabled`，只替换 `auth_json` 和派生的 `email` / `plan_type` / `auth_type`。这避免重新登录把用户禁用态、优先级或卡片名称重置。
+- 迁移后的 Codex Plus 额度查询必须从 SQLite runtime auth 闭环：account store 合成 `auth-file` 账号时不能被“旧 auth-dir codex 文件跳过”逻辑过滤；management `api-call` 的 `auth_index` 必须识别 `acct_*`、runtime auth id 和 source file name；Wails 额度解析必须兼容 runtime wrapper 中的 `metadata.account_id`。
 - 前端 OpenAI-compatible DTO 暴露 `accountKey`，账号卡操作和 Codex 账号列表模型优先使用 `acct_*`；provider name 仅作为迁移前旧卡片解析兜底。
 - `AccountRecord` 增加 `accountKind`，取值为 `auth-file | codex-api-key | openai-compatible`。前端删除、禁用同步、复制导入、详情编辑门禁和 Claude/Codex 账号列表分类必须优先使用 `accountKind`，不能再只靠 `auth-file:*`、`codex-api-key:*`、`openai-compatible:*` 旧 ID 前缀推断账号类型。
 - Wails 层仍有旧 ID 兼容分支，目标仅是迁移前残留状态可回退；新账号卡身份必须使用 sidecar 分配的 `acct_*`。
@@ -361,6 +362,7 @@ mark account_runtime_apply_state applied or failed
 5. runtime apply 失败不能回滚已提交 DB，但 management API 必须暴露 failed 状态，下一次 sidecar ready/reload 或账号更新时重试。
 6. GetTokens 不能绕过 sidecar 直接补写 DB 或 auth-file。
 7. token refresh 从 `coreauth.Manager.Update()` 进入持久化时，必须由 account-store token store 拦截 `acct_*` 账号：`auth-file` 写 SQLite，非 account-store auth 才允许 fallback 到旧文件 store。
+8. token refresh 写回 `auth_file_accounts.auth_json` 时必须先反序列化已有完整 JSON，再合并 runtime metadata；不能用不完整 refresh metadata 重建整份 JSON，否则会丢失 `account_id`、`id_token`、`plan_type` 等额度和套餐识别字段。
 
 ## Sidecar 是否还更新 auth-file
 
