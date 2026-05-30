@@ -5,6 +5,9 @@
 
 ```text
 .
+├── .codex/            # Codex 项目级配置：subagent、项目运行参数等
+│   ├── config.toml
+│   └── agents/        # 项目级 Codex custom agents
 ├── AGENTS.md          # 行为规则，可按任务优化但需保留路径规范
 └── docs-linhay/       # 项目文档系统目录：开发计划、需求文档、技术文档等
     ├── spaces/        # 以 feature / topic / milestone 为单位的工作空间根目录
@@ -47,6 +50,8 @@
 16. sidecar 是 GetTokens 运行态自治层。账号选择、rate-limit、route guard、live sessions、usage attribution、system proxy、Codex WebSocket 等热路径状态优先在 `CLIProxyAPI#gettokens/sidecar` 内闭环，不通过前端或 Wails 临时补偿来伪造 sidecar 已处理状态。
 17. 从账号与凭证 SQLite 统一存储版本开始，GetTokens sidecar 不再跟随 CLIProxyAPI 上游做合并式同步。上游提交和功能只能作为参考输入；需要的能力必须在 GetTokens sidecar 边界内重新设计、实现、补窄测试并重建 sidecar。management API 可以按 GetTokens 需求破坏性调整，不为了上游兼容保留旧合约。
 18. GetTokens 是 macOS/Wails 桌面工作台产品，默认不做移动端适配、移动端截图或 375/390px 宽度验收。前端与视觉改动默认按桌面窗口、Wails 容器和可用的桌面浏览器预览验收；只有用户在当前需求中明确提出移动端目标时，才增加移动端布局与截图门禁。
+19. 项目级 Codex subagent 配置统一放在 `.codex/agents/`，默认命名为 `gettokens_*`；除非正在验证模型路由能力，否则 agent 默认继承父会话模型，只用职责、sandbox 和 reasoning effort 区分任务面。
+20. 主控 agent 可根据任务判断自主新增、删除或修改 `.codex/agents/*.toml`，不需要逐次请求授权；但必须说明判断依据，验证 TOML 可解析，更新 `docs-linhay/dev/20260530-codex-project-subagents.md` 与 memory，并执行 `qmd update` / `qmd embed`。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
@@ -110,6 +115,7 @@ Git `worktree` 治理：
 6. 涉及“主控 agent 监督、subagent 实做、直到完整需求闭环才停止”的执行模式时，优先使用 `gettokens-ops-governance` 中的 `Subagent Delivery Loop`。
 7. 若用户希望用显式 skill 名称触发该模式，使用 `gettokens-subagent-supervision`；它是监督交付模式的轻量触发入口。
 8. 涉及 Codex Skills / MCP Servers、`[[skills.config]]`、`tk://github.com` / `tk://gitlab.com` Skill source、`~/.codex/config.toml` MCP 解析与保存时，优先使用 `gettokens-codex-extensions-management`。
+9. 涉及项目级 Codex custom agents、`.codex/config.toml`、`.codex/agents/*.toml` 或 subagent 任务分工配置时，优先参考 `docs-linhay/dev/20260530-codex-project-subagents.md`。
 
 ## 5. 记忆系统规则（必须）
 
