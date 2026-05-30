@@ -63,6 +63,13 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - OAuth 映射按 provider/channel 生效，同一 `codex` channel 共享映射。
 - 模型选择使用项目自定义 combobox，不回退到原生 `datalist`。
 
+## 3.1 Codex 模型路由语义
+- Codex runtime 账号选择只以请求 body 中的 `model` 作为模型路由输入，不读取 `X-OpenAI-Subagent`、`thread_source` 或 role 作为候选账号选择条件。
+- `X-OpenAI-Subagent` 只属于 Codex Responses client context 透传 header；可以继续转发给上游，但不得写入 GetTokens route context 或 metadata 作为路由判断。
+- 普通用法：用户在 Codex 侧配置模型名，例如 `deepseek`；sidecar 按 `deepseek` 进入模型 registry / 账号能力过滤，命中声明支持该模型的账号。
+- 进阶用法：账号卡模型映射把特殊 Codex 模型名暴露为 alias，例如 `models[].name = deepseek-chat`、`models[].alias = deepseek`；路由侧按 `deepseek` 选账号，执行侧发给上游 `deepseek-chat`。
+- 多个真实模型可以映射到同一个 Codex alias；openai-compatible 账号内会形成 alias pool，并在支持的错误边界内做同账号内轮转或失败切换。
+
 ## 4. 路由探测语义
 - `ProbeCodexAccountRouting` 使用页面传入的候选约束发起最小 relay 请求。
 - 新主路径应优先使用 Codex channel config + dry-run/explain，展示候选池、过滤原因、排序步骤和最终选择。
