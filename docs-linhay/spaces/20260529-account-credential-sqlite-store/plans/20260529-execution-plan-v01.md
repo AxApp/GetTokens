@@ -153,6 +153,22 @@
 - `account_migration_sources.deleted_at_unix_ms` / `backup_path` 写入成功。
 - 删除后 `accounts-v1.sqlite` 是唯一账号事实源。
 
+### 2026-05-30 dev 正式数据副本验证
+
+- [x] 不停止正式 App / 正式 sidecar，使用 SQLite `.backup` 在线复制正式 profile 到 `~/.config/gettokens-dev`。
+- [x] dev 配置隔离为 `port: 18317`、`auth-dir: /Users/linhey/.config/gettokens-dev`、`account-store-db: /Users/linhey/.config/gettokens-dev/accounts-v1.sqlite`。
+- [x] dev sidecar 使用新构建版本 `v7.1.16-92-ge6655916`，对应 sidecar commit `e6655916 fix: wait for account store sqlite locks`。
+- [x] dev dry-run 候选 11 个：`auth-file` 3 个、`codex-api-key` 8 个。
+- [x] dev commit 结果：`imported=11`、`skipped=0`、`errors=0`。
+- [x] dev delete legacy 结果：`deleted=11`，备份目录 `/Users/linhey/.config/gettokens-dev/migration-backups/accounts-v1-20260530T021439Z`。
+- [x] dev 迁移后账号 12 个：`auth-file` 4 个、`codex-api-key` 8 个。
+- [x] dev sidecar 日志未出现 `SQLITE_BUSY`、`database is locked` 或 `account store metadata` 错误。
+
+边界：
+
+- 正式 `/Applications/GetTokens.app` 与正式 sidecar 未停止、未替换、未执行删除旧源。
+- 正式 App 只有在安装包含 sidecar `e6655916` 的版本后，迁移启动页才具备本次 SQLite lock fix。
+
 ## 阶段 7：发布前最终回归
 
 - [x] sidecar：`go test ./internal/...`。
