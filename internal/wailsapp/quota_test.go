@@ -77,6 +77,57 @@ func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
 	}
 }
 
+func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
+	var gotAuthorization string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuthorization = r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"plan_type":"plus",
+			"rate_limit":{
+				"primary_window":{"used_percent":17,"limit_window_seconds":18000,"reset_at":1777980010}
+			}
+		}`))
+	}))
+	defer server.Close()
+
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method == http.MethodGet && path == ManagementAPIPrefix+"/accounts/acct_company" {
+				payload, _ := json.Marshal(map[string]any{
+					"account_key": "acct_company",
+					"kind":        "codex-api-key",
+					"title":       "公司 1",
+					"provider":    "codex",
+					"codex_api_key": map[string]any{
+						"api_key":       "sk-company",
+						"base_url":      server.URL,
+						"quota_curl":    `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"`,
+						"quota_enabled": true,
+					},
+				})
+				return payload, http.StatusOK, nil
+			}
+			t.Fatalf("unexpected sidecar request: %s %s", method, path)
+			return nil, 0, nil
+		},
+	}
+
+	quota, err := app.GetCodexQuota("acct_company")
+	if err != nil {
+		t.Fatalf("GetCodexQuota: %v", err)
+	}
+	if gotAuthorization != "Bearer sk-company" {
+		t.Fatalf("Authorization = %q, want Bearer sk-company", gotAuthorization)
+	}
+	if quota.PlanType != "plus" {
+		t.Fatalf("PlanType = %q, want plus", quota.PlanType)
+	}
+	if len(quota.Windows) != 1 || quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 83 {
+		t.Fatalf("unexpected quota windows: %#v", quota.Windows)
+	}
+}
+
 func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T) {
 	authBody := []byte(`{
 		"account_id":"acct_cached",
@@ -95,6 +146,19 @@ func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts/acct_cached":
+				payload, _ := json.Marshal(map[string]any{
+					"account_key": "acct_cached",
+					"kind":        "auth-file",
+					"title":       "cached.json",
+					"provider":    "codex",
+					"auth_file": map[string]any{
+						"source_file_name": "cached.json",
+						"auth_json":        string(authBody),
+						"auth_type":        "codex",
+					},
+				})
+				return payload, http.StatusOK, nil
 			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
 				payload, _ := json.Marshal(map[string]any{"accounts": []map[string]any{{
 					"account_key": "acct_cached",
@@ -117,7 +181,7 @@ func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T
 		},
 	}
 
-	quota, err := app.GetCodexQuota("cached.json")
+	quota, err := app.GetCodexQuota("acct_cached")
 	if err != nil {
 		t.Fatalf("GetCodexQuota: %v", err)
 	}

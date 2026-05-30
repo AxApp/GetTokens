@@ -12,12 +12,28 @@ import (
 	"time"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
 func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, errors.New("name 不能为空")
+	}
+	if isUnifiedAccountID(name) {
+		account, err := a.managementClient().GetAccount(name)
+		if err != nil {
+			return nil, err
+		}
+		switch account.Kind {
+		case cliproxyapi.AccountKindCodexAPIKey:
+			return a.getUnifiedCodexAPIKeyQuota(account)
+		case cliproxyapi.AccountKindAuthFile:
+			if account.AuthFile == nil {
+				return nil, fmt.Errorf("auth file 不存在: %s", name)
+			}
+			return a.getCodexAuthFileQuota(strings.TrimSpace(account.AccountKey), []byte(account.AuthFile.AuthJSON))
+		}
 	}
 	if strings.HasPrefix(name, "codex-api-key:") {
 		return a.getCodexAPIKeyQuota(name)
@@ -33,11 +49,14 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 		return nil, err
 	}
 
+	return a.getCodexAuthFileQuota(normalizeAuthIndex(authFile.AuthIndex), body)
+}
+
+func (a *App) getCodexAuthFileQuota(authIndex string, body []byte) (*CodexQuotaResponse, error) {
 	requestInfo, err := accountsdomain.ResolveCodexQuotaRequestInfo(body)
 	if err != nil {
 		return nil, err
 	}
-	authIndex := normalizeAuthIndex(authFile.AuthIndex)
 	if authIndex == "" {
 		return nil, errors.New("codex 凭证缺少 auth_index")
 	}
@@ -110,6 +129,27 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	}
 
 	return mapAccountsdomainCodexQuotaResponse(quota), nil
+}
+
+func (a *App) getUnifiedCodexAPIKeyQuota(account *cliproxyapi.UnifiedAccount) (*CodexQuotaResponse, error) {
+	if account == nil || account.Kind != cliproxyapi.AccountKindCodexAPIKey || account.CodexAPIKey == nil {
+		return nil, errors.New("账号不存在")
+	}
+	credential := account.CodexAPIKey
+	target := cliproxyAPIKeyQuotaSource{
+		APIKey:       strings.TrimSpace(credential.APIKey),
+		BaseURL:      strings.TrimSpace(credential.BaseURL),
+		Prefix:       strings.TrimSpace(credential.Prefix),
+		QuotaCurl:    strings.TrimSpace(credential.QuotaCurl),
+		QuotaEnabled: credential.QuotaEnabled,
+	}
+	if target.APIKey == "" {
+		return nil, errors.New("codex api key 为空")
+	}
+	if !target.QuotaEnabled || target.QuotaCurl == "" {
+		return nil, errors.New("codex api key 未配置额度 curl")
+	}
+	return a.executeCodexAPIKeyQuotaRequest(target)
 }
 
 func mapAccountsdomainCodexQuotaResponse(quota *accountsdomain.CodexQuotaResponse) *CodexQuotaResponse {

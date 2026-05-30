@@ -36,7 +36,8 @@ func (a *App) getRawAuthFileByName(name string) (*AuthFileItem, error) {
 	}
 
 	for index := range result.Files {
-		if strings.TrimSpace(result.Files[index].Name) == name {
+		if strings.TrimSpace(result.Files[index].Name) == name ||
+			strings.EqualFold(normalizeAuthIndex(result.Files[index].AuthIndex), name) {
 			return &result.Files[index], nil
 		}
 	}
