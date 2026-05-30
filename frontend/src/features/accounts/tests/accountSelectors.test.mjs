@@ -485,6 +485,64 @@ test('filterAccounts can select accounts by plan type', () => {
   );
 });
 
+test('filterAccounts keeps dynamically discovered plan types selectable', () => {
+  const accounts = [
+    {
+      id: 'auth-file:team',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Team Account',
+      status: 'ACTIVE',
+      planType: 'team',
+    },
+    {
+      id: 'auth-file:enterprise',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Enterprise Account',
+      status: 'ACTIVE',
+      planType: 'enterprise',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        plan: { team: true, enterprise: false },
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:team']
+  );
+});
+
+test('filterAccounts does not hide new plan types when an older all-selected plan filter is stored', () => {
+  const accounts = [
+    {
+      id: 'auth-file:team',
+      provider: 'codex',
+      credentialSource: 'auth-file',
+      displayName: 'Team Account',
+      status: 'ACTIVE',
+      planType: 'team',
+    },
+  ];
+
+  assert.deepEqual(
+    filterAccounts(accounts, {
+      searchTerm: '',
+      filters: {
+        ...defaultAccountsFilterState,
+        plan: { free: true, plus: true, pro: true },
+      },
+      codexQuotaByName: {},
+    }).map((item) => item.id),
+    ['auth-file:team']
+  );
+});
+
 test('filterAccounts recognizes common plan type aliases from auth and quota payloads', () => {
   const accounts = [
     {
@@ -702,10 +760,42 @@ test('groupAccounts groups accounts by plan with plan as the default view priori
   });
 
   assert.deepEqual(groups.map((group) => [group.id, group.label, group.accounts.map((account) => account.id)]), [
-    ['plan:pro', 'accounts.group_plan_pro', ['auth-file:pro']],
-    ['plan:free', 'accounts.group_plan_free', ['auth-file:free']],
+    ['plan:pro', 'Pro', ['auth-file:pro']],
+    ['plan:free', 'Free', ['auth-file:free']],
     ['plan:api-key', 'accounts.group_plan_api_key', ['api-key:one']],
     ['plan:unknown', 'accounts.group_plan_unknown', ['auth-file:unknown']],
+  ]);
+});
+
+test('groupAccounts groups team and future plan values without falling back to unknown', () => {
+  const groups = groupAccounts({
+    accounts: [
+      {
+        id: 'auth-file:team',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'Team User',
+        status: 'ACTIVE',
+        planType: 'team',
+      },
+      {
+        id: 'auth-file:enterprise',
+        provider: 'codex',
+        credentialSource: 'auth-file',
+        displayName: 'Enterprise User',
+        status: 'ACTIVE',
+        planType: 'enterprise',
+      },
+    ],
+    groupMode: 'plan',
+    sortMode: 'priority',
+    codexQuotaByName: {},
+    t,
+  });
+
+  assert.deepEqual(groups.map((group) => [group.id, group.label]), [
+    ['plan:team', 'Team'],
+    ['plan:enterprise', 'Enterprise'],
   ]);
 });
 
@@ -867,7 +957,7 @@ test('buildAccountsView exposes the available plan types present in account data
     t,
   });
 
-  assert.deepEqual(view.availablePlanTypes, ['free', 'pro']);
+  assert.deepEqual(view.availablePlanTypes, ['pro', 'free']);
 });
 
 test('buildAccountsView exposes available plan types after plan alias normalization', () => {
@@ -899,7 +989,7 @@ test('buildAccountsView exposes available plan types after plan alias normalizat
     t,
   });
 
-  assert.deepEqual(view.availablePlanTypes, ['plus', 'pro']);
+  assert.deepEqual(view.availablePlanTypes, ['pro', 'plus']);
 });
 
 test('buildAccountsView sorts, filters, groups, and resolves selection state together', () => {

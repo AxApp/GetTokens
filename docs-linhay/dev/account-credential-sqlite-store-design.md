@@ -64,6 +64,7 @@ account-store-db: /Users/<user>/.config/gettokens/accounts-v1.sqlite
 - OAuth 重新登录命中已有账号卡时必须保留原 `account_key`、`title`、`source_file_name`、`priority`、`disabled`，只替换 `auth_json` 和派生的 `email` / `plan_type` / `auth_type`。这避免重新登录把用户禁用态、优先级或卡片名称重置。
 - 前端 OpenAI-compatible DTO 暴露 `accountKey`，账号卡操作和 Codex 账号列表模型优先使用 `acct_*`；provider name 仅作为迁移前旧卡片解析兜底。
 - `AccountRecord` 增加 `accountKind`，取值为 `auth-file | codex-api-key | openai-compatible`。前端删除、禁用同步、复制导入、详情编辑门禁和 Claude/Codex 账号列表分类必须优先使用 `accountKind`，不能再只靠 `auth-file:*`、`codex-api-key:*`、`openai-compatible:*` 旧 ID 前缀推断账号类型。
+- `AccountRecord.planType` / quota `planType` 是运行时事实，不是固定枚举。前端账号列表必须动态聚合当前账号出现的 plan key；`team`、`enterprise`、`billing`、`key` 或后续新套餐都应进入独立套餐分组和筛选项，不能因不在 `free/plus/pro` 静态列表内落到“未识别套餐”。旧本地筛选若保存了 `free/plus/pro` 全选状态，必须默认包含新出现的 plan。
 - Wails 层仍有旧 ID 兼容分支，目标仅是迁移前残留状态可回退；新账号卡身份必须使用 sidecar 分配的 `acct_*`。
 
 ## 迁移边界

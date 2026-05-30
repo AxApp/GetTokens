@@ -130,19 +130,13 @@ function matchesStatusSelection(selection: AccountsFilterState['status'], accoun
 }
 
 function matchesPlanSelection(selection: AccountsFilterState['plan'], planType: AccountPlanType | null) {
-  if (isSelectionComplete(selection)) {
+  if (isPlanSelectionUnrestricted(selection)) {
     return true;
   }
-  if (planType === 'free' && selection.free) {
-    return true;
+  if (!planType) {
+    return false;
   }
-  if (planType === 'plus' && selection.plus) {
-    return true;
-  }
-  if (planType === 'pro' && selection.pro) {
-    return true;
-  }
-  return false;
+  return selection[planType] !== false;
 }
 
 function isAccountDisabled(account: AccountRecord) {
@@ -193,16 +187,40 @@ function normalizeAccountPlanType(value: string | undefined): AccountPlanType | 
     compact === 'chatgptpro' ||
     compact === 'proplan' ||
     compact === 'professional' ||
-    compact === 'prolite' ||
-    compact.includes('pro')
+    compact === 'prolite'
   ) {
     return 'pro';
   }
-  return null;
+  if (compact === 'team' || compact === 'chatgptteam' || compact === 'teamplan') {
+    return 'team';
+  }
+  return normalized.replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '') || null;
 }
 
 function isSelectionComplete(selection: Record<string, boolean>) {
   return Object.values(selection).every(Boolean);
+}
+
+function isPlanSelectionUnrestricted(selection: AccountsFilterState['plan']) {
+  return Object.values(selection).every((selected) => selected !== false);
+}
+
+function formatAccountPlanLabel(planType: string) {
+  return planType
+    .split(/[-_\s]+/g)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
+}
+
+function resolveAccountPlanRank(planType: string) {
+  const ranks: Record<string, number> = {
+    pro: 10,
+    team: 20,
+    plus: 30,
+    free: 40,
+  };
+  return ranks[planType] ?? 100;
 }
 
 function normalizeProviderKey(provider: string): string {
@@ -253,19 +271,13 @@ function resolvePlanGroup(
   t: Translator,
 ): AccountGroupDescriptor {
   const planType = resolveAccountPlanType(account, state);
-  if (planType === 'pro') {
-    return { id: 'plan:pro', label: t('accounts.group_plan_pro'), rank: 10 };
-  }
-  if (planType === 'plus') {
-    return { id: 'plan:plus', label: t('accounts.group_plan_plus'), rank: 20 };
-  }
-  if (planType === 'free') {
-    return { id: 'plan:free', label: t('accounts.group_plan_free'), rank: 30 };
+  if (planType) {
+    return { id: `plan:${planType}`, label: formatAccountPlanLabel(planType), rank: resolveAccountPlanRank(planType) };
   }
   if (account.credentialSource === 'api-key') {
-    return { id: 'plan:api-key', label: t('accounts.group_plan_api_key'), rank: 40 };
+    return { id: 'plan:api-key', label: t('accounts.group_plan_api_key'), rank: 900 };
   }
-  return { id: 'plan:unknown', label: t('accounts.group_plan_unknown'), rank: 50 };
+  return { id: 'plan:unknown', label: t('accounts.group_plan_unknown'), rank: 910 };
 }
 
 function resolveSourceGroup(account: AccountRecord, t: Translator): AccountGroupDescriptor {
@@ -442,7 +454,6 @@ export function collectAvailableAccountPlanTypes(
   codexQuotaByName: Record<string, CodexQuotaState>,
 ): AccountPlanType[] {
   const available = new Set<AccountPlanType>();
-  const accountPlanTypeOrder: readonly AccountPlanType[] = ['free', 'plus', 'pro'];
 
   for (const account of accounts) {
     const quotaState = codexQuotaByName[account.quotaKey || ''];
@@ -452,7 +463,13 @@ export function collectAvailableAccountPlanTypes(
     }
   }
 
-  return accountPlanTypeOrder.filter((planType) => available.has(planType));
+  return [...available].sort((left, right) => {
+    const rankResult = resolveAccountPlanRank(left) - resolveAccountPlanRank(right);
+    if (rankResult !== 0) {
+      return rankResult;
+    }
+    return left.localeCompare(right, undefined, { sensitivity: 'base' });
+  });
 }
 
 export function groupAccountsByVendor(
