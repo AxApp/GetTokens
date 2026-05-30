@@ -13,7 +13,13 @@ GetTokens 下一阶段自定义端点路由应收敛为 `AccountRoutingEngine`�
 3. 自定义端点路由本质是候选账号重写与排序，不是请求拦截。
 4. CLIProxyAPI fork 后续要持续合并上游，自定义逻辑必须集中到稳定扩展层。
 
-本次 rollout 同时需要清理既有账号路由逻辑。已经实现的 `RoutePolicy`、`AccountRouteGuardStore`、rate-limit evaluator、session affinity selector 和 WebSocket pinned auth 特例不能作为另一套路由系统长期并行存在；它们要么迁移为 engine policy，要么保留为明确的兼容 shim。
+本次 rollout 同时需要清理既有账号路由逻辑。已经实现的 `AccountRouteGuardStore`、rate-limit evaluator、session affinity selector 和 WebSocket pinned auth 特例不能作为另一套路由系统长期并行存在；它们必须迁移为 GetTokens route engine policy 或明确的 request-boundary 生命周期逻辑。
+
+2026-05-30 更新：
+
+- `sdk/cliproxy/auth` 旧公共 `RoutePolicy` / `RegisterRoutePolicy` 兼容 API 已删除。
+- `internal/gettokensrouting` 是唯一的 GetTokens policy registry；channel routing、account route guard、session affinity 都直接走 `gettokensrouting.Policy`。
+- 旧 `X-GetTokens-Route-*` header 和 executor metadata allow/deny/order/fallback 调试入口已删除；新调试面以渠道配置、guard source、route ledger 和 focused tests 为准。
 
 ## 推荐架构
 

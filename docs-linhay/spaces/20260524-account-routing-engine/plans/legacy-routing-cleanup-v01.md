@@ -6,7 +6,7 @@
 
 本清单用于约束 Account Routing Engine rollout 中必须一起清理的旧实现。目标不是删行为，而是保留用户可见语义并收敛实现入口。
 
-清理完成后，新增自定义端点路由和已有禁用、限流、请求级覆盖、session affinity、WebSocket 热切都应通过同一套 route engine / policy pipeline 被解释和测试。
+清理完成后，新增自定义端点路由和已有禁用、限流、session affinity、WebSocket 热切都应通过同一套 GetTokens route engine / policy pipeline 被解释和测试。旧 CLIProxyAPI `RoutePolicy` 兼容接口、`X-GetTokens-Route-*` header 和 executor metadata allow/deny/order/fallback 调试入口不再作为保留目标。
 
 ## 必须保留的行为
 
@@ -14,7 +14,7 @@
 - priority 仍先于同级选择器生效。
 - disabled、cooldown、model availability 不能被请求级 allow/order 绕过。
 - manual-disabled 和 rate-limit source 独立，自动恢复不清用户手动禁用。
-- `X-GetTokens-Route-*` loopback header 和 executor metadata 调试入口继续可用。
+- 不再保留 `X-GetTokens-Route-*` loopback header 和 executor metadata allow/deny/order/fallback 调试入口；调试和探测改走 GetTokens 渠道路由、guard source 与 route engine 测试面。
 - retry/fallback 继续通过 `tried` 排除已尝试账号后重新选择。
 - Codex WebSocket pinned auth 在下一条 downstream request 边界释放，不做 mid-response 迁移。
 
@@ -32,6 +32,14 @@
 - 已完成：`SessionAffinitySelector` 作为 manager-local sticky policy 接入 scheduler fast path，sticky cache hit 以 `PolicyStageSticky` 排序候选，cache miss 在 selector 选中后绑定结果。
 - 已完成：WebSocket pinned auth request-boundary 释放逻辑已收敛到单一 helper，统一使用 `AccountRouteGuardStore` 判断 guarded auth 并触发 transcript replay。
 - 保留中：`RoutePolicy` 公共类型、`gettokensRoutePolicy`、`accountRouteGuardPolicy` 继续作为 selector 热路径兼容 seam。
+
+### 当前状态（2026-05-30）
+
+- 已完成：`sdk/cliproxy/auth` 删除旧公共 `RoutePolicy` / `RoutePolicyFunc` / `RoutePolicyRequest` / `RoutePolicyDecision` / `RegisterRoutePolicy` 兼容 API。
+- 已完成：`internal/gettokensrouting` 成为 GetTokens 专用 policy registry，scheduler / legacy conductor 只消费 `gettokensrouting.PolicySnapshot()` 与 manager-local sticky policy。
+- 已完成：`gettokensRoutePolicy`、`RouteMetadata`、`X-GetTokens-Route-*` header 解析、metadata allow/deny/order/fallback 入口和对应旧测试已删除。
+- 已完成：channel routing 以 `PolicyStagePoolScope` 直接注册到 GetTokens routing registry；account route guard 以 `PolicyStageHardFilter` 注册；session affinity 以 manager-local `PolicyStageSticky` 直接进入 engine。
+- 已完成：启动链路由 `InstallRoutingPolicies()` 安装 GetTokens routing policies，不再调用 CLIProxyAPI 旧 `InstallRoutePolicyHook()`。
 
 ### 1. Hook 安装点
 
@@ -83,24 +91,28 @@
 
 现状风险：
 
-- 现有 `RoutePolicy` 是候选重写口子，Codex/Claude 路由探测依赖 metadata/header。
-- 新 engine 若绕过它，会破坏旧调试能力；若并行保留，会形成两套策略链。
+- 旧 `RoutePolicy` 曾是候选重写口子，Codex/Claude 路由探测依赖 metadata/header。
+- 账号路由已经由 GetTokens 自定义渠道路由接管，继续保留旧兼容层会形成两套策略链。
 
 目标：
 
-- 将旧 `RoutePolicyDecision` 映射为 engine 的 `RequestPolicy`。
-- `gettokensRoutePolicy` 继续解析 metadata/header，但只作为输入适配层。
-- `accountRouteGuardPolicy` 迁移为 `HardFilterPolicy`，或作为兼容 shim 调用 engine guard。
+- 删除旧 `RoutePolicy` 公共 API 和 `gettokensRoutePolicy`。
+- 删除 metadata/header allow/deny/order/fallback 调试入口。
+- 将 channel routing、account guard、session affinity 直接接入 `gettokensrouting.Policy`。
 
 2026-05-25 状态：
 
 - 部分完成。公共 `RoutePolicy` 仍保留；它已按 stage 进入 `gettokensrouting.Engine` 的兼容执行顺序，并由 scheduler 热路径调用。新 UI 已停止产生 allow / deny / fallback 主交互，旧 header/metadata 只作为 request policy 兼容入口。
 
+2026-05-30 状态：
+
+- 已完成。公共 `RoutePolicy` 兼容层和旧 request policy 输入面已删除。`sdk/cliproxy/auth` 只保留内部 `routeRequest` 用于组装 `gettokensrouting.RouteContext`；策略注册、stage 排序和候选改写由 `internal/gettokensrouting` 负责。
+
 验收：
 
-- allow/deny/order/fallback 旧测试不变。
-- loopback header 仍只接受本机请求。
-- 远端请求不能通过 header 注入路由控制。
+- 源码检索不到 `RoutePolicyRequest`、`RoutePolicyDecision`、`RegisterRoutePolicy`、`RouteMetadata`、`X-GetTokens-Route-*`。
+- scheduler fast path、legacy conductor path、mixed provider path 都从 `gettokensrouting.PolicySnapshot()` 取策略。
+- hard guard 不能被后续 request/order/sticky 绕过。
 
 ### 4. Session affinity wrapper
 
@@ -176,11 +188,12 @@
 7. 迁移 session affinity 为 `StickyPolicy`。
 8. 接入 endpoint policy。
 9. 保留 WebSocket request-boundary hook，但统一重选入口。
-10. 清理旧文档引用和测试命名。
+10. 删除旧 CLIProxyAPI RoutePolicy 兼容 API、header/metadata 调试入口和旧测试。
+11. 清理旧文档引用和测试命名。
 
 ## 不做的清理
 
-- 不删除 `RoutePolicy` 公共抽象，除非确认上游不需要且所有调用已迁移；短期应作为兼容 API 保留。
+- 已废止：不再保留 `RoutePolicy` 公共抽象；本版本开始 GetTokens sidecar 与 CLIProxyAPI 上游路由系统断开。
 - 不重写 scheduler 全部实现；只加稳定 seam。
 - 不把 WebSocket mid-response 迁移纳入本期。
 - 不迁移无关账号 UI 或 quota 展示逻辑。
