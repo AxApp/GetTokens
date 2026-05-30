@@ -165,6 +165,7 @@ mark account_runtime_apply_state applied or failed
 4. `PATCH /v0/management/accounts/{account_key}` 必须和 create/status/priority/delete 一样触发 runtime apply，保证凭证编辑后当前 sidecar 进程使用新凭证。
 5. sidecar 重启时必须从 SQLite 重建 runtime，不依赖旧 auth-dir 或 `config.yaml` 账号段。
 6. GetTokens 不能绕过 sidecar 直接修补账号 DB 或旧文件。
+7. 运行时 token refresh 不通过 management API，也不需要重新 apply 当前 runtime。它必须在 `coreauth.Manager.Update()` 的持久化入口拦截 `acct_*`，把 `auth-file` 的新 payload 写回 `auth_file_accounts.auth_json`，并禁止 account-store 账号 fallback 到旧文件 store。
 
 ## OAuth / auth-file 策略
 
@@ -172,7 +173,7 @@ mark account_runtime_apply_state applied or failed
 
 - OAuth finalize：创建新 `auth-file` 账号，写入 `auth_file_accounts.auth_json`。
 - OAuth relogin：更新指定 `account_key` 的 `auth_json`，保留账号卡 ID。
-- token refresh：如果产生新 auth payload，直接回写原账号卡 `auth_json`。
+- token refresh：如果产生新 auth payload，直接回写原账号卡 `auth_json`；保留原 `account_key`、不新建账号卡、不写旧 auth-file，并保留已有 `email` / `plan_type` 等派生展示字段。
 - 旧 auth-dir：只作为迁移来源或短期临时产物；迁移完成后持久旧文件必须删除。
 
 ## 迁移流程

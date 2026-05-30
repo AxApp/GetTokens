@@ -179,7 +179,7 @@ acct_<uuid>
 
 最终表结构以 `docs-linhay/dev/account-credential-sqlite-store-design.md` 的 `SQLite Schema` 为准。实现时必须包含：
 
-- `account_cards.revision`：每次凭证或配置变更递增，用于驱动 sidecar runtime apply。
+- `account_cards.revision`：management API 发起的凭证或配置变更递增，用于驱动 sidecar runtime apply；运行时 token refresh 是当前 runtime 生成的新 credential snapshot，只更新类型表和 `updated_at_unix_ms`，不递增 revision。
 - `account_cards.metadata_json`：仅放备注、标签、UI 分组等非核心扩展，不放凭证明文。
 - `account_runtime_apply_state`：sidecar 内部 runtime 快照 apply 状态，避免当前进程静默使用旧凭证。
 - `account_migration_sources`：记录旧源导入、备份、删除结果，作为删除旧数据的审计依据。
