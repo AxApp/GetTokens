@@ -64,8 +64,8 @@ And 测试覆盖别名命中、未知别名、显式禁用三类边界。
 
 ## 待讨论问题
 
-1. sidecar 如何消费 Codex 已发送的 `x-openai-subagent`，并将其规范化为 `subagentSource`。
-2. `ThreadSpawn` 当前 header 只有 `collab_spawn`，本期是否将其作为唯一 thread subagent source 处理。
+1. sidecar 不再消费 `x-openai-subagent` 做路由判断；该 header 只按 Codex client context allowlist 透传给上游。
+2. `ThreadSpawn` 当前 header 只有 `collab_spawn`，本期不作为 sidecar 账号选择输入。
 3. sidecar 如何把 `Session_id`、`X-Client-Request-Id`、`X-Codex-Turn-Metadata.session_id/thread_id/thread_source/turn_id/turn_started_at_unix_ms` 作为观测上下文保存，但不混入账号选择条件。
 4. fallback 策略是强失败、降级到默认 Codex 模型，还是只在用户显式允许时降级。
 5. 账号能力字段是否需要区分“可路由模型”“默认模型”“高成本模型”“仅 subagent 可用模型”。
@@ -75,16 +75,16 @@ And 测试覆盖别名命中、未知别名、显式禁用三类边界。
 
 1. sidecar 是账号选择和 runtime 状态的唯一可信闭环，前端只展示和配置，不承担热路径补偿。
 2. 请求路由应先完成模型规范化，再做账号过滤、rate-limit 判断和请求归因。
-3. Codex 主 agent 与 subagent 请求已有可观测差异：subagent 会话下的 HTTP 请求带 `x-openai-subagent`。
-4. 本期只处理 `x-openai-subagent`，不读取、不推断、不扩展具体 role。
+3. 账号选择只以请求 body `model` 进入现有模型能力过滤和 routing policy；不根据 `x-openai-subagent` 区分主 agent / subagent。
+4. 本期不读取、不推断、不扩展具体 role；`x-openai-subagent` 只做上游透传。
 5. 实现阶段应优先补 CLIProxyAPI fork / sidecar 路由单元测试，再接 GetTokens UI 或配置入口。
 
 ## 源码校准
 
 - Codex 源码位置：`/Users/linhey/.nolon/references/github.com/openai@codex`
 - 源码版本：`e6773f8 Feat: Preserve network access on read-only sandbox policies (#13409)`
-- 关键结论：`codex-rs/core/src/client.rs` 会为 `SessionSource::SubAgent` 写入 `x-openai-subagent`；`codex-rs/protocol/src/protocol.rs` 保留 `ThreadSpawn.agent_role`，但当前 header 对 thread spawn 只输出 `collab_spawn`。本期只消费这个 header。
-- 2026-05-30 追加：按 OpenAI Codex 最新源码 `/tmp/openai-codex-src` commit `3e7baa00e43419967d90d6ad9cef40f58d5ac89f` 复查，subagent 判定仍只消费 `x-openai-subagent`；但 sidecar 上游请求透传需要同步 Codex latest Responses client context，包括 installation id、turn state/metadata、parent thread、window id、memgen、attestation、`session-id`、`thread-id` 等 header。
+- 关键结论：`codex-rs/core/src/client.rs` 会为 `SessionSource::SubAgent` 写入 `x-openai-subagent`；`codex-rs/protocol/src/protocol.rs` 保留 `ThreadSpawn.agent_role`，但当前 header 对 thread spawn 只输出 `collab_spawn`。
+- 2026-05-30 追加：按 OpenAI Codex 最新源码 `/tmp/openai-codex-src` commit `3e7baa00e43419967d90d6ad9cef40f58d5ac89f` 复查后，GetTokens 本期不再使用 `x-openai-subagent` 做 sidecar 内部判断；sidecar 上游请求仍需同步 Codex latest Responses client context，包括 installation id、turn state/metadata、parent thread、window id、subagent、memgen、attestation、`session-id`、`thread-id` 等 header。
 
 ## 真实请求校准
 
@@ -93,7 +93,7 @@ And 测试覆盖别名命中、未知别名、显式禁用三类边界。
 1. `Session_id` 是独立 HTTP header。
 2. `X-Client-Request-Id` 是独立 HTTP header。
 3. `X-Codex-Turn-Metadata` 是 JSON header，已包含 `session_id`、`thread_id`、`thread_source`、`turn_id`、`workspaces`、`sandbox`、`turn_started_at_unix_ms`。
-4. 样例为主线程请求，未出现 `X-OpenAI-Subagent`；subagent 路由仍只以该 header 存在和值为准。
+4. 样例为主线程请求，未出现 `X-OpenAI-Subagent`；GetTokens sidecar 账号选择不再依赖该 header。
 5. 真实请求中的 Authorization / token 不进入文档与日志。
 
 ## 设计稿入口
@@ -123,14 +123,14 @@ And 测试覆盖别名命中、未知别名、显式禁用三类边界。
 - 最近更新：2026-05-30
 - 同步校准：已从本地 `master` 同步到 `232f573`；最新 sidecar 修改范围按 gitlink `c6f35c108cfd8b0060d27e8c63797609e3035c0f` 校准，旧 `RoutePolicy` / `X-GetTokens-Route-*` 不再作为实现入口。
 - 执行结果：已在 sidecar checkout `/Users/linhey/Desktop/linhay-open-sources/GetTokens/docs-linhay/references/CLIProxyAPI` 落地 P0。
-  - 新增 `internal/gettokenscodex.RequestContext`，从 allowlist headers 和 decoded body 解析 `requestKind/subagentSource/requestedModel/sessionID/clientRequestID/threadID/threadSource/turnID/turnStartedAtUnixMs`。
+  - 新增 `internal/gettokenscodex.RequestContext`，从 decoded body 和 allowlist headers 解析 `requestKind/requestedModel/sessionID/clientRequestID/threadID/threadSource/turnID/turnStartedAtUnixMs`；不再保存或判断 `subagentSource`。
   - `sdk/api/handlers` 在 Codex Responses handler 上解析一次并写入 `executor.Options.Metadata`；非 Codex handler 不注入。
   - `internal/gettokensrouting.RouteContext` 增加 typed `CodexRequest`，`sdk/cliproxy/auth` 从 metadata 贯通给 routing policy。
-  - HTTP `applyCodexHeaders()` 与 WebSocket `applyCodexWebsocketHeaders()` 复用统一 Codex Responses client context allowlist，补齐 installation、turn state/metadata、parent thread、window、subagent、memgen、attestation、`session-id`、`thread-id`。
+  - HTTP `applyCodexHeaders()` 与 WebSocket `applyCodexWebsocketHeaders()` 复用统一 Codex Responses client context allowlist，补齐 installation、turn state/metadata、parent thread、window、subagent 透传、memgen、attestation、`session-id`、`thread-id`。
 - 验证：sidecar `go test ./...` 通过；`go build -o test-output ./cmd/server` 通过，临时二进制已删除。
-- 冒烟补充：已新增 sidecar 上下游模拟收发测试 `sdk/api/handlers/openai/openai_responses_subagent_smoke_test.go`。
-  - HTTP：downstream `POST /v1/responses` -> handler -> auth manager -> Codex executor -> mock upstream `/responses`，断言 upstream 收到 subagent/client context headers、body model/input，mock SSE response 回流到 downstream。
+- 冒烟补充：已新增 sidecar 上下游模拟收发测试 `sdk/api/handlers/openai/openai_responses_model_routing_smoke_test.go`。
+  - HTTP：downstream `POST /v1/responses` -> handler -> auth manager -> Codex executor -> mock upstream `/responses`，断言 upstream 收到 client context headers、body model/input，mock SSE response 回流到 downstream。
   - WebSocket：downstream `GET /v1/responses/ws` -> handler -> auth manager -> Codex WebSocket executor -> mock upstream WS `/responses`，断言 upstream handshake headers、upstream `response.create` body、mock `response.completed` 回流到 downstream。
-  - 两条 smoke 均断言 routing policy 可读取 typed `CodexRequest`，且 inbound `Authorization` / `Cookie` 不会透传到 upstream。
-- 冒烟验证：`go test ./sdk/api/handlers/openai -run 'TestCodexSubagentResponses.*Smoke' -count=1 -v` 通过；随后 `go test ./sdk/api/handlers/openai ./internal/runtime/executor ./sdk/api/handlers ./sdk/cliproxy/auth -count=1` 与 sidecar `go test ./...` 均通过。
-- 剩余范围：P1 仍需接 live sessions / usage attribution / route explain 的持久化与展示字段；P2 才讨论 subagent 专属候选 scope。当前 P0 不改变账号候选选择语义。
+  - 两条 smoke 均断言 routing policy 可读取 typed `CodexRequest.requestedModel`，且 inbound `Authorization` / `Cookie` 不会透传到 upstream。
+- 冒烟验证：`go test ./sdk/api/handlers/openai -run 'TestCodexModelRoutingResponses.*Smoke' -count=1 -v` 通过；随后 `go test ./sdk/api/handlers/openai ./internal/runtime/executor ./sdk/api/handlers ./sdk/cliproxy/auth ./internal/gettokenscodex ./internal/gettokensrouting -count=1` 与 sidecar `go test ./...` 均通过。
+- 剩余范围：P1 仍可接 live sessions / usage attribution / route explain 的模型、session、thread、turn 观测字段；P2 如需候选 scope，也必须以模型和显式 sidecar 配置为准，不以 `X-OpenAI-Subagent` 做账号选择。
