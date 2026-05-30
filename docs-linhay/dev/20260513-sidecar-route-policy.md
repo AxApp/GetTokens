@@ -1,5 +1,7 @@
 # Sidecar Route Policy
 
+> 2026-05-30 状态：本文为历史文档，描述的是已删除的 CLIProxyAPI 旧 `RoutePolicy` 兼容层。当前 GetTokens 路由系统由 sidecar 内的 `internal/gettokensrouting` 独立维护；公共 `RoutePolicy` / `RegisterRoutePolicy`、`gettokensRoutePolicy`、`RouteMetadata`、`X-GetTokens-Route-*` header 与 executor metadata allow/deny/order/fallback 调试入口均已删除。当前权威边界见 `docs-linhay/dev/20260524-account-routing-engine.md`。
+
 ## 背景
 
 Codex account list 需要验证和控制请求实际命中的账号。单纯依赖 sidecar 既有 `priority`、`fill-first`、`round-robin`、cooldown 只能表达静态顺序，不能让受信任客户端在单次请求上指定候选账号、排除账号或调整顺序。

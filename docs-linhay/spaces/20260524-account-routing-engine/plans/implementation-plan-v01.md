@@ -2,14 +2,16 @@
 
 日期：2026-05-24
 
+> 2026-05-30 收口状态：本计划中的“先兼容再迁移”和 `RoutePolicy` 兼容层描述已经完成并废弃。当前实现不再保留 CLIProxyAPI 公共 `RoutePolicy` / `RegisterRoutePolicy`，也不再保留 `X-GetTokens-Route-*` 与 executor metadata allow/deny/order/fallback 请求级注入入口。后续路由系统由 `internal/gettokensrouting` 独立维护。
+
 ## 规划原则
 
 1. 统一入口，不做大函数：`AccountRoutingEngine.Route()` 是唯一决策入口，内部仍按 candidate、policy、selector、trace 分层。
 2. 热路径只读快照：路由引擎不直接查 DB、不解析大配置、不写持久化状态。
 3. 结果回写后置：执行后的 quota、cooldown、model state 由 `ResultRecorder / MarkResult` 更新，retry 再带 `tried` 进入路由引擎。
-4. 先兼容再迁移：保留现有 `RoutePolicy` 语义，先把新 endpoint policy 接到兼容层，再逐步收敛 rate-limit 和 session affinity。
+4. 独立维护：从 2026-05-30 起不再保留旧 `RoutePolicy` 兼容层；新能力直接进入 `internal/gettokensrouting`。
 5. 上游合并优先：GetTokens 自定义逻辑集中到 GetTokens-owned 包，上游核心文件只保留 seam。
-6. 新旧同轮清理：本次 rollout 不允许留下两套路由系统；既有 `RoutePolicy`、rate-limit、session affinity、WebSocket request-boundary 逻辑必须有明确归属。
+6. 新旧同轮清理：本次 rollout 不允许留下两套路由系统；rate-limit、session affinity、WebSocket request-boundary 逻辑必须有明确归属。
 7. 启停语义不对称：禁用立即生效并高于 sticky / 失败降级 / retry；激活只让账号进入下一轮候选池，不抢占当前 stream 或 sticky。
 8. 失败冷却持久化：401/429/5xx/model-unavailable 等执行结果必须写入运行态或 guard source，后续请求和 explain 从同一状态源读取。
 
@@ -72,20 +74,20 @@ Enable account / group
   - `CompiledRouteSnapshot`
 - 在 `authScheduler` / `Manager` 现有选路点增加最小 seam，允许 GetTokens engine 接管候选改写。
 - 明确 hook 安装点，确认并补齐：
-  - `InstallRoutePolicyHook`
+  - `InstallRoutingPolicies`
   - `InstallUsageAttributionHook`
   - `InstallRateLimitHook`
-- 保持现有 `RoutePolicy` allow/deny/order/fallback 测试通过。
+- 保持 routing registry 的 order/allow/deny/hard-filter 测试通过。
 - 新增 trace 基础结构，但 P0 可只在测试和日志中使用。
 - 建立旧逻辑清理基线，按 [既有账号路由逻辑清理清单](./legacy-routing-cleanup-v01.md) 标记每个旧入口的归属。
 
 测试：
 
-- `RoutePolicy` 兼容测试：allow、deny、order、fallback。
-- hook 安装测试：启动路径必须安装 GetTokens route policy。
+- routing registry 测试：allow、deny、order、hard-filter、fallback。
+- hook 安装测试：启动路径必须安装 GetTokens routing policies。
 - engine 空策略测试：无自定义策略时选择结果与旧逻辑一致。
 - hard guard 优先级测试：manual-disabled/rate-limit 不可被 allow/order 放回。
-- 旧路径等价测试：legacy `RoutePolicy` 输入和 engine `RequestPolicy` 输入产出相同 `RouteDecision`。
+- 旧路径删除测试：旧 request-level 注入入口不再影响 routing engine。
 
 ## P0.5：既有逻辑一次性清理
 
@@ -94,15 +96,15 @@ Enable account / group
 任务：
 
 - 补齐 hook 安装点并做幂等保护。
-- 将 `gettokensRoutePolicy` 映射为 engine `RequestPolicy` 兼容层。
-- 将 `accountRouteGuardPolicy` 映射为 engine `HardFilterPolicy`，保持 `AccountRouteGuardStore` source 独立。
+- 删除 `gettokensRoutePolicy` 和 request-level metadata/header 注入入口。
+- 将 `accountRouteGuardRoutingPolicy` 映射为 engine `HardFilterPolicy`，保持 `AccountRouteGuardStore` source 独立。
 - 收敛 rate-limit 双路径：
   - evaluator 负责评估与刷新 `rate-limit` guard source。
   - 热路径 deny 统一从 guard policy 输出。
   - 旧 `rateLimitPolicy` 标记为待删除兼容层或直接移除。
-- 将 `SessionAffinitySelector` 的 sticky 语义迁移为 `StickyPolicy`，或让 scheduler fast path 能识别 wrapper 并仍进入 engine。
+- 将 `SessionAffinitySelector` 的 sticky 语义迁移为 `StickyPolicy`。
 - WebSocket handler 保留 request-boundary hook，但重选统一进入 engine。
-- 更新旧 route policy / rate-limit 文档中的新旧关系说明。
+- 更新旧 route policy / rate-limit 文档中的废弃状态与新边界说明。
 
 测试：
 
@@ -112,7 +114,7 @@ Enable account / group
 - 禁用账号或禁用组会清理 sticky / pinned auth，并在最近可控边界断开当前流。
 - 激活账号或账号组只进入下一轮候选池，不抢占当前 sticky / stream。
 - WebSocket pinned auth release 后通过 engine 重新选择。
-- Codex/Claude route probe metadata/header 兼容。
+- Codex/Claude route probe 不再依赖 metadata/header 兼容入口。
 
 ## P1：Routeable Account Pool 与核心路由模式
 

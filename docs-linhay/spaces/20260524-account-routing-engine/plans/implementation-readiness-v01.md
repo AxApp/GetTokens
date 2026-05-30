@@ -2,6 +2,8 @@
 
 日期：2026-05-25
 
+> 2026-05-30 状态：本文是实施准备历史清单，当前已完成旧 CLIProxyAPI `RoutePolicy` 兼容层删除。后续实施不再执行“RoutePolicy 兼容映射”步骤；以 `internal/gettokensrouting` 独立维护边界为准。
+
 ## 实施入口
 
 本 space 已进入 implementation-ready 状态。实施时以本文件作为每日入口，详细设计分别引用：
@@ -47,11 +49,11 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 
 任务：
 
-- 为 `RoutePolicy` allow / deny / order / fallback 补兼容测试。
+- 为 routing registry 的 order / allow / deny / hard-filter / fallback 补测试。
 - 为 hard guard 优先级补测试：manual-disabled / rate-limit / disabled / cooldown 不可被 allow/order 放回。
 - 为启停实时性补测试：禁用清理 sticky / pinned auth 并断开当前流；激活只进入下一轮候选池，不抢占当前连接。
 - 为失败冷却持久化补测试：429/5xx 写入运行态后，后续 route explain 和真实 route 都能过滤该账号。
-- 为 hook 安装点补测试：route policy、usage attribution、rate-limit hook 必须在生产启动链路安装。
+- 为 hook 安装点补测试：routing policies、usage attribution、rate-limit hook 必须在生产启动链路安装。
 - 为前端模型补测试：`ChannelRouteMode` 只接受 `sequential / balanced`，`project` 输入降级或标记为旧兼容输入。
 - 为前端边界补测试：Account Inventory 不渲染 rotation orchestration 入口。
 
@@ -69,14 +71,14 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 - 新增 GetTokens-owned 路由包，例如 `internal/gettokensrouting`。
 - 定义 `RouteContext / RouteDecision / RouteTrace / CompiledRouteSnapshot`。
 - 在 scheduler / selector 选路点接入最小 seam。
-- 将旧 `RoutePolicy` 映射为 engine `RequestPolicy` 兼容层。
+- 删除旧 `RoutePolicy` 兼容层，确保 channel routing、account route guard、session affinity 直接进入 `internal/gettokensrouting`。
 - 将 `AccountRouteGuardStore` 映射为 `HardFilterPolicy`。
 - 输出基础 trace，先用于测试和 debug。
 
 通过标准：
 
 - 空策略时选择结果与旧逻辑一致。
-- 旧 loopback header / metadata 探测入口行为不变。
+- 旧 loopback header / metadata 探测入口已删除，不再影响 routing engine。
 - hard guard trace 位于所有 request policy 之前。
 
 ### Phase 2：旧逻辑一次性清理

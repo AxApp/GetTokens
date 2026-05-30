@@ -298,16 +298,18 @@ Codex WebSocket 不承诺 mid-response 迁移。已经开始向 downstream 输�
 
 ## 上游合并边界
 
-GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
+GetTokens 从 2026-05-30 起不再跟随 CLIProxyAPI 上游做路由系统的合并式维护。旧上游实现只作为参考输入；账号选择、渠道路由、route guard、session affinity 和 WebSocket request-boundary 热路径都在 GetTokens sidecar 边界内独立维护。
+
+GetTokens 自定义能力放在 GetTokens-owned 包，例如：
 
 - `internal/gettokensrouting`
 - `internal/gettokenshooks`
 - management API / Wails adapter
 
-上游核心文件只保留少量 seam：
+CLIProxyAPI 原始核心文件只保留必要 seam：
 
 - 构建 `RouteContext`。
-- 调用 engine 或兼容 `RoutePolicy`。
+- 调用 `internal/gettokensrouting` 的 policy registry / engine。
 - 将 `RouteResult` 交给 executor。
 - WebSocket request-boundary hook。
 
@@ -320,30 +322,31 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 - `internal/runtime/executor/codex_websockets_executor.go`
 - config / watcher / synthesizer 相关文件
 
-合并上游时优先保证 seam 存在，不在这些文件中继续堆 endpoint 业务规则。
+后续如参考上游提交，优先保证上述 seam 存在，不在这些文件中继续堆 endpoint 业务规则；不再为了兼容上游旧路由合约保留双系统。
 
-## 与现有 RoutePolicy 的关系
+## 旧 RoutePolicy 删除结论
 
-现有 `RoutePolicy` 不直接删除：
+2026-05-30 结论：
 
-1. P0 作为兼容层保留。
-2. `gettokensRoutePolicy` 和 `accountRouteGuardPolicy` 可以先映射为 engine policy。
-3. endpoint route policy 上线后，逐步把 session affinity wrapper 等剩余 selector shim 收敛到 engine。
+1. `sdk/cliproxy/auth` 旧公共 `RoutePolicy`、`RoutePolicyFunc`、`RoutePolicyRequest`、`RoutePolicyDecision`、`RegisterRoutePolicy` 已删除。
+2. `gettokensRoutePolicy`、`RouteMetadata`、`X-GetTokens-Route-*` header 与 executor metadata allow/deny/order/fallback 旧请求级控制入口已删除。
+3. `internal/gettokensrouting` 是当前唯一的 GetTokens policy registry。channel routing、account route guard、session affinity 均直接注册为 `gettokensrouting.Policy`。
+4. route guard 仍使用 source aggregation；rate-limit evaluator 只刷新 `rate-limit` source，热路径 deny 统一由 account route guard policy 输出。
+5. Codex WebSocket pinned auth 仍属于连接生命周期逻辑：guard 命中时在 request boundary 释放 pin、关闭旧 upstream execution session、强制 transcript replay，然后重新进入 routing registry。
 
 ## 既有逻辑清理边界
 
-本次清理以“行为不变、入口收敛”为原则：
+本次清理以“行为不变、入口收敛、删除旧兼容面”为原则：
 
-- `gettokensRoutePolicy`：保留 metadata/header 解析能力，但归入 `RequestPolicy`。
-- `accountRouteGuardPolicy`：归入 `HardFilterPolicy`，继续使用 source aggregation。
+- `gettokensRoutePolicy`：已删除，不再接受 metadata/header 注入 allow/deny/order/fallback。
+- `accountRouteGuardRoutingPolicy`：归入 `HardFilterPolicy`，继续使用 source aggregation。
 - `rateLimitPolicy`：不再作为第二个热路径 deny 出口；rate-limit evaluator 只刷新 `rate-limit` guard source。
-- `SessionAffinitySelector`：迁移为 `StickyPolicy`，或至少保证启用 session affinity 时仍进入 route engine。
+- `SessionAffinitySelector`：已通过 manager-local `PolicyStageSticky` 进入 routing registry；cache hit 只能在 guard 过滤后的候选池内排序。
 - `ResponsesWebsocket` pinned auth 检查：保留 request-boundary hook，但 guarded 判断和重新选择复用 engine 语义。
 - `CodexWebsocketsExecutor.ensureUpstreamConn`：继续负责 authID / wsURL 变化时关闭旧 upstream，这是连接生命周期逻辑，不迁入 route engine。
 
 清理不包括：
 
-- 删除公共 `RoutePolicy` 类型。
 - 重写 scheduler 全部索引结构。
 - 实现 streaming mid-response 账号迁移。
 
@@ -371,11 +374,11 @@ GetTokens 自定义能力应放在 GetTokens-owned 包，例如：
 - dev sidecar 真实 upstream 冒烟已完成：`GET /v1/models` 返回 `status=200 models=8`，`POST /v1/responses` 使用 `gpt-5.4` 和 `max_output_tokens=1` 返回 `status=200 object=response`。
 - Codex / Claude Channel Routing workbench 已展示最近 route event ledger，桌面模式读取 `ListChannelRouteEvents`，浏览器预览 Explain 后合成 redacted preview event。
 - `rateLimitPolicy` 兼容注册已删除；rate-limit evaluator 只刷新 `AccountRouteGuardSourceRateLimit`，热路径由 `accountRouteGuardPolicy` 统一 deny。
-- session affinity legacy path 已在 sticky selector 前复用 `RoutePolicy` / engine seam；sticky cache 和 fallback 只能在 guard 过滤后的候选池内工作。
+- session affinity legacy path 已在 sticky selector 前复用 routing registry / engine seam；sticky cache 和 fallback 只能在 guard 过滤后的候选池内工作。
 - session affinity 已进一步作为 manager-local `PolicyStageSticky` 接入 scheduler fast path：cache hit 通过 route engine 排序候选，cache miss 由 selector 选中后绑定结果。
 - WebSocket request-boundary 特例已收口为单一连接生命周期 helper：guarded pinned auth 释放 pin、关闭旧 execution session、强制 transcript replay。
 - WebSocket pinned auth 的 429/401/402/403 前置错误补齐透明 failover：若尚未写出 downstream payload，handler 抑制错误事件、释放 pin、关闭 execution session，并用完整 transcript 立即重派同一 request；若已开始输出，仍保持不做 mid-response 迁移。
-- `legacy-routing-cleanup-v01.md` 已更新当前 shim 状态：公共 `RoutePolicy` 兼容 API 是后续上游合并与旧 request policy 的主要兼容边界。
+- `legacy-routing-cleanup-v01.md` 已更新当前 shim 状态：公共 `RoutePolicy` 兼容 API 与旧 request policy 控制入口已删除，后续路由系统由 GetTokens sidecar 独立维护。
 - Codex 前端已把 `session-affinity` / `websocket-pin` / `route-order-header` 收进 `兼容层提示`，前端只保留总数与说明，不展开三条明细；explain 仍记录兼容遮罩摘要，不再回写到新的通道配置，避免上游合并时扩散改动面。
 
 仍未完成的项：

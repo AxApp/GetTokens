@@ -61,6 +61,7 @@
 
 ## 进展记录
 
-- 2026-05-26：完成 channel routing 对 `routing.strategy` 的请求侧绕过收口，`InstallRoutePolicyHook` 现在优先注册 `channelRoutingRoutePolicy`，并且活跃会话计数直接读取 live tracker，不再走 snapshot 汇总。
+- 2026-05-26：完成 channel routing 对 `routing.strategy` 的请求侧绕过收口；当时通过 route policy hook 注册 channel routing，并且活跃会话计数直接读取 live tracker，不再走 snapshot 汇总。
 - 2026-05-26：新增回归测试，覆盖 balanced 模式在 `routing.strategy: fill-first` 存在时仍按 channel routing 选择账号，以及 `InstallGetTokensHooks` 不再退回 fill-first 选择器。
 - 2026-05-26：焦点验证通过：`go test ./internal/gettokenshooks -count=1`、`go test ./internal/cmd -count=1`、`go test ./internal/gettokensrouting ./internal/gettokenshooks ./internal/cmd ./sdk/cliproxy/auth -count=1`。
+- 2026-05-30：CLIProxyAPI 旧公共 `RoutePolicy` 兼容层已删除。当前 channel routing 通过 `InstallRoutingPolicies` 注册 `channelRoutingPolicy` 到 `internal/gettokensrouting`，后续路由系统由 GetTokens sidecar 独立维护。
