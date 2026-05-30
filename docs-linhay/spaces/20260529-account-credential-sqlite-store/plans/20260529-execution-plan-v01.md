@@ -133,7 +133,7 @@
 - [hold] 核对无误后调用 `POST /v0/management/account-migration/commit`。
 - [hold] 重启 sidecar / App，确认账号池完全从 SQLite 重建。
 - [hold] 对至少一张 Codex API key 账号执行凭证更新，确认 `account_key` 不变且 runtime 使用新凭证。
-- [hold] 对 OAuth/auth-file 账号执行 relogin 或 token refresh 验证，确认原 `account_key` 不变。
+- [x] 对 OAuth/auth-file 账号执行 token refresh 持久化链路验证：`coreauth.Manager.Update()` 通过 account-store token store 更新原 `auth_file_accounts.auth_json`，确认原 `account_key` 不变、不新建账号卡、不写旧 auth-file，并保留已有套餐字段。
 - [hold] 对 OpenAI-compatible provider 执行 API key entries 或 headers 更新，确认 runtime provider 使用新配置。
 - [hold] 调用 `POST /v0/management/account-migration/delete-legacy-sources` 删除旧账号事实源。
 - [hold] 再次重启 sidecar / App，确认不会从旧源重复导入，账号池仍完整。

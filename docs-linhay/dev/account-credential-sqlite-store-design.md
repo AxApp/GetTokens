@@ -55,6 +55,7 @@ account-store-db: /Users/<user>/.config/gettokens/accounts-v1.sqlite
 
 - sidecar 已落地 SQLite schema、dry-run/commit/delete legacy 管理端点、统一账号 CRUD、Codex OAuth finalize 写 SQLite、Codex/OpenAI-compatible/auth-file runtime 合成器读取 SQLite。
 - sidecar 账号写入后会触发 watcher 重新合成 runtime auth，并将当前账号 revision 的 `account_runtime_apply_state` 标记为 `applied`；失败时标记为 `failed` 并保留错误。
+- sidecar `coreauth.Manager.Update()` 持久化链路已接入 account store：运行中 Codex token refresh 成功后，会通过 `Auth.AccountKey=acct_*` 定位原 `auth-file` 账号并更新 `auth_file_accounts.auth_json`；不会再把迁移后的账号凭证写回旧 auth-file。account store 内的非 `auth-file` 账号也不会 fallback 到旧文件 store。
 - GetTokens 父仓已新增统一账号 API client 和 `UnifiedAccount -> AccountRecord` 映射，`acct_*` Codex API key 更新、删除、disabled、priority 走 sidecar `/v0/management/accounts`。
 - GetTokens 父仓 OpenAI-compatible 管理已从旧 `/v0/management/openai-compatibility` 收敛到统一账号 API：列表过滤 `kind=openai-compatible`，创建走 `POST /v0/management/accounts`，编辑走 `PATCH /v0/management/accounts/{account_key}`，删除、disabled、priority 走对应统一账号端点。
 - 前端 OpenAI-compatible DTO 暴露 `accountKey`，账号卡操作和 Codex 账号列表模型优先使用 `acct_*`；provider name 仅作为迁移前旧卡片解析兜底。
@@ -144,7 +145,7 @@ CREATE INDEX idx_account_cards_updated
 - `sidecar-management-api`
 - `sidecar-oauth`
 
-`priority`、`disabled`、`revision` 只保存在主表。任何账号凭证或账号配置变更都必须递增 `account_cards.revision`。
+`priority`、`disabled`、`revision` 只保存在主表。management API 发起的账号凭证或账号配置变更必须递增 `account_cards.revision`，用于驱动 runtime apply。运行时 token refresh 是当前 runtime 自身产生的新 credential snapshot，只更新类型表和 `account_cards.updated_at_unix_ms`，不递增 revision、不重新排队 runtime apply。
 
 ```sql
 CREATE TABLE codex_api_key_accounts (
@@ -350,6 +351,7 @@ mark account_runtime_apply_state applied or failed
 4. DB commit 后 sidecar 必须刷新 runtime auth/provider 快照；否则当前进程可能继续使用旧 token 或旧 API key。`PATCH /v0/management/accounts/{account_key}` 是凭证更新主入口，不能只更新 DB 后返回。
 5. runtime apply 失败不能回滚已提交 DB，但 management API 必须暴露 failed 状态，下一次 sidecar ready/reload 或账号更新时重试。
 6. GetTokens 不能绕过 sidecar 直接补写 DB 或 auth-file。
+7. token refresh 从 `coreauth.Manager.Update()` 进入持久化时，必须由 account-store token store 拦截 `acct_*` 账号：`auth-file` 写 SQLite，非 account-store auth 才允许 fallback 到旧文件 store。
 
 ## Sidecar 是否还更新 auth-file
 
@@ -357,7 +359,7 @@ mark account_runtime_apply_state applied or failed
 
 - OAuth finalize 写入新的 auth-file 账号，或更新指定 `account_key` 的原账号卡。
 - OAuth relogin 保留原 `account_key`，只替换 `auth_json` 和派生 metadata。
-- 运行中 token refresh 如果产生新 auth payload，必须直接回写 SQLite。
+- 运行中 token refresh 如果产生新 auth payload，必须直接回写 SQLite，并保留已有 `email` / `plan_type` 等可展示派生字段，避免 refresh payload 不完整时把账号套餐识别结果清空。
 - 旧 `auth-dir` 只能作为迁移来源或短期临时产物；迁移完成后持久旧文件必须删除。
 
 ## 迁移流程
@@ -399,7 +401,7 @@ mark account_runtime_apply_state applied or failed
 8. 迁移旧 `auth-file:*`、`codex-api-key:*`、`openai-compatible:*` 后生成新的 `acct_*`。
 9. 编辑 API key/base URL/prefix 后 `account_key` 不变。
 10. 重新登录 OAuth 后 `account_key` 不变。
-11. token refresh 更新原 `auth_json`，不生成新账号卡。
+11. token refresh 更新原 `auth_json`，不生成新账号卡、不写旧 auth-file、不清空已有套餐识别字段。
 12. 删除账号卡级联删除 type-specific rows/runtime identities/apply state。
 13. 旧文件删除后再次启动不会重复导入。
 14. 明文凭证不进入日志和 debug export。
