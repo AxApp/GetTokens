@@ -59,6 +59,9 @@ account-store-db: /Users/<user>/.config/gettokens/accounts-v1.sqlite
 - GetTokens 父仓已新增统一账号 API client 和 `UnifiedAccount -> AccountRecord` 映射，`acct_*` Codex API key 更新、删除、disabled、priority 走 sidecar `/v0/management/accounts`。
 - GetTokens 父仓 OpenAI-compatible 管理已从旧 `/v0/management/openai-compatibility` 收敛到统一账号 API：列表过滤 `kind=openai-compatible`，创建走 `POST /v0/management/accounts`，编辑走 `PATCH /v0/management/accounts/{account_key}`，删除、disabled、priority 走对应统一账号端点。
 - GetTokens 账号池导入 auth-file 账号已从旧 `/v0/management/auth-files` 上传文件链路改为 `POST /v0/management/accounts` 创建 `kind=auth-file` 账号；公开导入入口不再创建 `codex-*.json`。旧 `/auth-files` 上传只保留给迁移前文件替换和兼容流程内部使用。
+- 导入和登录链路复查结论：前端导入、deep link 导入、Wails `UploadAuthFiles`、Codex OAuth start/status/finalize、sidecar OAuth token save、runtime token refresh 均已进入 account store。生产代码扫描不再存在 GetTokens/Wails/frontend 对旧 `/v0/management/auth-files*` 的调用；旧端点只保留 410 防线和测试覆盖。
+- Codex OAuth 重新登录存在两种合法成功形态：sidecar 直接命中已有 `account_key` 并原地更新 `auth_file_accounts.auth_json`，或产生一张临时新账号后由 Wails 回填旧账号并删除临时账号。第一种形态下 Wails finalize 不再要求出现 replacement auth-file。
+- OAuth 重新登录命中已有账号卡时必须保留原 `account_key`、`title`、`source_file_name`、`priority`、`disabled`，只替换 `auth_json` 和派生的 `email` / `plan_type` / `auth_type`。这避免重新登录把用户禁用态、优先级或卡片名称重置。
 - 前端 OpenAI-compatible DTO 暴露 `accountKey`，账号卡操作和 Codex 账号列表模型优先使用 `acct_*`；provider name 仅作为迁移前旧卡片解析兜底。
 - `AccountRecord` 增加 `accountKind`，取值为 `auth-file | codex-api-key | openai-compatible`。前端删除、禁用同步、复制导入、详情编辑门禁和 Claude/Codex 账号列表分类必须优先使用 `accountKind`，不能再只靠 `auth-file:*`、`codex-api-key:*`、`openai-compatible:*` 旧 ID 前缀推断账号类型。
 - Wails 层仍有旧 ID 兼容分支，目标仅是迁移前残留状态可回退；新账号卡身份必须使用 sidecar 分配的 `acct_*`。
@@ -364,7 +367,7 @@ mark account_runtime_apply_state applied or failed
 迁移后 sidecar 不再把 `codex-*.json` 当持久事实源更新。sidecar 会更新的是 `auth_file_accounts.auth_json`：
 
 - OAuth finalize 写入新的 auth-file 账号，或更新指定 `account_key` 的原账号卡。
-- OAuth relogin 保留原 `account_key`，只替换 `auth_json` 和派生 metadata。
+- OAuth relogin 保留原 `account_key`、`title`、`source_file_name`、`priority`、`disabled`，只替换 `auth_json` 和派生 metadata。
 - 运行中 token refresh 如果产生新 auth payload，必须直接回写 SQLite，并保留已有 `email` / `plan_type` 等可展示派生字段，避免 refresh payload 不完整时把账号套餐识别结果清空。
 - 旧 `auth-dir` 只能作为迁移来源或短期临时产物；迁移完成后持久旧文件必须删除。
 

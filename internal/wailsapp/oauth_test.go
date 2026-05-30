@@ -139,6 +139,31 @@ func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 	}
 }
 
+func TestFinalizeCodexOAuthAcceptsAccountStoreInPlaceUpdate(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				return []byte(`{"accounts":[{"account_key":"acct_existing","kind":"auth-file","title":"expired.json","provider":"codex","priority":6,"disabled":false,"auth_file":{"source_file_name":"expired.json","auth_json":"{\"type\":\"codex\",\"access_token\":\"fresh-access\",\"refresh_token\":\"fresh-refresh\",\"email\":\"tester@example.com\",\"plan_type\":\"plus\"}","auth_type":"codex","email":"tester@example.com","plan_type":"plus"}}]}`), http.StatusOK, nil
+			case strings.HasPrefix(path, ManagementAPIPrefix+"/auth-files"):
+				t.Fatalf("FinalizeCodexOAuth must not call deprecated auth-files endpoint: %s %s", method, path)
+				return nil, 0, nil
+			default:
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	err := app.FinalizeCodexOAuth(CompleteCodexOAuthInput{
+		ExistingName:  "expired.json",
+		PreviousNames: []string{"expired.json"},
+	})
+	if err != nil {
+		t.Fatalf("FinalizeCodexOAuth returned error: %v", err)
+	}
+}
+
 func TestResolveReplacementCodexAuthFileNameRejectsAmbiguousResults(t *testing.T) {
 	_, err := resolveReplacementCodexAuthFileName("expired.json", []string{"expired.json"}, []AuthFileItem{
 		{Name: "fresh-a.json", Provider: "codex", Type: "codex"},

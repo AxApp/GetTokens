@@ -9,6 +9,8 @@ import (
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 )
 
+var errNoReplacementCodexAuthFile = errors.New("no replacement codex auth file")
+
 func (a *App) StartCodexOAuth() (*OAuthStartResult, error) {
 	response, err := a.managementClient().RequestCodexAuthURL(true)
 	if err != nil {
@@ -55,6 +57,9 @@ func (a *App) FinalizeCodexOAuth(input CompleteCodexOAuthInput) error {
 
 	replacementName, err := resolveReplacementCodexAuthFileName(existingName, input.PreviousNames, authFiles.Files)
 	if err != nil {
+		if errors.Is(err, errNoReplacementCodexAuthFile) {
+			return nil
+		}
 		return err
 	}
 
@@ -159,7 +164,7 @@ func resolveReplacementCodexAuthFileName(existingName string, previousNames []st
 
 	switch len(candidates) {
 	case 0:
-		return "", errors.New("未找到新的 codex 登录结果，无法回填原账号")
+		return "", fmt.Errorf("%w: 未找到新的 codex 登录结果，可能已由 sidecar 原地更新", errNoReplacementCodexAuthFile)
 	case 1:
 		return candidates[0], nil
 	default:
