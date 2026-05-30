@@ -237,7 +237,7 @@ export default function useAccountsActions({
         if (account.credentialSource !== 'auth-file') {
           return [];
         }
-        return account.name || account.id.replace(/^auth-file:/, '');
+        return account.name || '';
       });
       const authFilePayload = items.flatMap((item) => {
         if (item.type === 'upload-file') {
@@ -295,9 +295,7 @@ export default function useAccountsActions({
           if (!isOpenAICompatibleAccount(account)) {
             return [];
           }
-          return account.id.startsWith('openai-compatible:')
-            ? account.id.replace(/^openai-compatible:/, '') || account.provider
-            : account.provider;
+          return account.provider;
         });
 
         for (const item of items) {
@@ -809,12 +807,9 @@ export default function useAccountsActions({
 }
 
 function isOpenAICompatibleAccount(account: Pick<AccountRecord, 'accountKind' | 'id'>): boolean {
-  return account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:');
+  return account.accountKind === 'openai-compatible';
 }
 
 function isCodexAPIKeyAccount(account: Pick<AccountRecord, 'accountKind' | 'credentialSource' | 'id'>): boolean {
-  if (account.accountKind) {
-    return account.accountKind === 'codex-api-key';
-  }
-  return account.credentialSource === 'api-key' && !account.id.startsWith('openai-compatible:');
+  return account.accountKind === 'codex-api-key';
 }

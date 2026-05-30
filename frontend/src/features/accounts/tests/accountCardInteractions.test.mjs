@@ -41,7 +41,8 @@ test('shouldOpenAccountDetailsFromTarget respects explicit ignore markers', () =
 
 test('buildAccountCardContentText returns structured account summary json', () => {
   const content = buildAccountCardContentText({
-    id: 'codex-api-key:stable-001',
+    id: 'acct_stable_001',
+    accountKind: 'codex-api-key',
     provider: 'codex',
     credentialSource: 'api-key',
     displayName: 'Primary API Key',
@@ -55,7 +56,7 @@ test('buildAccountCardContentText returns structured account summary json', () =
     schema: 'gettokens.account-card.v1',
     credentialSource: 'api-key',
     account: {
-      id: 'codex-api-key:stable-001',
+      id: 'acct_stable_001',
       provider: 'codex',
       displayName: 'Primary API Key',
       status: 'configured',

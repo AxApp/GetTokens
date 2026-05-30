@@ -404,5 +404,5 @@ function openAICompatibleProviderIdentity(provider: OpenAICompatibleProvider): s
   if (accountKey) {
     return accountKey;
   }
-  return `openai-compatible:${String(provider.name || '').trim()}`;
+  return String(provider.name || '').trim();
 }

@@ -397,10 +397,6 @@ function resolveAuthFileName(account: AccountRecord): string {
   if (explicitName) {
     return explicitName;
   }
-  const id = String(account.id || '').trim();
-  if (id.startsWith('auth-file:')) {
-    return id.slice('auth-file:'.length).trim();
-  }
   return '';
 }
 

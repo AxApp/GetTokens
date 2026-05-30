@@ -210,13 +210,15 @@ test('Codex OAuth auth-file draft can use builtin openai provider without preser
   assert.equal(actions[0].warnings.some((warning) => warning.severity === 'blocking'), false);
 });
 
-test('Codex OAuth auth-file draft falls back to auth-file id name', () => {
+test('Codex OAuth auth-file draft uses explicit auth-file name', () => {
   const actions = resolveAccountLocalCliMappings({
     account: account({
-      id: 'auth-file:codex-team.json',
+      id: 'acct_codex_team',
+      accountKind: 'auth-file',
       provider: 'codex',
       credentialSource: 'auth-file',
       displayName: 'codex-team.json',
+      name: 'codex-team.json',
       status: 'ACTIVE',
       supportedFormats: ['openai_responses'],
     }),

@@ -63,7 +63,8 @@ test('mapOpenAICompatibleProviderToRotationAccount preserves provider priority',
   });
 
   assert.deepEqual(account, {
-    id: 'openai-compatible:deepseek',
+    id: 'deepseek',
+    accountKind: 'openai-compatible',
     provider: 'deepseek',
     credentialSource: 'api-key',
     displayName: '兼容 OpenAI · deepseek',
@@ -197,14 +198,14 @@ test('buildRotationParticipationSummary marks disabled accounts as kept-but-skip
   );
 });
 
-test('canToggleRotationAccountDisabled covers auth-file, codex api key, and openai-compatible assets', () => {
+test('canToggleRotationAccountDisabled requires accountKind for account store assets', () => {
   assert.equal(
     canToggleRotationAccountDisabled({
       id: 'auth-file:demo.json',
       credentialSource: 'auth-file',
       name: 'demo.json',
     }),
-    true
+    false
   );
 
   assert.equal(
@@ -213,12 +214,42 @@ test('canToggleRotationAccountDisabled covers auth-file, codex api key, and open
       credentialSource: 'api-key',
       name: 'demo',
     }),
-    true
+    false
   );
 
   assert.equal(
     canToggleRotationAccountDisabled({
       id: 'openai-compatible:deepseek',
+      credentialSource: 'api-key',
+      name: 'deepseek',
+    }),
+    false
+  );
+
+  assert.equal(
+    canToggleRotationAccountDisabled({
+      id: 'acct_auth_file',
+      accountKind: 'auth-file',
+      credentialSource: 'auth-file',
+      name: 'demo.json',
+    }),
+    true
+  );
+
+  assert.equal(
+    canToggleRotationAccountDisabled({
+      id: 'acct_codex_key',
+      accountKind: 'codex-api-key',
+      credentialSource: 'api-key',
+      name: 'demo',
+    }),
+    true
+  );
+
+  assert.equal(
+    canToggleRotationAccountDisabled({
+      id: 'acct_openai_compatible',
+      accountKind: 'openai-compatible',
       credentialSource: 'api-key',
       name: 'deepseek',
     }),

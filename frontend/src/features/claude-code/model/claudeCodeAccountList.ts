@@ -28,6 +28,7 @@ export interface ClaudeCodeAccountRow {
   apiKeys?: string[];
   headers?: Record<string, string>;
   quotaKey?: string;
+  name?: string;
   supportedFormats: readonly string[];
   modelMappings: ClaudeCodeModelMappingRow[];
 }
@@ -266,13 +267,14 @@ function mapAccountRecordToClaudeCodeRow(account: AccountRecord): ClaudeCodeAcco
       : [],
     headers: readRecordStringMap((account as AccountRecord & { headers?: unknown }).headers),
     quotaKey: account.quotaKey,
+    name: account.name,
     supportedFormats: account.supportedFormats || [],
     modelMappings: buildClaudeCodeModelMappings(readAccountModels(account)),
   };
 }
 
 function resolveSourceKind(account: AccountRecord): ClaudeCodeAccountSourceKind {
-  if (account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:')) {
+  if (account.accountKind === 'openai-compatible') {
     return 'openai-compatible';
   }
   return account.credentialSource === 'auth-file' ? 'codex-auth-file' : 'codex-api-key';

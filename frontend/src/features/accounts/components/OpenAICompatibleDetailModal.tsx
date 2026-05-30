@@ -59,8 +59,7 @@ export default function OpenAICompatibleDetailModal({
   const [rateLimitDirty, setRateLimitDirty] = useState(false);
   const [savingRateLimit, setSavingRateLimit] = useState(false);
   const rateLimitRulesRef = useRef<RateLimitRulesSectionHandle>(null);
-  const rateLimitAccountName = draft.currentName || draft.name;
-  const rateLimitAccountKey = `openai-compatible:${rateLimitAccountName}`;
+  const rateLimitAccountKey = String(draft.accountKey || '').trim();
 
   useEffect(() => {
     setRateLimitDirty(false);
@@ -143,7 +142,7 @@ function OpenAICompatibleEvidenceSection({
   const rows = [
     {
       label: t('accounts.card_asset'),
-      value: `openai-compatible:${providerName}`,
+      value: draft.accountKey || providerName,
     },
     {
       label: t('accounts.card_source_type'),

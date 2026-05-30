@@ -85,7 +85,7 @@ test('buildCodexAccountRows merges codex auth files, codex api keys, and openai-
 
   assert.deepEqual(
     rows.map((row) => row.id),
-    ['openai-compatible:deepseek', 'codex-api-key:stable', 'auth-file:pro.json'],
+    ['deepseek', 'codex-api-key:stable', 'auth-file:pro.json'],
   );
   assert.equal(rows[0].sourceKind, 'openai-compatible');
   assert.equal(rows[0].requestable, true);
@@ -179,7 +179,7 @@ test('buildCodexAccountRows keeps disabled or errored accounts in order but mark
     rows.map((row) => [row.id, row.requestable, row.blockReason]),
     [
       ['auth-file:expired.json', false, 'refresh token expired'],
-      ['openai-compatible:openrouter', false, 'disabled'],
+      ['openrouter', false, 'disabled'],
     ],
   );
 });
@@ -1046,7 +1046,7 @@ test('buildCodexModelAliasOptionNames returns alias and real names for editable 
 test('getCodexAccountListPreviewRows provides browser-safe rows with model mappings', () => {
   const rows = getCodexAccountListPreviewRows();
   const codexPro = rows.find((row) => row.id === 'auth-file:codex-pro.json');
-  const deepseek = rows.find((row) => row.id === 'openai-compatible:deepseek');
+  const deepseek = rows.find((row) => row.id === 'acct_deepseek');
 
   assert.ok(rows.length >= 4);
   assert.deepEqual(codexPro?.modelMappings, []);

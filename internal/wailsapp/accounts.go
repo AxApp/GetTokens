@@ -16,6 +16,10 @@ func (a *App) managementClient() *cliproxyapi.Client {
 	return cliproxyapi.New(a.SidecarRequest)
 }
 
+func (a *App) hasManagementClient() bool {
+	return a != nil && (a.managementAPI != nil || a.sidecar != nil || a.sidecarRequest != nil)
+}
+
 func (a *App) ListAccounts() ([]accountsdomain.AccountRecord, error) {
 	accounts, err := a.managementClient().ListAccounts()
 	if err == nil {
@@ -101,16 +105,7 @@ func (a *App) SetAccountDisabled(id string, disabled bool) error {
 		_, err := a.managementClient().PatchAccountStatus(targetID, disabled)
 		return err
 	}
-	switch {
-	case strings.HasPrefix(targetID, "auth-file:"):
-		return a.SetAuthFileStatus(strings.TrimPrefix(targetID, "auth-file:"), disabled)
-	case strings.HasPrefix(targetID, "codex-api-key:"):
-		return a.SetCodexAPIKeyStatus(targetID, disabled)
-	case strings.HasPrefix(targetID, "openai-compatible:"):
-		return a.SetOpenAICompatibleProviderStatus(strings.TrimPrefix(targetID, "openai-compatible:"), disabled)
-	default:
-		return errors.New("不支持的账号类型")
-	}
+	return errors.New("不支持的账号类型")
 }
 
 type UpdateCodexAPIKeyLabelInput struct {
@@ -150,9 +145,12 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 	if !isUnifiedAccountID(targetID) {
 		return a.updateLegacyCodexAPIKeyLabel(input)
 	}
+	if !a.hasManagementClient() {
+		return a.updateLegacyCodexAPIKeyLabel(input)
+	}
 	account, err := a.managementClient().GetAccount(targetID)
 	if err != nil {
-		return err
+		return a.updateLegacyCodexAPIKeyLabel(input)
 	}
 	if account == nil || account.Kind != cliproxyapi.AccountKindCodexAPIKey || account.CodexAPIKey == nil {
 		return errors.New("账号不存在")
@@ -177,9 +175,12 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 	if !isUnifiedAccountID(targetID) {
 		return a.updateLegacyCodexAPIKeyConfig(input)
 	}
+	if !a.hasManagementClient() {
+		return a.updateLegacyCodexAPIKeyConfig(input)
+	}
 	account, err := a.managementClient().GetAccount(targetID)
 	if err != nil {
-		return err
+		return a.updateLegacyCodexAPIKeyConfig(input)
 	}
 	if account == nil || account.Kind != cliproxyapi.AccountKindCodexAPIKey || account.CodexAPIKey == nil {
 		return errors.New("账号不存在")
@@ -204,7 +205,13 @@ func (a *App) DeleteCodexAPIKey(id string) error {
 	if !isUnifiedAccountID(targetID) {
 		return a.deleteLegacyCodexAPIKey(id)
 	}
-	return a.managementClient().DeleteAccount(targetID)
+	if !a.hasManagementClient() {
+		return a.deleteLegacyCodexAPIKey(id)
+	}
+	if err := a.managementClient().DeleteAccount(targetID); err != nil {
+		return a.deleteLegacyCodexAPIKey(id)
+	}
+	return nil
 }
 
 func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
@@ -212,8 +219,14 @@ func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
 	if !isUnifiedAccountID(targetID) {
 		return a.updateLegacyCodexAPIKeyPriority(id, priority)
 	}
+	if !a.hasManagementClient() {
+		return a.updateLegacyCodexAPIKeyPriority(id, priority)
+	}
 	_, err := a.managementClient().PatchAccountPriority(targetID, priority)
-	return err
+	if err != nil {
+		return a.updateLegacyCodexAPIKeyPriority(id, priority)
+	}
+	return nil
 }
 
 func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
@@ -221,8 +234,14 @@ func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
 	if !isUnifiedAccountID(targetID) {
 		return a.setLegacyCodexAPIKeyStatus(id, disabled)
 	}
+	if !a.hasManagementClient() {
+		return a.setLegacyCodexAPIKeyStatus(id, disabled)
+	}
 	_, err := a.managementClient().PatchAccountStatus(targetID, disabled)
-	return err
+	if err != nil {
+		return a.setLegacyCodexAPIKeyStatus(id, disabled)
+	}
+	return nil
 }
 
 func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
@@ -231,16 +250,7 @@ func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
 		_, err := a.managementClient().PatchAccountPriority(targetID, input.Priority)
 		return err
 	}
-	switch {
-	case strings.HasPrefix(targetID, "auth-file:"):
-		return a.updateAuthFilePriority(strings.TrimPrefix(targetID, "auth-file:"), input.Priority)
-	case strings.HasPrefix(targetID, "codex-api-key:"):
-		return a.UpdateCodexAPIKeyPriority(targetID, input.Priority)
-	case strings.HasPrefix(targetID, "openai-compatible:"):
-		return a.UpdateOpenAICompatibleProviderPriority(strings.TrimPrefix(targetID, "openai-compatible:"), input.Priority)
-	default:
-		return errors.New("不支持的账号类型")
-	}
+	return errors.New("不支持的账号类型")
 }
 
 func (a *App) loadCodexAPIKeys() ([]cliproxyapi.CodexAPIKey, error) {

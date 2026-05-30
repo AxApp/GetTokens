@@ -15,6 +15,7 @@ func TestProbeClaudeCodeAccountRoutingSendsAnthropicMessagesRequestAndRouteHeade
 
 	used := false
 	app := New("dev", "", "AxApp/GetTokens")
+	account := testOpenAICompatibleAccount("acct_mimo", "mimo", 9, false, "https://platform.xiaomimimo.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-upstream", ProxyURL: "direct"}}, nil, []cliproxyapi.OpenAICompatibleModel{{Name: "mimo-v2.5-pro", Alias: "claude-sonnet-4-6"}})
 	app.managementAPI = func() *cliproxyapi.Client {
 		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			_ = method
@@ -24,10 +25,8 @@ func TestProbeClaudeCodeAccountRoutingSendsAnthropicMessagesRequestAndRouteHeade
 			switch path {
 			case "/v0/management/api-keys":
 				return []byte(`{"api-keys":["sk-relay"]}`), 200, nil
-			case "/v0/management/openai-compatibility":
-				return []byte(`{"openai-compatibility":[{"name":"mimo","priority":9,"base-url":"https://platform.xiaomimimo.com/v1","api-key-entries":[{"api-key":"sk-upstream","proxy-url":"direct"}],"models":[{"name":"mimo-v2.5-pro","alias":"claude-sonnet-4-6"}]}]}`), 200, nil
-			case "/v0/management/codex-api-key":
-				return []byte(`{"codex-api-key":[]}`), 200, nil
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, account), 200, nil
 			default:
 				return nil, 404, nil
 			}
@@ -88,8 +87,8 @@ func TestProbeClaudeCodeAccountRoutingSendsAnthropicMessagesRequestAndRouteHeade
 	result, err := app.ProbeClaudeCodeAccountRouting(ProbeClaudeCodeAccountRoutingInput{
 		Model:           "claude-sonnet-4-6",
 		Attempts:        1,
-		AllowAccountIDs: []string{"openai-compatible:mimo"},
-		OrderAccountIDs: []string{"openai-compatible:mimo"},
+		AllowAccountIDs: []string{"acct_mimo"},
+		OrderAccountIDs: []string{"acct_mimo"},
 	})
 	if err != nil {
 		t.Fatalf("ProbeClaudeCodeAccountRouting returned error: %v", err)
@@ -98,7 +97,7 @@ func TestProbeClaudeCodeAccountRoutingSendsAnthropicMessagesRequestAndRouteHeade
 		t.Fatalf("attempts len = %d, want 1", len(result.Attempts))
 	}
 	attempt := result.Attempts[0]
-	if attempt.AccountID != "openai-compatible:mimo" || attempt.Provider != "mimo" || !attempt.Success {
+	if attempt.AccountID != "acct_mimo" || attempt.Provider != "mimo" || !attempt.Success {
 		t.Fatalf("unexpected attempt: %#v", attempt)
 	}
 }
@@ -107,6 +106,7 @@ func TestProbeClaudeCodeAccountRoutingFiltersNonAnthropicAccounts(t *testing.T) 
 	t.Setenv("HOME", t.TempDir())
 
 	app := New("dev", "", "AxApp/GetTokens")
+	account := testOpenAICompatibleAccount("acct_copilot", "copilot", 9, false, "https://api.githubcopilot.com", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-copilot"}}, nil, nil)
 	app.managementAPI = func() *cliproxyapi.Client {
 		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			_ = method
@@ -116,10 +116,8 @@ func TestProbeClaudeCodeAccountRoutingFiltersNonAnthropicAccounts(t *testing.T) 
 			switch path {
 			case "/v0/management/api-keys":
 				return []byte(`{"api-keys":["sk-relay"]}`), 200, nil
-			case "/v0/management/openai-compatibility":
-				return []byte(`{"openai-compatibility":[{"name":"copilot","priority":9,"base-url":"https://api.githubcopilot.com","api-key-entries":[{"api-key":"sk-copilot"}]}]}`), 200, nil
-			case "/v0/management/codex-api-key":
-				return []byte(`{"codex-api-key":[]}`), 200, nil
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, account), 200, nil
 			default:
 				return nil, 404, nil
 			}

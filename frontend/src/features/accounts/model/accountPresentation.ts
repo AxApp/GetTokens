@@ -88,8 +88,10 @@ export function resolveAccountAPIKeyPlainNotice(account: AccountRecord, t: Trans
 
 export function mapAuthFileToRecord(account: AuthFile): AccountRecord {
   const provider = String(account.provider || account.type || 'unknown').trim().toLowerCase() || 'unknown';
+  const authIndex = String(account.authIndex || '').trim();
   return {
-    id: `auth-file:${account.name}`,
+    id: authIndex || account.name,
+    accountKind: 'auth-file',
     provider,
     credentialSource: 'auth-file',
     displayName: account.name,

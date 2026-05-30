@@ -430,7 +430,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   }, []);
 
   useEffect(() => {
-    if (!accountDetailIDFromHash || accountDetailIDFromHash.startsWith('openai-compatible:')) {
+    if (!accountDetailIDFromHash) {
       return;
     }
     if (selectedAccount?.id === accountDetailIDFromHash) {
@@ -565,9 +565,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const openAccountDetail = useCallback(
     (account: AccountRecord) => {
       if (isOpenAICompatibleAccount(account)) {
-        const providerName = account.id.startsWith('openai-compatible:')
-          ? account.id.slice('openai-compatible:'.length).trim().toLowerCase()
-          : account.provider.trim().toLowerCase();
+        const providerName = account.provider.trim().toLowerCase();
         const provider = openAICompatibleState.providers.find(
           (item) =>
             item.accountKey === account.id ||
@@ -669,7 +667,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const openOpenAICompatibleDetail = useCallback(
     (provider: OpenAICompatibleProvider) => {
       openAICompatibleState.openDetailModal(provider);
-      markAccountDetailInHash(provider.accountKey || `openai-compatible:${provider.name}`);
+      markAccountDetailInHash(provider.accountKey || provider.name);
     },
     [markAccountDetailInHash, openAICompatibleState],
   );
@@ -1151,8 +1149,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         <OpenAICompatibleDetailModal
           t={t}
           draft={openAICompatibleState.detailDraft}
-          usageSummary={accountUsageByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
-          rateLimitStatus={accountRateLimitByID[`openai-compatible:${openAICompatibleState.detailDraft.currentName}`]}
+          usageSummary={accountUsageByID[openAICompatibleState.detailDraft.accountKey || openAICompatibleState.detailDraft.currentName]}
+          rateLimitStatus={accountRateLimitByID[openAICompatibleState.detailDraft.accountKey || openAICompatibleState.detailDraft.currentName]}
           rateLimitStrategies={rateLimitStrategies}
           rateLimitRulesAPI={previewMode
             ? undefined
@@ -1482,12 +1480,9 @@ function readAccountDetailScriptFromHash(): AccountDetailScriptRoute | '' {
 }
 
 function isOpenAICompatibleAccount(account: Pick<AccountRecord, 'accountKind' | 'id'>): boolean {
-  return account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:');
+  return account.accountKind === 'openai-compatible';
 }
 
 function isCodexAPIKeyAccount(account: Pick<AccountRecord, 'accountKind' | 'credentialSource' | 'id'>): boolean {
-  if (account.accountKind) {
-    return account.accountKind === 'codex-api-key';
-  }
-  return account.credentialSource === 'api-key' && !account.id.startsWith('openai-compatible:');
+  return account.accountKind === 'codex-api-key';
 }

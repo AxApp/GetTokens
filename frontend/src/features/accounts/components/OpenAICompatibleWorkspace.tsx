@@ -124,8 +124,8 @@ export default function OpenAICompatibleWorkspace({
                   provider={provider}
                   verifyState={verifyState}
                   effectiveModelCount={effectiveModelCount}
-                  usageSummary={accountUsageByID[providerID] || accountUsageByID[`openai-compatible:${provider.name}`]}
-                  rateLimitStatus={accountRateLimitByID[providerID] || accountRateLimitByID[`openai-compatible:${provider.name}`]}
+                  usageSummary={accountUsageByID[providerID]}
+                  rateLimitStatus={accountRateLimitByID[providerID]}
                   pendingDelete={pendingDeleteName === providerID || pendingDeleteName === provider.name}
                   pendingStatus={pendingStatusName === providerID || pendingStatusName === provider.name}
                   onOpenDetail={onOpenDetail}
@@ -155,5 +155,5 @@ function openAICompatibleProviderIdentity(provider: OpenAICompatibleProvider): s
   if (accountKey) {
     return accountKey;
   }
-  return `openai-compatible:${String(provider.name || '').trim()}`;
+  return String(provider.name || '').trim();
 }

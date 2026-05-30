@@ -633,27 +633,12 @@ function isClaudeObservedDetail(detail: UsageDeskObservedDetail): boolean {
 
   return (
     usageDeskProviderSupportsClaude(detail.provider) ||
-    usageDeskAttributionAccountSupportsClaude(detail.accountKey) ||
     haystack.includes('anthropic') ||
     haystack.includes('claude') ||
     haystack.includes('sonnet') ||
     haystack.includes('opus') ||
     haystack.includes('haiku')
   );
-}
-
-function usageDeskAttributionAccountSupportsClaude(accountKey: string): boolean {
-  const normalized = accountKey.trim().toLowerCase();
-  if (!normalized) {
-    return false;
-  }
-  if (normalized.startsWith('openai-compatible:')) {
-    return usageDeskProviderSupportsClaude(normalized.slice('openai-compatible:'.length));
-  }
-  if (normalized.startsWith('auth-file:')) {
-    return usageDeskProviderSupportsClaude(normalized.slice('auth-file:'.length));
-  }
-  return false;
 }
 
 function usageDeskProviderSupportsClaude(provider: string): boolean {

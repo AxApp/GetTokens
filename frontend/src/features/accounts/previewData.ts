@@ -614,7 +614,8 @@ export function getAccountsPreviewAPIKeyRecords(): AccountRecord[] {
   return [
     ...PREVIEW_API_KEY_ACCOUNTS.map((account) => ({ ...account })),
     ...PREVIEW_OPENAI_COMPATIBLE_PROVIDERS.map((provider): AccountRecord => ({
-      id: `openai-compatible:${provider.name}`,
+      id: String(provider.accountKey || provider.name || '').trim(),
+      accountKind: 'openai-compatible',
       provider: provider.name,
       credentialSource: 'api-key' as const,
       displayName: `OPENAI-COMPATIBLE · ${provider.name.toUpperCase()}`,
@@ -962,17 +963,6 @@ function createFallbackUsageSummary(
 }
 
 function inferProviderFromPreviewID(id: string) {
-  if (id.startsWith('openai-compatible:')) {
-    return id.replace('openai-compatible:', '');
-  }
-  if (id.startsWith('auth-file:')) {
-    const name = id.replace('auth-file:', '');
-    if (name.startsWith('claude')) return 'claude';
-    if (name.startsWith('gemini')) return 'gemini';
-    return 'codex';
-  }
-  if (id.startsWith('codex-api-key:billing')) return 'openai';
-  if (id.startsWith('codex-api-key:')) return 'codex';
   return 'unknown';
 }
 
@@ -1173,7 +1163,9 @@ function previewProjectedDetail(input: {
 }
 
 function previewProvider(input: Omit<OpenAICompatibleProvider, 'convertValues'>): OpenAICompatibleProvider {
+  const name = String(input.name || '').trim();
   return {
+    accountKey: name ? `acct_${name}` : '',
     ...input,
     convertValues(value: unknown) {
       return value;

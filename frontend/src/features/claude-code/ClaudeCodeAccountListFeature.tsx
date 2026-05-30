@@ -214,7 +214,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       return;
     }
 
-    const authFileName = readAuthFileNameFromRowID(detailRow.id);
+    const authFileName = String(detailRow.name || '').trim();
     if (!authFileName) {
       return;
     }
@@ -853,11 +853,6 @@ function SummaryMetric({ label, value }: { label: string; value: number }) {
       <div className="mt-1 text-2xl font-black tabular-nums">{value}</div>
     </div>
   );
-}
-
-function readAuthFileNameFromRowID(rowID: string) {
-  const prefix = 'auth-file:';
-  return rowID.startsWith(prefix) ? rowID.slice(prefix.length) : '';
 }
 
 function buildDefaultChannelRoutingConfig(channel: 'claude', orderedAccountIDs: string[] = []): ChannelRoutingConfig {

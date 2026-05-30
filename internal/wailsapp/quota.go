@@ -35,9 +35,6 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 			return a.getCodexAuthFileQuota(strings.TrimSpace(account.AccountKey), []byte(account.AuthFile.AuthJSON))
 		}
 	}
-	if strings.HasPrefix(name, "codex-api-key:") {
-		return a.getCodexAPIKeyQuota(name)
-	}
 
 	authFile, err := a.getRawAuthFileByName(name)
 	if err != nil {

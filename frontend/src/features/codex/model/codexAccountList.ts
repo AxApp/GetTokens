@@ -209,7 +209,7 @@ export function buildCodexQuotaSummaryAccount(row: CodexAccountRow): AccountReco
     quotaEnabled: row.quotaEnabled,
     billingCurl: row.billingCurl,
     billingEnabled: row.billingEnabled,
-    name: row.name || (row.id.startsWith('auth-file:') ? row.id.slice('auth-file:'.length) : undefined),
+    name: row.name,
     email: row.email,
     planType: row.planType,
     apiKey: row.apiKey,
@@ -235,9 +235,8 @@ function isApiFormat(format: string): format is ApiFormat {
 }
 
 function isCodexRequestAccount(account: AccountRecord) {
-  const id = String(account.id || '').trim();
   const provider = String(account.provider || '').trim().toLowerCase();
-  return provider === 'codex' || id.startsWith('codex-api-key:');
+  return provider === 'codex' || account.accountKind === 'codex-api-key';
 }
 
 function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
@@ -283,7 +282,7 @@ function mapOpenAICompatibleProviderToCodexRow(provider: OpenAICompatibleProvide
   const accountKey = String(provider.accountKey || '').trim();
   const disabled = Boolean(provider.disabled);
   return {
-    id: accountKey || `openai-compatible:${name}`,
+    id: accountKey || name,
     label: name || 'openai-compatible',
     sourceKind: 'openai-compatible',
     provider: name || 'openai-compatible',

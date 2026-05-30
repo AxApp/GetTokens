@@ -39,14 +39,14 @@ test('removeDeletedAPIKeyRecord removes only the deleted api-key asset', () => {
   );
 });
 
-test('resolveAccountDeleteRequest routes openai-compatible provider assets by id prefix', () => {
+test('resolveAccountDeleteRequest does not infer openai-compatible providers from legacy id prefix', () => {
   assert.deepEqual(
     resolveAccountDeleteRequest({
       id: 'openai-compatible:deepseek',
       provider: 'deepseek',
       credentialSource: 'api-key',
     }),
-    { type: 'openai-compatible-provider', name: 'deepseek' }
+    { type: 'codex-api-key', id: 'openai-compatible:deepseek' }
   );
 });
 

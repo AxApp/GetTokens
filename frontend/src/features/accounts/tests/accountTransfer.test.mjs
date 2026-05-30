@@ -73,7 +73,8 @@ test('parseAccountCardImportPayload reads copied auth file cards', () => {
 
 test('copied codex api key card content can be pasted as an import payload', () => {
   const copiedText = buildAccountCardContentText({
-    id: 'codex-api-key:stable-001',
+    id: 'acct_stable_001',
+    accountKind: 'codex-api-key',
     provider: 'codex',
     credentialSource: 'api-key',
     displayName: 'Primary API Key',
@@ -95,7 +96,8 @@ test('copied codex api key card content can be pasted as an import payload', () 
 test('copied auth file card content can be pasted as an import payload', () => {
   const copiedText = buildAccountCardContentText(
     {
-      id: 'auth-file:codex-auth.json',
+      id: 'acct_codex_auth',
+      accountKind: 'auth-file',
       provider: 'codex',
       credentialSource: 'auth-file',
       displayName: 'codex-auth.json',
@@ -114,7 +116,8 @@ test('copied auth file card content can be pasted as an import payload', () => {
 
 test('copied openai-compatible card content can be pasted as an import payload', () => {
   const copiedText = buildAccountCardContentText({
-    id: 'openai-compatible:deepseek',
+    id: 'acct_deepseek',
+    accountKind: 'openai-compatible',
     provider: 'deepseek',
     credentialSource: 'api-key',
     displayName: 'OPENAI-COMPATIBLE · DEEPSEEK',

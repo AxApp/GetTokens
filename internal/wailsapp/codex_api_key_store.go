@@ -275,7 +275,7 @@ func ensureCodexAPIKeyLocalID(item *cliproxyapi.CodexAPIKeyInput) error {
 	if _, err := rand.Read(buf); err != nil {
 		return err
 	}
-	item.LocalID = "codex-api-key:" + hex.EncodeToString(buf)
+	item.LocalID = "acct_" + hex.EncodeToString(buf)
 	return nil
 }
 

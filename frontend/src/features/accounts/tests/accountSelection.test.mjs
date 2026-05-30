@@ -79,7 +79,8 @@ test('resolveBulkQuotaRefreshTargets only includes accounts with quota telemetry
 test('resolveBulkSetDisabledTargets skips unsupported or already matching accounts', () => {
   const selectedAccounts = [
     {
-      id: 'auth-file:codex',
+      id: 'acct_auth_file',
+      accountKind: 'auth-file',
       credentialSource: 'auth-file',
       provider: 'codex',
       name: 'codex.json',
@@ -92,28 +93,38 @@ test('resolveBulkSetDisabledTargets skips unsupported or already matching accoun
       disabled: false,
     },
     {
-      id: 'codex-api-key:tracked',
+      id: 'acct_codex_key_legacy_named',
+      accountKind: 'codex-api-key',
       credentialSource: 'api-key',
       provider: 'codex',
       disabled: false,
     },
     {
-      id: 'openai-compatible:deepseek',
+      id: 'acct_deepseek',
+      accountKind: 'openai-compatible',
       credentialSource: 'api-key',
       provider: 'deepseek',
       disabled: true,
     },
+    {
+      id: 'acct_codex_key',
+      accountKind: 'codex-api-key',
+      credentialSource: 'api-key',
+      provider: 'codex',
+      disabled: false,
+    },
   ];
 
   const disableResult = resolveBulkSetDisabledTargets(selectedAccounts, true);
-  assert.deepEqual(disableResult.targets.map((account) => account.id), ['auth-file:codex', 'codex-api-key:tracked']);
-  assert.deepEqual(disableResult.skipped.map((account) => account.id), ['auth-file:missing-name', 'openai-compatible:deepseek']);
+  assert.deepEqual(disableResult.targets.map((account) => account.id), ['acct_auth_file', 'acct_codex_key_legacy_named', 'acct_codex_key']);
+  assert.deepEqual(disableResult.skipped.map((account) => account.id), ['auth-file:missing-name', 'acct_deepseek']);
 
   const enableResult = resolveBulkSetDisabledTargets(selectedAccounts, false);
-  assert.deepEqual(enableResult.targets.map((account) => account.id), ['openai-compatible:deepseek']);
+  assert.deepEqual(enableResult.targets.map((account) => account.id), ['acct_deepseek']);
   assert.deepEqual(enableResult.skipped.map((account) => account.id), [
-    'auth-file:codex',
+    'acct_auth_file',
     'auth-file:missing-name',
-    'codex-api-key:tracked',
+    'acct_codex_key_legacy_named',
+    'acct_codex_key',
   ]);
 });

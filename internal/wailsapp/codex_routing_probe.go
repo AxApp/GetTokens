@@ -45,15 +45,21 @@ type CodexAccountRoutingProbeAttempt struct {
 }
 
 type codexRoutingProbeCandidate struct {
-	ID        string
-	Label     string
-	Provider  string
-	Priority  int
-	UsageKeys []string
-	RouteIDs  []string
+	ID          string
+	Label       string
+	Provider    string
+	Priority    int
+	UsageSource string
+	UsageKeys   []string
+	RouteIDs    []string
 }
 
 type codexRoutingUsageSnapshot map[string]int64
+
+const (
+	codexRoutingUsageSourceAuthFile = "auth-file"
+	codexRoutingUsageSourceAPIKey   = "api-key"
+)
 
 type codexRoutingRecentBucket struct {
 	Success int64 `json:"success"`
@@ -123,38 +129,29 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 	if err != nil {
 		return nil, err
 	}
-	providers, err := a.managementClient().ListOpenAICompatibleProviders()
-	if err != nil {
-		return nil, err
-	}
-	codexRouteIDs := a.loadCodexAPIKeyRouteIDs()
 
-	candidates := make([]codexRoutingProbeCandidate, 0, len(accounts)+len(providers))
+	candidates := make([]codexRoutingProbeCandidate, 0, len(accounts))
 	for _, account := range accounts {
 		if account.Disabled || !codexRoutingRecordRequestable(account.Status) {
 			continue
 		}
-		if strings.HasPrefix(account.ID, "openai-compatible:") {
+		accountID := strings.TrimSpace(account.ID)
+		if !isUnifiedAccountID(accountID) {
 			continue
 		}
-		if account.CredentialSource == accountsdomain.CredentialSourceAuthFile {
+		if account.AccountKind == accountsdomain.AccountKindAuthFile {
 			name := strings.TrimSpace(account.Name)
-			if name == "" && strings.HasPrefix(account.ID, "auth-file:") {
-				name = strings.TrimPrefix(account.ID, "auth-file:")
-			}
 			if name == "" {
 				continue
 			}
 			candidates = append(candidates, codexRoutingProbeCandidate{
-				ID:       account.ID,
-				Label:    firstNonEmptyString(account.DisplayName, account.Email, name),
-				Provider: strings.TrimSpace(account.Provider),
-				Priority: account.Priority,
-				UsageKeys: []string{
-					account.ID,
-					"auth-file:" + name,
-				},
-				RouteIDs: []string{name},
+				ID:          accountID,
+				Label:       firstNonEmptyString(account.DisplayName, account.Email, name),
+				Provider:    strings.TrimSpace(account.Provider),
+				Priority:    account.Priority,
+				UsageSource: codexRoutingUsageSourceAuthFile,
+				UsageKeys:   []string{accountID},
+				RouteIDs:    []string{name},
 			})
 			continue
 		}
@@ -166,46 +163,22 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 		if provider == "" {
 			provider = "codex"
 		}
+		routeKind := "codex:apikey"
+		routeParts := []string{apiKey, account.BaseURL}
+		if account.AccountKind == accountsdomain.AccountKindOpenAICompatible {
+			routeKind = "openai-compatibility:" + provider
+			routeParts = append(routeParts, account.ProxyURL)
+		}
 		candidates = append(candidates, codexRoutingProbeCandidate{
-			ID:       account.ID,
-			Label:    firstNonEmptyString(account.DisplayName, account.KeySuffix, account.ID),
-			Provider: provider,
-			Priority: account.Priority,
+			ID:          accountID,
+			Label:       firstNonEmptyString(account.DisplayName, account.KeySuffix, accountID),
+			Provider:    provider,
+			Priority:    account.Priority,
+			UsageSource: codexRoutingUsageSourceAPIKey,
 			UsageKeys: []string{
 				buildCodexRoutingAPIUsageKey(provider, account.BaseURL, apiKey),
 			},
-			RouteIDs: codexRouteIDs[account.ID],
-		})
-	}
-
-	for _, provider := range providers {
-		if provider.Disabled {
-			continue
-		}
-		name := strings.TrimSpace(provider.Name)
-		if name == "" {
-			continue
-		}
-		providerKey := strings.ToLower(name)
-		usageKeys := make([]string, 0, len(provider.APIKeyEntries)+1)
-		routeIDs := make([]string, 0, len(provider.APIKeyEntries)+1)
-		apiKeys := provider.APIKeyEntries
-		for _, apiKey := range apiKeys {
-			if trimmed := strings.TrimSpace(apiKey.APIKey); trimmed != "" {
-				usageKeys = append(usageKeys, buildCodexRoutingAPIUsageKey(providerKey, provider.BaseURL, trimmed))
-				routeIDs = append(routeIDs, buildStableRouteAuthID("openai-compatibility:"+providerKey, trimmed, provider.BaseURL, apiKey.ProxyURL))
-			}
-		}
-		if len(usageKeys) == 0 {
-			continue
-		}
-		candidates = append(candidates, codexRoutingProbeCandidate{
-			ID:        "openai-compatible:" + name,
-			Label:     name,
-			Provider:  providerKey,
-			Priority:  provider.Priority,
-			UsageKeys: usageKeys,
-			RouteIDs:  normalizeCodexRouteIDList(routeIDs),
+			RouteIDs: []string{buildStableRouteAuthID(routeKind, routeParts...)},
 		})
 	}
 
@@ -216,24 +189,6 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 		return candidates[i].ID < candidates[j].ID
 	})
 	return candidates, nil
-}
-
-func (a *App) loadCodexAPIKeyRouteIDs() map[string][]string {
-	codexKeys, err := a.loadCodexAPIKeys()
-	if err != nil {
-		return map[string][]string{}
-	}
-	out := make(map[string][]string, len(codexKeys))
-	for _, key := range codexKeys {
-		record := accountsdomain.BuildCodexAPIKeyAccountRecord(key)
-		id := strings.TrimSpace(record.ID)
-		apiKey := strings.TrimSpace(key.APIKey)
-		if id == "" || apiKey == "" {
-			continue
-		}
-		out[id] = []string{buildStableRouteAuthID("codex:apikey", apiKey, key.BaseURL)}
-	}
-	return out
 }
 
 func buildCodexRoutingRouteHeaders(input ProbeCodexAccountRoutingInput, candidates []codexRoutingProbeCandidate) map[string]string {
@@ -399,12 +354,12 @@ func (a *App) captureCodexRoutingUsage(candidates []codexRoutingProbeCandidate) 
 	apiKeyUsage := a.captureCodexRoutingAPIKeyUsage()
 	for _, candidate := range candidates {
 		var total int64
+		sourceUsage := apiKeyUsage
+		if candidate.UsageSource == codexRoutingUsageSourceAuthFile {
+			sourceUsage = authFileUsage
+		}
 		for _, key := range candidate.UsageKeys {
-			if strings.HasPrefix(key, "auth-file:") {
-				total += authFileUsage[key]
-				continue
-			}
-			total += apiKeyUsage[key]
+			total += sourceUsage[key]
 		}
 		snapshot[candidate.ID] = total
 	}

@@ -281,7 +281,7 @@ function resolvePlanGroup(
 }
 
 function resolveSourceGroup(account: AccountRecord, t: Translator): AccountGroupDescriptor {
-  if (account.accountKind === 'openai-compatible' || account.id.startsWith('openai-compatible:')) {
+  if (account.accountKind === 'openai-compatible') {
     return { id: 'source:openai-compatible', label: t('accounts.group_source_openai_compatible'), rank: 30 };
   }
   if (account.credentialSource === 'auth-file') {

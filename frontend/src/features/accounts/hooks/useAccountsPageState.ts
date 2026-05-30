@@ -343,7 +343,10 @@ export default function useAccountsPageState({
       }
       setAuthFiles((prev) =>
         prev.map((item) => {
-          const id = `auth-file:${item.name}`;
+          const id = String(item.authIndex || '').trim();
+          if (!id) {
+            return item;
+          }
           const patched = applyAccountDisabledChangeToRecord(
             {
               id,
@@ -804,7 +807,10 @@ function readInitialAccountSortMode(): AccountSortMode {
 
 function applyDisabledOverridesToPreviewAuthFiles(files: AuthFile[], overrides: Record<string, boolean>) {
   return files.map((file) => {
-    const id = `auth-file:${file.name}`;
+    const id = String(file.authIndex || '').trim();
+    if (!id) {
+      return file;
+    }
     if (!Object.prototype.hasOwnProperty.call(overrides, id)) {
       return file;
     }

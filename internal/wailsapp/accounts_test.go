@@ -48,7 +48,7 @@ func TestUpdateCodexAPIKeyLabelPersistsToStore(t *testing.T) {
 	}
 }
 
-func TestUpdateAccountPrioritySupportsOpenAICompatibleProvider(t *testing.T) {
+func TestUpdateAccountPrioritySupportsUnifiedOpenAICompatibleProvider(t *testing.T) {
 	account := testOpenAICompatibleAccount("acct_deepseek", "deepseek", 1, false, "https://api.deepseek.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-old"}}, nil, nil)
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
@@ -73,59 +73,79 @@ func TestUpdateAccountPrioritySupportsOpenAICompatibleProvider(t *testing.T) {
 	}
 
 	if err := app.UpdateAccountPriority(UpdateAccountPriorityInput{
-		ID:       "openai-compatible:deepseek",
+		ID:       "acct_deepseek",
 		Priority: 5,
 	}); err != nil {
 		t.Fatalf("UpdateAccountPriority: %v", err)
 	}
 }
 
-func TestSetAccountDisabledSupportsCodexAPIKey(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	item := cliproxyapi.CodexAPIKeyInput{
-		APIKey:  "sk-test-1111",
-		BaseURL: "https://api.openai.com/v1",
+func TestSetAccountDisabledSupportsUnifiedCodexAPIKey(t *testing.T) {
+	account := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_codex_key",
+		Kind:       cliproxyapi.AccountKindCodexAPIKey,
+		Title:      "Codex Key",
+		Provider:   "codex",
+		CodexAPIKey: &cliproxyapi.CodexAPIKeyAccountCredential{
+			APIKey:  "sk-test-1111",
+			BaseURL: "https://api.openai.com/v1",
+		},
 	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persistCodexAPIKeySet: %v", err)
-	}
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 item, got %d", len(items))
-	}
-
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
 			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method != "PUT" || path != "/v0/management/codex-api-key" {
-					t.Fatalf("unexpected request: %s %s", method, path)
+				if method == "PATCH" && path == "/v0/management/accounts/acct_codex_key/status" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					if !strings.Contains(string(payload), `"disabled":true`) {
+						t.Fatalf("unexpected payload: %s", payload)
+					}
+					return testAccountResponse(t, account), 200, nil
 				}
-				payload, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("read body: %v", err)
-				}
-				if !strings.Contains(string(payload), `"disabled":true`) {
-					t.Fatalf("unexpected payload: %s", payload)
-				}
-				return nil, 200, nil
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
 			})
 		},
 	}
 
-	if err := app.SetAccountDisabled(codexAPIKeyAssetIDFromInput(items[0]), true); err != nil {
+	if err := app.SetAccountDisabled("acct_codex_key", true); err != nil {
 		t.Fatalf("SetAccountDisabled: %v", err)
 	}
+}
 
-	items, err = loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
+func TestSetAccountDisabledRejectsLegacyPrefixedRuntimeIDs(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				t.Fatalf("unexpected request for legacy runtime id: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
 	}
-	if len(items) != 1 || !items[0].Disabled {
-		t.Fatalf("expected stored codex key to be disabled, got %#v", items)
+
+	for _, id := range []string{"auth-file:codex.json", "codex-api-key:stable-001", "openai-compatible:deepseek"} {
+		if err := app.SetAccountDisabled(id, true); err == nil {
+			t.Fatalf("SetAccountDisabled(%q) succeeded, want unsupported account type", id)
+		}
+	}
+}
+
+func TestUpdateAccountPriorityRejectsLegacyPrefixedRuntimeIDs(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				t.Fatalf("unexpected request for legacy runtime id: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	for _, id := range []string{"auth-file:codex.json", "codex-api-key:stable-001", "openai-compatible:deepseek"} {
+		if err := app.UpdateAccountPriority(UpdateAccountPriorityInput{ID: id, Priority: 5}); err == nil {
+			t.Fatalf("UpdateAccountPriority(%q) succeeded, want unsupported account type", id)
+		}
 	}
 }
 
@@ -134,9 +154,6 @@ func TestSetAccountDisabledSupportsOpenAICompatibleProvider(t *testing.T) {
 	app := &App{
 		managementAPI: func() *cliproxyapi.Client {
 			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method == "GET" && path == "/v0/management/accounts" {
-					return testAccountsResponse(t, account), 200, nil
-				}
 				if method == "PATCH" && path == "/v0/management/accounts/acct_deepseek/status" {
 					payload, err := io.ReadAll(body)
 					if err != nil {
@@ -159,7 +176,7 @@ func TestSetAccountDisabledSupportsOpenAICompatibleProvider(t *testing.T) {
 		},
 	}
 
-	if err := app.SetAccountDisabled("openai-compatible:deepseek", true); err != nil {
+	if err := app.SetAccountDisabled("acct_deepseek", true); err != nil {
 		t.Fatalf("SetAccountDisabled: %v", err)
 	}
 }

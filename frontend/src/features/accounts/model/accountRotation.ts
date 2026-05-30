@@ -51,9 +51,11 @@ export function buildPriorityUpdates<T extends PriorityAccountLike>(accounts: T[
 }
 
 export function mapOpenAICompatibleProviderToRotationAccount(provider: OpenAICompatibleProvider): AccountRecord {
+  const providerName = String(provider.name || '').trim();
   return {
-    id: `openai-compatible:${String(provider.name || '').trim()}`,
-    provider: String(provider.name || '').trim().toLowerCase() || 'openai-compatible',
+    id: String(provider.accountKey || '').trim() || providerName,
+    accountKind: 'openai-compatible',
+    provider: providerName.toLowerCase() || 'openai-compatible',
     credentialSource: 'api-key',
     displayName: `兼容 OpenAI · ${String(provider.name || '账号').trim()}`,
     status: provider.disabled ? 'DISABLED' : 'CONFIGURED',
@@ -132,8 +134,9 @@ export function buildRotationParticipationSummary(
 
 export function canToggleRotationAccountDisabled(account: AccountRecord): boolean {
   const id = String(account.id || '').trim();
-  if (id.startsWith('auth-file:')) {
-    return String(account.name || '').trim().length > 0;
-  }
-  return id.startsWith('codex-api-key:') || id.startsWith('openai-compatible:');
+  const accountKind = String(account.accountKind || '').trim();
+  return (
+    id.startsWith('acct_') &&
+    (accountKind === 'auth-file' || accountKind === 'codex-api-key' || accountKind === 'openai-compatible')
+  );
 }

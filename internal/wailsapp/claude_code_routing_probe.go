@@ -90,21 +90,23 @@ func (a *App) loadClaudeCodeRoutingProbeCandidates() ([]codexRoutingProbeCandida
 		if account.Disabled || !codexRoutingRecordRequestable(account.Status) || !supportsAnthropicFormat(account.SupportedFormats) {
 			continue
 		}
-		if account.CredentialSource == accountsdomain.CredentialSourceAuthFile {
+		accountID := strings.TrimSpace(account.ID)
+		if !isUnifiedAccountID(accountID) {
+			continue
+		}
+		if account.AccountKind == accountsdomain.AccountKindAuthFile {
 			name := strings.TrimSpace(account.Name)
-			if name == "" && strings.HasPrefix(account.ID, "auth-file:") {
-				name = strings.TrimPrefix(account.ID, "auth-file:")
-			}
 			if name == "" {
 				continue
 			}
 			candidates = append(candidates, codexRoutingProbeCandidate{
-				ID:        account.ID,
-				Label:     firstNonEmptyString(account.DisplayName, account.Email, name),
-				Provider:  strings.TrimSpace(account.Provider),
-				Priority:  account.Priority,
-				UsageKeys: []string{"auth-file:" + name},
-				RouteIDs:  []string{name},
+				ID:          accountID,
+				Label:       firstNonEmptyString(account.DisplayName, account.Email, name),
+				Provider:    strings.TrimSpace(account.Provider),
+				Priority:    account.Priority,
+				UsageSource: codexRoutingUsageSourceAuthFile,
+				UsageKeys:   []string{accountID},
+				RouteIDs:    []string{name},
 			})
 			continue
 		}
@@ -121,24 +123,25 @@ func (a *App) loadClaudeCodeRoutingProbeCandidates() ([]codexRoutingProbeCandida
 		usageKeys := make([]string, 0, len(apiKeys))
 		routeIDs := make([]string, 0, len(apiKeys))
 		routeKind := "codex:apikey"
-		if strings.HasPrefix(account.ID, "openai-compatible:") {
+		if account.AccountKind == accountsdomain.AccountKindOpenAICompatible {
 			routeKind = "openai-compatibility:" + provider
 		}
 		for _, apiKey := range apiKeys {
 			usageKeys = append(usageKeys, buildCodexRoutingAPIUsageKey(provider, baseURL, apiKey))
-			if strings.HasPrefix(account.ID, "openai-compatible:") {
+			if account.AccountKind == accountsdomain.AccountKindOpenAICompatible {
 				routeIDs = append(routeIDs, buildStableRouteAuthID(routeKind, apiKey, baseURL, account.ProxyURL))
 			} else {
 				routeIDs = append(routeIDs, buildStableRouteAuthID(routeKind, apiKey, baseURL))
 			}
 		}
 		candidates = append(candidates, codexRoutingProbeCandidate{
-			ID:        account.ID,
-			Label:     firstNonEmptyString(account.DisplayName, account.KeySuffix, account.ID),
-			Provider:  provider,
-			Priority:  account.Priority,
-			UsageKeys: usageKeys,
-			RouteIDs:  normalizeCodexRouteIDList(routeIDs),
+			ID:          accountID,
+			Label:       firstNonEmptyString(account.DisplayName, account.KeySuffix, accountID),
+			Provider:    provider,
+			Priority:    account.Priority,
+			UsageSource: codexRoutingUsageSourceAPIKey,
+			UsageKeys:   usageKeys,
+			RouteIDs:    normalizeCodexRouteIDList(routeIDs),
 		})
 	}
 

@@ -189,14 +189,16 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       const previewUsageAccounts: AccountRecord[] = [
         ...previewAccounts,
         {
-          id: 'openai-compatible:deepseek',
+          id: 'acct_deepseek',
+          accountKind: 'openai-compatible',
           provider: 'deepseek',
           credentialSource: 'api-key',
           displayName: 'DeepSeek',
           status: 'configured',
         },
         {
-          id: 'openai-compatible:openrouter',
+          id: 'acct_openrouter',
+          accountKind: 'openai-compatible',
           provider: 'openrouter',
           credentialSource: 'api-key',
           displayName: 'OpenRouter',
@@ -340,7 +342,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       return;
     }
 
-    const authFileName = readAuthFileNameFromRowID(detailRow.id);
+    const authFileName = String(detailRow.name || '').trim();
     if (!authFileName) {
       return;
     }
@@ -1088,11 +1090,6 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       ) : null}
     </div>
   );
-}
-
-function readAuthFileNameFromRowID(rowID: string) {
-  const prefix = 'auth-file:';
-  return rowID.startsWith(prefix) ? rowID.slice(prefix.length) : '';
 }
 
 function buildDefaultChannelRoutingConfig(channel: 'codex', orderedAccountIDs: string[] = []): ChannelRoutingConfig {

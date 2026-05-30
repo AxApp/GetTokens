@@ -15,6 +15,7 @@ func TestProbeCodexAccountRoutingDetectsOpenAICompatibleProviderFromUsageDelta(t
 
 	used := false
 	app := New("dev", "", "AxApp/GetTokens")
+	account := testOpenAICompatibleAccount("acct_mi", "MI", 9, false, "https://api.example.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-upstream"}}, nil, []cliproxyapi.OpenAICompatibleModel{{Name: "gpt-test", Alias: "gpt-5.4"}})
 	app.managementAPI = func() *cliproxyapi.Client {
 		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			_ = method
@@ -24,10 +25,8 @@ func TestProbeCodexAccountRoutingDetectsOpenAICompatibleProviderFromUsageDelta(t
 			switch path {
 			case "/v0/management/api-keys":
 				return []byte(`{"api-keys":["sk-relay"]}`), 200, nil
-			case "/v0/management/openai-compatibility":
-				return []byte(`{"openai-compatibility":[{"name":"MI","priority":9,"base-url":"https://api.example.com/v1","api-key-entries":[{"api-key":"sk-upstream"}],"models":[{"name":"gpt-test","alias":"gpt-5.4"}]}]}`), 200, nil
-			case "/v0/management/codex-api-key":
-				return []byte(`{"codex-api-key":[]}`), 200, nil
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, account), 200, nil
 			default:
 				return nil, 404, nil
 			}
@@ -84,8 +83,8 @@ func TestProbeCodexAccountRoutingDetectsOpenAICompatibleProviderFromUsageDelta(t
 		t.Fatalf("attempts len = %d, want 1", len(result.Attempts))
 	}
 	attempt := result.Attempts[0]
-	if attempt.AccountID != "openai-compatible:MI" {
-		t.Fatalf("AccountID = %q, want openai-compatible:MI", attempt.AccountID)
+	if attempt.AccountID != "acct_mi" {
+		t.Fatalf("AccountID = %q, want acct_mi", attempt.AccountID)
 	}
 	if attempt.AccountLabel != "MI" || attempt.Provider != "mi" {
 		t.Fatalf("unexpected account label/provider: %#v", attempt)
@@ -99,6 +98,7 @@ func TestProbeCodexAccountRoutingSendsRoutePolicyHeaders(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	app := New("dev", "", "AxApp/GetTokens")
+	account := testOpenAICompatibleAccount("acct_mi", "MI", 9, false, "https://api.example.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-upstream"}}, nil, []cliproxyapi.OpenAICompatibleModel{{Name: "gpt-test", Alias: "gpt-5.4"}})
 	app.managementAPI = func() *cliproxyapi.Client {
 		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			_ = method
@@ -108,10 +108,8 @@ func TestProbeCodexAccountRoutingSendsRoutePolicyHeaders(t *testing.T) {
 			switch path {
 			case "/v0/management/api-keys":
 				return []byte(`{"api-keys":["sk-relay"]}`), 200, nil
-			case "/v0/management/openai-compatibility":
-				return []byte(`{"openai-compatibility":[{"name":"MI","priority":9,"base-url":"https://api.example.com/v1","api-key-entries":[{"api-key":"sk-upstream"}],"models":[{"name":"gpt-test","alias":"gpt-5.4"}]}]}`), 200, nil
-			case "/v0/management/codex-api-key":
-				return []byte(`{"codex-api-key":[]}`), 200, nil
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, account), 200, nil
 			default:
 				return nil, 404, nil
 			}
@@ -156,8 +154,8 @@ func TestProbeCodexAccountRoutingSendsRoutePolicyHeaders(t *testing.T) {
 	_, err := app.ProbeCodexAccountRouting(ProbeCodexAccountRoutingInput{
 		Model:           "gpt-5.4",
 		Attempts:        1,
-		AllowAccountIDs: []string{"openai-compatible:MI"},
-		OrderAccountIDs: []string{"openai-compatible:MI"},
+		AllowAccountIDs: []string{"acct_mi"},
+		OrderAccountIDs: []string{"acct_mi"},
 		AllowFallback:   false,
 	})
 	if err != nil {
@@ -167,23 +165,23 @@ func TestProbeCodexAccountRoutingSendsRoutePolicyHeaders(t *testing.T) {
 
 func TestDetectCodexRoutingProbeHitPrefersCandidateWithUsageIncrease(t *testing.T) {
 	candidates := []codexRoutingProbeCandidate{
-		{ID: "auth-file:a.json", Label: "A"},
-		{ID: "openai-compatible:MI", Label: "MI"},
+		{ID: "acct_auth_a", Label: "A"},
+		{ID: "acct_mi", Label: "MI"},
 	}
 	before := codexRoutingUsageSnapshot{
-		"auth-file:a.json":     1,
-		"openai-compatible:MI": 10,
+		"acct_auth_a": 1,
+		"acct_mi":    10,
 	}
 	after := codexRoutingUsageSnapshot{
-		"auth-file:a.json":     1,
-		"openai-compatible:MI": 11,
+		"acct_auth_a": 1,
+		"acct_mi":    11,
 	}
 
 	selected, delta, ok := detectCodexRoutingProbeHit(before, after, candidates)
 	if !ok {
 		t.Fatal("expected selected candidate")
 	}
-	if selected.ID != "openai-compatible:MI" || delta != 1 {
+	if selected.ID != "acct_mi" || delta != 1 {
 		t.Fatalf("selected = %#v delta=%d", selected, delta)
 	}
 }
@@ -219,6 +217,7 @@ func TestProbeCodexAccountRoutingClampsAttempts(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
 	app := New("dev", "", "AxApp/GetTokens")
+	account := testOpenAICompatibleAccount("acct_mi", "MI", 9, false, "https://api.example.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-upstream"}}, nil, nil)
 	app.managementAPI = func() *cliproxyapi.Client {
 		return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			_ = method
@@ -228,10 +227,8 @@ func TestProbeCodexAccountRoutingClampsAttempts(t *testing.T) {
 			switch path {
 			case "/v0/management/api-keys":
 				return []byte(`{"api-keys":["sk-relay"]}`), 200, nil
-			case "/v0/management/openai-compatibility":
-				return []byte(`{"openai-compatibility":[{"name":"MI","priority":9,"base-url":"https://api.example.com/v1","api-key-entries":[{"api-key":"sk-upstream"}]}]}`), 200, nil
-			case "/v0/management/codex-api-key":
-				return []byte(`{"codex-api-key":[]}`), 200, nil
+			case "/v0/management/accounts":
+				return testAccountsResponse(t, account), 200, nil
 			default:
 				return nil, 404, nil
 			}
