@@ -12,6 +12,7 @@ COMMAND="${1:-$DEFAULT_COMMAND}"
 if [[ $# -gt 0 ]]; then
   shift
 fi
+COMMAND_ARGS=("$@")
 
 case "$(uname -s)" in
   Darwin)
@@ -49,9 +50,44 @@ if [[ "${COMMAND}" == "dev" ]]; then
   export GETTOKENS_APP_PROFILE=dev
 fi
 
+normalize_wailsjs() {
+  if [[ -x "${ROOT_DIR}/scripts/normalize-wailsjs.sh" ]]; then
+    "${ROOT_DIR}/scripts/normalize-wailsjs.sh"
+  fi
+}
+
+run_wails() {
+  local -a wails_cmd=("$@")
+  if [[ "${COMMAND}" == "dev" ]]; then
+    normalize_wailsjs
+    (
+      while true; do
+        sleep 2
+        normalize_wailsjs
+      done
+    ) &
+    local normalizer_pid="$!"
+    trap 'kill "$normalizer_pid" >/dev/null 2>&1 || true' EXIT INT TERM
+    set +e +u
+    "${wails_cmd[@]}" "$COMMAND" "${COMMAND_ARGS[@]}"
+    local status="$?"
+    set -euo pipefail
+    kill "$normalizer_pid" >/dev/null 2>&1 || true
+    normalize_wailsjs
+    exit "$status"
+  fi
+
+  set +e +u
+  "${wails_cmd[@]}" "$COMMAND" "${COMMAND_ARGS[@]}"
+  local status="$?"
+  set -euo pipefail
+  normalize_wailsjs
+  exit "$status"
+}
+
 if command -v wails >/dev/null 2>&1; then
   echo "→ Using global wails CLI from PATH"
-  exec wails "$COMMAND" "$@"
+  run_wails wails
 fi
 
 GOPATH_BIN="$(go env GOPATH 2>/dev/null)/bin/wails"
@@ -64,9 +100,9 @@ for candidate in \
 do
   if [[ -x "$candidate" ]]; then
     echo "→ Using local wails CLI at $candidate"
-    exec "$candidate" "$COMMAND" "$@"
+    run_wails "$candidate"
   fi
 done
 
 echo "→ Global wails CLI not found, using go run github.com/wailsapp/wails/v2/cmd/wails@${WAILS_VERSION}"
-exec go run "github.com/wailsapp/wails/v2/cmd/wails@${WAILS_VERSION}" "$COMMAND" "$@"
+run_wails go run "github.com/wailsapp/wails/v2/cmd/wails@${WAILS_VERSION}"
