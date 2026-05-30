@@ -84,14 +84,7 @@ func (a *App) FinalizeCodexOAuth(input CompleteCodexOAuthInput) error {
 		}
 	}
 
-	if err := a.DeleteAuthFiles([]string{existingName}); err != nil {
-		return err
-	}
-
-	if err := a.uploadLegacyAuthFiles([]UploadFilePayload{{
-		Name:          existingName,
-		ContentBase64: base64.StdEncoding.EncodeToString(replacementBody),
-	}}); err != nil {
+	if err := a.replaceAuthFile(existingName, replacementBody); err != nil {
 		return err
 	}
 

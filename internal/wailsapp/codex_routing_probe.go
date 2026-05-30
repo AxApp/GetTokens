@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -150,6 +151,7 @@ func (a *App) loadCodexRoutingProbeCandidates() ([]codexRoutingProbeCandidate, e
 				Provider: strings.TrimSpace(account.Provider),
 				Priority: account.Priority,
 				UsageKeys: []string{
+					account.ID,
 					"auth-file:" + name,
 				},
 				RouteIDs: []string{name},
@@ -410,26 +412,43 @@ func (a *App) captureCodexRoutingUsage(candidates []codexRoutingProbeCandidate) 
 }
 
 func (a *App) captureCodexRoutingAuthFileUsage() map[string]int64 {
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
+	query := url.Values{}
+	query.Set("include_unresolved", "true")
+	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/gettokens/usage-attribution", query, nil, "")
 	if err != nil {
 		return map[string]int64{}
 	}
 	var payload struct {
-		Files []struct {
-			Name           string                     `json:"name"`
-			RecentRequests []codexRoutingRecentBucket `json:"recent_requests"`
-		} `json:"files"`
+		Items []struct {
+			AccountKey     string `json:"accountKey"`
+			CredentialKey  string `json:"credentialKey"`
+			AttributionKey string `json:"attributionKey"`
+			RequestCount   int64  `json:"requestCount"`
+		} `json:"items"`
+		Unresolved []struct {
+			AccountKey     string `json:"accountKey"`
+			CredentialKey  string `json:"credentialKey"`
+			AttributionKey string `json:"attributionKey"`
+			RequestCount   int64  `json:"requestCount"`
+		} `json:"unresolved"`
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
 		return map[string]int64{}
 	}
-	out := make(map[string]int64, len(payload.Files))
-	for _, file := range payload.Files {
-		key := "auth-file:" + strings.TrimSpace(file.Name)
-		if key == "auth-file:" {
-			continue
+	out := make(map[string]int64, len(payload.Items)+len(payload.Unresolved))
+	add := func(accountKey, credentialKey, attributionKey string, count int64) {
+		for _, key := range []string{accountKey, credentialKey, attributionKey} {
+			key = strings.TrimSpace(key)
+			if key != "" {
+				out[key] += count
+			}
 		}
-		out[key] = sumCodexRoutingRecentBuckets(file.RecentRequests)
+	}
+	for _, item := range payload.Items {
+		add(item.AccountKey, item.CredentialKey, item.AttributionKey, item.RequestCount)
+	}
+	for _, item := range payload.Unresolved {
+		add(item.AccountKey, item.CredentialKey, item.AttributionKey, item.RequestCount)
 	}
 	return out
 }

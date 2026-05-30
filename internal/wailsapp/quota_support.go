@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 )
 
@@ -31,55 +30,14 @@ func (r managementAPICallResponse) statusCode() int {
 }
 
 func (a *App) getRawAuthFileByName(name string) (*AuthFileItem, error) {
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
+	result, err := a.ListAuthFiles()
 	if err != nil {
-		return nil, err
-	}
-
-	type rawAuthFileItem struct {
-		Name           string      `json:"name"`
-		Type           string      `json:"type,omitempty"`
-		Provider       string      `json:"provider,omitempty"`
-		Email          string      `json:"email,omitempty"`
-		PlanType       string      `json:"planType,omitempty"`
-		PlanTypeSnake  string      `json:"plan_type,omitempty"`
-		Size           int64       `json:"size,omitempty"`
-		AuthIndexSnake interface{} `json:"auth_index,omitempty"`
-		AuthIndexCamel interface{} `json:"authIndex,omitempty"`
-		RuntimeOnly    bool        `json:"runtimeOnly,omitempty"`
-		Disabled       bool        `json:"disabled,omitempty"`
-		Unavailable    bool        `json:"unavailable,omitempty"`
-		Status         string      `json:"status,omitempty"`
-		StatusMessage  string      `json:"statusMessage,omitempty"`
-		LastRefresh    interface{} `json:"lastRefresh,omitempty"`
-		Modified       int64       `json:"modified,omitempty"`
-	}
-	var result struct {
-		Files []rawAuthFileItem `json:"files"`
-	}
-	if err := json.Unmarshal(body, &result); err != nil {
 		return nil, err
 	}
 
 	for index := range result.Files {
 		if strings.TrimSpace(result.Files[index].Name) == name {
-			file := result.Files[index]
-			return &AuthFileItem{
-				Name:          file.Name,
-				Type:          file.Type,
-				Provider:      file.Provider,
-				Email:         file.Email,
-				PlanType:      firstNonEmptyString(file.PlanType, file.PlanTypeSnake),
-				Size:          file.Size,
-				AuthIndex:     firstNonNilValue(file.AuthIndexSnake, file.AuthIndexCamel),
-				RuntimeOnly:   file.RuntimeOnly,
-				Disabled:      file.Disabled,
-				Unavailable:   file.Unavailable,
-				Status:        file.Status,
-				StatusMessage: file.StatusMessage,
-				LastRefresh:   file.LastRefresh,
-				Modified:      file.Modified,
-			}, nil
+			return &result.Files[index], nil
 		}
 	}
 

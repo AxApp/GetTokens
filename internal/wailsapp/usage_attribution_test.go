@@ -47,8 +47,8 @@ func TestGetSidecarUsageAttributionResolvesCodexAPIKeyLocalID(t *testing.T) {
 						"buckets":[{"start":"2026-05-15T00:00:00Z","requestCount":2,"totalTokens":30}]
 					}]
 				}`), 200, nil
-			case ManagementAPIPrefix + "/auth-files":
-				return []byte(`{"files":[]}`), 200, nil
+			case ManagementAPIPrefix + "/accounts":
+				return []byte(`{"accounts":[]}`), 200, nil
 			case ManagementAPIPrefix + "/codex-api-key":
 				return []byte(`{"codex-api-key":[]}`), 200, nil
 			case ManagementAPIPrefix + "/openai-compatibility":
@@ -127,7 +127,7 @@ func TestGetSidecarUsageAttributionResolvesAuthIndexToAuthFileAndProvider(t *tes
 					"items":[],
 					"unresolved":[
 						{
-							"attributionKey":"auth-index:auth-file-001",
+							"attributionKey":"auth-index:acct_auth",
 							"attributionKind":"auth_index",
 							"provider":"codex",
 							"requestCount":1,
@@ -142,8 +142,8 @@ func TestGetSidecarUsageAttributionResolvesAuthIndexToAuthFileAndProvider(t *tes
 						}
 					]
 				}`), 200, nil
-			case ManagementAPIPrefix + "/auth-files":
-				return []byte(`{"files":[{"name":"auth.json","authIndex":"auth-file-001","provider":"codex","type":"codex","email":"dev@example.com","planType":"pro","priority":1}]}`), 200, nil
+			case ManagementAPIPrefix + "/accounts":
+				return []byte(`{"accounts":[{"account_key":"acct_auth","kind":"auth-file","title":"auth.json","provider":"codex","priority":1,"auth_file":{"source_file_name":"auth.json","auth_json":"{\"type\":\"codex\",\"email\":\"dev@example.com\",\"plan_type\":\"pro\"}","auth_type":"codex","email":"dev@example.com","plan_type":"pro"}}]}`), 200, nil
 			case ManagementAPIPrefix + "/codex-api-key":
 				return []byte(`{"codex-api-key":[]}`), 200, nil
 			case ManagementAPIPrefix + "/openai-compatibility":
@@ -162,8 +162,8 @@ func TestGetSidecarUsageAttributionResolvesAuthIndexToAuthFileAndProvider(t *tes
 	if len(result.Items) != 2 {
 		t.Fatalf("items = %d, want 2", len(result.Items))
 	}
-	if got := result.Items[0].AccountKey; got != "auth-file:auth.json" {
-		t.Fatalf("first account key = %q, want auth-file:auth.json", got)
+	if got := result.Items[0].AccountKey; got != "acct_auth" {
+		t.Fatalf("first account key = %q, want acct_auth", got)
 	}
 	if got := result.Items[1].AccountKey; got != "openai-compatible:MI" {
 		t.Fatalf("second account key = %q, want openai-compatible:MI", got)
@@ -206,8 +206,8 @@ func TestGetSidecarUsageAttributionIncludesUnresolvedSourceForJoinEvenWhenCaller
 						"buckets":[{"start":"2026-05-15T00:00:00Z","requestCount":1,"totalTokens":30}]
 					}]
 				}`), 200, nil
-			case ManagementAPIPrefix + "/auth-files":
-				return []byte(`{"files":[]}`), 200, nil
+			case ManagementAPIPrefix + "/accounts":
+				return []byte(`{"accounts":[]}`), 200, nil
 			case ManagementAPIPrefix + "/codex-api-key":
 				return []byte(`{"codex-api-key":[]}`), 200, nil
 			case ManagementAPIPrefix + "/openai-compatibility":

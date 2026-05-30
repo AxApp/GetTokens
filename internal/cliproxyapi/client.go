@@ -254,6 +254,23 @@ func (c *Client) DeleteAccount(accountKey string) error {
 	return err
 }
 
+func (c *Client) GetAccountModels(accountKey string) ([]map[string]interface{}, error) {
+	body, _, err := c.request("GET", "/v0/management/accounts/"+url.PathEscape(accountKey)+"/models", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Models []map[string]interface{} `json:"models"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Models == nil {
+		return []map[string]interface{}{}, nil
+	}
+	return response.Models, nil
+}
+
 func (c *Client) DryRunAccountMigration() (*AccountMigrationReport, error) {
 	var report AccountMigrationReport
 	if err := c.postAccountMigration("/v0/management/account-migration/dry-run", nil, &report); err != nil {

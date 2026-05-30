@@ -46,60 +46,70 @@ func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 	const freshContent = `{"type":"codex","access_token":"fresh-access","refresh_token":"fresh-refresh"}`
 	const existingContent = `{"type":"codex","access_token":"expired-access","priority":6}`
 
-	var uploadedBody string
+	var patchedAuthJSON string
 
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			switch {
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
-				files := make([]map[string]any, 0, len(existingNames))
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				accounts := make([]map[string]any, 0, len(existingNames))
 				for name := range existingNames {
-					files = append(files, map[string]any{
-						"name":        name,
+					accountKey := "acct_expired"
+					authJSON := existingContent
+					if name == "fresh-login.json" {
+						accountKey = "acct_fresh"
+						authJSON = freshContent
+					}
+					accounts = append(accounts, map[string]any{
+						"account_key": accountKey,
+						"kind":        "auth-file",
+						"title":       name,
 						"provider":    "codex",
-						"type":        "codex",
-						"email":       "tester@example.com",
-						"planType":    "plus",
-						"status":      "active",
+						"priority":    0,
 						"disabled":    false,
-						"runtimeOnly": false,
+						"auth_file": map[string]any{
+							"source_file_name": name,
+							"auth_json":        authJSON,
+							"auth_type":        "codex",
+							"email":            "tester@example.com",
+							"plan_type":        "plus",
+						},
 					})
 				}
-				payload, _ := json.Marshal(map[string]any{"files": files, "total": len(files)})
+				payload, _ := json.Marshal(map[string]any{"accounts": accounts})
 				return payload, http.StatusOK, nil
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-				switch got := query.Get("name"); got {
-				case "fresh-login.json":
-					return []byte(freshContent), http.StatusOK, nil
-				case "expired.json":
-					return []byte(existingContent), http.StatusOK, nil
-				default:
-					t.Fatalf("download name = %q, want fresh-login.json or expired.json", got)
-				}
-				return nil, 0, nil
-			case method == http.MethodDelete && path == ManagementAPIPrefix+"/auth-files":
+			case method == http.MethodPatch && path == ManagementAPIPrefix+"/accounts/acct_expired":
 				raw, err := io.ReadAll(body)
 				if err != nil {
-					t.Fatalf("ReadAll delete body: %v", err)
+					t.Fatalf("ReadAll patch body: %v", err)
 				}
 				var payload struct {
-					Names []string `json:"names"`
+					AuthFile struct {
+						AuthJSON string `json:"auth_json"`
+					} `json:"auth_file"`
 				}
 				if err := json.Unmarshal(raw, &payload); err != nil {
-					t.Fatalf("Unmarshal delete body: %v", err)
+					t.Fatalf("Unmarshal patch body: %v", err)
 				}
-				for _, name := range payload.Names {
-					delete(existingNames, name)
-				}
-				return []byte(`{"status":"ok"}`), http.StatusOK, nil
-			case method == http.MethodPost && path == ManagementAPIPrefix+"/auth-files":
-				raw, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("ReadAll upload body: %v", err)
-				}
-				uploadedBody = string(raw)
-				existingNames["expired.json"] = struct{}{}
-				return []byte(`{"status":"ok"}`), http.StatusOK, nil
+				patchedAuthJSON = payload.AuthFile.AuthJSON
+				response, _ := json.Marshal(map[string]any{
+					"account_key": "acct_expired",
+					"kind":        "auth-file",
+					"title":       "expired.json",
+					"provider":    "codex",
+					"auth_file": map[string]any{
+						"source_file_name": "expired.json",
+						"auth_json":        patchedAuthJSON,
+						"auth_type":        "codex",
+					},
+				})
+				return response, http.StatusOK, nil
+			case method == http.MethodDelete && path == ManagementAPIPrefix+"/accounts/acct_fresh":
+				delete(existingNames, "fresh-login.json")
+				return []byte(`{"ok":true}`), http.StatusOK, nil
+			case strings.HasPrefix(path, ManagementAPIPrefix+"/auth-files"):
+				t.Fatalf("FinalizeCodexOAuth must not call deprecated auth-files endpoint: %s %s", method, path)
+				return nil, 0, nil
 			default:
 				t.Fatalf("unexpected request: %s %s", method, path)
 				return nil, 0, nil
@@ -121,14 +131,11 @@ func TestFinalizeCodexOAuthReplacesExistingAuthFile(t *testing.T) {
 	if _, ok := existingNames["expired.json"]; !ok {
 		t.Fatalf("expired.json should exist after replacement")
 	}
-	if !strings.Contains(uploadedBody, `filename="expired.json"`) {
-		t.Fatalf("upload body should keep original file name: %s", uploadedBody)
+	if !strings.Contains(patchedAuthJSON, `"access_token": "fresh-access"`) {
+		t.Fatalf("patched auth_json should contain new auth content: %s", patchedAuthJSON)
 	}
-	if !strings.Contains(uploadedBody, `"access_token": "fresh-access"`) {
-		t.Fatalf("upload body should contain new auth content: %s", uploadedBody)
-	}
-	if !strings.Contains(uploadedBody, `"priority": 6`) {
-		t.Fatalf("upload body should preserve old priority: %s", uploadedBody)
+	if !strings.Contains(patchedAuthJSON, `"priority": 6`) {
+		t.Fatalf("patched auth_json should preserve old priority: %s", patchedAuthJSON)
 	}
 }
 

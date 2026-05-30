@@ -3,11 +3,11 @@ package wailsapp
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"testing"
 )
 
@@ -97,19 +97,14 @@ func TestNeedsAuthFileMetadataInference(t *testing.T) {
 	}
 }
 
-func TestListAuthFilesCachesInferredMetadataAcrossRepeatedCalls(t *testing.T) {
+func TestListAuthFilesReadsMetadataFromAccountStoreAuthJSON(t *testing.T) {
 	app := New("", "", "")
-	downloadCount := 0
+	listCount := 0
 	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		switch {
-		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
-			return []byte(`{"files":[{"name":"codex-team.json","type":"unknown","provider":"unknown","size":91,"modified":1760000000}],"total":1}`), http.StatusOK, nil
-		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-			if got := query.Get("name"); got != "codex-team.json" {
-				t.Fatalf("download name = %q, want codex-team.json", got)
-			}
-			downloadCount++
-			return []byte(`{"type":"codex","email":"team@example.com","plan_type":"plus","priority":7}`), http.StatusOK, nil
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+			listCount++
+			return []byte(`{"accounts":[{"account_key":"acct_team","kind":"auth-file","title":"codex-team.json","provider":"unknown","priority":7,"disabled":false,"auth_file":{"source_file_name":"codex-team.json","auth_json":"{\"type\":\"codex\",\"email\":\"team@example.com\",\"plan_type\":\"plus\",\"priority\":7}","auth_type":"unknown","size_bytes":91,"modified_unix_ms":1760000000}}]}`), http.StatusOK, nil
 		default:
 			t.Fatalf("unexpected request: %s %s", method, path)
 			return nil, 0, nil
@@ -125,8 +120,8 @@ func TestListAuthFilesCachesInferredMetadataAcrossRepeatedCalls(t *testing.T) {
 		t.Fatalf("second ListAuthFiles: %v", err)
 	}
 
-	if downloadCount != 1 {
-		t.Fatalf("download count = %d, want 1", downloadCount)
+	if listCount != 2 {
+		t.Fatalf("account list count = %d, want 2", listCount)
 	}
 	for label, response := range map[string]*AuthFilesResponse{"first": first, "second": second} {
 		if len(response.Files) != 1 {
@@ -139,16 +134,12 @@ func TestListAuthFilesCachesInferredMetadataAcrossRepeatedCalls(t *testing.T) {
 	}
 }
 
-func TestListAuthFilesDoesNotRedownloadWhenCachedMetadataRemainsIncomplete(t *testing.T) {
+func TestListAuthFilesInfersKnownProviderWithIncompleteProfile(t *testing.T) {
 	app := New("", "", "")
-	downloadCount := 0
 	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		switch {
-		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
-			return []byte(`{"files":[{"name":"codex-minimal.json","type":"unknown","provider":"unknown","size":42,"modified":1760000000}],"total":1}`), http.StatusOK, nil
-		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-			downloadCount++
-			return []byte(`{"type":"codex"}`), http.StatusOK, nil
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+			return []byte(`{"accounts":[{"account_key":"acct_minimal","kind":"auth-file","title":"codex-minimal.json","provider":"unknown","auth_file":{"source_file_name":"codex-minimal.json","auth_json":"{\"type\":\"codex\"}","auth_type":"unknown","size_bytes":42,"modified_unix_ms":1760000000}}]}`), http.StatusOK, nil
 		default:
 			t.Fatalf("unexpected request: %s %s", method, path)
 			return nil, 0, nil
@@ -164,9 +155,6 @@ func TestListAuthFilesDoesNotRedownloadWhenCachedMetadataRemainsIncomplete(t *te
 		t.Fatalf("second ListAuthFiles: %v", err)
 	}
 
-	if downloadCount != 1 {
-		t.Fatalf("download count = %d, want 1 after incomplete metadata is cached", downloadCount)
-	}
 	for label, response := range map[string]*AuthFilesResponse{"first": first, "second": second} {
 		file := response.Files[0]
 		if file.Provider != "codex" || file.Type != "codex" {
@@ -175,30 +163,31 @@ func TestListAuthFilesDoesNotRedownloadWhenCachedMetadataRemainsIncomplete(t *te
 	}
 }
 
-func TestListAuthFilesRefreshesMetadataCacheWhenFingerprintChanges(t *testing.T) {
+func TestListAuthFilesRefreshesMetadataWhenAccountStoreChanges(t *testing.T) {
 	app := New("", "", "")
-	downloadCount := 0
 	modified := int64(1760000000)
+	planType := "plus"
+	priority := 7
 	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		switch {
-		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
+		case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
 			payload, _ := json.Marshal(map[string]any{
-				"files": []map[string]any{{
-					"name":     "codex-team.json",
-					"type":     "unknown",
-					"provider": "unknown",
-					"size":     91,
-					"modified": modified,
+				"accounts": []map[string]any{{
+					"account_key": "acct_team",
+					"kind":        "auth-file",
+					"title":       "codex-team.json",
+					"provider":    "unknown",
+					"priority":    priority,
+					"auth_file": map[string]any{
+						"source_file_name": "codex-team.json",
+						"auth_json":        fmt.Sprintf(`{"type":"codex","email":"team@example.com","plan_type":%q,"priority":%d}`, planType, priority),
+						"auth_type":        "unknown",
+						"size_bytes":       91,
+						"modified_unix_ms": modified,
+					},
 				}},
-				"total": 1,
 			})
 			return payload, http.StatusOK, nil
-		case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-			downloadCount++
-			if downloadCount == 1 {
-				return []byte(`{"type":"codex","email":"team@example.com","plan_type":"plus","priority":7}`), http.StatusOK, nil
-			}
-			return []byte(`{"type":"codex","email":"team@example.com","plan_type":"pro","priority":9}`), http.StatusOK, nil
 		default:
 			t.Fatalf("unexpected request: %s %s", method, path)
 			return nil, 0, nil
@@ -210,14 +199,13 @@ func TestListAuthFilesRefreshesMetadataCacheWhenFingerprintChanges(t *testing.T)
 		t.Fatalf("first ListAuthFiles: %v", err)
 	}
 	modified = 1760000001
+	planType = "pro"
+	priority = 9
 	second, err := app.ListAuthFiles()
 	if err != nil {
 		t.Fatalf("second ListAuthFiles: %v", err)
 	}
 
-	if downloadCount != 2 {
-		t.Fatalf("download count = %d, want 2 after fingerprint change", downloadCount)
-	}
 	if first.Files[0].PlanType != "plus" || first.Files[0].Priority != 7 {
 		t.Fatalf("first metadata = %#v, want plus priority 7", first.Files[0])
 	}
@@ -435,85 +423,60 @@ func TestUpdateAuthFilePriorityPreservesDisabledStatus(t *testing.T) {
 	const fileName = "disabled.json"
 	const originalBody = `{"type":"codex","access_token":"token","priority":2}`
 
-	existingNames := map[string]struct{}{
-		fileName: {},
-	}
 	disabledByName := map[string]bool{
 		fileName: true,
 	}
-	statusPatched := false
+	priorityPatched := false
 
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			switch {
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
-				files := make([]map[string]any, 0, len(existingNames))
-				for name := range existingNames {
-					files = append(files, map[string]any{
-						"name":     name,
-						"disabled": disabledByName[name],
-						"provider": "codex",
-						"type":     "codex",
-						"email":    "tester@example.com",
-						"planType": "plus",
-						"priority": 2,
-					})
-				}
-				payload, _ := json.Marshal(map[string]any{"files": files, "total": len(files)})
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				payload, _ := json.Marshal(map[string]any{"accounts": []map[string]any{{
+					"account_key": "acct_disabled",
+					"kind":        "auth-file",
+					"title":       fileName,
+					"provider":    "codex",
+					"priority":    2,
+					"disabled":    disabledByName[fileName],
+					"auth_file": map[string]any{
+						"source_file_name": fileName,
+						"auth_json":        originalBody,
+						"auth_type":        "codex",
+						"email":            "tester@example.com",
+						"plan_type":        "plus",
+					},
+				}}})
 				return payload, http.StatusOK, nil
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-				if got := query.Get("name"); got != fileName {
-					t.Fatalf("download name = %q, want %q", got, fileName)
-				}
-				return []byte(originalBody), http.StatusOK, nil
-			case method == http.MethodDelete && path == ManagementAPIPrefix+"/auth-files":
+			case method == http.MethodPatch && path == ManagementAPIPrefix+"/accounts/acct_disabled/priority":
 				raw, err := io.ReadAll(body)
 				if err != nil {
-					t.Fatalf("ReadAll delete body: %v", err)
+					t.Fatalf("ReadAll priority body: %v", err)
 				}
 				var payload struct {
-					Names []string `json:"names"`
+					Priority int `json:"priority"`
 				}
 				if err := json.Unmarshal(raw, &payload); err != nil {
-					t.Fatalf("Unmarshal delete body: %v", err)
+					t.Fatalf("Unmarshal priority body: %v", err)
 				}
-				for _, name := range payload.Names {
-					delete(existingNames, name)
-					delete(disabledByName, name)
+				if payload.Priority != 7 {
+					t.Fatalf("patched priority = %d, want 7", payload.Priority)
 				}
-				return []byte(`{"status":"ok"}`), http.StatusOK, nil
-			case method == http.MethodPost && path == ManagementAPIPrefix+"/auth-files":
-				raw, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("ReadAll upload body: %v", err)
-				}
-				if !strings.Contains(string(raw), `"priority": 7`) {
-					t.Fatalf("upload body should contain updated priority: %s", raw)
-				}
-				existingNames[fileName] = struct{}{}
-				disabledByName[fileName] = false
-				return []byte(`{"status":"ok"}`), http.StatusOK, nil
-			case method == http.MethodPatch && path == ManagementAPIPrefix+"/auth-files/status":
-				raw, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("ReadAll patch body: %v", err)
-				}
-				var payload struct {
-					Name     string `json:"name"`
-					Disabled bool   `json:"disabled"`
-				}
-				if err := json.Unmarshal(raw, &payload); err != nil {
-					t.Fatalf("Unmarshal patch body: %v", err)
-				}
-				if payload.Name != fileName {
-					t.Fatalf("patched name = %q, want %q", payload.Name, fileName)
-				}
-				if !payload.Disabled {
-					t.Fatalf("patched disabled = %v, want true", payload.Disabled)
-				}
-				disabledByName[fileName] = true
-				statusPatched = true
-				return []byte(`{"status":"ok"}`), http.StatusOK, nil
+				priorityPatched = true
+				response, _ := json.Marshal(map[string]any{
+					"account_key": "acct_disabled",
+					"kind":        "auth-file",
+					"title":       "disabled.json",
+					"provider":    "codex",
+					"priority":    7,
+					"disabled":    true,
+					"auth_file": map[string]any{
+						"source_file_name": "disabled.json",
+						"auth_json":        originalBody,
+						"auth_type":        "codex",
+					},
+				})
+				return response, http.StatusOK, nil
 			default:
 				t.Fatalf("unexpected request: %s %s", method, path)
 				return nil, 0, nil
@@ -525,8 +488,8 @@ func TestUpdateAuthFilePriorityPreservesDisabledStatus(t *testing.T) {
 		t.Fatalf("updateAuthFilePriority: %v", err)
 	}
 
-	if !statusPatched {
-		t.Fatal("expected disabled status to be restored after replacing auth file")
+	if !priorityPatched {
+		t.Fatal("expected account priority to be patched")
 	}
 	if !disabledByName[fileName] {
 		t.Fatal("disabled status should remain true after priority update")

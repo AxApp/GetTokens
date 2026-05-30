@@ -1,14 +1,9 @@
 package wailsapp
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"mime/multipart"
-	"net/http"
-	"net/url"
 	"path/filepath"
 	"strings"
 
@@ -17,56 +12,20 @@ import (
 )
 
 func (a *App) ListAuthFiles() (*AuthFilesResponse, error) {
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
+	accounts, err := a.managementClient().ListAccounts()
 	if err != nil {
 		return nil, err
 	}
-	var result AuthFilesResponse
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
-	}
-	if result.Files == nil {
-		result.Files = []AuthFileItem{}
-	}
-
-	for index := range result.Files {
-		file := &result.Files[index]
-		if cached, ok := a.cachedAuthFileMetadata(*file); ok {
-			applyCachedAuthFileMetadata(file, cached)
-			a.storeAuthFileMetadata(*file)
+	files := make([]AuthFileItem, 0, len(accounts))
+	for _, account := range accounts {
+		if account.Kind != cliproxyapi.AccountKindAuthFile || account.AuthFile == nil {
 			continue
 		}
-
-		if !needsAuthFileMetadataInference(*file) {
-			a.storeAuthFileMetadata(*file)
-			continue
-		}
-
-		body, inferErr := a.downloadAuthFileBody(file.Name)
-		if inferErr != nil {
-			continue
-		}
-
-		if needsAuthFileKindInference(*file) {
-			inferredKind := accountsdomain.InferAuthFileKind(body)
-			if inferredKind != "" {
-				file.Provider = inferredKind
-				file.Type = inferredKind
-			}
-		}
-
-		profile := accountsdomain.ExtractAuthFileProfile(body)
-		if strings.TrimSpace(file.Email) == "" {
-			file.Email = profile.Email
-		}
-		if strings.TrimSpace(file.PlanType) == "" {
-			file.PlanType = profile.PlanType
-		}
-		file.Priority = accountsdomain.ExtractAuthFilePriority(body)
-		a.storeAuthFileMetadata(*file)
+		file := authFileItemFromUnifiedAccount(account)
+		a.storeAuthFileMetadata(file)
+		files = append(files, file)
 	}
-
-	return &result, nil
+	return &AuthFilesResponse{Files: files, Total: len(files)}, nil
 }
 
 func needsAuthFileMetadataInference(file AuthFileItem) bool {
@@ -83,25 +42,22 @@ func isUnknownKind(value string) bool {
 }
 
 func (a *App) downloadAuthFileBody(name string) ([]byte, error) {
-	query := url.Values{}
-	query.Set("name", strings.TrimSpace(name))
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files/download", query, nil, "")
+	account, err := a.findAuthFileAccount(name)
 	if err != nil {
 		return nil, err
 	}
-	return body, nil
+	if account.AuthFile == nil {
+		return nil, fmt.Errorf("auth file 不存在: %s", name)
+	}
+	return []byte(account.AuthFile.AuthJSON), nil
 }
 
 func (a *App) SetAuthFileStatus(name string, disabled bool) error {
-	payload := map[string]interface{}{
-		"name":     name,
-		"disabled": disabled,
-	}
-	b, err := json.Marshal(payload)
+	account, err := a.findAuthFileAccount(name)
 	if err != nil {
 		return err
 	}
-	_, _, err = a.SidecarRequest(http.MethodPatch, ManagementAPIPrefix+"/auth-files/status", nil, bytes.NewReader(b), "application/json")
+	_, err = a.managementClient().PatchAccountStatus(account.AccountKey, disabled)
 	if err == nil {
 		a.invalidateAuthFileMetadataCache(name)
 	}
@@ -109,18 +65,17 @@ func (a *App) SetAuthFileStatus(name string, disabled bool) error {
 }
 
 func (a *App) DeleteAuthFiles(names []string) error {
-	payload := map[string]interface{}{
-		"names": names,
+	for _, name := range names {
+		account, err := a.findAuthFileAccount(name)
+		if err != nil {
+			return err
+		}
+		if err := a.managementClient().DeleteAccount(account.AccountKey); err != nil {
+			return err
+		}
 	}
-	b, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-	_, _, err = a.SidecarRequest(http.MethodDelete, ManagementAPIPrefix+"/auth-files", nil, bytes.NewReader(b), "application/json")
-	if err == nil {
-		a.invalidateAuthFileMetadataCache(names...)
-	}
-	return err
+	a.invalidateAuthFileMetadataCache(names...)
+	return nil
 }
 
 func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
@@ -153,53 +108,6 @@ func (a *App) UploadAuthFiles(files []UploadFilePayload) error {
 	}
 
 	return nil
-}
-
-func (a *App) uploadLegacyAuthFiles(files []UploadFilePayload) error {
-	if len(files) == 0 {
-		return errors.New("未选择文件")
-	}
-
-	existingNames, err := a.listExistingLegacyAuthFileNames()
-	if err != nil {
-		return err
-	}
-
-	var buf bytes.Buffer
-	w := multipart.NewWriter(&buf)
-	resolvedNames := make([]string, 0, len(files))
-
-	for _, f := range files {
-		if strings.TrimSpace(f.Name) == "" || strings.TrimSpace(f.ContentBase64) == "" {
-			continue
-		}
-		decoded, err := base64.StdEncoding.DecodeString(f.ContentBase64)
-		if err != nil {
-			return fmt.Errorf("文件 %s base64 解码失败: %w", f.Name, err)
-		}
-		if normalized, _, normalizeErr := accountsdomain.NormalizeAuthFileForSidecar(decoded); normalizeErr == nil {
-			decoded = normalized
-		}
-		resolvedName := uniqueAuthFileUploadName(f.Name, existingNames)
-		resolvedNames = append(resolvedNames, resolvedName)
-		part, err := w.CreateFormFile("file", resolvedName)
-		if err != nil {
-			return err
-		}
-		if _, err := part.Write(decoded); err != nil {
-			return err
-		}
-	}
-
-	if err := w.Close(); err != nil {
-		return err
-	}
-
-	_, _, err = a.SidecarRequest(http.MethodPost, ManagementAPIPrefix+"/auth-files", nil, &buf, w.FormDataContentType())
-	if err == nil {
-		a.invalidateAuthFileMetadataCache(resolvedNames...)
-	}
-	return err
 }
 
 func authFileCreateAccountWrite(sourceFileName string, authJSON []byte) cliproxyapi.AccountWriteRequest {
@@ -236,88 +144,31 @@ func (a *App) updateAuthFilePriority(name string, priority int) error {
 		return errors.New("auth file name 不能为空")
 	}
 
-	wasDisabled, err := a.authFileDisabledStatus(trimmedName)
+	account, err := a.findAuthFileAccount(trimmedName)
 	if err != nil {
 		return err
 	}
-
-	body, err := a.downloadAuthFileBody(trimmedName)
-	if err != nil {
-		return err
-	}
-
-	updated, err := accountsdomain.SetAuthFilePriority(body, priority)
-	if err != nil {
-		return err
-	}
-
-	if err := a.replaceAuthFile(trimmedName, updated); err != nil {
-		return err
-	}
-	if wasDisabled {
-		return a.SetAuthFileStatus(trimmedName, true)
-	}
-	return nil
-}
-
-func (a *App) authFileDisabledStatus(name string) (bool, error) {
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
-	if err != nil {
-		return false, err
-	}
-
-	var result struct {
-		Files []struct {
-			Name     string `json:"name"`
-			Disabled bool   `json:"disabled"`
-		} `json:"files"`
-	}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return false, err
-	}
-
-	for _, file := range result.Files {
-		if strings.TrimSpace(file.Name) == name {
-			return file.Disabled, nil
-		}
-	}
-
-	return false, fmt.Errorf("auth file 不存在: %s", name)
+	_, err = a.managementClient().PatchAccountPriority(account.AccountKey, priority)
+	return err
 }
 
 func (a *App) replaceAuthFile(name string, content []byte) error {
-	if err := a.DeleteAuthFiles([]string{name}); err != nil {
+	account, err := a.findAuthFileAccount(name)
+	if err != nil {
 		return err
 	}
-
-	return a.uploadLegacyAuthFiles([]UploadFilePayload{{
-		Name:          name,
-		ContentBase64: base64.StdEncoding.EncodeToString(content),
-	}})
-}
-
-func (a *App) listExistingLegacyAuthFileNames() (map[string]struct{}, error) {
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files", nil, nil, "")
-	if err != nil {
-		return nil, err
+	write := accountWriteFromUnified(*account)
+	if write.AuthFile == nil {
+		return fmt.Errorf("auth file 不存在: %s", name)
 	}
-
-	var result struct {
-		Files []struct {
-			Name string `json:"name"`
-		} `json:"files"`
-	}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
-	}
-
-	names := make(map[string]struct{}, len(result.Files))
-	for _, file := range result.Files {
-		if trimmed := strings.TrimSpace(file.Name); trimmed != "" {
-			names[strings.ToLower(trimmed)] = struct{}{}
-		}
-	}
-	return names, nil
+	write.AuthFile.AuthJSON = string(content)
+	write.AuthFile.SizeBytes = int64(len(content))
+	profile := accountsdomain.ExtractAuthFileProfile(content)
+	write.AuthFile.Email = firstNonEmptyString(profile.Email, write.AuthFile.Email)
+	write.AuthFile.PlanType = firstNonEmptyString(profile.PlanType, write.AuthFile.PlanType)
+	write.Priority = accountsdomain.ExtractAuthFilePriority(content)
+	_, err = a.managementClient().PatchAccount(account.AccountKey, write)
+	return err
 }
 
 func (a *App) listExistingAccountStoreAuthFileNames() (map[string]struct{}, error) {
@@ -372,31 +223,18 @@ func uniqueAuthFileUploadName(name string, existing map[string]struct{}) string 
 }
 
 func (a *App) GetAuthFileModels(name string) ([]map[string]interface{}, error) {
-	query := url.Values{}
-	query.Set("name", name)
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files/models", query, nil, "")
+	account, err := a.findAuthFileAccount(name)
 	if err != nil {
 		return nil, err
 	}
-	var result struct {
-		Models []map[string]interface{} `json:"models"`
-	}
-	if err := json.Unmarshal(body, &result); err != nil {
-		return nil, err
-	}
-	if result.Models == nil {
-		return []map[string]interface{}{}, nil
-	}
-	return result.Models, nil
+	return a.managementClient().GetAccountModels(account.AccountKey)
 }
 
 func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 	if strings.TrimSpace(name) == "" {
 		return nil, errors.New("name 不能为空")
 	}
-	query := url.Values{}
-	query.Set("name", name)
-	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/auth-files/download", query, nil, "")
+	body, err := a.downloadAuthFileBody(name)
 	if err != nil {
 		return nil, err
 	}
@@ -405,4 +243,89 @@ func (a *App) DownloadAuthFile(name string) (*DownloadFileResponse, error) {
 		Name:          name,
 		ContentBase64: base64.StdEncoding.EncodeToString(body),
 	}, nil
+}
+
+func (a *App) findAuthFileAccount(name string) (*cliproxyapi.UnifiedAccount, error) {
+	trimmed := strings.TrimSpace(name)
+	if trimmed == "" {
+		return nil, errors.New("auth file name 不能为空")
+	}
+	accounts, err := a.managementClient().ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+	for index := range accounts {
+		account := &accounts[index]
+		if account.Kind != cliproxyapi.AccountKindAuthFile || account.AuthFile == nil {
+			continue
+		}
+		if strings.EqualFold(strings.TrimSpace(account.AccountKey), trimmed) ||
+			strings.EqualFold(strings.TrimSpace(account.AuthFile.SourceFileName), trimmed) ||
+			strings.EqualFold(strings.TrimSpace(account.Title), trimmed) {
+			return account, nil
+		}
+	}
+	return nil, fmt.Errorf("auth file 不存在: %s", name)
+}
+
+func authFileItemFromUnifiedAccount(account cliproxyapi.UnifiedAccount) AuthFileItem {
+	credential := account.AuthFile
+	name := strings.TrimSpace(account.Title)
+	provider := strings.TrimSpace(account.Provider)
+	email := ""
+	planType := ""
+	size := int64(0)
+	modified := int64(0)
+	if credential != nil {
+		if sourceName := strings.TrimSpace(credential.SourceFileName); sourceName != "" {
+			name = sourceName
+		}
+		if authType := strings.TrimSpace(credential.AuthType); authType != "" {
+			provider = authType
+		}
+		email = strings.TrimSpace(credential.Email)
+		planType = strings.TrimSpace(credential.PlanType)
+		size = credential.SizeBytes
+		modified = credential.ModifiedUnixMs
+		if strings.TrimSpace(credential.AuthJSON) != "" {
+			body := []byte(credential.AuthJSON)
+			if provider == "" || isUnknownKind(provider) {
+				if inferred := accountsdomain.InferAuthFileKind(body); inferred != "" {
+					provider = inferred
+				}
+			}
+			profile := accountsdomain.ExtractAuthFileProfile(body)
+			email = firstNonEmptyString(email, profile.Email)
+			planType = firstNonEmptyString(planType, profile.PlanType)
+			if size == 0 {
+				size = int64(len(body))
+			}
+		}
+	}
+	if provider == "" {
+		provider = "unknown"
+	}
+	status := "active"
+	if account.Disabled {
+		status = "disabled"
+	}
+	if strings.TrimSpace(account.RuntimeApplyStatus) == "failed" {
+		status = "unavailable"
+	}
+	return AuthFileItem{
+		Name:          name,
+		Type:          provider,
+		Provider:      provider,
+		Priority:      account.Priority,
+		Email:         email,
+		PlanType:      planType,
+		Size:          size,
+		AuthIndex:     strings.TrimSpace(account.AccountKey),
+		RuntimeOnly:   false,
+		Disabled:      account.Disabled,
+		Unavailable:   status == "unavailable",
+		Status:        status,
+		StatusMessage: strings.TrimSpace(account.RuntimeApplyError),
+		Modified:      modified,
+	}
 }

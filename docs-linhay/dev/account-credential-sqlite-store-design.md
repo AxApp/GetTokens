@@ -296,6 +296,7 @@ PATCH  /v0/management/accounts/{account_key}
 DELETE /v0/management/accounts/{account_key}
 PATCH  /v0/management/accounts/{account_key}/status
 PATCH  /v0/management/accounts/{account_key}/priority
+GET    /v0/management/accounts/{account_key}/models
 POST   /v0/management/accounts/{account_key}/oauth/relogin
 POST   /v0/management/account-migration/dry-run
 POST   /v0/management/account-migration/commit
@@ -321,9 +322,13 @@ POST   /v0/management/account-migration/delete-legacy-sources
 - `codex-api-key`：`api_key`、`base_url`、`prefix`、`proxy_url`、`headers`、`models`、`quota_curl`、`billing_curl` 等。
 - `openai-compatible`：`provider_name`、`base_url`、`prefix`、`api_key_entries`、`headers`、`models` 等。
 
-旧 management API 不作为兼容目标继续维护：
+旧 management API 不作为兼容目标继续维护。`/v0/management/auth-files*` 在新版本中直接返回 `410 Gone`，用于暴露仍未切到 SQLite account store 的旧调用链：
 
 - `/v0/management/auth-files`
+- `/v0/management/auth-files/download`
+- `/v0/management/auth-files/models`
+- `/v0/management/auth-files/status`
+- `/v0/management/auth-files/fields`
 - `/v0/management/codex-api-key`
 - `/v0/management/openai-compatibility`
 

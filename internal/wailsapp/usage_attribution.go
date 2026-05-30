@@ -180,7 +180,11 @@ func (a *App) loadAuthIndexAttributionIndex() (map[string]string, error) {
 			if authIndex == "" || name == "" {
 				continue
 			}
-			out["auth-index:"+authIndex] = "auth-file:" + name
+			accountKey := "auth-file:" + name
+			if isUnifiedAccountID(authIndex) {
+				accountKey = authIndex
+			}
+			out["auth-index:"+authIndex] = accountKey
 		}
 	}
 

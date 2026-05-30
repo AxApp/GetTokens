@@ -95,10 +95,19 @@ func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 			switch {
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files":
-				return []byte(`{"files":[{"name":"cached.json","provider":"codex","auth_index":"1"}]}`), http.StatusOK, nil
-			case method == http.MethodGet && path == ManagementAPIPrefix+"/auth-files/download":
-				return authBody, http.StatusOK, nil
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				payload, _ := json.Marshal(map[string]any{"accounts": []map[string]any{{
+					"account_key": "acct_cached",
+					"kind":        "auth-file",
+					"title":       "cached.json",
+					"provider":    "codex",
+					"auth_file": map[string]any{
+						"source_file_name": "cached.json",
+						"auth_json":        string(authBody),
+						"auth_type":        "codex",
+					},
+				}}})
+				return payload, http.StatusOK, nil
 			case method == http.MethodPost && path == ManagementAPIPrefix+"/api-call":
 				return nil, http.StatusForbidden, errors.New("api call denied")
 			default:
