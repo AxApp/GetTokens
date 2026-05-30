@@ -20,7 +20,6 @@ type AccountsFilterStatePatch = {
 const SOURCE_KEYS = ['authFile', 'apiKey'] as const;
 const RESOURCE_KEYS = ['hasLongestQuota', 'hasBalance'] as const;
 const STATUS_KEYS = ['error', 'disabled', 'requestable'] as const;
-const PLAN_KEYS = ['free', 'plus', 'pro'] as const;
 
 export const defaultAccountsFilterState: AccountsFilterState = {
   source: {
@@ -37,9 +36,6 @@ export const defaultAccountsFilterState: AccountsFilterState = {
     requestable: true,
   },
   plan: {
-    free: true,
-    plus: true,
-    pro: true,
   },
 };
 
@@ -54,7 +50,7 @@ export function normalizeAccountsFilterState(value: unknown): AccountsFilterStat
     source: normalizeSourceSelection(candidate.source),
     resource: normalizeResourceSelection(candidate.resource ?? candidate),
     status: normalizeStatusSelection(candidate.status ?? candidate),
-    plan: normalizePlanSelection(candidate.plan ?? candidate),
+    plan: normalizePlanSelection(candidate.plan),
   };
 }
 
@@ -87,6 +83,7 @@ export function applyAccountsFilterState(
 export function summarizeAccountsFilterState(
   t: (key: string) => string,
   state: AccountsFilterState,
+  availablePlanTypes: readonly string[] = Object.keys(state.plan),
 ): AccountsFilterSummaryPart[] {
   const parts: AccountsFilterSummaryPart[] = [];
 
@@ -120,15 +117,11 @@ export function summarizeAccountsFilterState(
     }
   }
 
-  if (!isSelectionComplete(state.plan, PLAN_KEYS)) {
-    if (state.plan.free) {
-      parts.push({ kind: 'plan', label: 'free' });
-    }
-    if (state.plan.plus) {
-      parts.push({ kind: 'plan', label: 'plus' });
-    }
-    if (state.plan.pro) {
-      parts.push({ kind: 'plan', label: 'pro' });
+  if (!isPlanSelectionComplete(state.plan, availablePlanTypes)) {
+    for (const planType of availablePlanTypes) {
+      if (state.plan[planType] !== false) {
+        parts.push({ kind: 'plan', label: formatAccountPlanLabel(planType) });
+      }
     }
   }
 
@@ -207,17 +200,14 @@ function normalizeStatusSelection(value: unknown): AccountsFilterState['status']
 }
 
 function normalizePlanSelection(value: unknown): AccountsFilterState['plan'] {
-  if (isSelectionObject(value, PLAN_KEYS)) {
-    return normalizeSelectionObject(value, PLAN_KEYS, defaultAccountsFilterState.plan);
-  }
-
-  if (isPlainObject(value) && ('free' in value || 'plus' in value || 'pro' in value)) {
-    const candidate = value as Record<string, unknown>;
-    return {
-      free: resolveBoolean(candidate.free),
-      plus: resolveBoolean(candidate.plus),
-      pro: resolveBoolean(candidate.pro),
-    };
+  if (isPlainObject(value)) {
+    return Object.entries(value).reduce<AccountsFilterState['plan']>((selection, [rawKey, rawValue]) => {
+      const key = normalizePlanFilterKey(rawKey);
+      if (key && typeof rawValue === 'boolean') {
+        selection[key] = rawValue;
+      }
+      return selection;
+    }, {});
   }
 
   return { ...defaultAccountsFilterState.plan };
@@ -244,6 +234,30 @@ function isSelectionObject<T extends string>(value: unknown, keys: readonly T[])
 
 function isSelectionComplete<T extends string>(selection: AccountsFilterGroupSelection<T>, keys: readonly T[]) {
   return keys.every((key) => selection[key] === true);
+}
+
+function isPlanSelectionComplete(selection: AccountsFilterState['plan'], availablePlanTypes: readonly string[]) {
+  if (availablePlanTypes.length === 0) {
+    return true;
+  }
+  return availablePlanTypes.every((planType) => selection[planType] !== false);
+}
+
+function normalizePlanFilterKey(value: string) {
+  const normalized = value.trim().toLowerCase().replace(/[\s_]+/g, '-').replace(/[^a-z0-9-]/g, '');
+  return normalized.replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+function formatAccountPlanLabel(planType: string) {
+  const normalized = planType.trim();
+  if (!normalized) {
+    return '';
+  }
+  return normalized
+    .split(/[-_\s]+/g)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
 }
 
 function resolveLegacySourceSelection(value: unknown): CredentialSource | 'all' | 'none' {

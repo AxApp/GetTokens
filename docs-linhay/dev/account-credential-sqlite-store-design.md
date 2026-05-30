@@ -66,6 +66,7 @@ account-store-db: /Users/<user>/.config/gettokens/accounts-v1.sqlite
 - 账号迁移回归门禁必须覆盖“旧备份样本 -> dev 隔离目录 -> migration dry-run/commit -> SQLite account store -> runtime auth 合成 -> Codex 路由选择 -> management `api-call` token 替换”。本地真实备份样本通过 `GETTOKENS_ACCOUNT_MIGRATION_BACKUP_DIR=<backup-dir> go test ./internal/api/handlers/management -run TestAccountMigrationBackupFixtureEndToEnd -count=1 -v` 验证；未设置环境变量时该测试跳过，避免 CI 依赖开发者本机数据。
 - 前端 OpenAI-compatible DTO 暴露 `accountKey`，账号卡操作和 Codex 账号列表模型优先使用 `acct_*`；provider name 仅作为迁移前旧卡片解析兜底。
 - `AccountRecord` 增加 `accountKind`，取值为 `auth-file | codex-api-key | openai-compatible`。前端删除、禁用同步、复制导入、详情编辑门禁和 Claude/Codex 账号列表分类必须优先使用 `accountKind`，不能再只靠 `auth-file:*`、`codex-api-key:*`、`openai-compatible:*` 旧 ID 前缀推断账号类型。
+- `AccountRecord.planType` / quota `planType` 是运行时事实，不是固定枚举。前端账号列表必须动态聚合当前账号出现的 plan key；`team`、`enterprise`、`billing`、`key` 或后续新套餐都应进入独立套餐分组和筛选项，不能因不在 `free/plus/pro` 静态列表内落到“未识别套餐”。旧本地筛选若保存了 `free/plus/pro` 全选状态，必须默认包含新出现的 plan。
 - Wails 层仍有旧 ID 兼容分支，目标仅是迁移前残留状态可回退；新账号卡身份必须使用 sidecar 分配的 `acct_*`。
 
 ## 迁移边界

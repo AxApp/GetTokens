@@ -12,7 +12,7 @@ import {
 import type { AccountsFilterState, Translator } from '../model/types';
 import type { AccountBulkActionID } from '../model/accountSelection';
 
-const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = ['free', 'plus', 'pro'];
+const DEFAULT_AVAILABLE_PLAN_TYPES: readonly AccountPlanType[] = [];
 
 interface AccountsToolbarProps {
   t: Translator;
@@ -92,7 +92,8 @@ export default function AccountsToolbar({
   const sourceAllSelected = filters.source.authFile && filters.source.apiKey;
   const resourceAllSelected = filters.resource.hasLongestQuota && filters.resource.hasBalance;
   const statusAllSelected = filters.status.error && filters.status.disabled && filters.status.requestable;
-  const planAllSelected = filters.plan.free && filters.plan.plus && filters.plan.pro;
+  const planOptions = availablePlanTypes;
+  const planAllSelected = areAllPlanOptionsSelected(filters.plan, planOptions);
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -144,12 +145,12 @@ export default function AccountsToolbar({
     );
   }
 
-  function setPlanOption(key: keyof AccountsFilterState['plan']) {
+  function setPlanOption(key: AccountPlanType) {
     onFiltersChange(
       applyAccountsFilterState(filters, {
         plan: {
           ...filters.plan,
-          [key]: !filters.plan[key],
+          [key]: !isPlanOptionSelected(filters.plan, key),
         },
       }),
     );
@@ -204,11 +205,7 @@ export default function AccountsToolbar({
     }
     onFiltersChange(
       applyAccountsFilterState(filters, {
-        plan: {
-          free: true,
-          plus: true,
-          pro: true,
-        },
+        plan: Object.fromEntries(planOptions.map((planType) => [planType, true])),
       }),
     );
   }
@@ -226,7 +223,7 @@ export default function AccountsToolbar({
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="btn-swiss h-10 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
             >
-              {buildToolbarFilterLabel(t, filters)}
+              {buildToolbarFilterLabel(t, filters, planOptions)}
             </button>
             {isMenuOpen ? (
               <div className="absolute left-0 top-full z-20 mt-2 flex min-w-[360px] flex-col gap-3.5 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4 shadow-[4px_4px_0_var(--shadow-color)]">
@@ -286,18 +283,19 @@ export default function AccountsToolbar({
                     {t('accounts.filter_group_plan')}
                   </p>
                   <div className="grid gap-1">
-                    <FilterCheckOption active={planAllSelected} onClick={enableAllPlanOptions}>
+                    <FilterCheckOption active={planAllSelected} disabled={planOptions.length === 0 && !planAvailabilityResolved} onClick={enableAllPlanOptions}>
                       {t('accounts.filter_all')}
                     </FilterCheckOption>
-                    <FilterCheckOption active={filters.plan.free} uppercase={false} onClick={() => setPlanOption('free')}>
-                      free
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.plan.plus} uppercase={false} onClick={() => setPlanOption('plus')}>
-                      plus
-                    </FilterCheckOption>
-                    <FilterCheckOption active={filters.plan.pro} uppercase={false} onClick={() => setPlanOption('pro')}>
-                      pro
-                    </FilterCheckOption>
+                    {planOptions.map((planType) => (
+                      <FilterCheckOption
+                        key={planType}
+                        active={isPlanOptionSelected(filters.plan, planType)}
+                        uppercase={false}
+                        onClick={() => setPlanOption(planType)}
+                      >
+                        {formatAccountPlanLabel(planType)}
+                      </FilterCheckOption>
+                    ))}
                   </div>
                 </div>
                 <div className="flex justify-end border-t border-dashed border-[var(--border-color)] pt-2">
@@ -853,11 +851,30 @@ function FilterCheckOption({
   );
 }
 
-function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState) {
-  const parts = summarizeAccountsFilterState(t, filters);
+function buildToolbarFilterLabel(t: Translator, filters: AccountsFilterState, availablePlanTypes: readonly AccountPlanType[]) {
+  const parts = summarizeAccountsFilterState(t, filters, availablePlanTypes);
 
   if (parts.length === 0) {
     return t('accounts.display_filters');
   }
   return `${t('accounts.display_filters')} · ${parts.map((part) => part.label).join(' · ')}`;
+}
+
+function isPlanOptionSelected(selection: AccountsFilterState['plan'], planType: AccountPlanType) {
+  return selection[planType] !== false;
+}
+
+function areAllPlanOptionsSelected(selection: AccountsFilterState['plan'], availablePlanTypes: readonly AccountPlanType[]) {
+  if (availablePlanTypes.length === 0) {
+    return true;
+  }
+  return availablePlanTypes.every((planType) => isPlanOptionSelected(selection, planType));
+}
+
+function formatAccountPlanLabel(planType: AccountPlanType) {
+  return planType
+    .split(/[-_\s]+/g)
+    .filter(Boolean)
+    .map((part) => `${part.slice(0, 1).toUpperCase()}${part.slice(1)}`)
+    .join(' ');
 }

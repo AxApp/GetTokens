@@ -85,9 +85,7 @@ export interface AccountsFilterState {
     requestable: boolean;
   };
   plan: {
-    free: boolean;
-    plus: boolean;
-    pro: boolean;
+    [planType: string]: boolean;
   };
 }
 

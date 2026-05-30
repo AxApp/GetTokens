@@ -47,7 +47,7 @@ const activeFilters: AccountsFilterState = {
   },
 };
 
-const ALL_PLAN_TYPES: readonly AccountPlanType[] = ['free', 'plus', 'pro'];
+const ALL_PLAN_TYPES: readonly AccountPlanType[] = ['pro', 'team', 'plus', 'free'];
 
 function ToolbarViewport({
   label,

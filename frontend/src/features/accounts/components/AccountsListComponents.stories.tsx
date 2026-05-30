@@ -275,7 +275,7 @@ function AccountsListSample({
   const [selectedAccountIDSet, setSelectedAccountIDSet] = useState(() => new Set(initialSelectedAccountIDs));
   const accountCount = groups.reduce((total, group) => total + group.accounts.length, 0);
   const allFilteredSelected = accountCount > 0 && selectedAccountIDSet.size === accountCount;
-  const availablePlanTypes: readonly AccountPlanType[] = ['free', 'pro'];
+  const availablePlanTypes: readonly AccountPlanType[] = ['pro', 'team', 'free'];
 
   function toggleSelection(accountID: string) {
     setSelectedAccountIDSet((current) => {
