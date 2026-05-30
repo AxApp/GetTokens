@@ -131,3 +131,74 @@ func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T
 		t.Fatalf("unexpected cached remaining percent: %#v", quota.Windows[0].RemainingPercent)
 	}
 }
+
+func TestGetCodexQuotaUsesAccountKeyAndRuntimeMetadataAccountID(t *testing.T) {
+	authBody := []byte(`{
+		"id":"codex-plus.json",
+		"provider":"codex",
+		"metadata":{
+			"account_id":"chatgpt_account_from_metadata",
+			"plan_type":"plus",
+			"email":"plus@example.com"
+		}
+	}`)
+
+	var gotAPICall managementAPICallRequest
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts":
+				payload, _ := json.Marshal(map[string]any{"accounts": []map[string]any{{
+					"account_key": "acct_plus",
+					"kind":        "auth-file",
+					"title":       "codex-plus.json",
+					"provider":    "codex",
+					"auth_file": map[string]any{
+						"source_file_name": "codex-plus.json",
+						"auth_json":        string(authBody),
+						"auth_type":        "codex",
+						"plan_type":        "plus",
+					},
+				}}})
+				return payload, http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/api-call":
+				if err := json.NewDecoder(body).Decode(&gotAPICall); err != nil {
+					t.Fatalf("decode api-call body: %v", err)
+				}
+				response, _ := json.Marshal(managementAPICallResponse{
+					StatusCodeSnake: http.StatusOK,
+					Body: `{
+						"plan_type":"plus",
+						"rate_limit":{
+							"primary_window":{"used_percent":20,"limit_window_seconds":18000,"reset_at":1777980010}
+						}
+					}`,
+				})
+				return response, http.StatusOK, nil
+			default:
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	quota, err := app.GetCodexQuota("codex-plus.json")
+	if err != nil {
+		t.Fatalf("GetCodexQuota: %v", err)
+	}
+	if gotAPICall.AuthIndex != "acct_plus" {
+		t.Fatalf("api-call auth index = %q, want acct_plus", gotAPICall.AuthIndex)
+	}
+	if gotAPICall.Header["chatgpt-account-id"] != "chatgpt_account_from_metadata" {
+		t.Fatalf("chatgpt-account-id = %q, want metadata account id", gotAPICall.Header["chatgpt-account-id"])
+	}
+	if gotAPICall.Header["Authorization"] != "Bearer $TOKEN$" {
+		t.Fatalf("Authorization = %q, want token placeholder", gotAPICall.Header["Authorization"])
+	}
+	if quota.PlanType != "plus" {
+		t.Fatalf("PlanType = %q, want plus", quota.PlanType)
+	}
+	if len(quota.Windows) != 1 || quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 80 {
+		t.Fatalf("unexpected quota windows: %#v", quota.Windows)
+	}
+}
