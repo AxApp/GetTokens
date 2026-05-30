@@ -39,18 +39,29 @@ type AccountMigrationDeleteResult struct {
 
 func (a *App) GetAccountMigrationPreview() (*AccountMigrationPreview, error) {
 	client := a.managementClient()
-	accounts, err := client.ListAccounts()
-	if err != nil {
-		return nil, err
+	accounts, accountsErr := client.ListAccounts()
+	accountCount := 0
+	if accountsErr == nil {
+		accountCount = len(accounts)
 	}
-	report, err := client.DryRunAccountMigration()
-	if err != nil {
-		if len(accounts) > 0 {
-			return buildAccountMigrationPreview(len(accounts), nil, []string{err.Error()}), nil
+	report, reportErr := client.DryRunAccountMigration()
+	if reportErr != nil {
+		if accountCount > 0 {
+			warnings := []string{reportErr.Error()}
+			if accountsErr != nil {
+				warnings = append(warnings, accountsErr.Error())
+			}
+			return buildAccountMigrationPreview(accountCount, nil, warnings), nil
 		}
-		return nil, err
+		if accountsErr != nil {
+			return nil, accountsErr
+		}
+		return nil, reportErr
 	}
-	return buildAccountMigrationPreview(len(accounts), report, nil), nil
+	if accountsErr != nil {
+		return buildAccountMigrationPreview(0, report, []string{accountsErr.Error()}), nil
+	}
+	return buildAccountMigrationPreview(accountCount, report, nil), nil
 }
 
 func (a *App) CommitAccountMigration() (*AccountMigrationCommitResult, error) {

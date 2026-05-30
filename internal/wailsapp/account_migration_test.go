@@ -175,6 +175,58 @@ func TestCommitAccountMigrationReturnsErrorsAndRefreshedPreview(t *testing.T) {
 	}
 }
 
+func TestGetAccountMigrationPreviewFallsBackToDryRunWhenListAccountsFails(t *testing.T) {
+	tests := []struct {
+		name          string
+		dryRunBody    string
+		wantStatus    string
+		wantCandidate int
+	}{
+		{
+			name:          "list accounts failure still blocks when legacy candidates exist",
+			dryRunBody:    `{"generated_at_unix_ms":1780000000000,"candidates":[{"account_key":"acct_1","kind":"auth-file"}]}`,
+			wantStatus:    "needs-migration",
+			wantCandidate: 1,
+		},
+		{
+			name:       "list accounts failure does not block when no legacy candidates remain",
+			dryRunBody: `{"generated_at_unix_ms":1780000000000,"candidates":[]}`,
+			wantStatus: "empty",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			app := &App{
+				managementAPI: func() *cliproxyapi.Client {
+					return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+						switch path {
+						case "/v0/management/accounts":
+							return nil, 500, errors.New("query codex-api-key credential for acct_demo: database is locked (5) (SQLITE_BUSY)")
+						case "/v0/management/account-migration/dry-run":
+							return []byte(tt.dryRunBody), 200, nil
+						default:
+							t.Fatalf("unexpected request: %s %s", method, path)
+						}
+						return nil, 404, nil
+					})
+				},
+			}
+
+			preview, err := app.GetAccountMigrationPreview()
+			if err != nil {
+				t.Fatalf("GetAccountMigrationPreview: %v", err)
+			}
+			if preview.Status != tt.wantStatus || preview.CandidateCount != tt.wantCandidate {
+				t.Fatalf("preview = %#v", preview)
+			}
+			if len(preview.Warnings) == 0 {
+				t.Fatalf("expected warnings for list account failure: %#v", preview)
+			}
+		})
+	}
+}
+
 func TestGetAccountMigrationPreviewSummarizesKinds(t *testing.T) {
 	preview := buildAccountMigrationPreview(0, &cliproxyapi.AccountMigrationReport{
 		Candidates: []cliproxyapi.AccountMigrationCandidate{

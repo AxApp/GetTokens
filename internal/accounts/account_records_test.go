@@ -22,6 +22,24 @@ func TestBuildAuthFileAccountRecordKeepsStatusMessage(t *testing.T) {
 	}
 }
 
+func TestBuildUnifiedAuthFileAccountRecordFallsBackToSourceNamePlanType(t *testing.T) {
+	record := BuildUnifiedAccountRecord(cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_00000000-0000-4000-8000-000000000001",
+		Kind:       cliproxyapi.AccountKindAuthFile,
+		Title:      "Codex Account",
+		Provider:   "codex",
+		AuthFile: &cliproxyapi.AuthFileAccountCredential{
+			SourceFileName: "codex-user@example.com-plus.json",
+			AuthJSON:       `{"id":"codex-user@example.com-plus.json","provider":"codex","metadata":{"email":"user@example.com"}}`,
+			Email:          "user@example.com",
+		},
+	})
+
+	if got := record.PlanType; got != "plus" {
+		t.Fatalf("PlanType = %q, want plus", got)
+	}
+}
+
 func TestBuildCodexAPIKeyAccountRecordPrefersPersistedLabel(t *testing.T) {
 	record := BuildCodexAPIKeyAccountRecord(cliproxyapi.CodexAPIKey{
 		APIKey:  "sk-test-123456",

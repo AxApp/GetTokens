@@ -309,7 +309,7 @@ func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) Accou
 		}
 		file.Type = strings.TrimSpace(credential.AuthType)
 		file.Email = strings.TrimSpace(credential.Email)
-		file.PlanType = strings.TrimSpace(credential.PlanType)
+		file.PlanType = inferUnifiedAuthFilePlanType(credential)
 		file.Modified = credential.ModifiedUnixMs
 		file.Size = credential.SizeBytes
 	}
@@ -320,6 +320,29 @@ func buildUnifiedAuthFileAccountRecord(account cliproxyapi.UnifiedAccount) Accou
 	record.QuotaKey = strings.TrimSpace(account.AccountKey)
 	record.LocalOnly = false
 	return record
+}
+
+func inferUnifiedAuthFilePlanType(credential *cliproxyapi.AuthFileAccountCredential) string {
+	if credential == nil {
+		return ""
+	}
+	if planType := strings.TrimSpace(credential.PlanType); planType != "" {
+		return planType
+	}
+	if profile := ExtractAuthFileProfile([]byte(strings.TrimSpace(credential.AuthJSON))); profile.PlanType != "" {
+		return profile.PlanType
+	}
+	name := strings.ToLower(strings.TrimSpace(credential.SourceFileName))
+	switch {
+	case strings.HasSuffix(name, "-plus.json"):
+		return "plus"
+	case strings.HasSuffix(name, "-pro.json"):
+		return "pro"
+	case strings.HasSuffix(name, "-free.json"):
+		return "free"
+	default:
+		return ""
+	}
 }
 
 func buildUnifiedCodexAPIKeyAccountRecord(account cliproxyapi.UnifiedAccount) AccountRecord {
