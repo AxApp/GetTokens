@@ -1291,6 +1291,8 @@ func mapSessionAnalysisResult(result *wailsapp.SessionAnalysisResult) *SessionAn
 	if result == nil {
 		return &SessionAnalysisResult{
 			Keywords:          []SessionAnalysisKeyword{},
+			WordCloud:         []SessionAnalysisWordCloudItem{},
+			CommonPhrases:     []SessionAnalysisCommonPhrase{},
 			RoleContributions: []SessionAnalysisRoleContribution{},
 			Projects:          []SessionAnalysisProjectSummary{},
 			Sessions:          []SessionAnalysisSessionSummary{},
@@ -1323,6 +1325,7 @@ func mapSessionAnalysisResult(result *wailsapp.SessionAnalysisResult) *SessionAn
 			TermCount:         session.TermCount,
 			TopicLine:         session.TopicLine,
 			Keywords:          mapSessionAnalysisKeywords(session.Keywords),
+			CommonPhrases:     mapSessionAnalysisCommonPhrases(session.CommonPhrases),
 			RoleContributions: mapSessionAnalysisRoleContributions(session.RoleContributions),
 		})
 	}
@@ -1336,6 +1339,8 @@ func mapSessionAnalysisResult(result *wailsapp.SessionAnalysisResult) *SessionAn
 		TotalMessages:         result.TotalMessages,
 		TotalTerms:            result.TotalTerms,
 		Keywords:              mapSessionAnalysisKeywords(result.Keywords),
+		WordCloud:             mapSessionAnalysisWordCloud(result.WordCloud),
+		CommonPhrases:         mapSessionAnalysisCommonPhrases(result.CommonPhrases),
 		RoleContributions:     mapSessionAnalysisRoleContributions(result.RoleContributions),
 		Projects:              projects,
 		Sessions:              sessions,
@@ -1350,6 +1355,38 @@ func mapSessionAnalysisKeywords(items []wailsapp.SessionAnalysisKeyword) []Sessi
 	for _, item := range items {
 		out = append(out, SessionAnalysisKeyword{
 			Term:         item.Term,
+			Count:        item.Count,
+			SessionCount: item.SessionCount,
+			Score:        item.Score,
+		})
+	}
+	return out
+}
+
+func mapSessionAnalysisWordCloud(items []wailsapp.SessionAnalysisWordCloudItem) []SessionAnalysisWordCloudItem {
+	if len(items) == 0 {
+		return []SessionAnalysisWordCloudItem{}
+	}
+	out := make([]SessionAnalysisWordCloudItem, 0, len(items))
+	for _, item := range items {
+		out = append(out, SessionAnalysisWordCloudItem{
+			Term:         item.Term,
+			Count:        item.Count,
+			SessionCount: item.SessionCount,
+			Weight:       item.Weight,
+		})
+	}
+	return out
+}
+
+func mapSessionAnalysisCommonPhrases(items []wailsapp.SessionAnalysisCommonPhrase) []SessionAnalysisCommonPhrase {
+	if len(items) == 0 {
+		return []SessionAnalysisCommonPhrase{}
+	}
+	out := make([]SessionAnalysisCommonPhrase, 0, len(items))
+	for _, item := range items {
+		out = append(out, SessionAnalysisCommonPhrase{
+			Text:         item.Text,
 			Count:        item.Count,
 			SessionCount: item.SessionCount,
 			Score:        item.Score,

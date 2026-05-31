@@ -70,6 +70,13 @@ export interface SessionManagementCopy {
   pluginHostTitle: string;
   analysisPluginName: string;
   analysisPluginHint: string;
+  analysisOpen: string;
+  analysisSelectorTitle: string;
+  analysisSelectorHint: string;
+  analysisDetailTitle: string;
+  analysisSelectProject: string;
+  analysisSelectSession: string;
+  analysisBackToSelection: string;
   analysisTitle: string;
   analysisAll: string;
   analysisProject: string;
@@ -77,6 +84,8 @@ export interface SessionManagementCopy {
   analysisRunning: string;
   analysisEmpty: string;
   analysisKeywords: string;
+  analysisWordCloud: string;
+  analysisCommonPhrases: string;
   analysisProjects: string;
   analysisRoles: string;
   analysisTopics: string;
@@ -144,6 +153,37 @@ export function getProviderDisplayLabel(value: string | null | undefined, fallba
     return fallback;
   }
   return text;
+}
+
+function useModalInitialFocus(onClose: () => void) {
+  const focusRef = useRef<HTMLButtonElement | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    focusRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        onCloseRef.current();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (previousFocus && document.contains(previousFocus)) {
+        previousFocus.focus();
+      }
+    };
+  }, []);
+
+  return focusRef;
 }
 
 export function StatePanel({
@@ -365,150 +405,381 @@ export function ProjectListPanel({
   );
 }
 
-export function SessionAnalysisPanel({
+export function SessionAnalysisScopeModal({
   copy,
+  projects,
+  activeProjectId,
+  activeProjectName,
+  visibleSessions,
+  recentLimit,
+  onClose,
+  onAnalyzeAll,
+  onAnalyzeRecent,
+  onAnalyzeProject,
+  onAnalyzeSession,
+}: {
+  copy: SessionManagementCopy;
+  projects: ProjectSummary[];
+  activeProjectId: string;
+  activeProjectName: string;
+  visibleSessions: SessionSummary[];
+  recentLimit: number;
+  onClose: () => void;
+  onAnalyzeAll: () => void;
+  onAnalyzeRecent: () => void;
+  onAnalyzeProject: (project: ProjectSummary) => void;
+  onAnalyzeSession: (session: SessionSummary) => void;
+}) {
+  const recentSessions = visibleSessions.slice(0, recentLimit);
+  const initialFocusRef = useModalInitialFocus(onClose);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-70)] p-4 sm:p-6"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-5xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-analysis-scope-title"
+      >
+        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+              <BarChart3 className="h-3.5 w-3.5" strokeWidth={2.5} />
+              <span>{copy.analysisTitle}</span>
+            </div>
+            <h3
+              id="session-analysis-scope-title"
+              className="mt-1 text-[length:var(--font-size-ui-3xl)] font-black uppercase tracking-tight leading-none"
+            >
+              {copy.analysisSelectorTitle}
+            </h3>
+            <p className="mt-2 max-w-3xl text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              {copy.analysisSelectorHint}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={copy.close}
+            title={copy.close}
+            className="flex h-7 w-7 shrink-0 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] active:scale-90"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <div className="grid min-h-0 gap-0 overflow-y-auto lg:grid-cols-[18rem_minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="border-b-4 border-[var(--border-color)] p-4 lg:border-b-0 lg:border-r-4">
+            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+              {copy.pluginHostTitle}
+            </div>
+            <div className="mt-3 grid gap-2">
+              <button
+                type="button"
+                ref={initialFocusRef}
+                onClick={onAnalyzeAll}
+                disabled={!projects.length}
+                className="btn-swiss w-full justify-center text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+              >
+                {copy.analysisAll}
+              </button>
+              <button
+                type="button"
+                onClick={onAnalyzeRecent}
+                disabled={!recentSessions.length}
+                className="btn-swiss w-full justify-center text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
+              >
+                {copy.analysisRecent(recentLimit)}
+              </button>
+            </div>
+            <div className="mt-4 border-t border-dashed border-[var(--border-color)] pt-4 text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              {copy.analysisPluginName} / {activeProjectName}
+            </div>
+          </div>
+
+          <div className="min-h-0 border-b-4 border-[var(--border-color)] lg:border-b-0 lg:border-r-4">
+            <div className="sticky top-0 z-10 border-b border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.22em]">
+                {copy.analysisSelectProject}
+              </div>
+            </div>
+            <div className="max-h-[56vh] overflow-y-auto">
+              {projects.map((project) => {
+                const active = project.id === activeProjectId;
+                return (
+                  <button
+                    key={project.id}
+                    type="button"
+                    onClick={() => onAnalyzeProject(project)}
+                    className={`block w-full border-b border-[var(--border-color)] px-4 py-3 text-left transition-colors active:opacity-70 ${
+                      active ? 'bg-[var(--border-color)] text-[var(--bg-main)]' : 'hover:bg-[var(--bg-surface)]'
+                    }`}
+                  >
+                    <div className="truncate text-[length:var(--font-size-ui-md)] font-black uppercase tracking-tight">
+                      {project.name}
+                    </div>
+                    <div className={`mt-1 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] ${
+                      active ? 'text-[var(--bg-main)]/70' : 'text-[var(--text-muted)]'
+                    }`}>
+                      {copy.projectStatusLine(project)}
+                    </div>
+                  </button>
+                );
+              })}
+              {!projects.length ? (
+                <StatePanel title={copy.noProjects} description={copy.analysisSelectorHint} />
+              ) : null}
+            </div>
+          </div>
+
+          <div className="min-h-0">
+            <div className="sticky top-0 z-10 border-b border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3">
+              <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.22em]">
+                {copy.analysisSelectSession}
+              </div>
+            </div>
+            <div className="max-h-[56vh] overflow-y-auto">
+              {visibleSessions.map((session) => (
+                <button
+                  key={session.id}
+                  type="button"
+                  onClick={() => onAnalyzeSession(session)}
+                  className="block w-full border-b border-[var(--border-color)] px-4 py-3 text-left transition-colors hover:bg-[var(--bg-surface)] active:opacity-70"
+                >
+                  <div className="truncate text-[length:var(--font-size-ui-md)] font-black uppercase tracking-tight">
+                    {session.title || getFileName(session.fileLabel, session.id)}
+                  </div>
+                  <div className="mt-1 flex min-w-0 items-center gap-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    <span>{session.messageCount} {copy.metaMessages}</span>
+                    <span>·</span>
+                    <span className="truncate">{formatSessionMetadataDate(session.updatedAt)}</span>
+                  </div>
+                </button>
+              ))}
+              {!visibleSessions.length ? (
+                <StatePanel title={copy.noSessions} description={activeProjectName} />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SessionAnalysisDetailModal({
+  copy,
+  scopeLabel,
   result,
   loading,
   error,
-  activeProjectName,
-  canAnalyze,
-  canAnalyzeRecent,
-  recentLimit,
-  onAnalyzeAll,
-  onAnalyzeProject,
-  onAnalyzeRecent,
+  onClose,
+  onBackToSelection,
 }: {
   copy: SessionManagementCopy;
+  scopeLabel: string;
   result: SessionAnalysisResult | null;
   loading: boolean;
   error: string | null;
-  activeProjectName: string;
-  canAnalyze: boolean;
-  canAnalyzeRecent: boolean;
-  recentLimit: number;
-  onAnalyzeAll: () => void;
-  onAnalyzeProject: () => void;
-  onAnalyzeRecent: () => void;
+  onClose: () => void;
+  onBackToSelection: () => void;
 }) {
+  const initialFocusRef = useModalInitialFocus(onClose);
+
   return (
-    <section className="shrink-0 border-b-4 border-[var(--border-color)] bg-[var(--bg-main)]">
-      <div className="flex flex-wrap items-start justify-between gap-3 px-5 py-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.22em]">
-            <BarChart3 className="h-4 w-4" strokeWidth={2.5} />
-            <span>{copy.pluginHostTitle}</span>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--overlay-scrim-80)] p-4 sm:p-6"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-6xl flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="session-analysis-detail-title"
+      >
+        <div className="flex items-start justify-between gap-4 border-b-4 border-[var(--border-color)] px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.24em] text-[var(--text-muted)]">
+              {copy.analysisTitle}
+            </div>
+            <h3
+              id="session-analysis-detail-title"
+              className="mt-1 truncate text-[length:var(--font-size-ui-3xl)] font-black uppercase tracking-tight leading-none"
+            >
+              {copy.analysisDetailTitle}
+            </h3>
+            <div className="mt-2 truncate text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+              {result
+                ? `${scopeLabel} / ${result.analyzedSessionCount} ${copy.sessionsUnit} / ${result.totalMessages} ${copy.metaMessages} / ${result.generatedAt}`
+                : scopeLabel}
+            </div>
           </div>
-          <div className="mt-1 truncate text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-            {result
-              ? `${result.analyzedSessionCount} ${copy.sessionsUnit} / ${result.totalMessages} ${copy.metaMessages} / ${result.generatedAt}`
-              : `${copy.analysisPluginName} / ${activeProjectName}`}
-          </div>
-          <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-            {copy.analysisPluginHint}
+          <div className="flex shrink-0 items-center gap-2">
+            {loading ? (
+              <span className="animate-pulse text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                {copy.analysisRunning}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              ref={initialFocusRef}
+              onClick={loading ? undefined : onBackToSelection}
+              aria-disabled={loading ? 'true' : undefined}
+              className={`btn-swiss text-[length:var(--font-size-ui-xs)] ${
+                loading ? 'cursor-not-allowed opacity-50' : ''
+              }`}
+            >
+              {copy.analysisBackToSelection}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={copy.close}
+              title={copy.close}
+              className="flex h-7 w-7 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] active:scale-90"
+            >
+              <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+            </button>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {loading ? (
-            <span className="animate-pulse text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-              {copy.analysisRunning}
-            </span>
+
+        <div className="min-h-0 overflow-y-auto">
+          {error ? (
+            <div className="border-b border-[var(--border-color)] px-5 py-3 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
+              {copy.loadFailed} / {error}
+            </div>
           ) : null}
-          <button
-            type="button"
-            onClick={onAnalyzeProject}
-            disabled={!canAnalyze || loading}
-            className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
-          >
-            {copy.analysisProject}
-          </button>
-          <button
-            type="button"
-            onClick={onAnalyzeRecent}
-            disabled={!canAnalyzeRecent || loading}
-            className="btn-swiss text-[length:var(--font-size-ui-xs)] disabled:opacity-50"
-          >
-            {copy.analysisRecent(recentLimit)}
-          </button>
-          <button
-            type="button"
-            onClick={onAnalyzeAll}
-            disabled={!canAnalyze || loading}
-            className="btn-swiss text-[length:var(--font-size-ui-xs)] opacity-80 disabled:opacity-50"
-          >
-            {copy.analysisAll}
-          </button>
+          {loading && !result ? (
+            <StatePanel title={copy.analysisRunning} description={scopeLabel} />
+          ) : result ? (
+            <SessionAnalysisResultGrid copy={copy} result={result} />
+          ) : !error ? (
+            <StatePanel title={copy.analysisEmpty} description={scopeLabel} />
+          ) : null}
         </div>
       </div>
-      {error ? (
-        <div className="border-t border-[var(--border-color)] px-5 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--accent-red)]">
-          {copy.loadFailed} / {error}
+    </div>
+  );
+}
+
+function SessionAnalysisResultGrid({ copy, result }: { copy: SessionManagementCopy; result: SessionAnalysisResult }) {
+  const wordCloud = getAnalysisWordCloud(result);
+  return (
+    <div className="grid gap-0">
+      <div className="border-b border-[var(--border-color)] px-4 py-3">
+        <AnalysisSectionTitle>{copy.analysisWordCloud}</AnalysisSectionTitle>
+        <div className="flex min-h-24 flex-wrap items-center gap-x-4 gap-y-2 overflow-hidden">
+          {wordCloud.slice(0, 28).map((item) => (
+            <span
+              key={item.term}
+              className="max-w-full truncate font-black uppercase leading-none text-[var(--text-primary)]"
+              style={{
+                fontSize: `${12 + Math.max(0.2, Math.min(item.weight, 1)) * 18}px`,
+                opacity: 0.68 + Math.max(0.2, Math.min(item.weight, 1)) * 0.32,
+              }}
+              title={`${item.term} / ${item.count}`}
+            >
+              {item.term}
+            </span>
+          ))}
         </div>
-      ) : null}
-      {result ? (
-        <div className="grid gap-0 border-t border-[var(--border-color)] lg:grid-cols-[1.2fr_1fr_1fr]">
-          <AnalysisColumn title={copy.analysisKeywords}>
-            {result.keywords.slice(0, 10).map((keyword) => (
-              <AnalysisMetricRow
-                key={keyword.term}
-                label={keyword.term}
-                value={`${keyword.count}`}
-                meta={`${keyword.sessionCount} ${copy.sessionsUnit}`}
-              />
-            ))}
-          </AnalysisColumn>
-          <AnalysisColumn title={copy.analysisProjects}>
-            {result.projects.slice(0, 6).map((project) => (
-              <AnalysisMetricRow
-                key={project.projectID}
-                label={project.projectName}
-                value={`${project.sessionCount}`}
-                meta={`${project.termCount} terms`}
-              />
-            ))}
-          </AnalysisColumn>
-          <AnalysisColumn title={copy.analysisRoles}>
-            {result.roleContributions.slice(0, 6).map((role) => (
-              <AnalysisMetricRow
-                key={role.role}
-                label={role.role}
-                value={`${Math.round(role.share * 100)}%`}
-                meta={`${role.messageCount} ${copy.metaMessages}`}
-              />
-            ))}
-          </AnalysisColumn>
-          <div className="border-t border-[var(--border-color)] px-4 py-3 lg:col-span-3">
-            <div className="mb-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
-              {copy.analysisTopics}
+      </div>
+      <div className="grid gap-0 lg:grid-cols-[1.2fr_1fr_1fr]">
+        <AnalysisColumn title={copy.analysisKeywords}>
+          {result.keywords.slice(0, 10).map((keyword) => (
+            <AnalysisMetricRow
+              key={keyword.term}
+              label={keyword.term}
+              value={`${keyword.count}`}
+              meta={`${keyword.sessionCount} ${copy.sessionsUnit}`}
+            />
+          ))}
+        </AnalysisColumn>
+        <AnalysisColumn title={copy.analysisProjects}>
+          {result.projects.slice(0, 6).map((project) => (
+            <AnalysisMetricRow
+              key={project.projectID}
+              label={project.projectName}
+              value={`${project.sessionCount}`}
+              meta={`${project.termCount} terms`}
+            />
+          ))}
+        </AnalysisColumn>
+        <AnalysisColumn title={copy.analysisRoles}>
+          {result.roleContributions.slice(0, 6).map((role) => (
+            <AnalysisMetricRow
+              key={role.role}
+              label={role.role}
+              value={`${Math.round(role.share * 100)}%`}
+              meta={`${role.messageCount} ${copy.metaMessages}`}
+            />
+          ))}
+        </AnalysisColumn>
+      </div>
+      <div className="border-b border-[var(--border-color)] px-4 py-3">
+        <AnalysisSectionTitle>{copy.analysisCommonPhrases}</AnalysisSectionTitle>
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {result.commonPhrases.slice(0, 9).map((phrase) => (
+            <div key={phrase.text} className="min-w-0 border border-[var(--border-color)] px-3 py-2">
+              <div className="line-clamp-2 break-words text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em]">
+                {phrase.text}
+              </div>
+              <div className="mt-1 text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                {phrase.count} / {phrase.sessionCount} {copy.sessionsUnit}
+              </div>
             </div>
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-              {result.sessions.slice(0, 6).map((session) => (
-                <div key={session.sessionID} className="min-w-0 border border-[var(--border-color)] px-3 py-2">
-                  <div className="truncate text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">
-                    {session.title || getFileName(session.sessionID, copy.unavailable)}
-                  </div>
-                  <div className="mt-1 truncate text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                    {session.topicLine}
-                  </div>
-                </div>
-              ))}
+          ))}
+        </div>
+      </div>
+      <div className="border-t border-[var(--border-color)] px-4 py-3 lg:col-span-3">
+        <AnalysisSectionTitle>{copy.analysisTopics}</AnalysisSectionTitle>
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {result.sessions.slice(0, 6).map((session) => (
+            <div key={session.sessionID} className="min-w-0 border border-[var(--border-color)] px-3 py-2">
+              <div className="truncate text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em]">
+                {session.title || getFileName(session.sessionID, copy.unavailable)}
+              </div>
+              <div className="mt-1 truncate text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                {session.topicLine}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
-      ) : !loading ? (
-        <div className="border-t border-[var(--border-color)] px-5 py-3 text-[length:var(--font-size-ui-xs)] font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-          {copy.analysisEmpty}
-        </div>
-      ) : null}
-    </section>
+      </div>
+    </div>
+  );
+}
+
+function getAnalysisWordCloud(result: SessionAnalysisResult) {
+  if (result.wordCloud.length > 0) {
+    return result.wordCloud;
+  }
+  const maxCount = Math.max(...result.keywords.map((keyword) => keyword.count), 1);
+  return result.keywords.map((keyword) => ({
+    term: keyword.term,
+    count: keyword.count,
+    sessionCount: keyword.sessionCount,
+    weight: 0.4 + 0.6 * (keyword.count / maxCount),
+  }));
+}
+
+function AnalysisSectionTitle({ children }: { children: ReactNode }) {
+  return (
+    <div className="mb-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
+      {children}
+    </div>
   );
 }
 
 function AnalysisColumn({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="border-b border-[var(--border-color)] px-4 py-3 lg:border-b-0 lg:border-r">
-      <div className="mb-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.22em] text-[var(--text-muted)]">
-        {title}
-      </div>
+      <AnalysisSectionTitle>{title}</AnalysisSectionTitle>
       <div className="space-y-1.5">{children}</div>
     </div>
   );

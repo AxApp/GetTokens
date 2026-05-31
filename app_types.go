@@ -1208,6 +1208,8 @@ type SessionAnalysisResult struct {
 	TotalMessages         int                               `json:"totalMessages"`
 	TotalTerms            int                               `json:"totalTerms"`
 	Keywords              []SessionAnalysisKeyword          `json:"keywords"`
+	WordCloud             []SessionAnalysisWordCloudItem    `json:"wordCloud"`
+	CommonPhrases         []SessionAnalysisCommonPhrase     `json:"commonPhrases"`
 	RoleContributions     []SessionAnalysisRoleContribution `json:"roleContributions"`
 	Projects              []SessionAnalysisProjectSummary   `json:"projects"`
 	Sessions              []SessionAnalysisSessionSummary   `json:"sessions"`
@@ -1215,6 +1217,20 @@ type SessionAnalysisResult struct {
 
 type SessionAnalysisKeyword struct {
 	Term         string  `json:"term"`
+	Count        int     `json:"count"`
+	SessionCount int     `json:"sessionCount"`
+	Score        float64 `json:"score"`
+}
+
+type SessionAnalysisWordCloudItem struct {
+	Term         string  `json:"term"`
+	Count        int     `json:"count"`
+	SessionCount int     `json:"sessionCount"`
+	Weight       float64 `json:"weight"`
+}
+
+type SessionAnalysisCommonPhrase struct {
+	Text         string  `json:"text"`
 	Count        int     `json:"count"`
 	SessionCount int     `json:"sessionCount"`
 	Score        float64 `json:"score"`
@@ -1248,6 +1264,7 @@ type SessionAnalysisSessionSummary struct {
 	TermCount         int                               `json:"termCount"`
 	TopicLine         string                            `json:"topicLine"`
 	Keywords          []SessionAnalysisKeyword          `json:"keywords"`
+	CommonPhrases     []SessionAnalysisCommonPhrase     `json:"commonPhrases"`
 	RoleContributions []SessionAnalysisRoleContribution `json:"roleContributions"`
 }
 

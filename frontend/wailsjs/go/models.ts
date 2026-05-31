@@ -4682,6 +4682,24 @@ export namespace main {
 	        this.preview = source["preview"];
 	    }
 	}
+	export class SessionAnalysisCommonPhrase {
+	    text: string;
+	    count: number;
+	    sessionCount: number;
+	    score: number;
+
+	    static createFrom(source: any = {}) {
+	        return new SessionAnalysisCommonPhrase(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.text = source["text"];
+	        this.count = source["count"];
+	        this.sessionCount = source["sessionCount"];
+	        this.score = source["score"];
+	    }
+	}
 	export class SessionAnalysisKeyword {
 	    term: string;
 	    count: number;
@@ -4752,6 +4770,7 @@ export namespace main {
 	    termCount: number;
 	    topicLine: string;
 	    keywords: SessionAnalysisKeyword[];
+	    commonPhrases: SessionAnalysisCommonPhrase[];
 	    roleContributions: SessionAnalysisRoleContribution[];
 
 	    static createFrom(source: any = {}) {
@@ -4771,6 +4790,7 @@ export namespace main {
 	        this.termCount = source["termCount"];
 	        this.topicLine = source["topicLine"];
 	        this.keywords = this.convertValues(source["keywords"], SessionAnalysisKeyword);
+	        this.commonPhrases = this.convertValues(source["commonPhrases"], SessionAnalysisCommonPhrase);
 	        this.roleContributions = this.convertValues(source["roleContributions"], SessionAnalysisRoleContribution);
 	    }
 
@@ -4810,6 +4830,24 @@ export namespace main {
 	        this.share = source["share"];
 	    }
 	}
+	export class SessionAnalysisWordCloudItem {
+	    term: string;
+	    count: number;
+	    sessionCount: number;
+	    weight: number;
+
+	    static createFrom(source: any = {}) {
+	        return new SessionAnalysisWordCloudItem(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.term = source["term"];
+	        this.count = source["count"];
+	        this.sessionCount = source["sessionCount"];
+	        this.weight = source["weight"];
+	    }
+	}
 	export class SessionAnalysisResult {
 	    scope: string;
 	    generatedAt: string;
@@ -4819,6 +4857,8 @@ export namespace main {
 	    totalMessages: number;
 	    totalTerms: number;
 	    keywords: SessionAnalysisKeyword[];
+	    wordCloud: SessionAnalysisWordCloudItem[];
+	    commonPhrases: SessionAnalysisCommonPhrase[];
 	    roleContributions: SessionAnalysisRoleContribution[];
 	    projects: SessionAnalysisProjectSummary[];
 	    sessions: SessionAnalysisSessionSummary[];
@@ -4837,6 +4877,8 @@ export namespace main {
 	        this.totalMessages = source["totalMessages"];
 	        this.totalTerms = source["totalTerms"];
 	        this.keywords = this.convertValues(source["keywords"], SessionAnalysisKeyword);
+	        this.wordCloud = this.convertValues(source["wordCloud"], SessionAnalysisWordCloudItem);
+	        this.commonPhrases = this.convertValues(source["commonPhrases"], SessionAnalysisCommonPhrase);
 	        this.roleContributions = this.convertValues(source["roleContributions"], SessionAnalysisRoleContribution);
 	        this.projects = this.convertValues(source["projects"], SessionAnalysisProjectSummary);
 	        this.sessions = this.convertValues(source["sessions"], SessionAnalysisSessionSummary);
@@ -4860,6 +4902,7 @@ export namespace main {
 		    return a;
 		}
 	}
+
 
 
 	export class SessionManagementMessageRecord {

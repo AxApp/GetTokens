@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   buildSessionAnalysisInput,
@@ -142,6 +143,8 @@ test('mapSessionAnalysisResultResponse normalizes batch analysis payloads', () =
     totalMessages: 8,
     totalTerms: 42,
     keywords: [{ term: '会话', count: 4, sessionCount: 2, score: 8.4 }],
+    wordCloud: [{ term: '会话', count: 4, sessionCount: 2, weight: 1 }],
+    commonPhrases: [{ text: '会话分析', count: 3, sessionCount: 2, score: 6.3 }],
     roleContributions: [{ role: 'assistant', messageCount: 4, termCount: 24, share: 0.57 }],
     projects: [
       {
@@ -172,6 +175,8 @@ test('mapSessionAnalysisResultResponse normalizes batch analysis payloads', () =
 
   assert.equal(result.requestedSessionCount, 3);
   assert.equal(result.keywords[0].term, '会话');
+  assert.equal(result.wordCloud[0].term, '会话');
+  assert.equal(result.commonPhrases[0].text, '会话分析');
   assert.equal(result.projects[0].keywords[0].term, '分词');
   assert.equal(result.sessions[0].status, 'active');
   assert.equal(result.sessions[0].model, '');
@@ -228,6 +233,33 @@ test('analyzeCodexSessions calls runtime batch analysis binding', async () => {
   assert.deepEqual(runtimeInput, { scope: 'project', projectID: 'gettokens' });
   assert.equal(result.analyzedSessionCount, 1);
   assert.equal(result.keywords[0].term, '会话');
+});
+
+test('session analysis opens from header through scope selector and detail modal', async () => {
+  const featureSource = await readFile(new URL('./SessionManagementFeature.tsx', import.meta.url), 'utf8');
+  const viewSource = await readFile(new URL('./SessionManagementView.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /setAnalysisSelectorOpen\(true\)/, 'header analysis action must open selector modal');
+  assert.match(featureSource, /analysisButtonRef/, 'analysis entry must keep a stable focus target for modal close');
+  assert.match(featureSource, /focusAnalysisEntry/, 'analysis modal close must restore focus to the header entry');
+  assert.doesNotMatch(featureSource, /disabled=\{!projects\.length \|\| analysisLoading\}/, 'analysis entry must stay focusable while analysis is loading');
+  assert.match(featureSource, /SessionAnalysisScopeModal/, 'feature must render analysis scope selector');
+  assert.match(featureSource, /SessionAnalysisDetailModal/, 'feature must render analysis detail modal');
+  assert.doesNotMatch(featureSource, /<SessionAnalysisPanel/, 'analysis panel must not stay inline in the page');
+  assert.doesNotMatch(viewSource, /export function SessionAnalysisPanel/, 'inline SessionAnalysisPanel component must be removed');
+  assert.match(viewSource, /analysisWordCloud/, 'analysis detail must render a word cloud section');
+  assert.match(viewSource, /analysisCommonPhrases/, 'analysis detail must render common phrases');
+  assert.match(viewSource, /useModalInitialFocus/, 'analysis modals must move keyboard focus into the dialog');
+  assert.match(viewSource, /event\.key === 'Escape'/, 'analysis modals must close from Escape');
+  assert.match(viewSource, /aria-disabled=\{loading \? 'true' : undefined\}/, 'detail modal back control must stay focusable while analysis is loading');
+  assert.doesNotMatch(viewSource, /disabled=\{loading\}/, 'detail modal must not drop focus onto body by disabling its initial focus button');
+});
+
+test('dev bridge session analysis keeps word cloud and common phrase fields', async () => {
+  const devSource = await readFile(new URL('../../../dev/sessionManagementDevData.js', import.meta.url), 'utf8');
+
+  assert.match(devSource, /wordCloud:\s*topAnalysisWordCloud/, 'dev bridge analysis must return word cloud data');
+  assert.match(devSource, /commonPhrases:\s*topAnalysisCommonPhrases/, 'dev bridge analysis must return common phrase data');
 });
 
 test('mapSessionManagementSnapshotResponse builds provider summary and does not invent rewrite metrics', () => {
