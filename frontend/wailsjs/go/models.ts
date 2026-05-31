@@ -1004,24 +1004,6 @@ export namespace main {
 	        this.routeOrder = source["routeOrder"];
 	    }
 	}
-	export class ChannelProjectBinding {
-	    projectName: string;
-	    targetType: string;
-	    targetID: string;
-	    fallbackMode: string;
-
-	    static createFrom(source: any = {}) {
-	        return new ChannelProjectBinding(source);
-	    }
-
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.projectName = source["projectName"];
-	        this.targetType = source["targetType"];
-	        this.targetID = source["targetID"];
-	        this.fallbackMode = source["fallbackMode"];
-	    }
-	}
 	export class ChannelRouteAccountResultInput {
 	    accountID: string;
 	    statusCode?: number;
@@ -1048,7 +1030,6 @@ export namespace main {
 	    id: string;
 	    recordedAt: string;
 	    channel: string;
-	    projectName?: string;
 	    routeMode: string;
 	    selectedAccountID?: string;
 	    candidateCount: number;
@@ -1070,7 +1051,6 @@ export namespace main {
 	        this.id = source["id"];
 	        this.recordedAt = source["recordedAt"];
 	        this.channel = source["channel"];
-	        this.projectName = source["projectName"];
 	        this.routeMode = source["routeMode"];
 	        this.selectedAccountID = source["selectedAccountID"];
 	        this.candidateCount = source["candidateCount"];
@@ -1130,9 +1110,6 @@ export namespace main {
 	    orderedAccountIDs: string[];
 	    accountGroups?: ChannelAccountGroup[];
 	    channelGroupStates: Record<string, ChannelGroupState>;
-	    projectBindings: ChannelProjectBinding[];
-	    projectModeFallbackRouteMode: string;
-	    fallbackMode: string;
 	    shadowEnabled?: boolean;
 	    shadowRouteMode?: string;
 
@@ -1147,9 +1124,6 @@ export namespace main {
 	        this.orderedAccountIDs = source["orderedAccountIDs"];
 	        this.accountGroups = this.convertValues(source["accountGroups"], ChannelAccountGroup);
 	        this.channelGroupStates = this.convertValues(source["channelGroupStates"], ChannelGroupState, true);
-	        this.projectBindings = this.convertValues(source["projectBindings"], ChannelProjectBinding);
-	        this.projectModeFallbackRouteMode = source["projectModeFallbackRouteMode"];
-	        this.fallbackMode = source["fallbackMode"];
 	        this.shadowEnabled = source["shadowEnabled"];
 	        this.shadowRouteMode = source["shadowRouteMode"];
 	    }
@@ -1173,7 +1147,6 @@ export namespace main {
 		}
 	}
 	export class ChannelRoutingConfigMeta {
-	    ignoredUpstreamModes?: string[];
 	    invalidModes?: string[];
 
 	    static createFrom(source: any = {}) {
@@ -1182,13 +1155,11 @@ export namespace main {
 
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.ignoredUpstreamModes = source["ignoredUpstreamModes"];
 	        this.invalidModes = source["invalidModes"];
 	    }
 	}
 	export class ChannelRoutingExplainInput {
 	    channel?: string;
-	    projectName?: string;
 	    triedAccountIDs?: string[];
 	    activeSessions?: Record<string, number>;
 	    stickyAccountID?: string;
@@ -1200,7 +1171,6 @@ export namespace main {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.channel = source["channel"];
-	        this.projectName = source["projectName"];
 	        this.triedAccountIDs = source["triedAccountIDs"];
 	        this.activeSessions = source["activeSessions"];
 	        this.stickyAccountID = source["stickyAccountID"];

@@ -22,15 +22,6 @@ type ChannelRouteMode string
 const (
 	ChannelRouteModeSequential ChannelRouteMode = "sequential"
 	ChannelRouteModeBalanced   ChannelRouteMode = "balanced"
-	ChannelRouteModeProject    ChannelRouteMode = "project"
-)
-
-type ChannelFallbackMode string
-
-const (
-	ChannelFallbackModeFailClosed      ChannelFallbackMode = "fail-closed"
-	ChannelFallbackModeFallbackDefault ChannelFallbackMode = "fallback-default"
-	ChannelFallbackModeFallbackGlobal  ChannelFallbackMode = "fallback-global"
 )
 
 type ChannelGroupState struct {
@@ -46,34 +37,22 @@ type ChannelAccountGroup struct {
 	AccountIDs []string `json:"accountIDs"`
 }
 
-type ChannelProjectBinding struct {
-	ProjectName  string              `json:"projectName"`
-	TargetType   string              `json:"targetType"`
-	TargetID     string              `json:"targetID"`
-	FallbackMode ChannelFallbackMode `json:"fallbackMode"`
-}
-
 type ChannelRoutingConfig struct {
-	Channel                      string                       `json:"channel"`
-	RouteMode                    ChannelRouteMode             `json:"routeMode"`
-	OrderedAccountIDs            []string                     `json:"orderedAccountIDs"`
-	AccountGroups                []ChannelAccountGroup        `json:"accountGroups,omitempty"`
-	ChannelGroupStates           map[string]ChannelGroupState `json:"channelGroupStates"`
-	ProjectBindings              []ChannelProjectBinding      `json:"projectBindings"`
-	ProjectModeFallbackRouteMode ChannelRouteMode             `json:"projectModeFallbackRouteMode"`
-	FallbackMode                 ChannelFallbackMode          `json:"fallbackMode"`
-	ShadowEnabled                bool                         `json:"shadowEnabled,omitempty"`
-	ShadowRouteMode              ChannelRouteMode             `json:"shadowRouteMode,omitempty"`
+	Channel            string                       `json:"channel"`
+	RouteMode          ChannelRouteMode             `json:"routeMode"`
+	OrderedAccountIDs  []string                     `json:"orderedAccountIDs"`
+	AccountGroups      []ChannelAccountGroup        `json:"accountGroups,omitempty"`
+	ChannelGroupStates map[string]ChannelGroupState `json:"channelGroupStates"`
+	ShadowEnabled      bool                         `json:"shadowEnabled,omitempty"`
+	ShadowRouteMode    ChannelRouteMode             `json:"shadowRouteMode,omitempty"`
 }
 
 type ChannelRoutingConfigMeta struct {
-	IgnoredUpstreamModes []string `json:"ignoredUpstreamModes,omitempty"`
-	InvalidModes         []string `json:"invalidModes,omitempty"`
+	InvalidModes []string `json:"invalidModes,omitempty"`
 }
 
 type ChannelRoutingExplainInput struct {
 	Channel         string         `json:"channel,omitempty"`
-	ProjectName     string         `json:"projectName,omitempty"`
 	TriedAccountIDs []string       `json:"triedAccountIDs,omitempty"`
 	ActiveSessions  map[string]int `json:"activeSessions,omitempty"`
 	StickyAccountID string         `json:"stickyAccountID,omitempty"`
@@ -125,7 +104,6 @@ type ChannelRouteEvent struct {
 	ID                      string           `json:"id"`
 	RecordedAt              string           `json:"recordedAt"`
 	Channel                 string           `json:"channel"`
-	ProjectName             string           `json:"projectName,omitempty"`
 	RouteMode               ChannelRouteMode `json:"routeMode"`
 	SelectedAccountID       string           `json:"selectedAccountID,omitempty"`
 	CandidateCount          int              `json:"candidateCount"`
@@ -167,11 +145,6 @@ type channelRoutingStore struct {
 	Events        []ChannelRouteEvent                   `json:"events,omitempty"`
 	NextEventID   int                                   `json:"nextEventID,omitempty"`
 	RuntimeStates map[string]ChannelAccountRuntimeState `json:"runtimeStates,omitempty"`
-}
-
-type channelRouteScope struct {
-	AccountID string
-	GroupID   string
 }
 
 type channelRouteSortKey struct {
@@ -306,35 +279,11 @@ func explainChannelRoutingWithRuntime(accounts []accountsdomain.AccountRecord, c
 func explainNormalizedChannelRouting(accounts []accountsdomain.AccountRecord, normalized ChannelRoutingConfig, input ChannelRoutingExplainInput, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
 	mode := normalized.RouteMode
 	steps := []string{"mode:" + string(mode)}
-	steps = appendChannelRoutingLegacyCompatibilitySteps(steps, normalized.Channel)
-	scope := channelRouteScope{}
-	if mode == ChannelRouteModeProject {
-		binding, ok := matchChannelProjectBinding(normalized.ProjectBindings, input.ProjectName)
-		if ok {
-			steps = append(steps, "project:hit:"+binding.ProjectName)
-			switch binding.TargetType {
-			case "account":
-				scope.AccountID = strings.TrimSpace(binding.TargetID)
-			case "group":
-				scope.GroupID = strings.TrimSpace(binding.TargetID)
-			}
-			mode = normalizeProjectModeRouteMode(normalized.ProjectModeFallbackRouteMode)
-			decision := decideChannelRoute(accounts, normalized, input, scope, mode, steps, meta, runtimeStates)
-			if decision.SelectedAccountID != "" || normalizeChannelFallbackMode(binding.FallbackMode, normalized.FallbackMode) == ChannelFallbackModeFailClosed {
-				return decision
-			}
-			steps = append(decision.Steps, "project:fallback-default")
-			scope = channelRouteScope{}
-		} else {
-			steps = append(steps, "project:miss")
-			mode = normalizeProjectModeRouteMode(normalized.ProjectModeFallbackRouteMode)
-		}
-	}
-	return decideChannelRoute(accounts, normalized, input, scope, mode, steps, meta, runtimeStates)
+	return decideChannelRoute(accounts, normalized, input, mode, steps, meta, runtimeStates)
 }
 
-func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, scope channelRouteScope, mode ChannelRouteMode, steps []string, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
-	candidates, filtered := buildChannelRouteablePool(accounts, cfg, input, scope, runtimeStates)
+func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, mode ChannelRouteMode, steps []string, meta ChannelRoutingConfigMeta, runtimeStates map[string]ChannelAccountRuntimeState) ChannelRoutingExplainResult {
+	candidates, filtered := buildChannelRouteablePool(accounts, cfg, input, runtimeStates)
 	steps = append(steps, "candidates:"+intString(len(candidates)))
 	selected := ""
 	stickyAccountID := strings.TrimSpace(input.StickyAccountID)
@@ -366,19 +315,7 @@ func decideChannelRoute(accounts []accountsdomain.AccountRecord, cfg ChannelRout
 	}
 }
 
-func appendChannelRoutingLegacyCompatibilitySteps(steps []string, channel string) []string {
-	if strings.TrimSpace(channel) != "codex" {
-		return steps
-	}
-	return append(
-		steps,
-		"legacy:session-affinity=blocked",
-		"legacy:websocket-pin=blocked",
-		"legacy:route-order-header=ignored",
-	)
-}
-
-func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, scope channelRouteScope, runtimeStates map[string]ChannelAccountRuntimeState) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount) {
+func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg ChannelRoutingConfig, input ChannelRoutingExplainInput, runtimeStates map[string]ChannelAccountRuntimeState) ([]channelRouteCandidate, []ChannelRoutingFilteredAccount) {
 	groupLookup := channelAccountGroupLookup(cfg.AccountGroups, cfg.ChannelGroupStates)
 	groupMembership := channelAccountGroupMembership(groupLookup)
 	channelOrder := rankIDs(cfg.OrderedAccountIDs)
@@ -392,10 +329,6 @@ func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg Chan
 		}
 		if !accountSupportsChannel(account, cfg.Channel) {
 			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: "channel-unsupported"})
-			continue
-		}
-		if scope.AccountID != "" && account.ID != scope.AccountID {
-			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: "scope-account"})
 			continue
 		}
 		if _, ok := tried[account.ID]; ok {
@@ -414,7 +347,7 @@ func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg Chan
 			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: "account-unrequestable"})
 			continue
 		}
-		groupID, groupOrder, ok, reason := effectiveChannelGroup(account.ID, groupLookup, groupMembership, scope.GroupID)
+		groupID, groupOrder, ok, reason := effectiveChannelGroup(account.ID, groupLookup, groupMembership)
 		if !ok {
 			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: reason})
 			continue
@@ -513,16 +446,13 @@ func defaultChannelRoutingStore() channelRoutingStore {
 
 func defaultChannelRoutingConfig(channel string) ChannelRoutingConfig {
 	return ChannelRoutingConfig{
-		Channel:                      channel,
-		RouteMode:                    ChannelRouteModeSequential,
-		OrderedAccountIDs:            []string{},
-		AccountGroups:                []ChannelAccountGroup{},
-		ChannelGroupStates:           map[string]ChannelGroupState{},
-		ProjectBindings:              []ChannelProjectBinding{},
-		ProjectModeFallbackRouteMode: ChannelRouteModeSequential,
-		FallbackMode:                 ChannelFallbackModeFailClosed,
-		ShadowEnabled:                false,
-		ShadowRouteMode:              ChannelRouteModeBalanced,
+		Channel:            channel,
+		RouteMode:          ChannelRouteModeSequential,
+		OrderedAccountIDs:  []string{},
+		AccountGroups:      []ChannelAccountGroup{},
+		ChannelGroupStates: map[string]ChannelGroupState{},
+		ShadowEnabled:      false,
+		ShadowRouteMode:    ChannelRouteModeBalanced,
 	}
 }
 
@@ -533,18 +463,14 @@ func normalizeChannelRoutingConfig(input ChannelRoutingConfig, fallbackChannel s
 	}
 	meta := ChannelRoutingConfigMeta{}
 	routeMode := normalizeChannelRouteMode(input.RouteMode, ChannelRouteModeSequential, &meta)
-	projectMode := normalizeProjectModeRouteModeWithMeta(input.ProjectModeFallbackRouteMode, &meta)
 	return ChannelRoutingConfig{
-		Channel:                      channel,
-		RouteMode:                    routeMode,
-		OrderedAccountIDs:            normalizeIDList(input.OrderedAccountIDs),
-		AccountGroups:                normalizeChannelAccountGroups(input.AccountGroups),
-		ChannelGroupStates:           normalizeChannelGroupStates(input.ChannelGroupStates),
-		ProjectBindings:              normalizeChannelProjectBindings(input.ProjectBindings),
-		ProjectModeFallbackRouteMode: projectMode,
-		FallbackMode:                 normalizeChannelFallbackMode(input.FallbackMode, ChannelFallbackModeFailClosed),
-		ShadowEnabled:                input.ShadowEnabled,
-		ShadowRouteMode:              normalizeShadowRouteModeWithMeta(input.ShadowRouteMode, routeMode, &meta),
+		Channel:            channel,
+		RouteMode:          routeMode,
+		OrderedAccountIDs:  normalizeIDList(input.OrderedAccountIDs),
+		AccountGroups:      normalizeChannelAccountGroups(input.AccountGroups),
+		ChannelGroupStates: normalizeChannelGroupStates(input.ChannelGroupStates),
+		ShadowEnabled:      input.ShadowEnabled,
+		ShadowRouteMode:    normalizeShadowRouteModeWithMeta(input.ShadowRouteMode, routeMode, &meta),
 	}, meta
 }
 
@@ -561,10 +487,8 @@ func normalizeChannelID(channel string) (string, error) {
 
 func normalizeChannelRouteMode(mode ChannelRouteMode, fallback ChannelRouteMode, meta *ChannelRoutingConfigMeta) ChannelRouteMode {
 	switch mode {
-	case ChannelRouteModeSequential, ChannelRouteModeBalanced, ChannelRouteModeProject:
+	case ChannelRouteModeSequential, ChannelRouteModeBalanced:
 		return mode
-	case "dedicated", "prefer", "ordered", "weighted", "canary":
-		appendIgnoredUpstreamMode(meta, string(mode))
 	default:
 		if strings.TrimSpace(string(mode)) != "" {
 			appendInvalidMode(meta, string(mode))
@@ -573,34 +497,9 @@ func normalizeChannelRouteMode(mode ChannelRouteMode, fallback ChannelRouteMode,
 	return fallback
 }
 
-func normalizeProjectModeRouteMode(mode ChannelRouteMode) ChannelRouteMode {
-	switch mode {
-	case ChannelRouteModeBalanced:
-		return ChannelRouteModeBalanced
-	default:
-		return ChannelRouteModeSequential
-	}
-}
-
-func normalizeProjectModeRouteModeWithMeta(mode ChannelRouteMode, meta *ChannelRoutingConfigMeta) ChannelRouteMode {
-	switch mode {
-	case ChannelRouteModeSequential, ChannelRouteModeBalanced:
-		return mode
-	case "dedicated", "prefer", "ordered", "weighted", "canary":
-		appendIgnoredUpstreamMode(meta, string(mode))
-	case ChannelRouteModeProject:
-		appendInvalidMode(meta, string(mode))
-	default:
-		if strings.TrimSpace(string(mode)) != "" {
-			appendInvalidMode(meta, string(mode))
-		}
-	}
-	return ChannelRouteModeSequential
-}
-
 func normalizeShadowRouteMode(mode ChannelRouteMode, production ChannelRouteMode) ChannelRouteMode {
 	switch mode {
-	case ChannelRouteModeSequential, ChannelRouteModeBalanced, ChannelRouteModeProject:
+	case ChannelRouteModeSequential, ChannelRouteModeBalanced:
 		return mode
 	default:
 		if production == ChannelRouteModeBalanced {
@@ -612,25 +511,14 @@ func normalizeShadowRouteMode(mode ChannelRouteMode, production ChannelRouteMode
 
 func normalizeShadowRouteModeWithMeta(mode ChannelRouteMode, production ChannelRouteMode, meta *ChannelRoutingConfigMeta) ChannelRouteMode {
 	switch mode {
-	case ChannelRouteModeSequential, ChannelRouteModeBalanced, ChannelRouteModeProject:
+	case ChannelRouteModeSequential, ChannelRouteModeBalanced:
 		return mode
-	case "dedicated", "prefer", "ordered", "weighted", "canary":
-		appendIgnoredUpstreamMode(meta, string(mode))
 	default:
 		if strings.TrimSpace(string(mode)) != "" {
 			appendInvalidMode(meta, string(mode))
 		}
 	}
 	return normalizeShadowRouteMode("", production)
-}
-
-func normalizeChannelFallbackMode(mode ChannelFallbackMode, fallback ChannelFallbackMode) ChannelFallbackMode {
-	switch mode {
-	case ChannelFallbackModeFailClosed, ChannelFallbackModeFallbackDefault, ChannelFallbackModeFallbackGlobal:
-		return mode
-	default:
-		return fallback
-	}
 }
 
 func normalizeChannelAccountGroups(groups []ChannelAccountGroup) []ChannelAccountGroup {
@@ -671,30 +559,6 @@ func normalizeChannelGroupStates(states map[string]ChannelGroupState) map[string
 	return out
 }
 
-func normalizeChannelProjectBindings(bindings []ChannelProjectBinding) []ChannelProjectBinding {
-	out := make([]ChannelProjectBinding, 0, len(bindings))
-	seen := map[string]struct{}{}
-	for _, binding := range bindings {
-		projectName := strings.TrimSpace(binding.ProjectName)
-		targetType := strings.TrimSpace(binding.TargetType)
-		targetID := strings.TrimSpace(binding.TargetID)
-		if projectName == "" || targetID == "" || (targetType != "account" && targetType != "group") {
-			continue
-		}
-		if _, exists := seen[projectName]; exists {
-			continue
-		}
-		seen[projectName] = struct{}{}
-		out = append(out, ChannelProjectBinding{
-			ProjectName:  projectName,
-			TargetType:   targetType,
-			TargetID:     targetID,
-			FallbackMode: normalizeChannelFallbackMode(binding.FallbackMode, ChannelFallbackModeFailClosed),
-		})
-	}
-	return out
-}
-
 func channelAccountGroupLookup(groups []ChannelAccountGroup, states map[string]ChannelGroupState) map[string]ChannelAccountGroup {
 	out := map[string]ChannelAccountGroup{}
 	for _, group := range groups {
@@ -723,18 +587,7 @@ func channelAccountGroupMembership(groups map[string]ChannelAccountGroup) map[st
 	return out
 }
 
-func effectiveChannelGroup(accountID string, groups map[string]ChannelAccountGroup, membership map[string][]string, targetGroupID string) (string, int, bool, string) {
-	if targetGroupID != "" {
-		targetGroupID = strings.TrimSpace(targetGroupID)
-		group, ok := groups[targetGroupID]
-		if !ok || !group.Enabled {
-			return "", 0, false, "group-disabled-or-missing"
-		}
-		if !idListContains(membership[accountID], targetGroupID) {
-			return "", 0, false, "scope-group"
-		}
-		return targetGroupID, group.RouteOrder, true, ""
-	}
+func effectiveChannelGroup(accountID string, groups map[string]ChannelAccountGroup, membership map[string][]string) (string, int, bool, string) {
 	groupIDs := membership[accountID]
 	if len(groupIDs) == 0 {
 		return "", 0, true, ""
@@ -757,19 +610,6 @@ func effectiveChannelGroup(accountID string, groups map[string]ChannelAccountGro
 		return "", 0, false, "group-disabled-or-missing"
 	}
 	return bestID, bestOrder, true, ""
-}
-
-func matchChannelProjectBinding(bindings []ChannelProjectBinding, projectName string) (ChannelProjectBinding, bool) {
-	projectName = strings.TrimSpace(projectName)
-	if projectName == "" {
-		return ChannelProjectBinding{}, false
-	}
-	for _, binding := range bindings {
-		if strings.TrimSpace(binding.ProjectName) == projectName {
-			return binding, true
-		}
-	}
-	return ChannelProjectBinding{}, false
 }
 
 func accountSupportsChannel(account accountsdomain.AccountRecord, channel string) bool {
@@ -1003,13 +843,6 @@ func cloneIntPtr(value *int) *int {
 	return &cloned
 }
 
-func appendIgnoredUpstreamMode(meta *ChannelRoutingConfigMeta, mode string) {
-	if meta == nil || strings.TrimSpace(mode) == "" || idListContains(meta.IgnoredUpstreamModes, mode) {
-		return
-	}
-	meta.IgnoredUpstreamModes = append(meta.IgnoredUpstreamModes, mode)
-}
-
 func appendInvalidMode(meta *ChannelRoutingConfigMeta, mode string) {
 	if meta == nil || strings.TrimSpace(mode) == "" || idListContains(meta.InvalidModes, mode) {
 		return
@@ -1031,7 +864,6 @@ func appendChannelRouteEvent(input ChannelRoutingExplainInput, result ChannelRou
 		ID:                fmt.Sprintf("route-%06d", store.NextEventID),
 		RecordedAt:        time.Now().UTC().Format(time.RFC3339Nano),
 		Channel:           result.Channel,
-		ProjectName:       strings.TrimSpace(input.ProjectName),
 		RouteMode:         result.RouteMode,
 		SelectedAccountID: result.SelectedAccountID,
 		CandidateCount:    len(result.Candidates),

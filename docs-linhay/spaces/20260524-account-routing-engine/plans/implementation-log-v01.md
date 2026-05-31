@@ -4,14 +4,14 @@
 
 ## 批次 1：前端边界红灯测试与模型骨架
 
-2026-05-27 校准：当前主路径已下线 `project` route mode；前端 `ChannelRouteMode` 只接受 `sequential / balanced`。历史项目绑定仍可作为项目名范围约束或兼容数据保留，但不能作为新的路由模式入口。
+2026-05-31 校准：当前 Channel Routing 已移除 `project` route mode、项目绑定、channel fallback、project fallback 和 upstream compat mode 执行语义；前端 `ChannelRouteMode` 只接受 `sequential / balanced`，旧字段读入即丢弃或降级为 invalid mode 诊断。
 
 范围：
 
 - 建立 `frontend/src/features/channel-routing/` 纯模型骨架。
 - 锁定当前 GetTokens 路由模式只接受 `sequential / balanced`。
-- 将 `dedicated / prefer / ordered / weighted / canary` 识别为上游兼容模式，不进入新配置保存。
-- 限制项目绑定命中账号组后的组内选择只能使用 `sequential / balanced`。
+- 将 `dedicated / prefer / ordered / weighted / canary` 识别为 invalid mode，不进入新配置保存。
+- 删除旧项目绑定和 fallback 字段的 UI / DTO / 执行路径。
 - 移除 `AccountsFeature` 中的 `AccountRotationModal` 主入口。
 - 移除 `useAccountsPageState` 中的账号轮动 modal UI state。
 

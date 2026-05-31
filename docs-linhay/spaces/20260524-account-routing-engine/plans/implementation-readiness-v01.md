@@ -2,7 +2,7 @@
 
 日期：2026-05-25
 
-> 2026-05-30 状态：本文是实施准备历史清单，当前已完成旧 CLIProxyAPI `RoutePolicy` 兼容层删除。后续实施不再执行“RoutePolicy 兼容映射”步骤；以 `internal/gettokensrouting` 独立维护边界为准。
+> 2026-05-31 状态：本文是实施准备历史清单，当前已完成旧 CLIProxyAPI `RoutePolicy` 兼容层删除，并继续移除 Channel Routing 内部 legacy 字段。后续实施不再执行“RoutePolicy 兼容映射”、project binding、fallback mode 或 upstream compat mode 兼容步骤；以 `internal/gettokensrouting` 独立维护边界和 `sequential / balanced` 两模式为准。
 
 ## 实施入口
 
@@ -22,9 +22,9 @@
 2. `Channel Routing` 由 Codex / Claude 账号列表分别负责，两个渠道配置互不影响。
 3. `Routing Engine` 是 sidecar 执行层，读取账号池快照和渠道配置，产出 `RouteDecision + Trace`。
 4. 当前 GetTokens 路由模式只保留 `sequential / balanced`。
-5. `dedicated / prefer / ordered / weighted / canary` 只作为上游兼容输入，不进入新 UI / Wails DTO / engine policy。
+5. `dedicated / prefer / ordered / weighted / canary` 不作为上游兼容执行输入保留；旧配置读入时只进入 invalid mode 诊断并降级为 `sequential`。
 6. `exclude` 不是 route mode，只是请求级 deny 或 pool filter。
-7. 项目绑定只限定目标账号或账号组；命中组后仍通过 `sequential` 或 `balanced` 做组内选择，不能作为独立 route mode 入口。
+7. `project` route mode、project binding、channel fallback 和 project fallback 不再作为 Channel Routing 保存、执行或 UI 语义。
 8. 账号或有效组禁用立即生效，高于 session sticky、失败降级和 retry；已有流式连接在最近可控边界断开。
 9. 账号或有效组激活只重新进入可路由账号池，等待下一轮 route / retry 选择，不抢占当前 stream / sticky。
 10. 失败冷却状态必须持久化到运行态或 guard source；自动恢复只清对应 source，不清用户禁用。
@@ -111,17 +111,16 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 - 建立账号状态模型：`activation` 与 `requestability` 分离。
 - 建立账号组模型：全局 `inventoryGroup.enabled / routeOrder`。
 - 建立渠道组状态：`channelGroup.enabled / routeOrder override`。
-- 建立渠道路由配置：`routeMode / orderedAccountIDs / channelGroupStates / projectBindings / fallbackMode`。
+- 建立渠道路由配置：`routeMode / orderedAccountIDs / channelGroupStates`。
 - 实现 `sequential`：有效排序从低到高，retry 排除已尝试账号。
 - 实现 `balanced`：当前会话数或 in-flight 最少优先，同负载按有效排序。
-- 实现项目绑定范围约束：项目名绑定账号或账号组，组内委托 `sequential / balanced`。
 
 通过标准：
 
 - 总账号池 CRUD 不创建或修改 Codex / Claude 渠道路由配置。
 - Codex 保存不影响 Claude，Claude 保存不影响 Codex。
 - 全局组禁用影响所有渠道，渠道组禁用只影响当前渠道。
-- 上游兼容模式不会改变两模式决策，只出现在 trace 兼容说明中。
+- 旧 project binding / fallback mode / upstream compat mode 不进入执行路径；非法 route mode 降级为 `sequential` 并记录 invalid mode 诊断。
 
 ### Phase 4：Wails / Management API
 
@@ -131,7 +130,7 @@ worktree: ../GetTokens-worktrees/20260524-account-routing-engine/
 
 - CLIProxyAPI management API：list / save channel route config、dry-run/explain、route event summary。
 - Wails：`internal/wailsapp` method、root `main.App` facade、root DTO / mapper、generated `frontend/wailsjs`。
-- 服务端校验：route mode、fallback、account id、group id、project binding、上游兼容字段。
+- 服务端校验：route mode、account id、group id、旧字段丢弃与 invalid mode 降级。
 
 通过标准：
 

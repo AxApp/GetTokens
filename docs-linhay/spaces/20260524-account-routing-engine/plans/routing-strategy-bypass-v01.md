@@ -65,3 +65,4 @@
 - 2026-05-26：新增回归测试，覆盖 balanced 模式在 `routing.strategy: fill-first` 存在时仍按 channel routing 选择账号，以及 `InstallGetTokensHooks` 不再退回 fill-first 选择器。
 - 2026-05-26：焦点验证通过：`go test ./internal/gettokenshooks -count=1`、`go test ./internal/cmd -count=1`、`go test ./internal/gettokensrouting ./internal/gettokenshooks ./internal/cmd ./sdk/cliproxy/auth -count=1`。
 - 2026-05-30：CLIProxyAPI 旧公共 `RoutePolicy` 兼容层已删除。当前 channel routing 通过 `InstallRoutingPolicies` 注册 `channelRoutingPolicy` 到 `internal/gettokensrouting`，后续路由系统由 GetTokens sidecar 独立维护。
+- 2026-05-31：按最新要求继续删除 Channel Routing 内部 legacy 字段和执行路径：`project` route mode、`projectBindings`、`projectModeFallbackRouteMode`、`fallbackMode`、上游兼容 mode ignored 列表、前端 legacy mask 均不再保留。旧配置读入时直接丢弃这些字段或按 invalid mode 降级，不再提供兼容执行。

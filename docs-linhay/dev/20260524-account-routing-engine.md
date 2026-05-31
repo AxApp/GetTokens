@@ -65,7 +65,6 @@ RouteContext Normalize
    - fill-first
    - sequential
    - balanced
-   - project
 
 `P0` 不允许被后续策略绕过。请求级 allow/order 不能把手动禁用、限流阻断、冷却中或模型不可用账号放回候选。
 
@@ -112,14 +111,15 @@ group.routeOrder -> account.routeOrder -> stable account id
    - 按账号当前会话数或 in-flight 请求数最少优先。
    - 负载相同再按有效排序。
    - WebSocket session 和长请求应计入当前会话数；短 HTTP 请求计入 in-flight。
-项目名绑定不再作为 route mode 暴露。历史 `projectBindings` 可作为项目名到账号组或账号的范围约束/兼容数据保留；命中绑定后仍交给 `sequential` 或 `balanced` 在目标池内选择账号。
 
-`dedicated / prefer / ordered / weighted / canary` 不进入新的 GetTokens 路由模型。它们只用于合并上游功能时的兼容边界：
+`project`、项目绑定、channel fallback 和 project fallback 不进入 Channel Routing 的保存、执行或 UI 路径。旧配置读入时直接丢弃 `projectBindings`、`fallbackMode`、`projectModeFallbackRouteMode` 等字段；请求中的项目名不影响候选池、fallback 或最终命中账号。
+
+`dedicated / prefer / ordered / weighted / canary` 不进入新的 GetTokens 路由模型，也不作为上游兼容执行路径保留：
 
 - 不在 UI、Wails DTO 或 engine policy 中作为可配置模式暴露。
 - 不映射为新的 route mode。
 - 不影响 `sequential / balanced` 的决策结果。
-- 如上游输入携带这些字段，只在 trace 中标记为 `upstream_compat` 或 `ignored_upstream_mode`，再按 GetTokens 两模式继续处理。
+- 如旧配置携带这些 route mode，归一化时记入 invalid mode 诊断，并降级为 `sequential`。
 
 `exclude` 也不作为路由模式；它只允许作为请求级 deny 或目标池过滤条件出现。
 
@@ -139,14 +139,10 @@ Channel Routing
     orderedAccountIDs
     enabledGroupIDs
     routeMode
-    projectBindings
-    fallbackMode
   claude:
     orderedAccountIDs
     enabledGroupIDs
     routeMode
-    projectBindings
-    fallbackMode
 
 Routing Engine
   buildRouteablePool(channel, requestContext)
@@ -169,12 +165,10 @@ Routing Engine
 - `codex - 账号列表`：
   - Codex 请求顺序。
   - Codex route mode：`sequential / balanced`。
-  - Codex 项目名绑定账号组或账号（兼容保留，不作为主模式入口）。
   - Codex 路由说明、dry-run/explain、路由探测。
 - `claude - 账号列表`：
   - Claude Code 请求顺序。
   - Claude route mode：`sequential / balanced`。
-  - Claude 项目名绑定账号组或账号（兼容保留，不作为主模式入口）。
   - Claude 路由说明、dry-run/explain、路由探测。
 
 sidecar `AccountRoutingEngine` 是执行层，读取渠道级配置和账号池快照后做决策；它不把渠道级顺序或 route mode 反写成总账号池属性。
@@ -184,15 +178,15 @@ sidecar `AccountRoutingEngine` 是执行层，读取渠道级配置和账号池�
 - 账号组是总账号池资产，可被多个渠道引用。
 - 账号组启停分为全局组状态和渠道组状态。
 - 渠道内排序是渠道配置，不等于总账号池排序。
-- Codex 和 Claude 的排序、项目绑定、路由模式互不影响。
+- Codex 和 Claude 的排序、渠道组状态、路由模式互不影响。
 
 ## 前端改造边界
 
 前端按三层模型重切页面 ownership：
 
-- `AccountsFeature` 属于 `Account Inventory`。它可以管理账号、账号组、启停、弃用、基础排序和状态展示，但不能再承载 route mode、渠道 fallback、项目绑定或路由探测。
-- `CodexAccountListFeature` 属于 Codex `Channel Routing`。它可以整页重做，主职责改为 Codex 渠道账号顺序、`sequential / balanced`、渠道组状态、项目绑定、dry-run/explain 和 probe。
-- `ClaudeCodeAccountListFeature` 属于 Claude `Channel Routing`。它可以整页重做，主职责改为 Claude 渠道账号顺序、`sequential / balanced`、渠道组状态、项目绑定、dry-run/explain 和 probe。
+- `AccountsFeature` 属于 `Account Inventory`。它可以管理账号、账号组、启停、弃用、基础排序和状态展示，但不能再承载 route mode、渠道 fallback 或路由探测。
+- `CodexAccountListFeature` 属于 Codex `Channel Routing`。它可以整页重做，主职责改为 Codex 渠道账号顺序、`sequential / balanced`、渠道组状态、dry-run/explain 和 probe。
+- `ClaudeCodeAccountListFeature` 属于 Claude `Channel Routing`。它可以整页重做，主职责改为 Claude 渠道账号顺序、`sequential / balanced`、渠道组状态、dry-run/explain 和 probe。
 
 建议新增共享前端领域 `frontend/src/features/channel-routing/`，沉淀纯模型、校验、preview 数据和共享工作台组件；Codex / Claude 页面只装配渠道差异。共享不等于共用配置，保存接口、配置 key、preview 数据和 explain trace 必须按渠道隔离。
 
@@ -222,8 +216,6 @@ AND channelGroup.enabled
 AND supports channel/provider/model/endpoint
 ```
 
-项目绑定只负责把请求限定到某个账号组或账号，不再作为独立路由模式。若项目绑定命中账号组，组内选择仍使用 `sequential` 或 `balanced`；历史 `projectModeFallbackRouteMode` 仅用于兼容旧配置，不能作为新自定义模式的扩展点。
-
 ## 快照与持久化
 
 热路径读取 `CompiledRouteSnapshot`：
@@ -237,7 +229,6 @@ AND supports channel/provider/model/endpoint
 - channel group enabled / routeOrder override。
 - account routeOrder。
 - current session counters。
-- project binding lookup。
 - guard state。
 - model availability。
 - priority。
@@ -365,21 +356,22 @@ CLIProxyAPI 原始核心文件只保留必要 seam：
 - `ExplainChannelRouting` 现在返回 `snapshotVersion`、`policyVersion` 和可选 `shadow` diff。
 - `ListChannelRouteEvents` 输出只含安全摘要，不携带 payload / token / cookie / bearer。
 - Codex / Claude Channel Routing workbench 已加入 shadow 开关与 shadow explain 展示。
-- 2026-05-26 前端重新整理 Channel Routing workbench：从“术语块堆叠”进一步收敛为普通用户只看 `请求模式` 和 `参与账号`。配置区使用上下连续区域，先选择顺序 / 均衡，再列出当前模式下可参与的可请求账号；`参与账号` 默认收起，只显示数量。`Shadow`、legacy compatibility、explain steps、候选 / 过滤、最近 route ledger 和 dry-run 操作全部默认收进 `高级诊断`。默认态不再展示 `pending / policy / DRY-RUN / candidates` 技术串，也不再用图表承载普通用户不关心的过滤细节。
+- 2026-05-26 前端重新整理 Channel Routing workbench：从“术语块堆叠”进一步收敛为普通用户只看 `请求模式` 和 `参与账号`。配置区使用上下连续区域，先选择顺序 / 均衡，再列出当前模式下可参与的可请求账号；`参与账号` 默认收起，只显示数量。`Shadow`、explain steps、候选 / 过滤、最近 route ledger 和 dry-run 操作全部默认收进 `高级诊断`。默认态不再展示 `pending / policy / DRY-RUN / candidates` 技术串，也不再用图表承载普通用户不关心的过滤细节。
+- 2026-05-31 Channel Routing 继续收口：`project` route mode、`projectBindings`、`projectModeFallbackRouteMode`、`fallbackMode`、上游兼容 mode ignored 列表和前端 legacy mask 均已移除。旧配置字段只作为归一化丢弃输入存在；非法 route mode 统一降级为 `sequential` 并进入 invalid mode 诊断。
 
 2026-05-25 后续收敛：
 
 - CLIProxyAPI fork 默认 service builder 已接入 `AccountRouteGuardResultHook`，真实执行器 `MarkResult` 可把 401、429、408/5xx/timeout 写入 route guard transient sources，并在成功后只清 transient source，不清 `manual-disabled`。
-- Codex / Claude 账号列表已经移除旧 allow / deny / fallback 的主 UI 操作入口；路由探测只按渠道当前账号顺序传入 `orderAccountIDs`，旧字段保留为空作为 request policy 兼容层。
+- Codex / Claude 账号列表已经移除旧 allow / deny / fallback 的主 UI 操作入口；路由探测只按渠道当前账号顺序传入 `orderAccountIDs`，不再把旧 Channel Routing 字段回写到新配置。
 - dev sidecar 真实 upstream 冒烟已完成：`GET /v1/models` 返回 `status=200 models=8`，`POST /v1/responses` 使用 `gpt-5.4` 和 `max_output_tokens=1` 返回 `status=200 object=response`。
 - Codex / Claude Channel Routing workbench 已展示最近 route event ledger，桌面模式读取 `ListChannelRouteEvents`，浏览器预览 Explain 后合成 redacted preview event。
 - `rateLimitPolicy` 兼容注册已删除；rate-limit evaluator 只刷新 `AccountRouteGuardSourceRateLimit`，热路径由 `accountRouteGuardPolicy` 统一 deny。
-- session affinity legacy path 已在 sticky selector 前复用 routing registry / engine seam；sticky cache 和 fallback 只能在 guard 过滤后的候选池内工作。
+- 旧 session affinity path 已在 sticky selector 前复用 routing registry / engine seam；sticky cache 和 fallback 只能在 guard 过滤后的候选池内工作。
 - session affinity 已进一步作为 manager-local `PolicyStageSticky` 接入 scheduler fast path：cache hit 通过 route engine 排序候选，cache miss 由 selector 选中后绑定结果。
 - WebSocket request-boundary 特例已收口为单一连接生命周期 helper：guarded pinned auth 释放 pin、关闭旧 execution session、强制 transcript replay。
 - WebSocket pinned auth 的 429/401/402/403 前置错误补齐透明 failover：若尚未写出 downstream payload，handler 抑制错误事件、释放 pin、关闭 execution session，并用完整 transcript 立即重派同一 request；若已开始输出，仍保持不做 mid-response 迁移。
 - `legacy-routing-cleanup-v01.md` 已更新当前 shim 状态：公共 `RoutePolicy` 兼容 API 与旧 request policy 控制入口已删除，后续路由系统由 GetTokens sidecar 独立维护。
-- Codex 前端已把 `session-affinity` / `websocket-pin` / `route-order-header` 收进 `兼容层提示`，前端只保留总数与说明，不展开三条明细；explain 仍记录兼容遮罩摘要，不再回写到新的通道配置，避免上游合并时扩散改动面。
+- Codex 前端已移除 Channel Routing 的兼容遮罩展示；诊断以 route ledger、guard source、dry-run/explain 和 focused tests 为准，不再在工作台展示 legacy mask。
 
 仍未完成的项：
 

@@ -5,11 +5,8 @@ import { readFile } from 'node:fs/promises';
 import {
   CHANNEL_ROUTE_MODES,
   CHANNEL_ROUTE_MODE_HELP_SECTIONS,
-  LEGACY_CHANNEL_ROUTING_BYPASSES,
   buildChannelRouteAuditEventSummary,
   buildChannelRoutingParticipantRows,
-  buildLegacyRoutingBypassSummary,
-  buildLegacyRoutingMaskPanel,
   buildChannelRoutingExplainDigest,
   buildPreviewChannelRouteAuditEvent,
   classifyChannelRouteMode,
@@ -28,70 +25,36 @@ test('ChannelRouteMode only accepts the GetTokens two-mode routing model', () =>
   });
 });
 
-test('classifyChannelRouteMode separates upstream compatibility modes from GetTokens route modes', () => {
+test('classifyChannelRouteMode treats every non GetTokens mode as invalid', () => {
   assert.deepEqual(classifyChannelRouteMode('balanced'), { kind: 'gettokens', mode: 'balanced' });
-  assert.deepEqual(classifyChannelRouteMode('weighted'), { kind: 'upstream-compat', mode: 'weighted' });
+  assert.deepEqual(classifyChannelRouteMode('weighted'), { kind: 'invalid', mode: 'weighted' });
+  assert.deepEqual(classifyChannelRouteMode('project'), { kind: 'invalid', mode: 'project' });
   assert.deepEqual(classifyChannelRouteMode('exclude'), { kind: 'invalid', mode: 'exclude' });
 });
 
-test('normalizeChannelRoutingConfig keeps upstream modes out of saved channel config', () => {
-  const { config, ignoredUpstreamModes, invalidModes } = normalizeChannelRoutingConfig(
+test('normalizeChannelRoutingConfig drops legacy routing fields from saved channel config', () => {
+  const { config, invalidModes } = normalizeChannelRoutingConfig(
     {
       channel: 'codex',
       routeMode: 'weighted',
       orderedAccountIDs: ['auth-file:a.json', 'auth-file:a.json', ' ', 'codex-api-key:stable'],
       projectModeFallbackRouteMode: 'canary',
       fallbackMode: 'fallback-default',
+      projectBindings: [
+        { projectName: 'gettokens', targetType: 'group', targetID: 'paid', fallbackMode: 'fallback-default' },
+      ],
     },
     { channel: 'codex' },
   );
 
   assert.equal(config.channel, 'codex');
   assert.equal(config.routeMode, 'sequential');
-  assert.equal(config.projectModeFallbackRouteMode, 'sequential');
   assert.equal(config.shadowRouteMode, 'balanced');
   assert.deepEqual(config.orderedAccountIDs, ['auth-file:a.json', 'codex-api-key:stable']);
-  assert.deepEqual(ignoredUpstreamModes, ['weighted', 'canary']);
-  assert.deepEqual(invalidModes, []);
-});
-
-test('legacy upstream routing bypasses are blocked from the GetTokens channel config model', () => {
-  assert.deepEqual(
-    LEGACY_CHANNEL_ROUTING_BYPASSES.map((item) => [item.id, item.disposition]),
-    [
-      ['session-affinity', 'blocked'],
-      ['websocket-pin', 'blocked'],
-      ['route-order-header', 'ignored'],
-    ],
-  );
-  assert.equal(buildLegacyRoutingBypassSummary(), '3 个旧兼容输入已屏蔽');
-
-  const normalized = normalizeChannelRoutingConfig(
-    {
-      channel: 'codex',
-      routeMode: 'balanced',
-      sessionAffinity: true,
-      websocketPin: 'auth-file:a.json',
-      orderAccountIDs: ['auth-file:a.json'],
-      routeOrderHeader: 'auth-file:a.json',
-    },
-    { channel: 'codex' },
-  );
-
-  assert.equal('sessionAffinity' in normalized.config, false);
-  assert.equal('websocketPin' in normalized.config, false);
-  assert.equal('orderAccountIDs' in normalized.config, false);
-  assert.equal('routeOrderHeader' in normalized.config, false);
-  assert.equal(normalized.config.routeMode, 'balanced');
-});
-
-test('legacy compatibility mask panel only exposes summary text and hides detail rows', () => {
-  const legacyMask = buildLegacyRoutingMaskPanel();
-
-  assert.equal(legacyMask.title, '兼容层提示');
-  assert.equal(legacyMask.summary, '3 个旧兼容输入已屏蔽');
-  assert.equal(legacyMask.note, '这些信号只保留为兼容层，不写入新配置，也不影响主路由判断。');
-  assert.equal(legacyMask.hasDetails, false);
+  assert.equal('projectModeFallbackRouteMode' in config, false);
+  assert.equal('fallbackMode' in config, false);
+  assert.equal('projectBindings' in config, false);
+  assert.deepEqual(invalidModes, ['weighted']);
 });
 
 test('normalizeChannelRoutingConfig keeps shadow mode explicit and separate from production route mode', () => {
@@ -108,22 +71,10 @@ test('normalizeChannelRoutingConfig keeps shadow mode explicit and separate from
   assert.equal(normalized.config.routeMode, 'sequential');
   assert.equal(normalized.config.shadowEnabled, true);
   assert.equal(normalized.config.shadowRouteMode, 'balanced');
-  assert.deepEqual(normalized.ignoredUpstreamModes, []);
   assert.deepEqual(normalized.invalidModes, []);
 });
 
-test('project mode inputs are downgraded while fallback stays limited to sequential or balanced', () => {
-  assert.equal(
-    normalizeChannelRoutingConfig(
-      {
-        routeMode: 'project',
-        projectModeFallbackRouteMode: 'balanced',
-      },
-      { channel: 'claude' },
-    ).config.projectModeFallbackRouteMode,
-    'balanced',
-  );
-
+test('project mode inputs are invalid and do not create project fallback config', () => {
   const normalized = normalizeChannelRoutingConfig(
     {
       routeMode: 'project',
@@ -133,7 +84,7 @@ test('project mode inputs are downgraded while fallback stays limited to sequent
   );
 
   assert.equal(normalized.config.routeMode, 'sequential');
-  assert.equal(normalized.config.projectModeFallbackRouteMode, 'sequential');
+  assert.equal('projectModeFallbackRouteMode' in normalized.config, false);
   assert.deepEqual(normalized.invalidModes, ['project']);
 });
 
@@ -175,7 +126,7 @@ test('Codex and Claude channel routing configs stay isolated when patched', () =
   assert.deepEqual(claude.channelGroupStates.shared, { enabled: true, routeOrder: 2 });
 });
 
-test('normalizeChannelRoutingConfig trims project bindings and drops legacy project route mode', () => {
+test('normalizeChannelRoutingConfig removes legacy project bindings entirely', () => {
   const normalized = normalizeChannelRoutingConfig(
     {
       channel: 'codex',
@@ -205,14 +156,7 @@ test('normalizeChannelRoutingConfig trims project bindings and drops legacy proj
   );
 
   assert.equal(normalized.config.routeMode, 'sequential');
-  assert.deepEqual(normalized.config.projectBindings, [
-    {
-      projectName: 'gettokens',
-      targetType: 'group',
-      targetID: 'codex-pro',
-      fallbackMode: 'fallback-global',
-    },
-  ]);
+  assert.equal('projectBindings' in normalized.config, false);
 });
 
 test('buildChannelRouteAuditEventSummary keeps route ledger redacted and compact', () => {
@@ -268,7 +212,7 @@ test('buildChannelRoutingExplainDigest turns raw explain data into readable sect
         { id: 'auth-file:cooldown.json', reason: 'runtime-rate-limit' },
         { id: 'auth-file:cooldown-2.json', reason: 'runtime-rate-limit' },
       ],
-      steps: ['mode:balanced', 'legacy:session-affinity=blocked', 'candidates:2', 'sticky:hit:codex-api-key:stable'],
+      steps: ['mode:balanced', 'candidates:2', 'sticky:hit:codex-api-key:stable'],
       snapshotVersion: 'preview',
       policyVersion: 'channel-routing-v1',
       shadow: {
@@ -308,7 +252,6 @@ test('buildChannelRoutingExplainDigest turns raw explain data into readable sect
       ],
       stepRows: [
         { label: '当前模式', detail: '均衡' },
-        { label: '兼容信号', detail: 'session-affinity 已屏蔽' },
         { label: '候选池', detail: '2 个' },
         { label: '粘性命中', detail: 'codex-api-key:stable' },
       ],

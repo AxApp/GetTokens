@@ -8,26 +8,21 @@ import (
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 )
 
-func TestNormalizeChannelRoutingConfigRejectsUpstreamCompatModes(t *testing.T) {
+func TestNormalizeChannelRoutingConfigDropsLegacyRoutingFields(t *testing.T) {
 	normalized, meta := normalizeChannelRoutingConfig(ChannelRoutingConfig{
-		Channel:                      "codex",
-		RouteMode:                    "weighted",
-		OrderedAccountIDs:            []string{" auth-file:a.json ", "auth-file:a.json", ""},
-		ProjectModeFallbackRouteMode: "canary",
-		FallbackMode:                 "fallback-default",
+		Channel:           "codex",
+		RouteMode:         "weighted",
+		OrderedAccountIDs: []string{" auth-file:a.json ", "auth-file:a.json", ""},
 	}, "codex")
 
 	if normalized.RouteMode != "sequential" {
 		t.Fatalf("RouteMode = %q, want sequential", normalized.RouteMode)
 	}
-	if normalized.ProjectModeFallbackRouteMode != "sequential" {
-		t.Fatalf("ProjectModeFallbackRouteMode = %q, want sequential", normalized.ProjectModeFallbackRouteMode)
-	}
 	if got := normalized.OrderedAccountIDs; len(got) != 1 || got[0] != "auth-file:a.json" {
 		t.Fatalf("OrderedAccountIDs = %#v", got)
 	}
-	if got := meta.IgnoredUpstreamModes; len(got) != 2 || got[0] != "weighted" || got[1] != "canary" {
-		t.Fatalf("IgnoredUpstreamModes = %#v", got)
+	if got := meta.InvalidModes; len(got) != 1 || got[0] != "weighted" {
+		t.Fatalf("InvalidModes = %#v", got)
 	}
 }
 
@@ -62,7 +57,7 @@ func TestChannelRoutingConfigStoreKeepsCodexAndClaudeIsolated(t *testing.T) {
 	if codex.RouteMode != "balanced" || len(codex.OrderedAccountIDs) != 1 || codex.OrderedAccountIDs[0] != "auth-file:codex.json" {
 		t.Fatalf("unexpected codex config: %#v", codex)
 	}
-	if claude.RouteMode != "project" || len(claude.OrderedAccountIDs) != 1 || claude.OrderedAccountIDs[0] != "openai-compatible:anthropic" {
+	if claude.RouteMode != "sequential" || len(claude.OrderedAccountIDs) != 1 || claude.OrderedAccountIDs[0] != "openai-compatible:anthropic" {
 		t.Fatalf("unexpected claude config: %#v", claude)
 	}
 }
@@ -109,31 +104,40 @@ func TestExplainChannelRoutingSequentialFiltersDisabledAndUnsupportedAccounts(t 
 	assertFilteredReason(t, result.Filtered, "openai-compatible:anthropic", "channel-unsupported")
 }
 
-func TestExplainChannelRoutingProjectGroupFallbackStaysInsideGroup(t *testing.T) {
+func TestExplainChannelRoutingDropsLegacyProjectModeAndProjectBindings(t *testing.T) {
 	accounts := []accountsdomain.AccountRecord{
 		{ID: "auth-file:a.json", DisplayName: "A", Status: "active", Priority: 2, SupportedFormats: []string{"codex"}},
 		{ID: "auth-file:b.json", DisplayName: "B", Status: "active", Priority: 1, SupportedFormats: []string{"codex"}},
 		{ID: "auth-file:c.json", DisplayName: "C", Status: "active", Priority: 0, SupportedFormats: []string{"codex"}},
 	}
-	cfg := ChannelRoutingConfig{
-		Channel:                      "codex",
-		RouteMode:                    "project",
-		ProjectModeFallbackRouteMode: "sequential",
-		AccountGroups: []ChannelAccountGroup{
-			{ID: "paid", Enabled: true, RouteOrder: 0, AccountIDs: []string{"auth-file:a.json", "auth-file:b.json"}},
-			{ID: "free", Enabled: true, RouteOrder: 0, AccountIDs: []string{"auth-file:c.json"}},
-		},
-		ProjectBindings: []ChannelProjectBinding{
-			{ProjectName: "GetTokens", TargetType: "group", TargetID: "paid", FallbackMode: "fail-closed"},
-		},
+	var cfg ChannelRoutingConfig
+	if err := json.Unmarshal([]byte(`{
+	  "channel": "codex",
+	  "routeMode": "project",
+	  "accountGroups": [
+	    {"id":"paid","enabled":true,"routeOrder":0,"accountIDs":["auth-file:a.json","auth-file:b.json"]},
+	    {"id":"free","enabled":true,"routeOrder":0,"accountIDs":["auth-file:c.json"]}
+	  ],
+	  "projectBindings": [
+	    {"projectName":"GetTokens","targetType":"group","targetID":"paid","fallbackMode":"fail-closed"}
+	  ]
+	}`), &cfg); err != nil {
+		t.Fatalf("unmarshal legacy config: %v", err)
 	}
 
-	result := explainChannelRoutingWithAccounts(accounts, cfg, ChannelRoutingExplainInput{ProjectName: "GetTokens"})
+	result := explainChannelRoutingWithAccounts(accounts, cfg, ChannelRoutingExplainInput{})
 
-	if result.SelectedAccountID != "auth-file:b.json" {
-		t.Fatalf("SelectedAccountID = %q, want auth-file:b.json", result.SelectedAccountID)
+	if result.RouteMode != "sequential" {
+		t.Fatalf("RouteMode = %q, want sequential", result.RouteMode)
 	}
-	assertFilteredReason(t, result.Filtered, "auth-file:c.json", "scope-group")
+	if result.SelectedAccountID != "auth-file:c.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:c.json", result.SelectedAccountID)
+	}
+	for _, step := range result.Steps {
+		if strings.HasPrefix(step, "project:") || strings.HasPrefix(step, "legacy:") {
+			t.Fatalf("legacy/project step remained: %#v", result.Steps)
+		}
+	}
 }
 
 func TestExplainChannelRoutingBalancedUsesActiveSessionsThenSortOrder(t *testing.T) {
@@ -156,9 +160,11 @@ func TestExplainChannelRoutingBalancedUsesActiveSessionsThenSortOrder(t *testing
 	if result.SelectedAccountID != "auth-file:b.json" {
 		t.Fatalf("SelectedAccountID = %q, want auth-file:b.json", result.SelectedAccountID)
 	}
-	assertStepContains(t, result.Steps, "legacy:session-affinity=blocked")
-	assertStepContains(t, result.Steps, "legacy:websocket-pin=blocked")
-	assertStepContains(t, result.Steps, "legacy:route-order-header=ignored")
+	for _, step := range result.Steps {
+		if strings.HasPrefix(step, "legacy:") {
+			t.Fatalf("legacy step remained: %#v", result.Steps)
+		}
+	}
 }
 
 func TestExplainChannelRoutingDisabledStickyInvalidatesAndFallsBack(t *testing.T) {
@@ -289,7 +295,7 @@ func TestChannelRouteEventLedgerStoresRedactedShadowSummary(t *testing.T) {
 			Diff:              true,
 		},
 	}
-	if err := appendChannelRouteEvent(ChannelRoutingExplainInput{Channel: "codex", ProjectName: "GetTokens"}, result); err != nil {
+	if err := appendChannelRouteEvent(ChannelRoutingExplainInput{Channel: "codex"}, result); err != nil {
 		t.Fatalf("appendChannelRouteEvent: %v", err)
 	}
 
@@ -305,7 +311,7 @@ func TestChannelRouteEventLedgerStoresRedactedShadowSummary(t *testing.T) {
 	if !event.Redacted || !event.ShadowEnabled || !event.ShadowDiff {
 		t.Fatalf("event redaction/shadow mismatch: %#v", event)
 	}
-	if event.CandidateCount != 1 || event.FilteredCount != 1 || event.ProjectName != "GetTokens" {
+	if event.CandidateCount != 1 || event.FilteredCount != 1 {
 		t.Fatalf("event summary mismatch: %#v", event)
 	}
 	body, err := json.Marshal(event)

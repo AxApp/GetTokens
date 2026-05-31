@@ -17,7 +17,6 @@ import {
   CHANNEL_ROUTE_MODE_HELP_SECTIONS,
   buildChannelRouteAuditEventSummary,
   buildChannelRoutingExplainDigest,
-  buildLegacyRoutingMaskPanel,
   type ChannelID,
   type ChannelRouteAuditEvent,
   type ChannelRouteMode,
@@ -72,7 +71,6 @@ export default function ChannelRoutingWorkbench({
 }: ChannelRoutingWorkbenchProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const explainView = buildChannelRoutingExplainDigest(explain);
-  const legacyMask = buildLegacyRoutingMaskPanel();
   const eventSummaries = routeEvents.slice(0, 5).map((event) => buildChannelRouteAuditEventSummary(event));
   const hasExplain = explainView.hasExplain;
   const shadowPanelLabel = config.shadowEnabled ? (hasExplain ? explainView.shadowLabel : '开启') : '关闭';
@@ -235,7 +233,6 @@ export default function ChannelRoutingWorkbench({
             </label>
 
             <div className="mt-3 grid gap-2">
-              <DiagnosticLine label="兼容输入" value={legacyMask.summary} />
               <DiagnosticLine label="对照结果" value={shadowPanelLabel} />
               {shadowPanelMeta ? <DiagnosticLine label="差异" value={shadowPanelMeta} /> : null}
               {hasExplain ? <DiagnosticLine label="规则" value={explainView.policyLabel} /> : null}

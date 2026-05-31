@@ -1,23 +1,12 @@
 export const CHANNEL_ROUTE_MODES = ['sequential', 'balanced'] as const;
-export const PROJECT_MODE_FALLBACK_ROUTE_MODES = ['sequential', 'balanced'] as const;
-export const CHANNEL_FALLBACK_MODES = ['fail-closed', 'fallback-default', 'fallback-global'] as const;
-export const UPSTREAM_COMPAT_ROUTE_MODES = ['dedicated', 'prefer', 'ordered', 'weighted', 'canary'] as const;
-export const LEGACY_CHANNEL_ROUTING_BYPASS_IDS = ['session-affinity', 'websocket-pin', 'route-order-header'] as const;
 
 export type ChannelID = 'codex' | 'claude';
 export type ChannelRouteMode = (typeof CHANNEL_ROUTE_MODES)[number];
-export type ProjectModeFallbackRouteMode = (typeof PROJECT_MODE_FALLBACK_ROUTE_MODES)[number];
-export type ChannelFallbackMode = (typeof CHANNEL_FALLBACK_MODES)[number];
-export type UpstreamCompatRouteMode = (typeof UPSTREAM_COMPAT_ROUTE_MODES)[number];
 
 export type ChannelRouteModeClassification =
   | {
       kind: 'gettokens';
       mode: ChannelRouteMode;
-    }
-  | {
-      kind: 'upstream-compat';
-      mode: UpstreamCompatRouteMode;
     }
   | {
       kind: 'invalid';
@@ -37,22 +26,12 @@ export interface ChannelAccountGroup {
   accountIDs: string[];
 }
 
-export interface ChannelProjectBinding {
-  projectName: string;
-  targetType: 'account' | 'group';
-  targetID: string;
-  fallbackMode: ChannelFallbackMode;
-}
-
 export interface ChannelRoutingConfig {
   channel: ChannelID;
   routeMode: ChannelRouteMode;
   orderedAccountIDs: string[];
   accountGroups: ChannelAccountGroup[];
   channelGroupStates: Record<string, ChannelGroupState>;
-  projectBindings: ChannelProjectBinding[];
-  projectModeFallbackRouteMode: ProjectModeFallbackRouteMode;
-  fallbackMode: ChannelFallbackMode;
   shadowEnabled: boolean;
   shadowRouteMode: ChannelRouteMode;
 }
@@ -63,56 +42,14 @@ export interface ChannelRoutingConfigDraft {
   orderedAccountIDs?: unknown;
   accountGroups?: unknown;
   channelGroupStates?: unknown;
-  projectBindings?: unknown;
-  projectModeFallbackRouteMode?: unknown;
-  fallbackMode?: unknown;
   shadowEnabled?: unknown;
   shadowRouteMode?: unknown;
 }
 
-export type LegacyChannelRoutingBypassID = (typeof LEGACY_CHANNEL_ROUTING_BYPASS_IDS)[number];
-export type LegacyChannelRoutingBypassDisposition = 'blocked' | 'ignored';
-
-export interface LegacyChannelRoutingBypass {
-  id: LegacyChannelRoutingBypassID;
-  label: string;
-  disposition: LegacyChannelRoutingBypassDisposition;
-  detail: string;
-}
-
-export interface LegacyRoutingMaskPanel {
-  title: string;
-  summary: string;
-  note: string;
-  hasDetails: false;
-}
-
 export interface NormalizedChannelRoutingConfig {
   config: ChannelRoutingConfig;
-  ignoredUpstreamModes: UpstreamCompatRouteMode[];
   invalidModes: string[];
 }
-
-export const LEGACY_CHANNEL_ROUTING_BYPASSES: LegacyChannelRoutingBypass[] = [
-  {
-    id: 'session-affinity',
-    label: 'Session affinity',
-    disposition: 'blocked',
-    detail: '跳过，不进入新配置；仅保留为 runtime 粘性信号',
-  },
-  {
-    id: 'websocket-pin',
-    label: 'WebSocket pin',
-    disposition: 'blocked',
-    detail: '屏蔽，不进入新配置；仅保留为连接级运行态信号',
-  },
-  {
-    id: 'route-order-header',
-    label: 'Route order header',
-    disposition: 'ignored',
-    detail: '跳过，不进入新配置；探测路径不再注入顺序头',
-  },
-];
 
 export interface ChannelRouteAuditEvent {
   id: string;
@@ -260,9 +197,6 @@ export function classifyChannelRouteMode(input: unknown): ChannelRouteModeClassi
   if (isChannelRouteMode(mode)) {
     return { kind: 'gettokens', mode };
   }
-  if (isUpstreamCompatRouteMode(mode)) {
-    return { kind: 'upstream-compat', mode };
-  }
   return { kind: 'invalid', mode };
 }
 
@@ -270,34 +204,13 @@ export function isChannelRouteMode(input: unknown): input is ChannelRouteMode {
   return typeof input === 'string' && CHANNEL_ROUTE_MODES.includes(input as ChannelRouteMode);
 }
 
-export function isProjectModeFallbackRouteMode(input: unknown): input is ProjectModeFallbackRouteMode {
-  return (
-    typeof input === 'string' &&
-    PROJECT_MODE_FALLBACK_ROUTE_MODES.includes(input as ProjectModeFallbackRouteMode)
-  );
-}
-
-export function isChannelFallbackMode(input: unknown): input is ChannelFallbackMode {
-  return typeof input === 'string' && CHANNEL_FALLBACK_MODES.includes(input as ChannelFallbackMode);
-}
-
-export function isUpstreamCompatRouteMode(input: unknown): input is UpstreamCompatRouteMode {
-  return typeof input === 'string' && UPSTREAM_COMPAT_ROUTE_MODES.includes(input as UpstreamCompatRouteMode);
-}
-
 export function normalizeChannelRoutingConfig(
   draft: ChannelRoutingConfigDraft,
   defaults: Pick<ChannelRoutingConfig, 'channel'>,
 ): NormalizedChannelRoutingConfig {
-  const ignoredUpstreamModes: UpstreamCompatRouteMode[] = [];
   const invalidModes: string[] = [];
 
-  const routeModeResult = normalizeRouteMode(draft.routeMode, 'sequential', ignoredUpstreamModes, invalidModes);
-  const projectFallbackResult = normalizeProjectFallbackRouteMode(
-    draft.projectModeFallbackRouteMode,
-    ignoredUpstreamModes,
-    invalidModes,
-  );
+  const routeModeResult = normalizeRouteMode(draft.routeMode, 'sequential', invalidModes);
 
   return {
     config: {
@@ -306,13 +219,9 @@ export function normalizeChannelRoutingConfig(
       orderedAccountIDs: normalizeOrderedAccountIDs(draft.orderedAccountIDs),
       accountGroups: normalizeAccountGroups(draft.accountGroups),
       channelGroupStates: normalizeChannelGroupStates(draft.channelGroupStates),
-      projectBindings: normalizeProjectBindings(draft.projectBindings),
-      projectModeFallbackRouteMode: projectFallbackResult,
-      fallbackMode: isChannelFallbackMode(draft.fallbackMode) ? draft.fallbackMode : 'fail-closed',
       shadowEnabled: draft.shadowEnabled === true,
-      shadowRouteMode: normalizeRouteMode(draft.shadowRouteMode, fallbackShadowMode(routeModeResult), ignoredUpstreamModes, invalidModes),
+      shadowRouteMode: normalizeRouteMode(draft.shadowRouteMode, fallbackShadowMode(routeModeResult), invalidModes),
     },
-    ignoredUpstreamModes: Array.from(new Set(ignoredUpstreamModes)),
     invalidModes: Array.from(new Set(invalidModes.filter(Boolean))),
   };
 }
@@ -334,24 +243,8 @@ export function updateChannelRoutingConfig(
     channelGroupStates: patch.channelGroupStates
       ? normalizeChannelGroupStates(patch.channelGroupStates)
       : cloneChannelGroupStates(config.channelGroupStates),
-    projectBindings: patch.projectBindings
-      ? normalizeProjectBindings(patch.projectBindings)
-      : config.projectBindings.map((binding) => ({ ...binding })),
     shadowEnabled: patch.shadowEnabled ?? config.shadowEnabled,
     shadowRouteMode: patch.shadowRouteMode ?? config.shadowRouteMode,
-  };
-}
-
-export function buildLegacyRoutingBypassSummary() {
-  return `${LEGACY_CHANNEL_ROUTING_BYPASSES.length} 个旧兼容输入已屏蔽`;
-}
-
-export function buildLegacyRoutingMaskPanel(): LegacyRoutingMaskPanel {
-  return {
-    title: '兼容层提示',
-    summary: buildLegacyRoutingBypassSummary(),
-    note: '这些信号只保留为兼容层，不写入新配置，也不影响主路由判断。',
-    hasDetails: false,
   };
 }
 
@@ -553,8 +446,6 @@ function formatChannelRouteModeLabel(mode: unknown): string {
       return '顺序';
     case 'balanced':
       return '均衡';
-    case 'project':
-      return '项目';
     case 'preview':
       return '预演';
     default:
@@ -649,15 +540,6 @@ function formatChannelRoutingExplainStep(step: string): ChannelRoutingExplainSte
       detail: formatChannelRouteModeLabel(raw.slice(5)),
     };
   }
-  if (raw.startsWith('legacy:')) {
-    const payload = raw.slice(7);
-    const [key, value] = payload.split('=');
-    const detail = value ? `${key} 已${value === 'ignored' ? '忽略' : '屏蔽'}` : payload;
-    return {
-      label: '兼容信号',
-      detail,
-    };
-  }
   if (raw.startsWith('candidates:')) {
     return {
       label: '候选池',
@@ -681,23 +563,6 @@ function formatChannelRoutingExplainStep(step: string): ChannelRoutingExplainSte
       label: '粘性未命中',
     };
   }
-  if (raw.startsWith('project:hit:')) {
-    return {
-      label: '项目命中',
-      detail: raw.slice(12),
-    };
-  }
-  if (raw === 'project:miss') {
-    return {
-      label: '项目未命中',
-    };
-  }
-  if (raw === 'project:fallback-default') {
-    return {
-      label: '项目回退',
-      detail: '默认路由',
-    };
-  }
   return {
     label: '步骤',
     detail: raw,
@@ -707,16 +572,11 @@ function formatChannelRoutingExplainStep(step: string): ChannelRoutingExplainSte
 function normalizeRouteMode(
   input: unknown,
   fallback: ChannelRouteMode,
-  ignoredUpstreamModes: UpstreamCompatRouteMode[],
   invalidModes: string[],
 ): ChannelRouteMode {
   const classified = classifyChannelRouteMode(input);
   if (classified.kind === 'gettokens') {
     return classified.mode;
-  }
-  if (classified.kind === 'upstream-compat') {
-    ignoredUpstreamModes.push(classified.mode);
-    return fallback;
   }
   if (classified.mode) {
     invalidModes.push(classified.mode);
@@ -726,23 +586,6 @@ function normalizeRouteMode(
 
 function fallbackShadowMode(productionMode: ChannelRouteMode): ChannelRouteMode {
   return productionMode === 'balanced' ? 'sequential' : 'balanced';
-}
-
-function normalizeProjectFallbackRouteMode(
-  input: unknown,
-  ignoredUpstreamModes: UpstreamCompatRouteMode[],
-  invalidModes: string[],
-): ProjectModeFallbackRouteMode {
-  if (isProjectModeFallbackRouteMode(input)) {
-    return input;
-  }
-  const classified = classifyChannelRouteMode(input);
-  if (classified.kind === 'upstream-compat') {
-    ignoredUpstreamModes.push(classified.mode);
-  } else if (classified.kind === 'invalid' && classified.mode) {
-    invalidModes.push(classified.mode);
-  }
-  return 'sequential';
 }
 
 function normalizeChannel(input: unknown, fallback: ChannelID): ChannelID {
@@ -819,33 +662,6 @@ function cloneChannelGroupStates(input: Record<string, ChannelGroupState>): Reco
     states[id] = { ...state };
     return states;
   }, {});
-}
-
-function normalizeProjectBindings(input: unknown): ChannelProjectBinding[] {
-  if (!Array.isArray(input)) {
-    return [];
-  }
-  const seen = new Set<string>();
-  return input.reduce<ChannelProjectBinding[]>((bindings, item) => {
-    if (!item || typeof item !== 'object' || Array.isArray(item)) {
-      return bindings;
-    }
-    const raw = item as Record<string, unknown>;
-    const projectName = String(raw.projectName ?? '').trim();
-    const targetType = raw.targetType === 'account' || raw.targetType === 'group' ? raw.targetType : null;
-    const targetID = String(raw.targetID ?? '').trim();
-    if (!projectName || !targetType || !targetID || seen.has(projectName)) {
-      return bindings;
-    }
-    seen.add(projectName);
-    bindings.push({
-      projectName,
-      targetType,
-      targetID,
-      fallbackMode: isChannelFallbackMode(raw.fallbackMode) ? raw.fallbackMode : 'fail-closed',
-    });
-    return bindings;
-  }, []);
 }
 
 function normalizeOptionalRouteOrder(input: unknown): number | undefined {

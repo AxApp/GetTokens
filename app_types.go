@@ -220,34 +220,22 @@ type ChannelAccountGroup struct {
 	AccountIDs []string `json:"accountIDs"`
 }
 
-type ChannelProjectBinding struct {
-	ProjectName  string `json:"projectName"`
-	TargetType   string `json:"targetType"`
-	TargetID     string `json:"targetID"`
-	FallbackMode string `json:"fallbackMode"`
-}
-
 type ChannelRoutingConfig struct {
-	Channel                      string                       `json:"channel"`
-	RouteMode                    string                       `json:"routeMode"`
-	OrderedAccountIDs            []string                     `json:"orderedAccountIDs"`
-	AccountGroups                []ChannelAccountGroup        `json:"accountGroups,omitempty"`
-	ChannelGroupStates           map[string]ChannelGroupState `json:"channelGroupStates"`
-	ProjectBindings              []ChannelProjectBinding      `json:"projectBindings"`
-	ProjectModeFallbackRouteMode string                       `json:"projectModeFallbackRouteMode"`
-	FallbackMode                 string                       `json:"fallbackMode"`
-	ShadowEnabled                bool                         `json:"shadowEnabled,omitempty"`
-	ShadowRouteMode              string                       `json:"shadowRouteMode,omitempty"`
+	Channel            string                       `json:"channel"`
+	RouteMode          string                       `json:"routeMode"`
+	OrderedAccountIDs  []string                     `json:"orderedAccountIDs"`
+	AccountGroups      []ChannelAccountGroup        `json:"accountGroups,omitempty"`
+	ChannelGroupStates map[string]ChannelGroupState `json:"channelGroupStates"`
+	ShadowEnabled      bool                         `json:"shadowEnabled,omitempty"`
+	ShadowRouteMode    string                       `json:"shadowRouteMode,omitempty"`
 }
 
 type ChannelRoutingConfigMeta struct {
-	IgnoredUpstreamModes []string `json:"ignoredUpstreamModes,omitempty"`
-	InvalidModes         []string `json:"invalidModes,omitempty"`
+	InvalidModes []string `json:"invalidModes,omitempty"`
 }
 
 type ChannelRoutingExplainInput struct {
 	Channel         string         `json:"channel,omitempty"`
-	ProjectName     string         `json:"projectName,omitempty"`
 	TriedAccountIDs []string       `json:"triedAccountIDs,omitempty"`
 	ActiveSessions  map[string]int `json:"activeSessions,omitempty"`
 	StickyAccountID string         `json:"stickyAccountID,omitempty"`
@@ -299,7 +287,6 @@ type ChannelRouteEvent struct {
 	ID                      string `json:"id"`
 	RecordedAt              string `json:"recordedAt"`
 	Channel                 string `json:"channel"`
-	ProjectName             string `json:"projectName,omitempty"`
 	RouteMode               string `json:"routeMode"`
 	SelectedAccountID       string `json:"selectedAccountID,omitempty"`
 	CandidateCount          int    `json:"candidateCount"`

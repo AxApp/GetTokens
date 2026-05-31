@@ -20,7 +20,7 @@
 
 1. 建立统一 `AccountRoutingEngine`，承载账号路由决策，而不是把自定义端点路由做成普通 HTTP middleware。
 2. 把 manual-disabled、rate-limit、自定义端点路由、channel routing、session affinity 归一为 policy pipeline。
-3. 简化用户可理解的路由语义：先由账号状态、排序值、归属组和组级状态/排序确定可路由账号池，再按顺序、均衡两种模式选择账号；项目名绑定保留为兼容数据，但不再作为当前前端可见路由模式。
+3. 简化用户可理解的路由语义：先由账号状态、排序值、归属组和组级状态/排序确定可路由账号池，再按顺序、均衡两种模式选择账号；项目名绑定、project mode 和 fallback mode 不再作为 Channel Routing 的保存或执行语义。
 4. 支持 dry-run / explain：用户或开发者可在不请求上游的情况下看到候选账号、过滤原因、排序和最终选择。
 5. 支持 shadow mode：新策略先并行计算并记录差异，不立即接管真实请求。
 6. 将持久化账号状态、路由规则、运行态快照、请求级临时状态分层，保证热路径快速决策。
@@ -43,7 +43,7 @@
   - 清理既有 `RoutePolicy` / `AccountRouteGuardStore` / `rateLimitPolicy` 的重复职责；旧 `RoutePolicy` 兼容层不再保留。
   - 建立 `RouteableAccountPool` 规则：账号激活状态、请求可用状态、账号排序、账号归属组、组级启停和组级排序共同决定可路由账号池和基础顺序。
   - 区分 `inventoryGroup.enabled` 与 `channelGroup.enabled`，避免 Codex / Claude 共用账号组时互相影响渠道启停范围。
-  - 建立两类核心路由模式：`sequential`、`balanced`。`project` 已从可配置 route mode 下线，项目绑定只作为项目名到账号/账号组的范围约束或兼容数据保留；`dedicated / prefer / ordered / weighted / canary` 不进入新的 GetTokens 路由逻辑，只作为合并上游功能时的兼容语义保留在边界层；`exclude` 仅作为请求级 deny / 过滤输入，不作为路由模式。
+  - 建立两类核心路由模式：`sequential`、`balanced`。`project`、项目绑定、fallback mode、`dedicated / prefer / ordered / weighted / canary` 等 legacy / upstream 兼容路由语义全部从 Channel Routing 保存、执行和展示路径移除；`exclude` 仅作为请求级 deny / 过滤输入，不作为路由模式。
   - 保留 Codex WebSocket 请求边界特例：释放 pinned auth、关闭旧 upstream、transcript replay、重新选择。
 - GetTokens backend / Wails：
   - 暴露自定义端点路由规则的读取、保存、验证、dry-run/explain API。
@@ -51,8 +51,8 @@
   - 保持 root `main.App` 绑定边界，新增 Wails 方法必须经过 root facade 和 generated binding。
 - Frontend：
   - 总账号池只提供账号和账号组的增删改查、启停、弃用、排序和基础状态展示；不提供账号轮动编排。
-  - `codex - 账号列表` 负责 Codex 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
-  - `claude - 账号列表` 负责 Claude Code 渠道的账号请求顺序、路由模式、项目绑定、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
+  - `codex - 账号列表` 负责 Codex 渠道的账号请求顺序、路由模式、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
+  - `claude - 账号列表` 负责 Claude Code 渠道的账号请求顺序、路由模式、路由说明和路由探测；路由模式当前仅暴露 `sequential / balanced`。
   - Codex / Claude 可以引用同一个账号组，但各自维护渠道组启停和渠道排序。
   - dry-run/explain 保留为高级诊断能力，默认不作为普通用户主界面内容。
   - 路由工作台已改为“请求模式 + 参与账号”的扁平布局：主路径只回答当前是什么模式、该模式下哪些账号会参与；`参与账号` 默认收起，只显示数量，内部只用分隔线、模式按钮和账号列表，不再做 summary rail、命中图表、过滤图表或卡中卡。
@@ -124,14 +124,14 @@
 19. Given 某账号所在目标组被禁用，When 该组被路由规则选中，Then 该账号不进入该组的可路由池；如果账号也属于其他启用组，只有其他组被选中时才可参与路由。
 20. Given 路由模式为顺序模式，When 请求失败且允许 retry，Then 按有效顺序尝试下一个可路由账号。
 21. Given 路由模式为均衡模式，When 多个账号可用，Then 优先选择当前会话数最低的账号；会话数相同再按有效排序值决定。
-22. Given 请求携带项目名且存在项目绑定，When 项目绑定命中账号组或账号，Then 该绑定只限定目标池，最终账号选择仍按当前渠道的 `sequential` 或 `balanced` 执行；绑定目标不可用时按兼容 fallback 配置处理。
+22. Given 请求携带项目名或旧配置中存在项目绑定，When Channel Routing 归一化或执行选路，Then 项目名和项目绑定不再影响候选池、fallback 或最终命中账号。
 23. Given 用户在总账号池修改账号或账号组，When 保存成功，Then 只影响账号资产、账号组资产、启停/弃用和基础排序，不直接修改 Codex 或 Claude 的渠道轮动配置。
 24. Given 用户在 Codex 账号列表调整排序或路由模式，When 保存成功，Then 只影响 Codex 渠道路由，不改变 Claude 渠道排序，也不改变总账号池的资产排序。
 25. Given 用户在 Claude 账号列表调整排序或路由模式，When 保存成功，Then 只影响 Claude 渠道路由，不改变 Codex 渠道排序，也不改变总账号池的资产排序。
 26. Given 用户查看路由说明，When 当前在 Codex 或 Claude 账号列表，Then 页面解释的是该渠道的可路由池、排序、模式和 fallback，而不是总账号池的全局排序。
 27. Given 总账号池禁用某账号组，When Codex 或 Claude 引用该组，Then 两个渠道都不能从该组产生候选。
 28. Given Codex 渠道禁用某账号组，When Claude 渠道仍启用该组，Then Codex 不从该组产生候选，但 Claude 仍可按自身渠道配置使用该组。
-29. Given 项目绑定命中账号组，When 该组内有多个可路由账号，Then 项目绑定只负责限定目标池，组内选择继续按该渠道配置的 `sequential` 或 `balanced` 执行。
+29. Given 旧 Channel Routing 配置包含 project binding，When 配置被读取、保存或解释，Then 该字段被丢弃，结果仍只按渠道当前 `sequential` / `balanced` 与账号顺序/账号组状态执行。
 30. Given 某账号已被 session sticky 或 WebSocket pinned auth 占用，When 用户禁用该账号或其有效组，Then sticky / pin 立即失效；当前流式连接在最近可控边界断开，后续请求重新进入 route engine。
 31. Given 某账号或账号组从禁用切回激活，When 当前已有其他账号承载 stream / sticky，Then 不主动抢占或迁移当前连接；该账号只进入下一轮 route / retry 的可路由账号池。
 32. Given 某账号因 401/429/5xx/model-unavailable 进入失败冷却，When 后续请求进入路由引擎，Then 该冷却状态从持久化运行态或 guard source 读取；冷却到期只恢复对应 source，不清除用户禁用状态。
@@ -165,6 +165,7 @@
 - 状态：routing-cleanup-complete
 - 最近更新：2026-05-30
 - 2026-05-30 补充：CLIProxyAPI 旧公共 `RoutePolicy` / `RegisterRoutePolicy`、`gettokensRoutePolicy`、`RouteMetadata`、`X-GetTokens-Route-*` header 与 executor metadata allow/deny/order/fallback 旧入口已删除。当前 sidecar 源码层无旧 RoutePolicy 标识残留，后续路由系统由 `internal/gettokensrouting` 独立维护。
+- 2026-05-31 补充：按“legacy 逻辑全部先移除”要求，Channel Routing 删除 `project` route mode、`projectBindings`、project fallback mode、channel fallback mode、上游兼容 mode ignored 列表和前端 legacy mask。路由模式只接受 `sequential / balanced`，其余输入统一降级为 `sequential` 并进入 invalid mode 诊断。
 - 2026-05-27 补充：记录 `Codex HTTP/SSE 入站 + GetTokens 上游 OpenAI Responses WebSocket` 作为 backlog 备选方案，近期不做实现；该方案属于代理层桥接，不要求 Codex 客户端在同一 session 内透明切回 WebSocket。
 - 2026-05-26 补充：sidecar 请求侧已完成 `routing.strategy` 主路径绕过，Codex / Claude 请求优先通过 `channel-routing` 快照生成候选顺序；`routing.strategy` 仅作为 legacy relay / 配置兼容边界保留。
 - 2026-05-26 补充：Codex / Claude 的 channel routing 进入“完整绕过 `routing.strategy`”收口，后续以 `channel-routing` 快照作为唯一决策源；旧 `config.yaml` 只保留 legacy relay 边界，不再参与渠道路由主路径。

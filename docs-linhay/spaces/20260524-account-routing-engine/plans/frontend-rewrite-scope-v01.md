@@ -93,7 +93,6 @@ frontend/src/features/channel-routing/
     ChannelRouteModeControl.tsx
     ChannelAccountOrderList.tsx
     ChannelGroupScopePanel.tsx
-    ProjectBindingEditor.tsx
     RouteExplainPanel.tsx
     RouteProbePanel.tsx
   model/
@@ -126,8 +125,6 @@ frontend/src/features/claude-code/ClaudeCodeAccountListFeature.tsx
 
 ```ts
 type ChannelRouteMode = 'sequential' | 'balanced';
-type ProjectModeFallbackRouteMode = 'sequential' | 'balanced';
-type ChannelFallbackMode = 'fail-closed' | 'fallback-default' | 'fallback-global';
 
 interface ChannelRoutingConfig {
   channel: 'codex' | 'claude';
@@ -137,18 +134,10 @@ interface ChannelRoutingConfig {
     enabled: boolean;
     routeOrder?: number;
   }>;
-  projectBindings: Array<{
-    projectName: string;
-    targetType: 'account' | 'group';
-    targetID: string;
-    fallbackMode: ChannelFallbackMode;
-  }>;
-  projectModeFallbackRouteMode: ProjectModeFallbackRouteMode;
-  fallbackMode: ChannelFallbackMode;
 }
 ```
 
-`ChannelRouteMode` 只允许两种值。`project` 作为旧输入进入前端时必须降级或显示为兼容提示，不得保存为新配置；上游兼容模式只能显示为兼容提示或 trace。
+`ChannelRouteMode` 只允许两种值。`project`、项目绑定、fallback 和上游兼容模式作为旧输入进入前端时必须被丢弃或降级为 invalid mode 诊断，不得保存为新配置，也不得显示为可编辑兼容项。
 
 ## UI 信息架构
 
@@ -156,7 +145,7 @@ interface ChannelRoutingConfig {
 
 1. 顶部渠道状态条：渠道、配置来源、快照版本、preview/live 状态。
 2. 左侧主区：可路由账号池与渠道顺序。
-3. 右侧配置区：route mode、fallback、渠道组范围、项目绑定。
+3. 右侧配置区：route mode、渠道组范围。
 4. 底部或右侧抽屉：dry-run / explain / probe trace。
 
 关键原则：
@@ -173,8 +162,8 @@ interface ChannelRoutingConfig {
 3. Given 用户在 Claude 账号列表调整渠道组启停，When 保存成功，Then 只影响 Claude 渠道，不影响 Codex 使用同一全局组。
 4. Given 全局账号组被禁用，When Codex / Claude explain 路由，Then 两个渠道都显示该组被 `inventoryGroup.enabled=false` 过滤。
 5. Given Codex 渠道组被禁用，When Codex explain 路由，Then Codex 不产生该组候选；When Claude explain 同一组，Then Claude 仍可使用自身启用的渠道组。
-6. Given 项目绑定指向账号组，When dry-run 命中该项目名，Then explain 显示项目绑定只限定目标池，组内选择继续使用 `sequential` 或 `balanced`。
-7. Given 页面读取到上游兼容模式 `weighted`，When 渲染新配置 UI，Then 不把它作为可编辑 route mode，只在兼容提示或 trace 中标记。
+6. Given 旧配置包含项目绑定或 fallback，When 页面归一化配置，Then 这些字段不出现在草稿、保存 payload 或可编辑 UI 中。
+7. Given 页面读取到上游兼容模式 `weighted`，When 渲染新配置 UI，Then 不把它作为可编辑 route mode，并把 route mode 降级到 `sequential`。
 8. Given 普通浏览器没有 Wails runtime，When 打开 Codex / Claude 账号列表 preview，Then 页面可显示 preview 数据、编辑草稿、运行 mock explain，不空白。
 
 ## TDD 优先级
@@ -182,8 +171,8 @@ interface ChannelRoutingConfig {
 P0 模型测试：
 
 - `ChannelRouteMode` 只接受 `sequential / balanced`。
-- `dedicated / prefer / ordered / weighted / canary` 被识别为 upstream compat，不进入配置保存。
-- 项目绑定命中组后，组内选择只能是 `sequential / balanced`。
+- `project` / `dedicated` / `prefer` / `ordered` / `weighted` / `canary` 被识别为 invalid mode，不进入配置保存。
+- 旧项目绑定和 fallback 字段归一化后被丢弃。
 - Codex / Claude 配置对象互不污染。
 
 P1 页面行为测试：
