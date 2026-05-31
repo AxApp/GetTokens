@@ -122,6 +122,7 @@ export default function AttributionCard({
         cardID={cardID}
         style={style}
         interactive={interactive}
+        openDetailsLabel={`${t('common.details')}: ${title}`}
         onOpen={onOpen}
       >
         <div className="account-card-list-row grid gap-3 px-3 py-2.5">
@@ -163,6 +164,7 @@ export default function AttributionCard({
       cardID={cardID}
       style={style}
       interactive={interactive}
+      openDetailsLabel={`${t('common.details')}: ${title}`}
       onOpen={onOpen}
     >
       <div className="account-card-header relative flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">

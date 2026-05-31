@@ -16,6 +16,12 @@ test('shouldOpenAccountDetailsFromTarget allows plain card body clicks', () => {
   assert.equal(shouldOpenAccountDetailsFromTarget(content, card), true);
 });
 
+test('shouldOpenAccountDetailsFromTarget allows direct account card frame clicks', () => {
+  const card = node('div');
+
+  assert.equal(shouldOpenAccountDetailsFromTarget(card, card), true);
+});
+
 test('shouldOpenAccountDetailsFromTarget ignores direct interactive elements', () => {
   const card = node('div');
   const button = node('button', card);
@@ -119,4 +125,12 @@ test('pasted codex api key copies use numbered duplicate titles', async () => {
 
   assert.match(source, /resolveNumberedDuplicateTitle\(item\.label/);
   assert.match(source, /label,/);
+});
+
+test('account card frame exposes card-level detail expansion semantics', async () => {
+  const source = await readFile(new URL('../components/AccountCardFrame.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-card-open-details/);
+  assert.match(source, /aria-label=\{interactive \? openDetailsLabel : undefined\}/);
+  assert.match(source, /role=\{interactive \? 'button' : undefined\}/);
 });

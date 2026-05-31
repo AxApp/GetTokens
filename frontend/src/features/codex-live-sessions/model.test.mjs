@@ -58,6 +58,37 @@ test('filterCodexLiveSessions searches request ids and keeps active sessions fir
   assert.deepEqual(sorted.slice(0, 3).map((session) => session.status), ['streaming', 'reconnecting', 'degraded_http']);
 });
 
+test('filterCodexLiveSessions keeps same-status rows stable when new requests update lastEventAt', () => {
+  const oldActive = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0],
+    sessionID: 'active-old',
+    status: 'streaming',
+    startedAt: '2026-05-31T10:00:00.000Z',
+    lastEventAt: '2026-05-31T10:00:10.000Z',
+  };
+  const newActive = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0],
+    sessionID: 'active-new',
+    status: 'streaming',
+    startedAt: '2026-05-31T10:01:00.000Z',
+    lastEventAt: '2026-05-31T10:01:10.000Z',
+  };
+  const refreshedOldActive = {
+    ...oldActive,
+    lastEventAt: '2026-05-31T10:02:30.000Z',
+    activeRequestID: 'new-request-on-old-active',
+  };
+
+  assert.deepEqual(
+    filterCodexLiveSessions({ sessions: [oldActive, newActive] }).map((session) => session.sessionID),
+    ['active-old', 'active-new'],
+  );
+  assert.deepEqual(
+    filterCodexLiveSessions({ sessions: [refreshedOldActive, newActive] }).map((session) => session.sessionID),
+    ['active-old', 'active-new'],
+  );
+});
+
 test('filterCodexLiveSessions still matches row-feed request ids without embedded request arrays', () => {
   const rowOnlySession = {
     ...codexLiveSessionsPreviewSnapshot.sessions[0],

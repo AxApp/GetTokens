@@ -6,11 +6,16 @@
 ## 目标
 1. `SessionRow` 显示项目名称时，若 live snapshot 缺少 `projectName`，由 CLIProxyAPI sidecar 按本地 Codex 会话信息反查并补齐后返回。
 2. `SessionDetail` 的 Timeline 区域改为请求级具体信息视图，参考 `http://cpa.host.dxy/user/monitor` 的监控信息密度，优先显示可用于排查的请求字段。
+3. 新请求进入 live sessions 时，列表不能因为 `lastEventAt` 更新而在同状态会话之间重排抖动。
+4. Codex 请求头 `X-Codex-Turn-Metadata.workspaces` 是项目名优先来源，sidecar 应直接从 workspace path basename 解析 `projectName`。
+5. 账号卡片外层 `AccountCardFrame` 必须保留卡片级点击/键盘展开详情语义，并让该行为可被 DOM 标识识别。
 
 ## 范围
 - Sidecar：CLIProxyAPI live session tracker 在生成 snapshot 时，对缺失项目名的 live session 做本地 `.codex` 会话反查补全，并通过 `projectName` 返回。
 - Wails：`GetCodexLiveSessionsSnapshot` 只透传 sidecar snapshot，不保留兼容旧 sidecar 的本地反查层。
 - 前端：`CodexLiveSessionDetail.tsx` 的 `Timeline` 从事件列表改为请求列表，展示 request id、client/upstream request id、model、auth、transport、status、timing、usage、error 与关键事件摘要。
+- 前端：live session feed 同状态排序使用稳定键，不再用随请求刷新变化的 `lastEventAt` 作为主排序键。
+- Accounts：`AccountCardFrame` 暴露 `data-account-card-open-details`、条件 `role=button` 与详情展开 aria label。
 - 测试：补充 sidecar 项目名补全回归、Wails 透传回归和前端源码/模型约束测试。
 
 ## 非目标
@@ -24,6 +29,9 @@
 3. Given 选中某个 live session；When 查看详情 Timeline；Then 页面展示请求级字段和关键事件摘要，而不是只展示 `lane.kind + label` 的事件行。
 4. Given 请求包含 error 或 timing / usage；When 查看 Timeline；Then 能看到状态、错误、耗时、速率和 token 用量，且不展示 payload 或密钥。
 5. 自动化验证至少覆盖 CLIProxyAPI fork 的 `go test ./internal/gettokenshooks -run LiveSessions`、GetTokens 的 `go test ./internal/wailsapp -run CodexLive`、`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck`。
+6. Given live sessions 中有多个同状态会话；When 某个旧会话收到新请求并更新 `lastEventAt`；Then feed 行顺序保持稳定，不出现页面跳动。
+7. Given downstream 请求带 `X-Codex-Turn-Metadata`，其中 `workspaces` 只有 `/Users/linhey/Desktop/FlowUp-Libs/Overloaded-v2`；When sidecar 记录 live session；Then snapshot 的 `projectName` 为 `Overloaded-v2`。
+8. Given 用户点击账号卡片非按钮区域或使用 Enter/Space；When 卡片可交互；Then 打开账号详情，且交互控件点击不会误触发详情展开。
 
 ## 验收记录
 
@@ -45,6 +53,12 @@
 - 运行态复验：重新拉起当前 `/Applications/GetTokens.app` 后，8317 由新 App 子进程持有；live snapshot 已返回 `projectName`，样本包含 `GetTokens` 与 `design`。
 - 自动化验证：
   - `go test ./internal/sidecar ./internal/wailsapp -run 'TestPortAvailabilityMatchesWildcardSidecarBind|TestFindOrphanedSidecarPIDsMatchesSameConfigOnly|TestStopProcessKillsWhenInterruptIsIgnored|TestGetCodexLiveSessionsSnapshot' -count=1`
+- 2026-05-31：按真实 Codex WebSocket handshake 样例补齐 `X-Codex-Turn-Metadata.workspaces` 解析，sidecar live tracker 会直接把 workspace basename 写入 `projectName`；同状态 live session feed 改为按 `startedAt + sessionID` 稳定排序，避免请求到达时因 `lastEventAt` 更新导致页面跳动；`AccountCardFrame` 补出卡片级详情展开 DOM 语义。
+- 自动化验证：
+  - `go test ./internal/gettokenshooks -run LiveSessions -count=1`（CLIProxyAPI fork）
+  - `go test ./internal/runtime/executor -run Codex -count=1`（CLIProxyAPI fork）
+  - `node --test frontend/src/features/codex-live-sessions/model.test.mjs frontend/src/features/accounts/tests/accountCardInteractions.test.mjs`
+  - `npm --prefix frontend run typecheck`
 
 ## 设计稿入口
 

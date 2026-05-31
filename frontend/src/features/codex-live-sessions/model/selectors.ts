@@ -47,7 +47,11 @@ export function compareCodexLiveSessions(a: CodexLiveSession, b: CodexLiveSessio
   if (rankDelta !== 0) {
     return rankDelta;
   }
-  return Date.parse(b.lastEventAt) - Date.parse(a.lastEventAt);
+  const startedDelta = compareLiveSessionTime(a.startedAt, b.startedAt);
+  if (startedDelta !== 0) {
+    return startedDelta;
+  }
+  return a.sessionID.localeCompare(b.sessionID);
 }
 
 export function buildCodexLiveSessionSummary(sessions: readonly CodexLiveSession[]) {
@@ -223,6 +227,21 @@ function buildSessionSearchText(session: CodexLiveSession): string {
 
 function normalizeSearch(value: string | undefined): string {
   return (value ?? '').trim().toLowerCase();
+}
+
+function compareLiveSessionTime(a: string, b: string): number {
+  const left = Date.parse(a);
+  const right = Date.parse(b);
+  if (!Number.isFinite(left) && !Number.isFinite(right)) {
+    return 0;
+  }
+  if (!Number.isFinite(left)) {
+    return 1;
+  }
+  if (!Number.isFinite(right)) {
+    return -1;
+  }
+  return left - right;
 }
 
 function sanitizeDiagnosticText(value: string): string {
