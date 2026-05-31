@@ -56,6 +56,53 @@ func TestFetchVendorStatusRSSErrorOnNon2xx(t *testing.T) {
 	}
 }
 
+func TestMapRateLimitStatePreservesExplainFields(t *testing.T) {
+	input := &wailsapp.RateLimitState{
+		AccountKey:      "acct_00000000-0000-4000-8000-000000000001",
+		Blocked:         true,
+		BlockReason:     "1h requests 已满",
+		UpdatedAt:       "2026-05-31T10:00:00Z",
+		LastEvaluatedAt: "2026-05-31T10:00:00Z",
+		NextReset:       "2026-05-31T11:00:00Z",
+		Stale:           true,
+		DegradedReason:  "evaluation delayed",
+		Sources: []wailsapp.RateLimitSourceState{{
+			Source:      "rate-limit",
+			Reason:      "1h requests 已满",
+			RuleID:      "rule-1",
+			Strategy:    "request-window",
+			Window:      "1h",
+			UsageValue:  2,
+			LimitValue:  2,
+			WindowStart: "2026-05-31T09:00:00Z",
+			WindowEnd:   "2026-05-31T10:00:00Z",
+			NextReset:   "2026-05-31T11:00:00Z",
+		}},
+		Rules: []wailsapp.RateLimitRuleState{{
+			Rule:         wailsapp.RateLimitRule{ID: "rule-1", AccountKey: "acct_00000000-0000-4000-8000-000000000001", Strategy: "request-window", Window: "1h", LimitValue: 2, Action: "block", Enabled: true},
+			Exceeded:     true,
+			Reason:       "1h requests 已满",
+			UsagePct:     100,
+			CurrentUsage: 2,
+			LimitValue:   2,
+			WindowStart:  "2026-05-31T09:00:00Z",
+			WindowEnd:    "2026-05-31T10:00:00Z",
+			NextReset:    "2026-05-31T11:00:00Z",
+		}},
+	}
+
+	got := mapRateLimitState(input)
+	if got == nil || !got.Blocked || got.LastEvaluatedAt != input.LastEvaluatedAt || got.NextReset != input.NextReset || !got.Stale || got.DegradedReason != input.DegradedReason {
+		t.Fatalf("mapped state = %#v, want top-level explain fields", got)
+	}
+	if len(got.Sources) != 1 || got.Sources[0].RuleID != "rule-1" || got.Sources[0].UsageValue != 2 || got.Sources[0].NextReset != input.NextReset {
+		t.Fatalf("mapped sources = %#v, want source explain fields", got.Sources)
+	}
+	if len(got.Rules) != 1 || got.Rules[0].LimitValue != 2 || got.Rules[0].WindowStart == "" || got.Rules[0].NextReset == "" {
+		t.Fatalf("mapped rules = %#v, want rule explain fields", got.Rules)
+	}
+}
+
 func TestBuildApplicationMenuKeepsCheckForUpdatesOutOfHelpMenu(t *testing.T) {
 	appMenu := buildApplicationMenuWithUpdateAction(func() {})
 	updateItem := findMenuItemByLabel(appMenu, macOSCheckForUpdatesMenuLabel)

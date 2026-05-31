@@ -4079,6 +4079,10 @@ export namespace main {
 	    reason?: string;
 	    usagePct: number;
 	    currentUsage: number;
+	    limitValue: number;
+	    windowStart?: string;
+	    windowEnd?: string;
+	    nextReset?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new RateLimitRuleState(source);
@@ -4091,6 +4095,10 @@ export namespace main {
 	        this.reason = source["reason"];
 	        this.usagePct = source["usagePct"];
 	        this.currentUsage = source["currentUsage"];
+	        this.limitValue = source["limitValue"];
+	        this.windowStart = source["windowStart"];
+	        this.windowEnd = source["windowEnd"];
+	        this.nextReset = source["nextReset"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -4123,12 +4131,47 @@ export namespace main {
 	        this.accountKey = source["accountKey"];
 	    }
 	}
+	export class RateLimitSourceState {
+	    source: string;
+	    reason?: string;
+	    ruleID?: string;
+	    strategy?: string;
+	    window?: string;
+	    usageValue?: number;
+	    limitValue?: number;
+	    windowStart?: string;
+	    windowEnd?: string;
+	    nextReset?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new RateLimitSourceState(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.source = source["source"];
+	        this.reason = source["reason"];
+	        this.ruleID = source["ruleID"];
+	        this.strategy = source["strategy"];
+	        this.window = source["window"];
+	        this.usageValue = source["usageValue"];
+	        this.limitValue = source["limitValue"];
+	        this.windowStart = source["windowStart"];
+	        this.windowEnd = source["windowEnd"];
+	        this.nextReset = source["nextReset"];
+	    }
+	}
 	export class RateLimitState {
 	    accountKey: string;
 	    blocked: boolean;
 	    blockReason?: string;
+	    sources: RateLimitSourceState[];
 	    rules: RateLimitRuleState[];
 	    updatedAt?: string;
+	    lastEvaluatedAt?: string;
+	    nextReset?: string;
+	    stale?: boolean;
+	    degradedReason?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new RateLimitState(source);
@@ -4139,8 +4182,13 @@ export namespace main {
 	        this.accountKey = source["accountKey"];
 	        this.blocked = source["blocked"];
 	        this.blockReason = source["blockReason"];
+	        this.sources = this.convertValues(source["sources"], RateLimitSourceState);
 	        this.rules = this.convertValues(source["rules"], RateLimitRuleState);
 	        this.updatedAt = source["updatedAt"];
+	        this.lastEvaluatedAt = source["lastEvaluatedAt"];
+	        this.nextReset = source["nextReset"];
+	        this.stale = source["stale"];
+	        this.degradedReason = source["degradedReason"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

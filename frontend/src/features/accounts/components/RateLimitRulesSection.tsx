@@ -81,6 +81,8 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
     () => buildRateLimitSummaryText(ruleDrafts, rateLimitStatus, t),
     [rateLimitStatus, ruleDrafts, t],
   );
+  const rateLimitMetaTimestamp = rateLimitStatus?.lastEvaluatedAt || rateLimitStatus?.updatedAt || '';
+  const rateLimitSources = rateLimitStatus?.sources ?? [];
 
   useEffect(() => {
     dirtyRef.current = dirty;
@@ -237,7 +239,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       componentName="RateLimitRulesSection"
       eyebrow="Route Guard"
       title={t('accounts.rate_limit_rules_title')}
-      meta={`${t('accounts.rate_limit_cache')} ${rateLimitStatus?.updatedAt ? new Date(rateLimitStatus.updatedAt).toLocaleString() : '-'}`}
+      meta={`${t('accounts.rate_limit_cache')} ${rateLimitMetaTimestamp ? new Date(rateLimitMetaTimestamp).toLocaleString() : '-'}`}
       span="wide"
       actions={
         <div className="flex flex-wrap items-center gap-2">
@@ -278,7 +280,7 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
         {rateLimitViewMode === 'summary' ? (
           <div
             data-rate-limit-view-mode="summary"
-            className="min-w-0 border-y-2 border-[var(--border-color)] px-2 py-2"
+            className="min-w-0 space-y-2 border-y-2 border-[var(--border-color)] px-2 py-2"
           >
             <button
               type="button"
@@ -290,6 +292,30 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
                 {rateLimitSummaryText}
               </span>
             </button>
+            {rateLimitStatus?.stale || rateLimitStatus?.degradedReason ? (
+              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--color-status-warning)]">
+                {rateLimitStatus?.stale ? 'STALE' : 'DEGRADED'} {rateLimitStatus?.degradedReason || ''}
+              </div>
+            ) : null}
+            {rateLimitSources.length > 0 ? (
+              <div className="grid min-w-0 gap-1">
+                {rateLimitSources.map((source, index) => (
+                  <div
+                    key={`${source.source}-${source.ruleID || index}`}
+                    className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]"
+                    title={[
+                      source.source,
+                      source.reason,
+                      source.ruleID,
+                      source.nextReset ? `NEXT ${formatRateLimitTimestamp(source.nextReset)}` : '',
+                    ].filter(Boolean).join(' / ')}
+                  >
+                    {source.source || 'source'} · {source.reason || '-'}
+                    {source.nextReset ? ` · NEXT ${formatRateLimitTimestamp(source.nextReset)}` : ''}
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : ruleDrafts.length === 0 ? (
           <div data-rate-limit-view-mode="config">
@@ -517,6 +543,12 @@ function buildRateLimitSummaryText(
     ? `${t('accounts.rate_limit_summary_blocked')} ${Math.max(exceededCount, 1)}`
     : t('accounts.rate_limit_summary_enabled');
   return `${statusText} / ${t('accounts.rate_limit_summary_rules')} ${rules.length} / ${t('accounts.rate_limit_summary_active')} ${enabledCount} / ${usageText}`;
+}
+
+function formatRateLimitTimestamp(value: string) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return value;
+  return new Date(timestamp).toLocaleString();
 }
 
 function RuleField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {

@@ -25,14 +25,36 @@ export interface RateLimitRuleState {
   reason?: string;
   usagePct: number;
   currentUsage: number;
+  limitValue?: number;
+  windowStart?: string;
+  windowEnd?: string;
+  nextReset?: string;
+}
+
+export interface RateLimitSourceState {
+  source: string;
+  reason?: string;
+  ruleID?: string;
+  strategy?: string;
+  window?: string;
+  usageValue?: number;
+  limitValue?: number;
+  windowStart?: string;
+  windowEnd?: string;
+  nextReset?: string;
 }
 
 export interface RateLimitState {
   accountKey: string;
   blocked: boolean;
   blockReason?: string;
+  sources?: RateLimitSourceState[];
   rules: RateLimitRuleState[];
   updatedAt?: string;
+  lastEvaluatedAt?: string;
+  nextReset?: string;
+  stale?: boolean;
+  degradedReason?: string;
 }
 
 export interface RateLimitEvent {
@@ -74,17 +96,41 @@ export function normalizeRateLimitState(input: RateLimitState): RateLimitState {
     blocked: Boolean(input.blocked),
     blockReason: String(input.blockReason || '').trim(),
     updatedAt: String(input.updatedAt || '').trim(),
+    lastEvaluatedAt: String(input.lastEvaluatedAt || input.updatedAt || '').trim(),
+    nextReset: String(input.nextReset || '').trim(),
+    stale: Boolean(input.stale),
+    degradedReason: String(input.degradedReason || '').trim(),
+    sources: (input.sources ?? []).map((source) => ({
+      source: String(source.source || '').trim(),
+      reason: String(source.reason || '').trim(),
+      ruleID: String(source.ruleID || '').trim(),
+      strategy: String(source.strategy || '').trim(),
+      window: String(source.window || '').trim(),
+      usageValue: Number.isFinite(Number(source.usageValue)) ? Number(source.usageValue) : 0,
+      limitValue: Number.isFinite(Number(source.limitValue)) ? Number(source.limitValue) : 0,
+      windowStart: String(source.windowStart || '').trim(),
+      windowEnd: String(source.windowEnd || '').trim(),
+      nextReset: String(source.nextReset || '').trim(),
+    })),
     rules: (input.rules ?? []).map((ruleState) => ({
       exceeded: Boolean(ruleState.exceeded),
       reason: String(ruleState.reason || '').trim(),
       usagePct: Number.isFinite(Number(ruleState.usagePct)) ? Number(ruleState.usagePct) : 0,
       currentUsage: Number.isFinite(Number(ruleState.currentUsage)) ? Number(ruleState.currentUsage) : 0,
+      limitValue: Number.isFinite(Number(ruleState.limitValue)) ? Number(ruleState.limitValue) : 0,
+      windowStart: String(ruleState.windowStart || '').trim(),
+      windowEnd: String(ruleState.windowEnd || '').trim(),
+      nextReset: String(ruleState.nextReset || '').trim(),
       rule: {
         id: String(ruleState.rule?.id || '').trim(),
         accountKey: String(ruleState.rule?.accountKey || input.accountKey || '').trim(),
         strategy: String(ruleState.rule?.strategy || '').trim(),
         window: String(ruleState.rule?.window || '').trim(),
-        limitValue: Number.isFinite(Number(ruleState.rule?.limitValue)) ? Number(ruleState.rule.limitValue) : 0,
+        limitValue: Number.isFinite(Number(ruleState.rule?.limitValue))
+          ? Number(ruleState.rule.limitValue)
+          : Number.isFinite(Number(ruleState.limitValue))
+            ? Number(ruleState.limitValue)
+            : 0,
         action: String(ruleState.rule?.action || 'block').trim(),
         enabled: Boolean(ruleState.rule?.enabled),
         label: String(ruleState.rule?.label || '').trim(),

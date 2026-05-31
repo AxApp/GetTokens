@@ -582,14 +582,19 @@ func mapRateLimitRule(item wailsapp.RateLimitRule) RateLimitRule {
 
 func mapRateLimitState(input *wailsapp.RateLimitState) *RateLimitState {
 	if input == nil {
-		return &RateLimitState{Rules: []RateLimitRuleState{}}
+		return &RateLimitState{Sources: []RateLimitSourceState{}, Rules: []RateLimitRuleState{}}
 	}
 	return &RateLimitState{
-		AccountKey:  input.AccountKey,
-		Blocked:     input.Blocked,
-		BlockReason: input.BlockReason,
-		Rules:       mapRateLimitRuleStates(input.Rules),
-		UpdatedAt:   input.UpdatedAt,
+		AccountKey:      input.AccountKey,
+		Blocked:         input.Blocked,
+		BlockReason:     input.BlockReason,
+		Sources:         mapRateLimitSourceStates(input.Sources),
+		Rules:           mapRateLimitRuleStates(input.Rules),
+		UpdatedAt:       input.UpdatedAt,
+		LastEvaluatedAt: input.LastEvaluatedAt,
+		NextReset:       input.NextReset,
+		Stale:           input.Stale,
+		DegradedReason:  input.DegradedReason,
 	}
 }
 
@@ -617,6 +622,32 @@ func mapRateLimitRuleStates(items []wailsapp.RateLimitRuleState) []RateLimitRule
 			Reason:       item.Reason,
 			UsagePct:     item.UsagePct,
 			CurrentUsage: item.CurrentUsage,
+			LimitValue:   item.LimitValue,
+			WindowStart:  item.WindowStart,
+			WindowEnd:    item.WindowEnd,
+			NextReset:    item.NextReset,
+		})
+	}
+	return out
+}
+
+func mapRateLimitSourceStates(items []wailsapp.RateLimitSourceState) []RateLimitSourceState {
+	if len(items) == 0 {
+		return []RateLimitSourceState{}
+	}
+	out := make([]RateLimitSourceState, 0, len(items))
+	for _, item := range items {
+		out = append(out, RateLimitSourceState{
+			Source:      item.Source,
+			Reason:      item.Reason,
+			RuleID:      item.RuleID,
+			Strategy:    item.Strategy,
+			Window:      item.Window,
+			UsageValue:  item.UsageValue,
+			LimitValue:  item.LimitValue,
+			WindowStart: item.WindowStart,
+			WindowEnd:   item.WindowEnd,
+			NextReset:   item.NextReset,
 		})
 	}
 	return out

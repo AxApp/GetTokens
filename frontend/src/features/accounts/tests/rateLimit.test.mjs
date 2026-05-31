@@ -7,6 +7,9 @@ test('rate limit model is keyed only by accountKey', async () => {
 
   assert.doesNotMatch(source, /matchKey|MatchKey|match_key/);
   assert.match(source, /accountKey: string/);
+  assert.match(source, /interface RateLimitSourceState/);
+  assert.match(source, /lastEvaluatedAt/);
+  assert.match(source, /nextReset/);
 });
 
 test('rate limit rules section edits account-card rules without matchKey fallback', async () => {
@@ -23,6 +26,8 @@ test('rate limit rules section edits account-card rules without matchKey fallbac
   assert.match(source, /data-rate-limit-view-mode="config"/);
   assert.match(source, /rate_limit_summary_rules/);
   assert.match(source, /rate_limit_summary_active/);
+  assert.match(source, /rateLimitSources/);
+  assert.match(source, /degradedReason/);
 });
 
 test('account detail callers do not pass attribution keys into rate limit rules', async () => {

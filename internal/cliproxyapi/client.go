@@ -481,6 +481,9 @@ func (c *Client) GetRateLimitStatus(accountKey string) (*RateLimitState, error) 
 	if response.Rules == nil {
 		response.Rules = []RateLimitRuleState{}
 	}
+	if response.Sources == nil {
+		response.Sources = []RateLimitSourceState{}
+	}
 	return &response, nil
 }
 

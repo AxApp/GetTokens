@@ -249,14 +249,36 @@ type RateLimitRuleState struct {
 	Reason       string        `json:"reason,omitempty"`
 	UsagePct     float64       `json:"usage_pct"`
 	CurrentUsage int64         `json:"current_usage"`
+	LimitValue   int64         `json:"limit_value"`
+	WindowStart  string        `json:"window_start,omitempty"`
+	WindowEnd    string        `json:"window_end,omitempty"`
+	NextReset    string        `json:"next_reset,omitempty"`
+}
+
+type RateLimitSourceState struct {
+	Source      string `json:"source"`
+	Reason      string `json:"reason,omitempty"`
+	RuleID      string `json:"rule_id,omitempty"`
+	Strategy    string `json:"strategy,omitempty"`
+	Window      string `json:"window,omitempty"`
+	UsageValue  int64  `json:"usage_value,omitempty"`
+	LimitValue  int64  `json:"limit_value,omitempty"`
+	WindowStart string `json:"window_start,omitempty"`
+	WindowEnd   string `json:"window_end,omitempty"`
+	NextReset   string `json:"next_reset,omitempty"`
 }
 
 type RateLimitState struct {
-	AccountKey  string               `json:"account_key"`
-	Blocked     bool                 `json:"blocked"`
-	BlockReason string               `json:"block_reason,omitempty"`
-	Rules       []RateLimitRuleState `json:"rules"`
-	UpdatedAt   string               `json:"updated_at,omitempty"`
+	AccountKey      string                 `json:"account_key"`
+	Blocked         bool                   `json:"blocked"`
+	BlockReason     string                 `json:"block_reason,omitempty"`
+	Sources         []RateLimitSourceState `json:"sources"`
+	Rules           []RateLimitRuleState   `json:"rules"`
+	UpdatedAt       string                 `json:"updated_at,omitempty"`
+	LastEvaluatedAt string                 `json:"last_evaluated_at,omitempty"`
+	NextReset       string                 `json:"next_reset,omitempty"`
+	Stale           bool                   `json:"stale,omitempty"`
+	DegradedReason  string                 `json:"degraded_reason,omitempty"`
 }
 
 type RateLimitEvent struct {

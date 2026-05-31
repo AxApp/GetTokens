@@ -5,6 +5,7 @@ import "github.com/linhay/gettokens/internal/cliproxyapi"
 type RateLimitStrategyMeta = cliproxyapi.RateLimitStrategyMeta
 type RateLimitRule = cliproxyapi.RateLimitRule
 type RateLimitRuleState = cliproxyapi.RateLimitRuleState
+type RateLimitSourceState = cliproxyapi.RateLimitSourceState
 type RateLimitState = cliproxyapi.RateLimitState
 type RateLimitEvent = cliproxyapi.RateLimitEvent
 
