@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Translator } from '../model/types';
-import type { AccountUsageSummary } from '../model/accountUsage';
 import type {
   OpenAICompatibleProviderDraft,
   ProviderRemoteModelsState,
@@ -8,7 +7,6 @@ import type {
 } from '../model/openAICompatible';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
-import { AccountRuntimeEvidenceSection } from './AccountDetailSections';
 import OpenAICompatibleDetailPanel from './OpenAICompatibleDetailPanel';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 
@@ -17,7 +15,6 @@ interface OpenAICompatibleDetailModalProps {
   draft: OpenAICompatibleProviderDraft;
   verifyState: ProviderVerifyState;
   remoteModelsState?: ProviderRemoteModelsState;
-  usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
   rateLimitStrategies?: RateLimitStrategyMeta[];
   rateLimitRulesAPI?: RateLimitRulesAPI;
@@ -37,7 +34,6 @@ export default function OpenAICompatibleDetailModal({
   draft,
   verifyState,
   remoteModelsState,
-  usageSummary,
   rateLimitStatus,
   rateLimitStrategies,
   rateLimitRulesAPI,
@@ -91,12 +87,6 @@ export default function OpenAICompatibleDetailModal({
         onVerify={onVerify}
         onFetchModels={onFetchModels}
         onApplyFetchedModels={onApplyFetchedModels}
-        leadingSections={
-          <AccountRuntimeEvidenceSection
-            usageSummary={usageSummary}
-            evidenceRows={buildOpenAICompatibleEvidenceRows(t, draft, verifyState)}
-          />
-        }
         afterSections={
           <>
             <RateLimitRulesSection
@@ -114,31 +104,4 @@ export default function OpenAICompatibleDetailModal({
       />
     </AccountDetailModalFrame>
   );
-}
-
-function buildOpenAICompatibleEvidenceRows(
-  t: Translator,
-  draft: OpenAICompatibleProviderDraft,
-  verifyState: ProviderVerifyState,
-) {
-  const providerName = draft.currentName || draft.name || '—';
-  const modelCount = draft.models.filter((model) => model.name.trim()).length;
-  return [
-    {
-      label: t('accounts.card_asset'),
-      value: draft.accountKey || providerName,
-    },
-    {
-      label: t('accounts.card_source_type'),
-      value: 'OPENAI-COMPATIBLE',
-    },
-    {
-      label: t('accounts.ui_models'),
-      value: String(modelCount),
-    },
-    {
-      label: t('accounts.openai_provider_last_verified'),
-      value: verifyState.lastVerifiedAt ? new Date(verifyState.lastVerifiedAt).toLocaleString() : '—',
-    },
-  ];
 }

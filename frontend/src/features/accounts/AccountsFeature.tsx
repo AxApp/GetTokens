@@ -1149,7 +1149,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         <OpenAICompatibleDetailModal
           t={t}
           draft={openAICompatibleState.detailDraft}
-          usageSummary={accountUsageByID[openAICompatibleState.detailDraft.accountKey || openAICompatibleState.detailDraft.currentName]}
           rateLimitStatus={accountRateLimitByID[openAICompatibleState.detailDraft.accountKey || openAICompatibleState.detailDraft.currentName]}
           rateLimitStrategies={rateLimitStrategies}
           rateLimitRulesAPI={previewMode

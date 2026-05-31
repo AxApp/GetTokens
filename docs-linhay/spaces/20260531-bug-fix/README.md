@@ -257,6 +257,11 @@ sidecar `PatchAccountStatus` 在调用 `SetAccountStatus` 后继续执行 `apply
 3. OpenAI-compatible 详情复用同一个合并 section，并通过 `evidenceRows` 注入 provider 证据行。
 4. 更新 Storybook 示例和 browser check，覆盖合并后的 DOM 标记。
 
+### 补充调整（2026-05-31）
+1. 按最新要求直接移除 `AccountRuntimeEvidenceSection`。
+2. 统一账号详情和 OpenAI-compatible 详情不再挂载顶部运行证据 overview。
+3. Storybook 示例、source-level 测试、设计系统 manifest 与 browser check 改为锁定该 section 不再出现。
+
 ### 验证
 1. `node --test frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`
 2. `npm --prefix frontend run typecheck`

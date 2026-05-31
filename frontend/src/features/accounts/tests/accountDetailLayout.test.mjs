@@ -4,14 +4,14 @@ import { readFile } from 'node:fs/promises';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout.ts';
 import { findAccountDetailByID } from '../model/accountDetailSelection.ts';
 
-test('account detail runtime evidence is no longer mounted through the split overview grid', async () => {
+test('account detail no longer mounts runtime evidence overview sections', async () => {
   const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const openAICompatibleSource = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(unifiedSource, /AccountDetailOverviewGrid/);
   assert.doesNotMatch(openAICompatibleSource, /AccountDetailOverviewGrid/);
-  assert.match(unifiedSource, /<AccountRuntimeEvidenceSection/);
-  assert.match(openAICompatibleSource, /<AccountRuntimeEvidenceSection/);
+  assert.doesNotMatch(unifiedSource, /AccountRuntimeEvidenceSection/);
+  assert.doesNotMatch(openAICompatibleSource, /AccountRuntimeEvidenceSection/);
 });
 
 test('account detail keeps auth-file modules lightweight', () => {
@@ -36,14 +36,6 @@ test('runtime quota rows use a full-width visible progress track', async () => {
   assert.match(source, /<QuotaBars quotaDisplay=\{quotaDisplay\} t=\{t\} \/>/);
   assert.doesNotMatch(source, /data-account-quota-progress-track/);
   assert.doesNotMatch(source, /data-account-quota-progress-fill/);
-});
-
-test('runtime stats render as a compact strip instead of a large stat grid', async () => {
-  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
-
-  assert.match(source, /data-account-runtime-stat-strip/);
-  assert.match(source, /md:grid-cols-3/);
-  assert.doesNotMatch(source, /<AccountDetailStatGrid columns=\{6\}>/);
 });
 
 test('api key credential, verify, and proxy route stack vertically in one module', async () => {
@@ -99,7 +91,7 @@ test('quota and billing curl editors are modal draft editors without local save 
 
 test('quota and billing test actions live in section headers', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
-  const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountRuntimeEvidenceSection/)?.[0] ?? '';
+  const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountBillingSection/)?.[0] ?? '';
   const billingBlock = source.match(/export function AccountBillingSection[\s\S]*?\nfunction RuntimeKV/)?.[0] ?? '';
   const billingActionsBlock = billingBlock.match(/const billingActions = \([\s\S]*?\n  \);/)?.[0] ?? '';
 
@@ -117,7 +109,7 @@ test('quota and billing test actions live in section headers', async () => {
 
 test('quota and billing detail share empty-state and script-card structure', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
-  const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountRuntimeEvidenceSection/)?.[0] ?? '';
+  const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountBillingSection/)?.[0] ?? '';
   const billingBlock = source.match(/export function AccountBillingSection[\s\S]*?\nfunction RuntimeKV/)?.[0] ?? '';
   const billingActionsBlock = billingBlock.match(/const billingActions = \([\s\S]*?\n  \);/)?.[0] ?? '';
 
@@ -133,30 +125,30 @@ test('quota and billing detail share empty-state and script-card structure', asy
   assert.doesNotMatch(billingActionsBlock, /编辑脚本/);
 });
 
-test('runtime snapshot and evidence render as one merged account detail section', async () => {
+test('runtime evidence section is removed from account detail surfaces', async () => {
   const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
   const openAICompatibleSource = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
   const storySource = await readFile(new URL('../components/AccountModalComponents.stories.tsx', import.meta.url), 'utf8');
 
-  assert.match(sectionSource, /export function AccountRuntimeEvidenceSection/);
-  assert.match(sectionSource, /componentName="AccountRuntimeEvidenceSection"/);
-  assert.match(sectionSource, /data-account-runtime-evidence-layout="merged"/);
-  assert.match(sectionSource, /data-account-runtime-evidence-slot="snapshot"/);
-  assert.match(sectionSource, /data-account-runtime-evidence-slot="audit"/);
-  assert.match(sectionSource, /AUDIT EVIDENCE/);
+  assert.doesNotMatch(sectionSource, /export function AccountRuntimeEvidenceSection/);
+  assert.doesNotMatch(sectionSource, /componentName="AccountRuntimeEvidenceSection"/);
+  assert.doesNotMatch(sectionSource, /data-account-runtime-evidence-layout="merged"/);
+  assert.doesNotMatch(sectionSource, /data-account-runtime-evidence-slot="snapshot"/);
+  assert.doesNotMatch(sectionSource, /data-account-runtime-evidence-slot="audit"/);
   assert.doesNotMatch(sectionSource, /export function AccountRuntimeSnapshotSection/);
   assert.doesNotMatch(sectionSource, /export function AccountEvidenceSection/);
 
-  assert.match(unifiedSource, /<AccountRuntimeEvidenceSection[\s\S]*?account=\{account\}/);
+  assert.doesNotMatch(unifiedSource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(unifiedSource, /AccountDetailOverviewGrid/);
   assert.doesNotMatch(unifiedSource, /AccountEvidenceSection/);
 
-  assert.match(openAICompatibleSource, /<AccountRuntimeEvidenceSection[\s\S]*?evidenceRows=\{buildOpenAICompatibleEvidenceRows/);
+  assert.doesNotMatch(openAICompatibleSource, /AccountRuntimeEvidenceSection/);
+  assert.doesNotMatch(openAICompatibleSource, /buildOpenAICompatibleEvidenceRows/);
   assert.doesNotMatch(openAICompatibleSource, /OpenAICompatibleEvidenceSection/);
   assert.doesNotMatch(openAICompatibleSource, /AccountDetailOverviewGrid/);
 
-  assert.match(storySource, /<AccountRuntimeEvidenceSection/);
+  assert.doesNotMatch(storySource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(storySource, /AccountRuntimeSnapshotSection/);
   assert.doesNotMatch(storySource, /AccountEvidenceSection/);
 });

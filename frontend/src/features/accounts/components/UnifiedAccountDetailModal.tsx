@@ -18,7 +18,7 @@ import {
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout';
-import { buildQuotaDisplay, extractBilling } from '../model/accountQuota';
+import { extractBilling } from '../model/accountQuota';
 import { buildAccountDetailStatusMessage } from '../model/accountPresentation';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import type { CodexQuotaState } from '../model/types';
@@ -29,7 +29,6 @@ import {
   AccountDetailFooter,
   AccountDetailHeader,
   AccountQuotaSection,
-  AccountRuntimeEvidenceSection,
   type APIKeyVerifyState,
 } from './AccountDetailSections';
 import {
@@ -122,10 +121,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     () => (quotaState?.quota ? extractBilling(quotaState.quota) : undefined),
     [quotaState],
   );
-  const quotaDisplay = useMemo(
-    () => buildQuotaDisplay(account, quotaState),
-    [account, quotaState],
-  );
   const statusMessage = useMemo(
     () => buildAccountDetailStatusMessage(account, t),
     [account, t],
@@ -170,12 +165,6 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       }
     >
       <AccountDetailBody>
-        <AccountRuntimeEvidenceSection
-          account={account}
-          usageSummary={props.usageSummary}
-          quotaDisplay={quotaDisplay}
-          billing={liveBilling}
-        />
         <AccountDetailModuleStack layout="cards">
           {buildAccountDetailModulePlan(account).map((moduleID) => {
             switch (moduleID) {

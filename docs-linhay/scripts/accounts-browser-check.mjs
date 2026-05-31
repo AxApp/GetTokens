@@ -27,10 +27,10 @@ const scenarios = [
     url: `${baseURL}/#frame=accounts&detail=codex-api-key%3Amanual-disabled`,
     screenshotPath: path.join(screenshotDir, '20260531-accounts-credential-quota-billing-after-v01.png'),
     checks: {
-      runtimeEvidenceMerged: (dom) => dom.includes('data-design-system-component-name="AccountRuntimeEvidenceSection"'),
-      runtimeEvidenceLayout: (dom) => dom.includes('data-account-runtime-evidence-layout="merged"'),
-      runtimeEvidenceSnapshot: (dom) => dom.includes('data-account-runtime-evidence-slot="snapshot"'),
-      runtimeEvidenceAudit: (dom) => dom.includes('data-account-runtime-evidence-slot="audit"'),
+      noRuntimeEvidenceSection: (dom) => !dom.includes('data-design-system-component-name="AccountRuntimeEvidenceSection"'),
+      noRuntimeEvidenceLayout: (dom) => !dom.includes('data-account-runtime-evidence-layout="merged"'),
+      noRuntimeEvidenceSnapshot: (dom) => !dom.includes('data-account-runtime-evidence-slot="snapshot"'),
+      noRuntimeEvidenceAudit: (dom) => !dom.includes('data-account-runtime-evidence-slot="audit"'),
       noStandaloneEvidenceSection: (dom) => !dom.includes('data-design-system-component-name="AccountEvidenceSection"'),
       credentialSectionWide: (dom) =>
         /data-design-system-component-name="AccountCredentialVerifySection"[^>]*class="[^"]*lg:col-span-2/.test(dom),

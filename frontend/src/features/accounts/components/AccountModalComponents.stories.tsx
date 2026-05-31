@@ -13,7 +13,6 @@ import {
   AccountDetailFooter,
   AccountDetailHeader,
   AccountQuotaSection,
-  AccountRuntimeEvidenceSection,
 } from './AccountDetailSections';
 import {
   AccountDetailBody,
@@ -553,11 +552,6 @@ function AccountDetailSectionsSample({
         }
       >
         <AccountDetailBody>
-          <AccountRuntimeEvidenceSection
-            account={apiKeyDetailAccount}
-            usageSummary={apiKeyUsageSummary}
-            billing={apiKeyDetailBilling}
-          />
           <AccountDetailModuleStack layout="cards">
             <AccountCredentialVerifySection
               draft={draft}

@@ -19,18 +19,15 @@ import {
   type AccountProxyRouteDraft,
 } from '../model/accountProxyRoute.ts';
 import { selectQuotaWindows } from '../model/accountQuota';
-import { buildAccountRuntimeStats } from '../model/accountDetailRuntime';
 import {
   resolveAccountOperationalState,
   resolveAccountPrimaryLabel,
 } from '../model/accountPresentation';
 import type { AccountUsageSummary } from '../model/accountUsage';
-import { buildAccountEvidenceRows, type AccountEvidenceRow } from '../model/accountEvidence';
 import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { QuotaBars } from './CardSections';
 import {
-  AccountDetailEvidenceGrid,
   AccountDetailEmptyState,
   AccountDetailPill,
   AccountDetailSection,
@@ -98,14 +95,6 @@ export interface AccountBillingSectionProps {
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => Promise<any>;
-}
-
-export interface AccountRuntimeEvidenceSectionProps {
-  account?: AccountRecord;
-  usageSummary?: AccountUsageSummary;
-  quotaDisplay?: QuotaDisplay;
-  billing?: BillingDisplay;
-  evidenceRows?: AccountEvidenceRow[];
 }
 
 export interface AccountDetailFooterProps {
@@ -739,127 +728,6 @@ export function AccountQuotaSection({
         />
       ) : null}
     </AccountDetailSection>
-  );
-}
-
-export function AccountRuntimeEvidenceSection({
-  account,
-  usageSummary,
-  quotaDisplay,
-  billing,
-  evidenceRows,
-}: AccountRuntimeEvidenceSectionProps) {
-  const { t } = useI18n();
-  const stats = buildAccountRuntimeStats(usageSummary, t);
-  const rows = evidenceRows ?? (account ? buildAccountEvidenceRows(t, account, usageSummary) : []);
-  const quotaWindows = quotaDisplay?.windows ?? [];
-  const balances = billing?.isAvailable ? billing.balances ?? [] : [];
-  const lastActivityMeta = usageSummary?.lastActivityAt ? `LAST ${new Date(usageSummary.lastActivityAt).toLocaleString()}` : undefined;
-
-  return (
-    <AccountDetailSection
-      componentName="AccountRuntimeEvidenceSection"
-      eyebrow="Runtime"
-      title="运行证据"
-      density="hero"
-      meta={lastActivityMeta}
-    >
-      <div
-        data-account-runtime-evidence-layout="merged"
-        className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]"
-      >
-        <div data-account-runtime-evidence-slot="snapshot" className="grid min-w-0 gap-4">
-          <div className="grid gap-2 border-l-4 border-[var(--text-primary)] bg-[var(--bg-surface)] px-3 py-2">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              LIVE SNAPSHOT
-            </div>
-            <RuntimeStatStrip stats={stats} />
-          </div>
-
-          {quotaWindows.length > 0 || balances.length > 0 ? (
-            <div
-              data-account-runtime-resource-grid="quota-balance"
-              className={`grid gap-4 border-t-2 border-[var(--border-color)] pt-4 ${quotaWindows.length > 0 && balances.length > 0 ? 'xl:grid-cols-2' : ''}`}
-            >
-              {quotaWindows.length > 0 ? (
-                <div data-account-runtime-resource-panel="quota" className="grid gap-2">
-                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    QUOTA
-                  </div>
-                  {quotaDisplay ? <QuotaBars quotaDisplay={quotaDisplay} t={t} /> : null}
-                </div>
-              ) : null}
-
-              {balances.length > 0 ? (
-                <div data-account-runtime-resource-panel="balance" className="grid gap-2 content-start">
-                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    BALANCE
-                  </div>
-                  {balances.map((balance, index) => (
-                    <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
-                      <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
-                      <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
-                      <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        <aside
-          data-account-runtime-evidence-slot="audit"
-          className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3"
-        >
-          <div className="mb-2 flex items-center justify-between gap-3 border-b border-dashed border-[var(--border-color)] pb-2">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              AUDIT EVIDENCE
-            </div>
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tabular-nums text-[var(--text-secondary)]">
-              {rows.length} ROWS
-            </div>
-          </div>
-          {rows.length > 0 ? (
-            <AccountDetailEvidenceGrid
-              compact
-              rows={rows.map((row) => ({
-                label: row.label,
-                value: row.value,
-                title: row.title ?? row.value,
-              }))}
-            />
-          ) : (
-            <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
-              暂无审计证据
-            </AccountDetailEmptyState>
-          )}
-        </aside>
-      </div>
-    </AccountDetailSection>
-  );
-}
-
-function RuntimeStatStrip({ stats }: { stats: ReturnType<typeof buildAccountRuntimeStats> }) {
-  return (
-    <div
-      data-account-runtime-stat-strip="compact"
-      className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-surface)] grid-cols-2 md:grid-cols-3"
-    >
-      {stats.map((item) => (
-        <div
-          key={item.id}
-          className="flex min-w-0 items-baseline justify-between gap-2 border-b border-r border-dashed border-[var(--border-color)] px-2.5 py-1.5"
-        >
-          <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-            {item.label}
-          </div>
-          <div className="shrink-0 truncate text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tabular-nums tracking-[0.04em] text-[var(--text-primary)]">
-            {item.value}
-          </div>
-        </div>
-      ))}
-    </div>
   );
 }
 
