@@ -28,7 +28,7 @@ quota refresh / usage result / upstream quota error
 
 ## 当前落地状态
 
-阶段：Phase 3a sidecar quota/billing curl HTTP execution bridge 已实现并通过自动化测试。
+阶段：Phase 3b sidecar-native quota refresh 已实现，自动化验证完成，等待真实桌面/真实账号流量用户验收。
 
 已完成：
 
@@ -47,13 +47,264 @@ quota refresh / usage result / upstream quota error
 - 账号卡只展示 sidecar 返回的 `blocked/sources`，不再从本地 quota bars 推断路由阻断。
 - auth-file usage cache fallback 写入 `status=stale`；stale/error 不新增强阻断，也不会清除已有 fresh `quota-empty`，已有 block 由 `resetAt` 自然过期或下一次成功刷新清理。
 - fresh success quota recovery 会按同一 source 的身份 lookup 清理 `quota-empty`。即使旧 block 是按 `authID` 写入，只要带有同一 `accountKey` lookup，也能被 `accountKey` 维度恢复清理；`manual-disabled` / `rate-limit` 不受影响。
-- Codex API key quota curl / billing curl 的 HTTP 执行已从 Wails/root 直连改为 sidecar `/v0/management/api-call`。Wails 仍负责已有 curl 解析与 quota/billing 响应映射，但出网、proxy/system proxy 和请求执行已进入 sidecar。
+- Codex API key quota curl / billing curl 的解析、provider-specific 映射、HTTP 执行与 runtime upsert 已迁入 sidecar-native management endpoint：
+  - `POST /v0/management/gettokens/quota-refresh/:account_key`
+  - `POST /v0/management/gettokens/quota-test`
+  - `POST /v0/management/gettokens/billing-test`
+- 已保存 `codex-api-key` 账号 refresh 从 sidecar account store 读取 `acct_*` credential，fresh success 通过 `QuotaRuntimeStore.Upsert` 写入 sidecar runtime，并同步 `quota-empty` guard。
+- 草稿 `quota-test` / `billing-test` 只返回预览态 `QuotaRuntimeState`，不写 runtime、不生成 guard。
+- Wails/root 现在只调用 sidecar `quota-refresh` / `quota-test` / `billing-test` 并映射 `QuotaRuntimeState`；root 侧 API key quota curl / billing parser 已移除，只保留 auth-file usage payload 所需解析。
+- auth-file usage refresh 暂继续通过 sidecar `/v0/management/api-call` 做 token 注入，再写入 quota runtime。
 
 未完成：
 
-- quota curl / billing curl 的解析器与 provider-specific quota 映射仍在 Wails/root 侧；下一步可把解析和 refresh orchestration 也迁入 sidecar-native endpoint。
 - Channel Routing explain 过滤原因的 UI 汇总仍需单独接入 `quota-empty` 分组展示。
-- reset 到期后的主动 quota refresh / reconcile 调度还未接入，只依赖 route guard `ExpiresAt` 自然失效与 runtime 后续更新。
+- reset 到期后的后台主动 quota refresh / 全量轮询未接入；当前依赖 route guard `ExpiresAt` 自然失效、账号池/详情按需刷新和后续 fresh success 清理。
+- quota refresh debug record 持久化未单独建设；当前只保留 management endpoint 响应与日志。
+
+## Phase 3b 详细技术方案
+
+### 建设内容
+
+Phase 3b 建设 sidecar-native quota refresh 执行器。它把 Codex API key 账号的 quota curl / billing curl 解析、HTTP 执行、provider-specific 响应映射和 `quota-status` upsert 全部收敛到 CLIProxyAPI fork 的 sidecar 边界内。debug record 持久化作为后续可观测性增强，不阻塞本期路由语义闭环。
+
+完成后，Wails/root 不再解析 API key quota curl，也不再把 provider 响应转换成 quota DTO；Wails 只负责调用 sidecar endpoint，并把 sidecar 返回的 `QuotaRuntimeState` 映射给现有 UI。
+
+### 不建设内容
+
+- 不迁移 auth-file `chatgpt.com/backend-api/wham/usage` 刷新链路；它可继续通过 `/v0/management/api-call` 做 token 注入，再写入 `quota-status`。
+- 不删除 `/v0/management/api-call`；它仍服务其他管理工具和 auth-file usage 请求。
+- 不做 provider 定时轮询的全量调度器；本期依赖 `quota-empty.ExpiresAt` 自然失效和按需 refresh。
+- 不把 quota-empty 合并进 `rate-limit`，也不恢复 legacy routing mode。
+- 不要求前端新增本地 blocked 推断；前端继续展示 sidecar 返回值。
+
+### 推荐方案
+
+推荐把 quota 执行器放在 sidecar `gettokenshooks` 域内，并通过 management routes 暴露小范围 API：
+
+```text
+Wails GetCodexQuota / TestQuotaCurl / TestBillingCurl
+  -> internal/cliproxyapi client
+  -> sidecar management endpoint
+  -> account store / draft input
+  -> quota curl parser
+  -> sidecar HTTP client with account/global/system proxy
+  -> provider quota/billing parser
+  -> QuotaRuntimeStore.Upsert(account_key)
+  -> AccountRouteGuardStore(source=quota-empty)
+  -> QuotaRuntimeState returned to Wails/UI
+```
+
+选择该方案的原因：
+
+- 额度、reset time 和路由阻断同源，`quota-empty` 不再依赖 Wails/root 中间态。
+- 可以复用 sidecar account store、proxy 选择和 route guard store，避免 root 与 sidecar 出现两套网络语义。
+- 分期可独立合并：Phase 3a 已保证 HTTP 出网在 sidecar；Phase 3b 继续下沉解析和 orchestration，失败时可回退到 Phase 3a。
+
+保留的最小替代方案是继续使用 Phase 3a `/api-call` 桥接，只把 reset 到期 reconcile 加在 root/Wails 侧。该方案改动更小，但会继续留下“UI 解析数据源”和“sidecar 路由真源”之间的语义分层，不推荐作为最终形态。
+
+### 新增 sidecar API
+
+新增三个 management endpoint，统一返回 sidecar-native DTO。
+
+#### 1. 刷新已保存账号
+
+```text
+POST /v0/management/gettokens/quota-refresh/:account_key
+```
+
+语义：
+
+- 从 sidecar account store 读取 `acct_*`。
+- 仅支持 `kind=codex-api-key`。
+- `quota_enabled=false` 或 `quota_curl` 为空时返回 400，不写入 runtime。
+- 成功执行 quota curl 后解析为 `QuotaRuntimeState`，写入 `QuotaRuntimeStore.Upsert`，返回写入后的 state。
+- 如果账号启用了 `billing_enabled` 且有 `billing_curl`，同一次 refresh 可顺带刷新 billing 并合并进同一个 state。
+- 上游非 2xx、网络失败或解析失败时：
+  - 若已有可展示 cache，返回 `status=stale` 或 `status=degraded` 的 state，并保留已有 active `quota-empty` 直到 `expiresAt`。
+  - 若没有 cache，返回错误，不创建新的 `quota-empty`。
+
+请求体：
+
+```json
+{
+  "include_billing": true,
+  "force": false
+}
+```
+
+响应体为现有 `QuotaRuntimeState`。
+
+#### 2. 测试 quota curl 草稿
+
+```text
+POST /v0/management/gettokens/quota-test
+```
+
+语义：
+
+- 用前端表单草稿 `api_key/base_url/prefix/quota_curl` 构造请求。
+- 不读取 account store，不写入 `QuotaRuntimeStore`，不生成 `quota-empty`。
+- 返回可映射为 UI 预览的 `QuotaRuntimeState`，`account_key` 可为空或使用请求体传入的临时 key；root 侧不得把测试结果当成路由状态。
+
+请求体：
+
+```json
+{
+  "api_key": "sk-...",
+  "base_url": "https://api.example.com",
+  "prefix": "",
+  "quota_curl": "curl ...",
+  "account_key": ""
+}
+```
+
+#### 3. 测试 billing curl 草稿
+
+```text
+POST /v0/management/gettokens/billing-test
+```
+
+语义：
+
+- 输入与 `quota-test` 相同，但字段为 `billing_curl`。
+- 只解析 billing/balance 响应，不写入 runtime，不生成 guard。
+- 返回 `QuotaRuntimeBilling` 或包含 billing 的 `QuotaRuntimeState`；root 侧继续映射成现有 `CodexQuotaBillingInfo`。
+
+### sidecar 内部模块边界
+
+本期实际落地在 management handler 层，复用已有 management transport 能力：
+
+- `internal/api/handlers/management/quota_refresh.go`：结构化解析 curl，禁止 shell operators，支持 URL/method/header/body/cookie，占位符替换、ignored options、provider quota/billing 映射、account store 读取、HTTP 执行和 runtime upsert。
+- `internal/api/handlers/management/quota_refresh_test.go`：覆盖已保存账号 refresh 写入 `quota-empty`、草稿 shell 拒绝不写 runtime、billing 草稿解析不写 runtime。
+- `internal/api/server.go`：注册 `/gettokens/quota-refresh/:account_key`、`/gettokens/quota-test`、`/gettokens/billing-test`。
+
+如果后续 parser 继续膨胀，再按稳定边界拆到 `internal/gettokenshooks/quota_curl.go`、`quota_provider_parser.go`、`quota_refresh.go`。当前先保持改动面集中，避免在 Phase 3b 同时做大规模包拆分。
+
+HTTP transport 不在 quota 模块里重写一套代理规则。应复用或抽取 management `apiCallTransport(auth)` 的同等能力：
+
+- 账号级 proxy 优先。
+- 其次全局 `proxy-url`。
+- 再其次 `use-system-proxy`。
+- 最后直连。
+
+当前 `quota_refresh.go` 直接调用 management handler 的 `apiCallTransport(auth)`，不要在 root/Wails 侧补偿代理语义。
+
+### root / Wails 改造
+
+`internal/cliproxyapi` 新增 client method：
+
+- `RefreshQuota(accountKey string, includeBilling bool, force bool) (*QuotaRuntimeState, error)`
+- `TestQuotaCurl(input QuotaCurlTestInput) (*QuotaRuntimeState, error)`
+- `TestBillingCurl(input QuotaCurlTestInput) (*QuotaRuntimeState, error)`
+
+`internal/wailsapp/quota.go` 改造：
+
+- `getUnifiedCodexAPIKeyQuota` 调 `RefreshQuota(account.AccountKey, true, false)`，删除 API key quota refresh 的 Wails/root curl 解析和 provider 映射。
+- `TestCodexAPIKeyQuotaCurl` 调 sidecar `quota-test`。
+- `TestCodexAPIKeyBillingCurl` 调 sidecar `billing-test`。
+- 保留 `mapQuotaRuntimeStateToCodexQuotaResponse`，作为 Wails UI 兼容层。
+- auth-file quota 路径暂不改，继续通过 `/api-call` 和 `upsertAccountsdomainCodexQuotaRuntimeIfUnified` 写 runtime。
+
+root `internal/accounts/quota_curl.go` 在 Phase 3b 后只保留 auth-file 或兼容需要的部分。若迁移后 root 已无 API key quota parser 调用，应删除对应未使用代码和测试，避免两套 parser 漂移。
+
+### reset time 与 refresh 时机
+
+Phase 3b 的 reset time 处理分两层：
+
+1. route guard TTL：已由 `quota-empty.ExpiresAt = latest resetAt` 处理，是强阻断的恢复边界。
+2. refresh trigger：当用户打开账号池、账号详情、手动测试或请求 explain 时，如果 `quota-status` 中 active `quota-empty` 已过期，sidecar 可先清理过期 block，并对该 account key 发起一次按需 refresh。
+
+本期不做后台全量定时轮询。当前实现采用轻量自然恢复：
+
+- `QuotaRuntimeStore.StateForAccount` 和 route guard active lookup 会自然过滤已过期 block。
+- 若调用方请求 `force=true` 或 UI 发起刷新，则立即执行 provider refresh。
+- 若普通列表读取发现已过期但未刷新，不继续阻断；UI 显示 stale/degraded，等待下一次显式 refresh。
+
+这样可以避免后台请求放大，同时保证 reset 到期不会永久卡住账号。
+
+### 失败与降级语义
+
+- curl parse 失败：返回 400，不写 runtime，不影响已有 guard。
+- HTTP 网络失败：返回 502；若是已保存账号且存在旧 runtime，返回或保留 stale/degraded 状态，不创建新 guard。
+- provider 非 2xx：测试 endpoint 返回错误；已保存账号 refresh 可把 runtime 标为 degraded，但不得用该结果新增 `quota-empty`，除非响应明确表达 quota exhausted 且带 reset time。
+- provider 响应无法解析：返回解析错误；附带 ignored curl options hint。
+- fresh success 且 remaining 恢复为正数：通过 `QuotaRuntimeStore.Upsert` 只清理 `quota-empty` source，不影响 `manual-disabled` / `rate-limit`。
+- fresh success 且 remaining 仍为 0：写入或延长 `quota-empty`，`expiresAt` 取最晚未来 resetAt。
+- fresh success 但缺 resetAt：只展示 zero quota，不创建长期 hard block。
+
+### BDD / TDD
+
+先补红灯测试，再实现。
+
+sidecar 测试：
+
+1. Given 已保存 Codex API key 账号配置 quota curl，When 调 `POST /gettokens/quota-refresh/:account_key`，Then sidecar 执行 upstream HTTP、解析 quota、写入 quota-status 并返回 `blocked=true/source=quota-empty`。
+2. Given quota refresh 返回 remaining 正数，When 此前存在同 account key 的 `quota-empty`，Then 只清理 `quota-empty`，保留其他 guard source。
+3. Given quota curl 含管道/重定向/多命令，When 调 quota-test，Then 返回 400 且不写 runtime。
+4. Given quota curl 含安全但不支持的选项，When 上游响应无法解析，Then 错误包含 ignored options hint。
+5. Given billing curl 返回 DeepSeek/OpenRouter/OpenAI/SiliconFlow/generic balance 格式，When 调 billing-test，Then 返回 normalized billing DTO。
+6. Given upstream 网络失败且已有 fresh `quota-empty` 未过 reset，When refresh 失败，Then active block 保留并返回 degraded/stale explain。
+7. Given `expiresAt <= now`，When 查询 active guard，Then 过期 `quota-empty` 不再阻断候选。
+
+root/Wails 测试：
+
+1. `GetCodexQuota(acct_*)` 不再调用 `/v0/management/api-call`，只调用 `/v0/management/gettokens/quota-refresh/:account_key`。
+2. `TestCodexAPIKeyQuotaCurl` 调 `/v0/management/gettokens/quota-test`，不在 Wails/root 解析 curl。
+3. `TestCodexAPIKeyBillingCurl` 调 `/v0/management/gettokens/billing-test`。
+4. `mapQuotaRuntimeStateToCodexQuotaResponse` 继续保留 `blocked/sources/stale/degraded/billing/windows`。
+
+frontend 本期只需要跑现有 focused tests；若 Wails DTO 字段不变，不新增前端用例。
+
+### 验证命令
+
+sidecar：
+
+```text
+go test ./internal/api/handlers/management -run 'TestQuotaRefresh|TestQuotaDraft|TestBillingDraft' -count=1
+go test ./internal/api/handlers/management ./internal/gettokenshooks -count=1
+go test ./... -count=1
+```
+
+root：
+
+```text
+go test ./internal/cliproxyapi ./internal/wailsapp -run 'Test.*Quota|Test.*Billing' -count=1
+go test ./... -count=1
+node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/accounts/tests/accountConfig.test.mjs
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+docs-linhay/scripts/check-docs.sh
+git diff --check
+git -C docs-linhay/references/CLIProxyAPI diff --check
+qmd update
+qmd embed
+```
+
+本次 Phase 3b 已执行结果：
+
+- CLIProxyAPI fork：`go test ./internal/api/handlers/management -run 'TestQuotaRefresh|TestQuotaDraft|TestBillingDraft' -count=1` 通过。
+- CLIProxyAPI fork：`go test ./internal/api/handlers/management ./internal/gettokenshooks -count=1` 通过。
+- CLIProxyAPI fork：`go test ./... -count=1` 通过。
+- GetTokens root：`go test ./internal/accounts ./internal/cliproxyapi ./internal/wailsapp -count=1` 通过。
+- GetTokens root：`node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/accounts/tests/accountConfig.test.mjs` 通过。
+- GetTokens root：`npm --prefix frontend run typecheck` 通过。
+- GetTokens root：`npm --prefix frontend run build` 通过，仅有既有 chunk size warning。
+- GetTokens root：`./scripts/ensure-sidecar.sh darwin arm64` 通过，已重建 `build/bin/cli-proxy-api`。
+- GetTokens root：`go test ./... -count=1` 通过；此前出现过一次 `internal/codexbinary` 本地 mock release binary 版本识别为 `unknown` 的环境失败，本轮复跑已恢复。
+
+### 发布与回滚
+
+Phase 3b 可独立发布。回滚方式：
+
+- root/Wails 回滚到 Phase 3a `/api-call` 桥接调用。
+- sidecar 保留已新增 endpoint 不影响旧客户端；如果 endpoint 有缺陷但未被 root 调用，不影响路由热路径。
+- `quota-status` 数据结构不做破坏性迁移，因此无需数据回滚。
+- 已存在的 `quota-empty` block 仍按 `expiresAt` 自然过期；必要时可通过后续 fresh success refresh 清理。
+
+### 最脆弱假设
+
+本方案假设 Codex API key 账号已经统一进入 sidecar account store，并能从 `acct_*` 读取 `api_key/base_url/prefix/quota_curl/billing_curl/proxy_url`。如果这个假设不成立，Phase 3b 不能直接从 sidecar 自治刷新，只能继续用 Wails/root 传入完整 draft credential；这会削弱“已保存账号 runtime 自治”的目标，但不影响草稿测试 endpoint。
 
 ## 设计原则
 
@@ -357,10 +608,13 @@ Channel Routing 的“参与账号”只统计路由可参与账号；被 `quota
 - HTTP 请求统一通过 sidecar management `/api-call` 执行，复用 sidecar proxy/system proxy 语义。
 - quota refresh 结果继续写入 sidecar `quota-status`，UI 与路由过滤共享 sidecar runtime 状态。
 
-### Phase 3b：sidecar-native quota 执行器（待做）
+### Phase 3b：sidecar-native quota 执行器（已完成）
 
-- 把 quota curl / billing curl 解析、provider-specific 响应映射和 refresh orchestration 从 Wails/root 迁入 sidecar。
-- sidecar 自行维护刷新、stale/degraded、debug record 和 reset 到期 refresh。
+- 把 API key quota curl / billing curl 解析、provider-specific 响应映射和 refresh orchestration 从 Wails/root 迁入 sidecar。
+- sidecar 已保存账号 refresh 自行读取 account store、执行 HTTP、写入 `QuotaRuntimeStore.Upsert` 并同步 `quota-empty`。
+- 草稿 quota/billing 测试 endpoint 不写 runtime、不生成 guard。
+- Wails/root 不再保留 API key quota/billing parser；auth-file usage 路径暂留 `/api-call`。
+- debug record 持久化、后台主动 reset refresh 调度未纳入本期。
 
 ### Phase 4：Channel Routing explain 展示（待做）
 

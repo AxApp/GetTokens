@@ -148,14 +148,14 @@ func (a *App) getUnifiedCodexAPIKeyQuota(account *cliproxyapi.UnifiedAccount) (*
 	if !target.QuotaEnabled || target.QuotaCurl == "" {
 		return nil, errors.New("codex api key 未配置额度 curl")
 	}
-	quota, err := a.executeCodexAPIKeyQuotaRequest(target)
+	state, err := a.managementClient().RefreshQuota(account.AccountKey, true, false)
 	if err != nil {
 		if cachedState, cacheErr := a.managementClient().GetQuotaStatus(account.AccountKey); cacheErr == nil && quotaRuntimeStateHasDisplayQuota(cachedState) {
 			return mapQuotaRuntimeStateToCodexQuotaResponse(cachedState), nil
 		}
 		return nil, err
 	}
-	return a.upsertCodexQuotaRuntimeIfUnified(account.AccountKey, "codex-api-key-quota-curl", cliproxyapi.QuotaRuntimeStatusSuccess, quota)
+	return mapQuotaRuntimeStateToCodexQuotaResponse(state), nil
 }
 
 func mapAccountsdomainCodexQuotaResponse(quota *accountsdomain.CodexQuotaResponse) *CodexQuotaResponse {
@@ -403,104 +403,16 @@ func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*Co
 }
 
 func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (*CodexQuotaResponse, error) {
-	startedAt := time.Now()
-	curlRequest, apiResponse, err := a.executeCodexAPIKeyCurlViaSidecar(source)
+	state, err := a.managementClient().TestQuotaCurl(cliproxyapi.QuotaCurlTestInput{
+		APIKey:    strings.TrimSpace(source.APIKey),
+		BaseURL:   strings.TrimSpace(source.BaseURL),
+		Prefix:    strings.TrimSpace(source.Prefix),
+		QuotaCurl: strings.TrimSpace(source.QuotaCurl),
+	})
 	if err != nil {
-		if curlRequest == nil {
-			return nil, err
-		}
-		debugURL := accountsdomain.RedactCodexQuotaCurlURL(curlRequest.URL, source.APIKey)
-		debugHeaders := accountsdomain.RedactCodexQuotaCurlHeaders(curlRequest.Headers)
-		a.emitCodexQuotaDebugRecord(accountsdomain.CodexQuotaDebugRecord{
-			Request: accountsdomain.CodexQuotaDebugRequest{
-				Method:  curlRequest.Method,
-				URL:     debugURL,
-				Headers: debugHeaders,
-			},
-			Error:      err.Error(),
-			StartedAt:  startedAt,
-			EndedAt:    time.Now(),
-			DurationMs: time.Since(startedAt).Milliseconds(),
-		})
 		return nil, err
 	}
-
-	responseBody := []byte(apiResponse.Body)
-	debugURL := accountsdomain.RedactCodexQuotaCurlURL(curlRequest.URL, source.APIKey)
-	debugHeaders := accountsdomain.RedactCodexQuotaCurlHeaders(curlRequest.Headers)
-	debugRecord := accountsdomain.CodexQuotaDebugRecord{
-		Request: accountsdomain.CodexQuotaDebugRequest{
-			Method:  curlRequest.Method,
-			URL:     debugURL,
-			Headers: debugHeaders,
-		},
-		Response:   parseDebugResponse(string(responseBody)),
-		StartedAt:  startedAt,
-		EndedAt:    time.Now(),
-		DurationMs: time.Since(startedAt).Milliseconds(),
-		StatusCode: apiResponse.statusCode(),
-	}
-	if apiResponse.statusCode() < 200 || apiResponse.statusCode() >= 300 {
-		debugRecord.Error = "codex api key 额度请求失败"
-		a.emitCodexQuotaDebugRecord(debugRecord)
-		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("codex api key 额度请求失败"), curlRequest.IgnoredOptions)
-	}
-
-	quota, err := accountsdomain.BuildCodexQuotaResponseFromUsagePayload(responseBody, "")
-	if err != nil {
-		debugRecord.Error = err.Error()
-		a.emitCodexQuotaDebugRecord(debugRecord)
-		return nil, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
-	}
-	a.emitCodexQuotaDebugRecord(debugRecord)
-
-	return mapAccountsdomainCodexQuotaResponse(quota), nil
-}
-
-func (a *App) executeCodexAPIKeyCurlViaSidecar(source cliproxyAPIKeyQuotaSource) (*accountsdomain.CodexQuotaCurlRequest, managementAPICallResponse, error) {
-	curlRequest, err := accountsdomain.BuildCodexQuotaCurlRequest(accountsdomain.CodexQuotaCurlInput{
-		Curl:    source.QuotaCurl,
-		APIKey:  source.APIKey,
-		BaseURL: source.BaseURL,
-		Prefix:  source.Prefix,
-	})
-	if err != nil {
-		return nil, managementAPICallResponse{}, err
-	}
-	payload, err := json.Marshal(managementAPICallRequest{
-		Method: curlRequest.Method,
-		URL:    curlRequest.URL,
-		Header: curlRequest.Headers,
-		Data:   curlRequest.Body,
-	})
-	if err != nil {
-		return curlRequest, managementAPICallResponse{}, err
-	}
-	responseBody, _, err := a.SidecarRequest(
-		http.MethodPost,
-		ManagementAPIPrefix+"/api-call",
-		nil,
-		bytes.NewReader(payload),
-		"application/json",
-	)
-	if err != nil {
-		return curlRequest, managementAPICallResponse{}, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
-	}
-	var apiResponse managementAPICallResponse
-	if err := json.Unmarshal(responseBody, &apiResponse); err != nil {
-		return curlRequest, managementAPICallResponse{}, err
-	}
-	return curlRequest, apiResponse, nil
-}
-
-func codexQuotaCurlErrorWithIgnoredOptions(err error, ignoredOptions []string) error {
-	if err == nil {
-		return nil
-	}
-	if hint := accountsdomain.CodexQuotaCurlIgnoredOptionsHint(ignoredOptions); hint != "" {
-		return fmt.Errorf("%w。%s", err, hint)
-	}
-	return err
+	return mapQuotaRuntimeStateToCodexQuotaResponse(state), nil
 }
 
 type cliproxyAPIKeyQuotaSource struct {
@@ -538,33 +450,19 @@ func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*
 		return nil, errors.New("billing curl 不能为空")
 	}
 
-	curlRequest, apiResponse, err := a.executeCodexAPIKeyCurlViaSidecar(source)
+	state, err := a.managementClient().TestBillingCurl(cliproxyapi.QuotaCurlTestInput{
+		APIKey:      strings.TrimSpace(source.APIKey),
+		BaseURL:     strings.TrimSpace(source.BaseURL),
+		Prefix:      strings.TrimSpace(source.Prefix),
+		BillingCurl: strings.TrimSpace(source.QuotaCurl),
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	if apiResponse.statusCode() < 200 || apiResponse.statusCode() >= 300 {
-		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("codex api key 余额请求失败"), curlRequest.IgnoredOptions)
+	if state == nil || state.Billing == nil {
+		return nil, errors.New("无法解析计费信息，响应格式不支持")
 	}
-
-	billing := accountsdomain.TryParseBillingResponse([]byte(apiResponse.Body))
-	if billing == nil {
-		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("无法解析计费信息，响应格式不支持"), curlRequest.IgnoredOptions)
-	}
-
-	infos := make([]CodexQuotaBillingBalanceInfo, 0, len(billing.BalanceInfos))
-	for _, info := range billing.BalanceInfos {
-		infos = append(infos, CodexQuotaBillingBalanceInfo{
-			Currency:        info.Currency,
-			TotalBalance:    info.TotalBalance,
-			GrantedBalance:  info.GrantedBalance,
-			ToppedUpBalance: info.ToppedUpBalance,
-		})
-	}
-	return &CodexQuotaBillingInfo{
-		IsAvailable:  billing.IsAvailable,
-		BalanceInfos: infos,
-	}, nil
+	return mapQuotaRuntimeBillingToCodexQuotaResponse(state.Billing), nil
 }
 
 func toJSONString(value interface{}) string {

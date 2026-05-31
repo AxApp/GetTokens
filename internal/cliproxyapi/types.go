@@ -347,3 +347,12 @@ type QuotaRuntimeState struct {
 	BlockReason     string                    `json:"block_reason,omitempty"`
 	Sources         []QuotaRuntimeSourceState `json:"sources"`
 }
+
+type QuotaCurlTestInput struct {
+	APIKey      string `json:"api_key"`
+	BaseURL     string `json:"base_url"`
+	Prefix      string `json:"prefix,omitempty"`
+	QuotaCurl   string `json:"quota_curl,omitempty"`
+	BillingCurl string `json:"billing_curl,omitempty"`
+	AccountKey  string `json:"account_key,omitempty"`
+}

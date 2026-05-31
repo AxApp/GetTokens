@@ -354,6 +354,63 @@ func TestQuotaRuntimeClientStatus(t *testing.T) {
 	}
 }
 
+func TestQuotaRefreshClientEndpoints(t *testing.T) {
+	var gotRefreshPayload string
+	var gotQuotaTestPayload string
+	var gotBillingTestPayload string
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == "POST" && path == "/v0/management/gettokens/quota-refresh/acct_00000000-0000-4000-8000-000000000001":
+			payload, _ := io.ReadAll(body)
+			gotRefreshPayload = string(payload)
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"pro","windows":[],"sources":[]}`), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/quota-test":
+			payload, _ := io.ReadAll(body)
+			gotQuotaTestPayload = string(payload)
+			return []byte(`{"status":"success","plan_type":"pro","windows":[{"id":"five-hour","remaining_percent":88}],"sources":[]}`), 200, nil
+		case method == "POST" && path == "/v0/management/gettokens/billing-test":
+			payload, _ := io.ReadAll(body)
+			gotBillingTestPayload = string(payload)
+			return []byte(`{"status":"success","windows":[],"billing":{"is_available":true,"balance_infos":[{"currency":"USD","granted_balance":"12.00"}]},"sources":[]}`), 200, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return nil, 404, nil
+	})
+
+	status, err := client.RefreshQuota("acct_00000000-0000-4000-8000-000000000001", true, false)
+	if err != nil || status == nil || status.PlanType != "pro" {
+		t.Fatalf("RefreshQuota = %#v, err = %v", status, err)
+	}
+	if !strings.Contains(gotRefreshPayload, `"include_billing":true`) {
+		t.Fatalf("refresh payload = %s, want include_billing", gotRefreshPayload)
+	}
+
+	status, err = client.TestQuotaCurl(QuotaCurlTestInput{
+		APIKey:    "sk-test",
+		BaseURL:   "https://quota.example.com",
+		QuotaCurl: "curl https://quota.example.com/usage",
+	})
+	if err != nil || status == nil || len(status.Windows) != 1 {
+		t.Fatalf("TestQuotaCurl = %#v, err = %v", status, err)
+	}
+	if !strings.Contains(gotQuotaTestPayload, `"quota_curl":"curl https://quota.example.com/usage"`) {
+		t.Fatalf("quota-test payload = %s", gotQuotaTestPayload)
+	}
+
+	status, err = client.TestBillingCurl(QuotaCurlTestInput{
+		APIKey:      "sk-test",
+		BaseURL:     "https://quota.example.com",
+		BillingCurl: "curl https://quota.example.com/billing",
+	})
+	if err != nil || status == nil || status.Billing == nil || !status.Billing.IsAvailable {
+		t.Fatalf("TestBillingCurl = %#v, err = %v", status, err)
+	}
+	if !strings.Contains(gotBillingTestPayload, `"billing_curl":"curl https://quota.example.com/billing"`) {
+		t.Fatalf("billing-test payload = %s", gotBillingTestPayload)
+	}
+}
+
 func assertJSONContains(t *testing.T, body io.Reader, want string) {
 	t.Helper()
 	payload, err := io.ReadAll(body)

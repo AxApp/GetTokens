@@ -573,6 +573,54 @@ func (c *Client) UpsertQuotaStatus(accountKey string, state QuotaRuntimeState) (
 	return &response, nil
 }
 
+func (c *Client) RefreshQuota(accountKey string, includeBilling bool, force bool) (*QuotaRuntimeState, error) {
+	payload, err := json.Marshal(struct {
+		IncludeBilling bool `json:"include_billing"`
+		Force          bool `json:"force"`
+	}{
+		IncludeBilling: includeBilling,
+		Force:          force,
+	})
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", "/v0/management/gettokens/quota-refresh/"+url.PathEscape(accountKey), nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaRuntimeState
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeQuotaRuntimeStateSlices(&response)
+	return &response, nil
+}
+
+func (c *Client) TestQuotaCurl(input QuotaCurlTestInput) (*QuotaRuntimeState, error) {
+	return c.postQuotaCurlTest("/v0/management/gettokens/quota-test", input)
+}
+
+func (c *Client) TestBillingCurl(input QuotaCurlTestInput) (*QuotaRuntimeState, error) {
+	return c.postQuotaCurlTest("/v0/management/gettokens/billing-test", input)
+}
+
+func (c *Client) postQuotaCurlTest(path string, input QuotaCurlTestInput) (*QuotaRuntimeState, error) {
+	payload, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("POST", path, nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaRuntimeState
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeQuotaRuntimeStateSlices(&response)
+	return &response, nil
+}
+
 func decodeRateLimitRules(body []byte) ([]RateLimitRule, error) {
 	var response struct {
 		Items []RateLimitRule `json:"items"`

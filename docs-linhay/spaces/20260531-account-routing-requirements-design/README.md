@@ -78,7 +78,7 @@
 - [2026-05-31 memory：账号池 quota 与路由热路径边界排查](../../memory/2026-05-31.md)
 
 ## 当前状态
-- 状态：implementation-phase-2-5-ui-explain-bridge
+- 状态：implementation-phase-3b-sidecar-native-quota-refresh-verified
 - 最近更新：2026-05-31
 
 ## 实施记录
@@ -127,3 +127,23 @@
   - `node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/accounts/tests/accountConfig.test.mjs`
   - `npm --prefix frontend run typecheck`
 - 剩余：quota curl / billing curl 解析器、provider-specific 映射、reset 到期主动 refresh 调度仍可继续迁入 sidecar-native endpoint；Channel Routing explain 过滤原因 UI 仍需单独接入 `quota-empty` 分组展示。
+
+### 2026-05-31 Phase 3b sidecar-native quota refresh 实施
+
+- 已新增 sidecar-native `quota-refresh` / `quota-test` / `billing-test` management endpoint，把 API key quota curl 解析、provider-specific 映射、HTTP 执行和 `quota-status` upsert 放进 sidecar。
+- 已保存 Codex API key 账号 refresh 从 sidecar account store 读取 `acct_*` credential，fresh success 写入 `QuotaRuntimeStore.Upsert` 并同步 `quota-empty`；草稿 quota/billing 测试不写 runtime、不生成 guard。
+- Wails/root 已切到只调用 sidecar endpoint，并继续把 `QuotaRuntimeState` 映射给现有 UI DTO；root 侧 API key quota/billing parser 已删除，只保留 auth-file usage payload 解析。
+- auth-file usage refresh 暂不迁移，仍通过 sidecar `/v0/management/api-call` 做 token 注入后写 quota runtime。
+- reset time 继续作为 `quota-empty.ExpiresAt`；本期采用按需 refresh 与过期自然清理，不做后台全量轮询。
+- 已验证：
+  - `go test ./internal/api/handlers/management -run 'TestQuotaRefresh|TestQuotaDraft|TestBillingDraft' -count=1`（CLIProxyAPI fork）
+  - `go test ./internal/api/handlers/management ./internal/gettokenshooks -count=1`（CLIProxyAPI fork）
+  - `go test ./... -count=1`（CLIProxyAPI fork）
+  - `go test ./internal/accounts ./internal/cliproxyapi ./internal/wailsapp -count=1`
+  - `go test ./... -count=1`（GetTokens root）
+  - `node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/accounts/tests/accountConfig.test.mjs`
+  - `npm --prefix frontend run typecheck`
+  - `npm --prefix frontend run build`
+  - `./scripts/ensure-sidecar.sh darwin arm64`
+- 备注：此前出现过一次 GetTokens root `internal/codexbinary` 本地 mock release binary 版本识别为 `unknown` 的环境失败，本轮复跑 `go test ./... -count=1` 已通过。
+- 详细方案见：[Account Routing Quota Guard 技术方案](../../dev/20260531-account-routing-quota-guard.md)。
