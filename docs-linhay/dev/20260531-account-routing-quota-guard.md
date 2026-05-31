@@ -28,7 +28,7 @@ quota refresh / usage result / upstream quota error
 
 ## 当前落地状态
 
-阶段：Phase 2.5 sidecar quota runtime + UI explain bridge 已实现并通过自动化测试。
+阶段：Phase 3a sidecar quota/billing curl HTTP execution bridge 已实现并通过自动化测试。
 
 已完成：
 
@@ -47,10 +47,11 @@ quota refresh / usage result / upstream quota error
 - 账号卡只展示 sidecar 返回的 `blocked/sources`，不再从本地 quota bars 推断路由阻断。
 - auth-file usage cache fallback 写入 `status=stale`；stale/error 不新增强阻断，也不会清除已有 fresh `quota-empty`，已有 block 由 `resetAt` 自然过期或下一次成功刷新清理。
 - fresh success quota recovery 会按同一 source 的身份 lookup 清理 `quota-empty`。即使旧 block 是按 `authID` 写入，只要带有同一 `accountKey` lookup，也能被 `accountKey` 维度恢复清理；`manual-disabled` / `rate-limit` 不受影响。
+- Codex API key quota curl / billing curl 的 HTTP 执行已从 Wails/root 直连改为 sidecar `/v0/management/api-call`。Wails 仍负责已有 curl 解析与 quota/billing 响应映射，但出网、proxy/system proxy 和请求执行已进入 sidecar。
 
 未完成：
 
-- quota curl / billing curl 的 HTTP 执行器仍在 Wails/root 侧，当前已先统一结果真源；下一步可把执行器本身也迁入 sidecar。
+- quota curl / billing curl 的解析器与 provider-specific quota 映射仍在 Wails/root 侧；下一步可把解析和 refresh orchestration 也迁入 sidecar-native endpoint。
 - Channel Routing explain 过滤原因的 UI 汇总仍需单独接入 `quota-empty` 分组展示。
 - reset 到期后的主动 quota refresh / reconcile 调度还未接入，只依赖 route guard `ExpiresAt` 自然失效与 runtime 后续更新。
 
@@ -180,7 +181,8 @@ remaining <= 0 && resetAt > now
 
 ```text
 GetCodexQuota(accountKey)
-  -> quota curl / auth-file usage refresh
+  -> quota curl parse / auth-file usage refresh
+  -> sidecar /v0/management/api-call executes HTTP request
   -> PUT /v0/management/gettokens/quota-status/<accountKey>
   -> QuotaRuntimeStore.Upsert
   -> AccountRouteGuardStore(source=quota-empty)
@@ -314,6 +316,8 @@ Channel Routing 的“参与账号”只统计路由可参与账号；被 `quota
 - 统一 Codex API key quota refresh 会写入 sidecar quota-status，并返回 sidecar 响应。
 - auth-file usage refresh 失败但有 cache 时写入 `status=stale`。
 - auth-file quota refresh 使用统一账号 `accountKey` 作为 sidecar `api-call` 和 quota-status key。
+- Codex API key quota curl 测试和实际 refresh 都通过 sidecar `/api-call` 执行 HTTP 请求，不再在 Wails/root 直连目标 URL。
+- Codex API key billing curl 测试通过 sidecar `/api-call` 执行 HTTP 请求。
 - root mapper 保留 sidecar quota runtime explain 字段。
 
 已覆盖 frontend：
@@ -347,9 +351,15 @@ Channel Routing 的“参与账号”只统计路由可参与账号；被 `quota
 - 账号池展示 sidecar 返回的阻断原因与 next reset，不在前端本地推断 blocked。
 - root/frontend focused tests 锁定 generated models、mapper 和 account display 行为。
 
-### Phase 3：sidecar-native quota 执行器（待做）
+### Phase 3a：sidecar HTTP execution bridge（已完成）
 
-- 把 quota curl / billing curl HTTP 执行从 Wails/root 迁入 sidecar。
+- Codex API key quota curl / billing curl 仍由 Wails/root 解析为 method/url/headers/body。
+- HTTP 请求统一通过 sidecar management `/api-call` 执行，复用 sidecar proxy/system proxy 语义。
+- quota refresh 结果继续写入 sidecar `quota-status`，UI 与路由过滤共享 sidecar runtime 状态。
+
+### Phase 3b：sidecar-native quota 执行器（待做）
+
+- 把 quota curl / billing curl 解析、provider-specific 响应映射和 refresh orchestration 从 Wails/root 迁入 sidecar。
 - sidecar 自行维护刷新、stale/degraded、debug record 和 reset 到期 refresh。
 
 ### Phase 4：Channel Routing explain 展示（待做）

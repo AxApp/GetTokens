@@ -102,7 +102,7 @@
   - `go test ./internal/gettokenshooks ./sdk/cliproxy/auth ./sdk/api/handlers/openai -count=1`
   - `go test ./internal/cliproxyapi ./internal/wailsapp -run 'TestQuotaRuntime|TestGetCodexQuota|TestTestCodexAPIKeyQuotaCurl' -count=1`
   - `go test ./internal/cliproxyapi ./internal/wailsapp -count=1`
-- 剩余：quota curl / billing curl HTTP 执行器本身仍在 Wails/root 侧，后续可迁入 sidecar；frontend 还未直接展示 `blocked/sources/stale/degraded` explain 字段。
+- 当时剩余：quota curl / billing curl HTTP 执行器与 frontend explain 字段仍未完成；后续 Phase 2.5 / Phase 3a 已继续推进。
 
 ### 2026-05-31 Phase 2.5 UI explain bridge
 
@@ -114,4 +114,16 @@
   - `go test ./... -count=1`（GetTokens root）
   - `node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/accounts/tests/accountConfig.test.mjs`
   - `npm --prefix frontend run typecheck`
-- 剩余：quota curl / billing curl HTTP 执行器本身仍在 Wails/root 侧，后续可迁入 sidecar；Channel Routing explain 过滤原因 UI 仍需单独接入 `quota-empty` 分组展示。
+- 剩余：quota curl / billing curl 解析和 provider-specific 映射仍在 Wails/root 侧，后续可迁入 sidecar-native endpoint；Channel Routing explain 过滤原因 UI 仍需单独接入 `quota-empty` 分组展示。
+
+### 2026-05-31 Phase 3a sidecar HTTP execution bridge
+
+- 已把 Codex API key quota curl / billing curl 的 HTTP 执行从 Wails/root 直连改为 sidecar `/v0/management/api-call`。
+- Wails/root 当前仍保留 curl 解析和 quota/billing 响应映射；sidecar 负责实际出网请求、proxy/system proxy 语义和请求执行。
+- quota refresh 成功后仍写入 sidecar `quota-status`，所以 UI 展示与路由过滤继续共享同一 sidecar runtime 状态。
+- 已验证：
+  - `go test ./internal/wailsapp -run 'Test.*Codex.*Quota|Test.*Billing|TestManagementAPICallResponseStatusCode' -count=1`
+  - `go test ./internal/wailsapp ./internal/cliproxyapi -count=1`
+  - `node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/accounts/tests/accountConfig.test.mjs`
+  - `npm --prefix frontend run typecheck`
+- 剩余：quota curl / billing curl 解析器、provider-specific 映射、reset 到期主动 refresh 调度仍可继续迁入 sidecar-native endpoint；Channel Routing explain 过滤原因 UI 仍需单独接入 `quota-empty` 分组展示。

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"testing"
 )
@@ -41,30 +40,42 @@ func TestManagementAPICallResponseStatusCode(t *testing.T) {
 }
 
 func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
-	var gotAuthorization string
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotAuthorization = r.Header.Get("Authorization")
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{
-			"plan_type":"pro",
-			"rate_limit":{
-				"primary_window":{"used_percent":11,"limit_window_seconds":18000,"reset_at":1777980010},
-				"secondary_window":{"used_percent":4,"limit_window_seconds":604800,"reset_at":1778546810}
+	var gotAPICall managementAPICallRequest
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != http.MethodPost || path != ManagementAPIPrefix+"/api-call" {
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
 			}
-		}`))
-	}))
-	defer server.Close()
+			if err := json.NewDecoder(body).Decode(&gotAPICall); err != nil {
+				t.Fatalf("decode api-call body: %v", err)
+			}
+			response, _ := json.Marshal(managementAPICallResponse{
+				StatusCodeSnake: http.StatusOK,
+				Body: `{
+					"plan_type":"pro",
+					"rate_limit":{
+						"primary_window":{"used_percent":11,"limit_window_seconds":18000,"reset_at":1777980010},
+						"secondary_window":{"used_percent":4,"limit_window_seconds":604800,"reset_at":1778546810}
+					}
+				}`,
+			})
+			return response, http.StatusOK, nil
+		},
+	}
 
-	result, err := (&App{}).TestCodexAPIKeyQuotaCurl(TestCodexAPIKeyQuotaCurlInput{
+	result, err := app.TestCodexAPIKeyQuotaCurl(TestCodexAPIKeyQuotaCurlInput{
 		APIKey:    "sk-live",
-		BaseURL:   server.URL,
+		BaseURL:   "https://quota.example.com",
 		QuotaCurl: `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"`,
 	})
 	if err != nil {
 		t.Fatalf("TestCodexAPIKeyQuotaCurl: %v", err)
 	}
-	if gotAuthorization != "Bearer sk-live" {
-		t.Fatalf("Authorization = %q, want Bearer sk-live", gotAuthorization)
+	if gotAPICall.Method != http.MethodGet || gotAPICall.URL != "https://quota.example.com/api/codex/usage" {
+		t.Fatalf("api-call request = %#v, want sidecar-executed quota curl", gotAPICall)
+	}
+	if gotAPICall.Header["Authorization"] != "Bearer sk-live" {
+		t.Fatalf("Authorization = %q, want Bearer sk-live", gotAPICall.Header["Authorization"])
 	}
 	if result.PlanType != "pro" {
 		t.Fatalf("PlanType = %q, want pro", result.PlanType)
@@ -77,21 +88,58 @@ func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
 	}
 }
 
+func TestTestCodexAPIKeyBillingCurlUsesSidecarAPICall(t *testing.T) {
+	var gotAPICall managementAPICallRequest
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != http.MethodPost || path != ManagementAPIPrefix+"/api-call" {
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
+			}
+			if err := json.NewDecoder(body).Decode(&gotAPICall); err != nil {
+				t.Fatalf("decode api-call body: %v", err)
+			}
+			response, _ := json.Marshal(managementAPICallResponse{
+				StatusCodeSnake: http.StatusOK,
+				Body: `{
+					"is_available": true,
+					"balance_infos": [{
+						"currency": "USD",
+						"total_balance": "20.00",
+						"granted_balance": "12.00",
+						"topped_up_balance": "8.00"
+					}]
+				}`,
+			})
+			return response, http.StatusOK, nil
+		},
+	}
+
+	result, err := app.TestCodexAPIKeyBillingCurl(TestCodexAPIKeyQuotaCurlInput{
+		APIKey:    "sk-billing",
+		BaseURL:   "https://billing.example.com",
+		QuotaCurl: `curl -sS "{{baseUrl}}/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+	})
+	if err != nil {
+		t.Fatalf("TestCodexAPIKeyBillingCurl: %v", err)
+	}
+	if gotAPICall.Method != http.MethodGet || gotAPICall.URL != "https://billing.example.com/user/balance" {
+		t.Fatalf("api-call request = %#v, want sidecar-executed billing curl", gotAPICall)
+	}
+	if gotAPICall.Header["Authorization"] != "Bearer sk-billing" {
+		t.Fatalf("Authorization = %q, want Bearer sk-billing", gotAPICall.Header["Authorization"])
+	}
+	if !result.IsAvailable || len(result.BalanceInfos) != 1 {
+		t.Fatalf("billing result = %#v, want parsed balance info", result)
+	}
+	if result.BalanceInfos[0].GrantedBalance != "12.00" {
+		t.Fatalf("granted balance = %q, want 12.00", result.BalanceInfos[0].GrantedBalance)
+	}
+}
+
 func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
 	const accountKey = "acct_00000000-0000-4000-8000-000000000201"
-	var gotAuthorization string
+	var gotAPICall managementAPICallRequest
 	gotQuotaRuntimeUpsert := false
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gotAuthorization = r.Header.Get("Authorization")
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{
-			"plan_type":"plus",
-			"rate_limit":{
-				"primary_window":{"used_percent":17,"limit_window_seconds":18000,"reset_at":1777980010}
-			}
-		}`))
-	}))
-	defer server.Close()
 
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
@@ -103,12 +151,27 @@ func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
 					"provider":    "codex",
 					"codex_api_key": map[string]any{
 						"api_key":       "sk-company",
-						"base_url":      server.URL,
+						"base_url":      "https://quota.example.com",
 						"quota_curl":    `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"`,
 						"quota_enabled": true,
 					},
 				})
 				return payload, http.StatusOK, nil
+			}
+			if method == http.MethodPost && path == ManagementAPIPrefix+"/api-call" {
+				if err := json.NewDecoder(body).Decode(&gotAPICall); err != nil {
+					t.Fatalf("decode api-call body: %v", err)
+				}
+				response, _ := json.Marshal(managementAPICallResponse{
+					StatusCodeSnake: http.StatusOK,
+					Body: `{
+						"plan_type":"plus",
+						"rate_limit":{
+							"primary_window":{"used_percent":17,"limit_window_seconds":18000,"reset_at":1777980010}
+						}
+					}`,
+				})
+				return response, http.StatusOK, nil
 			}
 			if method == http.MethodPut && path == ManagementAPIPrefix+"/gettokens/quota-status/"+accountKey {
 				gotQuotaRuntimeUpsert = true
@@ -130,8 +193,8 @@ func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCodexQuota: %v", err)
 	}
-	if gotAuthorization != "Bearer sk-company" {
-		t.Fatalf("Authorization = %q, want Bearer sk-company", gotAuthorization)
+	if gotAPICall.URL != "https://quota.example.com/api/codex/usage" || gotAPICall.Header["Authorization"] != "Bearer sk-company" {
+		t.Fatalf("api-call request = %#v, want sidecar-executed quota curl", gotAPICall)
 	}
 	if !gotQuotaRuntimeUpsert {
 		t.Fatal("expected quota runtime status to be upserted")

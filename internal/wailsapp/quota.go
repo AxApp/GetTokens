@@ -2,11 +2,9 @@ package wailsapp
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -405,69 +403,31 @@ func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*Co
 }
 
 func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (*CodexQuotaResponse, error) {
-	curlRequest, err := accountsdomain.BuildCodexQuotaCurlRequest(accountsdomain.CodexQuotaCurlInput{
-		Curl:    source.QuotaCurl,
-		APIKey:  source.APIKey,
-		BaseURL: source.BaseURL,
-		Prefix:  source.Prefix,
-	})
+	startedAt := time.Now()
+	curlRequest, apiResponse, err := a.executeCodexAPIKeyCurlViaSidecar(source)
 	if err != nil {
+		if curlRequest == nil {
+			return nil, err
+		}
+		debugURL := accountsdomain.RedactCodexQuotaCurlURL(curlRequest.URL, source.APIKey)
+		debugHeaders := accountsdomain.RedactCodexQuotaCurlHeaders(curlRequest.Headers)
+		a.emitCodexQuotaDebugRecord(accountsdomain.CodexQuotaDebugRecord{
+			Request: accountsdomain.CodexQuotaDebugRequest{
+				Method:  curlRequest.Method,
+				URL:     debugURL,
+				Headers: debugHeaders,
+			},
+			Error:      err.Error(),
+			StartedAt:  startedAt,
+			EndedAt:    time.Now(),
+			DurationMs: time.Since(startedAt).Milliseconds(),
+		})
 		return nil, err
 	}
 
-	startedAt := time.Now()
-	ctx := a.ctx
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	var body io.Reader
-	if strings.TrimSpace(curlRequest.Body) != "" {
-		body = strings.NewReader(curlRequest.Body)
-	}
+	responseBody := []byte(apiResponse.Body)
 	debugURL := accountsdomain.RedactCodexQuotaCurlURL(curlRequest.URL, source.APIKey)
 	debugHeaders := accountsdomain.RedactCodexQuotaCurlHeaders(curlRequest.Headers)
-	req, err := http.NewRequestWithContext(ctx, curlRequest.Method, curlRequest.URL, body)
-	if err != nil {
-		return nil, err
-	}
-	for key, value := range curlRequest.Headers {
-		req.Header.Set(key, value)
-	}
-
-	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
-	if err != nil {
-		a.emitCodexQuotaDebugRecord(accountsdomain.CodexQuotaDebugRecord{
-			Request: accountsdomain.CodexQuotaDebugRequest{
-				Method:  curlRequest.Method,
-				URL:     debugURL,
-				Headers: debugHeaders,
-			},
-			Error:      err.Error(),
-			StartedAt:  startedAt,
-			EndedAt:    time.Now(),
-			DurationMs: time.Since(startedAt).Milliseconds(),
-		})
-		return nil, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
-	}
-	defer resp.Body.Close()
-
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		a.emitCodexQuotaDebugRecord(accountsdomain.CodexQuotaDebugRecord{
-			Request: accountsdomain.CodexQuotaDebugRequest{
-				Method:  curlRequest.Method,
-				URL:     debugURL,
-				Headers: debugHeaders,
-			},
-			Error:      err.Error(),
-			StartedAt:  startedAt,
-			EndedAt:    time.Now(),
-			DurationMs: time.Since(startedAt).Milliseconds(),
-			StatusCode: resp.StatusCode,
-		})
-		return nil, err
-	}
-
 	debugRecord := accountsdomain.CodexQuotaDebugRecord{
 		Request: accountsdomain.CodexQuotaDebugRequest{
 			Method:  curlRequest.Method,
@@ -478,9 +438,9 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 		StartedAt:  startedAt,
 		EndedAt:    time.Now(),
 		DurationMs: time.Since(startedAt).Milliseconds(),
-		StatusCode: resp.StatusCode,
+		StatusCode: apiResponse.statusCode(),
 	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+	if apiResponse.statusCode() < 200 || apiResponse.statusCode() >= 300 {
 		debugRecord.Error = "codex api key 额度请求失败"
 		a.emitCodexQuotaDebugRecord(debugRecord)
 		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("codex api key 额度请求失败"), curlRequest.IgnoredOptions)
@@ -495,6 +455,42 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 	a.emitCodexQuotaDebugRecord(debugRecord)
 
 	return mapAccountsdomainCodexQuotaResponse(quota), nil
+}
+
+func (a *App) executeCodexAPIKeyCurlViaSidecar(source cliproxyAPIKeyQuotaSource) (*accountsdomain.CodexQuotaCurlRequest, managementAPICallResponse, error) {
+	curlRequest, err := accountsdomain.BuildCodexQuotaCurlRequest(accountsdomain.CodexQuotaCurlInput{
+		Curl:    source.QuotaCurl,
+		APIKey:  source.APIKey,
+		BaseURL: source.BaseURL,
+		Prefix:  source.Prefix,
+	})
+	if err != nil {
+		return nil, managementAPICallResponse{}, err
+	}
+	payload, err := json.Marshal(managementAPICallRequest{
+		Method: curlRequest.Method,
+		URL:    curlRequest.URL,
+		Header: curlRequest.Headers,
+		Data:   curlRequest.Body,
+	})
+	if err != nil {
+		return curlRequest, managementAPICallResponse{}, err
+	}
+	responseBody, _, err := a.SidecarRequest(
+		http.MethodPost,
+		ManagementAPIPrefix+"/api-call",
+		nil,
+		bytes.NewReader(payload),
+		"application/json",
+	)
+	if err != nil {
+		return curlRequest, managementAPICallResponse{}, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
+	}
+	var apiResponse managementAPICallResponse
+	if err := json.Unmarshal(responseBody, &apiResponse); err != nil {
+		return curlRequest, managementAPICallResponse{}, err
+	}
+	return curlRequest, apiResponse, nil
 }
 
 func codexQuotaCurlErrorWithIgnoredOptions(err error, ignoredOptions []string) error {
@@ -542,44 +538,16 @@ func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*
 		return nil, errors.New("billing curl 不能为空")
 	}
 
-	curlRequest, err := accountsdomain.BuildCodexQuotaCurlRequest(accountsdomain.CodexQuotaCurlInput{
-		Curl:    source.QuotaCurl,
-		APIKey:  source.APIKey,
-		BaseURL: source.BaseURL,
-		Prefix:  source.Prefix,
-	})
+	curlRequest, apiResponse, err := a.executeCodexAPIKeyCurlViaSidecar(source)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx := a.ctx
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	var body io.Reader
-	if strings.TrimSpace(curlRequest.Body) != "" {
-		body = strings.NewReader(curlRequest.Body)
-	}
-	req, err := http.NewRequestWithContext(ctx, curlRequest.Method, curlRequest.URL, body)
-	if err != nil {
-		return nil, err
-	}
-	for key, value := range curlRequest.Headers {
-		req.Header.Set(key, value)
+	if apiResponse.statusCode() < 200 || apiResponse.statusCode() >= 300 {
+		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("codex api key 余额请求失败"), curlRequest.IgnoredOptions)
 	}
 
-	resp, err := (&http.Client{Timeout: 20 * time.Second}).Do(req)
-	if err != nil {
-		return nil, codexQuotaCurlErrorWithIgnoredOptions(err, curlRequest.IgnoredOptions)
-	}
-	defer resp.Body.Close()
-
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	billing := accountsdomain.TryParseBillingResponse(responseBody)
+	billing := accountsdomain.TryParseBillingResponse([]byte(apiResponse.Body))
 	if billing == nil {
 		return nil, codexQuotaCurlErrorWithIgnoredOptions(errors.New("无法解析计费信息，响应格式不支持"), curlRequest.IgnoredOptions)
 	}
