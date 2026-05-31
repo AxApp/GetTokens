@@ -96,6 +96,15 @@ test('quota bars render reset time from quota windows', async () => {
   assert.match(source, /t\('accounts\.quota_reset'\)/);
 });
 
+test('quota bars surface stale runtime error reason on cards and details', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /formatQuotaRuntimeWarning\(quotaDisplay\)/);
+  assert.match(source, /data-account-quota-runtime-warning/);
+  assert.match(source, /quotaDisplay\.degradedReason/);
+  assert.match(source, /quotaDisplay\.stale/);
+});
+
 test('quota bar fill color is derived only from remaining quota value', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 

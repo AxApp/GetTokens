@@ -219,6 +219,7 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
   if (windows.length === 0) return null;
   const refreshing = quotaDisplay.refreshing === true;
   const hasTokenProgress = windows.some(hasQuotaTokenProgress);
+  const runtimeWarning = formatQuotaRuntimeWarning(quotaDisplay);
 
   const toggleDisplayMode = () => {
     if (!hasTokenProgress) return;
@@ -252,6 +253,16 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
       onClick={hasTokenProgress ? handleToggleDisplayMode : undefined}
       onKeyDown={hasTokenProgress ? handleToggleDisplayModeKeyDown : undefined}
     >
+      {runtimeWarning ? (
+        <div
+          className="min-w-0 border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_12%,transparent)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--color-status-warning)]"
+          title={runtimeWarning}
+          data-account-quota-runtime-warning
+        >
+          <span className="mr-1">STALE</span>
+          <span className="normal-case tracking-normal">{runtimeWarning}</span>
+        </div>
+      ) : null}
       {windows.map((window) => {
         const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
         const valueLabel = displayMode === 'tokens' && hasQuotaTokenProgress(window)
@@ -308,6 +319,14 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
       })}
     </section>
   );
+}
+
+function formatQuotaRuntimeWarning(quotaDisplay: QuotaDisplay) {
+  const degradedReason = String(quotaDisplay.degradedReason || '').trim();
+  if (degradedReason) {
+    return degradedReason;
+  }
+  return quotaDisplay.stale ? 'Quota data is stale.' : '';
 }
 
 function hasQuotaTokenProgress(window: QuotaWindowDisplay) {

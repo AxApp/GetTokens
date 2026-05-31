@@ -106,7 +106,11 @@ func (a *App) getCodexAuthFileQuota(authIndex string, body []byte) (*CodexQuotaR
 		debugRecord.Error = err.Error()
 		a.emitCodexQuotaDebugRecord(debugRecord)
 		if cachedQuota, cacheErr := accountsdomain.BuildCachedCodexQuotaResponse(body); cacheErr == nil {
-			return a.upsertAccountsdomainCodexQuotaRuntimeIfUnified(authIndex, "auth-file-usage-cache", cliproxyapi.QuotaRuntimeStatusStale, cachedQuota)
+			quota := mapAccountsdomainCodexQuotaResponse(cachedQuota)
+			quota.Status = cliproxyapi.QuotaRuntimeStatusStale
+			quota.Stale = true
+			quota.DegradedReason = err.Error()
+			return a.upsertCodexQuotaRuntimeIfUnified(authIndex, "auth-file-usage-cache", cliproxyapi.QuotaRuntimeStatusStale, quota)
 		}
 		return nil, err
 	}
@@ -126,6 +130,11 @@ func (a *App) getCodexAuthFileQuota(authIndex string, body []byte) (*CodexQuotaR
 	status := cliproxyapi.QuotaRuntimeStatusSuccess
 	if upstreamStatus := apiResponse.statusCode(); upstreamStatus > 0 && (upstreamStatus < 200 || upstreamStatus >= 300) {
 		status = cliproxyapi.QuotaRuntimeStatusStale
+		view := mapAccountsdomainCodexQuotaResponse(quota)
+		view.Status = status
+		view.Stale = true
+		view.DegradedReason = quotaUpstreamFailureReason(upstreamStatus, apiResponse.Body)
+		return a.upsertCodexQuotaRuntimeIfUnified(authIndex, "auth-file-usage", status, view)
 	}
 	return a.upsertAccountsdomainCodexQuotaRuntimeIfUnified(authIndex, "auth-file-usage", status, quota)
 }
@@ -241,13 +250,54 @@ func quotaRuntimeStateFromCodexQuotaResponse(accountKey string, source string, s
 		})
 	}
 	return cliproxyapi.QuotaRuntimeState{
-		AccountKey: strings.TrimSpace(accountKey),
-		Source:     strings.TrimSpace(source),
-		Status:     strings.TrimSpace(status),
-		PlanType:   quota.PlanType,
-		Windows:    windows,
-		Billing:    quotaRuntimeBillingFromCodexQuotaResponse(quota.Billing),
+		AccountKey:     strings.TrimSpace(accountKey),
+		Source:         strings.TrimSpace(source),
+		Status:         strings.TrimSpace(status),
+		PlanType:       quota.PlanType,
+		Windows:        windows,
+		Billing:        quotaRuntimeBillingFromCodexQuotaResponse(quota.Billing),
+		Stale:          quota.Stale,
+		DegradedReason: strings.TrimSpace(quota.DegradedReason),
 	}
+}
+
+func quotaUpstreamFailureReason(statusCode int, body string) string {
+	prefix := fmt.Sprintf("ChatGPT usage request failed (%d)", statusCode)
+	message, code := quotaUpstreamErrorMessage(body)
+	if message == "" {
+		return prefix
+	}
+	if code != "" {
+		return fmt.Sprintf("%s: %s (%s)", prefix, message, code)
+	}
+	return fmt.Sprintf("%s: %s", prefix, message)
+}
+
+func quotaUpstreamErrorMessage(body string) (string, string) {
+	var payload struct {
+		Message string `json:"message"`
+		Code    string `json:"code"`
+		Error   struct {
+			Message string `json:"message"`
+			Code    string `json:"code"`
+			Type    string `json:"type"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(body)), &payload); err != nil {
+		return "", ""
+	}
+	message := strings.TrimSpace(payload.Error.Message)
+	if message == "" {
+		message = strings.TrimSpace(payload.Message)
+	}
+	code := strings.TrimSpace(payload.Error.Code)
+	if code == "" {
+		code = strings.TrimSpace(payload.Code)
+	}
+	if code == "" {
+		code = strings.TrimSpace(payload.Error.Type)
+	}
+	return message, code
 }
 
 func quotaRuntimeBillingFromCodexQuotaResponse(billing *CodexQuotaBillingInfo) *cliproxyapi.QuotaRuntimeBilling {

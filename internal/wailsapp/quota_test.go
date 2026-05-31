@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -266,6 +267,87 @@ func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T
 	}
 	if quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 74 {
 		t.Fatalf("unexpected cached remaining percent: %#v", quota.Windows[0].RemainingPercent)
+	}
+}
+
+func TestGetCodexQuotaSurfacesAuthFileUsageUnauthorizedMessage(t *testing.T) {
+	authBody := []byte(`{
+		"account_id":"acct_unauthorized",
+		"tokens":{"access_token":"token_invalid"},
+		"plan":"plus",
+		"nolon":{
+			"usage_cache":{
+				"usage":{
+					"identity":{"plan":"plus"},
+					"primary":{"usedPercent":26,"resetsAt":1710000000}
+				}
+			}
+		}
+	}`)
+
+	var gotRuntimePayload map[string]any
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts/acct_unauthorized":
+				payload, _ := json.Marshal(map[string]any{
+					"account_key": "acct_unauthorized",
+					"kind":        "auth-file",
+					"title":       "unauthorized.json",
+					"provider":    "codex",
+					"auth_file": map[string]any{
+						"source_file_name": "unauthorized.json",
+						"auth_json":        string(authBody),
+						"auth_type":        "codex",
+					},
+				})
+				return payload, http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/api-call":
+				response, _ := json.Marshal(managementAPICallResponse{
+					StatusCodeSnake: http.StatusUnauthorized,
+					Body: `{
+						"error": {
+							"message": "Your authentication token has been invalidated. Please try signing in again.",
+							"type": "invalid_request_error",
+							"code": "token_invalidated"
+						},
+						"status": 401
+					}`,
+				})
+				return response, http.StatusOK, nil
+			case method == http.MethodPut && path == ManagementAPIPrefix+"/gettokens/quota-status/acct_unauthorized":
+				if err := json.NewDecoder(body).Decode(&gotRuntimePayload); err != nil {
+					t.Fatalf("decode quota runtime payload: %v", err)
+				}
+				reason, _ := gotRuntimePayload["degraded_reason"].(string)
+				if gotRuntimePayload["status"] != "stale" || !strings.Contains(reason, "token_invalidated") {
+					t.Fatalf("quota runtime payload = %#v, want stale token invalidated reason", gotRuntimePayload)
+				}
+				return []byte(`{
+					"account_key":"acct_unauthorized",
+					"status":"stale",
+					"stale":true,
+					"degraded_reason":"ChatGPT usage request failed (401): Your authentication token has been invalidated. Please try signing in again. (token_invalidated)",
+					"plan_type":"plus",
+					"windows":[{"id":"five-hour","label":"5H","remaining_percent":74,"reset_at_unix":1710000000}],
+					"sources":[]
+				}`), http.StatusOK, nil
+			default:
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	quota, err := app.GetCodexQuota("acct_unauthorized")
+	if err != nil {
+		t.Fatalf("GetCodexQuota: %v", err)
+	}
+	if quota.Status != "stale" || !quota.Stale || !strings.Contains(quota.DegradedReason, "token_invalidated") {
+		t.Fatalf("quota runtime explain = status:%q stale:%v degraded:%q", quota.Status, quota.Stale, quota.DegradedReason)
+	}
+	if len(quota.Windows) != 1 {
+		t.Fatalf("expected cached quota window, got %#v", quota.Windows)
 	}
 }
 
