@@ -271,6 +271,8 @@ test('generated Wails account models preserve quota curl fields', () => {
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
   assert.match(source, /export class CodexQuotaResponse[\s\S]*billing\?: CodexQuotaBillingInfo;/);
+  assert.match(source, /export class CodexQuotaSourceState[\s\S]*source: string;[\s\S]*nextReset\?: string;/);
+  assert.match(source, /export class CodexQuotaResponse[\s\S]*blocked: boolean;[\s\S]*sources: CodexQuotaSourceState\[\];/);
 });
 
 test('generated Wails app bindings expose quota curl draft test method', () => {

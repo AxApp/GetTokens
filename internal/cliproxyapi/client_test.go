@@ -319,6 +319,41 @@ func TestRateLimitClientCRUDStatusAndEvents(t *testing.T) {
 	}
 }
 
+func TestQuotaRuntimeClientStatus(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		switch {
+		case method == "PUT" && path == "/v0/management/gettokens/quota-status/acct_00000000-0000-4000-8000-000000000001":
+			if contentType != "application/json" {
+				t.Fatalf("unexpected content type: %s", contentType)
+			}
+			assertJSONContains(t, body, `"plan_type":"plus"`)
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","plan_type":"plus","windows":[{"id":"five-hour","remaining_percent":0,"reset_at_unix":1893456000}],"blocked":true,"sources":[{"source":"quota-empty","reason":"quota empty"}]}`), 200, nil
+		case method == "GET" && path == "/v0/management/gettokens/quota-status":
+			if got := query.Get("account_key"); got != "acct_00000000-0000-4000-8000-000000000001" {
+				t.Fatalf("unexpected quota account_key query: %s", got)
+			}
+			return []byte(`{"account_key":"acct_00000000-0000-4000-8000-000000000001","status":"success","windows":[],"sources":[]}`), 200, nil
+		default:
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return nil, 404, nil
+	})
+
+	remaining := 0
+	status, err := client.UpsertQuotaStatus("acct_00000000-0000-4000-8000-000000000001", QuotaRuntimeState{
+		Status:   "success",
+		PlanType: "plus",
+		Windows:  []QuotaRuntimeWindow{{ID: "five-hour", RemainingPercent: &remaining, ResetAtUnix: 1893456000}},
+	})
+	if err != nil || status == nil || !status.Blocked || status.Sources[0].Source != "quota-empty" {
+		t.Fatalf("UpsertQuotaStatus = %#v, err = %v", status, err)
+	}
+	status, err = client.GetQuotaStatus("acct_00000000-0000-4000-8000-000000000001")
+	if err != nil || status == nil || status.AccountKey == "" {
+		t.Fatalf("GetQuotaStatus = %#v, err = %v", status, err)
+	}
+}
+
 func assertJSONContains(t *testing.T, body io.Reader, want string) {
 	t.Helper()
 	payload, err := io.ReadAll(body)

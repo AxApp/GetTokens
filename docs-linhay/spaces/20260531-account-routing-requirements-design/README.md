@@ -71,11 +71,47 @@
 
 ## 相关链接
 
+- [Account Routing Quota Guard 技术方案](../../dev/20260531-account-routing-quota-guard.md)
 - [Account Routing Engine](../20260524-account-routing-engine/README.md)
 - [Account Routing Engine 技术边界](../../dev/20260524-account-routing-engine.md)
 - [Sidecar route guard / rate-limit](../20260531-sidecar-route-guard-rate-limit/README.md)
 - [2026-05-31 memory：账号池 quota 与路由热路径边界排查](../../memory/2026-05-31.md)
 
 ## 当前状态
-- 状态：requirements-design
+- 状态：implementation-phase-2-5-ui-explain-bridge
 - 最近更新：2026-05-31
+
+## 实施记录
+
+### 2026-05-31 Phase 1 sidecar guard
+
+- 已在 CLIProxyAPI fork 新增 `quota-empty` route guard source 与 quota guard evaluator。
+- 已覆盖 fresh quota empty、最晚 resetAt、stale/degraded 不阻断、只清理 `quota-empty`、hard-filter 排除候选、sticky 不能复活候选、WebSocket pinned auth request-boundary release source/reason。
+- 已验证：
+  - `go test ./internal/gettokenshooks -run 'TestQuotaGuard|TestAccountRouteGuard' -count=1`
+  - `go test ./internal/gettokenshooks ./sdk/cliproxy/auth ./sdk/api/handlers/openai -count=1`
+- 下一阶段：把账号池 quota curl / billing curl 刷新结果写入 sidecar-owned quota runtime source，并通过 management API / Wails / frontend 统一展示同一份 sidecar 状态。
+
+### 2026-05-31 Phase 2 sidecar quota runtime bridge
+
+- 已在 CLIProxyAPI fork 新增 sidecar `quota-status` runtime store 与 management API，`PUT /v0/management/gettokens/quota-status/<acct_*>` 会同步 `quota-empty` guard，`GET` 返回同一份 runtime + guard source 状态。
+- 已调整 Wails `GetCodexQuota`：统一账号 quota refresh 后先写入 sidecar quota-status，再用 sidecar 返回值映射给现有 UI DTO；auth-file cache fallback 写入 `status=stale`。
+- reset time 语义已落地：fresh empty window 使用 `reset_at_unix` 生成 `quota-empty.ExpiresAt`；stale/cache 不新增强阻断，也不提前清除已有 fresh block，已有 block 等 reset 到期自然失效。
+- 已验证：
+  - `go test ./internal/gettokenshooks -run 'TestQuotaRuntime|TestQuotaGuard|TestAccountRouteGuard' -count=1`
+  - `go test ./internal/gettokenshooks ./sdk/cliproxy/auth ./sdk/api/handlers/openai -count=1`
+  - `go test ./internal/cliproxyapi ./internal/wailsapp -run 'TestQuotaRuntime|TestGetCodexQuota|TestTestCodexAPIKeyQuotaCurl' -count=1`
+  - `go test ./internal/cliproxyapi ./internal/wailsapp -count=1`
+- 剩余：quota curl / billing curl HTTP 执行器本身仍在 Wails/root 侧，后续可迁入 sidecar；frontend 还未直接展示 `blocked/sources/stale/degraded` explain 字段。
+
+### 2026-05-31 Phase 2.5 UI explain bridge
+
+- 已打通 Wails/root/frontend DTO：`CodexQuotaResponse` 透传 sidecar quota runtime 的 `accountKey/source/status/stale/degradedReason/blocked/blockReason/sources`。
+- 账号卡展示阻断状态时读取 sidecar `blocked/sources`，不从本地 quota bars 自行推断是否进入路由阻断。
+- 已修复恢复边界：若 `quota-empty` 曾按 `authID` 写入，后续同一 `accountKey` 的 fresh success quota refresh 也能清理该 source，不影响 `manual-disabled` / `rate-limit`。
+- 已验证：
+  - `go test ./... -count=1`（CLIProxyAPI fork）
+  - `go test ./... -count=1`（GetTokens root）
+  - `node --test frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/accounts/tests/accountConfig.test.mjs`
+  - `npm --prefix frontend run typecheck`
+- 剩余：quota curl / billing curl HTTP 执行器本身仍在 Wails/root 侧，后续可迁入 sidecar；Channel Routing explain 过滤原因 UI 仍需单独接入 `quota-empty` 分组展示。

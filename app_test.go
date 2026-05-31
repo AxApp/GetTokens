@@ -260,7 +260,18 @@ func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {
 	limitTokens := 1000.0
 	remainingTokens := 875.0
 	result := mapCodexQuotaResponse(&wailsapp.CodexQuotaResponse{
-		PlanType: "metered",
+		PlanType:    "metered",
+		Status:      "success",
+		Blocked:     true,
+		BlockReason: "quota empty: weekly",
+		Sources: []wailsapp.CodexQuotaSourceState{
+			{
+				Source:    "quota-empty",
+				Reason:    "quota empty: weekly",
+				ExpiresAt: "2026-05-31T12:00:00Z",
+				NextReset: "2026-05-31T12:00:00Z",
+			},
+		},
 		Windows: []wailsapp.CodexQuotaWindow{
 			{
 				ID:              "weekly",
@@ -288,6 +299,9 @@ func TestMapCodexQuotaResponsePreservesBilling(t *testing.T) {
 	}
 	if result.Billing == nil {
 		t.Fatal("mapCodexQuotaResponse billing = nil, want preserved billing")
+	}
+	if !result.Blocked || result.BlockReason != "quota empty: weekly" || len(result.Sources) != 1 || result.Sources[0].Source != "quota-empty" {
+		t.Fatalf("mapCodexQuotaResponse guard = blocked:%v reason:%q sources:%#v, want preserved quota guard source", result.Blocked, result.BlockReason, result.Sources)
 	}
 	if !result.Billing.IsAvailable {
 		t.Fatal("mapCodexQuotaResponse billing availability = false, want true")

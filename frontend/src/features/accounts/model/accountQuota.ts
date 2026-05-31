@@ -49,6 +49,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
   }
 
   const refreshing = state.refreshing || state.status === 'loading';
+  const runtimeState = quotaRuntimeDisplayState(state.quota);
   const windows = selectQuotaWindows(state.quota).map((window) => {
     const remainingPercent = normalizePercent(window.remainingPercent);
     const usedPercent = remainingPercent === null ? null : Math.max(0, 100 - remainingPercent);
@@ -72,6 +73,7 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
       planType: state.quota.planType || '',
       windows: [],
       refreshing,
+      ...runtimeState,
     };
   }
 
@@ -80,6 +82,25 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
     planType: state.quota.planType || '',
     windows,
     refreshing,
+    ...runtimeState,
+  };
+}
+
+function quotaRuntimeDisplayState(quota: CodexQuota) {
+  const sources = Array.isArray((quota as any).sources)
+    ? (quota as any).sources.map((source: any) => ({
+        source: String(source?.source || '').trim(),
+        reason: String(source?.reason || '').trim() || undefined,
+        expiresAt: String(source?.expiresAt || '').trim() || undefined,
+        nextReset: String(source?.nextReset || '').trim() || undefined,
+      })).filter((source: { source: string }) => source.source)
+    : [];
+  return {
+    blocked: Boolean((quota as any).blocked),
+    blockReason: String((quota as any).blockReason || '').trim() || undefined,
+    stale: Boolean((quota as any).stale),
+    degradedReason: String((quota as any).degradedReason || '').trim() || undefined,
+    sources,
   };
 }
 

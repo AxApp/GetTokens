@@ -107,8 +107,9 @@ export default function AccountCard({
         ? 'warning'
       : resolveAccountStatusTone(account);
   const guardTone = rateLimitStateTone(rateLimitStatus);
+  const quotaBlocked = quotaDisplay.blocked === true;
   const cardTone =
-    guardTone === 'critical'
+    guardTone === 'critical' || quotaBlocked
       ? 'critical'
       : statusTone === 'positive'
         ? 'positive'
@@ -121,6 +122,9 @@ export default function AccountCard({
   }
   if (rateLimitStatus?.blocked) {
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
+  }
+  if (quotaBlocked) {
+    badges.push({ label: quotaDisplay.blockReason || 'QUOTA EMPTY', tone: 'critical' });
   }
   const canToggleDisabled = canToggleRotationAccountDisabled(account);
 

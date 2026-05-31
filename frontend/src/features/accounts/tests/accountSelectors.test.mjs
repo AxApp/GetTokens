@@ -84,6 +84,41 @@ test('failed quota refresh preserves the last successful quota payload', () => {
   );
 });
 
+test('quota display preserves sidecar route guard explain fields', () => {
+  const quotaDisplay = buildQuotaDisplay(quotaAccount, {
+    status: 'success',
+    quota: {
+      ...quotaState.quota,
+      status: 'success',
+      blocked: true,
+      blockReason: 'quota empty: weekly',
+      stale: true,
+      degradedReason: 'refresh_failed',
+      sources: [
+        {
+          source: 'quota-empty',
+          reason: 'quota empty: weekly',
+          expiresAt: '2026-05-31T12:00:00Z',
+          nextReset: '2026-05-31T12:00:00Z',
+        },
+      ],
+    },
+  });
+
+  assert.equal(quotaDisplay.blocked, true);
+  assert.equal(quotaDisplay.blockReason, 'quota empty: weekly');
+  assert.equal(quotaDisplay.stale, true);
+  assert.equal(quotaDisplay.degradedReason, 'refresh_failed');
+  assert.deepEqual(quotaDisplay.sources, [
+    {
+      source: 'quota-empty',
+      reason: 'quota empty: weekly',
+      expiresAt: '2026-05-31T12:00:00Z',
+      nextReset: '2026-05-31T12:00:00Z',
+    },
+  ]);
+});
+
 test('compact account cards prefer quota over billing and fall back to balance when quota has no windows', () => {
   const quotaDisplay = buildQuotaDisplay(quotaAccount, quotaState);
   const billing = {

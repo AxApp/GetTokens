@@ -2690,6 +2690,24 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CodexQuotaSourceState {
+	    source: string;
+	    reason?: string;
+	    expiresAt?: string;
+	    nextReset?: string;
+
+	    static createFrom(source: any = {}) {
+	        return new CodexQuotaSourceState(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.source = source["source"];
+	        this.reason = source["reason"];
+	        this.expiresAt = source["expiresAt"];
+	        this.nextReset = source["nextReset"];
+	    }
+	}
 	export class CodexQuotaWindow {
 	    id: string;
 	    label: string;
@@ -2717,9 +2735,19 @@ export namespace main {
 	    }
 	}
 	export class CodexQuotaResponse {
+	    accountKey?: string;
+	    source?: string;
+	    status?: string;
 	    planType?: string;
 	    windows: CodexQuotaWindow[];
 	    billing?: CodexQuotaBillingInfo;
+	    updatedAt?: string;
+	    lastEvaluatedAt?: string;
+	    stale?: boolean;
+	    degradedReason?: string;
+	    blocked: boolean;
+	    blockReason?: string;
+	    sources: CodexQuotaSourceState[];
 
 	    static createFrom(source: any = {}) {
 	        return new CodexQuotaResponse(source);
@@ -2727,9 +2755,19 @@ export namespace main {
 
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.accountKey = source["accountKey"];
+	        this.source = source["source"];
+	        this.status = source["status"];
 	        this.planType = source["planType"];
 	        this.windows = this.convertValues(source["windows"], CodexQuotaWindow);
 	        this.billing = this.convertValues(source["billing"], CodexQuotaBillingInfo);
+	        this.updatedAt = source["updatedAt"];
+	        this.lastEvaluatedAt = source["lastEvaluatedAt"];
+	        this.stale = source["stale"];
+	        this.degradedReason = source["degradedReason"];
+	        this.blocked = source["blocked"];
+	        this.blockReason = source["blockReason"];
+	        this.sources = this.convertValues(source["sources"], CodexQuotaSourceState);
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -2750,6 +2788,7 @@ export namespace main {
 		    return a;
 		}
 	}
+
 
 	export class CodexSkillFile {
 	    path: string;

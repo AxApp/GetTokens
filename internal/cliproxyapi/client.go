@@ -511,6 +511,68 @@ func (c *Client) ListRateLimitEvents(accountKey string, limit int) ([]RateLimitE
 	return response.Items, nil
 }
 
+func (c *Client) GetAllQuotaStatuses() ([]QuotaRuntimeState, error) {
+	body, _, err := c.request("GET", "/v0/management/gettokens/quota-status", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response struct {
+		Items []QuotaRuntimeState `json:"items"`
+	}
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	if response.Items == nil {
+		return []QuotaRuntimeState{}, nil
+	}
+	for index := range response.Items {
+		normalizeQuotaRuntimeStateSlices(&response.Items[index])
+	}
+	return response.Items, nil
+}
+
+func (c *Client) GetQuotaStatus(accountKey string) (*QuotaRuntimeState, error) {
+	query := url.Values{}
+	query.Set("account_key", accountKey)
+	body, _, err := c.request("GET", "/v0/management/gettokens/quota-status", query, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaRuntimeState
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeQuotaRuntimeStateSlices(&response)
+	return &response, nil
+}
+
+func (c *Client) UpsertQuotaStatus(accountKey string, state QuotaRuntimeState) (*QuotaRuntimeState, error) {
+	state.AccountKey = accountKey
+	if state.Windows == nil {
+		state.Windows = []QuotaRuntimeWindow{}
+	}
+	if state.Sources == nil {
+		state.Sources = []QuotaRuntimeSourceState{}
+	}
+	if state.Billing != nil && state.Billing.BalanceInfos == nil {
+		state.Billing.BalanceInfos = []QuotaRuntimeBalanceInfo{}
+	}
+	payload, err := json.Marshal(state)
+	if err != nil {
+		return nil, err
+	}
+	body, _, err := c.request("PUT", "/v0/management/gettokens/quota-status/"+url.PathEscape(accountKey), nil, bytes.NewReader(payload), "application/json")
+	if err != nil {
+		return nil, err
+	}
+	var response QuotaRuntimeState
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	normalizeQuotaRuntimeStateSlices(&response)
+	return &response, nil
+}
+
 func decodeRateLimitRules(body []byte) ([]RateLimitRule, error) {
 	var response struct {
 		Items []RateLimitRule `json:"items"`
@@ -522,4 +584,19 @@ func decodeRateLimitRules(body []byte) ([]RateLimitRule, error) {
 		return []RateLimitRule{}, nil
 	}
 	return response.Items, nil
+}
+
+func normalizeQuotaRuntimeStateSlices(state *QuotaRuntimeState) {
+	if state == nil {
+		return
+	}
+	if state.Windows == nil {
+		state.Windows = []QuotaRuntimeWindow{}
+	}
+	if state.Sources == nil {
+		state.Sources = []QuotaRuntimeSourceState{}
+	}
+	if state.Billing != nil && state.Billing.BalanceInfos == nil {
+		state.Billing.BalanceInfos = []QuotaRuntimeBalanceInfo{}
+	}
 }

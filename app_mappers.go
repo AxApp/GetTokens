@@ -393,11 +393,30 @@ func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaRespo
 			ResetAtUnix:      window.ResetAtUnix,
 		})
 	}
+	sources := make([]CodexQuotaSourceState, 0, len(result.Sources))
+	for _, source := range result.Sources {
+		sources = append(sources, CodexQuotaSourceState{
+			Source:    source.Source,
+			Reason:    source.Reason,
+			ExpiresAt: source.ExpiresAt,
+			NextReset: source.NextReset,
+		})
+	}
 
 	return &CodexQuotaResponse{
-		PlanType: result.PlanType,
-		Windows:  windows,
-		Billing:  mapCodexQuotaBillingInfo(result.Billing),
+		AccountKey:      result.AccountKey,
+		Source:          result.Source,
+		Status:          result.Status,
+		PlanType:        result.PlanType,
+		Windows:         windows,
+		Billing:         mapCodexQuotaBillingInfo(result.Billing),
+		UpdatedAt:       result.UpdatedAt,
+		LastEvaluatedAt: result.LastEvaluatedAt,
+		Stale:           result.Stale,
+		DegradedReason:  result.DegradedReason,
+		Blocked:         result.Blocked,
+		BlockReason:     result.BlockReason,
+		Sources:         sources,
 	}
 }
 

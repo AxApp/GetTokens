@@ -108,7 +108,7 @@ func (a *App) getCodexAuthFileQuota(authIndex string, body []byte) (*CodexQuotaR
 		debugRecord.Error = err.Error()
 		a.emitCodexQuotaDebugRecord(debugRecord)
 		if cachedQuota, cacheErr := accountsdomain.BuildCachedCodexQuotaResponse(body); cacheErr == nil {
-			return mapAccountsdomainCodexQuotaResponse(cachedQuota), nil
+			return a.upsertAccountsdomainCodexQuotaRuntimeIfUnified(authIndex, "auth-file-usage-cache", cliproxyapi.QuotaRuntimeStatusStale, cachedQuota)
 		}
 		return nil, err
 	}
@@ -125,7 +125,11 @@ func (a *App) getCodexAuthFileQuota(authIndex string, body []byte) (*CodexQuotaR
 		return nil, err
 	}
 
-	return mapAccountsdomainCodexQuotaResponse(quota), nil
+	status := cliproxyapi.QuotaRuntimeStatusSuccess
+	if upstreamStatus := apiResponse.statusCode(); upstreamStatus > 0 && (upstreamStatus < 200 || upstreamStatus >= 300) {
+		status = cliproxyapi.QuotaRuntimeStatusStale
+	}
+	return a.upsertAccountsdomainCodexQuotaRuntimeIfUnified(authIndex, "auth-file-usage", status, quota)
 }
 
 func (a *App) getUnifiedCodexAPIKeyQuota(account *cliproxyapi.UnifiedAccount) (*CodexQuotaResponse, error) {
@@ -146,7 +150,14 @@ func (a *App) getUnifiedCodexAPIKeyQuota(account *cliproxyapi.UnifiedAccount) (*
 	if !target.QuotaEnabled || target.QuotaCurl == "" {
 		return nil, errors.New("codex api key 未配置额度 curl")
 	}
-	return a.executeCodexAPIKeyQuotaRequest(target)
+	quota, err := a.executeCodexAPIKeyQuotaRequest(target)
+	if err != nil {
+		if cachedState, cacheErr := a.managementClient().GetQuotaStatus(account.AccountKey); cacheErr == nil && quotaRuntimeStateHasDisplayQuota(cachedState) {
+			return mapQuotaRuntimeStateToCodexQuotaResponse(cachedState), nil
+		}
+		return nil, err
+	}
+	return a.upsertCodexQuotaRuntimeIfUnified(account.AccountKey, "codex-api-key-quota-curl", cliproxyapi.QuotaRuntimeStatusSuccess, quota)
 }
 
 func mapAccountsdomainCodexQuotaResponse(quota *accountsdomain.CodexQuotaResponse) *CodexQuotaResponse {
@@ -169,9 +180,171 @@ func mapAccountsdomainCodexQuotaResponse(quota *accountsdomain.CodexQuotaRespons
 	}
 
 	return &CodexQuotaResponse{
+		Status:   cliproxyapi.QuotaRuntimeStatusSuccess,
 		PlanType: quota.PlanType,
 		Windows:  windows,
+		Billing:  mapAccountsdomainCodexQuotaBilling(quota.Billing),
+		Sources:  []CodexQuotaSourceState{},
 	}
+}
+
+func mapAccountsdomainCodexQuotaBilling(billing *accountsdomain.CodexQuotaBilling) *CodexQuotaBillingInfo {
+	if billing == nil {
+		return nil
+	}
+	infos := make([]CodexQuotaBillingBalanceInfo, 0, len(billing.BalanceInfos))
+	for _, info := range billing.BalanceInfos {
+		infos = append(infos, CodexQuotaBillingBalanceInfo{
+			Currency:        info.Currency,
+			TotalBalance:    info.TotalBalance,
+			GrantedBalance:  info.GrantedBalance,
+			ToppedUpBalance: info.ToppedUpBalance,
+		})
+	}
+	return &CodexQuotaBillingInfo{
+		IsAvailable:  billing.IsAvailable,
+		BalanceInfos: infos,
+	}
+}
+
+func (a *App) upsertAccountsdomainCodexQuotaRuntimeIfUnified(accountKey string, source string, status string, quota *accountsdomain.CodexQuotaResponse) (*CodexQuotaResponse, error) {
+	return a.upsertCodexQuotaRuntimeIfUnified(accountKey, source, status, mapAccountsdomainCodexQuotaResponse(quota))
+}
+
+func (a *App) upsertCodexQuotaRuntimeIfUnified(accountKey string, source string, status string, quota *CodexQuotaResponse) (*CodexQuotaResponse, error) {
+	if !isUnifiedAccountID(accountKey) {
+		return quota, nil
+	}
+	state, err := a.managementClient().UpsertQuotaStatus(accountKey, quotaRuntimeStateFromCodexQuotaResponse(accountKey, source, status, quota))
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaRuntimeStateToCodexQuotaResponse(state), nil
+}
+
+func quotaRuntimeStateFromCodexQuotaResponse(accountKey string, source string, status string, quota *CodexQuotaResponse) cliproxyapi.QuotaRuntimeState {
+	if quota == nil {
+		quota = &CodexQuotaResponse{Windows: []CodexQuotaWindow{}}
+	}
+	if strings.TrimSpace(status) == "" {
+		status = cliproxyapi.QuotaRuntimeStatusSuccess
+	}
+	windows := make([]cliproxyapi.QuotaRuntimeWindow, 0, len(quota.Windows))
+	for _, window := range quota.Windows {
+		windows = append(windows, cliproxyapi.QuotaRuntimeWindow{
+			ID:               window.ID,
+			Label:            window.Label,
+			RemainingPercent: window.RemainingPercent,
+			UsedTokens:       window.UsedTokens,
+			LimitTokens:      window.LimitTokens,
+			RemainingTokens:  window.RemainingTokens,
+			ResetLabel:       window.ResetLabel,
+			ResetAtUnix:      window.ResetAtUnix,
+		})
+	}
+	return cliproxyapi.QuotaRuntimeState{
+		AccountKey: strings.TrimSpace(accountKey),
+		Source:     strings.TrimSpace(source),
+		Status:     strings.TrimSpace(status),
+		PlanType:   quota.PlanType,
+		Windows:    windows,
+		Billing:    quotaRuntimeBillingFromCodexQuotaResponse(quota.Billing),
+	}
+}
+
+func quotaRuntimeBillingFromCodexQuotaResponse(billing *CodexQuotaBillingInfo) *cliproxyapi.QuotaRuntimeBilling {
+	if billing == nil {
+		return nil
+	}
+	infos := make([]cliproxyapi.QuotaRuntimeBalanceInfo, 0, len(billing.BalanceInfos))
+	for _, info := range billing.BalanceInfos {
+		infos = append(infos, cliproxyapi.QuotaRuntimeBalanceInfo{
+			Currency:        info.Currency,
+			TotalBalance:    info.TotalBalance,
+			GrantedBalance:  info.GrantedBalance,
+			ToppedUpBalance: info.ToppedUpBalance,
+		})
+	}
+	return &cliproxyapi.QuotaRuntimeBilling{
+		IsAvailable:  billing.IsAvailable,
+		BalanceInfos: infos,
+	}
+}
+
+func mapQuotaRuntimeStateToCodexQuotaResponse(state *cliproxyapi.QuotaRuntimeState) *CodexQuotaResponse {
+	if state == nil {
+		return &CodexQuotaResponse{Windows: []CodexQuotaWindow{}}
+	}
+	windows := make([]CodexQuotaWindow, 0, len(state.Windows))
+	for _, window := range state.Windows {
+		windows = append(windows, CodexQuotaWindow{
+			ID:               window.ID,
+			Label:            window.Label,
+			RemainingPercent: window.RemainingPercent,
+			UsedTokens:       window.UsedTokens,
+			LimitTokens:      window.LimitTokens,
+			RemainingTokens:  window.RemainingTokens,
+			ResetLabel:       window.ResetLabel,
+			ResetAtUnix:      window.ResetAtUnix,
+		})
+	}
+	return &CodexQuotaResponse{
+		AccountKey:      state.AccountKey,
+		Source:          state.Source,
+		Status:          state.Status,
+		PlanType:        state.PlanType,
+		Windows:         windows,
+		Billing:         mapQuotaRuntimeBillingToCodexQuotaResponse(state.Billing),
+		UpdatedAt:       state.UpdatedAt,
+		LastEvaluatedAt: state.LastEvaluatedAt,
+		Stale:           state.Stale,
+		DegradedReason:  state.DegradedReason,
+		Blocked:         state.Blocked,
+		BlockReason:     state.BlockReason,
+		Sources:         mapQuotaRuntimeSourcesToCodexQuotaResponse(state.Sources),
+	}
+}
+
+func mapQuotaRuntimeSourcesToCodexQuotaResponse(sources []cliproxyapi.QuotaRuntimeSourceState) []CodexQuotaSourceState {
+	out := make([]CodexQuotaSourceState, 0, len(sources))
+	for _, source := range sources {
+		out = append(out, CodexQuotaSourceState{
+			Source:    source.Source,
+			Reason:    source.Reason,
+			ExpiresAt: source.ExpiresAt,
+			NextReset: source.NextReset,
+		})
+	}
+	return out
+}
+
+func mapQuotaRuntimeBillingToCodexQuotaResponse(billing *cliproxyapi.QuotaRuntimeBilling) *CodexQuotaBillingInfo {
+	if billing == nil {
+		return nil
+	}
+	infos := make([]CodexQuotaBillingBalanceInfo, 0, len(billing.BalanceInfos))
+	for _, info := range billing.BalanceInfos {
+		infos = append(infos, CodexQuotaBillingBalanceInfo{
+			Currency:        info.Currency,
+			TotalBalance:    info.TotalBalance,
+			GrantedBalance:  info.GrantedBalance,
+			ToppedUpBalance: info.ToppedUpBalance,
+		})
+	}
+	return &CodexQuotaBillingInfo{
+		IsAvailable:  billing.IsAvailable,
+		BalanceInfos: infos,
+	}
+}
+
+func quotaRuntimeStateHasDisplayQuota(state *cliproxyapi.QuotaRuntimeState) bool {
+	if state == nil {
+		return false
+	}
+	if strings.TrimSpace(state.PlanType) != "" || len(state.Windows) > 0 {
+		return true
+	}
+	return state.Billing != nil && (state.Billing.IsAvailable || len(state.Billing.BalanceInfos) > 0)
 }
 
 func (a *App) getCodexAPIKeyQuota(id string) (*CodexQuotaResponse, error) {
@@ -321,40 +494,7 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 	}
 	a.emitCodexQuotaDebugRecord(debugRecord)
 
-	windows := make([]CodexQuotaWindow, 0, len(quota.Windows))
-	for _, window := range quota.Windows {
-		windows = append(windows, CodexQuotaWindow{
-			ID:               window.ID,
-			Label:            window.Label,
-			RemainingPercent: window.RemainingPercent,
-			UsedTokens:       window.UsedTokens,
-			LimitTokens:      window.LimitTokens,
-			RemainingTokens:  window.RemainingTokens,
-			ResetLabel:       window.ResetLabel,
-			ResetAtUnix:      window.ResetAtUnix,
-		})
-	}
-	var billing *CodexQuotaBillingInfo
-	if quota.Billing != nil {
-		infos := make([]CodexQuotaBillingBalanceInfo, 0, len(quota.Billing.BalanceInfos))
-		for _, info := range quota.Billing.BalanceInfos {
-			infos = append(infos, CodexQuotaBillingBalanceInfo{
-				Currency:        info.Currency,
-				TotalBalance:    info.TotalBalance,
-				GrantedBalance:  info.GrantedBalance,
-				ToppedUpBalance: info.ToppedUpBalance,
-			})
-		}
-		billing = &CodexQuotaBillingInfo{
-			IsAvailable:  quota.Billing.IsAvailable,
-			BalanceInfos: infos,
-		}
-	}
-	return &CodexQuotaResponse{
-		PlanType: quota.PlanType,
-		Windows:  windows,
-		Billing:  billing,
-	}, nil
+	return mapAccountsdomainCodexQuotaResponse(quota), nil
 }
 
 func codexQuotaCurlErrorWithIgnoredOptions(err error, ignoredOptions []string) error {

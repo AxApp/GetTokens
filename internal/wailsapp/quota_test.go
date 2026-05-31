@@ -78,7 +78,9 @@ func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
 }
 
 func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
+	const accountKey = "acct_00000000-0000-4000-8000-000000000201"
 	var gotAuthorization string
+	gotQuotaRuntimeUpsert := false
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotAuthorization = r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
@@ -93,9 +95,9 @@ func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
 
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-			if method == http.MethodGet && path == ManagementAPIPrefix+"/accounts/acct_company" {
+			if method == http.MethodGet && path == ManagementAPIPrefix+"/accounts/"+accountKey {
 				payload, _ := json.Marshal(map[string]any{
-					"account_key": "acct_company",
+					"account_key": accountKey,
 					"kind":        "codex-api-key",
 					"title":       "公司 1",
 					"provider":    "codex",
@@ -108,22 +110,39 @@ func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
 				})
 				return payload, http.StatusOK, nil
 			}
+			if method == http.MethodPut && path == ManagementAPIPrefix+"/gettokens/quota-status/"+accountKey {
+				gotQuotaRuntimeUpsert = true
+				var payload map[string]any
+				if err := json.NewDecoder(body).Decode(&payload); err != nil {
+					t.Fatalf("decode quota runtime payload: %v", err)
+				}
+				if payload["plan_type"] != "plus" || payload["status"] != "success" {
+					t.Fatalf("unexpected quota runtime payload: %#v", payload)
+				}
+				return []byte(`{"account_key":"` + accountKey + `","status":"success","plan_type":"plus","windows":[{"id":"five-hour","label":"5H","remaining_percent":82,"reset_at_unix":1777980010}],"blocked":true,"block_reason":"quota empty: five-hour","sources":[{"source":"quota-empty","reason":"quota empty: five-hour","expires_at":"2026-05-31T12:00:00Z","next_reset":"2026-05-31T12:00:00Z"}]}`), http.StatusOK, nil
+			}
 			t.Fatalf("unexpected sidecar request: %s %s", method, path)
 			return nil, 0, nil
 		},
 	}
 
-	quota, err := app.GetCodexQuota("acct_company")
+	quota, err := app.GetCodexQuota(accountKey)
 	if err != nil {
 		t.Fatalf("GetCodexQuota: %v", err)
 	}
 	if gotAuthorization != "Bearer sk-company" {
 		t.Fatalf("Authorization = %q, want Bearer sk-company", gotAuthorization)
 	}
+	if !gotQuotaRuntimeUpsert {
+		t.Fatal("expected quota runtime status to be upserted")
+	}
+	if !quota.Blocked || quota.BlockReason != "quota empty: five-hour" || len(quota.Sources) != 1 || quota.Sources[0].NextReset == "" {
+		t.Fatalf("quota route guard = blocked:%v reason:%q sources:%#v, want quota-empty with next reset", quota.Blocked, quota.BlockReason, quota.Sources)
+	}
 	if quota.PlanType != "plus" {
 		t.Fatalf("PlanType = %q, want plus", quota.PlanType)
 	}
-	if len(quota.Windows) != 1 || quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 83 {
+	if len(quota.Windows) != 1 || quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 82 {
 		t.Fatalf("unexpected quota windows: %#v", quota.Windows)
 	}
 }
@@ -174,6 +193,15 @@ func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T
 				return payload, http.StatusOK, nil
 			case method == http.MethodPost && path == ManagementAPIPrefix+"/api-call":
 				return nil, http.StatusForbidden, errors.New("api call denied")
+			case method == http.MethodPut && path == ManagementAPIPrefix+"/gettokens/quota-status/acct_cached":
+				var payload map[string]any
+				if err := json.NewDecoder(body).Decode(&payload); err != nil {
+					t.Fatalf("decode quota runtime payload: %v", err)
+				}
+				if payload["status"] != "stale" {
+					t.Fatalf("quota runtime status = %#v, want stale", payload["status"])
+				}
+				return []byte(`{"account_key":"acct_cached","status":"stale","plan_type":"plus","windows":[{"id":"five-hour","label":"5H","remaining_percent":74,"reset_at_unix":1710000000}],"sources":[]}`), http.StatusOK, nil
 			default:
 				t.Fatalf("unexpected sidecar request: %s %s", method, path)
 				return nil, 0, nil
@@ -239,6 +267,15 @@ func TestGetCodexQuotaUsesAccountKeyAndRuntimeMetadataAccountID(t *testing.T) {
 					}`,
 				})
 				return response, http.StatusOK, nil
+			case method == http.MethodPut && path == ManagementAPIPrefix+"/gettokens/quota-status/acct_plus":
+				var payload map[string]any
+				if err := json.NewDecoder(body).Decode(&payload); err != nil {
+					t.Fatalf("decode quota runtime payload: %v", err)
+				}
+				if payload["status"] != "success" {
+					t.Fatalf("quota runtime status = %#v, want success", payload["status"])
+				}
+				return []byte(`{"account_key":"acct_plus","status":"success","plan_type":"plus","windows":[{"id":"five-hour","label":"5H","remaining_percent":79,"reset_at_unix":1777980010}],"sources":[]}`), http.StatusOK, nil
 			default:
 				t.Fatalf("unexpected sidecar request: %s %s", method, path)
 				return nil, 0, nil
@@ -262,7 +299,7 @@ func TestGetCodexQuotaUsesAccountKeyAndRuntimeMetadataAccountID(t *testing.T) {
 	if quota.PlanType != "plus" {
 		t.Fatalf("PlanType = %q, want plus", quota.PlanType)
 	}
-	if len(quota.Windows) != 1 || quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 80 {
+	if len(quota.Windows) != 1 || quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 79 {
 		t.Fatalf("unexpected quota windows: %#v", quota.Windows)
 	}
 }

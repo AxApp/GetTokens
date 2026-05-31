@@ -205,6 +205,10 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Codex API key manual disable must survive every layer: GetTokens local store -> management `codex-api-key` config payload -> CLIProxyAPI `config.CodexKey.Disabled` -> synthesized runtime auth `Disabled=true` / `StatusDisabled` -> `manual-disabled` route guard. If changing Codex order appears to fix a disabled account, suspect the disabled flag was dropped before runtime auth synthesis.
   - Enforce guard state through `RoutePolicy` deny decisions on the hot path. Do not add Gin middleware that returns 429 in the middle of a request when selector fallback can route to another account.
   - Route-policy explain must include active guard source details, not only a generic account-route-guard reason. A filtered route trace should let operators distinguish `manual-disabled`, `rate-limit`, `auth-error`, `upstream-rate-limit`, and `upstream-error`.
+  - Quota exhaustion is a route-guard source, not a frontend-only account-card filter. Fresh sidecar quota runtime with `remaining <= 0` and a future reset time should write `quota-empty` into `AccountRouteGuardStore`; stale/degraded/unknown quota must not create a new hard block.
+  - UI quota display and route quota filtering must share sidecar quota runtime data. Wails may bridge refresh results into `PUT /v0/management/gettokens/quota-status/<acct_*>`, but frontend must not infer `blocked` from local quota bars.
+  - Reset time is the recovery boundary for `quota-empty`: use the latest exhausted window reset as `ExpiresAt`, let active blocks expire naturally, and only successful fresh quota recovery should clear `quota-empty` before reset. Stale/cache writes must not clear an existing fresh block early.
+  - Successful fresh quota recovery should clear `quota-empty` by sidecar guard identity lookup, not only by the original block key. This lets an `accountKey` quota refresh clear an earlier auth-scoped `quota-empty` for the same account while leaving `manual-disabled` and `rate-limit` sources intact.
   - For Codex WebSocket, candidate filtering alone is insufficient because downstream sessions may hold `pinnedAuthID` and an upstream connection. Add WebSocket-specific session control at request boundaries.
   - P0 behavior may close affected upstream sessions immediately when an auth is disabled. P2 behavior should preserve the downstream WebSocket and switch at the next downstream request boundary.
   - At the P2 boundary, check whether the current pinned auth is guarded before request normalization. If guarded, release the pin, close the old execution session upstream resource, force full transcript replay, and let AuthManager select again.
@@ -234,7 +238,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Render `SKILL.md` with the existing safe Markdown stack (`react-markdown` + `rehype-sanitize`) after stripping front matter; do not inject raw HTML.
 
 ## 4. Quota Rules
-- **Path**: `AccountsPage` -> `GetCodexQuota` -> Wails -> `POST /v0/management/api-call`.
+- **Path**: `AccountsPage` -> `GetCodexQuota` -> Wails refresh -> `PUT /v0/management/gettokens/quota-status/<acct_*>` -> sidecar quota runtime / `quota-empty` guard. Auth-file usage refresh still uses `POST /v0/management/api-call` for token injection before writing quota-status.
 - **Logic**: CLIProxyAPI injects token via `auth_index` for target `chatgpt.com/backend-api/wham/usage`.
 - **Debugging**: Verify both Wails debug events and CLIProxyAPI token resolution.
 - **Time**: Relative reset countdown must use raw unix seconds (`resetAtUnix`). Do not re-parse `resetLabel` for countdown logic, because display labels lose seconds and drift into false `0s`.

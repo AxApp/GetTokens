@@ -60,9 +60,26 @@ type CodexQuotaWindow struct {
 }
 
 type CodexQuotaResponse struct {
-	PlanType string                 `json:"planType,omitempty"`
-	Windows  []CodexQuotaWindow     `json:"windows"`
-	Billing  *CodexQuotaBillingInfo `json:"billing,omitempty"`
+	AccountKey      string                  `json:"accountKey,omitempty"`
+	Source          string                  `json:"source,omitempty"`
+	Status          string                  `json:"status,omitempty"`
+	PlanType        string                  `json:"planType,omitempty"`
+	Windows         []CodexQuotaWindow      `json:"windows"`
+	Billing         *CodexQuotaBillingInfo  `json:"billing,omitempty"`
+	UpdatedAt       string                  `json:"updatedAt,omitempty"`
+	LastEvaluatedAt string                  `json:"lastEvaluatedAt,omitempty"`
+	Stale           bool                    `json:"stale,omitempty"`
+	DegradedReason  string                  `json:"degradedReason,omitempty"`
+	Blocked         bool                    `json:"blocked"`
+	BlockReason     string                  `json:"blockReason,omitempty"`
+	Sources         []CodexQuotaSourceState `json:"sources"`
+}
+
+type CodexQuotaSourceState struct {
+	Source    string `json:"source"`
+	Reason    string `json:"reason,omitempty"`
+	ExpiresAt string `json:"expiresAt,omitempty"`
+	NextReset string `json:"nextReset,omitempty"`
 }
 
 type CodexQuotaBillingInfo struct {

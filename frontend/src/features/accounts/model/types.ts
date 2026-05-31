@@ -36,6 +36,18 @@ export interface QuotaDisplay {
   planType: string;
   windows: QuotaWindowDisplay[];
   refreshing?: boolean;
+  blocked?: boolean;
+  blockReason?: string;
+  stale?: boolean;
+  degradedReason?: string;
+  sources?: QuotaSourceDisplay[];
+}
+
+export interface QuotaSourceDisplay {
+  source: string;
+  reason?: string;
+  expiresAt?: string;
+  nextReset?: string;
 }
 
 export interface AccountStabilitySummary {

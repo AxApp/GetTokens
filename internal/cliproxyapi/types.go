@@ -294,3 +294,56 @@ type RateLimitEvent struct {
 	Reason      string `json:"reason,omitempty"`
 	TriggeredAt int64  `json:"triggered_at"`
 }
+
+const (
+	QuotaRuntimeStatusSuccess  = "success"
+	QuotaRuntimeStatusError    = "error"
+	QuotaRuntimeStatusStale    = "stale"
+	QuotaRuntimeStatusDegraded = "degraded"
+)
+
+type QuotaRuntimeWindow struct {
+	ID               string   `json:"id"`
+	Label            string   `json:"label"`
+	RemainingPercent *int     `json:"remaining_percent,omitempty"`
+	UsedTokens       *float64 `json:"used_tokens,omitempty"`
+	LimitTokens      *float64 `json:"limit_tokens,omitempty"`
+	RemainingTokens  *float64 `json:"remaining_tokens,omitempty"`
+	ResetLabel       string   `json:"reset_label,omitempty"`
+	ResetAtUnix      int64    `json:"reset_at_unix,omitempty"`
+}
+
+type QuotaRuntimeBilling struct {
+	IsAvailable  bool                      `json:"is_available"`
+	BalanceInfos []QuotaRuntimeBalanceInfo `json:"balance_infos"`
+}
+
+type QuotaRuntimeBalanceInfo struct {
+	Currency        string `json:"currency"`
+	TotalBalance    string `json:"total_balance"`
+	GrantedBalance  string `json:"granted_balance"`
+	ToppedUpBalance string `json:"topped_up_balance"`
+}
+
+type QuotaRuntimeSourceState struct {
+	Source    string `json:"source"`
+	Reason    string `json:"reason,omitempty"`
+	ExpiresAt string `json:"expires_at,omitempty"`
+	NextReset string `json:"next_reset,omitempty"`
+}
+
+type QuotaRuntimeState struct {
+	AccountKey      string                    `json:"account_key"`
+	Source          string                    `json:"source,omitempty"`
+	Status          string                    `json:"status"`
+	PlanType        string                    `json:"plan_type,omitempty"`
+	Windows         []QuotaRuntimeWindow      `json:"windows"`
+	Billing         *QuotaRuntimeBilling      `json:"billing,omitempty"`
+	UpdatedAt       string                    `json:"updated_at,omitempty"`
+	LastEvaluatedAt string                    `json:"last_evaluated_at,omitempty"`
+	Stale           bool                      `json:"stale,omitempty"`
+	DegradedReason  string                    `json:"degraded_reason,omitempty"`
+	Blocked         bool                      `json:"blocked"`
+	BlockReason     string                    `json:"block_reason,omitempty"`
+	Sources         []QuotaRuntimeSourceState `json:"sources"`
+}
