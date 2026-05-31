@@ -536,7 +536,7 @@ Channel Routing 的“参与账号”只统计路由可参与账号；被 `quota
 1. Given 账号 quota fresh 且 remaining 为 0，When 构建候选池，Then 该账号被 `quota-empty` hard-filter 排除。
 2. Given 账号 quota fresh 且 resetAt 在未来，When 生成 guard block，Then `expiresAt` 等于 resetAt。
 3. Given 多个 quota window 都耗尽，When 生成 guard block，Then next reset 使用最晚 resetAt。
-4. Given resetAt 已到期，When 周期 reconcile 运行，Then 清理过期 `quota-empty` 并触发 quota refresh。
+4. Given resetAt 已到期，When route guard active lookup 或账号按需 refresh 运行，Then 过期 `quota-empty` 不再阻断候选；显式 refresh 可重新拉取 provider quota。
 5. Given quota refresh 后 remaining 恢复为正数，When evaluator 刷新 guard source，Then 只清理 `quota-empty`，不影响 `manual-disabled` / `rate-limit`。
 6. Given quota 数据 stale，When 构建候选池，Then 默认不因 stale quota 排除账号，UI 显示 stale / degraded。
 7. Given sticky cache 绑定到 quota-empty 账号，When 同 session 新请求进入路由，Then sticky 失效并选择其他候选。
@@ -560,15 +560,19 @@ Channel Routing 的“参与账号”只统计路由可参与账号；被 `quota
 - `QuotaRuntimeStoreRecoveryClearsAuthScopedQuotaEmptyByAccountKey`
 - `QuotaRuntimeStoreStaleStateDoesNotClearFreshQuotaEmptyGuard`
 - `QuotaRuntimeRoutesPutAndGetStatus`
+- `QuotaRefreshCodexAPIKeyAccountWritesRuntimeGuard`
+- `QuotaDraftTestRejectsShellFeaturesWithoutRuntimeWrite`
+- `BillingDraftParsesOpenRouterWithoutRuntimeWrite`
 
 已覆盖 Wails/root：
 
 - `cliproxyapi.Client` 的 quota-status GET/PUT DTO。
-- 统一 Codex API key quota refresh 会写入 sidecar quota-status，并返回 sidecar 响应。
+- `cliproxyapi.Client` 的 `quota-refresh` / `quota-test` / `billing-test` endpoint DTO。
+- 统一 Codex API key quota refresh 调 sidecar-native `quota-refresh`，由 sidecar 写入 quota runtime 并返回 sidecar 响应。
 - auth-file usage refresh 失败但有 cache 时写入 `status=stale`。
 - auth-file quota refresh 使用统一账号 `accountKey` 作为 sidecar `api-call` 和 quota-status key。
-- Codex API key quota curl 测试和实际 refresh 都通过 sidecar `/api-call` 执行 HTTP 请求，不再在 Wails/root 直连目标 URL。
-- Codex API key billing curl 测试通过 sidecar `/api-call` 执行 HTTP 请求。
+- Codex API key quota curl 草稿测试通过 sidecar `quota-test`，不再在 Wails/root 解析或直连目标 URL。
+- Codex API key billing curl 草稿测试通过 sidecar `billing-test`。
 - root mapper 保留 sidecar quota runtime explain 字段。
 
 已覆盖 frontend：
@@ -579,7 +583,6 @@ Channel Routing 的“参与账号”只统计路由可参与账号；被 `quota
 后续仍需补：
 
 - Channel Routing explain 过滤原因包含 `quota-empty` 的 UI 断言。
-- sidecar-native quota curl / billing curl 执行器迁移后的集成测试。
 
 ## 分期
 
