@@ -157,6 +157,20 @@ Live sessions 是高频轮询页面，刷新时不能把每秒变化的时钟字
 
 本轮浏览器验收在 `#frame=codex&workspace=live-sessions` 的 CACHE 页面连续采样 4 次、约 3.6 秒，`来源 CACHE`、会话列表片段、`最新样本#50` 与页面滚动位置均保持稳定。
 
+### 13. Preview timing 数据要模拟真实请求历史
+
+5173 browser preview 是 live-session UI 的主要视觉验收入口。preview 数据不能只追求“看起来在动”，否则会把 mock 动画误判成真实运行态问题。
+
+稳定边界：
+
+1. completed preview requests 的 timing 必须从稳定身份生成，例如 `sequence`，不能从当前可见窗口 index 生成。滚动窗口从 `#1..#50` 变成 `#2..#51` 后，同一个 request 的 `totalDurationMs / TTFT / first token / gap / rate` 仍应保持不变。
+2. preview 可保留一个 active/live request，但每秒变化只能影响这个最新样本。历史 completed bars 不应随 preview refresh 改变高度。
+3. preview 数据应包含少量已完成慢请求 spike，用真实历史峰值承载 chart scale；不要让 live elapsed 每秒成为新的全局最大值，否则历史 waveform bars 会被重新缩放，看起来像所有柱体都在变化。
+4. 结构差分合并需要忽略 preview live sample 的 clock-only timing/rate 变化，避免列表和详情区域因为 mock refresh 闪烁。
+5. 回归测试至少覆盖：连续 1 秒刷新时 overlapping completed requests timing 不变；滚动 6 秒进入新 request 后 overlap 部分 timing 不变；live sample 低于 completed spike；浏览器 DOM 连续采样时只有最后一个 bar 几何变化。
+
+本轮 5173 验收中，Playwright 连续采样 `1.5s` 得到 `barCount=50`、`changedCount=1`、`changedIndexes=[49]`、`dashed=0`，确认只有最后一个 live 样本变化。
+
 ## 不纳入
 
 - 不新增独立 `gettokens-codex-live-sessions` skill；当前规则继续归入 `gettokens-domain-engineering` 的 Codex Live Sessions 小节。

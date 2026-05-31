@@ -4,12 +4,14 @@ import { readFile } from 'node:fs/promises';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout.ts';
 import { findAccountDetailByID } from '../model/accountDetailSelection.ts';
 
-test('account detail overview keeps runtime snapshot and evidence as a 50/50 desktop split', async () => {
-  const source = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+test('account detail runtime evidence is no longer mounted through the split overview grid', async () => {
+  const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const openAICompatibleSource = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /data-account-detail-overview-layout.*'split-50-50'/);
-  assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
-  assert.doesNotMatch(source, /xl:grid-cols-\[minmax\(0,1fr\)_24rem\]/);
+  assert.doesNotMatch(unifiedSource, /AccountDetailOverviewGrid/);
+  assert.doesNotMatch(openAICompatibleSource, /AccountDetailOverviewGrid/);
+  assert.match(unifiedSource, /<AccountRuntimeEvidenceSection/);
+  assert.match(openAICompatibleSource, /<AccountRuntimeEvidenceSection/);
 });
 
 test('account detail keeps auth-file modules lightweight', () => {
@@ -44,14 +46,15 @@ test('runtime stats render as a compact strip instead of a large stat grid', asy
   assert.doesNotMatch(source, /<AccountDetailStatGrid columns=\{6\}>/);
 });
 
-test('api key credential fields stack vertically with embedded labels', async () => {
+test('api key credential, verify, and proxy route stack vertically in one module', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /export function AccountCredentialVerifySection/);
+  assert.match(source, /data-account-credential-verify-layout="vertical"/);
   assert.match(source, /data-account-credential-fields="stacked"/);
-  assert.match(source, /data-account-credential-field-label="embedded"/);
-  assert.match(source, /data-account-credential-verify-layout="combined"/);
+  assert.match(source, /data-account-credential-field-label="above"/);
+  assert.doesNotMatch(source, /data-account-credential-field-label="embedded"/);
   assert.match(source, /data-account-credential-list-item="credential"/);
   assert.match(source, /data-account-credential-list-item="connection"/);
   assert.match(source, /data-account-credential-list-item="proxy-route"/);
@@ -92,6 +95,70 @@ test('quota and billing curl editors are modal draft editors without local save 
   assert.match(modalSource, /TEMPLATES/);
   assert.match(modalSource, /onApplyTemplate/);
   assert.doesNotMatch(modalSource, /保存模板/);
+});
+
+test('quota and billing test actions live in section headers', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountRuntimeEvidenceSection/)?.[0] ?? '';
+  const billingBlock = source.match(/export function AccountBillingSection[\s\S]*?\nfunction RuntimeKV/)?.[0] ?? '';
+  const billingActionsBlock = billingBlock.match(/const billingActions = \([\s\S]*?\n  \);/)?.[0] ?? '';
+
+  assert.match(quotaBlock, /actions=\{quotaActions\}/);
+  assert.match(quotaBlock, /const quotaActions = \(/);
+  assert.match(billingBlock, /actions=\{billingActions\}/);
+  assert.match(billingBlock, /const billingActions = \(/);
+  assert.doesNotMatch(quotaBlock, /<div className="flex flex-wrap items-center gap-2">\s*<button onClick=\{runQuotaTest\}/);
+  assert.doesNotMatch(billingBlock, /<div className="flex flex-wrap items-center gap-2">\s*<button onClick=\{runBillingTest\}/);
+  assert.ok(
+    billingActionsBlock.indexOf('onClick={runBillingTest}') < billingActionsBlock.indexOf('onClick={openEditor}'),
+    'billing add button should be the rightmost header action',
+  );
+});
+
+test('quota and billing detail share empty-state and script-card structure', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountRuntimeEvidenceSection/)?.[0] ?? '';
+  const billingBlock = source.match(/export function AccountBillingSection[\s\S]*?\nfunction RuntimeKV/)?.[0] ?? '';
+  const billingActionsBlock = billingBlock.match(/const billingActions = \([\s\S]*?\n  \);/)?.[0] ?? '';
+
+  assert.match(quotaBlock, /const hasQuotaScript = draft\.quotaCurl\.trim\(\)\.length > 0/);
+  assert.match(quotaBlock, /<AccountDetailEmptyState/);
+  assert.match(quotaBlock, /暂无额度脚本/);
+  assert.match(quotaBlock, /\{hasQuotaScript \? \(/);
+  assert.match(billingBlock, /const hasBillingScript = draft\.billingCurl\.trim\(\)\.length > 0/);
+  assert.match(billingBlock, /const liveBalances = liveBilling\?\.isAvailable \? liveBilling\.balances : \[\]/);
+  assert.match(billingBlock, /<AccountDetailEmptyState/);
+  assert.match(billingBlock, />\s*添加\s*<\/button>/);
+  assert.match(billingBlock, /\{hasBillingScript \? \(/);
+  assert.doesNotMatch(billingActionsBlock, /编辑脚本/);
+});
+
+test('runtime snapshot and evidence render as one merged account detail section', async () => {
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const openAICompatibleSource = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
+  const storySource = await readFile(new URL('../components/AccountModalComponents.stories.tsx', import.meta.url), 'utf8');
+
+  assert.match(sectionSource, /export function AccountRuntimeEvidenceSection/);
+  assert.match(sectionSource, /componentName="AccountRuntimeEvidenceSection"/);
+  assert.match(sectionSource, /data-account-runtime-evidence-layout="merged"/);
+  assert.match(sectionSource, /data-account-runtime-evidence-slot="snapshot"/);
+  assert.match(sectionSource, /data-account-runtime-evidence-slot="audit"/);
+  assert.match(sectionSource, /AUDIT EVIDENCE/);
+  assert.doesNotMatch(sectionSource, /export function AccountRuntimeSnapshotSection/);
+  assert.doesNotMatch(sectionSource, /export function AccountEvidenceSection/);
+
+  assert.match(unifiedSource, /<AccountRuntimeEvidenceSection[\s\S]*?account=\{account\}/);
+  assert.doesNotMatch(unifiedSource, /AccountDetailOverviewGrid/);
+  assert.doesNotMatch(unifiedSource, /AccountEvidenceSection/);
+
+  assert.match(openAICompatibleSource, /<AccountRuntimeEvidenceSection[\s\S]*?evidenceRows=\{buildOpenAICompatibleEvidenceRows/);
+  assert.doesNotMatch(openAICompatibleSource, /OpenAICompatibleEvidenceSection/);
+  assert.doesNotMatch(openAICompatibleSource, /AccountDetailOverviewGrid/);
+
+  assert.match(storySource, /<AccountRuntimeEvidenceSection/);
+  assert.doesNotMatch(storySource, /AccountRuntimeSnapshotSection/);
+  assert.doesNotMatch(storySource, /AccountEvidenceSection/);
 });
 
 test('quota and billing curl editors are driven by account detail script hash routes', async () => {

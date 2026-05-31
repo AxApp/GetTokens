@@ -446,6 +446,102 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     };
   }, [browserMode, detailRow, openAICompatibleModelOptions, trackRequest]);
 
+  async function fetchDetailModelOptions(row: CodexAccountRow) {
+    if (row.sourceKind === 'codex-auth-file') {
+      const authFileName = String(row.name || '').trim();
+      if (!authFileName) {
+        return;
+      }
+      if (browserMode) {
+        setAuthFileModelMappings((prev) => ({
+          ...prev,
+          [row.id]: getCodexAccountListPreviewAuthFileModelOptions(row.id),
+        }));
+        setAuthFileModelOptions((prev) => ({
+          ...prev,
+          [row.id]: getCodexAccountListPreviewAuthFileModelOptions(row.id),
+        }));
+        setAuthFileModelErrors((prev) => ({ ...prev, [row.id]: '' }));
+        return;
+      }
+
+      const channel = row.provider.trim().toLowerCase() || 'codex';
+      setLoadingAuthFileModelID(row.id);
+      setAuthFileModelErrors((prev) => ({ ...prev, [row.id]: '' }));
+      try {
+        const result = await trackRequest('GetAuthFileModels', { name: authFileName, channel }, async () => {
+          const [models, aliases] = await Promise.all([
+            GetAuthFileModels(authFileName),
+            ListOAuthModelAliases(channel),
+          ]);
+          return { models, aliases };
+        });
+        setAuthFileModelMappings((prev) => ({
+          ...prev,
+          [row.id]: mergeCodexAuthFileModelMappings(result.models || [], result.aliases || []),
+        }));
+        setAuthFileModelOptions((prev) => ({
+          ...prev,
+          [row.id]: buildCodexAuthFileModelMappings(result.models || []),
+        }));
+      } catch (error) {
+        console.error(error);
+        setAuthFileModelErrors((prev) => ({ ...prev, [row.id]: toErrorMessage(error) }));
+      } finally {
+        setLoadingAuthFileModelID((current) => (current === row.id ? null : current));
+      }
+      return;
+    }
+
+    const apiKey = row.apiKey || row.apiKeys?.[0] || '';
+    if (!row.baseUrl || !apiKey) {
+      setOpenAICompatibleModelErrors((prev) => ({
+        ...prev,
+        [row.id]: t('accounts.openai_provider_models_fetch_failed'),
+      }));
+      return;
+    }
+
+    if (browserMode) {
+      setOpenAICompatibleModelOptions((prev) => ({
+        ...prev,
+        [row.id]: row.modelMappings,
+      }));
+      setOpenAICompatibleModelErrors((prev) => ({ ...prev, [row.id]: '' }));
+      return;
+    }
+
+    setLoadingOpenAICompatibleModelID(row.id);
+    setOpenAICompatibleModelErrors((prev) => ({ ...prev, [row.id]: '' }));
+    try {
+      const result = await trackRequest('FetchOpenAICompatibleProviderModels', { name: row.provider, baseUrl: row.baseUrl }, () =>
+        FetchOpenAICompatibleProviderModels(
+          main.FetchOpenAICompatibleProviderModelsInput.createFrom({
+            baseUrl: row.baseUrl,
+            apiKey,
+            headers: row.headers || {},
+          }),
+        ),
+      );
+      const fetchedMappings = buildCodexAuthFileModelMappings(result?.models || []);
+      setOpenAICompatibleModelOptions((prev) => ({
+        ...prev,
+        [row.id]: fetchedMappings,
+      }));
+      if (Number(result?.statusCode || 0) >= 400 && fetchedMappings.length === 0) {
+        setOpenAICompatibleModelErrors((prev) => ({
+          ...prev,
+          [row.id]: result?.message || t('accounts.openai_provider_models_fetch_failed'),
+        }));
+      }
+    } catch (error) {
+      console.error(error);
+      setOpenAICompatibleModelErrors((prev) => ({ ...prev, [row.id]: toErrorMessage(error) }));
+    } finally {
+      setLoadingOpenAICompatibleModelID((current) => (current === row.id ? null : current));
+    }
+  }
+
   function handleDragStart(id: string) {
     setDraggedID(id);
     suppressNextDetailClickRef.current = false;
@@ -1086,6 +1182,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onSaveConfig={(draft, mappings) => saveDetailConfig(detailRowWithModels, draft, mappings)}
           onRateLimitRulesChanged={() => void loadAccountRateLimits(orderedRows.map(buildCodexQuotaSummaryAccount))}
           onSaveModelMappings={(mappings) => saveModelMappings(detailRowWithModels, mappings)}
+          onFetchModelOptions={() => void fetchDetailModelOptions(detailRowWithModels)}
         />
       ) : null}
     </div>

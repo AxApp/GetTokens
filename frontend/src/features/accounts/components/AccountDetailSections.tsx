@@ -31,6 +31,7 @@ import { formatLabel } from '../model/vendorPresetHelpers';
 import { QuotaBars } from './CardSections';
 import {
   AccountDetailEvidenceGrid,
+  AccountDetailEmptyState,
   AccountDetailPill,
   AccountDetailSection,
   type AccountDetailSectionSpan,
@@ -99,16 +100,12 @@ export interface AccountBillingSectionProps {
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => Promise<any>;
 }
 
-export interface AccountEvidenceSectionProps {
-  account: AccountRecord;
-  usageSummary?: AccountUsageSummary;
-  rows?: AccountEvidenceRow[];
-}
-
-export interface AccountRuntimeSnapshotSectionProps {
+export interface AccountRuntimeEvidenceSectionProps {
+  account?: AccountRecord;
   usageSummary?: AccountUsageSummary;
   quotaDisplay?: QuotaDisplay;
   billing?: BillingDisplay;
+  evidenceRows?: AccountEvidenceRow[];
 }
 
 export interface AccountDetailFooterProps {
@@ -246,7 +243,7 @@ export function AccountCredentialVerifySection({
       title="凭据与验证"
       span={span}
     >
-      <div data-account-credential-verify-layout="combined" className="grid min-w-0 gap-4">
+      <div data-account-credential-verify-layout="vertical" className="grid min-w-0 gap-4">
         <section data-account-credential-list-item="credential" className="grid gap-3 border-b border-dashed border-[var(--border-color)] pb-4">
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             CREDENTIAL
@@ -434,27 +431,25 @@ function CredentialInputField({
   onCopy?: () => void;
 }) {
   return (
-    <label className="block min-w-0">
-      <div className="flex min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-main)] focus-within:border-[var(--text-primary)]">
-        <div className="relative min-w-0 flex-1">
-          <span
-            data-account-credential-field-label="embedded"
-            className="pointer-events-none absolute left-3 top-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
-          >
-            {label}
-          </span>
-          <input
-            value={value}
-            placeholder={placeholder}
-            onChange={(event) => onChange(event.target.value)}
-            className="min-h-14 w-full bg-transparent px-3 pb-2 pt-6 font-mono text-[length:var(--font-size-ui-sm)] text-[var(--text-primary)] outline-none"
-          />
-        </div>
+    <label className="grid min-w-0 gap-1.5">
+      <span
+        data-account-credential-field-label="above"
+        className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
+      >
+        {label}
+      </span>
+      <div className="flex min-w-0 items-center gap-2">
+        <input
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          className="input-swiss min-w-0 flex-1 font-mono !text-[length:var(--font-size-ui-xs)]"
+        />
         {onCopy ? (
           <button
             type="button"
             onClick={onCopy}
-            className="min-h-14 shrink-0 border-l-2 border-[var(--border-color)] px-3 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] active:scale-95"
+            className="btn-swiss shrink-0 !px-3 !py-2 !text-[length:var(--font-size-ui-2xs)]"
           >
             复制
           </button>
@@ -612,6 +607,7 @@ export function AccountQuotaSection({
     [draft.baseUrl, quotaTemplate],
   );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
+  const hasQuotaScript = draft.quotaCurl.trim().length > 0;
 
   function openEditor() {
     if (onOpenEditor) {
@@ -654,12 +650,35 @@ export function AccountQuotaSection({
     }
   }
 
+  const quotaActions = (
+    <>
+      <button
+        type="button"
+        onClick={runQuotaTest}
+        disabled={testStatus === 'loading' || !hasQuotaScript || !onTestQuotaCurl}
+        className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+      >
+        {testStatus === 'loading' ? '测试中...' : '测试'}
+      </button>
+      {!hasQuotaScript ? (
+        <button
+          type="button"
+          onClick={openEditor}
+          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+        >
+          添加
+        </button>
+      ) : null}
+    </>
+  );
+
   return (
     <AccountDetailSection
       componentName="AccountQuotaSection"
       eyebrow="Quota"
       title="额度追踪"
       meta={liveWindows.length > 0 ? `实时 ${liveWindows.length} 个窗口` : undefined}
+      actions={quotaActions}
     >
 
       {quotaWindows.length > 0 ? (
@@ -669,32 +688,32 @@ export function AccountQuotaSection({
           </div>
           {quotaDisplay ? <QuotaBars quotaDisplay={quotaDisplay} t={t} /> : null}
         </div>
+      ) : (
+        <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+          {hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
+        </AccountDetailEmptyState>
+      )}
+
+      {hasQuotaScript ? (
+        <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={draft.quotaEnabled}
+                onChange={(event) => setDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))}
+              />
+              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用额度</span>
+            </label>
+            <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+              编辑脚本
+            </button>
+          </div>
+          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.quotaCurl || undefined}>
+            {draft.quotaCurl || '未配置额度脚本'}
+          </div>
+        </div>
       ) : null}
-
-      <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={draft.quotaEnabled}
-              onChange={(event) => setDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))}
-            />
-            <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用</span>
-          </label>
-          <button onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
-            编辑脚本
-          </button>
-        </div>
-        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.quotaCurl || undefined}>
-          {draft.quotaCurl || '未配置额度脚本'}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <button onClick={runQuotaTest} disabled={testStatus === 'loading' || !draft.quotaCurl.trim()} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
-          {testStatus === 'loading' ? '测试中...' : '测试'}
-        </button>
-      </div>
 
       {testStatus === 'success' && testResult ? (
         <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-success)]">
@@ -723,56 +742,100 @@ export function AccountQuotaSection({
   );
 }
 
-export function AccountRuntimeSnapshotSection({
+export function AccountRuntimeEvidenceSection({
+  account,
   usageSummary,
   quotaDisplay,
   billing,
-}: AccountRuntimeSnapshotSectionProps) {
+  evidenceRows,
+}: AccountRuntimeEvidenceSectionProps) {
   const { t } = useI18n();
   const stats = buildAccountRuntimeStats(usageSummary, t);
+  const rows = evidenceRows ?? (account ? buildAccountEvidenceRows(t, account, usageSummary) : []);
   const quotaWindows = quotaDisplay?.windows ?? [];
   const balances = billing?.isAvailable ? billing.balances ?? [] : [];
+  const lastActivityMeta = usageSummary?.lastActivityAt ? `LAST ${new Date(usageSummary.lastActivityAt).toLocaleString()}` : undefined;
 
   return (
     <AccountDetailSection
-      componentName="AccountRuntimeSnapshotSection"
+      componentName="AccountRuntimeEvidenceSection"
       eyebrow="Runtime"
-      title="运行快照"
+      title="运行证据"
       density="hero"
-      meta={usageSummary?.lastActivityAt ? `LAST ${new Date(usageSummary.lastActivityAt).toLocaleString()}` : undefined}
+      meta={lastActivityMeta}
     >
-      <RuntimeStatStrip stats={stats} />
-
-      {quotaWindows.length > 0 || balances.length > 0 ? (
-        <div
-          data-account-runtime-resource-grid="quota-balance"
-          className={`grid gap-4 ${quotaWindows.length > 0 && balances.length > 0 ? 'xl:grid-cols-2' : ''}`}
-        >
-          {quotaWindows.length > 0 ? (
-            <div data-account-runtime-resource-panel="quota" className="grid gap-2">
-              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                QUOTA
-              </div>
-              {quotaDisplay ? <QuotaBars quotaDisplay={quotaDisplay} t={t} /> : null}
+      <div
+        data-account-runtime-evidence-layout="merged"
+        className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]"
+      >
+        <div data-account-runtime-evidence-slot="snapshot" className="grid min-w-0 gap-4">
+          <div className="grid gap-2 border-l-4 border-[var(--text-primary)] bg-[var(--bg-surface)] px-3 py-2">
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              LIVE SNAPSHOT
             </div>
-          ) : null}
+            <RuntimeStatStrip stats={stats} />
+          </div>
 
-          {balances.length > 0 ? (
-            <div data-account-runtime-resource-panel="balance" className="grid gap-2 content-start">
-              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                BALANCE
-              </div>
-              {balances.map((balance, index) => (
-                <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
-                  <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
-                  <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
-                  <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
+          {quotaWindows.length > 0 || balances.length > 0 ? (
+            <div
+              data-account-runtime-resource-grid="quota-balance"
+              className={`grid gap-4 border-t-2 border-[var(--border-color)] pt-4 ${quotaWindows.length > 0 && balances.length > 0 ? 'xl:grid-cols-2' : ''}`}
+            >
+              {quotaWindows.length > 0 ? (
+                <div data-account-runtime-resource-panel="quota" className="grid gap-2">
+                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    QUOTA
+                  </div>
+                  {quotaDisplay ? <QuotaBars quotaDisplay={quotaDisplay} t={t} /> : null}
                 </div>
-              ))}
+              ) : null}
+
+              {balances.length > 0 ? (
+                <div data-account-runtime-resource-panel="balance" className="grid gap-2 content-start">
+                  <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    BALANCE
+                  </div>
+                  {balances.map((balance, index) => (
+                    <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
+                      <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
+                      <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
+                      <RuntimeKV label="Topped Up" value={`${balance.toppedUpBalance} ${balance.currency}`.trim()} />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ) : null}
         </div>
-      ) : null}
+
+        <aside
+          data-account-runtime-evidence-slot="audit"
+          className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3"
+        >
+          <div className="mb-2 flex items-center justify-between gap-3 border-b border-dashed border-[var(--border-color)] pb-2">
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              AUDIT EVIDENCE
+            </div>
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tabular-nums text-[var(--text-secondary)]">
+              {rows.length} ROWS
+            </div>
+          </div>
+          {rows.length > 0 ? (
+            <AccountDetailEvidenceGrid
+              compact
+              rows={rows.map((row) => ({
+                label: row.label,
+                value: row.value,
+                title: row.title ?? row.value,
+              }))}
+            />
+          ) : (
+            <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+              暂无审计证据
+            </AccountDetailEmptyState>
+          )}
+        </aside>
+      </div>
     </AccountDetailSection>
   );
 }
@@ -827,6 +890,8 @@ export function AccountBillingSection({
     [billingTemplate, draft.baseUrl],
   );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
+  const hasBillingScript = draft.billingCurl.trim().length > 0;
+  const liveBalances = liveBilling?.isAvailable ? liveBilling.balances : [];
 
   function openEditor() {
     if (onOpenEditor) {
@@ -873,20 +938,43 @@ export function AccountBillingSection({
     }
   }
 
+  const billingActions = (
+    <>
+      <button
+        type="button"
+        onClick={runBillingTest}
+        disabled={testStatus === 'loading' || !hasBillingScript || !onTestBillingCurl}
+        className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+      >
+        {testStatus === 'loading' ? '测试中...' : '测试余额'}
+      </button>
+      {!hasBillingScript ? (
+        <button
+          type="button"
+          onClick={openEditor}
+          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+        >
+          添加
+        </button>
+      ) : null}
+    </>
+  );
+
   return (
     <AccountDetailSection
       componentName="AccountBillingSection"
       eyebrow="Billing"
       title="余额"
       meta={liveBilling ? '实时余额已就绪' : undefined}
+      actions={billingActions}
     >
 
-      {liveBilling?.isAvailable && liveBilling.balances.length > 0 ? (
+      {liveBalances.length > 0 ? (
         <div className="grid gap-2 content-start">
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             BALANCE
           </div>
-          {liveBilling.balances.map((balance, index) => (
+          {liveBalances.map((balance, index) => (
             <div key={`${balance.currency}-${index}`} className="grid gap-2 border-y border-dashed border-[var(--border-color)] py-2 md:grid-cols-3">
               <RuntimeKV label="Total" value={`${balance.totalBalance} ${balance.currency}`.trim()} />
               <RuntimeKV label="Granted" value={`${balance.grantedBalance} ${balance.currency}`.trim()} />
@@ -894,32 +982,32 @@ export function AccountBillingSection({
             </div>
           ))}
         </div>
+      ) : (
+        <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+          {hasBillingScript ? '暂无余额数据，可测试余额脚本确认接口返回' : '暂无余额脚本，添加后可测试并展示余额'}
+        </AccountDetailEmptyState>
+      )}
+
+      {hasBillingScript ? (
+        <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={draft.billingEnabled}
+                onChange={(event) => setDraft((prev) => ({ ...prev, billingEnabled: event.target.checked }))}
+              />
+              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用余额</span>
+            </label>
+            <button onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+              编辑脚本
+            </button>
+          </div>
+          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.billingCurl || undefined}>
+            {draft.billingCurl || '未配置余额脚本'}
+          </div>
+        </div>
       ) : null}
-
-      <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={draft.billingEnabled}
-              onChange={(event) => setDraft((prev) => ({ ...prev, billingEnabled: event.target.checked }))}
-            />
-            <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用余额</span>
-          </label>
-          <button onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
-            编辑脚本
-          </button>
-        </div>
-        <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.billingCurl || undefined}>
-          {draft.billingCurl || '未配置余额脚本'}
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <button onClick={runBillingTest} disabled={testStatus === 'loading' || !draft.billingCurl.trim()} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
-          {testStatus === 'loading' ? '测试中...' : '测试余额'}
-        </button>
-      </div>
 
       {testStatus === 'success' && testBilling ? (
         <div className="grid gap-2 content-start">
@@ -956,31 +1044,6 @@ export function AccountBillingSection({
           onClose={closeEditor}
         />
       ) : null}
-    </AccountDetailSection>
-  );
-}
-
-export function AccountEvidenceSection({
-  account,
-  usageSummary,
-  rows,
-}: AccountEvidenceSectionProps) {
-  const { t } = useI18n();
-  const evidenceRows = rows ?? buildAccountEvidenceRows(t, account, usageSummary);
-
-  if (evidenceRows.length === 0) {
-    return null;
-  }
-
-  return (
-    <AccountDetailSection componentName="AccountEvidenceSection" density="dense" eyebrow="Audit" title="EVIDENCE">
-      <AccountDetailEvidenceGrid
-        rows={evidenceRows.map((row) => ({
-          label: row.label,
-          value: row.value,
-          title: row.title ?? row.value,
-        }))}
-      />
     </AccountDetailSection>
   );
 }

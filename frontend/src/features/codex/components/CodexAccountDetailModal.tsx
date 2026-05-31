@@ -1,4 +1,4 @@
-import { Plus, Trash2, X } from 'lucide-react';
+import { Plus, RefreshCw, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import AccountDetailModalFrame from '../../accounts/components/AccountDetailModalFrame';
 import {
@@ -15,7 +15,6 @@ import {
   AccountDetailPill,
   AccountDetailSection,
 } from '../../accounts/components/AccountDetailPrimitives';
-import AccountProxyRouteSection from '../../accounts/components/AccountProxyRouteSection';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from '../../accounts/components/RateLimitRulesSection';
 import {
   buildApiKeyConfigDraft,
@@ -72,7 +71,7 @@ export function CodexAccountDetailHeader({
 
         <dl
           data-codex-account-detail-header="summary"
-          className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-5"
+          className="flex min-w-0 flex-wrap items-center gap-2"
         >
           <AccountDetailHeaderMeta label={t('common.type')} value={sourceKindLabel(t, row.sourceKind)} />
           <AccountDetailHeaderMeta label={t('common.status')} value={row.status || '—'} />
@@ -103,13 +102,13 @@ function AccountDetailHeaderMeta({
   value: string;
 }) {
   return (
-    <div className="min-w-0 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2">
-      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+    <div className="inline-flex max-w-full items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2.5 py-1.5">
+      <dt className="shrink-0 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
         {label}
-      </div>
-      <div className="mt-1 break-words font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-primary)]">
+      </dt>
+      <dd className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-primary)]">
         {value}
-      </div>
+      </dd>
     </div>
   );
 }
@@ -134,6 +133,7 @@ export function CodexAccountDetailModal({
   onSaveConfig,
   onRateLimitRulesChanged,
   onSaveModelMappings,
+  onFetchModelOptions,
 }: {
   row: CodexAccountRow;
   t: (key: string) => string;
@@ -154,6 +154,7 @@ export function CodexAccountDetailModal({
   onSaveConfig?: (draft: ApiKeyConfigDraft, mappings: CodexModelMappingRow[]) => Promise<void>;
   onRateLimitRulesChanged?: () => void;
   onSaveModelMappings: (mappings: CodexModelMappingRow[]) => Promise<void>;
+  onFetchModelOptions?: () => void;
 }) {
   const account = useMemo(() => buildCodexQuotaSummaryAccount(row), [row]);
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
@@ -261,21 +262,14 @@ export function CodexAccountDetailModal({
             setDraft={setConfigDraft}
             verifyState={verifyState}
             modelNames={modelOptionNames}
+            span="wide"
+            onProxyValidityChange={setProxyRouteError}
           />
         );
       case 'auth-file-actions':
         return <CodexAuthFileSummarySection key={moduleID} account={account} />;
       case 'models':
         return <CodexAuthFileModelsSection key={moduleID} row={row} />;
-      case 'proxy-route':
-        return (
-          <AccountProxyRouteSection
-            key={moduleID}
-            proxyUrl={configDraft.proxyUrl}
-            onProxyUrlChange={(nextProxyURL) => setConfigDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
-            onValidityChange={setProxyRouteError}
-          />
-        );
       case 'rate-limit':
         return (
           <CodexRateLimitSection
@@ -329,6 +323,7 @@ export function CodexAccountDetailModal({
             modelOptionNames={modelOptionNames}
             codexModelOptionNames={codexModelOptionNames}
             onAddMapping={addMappingDraft}
+            onFetchModelOptions={onFetchModelOptions}
             onUpdateMapping={updateMappingDraft}
             onRemoveMapping={removeMappingDraft}
           />
@@ -472,6 +467,7 @@ function CodexModelRoutingSection({
   modelOptionNames,
   codexModelOptionNames,
   onAddMapping,
+  onFetchModelOptions,
   onUpdateMapping,
   onRemoveMapping,
 }: {
@@ -489,9 +485,12 @@ function CodexModelRoutingSection({
   modelOptionNames: string[];
   codexModelOptionNames: string[];
   onAddMapping: () => void;
+  onFetchModelOptions?: () => void;
   onUpdateMapping: (index: number, patch: Partial<CodexModelMappingRow>) => void;
   onRemoveMapping: (index: number) => void;
 }) {
+  const fetchingModels = loadingModelMappings || loadingModelOptions;
+
   return (
     <AccountDetailSection
       componentName="CodexModelRoutingSection"
@@ -500,14 +499,27 @@ function CodexModelRoutingSection({
       meta={showModelMappings ? String(displayedModelMappings.length) : undefined}
       span="wide"
       actions={editableModelMappings ? (
-        <button
-          type="button"
-          onClick={onAddMapping}
-          className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-        >
-          <Plus className="h-3.5 w-3.5" strokeWidth={4} />
-          {t('accounts.openai_provider_add_model')}
-        </button>
+        <>
+          {onFetchModelOptions ? (
+            <button
+              type="button"
+              onClick={onFetchModelOptions}
+              disabled={fetchingModels}
+              className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)] disabled:cursor-wait disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${fetchingModels ? 'animate-spin' : ''}`} strokeWidth={4} />
+              {fetchingModels ? t('accounts.openai_provider_models_fetch_running') : t('accounts.openai_provider_models_fetch')}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onAddMapping}
+            className="btn-swiss inline-flex items-center gap-2 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+          >
+            <Plus className="h-3.5 w-3.5" strokeWidth={4} />
+            {t('accounts.openai_provider_add_model')}
+          </button>
+        </>
       ) : undefined}
     >
       {showModelMappings ? (

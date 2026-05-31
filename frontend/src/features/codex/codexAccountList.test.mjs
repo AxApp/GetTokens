@@ -125,11 +125,11 @@ test('canEditCodexModelMappings allows codex api key mappings in detail modal ed
 test('buildCodexAccountDetailModulePlan merges account detail modules with model routing by account type', () => {
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'openai-compatible' }),
-    ['credentials', 'proxy-route', 'rate-limit', 'quota', 'billing', 'model-routing'],
+    ['credentials', 'rate-limit', 'quota', 'billing', 'model-routing'],
   );
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'codex-api-key' }),
-    ['credentials', 'proxy-route', 'rate-limit', 'quota', 'billing', 'model-routing'],
+    ['credentials', 'rate-limit', 'quota', 'billing', 'model-routing'],
   );
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'codex-auth-file' }),
@@ -139,15 +139,44 @@ test('buildCodexAccountDetailModulePlan merges account detail modules with model
 
 test('codex account detail header keeps labeled identity and metadata blocks', async () => {
   const source = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const summaryBlock = source.match(/<dl[\s\S]*?data-codex-account-detail-header="summary"[\s\S]*?<\/dl>/)?.[0] ?? '';
+  const metaBlock = source.match(/function AccountDetailHeaderMeta[\s\S]*?\n}\n\nexport function CodexAccountDetailModal/)?.[0] ?? '';
 
   assert.match(source, /export function CodexAccountDetailHeader/);
   assert.match(source, /sourceKindLabel\(t, row\.sourceKind\)/);
   assert.match(source, /data-codex-account-detail-header="summary"/);
+  assert.match(summaryBlock, /flex min-w-0 flex-wrap/);
+  assert.doesNotMatch(summaryBlock, /grid/);
+  assert.doesNotMatch(summaryBlock, /sm:grid-cols/);
+  assert.match(metaBlock, /inline-flex max-w-full items-center/);
+  assert.match(metaBlock, /<dt/);
+  assert.match(metaBlock, /<dd/);
+  assert.doesNotMatch(metaBlock, /mt-1/);
   assert.match(source, /t\('common\.type'\)/);
   assert.match(source, /t\('common\.status'\)/);
   assert.match(source, /t\('codex\.account_list_route'\)/);
   assert.match(source, /t\('codex\.account_list_priority'\)/);
   assert.match(source, /t\('common\.enable'\)/);
+});
+
+test('codex account detail folds proxy route into credential section', async () => {
+  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(modalSource, /import AccountProxyRouteSection/);
+  assert.doesNotMatch(modalSource, /case 'proxy-route':/);
+  assert.match(modalSource, /<AccountCredentialVerifySection[\s\S]*?span="wide"[\s\S]*?onProxyValidityChange=\{setProxyRouteError\}/);
+});
+
+test('codex model routing detail exposes fetch-model action from the account list', async () => {
+  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('./CodexAccountListFeature.tsx', import.meta.url), 'utf8');
+  const routingBlock = modalSource.match(/function CodexModelRoutingSection[\s\S]*?\nfunction buildEditableModelMappings/)?.[0] ?? '';
+
+  assert.match(modalSource, /onFetchModelOptions\?: \(\) => void/);
+  assert.match(routingBlock, /t\('accounts\.openai_provider_models_fetch'\)/);
+  assert.match(routingBlock, /onClick=\{onFetchModelOptions\}/);
+  assert.match(featureSource, /async function fetchDetailModelOptions\(row: CodexAccountRow\)/);
+  assert.match(featureSource, /onFetchModelOptions=\{\(\) => void fetchDetailModelOptions\(detailRowWithModels\)\}/);
 });
 
 test('buildCodexAccountRows keeps disabled or errored accounts in order but marks them not requestable', () => {

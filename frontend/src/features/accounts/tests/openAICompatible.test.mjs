@@ -380,8 +380,12 @@ test('openai compatible model rows avoid narrow vertical delete buttons', async 
   assert.match(source, /md:col-span-2 md:justify-self-start xl:col-span-1 xl:justify-self-end/);
 });
 
-test('openai compatible overview waits for wider viewports before splitting runtime and evidence', async () => {
+test('openai compatible overview renders merged runtime and evidence module', async () => {
   const source = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /className="lg:grid-cols-1 2xl:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]"/);
+  assert.match(source, /<AccountRuntimeEvidenceSection/);
+  assert.match(source, /usageSummary=\{usageSummary\}/);
+  assert.match(source, /evidenceRows=\{buildOpenAICompatibleEvidenceRows\(t, draft, verifyState\)\}/);
+  assert.doesNotMatch(source, /AccountRuntimeSnapshotSection|AccountEvidenceSection/);
+  assert.doesNotMatch(source, /lg:grid-cols-1 2xl:grid-cols/);
 });

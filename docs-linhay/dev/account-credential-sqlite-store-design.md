@@ -152,7 +152,7 @@ CREATE INDEX idx_account_cards_updated
 - `sidecar-management-api`
 - `sidecar-oauth`
 
-`priority`、`disabled`、`revision` 只保存在主表。management API 发起的账号凭证或账号配置变更必须递增 `account_cards.revision`，用于驱动 runtime apply。运行时 token refresh 是当前 runtime 自身产生的新 credential snapshot，只更新类型表和 `account_cards.updated_at_unix_ms`，不递增 revision、不重新排队 runtime apply。
+`priority`、`disabled`、`revision` 只保存在主表。management API 发起的账号凭证或账号配置变更必须递增 `account_cards.revision`，用于驱动 runtime apply。`disabled` 启停只表示账号是否参与账号池路由，不代表账号凭证是否可用；status PATCH 只更新 `account_cards.disabled` 和 `updated_at_unix_ms`，不递增 revision、不写 `account_runtime_apply_state`、不触发 runtime apply。sidecar 在内存态同步 route guard 和 runtime pool membership：禁用时阻止新请求选择该账号，并关闭受影响的 Codex WebSocket 会话；激活时只允许后续选择重新纳入该账号，不主动恢复旧连接。运行时 token refresh 是当前 runtime 自身产生的新 credential snapshot，只更新类型表和 `account_cards.updated_at_unix_ms`，不递增 revision、不重新排队 runtime apply。
 
 ```sql
 CREATE TABLE codex_api_key_accounts (

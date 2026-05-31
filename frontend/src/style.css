@@ -231,6 +231,8 @@
     --line-height-ui-none: 1;
     --line-height-ui-snug: 1.375;
     --line-height-ui-loose: 1.8;
+    --account-card-grid-full-width: 20rem;
+    --account-card-grid-compact-width: 18rem;
     --gt-control-segmented-font-size: var(--font-size-ui-md-compact);
     --gt-control-segmented-min-height: 2.125rem;
     --gt-control-segmented-padding-inline: 0.625rem;
@@ -548,11 +550,13 @@
   }
 
   .account-card-grid-full {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--account-card-grid-full-width)), var(--account-card-grid-full-width)));
+    justify-content: start;
   }
 
   .account-card-grid-compact {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 288px), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--account-card-grid-compact-width)), var(--account-card-grid-compact-width)));
+    justify-content: start;
   }
 
   .codex-account-order-card-grid-full {

@@ -28,16 +28,14 @@ import {
   AccountCredentialVerifySection,
   AccountDetailFooter,
   AccountDetailHeader,
-  AccountEvidenceSection,
   AccountQuotaSection,
-  AccountRuntimeSnapshotSection,
+  AccountRuntimeEvidenceSection,
   type APIKeyVerifyState,
 } from './AccountDetailSections';
 import {
   AccountDetailBody,
   AccountDetailEmptyState,
   AccountDetailModuleStack,
-  AccountDetailOverviewGrid,
   AccountDetailNotice,
   AccountDetailPill,
   AccountDetailSection,
@@ -172,20 +170,11 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       }
     >
       <AccountDetailBody>
-        <AccountDetailOverviewGrid
-          runtime={
-            <AccountRuntimeSnapshotSection
-              usageSummary={props.usageSummary}
-              quotaDisplay={quotaDisplay}
-              billing={liveBilling}
-            />
-          }
-          evidence={
-            <AccountEvidenceSection
-              account={account}
-              usageSummary={props.usageSummary}
-            />
-          }
+        <AccountRuntimeEvidenceSection
+          account={account}
+          usageSummary={props.usageSummary}
+          quotaDisplay={quotaDisplay}
+          billing={liveBilling}
         />
         <AccountDetailModuleStack layout="cards">
           {buildAccountDetailModulePlan(account).map((moduleID) => {

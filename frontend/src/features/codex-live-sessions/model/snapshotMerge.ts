@@ -138,6 +138,10 @@ function normalizeTimingSummaryForDiff(
     delete normalized.averages.totalDurationMs;
     delete normalized.averages.streamDurationMs;
   }
+  if (isPreviewLikeSource(source) && Boolean(summary.activeIncluded)) {
+    delete normalized.averages.outputTokensPerSecond;
+    delete normalized.averages.totalTokensPerSecond;
+  }
   return normalized;
 }
 
@@ -168,6 +172,10 @@ function normalizeTimingForDiff(
   if (isPreviewLikeSource(source) || (!request.completedAt && isLiveStatus(request.status))) {
     delete normalized.totalDurationMs;
     delete normalized.streamDurationMs;
+  }
+  if (isPreviewLikeSource(source) && !request.completedAt && isLiveStatus(request.status)) {
+    delete normalized.outputTokensPerSecond;
+    delete normalized.totalTokensPerSecond;
   }
   return normalized;
 }

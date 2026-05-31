@@ -39,7 +39,6 @@ export type CodexAccountDetailModuleID =
   | 'credentials'
   | 'auth-file-actions'
   | 'models'
-  | 'proxy-route'
   | 'rate-limit'
   | 'quota'
   | 'billing'
@@ -101,7 +100,7 @@ export function buildCodexAccountDetailModulePlan(
     return ['auth-file-actions', 'models', 'rate-limit', 'model-routing'];
   }
 
-  return ['credentials', 'proxy-route', 'rate-limit', 'quota', 'billing', 'model-routing'];
+  return ['credentials', 'rate-limit', 'quota', 'billing', 'model-routing'];
 }
 
 export function buildCodexAccountRows(input: BuildCodexAccountRowsInput): CodexAccountRow[] {

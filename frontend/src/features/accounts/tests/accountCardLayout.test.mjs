@@ -46,19 +46,25 @@ test('resolveAccountCardColumnHeights equalizes cards by rendered column', () =>
   );
 });
 
-test('account card grids collapse empty tracks so single-card groups do not leave blank lanes', async () => {
+test('account card grids use page-level fixed card widths instead of equal-width tracks', async () => {
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
+  assert.match(styleSource, /--account-card-grid-full-width:\s*20rem/);
+  assert.match(styleSource, /--account-card-grid-compact-width:\s*18rem/);
   assert.match(
     styleSource,
-    /\.account-card-grid-full\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,/s,
+    /\.account-card-grid-full\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*var\(--account-card-grid-full-width\)\),\s*var\(--account-card-grid-full-width\)\)\)/s,
   );
   assert.match(
     styleSource,
-    /\.account-card-grid-compact\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,/s,
+    /\.account-card-grid-compact\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*var\(--account-card-grid-compact-width\)\),\s*var\(--account-card-grid-compact-width\)\)\)/s,
   );
+  assert.match(styleSource, /\.account-card-grid-full\s*\{[^}]*justify-content:\s*start/s);
+  assert.match(styleSource, /\.account-card-grid-compact\s*\{[^}]*justify-content:\s*start/s);
   assert.doesNotMatch(styleSource, /\.account-card-grid-full\s*\{[^}]*repeat\(auto-fill,/s);
   assert.doesNotMatch(styleSource, /\.account-card-grid-compact\s*\{[^}]*repeat\(auto-fill,/s);
+  assert.doesNotMatch(styleSource, /\.account-card-grid-full\s*\{[^}]*minmax\([^;{]*,\s*1fr\)/s);
+  assert.doesNotMatch(styleSource, /\.account-card-grid-compact\s*\{[^}]*minmax\([^;{]*,\s*1fr\)/s);
 });
 
 test('list density keeps only the plan badge before metrics and actions', async () => {

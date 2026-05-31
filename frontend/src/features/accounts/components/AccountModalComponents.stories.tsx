@@ -12,14 +12,12 @@ import {
   AccountCredentialVerifySection,
   AccountDetailFooter,
   AccountDetailHeader,
-  AccountEvidenceSection,
   AccountQuotaSection,
-  AccountRuntimeSnapshotSection,
+  AccountRuntimeEvidenceSection,
 } from './AccountDetailSections';
 import {
   AccountDetailBody,
   AccountDetailModuleStack,
-  AccountDetailOverviewGrid,
 } from './AccountDetailPrimitives';
 import ApiKeyDetailModal, { type APIKeyVerifyState } from './ApiKeyDetailModal';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
@@ -555,19 +553,10 @@ function AccountDetailSectionsSample({
         }
       >
         <AccountDetailBody>
-          <AccountDetailOverviewGrid
-            runtime={
-              <AccountRuntimeSnapshotSection
-                usageSummary={apiKeyUsageSummary}
-                billing={apiKeyDetailBilling}
-              />
-            }
-            evidence={
-              <AccountEvidenceSection
-                account={apiKeyDetailAccount}
-                usageSummary={apiKeyUsageSummary}
-              />
-            }
+          <AccountRuntimeEvidenceSection
+            account={apiKeyDetailAccount}
+            usageSummary={apiKeyUsageSummary}
+            billing={apiKeyDetailBilling}
           />
           <AccountDetailModuleStack layout="cards">
             <AccountCredentialVerifySection

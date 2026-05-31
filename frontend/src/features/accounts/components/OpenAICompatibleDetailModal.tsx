@@ -8,12 +8,7 @@ import type {
 } from '../model/openAICompatible';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
-import { AccountRuntimeSnapshotSection } from './AccountDetailSections';
-import {
-  AccountDetailEvidenceGrid,
-  AccountDetailOverviewGrid,
-  AccountDetailSection,
-} from './AccountDetailPrimitives';
+import { AccountRuntimeEvidenceSection } from './AccountDetailSections';
 import OpenAICompatibleDetailPanel from './OpenAICompatibleDetailPanel';
 import RateLimitRulesSection, { type RateLimitRulesAPI, type RateLimitRulesSectionHandle } from './RateLimitRulesSection';
 
@@ -97,16 +92,9 @@ export default function OpenAICompatibleDetailModal({
         onFetchModels={onFetchModels}
         onApplyFetchedModels={onApplyFetchedModels}
         leadingSections={
-          <AccountDetailOverviewGrid
-            runtime={<AccountRuntimeSnapshotSection usageSummary={usageSummary} />}
-            className="lg:grid-cols-1 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
-            evidence={
-              <OpenAICompatibleEvidenceSection
-                t={t}
-                draft={draft}
-                verifyState={verifyState}
-              />
-            }
+          <AccountRuntimeEvidenceSection
+            usageSummary={usageSummary}
+            evidenceRows={buildOpenAICompatibleEvidenceRows(t, draft, verifyState)}
           />
         }
         afterSections={
@@ -128,18 +116,14 @@ export default function OpenAICompatibleDetailModal({
   );
 }
 
-function OpenAICompatibleEvidenceSection({
-  t,
-  draft,
-  verifyState,
-}: {
-  t: Translator;
-  draft: OpenAICompatibleProviderDraft;
-  verifyState: ProviderVerifyState;
-}) {
+function buildOpenAICompatibleEvidenceRows(
+  t: Translator,
+  draft: OpenAICompatibleProviderDraft,
+  verifyState: ProviderVerifyState,
+) {
   const providerName = draft.currentName || draft.name || '—';
   const modelCount = draft.models.filter((model) => model.name.trim()).length;
-  const rows = [
+  return [
     {
       label: t('accounts.card_asset'),
       value: draft.accountKey || providerName,
@@ -157,10 +141,4 @@ function OpenAICompatibleEvidenceSection({
       value: verifyState.lastVerifiedAt ? new Date(verifyState.lastVerifiedAt).toLocaleString() : '—',
     },
   ];
-
-  return (
-    <AccountDetailSection componentName="OpenAICompatibleEvidenceSection" density="dense" muted eyebrow="Audit" title="EVIDENCE">
-      <AccountDetailEvidenceGrid rows={rows} />
-    </AccountDetailSection>
-  );
 }

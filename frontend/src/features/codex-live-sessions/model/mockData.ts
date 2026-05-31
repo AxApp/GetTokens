@@ -1,11 +1,18 @@
 import { buildCodexLiveRequestTimingMetricAverages } from './requestTimingTrend.ts';
 import { snapshotWithDerivedSummary } from './selectors.ts';
-import type { CodexLiveRequest, CodexLiveSession, CodexLiveSessionSnapshot, CodexLiveTimelineEvent, CodexLiveTimingSummary } from './types';
+import type {
+  CodexLiveRequest,
+  CodexLiveSession,
+  CodexLiveSessionSnapshot,
+  CodexLiveTimelineEvent,
+  CodexLiveTimingMetrics,
+  CodexLiveTimingSummary,
+} from './types';
 
 const generatedAt = '2026-05-21T18:36:42+08:00';
 const previewActiveRequestStartedAtMs = Date.parse('2026-05-21T18:35:10+08:00');
-const previewLiveElapsedBaseMs = 7600;
-const previewLiveElapsedCycleMs = 9000;
+const previewLiveElapsedBaseMs = 1400;
+const previewStaticLiveElapsedMs = 8034;
 const previewRequestWindowSize = 50;
 const previewRequestStepMs = 6000;
 const previewBaseLatestSequence = 50;
@@ -65,7 +72,10 @@ function request(input: Partial<CodexLiveRequest> & Pick<CodexLiveRequest, 'requ
   };
 }
 
-function buildActivePreviewRequests(latestSequence = previewBaseLatestSequence): CodexLiveRequest[] {
+function buildActivePreviewRequests(
+  latestSequence = previewBaseLatestSequence,
+  liveElapsedMs = previewStaticLiveElapsedMs,
+): CodexLiveRequest[] {
   const safeLatestSequence = Math.max(previewRequestWindowSize, Math.round(latestSequence));
   const firstSequence = safeLatestSequence - previewRequestWindowSize + 1;
   return Array.from({ length: previewRequestWindowSize }, (_, index) => {
@@ -73,12 +83,9 @@ function buildActivePreviewRequests(latestSequence = previewBaseLatestSequence):
     const requestNumber = previewBaseRequestNumberOffset + sequence;
     const startedAtMs = previewActiveRequestStartedAtMs + (sequence - previewBaseLatestSequence) * previewRequestStepMs;
     const isLive = sequence === safeLatestSequence;
-    const totalDurationMs = isLive ? 8034 : 3200 + ((index * 937) % 7600);
-    const firstEventMs = isLive ? 562 : 360 + ((index * 47) % 760);
-    const firstTokenMs = isLive ? 810 : firstEventMs + 180 + ((index * 31) % 520);
-    const streamDurationMs = isLive ? 7352 : Math.max(900, totalDurationMs - firstTokenMs);
-    const outputTokens = 1200 + ((index * 97) % 3800);
-    const totalTokens = 9600 + ((index * 431) % 18000);
+    const timing = buildPreviewRequestTiming(sequence, isLive, liveElapsedMs);
+    const outputTokens = 900 + ((sequence * 173) % 4600);
+    const totalTokens = 7600 + ((sequence * 641) % 24000);
     return request({
       requestID: `gt-req-${requestNumber}`,
       clientRequestID: `cr_01hx-live-${requestNumber}`,
@@ -88,7 +95,7 @@ function buildActivePreviewRequests(latestSequence = previewBaseLatestSequence):
       model: 'gpt-5.5',
       status: isLive ? 'streaming' : 'completed',
       startedAt: new Date(startedAtMs).toISOString(),
-      completedAt: isLive ? undefined : new Date(startedAtMs + totalDurationMs).toISOString(),
+      completedAt: isLive ? undefined : new Date(startedAtMs + timing.totalDurationMs).toISOString(),
       authID: 'auth-file:team-codex',
       authLabel: 'team-codex@example.com',
       provider: 'codex',
@@ -100,22 +107,51 @@ function buildActivePreviewRequests(latestSequence = previewBaseLatestSequence):
         totalTokens,
       },
       timing: {
-        queueWaitMs: isLive ? 18 : 12 + ((index * 7) % 140),
-        authSelectMs: isLive ? 44 : 28 + ((index * 11) % 80),
-        upstreamConnectMs: isLive ? 391 : 180 + ((index * 29) % 520),
-        firstEventMs,
-        firstTokenMs,
-        averageEventGapMs: isLive ? 82 : 48 + ((index * 13) % 130),
-        longestEventGapMs: isLive ? 420 : 240 + ((index * 41) % 900),
-        streamDurationMs,
-        totalDurationMs,
-        reconnectCount: index % 17 === 0 ? 1 : 0,
-        outputTokensPerSecond: Math.round((outputTokens / Math.max(1, streamDurationMs)) * 1000),
-        totalTokensPerSecond: Math.round((totalTokens / Math.max(1, totalDurationMs)) * 1000),
+        ...timing,
+        reconnectCount: sequence % 23 === 0 ? 1 : 0,
+        outputTokensPerSecond: Math.round((outputTokens / Math.max(1, timing.streamDurationMs)) * 1000),
+        totalTokensPerSecond: Math.round((totalTokens / Math.max(1, timing.totalDurationMs)) * 1000),
       },
       timeline: activeTimeline,
     });
   });
+}
+
+function buildPreviewRequestTiming(sequence: number, isLive: boolean, liveElapsedMs: number): Required<Pick<
+  CodexLiveTimingMetrics,
+  | 'queueWaitMs'
+  | 'authSelectMs'
+  | 'upstreamConnectMs'
+  | 'firstEventMs'
+  | 'firstTokenMs'
+  | 'averageEventGapMs'
+  | 'longestEventGapMs'
+  | 'streamDurationMs'
+  | 'totalDurationMs'
+>> {
+  const queueWaitMs = isLive ? 24 : 18 + ((sequence * 17) % 180);
+  const authSelectMs = isLive ? 42 : 30 + ((sequence * 13) % 95);
+  const upstreamConnectMs = isLive ? 360 : 160 + ((sequence * 37) % 620);
+  const firstEventMs = isLive ? 620 : 340 + ((sequence * 53) % 920);
+  const firstTokenMs = firstEventMs + (isLive ? 240 : 180 + ((sequence * 29) % 620));
+  const steadyTotalMs = 3600 + ((sequence * 937) % 7600);
+  const spikeMs = sequence % 17 === 0 ? 24000 : sequence % 11 === 0 ? 9500 : 0;
+  const totalDurationMs = isLive ? Math.max(liveElapsedMs, firstTokenMs + 200) : steadyTotalMs + spikeMs;
+  const streamDurationMs = Math.max(isLive ? 250 : 900, totalDurationMs - firstTokenMs);
+  const averageEventGapMs = isLive ? 72 : 42 + ((sequence * 19) % 170);
+  const longestEventGapMs = isLive ? 360 : 220 + ((sequence * 47) % 1300) + (spikeMs > 0 ? Math.floor(spikeMs * 0.32) : 0);
+
+  return {
+    queueWaitMs,
+    authSelectMs,
+    upstreamConnectMs,
+    firstEventMs,
+    firstTokenMs,
+    averageEventGapMs,
+    longestEventGapMs,
+    streamDurationMs,
+    totalDurationMs,
+  };
 }
 
 const activeRequests: CodexLiveRequest[] = buildActivePreviewRequests();
@@ -331,9 +367,10 @@ export function buildAnimatedCodexLiveSessionsPreviewSnapshot(
 ): CodexLiveSessionSnapshot {
   const safeNowMs = Number.isFinite(nowMs) ? Math.round(nowMs) : Date.now();
   const latestSequence = resolveAnimatedPreviewLatestSequence(safeNowMs, animationAnchorMs);
+  const previewElapsedMs = resolveAnimatedPreviewElapsedMs(safeNowMs, animationAnchorMs);
+  const liveElapsedMs = previewLiveElapsedBaseMs + (previewElapsedMs % previewRequestStepMs);
   const rollingActiveRequestStartedAtMs =
     previewActiveRequestStartedAtMs + (latestSequence - previewBaseLatestSequence) * previewRequestStepMs;
-  const liveElapsedMs = previewLiveElapsedBaseMs + (safeNowMs % previewLiveElapsedCycleMs);
   const targetActiveRequestStartedAtMs = safeNowMs - liveElapsedMs;
   const timestampDeltaMs = targetActiveRequestStartedAtMs - rollingActiveRequestStartedAtMs;
   const latestRequestID = `gt-req-${previewBaseRequestNumberOffset + latestSequence}`;
@@ -344,7 +381,7 @@ export function buildAnimatedCodexLiveSessionsPreviewSnapshot(
           activeRequestID: latestRequestID,
           lastRequestID: latestRequestID,
           requestCount: previewRequestWindowSize,
-          requests: buildActivePreviewRequests(latestSequence),
+          requests: buildActivePreviewRequests(latestSequence, liveElapsedMs),
         }
       : session,
   );
@@ -360,9 +397,13 @@ export function buildAnimatedCodexLiveSessionsPreviewSnapshot(
 }
 
 function resolveAnimatedPreviewLatestSequence(nowMs: number, animationAnchorMs: number): number {
-  const safeAnchorMs = Number.isFinite(animationAnchorMs) ? Math.round(animationAnchorMs) : nowMs;
-  const elapsedMs = Math.max(0, nowMs - safeAnchorMs);
+  const elapsedMs = resolveAnimatedPreviewElapsedMs(nowMs, animationAnchorMs);
   return previewBaseLatestSequence + Math.floor(elapsedMs / previewRequestStepMs);
+}
+
+function resolveAnimatedPreviewElapsedMs(nowMs: number, animationAnchorMs: number): number {
+  const safeAnchorMs = Number.isFinite(animationAnchorMs) ? Math.round(animationAnchorMs) : nowMs;
+  return Math.max(0, nowMs - safeAnchorMs);
 }
 
 export const codexLiveSessionsEmptySnapshot: CodexLiveSessionSnapshot = snapshotWithDerivedSummary({
