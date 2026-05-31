@@ -50,6 +50,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 | `gettokens_reviewer` | `read-only` | correctness、安全、回归、测试缺口和治理合规 review |
 | `gettokens_session_distiller` | `workspace-write` | “整理”场景下的 skills、dev docs、memory、qmd 收口 |
 | `gettokens_release_operator` | `workspace-write` | macOS release、DMG 验收、Sparkle、notarization、CI release 检查 |
+| `gettokens_subagent_architect` | `workspace-write` | 项目级 Codex custom agents 的创建、合并、删除、TOML 校验和治理写回 |
 
 ## 专题 Agent
 
@@ -75,7 +76,8 @@ And 只有在明确验证模型路由时才临时指定模型。
 7. 设计系统与桌面 UI：`gettokens_design_system_curator` 负责 Storybook/manifest/视觉一致性，`gettokens_ui_integrator` 负责具体页面接线。
 8. macOS runtime：`gettokens_macos_runtime_operator` 负责 Wails binding、native menu/status item 和 sidecar 进程生命周期，`gettokens_verifier` 记录桌面验收缺口或截图。
 9. 发布：`gettokens_release_operator` 负责 release 证据链，主控 agent 避免把 CI 发布和可分发 DMG 验收混为一谈。
-10. 会话整理：`gettokens_session_distiller` 提炼可复用模式，主控 agent 审阅后确认是否升级到 `AGENTS.md`。
+10. subagent 治理：`gettokens_subagent_architect` 负责 agent 设计、裁剪、合并与配置校验；具体业务实现继续交给对应专题 agent。
+11. 会话整理：`gettokens_session_distiller` 提炼可复用模式，主控 agent 审阅后确认是否升级到 `AGENTS.md`。
 
 ## 使用边界
 
@@ -94,6 +96,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 3. 若发现某个 agent 长期不用，应删除或合并，减少 subagent 选择噪音。
 4. 如果 Codex custom agent schema 发生变化，优先更新 `.codex/agents/*.toml`，再同步本文档和 memory。
 5. 当某个专题 agent 的职责已经稳定迁移到项目 skill 或被其它 agent 覆盖时，优先合并或删除 agent，而不是继续扩张角色列表。
+6. 创建、删除、合并或拆分 agent 时，优先使用项目 skill `.agents/skills/gettokens-subagent-lifecycle/SKILL.md`；需要委托时使用 `gettokens_subagent_architect`。
 
 ## 维护授权
 
@@ -106,3 +109,13 @@ And 只有在明确验证模型路由时才临时指定模型。
 3. 新增 agent 需要同步本文档的分工或推荐组合；删除或合并 agent 需要同步移除引用。
 4. 有意义的 subagent 治理变化必须写入 `docs-linhay/memory/YYYY-MM-DD.md`，并执行 `qmd update` 与 `qmd embed`。
 5. 仍然禁止为了单次临时任务永久新增 agent；临时实验 agent 用完后应删除，或明确升级为长期角色的依据。
+
+## 配套 Skill
+
+项目级 subagent 生命周期治理已沉淀为 `.agents/skills/gettokens-subagent-lifecycle/SKILL.md`。
+
+该 skill 负责：
+
+1. 判断是否应该新增、修改、合并或删除 agent。
+2. 维护命名、职责、sandbox、reasoning effort 和默认不硬编码模型的规则。
+3. 固化 TOML 校验、固定模型扫描、文档更新、memory 写回和 qmd 同步流程。

@@ -116,6 +116,7 @@ Git `worktree` 治理：
 7. 若用户希望用显式 skill 名称触发该模式，使用 `gettokens-subagent-supervision`；它是监督交付模式的轻量触发入口。
 8. 涉及 Codex Skills / MCP Servers、`[[skills.config]]`、`tk://github.com` / `tk://gitlab.com` Skill source、`~/.codex/config.toml` MCP 解析与保存时，优先使用 `gettokens-codex-extensions-management`。
 9. 涉及项目级 Codex custom agents、`.codex/config.toml`、`.codex/agents/*.toml` 或 subagent 任务分工配置时，优先参考 `docs-linhay/dev/20260530-codex-project-subagents.md`。
+10. 涉及项目级 Codex subagent 的新增、删除、合并、拆分、验证或生命周期治理时，优先使用 `gettokens-subagent-lifecycle`。
 
 ## 5. 记忆系统规则（必须）
 
