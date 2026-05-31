@@ -29,6 +29,8 @@ type SessionAnalysisResult struct {
 	TotalMessages         int                               `json:"totalMessages"`
 	TotalTerms            int                               `json:"totalTerms"`
 	Keywords              []SessionAnalysisKeyword          `json:"keywords"`
+	WordCloud             []SessionAnalysisWordCloudItem    `json:"wordCloud"`
+	CommonPhrases         []SessionAnalysisCommonPhrase     `json:"commonPhrases"`
 	RoleContributions     []SessionAnalysisRoleContribution `json:"roleContributions"`
 	Projects              []SessionAnalysisProjectSummary   `json:"projects"`
 	Sessions              []SessionAnalysisSessionSummary   `json:"sessions"`
@@ -36,6 +38,20 @@ type SessionAnalysisResult struct {
 
 type SessionAnalysisKeyword struct {
 	Term         string  `json:"term"`
+	Count        int     `json:"count"`
+	SessionCount int     `json:"sessionCount"`
+	Score        float64 `json:"score"`
+}
+
+type SessionAnalysisWordCloudItem struct {
+	Term         string  `json:"term"`
+	Count        int     `json:"count"`
+	SessionCount int     `json:"sessionCount"`
+	Weight       float64 `json:"weight"`
+}
+
+type SessionAnalysisCommonPhrase struct {
+	Text         string  `json:"text"`
 	Count        int     `json:"count"`
 	SessionCount int     `json:"sessionCount"`
 	Score        float64 `json:"score"`
@@ -69,12 +85,15 @@ type SessionAnalysisSessionSummary struct {
 	TermCount         int                               `json:"termCount"`
 	TopicLine         string                            `json:"topicLine"`
 	Keywords          []SessionAnalysisKeyword          `json:"keywords"`
+	CommonPhrases     []SessionAnalysisCommonPhrase     `json:"commonPhrases"`
 	RoleContributions []SessionAnalysisRoleContribution `json:"roleContributions"`
 }
 
 type sessionAnalysisAccumulator struct {
 	termCounts       map[string]int
 	termSessions     map[string]map[string]struct{}
+	phraseCounts     map[string]int
+	phraseSessions   map[string]map[string]struct{}
 	roleMessages     map[string]int
 	roleTerms        map[string]int
 	sessionCount     int
@@ -187,6 +206,8 @@ func (a *App) AnalyzeCodexSessions(input AnalyzeCodexSessionsInput) (*SessionAna
 		TotalMessages:         global.messageCount,
 		TotalTerms:            global.termCount,
 		Keywords:              global.topKeywords(20),
+		WordCloud:             global.wordCloud(40),
+		CommonPhrases:         global.commonPhrases(12),
 		RoleContributions:     global.roleContributions(),
 		Projects:              projectSummaries,
 		Sessions:              global.sessionSummaries,
@@ -224,6 +245,8 @@ func newSessionAnalysisAccumulator() *sessionAnalysisAccumulator {
 	return &sessionAnalysisAccumulator{
 		termCounts:       map[string]int{},
 		termSessions:     map[string]map[string]struct{}{},
+		phraseCounts:     map[string]int{},
+		phraseSessions:   map[string]map[string]struct{}{},
 		roleMessages:     map[string]int{},
 		roleTerms:        map[string]int{},
 		sessionSummaries: []SessionAnalysisSessionSummary{},
@@ -241,6 +264,15 @@ func (accumulator *sessionAnalysisAccumulator) addSession(summary SessionAnalysi
 		if sessions == nil {
 			sessions = map[string]struct{}{}
 			accumulator.termSessions[keyword.Term] = sessions
+		}
+		sessions[summary.SessionID] = struct{}{}
+	}
+	for _, phrase := range summary.CommonPhrases {
+		accumulator.phraseCounts[phrase.Text] += phrase.Count
+		sessions := accumulator.phraseSessions[phrase.Text]
+		if sessions == nil {
+			sessions = map[string]struct{}{}
+			accumulator.phraseSessions[phrase.Text] = sessions
 		}
 		sessions[summary.SessionID] = struct{}{}
 	}
@@ -265,6 +297,57 @@ func (accumulator *sessionAnalysisAccumulator) topKeywords(limit int) []SessionA
 		if items[i].Count == items[j].Count {
 			if items[i].SessionCount == items[j].SessionCount {
 				return items[i].Term < items[j].Term
+			}
+			return items[i].SessionCount > items[j].SessionCount
+		}
+		return items[i].Count > items[j].Count
+	})
+	if limit > 0 && len(items) > limit {
+		return items[:limit]
+	}
+	return items
+}
+
+func (accumulator *sessionAnalysisAccumulator) wordCloud(limit int) []SessionAnalysisWordCloudItem {
+	keywords := accumulator.topKeywords(limit)
+	if len(keywords) == 0 {
+		return []SessionAnalysisWordCloudItem{}
+	}
+	maxCount := keywords[0].Count
+	if maxCount <= 0 {
+		maxCount = 1
+	}
+	items := make([]SessionAnalysisWordCloudItem, 0, len(keywords))
+	for _, keyword := range keywords {
+		weight := 0.4 + 0.6*safeAnalysisShare(keyword.Count, maxCount)
+		items = append(items, SessionAnalysisWordCloudItem{
+			Term:         keyword.Term,
+			Count:        keyword.Count,
+			SessionCount: keyword.SessionCount,
+			Weight:       roundAnalysisShare(weight),
+		})
+	}
+	return items
+}
+
+func (accumulator *sessionAnalysisAccumulator) commonPhrases(limit int) []SessionAnalysisCommonPhrase {
+	items := make([]SessionAnalysisCommonPhrase, 0, len(accumulator.phraseCounts))
+	for phrase, count := range accumulator.phraseCounts {
+		sessionCount := len(accumulator.phraseSessions[phrase])
+		items = append(items, SessionAnalysisCommonPhrase{
+			Text:         phrase,
+			Count:        count,
+			SessionCount: sessionCount,
+			Score:        roundAnalysisShare(float64(count) * (1 + math.Log1p(float64(sessionCount)))),
+		})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].Count == items[j].Count {
+			if items[i].SessionCount == items[j].SessionCount {
+				if len(items[i].Text) == len(items[j].Text) {
+					return items[i].Text < items[j].Text
+				}
+				return len(items[i].Text) > len(items[j].Text)
 			}
 			return items[i].SessionCount > items[j].SessionCount
 		}
@@ -301,6 +384,7 @@ func (accumulator *sessionAnalysisAccumulator) roleContributions() []SessionAnal
 
 func analyzeSessionDetail(detail SessionManagementSessionDetail, segmenter *gojieba.Jieba) SessionAnalysisSessionSummary {
 	termCounts := map[string]int{}
+	phraseCounts := map[string]int{}
 	roleMessages := map[string]int{}
 	roleTerms := map[string]int{}
 	totalMessages := 0
@@ -325,6 +409,9 @@ func analyzeSessionDetail(detail SessionManagementSessionDetail, segmenter *goji
 		for _, term := range terms {
 			termCounts[term]++
 		}
+		for _, phrase := range extractSessionAnalysisPhrases(segmentSessionAnalysisPhraseTerms(segmenter, text)) {
+			phraseCounts[phrase]++
+		}
 	}
 
 	sessionAccumulator := newSessionAnalysisAccumulator()
@@ -333,10 +420,16 @@ func analyzeSessionDetail(detail SessionManagementSessionDetail, segmenter *goji
 	for term := range termCounts {
 		sessionAccumulator.termSessions[term] = map[string]struct{}{detail.SessionID: struct{}{}}
 	}
+	sessionAccumulator.phraseCounts = phraseCounts
+	sessionAccumulator.phraseSessions = map[string]map[string]struct{}{}
+	for phrase := range phraseCounts {
+		sessionAccumulator.phraseSessions[phrase] = map[string]struct{}{detail.SessionID: struct{}{}}
+	}
 	sessionAccumulator.roleMessages = roleMessages
 	sessionAccumulator.roleTerms = roleTerms
 	sessionAccumulator.termCount = totalTerms
 	keywords := sessionAccumulator.topKeywords(10)
+	commonPhrases := sessionAccumulator.commonPhrases(8)
 
 	topicTerms := make([]string, 0, 5)
 	for _, keyword := range keywords {
@@ -362,6 +455,7 @@ func analyzeSessionDetail(detail SessionManagementSessionDetail, segmenter *goji
 		TermCount:         totalTerms,
 		TopicLine:         topicLine,
 		Keywords:          keywords,
+		CommonPhrases:     commonPhrases,
 		RoleContributions: sessionAccumulator.roleContributions(),
 	}
 }
@@ -380,6 +474,74 @@ func segmentSessionAnalysisText(segmenter *gojieba.Jieba, text string) []string 
 		}
 	}
 	return terms
+}
+
+func segmentSessionAnalysisPhraseTerms(segmenter *gojieba.Jieba, text string) []string {
+	rawTerms := segmenter.Cut(text, true)
+	terms := make([]string, 0, len(rawTerms))
+	for _, raw := range rawTerms {
+		term := normalizeSessionAnalysisTerm(raw)
+		if shouldKeepSessionAnalysisTerm(term) {
+			terms = append(terms, term)
+		}
+	}
+	return terms
+}
+
+func extractSessionAnalysisPhrases(terms []string) []string {
+	if len(terms) < 2 {
+		return []string{}
+	}
+	phrases := []string{}
+	for size := 2; size <= 3; size++ {
+		if len(terms) < size {
+			continue
+		}
+		for start := 0; start+size <= len(terms); start++ {
+			phrase := joinSessionAnalysisPhraseTerms(terms[start : start+size])
+			if shouldKeepSessionAnalysisPhrase(phrase) {
+				phrases = append(phrases, phrase)
+			}
+		}
+	}
+	return phrases
+}
+
+func joinSessionAnalysisPhraseTerms(terms []string) string {
+	if len(terms) == 0 {
+		return ""
+	}
+	allHan := true
+	for _, term := range terms {
+		if !isSessionAnalysisHanTerm(term) {
+			allHan = false
+			break
+		}
+	}
+	if allHan {
+		return strings.Join(terms, "")
+	}
+	return strings.Join(terms, " ")
+}
+
+func isSessionAnalysisHanTerm(term string) bool {
+	if term == "" {
+		return false
+	}
+	for _, r := range term {
+		if !unicode.Is(unicode.Han, r) {
+			return false
+		}
+	}
+	return true
+}
+
+func shouldKeepSessionAnalysisPhrase(phrase string) bool {
+	phrase = strings.TrimSpace(phrase)
+	if phrase == "" {
+		return false
+	}
+	return utf8.RuneCountInString(phrase) >= 4
 }
 
 func normalizeSessionAnalysisTerm(term string) string {

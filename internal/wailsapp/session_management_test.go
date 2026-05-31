@@ -1103,6 +1103,12 @@ func TestAnalyzeCodexSessionsAggregatesAllSessionsWithJiebaTerms(t *testing.T) {
 	if !analysisHasKeyword(result.Keywords, "分词", 2, 1) {
 		t.Fatalf("global keywords missing 分词 count/session coverage: %#v", result.Keywords)
 	}
+	if !analysisHasWordCloudTerm(result.WordCloud, "会话", 4, 2) {
+		t.Fatalf("word cloud missing 会话 term: %#v", result.WordCloud)
+	}
+	if !analysisHasCommonPhrase(result.CommonPhrases, "jieba 分词 聚合", 1, 1) {
+		t.Fatalf("common phrases missing jieba 分词 聚合 phrase: %#v", result.CommonPhrases)
+	}
 	if result.RoleContributions[0].Role != "assistant" || result.RoleContributions[0].MessageCount != 2 {
 		t.Fatalf("top role contribution = %#v, want assistant with 2 messages", result.RoleContributions)
 	}
@@ -1168,6 +1174,24 @@ func TestAnalyzeCodexSessionsCanTargetSelectedSessionIDs(t *testing.T) {
 func analysisHasKeyword(items []SessionAnalysisKeyword, term string, minCount int, minSessionCount int) bool {
 	for _, item := range items {
 		if item.Term == term && item.Count >= minCount && item.SessionCount >= minSessionCount {
+			return true
+		}
+	}
+	return false
+}
+
+func analysisHasWordCloudTerm(items []SessionAnalysisWordCloudItem, term string, minCount int, minSessionCount int) bool {
+	for _, item := range items {
+		if item.Term == term && item.Count >= minCount && item.SessionCount >= minSessionCount && item.Weight > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func analysisHasCommonPhrase(items []SessionAnalysisCommonPhrase, text string, minCount int, minSessionCount int) bool {
+	for _, item := range items {
+		if item.Text == text && item.Count >= minCount && item.SessionCount >= minSessionCount {
 			return true
 		}
 	}

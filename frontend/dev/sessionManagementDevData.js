@@ -1094,6 +1094,36 @@ function topAnalysisKeywords(termCounts, termSessions, limit) {
   return limit > 0 ? items.slice(0, limit) : items;
 }
 
+function topAnalysisWordCloud(termCounts, termSessions, limit) {
+  const keywords = topAnalysisKeywords(termCounts, termSessions, limit);
+  if (!keywords.length) {
+    return [];
+  }
+  const maxCount = Math.max(...keywords.map((keyword) => keyword.count), 1);
+  return keywords.map((keyword) => ({
+    term: keyword.term,
+    count: keyword.count,
+    sessionCount: keyword.sessionCount,
+    weight: Math.round((0.4 + 0.6 * (keyword.count / maxCount)) * 100) / 100,
+  }));
+}
+
+function topAnalysisCommonPhrases(phraseCounts, phraseSessions, limit) {
+  const items = Array.from(phraseCounts.entries()).map(([text, count]) => ({
+    text,
+    count,
+    sessionCount: phraseSessions.get(text)?.size || 0,
+    score: Math.round(count * (1 + Math.log1p(phraseSessions.get(text)?.size || 0)) * 100) / 100,
+  }));
+  items.sort((left, right) => {
+    if (right.count !== left.count) return right.count - left.count;
+    if (right.sessionCount !== left.sessionCount) return right.sessionCount - left.sessionCount;
+    if (right.text.length !== left.text.length) return right.text.length - left.text.length;
+    return left.text.localeCompare(right.text);
+  });
+  return limit > 0 ? items.slice(0, limit) : items;
+}
+
 function roleContributions(roleMessages, roleTerms, totalTerms) {
   return Array.from(roleMessages.entries())
     .map(([role, messageCount]) => {
@@ -1112,6 +1142,30 @@ function roleContributions(roleMessages, roleTerms, totalTerms) {
     });
 }
 
+function isHanAnalysisTerm(term) {
+  return /^[\p{Script=Han}]+$/u.test(term);
+}
+
+function joinAnalysisPhraseTerms(terms) {
+  return terms.every(isHanAnalysisTerm) ? terms.join('') : terms.join(' ');
+}
+
+function extractAnalysisPhrases(terms) {
+  const phrases = [];
+  for (let size = 2; size <= 3; size += 1) {
+    if (terms.length < size) {
+      continue;
+    }
+    for (let start = 0; start + size <= terms.length; start += 1) {
+      const phrase = joinAnalysisPhraseTerms(terms.slice(start, start + size)).trim();
+      if ([...phrase].length >= 4) {
+        phrases.push(phrase);
+      }
+    }
+  }
+  return phrases;
+}
+
 function addTermSession(termSessions, term, sessionID) {
   let sessions = termSessions.get(term);
   if (!sessions) {
@@ -1124,6 +1178,8 @@ function addTermSession(termSessions, term, sessionID) {
 function analyzeSessionDetailForDev(detail) {
   const termCounts = new Map();
   const termSessions = new Map();
+  const phraseCounts = new Map();
+  const phraseSessions = new Map();
   const roleMessages = new Map();
   const roleTerms = new Map();
   let messageCount = 0;
@@ -1145,9 +1201,14 @@ function analyzeSessionDetailForDev(detail) {
       termCounts.set(term, (termCounts.get(term) || 0) + 1);
       addTermSession(termSessions, term, detail.sessionID);
     }
+    for (const phrase of extractAnalysisPhrases(terms)) {
+      phraseCounts.set(phrase, (phraseCounts.get(phrase) || 0) + 1);
+      addTermSession(phraseSessions, phrase, detail.sessionID);
+    }
   }
 
   const keywords = topAnalysisKeywords(termCounts, termSessions, 10);
+  const commonPhrases = topAnalysisCommonPhrases(phraseCounts, phraseSessions, 8);
   return {
     sessionID: detail.sessionID,
     projectID: detail.projectID,
@@ -1160,6 +1221,7 @@ function analyzeSessionDetailForDev(detail) {
     termCount,
     topicLine: keywords.slice(0, 5).map((item) => item.term).join(' / ') || '—',
     keywords,
+    commonPhrases,
     roleContributions: roleContributions(roleMessages, roleTerms, termCount),
   };
 }
@@ -1185,6 +1247,8 @@ export async function analyzeCodexSessions(input = {}) {
   const analyzeInParallel = limit <= 0 && candidates.length > 1;
   const globalTermCounts = new Map();
   const globalTermSessions = new Map();
+  const globalPhraseCounts = new Map();
+  const globalPhraseSessions = new Map();
   const globalRoleMessages = new Map();
   const globalRoleTerms = new Map();
   const projectDrafts = new Map();
@@ -1231,6 +1295,10 @@ export async function analyzeCodexSessions(input = {}) {
         project.termCounts.set(keyword.term, (project.termCounts.get(keyword.term) || 0) + keyword.count);
         addTermSession(project.termSessions, keyword.term, summary.sessionID);
       }
+      for (const phrase of summary.commonPhrases) {
+        globalPhraseCounts.set(phrase.text, (globalPhraseCounts.get(phrase.text) || 0) + phrase.count);
+        addTermSession(globalPhraseSessions, phrase.text, summary.sessionID);
+      }
       for (const contribution of summary.roleContributions) {
         globalRoleMessages.set(contribution.role, (globalRoleMessages.get(contribution.role) || 0) + contribution.messageCount);
         globalRoleTerms.set(contribution.role, (globalRoleTerms.get(contribution.role) || 0) + contribution.termCount);
@@ -1272,6 +1340,10 @@ export async function analyzeCodexSessions(input = {}) {
         project.termCounts.set(keyword.term, (project.termCounts.get(keyword.term) || 0) + keyword.count);
         addTermSession(project.termSessions, keyword.term, summary.sessionID);
       }
+      for (const phrase of summary.commonPhrases) {
+        globalPhraseCounts.set(phrase.text, (globalPhraseCounts.get(phrase.text) || 0) + phrase.count);
+        addTermSession(globalPhraseSessions, phrase.text, summary.sessionID);
+      }
       for (const contribution of summary.roleContributions) {
         globalRoleMessages.set(contribution.role, (globalRoleMessages.get(contribution.role) || 0) + contribution.messageCount);
         globalRoleTerms.set(contribution.role, (globalRoleTerms.get(contribution.role) || 0) + contribution.termCount);
@@ -1288,6 +1360,8 @@ export async function analyzeCodexSessions(input = {}) {
     totalMessages,
     totalTerms,
     keywords: topAnalysisKeywords(globalTermCounts, globalTermSessions, 20),
+    wordCloud: topAnalysisWordCloud(globalTermCounts, globalTermSessions, 40),
+    commonPhrases: topAnalysisCommonPhrases(globalPhraseCounts, globalPhraseSessions, 12),
     roleContributions: roleContributions(globalRoleMessages, globalRoleTerms, totalTerms),
     projects: Array.from(projectDrafts.values())
       .map((project) => ({

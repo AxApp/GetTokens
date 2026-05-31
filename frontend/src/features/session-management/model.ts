@@ -115,6 +115,20 @@ export interface SessionAnalysisKeyword {
   score: number;
 }
 
+export interface SessionAnalysisWordCloudItem {
+  term: string;
+  count: number;
+  sessionCount: number;
+  weight: number;
+}
+
+export interface SessionAnalysisCommonPhrase {
+  text: string;
+  count: number;
+  sessionCount: number;
+  score: number;
+}
+
 export interface SessionAnalysisRoleContribution {
   role: string;
   messageCount: number;
@@ -143,6 +157,7 @@ export interface SessionAnalysisSessionSummary {
   termCount: number;
   topicLine: string;
   keywords: SessionAnalysisKeyword[];
+  commonPhrases: SessionAnalysisCommonPhrase[];
   roleContributions: SessionAnalysisRoleContribution[];
 }
 
@@ -155,6 +170,8 @@ export interface SessionAnalysisResult {
   totalMessages: number;
   totalTerms: number;
   keywords: SessionAnalysisKeyword[];
+  wordCloud: SessionAnalysisWordCloudItem[];
+  commonPhrases: SessionAnalysisCommonPhrase[];
   roleContributions: SessionAnalysisRoleContribution[];
   projects: SessionAnalysisProjectSummary[];
   sessions: SessionAnalysisSessionSummary[];
@@ -499,6 +516,26 @@ function mapSessionAnalysisKeyword(raw: unknown): SessionAnalysisKeyword {
   };
 }
 
+function mapSessionAnalysisWordCloudItem(raw: unknown): SessionAnalysisWordCloudItem {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    term: getText(source.term, ''),
+    count: getCount(source.count),
+    sessionCount: getCount(source.sessionCount),
+    weight: typeof source.weight === 'number' && Number.isFinite(source.weight) ? source.weight : 0,
+  };
+}
+
+function mapSessionAnalysisCommonPhrase(raw: unknown): SessionAnalysisCommonPhrase {
+  const source = isRecord(raw) ? raw : {};
+  return {
+    text: getText(source.text, ''),
+    count: getCount(source.count),
+    sessionCount: getCount(source.sessionCount),
+    score: typeof source.score === 'number' && Number.isFinite(source.score) ? source.score : 0,
+  };
+}
+
 function mapSessionAnalysisRoleContribution(raw: unknown): SessionAnalysisRoleContribution {
   const source = isRecord(raw) ? raw : {};
   return {
@@ -535,6 +572,9 @@ function mapSessionAnalysisSession(raw: unknown): SessionAnalysisSessionSummary 
     termCount: getCount(source.termCount),
     topicLine: getText(source.topicLine),
     keywords: Array.isArray(source.keywords) ? source.keywords.map(mapSessionAnalysisKeyword) : [],
+    commonPhrases: Array.isArray(source.commonPhrases)
+      ? source.commonPhrases.map(mapSessionAnalysisCommonPhrase)
+      : [],
     roleContributions: Array.isArray(source.roleContributions)
       ? source.roleContributions.map(mapSessionAnalysisRoleContribution)
       : [],
@@ -552,6 +592,10 @@ export function mapSessionAnalysisResultResponse(raw: unknown): SessionAnalysisR
     totalMessages: getCount(source.totalMessages),
     totalTerms: getCount(source.totalTerms),
     keywords: Array.isArray(source.keywords) ? source.keywords.map(mapSessionAnalysisKeyword) : [],
+    wordCloud: Array.isArray(source.wordCloud) ? source.wordCloud.map(mapSessionAnalysisWordCloudItem) : [],
+    commonPhrases: Array.isArray(source.commonPhrases)
+      ? source.commonPhrases.map(mapSessionAnalysisCommonPhrase)
+      : [],
     roleContributions: Array.isArray(source.roleContributions)
       ? source.roleContributions.map(mapSessionAnalysisRoleContribution)
       : [],

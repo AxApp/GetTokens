@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BarChart3 } from 'lucide-react';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../context/I18nContext';
 import { analyzeCodexSessions } from './api.ts';
@@ -27,7 +28,8 @@ import {
   InitialLoadingShell,
   ProjectListPanel,
   ProviderMergeModal,
-  SessionAnalysisPanel,
+  SessionAnalysisDetailModal,
+  SessionAnalysisScopeModal,
   SessionDetailModal,
   SessionManagementSearchBar,
   SessionsPanel,
@@ -38,6 +40,14 @@ interface SessionManagementFeatureProps {
 }
 
 const SESSION_ANALYSIS_RECENT_LIMIT = 20;
+
+interface SessionAnalysisRunRequest {
+  mode: SessionAnalysisPluginMode;
+  projectID?: string;
+  sessionIDs?: string[];
+  recentLimit?: number;
+  label: string;
+}
 
 export default function SessionManagementFeature({ workspace = 'codex' }: SessionManagementFeatureProps) {
   const { locale, t } = useI18n();
@@ -50,9 +60,13 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   );
   const [compactSessionsOpen, setCompactSessionsOpen] = useState(false);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+  const [analysisSelectorOpen, setAnalysisSelectorOpen] = useState(false);
+  const [analysisDetailOpen, setAnalysisDetailOpen] = useState(false);
+  const [analysisScopeLabel, setAnalysisScopeLabel] = useState('');
   const [analysisResult, setAnalysisResult] = useState<SessionAnalysisResult | null>(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const analysisButtonRef = useRef<HTMLButtonElement | null>(null);
   const {
     snapshot: rawSnapshot,
     snapshotLoading,
@@ -266,20 +280,24 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
   );
 
   const runAnalysis = useCallback(
-    async (mode: SessionAnalysisPluginMode) => {
+    async (request: SessionAnalysisRunRequest) => {
       if (workspace !== 'codex') {
         return;
       }
+      setAnalysisSelectorOpen(false);
+      setAnalysisDetailOpen(true);
+      setAnalysisScopeLabel(request.label);
+      setAnalysisResult(null);
       setAnalysisLoading(true);
       setAnalysisError(null);
       try {
         const input = buildSessionAnalysisInput({
-          mode,
-          projectID: activeProject?.id,
-          sessionIDs: recentAnalysisSessionIDs,
-          recentLimit: SESSION_ANALYSIS_RECENT_LIMIT,
+          mode: request.mode,
+          projectID: request.projectID,
+          sessionIDs: request.sessionIDs,
+          recentLimit: request.recentLimit,
         });
-        if (mode === 'recent' && !input.sessionIDs?.length) {
+        if (input.scope === 'selected' && !input.sessionIDs?.length) {
           throw new Error(copy.noSessions);
         }
         const result = await analyzeCodexSessions(input);
@@ -290,8 +308,24 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         setAnalysisLoading(false);
       }
     },
-    [activeProject?.id, copy.loadFailed, copy.noSessions, recentAnalysisSessionIDs, workspace],
+    [copy.loadFailed, copy.noSessions, workspace],
   );
+
+  const focusAnalysisEntry = useCallback(() => {
+    window.requestAnimationFrame(() => {
+      analysisButtonRef.current?.focus();
+    });
+  }, []);
+
+  const closeAnalysisSelector = useCallback(() => {
+    setAnalysisSelectorOpen(false);
+    focusAnalysisEntry();
+  }, [focusAnalysisEntry]);
+
+  const closeAnalysisDetail = useCallback(() => {
+    setAnalysisDetailOpen(false);
+    focusAnalysisEntry();
+  }, [focusAnalysisEntry]);
 
   if (snapshotLoading && !projects.length && !snapshotError) {
     return <InitialLoadingShell copy={copy} />;
@@ -311,6 +345,25 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
                 {copy.refreshing}
               </div>
             ) : null}
+            {workspace === 'codex' ? (
+              <button
+                type="button"
+                ref={analysisButtonRef}
+                onClick={() => {
+                  if (!projects.length || analysisLoading) {
+                    return;
+                  }
+                  setAnalysisSelectorOpen(true);
+                }}
+                aria-disabled={!projects.length || analysisLoading ? 'true' : undefined}
+                className={`btn-swiss inline-flex items-center gap-2 whitespace-nowrap ${
+                  !projects.length || analysisLoading ? 'cursor-not-allowed opacity-50' : ''
+                }`}
+              >
+                <BarChart3 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                <span>{copy.analysisOpen}</span>
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => void loadSnapshot('refresh')}
@@ -328,21 +381,6 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
-        {workspace === 'codex' ? (
-          <SessionAnalysisPanel
-            copy={copy}
-            result={analysisResult}
-            loading={analysisLoading}
-            error={analysisError}
-            activeProjectName={activeProject?.name ?? copy.unavailable}
-            canAnalyze={projects.length > 0}
-            canAnalyzeRecent={recentAnalysisSessionIDs.length > 0}
-            recentLimit={SESSION_ANALYSIS_RECENT_LIMIT}
-            onAnalyzeAll={() => void runAnalysis('all')}
-            onAnalyzeProject={() => void runAnalysis('project')}
-            onAnalyzeRecent={() => void runAnalysis('recent')}
-          />
-        ) : null}
         <div className={`flex min-h-0 flex-1 ${compactLayout ? 'flex-col' : 'flex-row'}`}>
           <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-4' : 'w-[20rem] shrink-0 border-r-4'}`}>
             <ProjectListPanel
@@ -442,6 +480,54 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
           onReset={resetProviderDraft}
           onSave={() => void saveProviderMerge()}
           onChangeValue={updateDraftValue}
+        />
+      ) : null}
+
+      {workspace === 'codex' && analysisSelectorOpen ? (
+        <SessionAnalysisScopeModal
+          copy={copy}
+          projects={projects}
+          activeProjectId={activeProject?.id ?? ''}
+          activeProjectName={activeProject?.name ?? copy.unavailable}
+          visibleSessions={visibleSessions}
+          recentLimit={SESSION_ANALYSIS_RECENT_LIMIT}
+          onClose={closeAnalysisSelector}
+          onAnalyzeAll={() => void runAnalysis({
+            mode: 'all',
+            label: copy.analysisAll,
+          })}
+          onAnalyzeRecent={() => void runAnalysis({
+            mode: 'recent',
+            sessionIDs: recentAnalysisSessionIDs,
+            recentLimit: SESSION_ANALYSIS_RECENT_LIMIT,
+            label: copy.analysisRecent(SESSION_ANALYSIS_RECENT_LIMIT),
+          })}
+          onAnalyzeProject={(project) => void runAnalysis({
+            mode: 'project',
+            projectID: project.id,
+            label: `${copy.analysisProject} / ${project.name}`,
+          })}
+          onAnalyzeSession={(session) => void runAnalysis({
+            mode: 'recent',
+            sessionIDs: [session.id],
+            recentLimit: 1,
+            label: `${copy.analysisSelectSession} / ${session.title || session.fileLabel}`,
+          })}
+        />
+      ) : null}
+
+      {workspace === 'codex' && analysisDetailOpen ? (
+        <SessionAnalysisDetailModal
+          copy={copy}
+          scopeLabel={analysisScopeLabel || copy.analysisTitle}
+          result={analysisResult}
+          loading={analysisLoading}
+          error={analysisError}
+          onClose={closeAnalysisDetail}
+          onBackToSelection={() => {
+            setAnalysisDetailOpen(false);
+            setAnalysisSelectorOpen(true);
+          }}
         />
       ) : null}
 

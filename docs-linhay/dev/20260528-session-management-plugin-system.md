@@ -25,6 +25,8 @@
 - `totalMessages`
 - `totalTerms`
 - `keywords`
+- `wordCloud`
+- `commonPhrases`
 - `roleContributions`
 - `projects`
 - `sessions`
@@ -36,6 +38,18 @@
 - 前端：`frontend/src/features/session-management/api.ts`
 - dev bridge：`frontend/vite.config.js` + `frontend/dev/sessionManagementDevData.js`
 - 一期宿主：当前项目、最近 20 条、全量分析入口。
+
+## 契约变更要求
+会话插件结果字段变更必须成组落地，不能只改 Go 或只改前端：
+1. `internal/wailsapp/` 插件 DTO、聚合逻辑和 Go 测试。
+2. 根 Wails 暴露层 `app_types.go` 与 `app_mappers.go`。
+3. `frontend/wailsjs/go/models.ts` 生成类型。
+4. `frontend/dev/sessionManagementDevData.js` 本地 dev bridge。
+5. `frontend/src/features/session-management/model.ts` 前端接口与 mapper。
+6. `SessionManagementView.tsx` 结果渲染和 `model.test.mjs` 契约测试。
+
+本轮已将该流程沉淀到项目级 skill：
+`.agents/skills/gettokens-session-management-plugin-contract/SKILL.md`。
 
 ## 设计系统收编
 - 会话插件控制台已进入设计系统，组件为 `frontend/src/features/session-management/components/SessionPluginConsolePanel.tsx`。
