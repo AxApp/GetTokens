@@ -2,11 +2,28 @@ package wailsapp
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 )
+
+func TestChannelRoutingStorePathUsesProfileConfigDir(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("GETTOKENS_APP_PROFILE", "dev")
+
+	path, err := channelRoutingStorePath()
+	if err != nil {
+		t.Fatalf("channelRoutingStorePath: %v", err)
+	}
+
+	want := filepath.Join(home, ".config", "gettokens-dev", "channel-routing", "config.json")
+	if path != want {
+		t.Fatalf("channelRoutingStorePath = %q, want %q", path, want)
+	}
+}
 
 func TestNormalizeChannelRoutingConfigDropsLegacyRoutingFields(t *testing.T) {
 	normalized, meta := normalizeChannelRoutingConfig(ChannelRoutingConfig{

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/sidecar"
 )
 
 const channelRoutingStoreDirName = "channel-routing"
@@ -423,11 +424,11 @@ func saveChannelRoutingStore(store channelRoutingStore) error {
 }
 
 func channelRoutingStorePath() (string, error) {
-	home, err := os.UserHomeDir()
+	configDir, err := sidecar.CurrentProfileConfigDir()
 	if err != nil {
 		return "", err
 	}
-	dir := filepath.Join(home, ".config", "gettokens-data", channelRoutingStoreDirName)
+	dir := filepath.Join(configDir, channelRoutingStoreDirName)
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
 	}

@@ -20,6 +20,9 @@ interface ModalFrameProps {
   headerClassName?: string;
   bodyClassName?: string;
   footerClassName?: string;
+  portal?: boolean;
+  zIndexClassName?: string;
+  coverViewport?: boolean;
 }
 
 const sizeClassNames: Record<ModalFrameSize, string> = {
@@ -51,6 +54,9 @@ export default function ModalFrame({
   headerClassName = 'px-6 py-5',
   bodyClassName = '',
   footerClassName = '',
+  portal = false,
+  zIndexClassName = 'z-50',
+  coverViewport = false,
 }: ModalFrameProps) {
   function handleBackdropClick() {
     if (closeOnBackdrop) {
@@ -64,7 +70,7 @@ export default function ModalFrame({
 
   const hasSlots = Boolean(header || footer || error);
   const detailFullscreen = size === 'detail';
-  const overlayStyle: CSSProperties | undefined = position === 'fixed' && !detailFullscreen
+  const overlayStyle: CSSProperties | undefined = position === 'fixed' && !detailFullscreen && !coverViewport
     ? { left: 'var(--app-sidebar-width, 0px)' }
     : undefined;
   const overlayLayoutClassName = detailFullscreen
@@ -76,7 +82,7 @@ export default function ModalFrame({
 
   const modal = (
     <div
-      className={`${position} inset-0 z-50 grid min-w-0 bg-[var(--overlay-scrim-80)] backdrop-blur-sm ${overlayLayoutClassName} ${overlayClassName}`}
+      className={`${position} inset-0 ${zIndexClassName} grid min-w-0 bg-[var(--overlay-scrim-80)] backdrop-blur-sm ${overlayLayoutClassName} ${overlayClassName}`}
       style={overlayStyle}
       onClick={handleBackdropClick}
     >
@@ -110,7 +116,7 @@ export default function ModalFrame({
     </div>
   );
 
-  if (detailFullscreen && typeof document !== 'undefined') {
+  if ((detailFullscreen || portal) && typeof document !== 'undefined') {
     return createPortal(modal, document.body);
   }
 

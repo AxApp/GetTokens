@@ -94,6 +94,11 @@ func ensureConfigDir(profile string) (string, error) {
 	return dir, nil
 }
 
+// CurrentProfileConfigDir returns the profile-specific GetTokens config dir.
+func CurrentProfileConfigDir() (string, error) {
+	return ensureConfigDir(resolveSidecarProfile())
+}
+
 func normalizeLegacyAuthFiles(dir string) (int, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {

@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { toErrorMessage } from '../../../utils/error';
 import {
   DEFAULT_RATE_LIMIT_STRATEGIES,
@@ -16,12 +17,10 @@ import {
   formatRateLimitMetric,
   formatRateLimitWindowLabel,
   parseRateLimitLimitDraftValue,
-  rateLimitRuleLabel,
   type RateLimitRule,
   type RateLimitState,
   type RateLimitStrategyMeta,
 } from '../model/rateLimit';
-import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import type { Translator } from '../model/types';
 import {
   AccountDetailEmptyState,
@@ -51,6 +50,10 @@ export interface RateLimitRulesAPI {
   delete: (input: { id: string }) => Promise<unknown>;
 }
 
+const RATE_LIMIT_RULE_SURFACE_CLASS = 'bg-[var(--bg-surface)]/35 px-3 py-2';
+const RATE_LIMIT_RULE_STACK_CLASS = 'space-y-2';
+const RATE_LIMIT_RULE_LIST_CLASS = 'space-y-2';
+
 const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitRulesSectionProps>(function RateLimitRulesSection(
   {
     accountKey,
@@ -70,24 +73,38 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
   const [rateLimitMessage, setRateLimitMessage] = useState('');
   const [rateLimitMessageTone, setRateLimitMessageTone] = useState<'danger' | 'success' | 'neutral'>('danger');
   const [savingRules, setSavingRules] = useState(false);
-  const [rateLimitViewMode, setRateLimitViewMode] = useState<'summary' | 'config'>('summary');
+  const [editingRuleIndex, setEditingRuleIndex] = useState<number | null>(null);
+  const [openRuleMenuIndex, setOpenRuleMenuIndex] = useState<number | null>(null);
   const dirtyRef = useRef(false);
+  const ruleMenuRef = useRef<HTMLDivElement | null>(null);
 
   const dirty = useMemo(
     () => deletedRuleIDs.length > 0 || serializeRateLimitRules(ruleDrafts) !== serializeRateLimitRules(baselineRuleDrafts),
     [baselineRuleDrafts, deletedRuleIDs, ruleDrafts],
   );
-  const rateLimitSummaryText = useMemo(
-    () => buildRateLimitSummaryText(ruleDrafts, rateLimitStatus, t),
-    [rateLimitStatus, ruleDrafts, t],
-  );
   const rateLimitMetaTimestamp = rateLimitStatus?.lastEvaluatedAt || rateLimitStatus?.updatedAt || '';
-  const rateLimitSources = rateLimitStatus?.sources ?? [];
 
   useEffect(() => {
     dirtyRef.current = dirty;
     onDirtyChange?.(dirty);
   }, [dirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (openRuleMenuIndex === null) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!ruleMenuRef.current?.contains(event.target as Node)) {
+        setOpenRuleMenuIndex(null);
+      }
+    }
+
+    window.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, [openRuleMenuIndex]);
 
   useEffect(() => {
     let cancelled = false;
@@ -134,14 +151,17 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
     setRuleDrafts(normalized);
     setBaselineRuleDrafts(normalized);
     setDeletedRuleIDs([]);
+    setEditingRuleIndex(null);
+    setOpenRuleMenuIndex(null);
     dirtyRef.current = false;
   }
 
   function addRateLimitRule() {
     const strategy = strategies[0] || DEFAULT_RATE_LIMIT_STRATEGIES[0];
     const window = supportedWindowsForStrategy(strategy)[0] || RATE_LIMIT_CALENDAR_DAY_WINDOW;
-    setRuleDrafts((prev) => [
-      ...prev,
+    const nextIndex = ruleDrafts.length;
+    setRuleDrafts([
+      ...ruleDrafts,
       {
         accountKey,
         strategy: strategy.id,
@@ -152,7 +172,8 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
         label: '',
       },
     ]);
-    setRateLimitViewMode('config');
+    setEditingRuleIndex(nextIndex);
+    setOpenRuleMenuIndex(null);
     setRateLimitMessage('');
   }
 
@@ -187,7 +208,6 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       commitRuleDrafts(previewRules);
       setRateLimitMessage(t('accounts.rate_limit_preview_only'));
       setRateLimitMessageTone('neutral');
-      setRateLimitViewMode('summary');
       setSavingRules(false);
       return true;
     }
@@ -213,7 +233,6 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       commitRuleDrafts(rules ?? []);
       setRateLimitMessage(t('accounts.rate_limit_save_success'));
       setRateLimitMessageTone('success');
-      setRateLimitViewMode('summary');
       onRateLimitRulesChanged();
       return true;
     } catch (error) {
@@ -231,6 +250,30 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       setDeletedRuleIDs((prev) => (prev.includes(draft.id!) ? prev : [...prev, draft.id!]));
     }
     setRuleDrafts((prev) => prev.filter((_, draftIndex) => draftIndex !== index));
+    setEditingRuleIndex((current) => {
+      if (current === null) return null;
+      if (current === index) return null;
+      return current > index ? current - 1 : current;
+    });
+    setOpenRuleMenuIndex(null);
+    setRateLimitMessage('');
+  }
+
+  function startEditingRateLimitRule(index: number) {
+    setEditingRuleIndex(index);
+    setOpenRuleMenuIndex(null);
+    setRateLimitMessage('');
+  }
+
+  function finishEditingRateLimitRule(index: number) {
+    const draft = normalizeRateLimitRuleDraft(ruleDrafts[index], accountKey);
+    if (!draft.strategy || !draft.window || draft.limitValue <= 0) {
+      setRateLimitMessage(t('accounts.rate_limit_rule_required'));
+      setRateLimitMessageTone('danger');
+      return;
+    }
+    setRuleDrafts((prev) => prev.map((item, draftIndex) => (draftIndex === index ? draft : item)));
+    setEditingRuleIndex(null);
     setRateLimitMessage('');
   }
 
@@ -240,31 +283,20 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
       eyebrow="Route Guard"
       title={t('accounts.rate_limit_rules_title')}
       meta={`${t('accounts.rate_limit_cache')} ${rateLimitMetaTimestamp ? new Date(rateLimitMetaTimestamp).toLocaleString() : '-'}`}
+      density="dense"
       span="wide"
       actions={
-        <div className="flex flex-wrap items-center gap-2">
-          {rateLimitViewMode === 'config' ? (
-            <button
-              type="button"
-              onClick={addRateLimitRule}
-              className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-              disabled={savingRules}
-            >
-              {t('accounts.rate_limit_add_rule')}
-            </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => setRateLimitViewMode((prev) => (prev === 'summary' ? 'config' : 'summary'))}
-            className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-            disabled={savingRules || (rateLimitViewMode === 'config' && dirty)}
-          >
-            {rateLimitViewMode === 'summary' ? t('accounts.rate_limit_edit_rules') : t('accounts.rate_limit_done')}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={addRateLimitRule}
+          className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+          disabled={savingRules}
+        >
+          {t('accounts.rate_limit_add_rule')}
+        </button>
       }
     >
-      <div className="space-y-3">
+      <div className={RATE_LIMIT_RULE_STACK_CLASS}>
         {dirty ? (
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
             {t('accounts.rate_limit_dirty')}
@@ -277,48 +309,10 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
           </AccountDetailNotice>
         ) : null}
 
-        {rateLimitViewMode === 'summary' ? (
+        {ruleDrafts.length === 0 ? (
           <div
-            data-rate-limit-view-mode="summary"
-            className="min-w-0 space-y-2 border-y-2 border-[var(--border-color)] px-2 py-2"
+            data-rate-limit-view-mode="config"
           >
-            <button
-              type="button"
-              onClick={() => setRateLimitViewMode('config')}
-              className="block w-full min-w-0 text-left"
-              title={rateLimitSummaryText}
-            >
-              <span className="block min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
-                {rateLimitSummaryText}
-              </span>
-            </button>
-            {rateLimitStatus?.stale || rateLimitStatus?.degradedReason ? (
-              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--color-status-warning)]">
-                {rateLimitStatus?.stale ? 'STALE' : 'DEGRADED'} {rateLimitStatus?.degradedReason || ''}
-              </div>
-            ) : null}
-            {rateLimitSources.length > 0 ? (
-              <div className="grid min-w-0 gap-1">
-                {rateLimitSources.map((source, index) => (
-                  <div
-                    key={`${source.source}-${source.ruleID || index}`}
-                    className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]"
-                    title={[
-                      source.source,
-                      source.reason,
-                      source.ruleID,
-                      source.nextReset ? `NEXT ${formatRateLimitTimestamp(source.nextReset)}` : '',
-                    ].filter(Boolean).join(' / ')}
-                  >
-                    {source.source || 'source'} · {source.reason || '-'}
-                    {source.nextReset ? ` · NEXT ${formatRateLimitTimestamp(source.nextReset)}` : ''}
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ) : ruleDrafts.length === 0 ? (
-          <div data-rate-limit-view-mode="config">
             <AccountDetailEmptyState>
               <button
                 type="button"
@@ -331,129 +325,177 @@ const RateLimitRulesSection = forwardRef<RateLimitRulesSectionHandle, RateLimitR
             </AccountDetailEmptyState>
           </div>
         ) : (
-          <div data-rate-limit-view-mode="config" className="space-y-2" role="list">
-              {ruleDrafts.map((draft, index) => {
-                const strategy = strategies.find((item) => item.id === draft.strategy) || strategies[0];
-                const windows = supportedWindowsForStrategy(strategy);
-                const ruleState = rateLimitStatus?.rules.find((item) => item.rule.id && item.rule.id === draft.id);
-                const ruleDomID = `rate-limit-rule-${draft.id || index}`;
+          <div data-rate-limit-view-mode="config" className={RATE_LIMIT_RULE_LIST_CLASS} role="list">
+            {ruleDrafts.map((draft, index) => {
+              const strategy = strategies.find((item) => item.id === draft.strategy) || strategies[0];
+              const windows = supportedWindowsForStrategy(strategy);
+              const ruleState = rateLimitStatus?.rules.find((item) => item.rule.id && item.rule.id === draft.id);
+              const ruleDomID = `rate-limit-rule-${draft.id || index}`;
+              const isEditing = editingRuleIndex === index;
+              if (!isEditing) {
                 return (
-                  <fieldset
+                  <div
                     key={draft.id || `new-${index}`}
-                    className="grid min-w-0 gap-3 border-y-2 border-[var(--border-color)] px-2 py-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)] xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)_minmax(7rem,0.7fr)_minmax(9rem,0.9fr)_auto]"
+                    className={`grid min-w-0 items-center gap-3 md:grid-cols-[auto_minmax(0,1fr)_auto] ${RATE_LIMIT_RULE_SURFACE_CLASS}`}
                     role="listitem"
-                    disabled={savingRules}
                   >
-                    <legend className="sr-only">{t('accounts.rate_limit_rule_legend')}</legend>
-                    <RuleField label={t('accounts.rate_limit_label')} htmlFor={`${ruleDomID}-label`}>
+                    <label className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center" title={t('accounts.rate_limit_enabled')}>
                       <input
-                        id={`${ruleDomID}-label`}
-                        type="text"
-                        value={draft.label || ''}
-                        placeholder={rateLimitRuleLabel(draft)}
-                        onChange={(event) => updateRateLimitDraft(index, { label: event.target.value })}
-                        className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
-                      />
-                    </RuleField>
-                    <RuleField label={t('accounts.rate_limit_strategy')} htmlFor={`${ruleDomID}-strategy`}>
-                      <select
-                        id={`${ruleDomID}-strategy`}
-                        value={draft.strategy}
-                        onChange={(event) => {
-                          const nextStrategy = strategies.find((item) => item.id === event.target.value);
-                          const nextWindows = supportedWindowsForStrategy(nextStrategy);
-                          updateRateLimitDraft(index, {
-                            strategy: event.target.value,
-                            window: nextWindows.includes(draft.window) ? draft.window : nextWindows[0] || '24h',
-                          });
-                        }}
-                        className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
-                      >
-                        {strategies.map((item) => (
-                          <option key={item.id} value={item.id}>
-                            {item.name}
-                          </option>
-                        ))}
-                      </select>
-                    </RuleField>
-                    <RuleField label={t('accounts.rate_limit_window')} htmlFor={`${ruleDomID}-window`}>
-                      <select
-                        id={`${ruleDomID}-window`}
-                        value={draft.window}
-                        onChange={(event) => updateRateLimitDraft(index, { window: event.target.value })}
-                        className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
-                      >
-                        {windows.map((window) => (
-                          <option key={window} value={window}>
-                            {formatRateLimitWindowLabel(window)}
-                          </option>
-                        ))}
-                      </select>
-                    </RuleField>
-                    <RuleField label={t('accounts.rate_limit_limit')} htmlFor={`${ruleDomID}-limit`}>
-                      <div className="flex h-9 border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-                        <input
-                          id={`${ruleDomID}-limit`}
-                          type="number"
-                          min={draft.strategy === 'token-window' ? 0.000001 : 1}
-                          step={draft.strategy === 'token-window' ? 0.1 : 1}
-                          value={formatRateLimitLimitDraftValue(draft)}
-                          onChange={(event) =>
-                            updateRateLimitDraft(index, {
-                              limitValue: parseRateLimitLimitDraftValue(draft.strategy, event.target.value),
-                            })
-                          }
-                          className="min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)] outline-none"
-                        />
-                        <span className="flex w-10 items-center justify-center border-l border-[var(--border-color)] text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                          {draft.strategy === 'token-window' ? 'M' : t('accounts.rate_limit_count_unit')}
-                        </span>
-                      </div>
-                    </RuleField>
-                    <RuleField label={t('accounts.rate_limit_action')} htmlFor={`${ruleDomID}-action`}>
-                      <select
-                        id={`${ruleDomID}-action`}
-                        value={draft.action}
-                        onChange={(event) => updateRateLimitDraft(index, { action: event.target.value })}
-                        className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
-                      >
-                        <option value="block">{t('accounts.rate_limit_action_block')}</option>
-                        <option value="warn">{t('accounts.rate_limit_action_warn')}</option>
-                      </select>
-                    </RuleField>
-                    <div className="flex min-w-0 flex-col gap-1">
-                      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                        {t('accounts.rate_limit_enabled_short')}
-                      </div>
-                      <ToggleSwitch
-                        label={t('accounts.rate_limit_enabled')}
+                        type="checkbox"
                         checked={draft.enabled}
+                        onChange={(event) => updateRateLimitDraft(index, { enabled: event.target.checked })}
                         disabled={savingRules}
-                        onChange={(checked) => updateRateLimitDraft(index, { enabled: checked })}
-                        className="!min-h-0 scale-75 origin-left"
+                        className="h-4 w-4 accent-[var(--text-primary)]"
+                        aria-label={t('accounts.rate_limit_enabled')}
                       />
+                    </label>
+                    <div className="min-w-0">
+                      <div
+                        className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]"
+                        title={buildRateLimitRuleRowSummary(draft, strategy, t)}
+                      >
+                        {buildRateLimitRuleRowSummary(draft, strategy, t)}
+                      </div>
+                      {ruleState ? (
+                        <div
+                          className={`mt-1 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] ${
+                            ruleState.exceeded ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
+                          }`}
+                          title={`${Math.round(ruleState.usagePct)}% ${formatRateLimitMetric(ruleState.currentUsage)}/${formatRateLimitMetric(ruleState.rule.limitValue)}`}
+                        >
+                          {Math.round(ruleState.usagePct)}% {formatRateLimitMetric(ruleState.currentUsage)}/{formatRateLimitMetric(ruleState.rule.limitValue)}
+                        </div>
+                      ) : null}
                     </div>
-                    <div
-                      className={`min-w-0 self-end truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] xl:self-center ${
-                        ruleState?.exceeded ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
-                      }`}
-                      title={ruleState ? `${formatRateLimitMetric(ruleState.currentUsage)} / ${formatRateLimitMetric(ruleState.rule.limitValue)} (${Math.round(ruleState.usagePct)}%)` : undefined}
+                    <div ref={openRuleMenuIndex === index ? ruleMenuRef : undefined} className="relative">
+                      <button
+                        type="button"
+                        aria-label={t('accounts.rate_limit_rule_actions')}
+                        aria-haspopup="menu"
+                        aria-expanded={openRuleMenuIndex === index}
+                        onClick={() => setOpenRuleMenuIndex((current) => (current === index ? null : index))}
+                        className="btn-swiss flex h-9 w-9 items-center justify-center !px-0 !py-0"
+                        disabled={savingRules}
+                        title={t('accounts.rate_limit_rule_actions')}
+                      >
+                        <MoreVertical size={15} strokeWidth={3} />
+                      </button>
+                      {openRuleMenuIndex === index ? (
+                        <div
+                          role="menu"
+                          className="absolute right-0 top-full z-30 mt-2 w-40 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-1 shadow-[6px_6px_0_var(--shadow-color)]"
+                        >
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => startEditingRateLimitRule(index)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)]"
+                          >
+                            <Pencil size={14} strokeWidth={3} />
+                            {t('accounts.rate_limit_rule_edit')}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => deleteRateLimitRule(index)}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--color-status-danger)] hover:bg-[var(--bg-surface)]"
+                          >
+                            <Trash2 size={14} strokeWidth={3} />
+                            {t('common.delete')}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <fieldset
+                  key={draft.id || `new-${index}`}
+                  className={`grid min-w-0 gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)] xl:grid-cols-[minmax(0,1.4fr)_minmax(7rem,0.8fr)_minmax(9rem,1fr)_minmax(8rem,0.8fr)_auto] ${RATE_LIMIT_RULE_SURFACE_CLASS}`}
+                  role="listitem"
+                  disabled={savingRules}
+                >
+                  <legend className="sr-only">{t('accounts.rate_limit_rule_legend')}</legend>
+                  <RuleField label={t('accounts.rate_limit_strategy')} htmlFor={`${ruleDomID}-strategy`}>
+                    <select
+                      id={`${ruleDomID}-strategy`}
+                      value={draft.strategy}
+                      onChange={(event) => {
+                        const nextStrategy = strategies.find((item) => item.id === event.target.value);
+                        const nextWindows = supportedWindowsForStrategy(nextStrategy);
+                        updateRateLimitDraft(index, {
+                          strategy: event.target.value,
+                          window: nextWindows.includes(draft.window) ? draft.window : nextWindows[0] || '24h',
+                        });
+                      }}
+                      className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
                     >
-                      {ruleState
-                        ? `${formatRateLimitMetric(ruleState.currentUsage)} / ${formatRateLimitMetric(ruleState.rule.limitValue)} (${Math.round(ruleState.usagePct)}%)`
-                        : '-'}
+                      {strategies.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </RuleField>
+                  <RuleField label={t('accounts.rate_limit_window')} htmlFor={`${ruleDomID}-window`}>
+                    <select
+                      id={`${ruleDomID}-window`}
+                      value={draft.window}
+                      onChange={(event) => updateRateLimitDraft(index, { window: event.target.value })}
+                      className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
+                    >
+                      {windows.map((window) => (
+                        <option key={window} value={window}>
+                          {formatRateLimitWindowLabel(window)}
+                        </option>
+                      ))}
+                    </select>
+                  </RuleField>
+                  <RuleField label={t('accounts.rate_limit_limit')} htmlFor={`${ruleDomID}-limit`}>
+                    <div className="flex h-9 border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+                      <input
+                        id={`${ruleDomID}-limit`}
+                        type="number"
+                        min={draft.strategy === 'token-window' ? 0.000001 : 1}
+                        step={draft.strategy === 'token-window' ? 0.1 : 1}
+                        value={formatRateLimitLimitDraftValue(draft)}
+                        onChange={(event) =>
+                          updateRateLimitDraft(index, {
+                            limitValue: parseRateLimitLimitDraftValue(draft.strategy, event.target.value),
+                          })
+                        }
+                        className="min-w-0 flex-1 bg-transparent px-2 py-1 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)] outline-none"
+                      />
+                      <span className="flex w-10 items-center justify-center border-l border-[var(--border-color)] text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        {draft.strategy === 'token-window' ? 'M' : t('accounts.rate_limit_count_unit')}
+                      </span>
                     </div>
+                  </RuleField>
+                  <RuleField label={t('accounts.rate_limit_action')} htmlFor={`${ruleDomID}-action`}>
+                    <select
+                      id={`${ruleDomID}-action`}
+                      value={draft.action}
+                      onChange={(event) => updateRateLimitDraft(index, { action: event.target.value })}
+                      className="input-swiss h-9 w-full !py-1 !text-[length:var(--font-size-ui-xs)]"
+                    >
+                      <option value="block">{t('accounts.rate_limit_action_block')}</option>
+                      <option value="warn">{t('accounts.rate_limit_action_warn')}</option>
+                    </select>
+                  </RuleField>
+                  <div className="flex min-w-0 items-end justify-end self-end md:col-span-4 xl:col-span-1 xl:self-end">
                     <button
                       type="button"
-                      onClick={() => deleteRateLimitRule(index)}
-                      className="btn-swiss h-9 self-end !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)] !text-[var(--color-status-danger)] xl:self-center"
+                      onClick={() => finishEditingRateLimitRule(index)}
+                      className="btn-swiss h-9 !px-3 !py-1 !text-[length:var(--font-size-ui-2xs)]"
                       disabled={savingRules}
                     >
-                      {t('common.delete')}
+                      {t('accounts.rate_limit_rule_save')}
                     </button>
-                  </fieldset>
-                );
-              })}
+                  </div>
+                </fieldset>
+              );
+            })}
           </div>
         )}
       </div>
@@ -519,36 +561,20 @@ function compactRateLimitRule(rule: RateLimitRule) {
   };
 }
 
-function buildRateLimitSummaryText(
-  rules: RateLimitRule[],
-  status: RateLimitState | undefined,
+function buildRateLimitRuleRowSummary(
+  rule: RateLimitRule,
+  strategy: RateLimitStrategyMeta | undefined,
   t: Translator,
 ) {
-  if (rules.length === 0) {
-    return t('accounts.rate_limit_no_local_rule');
-  }
-  const enabledCount = rules.filter((rule) => rule.enabled).length;
-  const evaluatedRules = status?.rules ?? [];
-  const exceededCount = evaluatedRules.filter((item) => item.exceeded).length;
-  const hottestRule = evaluatedRules.reduce<(typeof evaluatedRules)[number] | undefined>((current, item) => {
-    if (!current || item.usagePct > current.usagePct) {
-      return item;
-    }
-    return current;
-  }, undefined);
-  const usageText = hottestRule
-    ? `${Math.round(hottestRule.usagePct)}% ${formatRateLimitMetric(hottestRule.currentUsage)}/${formatRateLimitMetric(hottestRule.rule.limitValue)}`
-    : t('accounts.rate_limit_not_evaluated');
-  const statusText = status?.blocked
-    ? `${t('accounts.rate_limit_summary_blocked')} ${Math.max(exceededCount, 1)}`
-    : t('accounts.rate_limit_summary_enabled');
-  return `${statusText} / ${t('accounts.rate_limit_summary_rules')} ${rules.length} / ${t('accounts.rate_limit_summary_active')} ${enabledCount} / ${usageText}`;
-}
-
-function formatRateLimitTimestamp(value: string) {
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) return value;
-  return new Date(timestamp).toLocaleString();
+  const strategyLabel = strategy?.name || String(rule.strategy || '').toUpperCase();
+  const windowLabel = formatRateLimitWindowLabel(rule.window);
+  const limitLabel = rule.strategy === 'token-window'
+    ? `${formatRateLimitLimitDraftValue(rule)}M`
+    : `${formatRateLimitMetric(rule.limitValue)} ${t('accounts.rate_limit_count_unit')}`;
+  const actionLabel = rule.action === 'warn'
+    ? t('accounts.rate_limit_action_warn')
+    : t('accounts.rate_limit_action_block');
+  return `${strategyLabel} / ${windowLabel} / ${limitLabel} / ${actionLabel}`;
 }
 
 function RuleField({ label, htmlFor, children }: { label: string; htmlFor: string; children: ReactNode }) {

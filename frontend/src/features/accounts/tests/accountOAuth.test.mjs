@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   buildCodexOAuthBannerMessage,
@@ -29,4 +30,20 @@ test('codex oauth dialog copy follows login and reauth mode', () => {
   assert.equal(buildCodexOAuthDialogHint(t, ''), 'accounts.oauth_dialog_hint_login');
   assert.equal(buildCodexOAuthDialogTitle(t, 'expired.json'), 'accounts.oauth_dialog_title_reauth');
   assert.equal(buildCodexOAuthDialogHint(t, 'expired.json'), 'accounts.oauth_dialog_hint_reauth');
+});
+
+test('codex oauth dialog is portaled above account detail modal', async () => {
+  const dialogSource = await readFile(new URL('../components/CodexOAuthModal.tsx', import.meta.url), 'utf8');
+  const modalFrameSource = await readFile(new URL('../../../components/ui/ModalFrame.tsx', import.meta.url), 'utf8');
+
+  assert.match(dialogSource, /ModalFrame/);
+  assert.match(dialogSource, /portal/);
+  assert.match(dialogSource, /coverViewport/);
+  assert.match(dialogSource, /zIndexClassName="z-\[70\]"/);
+  assert.doesNotMatch(dialogSource, /fixed inset-0 z-50/);
+  assert.match(modalFrameSource, /portal = false/);
+  assert.match(modalFrameSource, /zIndexClassName = 'z-50'/);
+  assert.match(modalFrameSource, /coverViewport = false/);
+  assert.match(modalFrameSource, /!detailFullscreen && !coverViewport/);
+  assert.match(modalFrameSource, /detailFullscreen \|\| portal/);
 });
