@@ -322,22 +322,20 @@ test('AccountLocalCliApplyConfirm exposes editable Claude Code draft fields', as
   assert.match(featureSource, /setLocalCliDraft\(nextDraft\)/);
 });
 
-test('deep link Codex apply adapter reuses AccountLocalCliApplyConfirm shell', async () => {
-  const adapterSource = await readFile(new URL('../components/DeepLinkCodexApplyAdapter.tsx', import.meta.url), 'utf8');
-  const confirmSource = await readFile(new URL('../components/AccountLocalCliApplyConfirm.tsx', import.meta.url), 'utf8');
+test('deep link account import confirm renders batch account preview and result summary', async () => {
+  const confirmSource = await readFile(new URL('../components/DeepLinkAccountImportConfirm.tsx', import.meta.url), 'utf8');
   const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
-  assert.match(adapterSource, /AccountLocalCliApplyConfirm/);
-  assert.doesNotMatch(adapterSource, /ModalFrame/);
-  assert.match(adapterSource, /deepLinkContext/);
-  assert.match(confirmSource, /DeepLinkApplyContext/);
-  assert.match(confirmSource, /providerScope/);
-  assert.match(confirmSource, /providerRewriteMode/);
-  assert.match(confirmSource, /onImportAccountOnly/);
-  assert.match(confirmSource, /只导入账号/);
-  assert.match(featureSource, /buildDeepLinkAccountImportItems/);
-  assert.match(featureSource, /account\.accountType === 'auth-file'/);
-  assert.match(featureSource, /account\.authFileJSON/);
+  assert.match(confirmSource, /ModalFrame/);
+  assert.match(confirmSource, /导入账号/);
+  assert.match(confirmSource, /preview\.accounts/);
+  assert.match(confirmSource, /account\.apiKeyPreview/);
+  assert.match(confirmSource, /result\?\.accounts/);
+  assert.match(confirmSource, /created/);
+  assert.match(featureSource, /DeepLinkAccountImportConfirm/);
+  assert.match(featureSource, /PreviewDeepLinkImport/);
+  assert.match(featureSource, /ApplyDeepLinkImport/);
+  assert.doesNotMatch(featureSource, /buildDeepLinkAccountImportItems/);
 });
 
 test('account import preview redacts auth-file and api-key secrets', () => {

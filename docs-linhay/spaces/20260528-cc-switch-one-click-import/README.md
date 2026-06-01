@@ -12,7 +12,8 @@ cc-switch v3.15.0 提供 `ccswitch://` 深度链接协议，用于一键导入 p
 2. 明确 provider 导入字段如何映射到 Claude / Codex / Gemini / OpenCode / OpenClaw / Hermes。
 3. 识别可借鉴点、不可直接照搬点，以及 GetTokens 后续设计的最小可行边界。
 4. 给出后续是否进入产品方案和技术设计的判断依据。
-5. 设计 GetTokens deep link 直接导入账号和 Codex 本地配置的协议、确认流、服务边界与验收标准。
+5. 设计 GetTokens deep link 直接导入账号的协议、确认流、服务边界与验收标准。
+6. 在账号与凭证 SQLite 统一存储落地后，收敛 GetTokens 私有导入协议细节，明确唯一 deep link payload 入口。
 
 ## 范围
 
@@ -20,7 +21,7 @@ cc-switch v3.15.0 提供 `ccswitch://` 深度链接协议，用于一键导入 p
 2. provider 一键导入：endpoint、apiKey、homepage、model、icon、notes、usage script、inline config。
 3. MCP / prompt / skill 的统一导入入口，只做横向对比，不深入实现细节。
 4. 安全与确认：敏感信息展示、导入前确认、格式校验、协议注册。
-5. 与 GetTokens 账号导入、Provider 创建、CLIProxyAPI Management API 的关系。
+5. 与 GetTokens 账号导入、Provider 创建、sidecar 统一账号 Management API 的关系。
 
 ## 非目标
 
@@ -56,9 +57,12 @@ And 能看到最小可行实现建议与主要风险
 
 Given 维护者准备实现 GetTokens deep link
 When 阅读本 space 的设计文档
-Then 能看到账号导入、Codex 配置导入、组合导入三种能力的协议草案
-And 能明确每种导入最终调用的现有服务层入口
-And 能明确哪些字段只允许确认预览、哪些字段允许写入
+Then 能看到 `gt://app/v1/import?payload=...` 这一唯一入口
+And 能明确不做旧 `gettokens://` 入口兼容
+And 能明确不做 cc-switch provider 格式兼容
+And 能明确不做导入 POST 入口
+And 能明确 payload 如何支持多账号导入和逐账号结果
+And 能明确本期不再写 Codex / Claude Code 本地配置
 
 ## 设计稿入口
 
@@ -74,17 +78,21 @@ And 能明确哪些字段只允许确认预览、哪些字段允许写入
 
 - 调研文档：`plans/20260528-cc-switch-one-click-import-research.md`
 - GetTokens 设计文档：`plans/20260528-gettokens-deeplink-account-codex-config-design.md`
+- gt deep link 账号导入技术规格：`plans/20260601-gt-deeplink-account-import-technical-spec-v01.md`
 - 本地参考项目：`docs-linhay/references/cc-switch/`
 - cc-switch 深度链接用户手册：`docs-linhay/references/cc-switch/docs/user-manual/zh/5-faq/5.3-deeplink.md`
 - cc-switch 解析实现：`docs-linhay/references/cc-switch/src-tauri/src/deeplink/parser.rs`
 - cc-switch provider 导入实现：`docs-linhay/references/cc-switch/src-tauri/src/deeplink/provider.rs`
 
 ## 当前状态
-- 状态：backend-and-desktop-entry-implemented
-- 最近更新：2026-05-28
+- 状态：gt-account-import-implemented
+- 最近更新：2026-06-01
 
 ## 实施记录
 
+- 2026-06-01：按账号导入一期规格完成施工：桌面 URL scheme 注册 `gt` 与本地冒烟别名 `gt-dev`；启动参数和 single instance 消费 `gt://` / `gt-dev://`；后端 `Parse/Preview/ApplyDeepLinkImport` 只接受 `gt://app/v1/import?payload=<base64url-json>` / `gt-dev://app/v1/import?payload=...`，payload 编译为 `cliproxyapi.AccountWriteRequest` 后调用 sidecar `POST /v0/management/accounts`；支持多账号、逐账号结果、`continue_on_error`、openai-compatible 重名自动 `#2/#3`、payload/URL 脱敏和旧入口拒绝。前端 deep link 入口改为独立“导入账号”批量确认页，移除旧 `DeepLinkCodexApplyAdapter` 与 Codex local apply 复用路径。
+- 2026-06-01：验证通过：`go test ./internal/wailsapp -run DeepLink -count=1`、`go test . -run TestWailsConfigRegistersProdAndDevDeepLinkSchemes -count=1`、`go test ./... -count=1`、`npm --prefix frontend run typecheck`、`npm --prefix frontend run test:unit`、`./scripts/wails-cli.sh build`、`docs-linhay/scripts/check-docs.sh`、`git diff --check`。打包产物 `Info.plist` 已确认包含 `gt` / `gt-dev`；`open -g gt-dev://...` 未抢前台，但命中了本机既有另一个 dev build，不能作为当前 worktree 新 build 的完整桌面 UI 冒烟。
+- 2026-06-01：账号与凭证 SQLite 统一存储完成后，本 space 收敛为账号导入一期：只保留 `gt://app/v1/import?payload=<base64url-json>` 这一 GetTokens 私有 deep link 入口；不做导入 POST 入口，不做旧 `gettokens://` 兼容，不做 cc-switch provider 兼容，不再把 `resource=codex-config/codex-setup`、`documents/operations`、`codexLocal` 作为新协议语义。
 - 2026-05-28：前端先落 thin adapter 边界，新增 `DeepLinkCodexApplyAdapter`，复用 `AccountLocalCliApplyConfirm` 作为 deep link Codex 配置确认页。
 - 2026-05-28：`AccountLocalCliApplyConfirm` 增加可选 `deepLinkContext` 和 `onImportAccountOnly`，只补外部来源、resource、providerScope、providerRewriteMode、账号草稿摘要和“只导入账号”动作。
 - 2026-05-28：后端新增 `gettokens://v1/import` parser / preview / apply，支持 `resource=account`、`resource=codex-config`、`resource=codex-setup`，拒绝 `configUrl`、`usageScript`、headers 和非 `channel=codex`。

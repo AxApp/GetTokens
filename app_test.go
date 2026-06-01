@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -173,10 +175,10 @@ func TestAppSingleInstanceUniqueIDSeparatesDevAndProd(t *testing.T) {
 func TestConsumeDeepLinkArgsRemovesGetTokensURLsBeforeWailsParsesFlags(t *testing.T) {
 	args, links := consumeDeepLinkArgs([]string{
 		"/Applications/GetTokens.app/Contents/MacOS/GetTokens",
-		"gettokens://v1/import?channel=codex&resource=account",
+		"gt://app/v1/import?payload=abc",
 		"-loglevel",
 		"Info",
-		"GETTOKENS://v1/import?channel=codex&resource=codex-config",
+		"GT-DEV://app/v1/import?payload=def",
 	})
 
 	wantArgs := []string{
@@ -188,11 +190,37 @@ func TestConsumeDeepLinkArgsRemovesGetTokensURLsBeforeWailsParsesFlags(t *testin
 		t.Fatalf("consumeDeepLinkArgs args = %v, want %v", args, wantArgs)
 	}
 	wantLinks := []string{
-		"gettokens://v1/import?channel=codex&resource=account",
-		"GETTOKENS://v1/import?channel=codex&resource=codex-config",
+		"gt://app/v1/import?payload=abc",
+		"GT-DEV://app/v1/import?payload=def",
 	}
 	if strings.Join(links, "\x00") != strings.Join(wantLinks, "\x00") {
 		t.Fatalf("consumeDeepLinkArgs links = %v, want %v", links, wantLinks)
+	}
+}
+
+func TestWailsConfigRegistersProdAndDevDeepLinkSchemes(t *testing.T) {
+	body, err := os.ReadFile("wails.json")
+	if err != nil {
+		t.Fatalf("read wails.json: %v", err)
+	}
+	var config struct {
+		Info struct {
+			Protocols []struct {
+				Scheme string `json:"scheme"`
+			} `json:"protocols"`
+		} `json:"info"`
+	}
+	if err := json.Unmarshal(body, &config); err != nil {
+		t.Fatalf("parse wails.json: %v", err)
+	}
+	schemes := map[string]bool{}
+	for _, protocol := range config.Info.Protocols {
+		schemes[strings.ToLower(strings.TrimSpace(protocol.Scheme))] = true
+	}
+	for _, want := range []string{"gt", "gt-dev"} {
+		if !schemes[want] {
+			t.Fatalf("wails.json protocols missing %q: %#v", want, schemes)
+		}
 	}
 }
 
