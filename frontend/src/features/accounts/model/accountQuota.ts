@@ -115,16 +115,43 @@ export function beginQuotaRefreshState(current?: CodexQuotaState): CodexQuotaSta
   return { status: 'loading' };
 }
 
-export function failQuotaRefreshState(current?: CodexQuotaState): CodexQuotaState {
+export function failQuotaRefreshState(current?: CodexQuotaState, error?: unknown): CodexQuotaState {
   if (current?.quota) {
+    const reason = quotaRefreshFailureReason(error);
+    const existingReason = String((current.quota as any).degradedReason || '').trim();
+    const degradedReason = reason
+      ? existingReason && !existingReason.includes(reason)
+        ? `${existingReason}; ${reason}`
+        : existingReason || reason
+      : existingReason;
+
     return {
       ...current,
       status: 'success',
       refreshing: false,
+      quota: {
+        ...current.quota,
+        status: 'stale',
+        stale: true,
+        degradedReason: degradedReason || 'Quota refresh failed.',
+      } as CodexQuota,
     };
   }
 
   return { status: 'error' };
+}
+
+function quotaRefreshFailureReason(error: unknown) {
+  if (error instanceof Error) {
+    return error.message.trim();
+  }
+  if (typeof error === 'string') {
+    return error.trim();
+  }
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String((error as { message?: unknown }).message || '').trim();
+  }
+  return '';
 }
 
 export function selectQuotaWindows(quota: CodexQuota) {

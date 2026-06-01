@@ -67,14 +67,16 @@ test('quota refresh falls back to full loading only before the first quota paylo
   });
 });
 
-test('failed quota refresh preserves the last successful quota payload', () => {
+test('failed quota refresh preserves the last successful quota payload and surfaces stale reason', () => {
   const refreshingState = beginQuotaRefreshState(quotaState);
-  const failedState = failQuotaRefreshState(refreshingState);
+  const failedState = failQuotaRefreshState(refreshingState, new Error('management api-call failed'));
   const quotaDisplay = buildQuotaDisplay(quotaAccount, failedState);
 
   assert.equal(failedState.status, 'success');
   assert.equal(failedState.refreshing, false);
   assert.equal(quotaDisplay.status, 'success');
+  assert.equal(quotaDisplay.stale, true);
+  assert.equal(quotaDisplay.degradedReason, 'management api-call failed');
   assert.deepEqual(
     quotaDisplay.windows.map((window) => [window.id, window.remainingPercent]),
     [

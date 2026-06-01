@@ -50,7 +50,7 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
             console.error(error);
             return [
               account.quotaKey!,
-              failQuotaRefreshState(cachedQuotaByName[account.quotaKey!]) satisfies CodexQuotaState,
+              failQuotaRefreshState(cachedQuotaByName[account.quotaKey!], error) satisfies CodexQuotaState,
             ] as const;
           }
         })
@@ -108,7 +108,7 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
         console.error(error);
         setCodexQuotaByName((prev) => ({
           ...prev,
-          [account.quotaKey!]: failQuotaRefreshState(prev[account.quotaKey!]),
+          [account.quotaKey!]: failQuotaRefreshState(prev[account.quotaKey!], error),
         }));
       }
     },
