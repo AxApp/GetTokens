@@ -66,14 +66,14 @@ export function buildCodexModelAliasOptionNames(mappings: CodexModelMappingRow[]
   const seen = new Set<string>();
   const names: string[] = [];
   for (const mapping of mappings || []) {
-    [mapping.codexModel, mapping.realModel].forEach((value) => {
-      const name = String(value || '').trim();
-      if (!name || seen.has(name)) {
-        return;
-      }
-      seen.add(name);
-      names.push(name);
-    });
+    const codexModel = String(mapping.codexModel || '').trim();
+    const realModel = String(mapping.realModel || '').trim();
+    const name = codexModel || realModel;
+    if (!name || seen.has(name)) {
+      continue;
+    }
+    seen.add(name);
+    names.push(name);
   }
   return names;
 }

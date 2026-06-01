@@ -266,7 +266,7 @@ export default function OpenAICompatibleDetailPanel({
                       }}
                       list="openai-compatible-remote-models"
                       className="input-swiss"
-                      placeholder={suggestedModels[0]?.name || 'deepseek-chat'}
+                      placeholder={suggestedModels[0]?.name || 'deepseek-v4-flash'}
                     />
                     <input
                       value={row.alias}
@@ -334,7 +334,7 @@ export default function OpenAICompatibleDetailPanel({
                   onChange={(event) => onChange({ ...draft, verifyModel: event.target.value })}
                   list="openai-compatible-remote-models"
                   className="input-swiss flex-1"
-                  placeholder={selectedPreset?.models[0]?.name || 'deepseek-chat'}
+                  placeholder={selectedPreset?.models[0]?.name || 'deepseek-v4-flash'}
                 />
                 <button
                   onClick={onVerify}

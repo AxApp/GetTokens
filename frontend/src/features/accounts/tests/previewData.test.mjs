@@ -71,6 +71,17 @@ test('accounts preview detail data covers api-key verification and auth-file met
   assert.ok(authModels.some((model) => model.display_name === 'GPT 5.4 Mini'));
 });
 
+test('accounts preview DeepSeek provider uses automatic v4 model names without aliases', () => {
+  const providers = getAccountsPreviewOpenAICompatibleProviders();
+  const deepseek = providers.find((provider) => provider.name === 'deepseek');
+
+  assert.ok(deepseek);
+  assert.deepEqual(deepseek.models, [
+    { alias: '', name: 'deepseek-v4-flash' },
+    { alias: '', name: 'deepseek-v4-pro' },
+  ]);
+});
+
 test('accounts preview inventory covers full account list states and providers', () => {
   const authRecords = getAccountsPreviewAuthFileRecords();
   const apiRecords = getAccountsPreviewAPIKeyRecords();

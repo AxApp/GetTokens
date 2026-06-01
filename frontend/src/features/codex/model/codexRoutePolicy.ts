@@ -57,29 +57,39 @@ export interface CodexRoutingProbeStreamLine {
 
 export const DEFAULT_CODEX_ROUTING_PROBE_MODEL = 'gpt-5.4';
 
-export function buildCodexRoutingProbeModelOptions(rows: Array<{ modelMappings: CodexModelMappingRow[] }>): string[] {
+export function buildCodexRoutingProbeModelOptions(
+  rows: Array<{ modelMappings: CodexModelMappingRow[] }>,
+  catalogMappings: CodexModelMappingRow[] = [],
+): string[] {
   const seen = new Set<string>();
   const names: string[] = [];
-  for (const row of rows || []) {
-    for (const mapping of row.modelMappings || []) {
-      [mapping.codexModel, mapping.realModel].forEach((value) => {
-        const name = String(value || '').trim();
-        if (!name || seen.has(name)) {
-          return;
-        }
-        seen.add(name);
-        names.push(name);
-      });
+  const append = (mappings: CodexModelMappingRow[]) => {
+    for (const mapping of mappings || []) {
+      const codexModel = String(mapping.codexModel || '').trim();
+      const realModel = String(mapping.realModel || '').trim();
+      const name = codexModel || realModel;
+      if (!name || seen.has(name)) {
+        continue;
+      }
+      seen.add(name);
+      names.push(name);
     }
+  };
+  for (const row of rows || []) {
+    append(row.modelMappings || []);
   }
+  append(catalogMappings);
   if (!seen.has(DEFAULT_CODEX_ROUTING_PROBE_MODEL)) {
     names.push(DEFAULT_CODEX_ROUTING_PROBE_MODEL);
   }
   return names;
 }
 
-export function resolveCodexRoutingProbeDefaultModel(rows: Array<{ modelMappings: CodexModelMappingRow[] }>) {
-  return buildCodexRoutingProbeModelOptions(rows)[0] || DEFAULT_CODEX_ROUTING_PROBE_MODEL;
+export function resolveCodexRoutingProbeDefaultModel(
+  rows: Array<{ modelMappings: CodexModelMappingRow[] }>,
+  catalogMappings: CodexModelMappingRow[] = [],
+) {
+  return buildCodexRoutingProbeModelOptions(rows, catalogMappings)[0] || DEFAULT_CODEX_ROUTING_PROBE_MODEL;
 }
 
 export function summarizeCodexRoutingProbeAttempt(attempt: CodexRoutingProbeAttemptView | null | undefined) {
