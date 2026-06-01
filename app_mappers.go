@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"strings"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 	"github.com/linhay/gettokens/internal/cliproxyapi"
@@ -130,109 +131,12 @@ func mapDeepLinkImportRequest(result wailsapp.DeepLinkImportRequest) DeepLinkImp
 	return DeepLinkImportRequest{
 		RawURL:      result.RawURL,
 		RedactedURL: result.RedactedURL,
-		Channel:     result.Channel,
-		Version:     result.Version,
-		Resource:    result.Resource,
-		Source:      result.Source,
-		Nonce:       result.Nonce,
-		Apply:       result.Apply,
-		Enabled:     result.Enabled,
-		Account:     mapDeepLinkAccountDraft(result.Account),
-		CodexConfig: mapDeepLinkCodexConfig(result.CodexConfig),
-		Documents:   mapDeepLinkDocumentPatches(result.Documents),
+		Protocol:    result.Protocol,
+		Schema:      result.Schema,
+		Source:      mapDeepLinkImportSource(result.Source),
+		Options:     mapDeepLinkImportOptions(result.Options),
+		Accounts:    mapDeepLinkImportAccounts(result.Accounts),
 	}
-}
-
-func mapDeepLinkAccountDraft(result *wailsapp.DeepLinkAccountDraft) *DeepLinkAccountDraft {
-	if result == nil {
-		return nil
-	}
-	return &DeepLinkAccountDraft{
-		AccountType:    result.AccountType,
-		Name:           result.Name,
-		Label:          result.Label,
-		APIKey:         result.APIKey,
-		APIKeys:        append([]string(nil), result.APIKeys...),
-		BaseURL:        result.BaseURL,
-		Prefix:         result.Prefix,
-		ProxyURL:       result.ProxyURL,
-		Models:         mapWailsOpenAICompatibleModels(result.Models),
-		FormatBaseURLs: cloneStringMap(result.FormatBaseURLs),
-		QuotaCurl:      result.QuotaCurl,
-		QuotaEnabled:   result.QuotaEnabled,
-		BillingCurl:    result.BillingCurl,
-		BillingEnabled: result.BillingEnabled,
-		AuthFileName:   result.AuthFileName,
-		AuthFileJSON:   result.AuthFileJSON,
-		Enabled:        result.Enabled,
-	}
-}
-
-func mapDeepLinkCodexConfig(result *wailsapp.DeepLinkCodexConfig) *DeepLinkCodexConfig {
-	if result == nil {
-		return nil
-	}
-	return &DeepLinkCodexConfig{
-		Mode:                  result.Mode,
-		AccountRef:            result.AccountRef,
-		Model:                 result.Model,
-		ModelSet:              result.ModelSet,
-		ReasoningEffort:       result.ReasoningEffort,
-		ReasoningEffortSet:    result.ReasoningEffortSet,
-		ProviderID:            result.ProviderID,
-		ProviderIDSet:         result.ProviderIDSet,
-		ProviderName:          result.ProviderName,
-		ProviderNameSet:       result.ProviderNameSet,
-		ProviderScope:         result.ProviderScope,
-		BaseURL:               result.BaseURL,
-		BaseURLSet:            result.BaseURLSet,
-		APIKey:                result.APIKey,
-		APIKeySet:             result.APIKeySet,
-		RequiresOpenAIAuth:    result.RequiresOpenAIAuth,
-		RequiresOpenAIAuthSet: result.RequiresOpenAIAuthSet,
-		WireAPI:               result.WireAPI,
-		WireAPISet:            result.WireAPISet,
-		SupportsWebsockets:    result.SupportsWebsockets,
-		SupportsWebsocketsSet: result.SupportsWebsocketsSet,
-		Apply:                 result.Apply,
-		AuthFileContentBase64: result.AuthFileContentBase64,
-		AuthFileContentSet:    result.AuthFileContentSet,
-	}
-}
-
-func mapDeepLinkDocumentPatches(items []wailsapp.DeepLinkDocumentPatch) []DeepLinkDocumentPatch {
-	if len(items) == 0 {
-		return nil
-	}
-	out := make([]DeepLinkDocumentPatch, 0, len(items))
-	for _, item := range items {
-		out = append(out, DeepLinkDocumentPatch{
-			Target:          item.Target,
-			Format:          item.Format,
-			Mode:            item.Mode,
-			Operations:      mapDeepLinkPatchOperations(item.Operations),
-			PreserveUnknown: item.PreserveUnknown,
-			Backup:          item.Backup,
-		})
-	}
-	return out
-}
-
-func mapDeepLinkPatchOperations(items []wailsapp.DeepLinkPatchOperation) []DeepLinkPatchOperation {
-	if len(items) == 0 {
-		return nil
-	}
-	out := make([]DeepLinkPatchOperation, 0, len(items))
-	for _, item := range items {
-		out = append(out, DeepLinkPatchOperation{
-			Op:            item.Op,
-			Path:          item.Path,
-			Value:         decodeRawJSONValue(item.Value),
-			ValueEncoding: item.ValueEncoding,
-			AllowCreate:   item.AllowCreate,
-		})
-	}
-	return out
 }
 
 func mapDeepLinkImportPreview(result *wailsapp.DeepLinkImportPreview) *DeepLinkImportPreview {
@@ -240,33 +144,12 @@ func mapDeepLinkImportPreview(result *wailsapp.DeepLinkImportPreview) *DeepLinkI
 		return nil
 	}
 	return &DeepLinkImportPreview{
-		Request:               mapDeepLinkImportRequest(result.Request),
-		RedactedURL:           result.RedactedURL,
-		Resource:              result.Resource,
-		Source:                result.Source,
-		AccountSummary:        mapDeepLinkAccountSummary(result.AccountSummary),
-		ProviderScope:         result.ProviderScope,
-		ProviderRewriteMode:   result.ProviderRewriteMode,
-		ProviderCompatibility: result.ProviderCompatibility,
-		EffectiveProviderID:   result.EffectiveProviderID,
-		EffectiveProviderName: result.EffectiveProviderName,
-		AuthJSONPreview:       result.AuthJSONPreview,
-		ConfigTomlPreview:     result.ConfigTomlPreview,
-		LocalApplyInput:       mapRelayLocalApplyInput(result.LocalApplyInput),
-		Warnings:              append([]string(nil), result.Warnings...),
-		BlockingWarnings:      append([]string(nil), result.BlockingWarnings...),
-	}
-}
-
-func mapDeepLinkAccountSummary(result *wailsapp.DeepLinkAccountSummary) *DeepLinkAccountSummary {
-	if result == nil {
-		return nil
-	}
-	return &DeepLinkAccountSummary{
-		AccountType:   result.AccountType,
-		Title:         result.Title,
-		BaseURL:       result.BaseURL,
-		APIKeyPreview: result.APIKeyPreview,
+		Protocol:    result.Protocol,
+		RedactedURL: result.RedactedURL,
+		Source:      mapDeepLinkImportSource(result.Source),
+		Accounts:    mapDeepLinkPreviewAccounts(result.Accounts),
+		Warnings:    append([]string(nil), result.Warnings...),
+		Blocking:    append([]string(nil), result.Blocking...),
 	}
 }
 
@@ -275,13 +158,135 @@ func mapDeepLinkApplyResult(result *wailsapp.DeepLinkApplyResult) *DeepLinkApply
 		return nil
 	}
 	return &DeepLinkApplyResult{
-		Status:             result.Status,
-		AccountApplied:     result.AccountApplied,
-		CodexConfigApplied: result.CodexConfigApplied,
-		AccountError:       result.AccountError,
-		CodexConfigError:   result.CodexConfigError,
-		LocalApplyResult:   mapRelayLocalApplyResult(result.LocalApplyResult),
+		Status:   result.Status,
+		Total:    result.Total,
+		Created:  result.Created,
+		Failed:   result.Failed,
+		Accounts: mapDeepLinkApplyAccounts(result.Accounts),
 	}
+}
+
+func mapDeepLinkImportSource(result wailsapp.DeepLinkImportSource) DeepLinkImportSource {
+	return DeepLinkImportSource{
+		Name: result.Name,
+		URL:  result.URL,
+	}
+}
+
+func mapDeepLinkImportOptions(result wailsapp.DeepLinkImportOptions) DeepLinkImportOptions {
+	return DeepLinkImportOptions{
+		ContinueOnError: result.ContinueOnError,
+	}
+}
+
+func mapDeepLinkImportAccounts(items []wailsapp.DeepLinkAccountImportItem) []DeepLinkAccountPreviewItem {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DeepLinkAccountPreviewItem, 0, len(items))
+	for _, item := range items {
+		out = append(out, mapDeepLinkWritePreview(item.Index, item.Ref, item.Write))
+	}
+	return out
+}
+
+func mapDeepLinkPreviewAccounts(items []wailsapp.DeepLinkAccountPreviewItem) []DeepLinkAccountPreviewItem {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DeepLinkAccountPreviewItem, 0, len(items))
+	for _, item := range items {
+		out = append(out, DeepLinkAccountPreviewItem{
+			Index:         item.Index,
+			Ref:           item.Ref,
+			Kind:          item.Kind,
+			Title:         item.Title,
+			Provider:      item.Provider,
+			BaseURL:       item.BaseURL,
+			APIKeyPreview: item.APIKeyPreview,
+			KeyCount:      item.KeyCount,
+			ModelCount:    item.ModelCount,
+			Disabled:      item.Disabled,
+			Warnings:      append([]string(nil), item.Warnings...),
+			Blocking:      append([]string(nil), item.Blocking...),
+		})
+	}
+	return out
+}
+
+func mapDeepLinkWritePreview(index int, ref string, write cliproxyapi.AccountWriteRequest) DeepLinkAccountPreviewItem {
+	item := DeepLinkAccountPreviewItem{
+		Index:    index,
+		Ref:      ref,
+		Kind:     string(write.Kind),
+		Title:    write.Title,
+		Provider: write.Provider,
+		Disabled: write.Disabled,
+	}
+	if write.CodexAPIKey != nil {
+		item.BaseURL = write.CodexAPIKey.BaseURL
+		item.APIKeyPreview = redactMappedSecret(write.CodexAPIKey.APIKey)
+		item.KeyCount = boolToMappedCount(write.CodexAPIKey.APIKey != "")
+		item.ModelCount = countMappedJSONArray(write.CodexAPIKey.ModelsJSON)
+	}
+	if write.OpenAICompatible != nil {
+		item.BaseURL = write.OpenAICompatible.BaseURL
+		item.KeyCount = countMappedJSONArray(write.OpenAICompatible.APIKeyEntriesJSON)
+		item.ModelCount = countMappedJSONArray(write.OpenAICompatible.ModelsJSON)
+	}
+	if write.AuthFile != nil {
+		item.KeyCount = boolToMappedCount(write.AuthFile.AuthJSON != "")
+	}
+	return item
+}
+
+func mapDeepLinkApplyAccounts(items []wailsapp.DeepLinkAccountApplyResultItem) []DeepLinkAccountApplyResultItem {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make([]DeepLinkAccountApplyResultItem, 0, len(items))
+	for _, item := range items {
+		out = append(out, DeepLinkAccountApplyResultItem{
+			Index:      item.Index,
+			Ref:        item.Ref,
+			Kind:       item.Kind,
+			Title:      item.Title,
+			AccountKey: item.AccountKey,
+			Status:     item.Status,
+			Error:      item.Error,
+		})
+	}
+	return out
+}
+
+func redactMappedSecret(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	if len(trimmed) <= 8 {
+		return "[REDACTED]"
+	}
+	return trimmed[:4] + strings.Repeat("*", 4) + trimmed[len(trimmed)-4:]
+}
+
+func countMappedJSONArray(rawJSON string) int {
+	trimmed := strings.TrimSpace(rawJSON)
+	if trimmed == "" {
+		return 0
+	}
+	var items []any
+	if err := json.Unmarshal([]byte(trimmed), &items); err != nil {
+		return 0
+	}
+	return len(items)
+}
+
+func boolToMappedCount(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
 }
 
 func mapWailsOpenAICompatibleModels(items []wailsapp.OpenAICompatibleModel) []OpenAICompatibleModel {
@@ -340,17 +345,6 @@ func mapRelayLocalApplyResult(result *wailsapp.RelayLocalApplyResult) *RelayLoca
 		AuthFilePath:  result.AuthFilePath,
 		ConfigPath:    result.ConfigPath,
 	}
-}
-
-func decodeRawJSONValue(value json.RawMessage) interface{} {
-	if len(value) == 0 {
-		return nil
-	}
-	var out interface{}
-	if err := json.Unmarshal(value, &out); err != nil {
-		return string(value)
-	}
-	return out
 }
 
 func cloneStringMap(items map[string]string) map[string]string {

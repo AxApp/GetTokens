@@ -13,8 +13,13 @@
   "info": {
     "protocols": [
       {
-        "scheme": "gettokens",
+        "scheme": "gt",
         "description": "GetTokens deep link import",
+        "role": "Viewer"
+      },
+      {
+        "scheme": "gt-dev",
+        "description": "GetTokens dev deep link import",
         "role": "Viewer"
       }
     ]

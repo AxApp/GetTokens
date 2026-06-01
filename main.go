@@ -109,7 +109,8 @@ func consumeDeepLinkArgs(args []string) ([]string, []string) {
 	filtered := make([]string, 0, len(args))
 	links := make([]string, 0)
 	for _, arg := range args {
-		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(arg)), "gettokens://") {
+		trimmedArg := strings.ToLower(strings.TrimSpace(arg))
+		if strings.HasPrefix(trimmedArg, "gt://") || strings.HasPrefix(trimmedArg, "gt-dev://") {
 			links = append(links, arg)
 			continue
 		}

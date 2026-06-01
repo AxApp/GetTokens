@@ -162,7 +162,8 @@ func filterDeepLinkURLs(values []string) []string {
 	links := make([]string, 0, len(values))
 	for _, value := range values {
 		trimmed := strings.TrimSpace(value)
-		if strings.HasPrefix(strings.ToLower(trimmed), "gettokens://") {
+		normalized := strings.ToLower(trimmed)
+		if strings.HasPrefix(normalized, "gt://") || strings.HasPrefix(normalized, "gt-dev://") {
 			links = append(links, trimmed)
 		}
 	}

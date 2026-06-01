@@ -25,7 +25,7 @@ import { useI18n } from '../../context/I18nContext';
 import AccountCardSkeleton from './components/AccountCardSkeleton';
 import AccountImportModal from './components/AccountImportModal';
 import AccountLocalCliApplyConfirm from './components/AccountLocalCliApplyConfirm';
-import DeepLinkCodexApplyAdapter from './components/DeepLinkCodexApplyAdapter';
+import DeepLinkAccountImportConfirm from './components/DeepLinkAccountImportConfirm';
 import AccountGroupSection from './components/AccountGroupSection';
 import AccountsHeader from './components/AccountsHeader';
 import AccountsToolbar, { AccountsSelectionActions } from './components/AccountsToolbar';
@@ -190,7 +190,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const [isApplyingLocalCli, setIsApplyingLocalCli] = useState(false);
   const [deepLinkRawURL, setDeepLinkRawURL] = useState('');
   const [deepLinkPreview, setDeepLinkPreview] = useState<main.DeepLinkImportPreview | null>(null);
-  const [deepLinkDraft, setDeepLinkDraft] = useState<AccountCliApplyDraft | null>(null);
+  const [deepLinkResult, setDeepLinkResult] = useState<main.DeepLinkApplyResult | null>(null);
   const [deepLinkApplyMessage, setDeepLinkApplyMessage] = useState('');
   const [isApplyingDeepLink, setIsApplyingDeepLink] = useState(false);
   const [accountDetailIDFromHash, setAccountDetailIDFromHash] = useState(() => readAccountDetailIDFromHash());
@@ -341,28 +341,13 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     try {
       const preview = await trackRequest(
         'PreviewDeepLinkImport',
-        { redactedURL: normalizedURL.replace(/(apiKey=)[^&]+/i, '$1[REDACTED]') },
+        { redactedURL: normalizedURL.replace(/(payload=)[^&]+/i, '$1[REDACTED]') },
         () => PreviewDeepLinkImport(normalizedURL),
       );
-      if (preview.resource === 'account') {
-        const items = buildDeepLinkAccountImportItems(preview.request.account);
-        if (!items.length) {
-          setAccountActionNotice({
-            tone: 'warning',
-            message: '已解析 Codex 账号 deep link，但当前账号类型需要后端专用确认页，本次未写入。',
-          });
-          return;
-        }
-        setInitialImportItems(items);
-        setIsAccountImportModalOpen(true);
-        setDeepLinkApplyMessage('');
-        return;
-      }
-      const draft = buildDeepLinkCodexApplyDraft(preview);
       setDeepLinkRawURL(normalizedURL);
       setDeepLinkPreview(preview);
-      setDeepLinkDraft(draft);
-      setDeepLinkApplyMessage(preview.blockingWarnings?.[0] || 'Deep link 已转换为 Codex local apply 草稿，等待确认。');
+      setDeepLinkResult(null);
+      setDeepLinkApplyMessage('');
     } catch (error) {
       console.error(error);
       setAccountActionNotice({
@@ -866,60 +851,34 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     }
   }
 
-  async function applyDeepLinkDraft(draft: AccountCliApplyDraft, accountOnly = false) {
+  async function applyDeepLinkImport() {
     if (previewMode) {
-      setDeepLinkApplyMessage('PREVIEW ONLY / deep link 草稿已确认，未调用 Wails 写入。');
+      setDeepLinkApplyMessage('PREVIEW ONLY / deep link 账号导入已确认，未调用 Wails 写入。');
       return;
     }
     if (!deepLinkRawURL) {
       setDeepLinkApplyMessage('缺少 deep link 原始 URL，不能应用。');
       return;
     }
-    const blockingWarning = draft.source.warnings.find((warning) => warning.severity === 'blocking');
-    if (blockingWarning && !accountOnly) {
-      setDeepLinkApplyMessage(blockingWarning.message);
-      return;
-    }
     setIsApplyingDeepLink(true);
     try {
-      if (accountOnly) {
-        const result = await trackRequest(
-          'ApplyDeepLinkImport',
-          { redactedURL: deepLinkPreview?.redactedURL || '[REDACTED]', accountOnly: true },
-          () => ApplyDeepLinkImport(buildDeepLinkAccountOnlyURL(deepLinkRawURL)),
-        );
-        if (result.accountApplied) {
-          setDeepLinkApplyMessage('已按 deep link 导入账号，未写入 Codex 配置。');
-          await loadAccounts();
-        } else {
-          setDeepLinkApplyMessage(`账号导入失败：${result.accountError || '未知错误'}`);
-        }
-        return;
-      }
       const result = await trackRequest(
         'ApplyDeepLinkImport',
         { redactedURL: deepLinkPreview?.redactedURL || '[REDACTED]' },
         () => ApplyDeepLinkImport(deepLinkRawURL),
       );
+      setDeepLinkResult(result);
       if (result.status === 'partial') {
-        setDeepLinkApplyMessage(`部分完成：${result.codexConfigError || result.accountError || 'Codex 配置未应用'}`);
+        setDeepLinkApplyMessage(`部分导入：成功 ${result.created || 0} 个，失败 ${result.failed || 0} 个。`);
       } else if (result.status === 'failed') {
-        setDeepLinkApplyMessage(`应用失败：${result.codexConfigError || result.accountError || '未知错误'}`);
+        setDeepLinkApplyMessage(`导入失败：${result.failed || 0} 个账号未写入。`);
       } else {
-        setDeepLinkApplyMessage(`已应用 deep link：${result.localApplyResult?.configPath || result.status}`);
+        setDeepLinkApplyMessage(`已导入 ${result.created || 0} 个账号。`);
         await loadAccounts();
-        try {
-          const providerState = await trackRequest('GetLocalCodexModelProviderStateView', { args: [] }, () =>
-            GetLocalCodexModelProviderStateView()
-          );
-          setLocalCodexProviderState(providerState);
-        } catch (refreshError) {
-          console.error(refreshError);
-        }
       }
     } catch (error) {
       console.error(error);
-      setDeepLinkApplyMessage(`应用失败：${toErrorMessage(error)}`);
+      setDeepLinkApplyMessage(`导入失败：${toErrorMessage(error)}`);
     } finally {
       setIsApplyingDeepLink(false);
     }
@@ -1291,160 +1250,26 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         />
       ) : null}
 
-      {deepLinkDraft && deepLinkPreview ? (
-        <DeepLinkCodexApplyAdapter
-          draft={deepLinkDraft as Extract<AccountCliApplyDraft, { target: 'codex' }>}
-          relayKeyItems={relayKeyItems}
-          context={{
-            source: deepLinkPreview.source || 'DEEP LINK',
-            resource: deepLinkPreview.resource === 'codex-setup' ? 'codex-setup' : 'codex-config',
-            providerScope: deepLinkPreview.providerScope === 'create-new' ? 'create-new' : 'current-active',
-            providerRewriteMode: deepLinkPreview.providerRewriteMode as 'keep-current' | 'patch-current' | 'create-new' | undefined,
-            providerCompatibility: deepLinkPreview.providerCompatibility as 'compatible' | 'blocked_builtin_openai' | 'missing_chatgpt_auth' | 'missing_provider_section' | undefined,
-            redactedURL: deepLinkPreview.redactedURL,
-            accountDraft: deepLinkPreview.accountSummary
-              ? {
-                  accountType: deepLinkPreview.accountSummary.accountType,
-                  title: deepLinkPreview.accountSummary.title,
-                  baseUrl: deepLinkPreview.accountSummary.baseUrl,
-                  apiKeyPreview: deepLinkPreview.accountSummary.apiKeyPreview,
-                }
-              : undefined,
-          }}
+      {deepLinkPreview ? (
+        <DeepLinkAccountImportConfirm
+          preview={deepLinkPreview}
+          result={deepLinkResult}
           applying={isApplyingDeepLink}
           resultMessage={deepLinkApplyMessage}
           previewMode={previewMode}
           onClose={() => {
             setDeepLinkRawURL('');
             setDeepLinkPreview(null);
-            setDeepLinkDraft(null);
+            setDeepLinkResult(null);
             setDeepLinkApplyMessage('');
           }}
-          onDraftChange={(nextDraft) => {
-            setDeepLinkDraft(nextDraft);
-            setDeepLinkApplyMessage('');
-          }}
-          onApply={(draft) => void applyDeepLinkDraft(draft)}
-          onImportAccountOnly={() => {
-            if (deepLinkDraft) void applyDeepLinkDraft(deepLinkDraft, true);
-          }}
+          onApply={() => void applyDeepLinkImport()}
         />
       ) : null}
         </div>
       </div>
     </>
   );
-}
-
-function buildDeepLinkCodexApplyDraft(preview: main.DeepLinkImportPreview): Extract<AccountCliApplyDraft, { target: 'codex' }> {
-  const input = preview.localApplyInput || main.RelayLocalApplyInput.createFrom({});
-  const accountTitle = preview.accountSummary?.title || preview.source || 'Deep Link Codex Config';
-  const warnings = [
-    ...(preview.warnings || []).map((message) => ({
-      code: 'current-provider-missing' as const,
-      severity: 'warning' as const,
-      message,
-    })),
-    ...(preview.blockingWarnings || []).map((message) => ({
-      code: 'preserve-chatgpt-auth-missing-local-auth' as const,
-      severity: 'blocking' as const,
-      message,
-    })),
-  ];
-  const source = {
-    id: `deeplink:${preview.resource || 'codex-config'}`,
-    accountID: preview.accountSummary?.accountType || 'deeplink:codex-config',
-    accountTitle,
-    templateID: 'deeplink-codex-config',
-    templateName: 'Deep Link Codex Config',
-    target: 'codex' as const,
-    status: preview.blockingWarnings?.length ? 'blocked-account' as const : 'ready' as const,
-    enabled: !(preview.blockingWarnings?.length),
-    disabledReason: preview.blockingWarnings?.[0] || '',
-    sourceFormat: 'openai_responses' as const,
-    sourceFormatBaseUrl: input.baseURL || '',
-    relayEndpointID: 'deeplink',
-    relayBaseUrl: input.baseURL || '',
-    relayKeyIndex: 0,
-    relayKeyLabel: 'Deep Link',
-    modelCandidates: [input.model || 'gpt-5-codex'],
-    warnings,
-  };
-  return {
-    target: 'codex',
-    source,
-    codex: {
-      relayKeyIndex: 0,
-      endpointID: 'deeplink',
-      apiKey: input.apiKey || '',
-      apiKeySet: Boolean(input.apiKeySet),
-      authFileContentSet: Boolean(input.authFileContentSet),
-      baseUrl: input.baseURL || '',
-      baseUrlSet: Boolean(input.baseURLSet),
-      model: input.model || 'gpt-5-codex',
-      modelSet: Boolean(input.modelSet),
-      providerID: input.providerID || preview.effectiveProviderID || 'gettokens',
-      providerIDSet: Boolean(input.providerIDSet),
-      providerName: input.providerName || preview.effectiveProviderName || input.providerID || 'GetTokens',
-      providerNameSet: Boolean(input.providerNameSet),
-      reasoningEffort: input.reasoningEffort || 'high',
-      reasoningEffortSet: Boolean(input.reasoningEffortSet),
-      requiresOpenAIAuth: input.requiresOpenAIAuth ?? true,
-      requiresOpenAIAuthSet: Boolean(input.requiresOpenAIAuthSet),
-      wireAPI: input.wireAPI || 'responses',
-      wireAPISet: Boolean(input.wireAPISet),
-      supportsWebsockets: Boolean(input.supportsWebsockets),
-      supportsWebsocketsSet: Boolean(input.supportsWebsocketsSet),
-      authStrategy: (input.authStrategy || 'replace_auth_with_apikey') as Extract<AccountCliApplyDraft, { target: 'codex' }>['codex']['authStrategy'],
-    },
-  };
-}
-
-function buildDeepLinkAccountOnlyURL(rawURL: string) {
-  const parsed = new URL(rawURL);
-  parsed.searchParams.set('resource', 'account');
-  parsed.searchParams.delete('apply');
-  return parsed.toString();
-}
-
-function buildDeepLinkAccountImportItems(account?: main.DeepLinkAccountDraft): AccountImportPayloadItem[] {
-  if (!account) {
-    return [];
-  }
-  if (account.accountType === 'codex-api-key') {
-    return [{
-      type: 'codex-api-key',
-      label: account.label || account.name || 'Deep Link Codex API Key',
-      apiKey: account.apiKey || '',
-      baseUrl: account.baseUrl || '',
-      prefix: account.prefix || '',
-    }];
-  }
-  if (account.accountType === 'openai-compatible') {
-    return [{
-      type: 'openai-compatible',
-      name: account.name || account.label || 'openai-compatible',
-      apiKey: account.apiKey || account.apiKeys?.[0] || '',
-      apiKeys: account.apiKeys || [],
-      baseUrl: account.baseUrl || '',
-      prefix: account.prefix || '',
-      proxyUrl: account.proxyUrl || '',
-      headers: {},
-      models: (account.models || []).map((model) => ({
-        name: model.name,
-        alias: model.alias,
-      })),
-    }];
-  }
-  if (account.accountType === 'auth-file' && account.authFileJSON) {
-    const name = account.authFileName || account.name || account.label || 'deep-link-auth.json';
-    return [{
-      type: 'auth-file',
-      name: name.endsWith('.json') ? name : `${name}.json`,
-      content: account.authFileJSON,
-    }];
-  }
-  return [];
 }
 
 function readInitialDisplayMode(): AccountListDisplayMode {

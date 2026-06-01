@@ -84,6 +84,31 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - `typecheck` and `build` after the binding or shared frontend surface changes.
   - `storyCatalog` / manifest tests that prove the component is admitted instead of being a one-off inline block.
 
+### 1.4 macOS Deep Link Scheme & Smoke Loop
+- **When to use**:
+  - A Wails feature adds, removes, or renames a custom URL scheme.
+  - Parser behavior changes for desktop deep links, including dev-only aliases such as `gt-dev://`.
+  - The feature depends on macOS LaunchServices handing a URL to GetTokens.
+- **Scheme contract**:
+  - Parser support is not enough. The scheme must also be registered in `wails.json`, then verified in the built `.app` `Info.plist`.
+  - Add or update a root-level test that reads `wails.json` and asserts every supported production and dev scheme is registered.
+  - Keep production and dev schemes semantically identical unless the feature explicitly requires a different payload contract.
+  - Dev-only schemes are for local isolation and smoke testing. Product docs and external links should continue to use the production scheme.
+- **Entry contract**:
+  - Initial process arguments and `SingleInstanceLock` second-instance arguments must filter every supported scheme before Wails parses flags.
+  - Preserve the original URL string for frontend/event consumption, but normalize only for matching and validation.
+- **Smoke contract**:
+  - After `./scripts/wails-cli.sh build`, inspect `build/bin/GetTokens.app/Contents/Info.plist` for `CFBundleURLTypes`.
+  - If using `open <scheme>://...`, first register the intended `.app` with LaunchServices. If another installed or dev build receives the URL, report that as a LaunchServices registration conflict instead of claiming current-build UI smoke.
+  - Use `open -g` when possible so routine smoke does not steal focus.
+  - Do not kill existing prod/dev GetTokens processes just to force scheme ownership unless the user explicitly approves that desktop interruption.
+- **Acceptance checklist**:
+  - Focused parser tests for every supported scheme.
+  - Startup/single-instance argument filtering tests.
+  - `wails.json` registration test.
+  - `./scripts/wails-cli.sh build` and built `Info.plist` inspection.
+  - Real desktop URL handoff only counts as complete when the intended build receives the URL.
+
 ## 2. Space Governance (`docs-linhay/spaces/`)
 - **Structure**: Each space must have `README.md`, `plans/`, `screenshots/`, and `debate/`.
 - **Naming**: Use English slugs. Prefer `YYYYMMDD-<topic>` for short tasks or stable feature names for milestones.

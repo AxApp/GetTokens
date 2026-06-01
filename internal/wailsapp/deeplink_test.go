@@ -2,390 +2,472 @@ package wailsapp
 
 import (
 	"encoding/base64"
-	"os"
-	"path/filepath"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/url"
 	"strings"
 	"testing"
+
+	accountsdomain "github.com/linhay/gettokens/internal/accounts"
+	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
-func TestParseDeepLinkImportMergesConfigAndQueryWins(t *testing.T) {
-	config := encodeDeepLinkTestConfig(`{
-		"account": {
-			"accountType": "codex-api-key",
-			"label": "Config Label",
-			"apiKey": "sk-config",
-			"baseUrl": "https://config.example.com/v1"
+func TestParseDeepLinkImportPayloadSupportsMultipleAccounts(t *testing.T) {
+	rawURL := buildDeepLinkTestURL(`{
+		"schema": "gettokens.import.v1",
+		"source": {
+			"name": "team-doc",
+			"url": "https://example.com/setup"
 		},
-		"codexConfig": {
-			"mode": "api-key",
-			"providerScope": "create-new",
-			"providerID": "config-provider",
-			"model": "gpt-5-codex"
-		}
-	}`)
-
-	request, err := ParseDeepLinkImportURL("gettokens://v1/import?channel=codex&resource=codex-setup&source=cc-switch&config=" + config + "&label=Query%20Label&providerScope=current-active&providerID=query-provider&baseUrl=https%3A%2F%2Fquery.example.com%2Fv1")
-	if err != nil {
-		t.Fatalf("ParseDeepLinkImportURL returned error: %v", err)
-	}
-
-	if request.Channel != "codex" {
-		t.Fatalf("Channel = %q, want codex", request.Channel)
-	}
-	if request.Version != "v1" {
-		t.Fatalf("Version = %q, want v1", request.Version)
-	}
-	if request.Resource != "codex-setup" {
-		t.Fatalf("Resource = %q, want codex-setup", request.Resource)
-	}
-	if request.Source != "cc-switch" {
-		t.Fatalf("Source = %q, want cc-switch", request.Source)
-	}
-	if request.Account == nil {
-		t.Fatalf("expected account draft")
-	}
-	if request.Account.Label != "Query Label" {
-		t.Fatalf("Account.Label = %q, want Query Label", request.Account.Label)
-	}
-	if request.Account.BaseURL != "https://query.example.com/v1" {
-		t.Fatalf("Account.BaseURL = %q, want query override", request.Account.BaseURL)
-	}
-	if request.CodexConfig == nil {
-		t.Fatalf("expected codex config draft")
-	}
-	if request.CodexConfig.ProviderScope != "current-active" {
-		t.Fatalf("ProviderScope = %q, want current-active", request.CodexConfig.ProviderScope)
-	}
-	if request.CodexConfig.ProviderID != "query-provider" {
-		t.Fatalf("ProviderID = %q, want query-provider", request.CodexConfig.ProviderID)
-	}
-}
-
-func TestParseDeepLinkImportRejectsUnsupportedFieldsAndNonCodexChannel(t *testing.T) {
-	cases := []string{
-		"gettokens://v1/import?channel=claude&resource=account",
-		"gettokens://v1/import?channel=codex&resource=account&configUrl=https%3A%2F%2Fexample.com%2Fconfig.json",
-		"gettokens://v1/import?channel=codex&resource=account&usageScript=curl%20example.com",
-		"gettokens://v1/import?channel=codex&resource=account&accountType=openai-compatible&headers.Authorization=Bearer%20secret",
-	}
-
-	for _, rawURL := range cases {
-		if _, err := ParseDeepLinkImportURL(rawURL); err == nil {
-			t.Fatalf("ParseDeepLinkImportURL(%q) expected error", rawURL)
-		}
-	}
-}
-
-func TestParseDeepLinkImportAuthFileBuildsAuthJSONFromDocuments(t *testing.T) {
-	config := encodeDeepLinkTestConfig(`{
-		"documents": [
+		"accounts": [
 			{
-				"target": "auth.json",
-				"format": "json",
-				"mode": "merge",
-				"operations": [
-					{ "op": "set", "path": "/auth_mode", "value": "chatgpt" },
-					{ "op": "set", "path": "/tokens/access_token", "value": "access-secret" },
-					{ "op": "set", "path": "/user/email", "value": "team@example.com" }
-				]
-			}
-		]
-	}`)
-
-	request, err := ParseDeepLinkImportURL("gettokens://v1/import?channel=codex&resource=account&accountType=auth-file&name=team-codex-auth.json&config=" + config)
-	if err != nil {
-		t.Fatalf("ParseDeepLinkImportURL returned error: %v", err)
-	}
-
-	if request.Account == nil {
-		t.Fatalf("expected account draft")
-	}
-	if request.Account.AccountType != "auth-file" {
-		t.Fatalf("AccountType = %q, want auth-file", request.Account.AccountType)
-	}
-	if request.Account.Name != "team-codex-auth.json" {
-		t.Fatalf("Name = %q, want team-codex-auth.json", request.Account.Name)
-	}
-	if !strings.Contains(request.Account.AuthFileJSON, `"auth_mode": "chatgpt"`) {
-		t.Fatalf("AuthFileJSON missing auth_mode: %s", request.Account.AuthFileJSON)
-	}
-	if !strings.Contains(request.Account.AuthFileJSON, `"email": "team@example.com"`) {
-		t.Fatalf("AuthFileJSON missing email: %s", request.Account.AuthFileJSON)
-	}
-}
-
-func TestPreviewDeepLinkImportBuildsCodexConfigFromDocuments(t *testing.T) {
-	codexHome := filepath.Join(t.TempDir(), ".codex")
-	t.Setenv("CODEX_HOME", codexHome)
-	t.Setenv("HOME", t.TempDir())
-	if err := os.MkdirAll(codexHome, 0700); err != nil {
-		t.Fatalf("MkdirAll: %v", err)
-	}
-	existingConfig := strings.Join([]string{
-		`model_provider = "legacy-relay"`,
-		``,
-		`[model_providers.legacy-relay]`,
-		`name = "Legacy Relay"`,
-		`base_url = "https://legacy.example.com/v1"`,
-	}, "\n") + "\n"
-	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(existingConfig), 0600); err != nil {
-		t.Fatalf("WriteFile config.toml: %v", err)
-	}
-	config := encodeDeepLinkTestConfig(`{
-		"codexConfig": {
-			"providerScope": "current-active"
-		},
-		"documents": [
-			{
-				"target": "auth.json",
-				"format": "json",
-				"mode": "merge",
-				"operations": [
-					{ "op": "set", "path": "/auth_mode", "value": "apikey" },
-					{ "op": "set", "path": "/OPENAI_API_KEY", "value": "sk-documents-secret" }
-				]
+				"ref": "team-relay",
+				"kind": "codex-api-key",
+				"title": "Team Relay",
+				"provider": "codex",
+				"disabled": false,
+				"codex_api_key": {
+					"api_key": "sk-team-relay",
+					"base_url": "https://relay.example.com/v1",
+					"websockets": false,
+					"models_json": "[{\"name\":\"gpt-5-codex\",\"alias\":\"gpt-5-codex\"}]"
+				}
 			},
 			{
-				"target": "config.toml",
-				"format": "toml",
-				"mode": "patch",
-				"operations": [
-					{ "op": "set", "path": "model", "value": "gpt-5-codex" },
-					{ "op": "set", "path": "model_reasoning_effort", "value": "high" },
-					{ "op": "set", "path": "model_provider", "value": "team-relay" },
-					{ "op": "set", "path": "model_providers.team-relay.name", "value": "Team Relay" },
-					{ "op": "set", "path": "model_providers.team-relay.base_url", "value": "https://relay.example.com/v1" },
-					{ "op": "set", "path": "model_providers.team-relay.requires_openai_auth", "value": false },
-					{ "op": "set", "path": "model_providers.team-relay.wire_api", "value": "chat_completions" },
-					{ "op": "set", "path": "model_providers.team-relay.supports_websockets", "value": false }
-				]
+				"ref": "deepseek",
+				"kind": "openai-compatible",
+				"title": "DeepSeek",
+				"provider": "deepseek",
+				"openai_compatible": {
+					"provider_name": "deepseek",
+					"base_url": "https://api.deepseek.com/v1",
+					"api_key_entries_json": "[{\"api-key\":\"sk-deepseek\"}]",
+					"models_json": "[{\"name\":\"deepseek-chat\",\"alias\":\"deepseek-chat\"}]"
+				}
 			}
 		]
 	}`)
 
-	preview, err := PreviewDeepLinkImportURL("gettokens://v1/import?channel=codex&resource=codex-config&config=" + config)
+	request, err := ParseDeepLinkImportURL(rawURL)
 	if err != nil {
-		t.Fatalf("PreviewDeepLinkImportURL returned error: %v", err)
+		t.Fatalf("ParseDeepLinkImportURL returned error: %v", err)
 	}
 
-	if preview.LocalApplyInput == nil {
-		t.Fatalf("expected local apply input")
+	if request.Protocol != "gt" {
+		t.Fatalf("Protocol = %q, want gt", request.Protocol)
 	}
-	if preview.LocalApplyInput.APIKey != redactSecret("sk-documents-secret") {
-		t.Fatalf("APIKey preview = %q, want redacted document secret", preview.LocalApplyInput.APIKey)
+	if request.Schema != "gettokens.import.v1" {
+		t.Fatalf("Schema = %q, want gettokens.import.v1", request.Schema)
 	}
-	if preview.LocalApplyInput.ProviderID != "team-relay" {
-		t.Fatalf("ProviderID = %q, want team-relay", preview.LocalApplyInput.ProviderID)
+	if request.Source.Name != "team-doc" || request.Source.URL != "https://example.com/setup" {
+		t.Fatalf("unexpected source: %#v", request.Source)
 	}
-	if preview.LocalApplyInput.SupportsWebsockets {
-		t.Fatalf("SupportsWebsockets = true, want explicit false from documents")
+	if len(request.Accounts) != 2 {
+		t.Fatalf("account count = %d, want 2", len(request.Accounts))
 	}
-	if !preview.LocalApplyInput.SupportsWebsocketsSet {
-		t.Fatalf("SupportsWebsocketsSet = false, want true when documents include supports_websockets")
+	if request.Accounts[0].Ref != "team-relay" || request.Accounts[0].Write.Kind != cliproxyapi.AccountKindCodexAPIKey {
+		t.Fatalf("unexpected first account: %#v", request.Accounts[0])
 	}
-	if preview.EffectiveProviderID != "legacy-relay" {
-		t.Fatalf("EffectiveProviderID = %q, want legacy-relay", preview.EffectiveProviderID)
+	if request.Accounts[0].Write.CodexAPIKey == nil || request.Accounts[0].Write.CodexAPIKey.APIKey != "sk-team-relay" {
+		t.Fatalf("first account missing codex api key: %#v", request.Accounts[0].Write)
 	}
-	if preview.ProviderRewriteMode != "patch-current" {
-		t.Fatalf("ProviderRewriteMode = %q, want patch-current", preview.ProviderRewriteMode)
+	if request.Accounts[1].Write.OpenAICompatible == nil || request.Accounts[1].Write.OpenAICompatible.ProviderName != "deepseek" {
+		t.Fatalf("second account missing openai compatible credential: %#v", request.Accounts[1].Write)
 	}
-	if !strings.Contains(preview.ConfigTomlPreview, `model = "gpt-5-codex"`) {
-		t.Fatalf("ConfigTomlPreview missing model from documents:\n%s", preview.ConfigTomlPreview)
-	}
-	if strings.Contains(preview.ConfigTomlPreview, `model_provider = "team-relay"`) {
-		t.Fatalf("ConfigTomlPreview must preserve active model_provider:\n%s", preview.ConfigTomlPreview)
-	}
-	if !strings.Contains(preview.ConfigTomlPreview, `[model_providers.legacy-relay]`) {
-		t.Fatalf("ConfigTomlPreview should patch current provider section:\n%s", preview.ConfigTomlPreview)
-	}
-	if !strings.Contains(preview.ConfigTomlPreview, `supports_websockets = false`) {
-		t.Fatalf("ConfigTomlPreview should explicitly write supports_websockets=false when provided:\n%s", preview.ConfigTomlPreview)
-	}
-	if !strings.Contains(preview.ConfigTomlPreview, `requires_openai_auth = false`) {
-		t.Fatalf("ConfigTomlPreview should explicitly write requires_openai_auth=false when provided:\n%s", preview.ConfigTomlPreview)
-	}
-	if !strings.Contains(preview.ConfigTomlPreview, `wire_api = "chat_completions"`) {
-		t.Fatalf("ConfigTomlPreview should explicitly write wire_api from documents:\n%s", preview.ConfigTomlPreview)
-	}
-	if strings.Contains(preview.AuthJSONPreview, "sk-documents-secret") {
-		t.Fatalf("AuthJSONPreview leaked document secret:\n%s", preview.AuthJSONPreview)
+	if strings.Contains(request.RedactedURL, "sk-team-relay") || !strings.Contains(request.RedactedURL, "payload=%5BREDACTED%5D") {
+		t.Fatalf("redacted URL leaked payload: %s", request.RedactedURL)
 	}
 }
 
-func TestPreviewDeepLinkImportPreservesUnspecifiedConfigTomlFields(t *testing.T) {
-	codexHome := filepath.Join(t.TempDir(), ".codex")
-	t.Setenv("CODEX_HOME", codexHome)
-	t.Setenv("HOME", t.TempDir())
-	if err := os.MkdirAll(codexHome, 0700); err != nil {
-		t.Fatalf("MkdirAll: %v", err)
-	}
-	existingConfig := strings.Join([]string{
-		`model = "old-model"`,
-		`model_reasoning_effort = "low"`,
-		`model_provider = "legacy-relay"`,
-		``,
-		`[model_providers.legacy-relay]`,
-		`name = "Legacy Relay"`,
-		`base_url = "https://legacy.example.com/v1"`,
-		`requires_openai_auth = false`,
-		`wire_api = "chat_completions"`,
-		`supports_websockets = true`,
-	}, "\n") + "\n"
-	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(existingConfig), 0600); err != nil {
-		t.Fatalf("WriteFile config.toml: %v", err)
-	}
+func TestParseDeepLinkImportPayloadSupportsDevScheme(t *testing.T) {
+	rawURL := strings.Replace(buildDeepLinkTestURL(`{
+		"schema": "gettokens.import.v1",
+		"accounts": [
+			{
+				"ref": "team-relay",
+				"kind": "codex-api-key",
+				"title": "Team Relay",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-team-relay",
+					"base_url": "https://relay.example.com/v1"
+				}
+			}
+		]
+	}`), "gt://", "gt-dev://", 1)
 
-	preview, err := PreviewDeepLinkImportURL("gettokens://v1/import?channel=codex&resource=codex-config&mode=api-key&providerScope=current-active")
+	request, err := ParseDeepLinkImportURL(rawURL)
 	if err != nil {
-		t.Fatalf("PreviewDeepLinkImportURL returned error: %v", err)
+		t.Fatalf("ParseDeepLinkImportURL returned error: %v", err)
 	}
-
-	if preview.LocalApplyInput == nil {
-		t.Fatalf("expected local apply input")
+	if request.Protocol != "gt-dev" {
+		t.Fatalf("Protocol = %q, want gt-dev", request.Protocol)
 	}
-	if preview.LocalApplyInput.SupportsWebsocketsSet {
-		t.Fatalf("SupportsWebsocketsSet = true, want false when supportsWebsockets is omitted")
-	}
-	if preview.LocalApplyInput.ModelSet || preview.LocalApplyInput.ReasoningEffortSet || preview.LocalApplyInput.BaseURLSet || preview.LocalApplyInput.ProviderNameSet || preview.LocalApplyInput.RequiresOpenAIAuthSet || preview.LocalApplyInput.WireAPISet {
-		t.Fatalf("unspecified fields should remain unset in local apply input: %#v", preview.LocalApplyInput)
-	}
-	for _, want := range []string{
-		`model = "old-model"`,
-		`model_reasoning_effort = "low"`,
-		`name = "Legacy Relay"`,
-		`base_url = "https://legacy.example.com/v1"`,
-		`requires_openai_auth = false`,
-		`wire_api = "chat_completions"`,
-	} {
-		if !strings.Contains(preview.ConfigTomlPreview, want) {
-			t.Fatalf("ConfigTomlPreview should preserve %s when omitted:\n%s", want, preview.ConfigTomlPreview)
-		}
-	}
-	if !strings.Contains(preview.ConfigTomlPreview, `supports_websockets = true`) {
-		t.Fatalf("ConfigTomlPreview should preserve existing supports_websockets when omitted:\n%s", preview.ConfigTomlPreview)
-	}
-	if strings.Contains(preview.ConfigTomlPreview, `supports_websockets = false`) {
-		t.Fatalf("ConfigTomlPreview should not force false when omitted:\n%s", preview.ConfigTomlPreview)
+	if len(request.Accounts) != 1 {
+		t.Fatalf("account count = %d, want 1", len(request.Accounts))
 	}
 }
 
-func TestPreviewDeepLinkImportRedactsURLAndKeepsCurrentActiveProvider(t *testing.T) {
-	codexHome := filepath.Join(t.TempDir(), ".codex")
-	t.Setenv("CODEX_HOME", codexHome)
-	t.Setenv("HOME", t.TempDir())
-	if err := os.MkdirAll(codexHome, 0700); err != nil {
-		t.Fatalf("MkdirAll: %v", err)
-	}
-	existingConfig := strings.Join([]string{
-		`model = "old-model"`,
-		`model_provider = "legacy-relay"`,
-		``,
-		`[model_providers.legacy-relay]`,
-		`name = "Legacy Relay"`,
-		`base_url = "https://legacy.example.com/v1"`,
-		`wire_api = "chat_completions"`,
-	}, "\n") + "\n"
-	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(existingConfig), 0600); err != nil {
-		t.Fatalf("WriteFile config.toml: %v", err)
-	}
-
-	rawURL := "gettokens://v1/import?channel=codex&resource=codex-config&mode=api-key&providerScope=current-active&providerID=team-relay&providerName=Team%20Relay&apiKey=sk-secret-123456&baseUrl=https%3A%2F%2Frelay.example.com%2Fv1&model=gpt-5-codex"
-	preview, err := PreviewDeepLinkImportURL(rawURL)
-	if err != nil {
-		t.Fatalf("PreviewDeepLinkImportURL returned error: %v", err)
-	}
-
-	if strings.Contains(preview.RedactedURL, "sk-secret-123456") {
-		t.Fatalf("RedactedURL leaked api key: %s", preview.RedactedURL)
-	}
-	if !strings.Contains(preview.RedactedURL, "apiKey=%5BREDACTED%5D") && !strings.Contains(preview.RedactedURL, "apiKey=[REDACTED]") {
-		t.Fatalf("RedactedURL should mark apiKey as redacted: %s", preview.RedactedURL)
-	}
-	if preview.ProviderScope != "current-active" {
-		t.Fatalf("ProviderScope = %q, want current-active", preview.ProviderScope)
-	}
-	if preview.ProviderRewriteMode != "patch-current" {
-		t.Fatalf("ProviderRewriteMode = %q, want patch-current", preview.ProviderRewriteMode)
-	}
-	if preview.EffectiveProviderID != "legacy-relay" {
-		t.Fatalf("EffectiveProviderID = %q, want legacy-relay", preview.EffectiveProviderID)
-	}
-	if strings.Contains(preview.ConfigTomlPreview, `model_provider = "team-relay"`) {
-		t.Fatalf("preview must not rewrite model_provider when active provider exists:\n%s", preview.ConfigTomlPreview)
-	}
-	if !strings.Contains(preview.ConfigTomlPreview, `[model_providers.legacy-relay]`) {
-		t.Fatalf("preview should patch active provider section:\n%s", preview.ConfigTomlPreview)
-	}
-	if strings.Contains(preview.AuthJSONPreview, "sk-secret-123456") {
-		t.Fatalf("auth preview leaked api key:\n%s", preview.AuthJSONPreview)
-	}
-}
-
-func TestPreviewDeepLinkImportCreatesProviderOnlyWhenNoExplicitActiveProvider(t *testing.T) {
-	codexHome := filepath.Join(t.TempDir(), ".codex")
-	t.Setenv("CODEX_HOME", codexHome)
-	t.Setenv("HOME", t.TempDir())
-
-	preview, err := PreviewDeepLinkImportURL("gettokens://v1/import?channel=codex&resource=codex-config&mode=api-key&providerScope=create-new&providerID=team-relay&providerName=Team%20Relay&apiKey=sk-secret&baseUrl=https%3A%2F%2Frelay.example.com%2Fv1&model=gpt-5-codex")
-	if err != nil {
-		t.Fatalf("PreviewDeepLinkImportURL returned error: %v", err)
-	}
-
-	if preview.ProviderRewriteMode != "create-new" {
-		t.Fatalf("ProviderRewriteMode = %q, want create-new", preview.ProviderRewriteMode)
-	}
-	if preview.EffectiveProviderID != "team-relay" {
-		t.Fatalf("EffectiveProviderID = %q, want team-relay", preview.EffectiveProviderID)
-	}
-	if !strings.Contains(preview.ConfigTomlPreview, `model_provider = "team-relay"`) {
-		t.Fatalf("preview should create provider when there is no explicit active provider:\n%s", preview.ConfigTomlPreview)
-	}
-}
-
-func TestApplyDeepLinkImportCodexSetupReportsPartialSuccess(t *testing.T) {
-	codexHome := filepath.Join(t.TempDir(), ".codex")
-	home := t.TempDir()
-	t.Setenv("CODEX_HOME", codexHome)
-	t.Setenv("HOME", home)
-
-	config := encodeDeepLinkTestConfig(`{
-		"account": {
-			"accountType": "codex-api-key",
-			"label": "Team Relay",
-			"apiKey": "sk-account",
-			"baseUrl": "https://relay.example.com/v1"
+func TestParseDeepLinkImportRejectsLegacyRoutesAndForbiddenPayloadFields(t *testing.T) {
+	cases := []struct {
+		name    string
+		rawURL  string
+		wantErr string
+	}{
+		{
+			name:    "legacy scheme",
+			rawURL:  "gettokens://v1/import?channel=codex&resource=account",
+			wantErr: "unsupported_scheme",
 		},
-		"codexConfig": {
-			"mode": "preserve-chatgpt-provider",
-			"providerScope": "current-active",
-			"providerID": "team-relay",
-			"providerName": "Team Relay",
-			"apiKey": "sk-config",
-			"baseUrl": "https://relay.example.com/v1",
-			"model": "gpt-5-codex"
-		}
+		{
+			name:    "missing app host",
+			rawURL:  "gt://v1/import?resource=provider",
+			wantErr: "unsupported_route",
+		},
+		{
+			name:    "payload as path",
+			rawURL:  "gt://app/v1/import/payload=abc",
+			wantErr: "unsupported_route",
+		},
+		{
+			name:    "missing payload",
+			rawURL:  "gt://app/v1/import?resource=account",
+			wantErr: "missing_payload",
+		},
+		{
+			name: "account key forbidden",
+			rawURL: buildDeepLinkTestURL(`{
+				"schema": "gettokens.import.v1",
+				"accounts": [
+					{
+						"ref": "bad",
+						"account_key": "acct_existing",
+						"kind": "codex-api-key",
+						"codex_api_key": {
+							"api_key": "sk-bad",
+							"base_url": "https://relay.example.com/v1"
+						}
+					}
+				]
+			}`),
+			wantErr: "forbidden_field",
+		},
+		{
+			name: "documents forbidden",
+			rawURL: buildDeepLinkTestURL(`{
+				"schema": "gettokens.import.v1",
+				"documents": [],
+				"accounts": []
+			}`),
+			wantErr: "forbidden_field",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := ParseDeepLinkImportURL(tt.rawURL)
+			if err == nil {
+				t.Fatalf("ParseDeepLinkImportURL expected error")
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("error = %q, want contains %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPreviewDeepLinkImportBuildsBatchAccountSummary(t *testing.T) {
+	preview, err := PreviewDeepLinkImportURL(buildDeepLinkTestURL(`{
+		"schema": "gettokens.import.v1",
+		"source": { "name": "team-doc" },
+		"accounts": [
+			{
+				"ref": "relay",
+				"kind": "codex-api-key",
+				"title": "Team Relay",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-team-relay",
+					"base_url": "https://relay.example.com/v1",
+					"models_json": "[{\"name\":\"gpt-5-codex\",\"alias\":\"gpt-5-codex\"}]"
+				}
+			}
+		]
+	}`))
+	if err != nil {
+		t.Fatalf("PreviewDeepLinkImportURL returned error: %v", err)
+	}
+
+	if preview.Protocol != "gt" || preview.Source.Name != "team-doc" {
+		t.Fatalf("unexpected preview metadata: %#v", preview)
+	}
+	if len(preview.Accounts) != 1 {
+		t.Fatalf("preview account count = %d, want 1", len(preview.Accounts))
+	}
+	account := preview.Accounts[0]
+	if account.Index != 0 || account.Ref != "relay" || account.Kind != string(cliproxyapi.AccountKindCodexAPIKey) {
+		t.Fatalf("unexpected preview account: %#v", account)
+	}
+	if account.APIKeyPreview == "sk-team-relay" || !strings.Contains(account.APIKeyPreview, "****") {
+		t.Fatalf("API key preview not redacted: %q", account.APIKeyPreview)
+	}
+	if account.ModelCount != 1 {
+		t.Fatalf("ModelCount = %d, want 1", account.ModelCount)
+	}
+}
+
+func TestApplyDeepLinkImportCreatesAccountsAndContinuesOnError(t *testing.T) {
+	rawURL := buildDeepLinkTestURL(`{
+		"schema": "gettokens.import.v1",
+		"options": { "continue_on_error": true },
+		"accounts": [
+			{
+				"ref": "ok-1",
+				"kind": "codex-api-key",
+				"title": "First",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-first",
+					"base_url": "https://first.example.com/v1"
+				}
+			},
+			{
+				"ref": "fail",
+				"kind": "codex-api-key",
+				"title": "Fail",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-fail",
+					"base_url": "https://fail.example.com/v1"
+				}
+			},
+			{
+				"ref": "ok-2",
+				"kind": "codex-api-key",
+				"title": "Second",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-second",
+					"base_url": "https://second.example.com/v1"
+				}
+			}
+		]
+	}`)
+	rawURL = strings.Replace(rawURL, "gt://", "gt-dev://", 1)
+
+	app, created := newDeepLinkApplyTestApp(t, map[string]error{"Fail": errors.New("sidecar rejected account")})
+	result, err := app.ApplyDeepLinkImportURL(rawURL)
+	if err != nil {
+		t.Fatalf("ApplyDeepLinkImportURL returned error: %v", err)
+	}
+
+	if result.Status != "partial" || result.Total != 3 || result.Created != 2 || result.Failed != 1 {
+		t.Fatalf("unexpected result summary: %#v", result)
+	}
+	if len(*created) != 3 {
+		t.Fatalf("create attempts = %d, want 3", len(*created))
+	}
+	if result.Accounts[0].AccountKey == "" || result.Accounts[1].Status != "failed" || result.Accounts[2].AccountKey == "" {
+		t.Fatalf("unexpected item results: %#v", result.Accounts)
+	}
+}
+
+func TestApplyDeepLinkImportStopsOnErrorWhenContinueOnErrorFalse(t *testing.T) {
+	rawURL := buildDeepLinkTestURL(`{
+		"schema": "gettokens.import.v1",
+		"options": { "continue_on_error": false },
+		"accounts": [
+			{
+				"ref": "ok-1",
+				"kind": "codex-api-key",
+				"title": "First",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-first",
+					"base_url": "https://first.example.com/v1"
+				}
+			},
+			{
+				"ref": "fail",
+				"kind": "codex-api-key",
+				"title": "Fail",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-fail",
+					"base_url": "https://fail.example.com/v1"
+				}
+			},
+			{
+				"ref": "skipped",
+				"kind": "codex-api-key",
+				"title": "Skipped",
+				"provider": "codex",
+				"codex_api_key": {
+					"api_key": "sk-skipped",
+					"base_url": "https://skipped.example.com/v1"
+				}
+			}
+		]
 	}`)
 
-	app := New("test", "", "test/repo")
-	result, err := app.ApplyDeepLinkImportURL("gettokens://v1/import?channel=codex&resource=codex-setup&config=" + config)
+	app, created := newDeepLinkApplyTestApp(t, map[string]error{"Fail": errors.New("sidecar rejected account")})
+	result, err := app.ApplyDeepLinkImportURL(rawURL)
 	if err != nil {
-		t.Fatalf("ApplyDeepLinkImportURL should return partial result without top-level error: %v", err)
+		t.Fatalf("ApplyDeepLinkImportURL returned error: %v", err)
 	}
 
-	if !result.AccountApplied {
-		t.Fatalf("expected account import to succeed: %#v", result)
+	if result.Status != "partial" || result.Total != 3 || result.Created != 1 || result.Failed != 1 {
+		t.Fatalf("unexpected result summary: %#v", result)
 	}
-	if result.CodexConfigApplied {
-		t.Fatalf("codex config should fail because ChatGPT auth is missing: %#v", result)
+	if len(*created) != 2 {
+		t.Fatalf("create attempts = %d, want 2", len(*created))
 	}
-	if result.Status != "partial" {
-		t.Fatalf("Status = %q, want partial", result.Status)
-	}
-	if result.CodexConfigError == "" {
-		t.Fatalf("expected codex config error in partial result")
+	if len(result.Accounts) != 2 || result.Accounts[1].Ref != "fail" {
+		t.Fatalf("unexpected item results: %#v", result.Accounts)
 	}
 }
 
-func encodeDeepLinkTestConfig(rawJSON string) string {
-	return base64.RawURLEncoding.EncodeToString([]byte(rawJSON))
+func TestApplyDeepLinkImportNormalizesAuthFileThroughAccountWrite(t *testing.T) {
+	authJSON := `{"type":"codex","access_token":"access-secret","email":"team@example.com","plan_type":"plus"}`
+	rawURL := buildDeepLinkTestURL(fmt.Sprintf(`{
+		"schema": "gettokens.import.v1",
+		"accounts": [
+			{
+				"ref": "auth",
+				"kind": "auth-file",
+				"title": "team-auth.json",
+				"provider": "codex",
+				"auth_file": {
+					"source_file_name": "team-auth.json",
+					"auth_json": %q,
+					"auth_type": "codex"
+				}
+			}
+		]
+	}`, authJSON))
+
+	app, created := newDeepLinkApplyTestApp(t, nil)
+	result, err := app.ApplyDeepLinkImportURL(rawURL)
+	if err != nil {
+		t.Fatalf("ApplyDeepLinkImportURL returned error: %v", err)
+	}
+	if result.Status != "applied" || result.Created != 1 {
+		t.Fatalf("unexpected result: %#v", result)
+	}
+	if len(*created) != 1 || (*created)[0].AuthFile == nil {
+		t.Fatalf("expected auth-file account write: %#v", *created)
+	}
+	if (*created)[0].AuthFile.Email != "team@example.com" || (*created)[0].AuthFile.SizeBytes == 0 {
+		t.Fatalf("auth-file metadata was not normalized: %#v", (*created)[0].AuthFile)
+	}
 }
+
+func TestApplyDeepLinkImportRenamesOpenAICompatibleProviderOnConflict(t *testing.T) {
+	rawURL := buildDeepLinkTestURL(`{
+		"schema": "gettokens.import.v1",
+		"accounts": [
+			{
+				"ref": "deepseek",
+				"kind": "openai-compatible",
+				"title": "deepseek",
+				"provider": "deepseek",
+				"openai_compatible": {
+					"provider_name": "deepseek",
+					"base_url": "https://api.deepseek.com/v1",
+					"api_key_entries_json": "[{\"api-key\":\"sk-deepseek\"}]"
+				}
+			}
+		]
+	}`)
+
+	app, created := newDeepLinkApplyTestAppWithExisting(t, []cliproxyapi.UnifiedAccount{
+		{
+			AccountKey: "acct_existing",
+			Kind:       cliproxyapi.AccountKindOpenAICompatible,
+			Title:      "deepseek",
+			Provider:   "deepseek",
+			OpenAICompatible: &cliproxyapi.OpenAICompatibleAccountCredential{
+				ProviderName:      "deepseek",
+				BaseURL:           "https://api.deepseek.com/v1",
+				APIKeyEntriesJSON: `[{"api-key":"sk-existing"}]`,
+			},
+		},
+	}, nil)
+	result, err := app.ApplyDeepLinkImportURL(rawURL)
+	if err != nil {
+		t.Fatalf("ApplyDeepLinkImportURL returned error: %v", err)
+	}
+	if result.Status != "applied" || result.Created != 1 {
+		t.Fatalf("unexpected result: %#v", result)
+	}
+	if len(*created) != 1 || (*created)[0].OpenAICompatible == nil {
+		t.Fatalf("expected openai-compatible create: %#v", *created)
+	}
+	if (*created)[0].OpenAICompatible.ProviderName != "deepseek #2" || (*created)[0].Provider != "deepseek #2" || (*created)[0].Title != "deepseek #2" {
+		t.Fatalf("provider name was not suffixed: %#v", (*created)[0])
+	}
+}
+
+func buildDeepLinkTestURL(rawJSON string) string {
+	payload := base64.RawURLEncoding.EncodeToString([]byte(rawJSON))
+	return "gt://app/v1/import?payload=" + payload
+}
+
+func newDeepLinkApplyTestApp(t *testing.T, failures map[string]error) (*App, *[]cliproxyapi.AccountWriteRequest) {
+	return newDeepLinkApplyTestAppWithExisting(t, nil, failures)
+}
+
+func newDeepLinkApplyTestAppWithExisting(t *testing.T, existing []cliproxyapi.UnifiedAccount, failures map[string]error) (*App, *[]cliproxyapi.AccountWriteRequest) {
+	t.Helper()
+	created := []cliproxyapi.AccountWriteRequest{}
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "GET" && path == "/v0/management/accounts" {
+					body, err := json.Marshal(cliproxyapi.UnifiedAccountsResponse{Items: existing})
+					if err != nil {
+						t.Fatalf("marshal existing accounts: %v", err)
+					}
+					return body, 200, nil
+				}
+				if method != "POST" || path != "/v0/management/accounts" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				payload, err := io.ReadAll(body)
+				if err != nil {
+					t.Fatalf("read request body: %v", err)
+				}
+				var write cliproxyapi.AccountWriteRequest
+				if err := json.Unmarshal(payload, &write); err != nil {
+					t.Fatalf("unmarshal account write: %v", err)
+				}
+				created = append(created, write)
+				if fail := failures[write.Title]; fail != nil {
+					return []byte(`{"error":"failed"}`), 500, fail
+				}
+				account := cliproxyapi.UnifiedAccount{
+					AccountKey:  "acct_" + strings.ToLower(strings.ReplaceAll(write.Title, " ", "_")),
+					Kind:        write.Kind,
+					Title:       write.Title,
+					Provider:    write.Provider,
+					Disabled:    write.Disabled,
+					AuthFile:    write.AuthFile,
+					CodexAPIKey: write.CodexAPIKey,
+				}
+				if write.OpenAICompatible != nil {
+					account.OpenAICompatible = write.OpenAICompatible
+				}
+				responseBody, err := json.Marshal(account)
+				if err != nil {
+					t.Fatalf("marshal account response: %v", err)
+				}
+				return responseBody, 200, nil
+			})
+		},
+	}
+	return app, &created
+}
+
+var _ = accountsdomain.NormalizeAuthFileForSidecar
