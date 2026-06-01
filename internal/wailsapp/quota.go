@@ -160,7 +160,7 @@ func (a *App) getUnifiedCodexAPIKeyQuota(account *cliproxyapi.UnifiedAccount) (*
 	state, err := a.managementClient().RefreshQuota(account.AccountKey, true, false)
 	if err != nil {
 		if cachedState, cacheErr := a.managementClient().GetQuotaStatus(account.AccountKey); cacheErr == nil && quotaRuntimeStateHasDisplayQuota(cachedState) {
-			return mapQuotaRuntimeStateToCodexQuotaResponse(cachedState), nil
+			return mapQuotaRuntimeStateToCodexQuotaResponse(markQuotaRuntimeStateStaleFromError(cachedState, err)), nil
 		}
 		return nil, err
 	}
@@ -393,6 +393,28 @@ func quotaRuntimeStateHasDisplayQuota(state *cliproxyapi.QuotaRuntimeState) bool
 		return true
 	}
 	return state.Billing != nil && (state.Billing.IsAvailable || len(state.Billing.BalanceInfos) > 0)
+}
+
+func markQuotaRuntimeStateStaleFromError(state *cliproxyapi.QuotaRuntimeState, err error) *cliproxyapi.QuotaRuntimeState {
+	if state == nil {
+		return nil
+	}
+	next := *state
+	next.Windows = append([]cliproxyapi.QuotaRuntimeWindow(nil), state.Windows...)
+	next.Sources = append([]cliproxyapi.QuotaRuntimeSourceState(nil), state.Sources...)
+	next.Status = cliproxyapi.QuotaRuntimeStatusStale
+	next.Stale = true
+	if err != nil {
+		reason := strings.TrimSpace(err.Error())
+		if existing := strings.TrimSpace(next.DegradedReason); existing != "" {
+			if reason != "" && !strings.Contains(existing, reason) {
+				next.DegradedReason = existing + "; " + reason
+			}
+		} else if reason != "" {
+			next.DegradedReason = reason
+		}
+	}
+	return &next
 }
 
 func (a *App) getCodexAPIKeyQuota(id string) (*CodexQuotaResponse, error) {

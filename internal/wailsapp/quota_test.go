@@ -193,6 +193,53 @@ func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
 	}
 }
 
+func TestGetCodexQuotaMarksCachedUnifiedQuotaStaleWhenRefreshFails(t *testing.T) {
+	const accountKey = "acct_00000000-0000-4000-8000-000000000202"
+	const refreshErr = "ensure account store metadata: database is locked (SQLITE_BUSY)"
+
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			switch {
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/accounts/"+accountKey:
+				payload, _ := json.Marshal(map[string]any{
+					"account_key": accountKey,
+					"kind":        "codex-api-key",
+					"title":       "公司 2",
+					"provider":    "codex",
+					"codex_api_key": map[string]any{
+						"api_key":       "sk-company",
+						"base_url":      "https://quota.example.com",
+						"quota_curl":    `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"`,
+						"quota_enabled": true,
+					},
+				})
+				return payload, http.StatusOK, nil
+			case method == http.MethodPost && path == ManagementAPIPrefix+"/gettokens/quota-refresh/"+accountKey:
+				return nil, http.StatusInternalServerError, errors.New(refreshErr)
+			case method == http.MethodGet && path == ManagementAPIPrefix+"/gettokens/quota-status":
+				if query.Get("account_key") != accountKey {
+					t.Fatalf("quota status query = %q, want account key", query.Encode())
+				}
+				return []byte(`{"account_key":"` + accountKey + `","status":"success","plan_type":"plus","windows":[{"id":"five-hour","label":"5H","remaining_percent":61,"reset_at_unix":1777980010}],"sources":[]}`), http.StatusOK, nil
+			default:
+				t.Fatalf("unexpected sidecar request: %s %s", method, path)
+				return nil, 0, nil
+			}
+		},
+	}
+
+	quota, err := app.GetCodexQuota(accountKey)
+	if err != nil {
+		t.Fatalf("GetCodexQuota: %v", err)
+	}
+	if quota.Status != "stale" || !quota.Stale || !strings.Contains(quota.DegradedReason, refreshErr) {
+		t.Fatalf("cached quota fallback = status:%q stale:%v degraded:%q, want stale with refresh error", quota.Status, quota.Stale, quota.DegradedReason)
+	}
+	if len(quota.Windows) != 1 || quota.Windows[0].RemainingPercent == nil || *quota.Windows[0].RemainingPercent != 61 {
+		t.Fatalf("unexpected cached quota windows: %#v", quota.Windows)
+	}
+}
+
 func TestGetCodexQuotaFallsBackToAuthFileUsageCacheWhenAPICallFails(t *testing.T) {
 	authBody := []byte(`{
 		"account_id":"acct_cached",
