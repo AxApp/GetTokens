@@ -206,8 +206,8 @@ const PREVIEW_OPENAI_COMPATIBLE_PROVIDERS: OpenAICompatibleProvider[] = [
     keyCount: 1,
     modelCount: 2,
     models: [
-      { alias: 'codex-deepseek', name: 'deepseek-chat' },
-      { alias: 'codex-reasoner', name: 'deepseek-reasoner' },
+      { alias: '', name: 'deepseek-v4-flash' },
+      { alias: '', name: 'deepseek-v4-pro' },
     ],
   }),
   previewProvider({
@@ -489,7 +489,7 @@ const PREVIEW_USAGE_BY_ID: Record<string, AccountUsageSummary> = {
     failedCount: 1,
     latency: 622,
     totalTokens: [12000, 18000, 24000, 22000, 27000, 26000, 30000, 32000],
-    requestedModels: ['codex-deepseek'],
+    requestedModels: ['deepseek-v4-flash'],
     lastActivityOffsetMs: 9 * 60 * 1000,
   }),
   'openai-compatible:openrouter': createUsageSummary({
@@ -712,7 +712,7 @@ export function getUsageDeskPreviewObservedUsage(workspace: 'codex' | 'claude' =
         accountKey: 'openai-compatible:deepseek',
         attributionKey: 'provider:deepseek',
         provider: 'deepseek',
-        requestedModels: ['codex-deepseek'],
+        requestedModels: ['deepseek-v4-flash'],
         buckets: [
           previewObservedBucket({ daysAgo: 6, hour: 19, requestCount: 5, failedCount: 0, totalTokens: 44000 }),
           previewObservedBucket({ daysAgo: 4, hour: 20, requestCount: 8, failedCount: 0, totalTokens: 62000 }),
@@ -889,7 +889,7 @@ function inferProviderFromPreviewID(id: string) {
 function previewModelsForProvider(provider: string) {
   switch (provider) {
     case 'deepseek':
-      return ['deepseek-chat', 'deepseek-reasoner'];
+      return ['deepseek-v4-flash', 'deepseek-v4-pro'];
     case 'siliconflow':
       return ['deepseek-ai/DeepSeek-V3.2'];
     case 'zhipu':

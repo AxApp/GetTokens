@@ -843,7 +843,7 @@ test('Codex account order toolbar uses the unified filter menu instead of separa
   assert.doesNotMatch(source, /function ActionControlCluster/);
 });
 
-test('routing probe model helpers prefer configured codex aliases and keep fallback', () => {
+test('routing probe model helpers prefer configured codex aliases, hide aliased real names, and keep fallback', () => {
   const rows = [
     {
       modelMappings: [
@@ -856,7 +856,13 @@ test('routing probe model helpers prefer configured codex aliases and keep fallb
     },
   ];
 
-  assert.deepEqual(buildCodexRoutingProbeModelOptions(rows), ['codex-deepseek', 'deepseek-chat', 'gpt-5.4-mini', 'gpt-5.4']);
+  assert.deepEqual(
+    buildCodexRoutingProbeModelOptions(rows, [
+      { realModel: 'deepseek-v4-flash', codexModel: 'deepseek-v4-flash' },
+      { realModel: 'deepseek-v4-pro', codexModel: 'deepseek-v4-pro' },
+    ]),
+    ['codex-deepseek', 'gpt-5.4-mini', 'deepseek-v4-flash', 'deepseek-v4-pro', 'gpt-5.4'],
+  );
   assert.equal(resolveCodexRoutingProbeDefaultModel(rows), 'codex-deepseek');
 });
 
@@ -1031,7 +1037,7 @@ test('buildCodexModelOptionNames returns unique real model names for dropdowns',
   );
 });
 
-test('buildCodexModelAliasOptionNames returns alias and real names for editable codex model dropdowns', () => {
+test('buildCodexModelAliasOptionNames returns only alias when configured and real names otherwise', () => {
   assert.deepEqual(
     buildCodexModelAliasOptionNames([
       { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
@@ -1039,7 +1045,7 @@ test('buildCodexModelAliasOptionNames returns alias and real names for editable 
       { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
       { realModel: 'custom-real', codexModel: '' },
     ]),
-    ['codex-deepseek', 'deepseek-chat', 'deepseek-reasoner', 'custom-real'],
+    ['codex-deepseek', 'deepseek-reasoner', 'custom-real'],
   );
 });
 
@@ -1051,8 +1057,8 @@ test('getCodexAccountListPreviewRows provides browser-safe rows with model mappi
   assert.ok(rows.length >= 4);
   assert.deepEqual(codexPro?.modelMappings, []);
   assert.deepEqual(deepseek?.modelMappings.slice(0, 2), [
-    { realModel: 'deepseek-chat', codexModel: 'codex-deepseek' },
-    { realModel: 'deepseek-reasoner', codexModel: 'codex-reasoner' },
+    { realModel: 'deepseek-v4-flash', codexModel: 'deepseek-v4-flash' },
+    { realModel: 'deepseek-v4-pro', codexModel: 'deepseek-v4-pro' },
   ]);
 });
 

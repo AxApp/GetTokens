@@ -534,7 +534,7 @@ function CodexModelRoutingSection({
                       value={mapping.realModel}
                       options={modelOptionNames}
                       onChange={(value) => onUpdateMapping(index, { realModel: value })}
-                      placeholder={modelOptionNames[0] || 'deepseek-chat'}
+                      placeholder={modelOptionNames[0] || 'deepseek-v4-flash'}
                     />
                   ) : (
                     <span className="min-w-0 break-all font-mono text-[length:var(--font-size-ui-md-compact)] font-black text-[var(--text-primary)]">
@@ -547,7 +547,7 @@ function CodexModelRoutingSection({
                       value={mapping.codexModel}
                       options={codexModelOptionNames}
                       onChange={(value) => onUpdateMapping(index, { codexModel: value })}
-                      placeholder={codexModelOptionNames[0] || mapping.realModel || 'codex-deepseek'}
+                      placeholder={codexModelOptionNames[0] || mapping.realModel || 'deepseek-v4-flash'}
                       align="right"
                     />
                   ) : (

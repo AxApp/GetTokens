@@ -274,3 +274,33 @@ func TestListRelaySupportedModelsProviderAliasOverridesSidecarAlias(t *testing.T
 		t.Fatalf("expected sidecar reasoning efforts to be merged in: %#v", gpt54)
 	}
 }
+
+func TestListRelaySupportedModelsKeepsUserAliasAsOnlyCodexFacingModel(t *testing.T) {
+	providers := []OpenAICompatibleProvider{
+		{
+			Name:    "deepseek",
+			BaseURL: "https://api.deepseek.com/v1",
+			APIKey:  "sk-deepseek",
+			Models: []OpenAICompatibleModel{
+				{Name: "deepseek-v4-flash", Alias: "ds-flash"},
+			},
+		},
+	}
+
+	models := listRelaySupportedModels(providers, nil, func(input FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error) {
+		return []OpenAICompatibleModel{
+			{Name: "deepseek-v4-flash"},
+			{Name: "deepseek-v4-pro"},
+		}, nil
+	}, nil, nil)
+
+	if len(models) != 2 {
+		t.Fatalf("expected 2 codex-facing models, got %d: %#v", len(models), models)
+	}
+	if models[0].Name != "deepseek-v4-flash" || models[0].Alias != "ds-flash" {
+		t.Fatalf("expected aliased flash model to be preserved, got %#v", models[0])
+	}
+	if models[1].Name != "deepseek-v4-pro" || models[1].Alias != "" {
+		t.Fatalf("expected unaliased pro model to remain visible by real name, got %#v", models[1])
+	}
+}

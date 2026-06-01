@@ -56,6 +56,17 @@ test('accounts preview providers remain available for aggregate workspace previe
   );
 });
 
+test('accounts preview DeepSeek provider uses automatic v4 model names without aliases', () => {
+  const providers = getAccountsPreviewOpenAICompatibleProviders();
+  const deepseek = providers.find((provider) => provider.name === 'deepseek');
+
+  assert.ok(deepseek);
+  assert.deepEqual(deepseek.models, [
+    { alias: '', name: 'deepseek-v4-flash' },
+    { alias: '', name: 'deepseek-v4-pro' },
+  ]);
+});
+
 test('accounts preview inventory covers full account list states and providers', () => {
   const authRecords = getAccountsPreviewAuthFileRecords();
   const apiRecords = getAccountsPreviewAPIKeyRecords();

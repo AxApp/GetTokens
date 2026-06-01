@@ -142,6 +142,13 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - Codex channel config 保存不影响 Claude channel config。
   - `ChannelRouteMode` 只接受 `sequential / balanced`；`project` 输入必须降级或标记为旧兼容输入。
   - 上游兼容模式不进入 Codex 新配置保存。
+- Codex + openai-compatible 真实进程冒烟：
+  - 当改动涉及 Codex model catalog、openai-compatible alias、Responses <-> Chat/SSE 桥接或 DeepSeek 等上游协议适配时，mock smoke 通过后再补一次真实 Codex CLI 进程冒烟。
+  - 使用临时 CLIProxyAPI dev config 和隔离 `CODEX_HOME`，只把真实上游 key 复制到临时 sidecar config；Codex `auth.json` 只写本地 relay client key，不写真实 provider key。
+  - Codex config 指向本地 relay provider，保持 `wire_api = "responses"`，模型使用 client-facing 名称，例如无 alias 时的 `deepseek-v4-flash`。
+  - 冒烟命令优先使用 `codex -a never exec --skip-git-repo-check --ephemeral --sandbox read-only --model <model> --output-last-message <tmp-file> "<prompt>"`。
+  - 验收至少确认：`/v1/models?client_version=<codex-version>` 返回目标模型、Codex CLI exit code 为 `0`、最后消息符合预期、sidecar 收到 `/responses` 请求、临时目录和含 key 配置已删除。
+  - 不打印 API key/token；失败时只输出脱敏 stderr/stdout 尾部和 sidecar 关键错误。
 - 视觉截图放到 `docs-linhay/spaces/20260511-codex-account-list-tab/screenshots/<YYYYMMDD>/codex/`。
 
 ## 9. 文档

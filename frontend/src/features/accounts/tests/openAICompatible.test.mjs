@@ -104,8 +104,8 @@ test('openAICompatibleProviderPresets exposes cherry-studio vendor defaults adap
       baseUrl: 'https://api.deepseek.com/v1',
       apiKeyPlaceholder: 'sk-...',
       models: [
-        { name: 'deepseek-chat', alias: 'Chat' },
-        { name: 'deepseek-reasoner', alias: 'Reasoner' },
+        { name: 'deepseek-v4-flash', alias: '' },
+        { name: 'deepseek-v4-pro', alias: '' },
       ],
     },
     {
@@ -167,8 +167,8 @@ test('resolveOpenAICompatibleProviderPreset returns preset details for matching 
     baseUrl: 'https://api.deepseek.com/v1',
     apiKeyPlaceholder: 'sk-...',
     models: [
-      { name: 'deepseek-chat', alias: 'Chat' },
-      { name: 'deepseek-reasoner', alias: 'Reasoner' },
+      { name: 'deepseek-v4-flash', alias: '' },
+      { name: 'deepseek-v4-pro', alias: '' },
     ],
   });
 });

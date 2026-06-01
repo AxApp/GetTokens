@@ -134,7 +134,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     };
   }, [authFileModelMappings, detailRow]);
   const orderChanged = orderDirty;
-  const routingProbeModelOptions = useMemo(() => buildCodexRoutingProbeModelOptions(orderedRows), [orderedRows]);
+  const routingProbeModelOptions = useMemo(
+    () => buildCodexRoutingProbeModelOptions(orderedRows, codexModelCatalogOptions),
+    [codexModelCatalogOptions, orderedRows],
+  );
   const requestableRows = useMemo(() => orderedRows.filter((row) => row.requestable), [orderedRows]);
   const routePolicyDraft = useMemo(
     () => ({
@@ -289,8 +292,8 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     if (routingProbeModel.trim()) {
       return;
     }
-    setRoutingProbeModel(resolveCodexRoutingProbeDefaultModel(orderedRows));
-  }, [orderedRows, routingProbeModel]);
+    setRoutingProbeModel(resolveCodexRoutingProbeDefaultModel(orderedRows, codexModelCatalogOptions));
+  }, [codexModelCatalogOptions, orderedRows, routingProbeModel]);
 
   useEffect(() => {
     if (!ready) {
@@ -310,7 +313,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     void trackRequest('ListRelaySupportedModels', { args: [] }, () => ListRelaySupportedModels())
       .then((result) => {
         if (mounted) {
-          setCodexModelCatalogOptions(buildCodexAuthFileModelMappings(result?.models || []));
+          setCodexModelCatalogOptions(buildOpenAICompatibleModelMappings({ models: result?.models || [] }));
         }
       })
       .catch((error) => {
