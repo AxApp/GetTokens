@@ -54,16 +54,19 @@ const usageDeskWorkspaces: ReadonlySet<UsageDeskWorkspace> = new Set(['codex', '
 const usageDeskSources = new Set(['observed', 'projected'] as const);
 const usageDeskRanges = new Set(['TODAY', '7D', '14D', '30D', '全部'] as const);
 const accountDetailScriptRoutes = new Set(['quota', 'billing'] as const);
+const accountListModalRoutes = new Set(['route-probe'] as const);
 
 export type UsageDeskSourceStorageValue = 'observed' | 'projected';
 export type UsageDeskRangeStorageValue = 'TODAY' | '7D' | '14D' | '30D' | '全部';
 export type AccountDetailScriptRoute = 'quota' | 'billing';
+export type AccountListModalRoute = 'route-probe';
 
 export interface FrameHashState {
   page: AppPage;
   workspace?: AccountWorkspace;
   accountDetailID?: string;
   accountDetailScript?: AccountDetailScriptRoute;
+  modal?: AccountListModalRoute;
   codexWorkspace?: CodexWorkspace;
   claudeWorkspace?: ClaudeWorkspace;
   sessionManagementWorkspace?: SessionManagementWorkspace;
@@ -75,6 +78,7 @@ interface FrameHashOptions {
   claudeWorkspace?: ClaudeWorkspace;
   density?: string | null;
   group?: string | null;
+  modal?: AccountListModalRoute | null;
   sort?: string | null;
 }
 
@@ -130,6 +134,10 @@ export function isUsageDeskRangeStorageValue(value: string | null | undefined): 
 
 export function isAccountDetailScriptRoute(value: string | null | undefined): value is AccountDetailScriptRoute {
   return typeof value === 'string' && accountDetailScriptRoutes.has(value as AccountDetailScriptRoute);
+}
+
+export function isAccountListModalRoute(value: string | null | undefined): value is AccountListModalRoute {
+  return typeof value === 'string' && accountListModalRoutes.has(value as AccountListModalRoute);
 }
 
 export function resolveInitialActivePage(
@@ -359,6 +367,7 @@ export function readFrameHashState(
       };
     }
     const detail = params.get('detail');
+    const modal = params.get('modal');
     const state: FrameHashState = {
       page,
       codexWorkspace: isCodexWorkspace(workspace) ? workspace : 'feature-config',
@@ -366,15 +375,27 @@ export function readFrameHashState(
     if (detail && detail.trim()) {
       state.accountDetailID = detail;
     }
+    if (isAccountListModalRoute(modal)) {
+      state.modal = modal;
+    }
     return state;
   }
 
   if (page === 'claude') {
     const workspace = params.get('workspace');
-    return {
+    const detail = params.get('detail');
+    const modal = params.get('modal');
+    const state: FrameHashState = {
       page,
       claudeWorkspace: resolveInitialClaudeWorkspace(workspace),
     };
+    if (detail && detail.trim()) {
+      state.accountDetailID = detail;
+    }
+    if (isAccountListModalRoute(modal)) {
+      state.modal = modal;
+    }
+    return state;
   }
 
   if (page === 'usage-desk') {
@@ -432,6 +453,9 @@ export function buildFrameHash(
   if (detailID && detailID.trim()) {
     params.set('detail', detailID);
   }
+  if ((page === 'codex' || page === 'claude') && isAccountListModalRoute(options?.modal)) {
+    params.set('modal', options.modal);
+  }
   if (page === 'accounts' && detailID && isAccountDetailScriptRoute(options?.accountDetailScript)) {
     params.set('script', options.accountDetailScript);
   }
@@ -487,5 +511,50 @@ export function clearCodexDetailFrameHash(hash: string | null | undefined): stri
   const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
   const params = new URLSearchParams(normalized);
   params.delete('detail');
+  return `#${params.toString()}`;
+}
+
+export function buildClaudeDetailFrameHash(hash: string | null | undefined, detailID: string): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.set('frame', 'claude');
+  params.set('detail', detailID);
+  return `#${params.toString()}`;
+}
+
+export function clearClaudeDetailFrameHash(hash: string | null | undefined): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.delete('detail');
+  return `#${params.toString()}`;
+}
+
+export function buildCodexModalFrameHash(hash: string | null | undefined, modal: AccountListModalRoute): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.set('frame', 'codex');
+  params.set('modal', modal);
+  return `#${params.toString()}`;
+}
+
+export function clearCodexModalFrameHash(hash: string | null | undefined): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.delete('modal');
+  return `#${params.toString()}`;
+}
+
+export function buildClaudeModalFrameHash(hash: string | null | undefined, modal: AccountListModalRoute): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.set('frame', 'claude');
+  params.set('modal', modal);
+  return `#${params.toString()}`;
+}
+
+export function clearClaudeModalFrameHash(hash: string | null | undefined): string {
+  const normalized = typeof hash === 'string' && hash.startsWith('#') ? hash.slice(1) : hash || '';
+  const params = new URLSearchParams(normalized);
+  params.delete('modal');
   return `#${params.toString()}`;
 }

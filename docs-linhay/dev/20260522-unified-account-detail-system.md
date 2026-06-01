@@ -67,6 +67,12 @@ type AccountDetailTarget =
 - `componentManifest.ts` 已补齐 `card-mode` required state，并补齐 Codex live sessions 新拆分组件的收编记录，保证 manifest coverage 继续严格。
 - 可复用规则已沉淀到 `.agents/skills/gettokens-domain-engineering/SKILL.md` 的 Account Detail Surfaces 小节；该规则限定在账号域，不写入 `AGENTS.md`。
 
+## 2026-06-01 补充：满屏 modal 与独立路由
+1. `ModalFrame size="detail"` 是账号详情与详情类工作台 modal 的满屏 shell，不再使用 `max-w-[72rem]` 或 `max-h-[90vh]` 这类居中窄弹窗约束。
+2. `UnifiedAccountDetailModal`、`OpenAICompatibleDetailModal`、`CodexAccountDetailModal` 与 Claude Code account-list 详情都应通过 `AccountDetailModalFrame` 或同语义 detail shell 使用覆盖整个应用窗口视口（包括 sidebar 区域）的遮罩层；面板四周保留可见遮罩与投影间距，不得被账号页内容容器、滚动层或 sidebar offset 限制。
+3. 工作台内 account-list modal/detail layer 必须有可恢复 hash：账号详情使用 `detail=<account-id>`，命名调试弹窗使用 `modal=<route>`，例如 `#frame=codex&workspace=account-list&modal=route-probe`。
+4. 全局 hash canonicalizer 必须保留仍属于当前 frame/workspace 的 `detail` / `modal` 参数；关闭某个 modal 时只删除自己的 marker，不清空同一 hash 上的其他 workspace 状态。
+
 ## 验收
 - `node --test frontend/src/features/design-system/storyCatalog.test.mjs`
 - `npm --prefix frontend run typecheck`

@@ -52,6 +52,7 @@
 18. GetTokens 是 macOS/Wails 桌面工作台产品，默认不做移动端适配、移动端截图或 375/390px 宽度验收。前端与视觉改动默认按桌面窗口、Wails 容器和可用的桌面浏览器预览验收；只有用户在当前需求中明确提出移动端目标时，才增加移动端布局与截图门禁。
 19. 项目级 Codex subagent 配置统一放在 `.codex/agents/`，默认命名为 `gettokens_*`；除非正在验证模型路由能力，否则 agent 默认继承父会话模型，只用职责、sandbox 和 reasoning effort 区分任务面。
 20. 主控 agent 可根据任务判断自主新增、删除或修改 `.codex/agents/*.toml`，不需要逐次请求授权；但必须说明判断依据，验证 TOML 可解析，更新 `docs-linhay/dev/20260530-codex-project-subagents.md` 与 memory，并执行 `qmd update` / `qmd embed`。
+21. 工作台内详情类或调试类 modal 默认必须使用覆盖整个应用窗口视口（包括 sidebar 区域）的遮罩层，面板四周保留可见遮罩与投影间距，并具备可恢复的独立 hash 路由。打开 modal 时写入 `detail=<id>` 或 `modal=<route>`，关闭时只移除对应标记；全局 hash canonicalizer 不得丢弃仍属于当前 frame/workspace 的 modal/detail 参数。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。

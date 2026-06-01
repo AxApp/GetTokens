@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 
 import {
   CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES,
@@ -52,6 +53,18 @@ test('buildClaudeCodeAccountRows only admits accounts with anthropic supported f
 
   assert.deepEqual(rows.map((row) => row.id), ['codex-api-key:deepseek']);
   assert.equal(rows[0].baseUrl, 'https://api.deepseek.com/anthropic');
+});
+
+test('claude account list detail and route probe modals are hash-routed', async () => {
+  const source = await readFile(new URL('./ClaudeCodeAccountListFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /buildClaudeDetailFrameHash/);
+  assert.match(source, /clearClaudeDetailFrameHash/);
+  assert.match(source, /buildClaudeModalFrameHash/);
+  assert.match(source, /clearClaudeModalFrameHash/);
+  assert.match(source, /hashState\?\.page === 'claude' && hashState\.claudeWorkspace === 'account-list'/);
+  assert.match(source, /hashState\?\.accountDetailID/);
+  assert.match(source, /hashState\?\.modal === 'route-probe'/);
 });
 
 test('disabled and errored Claude Code accounts stay ordered but are not requestable', () => {

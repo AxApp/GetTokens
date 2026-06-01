@@ -13,10 +13,16 @@ import {
   buildAccountDetailFrameHash,
   buildAccountDetailScriptFrameHash,
   buildCodexDetailFrameHash,
+  buildCodexModalFrameHash,
+  buildClaudeDetailFrameHash,
+  buildClaudeModalFrameHash,
   buildFrameHash,
   clearAccountDetailFrameHash,
   clearAccountDetailScriptFrameHash,
   clearCodexDetailFrameHash,
+  clearCodexModalFrameHash,
+  clearClaudeDetailFrameHash,
+  clearClaudeModalFrameHash,
   isAccountDetailScriptRoute,
   isAccountWorkspace,
   isDeveloperAppPage,
@@ -618,6 +624,11 @@ test('readFrameHashState parses claude workspace and migrates old codex claude r
     page: 'claude',
     claudeWorkspace: 'usage',
   });
+  assert.deepEqual(readFrameHashState('#frame=claude&workspace=account-list&detail=claude%3Asonnet'), {
+    page: 'claude',
+    claudeWorkspace: 'account-list',
+    accountDetailID: 'claude:sonnet',
+  });
   assert.deepEqual(readFrameHashState('#frame=claude&workspace=unknown'), {
     page: 'claude',
     claudeWorkspace: 'account-list',
@@ -699,6 +710,36 @@ test('codex detail hash helpers add and remove modal marker', () => {
   );
 });
 
+test('claude detail hash helpers add and remove modal marker', () => {
+  assert.equal(
+    buildClaudeDetailFrameHash('#frame=claude&workspace=account-list', 'claude:sonnet'),
+    '#frame=claude&workspace=account-list&detail=claude%3Asonnet',
+  );
+  assert.equal(
+    clearClaudeDetailFrameHash('#frame=claude&workspace=account-list&detail=claude%3Asonnet'),
+    '#frame=claude&workspace=account-list',
+  );
+});
+
+test('account-list modal hash helpers add and remove independent modal routes', () => {
+  assert.equal(
+    buildCodexModalFrameHash('#frame=codex&workspace=account-list', 'route-probe'),
+    '#frame=codex&workspace=account-list&modal=route-probe',
+  );
+  assert.equal(
+    clearCodexModalFrameHash('#frame=codex&workspace=account-list&modal=route-probe'),
+    '#frame=codex&workspace=account-list',
+  );
+  assert.equal(
+    buildClaudeModalFrameHash('#frame=claude&workspace=account-list', 'route-probe'),
+    '#frame=claude&workspace=account-list&modal=route-probe',
+  );
+  assert.equal(
+    clearClaudeModalFrameHash('#frame=claude&workspace=account-list&modal=route-probe'),
+    '#frame=claude&workspace=account-list',
+  );
+});
+
 test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(buildFrameHash('status', 'all', 'feature-config', 'codex', 'codex'), '#frame=status');
   assert.equal(
@@ -774,6 +815,17 @@ test('buildFrameHash serializes page and optional accounts workspace', () => {
   assert.equal(
     buildFrameHash('codex', 'all', 'account-list', 'codex', 'codex', 'openai-compatible:deepseek'),
     '#frame=codex&workspace=account-list&detail=openai-compatible%3Adeepseek',
+  );
+  assert.equal(
+    buildFrameHash('codex', 'all', 'account-list', 'codex', 'codex', null, { modal: 'route-probe' }),
+    '#frame=codex&workspace=account-list&modal=route-probe',
+  );
+  assert.equal(
+    buildFrameHash('claude', 'all', 'feature-config', 'codex', 'codex', 'claude:sonnet', {
+      claudeWorkspace: 'account-list',
+      modal: 'route-probe',
+    }),
+    '#frame=claude&workspace=account-list&detail=claude%3Asonnet&modal=route-probe',
   );
   assert.equal(
     buildFrameHash('accounts', 'codex', 'feature-config', 'codex', 'codex', 'api-key:local-1'),

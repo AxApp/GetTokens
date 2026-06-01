@@ -21,6 +21,13 @@ import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import type { SidecarStatus } from '../../types';
 import { toErrorMessage } from '../../utils/error';
+import {
+  buildClaudeDetailFrameHash,
+  buildClaudeModalFrameHash,
+  clearClaudeDetailFrameHash,
+  clearClaudeModalFrameHash,
+  readFrameHashState,
+} from '../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import { mapBackendAccountRecord } from '../accounts/model/accountPresentation';
 import ChannelRoutingWorkbench from '../channel-routing/components/ChannelRoutingWorkbench';
@@ -365,11 +372,85 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
       return;
     }
     setDetailRowID(rowID);
+    markClaudeDetailInHash(rowID);
   }
 
   function closeDetail() {
     setDetailRowID(null);
+    clearClaudeDetailInHash();
   }
+
+  function openRouteProbeModal() {
+    setRouteProbeOpen(true);
+    markClaudeModalInHash('route-probe');
+  }
+
+  function closeRouteProbeModal() {
+    setRouteProbeOpen(false);
+    clearClaudeModalInHash();
+  }
+
+  function markClaudeDetailInHash(rowID: string) {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = buildClaudeDetailFrameHash(window.location.hash, rowID);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }
+
+  function clearClaudeDetailInHash() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = clearClaudeDetailFrameHash(window.location.hash);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }
+
+  function markClaudeModalInHash(modal: 'route-probe') {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = buildClaudeModalFrameHash(window.location.hash, modal);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }
+
+  function clearClaudeModalInHash() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = clearClaudeModalFrameHash(window.location.hash);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const syncModalStateFromHash = () => {
+      const hashState = readFrameHashState(window.location.hash);
+      if (hashState?.page === 'claude' && hashState.claudeWorkspace === 'account-list' && hashState?.accountDetailID) {
+        setDetailRowID(hashState.accountDetailID);
+      } else {
+        setDetailRowID(null);
+      }
+      setRouteProbeOpen(hashState?.page === 'claude' && hashState.claudeWorkspace === 'account-list' && hashState?.modal === 'route-probe');
+    };
+
+    syncModalStateFromHash();
+    window.addEventListener('hashchange', syncModalStateFromHash);
+    return () => {
+      window.removeEventListener('hashchange', syncModalStateFromHash);
+    };
+  }, []);
 
   async function persistChannelRoutingConfig(
     nextConfig: ChannelRoutingConfig,
@@ -738,7 +819,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           actions={
             <button
               type="button"
-              onClick={() => setRouteProbeOpen(true)}
+              onClick={openRouteProbeModal}
               className="btn-swiss flex min-h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
             >
               <Terminal className="h-3.5 w-3.5" strokeWidth={4} />
@@ -820,7 +901,7 @@ export default function ClaudeCodeAccountListFeature({ sidecarStatus }: ClaudeCo
           routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
           routePolicyPreviewRows={routePolicyPreviewRows}
           routingProbeStreamLines={routingProbeStreamLines}
-          onClose={() => setRouteProbeOpen(false)}
+          onClose={closeRouteProbeModal}
           onModelChange={setRoutingProbeModel}
           onProbeOnce={() => void runRoutingProbe(1)}
           onProbeSeries={() => void runRoutingProbe(3)}

@@ -62,12 +62,12 @@ export function RouteProbeCard({
 
   return (
     <div
-      className="scrollbar-stable fixed inset-0 z-50 overflow-y-auto bg-[var(--overlay-scrim-80)] px-3 py-6 backdrop-blur-sm sm:px-6 sm:py-10"
+      className="scrollbar-stable fixed inset-0 z-50 overflow-hidden bg-[var(--overlay-scrim-80)] backdrop-blur-sm"
       data-collaboration-id="MODAL_CODEX_ROUTE_PROBE"
       onClick={onClose}
     >
       <section
-        className="mx-auto flex max-h-[calc(100vh-3rem)] w-full max-w-7xl flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)] sm:max-h-[calc(100vh-5rem)]"
+        className="flex h-full w-full max-w-none flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-hard shadow-[var(--shadow-color)]"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-4 border-b-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-5 py-4">

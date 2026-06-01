@@ -27,7 +27,13 @@ import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
 import type { AccountRecord, SidecarStatus } from '../../types';
 import { toErrorMessage } from '../../utils/error';
-import { buildCodexDetailFrameHash, clearCodexDetailFrameHash, readFrameHashState } from '../../utils/pagePersistence';
+import {
+  buildCodexDetailFrameHash,
+  buildCodexModalFrameHash,
+  clearCodexDetailFrameHash,
+  clearCodexModalFrameHash,
+  readFrameHashState,
+} from '../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import useAccountsQuotaState from '../accounts/hooks/useAccountsQuotaState';
 import useAccountsRateLimitState from '../accounts/hooks/useAccountsRateLimitState';
@@ -590,6 +596,16 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     clearCodexDetailInHash();
   }
 
+  function openRouteProbeModal() {
+    setRouteProbeOpen(true);
+    markCodexModalInHash('route-probe');
+  }
+
+  function closeRouteProbeModal() {
+    setRouteProbeOpen(false);
+    clearCodexModalInHash();
+  }
+
   function markCodexDetailInHash(rowID: string) {
     if (typeof window === 'undefined') {
       return;
@@ -610,6 +626,26 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     }
   }
 
+  function markCodexModalInHash(modal: 'route-probe') {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = buildCodexModalFrameHash(window.location.hash, modal);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }
+
+  function clearCodexModalInHash() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const nextHash = clearCodexModalFrameHash(window.location.hash);
+    if (window.location.hash !== nextHash) {
+      window.location.hash = nextHash;
+    }
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
@@ -619,9 +655,10 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       const hashState = readFrameHashState(window.location.hash);
       if (hashState?.page === 'codex' && hashState.codexWorkspace === 'account-list' && hashState.accountDetailID) {
         setDetailRowID(hashState.accountDetailID);
-        return;
+      } else {
+        setDetailRowID(null);
       }
-      setDetailRowID(null);
+      setRouteProbeOpen(hashState?.page === 'codex' && hashState.codexWorkspace === 'account-list' && hashState?.modal === 'route-probe');
     };
 
     syncDetailFromHash();
@@ -1075,7 +1112,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           actions={
             <button
               type="button"
-              onClick={() => setRouteProbeOpen(true)}
+              onClick={openRouteProbeModal}
               className="btn-swiss flex min-h-10 items-center gap-2 !px-3 !py-2 !text-[length:var(--font-size-ui-sm)]"
             >
               <Terminal className="h-3.5 w-3.5" strokeWidth={4} />
@@ -1144,7 +1181,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           routingProbeDisabled={routingProbeDisabled || routePolicyPreviewRows.length === 0}
           routePolicyPreviewRows={routePolicyPreviewRows}
           routingProbeStreamLines={routingProbeStreamLines}
-          onClose={() => setRouteProbeOpen(false)}
+          onClose={closeRouteProbeModal}
           onModelChange={setRoutingProbeModel}
           onProbeOnce={() => void runRoutingProbe(1)}
           onProbeSeries={() => void runRoutingProbe(3)}

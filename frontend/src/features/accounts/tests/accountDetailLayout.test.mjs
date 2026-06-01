@@ -14,6 +14,19 @@ test('account detail no longer mounts runtime evidence overview sections', async
   assert.doesNotMatch(openAICompatibleSource, /AccountRuntimeEvidenceSection/);
 });
 
+test('account detail frame uses the fullscreen detail modal shell', async () => {
+  const frameSource = await readFile(new URL('../components/AccountDetailModalFrame.tsx', import.meta.url), 'utf8');
+  const modalFrameSource = await readFile(new URL('../../../components/ui/ModalFrame.tsx', import.meta.url), 'utf8');
+
+  assert.match(frameSource, /size="detail"/);
+  assert.match(modalFrameSource, /const detailFullscreen = size === 'detail'/);
+  assert.match(modalFrameSource, /position === 'fixed' && !detailFullscreen/);
+  assert.match(modalFrameSource, /detailFullscreen[\s\S]*\? 'place-items-center overflow-hidden p-4 sm:p-6'/);
+  assert.match(modalFrameSource, /detailFullscreen[\s\S]*h-\[calc\(100vh-2rem\)\]/);
+  assert.match(modalFrameSource, /sm:h-\[calc\(100vh-3rem\)\]/);
+  assert.match(modalFrameSource, /createPortal\(modal, document\.body\)/);
+});
+
 test('account detail keeps auth-file modules lightweight', () => {
   assert.deepEqual(
     buildAccountDetailModulePlan({ credentialSource: 'auth-file' }),
@@ -170,6 +183,8 @@ test('quota and billing curl editors are driven by account detail script hash ro
   assert.match(sectionSource, /editorOpen: routedEditorOpen/);
   assert.match(sectionSource, /const editorOpen = routedEditorOpen \?\? localEditorOpen/);
   assert.match(navigationSource, /accountDetailScript: hashState\?\.accountDetailScript \?\? null/);
+  assert.match(navigationSource, /modal: hashState\.modal \?\? null/);
+  assert.match(navigationSource, /function shouldPreserveModalHash/);
 });
 
 test('curl editor variable buttons insert at cursor or copy when no cursor is active', async () => {

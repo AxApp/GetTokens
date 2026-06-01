@@ -115,9 +115,13 @@ export function useAppNavigation() {
       hashState,
       activePage,
       activeCodexWorkspace,
+      activeClaudeWorkspace,
     )) {
       detailID = hashState?.accountDetailID ?? null;
     }
+    const modal = shouldPreserveModalHash(hashState, activePage, activeCodexWorkspace, activeClaudeWorkspace)
+      ? hashState?.modal ?? null
+      : null;
     const nextHash = buildFrameHash(
       activePage,
       'all' as const,
@@ -130,6 +134,7 @@ export function useAppNavigation() {
         claudeWorkspace: activeClaudeWorkspace,
         density: activePage === 'accounts' ? readCurrentHashParam('density') : null,
         group: activePage === 'accounts' ? readCurrentHashParam('group') : null,
+        modal,
         sort: activePage === 'accounts' ? readCurrentHashParam('sort') : null,
       },
     );
@@ -208,6 +213,7 @@ function buildCanonicalFrameHashFromState(hashState: NonNullable<ReturnType<type
       claudeWorkspace: hashState.claudeWorkspace ?? 'account-list',
       density: hashState.page === 'accounts' ? readCurrentHashParam('density') : null,
       group: hashState.page === 'accounts' ? readCurrentHashParam('group') : null,
+      modal: hashState.modal ?? null,
       sort: hashState.page === 'accounts' ? readCurrentHashParam('sort') : null,
     },
   );
@@ -225,6 +231,7 @@ function shouldPreserveDetailHash(
   hashState: ReturnType<typeof readFrameHashState>,
   activePage: AppPage,
   activeCodexWorkspace: CodexWorkspace,
+  activeClaudeWorkspace: ClaudeWorkspace,
 ) {
   if (!hashState?.accountDetailID || hashState.page !== activePage) {
     return false;
@@ -234,6 +241,27 @@ function shouldPreserveDetailHash(
   }
   if (activePage === 'codex') {
     return (hashState.codexWorkspace ?? 'feature-config') === activeCodexWorkspace;
+  }
+  if (activePage === 'claude') {
+    return (hashState.claudeWorkspace ?? 'account-list') === activeClaudeWorkspace;
+  }
+  return false;
+}
+
+function shouldPreserveModalHash(
+  hashState: ReturnType<typeof readFrameHashState>,
+  activePage: AppPage,
+  activeCodexWorkspace: CodexWorkspace,
+  activeClaudeWorkspace: ClaudeWorkspace,
+) {
+  if (!hashState?.modal || hashState.page !== activePage) {
+    return false;
+  }
+  if (activePage === 'codex') {
+    return (hashState.codexWorkspace ?? 'feature-config') === activeCodexWorkspace;
+  }
+  if (activePage === 'claude') {
+    return (hashState.claudeWorkspace ?? 'account-list') === activeClaudeWorkspace;
   }
   return false;
 }

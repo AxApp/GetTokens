@@ -1,4 +1,5 @@
 import type { CSSProperties, MouseEvent, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 type ModalFrameSize = 'sm' | 'md' | 'lg' | 'xl' | 'detail';
 type ModalFramePosition = 'fixed' | 'absolute';
@@ -26,7 +27,7 @@ const sizeClassNames: Record<ModalFrameSize, string> = {
   md: 'max-w-[min(42rem,calc(100vw-1.5rem))]',
   lg: 'max-w-[min(56rem,calc(100vw-1.5rem))]',
   xl: 'max-w-[min(64rem,calc(100vw-1.5rem))]',
-  detail: 'max-w-[min(72rem,calc(100vw-1.5rem))]',
+  detail: 'max-w-none',
 };
 
 const panelMaxHeightClassNames: Record<ModalFramePosition, string> = {
@@ -62,13 +63,20 @@ export default function ModalFrame({
   }
 
   const hasSlots = Boolean(header || footer || error);
-  const overlayStyle: CSSProperties | undefined = position === 'fixed'
+  const detailFullscreen = size === 'detail';
+  const overlayStyle: CSSProperties | undefined = position === 'fixed' && !detailFullscreen
     ? { left: 'var(--app-sidebar-width, 0px)' }
     : undefined;
+  const overlayLayoutClassName = detailFullscreen
+    ? 'place-items-center overflow-hidden p-4 sm:p-6'
+    : 'place-items-center overflow-y-auto overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6';
+  const panelViewportClassName = detailFullscreen
+    ? 'h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] sm:h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-3rem)]'
+    : panelMaxHeightClassNames[position];
 
-  return (
+  const modal = (
     <div
-      className={`${position} inset-0 z-50 grid min-w-0 place-items-center overflow-y-auto overflow-x-hidden bg-[var(--overlay-scrim-80)] px-3 py-4 backdrop-blur-sm sm:px-6 sm:py-6 ${overlayClassName}`}
+      className={`${position} inset-0 z-50 grid min-w-0 bg-[var(--overlay-scrim-80)] backdrop-blur-sm ${overlayLayoutClassName} ${overlayClassName}`}
       style={overlayStyle}
       onClick={handleBackdropClick}
     >
@@ -79,7 +87,7 @@ export default function ModalFrame({
         aria-modal="true"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`flex w-full min-w-0 ${sizeClassNames[size]} ${panelMaxHeightClassNames[position]} flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-hard shadow-[var(--shadow-color)] ${panelClassName}`}
+        className={`flex w-full min-w-0 ${sizeClassNames[size]} ${panelViewportClassName} flex-col overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-hard shadow-[var(--shadow-color)] ${panelClassName}`}
         onClick={stopPanelClick}
       >
         {hasSlots ? (
@@ -101,4 +109,10 @@ export default function ModalFrame({
       </div>
     </div>
   );
+
+  if (detailFullscreen && typeof document !== 'undefined') {
+    return createPortal(modal, document.body);
+  }
+
+  return modal;
 }
