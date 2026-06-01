@@ -161,7 +161,7 @@ function SessionRow({
 
   return (
     <div
-      className={`grid w-full grid-cols-[minmax(0,1fr)_minmax(0,45%)] items-end gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
+      className={`grid w-full grid-cols-[minmax(0,1fr)_minmax(9rem,auto)] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
         selected
           ? 'bg-[color-mix(in_srgb,var(--border-color)_10%,var(--bg-main))]'
           : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'
@@ -171,7 +171,7 @@ function SessionRow({
         type="button"
         onClick={onSelect}
         aria-expanded={selected}
-        className="col-span-2 min-w-0 text-left transition-transform active:scale-[0.99]"
+        className="col-start-1 row-start-1 min-w-0 text-left transition-transform active:scale-[0.99]"
       >
         <span className="block truncate font-mono text-[length:var(--font-size-ui-2xl)] font-black leading-snug text-[var(--text-primary)]">
           {summary.sessionProjectLabel}
@@ -181,39 +181,44 @@ function SessionRow({
         type="button"
         onClick={onSelect}
         tabIndex={-1}
-        className="min-w-0 truncate text-left font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)] transition-transform active:scale-[0.99]"
+        className="col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug uppercase text-[var(--text-muted)] transition-transform active:scale-[0.99]"
       >
-        {summary.accountTransportLabel}
+        {summary.transportLabel}
       </button>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onCopySessionID(session.sessionID);
-        }}
-        aria-label={`${t('codex_live_sessions.copy_session_id')} ${summary.sessionIDLabel}`}
-        title={copied ? t('codex_live_sessions.copied') : t('codex_live_sessions.copy_session_id')}
-        aria-live="polite"
-        className={`flex min-w-0 items-center justify-end gap-1 truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug transition-colors active:scale-[0.98] ${
-          copied
-            ? 'text-[var(--color-status-success)]'
-            : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-        }`}
-      >
-        {copied ? (
-          <>
-            <span className="truncate">{t('codex_live_sessions.copied')}</span>
-            <span aria-hidden="true" className="text-[var(--color-status-success)]">
-              ✓
-            </span>
-          </>
-        ) : (
-          <>
-            <span className="truncate">{summary.sessionIDLabel}</span>
-            <Copy className="h-3 w-3 shrink-0" strokeWidth={2.5} />
-          </>
-        )}
-      </button>
+      <span className="col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">
+        {summary.accountLabel}
+      </span>
+      <div className="col-start-2 row-start-2 flex min-w-0 max-w-[15rem] items-center justify-end justify-self-end text-right">
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onCopySessionID(session.sessionID);
+          }}
+          aria-label={`${t('codex_live_sessions.copy_session_id')} ${summary.sessionIDLabel}`}
+          title={copied ? t('codex_live_sessions.copied') : t('codex_live_sessions.copy_session_id')}
+          aria-live="polite"
+          className={`flex min-w-0 max-w-full items-center justify-end gap-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug transition-colors active:scale-[0.98] ${
+            copied
+              ? 'text-[var(--color-status-success)]'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+          }`}
+        >
+          {copied ? (
+            <>
+              <span className="truncate">{t('codex_live_sessions.copied')}</span>
+              <span aria-hidden="true" className="text-[var(--color-status-success)]">
+                ✓
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="truncate">{summary.sessionIDLabel}</span>
+              <Copy className="h-3 w-3 shrink-0" strokeWidth={2.5} />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

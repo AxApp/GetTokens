@@ -40,7 +40,8 @@ export function buildSessionRowSummary(
 
   return {
     sessionProjectLabel: projectName,
-    accountTransportLabel: `${auth} / ${getShortTransportLabel(session)}`,
+    accountLabel: auth,
+    transportLabel: getShortTransportLabel(session),
     sessionIDLabel: session.sessionID,
   };
 }

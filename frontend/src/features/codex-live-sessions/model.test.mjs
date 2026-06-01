@@ -156,7 +156,8 @@ test('buildSessionRowSummary only exposes session project, account, and short pr
 
   assert.deepEqual(summary, {
     sessionProjectLabel: 'GetTokens',
-    accountTransportLabel: 'team-codex@example.com / ws',
+    accountLabel: 'team-codex@example.com',
+    transportLabel: 'ws',
     sessionIDLabel: 'ws_sess_7a91',
   });
   assert.doesNotMatch(Object.values(summary).join(' '), /gpt-5\.5|streaming|8\.0s/);
@@ -189,8 +190,22 @@ test('buildSessionRowSummary falls back to unknown project and prefers http for 
   });
 
   assert.equal(summary.sessionProjectLabel, '未知项目');
-  assert.equal(summary.accountTransportLabel, 'team-codex@example.com / http');
+  assert.equal(summary.accountLabel, 'team-codex@example.com');
+  assert.equal(summary.transportLabel, 'http');
   assert.equal(summary.sessionIDLabel, 'codex_win_48f2');
+});
+
+test('codex live session row keeps transport top right and account aligned with session id below', async () => {
+  const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+
+  assert.match(feedSource, /grid-cols-\[minmax\(0,1fr\)_minmax\(9rem,auto\)\]/);
+  assert.match(feedSource, /className="col-start-1 row-start-1/);
+  assert.match(feedSource, /className="col-start-2 row-start-1[^"]*self-center[^"]*justify-self-end/);
+  assert.match(feedSource, /\{summary\.transportLabel\}/);
+  assert.match(feedSource, /className="col-start-1 row-start-2[^"]*self-center/);
+  assert.match(feedSource, /\{summary\.accountLabel\}/);
+  assert.match(feedSource, /className="col-start-2 row-start-2[^"]*items-center[^"]*justify-end/);
+  assert.doesNotMatch(feedSource, /accountTransportLabel/);
 });
 
 test('copyCodexLiveSessionID writes the exact session id to clipboard', async () => {
@@ -254,7 +269,8 @@ test('getPrimaryCodexLiveRequest prefers active request, then last request, then
     }
     return key;
   });
-  assert.equal(rowSummary.accountTransportLabel, 'new-account@example.com / ws');
+  assert.equal(rowSummary.accountLabel, 'new-account@example.com');
+  assert.equal(rowSummary.transportLabel, 'ws');
 
   const diagnostic = buildCodexLiveDiagnosticSummary(session, selected);
   assert.match(diagnostic, /auth: auth-file:team-codex-new \/ new-account@example.com/);
