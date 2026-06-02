@@ -255,6 +255,18 @@ test('session analysis opens from header through scope selector and detail modal
   assert.doesNotMatch(viewSource, /disabled=\{loading\}/, 'detail modal must not drop focus onto body by disabling its initial focus button');
 });
 
+test('session management workbench keeps brutalist hierarchy readable', async () => {
+  const featureSource = await readFile(new URL('./SessionManagementFeature.tsx', import.meta.url), 'utf8');
+  const viewSource = await readFile(new URL('./SessionManagementView.tsx', import.meta.url), 'utf8');
+
+  assert.match(featureSource, /titleClassName="text-\[length:var\(--font-size-display-sm\)\]/, 'page title must use the calibrated workspace display scale');
+  assert.match(viewSource, /data-session-management-search-frame="true"/, 'search frame must be explicitly styled as a quiet utility rail');
+  assert.doesNotMatch(viewSource, /data-session-management-search-frame="true" className="[^"]*border-b-4/, 'search rail must not compete with the main workbench border');
+  assert.match(viewSource, /rounded-sm border-l-4 border-l-transparent/, 'session rows must have a subtle active affordance without another heavy box');
+  assert.match(viewSource, /border-t border-dashed border-\[var\(--border-color\)\]\/45/, 'session metadata must sit in a quiet footer rail');
+  assert.match(viewSource, /max-w-\[min\(56rem,68vw\)\]/, 'long session summaries must cap line length for scanning');
+});
+
 test('dev bridge session analysis keeps word cloud and common phrase fields', async () => {
   const devSource = await readFile(new URL('../../../dev/sessionManagementDevData.js', import.meta.url), 'utf8');
 

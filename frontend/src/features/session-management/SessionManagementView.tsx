@@ -268,7 +268,7 @@ export function SessionManagementSearchBar({
   onSearchChange: (query: string) => void;
 }) {
   return (
-    <div className="shrink-0 border-b-4 border-[var(--border-color)] p-4">
+    <div data-session-management-search-frame="true" className="shrink-0 border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-3">
       <SearchInput
         value={searchQuery}
         onChange={onSearchChange}
@@ -887,14 +887,14 @@ export function SessionsPanel({
 
   return (
     <section ref={panelRef} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b-4 border-[var(--border-color)] px-5">
+      <div className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--border-color)] bg-[var(--bg-surface)] px-5">
         <div className="flex min-w-0 items-center gap-3">
           <h2 className="shrink-0 text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.25em]">{copy.projectSessionsTitle}</h2>
           <span className="truncate text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
             / {activeProjectName}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 bg-[var(--bg-main)] p-1">
           {useActionMenu ? (
             <div ref={actionMenuRef} className="relative">
               <button
@@ -964,7 +964,7 @@ export function SessionsPanel({
                     className={`border px-3 py-1.5 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] transition-colors active:scale-95 ${
                       isActive
                         ? 'border-[var(--border-color)] bg-[var(--border-color)] text-[var(--bg-main)]'
-                        : 'border-[var(--border-color)] bg-transparent text-[var(--text-primary)] hover:bg-[var(--bg-surface)]'
+                        : 'border-transparent bg-transparent text-[var(--text-muted)] hover:border-[var(--border-color)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {filter.label}
@@ -976,7 +976,7 @@ export function SessionsPanel({
                 onClick={onRefresh}
                 aria-label={copy.refresh}
                 title={copy.refresh}
-                className="flex h-8 w-8 items-center justify-center border border-[var(--border-color)] text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
+                  className="flex h-8 w-8 items-center justify-center border border-transparent text-[var(--text-muted)] transition-colors hover:border-[var(--border-color)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)] active:scale-90"
               >
                 <RefreshCw className="h-3.5 w-3.5" strokeWidth={2.5} />
               </button>
@@ -1000,9 +1000,8 @@ export function SessionsPanel({
                   key={session.id}
                   type="button"
                   onClick={() => onSelectSession(session.id)}
-                  className="group block w-full border-b border-[var(--border-color)] px-6 py-4 text-left transition-colors hover:bg-[var(--bg-surface)] active:bg-[var(--bg-muted)]"
+                  className="group block w-full rounded-sm border-l-4 border-l-transparent border-b border-b-[var(--border-color)] px-6 py-4 text-left transition-colors hover:border-l-[var(--text-muted)]/45 hover:bg-[var(--bg-surface)] active:bg-[var(--bg-muted)]"
                 >
-                  {/* Line 1: title + status badge */}
                   <div className="flex items-baseline justify-between gap-4">
                     <div className="min-w-0 flex-1 truncate text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-tight leading-none text-[var(--text-primary)]">
                       {session.title || 'UNTITLED SESSION'}
@@ -1016,16 +1015,14 @@ export function SessionsPanel({
                     </span>
                   </div>
 
-                  {/* Line 2: summary */}
                   {session.summary ? (
-                    <div className="mt-1.5 truncate text-[length:var(--font-size-ui-md-compact)] leading-snug text-[var(--text-muted)]">
+                    <div className="mt-2 max-w-[min(56rem,68vw)] truncate text-[length:var(--font-size-ui-md-compact)] leading-snug text-[var(--text-muted)]">
                       {session.summary}
                     </div>
                   ) : null}
 
-                  {/* Line 3: metadata */}
                   <div
-                    className={`mt-2 flex items-center text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]/60 ${
+                    className={`mt-3 flex items-center border-t border-dashed border-[var(--border-color)]/45 pt-2 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]/60 ${
                       useCompactSessionMetadata ? 'justify-between gap-x-6' : 'gap-x-2'
                     }`}
                   >

@@ -224,6 +224,7 @@
     --font-size-ui-4xl: 1.375rem;
     --font-size-ui-5xl: 1.625rem;
     --font-size-ui-6xl: 1.75rem;
+    --font-size-display-sm: clamp(2.25rem, 3.8vw, 3.75rem);
     --font-size-ui-display: 2.5rem;
     --line-height-ui-tight: 1.2;
     --line-height-ui-normal: 1.4;

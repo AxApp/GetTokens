@@ -336,6 +336,7 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
       <WorkspacePageHeader
         title={t('session_management.title')}
         subtitle={copy.headerSubtitleLine(stats)}
+        titleClassName="text-[length:var(--font-size-display-sm)] font-black uppercase italic tracking-tighter leading-[0.86] text-[var(--text-primary)]"
         subtitleClassName="mt-3 truncate whitespace-nowrap text-[length:var(--font-size-ui-sm)] font-bold uppercase tracking-[0.22em] text-[var(--text-muted)]"
         actionsClassName="flex items-center gap-3 self-start"
         actions={
@@ -375,14 +376,14 @@ export default function SessionManagementFeature({ workspace = 'codex' }: Sessio
         }
       />
 
-      <div className="mt-8 flex min-h-0 flex-1 flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
+      <div className="mt-7 flex min-h-0 flex-1 flex-col border-4 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[8px_8px_0_var(--shadow-color)]">
         <SessionManagementSearchBar
           copy={copy}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
         <div className={`flex min-h-0 flex-1 ${compactLayout ? 'flex-col' : 'flex-row'}`}>
-          <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-4' : 'w-[20rem] shrink-0 border-r-4'}`}>
+          <div className={`flex min-h-0 flex-col border-[var(--border-color)] ${compactLayout ? 'w-full border-b-2' : 'w-[20rem] shrink-0 border-r-2'}`}>
             <ProjectListPanel
               copy={copy}
               projects={filteredProjects}
