@@ -287,3 +287,45 @@ sidecar `PatchAccountStatus` 在调用 `SetAccountStatus` 后继续执行 `apply
 1. `node --test frontend/src/features/accounts/tests/accountCardLayout.test.mjs`
 2. `npm --prefix frontend run typecheck`
 3. `ACCOUNTS_PREVIEW_BASE_URL=http://localhost:5173 node docs-linhay/scripts/accounts-browser-check.mjs`
+
+## Bug 009：Codex Live Sessions 行点击与耗时图 SVG 拉伸
+### 复现
+1. 打开 `#frame=codex&workspace=live-sessions`。
+2. 会话列表项目名在窄左栏内被右侧 session id 挤压，点击 session id 文本会直接进入复制状态；预期点击行切换详情，右侧 session id 可压缩为“会话”按钮并执行复制。
+3. 请求耗时趋势图在 SVG fallback 宽度阶段使用非等比 `preserveAspectRatio="none"`，导致 y 轴文字、底部序号、圆点和选中环被横向压扁或拉伸。
+
+### 修复
+1. `CodexLiveSessionFeed` 改为整行 `role="button"` 负责选择与键盘 Enter/Space 切换，session id 不再常驻占宽，复制动作收敛为右侧“会话”按钮。
+2. 会话行 grid 改为 `minmax(0,1fr)_auto`，减少右侧固定宽度对项目名的挤压。
+3. `TimingTrendChart` 的 SVG 改为 `preserveAspectRatio="xMinYMin meet"`；宽度未测量时使用固定 fallback px，测量后再切换为 `100%`，避免文字和圆点非等比缩放。
+
+### 验证
+1. `node --test src/features/codex-live-sessions/model.test.mjs`
+2. `npm --prefix frontend run typecheck`
+3. `agent-browser` 打开 `http://127.0.0.1:5173/?preview=codex-live-sessions#frame=codex&workspace=live-sessions`：
+   - 会话行只有 1 个“会话”复制按钮，点击行主体切换 `aria-expanded`。
+   - 项目文本 `clientWidth === scrollWidth`，不再被截断。
+   - 图表 SVG 为 `preserveAspectRatio="xMinYMin meet"`，圆点宽高一致。
+4. 截图：`screenshots/20260602/codex/20260602-codex-live-sessions-after-v01.png`。
+
+## Bug 010：Codex Live Sessions 有请求但无耗时图表
+### 复现
+1. 打开 `#frame=codex&workspace=live-sessions`，选中有请求记录的会话。
+2. 详情页 Timeline 能看到请求行，但请求耗时趋势图可能显示空态。
+3. 请求行右侧未显示 `TTFT`、首 token、流式耗时等 timing pills。
+
+### 根因
+1. 前端趋势图只在 request timing 至少存在一个大于 0 的耗时值时显示数据；有 request 行不代表已有 timing。
+2. Codex HTTP 请求的 `UsageReporter` 已采集 `usage.Record.TTFT` 和 `Latency`，但 live session tracker 的 `ObserveCodexLiveUsage` 只把 token detail 传给 `fillTiming`。
+3. `fillTiming` 不读取 `usage.Record.TTFT`，因此 HTTP 请求只可能得到粗略总耗时，`firstEventMs` / `firstTokenMs` / `streamDurationMs` 为空；历史请求或极快完成请求会表现为“有请求但图表无数据”。
+
+### 修复
+1. 新增 `fillTimingFromUsageRecord`，在 `ObserveCodexLiveUsage` 更新既有 request 或创建 HTTP completed session 时统一接入。
+2. `record.Latency` 映射为 `totalDurationMs`，`record.TTFT` 同步映射为 `firstEventMs` 和 `firstTokenMs`，并补算 `streamDurationMs`。
+3. 输出速率和总 token 速率基于修正后的 `totalDurationMs` 重新计算，避免继续使用 wall-clock 误差。
+
+### 验证
+1. `go test ./internal/gettokenshooks -run 'TestLiveSessions(ObserveUsageRecordCreatesHTTPCompletedSession|TimingSummary|RouteReturns|ObserveUsageRecordUpdates)' -count=1`
+2. `go test ./internal/gettokenshooks -count=1`
+3. `go build -o test-output ./cmd/server`
+4. `./scripts/ensure-sidecar.sh darwin arm64`

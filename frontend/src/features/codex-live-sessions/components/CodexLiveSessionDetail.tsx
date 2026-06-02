@@ -231,6 +231,7 @@ function TimingTrendChart({
   const [chartWidth, setChartWidth] = useState(0);
   const selectedSeries = getTimingTrendSeries(selectedMetric);
   const width = chartWidth > 0 ? chartWidth : timingTrendChartFallbackWidthPx;
+  const svgWidthStyle = chartWidth > 0 ? '100%' : `${timingTrendChartFallbackWidthPx}px`;
   const visibleRequestCount = resolveTimingTrendVisibleRequestCount(width, padding);
   const visiblePoints = trend.points.slice(-visibleRequestCount);
   const selectedMetricMaxMs = getTimingTrendMetricMax(visiblePoints, selectedMetric);
@@ -290,7 +291,13 @@ function TimingTrendChart({
             50% { opacity: 0.68; transform: scale(1.45); }
           }
         `}</style>
-        <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="xMinYMin meet"
+          className="absolute inset-y-0 left-0 h-full"
+          style={{ width: svgWidthStyle }}
+          aria-hidden="true"
+        >
           <defs>
             <linearGradient id="codexTimingTrendArea" x1="0" x2="0" y1="0" y2="1">
               <stop offset="0%" stopColor={selectedSeries.color} stopOpacity="0.22" />

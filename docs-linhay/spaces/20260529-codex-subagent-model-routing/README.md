@@ -134,3 +134,10 @@ And 测试覆盖别名命中、未知别名、显式禁用三类边界。
   - 两条 smoke 均断言 routing policy 可读取 typed `CodexRequest.requestedModel`，且 inbound `Authorization` / `Cookie` 不会透传到 upstream。
 - 冒烟验证：`go test ./sdk/api/handlers/openai -run 'TestCodexModelRoutingResponses.*Smoke' -count=1 -v` 通过；随后 `go test ./sdk/api/handlers/openai ./internal/runtime/executor ./sdk/api/handlers ./sdk/cliproxy/auth ./internal/gettokenscodex ./internal/gettokensrouting -count=1` 与 sidecar `go test ./...` 均通过。
 - 剩余范围：P1 仍可接 live sessions / usage attribution / route explain 的模型、session、thread、turn 观测字段；P2 如需候选 scope，也必须以模型和显式 sidecar 配置为准，不以 `X-OpenAI-Subagent` 做账号选择。
+
+## 2026-06-02 DeepSeek account-store runtime 修正
+
+- 背景：Codex `/model` 已能展示 `deepseek-v4-flash`，但真实请求失败为 `auth_unavailable: no auth available (providers=codex, model=deepseek-v4-flash)`。
+- 根因：SQLite account-store 作为运行态真源后，openai-compatible 账号合成出的 runtime auth 没有携带非敏感 `openai_compat_models`；模型注册阶段不应再把旧 `config.OpenAICompatibility` 当运行时 fallback。缺少自描述模型声明时，account-store DeepSeek auth 没有注册到 model registry，最终 registry 只剩 Codex 静态 DeepSeek catalog，provider set 被收窄成 `codex`。
+- 修复：account-store openai-compatible auth 合成时写入 `openai_compat_models` attribute；DeepSeek 默认模型只在 account-store 合成阶段 materialize；`sdk/cliproxy` 注册阶段只消费 auth attributes，不反查旧 config provider。
+- 验证：`go test ./internal/watcher/synthesizer ./sdk/cliproxy ./sdk/api/handlers/openai ./sdk/api/handlers ./sdk/cliproxy/auth ./internal/registry -count=1`、`go build -o test-output ./cmd/server` 与 `./scripts/ensure-sidecar.sh darwin arm64` 通过。

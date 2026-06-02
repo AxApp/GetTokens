@@ -215,16 +215,22 @@ test('buildSessionRowSummary derives short protocol from the latest request befo
   assert.equal(summary.transportLabel, 'ws');
 });
 
-test('codex live session row keeps transport top right and account aligned with session id below', async () => {
+test('codex live session row gives project text priority and compresses session id into a button', async () => {
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
 
-  assert.match(feedSource, /grid-cols-\[minmax\(0,1fr\)_minmax\(7rem,auto\)\]/);
+  assert.match(feedSource, /role="button"/);
+  assert.match(feedSource, /tabIndex=\{0\}/);
+  assert.match(feedSource, /onClick=\{onSelect\}/);
+  assert.match(feedSource, /event\.key === 'Enter' \|\| event\.key === ' '/);
+  assert.match(feedSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
   assert.match(feedSource, /className="col-start-1 row-start-1/);
   assert.match(feedSource, /className="col-start-2 row-start-1[^"]*self-center[^"]*justify-self-end/);
   assert.match(feedSource, /\{summary\.transportLabel\}/);
   assert.match(feedSource, /className="col-start-1 row-start-2[^"]*self-center/);
   assert.match(feedSource, /\{summary\.accountLabel\}/);
   assert.match(feedSource, /className="col-start-2 row-start-2[^"]*items-center[^"]*justify-end/);
+  assert.match(feedSource, /t\('codex_live_sessions\.session_button'\)/);
+  assert.doesNotMatch(feedSource, /summary\.sessionIDLabel\}\s*<\/span>/);
   assert.doesNotMatch(feedSource, /accountTransportLabel/);
 });
 
@@ -690,10 +696,13 @@ test('codex live session feed renders session id as an independent copy target',
   assert.match(feedSource, /copyCodexLiveSessionID/);
   assert.match(feedSource, /onCopySessionID/);
   assert.match(feedSource, /event\.stopPropagation\(\)/);
+  assert.match(feedSource, /\`\$\{t\('codex_live_sessions\.copy_session_id'\)\} \$\{summary\.sessionIDLabel\}\`/);
+  assert.match(feedSource, /className=\{`inline-flex h-6 shrink-0 items-center justify-center/);
   assert.match(feedSource, /ClipboardSetText/);
   assert.match(feedSource, /document\.execCommand\('copy'\)/);
   assert.match(feedSource, /aria-live="polite"/);
   assert.match(feedSource, /t\('codex_live_sessions\.copied'\)/);
+  assert.match(feedSource, /t\('codex_live_sessions\.session_button'\)/);
   assert.match(feedSource, /codex_live_sessions\.copy_session_id/);
 });
 
@@ -1317,13 +1326,16 @@ test('codex live session timing chart uses a fixed viewport without horizontal p
   assert.match(detailSource, /ResizeObserver/);
   assert.match(detailSource, /element\.clientWidth/);
   assert.match(detailSource, /const width = chartWidth > 0 \? chartWidth : timingTrendChartFallbackWidthPx/);
+  assert.match(detailSource, /const svgWidthStyle = chartWidth > 0 \? '100%' : `\$\{timingTrendChartFallbackWidthPx\}px`/);
+  assert.match(detailSource, /preserveAspectRatio="xMinYMin meet"/);
+  assert.match(detailSource, /style=\{\{ width: svgWidthStyle \}\}/);
   assert.doesNotMatch(detailSource, /visibility: .*'hidden'/);
+  assert.doesNotMatch(detailSource, /preserveAspectRatio="none"/);
   assert.doesNotMatch(detailSource, /chartWidth \|\| 0/);
   assert.match(detailSource, /resolveTimingTrendVisibleRequestCount/);
   assert.match(detailSource, /timingTrendMinVisiblePoints/);
   assert.match(detailSource, /timingTrendPointStepPx/);
   assert.match(detailSource, /className="overflow-hidden border border-\[color:color-mix\(in_srgb,var\(--border-color\)_24%,transparent\)\] bg-\[color:color-mix\(in_srgb,var\(--bg-main\)_92%,var\(--bg-surface\)\)\]"/);
-  assert.match(detailSource, /width: '100%'/);
   assert.doesNotMatch(detailSource, /resolveTimingTrendVisibleWindowMs/);
   assert.doesNotMatch(detailSource, /timingTrendStripFullWindowWidthPx/);
   assert.doesNotMatch(detailSource, /overflow-x-auto/);

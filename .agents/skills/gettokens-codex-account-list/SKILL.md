@@ -68,6 +68,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 普通用法：用户在 Codex 侧配置模型名，例如 `deepseek`；sidecar 按 `deepseek` 进入模型 registry / 账号能力过滤，命中声明支持该模型的账号。
 - 进阶用法：账号卡模型映射把特殊 Codex 模型名暴露为 alias，例如 `models[].name = deepseek-chat`、`models[].alias = deepseek`；路由侧按 `deepseek` 选账号，执行侧发给上游 `deepseek-chat`。
 - 多个真实模型可以映射到同一个 Codex alias；openai-compatible 账号内会形成 alias pool，并在支持的错误边界内做同账号内轮转或失败切换。
+- SQLite account-store 启用后，openai-compatible runtime auth 必须自描述可注册模型，例如通过非敏感 `openai_compat_models` attribute 携带模型声明。旧 `config.OpenAICompatibility` 只作为迁移输入，不能在运行时 synthesis 或 `sdk/cliproxy` 模型注册阶段作为 fallback；缺少自描述模型时应暴露为回归，而不是反查旧 config 补洞。
 
 ## 3.2 Codex /model 本地目录投影语义
 - Codex `/model` 展示与 GetTokens runtime route 是两条边界：runtime 真源仍是 sidecar / account store / channel routing；`model_catalog_json` 只是让本地 Codex TUI 稳定展示可选模型的 projection。

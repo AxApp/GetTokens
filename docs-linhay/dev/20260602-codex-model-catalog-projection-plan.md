@@ -203,3 +203,26 @@ npm --prefix frontend run test:unit -- src/features/accounts/tests/accountLocalC
 
 - 使用隔离 `CODEX_HOME` 和临时 GetTokens relay config 启动 Codex CLI，确认 `/v1/models?client_version=...` 与 static catalog 均包含目标 DeepSeek alias。
 - 重启 Codex 后在 `/model -> All models` 选择 DeepSeek，确认请求仍走 GetTokens relay `/v1/responses`，sidecar route engine 命中 openai-compatible executor。
+
+## 2026-06-02 运行时路由修复
+
+本地 Codex 报错 `auth_unavailable: no auth available (providers=codex, model=deepseek-v4-flash)` 后，补查相关 spaces，确认 DeepSeek 的正式产品边界是 `openai-compatible provider`，Codex 运行时路由只应消费 body `model`。
+
+根因不在 `model_catalog_json` 本身，而在 sidecar account-store runtime synthesis：SQLite 账号库启用后，openai-compatible 账号合成出的 auth 只带 `models_hash`，没有带可用于注册 registry 的模型定义。进入 SQLite 统一账号库后，运行时真源必须是 account-store 合成出的 auth；旧 `config.OpenAICompatibility` 只参与迁移，不能参与运行时 synthesis，也不能在模型注册阶段作为 fallback。缺少自描述模型 attribute 时，DeepSeek auth 没有注册到 model registry，于是 `/v1/responses` 的 provider set 只剩 Codex 静态 catalog 的 `codex`。
+
+本轮修复：
+
+- `internal/watcher/synthesizer/config.go`：account-store openai-compatible auth 合成时写入非敏感 `openai_compat_models` attribute；DeepSeek 默认模型也只在 account-store 合成阶段 materialize。
+- `sdk/cliproxy/service.go`：注册 openai-compatible auth 模型时只读取 auth attributes（`compat_name`、`provider_key`、`base_url`、`openai_compat_models`），不再反查 `cfg.OpenAICompatibility`。
+- `sdk/cliproxy/service_excluded_models_test.go` 与 `internal/watcher/synthesizer/config_test.go`：补 account-store DeepSeek、自描述模型注册、DeepSeek 默认模型合成和“缺少 `openai_compat_models` 不回退旧 config”的回归。
+
+已验证：
+
+```bash
+go test ./internal/watcher/synthesizer ./sdk/cliproxy -run 'TestConfigSynthesizer_UsesAccountStoreForCodexAndOpenAICompatible|TestConfigSynthesizer_OpenAICompat_DeepSeekDefaultsMaterialized|TestConfigSynthesizer_OpenAICompat_WithModels|TestRegisterModelsForAuth_AccountStoreOpenAICompatibilityModels|TestRegisterModelsForAuth_OpenAICompatibilityUsesAuthModelAttributes|TestRegisterModelsForAuth_OpenAICompatibilityDoesNotFallbackToConfig|TestRegisterModelsForAuth_OpenAICompatibilityImageModelType' -count=1
+go test ./sdk/api/handlers/openai -run 'TestCodexDeepSeekOpenAICompatibleResponses.*Smoke|TestOpenAIModelsReturnsDeepSeekOpenAICompatibleCodexCatalogEntry' -count=1
+go test ./sdk/api/handlers ./sdk/cliproxy/auth ./internal/registry -run 'TestGetRequestDetails|TestCodexStaticModelsIncludeDeepSeekV4OpenAICompatibleModels|TestExecuteStreamWithAuthManager_SelectionErrorIncludesProviderContext' -count=1
+go test ./internal/watcher/synthesizer ./sdk/cliproxy ./sdk/api/handlers/openai ./sdk/api/handlers ./sdk/cliproxy/auth ./internal/registry -count=1
+go build -o test-output ./cmd/server
+./scripts/ensure-sidecar.sh darwin arm64
+```

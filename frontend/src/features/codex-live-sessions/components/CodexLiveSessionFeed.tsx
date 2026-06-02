@@ -1,4 +1,3 @@
-import { Copy } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ClipboardSetText } from '../../../../wailsjs/runtime/runtime';
 import type {
@@ -161,34 +160,32 @@ function SessionRow({
 
   return (
     <div
-      className={`grid w-full grid-cols-[minmax(0,1fr)_minmax(7rem,auto)] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-expanded={selected}
+      className={`grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
         selected
           ? 'bg-[color-mix(in_srgb,var(--text-primary)_7%,var(--bg-main))]'
           : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'
       }`}
     >
-      <button
-        type="button"
-        onClick={onSelect}
-        aria-expanded={selected}
-        className="col-start-1 row-start-1 min-w-0 text-left transition-transform active:scale-[0.99]"
-      >
-        <span className="block truncate font-mono text-[length:var(--font-size-ui-lg)] font-black leading-snug text-[var(--text-primary)]">
-          {summary.sessionProjectLabel}
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={onSelect}
-        tabIndex={-1}
-        className="col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug uppercase text-[var(--text-muted)] transition-transform active:scale-[0.99]"
-      >
+      <span className="col-start-1 row-start-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black leading-snug text-[var(--text-primary)]">
+        {summary.sessionProjectLabel}
+      </span>
+      <span className="col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug uppercase text-[var(--text-muted)]">
         {summary.transportLabel}
-      </button>
+      </span>
       <span className="col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">
         {summary.accountLabel}
       </span>
-      <div className="col-start-2 row-start-2 flex min-w-0 max-w-[15rem] items-center justify-end justify-self-end text-right">
+      <div className="col-start-2 row-start-2 flex min-w-0 items-center justify-end justify-self-end text-right">
         <button
           type="button"
           onClick={(event) => {
@@ -196,27 +193,15 @@ function SessionRow({
             onCopySessionID(session.sessionID);
           }}
           aria-label={`${t('codex_live_sessions.copy_session_id')} ${summary.sessionIDLabel}`}
-          title={copied ? t('codex_live_sessions.copied') : t('codex_live_sessions.copy_session_id')}
+          title={copied ? t('codex_live_sessions.copied') : `${t('codex_live_sessions.copy_session_id')} ${summary.sessionIDLabel}`}
           aria-live="polite"
-          className={`flex min-w-0 max-w-full items-center justify-end gap-1 truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug transition-colors active:scale-[0.98] ${
+          className={`inline-flex h-6 shrink-0 items-center justify-center border border-[color:color-mix(in_srgb,var(--border-color)_38%,transparent)] px-1.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase leading-none transition-colors active:scale-[0.98] ${
             copied
-              ? 'text-[var(--color-status-success)]'
-              : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+              ? 'border-[color:color-mix(in_srgb,var(--color-status-success)_55%,transparent)] text-[var(--color-status-success)]'
+              : 'text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]'
           }`}
         >
-          {copied ? (
-            <>
-              <span className="truncate">{t('codex_live_sessions.copied')}</span>
-              <span aria-hidden="true" className="text-[var(--color-status-success)]">
-                ✓
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="truncate">{summary.sessionIDLabel}</span>
-              <Copy className="h-3 w-3 shrink-0" strokeWidth={2.5} />
-            </>
-          )}
+          {copied ? t('codex_live_sessions.copied') : t('codex_live_sessions.session_button')}
         </button>
       </div>
     </div>
