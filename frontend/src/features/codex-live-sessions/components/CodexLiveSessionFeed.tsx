@@ -57,13 +57,13 @@ export function SessionFeed({
   }
 
   return (
-    <div className="min-h-0 min-w-0 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] shadow-[6px_6px_0_var(--shadow-color)]">
+    <div className="min-h-0 min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_78%,var(--bg-surface))] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]">
       <div
         data-debug={undefined}
-        className="grid gap-1 border-b-2 border-[var(--border-color)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
+        className="grid gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
       >
         <div>
-          <h3 className="font-mono text-[length:var(--font-size-ui-3xl)] font-black uppercase tracking-[0.16em]">
+          <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
             {t('codex_live_sessions.session_feed')}
           </h3>
           <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
@@ -83,7 +83,7 @@ export function SessionFeed({
             </div>
           </div>
         ) : (
-          <div className="divide-y divide-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)]">
+          <div className="divide-y divide-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)]">
             {sessions.map((session) => {
               const request = getPrimaryCodexLiveRequest(session);
               const selected = session.sessionID === selectedSessionID;
@@ -161,9 +161,9 @@ function SessionRow({
 
   return (
     <div
-      className={`grid w-full grid-cols-[minmax(0,1fr)_minmax(9rem,auto)] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
+      className={`grid w-full grid-cols-[minmax(0,1fr)_minmax(7rem,auto)] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
         selected
-          ? 'bg-[color-mix(in_srgb,var(--border-color)_10%,var(--bg-main))]'
+          ? 'bg-[color-mix(in_srgb,var(--text-primary)_7%,var(--bg-main))]'
           : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'
       }`}
     >
@@ -173,7 +173,7 @@ function SessionRow({
         aria-expanded={selected}
         className="col-start-1 row-start-1 min-w-0 text-left transition-transform active:scale-[0.99]"
       >
-        <span className="block truncate font-mono text-[length:var(--font-size-ui-2xl)] font-black leading-snug text-[var(--text-primary)]">
+        <span className="block truncate font-mono text-[length:var(--font-size-ui-lg)] font-black leading-snug text-[var(--text-primary)]">
           {summary.sessionProjectLabel}
         </span>
       </button>

@@ -231,7 +231,7 @@ export default function CodexLiveSessionsWorkbench({
           </div>
         </div>
 
-        <div className="grid min-h-[620px] min-w-0 gap-5 xl:grid-cols-[minmax(320px,420px)_minmax(0,1fr)] xl:items-start">
+        <div className="grid min-h-[620px] min-w-0 gap-5 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] xl:items-start">
           <SessionFeed
             sessions={sessions}
             selectedSessionID={selectedSession?.sessionID}
@@ -240,7 +240,7 @@ export default function CodexLiveSessionsWorkbench({
             }}
             t={t}
           />
-          <div className="min-w-0 xl:sticky xl:top-5 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:overscroll-contain xl:pr-1 scrollbar-stable">
+          <div className="min-w-0">
             <SessionDetail
               session={selectedSessionWithDetail}
               request={selectedRequest}

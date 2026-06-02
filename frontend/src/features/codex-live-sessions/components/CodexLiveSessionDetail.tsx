@@ -50,7 +50,7 @@ export function SessionDetail({
   errorMessage?: string;
   t: Translate;
 }) {
-  const [selectedTimingMetric, setSelectedTimingMetric] = useState<CodexLiveTimingTrendMetric>('totalDurationMs');
+  const [selectedTimingMetric, setSelectedTimingMetric] = useState<CodexLiveTimingTrendMetric>('firstEventMs');
 
   if (!session) {
     return (
@@ -65,40 +65,53 @@ export function SessionDetail({
   const timeline = request?.timeline ?? session.recentEvents;
 
   return (
-    <div className="grid min-w-0 w-full gap-5">
-      <div className="grid min-w-0 gap-5">
+    <div className="grid max-h-[calc(100vh-13rem)] min-w-0 w-full gap-5 overflow-y-auto overscroll-contain pr-1 scrollbar-stable" data-codex-session-detail-root="true">
+      <div className="grid min-w-0 gap-3" data-codex-detail-section="analysis">
         {loading || errorMessage ? (
-          <div className="flex min-h-10 items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase">
-            <span className="text-[var(--text-muted)]">
-              {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
-            </span>
-            {errorMessage ? (
-              <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span>
-            ) : null}
+          <div className="overflow-hidden" data-codex-detail-slot="status">
+            <div className="flex min-h-10 items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_45%,transparent)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase">
+              <span className="text-[var(--text-muted)]">
+                {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
+              </span>
+              {errorMessage ? (
+                <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span>
+              ) : null}
+            </div>
           </div>
         ) : null}
-        <RequestTimingTrend session={session} request={request} selectedMetric={selectedTimingMetric} t={t} />
-        <TimingMetrics
-          session={session}
-          request={request}
-          selectedMetric={selectedTimingMetric}
-          onSelectMetric={setSelectedTimingMetric}
-          t={t}
-        />
-        <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
+        <div className="min-w-0 overflow-hidden" data-codex-detail-slot="trend">
+          <RequestTimingTrend session={session} request={request} selectedMetric={selectedTimingMetric} t={t} />
+        </div>
+        <div className="min-w-0" data-codex-detail-slot="metrics">
+          <TimingMetrics
+            session={session}
+            request={request}
+            selectedMetric={selectedTimingMetric}
+            onSelectMetric={setSelectedTimingMetric}
+            t={t}
+          />
+        </div>
+        <div className="min-w-0" data-codex-detail-slot="timeline">
+          <Timeline requests={session.requests} fallbackEvents={timeline} t={t} />
+        </div>
       </div>
 
-      <div className="grid min-w-0 gap-5">
-        <AccountCard session={session} request={request} t={t} />
-        <SessionCard session={session} request={request} t={t} />
-        <TransportLane events={timeline} t={t} />
+      <div className="grid min-w-0 gap-5 2xl:grid-cols-2" data-codex-detail-section="metadata">
+        <div className="min-w-0" data-codex-detail-slot="account">
+          <AccountCard session={session} request={request} t={t} />
+        </div>
+        <div className="min-w-0" data-codex-detail-slot="session">
+          <SessionCard session={session} request={request} t={t} />
+        </div>
+        <div className="min-w-0 2xl:col-span-2" data-codex-detail-slot="transport">
+          <TransportLane events={timeline} t={t} />
+        </div>
       </div>
     </div>
   );
 }
 
 const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: string; color: string }> = [
-  { id: 'totalDurationMs', labelKey: 'codex_live_sessions.timing_total', color: 'var(--color-chart-primary)' },
   { id: 'firstEventMs', labelKey: 'codex_live_sessions.timing_ttft', color: 'var(--color-chart-blue)' },
   { id: 'firstTokenMs', labelKey: 'codex_live_sessions.timing_first_token', color: 'var(--color-chart-peak)' },
   { id: 'streamDurationMs', labelKey: 'codex_live_sessions.timing_stream', color: 'var(--color-status-success)' },
@@ -109,13 +122,11 @@ const timingTrendSeries: Array<{ id: CodexLiveTimingTrendMetric; labelKey: strin
   { id: 'longestEventGapMs', labelKey: 'codex_live_sessions.timing_max_gap', color: 'var(--color-status-danger)' },
 ];
 const requestTimelineVisibleLimit = 15;
-const timingTrendAudioBarStepPx = 5;
-const timingTrendAudioMinVisibleBars = 36;
+const timingTrendPointStepPx = 16;
+const timingTrendMinVisiblePoints = 18;
 const timingTrendSequenceTickEvery = 10;
 const timingTrendSequenceTickMinGapPx = 40;
-const timingTrendLiveRingRadiusPx = 7;
-const timingTrendWaveformMinFillRatio = 0.5;
-const timingTrendChartFallbackWidthPx = 320;
+const timingTrendChartFallbackWidthPx = 560;
 
 function RequestTimingTrend({
   session,
@@ -140,25 +151,27 @@ function RequestTimingTrend({
   const selectedSeries = getTimingTrendSeries(selectedMetric);
 
   return (
-    <section className="min-w-0" aria-label={t('codex_live_sessions.request_timing_trend')}>
-      <div className="flex flex-wrap items-center gap-2">
-        <StatusBadge status={session.status} t={t} />
-        {session.fallbackInferred ? <span className="badge-swiss">{t('codex_live_sessions.inferred')}</span> : null}
-        <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-          {currentRequestID}
-        </span>
-      </div>
-
-      <div className="mt-3 grid min-h-[166px] gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="font-mono text-[length:var(--font-size-ui-lg)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+    <section className="grid min-w-0 gap-3" aria-label={t('codex_live_sessions.request_timing_trend')}>
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={session.status} t={t} />
+            {session.fallbackInferred ? <span className="badge-swiss">{t('codex_live_sessions.inferred')}</span> : null}
+            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+              {currentRequestID}
+            </span>
+          </div>
+          <h3 className="mt-3 font-mono text-[length:var(--font-size-ui-2xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
-          <span className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-            {session.model} · {session.downstreamTransport} → {session.upstreamTransport}
-          </span>
         </div>
+        <div className="min-w-0 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] xl:text-right">
+          <div className="truncate text-[var(--text-primary)]">{session.model}</div>
+          <div className="mt-1 truncate">{session.downstreamTransport} → {session.upstreamTransport}</div>
+        </div>
+      </div>
 
+      <div className="grid gap-3">
         <TimingTrendChart
           trend={trend}
           selectedMetric={selectedMetric}
@@ -166,7 +179,7 @@ function RequestTimingTrend({
           t={t}
         />
 
-        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
+        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
           <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-2">
             <TimingTrendFooterItem label={t('codex_live_sessions.duration')} value={formatDuration(session.durationMs)} />
             <TimingTrendFooterItem label={t('codex_live_sessions.requests')} value={`${session.requestCount}`} />
@@ -208,9 +221,9 @@ function TimingTrendChart({
   selectedRequestID: string;
   t: Translate;
 }) {
-  const chartHeight = 168;
-  const chartTopInset = 18;
-  const chartBottomInset = 30;
+  const chartHeight = 230;
+  const chartTopInset = 22;
+  const chartBottomInset = 34;
   const height = chartHeight;
   const padding = resolveTimingTrendChartPadding(chartTopInset, chartBottomInset);
   const chartShellRef = useRef<HTMLDivElement | null>(null);
@@ -220,9 +233,12 @@ function TimingTrendChart({
   const visibleRequestCount = resolveTimingTrendVisibleRequestCount(width, padding);
   const visiblePoints = trend.points.slice(-visibleRequestCount);
   const selectedMetricMaxMs = getTimingTrendMetricMax(visiblePoints, selectedMetric);
-  const waveformBars = buildTimingTrendWaveformBars(visiblePoints, selectedMetric, selectedMetricMaxMs, width, height, padding);
-  const sequenceTickIndexes = resolveTimingTrendSequenceTickIndexes(waveformBars, selectedRequestID);
-  const centerY = padding.top + (height - padding.top - padding.bottom) / 2;
+  const chartPoints = buildTimingTrendLinePoints(visiblePoints, selectedMetric, selectedMetricMaxMs, width, height, padding);
+  const sequenceTickIndexes = resolveTimingTrendSequenceTickIndexes(chartPoints, selectedRequestID);
+  const linePath = buildTimingTrendLinePath(chartPoints);
+  const areaPath = buildTimingTrendAreaPath(chartPoints, height - padding.bottom);
+  const selectedPoint = chartPoints.find((point) => point.point.requestID === selectedRequestID) ?? chartPoints[chartPoints.length - 1];
+  const gridLines = [0, 0.25, 0.5, 0.75, 1];
 
   useLayoutEffect(() => {
     const element = chartShellRef.current;
@@ -242,7 +258,7 @@ function TimingTrendChart({
 
   if (!trend.hasData || selectedMetricMaxMs <= 0) {
     return (
-      <div className="mt-3 grid h-[168px] place-items-center bg-[color:color-mix(in_srgb,var(--bg-main)_88%,var(--bg-surface))] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+      <div className="grid h-[230px] place-items-center border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_90%,var(--bg-surface))] font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
         {t('codex_live_sessions.timing_trend_empty')}
       </div>
     );
@@ -250,8 +266,8 @@ function TimingTrendChart({
 
   return (
     <div
-      className="mt-3 overflow-hidden bg-[color:color-mix(in_srgb,var(--bg-main)_88%,var(--bg-surface))]"
-      data-codex-timing-waveform-strip="true"
+      className="overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_92%,var(--bg-surface))]"
+      data-codex-timing-latency-chart="true"
       role="img"
       aria-label={t('codex_live_sessions.request_timing_trend')}
     >
@@ -264,27 +280,51 @@ function TimingTrendChart({
         }}
       >
         <style>{`
-          @keyframes codex-live-strip-enter {
-            0% { opacity: 0.56; }
+          @keyframes codex-live-chart-enter {
+            0% { opacity: 0; transform: translateY(4px); }
             100% { opacity: 1; }
           }
-          @keyframes codex-live-ring-breathe {
-            0%, 100% { opacity: 0.22; stroke-width: 1; }
-            50% { opacity: 0.58; stroke-width: 1.75; }
+          @keyframes codex-live-point-pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.68; transform: scale(1.45); }
           }
         `}</style>
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="absolute inset-0 h-full w-full" aria-hidden="true">
-          <line
-            data-codex-timing-waveform-centerline="true"
-            x1={padding.left}
-            x2={width - padding.right}
-            y1={centerY}
-            y2={centerY}
-            stroke="color-mix(in srgb, var(--text-muted) 22%, transparent)"
-            strokeWidth="1"
-          />
+          <defs>
+            <linearGradient id="codexTimingTrendArea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={selectedSeries.color} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={selectedSeries.color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
 
-          {waveformBars.map(({ point, x }, index) => {
+          {gridLines.map((ratio) => {
+            const y = padding.top + (height - padding.top - padding.bottom) * ratio;
+            return (
+              <g key={`grid-${ratio}`} data-codex-timing-grid-line="true">
+                <line
+                  x1={padding.left}
+                  x2={width - padding.right}
+                  y1={y}
+                  y2={y}
+                  stroke="color-mix(in srgb, var(--text-muted) 13%, transparent)"
+                  strokeWidth="1"
+                />
+                {ratio === 0 || ratio === 0.5 || ratio === 1 ? (
+                  <text
+                    x={padding.left - 8}
+                    y={y + 3}
+                    textAnchor="end"
+                    className="fill-[var(--text-muted)] font-mono text-[9px] font-black"
+                    opacity="0.52"
+                  >
+                    {formatDuration(selectedMetricMaxMs * (1 - ratio))}
+                  </text>
+                ) : null}
+              </g>
+            );
+          })}
+
+          {chartPoints.map(({ point, x }, index) => {
             const showSequenceTick = sequenceTickIndexes.has(index);
             return (
               <g key={`${point.requestID}-sequence`} data-codex-timing-sequence-tick={showSequenceTick ? 'true' : undefined}>
@@ -313,35 +353,50 @@ function TimingTrendChart({
             );
           })}
 
-          <g key={`${selectedMetric}-audio-waveform-layer`} style={{ animation: 'codex-live-strip-enter 240ms ease-out' }}>
-            {waveformBars.map(({ point, x, centerY, topY, bottomY, value }) => (
-              <g key={`${point.requestID}-waveform-bar`} data-codex-timing-waveform-bar="true">
-                <line
-                  x1={x}
-                  x2={x}
-                  y1={topY}
-                  y2={bottomY}
+          <g key={`${selectedMetric}-latency-trend-layer`} data-codex-timing-line-layer="true" style={{ animation: 'codex-live-chart-enter 220ms cubic-bezier(0.16,1,0.3,1)' }}>
+            {areaPath ? <path d={areaPath} fill="url(#codexTimingTrendArea)" data-codex-timing-area-path="true" /> : null}
+            {linePath ? (
+              <path
+                d={linePath}
+                fill="none"
+                stroke={selectedSeries.color}
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                data-codex-timing-line-path="true"
+              />
+            ) : null}
+            {chartPoints.map(({ point, x, y, value }) => {
+              const emphasized = point.requestID === selectedRequestID || point.isLive;
+              return (
+                <circle
+                  key={`${point.requestID}-point`}
+                  cx={x}
+                  cy={y}
+                  r={emphasized ? 4.5 : 2.5}
+                  fill={emphasized ? selectedSeries.color : 'var(--bg-main)'}
                   stroke={selectedSeries.color}
-                  strokeLinecap="round"
-                  strokeWidth={point.requestID === selectedRequestID ? 4 : 2}
-                  opacity={point.requestID === selectedRequestID ? 0.82 : point.isLive ? 0.72 : 0.34}
+                  strokeWidth={emphasized ? 2 : 1.25}
+                  opacity={emphasized ? 0.95 : 0.58}
+                  data-codex-timing-point="true"
                 >
                   <title>{`${point.label} · ${t(selectedSeries.labelKey)} ${formatDuration(value)}`}</title>
-                </line>
-                {point.isLive || point.requestID === selectedRequestID ? (
-                  <circle
-                    cx={x}
-                    cy={centerY}
-                    r={timingTrendLiveRingRadiusPx}
-                    fill="none"
-                    stroke={selectedSeries.color}
-                    strokeWidth="1.25"
-                    opacity="0.48"
-                    style={{ animation: 'codex-live-ring-breathe 1.9s ease-in-out infinite' }}
-                  />
-                ) : null}
-              </g>
-            ))}
+                </circle>
+              );
+            })}
+            {selectedPoint ? (
+              <circle
+                cx={selectedPoint.x}
+                cy={selectedPoint.y}
+                r="9"
+                fill="none"
+                stroke={selectedSeries.color}
+                strokeWidth="1.25"
+                opacity="0.36"
+                data-codex-timing-selected-ring="true"
+                style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'codex-live-point-pulse 1.8s ease-in-out infinite' }}
+              />
+            ) : null}
           </g>
         </svg>
       </div>
@@ -362,49 +417,54 @@ function resolveTimingTrendChartPadding(top: number, bottom: number) {
     top,
     right: 18,
     bottom,
-    left: 14,
+    left: 52,
   };
 }
 
-interface TimingTrendWaveformBar {
+interface TimingTrendLinePoint {
   point: CodexLiveRequestTimingTrendPoint;
   x: number;
-  centerY: number;
-  topY: number;
-  bottomY: number;
-  amplitude: number;
+  y: number;
   value: number;
 }
 
-function buildTimingTrendWaveformBars(
+function buildTimingTrendLinePoints(
   points: readonly CodexLiveRequestTimingTrendPoint[],
   metric: CodexLiveTimingTrendMetric,
   maxMs: number,
   width: number,
   height: number,
   padding: { top: number; right: number; bottom: number; left: number },
-): TimingTrendWaveformBar[] {
+): TimingTrendLinePoint[] {
   const chartHeight = height - padding.top - padding.bottom;
-  const centerY = padding.top + chartHeight / 2;
-  const maxAmplitude = Math.max(6, chartHeight / 2 - 8);
   return points.flatMap((point, index) => {
     const value = point.values[metric];
     if (value === null) {
       return [];
     }
     const ratio = maxMs > 0 ? Math.min(1, Math.max(0, value / maxMs)) : 0;
-    const amplitude = Math.max(3, maxAmplitude * ratio);
     const x = resolveTimingTrendBarX(index, points.length, width, padding);
     return {
       point,
       value,
       x,
-      centerY,
-      amplitude,
-      topY: centerY - amplitude,
-      bottomY: centerY + amplitude,
+      y: padding.top + chartHeight * (1 - ratio),
     };
   });
+}
+
+function buildTimingTrendLinePath(points: readonly TimingTrendLinePoint[]): string {
+  return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+}
+
+function buildTimingTrendAreaPath(points: readonly TimingTrendLinePoint[], baselineY: number): string {
+  if (points.length === 0) {
+    return '';
+  }
+  const linePath = buildTimingTrendLinePath(points);
+  const first = points[0];
+  const last = points[points.length - 1];
+  return `M ${first.x} ${baselineY} ${linePath.replace(/^M /, 'L ')} L ${last.x} ${baselineY} Z`;
 }
 
 function resolveTimingTrendVisibleRequestCount(
@@ -412,7 +472,7 @@ function resolveTimingTrendVisibleRequestCount(
   padding: { right: number; left: number },
 ): number {
   const plotWidth = Math.max(1, width - padding.left - padding.right);
-  return Math.max(timingTrendAudioMinVisibleBars, Math.floor(plotWidth / timingTrendAudioBarStepPx));
+  return Math.max(timingTrendMinVisiblePoints, Math.floor(plotWidth / timingTrendPointStepPx));
 }
 
 function resolveTimingTrendBarX(
@@ -423,45 +483,45 @@ function resolveTimingTrendBarX(
 ): number {
   const plotRight = width - padding.right;
   const plotWidth = Math.max(0, width - padding.left - padding.right);
-  const fixedWidth = Math.max(0, (visibleCount - 1) * timingTrendAudioBarStepPx);
-  const visibleWidth = Math.min(plotWidth, Math.max(fixedWidth, plotWidth * timingTrendWaveformMinFillRatio));
+  const fixedWidth = Math.max(0, (visibleCount - 1) * timingTrendPointStepPx);
+  const visibleWidth = Math.min(plotWidth, Math.max(fixedWidth, plotWidth));
   const barStep = visibleCount > 1 ? visibleWidth / (visibleCount - 1) : 0;
   return plotRight - visibleWidth + index * barStep;
 }
 
 function resolveTimingTrendSequenceTickIndexes(
-  bars: readonly TimingTrendWaveformBar[],
+  points: readonly TimingTrendLinePoint[],
   selectedRequestID: string,
 ): Set<number> {
   const labelIndexes = new Set<number>();
-  if (bars.length <= 6) {
-    bars.forEach((_, index) => labelIndexes.add(index));
+  if (points.length <= 6) {
+    points.forEach((_, index) => labelIndexes.add(index));
     return labelIndexes;
   }
 
-  const canAddBar = (bar: TimingTrendWaveformBar) => {
-    const existingXs = Array.from(labelIndexes, (existingIndex) => bars[existingIndex]?.x ?? Number.NEGATIVE_INFINITY);
-    return existingXs.every((existingX) => Math.abs(bar.x - existingX) >= timingTrendSequenceTickMinGapPx);
+  const canAddPoint = (point: TimingTrendLinePoint) => {
+    const existingXs = Array.from(labelIndexes, (existingIndex) => points[existingIndex]?.x ?? Number.NEGATIVE_INFINITY);
+    return existingXs.every((existingX) => Math.abs(point.x - existingX) >= timingTrendSequenceTickMinGapPx);
   };
   const addLabelIndex = (index: number, force = false) => {
-    const bar = bars[index];
-    if (!bar) {
+    const point = points[index];
+    if (!point) {
       return;
     }
-    if (force || canAddBar(bar)) {
+    if (force || canAddPoint(point)) {
       labelIndexes.add(index);
     }
   };
 
-  addLabelIndex(bars.length - 1, true);
-  bars.forEach((bar, index) => {
-    if (bar.point.isLive || bar.point.requestID === selectedRequestID) {
-      addLabelIndex(index, index === bars.length - 1);
+  addLabelIndex(points.length - 1, true);
+  points.forEach((chartPoint, index) => {
+    if (chartPoint.point.isLive || chartPoint.point.requestID === selectedRequestID) {
+      addLabelIndex(index, index === points.length - 1);
     }
   });
-  for (let index = bars.length - 1; index >= 0; index -= 1) {
-    const bar = bars[index];
-    if (bar && bar.point.sequence % timingTrendSequenceTickEvery === 0) {
+  for (let index = points.length - 1; index >= 0; index -= 1) {
+    const point = points[index];
+    if (point && point.point.sequence % timingTrendSequenceTickEvery === 0) {
       addLabelIndex(index);
     }
   }
@@ -530,35 +590,29 @@ function TimingMetrics({
 
   const averages = resolveCodexLiveTimingMetricSummary(session, request, { nowMs });
   const metrics = buildTimingMetricRows(averages, t);
-  const summaryMeta = buildTimingSummaryMeta(averages, t);
 
   return (
-    <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="border border-[color:color-mix(in_srgb,var(--border-color)_32%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_70%,var(--bg-surface))] p-4">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
           {t('codex_live_sessions.timing_average')}
         </div>
-        {summaryMeta ? (
-          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-            {summaryMeta}
-          </div>
-        ) : null}
       </div>
-      <div className="mt-3 grid gap-x-5 gap-y-2 md:grid-cols-3 xl:grid-cols-4">
+      <div className="mt-3 grid gap-2 md:grid-cols-3 xl:grid-cols-5">
         {metrics.map((metric) => {
           const selected = metric.trendMetric === selectedMetric;
-          const rowClassName = `flex min-w-0 justify-between gap-3 border-b py-1 font-mono text-[length:var(--font-size-ui-sm)] uppercase transition-colors ${
+          const rowClassName = `grid min-h-12 min-w-0 grid-cols-[1fr_auto] items-end gap-2 border px-2.5 py-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase transition-colors ${
             selected
-              ? 'border-[var(--text-primary)] text-[var(--text-primary)]'
-              : 'border-[color:color-mix(in_srgb,var(--border-color)_30%,transparent)] text-[var(--text-muted)]'
+              ? 'border-[var(--text-primary)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-[0_1px_0_var(--shadow-color)]'
+              : 'border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_58%,transparent)] text-[var(--text-muted)] hover:border-[color:color-mix(in_srgb,var(--border-color)_46%,transparent)] hover:bg-[var(--bg-main)]'
           }`;
 
           const trendMetric = metric.trendMetric;
           if (!trendMetric) {
             return (
               <div key={metric.key} className={rowClassName}>
-                <span className="font-black">{metric.label}</span>
-                <span className="truncate font-black text-[var(--text-primary)]">{metric.value}</span>
+                <span className="min-w-0 truncate font-black">{metric.label}</span>
+                <span className="font-black tabular-nums text-[var(--text-primary)]">{metric.value}</span>
               </div>
             );
           }
@@ -571,26 +625,14 @@ function TimingMetrics({
               aria-pressed={selected}
               onClick={() => onSelectMetric(trendMetric)}
             >
-              <span className="font-black">{metric.label}</span>
-              <span className="truncate font-black text-[var(--text-primary)]">{metric.value}</span>
+              <span className="min-w-0 truncate font-black">{metric.label}</span>
+              <span className="font-black tabular-nums text-[var(--text-primary)]">{metric.value}</span>
             </button>
           );
         })}
       </div>
     </div>
   );
-}
-
-function buildTimingSummaryMeta(summary: CodexLiveTimingMetricAverages, t: Translate): string {
-  if (summary.sampleCount <= 0) {
-    return '';
-  }
-  const parts = [`${t('codex_live_sessions.timing_summary_recent')} ${summary.sampleCount}`];
-  if (typeof summary.sequenceFrom === 'number' && typeof summary.sequenceTo === 'number') {
-    parts.push(`#${summary.sequenceFrom}-#${summary.sequenceTo}`);
-  }
-  parts.push(t(summary.source === 'sidecar' ? 'codex_live_sessions.timing_summary_sidecar' : 'codex_live_sessions.timing_summary_fallback'));
-  return parts.join(' · ');
 }
 
 interface TimingMetricRow {
@@ -607,7 +649,6 @@ function buildTimingMetricRows(averages: CodexLiveTimingMetricAverages, t: Trans
   }
 
   const metricEntries: TimingMetricRow[] = [
-    { key: 'totalDurationMs', label: t('codex_live_sessions.timing_total'), value: formatOptionalDuration(timing.totalDurationMs), trendMetric: 'totalDurationMs' },
     { key: 'firstEventMs', label: t('codex_live_sessions.timing_ttft'), value: formatOptionalDuration(timing.firstEventMs), trendMetric: 'firstEventMs' },
     { key: 'firstTokenMs', label: t('codex_live_sessions.timing_first_token'), value: formatOptionalDuration(timing.firstTokenMs), trendMetric: 'firstTokenMs' },
     { key: 'streamDurationMs', label: t('codex_live_sessions.timing_stream'), value: formatOptionalDuration(timing.streamDurationMs), trendMetric: 'streamDurationMs' },
@@ -618,7 +659,6 @@ function buildTimingMetricRows(averages: CodexLiveTimingMetricAverages, t: Trans
     { key: 'longestEventGapMs', label: t('codex_live_sessions.timing_max_gap'), value: formatOptionalDuration(timing.longestEventGapMs), trendMetric: 'longestEventGapMs' },
     { key: 'reconnectCount', label: t('codex_live_sessions.timing_reconnect'), value: formatOptionalCount(timing.reconnectCount) },
     { key: 'outputTokensPerSecond', label: t('codex_live_sessions.timing_output_rate'), value: formatOptionalRate(timing.outputTokensPerSecond) },
-    { key: 'totalTokensPerSecond', label: t('codex_live_sessions.timing_total_rate'), value: formatOptionalRate(timing.totalTokensPerSecond) },
   ];
   const metrics = metricEntries.reduce<TimingMetricRow[]>((acc, entry) => {
     if (entry.value !== 'n/a') {
@@ -800,7 +840,7 @@ function Timeline({
   const visibleRowCount = requests.length > 0 ? visibleRequests.length : 1;
 
   return (
-    <div className="grid gap-3">
+    <div className="grid min-h-[320px] max-h-[clamp(360px,42vh,560px)] grid-rows-[auto_minmax(0,1fr)] gap-3">
       <div className="flex items-center justify-between gap-3">
         <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
           {t('codex_live_sessions.request_timeline')}
@@ -810,7 +850,7 @@ function Timeline({
         </div>
       </div>
 
-      <div className="border-2 border-[var(--border-color)] bg-[var(--bg-surface)]">
+      <div className="min-h-0 overflow-y-auto border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_82%,var(--bg-surface))] scrollbar-stable">
         {requests.length === 0 ? (
           <TimelineFallbackRow
             summary={fallbackSummary}
@@ -883,7 +923,7 @@ function TimelineSummaryRow({
     <button
       type="button"
       onClick={onOpen}
-      className={`grid min-h-10 w-full grid-cols-[auto_auto_auto_minmax(0,1fr)] items-center gap-2 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-main)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
+      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--border-color)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-main)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
       title={t('codex_live_sessions.detail')}
       aria-label={t('codex_live_sessions.detail')}
     >
@@ -896,7 +936,7 @@ function TimelineSummaryRow({
       <span className="min-w-0 truncate whitespace-nowrap font-mono font-black text-[var(--text-primary)]">
         {timeRangeLabel}
       </span>
-      <div className="flex min-w-0 flex-nowrap items-center justify-end gap-1.5 overflow-hidden">
+      <div className="flex min-w-0 flex-nowrap items-center justify-end gap-1 overflow-hidden">
         {metricItems.map((item, index) => (
           <TimelineMetricPill key={item.label} label={item.label} value={item.value} priority={index} />
         ))}
@@ -930,7 +970,7 @@ function isTimelineValuePresent(value: string): boolean {
 function TimelineMetricPill({ label, value, priority }: { label: string; value: string; priority: number }) {
   const visibilityClass = priority >= 3 ? 'hidden xl:inline-flex' : 'inline-flex';
   return (
-    <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 border border-[color:color-mix(in_srgb,var(--border-color)_42%,transparent)] bg-[var(--bg-main)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]`}>
+    <span className={`${visibilityClass} h-6 shrink-0 items-center gap-1 bg-[color:color-mix(in_srgb,var(--border-color)_9%,transparent)] px-1.5 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-primary)]`}>
       <span className="text-[var(--text-muted)]">{label}</span>
       <span>{value}</span>
     </span>
@@ -960,11 +1000,9 @@ function RequestTimelineDetailModal({
   }
 
   const metricRows: Array<[string, string]> = [
-    [t('codex_live_sessions.timing_total'), formatOptionalDuration(timing?.totalDurationMs)],
     [t('codex_live_sessions.timing_ttft'), formatOptionalDuration(timing?.firstEventMs)],
     [t('codex_live_sessions.timing_first_token'), formatOptionalDuration(timing?.firstTokenMs)],
     [t('codex_live_sessions.timing_output_rate'), formatOptionalRate(timing?.outputTokensPerSecond)],
-    [t('codex_live_sessions.tokens_total'), usage ? usage.totalTokens.toLocaleString() : 'n/a'],
     [t('codex_live_sessions.tokens_output'), usage ? usage.outputTokens.toLocaleString() : 'n/a'],
   ];
 
