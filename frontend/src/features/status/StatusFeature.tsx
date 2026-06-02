@@ -4,6 +4,7 @@ import {
   ApplyRelayServiceConfigToLocal,
   ApplyRelayServiceConfigToLocalV2,
   DisableGetTokensCodexModelCatalogProjection,
+  EnableGetTokensCodexModelCatalogProjection,
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
   GetRelayServiceConfig,
@@ -779,9 +780,38 @@ export default function StatusFeature({
     }
   }
 
+  async function enableCodexModelCatalogProjection(): Promise<boolean> {
+    setIsDisablingModelCatalog(true);
+    try {
+      const models = relayAccountPoolModels.length > 0 ? relayAccountPoolModels : [];
+      const result = await trackRequest(
+        'EnableGetTokensCodexModelCatalogProjection',
+        { modelCount: models.length },
+        () => EnableGetTokensCodexModelCatalogProjection(models)
+      );
+      if (result.existingExternalModelCatalogPath) {
+        const warningMessage = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
+        setLocalApplyMessage(`保留外部 model_catalog_json：${result.existingExternalModelCatalogPath}${warningMessage}`);
+        return false;
+      }
+      setLocalApplyMessage(`/model 同步已启用：${result.modelCatalogPath || result.configPath}，重启 Codex 后生效`);
+      return true;
+    } catch (error) {
+      console.error(error);
+      setLocalApplyMessage(`${t('status.apply_local_failed')}: ${toErrorMessage(error)}`);
+      return false;
+    } finally {
+      setIsDisablingModelCatalog(false);
+    }
+  }
+
   async function changeSyncCodexModelCatalog(nextValue: boolean) {
     if (nextValue) {
       setSyncCodexModelCatalog(true);
+      const enabled = await enableCodexModelCatalogProjection();
+      if (!enabled) {
+        setSyncCodexModelCatalog(false);
+      }
       return;
     }
 

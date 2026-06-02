@@ -226,8 +226,69 @@ func disableGetTokensCodexModelCatalogProjection() (*RelayLocalApplyResult, erro
 	}, nil
 }
 
+func enableGetTokensCodexModelCatalogProjection(
+	models []OpenAICompatibleModel,
+	overrideExternal bool,
+) (*RelayLocalApplyResult, error) {
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil, err
+	}
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		return nil, err
+	}
+
+	configPath := filepath.Join(codexHome, "config.toml")
+	existingConfig, err := readOptionalTextFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	nextConfig, catalogPath, externalPath, requiresRestart, err := applyGetTokensCodexModelCatalogProjection(
+		existingConfig,
+		codexHome,
+		models,
+		overrideExternal,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if catalogPath != "" {
+		if err := writeFileAtomically(configPath, []byte(nextConfig), 0600); err != nil {
+			return nil, err
+		}
+	}
+
+	warnings := []string(nil)
+	if externalPath != "" {
+		warnings = append(warnings, "已保留现有外部 model_catalog_json，未改写为 GetTokens 模型目录")
+	}
+
+	return &RelayLocalApplyResult{
+		CodexHomePath:                    codexHome,
+		ConfigPath:                       configPath,
+		ModelCatalogPath:                 catalogPath,
+		ModelCatalogRequiresRestart:      requiresRestart,
+		ExistingExternalModelCatalogPath: externalPath,
+		Warnings:                         warnings,
+	}, nil
+}
+
 func (a *App) DisableGetTokensCodexModelCatalogProjection() (*RelayLocalApplyResult, error) {
 	return disableGetTokensCodexModelCatalogProjection()
+}
+
+func (a *App) EnableGetTokensCodexModelCatalogProjection(
+	models []OpenAICompatibleModel,
+) (*RelayLocalApplyResult, error) {
+	if len(models) == 0 {
+		relayModels, err := a.ListRelaySupportedModels()
+		if err != nil {
+			return nil, err
+		}
+		models = relayModels
+	}
+	return enableGetTokensCodexModelCatalogProjection(models, false)
 }
 
 func removeGetTokensCodexModelCatalogPointer(configBody string, codexHome string) (string, bool) {

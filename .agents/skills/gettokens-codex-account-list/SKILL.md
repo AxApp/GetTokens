@@ -75,7 +75,7 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - `model_catalog_json` 会完全替换 Codex 内置和远程 catalog；生成文件必须覆盖当前 relay 可选的完整模型集合，不能只写 DeepSeek 或某个单一账号模型。
 - 生成 slug 使用 client-facing model：有 `OpenAICompatibleModel.Alias` 时用 alias，否则用 name；这保证用户在 `/model` 里选到的值就是 sidecar route engine 的请求模型输入。
 - 如果用户已有外部 `model_catalog_json`，默认保留并返回冲突提示；除非用户明确确认接管，不得静默覆盖。
-- Status 页关闭 `/model` 同步开关时，只移除指向 `gettokens-model-catalog.json` 的 pointer；不得删除或改写用户外部 catalog。
+- Status 页 `/model` 同步开关必须双向立即写配置：打开时写入 GetTokens-owned `model_catalog_json` pointer，关闭时只移除指向 `gettokens-model-catalog.json` 的 pointer；不得删除或改写用户外部 catalog。
 - Codex 只在启动时读取 static catalog；前端保存后必须提示重启 Codex 后生效。
 
 ## 4. 路由探测语义

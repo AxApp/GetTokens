@@ -1335,6 +1335,14 @@ func (a *App) DisableGetTokensCodexModelCatalogProjection() (*RelayLocalApplyRes
 	return mapRelayLocalApplyResult(result), nil
 }
 
+func (a *App) EnableGetTokensCodexModelCatalogProjection(models []OpenAICompatibleModel) (*RelayLocalApplyResult, error) {
+	result, err := a.core.EnableGetTokensCodexModelCatalogProjection(mapOpenAICompatibleModelsToWails(models))
+	if err != nil {
+		return nil, err
+	}
+	return mapRelayLocalApplyResult(result), nil
+}
+
 func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {
 	result, err := a.core.GetLocalCodexAuthState()
 	if err != nil {

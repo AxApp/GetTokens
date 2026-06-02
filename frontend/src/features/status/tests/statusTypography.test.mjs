@@ -89,6 +89,16 @@ test('status model catalog sync label opens a preview modal', async () => {
   assert.doesNotMatch(statusPanelSource, /md:grid-cols-\[max-content_max-content_max-content\]/);
 });
 
+test('status model catalog toggle writes config in both directions', async () => {
+  const statusFeatureSource = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(statusFeatureSource, /EnableGetTokensCodexModelCatalogProjection/);
+  assert.match(statusFeatureSource, /DisableGetTokensCodexModelCatalogProjection/);
+  assert.match(statusFeatureSource, /enableCodexModelCatalogProjection/);
+  assert.match(statusFeatureSource, /disableCodexModelCatalogProjection/);
+  assert.doesNotMatch(statusFeatureSource, /if \(nextValue\) \{\s*setSyncCodexModelCatalog\(true\);\s*return;/);
+});
+
 test('codex model provider option descriptions are localized in Chinese', async () => {
   const zh = JSON.parse(await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
   const descriptions = zh.status.codex_model_provider_descriptions;

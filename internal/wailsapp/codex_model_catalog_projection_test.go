@@ -107,6 +107,44 @@ func TestApplyRelayServiceConfigToLocalV2WritesGetTokensModelCatalogPointer(t *t
 	}
 }
 
+func TestEnableGetTokensCodexModelCatalogProjectionWritesPointerWithoutRelayApply(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.WriteFile(configPath, []byte(`model = "deepseek"`+"\n"), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	result, err := enableGetTokensCodexModelCatalogProjection([]OpenAICompatibleModel{
+		{Name: "deepseek-chat", Alias: "deepseek"},
+	}, false)
+	if err != nil {
+		t.Fatalf("enableGetTokensCodexModelCatalogProjection returned error: %v", err)
+	}
+
+	wantCatalogPath := filepath.Join(codexHome, gettokensCodexModelCatalogFilename)
+	if result.ModelCatalogPath != wantCatalogPath {
+		t.Fatalf("ModelCatalogPath = %q, want %q", result.ModelCatalogPath, wantCatalogPath)
+	}
+	if !result.ModelCatalogRequiresRestart {
+		t.Fatalf("ModelCatalogRequiresRestart should be true")
+	}
+
+	configBody, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if !strings.Contains(string(configBody), `model_catalog_json = "`+wantCatalogPath+`"`) {
+		t.Fatalf("config.toml missing GetTokens catalog pointer:\n%s", string(configBody))
+	}
+	if !strings.Contains(string(configBody), `model = "deepseek"`) {
+		t.Fatalf("enable should preserve unrelated local Codex config:\n%s", string(configBody))
+	}
+}
+
 func TestApplyRelayServiceConfigToLocalV2DoesNotOverwriteExternalModelCatalogPointer(t *testing.T) {
 	codexHome := filepath.Join(t.TempDir(), ".codex")
 	t.Setenv("CODEX_HOME", codexHome)

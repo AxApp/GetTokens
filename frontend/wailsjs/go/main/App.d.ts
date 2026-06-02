@@ -53,6 +53,8 @@ export function DownloadCodexBinary(arg1:codexbinary.DownloadInput):Promise<code
 
 export function EnableCodexBinaryManagedPath():Promise<codexbinary.EnableManagedPathResult>;
 
+export function EnableGetTokensCodexModelCatalogProjection(arg1:Array<main.OpenAICompatibleModel>):Promise<main.RelayLocalApplyResult>;
+
 export function ExplainChannelRouting(arg1:main.ChannelRoutingExplainInput):Promise<main.ChannelRoutingExplainResult>;
 
 export function FetchOpenAICompatibleProviderModels(arg1:main.FetchOpenAICompatibleProviderModelsInput):Promise<main.FetchOpenAICompatibleProviderModelsResult>;

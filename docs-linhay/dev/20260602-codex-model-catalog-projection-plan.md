@@ -181,7 +181,7 @@ codex -a never exec --skip-git-repo-check --ephemeral --sandbox read-only --mode
 - `ApplyRelayServiceConfigToLocalV2` 在 `modelCatalogProjectionMode=gettokens` 时写入完整模型 catalog，并把 `config.toml` 顶层 `model_catalog_json` 指向 GetTokens 文件。
 - 如果已有外部 `model_catalog_json`，默认保留外部指针并返回 `existingExternalModelCatalogPath`，不静默接管。
 - 新增 `DisableGetTokensCodexModelCatalogProjection`，只移除指向 `gettokens-model-catalog.json` 的顶层 pointer；外部 catalog 不动。
-- Status 页 Codex 本地应用面板新增“Codex /model 模型目录”同步开关，默认开启；关闭开关会立即移除 GetTokens-owned `model_catalog_json` pointer。
+- Status 页 Codex 本地应用面板新增“Codex /model 模型目录”同步开关，默认开启；打开开关会立即写入 GetTokens-owned `model_catalog_json` pointer，关闭开关会立即移除该 pointer。
 - 账号卡 apply 维持 direct upstream 与 OAuth 模式的既有语义，本轮仅修正 V2 DTO 构造方式，不默认写 GetTokens catalog。
 
 实际实现与 Phase 1 原计划有两点收窄：

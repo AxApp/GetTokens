@@ -98,6 +98,10 @@ export function EnableCodexBinaryManagedPath() {
   return window['go']['main']['App']['EnableCodexBinaryManagedPath']();
 }
 
+export function EnableGetTokensCodexModelCatalogProjection(arg1) {
+  return window['go']['main']['App']['EnableGetTokensCodexModelCatalogProjection'](arg1);
+}
+
 export function ExplainChannelRouting(arg1) {
   return window['go']['main']['App']['ExplainChannelRouting'](arg1);
 }
