@@ -313,7 +313,7 @@ export default function CodexFeature({ workspace }: CodexFeatureProps) {
   }
 
   return (
-    <div className="h-full w-full overflow-auto p-6 lg:p-8" data-collaboration-id="PAGE_CODEX">
+    <div data-collaboration-id="PAGE_CODEX" className="h-full w-full overflow-auto p-6 lg:p-8 select-text">
       <div className="w-full space-y-8">
         <WorkspacePageHeader
           title={t('codex.title')}

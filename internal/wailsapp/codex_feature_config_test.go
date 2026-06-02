@@ -858,6 +858,68 @@ func TestSaveCodexFeatureConfigWritesNestedModelProviderChanges(t *testing.T) {
 	}
 }
 
+func TestSaveCodexFeatureConfigWritesExpandableRootTableLeaves(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", t.TempDir())
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	initial := strings.Join([]string{
+		`[plugins."browser@openai-bundled"]`,
+		`enabled = true`,
+		``,
+		`[marketplaces.openai-bundled]`,
+		`source_type = "local"`,
+		`source = "/Users/linhey/.codex/.tmp/bundled-marketplaces/openai-bundled"`,
+	}, "\n") + "\n"
+	if err := os.WriteFile(configPath, []byte(initial), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := &App{}
+	preview, err := app.SaveCodexFeatureConfig(SaveCodexFeatureConfigInput{
+		Changes: []CodexConfigChangeInput{
+			{
+				ID:        "plugins.browser@openai-bundled.enabled",
+				Path:      []string{"plugins", "browser@openai-bundled", "enabled"},
+				ValueType: "boolean",
+				Value:     false,
+			},
+			{
+				ID:        "marketplaces.openai-bundled.last_updated",
+				Path:      []string{"marketplaces", "openai-bundled", "last_updated"},
+				ValueType: "string",
+				Value:     "2026-05-27T07:30:43Z",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("SaveCodexFeatureConfig returned error: %v", err)
+	}
+	if len(preview.Changes) != 2 {
+		t.Fatalf("preview changes = %#v", preview.Changes)
+	}
+	if preview.Changes[0].PreviousEnabled == nil || *preview.Changes[0].PreviousEnabled != true || preview.Changes[0].NextEnabled != false {
+		t.Fatalf("plugin enabled change did not preserve boolean previous/next values: %#v", preview.Changes[0])
+	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	content := string(body)
+	for _, want := range []string{
+		"[plugins.\"browser@openai-bundled\"]\nenabled = false",
+		"[marketplaces.openai-bundled]\nsource_type = \"local\"\nsource = \"/Users/linhey/.codex/.tmp/bundled-marketplaces/openai-bundled\"\nlast_updated = \"2026-05-27T07:30:43Z\"",
+	} {
+		if !strings.Contains(content, want) {
+			t.Fatalf("root table leaf output missing %q: %s", want, content)
+		}
+	}
+}
+
 func TestSaveCodexFeatureConfigWritesRawTomlSections(t *testing.T) {
 	codexHome := filepath.Join(t.TempDir(), ".codex")
 	t.Setenv("CODEX_HOME", codexHome)

@@ -4,7 +4,7 @@ import type {
   CodexFeatureRow,
 } from '../model/codexFeatureConfig';
 import { groupCodexFeatureRows } from '../model/codexFeatureConfig';
-import { renderCodexValueEditor } from '../model/codexValueEditor';
+import StatusCodexConfigRows from './StatusCodexConfigRows';
 
 function resolveCodexRootSettingDescription(t: (key: string) => string, row: CodexFeatureRow) {
   const translationKey = `status.codex_root_setting_descriptions.${row.key}`;
@@ -101,31 +101,14 @@ export default function StatusCodexRootSettingsSection({
                 {group.rows.length} {t('design_system.items')}
               </div>
             </div>
-            <div className="divide-y-2 divide-[var(--border-color)]">
-              {group.rows.map((row) => (
-                <div
-                  key={row.key}
-                  className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_5rem] md:items-center"
-                >
-                  <div className="min-w-0">
-                    <div className="break-all font-mono text-[length:var(--font-size-ui-md)] font-black tracking-wide text-[var(--text-primary)]">
-                      {row.key}
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-center gap-2 text-[length:var(--font-size-ui-sm)] font-bold tracking-wide text-[var(--text-muted)]">
-                      <span className="inline-flex shrink-0 border-2 border-[var(--border-color)] bg-[var(--text-primary)] px-2 py-0.5 text-[length:var(--font-size-ui-xs)] font-black tracking-[0.14em] text-[var(--bg-main)]">
-                        ROOT
-                      </span>
-                      <span className="min-w-0">{resolveCodexRootSettingDescription(t, row)}</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-start md:justify-center">
-                    <div className="w-full max-w-[22rem]">
-                      {renderCodexValueEditor(row, row.readOnly || isBusy, onChangeSetting)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <StatusCodexConfigRows
+              rows={group.rows}
+              badgeLabel="ROOT"
+              isBusy={isBusy}
+              parentMode="section"
+              resolveDescription={(row) => resolveCodexRootSettingDescription(t, row)}
+              onChangeSetting={onChangeSetting}
+            />
           </div>
         ))}
         {rows.length === 0 ? (

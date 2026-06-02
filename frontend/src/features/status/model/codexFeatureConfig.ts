@@ -57,6 +57,12 @@ export interface CodexFeatureRowGroup {
   rows: CodexFeatureRow[];
 }
 
+export interface CodexFeatureRowPathDisplay {
+  primaryLabel: string;
+  childLabels: string[];
+  fullLabel: string;
+}
+
 export interface CodexFeatureChangeInput {
   values: Record<string, boolean>;
   changes: Array<{
@@ -394,6 +400,72 @@ function normalizeItem(rawItem: unknown): CodexFeatureConfigItem | null {
   };
 }
 
+const expandableRootTableKeys = new Set(['marketplaces', 'plugins']);
+
+function inferCodexLeafValueType(value: unknown) {
+  if (typeof value === 'boolean') {
+    return 'boolean';
+  }
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? 'integer' : 'number';
+  }
+  if (Array.isArray(value)) {
+    return value.every((item) => typeof item === 'string') ? 'string_array' : 'toml';
+  }
+  return 'string';
+}
+
+function flattenSimpleCodexTableLeaves(value: unknown, path: string[]): Array<{ path: string[]; value: unknown }> {
+  if (!isRecord(value)) {
+    return [{ path, value }];
+  }
+
+  const leaves: Array<{ path: string[]; value: unknown }> = [];
+  for (const [childKey, childValue] of Object.entries(value)) {
+    if (isRecord(childValue)) {
+      leaves.push(...flattenSimpleCodexTableLeaves(childValue, [...path, childKey]));
+    } else {
+      leaves.push({ path: [...path, childKey], value: childValue });
+    }
+  }
+  return leaves;
+}
+
+function expandCodexConfigItem(item: CodexFeatureConfigItem): CodexFeatureConfigItem[] {
+  const rootKey = item.path[0] || item.key;
+  if (item.section !== 'root' || !expandableRootTableKeys.has(rootKey) || !isRecord(item.effectiveValue)) {
+    return [item];
+  }
+
+  const leaves = flattenSimpleCodexTableLeaves(item.effectiveValue, item.path);
+  if (leaves.length === 0) {
+    return [item];
+  }
+
+  return leaves.map((leaf) => {
+    const id = leaf.path.join('.');
+    const valueType = inferCodexLeafValueType(leaf.value);
+    return {
+      ...item,
+      id,
+      key: id,
+      path: leaf.path,
+      valueType,
+      options: valueType === 'boolean' ? ['true', 'false'] : [],
+      defaultValue: leaf.value,
+      localValue: leaf.value,
+      localRawValue: String(leaf.value ?? ''),
+      effectiveValue: leaf.value,
+      hasLocalValue: true,
+      canonicalKey: id,
+      legacyAliases: [],
+      unsupported: false,
+      readOnly: item.readOnly,
+      hiddenByDefault: false,
+    };
+  });
+}
+
 export function normalizeCodexFeatureConfigSnapshot(raw: unknown): CodexFeatureConfigSnapshot {
   const record = isRecord(raw) ? raw : {};
   const explicitItems = readItems(raw);
@@ -401,6 +473,7 @@ export function normalizeCodexFeatureConfigSnapshot(raw: unknown): CodexFeatureC
   const items = itemSource
     .map(normalizeItem)
     .filter((item): item is CodexFeatureConfigItem => Boolean(item))
+    .flatMap(expandCodexConfigItem)
     .sort((left, right) => {
       const rankDiff = stageRank[left.stage] - stageRank[right.stage];
       return rankDiff === 0 ? left.key.localeCompare(right.key) : rankDiff;
@@ -674,25 +747,27 @@ function resolveCodexRowGroupId(row: CodexFeatureRow) {
     return 'advanced';
   }
 
-  if (codexRootLaunchKeys.has(row.key)) {
+  const rootKey = row.path[0] || row.key;
+
+  if (codexRootLaunchKeys.has(rootKey)) {
     return 'launch';
   }
-  if (codexRootModelKeys.has(row.key) || row.key.startsWith('model_')) {
+  if (codexRootModelKeys.has(rootKey) || rootKey.startsWith('model_')) {
     return 'model';
   }
-  if (codexRootPolicyKeys.has(row.key) || row.key.startsWith('approval_') || row.key.startsWith('sandbox_')) {
+  if (codexRootPolicyKeys.has(rootKey) || rootKey.startsWith('approval_') || rootKey.startsWith('sandbox_')) {
     return 'policy';
   }
   if (
-    codexRootWorkspaceKeys.has(row.key) ||
-    row.key.startsWith('project_') ||
-    row.key === 'compact_prompt' ||
-    row.key === 'developer_instructions' ||
-    row.key === 'file_opener'
+    codexRootWorkspaceKeys.has(rootKey) ||
+    rootKey.startsWith('project_') ||
+    rootKey === 'compact_prompt' ||
+    rootKey === 'developer_instructions' ||
+    rootKey === 'file_opener'
   ) {
     return 'workspace';
   }
-  if (codexRootIntegrationKeys.has(row.key) || row.key.startsWith('mcp_oauth_')) {
+  if (codexRootIntegrationKeys.has(rootKey) || rootKey.startsWith('mcp_oauth_')) {
     return 'integrations';
   }
   return 'advanced';
@@ -750,6 +825,35 @@ export function groupCodexFeatureRows(rows: CodexFeatureRow[]): CodexFeatureRowG
   }
 
   return groupedRows;
+}
+
+export function resolveCodexFeatureRowPathDisplay(
+  row: Pick<CodexFeatureRow, 'section' | 'key' | 'path'>
+): CodexFeatureRowPathDisplay {
+  const path = row.path.length > 0 ? row.path : row.key.split('.').filter(Boolean);
+  const fullLabel = path.length > 0 ? path.join('.') : row.key;
+
+  if (row.section === 'model_providers') {
+    return {
+      primaryLabel: path[1] || row.key,
+      childLabels: path.slice(2),
+      fullLabel,
+    };
+  }
+
+  if (row.section === 'root') {
+    return {
+      primaryLabel: path[0] || row.key,
+      childLabels: path.slice(1),
+      fullLabel,
+    };
+  }
+
+  return {
+    primaryLabel: row.key,
+    childLabels: [],
+    fullLabel,
+  };
 }
 
 export function buildCodexFeatureChangeInput(

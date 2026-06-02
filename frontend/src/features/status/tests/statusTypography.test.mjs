@@ -73,3 +73,86 @@ test('status model picker does not inject legacy GT fallback', async () => {
   assert.doesNotMatch(statusFeatureSource, /\|\|\s*['"]GT['"]/);
   assert.match(relayLocalStateSource, /defaultRelayModelOptions\s*=\s*\[RELAY_CODEX_DEFAULT_MODEL\]/);
 });
+
+test('codex model provider option descriptions are localized in Chinese', async () => {
+  const zh = JSON.parse(await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
+  const descriptions = zh.status.codex_model_provider_descriptions;
+
+  for (const key of [
+    'base_url',
+    'name',
+    'wire_api',
+    'auth',
+    'aws',
+    'env_http_headers',
+    'http_headers',
+    'query_params',
+    'env_key_instructions',
+  ]) {
+    assert.equal(typeof descriptions[key], 'string', `${key} should have a localized description`);
+    assert.doesNotMatch(descriptions[key], /^Model provider .* field /);
+  }
+  assert.match(descriptions.base_url, /API base URL/);
+  assert.match(descriptions.env_http_headers, /环境变量/);
+});
+
+test('codex root settings value editors keep a responsive control column', async () => {
+  const rootSettingsSource = await readFile(
+    new URL('../components/StatusCodexRootSettingsSection.tsx', import.meta.url),
+    'utf8'
+  );
+  const modelProvidersSource = await readFile(
+    new URL('../components/StatusCodexModelProvidersSection.tsx', import.meta.url),
+    'utf8'
+  );
+  const configRowsSource = await readFile(
+    new URL('../components/StatusCodexConfigRows.tsx', import.meta.url),
+    'utf8'
+  );
+  const valueEditorSource = await readFile(new URL('../model/codexValueEditor.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(configRowsSource, /md:grid-cols-\[minmax\(0,1fr\)_5rem\]/);
+  assert.match(configRowsSource, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(16rem,22rem\)\]/);
+  assert.match(configRowsSource, /className="flex min-w-0 w-full justify-start md:justify-end"/);
+  assert.match(configRowsSource, /className="w-full"/);
+  assert.match(rootSettingsSource, /<StatusCodexConfigRows/);
+  assert.match(modelProvidersSource, /<StatusCodexConfigRows/);
+  assert.doesNotMatch(modelProvidersSource, /md:justify-center/);
+  assert.doesNotMatch(valueEditorSource, /className="mx-auto h-9 w-16"/);
+  assert.match(valueEditorSource, /className="ml-auto h-9 w-16"/);
+});
+
+test('codex feature config page keeps readable text selectable for copy', async () => {
+  const codexFeatureSource = await readFile(new URL('../../codex/CodexFeature.tsx', import.meta.url), 'utf8');
+  const configRowsSource = await readFile(
+    new URL('../components/StatusCodexConfigRows.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(codexFeatureSource, /data-collaboration-id="PAGE_CODEX"[\s\S]{0,120}select-text/);
+  assert.match(configRowsSource, /min-w-0 select-text/);
+});
+
+test('codex config rows render hierarchical path labels instead of flat dotted titles', async () => {
+  const rootSettingsSource = await readFile(
+    new URL('../components/StatusCodexRootSettingsSection.tsx', import.meta.url),
+    'utf8'
+  );
+  const modelProvidersSource = await readFile(
+    new URL('../components/StatusCodexModelProvidersSection.tsx', import.meta.url),
+    'utf8'
+  );
+  const configRowsSource = await readFile(
+    new URL('../components/StatusCodexConfigRows.tsx', import.meta.url),
+    'utf8'
+  );
+
+  assert.match(rootSettingsSource, /parentMode="section"/);
+  assert.match(modelProvidersSource, /parentMode="hidden"/);
+  assert.match(configRowsSource, /resolveCodexFeatureRowPathDisplay\(row\)/);
+  assert.match(configRowsSource, /data-codex-path-primary-heading/);
+  assert.match(configRowsSource, /resolveRowPathLabels\(pathDisplay, nested\)/);
+  assert.match(configRowsSource, /pathDisplay\.childLabels/);
+  assert.doesNotMatch(modelProvidersSource, /\{row\.path\.join\('\.'\)\}/);
+  assert.doesNotMatch(modelProvidersSource, /\{pathDisplay\.primaryLabel\}/);
+});

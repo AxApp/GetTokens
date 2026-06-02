@@ -1,7 +1,7 @@
 import SegmentedControl from '../../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import type { CodexFeatureRow } from './codexFeatureConfig';
-import { selectCodexValueEditorKind } from './codexValueEditorModel';
+import { coerceCodexBooleanEditorValue, selectCodexValueEditorKind } from './codexValueEditorModel';
 
 function stringifyCodexValue(value: unknown) {
   if (Array.isArray(value)) {
@@ -34,9 +34,9 @@ export function renderCodexValueEditor(
     return (
       <ToggleSwitch
         label={row.id}
-        checked={Boolean(value)}
+        checked={coerceCodexBooleanEditorValue(value)}
         disabled={disabled}
-        className="mx-auto h-9 w-16"
+        className="ml-auto h-9 w-16"
         onChange={(checked) => onChangeSetting(row.id, checked)}
       />
     );

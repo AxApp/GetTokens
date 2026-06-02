@@ -7,6 +7,7 @@ import {
   groupCodexFeatureRows,
   normalizeCodexFeatureConfigSnapshot,
   normalizeCodexFeaturePreview,
+  resolveCodexFeatureRowPathDisplay,
   selectCodexFeatureRows,
   setCodexFeatureDraftValue,
 } from '../model/codexFeatureConfig.ts';
@@ -15,7 +16,7 @@ import {
   previewCodexFeatureConfig,
   saveCodexFeatureConfig,
 } from '../api/codexFeatures.ts';
-import { selectCodexValueEditorKind } from '../model/codexValueEditorModel.ts';
+import { coerceCodexBooleanEditorValue, selectCodexValueEditorKind } from '../model/codexValueEditorModel.ts';
 
 const snapshot = normalizeCodexFeatureConfigSnapshot({
   codexHomePath: '/Users/test/.codex',
@@ -256,9 +257,64 @@ test('groupCodexFeatureRows groups sections into stable UI buckets', () => {
   );
 });
 
+test('resolveCodexFeatureRowPathDisplay separates top-level options from nested children', () => {
+  assert.deepEqual(
+    resolveCodexFeatureRowPathDisplay(
+      makeRow({
+        section: 'root',
+        key: 'marketplaces.openai-bundled.source',
+        path: ['marketplaces', 'openai-bundled', 'source'],
+      })
+    ),
+    {
+      primaryLabel: 'marketplaces',
+      childLabels: ['openai-bundled', 'source'],
+      fullLabel: 'marketplaces.openai-bundled.source',
+    }
+  );
+
+  assert.deepEqual(
+    resolveCodexFeatureRowPathDisplay(
+      makeRow({
+        section: 'model_providers',
+        key: 'env_key_instructions',
+        path: ['model_providers', 'gettokens', 'env_key_instructions'],
+      })
+    ),
+    {
+      primaryLabel: 'gettokens',
+      childLabels: ['env_key_instructions'],
+      fullLabel: 'model_providers.gettokens.env_key_instructions',
+    }
+  );
+});
+
 test('selectCodexValueEditorKind uses toggles for booleans and segments for fixed enums', () => {
   assert.equal(
     selectCodexValueEditorKind(makeRow({ section: 'root', key: 'web_search', valueType: 'boolean', draftValue: true })),
+    'toggle'
+  );
+  assert.equal(
+    selectCodexValueEditorKind(
+      makeRow({
+        section: 'root',
+        key: 'hide_full_access_warning',
+        valueType: 'string',
+        draftValue: 'false',
+      })
+    ),
+    'toggle'
+  );
+  assert.equal(
+    selectCodexValueEditorKind(
+      makeRow({
+        section: 'root',
+        key: 'show_raw_events',
+        valueType: 'enum',
+        options: ['true', 'false'],
+        draftValue: 'true',
+      })
+    ),
     'toggle'
   );
   assert.equal(
@@ -285,6 +341,15 @@ test('selectCodexValueEditorKind uses toggles for booleans and segments for fixe
     ),
     'segment'
   );
+});
+
+test('coerces string booleans for toggle checked state', () => {
+  assert.equal(coerceCodexBooleanEditorValue(true), true);
+  assert.equal(coerceCodexBooleanEditorValue(false), false);
+  assert.equal(coerceCodexBooleanEditorValue('true'), true);
+  assert.equal(coerceCodexBooleanEditorValue('false'), false);
+  assert.equal(coerceCodexBooleanEditorValue('FALSE'), false);
+  assert.equal(coerceCodexBooleanEditorValue('never'), false);
 });
 
 test('deprecated and removed features are hidden by default unless local config exists', () => {
@@ -389,6 +454,143 @@ test('raw TOML definitions are editable and scoped as typed changes', () => {
       },
     ],
   });
+});
+
+test('expands simple root TOML tables into leaf setting rows', () => {
+  const backendSnapshot = normalizeCodexFeatureConfigSnapshot({
+    definitions: [
+      {
+        section: 'root',
+        key: 'marketplaces',
+        valueType: 'toml',
+        stage: 'advanced',
+        path: ['marketplaces'],
+      },
+      {
+        section: 'root',
+        key: 'plugins',
+        valueType: 'toml',
+        stage: 'advanced',
+        path: ['plugins'],
+      },
+    ],
+    typedValues: {
+      marketplaces: {
+        'openai-bundled': {
+          last_updated: '2026-05-27T07:30:43Z',
+          source_type: 'local',
+          source: '/Users/linhey/.codex/.tmp/bundled-marketplaces/openai-bundled',
+        },
+      },
+      plugins: {
+        'browser@openai-bundled': {
+          enabled: true,
+        },
+        'chrome@openai-bundled': {
+          enabled: true,
+        },
+      },
+    },
+  });
+  const draft = setCodexFeatureDraftValue(
+    buildCodexFeatureDraft(backendSnapshot),
+    'plugins.browser@openai-bundled.enabled',
+    false
+  );
+  const rows = selectCodexFeatureRows(backendSnapshot, draft, { sectionFilter: 'root' });
+
+  assert.deepEqual(
+    rows.map((row) => [row.id, row.key, row.path, row.valueType, row.draftValue, row.dirty]),
+    [
+      [
+        'marketplaces.openai-bundled.last_updated',
+        'marketplaces.openai-bundled.last_updated',
+        ['marketplaces', 'openai-bundled', 'last_updated'],
+        'string',
+        '2026-05-27T07:30:43Z',
+        false,
+      ],
+      [
+        'marketplaces.openai-bundled.source',
+        'marketplaces.openai-bundled.source',
+        ['marketplaces', 'openai-bundled', 'source'],
+        'string',
+        '/Users/linhey/.codex/.tmp/bundled-marketplaces/openai-bundled',
+        false,
+      ],
+      [
+        'marketplaces.openai-bundled.source_type',
+        'marketplaces.openai-bundled.source_type',
+        ['marketplaces', 'openai-bundled', 'source_type'],
+        'string',
+        'local',
+        false,
+      ],
+      [
+        'plugins.browser@openai-bundled.enabled',
+        'plugins.browser@openai-bundled.enabled',
+        ['plugins', 'browser@openai-bundled', 'enabled'],
+        'boolean',
+        false,
+        true,
+      ],
+      [
+        'plugins.chrome@openai-bundled.enabled',
+        'plugins.chrome@openai-bundled.enabled',
+        ['plugins', 'chrome@openai-bundled', 'enabled'],
+        'boolean',
+        true,
+        false,
+      ],
+    ]
+  );
+  assert.deepEqual(buildCodexFeatureChangeInput(backendSnapshot, draft, { sectionFilter: 'root' }), {
+    values: {
+      'plugins.browser@openai-bundled.enabled': false,
+    },
+    changes: [
+      {
+        id: 'plugins.browser@openai-bundled.enabled',
+        section: 'root',
+        key: 'plugins.browser@openai-bundled.enabled',
+        path: ['plugins', 'browser@openai-bundled', 'enabled'],
+        valueType: 'boolean',
+        value: false,
+      },
+    ],
+  });
+  assert.deepEqual(
+    groupCodexFeatureRows(rows).map((group) => [group.section, group.id, group.rows.map((row) => row.key)]),
+    [
+      [
+        'root',
+        'integrations',
+        [
+          'marketplaces.openai-bundled.last_updated',
+          'marketplaces.openai-bundled.source',
+          'marketplaces.openai-bundled.source_type',
+          'plugins.browser@openai-bundled.enabled',
+          'plugins.chrome@openai-bundled.enabled',
+        ],
+      ],
+    ]
+  );
+  assert.deepEqual(
+    resolveCodexFeatureRowPathDisplay(rows.find((row) => row.id === 'plugins.browser@openai-bundled.enabled')),
+    {
+      primaryLabel: 'plugins',
+      childLabels: ['browser@openai-bundled', 'enabled'],
+      fullLabel: 'plugins.browser@openai-bundled.enabled',
+    }
+  );
+  assert.deepEqual(
+    resolveCodexFeatureRowPathDisplay(rows.find((row) => row.id === 'marketplaces.openai-bundled.source_type')),
+    {
+      primaryLabel: 'marketplaces',
+      childLabels: ['openai-bundled', 'source_type'],
+      fullLabel: 'marketplaces.openai-bundled.source_type',
+    }
+  );
 });
 
 test('normalizes backend definitions values and unknownValues shape', () => {

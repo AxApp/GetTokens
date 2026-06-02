@@ -733,6 +733,17 @@ func normalizeCodexTypedChangeInput(input CodexConfigChangeInput, definitionsByI
 		}
 		known = true
 	}
+	if !known && isEditableCodexRootTableLeafPath(path) {
+		definition = CodexFeatureDefinition{
+			ID:        codexConfigPathID(path),
+			Section:   "root",
+			Key:       path[len(path)-1],
+			Path:      path,
+			Stage:     "unknown",
+			ValueType: inferCodexConfigValueType(input.Value),
+		}
+		known = true
+	}
 	if !known {
 		return CodexConfigChangeInput{}, CodexFeatureDefinition{}, fmt.Errorf("%s 不在当前 Codex 配置 definitions 中，已停止写入", id)
 	}
@@ -767,8 +778,38 @@ func upsertCodexTypedConfigPath(lines []string, path []string, value string) []s
 	if len(path) == 1 {
 		return upsertRootTomlKey(lines, path[0], value, true)
 	}
-	sectionName := strings.Join(path[:len(path)-1], ".")
+	sectionName := formatTomlPath(path[:len(path)-1])
 	return upsertTomlSectionKey(lines, sectionName, path[len(path)-1], value, true)
+}
+
+func isEditableCodexRootTableLeafPath(path []string) bool {
+	if len(path) < 2 {
+		return false
+	}
+	switch path[0] {
+	case "marketplaces", "plugins":
+		return true
+	default:
+		return false
+	}
+}
+
+func inferCodexConfigValueType(value any) string {
+	switch typed := value.(type) {
+	case bool:
+		return "boolean"
+	case int, int64:
+		return "integer"
+	case float64:
+		if typed == float64(int64(typed)) {
+			return "integer"
+		}
+		return "number"
+	case []string, []any:
+		return "string_array"
+	default:
+		return "string"
+	}
 }
 
 func formatCodexTypedConfigValue(valueType string, value any) (string, any, error) {
@@ -1280,16 +1321,27 @@ func parseTomlSectionHeaderName(line string) (string, bool) {
 }
 
 func codexTomlSectionMatchesPath(sectionName string, path []string) bool {
-	prefix := strings.Join(path, ".")
-	return sectionName == prefix || strings.HasPrefix(sectionName, prefix+".")
+	sectionPath, ok := parseTomlDottedKeyPath(sectionName)
+	if !ok {
+		prefix := strings.Join(path, ".")
+		return sectionName == prefix || strings.HasPrefix(sectionName, prefix+".")
+	}
+	if len(sectionPath) < len(path) {
+		return false
+	}
+	for index := range path {
+		if sectionPath[index] != path[index] {
+			return false
+		}
+	}
+	return true
 }
 
 func findCodexTomlSectionRawValue(lines []string, newline string, path []string) (string, bool) {
 	if len(path) == 0 {
 		return "", false
 	}
-	sectionName := strings.Join(path, ".")
-	start, end, found := findTomlSection(lines, "["+sectionName+"]")
+	start, end, found := findTomlSectionByPath(lines, path)
 	if !found {
 		if prefixRaw, ok := findCodexTomlSectionPrefixRawValue(lines, newline, path); ok {
 			return prefixRaw, true
@@ -1339,8 +1391,7 @@ func findCodexTomlPathRawValue(lines []string, path []string) (string, bool) {
 	start := 0
 	end := firstTomlSectionIndex(lines)
 	if len(path) > 1 {
-		sectionName := strings.Join(path[:len(path)-1], ".")
-		sectionStart, sectionEnd, found := findTomlSection(lines, "["+sectionName+"]")
+		sectionStart, sectionEnd, found := findTomlSectionByPath(lines, path[:len(path)-1])
 		if !found {
 			return "", false
 		}
@@ -1508,11 +1559,100 @@ func parseTomlKey(raw string) (string, bool) {
 	return "", false
 }
 
+func parseTomlDottedKeyPath(raw string) ([]string, bool) {
+	parts, ok := splitTomlDottedKey(raw)
+	if !ok || len(parts) == 0 {
+		return nil, false
+	}
+	path := make([]string, 0, len(parts))
+	for _, part := range parts {
+		key, ok := parseTomlKey(strings.TrimSpace(part))
+		if !ok {
+			return nil, false
+		}
+		path = append(path, key)
+	}
+	return path, true
+}
+
+func splitTomlDottedKey(raw string) ([]string, bool) {
+	var parts []string
+	start := 0
+	inSingle := false
+	inDouble := false
+	escaped := false
+	for index, ch := range raw {
+		switch ch {
+		case '\\':
+			if inDouble {
+				escaped = !escaped
+			}
+		case '"':
+			if !inSingle && !escaped {
+				inDouble = !inDouble
+			}
+			escaped = false
+		case '\'':
+			if !inDouble {
+				inSingle = !inSingle
+			}
+			escaped = false
+		case '.':
+			if !inSingle && !inDouble {
+				parts = append(parts, raw[start:index])
+				start = index + 1
+			}
+			escaped = false
+		default:
+			escaped = false
+		}
+	}
+	if inSingle || inDouble {
+		return nil, false
+	}
+	parts = append(parts, raw[start:])
+	return parts, true
+}
+
 func formatTomlKey(key string) string {
 	if isBareTomlKey(key) {
 		return key
 	}
 	return quoteTomlString(key)
+}
+
+func formatTomlPath(path []string) string {
+	parts := make([]string, 0, len(path))
+	for _, key := range path {
+		parts = append(parts, formatTomlKey(key))
+	}
+	return strings.Join(parts, ".")
+}
+
+func findTomlSectionByPath(lines []string, path []string) (int, int, bool) {
+	header := "[" + formatTomlPath(path) + "]"
+	if start, end, found := findTomlSection(lines, header); found {
+		return start, end, true
+	}
+	for index, line := range lines {
+		sectionName, ok := parseTomlSectionHeaderName(line)
+		if !ok || !codexTomlSectionMatchesPath(sectionName, path) {
+			continue
+		}
+		sectionPath, ok := parseTomlDottedKeyPath(sectionName)
+		if !ok || len(sectionPath) != len(path) {
+			continue
+		}
+		end := len(lines)
+		for next := index + 1; next < len(lines); next++ {
+			if isTomlSectionHeader(lines[next]) {
+				end = next
+				break
+			}
+		}
+		return index, end, true
+	}
+	return 0, 0, false
 }
 
 func formatTomlBool(value bool) string {
