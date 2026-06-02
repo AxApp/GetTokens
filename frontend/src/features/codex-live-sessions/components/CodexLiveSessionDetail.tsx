@@ -152,12 +152,12 @@ function RequestTimingTrend({
 
   return (
     <section className="grid min-w-0 gap-3" aria-label={t('codex_live_sessions.request_timing_trend')}>
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-5 gap-y-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={session.status} t={t} />
             {session.fallbackInferred ? <span className="badge-swiss">{t('codex_live_sessions.inferred')}</span> : null}
-            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
               {currentRequestID}
             </span>
           </div>
@@ -165,9 +165,10 @@ function RequestTimingTrend({
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
-        <div className="min-w-0 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)] xl:text-right">
-          <div className="truncate text-[var(--text-primary)]">{session.model}</div>
-          <div className="mt-1 truncate">{session.downstreamTransport} → {session.upstreamTransport}</div>
+        <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-end gap-2 self-start overflow-hidden whitespace-nowrap pt-1 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_68%,var(--text-primary))]">
+          <span className="shrink-0 text-[var(--text-primary)]">{session.model}</span>
+          <span className="shrink-0 text-[color:color-mix(in_srgb,var(--text-muted)_54%,var(--text-primary))]">·</span>
+          <span className="min-w-0 truncate">{session.downstreamTransport} → {session.upstreamTransport}</span>
         </div>
       </div>
 

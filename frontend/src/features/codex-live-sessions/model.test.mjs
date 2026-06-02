@@ -195,6 +195,26 @@ test('buildSessionRowSummary falls back to unknown project and prefers http for 
   assert.equal(summary.sessionIDLabel, 'codex_win_48f2');
 });
 
+test('buildSessionRowSummary derives short protocol from the latest request before session transport', () => {
+  const session = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[2],
+    downstreamTransport: 'http',
+    upstreamTransport: 'http',
+    fallbackInferred: true,
+  };
+  const latestRequest = {
+    ...session.requests[0],
+    requestID: 'gt-req-latest-ws',
+    sequence: 99,
+    downstreamTransport: 'websocket',
+    upstreamTransport: 'websocket',
+  };
+
+  const summary = buildSessionRowSummary(session, latestRequest, (key) => key);
+
+  assert.equal(summary.transportLabel, 'ws');
+});
+
 test('codex live session row keeps transport top right and account aligned with session id below', async () => {
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
 
@@ -818,6 +838,11 @@ test('codex live session detail header uses request timing trend chart', async (
   );
   assert.doesNotMatch(trendSeriesSource, /timing_total/);
   assert.match(detailSource, /function TimingTrendChart/);
+  assert.match(detailSource, /flex min-w-0 flex-wrap items-start justify-between/);
+  assert.match(detailSource, /flex-nowrap items-center justify-end/);
+  assert.match(detailSource, /\{session\.model\}[\s\S]*?·[\s\S]*?\{session\.downstreamTransport\} → \{session\.upstreamTransport\}/);
+  assert.doesNotMatch(detailSource, /xl:grid-cols-\[minmax\(0,1fr\)_auto\]/);
+  assert.doesNotMatch(detailSource, /<div className="mt-1 truncate">\{session\.downstreamTransport\} → \{session\.upstreamTransport\}<\/div>/);
   assert.match(detailSource, /TimingTrendFooterItem label=\{t\('codex_live_sessions\.duration'\)\}/);
   assert.doesNotMatch(detailSource, /min-h-\[166px\][^"]*border[^"]*bg-\[var\(--bg-surface\)\]/);
   assert.doesNotMatch(detailSource, /font-size-ui-5xl/);

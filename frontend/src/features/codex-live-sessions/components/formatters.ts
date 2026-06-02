@@ -41,17 +41,33 @@ export function buildSessionRowSummary(
   return {
     sessionProjectLabel: projectName,
     accountLabel: auth,
-    transportLabel: getShortTransportLabel(session),
+    transportLabel: getShortTransportLabel(session, request),
     sessionIDLabel: session.sessionID,
   };
 }
 
-function getShortTransportLabel(session: CodexLiveSession): 'http' | 'ws' | string {
-  if (session.fallbackInferred || session.downstreamTransport === 'http' || session.upstreamTransport === 'http') {
+function getShortTransportLabel(session: CodexLiveSession, request?: CodexLiveRequest): 'http' | 'ws' | string {
+  if (request) {
+    return shortTransportFromPair(request.downstreamTransport, request.upstreamTransport);
+  }
+  return shortTransportFromPair(session.downstreamTransport, session.upstreamTransport, session.fallbackInferred);
+}
+
+function shortTransportFromPair(downstream: string, upstream: string, fallbackInferred = false): 'http' | 'ws' | string {
+  if (upstream === 'websocket') {
+    return 'ws';
+  }
+  if (upstream === 'http') {
     return 'http';
   }
-  if (session.downstreamTransport === 'websocket' || session.upstreamTransport === 'websocket') {
+  if (downstream === 'websocket') {
     return 'ws';
+  }
+  if (downstream === 'http') {
+    return 'http';
+  }
+  if (fallbackInferred) {
+    return 'http';
   }
   return 'unknown';
 }
