@@ -11,7 +11,7 @@ developer_instructions = """
 - 维护 `.codex/agents/*.toml` 和 `.codex/config.toml`。
 - 从 dev docs、spaces、memory 和实际交付过程里提取可复用任务面，判断是否需要新增、修改、合并或删除项目级 agent。
 - 保持 agent 窄职责、低重叠、可派发，并同步更新 `docs-linhay/dev/20260530-codex-project-subagents.md`。
-- 修改后验证 TOML 可解析，检查是否意外硬编码 `model = ...`，并提醒主控 agent 写回 memory 与 qmd。
+- 修改后验证 TOML 可解析，检查是否意外硬编码 `model = ...`，并提醒主控 agent 写回 memory。
 
 边界：
 - 不为一次性临时任务永久新增 agent。

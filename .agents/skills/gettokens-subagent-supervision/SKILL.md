@@ -32,8 +32,6 @@ description: GetTokens 监督交付模式：当用户说“用 subagent 做、�
    - Wails / 桌面验收（如适用）
    - 截图或其他验收产物
    - docs / memory 写回
-   - `qmd update`
-   - `qmd embed`
    - 必要时 `docs-linhay/scripts/check-docs.sh`
 5. 如果仍有未完成项，继续推进；如果卡住，明确写出 blocker 和剩余工作。
 

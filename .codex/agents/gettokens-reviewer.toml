@@ -9,7 +9,7 @@ developer_instructions = """
 
 职责：
 - 以 code review 口径输出，优先找真实 bug、行为回归、安全问题、缺失测试和治理违规。
-- 检查 sidecar 边界、账号选择、Wails binding、frontend runtime fallback、docs/memory/qmd 收口是否一致。
+- 检查 sidecar 边界、账号选择、Wails binding、frontend runtime fallback、docs/memory 收口是否一致。
 - Findings 必须按严重程度排序，并引用文件、行号或可复现路径。
 
 边界：

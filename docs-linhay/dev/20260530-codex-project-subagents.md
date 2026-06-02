@@ -48,7 +48,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 | `gettokens_ui_integrator` | `workspace-write` | 桌面优先 UI、Wails preview、设计系统接入、前端状态派生 |
 | `gettokens_verifier` | `workspace-write` | 自动化验证、无头浏览器证据、截图归档、DoD 缺口报告 |
 | `gettokens_reviewer` | `read-only` | correctness、安全、回归、测试缺口和治理合规 review |
-| `gettokens_session_distiller` | `workspace-write` | “整理”场景下的 skills、dev docs、memory、qmd 收口 |
+| `gettokens_session_distiller` | `workspace-write` | “整理”场景下的 skills、dev docs、memory 收口 |
 | `gettokens_release_operator` | `workspace-write` | macOS release、DMG 验收、Sparkle、notarization、CI release 检查 |
 | `gettokens_subagent_architect` | `workspace-write` | 项目级 Codex custom agents 的创建、合并、删除、TOML 校验和治理写回 |
 
@@ -81,7 +81,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 
 ## 使用边界
 
-1. subagent 不拥有最终完成判断。GetTokens 的主控 agent 仍负责需求边界、集成、测试门禁、Wails/桌面验收、截图、docs、memory 和 `qmd` 收口。
+1. subagent 不拥有最终完成判断。GetTokens 的主控 agent 仍负责需求边界、集成、测试门禁、Wails/桌面验收、截图、docs 和 memory 收口。
 2. 读写 agent 也必须小步修改，不能跨越任务边界吸收无关变更。
 3. 浏览器 preview 只能证明布局和交互；涉及 sidecar readiness、Wails binding、macOS runtime 或 release 资产时，仍需真实桌面或对应系统级验证。
 4. `.codex/agents/*.toml` 不写固定模型名，避免和 GetTokens 的模型路由、账号池能力过滤测试互相干扰。
@@ -107,7 +107,7 @@ And 只有在明确验证模型路由时才临时指定模型。
 1. 修改前先说明触发原因，例如新重复工作流出现、agent 职责重叠、长期不用、schema 变化或任务需要更窄角色。
 2. 修改 `.codex/agents/*.toml` 后必须验证 TOML 可解析，并检查是否意外硬编码 `model = ...`。
 3. 新增 agent 需要同步本文档的分工或推荐组合；删除或合并 agent 需要同步移除引用。
-4. 有意义的 subagent 治理变化必须写入 `docs-linhay/memory/YYYY-MM-DD.md`，并执行 `qmd update` 与 `qmd embed`。
+4. 有意义的 subagent 治理变化必须写入 `docs-linhay/memory/YYYY-MM-DD.md`。
 5. 仍然禁止为了单次临时任务永久新增 agent；临时实验 agent 用完后应删除，或明确升级为长期角色的依据。
 
 ## 配套 Skill
@@ -118,4 +118,4 @@ And 只有在明确验证模型路由时才临时指定模型。
 
 1. 判断是否应该新增、修改、合并或删除 agent。
 2. 维护命名、职责、sandbox、reasoning effort 和默认不硬编码模型的规则。
-3. 固化 TOML 校验、固定模型扫描、文档更新、memory 写回和 qmd 同步流程。
+3. 固化 TOML 校验、固定模型扫描、文档更新和 memory 写回流程。

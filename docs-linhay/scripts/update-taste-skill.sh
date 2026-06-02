@@ -135,4 +135,4 @@ lock_path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", enco
 PY
 
 echo "Updated Taste Skill to $REMOTE_COMMIT."
-echo "Review the diff, then run docs-linhay/scripts/check-docs.sh, qmd update, and qmd embed."
+echo "Review the diff, then run docs-linhay/scripts/check-docs.sh."

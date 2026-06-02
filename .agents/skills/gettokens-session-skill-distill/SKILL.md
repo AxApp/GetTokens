@@ -17,7 +17,6 @@ description: GetTokens 会话沉淀入口：处理“整理”及可复用模式
    - 后续还会重复的，先沉淀到项目级 skill
    - repo-wide 且长期稳定的，再考虑更新 AGENTS
 3. 同步写入对应 docs 与 memory
-4. 执行 `qmd update` 与 `qmd embed`
 
 ## 3. 输出标准
 - 清楚写出“这次沉淀了什么模式”
@@ -28,11 +27,10 @@ description: GetTokens 会话沉淀入口：处理“整理”及可复用模式
 ## 4. 本仓库常见沉淀对象
 - Wails 开发态与 sidecar 启动闭环
 - 账号池 / 轮动 / quota 的稳定边界
-- 文档写回、记忆写回、qmd 索引同步
+- 文档写回、记忆写回
 - Wails 绑定生成与前端导出缺口排障
 
 ## 5. 结束检查
 - 是否已经更新相关 skill
 - 是否已写入 docs-linhay/dev 或 docs-linhay/memory
-- 是否已跑 `qmd update` 与 `qmd embed`
 - 是否需要进一步升级到 AGENTS

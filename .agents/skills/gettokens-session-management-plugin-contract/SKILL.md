@@ -15,7 +15,7 @@ Use this skill when changing `session-management` plugin inputs, outputs, runtim
 5. Update frontend model interfaces and response mappers in `frontend/src/features/session-management/model.ts`.
 6. Render new result fields in `SessionManagementView.tsx` without blocking existing list/detail workflows.
 7. Add or update `model.test.mjs` assertions for runtime mapping, UI structure, and dev bridge contract.
-8. Update the matching `docs-linhay/spaces/<space-key>/README.md`, plan, memory, and qmd index.
+8. Update the matching `docs-linhay/spaces/<space-key>/README.md`, plan, and memory.
 
 ## Verification
 - Run focused Go tests for `AnalyzeCodexSessions` when analysis logic changes.

@@ -33,19 +33,6 @@ check_screenshot_files() {
   done < <(find "$space_dir/screenshots" -type f ! -name '.gitkeep' -print0)
 }
 
-check_debate_files() {
-  local space_dir="$1"
-  [[ -d "$space_dir/debate" ]] || return 0
-
-  while IFS= read -r -d '' file; do
-    local rel base
-    rel="${file#"$space_dir/debate/"}"
-    base="$(basename "$file")"
-    [[ "$rel" =~ ^[0-9]{8}/[a-z0-9-]+/[^/]+$ ]] || report_error "Invalid debate path: $file"
-    [[ "$base" =~ ^[0-9]{8}-[a-z0-9-]+-v[0-9]{2}\.md$ ]] || report_error "Invalid debate filename: $file"
-  done < <(find "$space_dir/debate" -type f ! -name '.gitkeep' -print0)
-}
-
 if [[ ! -d "$SPACES_DIR" ]]; then
   report_error "Missing spaces directory: $SPACES_DIR"
 fi
@@ -56,7 +43,6 @@ if [[ -d "$SPACES_DIR" ]]; then
     space_found=1
     check_space_structure "$space_dir"
     check_screenshot_files "$space_dir"
-    check_debate_files "$space_dir"
   done < <(find "$SPACES_DIR" -mindepth 1 -maxdepth 1 -type d -print0 | sort -z)
 fi
 

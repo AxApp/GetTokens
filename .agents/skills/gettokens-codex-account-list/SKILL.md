@@ -161,4 +161,4 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 需求、验收与截图写入 `docs-linhay/spaces/20260511-codex-account-list-tab/README.md`。
 - 技术拆分、沉淀结论写入 `docs-linhay/dev/`。
 - 稳定决策和用户偏好写入 `docs-linhay/memory/YYYY-MM-DD.md`。
-- 文档或记忆写回后运行 `qmd update` 与 `qmd embed`。
+- 文档或记忆写回后运行 `docs-linhay/scripts/check-docs.sh`。

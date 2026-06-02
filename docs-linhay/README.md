@@ -5,7 +5,7 @@
 ## 目录说明
 
 1. `spaces/`
-   单个需求、主题或里程碑的工作空间。每个 `space` 下固定包含 `README.md`、`plans/`、`screenshots/`、`debate/`。
+   单个需求、主题或里程碑的工作空间。每个 `space` 下固定包含 `README.md`、`plans/`、`screenshots/`。
 2. `dev/`
    技术方案、工程治理说明、流程设计、测试策略。
 3. `memory/`
@@ -54,13 +54,7 @@ docs-linhay/scripts/check-docs.sh
 git worktree add ../GetTokens-worktrees/20260429-network-proxy -b feat/20260429-network-proxy master
 ```
 
-4. 记忆写回后更新索引
-
-```bash
-qmd update && qmd embed
-```
-
-5. macOS 可分发 DMG 发布
+4. macOS 可分发 DMG 发布
 
 发布前先读 `docs-linhay/dev/20260426-release-prep-guide.md`。发布完成后必须下载 GitHub Release 正式资产，并完成 checksum、`spctl`、`xcrun stapler validate`、`codesign`、架构、bundle version 与 `SUFeedURL` 验收；只看到 release 页面或资产存在不能算发布完成。
 
@@ -68,7 +62,7 @@ qmd update && qmd embed
 
 1. `space-key` 使用英文 slug，优先使用 `<YYYYMMDD>-<topic>` 或稳定功能名。
 2. 禁止空格、中文、`latest`、`final`。
-3. 截图和 debate 文件继续遵循 `AGENTS.md` 与 `gettokens-ops-governance` 中的命名规则。
+3. 截图文件继续遵循 `AGENTS.md` 与 `gettokens-ops-governance` 中的命名规则。
 4. 设计稿 HTML 文件名应语义化且可追踪，例如 `design-preview.html`、`usage-dashboard-design-v01.html`；避免 `option-a.html` 这类只表达比较序号、不表达主题的命名。
 
 ## 推荐使用顺序
@@ -79,8 +73,7 @@ qmd update && qmd embed
 4. 技术设计或治理说明：写到 `dev/`
 5. 决策、风险、里程碑：写到 `memory/`
 6. 文档改动完成后：运行 `check-docs.sh`
-7. memory 写回完成后：运行 `qmd update && qmd embed`
-8. 需求进入并行实现后：为对应 `space-key` 创建同 key 的 branch 和 `worktree`
+7. 需求进入并行实现后：为对应 `space-key` 创建同 key 的 branch 和 `worktree`
 
 ## 当前 Space
 

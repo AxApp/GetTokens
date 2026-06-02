@@ -14,8 +14,7 @@
     │   └── <space-key>/
     │       ├── README.md      # 当前 space 的需求背景、目标、范围、验收标准
     │       ├── plans/         # 开发计划、迭代规划、里程碑
-    │       ├── screenshots/   # 截图，按日期/模块分层存放
-    │       └── debate/        # 多 agent 辩论文档，按日期和主题分层存放
+    │       └── screenshots/   # 截图，按日期/模块分层存放
     ├── dev/          # 研发文档（架构、技术方案、测试策略、数据字典等）
     ├── memory/       # 记忆系统（MEMORY.md + 每日日志）
     ├── references/   # 参考项目、外部资料归档
@@ -41,17 +40,17 @@
 7. 涉及 Web / 前端体验优化时，默认由 Gemini 主导前端实现；Codex 负责业务逻辑、接口契约、状态流转、测试门禁、回归验收与最终集成。
 8. 前端改动若影响后端接口、领域模型或关键交互闭环，必须先由 Codex 明确边界，再交给 Gemini 落地，避免只改视觉不改业务完成度。
 9. 当一次会话中出现“有用且重复出现”的行为模式、排障路径或交付动作时，必须先识别复用边界，再优先新增或更新项目级 `skills`；只有当规则已经上升为 repo-wide、长期稳定的约束时，才同步更新 `AGENTS.md`。
-10. 当用户明确说“整理”且语境指向刚完成的一轮工作会话时，默认触发一次会话沉淀流程：先按 `gettokens-session-skill-distill` 提炼可复用模式，再按是否 repo-wide 决定是否同步更新 `AGENTS.md`、`docs-linhay/dev/`、`docs-linhay/memory/`，并执行 `qmd update` 与 `qmd embed`。
+10. 当用户明确说“整理”且语境指向刚完成的一轮工作会话时，默认触发一次会话沉淀流程：先按 `gettokens-session-skill-distill` 提炼可复用模式，再按是否 repo-wide 决定是否同步更新 `AGENTS.md`、`docs-linhay/dev/`、`docs-linhay/memory/`。
 11. 多份独立需求稿并行推进时，默认按“一个需求单元一个 `space`，必要时再配一个同 key 的 branch 与 `worktree`”组织，不按个人姓名或临时阶段单独命名工作目录。
 12. 当用户明确要求“由 subagent 去做、主控 agent 负责监督”时，主控 agent 必须承担需求边界、任务拆分、集成、验收、文档与最终完成判断，不得在“代码已改完”但截图、实机验证、文档写回等验收环节仍未完成时提前停止。
-13. 当某个 `space` 的需求施工结束并进入整理期时，默认执行一次行为保持的收尾整理：识别大文件和大数据结构，优先按稳定边界拆分文件；同步提取可复用流程到项目级 `skills`，仅把 repo-wide 且长期稳定的规则写入 `AGENTS.md`；最后更新 space、dev 文档、memory 并重建 qmd 索引。
+13. 当某个 `space` 的需求施工结束并进入整理期时，默认执行一次行为保持的收尾整理：识别大文件和大数据结构，优先按稳定边界拆分文件；同步提取可复用流程到项目级 `skills`，仅把 repo-wide 且长期稳定的规则写入 `AGENTS.md`；最后更新 space、dev 文档与 memory。
 14. 本地 Web / Wails 预览验收默认使用无头浏览器、DOM 断言和文件截图；除非用户明确要求可见窗口，否则不得把 Playwright、Chrome 或其他浏览器验收窗口打开到用户当前激活显示器。确需可见窗口时必须先询问，或放到非激活副屏。
 15. 通用看板产品线按固定节奏推进：新建 `space` -> 设计需求 -> 技术细节补充 -> 回到需求调整 -> 调整设计系统的稿子 -> 执行开发 -> 冒烟测试 -> 交付用户测试。
 16. sidecar 是 GetTokens 运行态自治层。账号选择、rate-limit、route guard、live sessions、usage attribution、system proxy、Codex WebSocket 等热路径状态优先在 `CLIProxyAPI#gettokens/sidecar` 内闭环，不通过前端或 Wails 临时补偿来伪造 sidecar 已处理状态。
 17. 从账号与凭证 SQLite 统一存储版本开始，GetTokens sidecar 不再跟随 CLIProxyAPI 上游做合并式同步。上游提交和功能只能作为参考输入；需要的能力必须在 GetTokens sidecar 边界内重新设计、实现、补窄测试并重建 sidecar。management API 可以按 GetTokens 需求破坏性调整，不为了上游兼容保留旧合约。
 18. GetTokens 是 macOS/Wails 桌面工作台产品，默认不做移动端适配、移动端截图或 375/390px 宽度验收。前端与视觉改动默认按桌面窗口、Wails 容器和可用的桌面浏览器预览验收；只有用户在当前需求中明确提出移动端目标时，才增加移动端布局与截图门禁。
 19. 项目级 Codex subagent 配置统一放在 `.codex/agents/`，默认命名为 `gettokens_*`；除非正在验证模型路由能力，否则 agent 默认继承父会话模型，只用职责、sandbox 和 reasoning effort 区分任务面。
-20. 主控 agent 可根据任务判断自主新增、删除或修改 `.codex/agents/*.toml`，不需要逐次请求授权；但必须说明判断依据，验证 TOML 可解析，更新 `docs-linhay/dev/20260530-codex-project-subagents.md` 与 memory，并执行 `qmd update` / `qmd embed`。
+20. 主控 agent 可根据任务判断自主新增、删除或修改 `.codex/agents/*.toml`，不需要逐次请求授权；但必须说明判断依据，验证 TOML 可解析，并更新 `docs-linhay/dev/20260530-codex-project-subagents.md` 与 memory。
 21. 工作台内详情类或调试类 modal 默认必须使用覆盖整个应用窗口视口（包括 sidebar 区域）的遮罩层，面板四周保留可见遮罩与投影间距，并具备可恢复的独立 hash 路由。打开 modal 时写入 `detail=<id>` 或 `modal=<route>`，关闭时只移除对应标记；全局 hash canonicalizer 不得丢弃仍属于当前 frame/workspace 的 modal/detail 参数。
 
 ## 2. 标准工作流（必须）
@@ -77,21 +76,20 @@
 1. `docs-linhay/spaces/<space-key>/README.md`：单个需求空间的背景、目标、范围、验收标准、相关链接。
 2. `docs-linhay/spaces/<space-key>/plans/`：该需求空间下的开发计划、迭代规划、里程碑。
 3. `docs-linhay/spaces/<space-key>/screenshots/`：该需求空间下的截图归档。
-4. `docs-linhay/spaces/<space-key>/debate/`：该需求空间下的多 agent 辩论文档。
-5. `docs-linhay/dev/`：研发文档、技术方案、治理说明。
-6. `docs-linhay/memory/`：记忆系统（`MEMORY.md` + 每日日志 `YYYY-MM-DD.md`）。
-7. `docs-linhay/references/`：参考项目、外部资料归档。
-8. `docs-linhay/scripts/`：自动化脚本及其说明文档。
+4. `docs-linhay/dev/`：研发文档、技术方案、治理说明。
+5. `docs-linhay/memory/`：记忆系统（`MEMORY.md` + 每日日志 `YYYY-MM-DD.md`）。
+6. `docs-linhay/references/`：参考项目、外部资料归档。
+7. `docs-linhay/scripts/`：自动化脚本及其说明文档。
 
 Git `worktree` 治理：
-1. `space` 负责需求背景、计划、截图、辩论和验收；`worktree` 只负责该需求的代码执行上下文。
+1. `space` 负责需求背景、计划、截图和验收；`worktree` 只负责该需求的代码执行上下文。
 2. 默认映射为：`space = docs-linhay/spaces/<space-key>/`、`branch = feat/<space-key>`、`worktree = ../GetTokens-worktrees/<space-key>/`。
 3. 只讨论、不落代码的需求稿只建 `space`，不建 `worktree`。
 4. 一次性小修或当天即可完成的短改动，可直接在主工作区开短分支，不强制建 `worktree`。
 5. 会并行推进、会持续多天、会频繁切换上下文的需求，必须使用独立 `worktree`。
 6. release、打包、一次性验证类短命工作区可继续放在 `/private/tmp/`，但常规 feature `worktree` 不得放在 `/tmp`。
 7. 禁止在主仓库目录内嵌套创建 feature `worktree`，避免污染搜索、索引和脚本扫描范围。
-8. 合并完成后删除对应 `worktree`，保留 `space` 文档、截图、计划和 debate 历史。
+8. 合并完成后删除对应 `worktree`，保留 `space` 文档、截图和计划历史。
 
 设计稿治理：
 1. 设计稿 HTML 默认落在对应 `space` 根目录，作为该期视觉/交互方案的唯一入口。
@@ -103,13 +101,13 @@ Git `worktree` 治理：
 文档落位硬约束：
 1. 需求变更先写对应 `space`，再改代码。
 2. 技术方案和治理说明放 `docs-linhay/dev/`。
-3. 截图、计划、辩论材料必须跟着对应 `space` 走。
+3. 截图、计划材料必须跟着对应 `space` 走。
 4. 外部参考资料统一归档到 `docs-linhay/references/`。
 5. 完整源码型本地参考项目默认不进入 git；`docs-linhay/references/` 只提交根部 Markdown 索引、调研摘要和必要的小型资料，参考项目源码目录由 `.gitignore` 忽略。既有已跟踪参考目录视为历史遗留，后续新增参考项目必须遵循“不提交源码目录，只提交调研结论”的规则。
 
 项目级 skills：
-1. 涉及 `space` 创建、命名、README 模板、截图或 debate 归档时，优先使用 `gettokens-ops-governance`。
-2. 涉及文档写回、memory 写回、`qmd update` / `qmd embed` 同步时，优先使用 `gettokens-ops-governance`。
+1. 涉及 `space` 创建、命名、README 模板或截图归档时，优先使用 `gettokens-ops-governance`。
+2. 涉及文档写回或 memory 写回时，优先使用 `gettokens-ops-governance`。
 3. 涉及 AGENTS 级长期治理规则时，优先使用 `gettokens-ops-governance`；若用户明确说“整理”，同时使用 `gettokens-session-skill-distill`。
 4. 涉及账号池、quota、视觉系统、前端调试归因或 CLIProxyAPI fork 维护时，优先使用 `gettokens-domain-engineering`。
 5. 涉及 Codex 账号列表、请求顺序、路由探测、OAuth/openai-compatible 模型映射时，优先使用 `gettokens-codex-account-list`。
@@ -121,34 +119,20 @@ Git `worktree` 治理：
 
 ## 5. 记忆系统规则（必须）
 
-### 5.1 Retrieval（查询）
-查询历史信息时，禁止先全量读取 `docs-linhay/memory/MEMORY.md` 或 `docs-linhay/memory/*.md`。按顺序执行：
-1. `qmd query "<问题>"`
-2. `qmd get <file>:<line> -l 20`
-3. 仅当 `qmd` 无结果时，才回退直接读文件
-
-### 5.2 Writeback（写回）
+### 5.1 Writeback（写回）
 出现以下情况必须写入记忆：关键决策、行动项、偏好变化、里程碑、风险结论。
 1. 写入 `docs-linhay/memory/YYYY-MM-DD.md`
-2. 执行 `qmd update && qmd embed`
-3. 每周合并到 `docs-linhay/memory/MEMORY.md`（只保留稳定高价值信息）
-
-### 5.3 Collection 管理
-`qmd` 需支持自动建立 collection，规则如下：
-1. 首次在项目中执行 `qmd update` 时，若 collection 不存在，自动创建。
-2. collection 名称与项目目录名保持一致。
-3. 跨项目查询时，通过 `qmd query --collection <name> "<问题>"` 指定 collection。
-4. CI/CD 环境中应跳过 collection 初始化（通过环境变量 `QMD_SKIP_INIT=1` 控制）。
+2. 每周合并到 `docs-linhay/memory/MEMORY.md`（只保留稳定高价值信息）
 
 ## 6. 文档工具（推荐）
 1. 新建 `space` 时优先使用 `docs-linhay/scripts/create-space.sh <space-key>`。
 2. 提交前或调整治理规则后，运行 `docs-linhay/scripts/check-docs.sh` 做结构校验。
 3. 新建 feature `worktree` 时，默认使用 `git worktree add ../GetTokens-worktrees/<space-key> -b feat/<space-key> master`；若当前集成分支不是 `master`，以当轮基线分支替换末尾参数。
-4. 采用 `subagent` 交付的需求，主控 agent 收尾前默认补做一次 DoD 自检：测试、桌面验收、截图、文档、memory、`qmd`、必要时 `check-docs.sh`。
+4. 采用 `subagent` 交付的需求，主控 agent 收尾前默认补做一次 DoD 自检：测试、桌面验收、截图、文档、memory、必要时 `check-docs.sh`。
 
 ## 7. 完成定义（DoD）
 1. 验收场景满足。
 2. 相关测试通过，或已说明阻塞、未测原因与风险。
 3. 文档已更新到正确目录。
-4. 有意义变更已写入记忆并可检索。
+4. 有意义变更已写入记忆并可追溯。
 5. 若本次工作产生了可复用且重复出现的行为模式，已完成对应 `skills` / `AGENTS.md` 的新增或更新，或已明确说明为何暂不沉淀。

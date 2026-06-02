@@ -110,7 +110,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Real desktop URL handoff only counts as complete when the intended build receives the URL.
 
 ## 2. Space Governance (`docs-linhay/spaces/`)
-- **Structure**: Each space must have `README.md`, `plans/`, `screenshots/`, and `debate/`.
+- **Structure**: Each space must have `README.md`, `plans/`, and `screenshots/`.
 - **Naming**: Use English slugs. Prefer `YYYYMMDD-<topic>` for short tasks or stable feature names for milestones.
 - **Content**: Put requirements in the space `README.md`. Use specific naming conventions for screenshots: `<YYYYMMDD>-<module>-<scene>-<status>-v<nn>.png`.
 
@@ -120,7 +120,7 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
   - Design/Workflow -> `docs-linhay/dev/`
   - Decisions/Milestones -> `docs-linhay/memory/`
   - Rules -> `AGENTS.md`
-- **Memory**: Keep entries concise and decision-oriented. Run `qmd update` and `qmd embed` after any write-back.
+- **Memory**: Keep entries concise and decision-oriented.
 - **Governance**: Read `AGENTS.md` first. Update it only for repo-wide, durable rules. Ensure `docs-linhay` is not ignored in `.gitignore`.
 
 ### 3.1 Cleanup Before Claiming Done
@@ -148,7 +148,6 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
      - Wails/desktop verification when applicable
      - screenshots or other acceptance artifacts
      - docs + memory write-back
-     - `qmd update` + `qmd embed`
   6. If something remains blocked, report the exact blocker and why the requirement cannot yet be considered done.
 - **Stop Rule**:
   - “Implemented first pass” is not completion.
@@ -205,6 +204,6 @@ This skill unifies the procedural rules for working on GetTokens, ensuring consi
 
 ## Acceptance Checklist
 - App launches with latest code and reaches `ready` state.
-- Space boundaries are clear; screenshots and debate notes follow naming rules.
-- Durable knowledge is written to the correct directory and indexed via `qmd`.
+- Space boundaries are clear; screenshots follow naming rules.
+- Durable knowledge is written to the correct directory.
 - New skills or rules are distilled without bloating governance files.

@@ -400,7 +400,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   5. Merge `upstream/main`, resolve conflicts by preserving GetTokens runtime surfaces, then add narrow regressions for accepted upstream behavior that is not already locked by tests.
   6. Run focused tests, `go test ./...`, and `git diff --check` in the fork; commit and push `origin/gettokens/sidecar`.
   7. Rerun `./scripts/ensure-sidecar.sh darwin arm64` from the parent repo and confirm the sidecar meta records the new fork commit with `dirty=clean`.
-  8. Update the parent gitlink plus relevant `space`, dev docs, memory, and qmd index; commit only those relevant parent files.
+  8. Update the parent gitlink plus relevant `space`, dev docs, and memory; commit only those relevant parent files.
 - **Protected Reference Surfaces**: During upstream reference audits or exceptional historical merges, explicitly re-check `internal/gettokenshooks`, `internal/gettokensrouting`, `sdk/cliproxy/auth`, Codex WebSocket executor, usage / TTFT / reasoning helpers, system proxy behavior, and config diff visibility.
 - **Timing and Reasoning Hardening**: If upstream changes telemetry, timing, or reasoning extraction, avoid duplicating parsing or TTFT work across call sites. `SetTranslatedReasoningEffort` must not clear context reasoning effort when the translated payload has no config-derived effort. Keep `ttft_ms` as telemetry unless a consuming feature is explicitly scoped.
 - **Codex WebSocket Timing Guard**: When `codex_websockets_executor.go` changes, verify the four timing/live-session events still have a coherent order: `RecordCodexLiveUpstreamConnected`, `RecordCodexLiveFirstEvent`, `StartResponseTTFT`, and `MarkFirstResponseByte`.

@@ -36,7 +36,7 @@ SPACES_DIR="$DOCS_ROOT/spaces"
 SPACE_DIR="$SPACES_DIR/$SPACE_KEY"
 README_PATH="$SPACE_DIR/README.md"
 
-mkdir -p "$SPACE_DIR/plans" "$SPACE_DIR/screenshots" "$SPACE_DIR/debate"
+mkdir -p "$SPACE_DIR/plans" "$SPACE_DIR/screenshots"
 
 if [[ ! -f "$README_PATH" ]]; then
   cat >"$README_PATH" <<EOF
@@ -77,4 +77,3 @@ echo "Space ready: $SPACE_DIR"
 echo "Created or verified:"
 echo "  - $SPACE_DIR/plans"
 echo "  - $SPACE_DIR/screenshots"
-echo "  - $SPACE_DIR/debate"

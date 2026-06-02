@@ -106,4 +106,4 @@ description: GetTokens Codex 二进制管理：Codex CLI 版本源、下载、�
 ## 9. 文档
 - 需求、范围、实施状态、截图和未完成项写入 `docs-linhay/spaces/20260511-codex-binary-management/README.md`。
 - 稳定决策写入 `docs-linhay/memory/YYYY-MM-DD.md`。
-- 文档或记忆写回后运行 `qmd update` 与 `qmd embed`。
+- 文档或记忆写回后运行 `docs-linhay/scripts/check-docs.sh`。

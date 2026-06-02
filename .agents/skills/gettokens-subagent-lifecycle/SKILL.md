@@ -1,6 +1,6 @@
 ---
 name: gettokens-subagent-lifecycle
-description: GetTokens 项目级 Codex subagent 生命周期治理：创建、拆分、合并、删除、TOML 校验、文档记忆写回与 qmd 同步。
+description: GetTokens 项目级 Codex subagent 生命周期治理：创建、拆分、合并、删除、TOML 校验、文档记忆写回。
 ---
 
 # GetTokens Subagent Lifecycle
@@ -34,15 +34,12 @@ description: GetTokens 项目级 Codex subagent 生命周期治理：创建、�
    - TOML 可解析。
    - `.codex/agents` 中没有意外固定 `model = ...`。
    - `docs-linhay/scripts/check-docs.sh` 通过。
-7. 执行 `qmd update` 与 `qmd embed`。
-
 ## 验证命令
 
 ```bash
 python3 -c 'import pathlib,tomllib; [tomllib.load(p.open("rb")) for p in pathlib.Path(".codex").rglob("*.toml")]; print("toml ok")'
 rg -n "^model\s*=" .codex/agents .codex/config.toml
 docs-linhay/scripts/check-docs.sh
-qmd update && qmd embed
 ```
 
 `rg` 查找固定模型返回 1 且无输出是期望结果；如果有输出，必须确认是不是本轮刻意设置。
@@ -50,6 +47,6 @@ qmd update && qmd embed
 ## 与其它 skill 的关系
 
 1. 监督交付流程使用 `gettokens-subagent-supervision`。
-2. spaces、memory、qmd 和 AGENTS 同步使用 `gettokens-ops-governance`。
+2. spaces、memory 和 AGENTS 同步使用 `gettokens-ops-governance`。
 3. Codex Skills / MCP 工作台使用 `gettokens-codex-extensions-management`。
 4. 本 skill 只负责项目级 `.codex/agents` 的生命周期，不负责业务实现。

@@ -75,8 +75,6 @@ description: GetTokens Claude Code 账号列表：Claude Channel Routing、Anthr
 
 - 文档或需求调整后运行：
   - `docs-linhay/scripts/check-docs.sh`
-  - `qmd update`
-  - `qmd embed`
 - 前端实现后至少覆盖：
   - Anthropic 格式筛选
   - 禁用保留排序但不参与运行候选

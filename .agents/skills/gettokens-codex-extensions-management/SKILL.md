@@ -39,7 +39,7 @@ description: GetTokens Codex Skills / MCP 扩展管理：源码校准解析、�
 - 优先把来源记录写成机器可读 lock，例如 `.agents/skills/<package>.lock.json`，再补 `docs-linhay/dev/` 人工说明。
 - 如果外部仓库包含多个 `skills/*/SKILL.md`，用户给的是仓库 URL 且未指定子 skill 时，按全量安装处理；后续如出现 skill discovery 预算告警，再收敛为高频子集。
 - 更新脚本默认只能检查哈希；替换本地 skill 目录必须显式传 `--update` 或等价确认参数。
-- 收尾必须更新 memory，并运行 `qmd update` 与 `qmd embed`，确保后续能按包名、commit、脚本名检索。
+- 收尾必须更新 memory，记录包名、commit 和脚本名，确保后续可追溯。
 
 ## 3. MCP Rules
 - Transport 由字段推断：`command` => `stdio`，`url` => `streamable_http`。
@@ -81,4 +81,4 @@ description: GetTokens Codex Skills / MCP 扩展管理：源码校准解析、�
 - 后端 Codex extensions 变更后至少运行：
   - `go test ./internal/wailsapp -run 'Codex|Mcp|Skill'`
 - 视觉/交互变化需要浏览器或 Wails 实际截图，截图归档到对应 `space/screenshots/`。
-- 收尾时更新 space README、`docs-linhay/dev/`、`docs-linhay/memory/YYYY-MM-DD.md`，再执行 `qmd update` 与 `qmd embed`。
+- 收尾时更新 space README、`docs-linhay/dev/` 和 `docs-linhay/memory/YYYY-MM-DD.md`。
