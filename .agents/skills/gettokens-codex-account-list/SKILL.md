@@ -69,6 +69,15 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - 进阶用法：账号卡模型映射把特殊 Codex 模型名暴露为 alias，例如 `models[].name = deepseek-chat`、`models[].alias = deepseek`；路由侧按 `deepseek` 选账号，执行侧发给上游 `deepseek-chat`。
 - 多个真实模型可以映射到同一个 Codex alias；openai-compatible 账号内会形成 alias pool，并在支持的错误边界内做同账号内轮转或失败切换。
 
+## 3.2 Codex /model 本地目录投影语义
+- Codex `/model` 展示与 GetTokens runtime route 是两条边界：runtime 真源仍是 sidecar / account store / channel routing；`model_catalog_json` 只是让本地 Codex TUI 稳定展示可选模型的 projection。
+- GetTokens 只管理 `CODEX_HOME/gettokens-model-catalog.json`。写入 `config.toml` 顶层 `model_catalog_json` 时必须指向这个 GetTokens-owned 文件，不把 account store 或 provider preset 当成 catalog 真源。
+- `model_catalog_json` 会完全替换 Codex 内置和远程 catalog；生成文件必须覆盖当前 relay 可选的完整模型集合，不能只写 DeepSeek 或某个单一账号模型。
+- 生成 slug 使用 client-facing model：有 `OpenAICompatibleModel.Alias` 时用 alias，否则用 name；这保证用户在 `/model` 里选到的值就是 sidecar route engine 的请求模型输入。
+- 如果用户已有外部 `model_catalog_json`，默认保留并返回冲突提示；除非用户明确确认接管，不得静默覆盖。
+- Status 页关闭 `/model` 同步开关时，只移除指向 `gettokens-model-catalog.json` 的 pointer；不得删除或改写用户外部 catalog。
+- Codex 只在启动时读取 static catalog；前端保存后必须提示重启 Codex 后生效。
+
 ## 4. 路由探测语义
 - `ProbeCodexAccountRouting` 使用页面传入的候选约束发起最小 relay 请求。
 - 新主路径应优先使用 Codex channel config + dry-run/explain，展示候选池、过滤原因、排序步骤和最终选择。

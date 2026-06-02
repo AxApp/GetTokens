@@ -4053,6 +4053,9 @@ export namespace main {
 	    supportsWebsocketsSet?: boolean;
 	    authStrategy: string;
 	    skipRelayKeyMetadata?: boolean;
+	    modelCatalogProjectionMode?: string;
+	    modelCatalogOverrideExternal?: boolean;
+	    modelCatalogModels?: OpenAICompatibleModel[];
 
 	    static createFrom(source: any = {}) {
 	        return new RelayLocalApplyInput(source);
@@ -4083,12 +4086,37 @@ export namespace main {
 	        this.supportsWebsocketsSet = source["supportsWebsocketsSet"];
 	        this.authStrategy = source["authStrategy"];
 	        this.skipRelayKeyMetadata = source["skipRelayKeyMetadata"];
+	        this.modelCatalogProjectionMode = source["modelCatalogProjectionMode"];
+	        this.modelCatalogOverrideExternal = source["modelCatalogOverrideExternal"];
+	        this.modelCatalogModels = this.convertValues(source["modelCatalogModels"], OpenAICompatibleModel);
 	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class RelayLocalApplyResult {
 	    codexHomePath: string;
 	    authFilePath: string;
 	    configPath: string;
+	    modelCatalogPath?: string;
+	    modelCatalogRequiresRestart?: boolean;
+	    existingExternalModelCatalogPath?: string;
+	    warnings?: string[];
 
 	    static createFrom(source: any = {}) {
 	        return new RelayLocalApplyResult(source);
@@ -4099,6 +4127,10 @@ export namespace main {
 	        this.codexHomePath = source["codexHomePath"];
 	        this.authFilePath = source["authFilePath"];
 	        this.configPath = source["configPath"];
+	        this.modelCatalogPath = source["modelCatalogPath"];
+	        this.modelCatalogRequiresRestart = source["modelCatalogRequiresRestart"];
+	        this.existingExternalModelCatalogPath = source["existingExternalModelCatalogPath"];
+	        this.warnings = source["warnings"];
 	    }
 	}
 	export class RelayRoutingConfig {

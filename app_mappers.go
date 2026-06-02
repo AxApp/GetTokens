@@ -310,29 +310,32 @@ func mapRelayLocalApplyInput(result *wailsapp.RelayLocalApplyInput) *RelayLocalA
 		return nil
 	}
 	return &RelayLocalApplyInput{
-		PreserveUnspecifiedFields: result.PreserveUnspecifiedFields,
-		APIKey:                    result.APIKey,
-		APIKeySet:                 result.APIKeySet,
-		AuthFileContentBase64:     result.AuthFileContentBase64,
-		AuthFileContentSet:        result.AuthFileContentSet,
-		BaseURL:                   result.BaseURL,
-		BaseURLSet:                result.BaseURLSet,
-		Model:                     result.Model,
-		ModelSet:                  result.ModelSet,
-		ReasoningEffort:           result.ReasoningEffort,
-		ReasoningEffortSet:        result.ReasoningEffortSet,
-		ProviderID:                result.ProviderID,
-		ProviderIDSet:             result.ProviderIDSet,
-		ProviderName:              result.ProviderName,
-		ProviderNameSet:           result.ProviderNameSet,
-		RequiresOpenAIAuth:        result.RequiresOpenAIAuth,
-		RequiresOpenAIAuthSet:     result.RequiresOpenAIAuthSet,
-		WireAPI:                   result.WireAPI,
-		WireAPISet:                result.WireAPISet,
-		SupportsWebsockets:        result.SupportsWebsockets,
-		SupportsWebsocketsSet:     result.SupportsWebsocketsSet,
-		AuthStrategy:              result.AuthStrategy,
-		SkipRelayKeyMetadata:      result.SkipRelayKeyMetadata,
+		PreserveUnspecifiedFields:    result.PreserveUnspecifiedFields,
+		APIKey:                       result.APIKey,
+		APIKeySet:                    result.APIKeySet,
+		AuthFileContentBase64:        result.AuthFileContentBase64,
+		AuthFileContentSet:           result.AuthFileContentSet,
+		BaseURL:                      result.BaseURL,
+		BaseURLSet:                   result.BaseURLSet,
+		Model:                        result.Model,
+		ModelSet:                     result.ModelSet,
+		ReasoningEffort:              result.ReasoningEffort,
+		ReasoningEffortSet:           result.ReasoningEffortSet,
+		ProviderID:                   result.ProviderID,
+		ProviderIDSet:                result.ProviderIDSet,
+		ProviderName:                 result.ProviderName,
+		ProviderNameSet:              result.ProviderNameSet,
+		RequiresOpenAIAuth:           result.RequiresOpenAIAuth,
+		RequiresOpenAIAuthSet:        result.RequiresOpenAIAuthSet,
+		WireAPI:                      result.WireAPI,
+		WireAPISet:                   result.WireAPISet,
+		SupportsWebsockets:           result.SupportsWebsockets,
+		SupportsWebsocketsSet:        result.SupportsWebsocketsSet,
+		AuthStrategy:                 result.AuthStrategy,
+		SkipRelayKeyMetadata:         result.SkipRelayKeyMetadata,
+		ModelCatalogProjectionMode:   result.ModelCatalogProjectionMode,
+		ModelCatalogOverrideExternal: result.ModelCatalogOverrideExternal,
+		ModelCatalogModels:           mapOpenAICompatibleModels(result.ModelCatalogModels),
 	}
 }
 
@@ -341,9 +344,13 @@ func mapRelayLocalApplyResult(result *wailsapp.RelayLocalApplyResult) *RelayLoca
 		return nil
 	}
 	return &RelayLocalApplyResult{
-		CodexHomePath: result.CodexHomePath,
-		AuthFilePath:  result.AuthFilePath,
-		ConfigPath:    result.ConfigPath,
+		CodexHomePath:                    result.CodexHomePath,
+		AuthFilePath:                     result.AuthFilePath,
+		ConfigPath:                       result.ConfigPath,
+		ModelCatalogPath:                 result.ModelCatalogPath,
+		ModelCatalogRequiresRestart:      result.ModelCatalogRequiresRestart,
+		ExistingExternalModelCatalogPath: result.ExistingExternalModelCatalogPath,
+		Warnings:                         append([]string(nil), result.Warnings...),
 	}
 }
 

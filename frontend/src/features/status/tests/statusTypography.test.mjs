@@ -74,6 +74,21 @@ test('status model picker does not inject legacy GT fallback', async () => {
   assert.match(relayLocalStateSource, /defaultRelayModelOptions\s*=\s*\[RELAY_CODEX_DEFAULT_MODEL\]/);
 });
 
+test('status model catalog sync label opens a preview modal', async () => {
+  const statusPanelSource = await readFile(new URL('../components/StatusPanels.tsx', import.meta.url), 'utf8');
+
+  assert.match(statusPanelSource, /setModelCatalogPreviewOpen\(true\)/);
+  assert.match(statusPanelSource, /aria-label="preview sync_model_catalog"/);
+  assert.match(statusPanelSource, /Codex \/model 模型目录预览/);
+  assert.match(statusPanelSource, /modelCatalogPreviewModels\.map/);
+  assert.match(statusPanelSource, /<table className="w-max min-w-full border-collapse"/);
+  assert.match(statusPanelSource, /<th scope="col"/);
+  assert.match(statusPanelSource, /<tbody className="divide-y-2/);
+  assert.match(statusPanelSource, /whitespace-nowrap/);
+  assert.doesNotMatch(statusPanelSource, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)_10rem\]/);
+  assert.doesNotMatch(statusPanelSource, /md:grid-cols-\[max-content_max-content_max-content\]/);
+});
+
 test('codex model provider option descriptions are localized in Chinese', async () => {
   const zh = JSON.parse(await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8'));
   const descriptions = zh.status.codex_model_provider_descriptions;

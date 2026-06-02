@@ -45,6 +45,8 @@ export function DeleteOpenAICompatibleProvider(arg1:string):Promise<void>;
 
 export function DeleteRateLimitRule(arg1:main.DeleteRateLimitRuleInput):Promise<void>;
 
+export function DisableGetTokensCodexModelCatalogProjection():Promise<main.RelayLocalApplyResult>;
+
 export function DownloadAuthFile(arg1:string):Promise<main.DownloadFileResponse>;
 
 export function DownloadCodexBinary(arg1:codexbinary.DownloadInput):Promise<codexbinary.DownloadResult>;

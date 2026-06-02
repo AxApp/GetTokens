@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { main } from '../../../../wailsjs/go/models';
 import ActionSelect, { type ActionSelectOption } from '../../../components/ui/ActionSelect';
 import FormField, { FieldLabel, SelectField, TextInputField } from '../../../components/ui/FormField';
+import ModalFrame from '../../../components/ui/ModalFrame';
 import SegmentedControl from '../../../components/ui/SegmentedControl';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { RelayModelEditorModal } from './RelayEditors';
@@ -68,6 +69,9 @@ interface StatusApplyLocalSectionProps {
   relayKeyDisplayName: (value: string, index: number) => string;
   supportsWebsockets: boolean;
   onToggleSupportsWebsockets: () => void;
+  syncCodexModelCatalog: boolean;
+  isDisablingModelCatalog: boolean;
+  onChangeSyncCodexModelCatalog: (checked: boolean) => void;
   initialActiveTarget?: LocalCliPanelTarget;
 }
 
@@ -111,6 +115,9 @@ export function StatusApplyLocalSection({
   relayKeyDisplayName,
   supportsWebsockets,
   onToggleSupportsWebsockets,
+  syncCodexModelCatalog,
+  isDisablingModelCatalog,
+  onChangeSyncCodexModelCatalog,
   initialActiveTarget = 'codex',
 }: StatusApplyLocalSectionProps) {
   type ClaudeCodeModelField = 'model' | 'defaultHaikuModel' | 'defaultSonnetModel' | 'defaultOpusModel' | 'smallFastModel';
@@ -119,6 +126,7 @@ export function StatusApplyLocalSection({
   const [activeTarget, setActiveTarget] = useState<LocalCliPanelTarget>(initialActiveTarget);
   const [modelEditorTarget, setModelEditorTarget] = useState<ModelEditorTarget | null>(null);
   const [modelEditor, setModelEditor] = useState<RelayModelEditorState | null>(null);
+  const [modelCatalogPreviewOpen, setModelCatalogPreviewOpen] = useState(false);
   const fieldPairGridClass = 'grid gap-3 md:grid-cols-2';
   const [claudeDraft, setClaudeDraft] = useState<ClaudeCodeLocalApplyDraft>(() => ({
     relayKeyIndex: selectedKeyIndex,
@@ -153,6 +161,25 @@ export function StatusApplyLocalSection({
     () => sortRelayModelCatalogByNameDesc(resolvedRelayModels),
     [resolvedRelayModels]
   );
+  const modelCatalogPreviewModels = useMemo(() => {
+    const seen = new Set<string>();
+    return sortedRelayModels
+      .map((model) => {
+        const slug = (model.alias || model.name || '').trim();
+        const name = (model.name || '').trim();
+        if (!slug || seen.has(slug)) {
+          return null;
+        }
+        seen.add(slug);
+        return {
+          slug,
+          name,
+          alias: (model.alias || '').trim(),
+          reasoning: model.supportedReasoningEfforts.length > 0 ? model.supportedReasoningEfforts.join(' / ') : '-',
+        };
+      })
+      .filter((model): model is { slug: string; name: string; alias: string; reasoning: string } => model !== null);
+  }, [sortedRelayModels]);
   const codexDiff = useMemo(
     () =>
       buildCodexLocalApplyDiff({
@@ -439,6 +466,31 @@ export function StatusApplyLocalSection({
                 </div>
               ) : null}
 
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  aria-label="preview sync_model_catalog"
+                  className="min-w-0 text-left active:scale-95"
+                  onClick={() => setModelCatalogPreviewOpen(true)}
+                >
+                  <span className="text-[length:var(--font-size-ui-lg)] font-bold tracking-[0.08em] text-[var(--text-primary)] underline-offset-4 hover:underline">
+                    sync_model_catalog
+                    {isDisablingModelCatalog ? (
+                      <span className="ml-2 font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                        正在停用
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
+                <ToggleSwitch
+                  label="sync_model_catalog"
+                  checked={syncCodexModelCatalog}
+                  disabled={isApplyingToLocal || isDisablingModelCatalog}
+                  className="h-9 w-16"
+                  onChange={onChangeSyncCodexModelCatalog}
+                />
+              </div>
+
               {codexLocalAuthStrategy === 'preserve_chatgpt_auth' && codexLocalCanApply ? (
                 <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-main)] px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
                   {t('status.codex_local_preserve_hint')}
@@ -691,6 +743,74 @@ export function StatusApplyLocalSection({
           onChange={setModelEditor}
           onSubmit={submitModelEditor}
         />
+      ) : null}
+      {modelCatalogPreviewOpen ? (
+        <ModalFrame
+          size="lg"
+          ariaLabel="Codex /model 模型目录预览"
+          onClose={() => setModelCatalogPreviewOpen(false)}
+          panelClassName="!w-fit !max-w-[calc(100vw-3rem)]"
+          header={
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+              <div className="min-w-0">
+                <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  CODEX MODEL CATALOG
+                </div>
+                <h3 className="mt-1 text-sm font-black uppercase italic tracking-normal text-[var(--text-primary)]">
+                  Codex /model 模型目录预览
+                </h3>
+              </div>
+              <button type="button" onClick={() => setModelCatalogPreviewOpen(false)} className="btn-swiss active:scale-95">
+                关闭
+              </button>
+            </div>
+          }
+          bodyClassName="bg-[var(--bg-surface)]"
+        >
+          <table className="w-max min-w-full border-collapse">
+            <thead className="border-b-2 border-[var(--border-color)] bg-[var(--bg-main)]">
+              <tr>
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  /model slug
+                </th>
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  real model
+                </th>
+                <th scope="col" className="px-4 py-2 text-left font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  reasoning
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y-2 divide-[var(--border-color)]">
+              {modelCatalogPreviewModels.map((model) => (
+                <tr key={model.slug}>
+                  <td className="px-4 py-3 align-top">
+                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-black tracking-wide text-[var(--text-primary)]">
+                      {model.slug}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-sm)] font-semibold tracking-wide text-[var(--text-primary)]">
+                      {model.name || '-'}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 align-top">
+                    <div className="whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                      {model.reasoning}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {modelCatalogPreviewModels.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-8 text-center font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    暂无可同步模型
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </ModalFrame>
       ) : null}
     </>
   );

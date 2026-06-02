@@ -238,6 +238,9 @@ function LocalCliApplySample({
         relayKeyDisplayName={(_, index) => `Relay Key ${index + 1}`}
         supportsWebsockets
         onToggleSupportsWebsockets={() => undefined}
+        syncCodexModelCatalog
+        isDisablingModelCatalog={false}
+        onChangeSyncCodexModelCatalog={() => undefined}
         initialActiveTarget={initialActiveTarget}
       />
     </Frame>

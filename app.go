@@ -1273,47 +1273,66 @@ func (a *App) ApplyRelayServiceConfigToLocal(apiKey string, baseURL string, mode
 	}
 
 	return &RelayLocalApplyResult{
-		CodexHomePath: result.CodexHomePath,
-		AuthFilePath:  result.AuthFilePath,
-		ConfigPath:    result.ConfigPath,
+		CodexHomePath:                    result.CodexHomePath,
+		AuthFilePath:                     result.AuthFilePath,
+		ConfigPath:                       result.ConfigPath,
+		ModelCatalogPath:                 result.ModelCatalogPath,
+		ModelCatalogRequiresRestart:      result.ModelCatalogRequiresRestart,
+		ExistingExternalModelCatalogPath: result.ExistingExternalModelCatalogPath,
+		Warnings:                         append([]string(nil), result.Warnings...),
 	}, nil
 }
 
 func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*RelayLocalApplyResult, error) {
 	result, err := a.core.ApplyRelayServiceConfigToLocalV2(wailsapp.RelayLocalApplyInput{
-		PreserveUnspecifiedFields: input.PreserveUnspecifiedFields,
-		APIKey:                    input.APIKey,
-		APIKeySet:                 input.APIKeySet,
-		AuthFileContentBase64:     input.AuthFileContentBase64,
-		AuthFileContentSet:        input.AuthFileContentSet,
-		BaseURL:                   input.BaseURL,
-		BaseURLSet:                input.BaseURLSet,
-		Model:                     input.Model,
-		ModelSet:                  input.ModelSet,
-		ReasoningEffort:           input.ReasoningEffort,
-		ReasoningEffortSet:        input.ReasoningEffortSet,
-		ProviderID:                input.ProviderID,
-		ProviderIDSet:             input.ProviderIDSet,
-		ProviderName:              input.ProviderName,
-		ProviderNameSet:           input.ProviderNameSet,
-		RequiresOpenAIAuth:        input.RequiresOpenAIAuth,
-		RequiresOpenAIAuthSet:     input.RequiresOpenAIAuthSet,
-		WireAPI:                   input.WireAPI,
-		WireAPISet:                input.WireAPISet,
-		SupportsWebsockets:        input.SupportsWebsockets,
-		SupportsWebsocketsSet:     input.SupportsWebsocketsSet,
-		AuthStrategy:              input.AuthStrategy,
-		SkipRelayKeyMetadata:      input.SkipRelayKeyMetadata,
+		PreserveUnspecifiedFields:    input.PreserveUnspecifiedFields,
+		APIKey:                       input.APIKey,
+		APIKeySet:                    input.APIKeySet,
+		AuthFileContentBase64:        input.AuthFileContentBase64,
+		AuthFileContentSet:           input.AuthFileContentSet,
+		BaseURL:                      input.BaseURL,
+		BaseURLSet:                   input.BaseURLSet,
+		Model:                        input.Model,
+		ModelSet:                     input.ModelSet,
+		ReasoningEffort:              input.ReasoningEffort,
+		ReasoningEffortSet:           input.ReasoningEffortSet,
+		ProviderID:                   input.ProviderID,
+		ProviderIDSet:                input.ProviderIDSet,
+		ProviderName:                 input.ProviderName,
+		ProviderNameSet:              input.ProviderNameSet,
+		RequiresOpenAIAuth:           input.RequiresOpenAIAuth,
+		RequiresOpenAIAuthSet:        input.RequiresOpenAIAuthSet,
+		WireAPI:                      input.WireAPI,
+		WireAPISet:                   input.WireAPISet,
+		SupportsWebsockets:           input.SupportsWebsockets,
+		SupportsWebsocketsSet:        input.SupportsWebsocketsSet,
+		AuthStrategy:                 input.AuthStrategy,
+		SkipRelayKeyMetadata:         input.SkipRelayKeyMetadata,
+		ModelCatalogProjectionMode:   input.ModelCatalogProjectionMode,
+		ModelCatalogOverrideExternal: input.ModelCatalogOverrideExternal,
+		ModelCatalogModels:           mapOpenAICompatibleModelsToWails(input.ModelCatalogModels),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &RelayLocalApplyResult{
-		CodexHomePath: result.CodexHomePath,
-		AuthFilePath:  result.AuthFilePath,
-		ConfigPath:    result.ConfigPath,
+		CodexHomePath:                    result.CodexHomePath,
+		AuthFilePath:                     result.AuthFilePath,
+		ConfigPath:                       result.ConfigPath,
+		ModelCatalogPath:                 result.ModelCatalogPath,
+		ModelCatalogRequiresRestart:      result.ModelCatalogRequiresRestart,
+		ExistingExternalModelCatalogPath: result.ExistingExternalModelCatalogPath,
+		Warnings:                         append([]string(nil), result.Warnings...),
 	}, nil
+}
+
+func (a *App) DisableGetTokensCodexModelCatalogProjection() (*RelayLocalApplyResult, error) {
+	result, err := a.core.DisableGetTokensCodexModelCatalogProjection()
+	if err != nil {
+		return nil, err
+	}
+	return mapRelayLocalApplyResult(result), nil
 }
 
 func (a *App) GetLocalCodexAuthState() (*LocalCodexAuthState, error) {

@@ -82,6 +82,10 @@ export function DeleteRateLimitRule(arg1) {
   return window['go']['main']['App']['DeleteRateLimitRule'](arg1);
 }
 
+export function DisableGetTokensCodexModelCatalogProjection() {
+  return window['go']['main']['App']['DisableGetTokensCodexModelCatalogProjection']();
+}
+
 export function DownloadAuthFile(arg1) {
   return window['go']['main']['App']['DownloadAuthFile'](arg1);
 }

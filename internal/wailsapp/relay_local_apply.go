@@ -52,6 +52,13 @@ func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*Rel
 	if err != nil {
 		return nil, err
 	}
+	if normalized.ModelCatalogProjectionMode == relayModelCatalogProjectionGetTokens && len(normalized.ModelCatalogModels) == 0 {
+		models, err := a.ListRelaySupportedModels()
+		if err != nil {
+			return nil, err
+		}
+		normalized.ModelCatalogModels = models
+	}
 
 	result, err := applyRelayServiceConfigToLocalV2Normalized(normalized)
 	if err != nil {
@@ -156,14 +163,40 @@ func applyRelayServiceConfigToLocalV2Normalized(input RelayLocalApplyInput) (*Re
 		return nil, err
 	}
 	configPayload := mergeRelayCodexConfigToml(existingConfig, input)
+	modelCatalogPath := ""
+	externalModelCatalogPath := ""
+	modelCatalogRequiresRestart := false
+	warnings := []string(nil)
+	if input.ModelCatalogProjectionMode == relayModelCatalogProjectionGetTokens {
+		nextConfig, catalogPath, externalPath, requiresRestart, err := applyGetTokensCodexModelCatalogProjection(
+			configPayload,
+			codexHome,
+			input.ModelCatalogModels,
+			input.ModelCatalogOverrideExternal,
+		)
+		if err != nil {
+			return nil, err
+		}
+		configPayload = nextConfig
+		modelCatalogPath = catalogPath
+		externalModelCatalogPath = externalPath
+		modelCatalogRequiresRestart = requiresRestart
+		if externalPath != "" {
+			warnings = append(warnings, "已保留现有外部 model_catalog_json，未改写为 GetTokens 模型目录")
+		}
+	}
 	if err := writeFileAtomically(configPath, []byte(configPayload), 0600); err != nil {
 		return nil, err
 	}
 
 	return &RelayLocalApplyResult{
-		CodexHomePath: codexHome,
-		AuthFilePath:  authPath,
-		ConfigPath:    configPath,
+		CodexHomePath:                    codexHome,
+		AuthFilePath:                     authPath,
+		ConfigPath:                       configPath,
+		ModelCatalogPath:                 modelCatalogPath,
+		ModelCatalogRequiresRestart:      modelCatalogRequiresRestart,
+		ExistingExternalModelCatalogPath: externalModelCatalogPath,
+		Warnings:                         warnings,
 	}, nil
 }
 
@@ -212,29 +245,32 @@ func normalizeRelayLocalApplyInput(input RelayLocalApplyInput) (RelayLocalApplyI
 
 	normalizedProviderID, normalizedProviderName := normalizeRelayLocalProvider(input.ProviderID, input.ProviderName)
 	return RelayLocalApplyInput{
-		APIKey:                    normalizedAPIKey,
-		APIKeySet:                 apiKeySet,
-		AuthFileContentBase64:     normalizedAuthFileContent,
-		AuthFileContentSet:        authFileContentSet,
-		BaseURL:                   normalizedBaseURL,
-		BaseURLSet:                baseURLSet,
-		Model:                     normalizeRelayLocalModel(input.Model, modelSet),
-		ModelSet:                  modelSet,
-		ReasoningEffort:           normalizeRelayLocalReasoningEffort(input.ReasoningEffort, reasoningEffortSet),
-		ReasoningEffortSet:        reasoningEffortSet,
-		ProviderID:                normalizedProviderID,
-		ProviderIDSet:             providerIDSet,
-		ProviderName:              normalizedProviderName,
-		ProviderNameSet:           providerNameSet,
-		PreserveUnspecifiedFields: input.PreserveUnspecifiedFields,
-		RequiresOpenAIAuth:        requiresOpenAIAuth,
-		RequiresOpenAIAuthSet:     requiresOpenAIAuthSet,
-		WireAPI:                   wireAPI,
-		WireAPISet:                wireAPISet,
-		SupportsWebsockets:        input.SupportsWebsockets,
-		SupportsWebsocketsSet:     supportsWebsocketsSet,
-		AuthStrategy:              authStrategy,
-		SkipRelayKeyMetadata:      input.SkipRelayKeyMetadata,
+		APIKey:                       normalizedAPIKey,
+		APIKeySet:                    apiKeySet,
+		AuthFileContentBase64:        normalizedAuthFileContent,
+		AuthFileContentSet:           authFileContentSet,
+		BaseURL:                      normalizedBaseURL,
+		BaseURLSet:                   baseURLSet,
+		Model:                        normalizeRelayLocalModel(input.Model, modelSet),
+		ModelSet:                     modelSet,
+		ReasoningEffort:              normalizeRelayLocalReasoningEffort(input.ReasoningEffort, reasoningEffortSet),
+		ReasoningEffortSet:           reasoningEffortSet,
+		ProviderID:                   normalizedProviderID,
+		ProviderIDSet:                providerIDSet,
+		ProviderName:                 normalizedProviderName,
+		ProviderNameSet:              providerNameSet,
+		PreserveUnspecifiedFields:    input.PreserveUnspecifiedFields,
+		RequiresOpenAIAuth:           requiresOpenAIAuth,
+		RequiresOpenAIAuthSet:        requiresOpenAIAuthSet,
+		WireAPI:                      wireAPI,
+		WireAPISet:                   wireAPISet,
+		SupportsWebsockets:           input.SupportsWebsockets,
+		SupportsWebsocketsSet:        supportsWebsocketsSet,
+		AuthStrategy:                 authStrategy,
+		SkipRelayKeyMetadata:         input.SkipRelayKeyMetadata,
+		ModelCatalogProjectionMode:   normalizeRelayModelCatalogProjectionMode(input.ModelCatalogProjectionMode),
+		ModelCatalogOverrideExternal: input.ModelCatalogOverrideExternal,
+		ModelCatalogModels:           normalizeProviderModels(input.ModelCatalogModels),
 	}, nil
 }
 

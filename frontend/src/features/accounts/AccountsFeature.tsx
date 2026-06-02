@@ -772,7 +772,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             skipRelayKeyMetadata: codexUsesAccountAPIKey,
           },
           () =>
-            ApplyRelayServiceConfigToLocalV2({
+            ApplyRelayServiceConfigToLocalV2(main.RelayLocalApplyInput.createFrom({
               apiKey: codexAPIKey,
               apiKeySet: draft.codex.apiKeySet ?? true,
               authFileContentBase64,
@@ -795,7 +795,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               supportsWebsocketsSet: draft.codex.supportsWebsocketsSet ?? true,
               authStrategy: draft.codex.authStrategy,
               skipRelayKeyMetadata: codexUsesAccountAPIKey,
-            }),
+            })),
         );
         setLocalCliApplyMessage(`已写入 Codex：${result.configPath || result.codexHomePath}`);
         try {

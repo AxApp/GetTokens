@@ -3,13 +3,14 @@ import {
   ApplyClaudeCodeAPIKeyConfigToLocal,
   ApplyRelayServiceConfigToLocal,
   ApplyRelayServiceConfigToLocalV2,
+  DisableGetTokensCodexModelCatalogProjection,
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
   GetRelayServiceConfig,
   ListRelaySupportedModels,
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
-import type { main } from '../../../wailsjs/go/models';
+import { main } from '../../../wailsjs/go/models';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/useDebug';
 import { useI18n } from '../../context/I18nContext';
@@ -100,6 +101,7 @@ export default function StatusFeature({
     loadCodexLocalAuthStrategy()
   );
   const [supportsWebsockets, setSupportsWebsockets] = useState(true);
+  const [syncCodexModelCatalog, setSyncCodexModelCatalog] = useState(true);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
   const [localCodexAuthState, setLocalCodexAuthState] = useState<main.LocalCodexAuthState | null>(null);
@@ -107,6 +109,7 @@ export default function StatusFeature({
   const [claudeApplyMessage, setClaudeApplyMessage] = useState('');
   const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
   const [isApplyingClaude, setIsApplyingClaude] = useState(false);
+  const [isDisablingModelCatalog, setIsDisablingModelCatalog] = useState(false);
 
   const relayKeys = relayKeyItems.map((item) => item.value);
   const selectedKey = relayKeys[selectedKeyIndex] || '';
@@ -664,9 +667,10 @@ export default function StatusFeature({
           providerID: selectedRelayProvider.id,
           providerName: selectedRelayProvider.name,
           authStrategy: codexLocalAuthStrategy,
+          modelCatalogProjectionMode: syncCodexModelCatalog ? 'gettokens' : 'off',
         },
         () =>
-          ApplyRelayServiceConfigToLocalV2({
+          ApplyRelayServiceConfigToLocalV2(main.RelayLocalApplyInput.createFrom({
             apiKey: normalizedKey,
             apiKeySet: true,
             baseURL: selectedEndpoint.baseUrl,
@@ -686,9 +690,17 @@ export default function StatusFeature({
             supportsWebsockets,
             supportsWebsocketsSet: true,
             authStrategy: codexLocalAuthStrategy,
-          })
+            modelCatalogProjectionMode: syncCodexModelCatalog ? 'gettokens' : 'off',
+            modelCatalogModels: relayAccountPoolModels.length > 0 ? relayAccountPoolModels : undefined,
+          }))
       );
-      setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}`);
+      const catalogMessage = result.existingExternalModelCatalogPath
+        ? ` / 保留外部 model_catalog_json：${result.existingExternalModelCatalogPath}`
+        : result.modelCatalogPath
+          ? ` / /model 同步：${result.modelCatalogPath}，重启 Codex 后生效`
+          : '';
+      const warningMessage = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
+      setLocalApplyMessage(`${t('status.apply_local_done')}: ${result.codexHomePath}${catalogMessage}${warningMessage}`);
       try {
         const refreshed = await trackRequest('GetRelayServiceConfig', { args: [] }, () => GetRelayServiceConfig());
         setRelayKeyItems(refreshed.apiKeyItems || (refreshed.apiKeys || []).map((value) => ({ value })));
@@ -744,6 +756,39 @@ export default function StatusFeature({
       setLocalApplyMessage(`${t('status.apply_local_failed')}: ${toErrorMessage(error)}`);
     } finally {
       setIsApplyingToLocal(false);
+    }
+  }
+
+  async function disableCodexModelCatalogProjection(): Promise<boolean> {
+    setIsDisablingModelCatalog(true);
+    try {
+      const result = await trackRequest(
+        'DisableGetTokensCodexModelCatalogProjection',
+        { args: [] },
+        () => DisableGetTokensCodexModelCatalogProjection()
+      );
+      const restartMessage = result.modelCatalogRequiresRestart ? '，重启 Codex 后生效' : '';
+      setLocalApplyMessage(`已停用 GetTokens /model 同步：${result.configPath}${restartMessage}`);
+      return true;
+    } catch (error) {
+      console.error(error);
+      setLocalApplyMessage(`${t('status.apply_local_failed')}: ${toErrorMessage(error)}`);
+      return false;
+    } finally {
+      setIsDisablingModelCatalog(false);
+    }
+  }
+
+  async function changeSyncCodexModelCatalog(nextValue: boolean) {
+    if (nextValue) {
+      setSyncCodexModelCatalog(true);
+      return;
+    }
+
+    setSyncCodexModelCatalog(false);
+    const disabled = await disableCodexModelCatalogProjection();
+    if (!disabled) {
+      setSyncCodexModelCatalog(true);
     }
   }
 
@@ -880,6 +925,9 @@ export default function StatusFeature({
             relayKeyDisplayName={relayKeyDisplayName}
             supportsWebsockets={supportsWebsockets}
             onToggleSupportsWebsockets={() => setSupportsWebsockets((prev) => !prev)}
+            syncCodexModelCatalog={syncCodexModelCatalog}
+            isDisablingModelCatalog={isDisablingModelCatalog}
+            onChangeSyncCodexModelCatalog={(nextValue) => void changeSyncCodexModelCatalog(nextValue)}
           />
         </section>
       </div>
