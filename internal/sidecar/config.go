@@ -6,6 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -19,20 +21,37 @@ type sidecarConfig struct {
 	APIKeys                []string `yaml:"api-keys"`
 	UseSystemProxy         bool     `yaml:"use-system-proxy"`
 	UsageStatisticsEnabled bool     `yaml:"usage-statistics-enabled"`
+	RequestRetry           int      `yaml:"request-retry"`
+	MaxRetryCredentials    int      `yaml:"max-retry-credentials"`
+	MaxRetryInterval       int      `yaml:"max-retry-interval"`
 	RemoteManagement       struct {
 		AllowRemote bool   `yaml:"allow-remote"`
 		SecretKey   string `yaml:"secret-key"`
 	} `yaml:"remote-management"`
 }
 
+const (
+	defaultRequestRetry        = 3
+	defaultMaxRetryCredentials = 0
+	defaultMaxRetryInterval    = 30
+	retryDefaultsMarkerName    = ".gettokens-retry-defaults-v1"
+)
+
 // writeConfig serialises a minimal YAML config for CLIProxyAPI.
 func writeConfig(path string, port int, authDir string) (string, error) {
+	if err := migrateLegacyChannelRoutingConfig(path); err != nil {
+		return "", err
+	}
+
 	cfg := sidecarConfig{
 		Host:                   "",
 		Port:                   port,
 		AuthDir:                authDir,
 		APIKeys:                []string{mustGenerateServiceAPIKey()},
 		UsageStatisticsEnabled: true,
+		RequestRetry:           defaultRequestRetry,
+		MaxRetryCredentials:    defaultMaxRetryCredentials,
+		MaxRetryInterval:       defaultMaxRetryInterval,
 	}
 	cfg.RemoteManagement.AllowRemote = false
 	cfg.RemoteManagement.SecretKey = ManagementKey
@@ -63,6 +82,9 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 			remoteManagement := ensureMappingNode(root, "remote-management")
 			upsertMappingScalar(remoteManagement, "allow-remote", "false", "!!bool")
 			upsertMappingScalar(remoteManagement, "secret-key", cfg.RemoteManagement.SecretKey, "!!str")
+			if err := applyRetryDefaults(root, path); err != nil {
+				return "", err
+			}
 
 			var buf bytes.Buffer
 			encoder := yaml.NewEncoder(&buf)
@@ -71,6 +93,9 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 				if closeErr := encoder.Close(); closeErr == nil {
 					if writeErr := os.WriteFile(path, buf.Bytes(), 0600); writeErr != nil {
 						return "", writeErr
+					}
+					if markerErr := markRetryDefaultsApplied(path); markerErr != nil {
+						return "", markerErr
 					}
 					return apiKeys[0], nil
 				}
@@ -88,7 +113,83 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 	if err := os.WriteFile(path, rendered, 0600); err != nil {
 		return "", err
 	}
+	if err := markRetryDefaultsApplied(path); err != nil {
+		return "", err
+	}
 	return cfg.APIKeys[0], nil
+}
+
+func applyRetryDefaults(root *yaml.Node, configPath string) error {
+	requestRetry, hasRequestRetry := readMappingInt(root, "request-retry")
+	maxRetryCredentials, hasMaxRetryCredentials := readMappingInt(root, "max-retry-credentials")
+	maxRetryInterval, hasMaxRetryInterval := readMappingInt(root, "max-retry-interval")
+
+	if !hasRequestRetry {
+		upsertMappingScalar(root, "request-retry", fmt.Sprintf("%d", defaultRequestRetry), "!!int")
+	}
+	if !hasMaxRetryCredentials {
+		upsertMappingScalar(root, "max-retry-credentials", fmt.Sprintf("%d", defaultMaxRetryCredentials), "!!int")
+	}
+	if !hasMaxRetryInterval {
+		upsertMappingScalar(root, "max-retry-interval", fmt.Sprintf("%d", defaultMaxRetryInterval), "!!int")
+	}
+
+	if hasRequestRetry && hasMaxRetryCredentials && hasMaxRetryInterval &&
+		requestRetry == 0 && maxRetryCredentials == 0 && maxRetryInterval == 0 &&
+		!retryDefaultsMarkerExists(configPath) {
+		upsertMappingScalar(root, "request-retry", fmt.Sprintf("%d", defaultRequestRetry), "!!int")
+		upsertMappingScalar(root, "max-retry-credentials", fmt.Sprintf("%d", defaultMaxRetryCredentials), "!!int")
+		upsertMappingScalar(root, "max-retry-interval", fmt.Sprintf("%d", defaultMaxRetryInterval), "!!int")
+	}
+
+	return nil
+}
+
+func retryDefaultsMarkerExists(configPath string) bool {
+	_, err := os.Stat(retryDefaultsMarkerPath(configPath))
+	return err == nil
+}
+
+func markRetryDefaultsApplied(configPath string) error {
+	markerPath := retryDefaultsMarkerPath(configPath)
+	if err := os.MkdirAll(filepath.Dir(markerPath), 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(markerPath, []byte("1\n"), 0o600)
+}
+
+func retryDefaultsMarkerPath(configPath string) string {
+	return filepath.Join(filepath.Dir(strings.TrimSpace(configPath)), retryDefaultsMarkerName)
+}
+
+func migrateLegacyChannelRoutingConfig(configPath string) error {
+	configDir := filepath.Dir(strings.TrimSpace(configPath))
+	if configDir == "." || configDir == "" || filepath.Base(configDir) != "gettokens" {
+		return nil
+	}
+	targetPath := filepath.Join(configDir, "channel-routing", "config.json")
+	if _, err := os.Stat(targetPath); err == nil {
+		return nil
+	} else if !os.IsNotExist(err) {
+		return err
+	}
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+	legacyPath := filepath.Join(home, ".config", "gettokens-data", "channel-routing", "config.json")
+	body, err := os.ReadFile(legacyPath)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0o700); err != nil {
+		return err
+	}
+	return os.WriteFile(targetPath, body, 0o600)
 }
 
 func readUseSystemProxy(path string) (bool, error) {
@@ -179,6 +280,28 @@ func readMappingBool(parent *yaml.Node, key string) bool {
 		return strings.EqualFold(strings.TrimSpace(valueNode.Value), "true") || strings.TrimSpace(valueNode.Value) == "1"
 	}
 	return false
+}
+
+func readMappingInt(parent *yaml.Node, key string) (int, bool) {
+	if parent == nil || parent.Kind != yaml.MappingNode {
+		return 0, false
+	}
+	for index := 0; index+1 < len(parent.Content); index += 2 {
+		keyNode := parent.Content[index]
+		if keyNode == nil || keyNode.Value != key {
+			continue
+		}
+		valueNode := parent.Content[index+1]
+		if valueNode == nil {
+			return 0, true
+		}
+		parsed, err := strconv.Atoi(strings.TrimSpace(valueNode.Value))
+		if err != nil {
+			return 0, true
+		}
+		return parsed, true
+	}
+	return 0, false
 }
 
 func ensureMappingNode(parent *yaml.Node, key string) *yaml.Node {

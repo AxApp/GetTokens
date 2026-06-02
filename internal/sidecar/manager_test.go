@@ -207,11 +207,113 @@ func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	assertContains(t, content, "auth-dir: "+dir)
 	assertContains(t, content, "use-system-proxy: false")
 	assertContains(t, content, "usage-statistics-enabled: true")
+	assertContains(t, content, "request-retry: 3")
+	assertContains(t, content, "max-retry-credentials: 0")
+	assertContains(t, content, "max-retry-interval: 30")
 	assertContains(t, content, "remote-management:")
 	assertContains(t, content, "allow-remote: false")
 	assertContains(t, content, "secret-key: "+ManagementKey)
 	assertContains(t, content, "api-keys:")
 	assertContains(t, content, "- "+apiKey)
+}
+
+func TestWriteConfigRepairsLegacyZeroRetryDefaultsOnce(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+	original := `host: ""
+port: 8317
+request-retry: 0
+max-retry-credentials: 0
+max-retry-interval: 0
+api-keys:
+  - relay-key
+`
+	if err := os.WriteFile(path, []byte(original), 0o600); err != nil {
+		t.Fatalf("seed config: %v", err)
+	}
+
+	if _, err := writeConfig(path, 8317, dir); err != nil {
+		t.Fatalf("writeConfig returned error: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read config: %v", err)
+	}
+	content := string(data)
+	assertContains(t, content, "request-retry: 3")
+	assertContains(t, content, "max-retry-credentials: 0")
+	assertContains(t, content, "max-retry-interval: 30")
+
+	if err := os.WriteFile(path, []byte(original), 0o600); err != nil {
+		t.Fatalf("reset config: %v", err)
+	}
+	if _, err := writeConfig(path, 8317, dir); err != nil {
+		t.Fatalf("second writeConfig returned error: %v", err)
+	}
+	data, err = os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read second config: %v", err)
+	}
+	content = string(data)
+	assertContains(t, content, "request-retry: 0")
+	assertContains(t, content, "max-retry-credentials: 0")
+	assertContains(t, content, "max-retry-interval: 0")
+}
+
+func TestWriteConfigMigratesLegacyChannelRoutingForProdProfile(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	configDir := filepath.Join(home, ".config", "gettokens")
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("create config dir: %v", err)
+	}
+	legacyDir := filepath.Join(home, ".config", "gettokens-data", "channel-routing")
+	if err := os.MkdirAll(legacyDir, 0o700); err != nil {
+		t.Fatalf("create legacy dir: %v", err)
+	}
+	legacyPath := filepath.Join(legacyDir, "config.json")
+	legacyBody := []byte(`{"channels":{"codex":{"channel":"codex","routeMode":"balanced"}}}`)
+	if err := os.WriteFile(legacyPath, legacyBody, 0o600); err != nil {
+		t.Fatalf("seed legacy routing config: %v", err)
+	}
+
+	if _, err := writeConfig(filepath.Join(configDir, "config.yaml"), 8317, configDir); err != nil {
+		t.Fatalf("writeConfig returned error: %v", err)
+	}
+
+	migratedPath := filepath.Join(configDir, "channel-routing", "config.json")
+	migrated, err := os.ReadFile(migratedPath)
+	if err != nil {
+		t.Fatalf("read migrated routing config: %v", err)
+	}
+	if string(migrated) != string(legacyBody) {
+		t.Fatalf("migrated routing config = %q, want %q", string(migrated), string(legacyBody))
+	}
+}
+
+func TestWriteConfigDoesNotMigrateLegacyChannelRoutingForDevProfile(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	configDir := filepath.Join(home, ".config", "gettokens-dev")
+	if err := os.MkdirAll(configDir, 0o700); err != nil {
+		t.Fatalf("create config dir: %v", err)
+	}
+	legacyDir := filepath.Join(home, ".config", "gettokens-data", "channel-routing")
+	if err := os.MkdirAll(legacyDir, 0o700); err != nil {
+		t.Fatalf("create legacy dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(legacyDir, "config.json"), []byte(`{"channels":{}}`), 0o600); err != nil {
+		t.Fatalf("seed legacy routing config: %v", err)
+	}
+
+	if _, err := writeConfig(filepath.Join(configDir, "config.yaml"), 18317, configDir); err != nil {
+		t.Fatalf("writeConfig returned error: %v", err)
+	}
+
+	migratedPath := filepath.Join(configDir, "channel-routing", "config.json")
+	if _, err := os.Stat(migratedPath); !os.IsNotExist(err) {
+		t.Fatalf("dev routing config migrated unexpectedly: %v", err)
+	}
 }
 
 func TestUseSystemProxyConfigRoundTrip(t *testing.T) {

@@ -80,9 +80,11 @@ export function buildRoutingDefaultLabel(
     case 'sessionAffinityTTL':
       return `${prefix}: 1h`;
     case 'requestRetry':
+      return `${prefix}: 3`;
     case 'maxRetryCredentials':
-    case 'maxRetryInterval':
       return `${prefix}: 0`;
+    case 'maxRetryInterval':
+      return `${prefix}: 30`;
     case 'sessionAffinity':
     case 'switchProject':
     case 'switchPreviewModel':

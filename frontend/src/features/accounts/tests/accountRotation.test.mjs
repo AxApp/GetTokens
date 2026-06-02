@@ -88,9 +88,9 @@ test('buildRoutingDefaultLabel exposes explicit defaults for routing fields', ()
 
   assert.equal(buildRoutingDefaultLabel(t, 'strategy'), '默认: 轮询');
   assert.equal(buildRoutingDefaultLabel(t, 'sessionAffinityTTL'), '默认: 1h');
-  assert.equal(buildRoutingDefaultLabel(t, 'requestRetry'), '默认: 0');
+  assert.equal(buildRoutingDefaultLabel(t, 'requestRetry'), '默认: 3');
   assert.equal(buildRoutingDefaultLabel(t, 'maxRetryCredentials'), '默认: 0');
-  assert.equal(buildRoutingDefaultLabel(t, 'maxRetryInterval'), '默认: 0');
+  assert.equal(buildRoutingDefaultLabel(t, 'maxRetryInterval'), '默认: 30');
   assert.equal(buildRoutingDefaultLabel(t, 'sessionAffinity'), '默认: 关闭');
   assert.equal(buildRoutingDefaultLabel(t, 'switchProject'), '默认: 关闭');
   assert.equal(buildRoutingDefaultLabel(t, 'switchPreviewModel'), '默认: 关闭');
