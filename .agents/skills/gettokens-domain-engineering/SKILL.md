@@ -20,6 +20,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Copied account imports create a new editable asset even when the underlying config is identical. When the imported title/provider/file name already exists, append user-facing numeric suffixes from ` #2` onward; do not use `-copy` style suffixes. For auth-file imports, preserve `.json` after the numbered title, such as `codex-auth #2.json`.
   - Do not fetch accounts until sidecar is `ready`.
   - Reload from Wails after create/delete instead of hand-merging state.
+  - Once `accounts-v1.sqlite` / `account-store-db` is configured, Codex runtime auth synthesis must treat SQLite as the source of truth even when the DB is missing, unreadable, or has zero active rows. Legacy `auth-dir/*.json`, `codex-api-key`, and `openai-compatibility` sources are migration inputs only; they must not become fallback runtime accounts after delete/restart.
   - `codex api key` lives in local storage under `~/.config/gettokens-data/codex-api-keys/`, not in `auth-dir`.
   - `AccountsPage` is route-only; heavy assembly lives under `frontend/src/features/accounts/`.
   - Feature-internal layering for `accounts` is:
