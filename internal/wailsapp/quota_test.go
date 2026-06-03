@@ -64,9 +64,10 @@ func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
 	}
 
 	result, err := app.TestCodexAPIKeyQuotaCurl(TestCodexAPIKeyQuotaCurlInput{
-		APIKey:    "sk-live",
-		BaseURL:   "https://quota.example.com",
-		QuotaCurl: `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"`,
+		APIKey:         "sk-live",
+		BaseURL:        "https://quota.example.com",
+		PlatformCookie: "Cookie: service=abc",
+		QuotaCurl:      `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}" -b "{{platformCookie}}"`,
 	})
 	if err != nil {
 		t.Fatalf("TestCodexAPIKeyQuotaCurl: %v", err)
@@ -74,8 +75,11 @@ func TestTestCodexAPIKeyQuotaCurlUsesDraftInput(t *testing.T) {
 	if gotDraft["api_key"] != "sk-live" || gotDraft["base_url"] != "https://quota.example.com" {
 		t.Fatalf("quota-test draft = %#v", gotDraft)
 	}
-	if gotDraft["quota_curl"] != `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"` {
+	if gotDraft["quota_curl"] != `curl -sS "{{baseUrl}}/api/codex/usage" -H "Authorization: Bearer {{apiKey}}" -b "{{platformCookie}}"` {
 		t.Fatalf("quota curl draft = %q", gotDraft["quota_curl"])
+	}
+	if gotDraft["platform_cookie"] != "service=abc" {
+		t.Fatalf("platform cookie draft = %q", gotDraft["platform_cookie"])
 	}
 	if result.PlanType != "pro" {
 		t.Fatalf("PlanType = %q, want pro", result.PlanType)
@@ -117,9 +121,10 @@ func TestTestCodexAPIKeyBillingCurlUsesSidecarAPICall(t *testing.T) {
 	}
 
 	result, err := app.TestCodexAPIKeyBillingCurl(TestCodexAPIKeyQuotaCurlInput{
-		APIKey:    "sk-billing",
-		BaseURL:   "https://billing.example.com",
-		QuotaCurl: `curl -sS "{{baseUrl}}/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+		APIKey:         "sk-billing",
+		BaseURL:        "https://billing.example.com",
+		PlatformCookie: "billing=xyz",
+		QuotaCurl:      `curl -sS "{{baseUrl}}/user/balance" -b "{{platformCookie}}"`,
 	})
 	if err != nil {
 		t.Fatalf("TestCodexAPIKeyBillingCurl: %v", err)
@@ -127,8 +132,11 @@ func TestTestCodexAPIKeyBillingCurlUsesSidecarAPICall(t *testing.T) {
 	if gotDraft["api_key"] != "sk-billing" || gotDraft["base_url"] != "https://billing.example.com" {
 		t.Fatalf("billing-test draft = %#v", gotDraft)
 	}
-	if gotDraft["billing_curl"] != `curl -sS "{{baseUrl}}/user/balance" -H "Authorization: Bearer {{apiKey}}"` {
+	if gotDraft["billing_curl"] != `curl -sS "{{baseUrl}}/user/balance" -b "{{platformCookie}}"` {
 		t.Fatalf("billing curl draft = %q", gotDraft["billing_curl"])
+	}
+	if gotDraft["platform_cookie"] != "billing=xyz" {
+		t.Fatalf("billing platform cookie draft = %q", gotDraft["platform_cookie"])
 	}
 	if !result.IsAvailable || len(result.BalanceInfos) != 1 {
 		t.Fatalf("billing result = %#v, want parsed balance info", result)

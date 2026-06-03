@@ -303,3 +303,16 @@ multiModeProfiles: [
 ### 仍需注意
 
 - 当前工作树仍包含 Codex live-session 相关未提交改动，提交 Xiaomi 任务前需要按 diff 分离 staging，避免把两个需求混到同一个提交。
+
+## 2026-06-03 创建页 Cookie 输入补强
+
+### 交互补齐
+
+- 在 UnifiedCompose 添加第三方厂商账号页中，若当前厂商 cURL 模板/指引包含 `<PASTE_PLATFORM_COOKIE>`，对应的 quota/billing cURL section 会展示临时 `Platform Cookie` 输入区。
+- 用户可在创建页直接粘贴 Cookie 值，点击「填入 cURL」后自动替换模板里的 `<PASTE_PLATFORM_COOKIE>`，并启用对应 cURL。
+- 该输入值只用于生成当前 cURL 文本，不作为独立字段保存；最终持久化的仍是完整 cURL，避免新增一套 Cookie 凭据存储模型。
+
+### 验证
+
+- `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs`：通过。
+- `cd frontend && npx tsc --noEmit`：通过。

@@ -756,6 +756,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   ? formatBaseUrls
                   : undefined,
               models: models.length > 0 ? models : undefined,
+              platformCookie: (unifiedComposeForm.platformCookie ?? "").trim(),
               modelFetchApiKey:
                 unifiedComposeForm.modelFetchApiKey?.trim() || "",
               modelFetchBaseUrl:

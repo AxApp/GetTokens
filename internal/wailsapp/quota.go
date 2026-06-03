@@ -418,19 +418,21 @@ func markQuotaRuntimeStateStaleFromError(state *cliproxyapi.QuotaRuntimeState, e
 }
 
 type TestCodexAPIKeyQuotaCurlInput struct {
-	APIKey    string `json:"apiKey"`
-	BaseURL   string `json:"baseUrl"`
-	Prefix    string `json:"prefix,omitempty"`
-	QuotaCurl string `json:"quotaCurl"`
+	APIKey         string `json:"apiKey"`
+	BaseURL        string `json:"baseUrl"`
+	Prefix         string `json:"prefix,omitempty"`
+	QuotaCurl      string `json:"quotaCurl"`
+	PlatformCookie string `json:"platformCookie,omitempty"`
 }
 
 func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaResponse, error) {
 	source := cliproxyAPIKeyQuotaSource{
-		APIKey:       strings.TrimSpace(input.APIKey),
-		BaseURL:      strings.TrimSpace(input.BaseURL),
-		Prefix:       strings.TrimSpace(input.Prefix),
-		QuotaCurl:    strings.TrimSpace(input.QuotaCurl),
-		QuotaEnabled: true,
+		APIKey:         strings.TrimSpace(input.APIKey),
+		BaseURL:        strings.TrimSpace(input.BaseURL),
+		Prefix:         strings.TrimSpace(input.Prefix),
+		QuotaCurl:      strings.TrimSpace(input.QuotaCurl),
+		QuotaEnabled:   true,
+		PlatformCookie: normalizePlatformCookie(input.PlatformCookie),
 	}
 	if source.APIKey == "" {
 		return nil, errors.New("api key 不能为空")
@@ -446,10 +448,11 @@ func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*Co
 
 func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (*CodexQuotaResponse, error) {
 	state, err := a.managementClient().TestQuotaCurl(cliproxyapi.QuotaCurlTestInput{
-		APIKey:    strings.TrimSpace(source.APIKey),
-		BaseURL:   strings.TrimSpace(source.BaseURL),
-		Prefix:    strings.TrimSpace(source.Prefix),
-		QuotaCurl: strings.TrimSpace(source.QuotaCurl),
+		APIKey:         strings.TrimSpace(source.APIKey),
+		BaseURL:        strings.TrimSpace(source.BaseURL),
+		Prefix:         strings.TrimSpace(source.Prefix),
+		QuotaCurl:      strings.TrimSpace(source.QuotaCurl),
+		PlatformCookie: strings.TrimSpace(source.PlatformCookie),
 	})
 	if err != nil {
 		return nil, err
@@ -458,11 +461,12 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 }
 
 type cliproxyAPIKeyQuotaSource struct {
-	APIKey       string
-	BaseURL      string
-	Prefix       string
-	QuotaCurl    string
-	QuotaEnabled bool
+	APIKey         string
+	BaseURL        string
+	Prefix         string
+	QuotaCurl      string
+	QuotaEnabled   bool
+	PlatformCookie string
 }
 
 func parseDebugResponse(body string) interface{} {
@@ -479,11 +483,12 @@ func parseDebugResponse(body string) interface{} {
 
 func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaBillingInfo, error) {
 	source := cliproxyAPIKeyQuotaSource{
-		APIKey:       strings.TrimSpace(input.APIKey),
-		BaseURL:      strings.TrimSpace(input.BaseURL),
-		Prefix:       strings.TrimSpace(input.Prefix),
-		QuotaCurl:    strings.TrimSpace(input.QuotaCurl),
-		QuotaEnabled: true,
+		APIKey:         strings.TrimSpace(input.APIKey),
+		BaseURL:        strings.TrimSpace(input.BaseURL),
+		Prefix:         strings.TrimSpace(input.Prefix),
+		QuotaCurl:      strings.TrimSpace(input.QuotaCurl),
+		QuotaEnabled:   true,
+		PlatformCookie: normalizePlatformCookie(input.PlatformCookie),
 	}
 	if source.APIKey == "" {
 		return nil, errors.New("api key 不能为空")
@@ -493,10 +498,11 @@ func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*
 	}
 
 	state, err := a.managementClient().TestBillingCurl(cliproxyapi.QuotaCurlTestInput{
-		APIKey:      strings.TrimSpace(source.APIKey),
-		BaseURL:     strings.TrimSpace(source.BaseURL),
-		Prefix:      strings.TrimSpace(source.Prefix),
-		BillingCurl: strings.TrimSpace(source.QuotaCurl),
+		APIKey:         strings.TrimSpace(source.APIKey),
+		BaseURL:        strings.TrimSpace(source.BaseURL),
+		Prefix:         strings.TrimSpace(source.Prefix),
+		BillingCurl:    strings.TrimSpace(source.QuotaCurl),
+		PlatformCookie: strings.TrimSpace(source.PlatformCookie),
 	})
 	if err != nil {
 		return nil, err

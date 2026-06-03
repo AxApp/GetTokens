@@ -146,7 +146,7 @@ export function AccountCurlEditorModal({
               </span>
             </label>
             <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              支持 {'{{apiKey}}'} / {'{{baseUrl}}'} / {'{{prefix}}'}
+              支持 {'{{apiKey}}'} / {'{{baseUrl}}'} / {'{{prefix}}'} / {'{{platformCookie}}'}
             </div>
           </div>
           <textarea
@@ -242,6 +242,7 @@ export function buildCurlVariables(draft: ApiKeyConfigDraft) {
     { label: 'apiKey', value: maskSecret(draft.apiKey) },
     { label: 'baseUrl', value: draft.baseUrl || '{{baseUrl}}' },
     { label: 'prefix', value: draft.prefix || '{{prefix}}' },
+    { label: 'platformCookie', value: maskSecret(draft.platformCookie ?? "") },
   ];
 }
 

@@ -61,6 +61,7 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		FormatBaseURLs:    record.FormatBaseURLs,
 		BillingCurl:       record.BillingCurl,
 		BillingEnabled:    record.BillingEnabled,
+		PlatformCookie:    record.PlatformCookie,
 		ModelFetchAPIKey:  record.ModelFetchAPIKey,
 		ModelFetchBaseURL: record.ModelFetchBaseURL,
 	}

@@ -317,26 +317,28 @@ func TestQuotaRefreshClientEndpoints(t *testing.T) {
 	}
 
 	status, err = client.TestQuotaCurl(QuotaCurlTestInput{
-		APIKey:    "sk-test",
-		BaseURL:   "https://quota.example.com",
-		QuotaCurl: "curl https://quota.example.com/usage",
+		APIKey:         "sk-test",
+		BaseURL:        "https://quota.example.com",
+		QuotaCurl:      "curl https://quota.example.com/usage -b {{platformCookie}}",
+		PlatformCookie: "cookie-a",
 	})
 	if err != nil || status == nil || len(status.Windows) != 1 {
 		t.Fatalf("TestQuotaCurl = %#v, err = %v", status, err)
 	}
-	if !strings.Contains(gotQuotaTestPayload, `"quota_curl":"curl https://quota.example.com/usage"`) {
+	if !strings.Contains(gotQuotaTestPayload, `"quota_curl":"curl https://quota.example.com/usage -b {{platformCookie}}"`) || !strings.Contains(gotQuotaTestPayload, `"platform_cookie":"cookie-a"`) {
 		t.Fatalf("quota-test payload = %s", gotQuotaTestPayload)
 	}
 
 	status, err = client.TestBillingCurl(QuotaCurlTestInput{
-		APIKey:      "sk-test",
-		BaseURL:     "https://quota.example.com",
-		BillingCurl: "curl https://quota.example.com/billing",
+		APIKey:         "sk-test",
+		BaseURL:        "https://quota.example.com",
+		BillingCurl:    "curl https://quota.example.com/billing -b {{platformCookie}}",
+		PlatformCookie: "cookie-b",
 	})
 	if err != nil || status == nil || status.Billing == nil || !status.Billing.IsAvailable {
 		t.Fatalf("TestBillingCurl = %#v, err = %v", status, err)
 	}
-	if !strings.Contains(gotBillingTestPayload, `"billing_curl":"curl https://quota.example.com/billing"`) {
+	if !strings.Contains(gotBillingTestPayload, `"billing_curl":"curl https://quota.example.com/billing -b {{platformCookie}}"`) || !strings.Contains(gotBillingTestPayload, `"platform_cookie":"cookie-b"`) {
 		t.Fatalf("billing-test payload = %s", gotBillingTestPayload)
 	}
 }

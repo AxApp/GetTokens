@@ -595,12 +595,13 @@ export default function useAccountsPageState({
   );
 
   const testSelectedApiKeyQuotaCurl = useCallback(
-    async (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }): Promise<CodexQuota> => {
+    async (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string }): Promise<CodexQuota> => {
       const nextInput = {
         apiKey: input.apiKey.trim(),
         baseUrl: input.baseUrl.trim(),
         prefix: input.prefix.trim(),
         quotaCurl: input.quotaCurl.trim(),
+        platformCookie: input.platformCookie?.trim() ?? '',
       };
       return trackRequest(
         'TestCodexAPIKeyQuotaCurl',
@@ -612,12 +613,13 @@ export default function useAccountsPageState({
   );
 
   const testSelectedApiKeyBillingCurl = useCallback(
-    async (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => {
+    async (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string }) => {
       const nextInput = {
         apiKey: input.apiKey.trim(),
         baseUrl: input.baseUrl.trim(),
         prefix: input.prefix.trim(),
         quotaCurl: input.billingCurl.trim(),
+        platformCookie: input.platformCookie?.trim() ?? '',
       };
       return trackRequest(
         'TestCodexAPIKeyBillingCurl',

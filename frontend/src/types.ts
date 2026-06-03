@@ -99,6 +99,7 @@ export interface AccountRecord {
   models?: Array<{ name: string; alias?: string }>;
   billingCurl?: string;
   billingEnabled?: boolean;
+  platformCookie?: string;
   modelFetchApiKey?: string;
   modelFetchBaseUrl?: string;
   rawAuthFile?: AuthFile;

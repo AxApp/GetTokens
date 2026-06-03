@@ -85,7 +85,7 @@ export interface AccountQuotaSectionProps {
   editorOpen?: boolean;
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
-  onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string }) => Promise<any>;
+  onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string }) => Promise<any>;
 }
 
 export interface AccountBillingSectionProps {
@@ -96,7 +96,7 @@ export interface AccountBillingSectionProps {
   editorOpen?: boolean;
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
-  onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string }) => Promise<any>;
+  onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string }) => Promise<any>;
 }
 
 export interface AccountDetailFooterProps {
@@ -258,6 +258,13 @@ export function AccountCredentialVerifySection({
               placeholder="/v1"
               onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
             />
+            <CredentialInputField
+              label="平台 Cookie"
+              value={draft.platformCookie ?? ""}
+              placeholder="用于 {{platformCookie}}，不要包含 Cookie: 前缀"
+              onChange={(value) => setDraft((prev) => ({ ...prev, platformCookie: value }))}
+              secret
+            />
           </div>
         </section>
 
@@ -414,12 +421,14 @@ function CredentialInputField({
   placeholder,
   onChange,
   onCopy,
+  secret,
 }: {
   label: string;
   value: string;
   placeholder?: string;
   onChange: (value: string) => void;
   onCopy?: () => void;
+  secret?: boolean;
 }) {
   return (
     <label className="grid min-w-0 gap-1.5">
@@ -431,6 +440,7 @@ function CredentialInputField({
       </span>
       <div className="flex min-w-0 items-center gap-2">
         <input
+          type={secret ? 'password' : 'text'}
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
@@ -640,6 +650,7 @@ export function AccountQuotaSection({
         baseUrl: draft.baseUrl,
         prefix: draft.prefix,
         quotaCurl: draft.quotaCurl.trim(),
+        platformCookie: (draft.platformCookie ?? "").trim(),
       });
       setTestResult(result);
       setTestStatus('success');
@@ -812,6 +823,7 @@ export function AccountBillingSection({
         baseUrl: draft.baseUrl,
         prefix: draft.prefix,
         billingCurl: draft.billingCurl.trim(),
+        platformCookie: (draft.platformCookie ?? "").trim(),
       });
       const nextBilling = normalizeBillingDisplay(result);
       setTestBilling(nextBilling);

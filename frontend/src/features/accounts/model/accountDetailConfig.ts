@@ -11,6 +11,7 @@ export interface ApiKeyConfigDraft {
   quotaEnabled: boolean;
   billingCurl: string;
   billingEnabled: boolean;
+  platformCookie?: string;
   proxyUrl: string;
 }
 
@@ -25,6 +26,7 @@ type ConfigSource = Pick<
   | "quotaEnabled"
   | "billingCurl"
   | "billingEnabled"
+  | "platformCookie"
   | "proxyUrl"
 >;
 
@@ -54,6 +56,7 @@ export function buildApiKeyConfigDraft(
     quotaEnabled: account.quotaEnabled ?? quotaCurl.trim().length > 0,
     billingCurl,
     billingEnabled: account.billingEnabled ?? billingCurl.trim().length > 0,
+    platformCookie: account.platformCookie ?? "",
     proxyUrl: account.proxyUrl ?? "",
   };
 }
@@ -71,6 +74,7 @@ export function hasApiKeyConfigChanges(
     current.quotaEnabled !== draft.quotaEnabled ||
     current.billingCurl !== draft.billingCurl ||
     current.billingEnabled !== draft.billingEnabled ||
+    current.platformCookie !== draft.platformCookie ||
     current.proxyUrl !== draft.proxyUrl
   );
 }

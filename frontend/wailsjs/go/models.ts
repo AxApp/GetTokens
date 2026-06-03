@@ -749,6 +749,7 @@ export namespace main {
 	    formatBaseUrls?: Record<string, string>;
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
+	    platformCookie?: string;
 	    modelFetchApiKey?: string;
 	    modelFetchBaseUrl?: string;
 
@@ -788,6 +789,7 @@ export namespace main {
 	        this.formatBaseUrls = source["formatBaseUrls"];
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
+	        this.platformCookie = source["platformCookie"];
 	        this.modelFetchApiKey = source["modelFetchApiKey"];
 	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
 	    }
@@ -3026,6 +3028,7 @@ export namespace main {
 	    quotaEnabled?: boolean;
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
+	    platformCookie?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new CreateCodexAPIKeyInput(source);
@@ -3047,6 +3050,7 @@ export namespace main {
 	        this.quotaEnabled = source["quotaEnabled"];
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
+	        this.platformCookie = source["platformCookie"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -5379,6 +5383,7 @@ export namespace main {
 	    baseUrl: string;
 	    prefix?: string;
 	    quotaCurl: string;
+	    platformCookie?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new TestCodexAPIKeyQuotaCurlInput(source);
@@ -5390,6 +5395,7 @@ export namespace main {
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
 	        this.quotaCurl = source["quotaCurl"];
+	        this.platformCookie = source["platformCookie"];
 	    }
 	}
 	export class UpdateAccountPriorityInput {
@@ -5417,6 +5423,7 @@ export namespace main {
 	    quotaEnabled?: boolean;
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
+	    platformCookie?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyConfigInput(source);
@@ -5434,6 +5441,7 @@ export namespace main {
 	        this.quotaEnabled = source["quotaEnabled"];
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
+	        this.platformCookie = source["platformCookie"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

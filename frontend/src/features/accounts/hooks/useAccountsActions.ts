@@ -201,6 +201,7 @@ export default function useAccountsActions({
             prefix: trimmedPrefix,
             quotaCurl: trimmedQuotaCurl,
             quotaEnabled: Boolean(apiKeyForm.quotaEnabled && trimmedQuotaCurl),
+            platformCookie: (apiKeyForm.platformCookie ?? "").trim(),
           }))
       );
       setIsApiKeyModalOpen(false);
@@ -486,6 +487,7 @@ export default function useAccountsActions({
       const nextPrefix = draft.prefix.trim();
       const nextQuotaCurl = draft.quotaCurl.trim();
       const nextBillingCurl = draft.billingCurl.trim();
+      const nextPlatformCookie = (draft.platformCookie ?? "").trim();
       const nextProxyURL = draft.proxyUrl.trim();
       if (!nextAPIKey) {
         setDeleteError(`SAVE ERROR: ${t('accounts.api_key_required')}`);
@@ -504,6 +506,7 @@ export default function useAccountsActions({
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                platformCookie: nextPlatformCookie,
                 proxyUrl: nextProxyURL,
               }
             : prev
@@ -523,6 +526,7 @@ export default function useAccountsActions({
                   baseUrl: nextBaseURL,
                   prefix: nextPrefix,
                   quotaCurl: nextQuotaCurl,
+                  platformCookie: nextPlatformCookie,
                 })
               )
           );
@@ -542,6 +546,7 @@ export default function useAccountsActions({
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                platformCookie: nextPlatformCookie,
                 proxyUrl: nextProxyURL,
               })
             )
@@ -558,6 +563,7 @@ export default function useAccountsActions({
                 quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                platformCookie: nextPlatformCookie,
                 proxyUrl: nextProxyURL,
               }
             : prev

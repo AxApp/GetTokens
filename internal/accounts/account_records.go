@@ -95,6 +95,7 @@ type AccountRecord struct {
 	FormatBaseURLs    map[string]string        `json:"formatBaseUrls,omitempty"`
 	BillingCurl       string                   `json:"billingCurl,omitempty"`
 	BillingEnabled    bool                     `json:"billingEnabled,omitempty"`
+	PlatformCookie    string                   `json:"platformCookie,omitempty"`
 	ModelFetchAPIKey  string                   `json:"modelFetchApiKey,omitempty"`
 	ModelFetchBaseURL string                   `json:"modelFetchBaseUrl,omitempty"`
 }

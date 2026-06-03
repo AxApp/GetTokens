@@ -274,6 +274,16 @@ export default function UnifiedComposeModal({
                   {selectedPreset.notes}
                 </AccountDetailNotice>
               ) : null}
+
+              {selectedPreset?.quotaSetupGuide?.length || selectedPreset?.billingSetupGuide?.length ? (
+                <TextInputField
+                  title="平台 Cookie"
+                  value={form.platformCookie ?? ""}
+                  onChange={(event) => onFormChange("platformCookie", event.target.value)}
+                  placeholder="用于 {{platformCookie}}，不要包含 Cookie: 前缀"
+                  aria-label="平台 Cookie"
+                />
+              ) : null}
             </AccountDetailSection>
 
             {selectedPreset?.requiresModelFetchApiKey ? (
@@ -380,6 +390,7 @@ export default function UnifiedComposeModal({
               baseUrl={form.baseUrl}
               apiKey={form.apiKey}
               prefix={form.prefix}
+              platformCookie={form.platformCookie ?? ""}
               placeholder={copy.quotaCurlPlaceholder}
               setupGuide={selectedPreset?.quotaSetupGuide}
               templates={buildQuotaCurlTemplates(
@@ -413,6 +424,7 @@ export default function UnifiedComposeModal({
                 baseUrl={form.baseUrl}
                 apiKey={form.apiKey}
                 prefix={form.prefix}
+                platformCookie={form.platformCookie ?? ""}
                 placeholder={
                   selectedPreset?.billingCurlTemplate ??
                   'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'
@@ -453,6 +465,7 @@ interface UnifiedComposeCurlConfigSectionProps {
   baseUrl: string;
   apiKey: string;
   prefix: string;
+  platformCookie: string;
   placeholder: string;
   setupGuide?: string[];
   templates: Array<{
@@ -482,6 +495,7 @@ function UnifiedComposeCurlConfigSection({
   baseUrl,
   apiKey,
   prefix,
+  platformCookie = "",
   placeholder,
   setupGuide,
   templates,
@@ -497,6 +511,7 @@ function UnifiedComposeCurlConfigSection({
     prefix,
     quotaCurl: "",
     quotaEnabled: false,
+    platformCookie: platformCookie ?? "",
     billingCurl: "",
     billingEnabled: false,
     proxyUrl: "",
@@ -569,6 +584,7 @@ function UnifiedComposeCurlConfigSection({
     </AccountDetailSection>
   );
 }
+
 
 function UnifiedComposeHeader({
   copy,

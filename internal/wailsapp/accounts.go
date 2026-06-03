@@ -46,6 +46,7 @@ type CreateCodexAPIKeyInput struct {
 	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
 	BillingCurl    string                  `json:"billingCurl,omitempty"`
 	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie string                  `json:"platformCookie,omitempty"`
 }
 
 type UpdateAccountPriorityInput struct {
@@ -78,6 +79,7 @@ type UpdateCodexAPIKeyConfigInput struct {
 	QuotaEnabled   bool                    `json:"quotaEnabled,omitempty"`
 	BillingCurl    string                  `json:"billingCurl,omitempty"`
 	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie string                  `json:"platformCookie,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -150,6 +152,7 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 	write.CodexAPIKey.QuotaEnabled = input.QuotaEnabled && write.CodexAPIKey.QuotaCurl != ""
 	write.CodexAPIKey.BillingCurl = strings.TrimSpace(input.BillingCurl)
 	write.CodexAPIKey.BillingEnabled = input.BillingEnabled && write.CodexAPIKey.BillingCurl != ""
+	write.CodexAPIKey.PlatformCookie = normalizePlatformCookie(input.PlatformCookie)
 	_, err = a.managementClient().PatchAccount(targetID, write)
 	return err
 }
@@ -288,4 +291,8 @@ func codexModelsFromOpenAICompatibleModels(items []OpenAICompatibleModel) []clip
 		})
 	}
 	return out
+}
+
+func normalizePlatformCookie(value string) string {
+	return strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(value), "Cookie:"))
 }

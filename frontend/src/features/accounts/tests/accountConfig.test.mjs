@@ -163,6 +163,7 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       quotaEnabled: true,
       billingCurl: 'billing',
       billingEnabled: true,
+      platformCookie: '',
       proxyUrl: 'socks5://127.0.0.1:7890',
     }),
     {
@@ -173,6 +174,7 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       quotaEnabled: true,
       billingCurl: 'billing',
       billingEnabled: true,
+      platformCookie: '',
       proxyUrl: 'socks5://127.0.0.1:7890',
     },
   );
@@ -257,7 +259,7 @@ test('buildQuotaCurlTemplate resolves Xiaomi MiMo token plan usage preset withou
   });
 
   assert.match(template, /https:\/\/platform\.xiaomimimo\.com\/api\/v1\/tokenPlan\/usage/);
-  assert.match(template, /<PASTE_PLATFORM_COOKIE>/);
+  assert.match(template, /\{\{platformCookie\}\}/);
   assert.doesNotMatch(template, /api-platform_serviceToken=/);
 });
 
@@ -269,7 +271,7 @@ test('buildBillingCurlTemplate resolves Xiaomi MiMo balance preset without secre
   });
 
   assert.match(template, /https:\/\/platform\.xiaomimimo\.com\/api\/v1\/balance/);
-  assert.match(template, /<PASTE_PLATFORM_COOKIE>/);
+  assert.match(template, /\{\{platformCookie\}\}/);
   assert.doesNotMatch(template, /api-platform_serviceToken=/);
 });
 
@@ -288,7 +290,7 @@ test('Xiaomi MiMo curl setup guides explain how to copy platform cookies', () =>
   assert.ok(quotaGuide.length >= 3);
   assert.ok(billingGuide.length >= 3);
   assert.match(quotaGuide.join(' '), /Cookie/);
-  assert.match(billingGuide.join(' '), /<PASTE_PLATFORM_COOKIE>/);
+  assert.match(billingGuide.join(' '), /\{\{platformCookie\}\}/);
 });
 
 
@@ -298,6 +300,15 @@ test('Unified compose persists dedicated model fetch credential when creating To
   assert.match(source, /modelFetchBaseUrl:\s*unifiedComposeForm\.modelFetchBaseUrl\?\.trim\(\) \|\| ""/);
   assert.match(source, /billingCurl:\s*preset\.billingCurlTemplate \?\? prev\.billingCurl/);
   assert.match(source, /billingEnabled:\s*Boolean\(preset\.billingCurlTemplate\)/);
+});
+
+
+test('Unified compose Xiaomi cURL section exposes platform cookie variable to cURL editor', () => {
+  const source = readFileSync(new URL('../components/UnifiedComposeModal.tsx', import.meta.url), 'utf8');
+  assert.match(source, /平台 Cookie/);
+  assert.match(source, /platformCookie/);
+  assert.match(source, /\{\{platformCookie\}\}/);
+  assert.match(source, /AccountCurlEditorModal/);
 });
 
 test('generated Wails account models preserve quota curl fields', () => {
