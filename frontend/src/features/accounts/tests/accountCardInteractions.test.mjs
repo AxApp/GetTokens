@@ -143,8 +143,8 @@ test('account card frame exposes card-level detail expansion semantics', async (
   const source = await readFile(new URL('../components/AccountCardFrame.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /data-account-card-open-details/);
-  assert.match(source, /aria-label=\{interactive \? openDetailsLabel : undefined\}/);
-  assert.match(source, /role=\{interactive \? 'button' : undefined\}/);
+  assert.match(source, /'aria-label': interactive \? openDetailsLabel : undefined/);
+  assert.match(source, /role: interactive \? 'button' : undefined/);
 });
 
 test('account card runtime warning banner summarizes stale reasons but keeps full tooltip', async () => {

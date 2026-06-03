@@ -8,6 +8,7 @@ interface AccountCardFrameProps {
   style?: CSSProperties;
   interactive?: boolean;
   openDetailsLabel?: string;
+  debugLabel?: string;
   onOpen: () => void;
 }
 
@@ -18,6 +19,7 @@ export default function AccountCardFrame({
   style,
   interactive = true,
   openDetailsLabel = 'Open account details',
+  debugLabel,
   onOpen,
 }: AccountCardFrameProps) {
   function handleClick(event: MouseEvent<HTMLDivElement>) {
@@ -38,21 +40,31 @@ export default function AccountCardFrame({
     onOpen();
   }
 
+  const frameProps = {
+    'data-account-card': true,
+    'data-account-card-id': cardID,
+    'data-account-card-open-details': interactive ? 'true' : undefined,
+    className: `card-swiss relative flex h-full w-full min-w-0 max-w-full flex-col overflow-visible bg-[var(--bg-main)] p-0 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] active:scale-[0.985] ${
+      interactive ? 'cursor-pointer' : ''
+    } ${className}`,
+    style,
+    onClick: handleClick,
+    onKeyDown: handleKeyDown,
+    role: interactive ? 'button' : undefined,
+    'aria-label': interactive ? openDetailsLabel : undefined,
+    tabIndex: interactive ? 0 : -1,
+  };
+
+  if (debugLabel) {
+    return (
+      <div {...frameProps} data-debug={debugLabel}>
+        {children}
+      </div>
+    );
+  }
+
   return (
-    <div
-      data-account-card
-      data-account-card-id={cardID}
-      data-account-card-open-details={interactive ? 'true' : undefined}
-      className={`card-swiss relative flex h-full w-full min-w-0 max-w-full flex-col overflow-visible bg-[var(--bg-main)] p-0 transition-transform hover:translate-x-[-2px] hover:translate-y-[-2px] active:scale-[0.985] ${
-        interactive ? 'cursor-pointer' : ''
-      } ${className}`}
-      style={style}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role={interactive ? 'button' : undefined}
-      aria-label={interactive ? openDetailsLabel : undefined}
-      tabIndex={interactive ? 0 : -1}
-    >
+    <div {...frameProps}>
       {children}
     </div>
   );

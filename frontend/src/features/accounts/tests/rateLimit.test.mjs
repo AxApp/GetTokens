@@ -45,6 +45,17 @@ test('rate limit guard rows expose quota-like progress details for account cards
   ]);
 });
 
+
+test('rate limit guard rows use the same stacked progress layout as quota rows', async () => {
+  const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(source, /account-card-rate-limit-heading flex min-w-0 items-baseline justify-between gap-2/);
+  assert.match(source, /className="account-card-rate-limit-row grid min-w-0 gap-1\.5"/);
+  assert.match(styleSource, /\.account-card-rate-limit-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+  assert.doesNotMatch(styleSource, /\.account-card-rate-limit-row\s*\{[^}]*grid-template-columns:\s*(?:4|5)rem\s+minmax\(0,\s*1fr\)/s);
+});
+
 test('rate limit model is keyed only by accountKey', async () => {
   const source = await readFile(new URL('../model/rateLimit.ts', import.meta.url), 'utf8');
 
@@ -94,6 +105,29 @@ test('rate limit rules section edits account-card rules without matchKey fallbac
   assert.doesNotMatch(source, /\{rateLimitSummaryText\}/);
   assert.doesNotMatch(source, /rateLimitSources\.map/);
   assert.doesNotMatch(source, /formatRateLimitTimestamp/);
+});
+
+
+
+test('compact account cards still render route guard module when rules are configured', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /const showCompactRouteGuard = density === 'compact' && hasRouteGuardRows/);
+  assert.match(source, /\{showCompactRouteGuard \? <RateLimitGuard rateLimitStatus=\{rateLimitStatus\} \/> : null\}/);
+  assert.match(source, /const hasRouteGuardRows = buildRateLimitGuardRows\(rateLimitStatus\)\.length > 0/);
+});
+
+test('route guard configured account cards replace the generic frame inspector label with guard info', async () => {
+  const frameSource = await readFile(new URL('../components/AccountCardFrame.tsx', import.meta.url), 'utf8');
+  const cardSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(frameSource, /debugLabel\?: string/);
+  assert.match(frameSource, /if \(debugLabel\)/);
+  assert.match(frameSource, /data-debug=\{debugLabel\}/);
+  assert.match(cardSource, /buildRouteGuardFrameDebugLabel\(rateLimitStatus\)/);
+  assert.match(cardSource, /debugLabel=\{routeGuardFrameDebugLabel\}/);
+  assert.match(cardSource, /ROUTE GUARD: /);
+  assert.match(cardSource, /buildRateLimitGuardRows\(rateLimitStatus\)/);
 });
 
 test('account detail callers do not pass attribution keys into rate limit rules', async () => {

@@ -131,7 +131,9 @@ test('full attribution cards group traffic and usage statistics in one module co
   const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
   assert.match(sectionsSource, /export function TrafficMetricsModule\(\{ usageSummary, t \}: TrafficMetricsModuleProps\)/);
-  assert.match(sectionsSource, /account-card-traffic-module/);
+  assert.match(sectionsSource, /data-design-system-component-name="TrafficMetricsModule"/);
+  assert.match(sectionsSource, /account-card-traffic-module grid border-b border-dashed border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(sectionsSource, /account-card-traffic-module grid border border-\[var\(--color-status-danger\)\]/);
   assert.match(sectionsSource, /<TrafficSection usageSummary=\{usageSummary\} t=\{t\} embedded \/>/);
   assert.match(sectionsSource, /<UsageMetrics usageSummary=\{usageSummary\} t=\{t\} embedded \/>/);
   assert.match(cardSource, /TrafficMetricsModule usageSummary=\{usageSummary\} t=\{t\}/);

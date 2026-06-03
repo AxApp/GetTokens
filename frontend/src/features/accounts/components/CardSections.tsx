@@ -74,7 +74,11 @@ interface TrafficMetricsModuleProps {
 
 export function TrafficMetricsModule({ usageSummary, t }: TrafficMetricsModuleProps) {
   return (
-    <section className="account-card-traffic-module grid border-b border-dashed border-[var(--border-color)]">
+    <section
+      data-design-system-component="true"
+      data-design-system-component-name="TrafficMetricsModule"
+      className="account-card-traffic-module grid border-b border-dashed border-[var(--border-color)]"
+    >
       <TrafficSection usageSummary={usageSummary} t={t} embedded />
       <UsageMetrics usageSummary={usageSummary} t={t} embedded />
     </section>

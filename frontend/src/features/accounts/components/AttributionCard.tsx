@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import AccountCardFrame from './AccountCardFrame';
 import type { AccountUsageSummary } from '../model/accountUsage';
-import type { RateLimitState } from '../model/rateLimit';
+import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit';
 import type { BillingDisplay } from '../../../types';
 import type { QuotaDisplay, Translator } from '../model/types';
 import { resolveAccountCardValueSection } from '../model/accountQuota';
@@ -22,6 +22,15 @@ import {
 } from './attributionCardTone';
 
 type AttributionCardDensity = 'full' | 'compact' | 'list';
+
+
+function buildRouteGuardFrameDebugLabel(rateLimitStatus?: RateLimitState) {
+  const rows = buildRateLimitGuardRows(rateLimitStatus);
+  if (rows.length === 0) return undefined;
+  const statusLabel = rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS';
+  const rowSummary = rows.map((row) => `${row.label} ${row.valueLabel}`).join(' | ');
+  return `ROUTE GUARD: ${statusLabel}${rowSummary ? ` · ${rowSummary}` : ''}`;
+}
 
 export interface AttributionCardBadge {
   label: string;
@@ -90,6 +99,9 @@ export default function AttributionCard({
     density === 'list'
       ? 'absolute -inset-y-0.5 -left-2 -right-0.5 z-20'
       : 'absolute -inset-y-0.5 -left-1.5 -right-0.5 z-20';
+  const routeGuardFrameDebugLabel = buildRouteGuardFrameDebugLabel(rateLimitStatus);
+  const hasRouteGuardRows = buildRateLimitGuardRows(rateLimitStatus).length > 0;
+  const showCompactRouteGuard = density === 'compact' && hasRouteGuardRows;
 
   if (density === 'list') {
     const planBadge = badges.find((badge) => badge.backgroundColor) ?? null;
@@ -122,6 +134,7 @@ export default function AttributionCard({
         style={style}
         interactive={interactive}
         openDetailsLabel={`${t('common.details')}: ${title}`}
+        debugLabel={routeGuardFrameDebugLabel}
         onOpen={onOpen}
       >
         <div className="account-card-list-row grid gap-3 px-3 py-2.5">
@@ -164,6 +177,7 @@ export default function AttributionCard({
       style={style}
       interactive={interactive}
       openDetailsLabel={`${t('common.details')}: ${title}`}
+      debugLabel={routeGuardFrameDebugLabel}
       onOpen={onOpen}
     >
       <div className="account-card-header relative flex min-h-[112px] items-start gap-4 border-b-[3px] border-[var(--border-color)] px-4 py-4">
@@ -222,6 +236,7 @@ export default function AttributionCard({
           <UnsupportedQuotaPlaceholder quotaDisplay={resolvedQuotaDisplay} billing={billing} t={t} />
         )
       ) : null}
+      {showCompactRouteGuard ? <RateLimitGuard rateLimitStatus={rateLimitStatus} /> : null}
 
       {showAttribution ? (
         <>
