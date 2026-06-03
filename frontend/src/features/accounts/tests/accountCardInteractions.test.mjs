@@ -88,6 +88,18 @@ test('account card action menu uses explicit copy labels', async () => {
   assert.doesNotMatch(source, /navigator\.clipboard\.writeText/);
 });
 
+test('account card action menu includes reauth for every codex auth-file account', async () => {
+  const source = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /RotateCw/);
+  assert.match(source, /isCodexAuthFile/);
+  assert.match(source, /const canMenuReauth = isCodexAuthFile\(account\)/);
+  assert.match(source, /\{canMenuReauth \? \(/);
+  assert.match(source, /onStartReauth\(account\)/);
+  assert.match(source, /isOAuthPending \? t\('accounts\.reauth_pending'\) : t\('accounts\.reauth'\)/);
+  assert.match(source, /disabled=\{isOAuthPending\}/);
+});
+
 test('accounts import modal opens with app-local copied account payload when available', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 

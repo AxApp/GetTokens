@@ -2,6 +2,49 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
+import { buildRateLimitGuardRows } from '../model/rateLimit.ts';
+
+test('rate limit guard rows expose quota-like progress details for account cards', () => {
+  const rows = buildRateLimitGuardRows({
+    accountKey: 'acct_001',
+    blocked: false,
+    rules: [
+      {
+        exceeded: false,
+        usagePct: 37.4,
+        currentUsage: 1870000,
+        limitValue: 5000000,
+        windowStart: '2026-06-03T00:00:00Z',
+        windowEnd: '2026-06-03T01:00:00',
+        nextReset: '2026-06-03T01:00:00',
+        rule: {
+          id: 'rlr_tokens_1h',
+          accountKey: 'acct_001',
+          strategy: 'token-window',
+          window: '1h',
+          limitValue: 5000000,
+          action: 'block',
+          enabled: true,
+          label: 'Claude burst',
+        },
+      },
+    ],
+    lastEvaluatedAt: '2026-06-03T00:30:00Z',
+  });
+
+  assert.deepEqual(rows, [
+    {
+      id: 'rlr_tokens_1h',
+      label: 'CLAUDE BURST',
+      valueLabel: '1.9M / 5M',
+      fillPercent: 37,
+      tone: 'warning',
+      windowLabel: '1h',
+      resetLabel: '06/03 01:00',
+    },
+  ]);
+});
+
 test('rate limit model is keyed only by accountKey', async () => {
   const source = await readFile(new URL('../model/rateLimit.ts', import.meta.url), 'utf8');
 

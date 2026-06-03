@@ -3,7 +3,7 @@ import type { KeyboardEvent, MouseEvent } from 'react';
 import type { ApiFormat, BillingDisplay } from '../../../types';
 import type { AccountRecord, QuotaDisplay, QuotaWindowDisplay, Translator } from '../model/types';
 import type { AccountUsageSummary } from '../model/accountUsage';
-import type { RateLimitState } from '../model/rateLimit';
+import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { formatQuotaResetDisplayWithUnix, hasDisplayableBilling } from '../model/accountQuota';
 import { resolveQuotaRemainingFillClass } from '../model/quotaColor';
@@ -440,11 +440,22 @@ interface RateLimitGuardProps {
 }
 
 export function RateLimitGuard({ rateLimitStatus }: RateLimitGuardProps) {
-  const rules = rateLimitStatus?.rules ?? [];
-  if (rules.length === 0) return null;
+  const rows = buildRateLimitGuardRows(rateLimitStatus);
+  if (rows.length === 0) return null;
+  const runtimeWarning = formatRateLimitRuntimeWarning(rateLimitStatus);
 
   return (
-    <section className="grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-4">
+    <section className="grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3">
+      {runtimeWarning ? (
+        <div
+          className="min-w-0 border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_12%,transparent)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--color-status-warning)]"
+          title={runtimeWarning}
+          data-account-route-guard-runtime-warning
+        >
+          <span className="mr-1">STALE</span>
+          <span className="normal-case tracking-normal">{runtimeWarning}</span>
+        </div>
+      ) : null}
       <div className="flex items-center justify-between gap-3">
         <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
           ROUTE GUARD
@@ -455,26 +466,40 @@ export function RateLimitGuard({ rateLimitStatus }: RateLimitGuardProps) {
           {rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS'}
         </div>
       </div>
-      {rules.map((ruleState) => {
-        const exceeded = ruleState.exceeded && ruleState.rule.action === 'block';
-        const fillClass = exceeded ? 'bg-[var(--color-status-danger)]' : ruleState.exceeded ? 'bg-[var(--color-status-warning)]' : 'bg-[var(--color-status-warning)]';
-        const pct = Math.min(100, Math.max(0, Number(ruleState.usagePct || 0)));
+      {rows.map((row) => {
+        const fillClass = row.tone === 'critical' ? 'bg-[var(--color-status-danger)]' : 'bg-[var(--color-status-warning)]';
         return (
-          <div key={ruleState.rule.id} className="account-card-rate-limit-row grid items-center gap-2">
-            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
-              {ruleState.rule.strategy} · {ruleState.rule.window}
+          <div key={row.id} className="account-card-rate-limit-row grid min-w-0 gap-1.5">
+            <div className="account-card-rate-limit-heading flex min-w-0 items-baseline justify-between gap-2">
+              <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                {row.label}
+              </div>
+              <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+                {row.valueLabel}
+              </div>
             </div>
-            <div className="relative h-3 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]">
-              <div className={`absolute inset-y-0 left-0 ${fillClass}`} style={{ width: `${pct}%` }} />
-            </div>
-            <div className="text-right font-mono text-[length:var(--font-size-ui-2xs)] font-black tabular-nums text-[var(--text-primary)]">
-              {pct}%
+            <div className="grid min-w-0 gap-1">
+              <div className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]">
+                <div className={`absolute inset-y-0 left-0 ${fillClass}`} style={{ width: `${row.fillPercent}%` }} />
+              </div>
+              <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                <span className="shrink-0">{row.windowLabel}</span>
+                <span className="min-w-0 truncate text-right text-[var(--text-primary)]">{row.resetLabel || '--'}</span>
+              </div>
             </div>
           </div>
         );
       })}
     </section>
   );
+}
+
+function formatRateLimitRuntimeWarning(rateLimitStatus?: RateLimitState) {
+  const degradedReason = String(rateLimitStatus?.degradedReason || '').trim();
+  if (degradedReason) {
+    return degradedReason;
+  }
+  return rateLimitStatus?.stale ? 'Route guard data is stale.' : '';
 }
 
 // ── Unsupported Quota Placeholder ──────────────────────────────────

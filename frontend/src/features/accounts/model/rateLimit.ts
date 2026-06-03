@@ -71,6 +71,16 @@ export interface RateLimitEvent {
   triggeredAt: number;
 }
 
+export interface RateLimitGuardRowDisplay {
+  id: string;
+  label: string;
+  valueLabel: string;
+  fillPercent: number;
+  tone: RateLimitTone;
+  windowLabel: string;
+  resetLabel: string;
+}
+
 export const RATE_LIMIT_CALENDAR_DAY_WINDOW = 'calendar-day';
 
 export const DEFAULT_RATE_LIMIT_WINDOWS = ['1h', '6h', '12h', '24h', RATE_LIMIT_CALENDAR_DAY_WINDOW, '7d', '30d'];
@@ -155,6 +165,37 @@ export function rateLimitRuleLabel(rule: Pick<RateLimitRule, 'strategy' | 'windo
   return `${window} ${rateLimitStrategyShortLabel(rule.strategy)}`;
 }
 
+export function buildRateLimitGuardRows(status?: RateLimitState): RateLimitGuardRowDisplay[] {
+  return (status?.rules ?? []).map((ruleState, index) => {
+    const rule = ruleState.rule;
+    const limitValue = Number.isFinite(Number(ruleState.limitValue)) && Number(ruleState.limitValue) > 0
+      ? Number(ruleState.limitValue)
+      : Number(rule?.limitValue || 0);
+    const currentUsage = Number.isFinite(Number(ruleState.currentUsage)) ? Number(ruleState.currentUsage) : 0;
+    const exceeded = Boolean(ruleState.exceeded);
+    const blocks = exceeded && rule?.action === 'block';
+
+    return {
+      id: rule?.id || `${rule?.strategy || 'rule'}-${rule?.window || index}`,
+      label: rateLimitRuleLabel(rule),
+      valueLabel: `${formatRateLimitMetric(currentUsage)} / ${formatRateLimitMetric(limitValue)}`,
+      fillPercent: normalizeRateLimitUsagePercent(ruleState.usagePct),
+      tone: blocks ? 'critical' : 'warning',
+      windowLabel: formatRateLimitWindowLabel(rule?.window || ''),
+      resetLabel: formatRateLimitTimestampDisplay(
+        ruleState.nextReset || status?.nextReset || status?.lastEvaluatedAt || status?.updatedAt || '',
+      ),
+    };
+  });
+}
+
+export function normalizeRateLimitUsagePercent(value: number) {
+  if (!Number.isFinite(Number(value))) {
+    return 0;
+  }
+  return Math.max(0, Math.min(100, Math.round(Number(value))));
+}
+
 export function formatRateLimitWindowLabel(window: string) {
   const normalized = String(window || '').trim().toLowerCase();
   if (normalized === RATE_LIMIT_CALENDAR_DAY_WINDOW) {
@@ -179,6 +220,24 @@ export function formatRateLimitMetric(value: number) {
   if (normalized >= 1000000) return `${trimDecimal(normalized / 1000000)}M`;
   if (normalized >= 10000) return `${trimDecimal(normalized / 10000)}W`;
   return new Intl.NumberFormat('zh-CN').format(Math.round(normalized));
+}
+
+export function formatRateLimitTimestampDisplay(value: string) {
+  const trimmed = String(value || '').trim();
+  if (!trimmed || trimmed === '-') {
+    return '--';
+  }
+
+  const parsed = new Date(trimmed);
+  if (!Number.isNaN(parsed.getTime())) {
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    const hour = String(parsed.getHours()).padStart(2, '0');
+    const minute = String(parsed.getMinutes()).padStart(2, '0');
+    return `${month}/${day} ${hour}:${minute}`;
+  }
+
+  return trimmed;
 }
 
 export function formatRateLimitLimitDraftValue(rule: Pick<RateLimitRule, 'strategy' | 'limitValue'>) {

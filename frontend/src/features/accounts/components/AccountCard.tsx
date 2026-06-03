@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { FileText, MoreVertical, Power, Terminal, Trash2 } from 'lucide-react';
+import { FileText, MoreVertical, Power, RotateCw, Terminal, Trash2 } from 'lucide-react';
 import { buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
 import { buildAccountCardContentText } from '../model/accountCardActions';
 import { writeAccountClipboardText } from '../model/accountClipboard';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import {
   buildAccountAttributionBadges,
+  isCodexAuthFile,
   isCodexReauthEligible,
   resolveAccountOperationalState,
   resolveAccountStatusTone,
@@ -99,6 +100,7 @@ export default function AccountCard({
   const primaryLabel = resolveAccountPrimaryLabel(account);
   const failureReason = resolveAccountFailureReason(account);
   const canReauth = isCodexReauthEligible(account);
+  const canMenuReauth = isCodexAuthFile(account);
   const operationalState = resolveAccountOperationalState(account, usageSummary, quotaDisplay, t);
   const statusTone =
     operationalState.tone === 'positive'
@@ -278,6 +280,24 @@ export default function AccountCard({
                     <FileText size={14} strokeWidth={3} />
                     {t('accounts.copy_account_config')}
                   </button>
+                  {canMenuReauth ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        if (isOAuthPending) {
+                          return;
+                        }
+                        setIsActionMenuOpen(false);
+                        onStartReauth(account);
+                      }}
+                      disabled={isOAuthPending}
+                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] disabled:cursor-wait disabled:opacity-50"
+                    >
+                      <RotateCw size={14} strokeWidth={3} />
+                      {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}
+                    </button>
+                  ) : null}
                   {localCliActions.length > 0 ? (
                     <>
                       <div className="my-1 border-t-2 border-dashed border-[var(--border-color)]" />
