@@ -329,8 +329,6 @@
     "rows": "行",
     "clear_sessions": "清空",
     "clear_sessions_title": "清空当前运行会话列表",
-    "feed_mode_sessions": "会话导航",
-    "feed_mode_requests": "请求汇总",
     "session_rows": "个会话",
     "request_rows": "个请求",
     "request_feed_hint": "汇总当前保留窗口内的请求，点击请求回到所属会话详情。",
@@ -438,7 +436,11 @@
     "balance_granted": "赠金",
     "balance_topped_up": "充值",
     "request_timeline": "请求时间线",
-    "redacted_diagnostic": "脱敏诊断"
+    "redacted_diagnostic": "脱敏诊断",
+    "title_sessions": "会话",
+    "title_requests": "请求",
+    "switch_to_sessions": "切换至会话",
+    "switch_to_requests": "切换至请求"
   },
   "codex_extensions": {
     "skills_title": "Codex Skills",

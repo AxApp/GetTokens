@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ClipboardSetText } from '../../../../wailsjs/runtime/runtime';
 import type {
   CodexLiveRequest,
@@ -70,15 +70,19 @@ export function SessionFeed({
         className="grid gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
       >
         <div>
-          <div className="inline-grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)] sm:grid-cols-2">
-            <FeedModeButton active={feedMode === 'sessions'} onClick={() => setFeedMode('sessions')}>
-              {t('codex_live_sessions.feed_mode_sessions')}
-            </FeedModeButton>
-            <FeedModeButton active={feedMode === 'requests'} onClick={() => setFeedMode('requests')} bordered>
-              {t('codex_live_sessions.feed_mode_requests')}
-            </FeedModeButton>
-          </div>
-          <p className="mt-2 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+          <button
+            type="button"
+            onClick={() => setFeedMode(feedMode === 'sessions' ? 'requests' : 'sessions')}
+            className="group flex cursor-pointer items-baseline gap-2 text-left"
+          >
+            <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] group-hover:underline">
+              {t(feedMode === 'sessions' ? 'codex_live_sessions.title_sessions' : 'codex_live_sessions.title_requests')}
+            </h3>
+            <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)] transition-colors group-hover:text-[var(--text-primary)]">
+              {feedMode === 'sessions' ? t('codex_live_sessions.switch_to_requests') : t('codex_live_sessions.switch_to_sessions')}
+            </span>
+          </button>
+          <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
             {feedMode === 'sessions' ? t('codex_live_sessions.session_feed_hint') : t('codex_live_sessions.request_feed_hint')}
           </p>
         </div>
@@ -139,34 +143,6 @@ export function SessionFeed({
         )}
       </div>
     </div>
-  );
-}
-
-
-function FeedModeButton({
-  active,
-  bordered = false,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  bordered?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`px-3 py-2 text-left font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] transition-colors ${bordered ? 'border-t-2 border-[var(--border-color)] sm:border-l-2 sm:border-t-0' : ''} ${
-        active
-          ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-          : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

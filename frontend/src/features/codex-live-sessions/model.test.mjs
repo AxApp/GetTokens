@@ -758,16 +758,18 @@ test('codex live session surfaces use larger typography tokens for the dense wor
 });
 
 
-test('codex live session feed header is a clickable session/request switch with redesigned copy', async () => {
+test('codex live session feed header is clickable and toggles between sessions and requests', async () => {
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
   const zhLocale = JSON.parse(await readFile(new URL('../../locales/zh.json', import.meta.url), 'utf8'));
 
   assert.match(feedSource, /feedMode === 'sessions'/);
-  assert.match(feedSource, /setFeedMode\('requests'\)/);
+  assert.match(feedSource, /setFeedMode\(feedMode === 'sessions' \? 'requests' : 'sessions'\)/);
   assert.match(feedSource, /buildCodexLiveRequestFeedRows\(sessions\)/);
   assert.match(feedSource, /<RequestRow/);
-  assert.equal(zhLocale.codex_live_sessions.feed_mode_sessions, '会话导航');
-  assert.equal(zhLocale.codex_live_sessions.feed_mode_requests, '请求汇总');
+  assert.ok(zhLocale.codex_live_sessions.title_sessions);
+  assert.ok(zhLocale.codex_live_sessions.title_requests);
+  assert.ok(zhLocale.codex_live_sessions.switch_to_sessions);
+  assert.ok(zhLocale.codex_live_sessions.switch_to_requests);
   assert.equal(zhLocale.codex_live_sessions.session_rows, '个会话');
   assert.equal(zhLocale.codex_live_sessions.request_rows, '个请求');
 });

@@ -329,8 +329,6 @@
     "rows": "rows",
     "clear_sessions": "Clear",
     "clear_sessions_title": "Clear the current live session list",
-    "feed_mode_sessions": "Session Nav",
-    "feed_mode_requests": "Request Rollup",
     "session_rows": "sessions",
     "request_rows": "requests",
     "request_feed_hint": "Roll up requests retained in the current window. Select a request to open its owning session.",
@@ -438,7 +436,11 @@
     "balance_granted": "Granted",
     "balance_topped_up": "Topped Up",
     "request_timeline": "Request Timeline",
-    "redacted_diagnostic": "Redacted Diagnostic"
+    "redacted_diagnostic": "Redacted Diagnostic",
+    "title_sessions": "Sessions",
+    "title_requests": "Requests",
+    "switch_to_sessions": "Switch to sessions",
+    "switch_to_requests": "Switch to requests"
   },
   "codex_extensions": {
     "skills_title": "Codex Skills",
