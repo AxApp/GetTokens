@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { GetCodexLiveSessionHistory, GetCodexLiveSessionsSnapshot } from '../../../wailsjs/go/main/App';
+import { ClearCodexLiveSessions, GetCodexLiveSessionHistory, GetCodexLiveSessionsSnapshot } from '../../../wailsjs/go/main/App';
 import type { SidecarStatus } from '../../types';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import CodexLiveSessionsWorkbench from './components/CodexLiveSessionsWorkbench';
@@ -73,6 +73,33 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
       setSnapshot((current) => buildCodexLiveSessionsLoadFailureSnapshot(current));
     }
   }, [loadSnapshot]);
+
+
+  const clearSessions = useCallback(async () => {
+    try {
+      if (!browserMode && sidecarReady) {
+        await ClearCodexLiveSessions();
+      }
+      detailRequestVersionRef.current += 1;
+      setSelectedSessionID(undefined);
+      setDetailState({ sessionID: undefined, requests: [], generatedAt: '', loading: false });
+      setSnapshot((current) => ({
+        ...current,
+        summary: {
+          activeSessions: 0,
+          activeRequests: 0,
+          websocketSessions: 0,
+          httpSessions: 0,
+          degradedSessions: 0,
+          errorSessions: 0,
+        },
+        sessions: [],
+      }));
+    } catch (error) {
+      console.error(error);
+      setSnapshot((current) => buildCodexLiveSessionsLoadFailureSnapshot(current));
+    }
+  }, [browserMode, sidecarReady]);
 
   const loadDetail = useCallback(async () => {
     if (!selectedSessionID) {

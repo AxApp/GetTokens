@@ -100,6 +100,28 @@ func TestGetCodexLiveSessionsSnapshotPropagatesInvalidJSON(t *testing.T) {
 	}
 }
 
+func TestClearCodexLiveSessionsCallsSidecarManagementAPI(t *testing.T) {
+	app := New("", "", "")
+	called := false
+	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		called = true
+		if method != http.MethodDelete {
+			t.Fatalf("method = %s, want DELETE", method)
+		}
+		if path != ManagementAPIPrefix+"/gettokens/live-sessions" {
+			t.Fatalf("path = %s", path)
+		}
+		return []byte(`{}`), http.StatusNoContent, nil
+	}
+
+	if err := app.ClearCodexLiveSessions(); err != nil {
+		t.Fatalf("ClearCodexLiveSessions returned error: %v", err)
+	}
+	if !called {
+		t.Fatal("sidecar request was not called")
+	}
+}
+
 func TestGetCodexLiveSessionHistoryReadsSidecarManagementAPI(t *testing.T) {
 	app := New("", "", "")
 	app.sidecarRequest = func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {

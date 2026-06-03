@@ -21,6 +21,8 @@ export function CanApplyUpdate():Promise<boolean>;
 
 export function CheckUpdate():Promise<updater.ReleaseInfo>;
 
+export function ClearCodexLiveSessions():Promise<void>;
+
 export function CommitAccountMigration():Promise<main.AccountMigrationCommitResult>;
 
 export function ConsumePendingDeepLinks():Promise<Array<string>>;

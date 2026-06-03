@@ -7,6 +7,7 @@ import type {
   CodexLiveTimingSummary,
   CodexLiveTimelineEvent,
 } from './types';
+import { snapshotWithDerivedSummary } from './selectors.ts';
 
 const liveStatuses = new Set(['active', 'streaming', 'reconnecting']);
 
@@ -14,16 +15,13 @@ export function mergeCodexLiveSessionsSnapshot(
   current: CodexLiveSessionSnapshot,
   next: CodexLiveSessionSnapshot,
 ): CodexLiveSessionSnapshot {
-  if (current.source !== next.source || current.sidecarReady !== next.sidecarReady || current.retentionLabel !== next.retentionLabel) {
+  if (current.source !== next.source || current.sidecarReady !== next.sidecarReady) {
     return next;
   }
 
-  if (!hasSummaryChanged(current, next) && areSessionsStructurallyEqual(current.sessions, next.sessions, current.source)) {
-    return current;
-  }
-
   const currentByID = new Map(current.sessions.map((session) => [session.sessionID, session]));
-  let changed = current.sessions.length !== next.sessions.length;
+  const nextIDs = new Set(next.sessions.map((session) => session.sessionID));
+  let changed = current.retentionLabel !== next.retentionLabel || current.sessions.length !== next.sessions.length;
   const sessions = next.sessions.map((nextSession, index) => {
     const currentSession = currentByID.get(nextSession.sessionID);
     if (!currentSession) {
@@ -40,14 +38,20 @@ export function mergeCodexLiveSessionsSnapshot(
     return mergeCodexLiveSession(currentSession, nextSession, current.source);
   });
 
-  if (!changed) {
+  const retainedSessions = current.sessions.filter((session) => !nextIDs.has(session.sessionID));
+  if (retainedSessions.length > 0) {
+    changed = true;
+    sessions.push(...retainedSessions);
+  }
+
+  if (!changed && !hasSummaryChanged(current, next)) {
     return current;
   }
 
-  return {
+  return snapshotWithDerivedSummary({
     ...next,
     sessions,
-  };
+  });
 }
 
 function mergeCodexLiveSession(

@@ -10,7 +10,7 @@ import {
   getPrimaryCodexLiveRequest,
   getSelectedCodexLiveSession,
 } from './model/selectors.ts';
-import { buildSessionRowSummary } from './components/formatters.ts';
+import { buildCodexLiveRequestFeedRows, buildRequestRowSummary, buildSessionRowSummary } from './components/formatters.ts';
 import { copyCodexLiveSessionID } from './components/sessionClipboard.ts';
 import {
   buildLiveSessionBillingDisplay,
@@ -213,6 +213,53 @@ test('buildSessionRowSummary derives short protocol from the latest request befo
   const summary = buildSessionRowSummary(session, latestRequest, (key) => key);
 
   assert.equal(summary.transportLabel, 'ws');
+});
+
+
+test('buildCodexLiveRequestFeedRows rolls up embedded requests and row-only active request ids', () => {
+  const withEmbeddedRequests = codexLiveSessionsPreviewSnapshot.sessions[0];
+  const rowOnlySession = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[1],
+    sessionID: 'row-only-session',
+    requests: [],
+    activeRequestID: 'row-only-active-request',
+    lastRequestID: 'row-only-last-request',
+    requestCount: 7,
+    lastEventAt: '2026-05-31T12:00:00.000Z',
+  };
+
+  const rows = buildCodexLiveRequestFeedRows([withEmbeddedRequests, rowOnlySession]);
+
+  assert.equal(rows[0].rowID, 'row-only-session:row-only-active-request');
+  assert.equal(rows[0].requestID, 'row-only-active-request');
+  assert.equal(rows[0].sequence, 7);
+  assert.ok(rows.some((row) => row.requestID === withEmbeddedRequests.requests[0].requestID));
+});
+
+test('buildRequestRowSummary designs request rollup labels around request, project, model, and timing', () => {
+  const session = codexLiveSessionsPreviewSnapshot.sessions[0];
+  const row = buildCodexLiveRequestFeedRows([session]).find((item) => item.requestID === session.requests[0].requestID);
+  assert.ok(row);
+
+  const summary = buildRequestRowSummary(row, (key) => {
+    const labels = {
+      'codex_live_sessions.status_streaming': '流式输出',
+      'codex_live_sessions.status_completed': '已完成',
+      'codex_live_sessions.no_timing_data': '暂无可用耗时',
+      'codex_live_sessions.unknown_project': '未知项目',
+      'codex_live_sessions.unknown_auth': '未知账号',
+      'codex_live_sessions.unknown': '未知',
+    };
+    return labels[key] || key;
+  });
+
+  assert.match(summary.requestLabel, /^REQ-/);
+  assert.equal(summary.projectLabel, 'GetTokens');
+  assert.equal(summary.modelLabel, session.requests[0].model);
+  assert.equal(summary.statusLabel, '已完成');
+  assert.equal(summary.transportLabel, 'ws');
+  assert.match(summary.sequenceLabel, /^#/);
+  assert.doesNotMatch(Object.values(summary).join(' '), /session_feed|会话列表/);
 });
 
 test('codex live session row gives project text priority and compresses session id into a button', async () => {
@@ -708,6 +755,21 @@ test('codex live session surfaces use larger typography tokens for the dense wor
   assert.match(feedSource, /font-size-ui-xl/);
   assert.match(feedSource, /font-size-ui-lg/);
   assert.match(feedSource, /font-size-ui-sm/);
+});
+
+
+test('codex live session feed header is a clickable session/request switch with redesigned copy', async () => {
+  const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+  const zhLocale = JSON.parse(await readFile(new URL('../../locales/zh.json', import.meta.url), 'utf8'));
+
+  assert.match(feedSource, /feedMode === 'sessions'/);
+  assert.match(feedSource, /setFeedMode\('requests'\)/);
+  assert.match(feedSource, /buildCodexLiveRequestFeedRows\(sessions\)/);
+  assert.match(feedSource, /<RequestRow/);
+  assert.equal(zhLocale.codex_live_sessions.feed_mode_sessions, '会话导航');
+  assert.equal(zhLocale.codex_live_sessions.feed_mode_requests, '请求汇总');
+  assert.equal(zhLocale.codex_live_sessions.session_rows, '个会话');
+  assert.equal(zhLocale.codex_live_sessions.request_rows, '个请求');
 });
 
 test('codex live session feed renders session id as an independent copy target', async () => {
@@ -1460,4 +1522,32 @@ test('desktop live sessions state keeps only prior real live rows as cache after
   assert.equal(failed.sidecarReady, false);
   assert.equal(failed.sessions.length, 1);
   assert.equal(failed.sessions[0].sessionID, codexLiveSessionsPreviewSnapshot.sessions[0].sessionID);
+});
+
+test('mergeCodexLiveSessionsSnapshot retains rows omitted by a later live poll until cleared locally', () => {
+  const firstSession = codexLiveSessionsPreviewSnapshot.sessions[0];
+  const secondSession = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[1],
+    sessionID: 'retained-after-empty-poll',
+    startedAt: '2026-05-31T09:59:00.000Z',
+  };
+  const current = {
+    ...codexLiveSessionsPreviewSnapshot,
+    source: 'live',
+    sessions: [firstSession, secondSession],
+  };
+  const next = {
+    ...codexLiveSessionsPreviewSnapshot,
+    source: 'live',
+    generatedAt: '2026-05-31T10:10:00.000Z',
+    sessions: [firstSession],
+  };
+
+  const merged = mergeCodexLiveSessionsSnapshot(current, next);
+
+  assert.deepEqual(
+    merged.sessions.map((session) => session.sessionID),
+    [firstSession.sessionID, secondSession.sessionID],
+  );
+  assert.equal(merged.summary.activeSessions, merged.sessions.filter((session) => ['active', 'streaming'].includes(session.status)).length);
 });

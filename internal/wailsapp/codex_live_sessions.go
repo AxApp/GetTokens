@@ -178,6 +178,11 @@ func (a *App) GetCodexLiveSessionsSnapshot() (*CodexLiveSessionsSnapshot, error)
 	return &snapshot, nil
 }
 
+func (a *App) ClearCodexLiveSessions() error {
+	_, _, err := a.SidecarRequest(http.MethodDelete, ManagementAPIPrefix+"/gettokens/live-sessions", nil, nil, "")
+	return err
+}
+
 func (a *App) GetCodexLiveSessionHistory(input CodexLiveSessionHistoryInput) (*CodexLiveSessionHistoryResponse, error) {
 	query := url.Values{}
 	if sessionID := strings.TrimSpace(input.SessionID); sessionID != "" {

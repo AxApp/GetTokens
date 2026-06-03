@@ -28,6 +28,7 @@ interface CodexLiveSessionsWorkbenchProps {
   detailError?: string;
   initialSelectedSessionID?: string;
   onRefresh?: () => void;
+  onClearSessions?: () => void;
   onSelectionChange?: (sessionID?: string) => void;
 }
 
@@ -45,6 +46,7 @@ export default function CodexLiveSessionsWorkbench({
   detailError,
   initialSelectedSessionID,
   onRefresh,
+  onClearSessions,
   onSelectionChange,
 }: CodexLiveSessionsWorkbenchProps) {
   const { t } = useI18n();
@@ -237,6 +239,10 @@ export default function CodexLiveSessionsWorkbench({
             selectedSessionID={selectedSession?.sessionID}
             onSelectSession={(sessionID) => {
               setSelectedSessionID((currentSessionID) => (currentSessionID === sessionID ? undefined : sessionID));
+            }}
+            onClearSessions={() => {
+              setSelectedSessionID(undefined);
+              onClearSessions?.();
             }}
             t={t}
           />

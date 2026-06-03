@@ -34,6 +34,10 @@ export function CheckUpdate() {
   return window['go']['main']['App']['CheckUpdate']();
 }
 
+export function ClearCodexLiveSessions() {
+  return window['go']['main']['App']['ClearCodexLiveSessions']();
+}
+
 export function CommitAccountMigration() {
   return window['go']['main']['App']['CommitAccountMigration']();
 }

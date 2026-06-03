@@ -30,6 +30,98 @@ export function getConnectionLabel(session: CodexLiveSession, t: Translate): str
   return t('codex_live_sessions.connection_unknown');
 }
 
+
+export interface CodexLiveRequestFeedRow {
+  rowID: string;
+  session: CodexLiveSession;
+  request?: CodexLiveRequest;
+  requestID: string;
+  sequence: number;
+  model: string;
+  status: CodexLiveSessionStatus;
+  startedAt: string;
+}
+
+export function buildCodexLiveRequestFeedRows(sessions: readonly CodexLiveSession[]): CodexLiveRequestFeedRow[] {
+  return sessions
+    .flatMap((session) => {
+      if (session.requests.length > 0) {
+        return session.requests.map((request) => ({
+          rowID: `${session.sessionID}:${request.requestID}`,
+          session,
+          request,
+          requestID: request.requestID,
+          sequence: request.sequence,
+          model: request.model,
+          status: request.status,
+          startedAt: request.startedAt,
+        }));
+      }
+      const requestID = session.activeRequestID || session.lastRequestID;
+      if (!requestID) {
+        return [];
+      }
+      return [
+        {
+          rowID: `${session.sessionID}:${requestID}`,
+          session,
+          requestID,
+          sequence: session.requestCount,
+          model: session.model,
+          status: session.status,
+          startedAt: session.lastEventAt || session.startedAt,
+        },
+      ];
+    })
+    .sort((left, right) => {
+      const rightTime = Date.parse(right.startedAt);
+      const leftTime = Date.parse(left.startedAt);
+      const safeRight = Number.isNaN(rightTime) ? 0 : rightTime;
+      const safeLeft = Number.isNaN(leftTime) ? 0 : leftTime;
+      if (safeRight !== safeLeft) {
+        return safeRight - safeLeft;
+      }
+      if (right.sequence !== left.sequence) {
+        return right.sequence - left.sequence;
+      }
+      return left.requestID.localeCompare(right.requestID);
+    });
+}
+
+export function buildRequestRowSummary(row: CodexLiveRequestFeedRow, t: Translate) {
+  const request = row.request;
+  const projectName = row.session.projectName?.trim() || t('codex_live_sessions.unknown_project');
+  const auth = request?.authLabel || row.session.authLabel || request?.authID || row.session.authID || t('codex_live_sessions.unknown_auth');
+  const totalDuration = formatOptionalDuration(request?.timing?.totalDurationMs);
+  const ttft = formatOptionalDuration(request?.timing?.firstEventMs);
+
+  return {
+    requestLabel: formatRequestShortID(row.requestID),
+    projectLabel: projectName,
+    accountLabel: auth,
+    modelLabel: row.model || t('codex_live_sessions.unknown'),
+    statusLabel: t(statusLabelKeys[row.status] || 'codex_live_sessions.unknown'),
+    transportLabel: request ? getShortTransportLabel(row.session, request) : getShortTransportLabel(row.session),
+    timingLabel: totalDuration === 'n/a' && ttft === 'n/a' ? t('codex_live_sessions.no_timing_data') : `${totalDuration} / ${ttft}`,
+    sequenceLabel: row.sequence > 0 ? `#${row.sequence}` : '-',
+  };
+}
+
+function formatRequestShortID(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return '-';
+  }
+  const reqMatch = trimmed.match(/(?:^|[-_])req[-_]([a-z0-9]+)$/i);
+  if (reqMatch) {
+    return `REQ-${reqMatch[1].toUpperCase()}`;
+  }
+  if (trimmed.length <= 16) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, 7)}...${trimmed.slice(-5)}`;
+}
+
 export function buildSessionRowSummary(
   session: CodexLiveSession,
   request: CodexLiveRequest | undefined,

@@ -165,6 +165,10 @@ func (a *App) GetCodexLiveSessionsSnapshot() (*CodexLiveSessionsSnapshot, error)
 	return mapCodexLiveSessionsSnapshot(result), nil
 }
 
+func (a *App) ClearCodexLiveSessions() error {
+	return a.core.ClearCodexLiveSessions()
+}
+
 func (a *App) GetCodexLiveSessionHistory(input CodexLiveSessionHistoryInput) (*CodexLiveSessionHistoryResponse, error) {
 	result, err := a.core.GetCodexLiveSessionHistory(wailsapp.CodexLiveSessionHistoryInput{
 		SessionID: input.SessionID,
