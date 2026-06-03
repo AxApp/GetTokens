@@ -2,6 +2,7 @@ package wailsapp
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"path/filepath"
 	"sort"
@@ -26,18 +27,28 @@ func (a *App) ListRelaySupportedModels() ([]OpenAICompatibleModel, error) {
 		localCodexModels = nil
 	}
 
+	cachedSnapshots, err := loadRelayModelAccountCache()
+	if err != nil {
+		cachedSnapshots = nil
+	}
+	cachedByAccount := indexRelayModelAccountSnapshots(cachedSnapshots)
+
 	sidecarModels, err := a.fetchSidecarStaticModelDefinitions()
 	if err != nil {
 		sidecarModels = nil
 	}
 
-	return listRelaySupportedModels(providers, codexKeys, func(input FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error) {
+	models, snapshots := listRelaySupportedModelsWithAccountSnapshots(providers, codexKeys, func(input FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error) {
 		result, err := a.FetchOpenAICompatibleProviderModels(input)
 		if err != nil {
 			return nil, err
 		}
 		return result.Models, nil
-	}, localCodexModels, sidecarModels), nil
+	}, localCodexModels, sidecarModels, cachedByAccount)
+	if err := saveRelayModelAccountCache(snapshots); err != nil {
+		log.Printf("save relay model account cache failed: %v", err)
+	}
+	return models, nil
 }
 
 func (a *App) loadRelayAccountStoreInventory() ([]OpenAICompatibleProvider, []cliproxyapi.CodexAPIKey, error) {
@@ -162,31 +173,56 @@ func listRelaySupportedModels(
 	localCodexModels []OpenAICompatibleModel,
 	sidecarModels []OpenAICompatibleModel,
 ) []OpenAICompatibleModel {
+	models, _ := listRelaySupportedModelsWithAccountSnapshots(providers, codexKeys, fetcher, localCodexModels, sidecarModels, nil)
+	return models
+}
+
+func listRelaySupportedModelsWithAccountSnapshots(
+	providers []OpenAICompatibleProvider,
+	codexKeys []cliproxyapi.CodexAPIKey,
+	fetcher relayModelFetcher,
+	localCodexModels []OpenAICompatibleModel,
+	sidecarModels []OpenAICompatibleModel,
+	cachedByAccount map[string]relayModelAccountSnapshot,
+) ([]OpenAICompatibleModel, []relayModelAccountSnapshot) {
 	merged := make(map[string]OpenAICompatibleModel)
+	snapshots := make([]relayModelAccountSnapshot, 0, len(providers)+len(codexKeys))
 
 	for _, provider := range providers {
 		if provider.Disabled {
 			continue
 		}
 
-		appendRelaySupportedModels(merged, provider.Models)
+		accountModels := make([]OpenAICompatibleModel, 0, len(provider.Models))
+		accountModels = append(accountModels, provider.Models...)
 
-		if fetcher == nil {
-			continue
-		}
-		if strings.TrimSpace(provider.BaseURL) == "" || strings.TrimSpace(provider.APIKey) == "" {
-			continue
+		if fetcher != nil && strings.TrimSpace(provider.BaseURL) != "" && strings.TrimSpace(provider.APIKey) != "" {
+			remoteModels, err := fetcher(FetchOpenAICompatibleProviderModelsInput{
+				BaseURL: provider.BaseURL,
+				APIKey:  provider.APIKey,
+				Headers: cloneHeaders(provider.Headers),
+			})
+			if err == nil {
+				accountModels = append(accountModels, remoteModels...)
+			}
 		}
 
-		remoteModels, err := fetcher(FetchOpenAICompatibleProviderModelsInput{
-			BaseURL: provider.BaseURL,
-			APIKey:  provider.APIKey,
-			Headers: cloneHeaders(provider.Headers),
-		})
-		if err != nil {
-			continue
+		accountKey := strings.TrimSpace(provider.AccountKey)
+		accountModels = normalizeProviderModels(accountModels)
+		if len(accountModels) == 0 && accountKey != "" && cachedByAccount != nil {
+			if cached, ok := cachedByAccount[accountKey]; ok {
+				accountModels = normalizeProviderModels(cached.Models)
+			}
 		}
-		appendRelaySupportedModels(merged, remoteModels)
+		appendRelaySupportedModels(merged, accountModels)
+		if accountKey != "" && len(accountModels) > 0 {
+			snapshots = append(snapshots, relayModelAccountSnapshot{
+				AccountKey:   accountKey,
+				Kind:         "openai-compatible",
+				ProviderName: strings.TrimSpace(provider.Name),
+				Models:       accountModels,
+			})
+		}
 	}
 
 	for _, key := range codexKeys {
@@ -194,6 +230,7 @@ func listRelaySupportedModels(
 			continue
 		}
 
+		accountKey := strings.TrimSpace(key.LocalID)
 		models := make([]OpenAICompatibleModel, 0, len(key.Models))
 		for _, model := range key.Models {
 			models = append(models, OpenAICompatibleModel{
@@ -201,7 +238,21 @@ func listRelaySupportedModels(
 				Alias: model.Alias,
 			})
 		}
+		models = normalizeProviderModels(models)
+		if len(models) == 0 && accountKey != "" && cachedByAccount != nil {
+			if cached, ok := cachedByAccount[accountKey]; ok {
+				models = normalizeProviderModels(cached.Models)
+			}
+		}
 		appendRelaySupportedModels(merged, models)
+		if accountKey != "" && len(models) > 0 {
+			snapshots = append(snapshots, relayModelAccountSnapshot{
+				AccountKey:   accountKey,
+				Kind:         "codex-api-key",
+				ProviderName: strings.TrimSpace(key.Label),
+				Models:       models,
+			})
+		}
 	}
 
 	// Codex's local models cache represents models the Codex client already knows
@@ -215,7 +266,7 @@ func listRelaySupportedModels(
 	mergeRelaySupportedModelMetadata(merged, sidecarModels)
 
 	if len(merged) == 0 {
-		return nil
+		return nil, snapshots
 	}
 
 	names := make([]string, 0, len(merged))
@@ -228,7 +279,7 @@ func listRelaySupportedModels(
 	for _, name := range names {
 		models = append(models, merged[name])
 	}
-	return models
+	return models, snapshots
 }
 
 func sortModelNames(names []string) {

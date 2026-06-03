@@ -24,6 +24,11 @@ func (a *App) Startup(ctx context.Context) {
 	} else {
 		log.Printf("load app runtime settings failed: %v", err)
 	}
+	go func() {
+		if err := applyPersistedCodexModelCatalogCacheSnapshot(); err != nil {
+			log.Printf("apply cached Codex model catalog snapshot failed: %v", err)
+		}
+	}()
 
 	if usesNativeUpdaterUI() {
 		if err := sparkle.Start(); err != nil {

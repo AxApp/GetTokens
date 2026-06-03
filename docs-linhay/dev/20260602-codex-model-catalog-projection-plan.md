@@ -362,3 +362,25 @@ go test ./... -count=1
 ```bash
 go test ./sdk/api/handlers/openai ./sdk/api/handlers ./sdk/cliproxy/auth -count=1
 ```
+
+## 2026-06-03 账号关联模型缓存启动优化
+
+用户反馈“最新正式版本地 DeepSeek 模型不显示”后确认：`~/.codex/gettokens-model-catalog.json` 与 `codex debug models` 已包含 `deepseek-v4-flash` / `deepseek-v4-pro`，但 Codex 选择器存在启动时读取/会话缓存窗口。为降低 GetTokens 启动到 sidecar ready、远端 provider 模型刷新之间的空窗，本轮补充账号关联模型缓存。
+
+实现边界：
+
+- 新增 `internal/wailsapp/relay_model_account_cache.go`，缓存路径为 `~/.config/gettokens-data/codex-model-account-cache/account-models-v1.json`。
+- 缓存以账号为单位保存 Codex-facing 模型快照：`accountKey`、`kind`、`providerName`、`models`。
+- `ListRelaySupportedModels` 在成功读取当前账号库存后，按启用账号生成最新快照并覆盖缓存；禁用/删除账号不再写入快照。
+- 若远端 provider 模型暂时不可用，但当前账号仍启用且存在同账号缓存，则本轮模型聚合可使用该账号缓存，避免刷新失败导致模型目录短暂丢模型。
+- App `Startup` 在 sidecar ready 前异步执行 `applyPersistedCodexModelCatalogCacheSnapshot`：当 `codexModelCatalogSyncEnabled=true` 且本地缓存非空时，先写 `~/.codex/gettokens-model-catalog.json` 与 `model_catalog_json` 指针。
+- sidecar ready 后继续执行既有 `applyPersistedCodexModelCatalogSyncSetting`，用账号/远端 provider 最新聚合结果覆盖 catalog 与缓存。
+- 若 sidecar ready 后最新聚合为空，则移除 GetTokens model catalog 指针，避免旧账号缓存继续暴露已禁用/已删除模型。
+
+验证：
+
+```bash
+go test ./internal/wailsapp -run 'TestRelayModelAccountCache|TestListRelaySupportedModelsUsesAccountCache|TestListRelaySupportedModelsRefreshesAccountCache|TestLoadRelaySupportedModelsFromAccountCache|TestCodexAPIKeyAccountCacheUsesLocalID|TestApplyPersistedCodexModelCatalogCacheSnapshot'
+go test ./internal/wailsapp -run 'TestListRelaySupportedModels|TestRelayModelAccountCache|TestApplyPersistedCodexModelCatalogCacheSnapshot|TestCodexAPIKeyAccountCacheUsesLocalID|TestLoadRelaySupportedModelsFromAccountCache'
+go test ./internal/wailsapp
+```

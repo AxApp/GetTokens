@@ -299,6 +299,25 @@ func enableGetTokensCodexModelCatalogProjection(
 	}, nil
 }
 
+func applyPersistedCodexModelCatalogCacheSnapshot() error {
+	settings, err := loadAppRuntimeSettings()
+	if err != nil {
+		return err
+	}
+	if !settings.CodexModelCatalogSyncEnabled {
+		return nil
+	}
+	models, err := loadRelaySupportedModelsFromAccountCache()
+	if err != nil {
+		return err
+	}
+	if len(models) == 0 {
+		return nil
+	}
+	_, err = enableGetTokensCodexModelCatalogProjection(models, false)
+	return err
+}
+
 func (a *App) applyPersistedCodexModelCatalogSyncSetting() error {
 	settings, err := loadAppRuntimeSettings()
 	if err != nil {
@@ -310,6 +329,10 @@ func (a *App) applyPersistedCodexModelCatalogSyncSetting() error {
 	}
 	models, err := a.ListRelaySupportedModels()
 	if err != nil {
+		return err
+	}
+	if len(models) == 0 {
+		_, err := disableGetTokensCodexModelCatalogProjection()
 		return err
 	}
 	_, err = a.EnableGetTokensCodexModelCatalogProjection(models)
