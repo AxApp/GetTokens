@@ -232,28 +232,29 @@ func TestConsumeDeepLinkArgsRemovesGetTokensURLsBeforeWailsParsesFlags(t *testin
 }
 
 func TestWailsConfigRegistersProdAndDevDeepLinkSchemes(t *testing.T) {
-	body, err := os.ReadFile("wails.json")
+	prodPList, err := os.ReadFile("build/darwin/Info.plist")
 	if err != nil {
-		t.Fatalf("read wails.json: %v", err)
+		t.Fatalf("read build/darwin/Info.plist: %v", err)
 	}
-	var config struct {
-		Info struct {
-			Protocols []struct {
-				Scheme string `json:"scheme"`
-			} `json:"protocols"`
-		} `json:"info"`
+	devPList, err := os.ReadFile("build/darwin/Info.dev.plist")
+	if err != nil {
+		t.Fatalf("read build/darwin/Info.dev.plist: %v", err)
 	}
-	if err := json.Unmarshal(body, &config); err != nil {
-		t.Fatalf("parse wails.json: %v", err)
+	prodStr := string(prodPList)
+	devStr := string(devPList)
+	// Prod plist must register gt but NOT gt-dev
+	if !strings.Contains(prodStr, "<string>gt</string>") {
+		t.Fatal("build/darwin/Info.plist missing gt scheme registration")
 	}
-	schemes := map[string]bool{}
-	for _, protocol := range config.Info.Protocols {
-		schemes[strings.ToLower(strings.TrimSpace(protocol.Scheme))] = true
+	if strings.Contains(prodStr, "<string>gt-dev</string>") {
+		t.Fatal("build/darwin/Info.plist must NOT register gt-dev scheme")
 	}
-	for _, want := range []string{"gt", "gt-dev"} {
-		if !schemes[want] {
-			t.Fatalf("wails.json protocols missing %q: %#v", want, schemes)
-		}
+	// Dev plist must also register gt (Wails v2.12.0 always uses Info.dev.plist)
+	if !strings.Contains(devStr, "<string>gt</string>") {
+		t.Fatal("build/darwin/Info.dev.plist missing gt scheme registration")
+	}
+	if strings.Contains(devStr, "<string>gt-dev</string>") {
+		t.Fatal("build/darwin/Info.dev.plist must NOT register gt-dev scheme")
 	}
 }
 

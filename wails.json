@@ -10,18 +10,5 @@
     "name": "linhey",
     "email": "is.linhey@outlook.com"
   },
-  "info": {
-    "protocols": [
-      {
-        "scheme": "gt",
-        "description": "GetTokens deep link import",
-        "role": "Viewer"
-      },
-      {
-        "scheme": "gt-dev",
-        "description": "GetTokens dev deep link import",
-        "role": "Viewer"
-      }
-    ]
-  }
+  "info": {}
 }

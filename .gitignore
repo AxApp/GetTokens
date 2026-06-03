@@ -33,3 +33,7 @@ docs-linhay/references/*/
 docs-linhay/references/CLIProxyAPI/*
 !docs-linhay/references/*.md
 docs-linhay/references/codex/
+
+# Track plist templates but ignore build artifacts
+!build/darwin/
+!build/darwin/*
