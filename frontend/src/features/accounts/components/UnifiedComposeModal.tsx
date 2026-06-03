@@ -197,8 +197,17 @@ export default function UnifiedComposeModal({
                             </span>
                           </div>
                           <div className="mt-3 flex min-w-0 items-end">
-                            <div className="truncate text-[length:var(--font-size-ui-lg)] font-black tracking-normal text-[var(--text-primary)]">
-                              {resolveVendorDisplayName(preset)}
+                            <div className="min-w-0 space-y-1">
+                              <div className="truncate text-[length:var(--font-size-ui-lg)] font-black tracking-normal text-[var(--text-primary)]">
+                                {preset.name}
+                              </div>
+                              {preset.variantLabel ? (
+                                <div className="inline-flex max-w-full border border-[var(--text-primary)] bg-[var(--text-primary)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.12em] text-[var(--bg-main)]">
+                                  <span className="truncate">
+                                    {preset.variantLabel}
+                                  </span>
+                                </div>
+                              ) : null}
                             </div>
                           </div>
                           <div className="mt-2 flex min-h-[1.25rem] flex-wrap content-end gap-1">
@@ -569,7 +578,7 @@ function UnifiedComposeHeader({
 }) {
   const primaryTitle =
     selectedPreset && !showPresets
-      ? resolveVendorDisplayName(selectedPreset)
+      ? selectedPreset.name
       : showPresets
         ? copy.selectTitle
         : copy.configureTitle;
@@ -598,6 +607,14 @@ function UnifiedComposeHeader({
                     <AccountDetailPill className="!min-h-0 !py-0.5 !tracking-[0.12em]">
                       {copy.categoryLabels[selectedPreset.category]}
                     </AccountDetailPill>
+                    {selectedPreset.variantLabel ? (
+                      <AccountDetailPill
+                        tone="success"
+                        className="!min-h-0 !py-0.5 !tracking-[0.12em]"
+                      >
+                        {selectedPreset.variantLabel}
+                      </AccountDetailPill>
+                    ) : null}
                     {selectedPreset.supportedFormats.map((fmt) => (
                       <AccountDetailPill
                         key={fmt}

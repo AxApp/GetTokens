@@ -22,6 +22,8 @@ export interface VendorPreset {
   billingCurlTemplate?: string;
   notes?: string;
   consoleUrl?: string;
+  variantLabel?: string;
+  variantDescription?: string;
   modelFetchBaseUrl?: string;
   modelFetchApiKeyPlaceholder?: string;
   requiresModelFetchApiKey?: boolean;
@@ -223,6 +225,8 @@ export const vendorPresets: VendorPreset[] = [
     iconColor: "var(--color-provider-xiaomimimo)",
     websiteUrl: "https://platform.xiaomimimo.com",
     consoleUrl: "https://platform.xiaomimimo.com/#/console/api-keys",
+    variantLabel: "API / sk",
+    variantDescription: "按量 API",
     notes:
       "按量 API 模式使用 sk-xxxxx；agent 对话和模型列表拉取均使用此 API Key。",
   },
@@ -256,6 +260,8 @@ export const vendorPresets: VendorPreset[] = [
     iconColor: "var(--color-provider-xiaomimimo)",
     websiteUrl: "https://platform.xiaomimimo.com",
     consoleUrl: "https://platform.xiaomimimo.com/#/console/plan-manage",
+    variantLabel: "Token Plan / tp",
+    variantDescription: "订阅套餐",
     modelFetchBaseUrl: "https://api.xiaomimimo.com/v1",
     modelFetchApiKeyPlaceholder: "sk-...",
     requiresModelFetchApiKey: true,

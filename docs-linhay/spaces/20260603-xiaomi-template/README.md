@@ -228,5 +228,6 @@ multiModeProfiles: [
 
 ## 当前状态
 
-- 状态：draft
+- 状态：implemented
 - 最近更新：2026-06-03
+- 补充：厂商选择卡片已增加 `API / sk` 与 `Token Plan / tp` 模式 badge，避免两个 Xiaomi 预设只显示同名。
