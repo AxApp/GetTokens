@@ -148,6 +148,8 @@ type OpenAICompatibleAccountCredential struct {
 	HeadersJSON        string `json:"headers_json,omitempty"`
 	FormatBaseURLsJSON string `json:"format_base_urls_json,omitempty"`
 	ModelsJSON         string `json:"models_json,omitempty"`
+	ModelFetchAPIKey   string `json:"model_fetch_api_key,omitempty"`
+	ModelFetchBaseURL  string `json:"model_fetch_base_url,omitempty"`
 }
 
 type UnifiedAccount struct {

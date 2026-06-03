@@ -91,7 +91,10 @@ export interface CodexLiveRequest {
   upstreamTransport: CodexLiveTransport;
   connectionReused?: boolean;
   authID?: string;
+  accountKey?: string;
   authLabel?: string;
+  authDetached?: boolean;
+  authDisabled?: boolean;
   provider?: string;
   proxyRoute?: string;
   usage?: CodexLiveTokenUsage;
@@ -117,7 +120,10 @@ export interface CodexLiveSession {
   lastRequestID?: string;
   model: string;
   authID?: string;
+  accountKey?: string;
   authLabel?: string;
+  authDetached?: boolean;
+  authDisabled?: boolean;
   provider?: string;
   downstreamTransport: CodexLiveTransport;
   upstreamTransport: CodexLiveTransport;

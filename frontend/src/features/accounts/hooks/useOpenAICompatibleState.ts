@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CreateOpenAICompatibleProvider,
   DeleteOpenAICompatibleProvider,
@@ -7,10 +7,10 @@ import {
   SetAccountDisabled,
   UpdateOpenAICompatibleProvider,
   VerifyOpenAICompatibleProvider,
-} from '../../../../wailsjs/go/main/App';
-import { main } from '../../../../wailsjs/go/models';
-import { toErrorMessage } from '../../../utils/error';
-import type { TrackRequest, Translator } from '../model/types';
+} from "../../../../wailsjs/go/main/App";
+import { main } from "../../../../wailsjs/go/models";
+import { toErrorMessage } from "../../../utils/error";
+import type { TrackRequest, Translator } from "../model/types";
 import {
   applyOpenAICompatibleProviderPreset,
   parseHeadersText,
@@ -18,6 +18,7 @@ import {
   buildOpenAICompatibleProviderDraft,
   buildProviderConfigSignature,
   normalizeProviderModels,
+  resolveOpenAICompatibleModelFetchConfig,
   emptyOpenAICompatibleProviderForm,
   type OpenAICompatibleProvider,
   type OpenAICompatibleProviderDraft,
@@ -27,9 +28,9 @@ import {
   renameProviderRemoteModelsState,
   renameProviderVerifyState,
   shouldRefreshRemoteModels,
-} from '../model/openAICompatible';
-import { getAccountsPreviewOpenAICompatibleProviders } from '../previewData';
-import { hasWailsAppBindings } from '../../../utils/previewMode';
+} from "../model/openAICompatible";
+import { getAccountsPreviewOpenAICompatibleProviders } from "../previewData";
+import { hasWailsAppBindings } from "../../../utils/previewMode";
 
 interface UseOpenAICompatibleStateArgs {
   ready: boolean;
@@ -37,20 +38,35 @@ interface UseOpenAICompatibleStateArgs {
   t: Translator;
 }
 
-export default function useOpenAICompatibleState({ ready, trackRequest, t }: UseOpenAICompatibleStateArgs) {
+export default function useOpenAICompatibleState({
+  ready,
+  trackRequest,
+  t,
+}: UseOpenAICompatibleStateArgs) {
   const browserMode = !hasWailsAppBindings();
   const [providers, setProviders] = useState<OpenAICompatibleProvider[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedPresetID, setSelectedPresetID] = useState('');
-  const [form, setForm] = useState<OpenAICompatibleProviderFormState>(emptyOpenAICompatibleProviderForm);
-  const [formError, setFormError] = useState('');
-  const [verifyStateByName, setVerifyStateByName] = useState<Record<string, ProviderVerifyState>>({});
-  const [remoteModelsStateByName, setRemoteModelsStateByName] = useState<Record<string, ProviderRemoteModelsState>>({});
-  const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(null);
-  const [pendingStatusName, setPendingStatusName] = useState<string | null>(null);
-  const [detailDraft, setDetailDraft] = useState<OpenAICompatibleProviderDraft | null>(null);
-  const [detailError, setDetailError] = useState('');
+  const [selectedPresetID, setSelectedPresetID] = useState("");
+  const [form, setForm] = useState<OpenAICompatibleProviderFormState>(
+    emptyOpenAICompatibleProviderForm,
+  );
+  const [formError, setFormError] = useState("");
+  const [verifyStateByName, setVerifyStateByName] = useState<
+    Record<string, ProviderVerifyState>
+  >({});
+  const [remoteModelsStateByName, setRemoteModelsStateByName] = useState<
+    Record<string, ProviderRemoteModelsState>
+  >({});
+  const [pendingDeleteName, setPendingDeleteName] = useState<string | null>(
+    null,
+  );
+  const [pendingStatusName, setPendingStatusName] = useState<string | null>(
+    null,
+  );
+  const [detailDraft, setDetailDraft] =
+    useState<OpenAICompatibleProviderDraft | null>(null);
+  const [detailError, setDetailError] = useState("");
   const [detailSaving, setDetailSaving] = useState(false);
 
   const loadProviders = useCallback(async () => {
@@ -63,7 +79,11 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     }
     setLoading(true);
     try {
-      const result = await trackRequest('ListOpenAICompatibleProviders', { args: [] }, () => ListOpenAICompatibleProviders());
+      const result = await trackRequest(
+        "ListOpenAICompatibleProviders",
+        { args: [] },
+        () => ListOpenAICompatibleProviders(),
+      );
       setProviders(result || []);
     } finally {
       setLoading(false);
@@ -77,9 +97,9 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
   }, [loadProviders, ready]);
 
   const openCreateModal = useCallback(() => {
-    setSelectedPresetID('');
+    setSelectedPresetID("");
     setForm(emptyOpenAICompatibleProviderForm);
-    setFormError('');
+    setFormError("");
     setIsCreateModalOpen(true);
   }, []);
 
@@ -94,8 +114,8 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
       setRemoteModelsStateByName((prev) => ({
         ...prev,
         [providerName]: {
-          status: 'loading',
-          message: '',
+          status: "loading",
+          message: "",
           models: prev[providerName]?.models || [],
           lastFetchedAt: prev[providerName]?.lastFetchedAt ?? null,
           configSignature: buildProviderConfigSignature(draft),
@@ -103,79 +123,100 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
       }));
 
       try {
+        const modelFetchConfig = resolveOpenAICompatibleModelFetchConfig(draft);
+        if (modelFetchConfig.missingDedicatedKey) {
+          throw new Error(
+            "Token Plan 厂商需要额外填写 sk-xxxxx 才能拉取模型列表；也可以使用内置模型建议。",
+          );
+        }
         const result = await trackRequest(
-          'FetchOpenAICompatibleProviderModels',
-          { name: providerName, baseUrl: draft.baseUrl },
+          "FetchOpenAICompatibleProviderModels",
+          { name: providerName, baseUrl: modelFetchConfig.baseUrl },
           () =>
             FetchOpenAICompatibleProviderModels({
-              baseUrl: draft.baseUrl,
-              apiKey: draft.apiKey,
+              baseUrl: modelFetchConfig.baseUrl,
+              apiKey: modelFetchConfig.apiKey,
               headers: parseHeadersText(draft.headersText),
             }),
         );
 
         setRemoteModelsStateByName((prev) => ({
           ...prev,
-        [providerName]: {
-          status: 'success',
-          message: result.message || t('accounts.openai_provider_models_fetch_success'),
-          models: buildModelRows(result.models || []),
-          lastFetchedAt: Date.now(),
-          configSignature: buildProviderConfigSignature(draft),
-        },
-      }));
+          [providerName]: {
+            status: "success",
+            message:
+              result.message ||
+              t("accounts.openai_provider_models_fetch_success"),
+            models: buildModelRows(result.models || []),
+            lastFetchedAt: Date.now(),
+            configSignature: buildProviderConfigSignature(draft),
+          },
+        }));
       } catch (error) {
         setRemoteModelsStateByName((prev) => ({
           ...prev,
-        [providerName]: {
-          status: 'error',
-          message: toErrorMessage(error),
-          models: prev[providerName]?.models || [],
-          lastFetchedAt: Date.now(),
-          configSignature: buildProviderConfigSignature(draft),
-        },
-      }));
+          [providerName]: {
+            status: "error",
+            message: toErrorMessage(error),
+            models: prev[providerName]?.models || [],
+            lastFetchedAt: Date.now(),
+            configSignature: buildProviderConfigSignature(draft),
+          },
+        }));
       }
     },
     [t, trackRequest],
   );
 
-  const openDetailModal = useCallback((provider: OpenAICompatibleProvider) => {
-    const draft = buildOpenAICompatibleProviderDraft(provider, verifyStateByName[provider.name]);
-    setDetailDraft(draft);
-    setDetailError('');
-    if (browserMode) {
-      return;
-    }
-    const providerConfigSignature = buildProviderConfigSignature(provider);
-    const cachedState = remoteModelsStateByName[provider.name];
-    if (
-      !cachedState ||
-      cachedState.configSignature !== providerConfigSignature ||
-      shouldRefreshRemoteModels(cachedState.lastFetchedAt ?? null)
-    ) {
-      void fetchRemoteModelsForDraft(draft);
-    }
-  }, [browserMode, fetchRemoteModelsForDraft, remoteModelsStateByName, verifyStateByName]);
+  const openDetailModal = useCallback(
+    (provider: OpenAICompatibleProvider) => {
+      const draft = buildOpenAICompatibleProviderDraft(
+        provider,
+        verifyStateByName[provider.name],
+      );
+      setDetailDraft(draft);
+      setDetailError("");
+      if (browserMode) {
+        return;
+      }
+      const providerConfigSignature = buildProviderConfigSignature(provider);
+      const cachedState = remoteModelsStateByName[provider.name];
+      if (
+        !cachedState ||
+        cachedState.configSignature !== providerConfigSignature ||
+        shouldRefreshRemoteModels(cachedState.lastFetchedAt ?? null)
+      ) {
+        void fetchRemoteModelsForDraft(draft);
+      }
+    },
+    [
+      browserMode,
+      fetchRemoteModelsForDraft,
+      remoteModelsStateByName,
+      verifyStateByName,
+    ],
+  );
 
   const closeDetailModal = useCallback(() => {
     setDetailDraft(null);
-    setDetailError('');
+    setDetailError("");
   }, []);
 
   const submitCreate = useCallback(async () => {
     try {
-      setFormError('');
-      await trackRequest('CreateOpenAICompatibleProvider', { ...form }, () =>
-        CreateOpenAICompatibleProvider(main.CreateOpenAICompatibleProviderInput.createFrom({
-          name: form.name,
-          baseUrl: form.baseUrl,
-          prefix: '',
-          apiKey: form.apiKey,
-        })),
+      setFormError("");
+      await trackRequest("CreateOpenAICompatibleProvider", { ...form }, () =>
+        CreateOpenAICompatibleProvider(
+          main.CreateOpenAICompatibleProviderInput.createFrom({
+            name: form.name,
+            baseUrl: form.baseUrl,
+            prefix: "",
+            apiKey: form.apiKey,
+          }),
+        ),
       );
       setIsCreateModalOpen(false);
-      setSelectedPresetID('');
+      setSelectedPresetID("");
       setForm(emptyOpenAICompatibleProviderForm);
       await loadProviders();
     } catch (error) {
@@ -187,7 +228,9 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     async (name: string) => {
       try {
         setPendingDeleteName(name);
-        await trackRequest('DeleteOpenAICompatibleProvider', { name }, () => DeleteOpenAICompatibleProvider(name));
+        await trackRequest("DeleteOpenAICompatibleProvider", { name }, () =>
+          DeleteOpenAICompatibleProvider(name),
+        );
         await loadProviders();
         setVerifyStateByName((prev) => {
           const next = { ...prev };
@@ -211,8 +254,10 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
       const providerID = openAICompatibleProviderIdentity(provider);
       try {
         setPendingStatusName(providerID);
-        await trackRequest('SetAccountDisabled', { id: providerID, disabled: !provider.disabled }, () =>
-          SetAccountDisabled(providerID, !provider.disabled),
+        await trackRequest(
+          "SetAccountDisabled",
+          { id: providerID, disabled: !provider.disabled },
+          () => SetAccountDisabled(providerID, !provider.disabled),
         );
         await loadProviders();
       } finally {
@@ -229,25 +274,42 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
 
     try {
       setDetailSaving(true);
-      setDetailError('');
-      await trackRequest('UpdateOpenAICompatibleProvider', { ...detailDraft }, () =>
-        UpdateOpenAICompatibleProvider(
-          main.UpdateOpenAICompatibleProviderInput.createFrom({
-            currentName: detailDraft.accountKey || detailDraft.currentName,
-            name: detailDraft.name,
-            baseUrl: detailDraft.baseUrl,
-            prefix: '',
-            apiKey: detailDraft.apiKey,
-            apiKeys: [detailDraft.apiKey],
-            proxyUrl: detailDraft.proxyUrl.trim(),
-            headers: parseHeadersText(detailDraft.headersText),
-            models: normalizeProviderModels(detailDraft.models),
-          }),
-        ),
+      setDetailError("");
+      await trackRequest(
+        "UpdateOpenAICompatibleProvider",
+        { ...detailDraft },
+        () =>
+          UpdateOpenAICompatibleProvider(
+            main.UpdateOpenAICompatibleProviderInput.createFrom({
+              currentName: detailDraft.accountKey || detailDraft.currentName,
+              name: detailDraft.name,
+              baseUrl: detailDraft.baseUrl,
+              prefix: "",
+              apiKey: detailDraft.apiKey,
+              apiKeys: [detailDraft.apiKey],
+              proxyUrl: detailDraft.proxyUrl.trim(),
+              headers: parseHeadersText(detailDraft.headersText),
+              models: normalizeProviderModels(detailDraft.models),
+              modelFetchApiKey: detailDraft.modelFetchApiKey || "",
+              modelFetchBaseUrl: detailDraft.modelFetchBaseUrl || "",
+            }),
+          ),
       );
 
-      setVerifyStateByName((prev) => renameProviderVerifyState(prev, detailDraft.currentName, detailDraft.name));
-      setRemoteModelsStateByName((prev) => renameProviderRemoteModelsState(prev, detailDraft.currentName, detailDraft.name));
+      setVerifyStateByName((prev) =>
+        renameProviderVerifyState(
+          prev,
+          detailDraft.currentName,
+          detailDraft.name,
+        ),
+      );
+      setRemoteModelsStateByName((prev) =>
+        renameProviderRemoteModelsState(
+          prev,
+          detailDraft.currentName,
+          detailDraft.name,
+        ),
+      );
       await loadProviders();
       setDetailDraft((prev) =>
         prev
@@ -271,14 +333,14 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     }
 
     const providerName = detailDraft.currentName || detailDraft.name;
-    const model = String(detailDraft.verifyModel || '').trim();
+    const model = String(detailDraft.verifyModel || "").trim();
     if (!model) {
       setVerifyStateByName((prev) => ({
         ...prev,
         [providerName]: {
-          model: '',
-          status: 'error',
-          message: t('accounts.openai_provider_test_model_required'),
+          model: "",
+          status: "error",
+          message: t("accounts.openai_provider_test_model_required"),
           lastVerifiedAt: prev[providerName]?.lastVerifiedAt ?? null,
           configSignature: buildProviderConfigSignature(detailDraft),
         },
@@ -288,18 +350,18 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
 
     setVerifyStateByName((prev) => ({
       ...prev,
-        [providerName]: {
-          model,
-          status: 'loading',
-          message: '',
-          lastVerifiedAt: prev[providerName]?.lastVerifiedAt ?? null,
-          configSignature: buildProviderConfigSignature(detailDraft),
-        },
-      }));
+      [providerName]: {
+        model,
+        status: "loading",
+        message: "",
+        lastVerifiedAt: prev[providerName]?.lastVerifiedAt ?? null,
+        configSignature: buildProviderConfigSignature(detailDraft),
+      },
+    }));
 
     try {
       const result = await trackRequest(
-        'VerifyOpenAICompatibleProvider',
+        "VerifyOpenAICompatibleProvider",
         { name: providerName, baseUrl: detailDraft.baseUrl, model },
         () =>
           VerifyOpenAICompatibleProvider({
@@ -314,8 +376,12 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
         ...prev,
         [providerName]: {
           model,
-          status: result.success ? 'success' : 'error',
-          message: result.message || (result.success ? t('accounts.openai_provider_test_success') : t('accounts.openai_provider_test_failed')),
+          status: result.success ? "success" : "error",
+          message:
+            result.message ||
+            (result.success
+              ? t("accounts.openai_provider_test_success")
+              : t("accounts.openai_provider_test_failed")),
           lastVerifiedAt: Date.now(),
           configSignature: buildProviderConfigSignature(detailDraft),
         },
@@ -325,7 +391,7 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
         ...prev,
         [providerName]: {
           model,
-          status: 'error',
+          status: "error",
           message: toErrorMessage(error),
           lastVerifiedAt: Date.now(),
           configSignature: buildProviderConfigSignature(detailDraft),
@@ -335,7 +401,10 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
   }, [detailDraft, t, trackRequest]);
 
   const verifyStates = useMemo(() => verifyStateByName, [verifyStateByName]);
-  const remoteModelsStates = useMemo(() => remoteModelsStateByName, [remoteModelsStateByName]);
+  const remoteModelsStates = useMemo(
+    () => remoteModelsStateByName,
+    [remoteModelsStateByName],
+  );
 
   const fetchDetailModels = useCallback(async () => {
     if (!detailDraft) {
@@ -351,7 +420,11 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
 
     const providerName = detailDraft.currentName || detailDraft.name;
     const remoteState = remoteModelsStateByName[providerName];
-    if (!remoteState || remoteState.status !== 'success' || remoteState.models.length === 0) {
+    if (
+      !remoteState ||
+      remoteState.status !== "success" ||
+      remoteState.models.length === 0
+    ) {
       return;
     }
 
@@ -360,8 +433,11 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
         ? {
             ...prev,
             models: remoteState.models,
-            verifyModel:
-              remoteState.models.some((item) => item.name === prev.verifyModel) ? prev.verifyModel : remoteState.models[0]?.name || '',
+            verifyModel: remoteState.models.some(
+              (item) => item.name === prev.verifyModel,
+            )
+              ? prev.verifyModel
+              : remoteState.models[0]?.name || "",
           }
         : prev,
     );
@@ -399,10 +475,12 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
   };
 }
 
-function openAICompatibleProviderIdentity(provider: OpenAICompatibleProvider): string {
-  const accountKey = String(provider.accountKey || '').trim();
+function openAICompatibleProviderIdentity(
+  provider: OpenAICompatibleProvider,
+): string {
+  const accountKey = String(provider.accountKey || "").trim();
   if (accountKey) {
     return accountKey;
   }
-  return String(provider.name || '').trim();
+  return String(provider.name || "").trim();
 }

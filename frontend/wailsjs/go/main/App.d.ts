@@ -239,6 +239,8 @@ export function SetAccountDisabled(arg1:string,arg2:boolean):Promise<void>;
 
 export function SetAuthFileStatus(arg1:string,arg2:boolean):Promise<void>;
 
+export function SetCodexModelCatalogSyncEnabled(arg1:boolean):Promise<main.AppRuntimeSettings>;
+
 export function StartCodexOAuth():Promise<main.OAuthStartResult>;
 
 export function TestCodexAPIKeyBillingCurl(arg1:main.TestCodexAPIKeyQuotaCurlInput):Promise<main.CodexQuotaBillingInfo>;

@@ -882,6 +882,7 @@ export namespace main {
 	    }
 	}
 	export class AppRuntimeSettings {
+	    codexModelCatalogSyncEnabled: boolean;
 	    launchAtLogin: boolean;
 	    launchAtLoginSupported: boolean;
 	    launchAgentPath?: string;
@@ -895,6 +896,7 @@ export namespace main {
 
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.codexModelCatalogSyncEnabled = source["codexModelCatalogSyncEnabled"];
 	        this.launchAtLogin = source["launchAtLogin"];
 	        this.launchAtLoginSupported = source["launchAtLoginSupported"];
 	        this.launchAgentPath = source["launchAgentPath"];
@@ -2197,7 +2199,10 @@ export namespace main {
 	    upstreamTransport: string;
 	    connectionReused?: boolean;
 	    authID?: string;
+	    accountKey?: string;
 	    authLabel?: string;
+	    authDetached?: boolean;
+	    authDisabled?: boolean;
 	    provider?: string;
 	    proxyRoute?: string;
 	    usage?: CodexLiveTokenUsage;
@@ -2224,7 +2229,10 @@ export namespace main {
 	        this.upstreamTransport = source["upstreamTransport"];
 	        this.connectionReused = source["connectionReused"];
 	        this.authID = source["authID"];
+	        this.accountKey = source["accountKey"];
 	        this.authLabel = source["authLabel"];
+	        this.authDetached = source["authDetached"];
+	        this.authDisabled = source["authDisabled"];
 	        this.provider = source["provider"];
 	        this.proxyRoute = source["proxyRoute"];
 	        this.usage = this.convertValues(source["usage"], CodexLiveTokenUsage);
@@ -2342,7 +2350,10 @@ export namespace main {
 	    lastRequestID?: string;
 	    model: string;
 	    authID?: string;
+	    accountKey?: string;
 	    authLabel?: string;
+	    authDetached?: boolean;
+	    authDisabled?: boolean;
 	    provider?: string;
 	    downstreamTransport: string;
 	    upstreamTransport: string;
@@ -2373,7 +2384,10 @@ export namespace main {
 	        this.lastRequestID = source["lastRequestID"];
 	        this.model = source["model"];
 	        this.authID = source["authID"];
+	        this.accountKey = source["accountKey"];
 	        this.authLabel = source["authLabel"];
+	        this.authDetached = source["authDetached"];
+	        this.authDisabled = source["authDisabled"];
 	        this.provider = source["provider"];
 	        this.downstreamTransport = source["downstreamTransport"];
 	        this.upstreamTransport = source["upstreamTransport"];
@@ -3052,6 +3066,8 @@ export namespace main {
 	    apiKey: string;
 	    formatBaseUrls?: Record<string, string>;
 	    models?: OpenAICompatibleModel[];
+	    modelFetchApiKey?: string;
+	    modelFetchBaseUrl?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new CreateOpenAICompatibleProviderInput(source);
@@ -3065,6 +3081,8 @@ export namespace main {
 	        this.apiKey = source["apiKey"];
 	        this.formatBaseUrls = source["formatBaseUrls"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	        this.modelFetchApiKey = source["modelFetchApiKey"];
+	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -3660,6 +3678,8 @@ export namespace main {
 	    keyCount?: number;
 	    modelCount?: number;
 	    hasHeaders?: boolean;
+	    modelFetchApiKey?: string;
+	    modelFetchBaseUrl?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new OpenAICompatibleProvider(source);
@@ -3682,6 +3702,8 @@ export namespace main {
 	        this.keyCount = source["keyCount"];
 	        this.modelCount = source["modelCount"];
 	        this.hasHeaders = source["hasHeaders"];
+	        this.modelFetchApiKey = source["modelFetchApiKey"];
+	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -5494,6 +5516,8 @@ export namespace main {
 	    apiKeys?: string[];
 	    headers?: Record<string, string>;
 	    models?: OpenAICompatibleModel[];
+	    modelFetchApiKey?: string;
+	    modelFetchBaseUrl?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new UpdateOpenAICompatibleProviderInput(source);
@@ -5510,6 +5534,8 @@ export namespace main {
 	        this.apiKeys = source["apiKeys"];
 	        this.headers = source["headers"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
+	        this.modelFetchApiKey = source["modelFetchApiKey"];
+	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

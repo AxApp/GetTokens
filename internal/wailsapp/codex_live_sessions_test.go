@@ -34,6 +34,9 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 				"activeRequestID":"req-1",
 				"model":"gpt-5.5",
 					"authID":"auth-file:team",
+					"accountKey":"acct_live",
+					"authDetached":true,
+					"authDisabled":true,
 					"downstreamTransport":"websocket",
 					"upstreamTransport":"websocket",
 					"timingSummary":{
@@ -63,6 +66,9 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 	session := snapshot.Sessions[0]
 	if session.SessionID != "ws-session-1" || session.ProjectName != "GetTokens" || len(session.Requests) != 0 {
 		t.Fatalf("unexpected session payload: %#v", session)
+	}
+	if session.AccountKey != "acct_live" || !session.AuthDetached || !session.AuthDisabled {
+		t.Fatalf("unexpected account state: %#v", session)
 	}
 	if session.TimingSummary == nil || session.TimingSummary.SampleCount != 2 || session.TimingSummary.SequenceFrom != 4 || session.TimingSummary.SequenceTo != 5 {
 		t.Fatalf("unexpected timing summary: %#v", session.TimingSummary)

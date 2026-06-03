@@ -612,3 +612,71 @@ func TestCreateOpenAICompatibleProviderCreatesUnifiedAccount(t *testing.T) {
 		t.Fatalf("CreateOpenAICompatibleProvider returned error: %v", err)
 	}
 }
+
+func TestUpdateOpenAICompatibleProviderPersistsModelFetchCredentialOutsideRuntimeKeys(t *testing.T) {
+	account := testOpenAICompatibleAccount(
+		"acct_mimo_tp",
+		"xiaomimimo-token-plan",
+		0,
+		false,
+		"https://token-plan-cn.xiaomimimo.com/v1",
+		"",
+		[]cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "tp-agent"}},
+		nil,
+		nil,
+	)
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == http.MethodGet && path == "/v0/management/accounts/acct_mimo_tp" {
+					return testAccountResponse(t, account), 200, nil
+				}
+				if method == http.MethodGet && path == "/v0/management/accounts" {
+					return testAccountsResponse(t, account), 200, nil
+				}
+				if method == http.MethodPatch && path == "/v0/management/accounts/acct_mimo_tp" {
+					payload, err := io.ReadAll(body)
+					if err != nil {
+						t.Fatalf("read body: %v", err)
+					}
+					var write cliproxyapi.AccountWriteRequest
+					if err := json.Unmarshal(payload, &write); err != nil {
+						t.Fatalf("unmarshal payload: %v", err)
+					}
+					if write.OpenAICompatible == nil {
+						t.Fatalf("missing openai compatible payload: %s", string(payload))
+					}
+					if write.OpenAICompatible.ModelFetchAPIKey != "sk-models" {
+						t.Fatalf("model fetch api key = %q, want sk-models", write.OpenAICompatible.ModelFetchAPIKey)
+					}
+					if write.OpenAICompatible.ModelFetchBaseURL != "https://api.xiaomimimo.com/v1" {
+						t.Fatalf("model fetch base url = %q", write.OpenAICompatible.ModelFetchBaseURL)
+					}
+					var entries []cliproxyapi.OpenAICompatibleAPIKeyEntry
+					if err := json.Unmarshal([]byte(write.OpenAICompatible.APIKeyEntriesJSON), &entries); err != nil {
+						t.Fatalf("unmarshal entries: %v", err)
+					}
+					if len(entries) != 1 || entries[0].APIKey != "tp-agent" {
+						t.Fatalf("model fetch key leaked into runtime entries: %#v", entries)
+					}
+					return testAccountResponse(t, account), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	err := app.UpdateOpenAICompatibleProvider(UpdateOpenAICompatibleProviderInput{
+		CurrentName:       "acct_mimo_tp",
+		Name:              "xiaomimimo-token-plan",
+		BaseURL:           "https://token-plan-cn.xiaomimimo.com/v1",
+		APIKey:            "tp-agent",
+		APIKeys:           []string{"tp-agent"},
+		ModelFetchAPIKey:  "sk-models",
+		ModelFetchBaseURL: "https://api.xiaomimimo.com/v1",
+	})
+	if err != nil {
+		t.Fatalf("UpdateOpenAICompatibleProvider returned error: %v", err)
+	}
+}

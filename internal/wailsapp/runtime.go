@@ -39,6 +39,9 @@ func (a *App) Startup(ctx context.Context) {
 					if err := a.applyPendingSidecarProxySettings(); err != nil {
 						log.Printf("apply pending sidecar proxy settings failed: %v", err)
 					}
+					if err := a.applyPersistedCodexModelCatalogSyncSetting(); err != nil {
+						log.Printf("apply persisted Codex model catalog sync failed: %v", err)
+					}
 				}()
 			}
 			wailsRuntime.EventsEmit(ctx, "sidecar:status", status)
@@ -97,8 +100,16 @@ func checkAndEmitAvailableUpdate(
 }
 
 func (a *App) Shutdown() {
+	if err := a.cleanupOwnedCodexModelCatalogProjectionOnShutdown(); err != nil {
+		log.Printf("cleanup owned Codex model catalog projection on shutdown failed: %v", err)
+	}
 	a.menuBar.Stop()
 	a.sidecar.Stop()
+}
+
+func (a *App) cleanupOwnedCodexModelCatalogProjectionOnShutdown() error {
+	_, err := disableGetTokensCodexModelCatalogProjection()
+	return err
 }
 
 func (a *App) BeforeClose(ctx context.Context) bool {

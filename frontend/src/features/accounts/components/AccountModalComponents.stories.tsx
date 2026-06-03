@@ -390,6 +390,8 @@ const unifiedComposeForms: Record<'empty' | 'deepseek' | 'error', UnifiedCompose
     formatBaseUrls: {},
     billingCurl: '',
     billingEnabled: false,
+    modelFetchApiKey: '',
+    modelFetchBaseUrl: '',
   },
   deepseek: {
     label: 'DeepSeek Team',
@@ -404,6 +406,8 @@ const unifiedComposeForms: Record<'empty' | 'deepseek' | 'error', UnifiedCompose
     },
     billingCurl: 'curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"',
     billingEnabled: true,
+    modelFetchApiKey: '',
+    modelFetchBaseUrl: '',
   },
   error: {
     label: 'Custom Router',
@@ -415,6 +419,8 @@ const unifiedComposeForms: Record<'empty' | 'deepseek' | 'error', UnifiedCompose
     formatBaseUrls: {},
     billingCurl: '',
     billingEnabled: false,
+    modelFetchApiKey: '',
+    modelFetchBaseUrl: '',
   },
 };
 

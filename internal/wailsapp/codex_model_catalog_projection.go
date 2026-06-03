@@ -110,10 +110,16 @@ func buildGetTokensCodexModelCatalog(models []OpenAICompatibleModel) ([]byte, er
 func resolveCodexModelCatalogSlug(model OpenAICompatibleModel) string {
 	name := strings.TrimSpace(model.Name)
 	alias := strings.TrimSpace(model.Alias)
-	if isCodexRouteModelAlias(alias) {
+	if isCodexRouteModelAlias(alias) && !isCodexModelDisplayAliasForName(name, alias) {
 		return alias
 	}
 	return name
+}
+
+func isCodexModelDisplayAliasForName(name string, alias string) bool {
+	name = strings.TrimSpace(name)
+	alias = strings.TrimSpace(alias)
+	return name != "" && alias != "" && strings.EqualFold(name, alias)
 }
 
 func resolveCodexModelCatalogDisplayName(model OpenAICompatibleModel, slug string) string {
@@ -293,7 +299,27 @@ func enableGetTokensCodexModelCatalogProjection(
 	}, nil
 }
 
+func (a *App) applyPersistedCodexModelCatalogSyncSetting() error {
+	settings, err := loadAppRuntimeSettings()
+	if err != nil {
+		return err
+	}
+	if !settings.CodexModelCatalogSyncEnabled {
+		_, err := a.DisableGetTokensCodexModelCatalogProjection()
+		return err
+	}
+	models, err := a.ListRelaySupportedModels()
+	if err != nil {
+		return err
+	}
+	_, err = a.EnableGetTokensCodexModelCatalogProjection(models)
+	return err
+}
+
 func (a *App) DisableGetTokensCodexModelCatalogProjection() (*RelayLocalApplyResult, error) {
+	if _, err := a.SetCodexModelCatalogSyncEnabled(false); err != nil {
+		return nil, err
+	}
 	return disableGetTokensCodexModelCatalogProjection()
 }
 
@@ -306,6 +332,9 @@ func (a *App) EnableGetTokensCodexModelCatalogProjection(
 			return nil, err
 		}
 		models = relayModels
+	}
+	if _, err := a.SetCodexModelCatalogSyncEnabled(true); err != nil {
+		return nil, err
 	}
 	return enableGetTokensCodexModelCatalogProjection(models, false)
 }
@@ -341,4 +370,12 @@ func normalizeRelayModelCatalogProjectionMode(value string) string {
 	default:
 		return relayModelCatalogProjectionOff
 	}
+}
+
+func normalizeRelayLocalModelCatalogProjectionMode(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	return normalizeRelayModelCatalogProjectionMode(trimmed)
 }

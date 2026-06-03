@@ -131,6 +131,7 @@ export function buildCodexLiveDiagnosticSummary(session: CodexLiveSession, reque
     `upstream_request_id: ${selectedRequest?.upstreamRequestID || 'unknown'}`,
     `model: ${selectedRequest?.model || session.model}`,
     `auth: ${selectedRequest?.authID || session.authID || 'unknown'} / ${selectedRequest?.authLabel || session.authLabel || 'unknown'}`,
+    `account_key: ${selectedRequest?.accountKey || session.accountKey || 'unknown'}`,
     `transport: downstream=${session.downstreamTransport} upstream=${session.upstreamTransport}`,
     `status: ${session.status}`,
     `fallback_inferred: ${session.fallbackInferred ? `true (${session.fallbackConfidence || 'unknown'})` : 'false'}`,

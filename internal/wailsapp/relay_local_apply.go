@@ -65,6 +65,12 @@ func (a *App) ApplyRelayServiceConfigToLocalV2(input RelayLocalApplyInput) (*Rel
 		return nil, err
 	}
 
+	if normalized.ModelCatalogProjectionMode == relayModelCatalogProjectionGetTokens || normalized.ModelCatalogProjectionMode == relayModelCatalogProjectionOff {
+		if _, err := a.SetCodexModelCatalogSyncEnabled(normalized.ModelCatalogProjectionMode == relayModelCatalogProjectionGetTokens); err != nil {
+			return nil, err
+		}
+	}
+
 	if strings.TrimSpace(normalized.APIKey) != "" && !normalized.SkipRelayKeyMetadata {
 		metadata, err := loadRelayServiceAPIKeyMetadata()
 		if err != nil {
@@ -184,6 +190,13 @@ func applyRelayServiceConfigToLocalV2Normalized(input RelayLocalApplyInput) (*Re
 		if externalPath != "" {
 			warnings = append(warnings, "已保留现有外部 model_catalog_json，未改写为 GetTokens 模型目录")
 		}
+	} else if input.ModelCatalogProjectionMode == relayModelCatalogProjectionOff {
+		nextConfig, removed := removeGetTokensCodexModelCatalogPointer(configPayload, codexHome)
+		if removed {
+			configPayload = nextConfig
+			modelCatalogPath = getGetTokensCodexModelCatalogPath(codexHome)
+			modelCatalogRequiresRestart = true
+		}
 	}
 	if err := writeFileAtomically(configPath, []byte(configPayload), 0600); err != nil {
 		return nil, err
@@ -268,7 +281,7 @@ func normalizeRelayLocalApplyInput(input RelayLocalApplyInput) (RelayLocalApplyI
 		SupportsWebsocketsSet:        supportsWebsocketsSet,
 		AuthStrategy:                 authStrategy,
 		SkipRelayKeyMetadata:         input.SkipRelayKeyMetadata,
-		ModelCatalogProjectionMode:   normalizeRelayModelCatalogProjectionMode(input.ModelCatalogProjectionMode),
+		ModelCatalogProjectionMode:   normalizeRelayLocalModelCatalogProjectionMode(input.ModelCatalogProjectionMode),
 		ModelCatalogOverrideExternal: input.ModelCatalogOverrideExternal,
 		ModelCatalogModels:           normalizeProviderModels(input.ModelCatalogModels),
 	}, nil

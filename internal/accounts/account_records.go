@@ -65,36 +65,38 @@ type AuthFileRecord struct {
 }
 
 type AccountRecord struct {
-	ID               string                   `json:"id"`
-	AccountKind      string                   `json:"accountKind,omitempty"`
-	Provider         string                   `json:"provider"`
-	CredentialSource string                   `json:"credentialSource"`
-	DisplayName      string                   `json:"displayName"`
-	Status           string                   `json:"status"`
-	StatusMessage    string                   `json:"statusMessage,omitempty"`
-	Priority         int                      `json:"priority,omitempty"`
-	Disabled         bool                     `json:"disabled,omitempty"`
-	Email            string                   `json:"email,omitempty"`
-	PlanType         string                   `json:"planType,omitempty"`
-	Name             string                   `json:"name,omitempty"`
-	APIKey           string                   `json:"apiKey,omitempty"`
-	APIKeys          []string                 `json:"apiKeys,omitempty"`
-	Headers          map[string]string        `json:"headers,omitempty"`
-	Models           []cliproxyapi.CodexModel `json:"models,omitempty"`
-	KeyFingerprint   string                   `json:"keyFingerprint,omitempty"`
-	KeySuffix        string                   `json:"keySuffix,omitempty"`
-	BaseURL          string                   `json:"baseUrl,omitempty"`
-	Prefix           string                   `json:"prefix,omitempty"`
-	ProxyURL         string                   `json:"proxyUrl,omitempty"`
-	AuthIndex        interface{}              `json:"authIndex,omitempty"`
-	QuotaKey         string                   `json:"quotaKey,omitempty"`
-	QuotaCurl        string                   `json:"quotaCurl,omitempty"`
-	QuotaEnabled     bool                     `json:"quotaEnabled,omitempty"`
-	LocalOnly        bool                     `json:"localOnly,omitempty"`
-	SupportedFormats []string                 `json:"supportedFormats,omitempty"`
-	FormatBaseURLs   map[string]string        `json:"formatBaseUrls,omitempty"`
-	BillingCurl      string                   `json:"billingCurl,omitempty"`
-	BillingEnabled   bool                     `json:"billingEnabled,omitempty"`
+	ID                string                   `json:"id"`
+	AccountKind       string                   `json:"accountKind,omitempty"`
+	Provider          string                   `json:"provider"`
+	CredentialSource  string                   `json:"credentialSource"`
+	DisplayName       string                   `json:"displayName"`
+	Status            string                   `json:"status"`
+	StatusMessage     string                   `json:"statusMessage,omitempty"`
+	Priority          int                      `json:"priority,omitempty"`
+	Disabled          bool                     `json:"disabled,omitempty"`
+	Email             string                   `json:"email,omitempty"`
+	PlanType          string                   `json:"planType,omitempty"`
+	Name              string                   `json:"name,omitempty"`
+	APIKey            string                   `json:"apiKey,omitempty"`
+	APIKeys           []string                 `json:"apiKeys,omitempty"`
+	Headers           map[string]string        `json:"headers,omitempty"`
+	Models            []cliproxyapi.CodexModel `json:"models,omitempty"`
+	KeyFingerprint    string                   `json:"keyFingerprint,omitempty"`
+	KeySuffix         string                   `json:"keySuffix,omitempty"`
+	BaseURL           string                   `json:"baseUrl,omitempty"`
+	Prefix            string                   `json:"prefix,omitempty"`
+	ProxyURL          string                   `json:"proxyUrl,omitempty"`
+	AuthIndex         interface{}              `json:"authIndex,omitempty"`
+	QuotaKey          string                   `json:"quotaKey,omitempty"`
+	QuotaCurl         string                   `json:"quotaCurl,omitempty"`
+	QuotaEnabled      bool                     `json:"quotaEnabled,omitempty"`
+	LocalOnly         bool                     `json:"localOnly,omitempty"`
+	SupportedFormats  []string                 `json:"supportedFormats,omitempty"`
+	FormatBaseURLs    map[string]string        `json:"formatBaseUrls,omitempty"`
+	BillingCurl       string                   `json:"billingCurl,omitempty"`
+	BillingEnabled    bool                     `json:"billingEnabled,omitempty"`
+	ModelFetchAPIKey  string                   `json:"modelFetchApiKey,omitempty"`
+	ModelFetchBaseURL string                   `json:"modelFetchBaseUrl,omitempty"`
 }
 
 func BuildAccountRecords(authFiles []AuthFileRecord, codexKeys []cliproxyapi.CodexAPIKey) []AccountRecord {
@@ -392,9 +394,14 @@ func buildUnifiedOpenAICompatibleAccountRecord(account cliproxyapi.UnifiedAccoun
 		provider.Prefix = strings.TrimSpace(credential.Prefix)
 		provider.APIKeyEntries = parseOpenAICompatibleAPIKeyEntriesJSON(credential.APIKeyEntriesJSON)
 		provider.Headers = parseStringMapJSON(credential.HeadersJSON)
+		provider.FormatBaseURLs = parseStringMapJSON(credential.FormatBaseURLsJSON)
 		provider.Models = parseOpenAICompatibleModelsJSON(credential.ModelsJSON)
 	}
 	record := BuildOpenAICompatibleProviderAccountRecord(provider)
+	if credential != nil {
+		record.ModelFetchAPIKey = strings.TrimSpace(credential.ModelFetchAPIKey)
+		record.ModelFetchBaseURL = strings.TrimSpace(credential.ModelFetchBaseURL)
+	}
 	record.ID = strings.TrimSpace(account.AccountKey)
 	record.Status = unifiedStatus(account)
 	record.DisplayName = unifiedDisplayName(account, record.DisplayName)

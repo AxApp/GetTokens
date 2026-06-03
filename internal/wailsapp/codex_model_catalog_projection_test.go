@@ -70,6 +70,14 @@ func TestBuildGetTokensCodexModelCatalogUsesModelIDForDisplayAliases(t *testing.
 			Alias: "GPT 5.4 Mini",
 		},
 		{
+			Name:  "gpt-5.5",
+			Alias: "GPT-5.5",
+		},
+		{
+			Name:  "gpt-5.4-mini",
+			Alias: "GPT-5.4-Mini",
+		},
+		{
 			Name:  "deepseek-chat",
 			Alias: "deepseek",
 		},
@@ -105,6 +113,12 @@ func TestBuildGetTokensCodexModelCatalogUsesModelIDForDisplayAliases(t *testing.
 	}
 	if _, ok := got["GPT 5.5"]; ok {
 		t.Fatalf("display alias must not become request slug: %#v", got)
+	}
+	if _, ok := got["GPT-5.5"]; ok {
+		t.Fatalf("case-only display alias must not become request slug: %#v", got)
+	}
+	if _, ok := got["GPT-5.4-Mini"]; ok {
+		t.Fatalf("case-only display alias must not become request slug: %#v", got)
 	}
 }
 
@@ -274,5 +288,215 @@ func TestDisableGetTokensCodexModelCatalogProjectionRemovesOnlyOwnedPointer(t *t
 	}
 	if !strings.Contains(string(configBody), `[model_providers.gettokens]`) {
 		t.Fatalf("unrelated config should be preserved:\n%s", string(configBody))
+	}
+}
+
+func TestModelCatalogProjectionPublicMethodsPersistSyncPreference(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	home := t.TempDir()
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", home)
+
+	app := New("", "", "")
+	if _, err := app.EnableGetTokensCodexModelCatalogProjection([]OpenAICompatibleModel{{Name: "deepseek-chat", Alias: "deepseek"}}); err != nil {
+		t.Fatalf("EnableGetTokensCodexModelCatalogProjection: %v", err)
+	}
+	settings, err := app.GetAppRuntimeSettings()
+	if err != nil {
+		t.Fatalf("GetAppRuntimeSettings after enable: %v", err)
+	}
+	if !settings.CodexModelCatalogSyncEnabled {
+		t.Fatal("CodexModelCatalogSyncEnabled = false after public enable")
+	}
+
+	if _, err := app.DisableGetTokensCodexModelCatalogProjection(); err != nil {
+		t.Fatalf("DisableGetTokensCodexModelCatalogProjection: %v", err)
+	}
+	settings, err = app.GetAppRuntimeSettings()
+	if err != nil {
+		t.Fatalf("GetAppRuntimeSettings after disable: %v", err)
+	}
+	if settings.CodexModelCatalogSyncEnabled {
+		t.Fatal("CodexModelCatalogSyncEnabled = true after public disable")
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalV2OffPersistsAndRemovesOwnedCatalogPointer(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	home := t.TempDir()
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", home)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	ownedCatalogPath := filepath.Join(codexHome, gettokensCodexModelCatalogFilename)
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.WriteFile(configPath, []byte(`model_catalog_json = "`+ownedCatalogPath+`"`+"\n"), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := New("", "", "")
+	if _, err := app.SetCodexModelCatalogSyncEnabled(true); err != nil {
+		t.Fatalf("SetCodexModelCatalogSyncEnabled(true): %v", err)
+	}
+	result, err := app.ApplyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:                     "sk-relay-test",
+		BaseURL:                    "http://127.0.0.1:8317/v1",
+		Model:                      "gpt-5.5",
+		ProviderID:                 "gettokens",
+		ProviderName:               "GetTokens",
+		AuthStrategy:               relayLocalAuthStrategyReplaceAuthWithAPIKey,
+		ModelCatalogProjectionMode: relayModelCatalogProjectionOff,
+	})
+	if err != nil {
+		t.Fatalf("ApplyRelayServiceConfigToLocalV2 off: %v", err)
+	}
+	if !result.ModelCatalogRequiresRestart {
+		t.Fatal("ModelCatalogRequiresRestart = false, want true after owned pointer removal")
+	}
+	settings, err := app.GetAppRuntimeSettings()
+	if err != nil {
+		t.Fatalf("GetAppRuntimeSettings: %v", err)
+	}
+	if settings.CodexModelCatalogSyncEnabled {
+		t.Fatal("CodexModelCatalogSyncEnabled = true after ApplyRelayServiceConfigToLocalV2 off")
+	}
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if strings.Contains(string(body), "model_catalog_json") {
+		t.Fatalf("model_catalog_json should be removed when projection mode is off:\n%s", string(body))
+	}
+}
+
+func TestApplyRelayServiceConfigToLocalV2WithoutProjectionModePreservesCatalogPreference(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	home := t.TempDir()
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", home)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	ownedCatalogPath := filepath.Join(codexHome, gettokensCodexModelCatalogFilename)
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.WriteFile(configPath, []byte(`model_catalog_json = "`+ownedCatalogPath+`"`+"\n"), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := New("", "", "")
+	if _, err := app.SetCodexModelCatalogSyncEnabled(true); err != nil {
+		t.Fatalf("SetCodexModelCatalogSyncEnabled(true): %v", err)
+	}
+	if _, err := app.ApplyRelayServiceConfigToLocalV2(RelayLocalApplyInput{
+		APIKey:                "sk-relay-test",
+		APIKeySet:             true,
+		BaseURL:               "http://127.0.0.1:8317/v1",
+		BaseURLSet:            true,
+		Model:                 "gpt-5.5",
+		ModelSet:              true,
+		ProviderID:            "gettokens",
+		ProviderIDSet:         true,
+		ProviderName:          "GetTokens",
+		ProviderNameSet:       true,
+		RequiresOpenAIAuth:    true,
+		RequiresOpenAIAuthSet: true,
+		WireAPI:               "responses",
+		WireAPISet:            true,
+		SupportsWebsockets:    true,
+		SupportsWebsocketsSet: true,
+		AuthStrategy:          relayLocalAuthStrategyReplaceAuthWithAPIKey,
+	}); err != nil {
+		t.Fatalf("ApplyRelayServiceConfigToLocalV2 without projection mode: %v", err)
+	}
+
+	settings, err := app.GetAppRuntimeSettings()
+	if err != nil {
+		t.Fatalf("GetAppRuntimeSettings: %v", err)
+	}
+	if !settings.CodexModelCatalogSyncEnabled {
+		t.Fatal("unspecified projection mode must not reset CodexModelCatalogSyncEnabled")
+	}
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if !strings.Contains(string(body), `model_catalog_json = "`+ownedCatalogPath+`"`) {
+		t.Fatalf("unspecified projection mode should preserve existing catalog pointer:\n%s", string(body))
+	}
+}
+
+func TestShutdownRemovesOwnedModelCatalogPointerWithoutChangingSyncPreference(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	home := t.TempDir()
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", home)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	ownedCatalogPath := filepath.Join(codexHome, gettokensCodexModelCatalogFilename)
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.WriteFile(configPath, []byte(strings.Join([]string{
+		`model = "deepseek"`,
+		`model_catalog_json = "` + ownedCatalogPath + `"`,
+		``,
+	}, "\n")), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := New("", "", "")
+	if _, err := app.SetCodexModelCatalogSyncEnabled(true); err != nil {
+		t.Fatalf("SetCodexModelCatalogSyncEnabled(true): %v", err)
+	}
+
+	app.Shutdown()
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if strings.Contains(string(body), "model_catalog_json") {
+		t.Fatalf("shutdown should remove GetTokens-owned model_catalog_json pointer:\n%s", string(body))
+	}
+	if !strings.Contains(string(body), `model = "deepseek"`) {
+		t.Fatalf("shutdown should preserve unrelated Codex config:\n%s", string(body))
+	}
+
+	settings, err := app.GetAppRuntimeSettings()
+	if err != nil {
+		t.Fatalf("GetAppRuntimeSettings: %v", err)
+	}
+	if !settings.CodexModelCatalogSyncEnabled {
+		t.Fatal("shutdown cleanup must not change persisted sync preference")
+	}
+}
+
+func TestShutdownPreservesExternalModelCatalogPointer(t *testing.T) {
+	codexHome := filepath.Join(t.TempDir(), ".codex")
+	home := t.TempDir()
+	t.Setenv("CODEX_HOME", codexHome)
+	t.Setenv("HOME", home)
+	if err := os.MkdirAll(codexHome, 0700); err != nil {
+		t.Fatalf("MkdirAll: %v", err)
+	}
+	externalCatalogPath := filepath.Join(t.TempDir(), "user-model-catalog.json")
+	configPath := filepath.Join(codexHome, "config.toml")
+	if err := os.WriteFile(configPath, []byte(strings.Join([]string{
+		`model = "deepseek"`,
+		`model_catalog_json = "` + externalCatalogPath + `"`,
+		``,
+	}, "\n")), 0600); err != nil {
+		t.Fatalf("WriteFile config.toml: %v", err)
+	}
+
+	app := New("", "", "")
+	app.Shutdown()
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile config.toml: %v", err)
+	}
+	if !strings.Contains(string(body), `model_catalog_json = "`+externalCatalogPath+`"`) {
+		t.Fatalf("shutdown should preserve external model_catalog_json pointer:\n%s", string(body))
 	}
 }

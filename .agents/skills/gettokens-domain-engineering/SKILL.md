@@ -478,6 +478,8 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   3. sidecar route logs for `route resolve` and `route auth selected` to see provider, account_key, kind, base_url, compat_name, and websocket capability.
 - For providers that do not support Codex WebSocket, verify in a dev or temporary sidecar first: authenticated downstream WSS should close with a fallback reason, and HTTP `/v1/responses` should then complete through the OpenAI-compatible executor.
 - Avoid using `/Applications/GetTokens.app` production state for exploratory route fixes. Use a temporary account-store DB and sidecar port, or Wails dev profile, then only apply production configuration changes after the protocol boundary is proven.
+- Account-store `openai-compatible` runtime provider keys must be stable machine keys, not display names. Normalize values like `Xiaomi MiMo` / `mimo` to `xiaomimimo`, keep the human label in `compat_name`, and confirm logs show `providers=<stable-key>` before treating auth selection as fixed.
+- Codex auth-file / OAuth / unknown-kind ChatGPT accounts must not register OpenAI-compatible builtins such as `deepseek-v4-*`. Only explicit Codex API-key auth (`auth_kind=apikey` / `api_key`) may advertise those compatibility models; otherwise DeepSeek-style requests can be misrouted to ChatGPT and fail with official model-support errors.
 
 ## Session Distillation: Third-party provider account protocol formats
 - 账号池“添加第三方厂商账号”入口代表 provider preset，不等同于 Codex API Key。该入口不得调用 `CreateCodexAPIKey`，应创建 `openai-compatible` unified account；单独的“添加 Codex API Key”入口才使用 `codex-api-key`。

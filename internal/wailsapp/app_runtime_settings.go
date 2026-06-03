@@ -31,8 +31,9 @@ func normalizeAppRuntimeSettings(settings *AppRuntimeSettings) AppRuntimeSetting
 		return defaultAppRuntimeSettings()
 	}
 	normalized := AppRuntimeSettings{
-		LaunchAtLogin: settings.LaunchAtLogin,
-		CloseAction:   normalizeAppCloseAction(settings.CloseAction),
+		CodexModelCatalogSyncEnabled: settings.CodexModelCatalogSyncEnabled,
+		LaunchAtLogin:                settings.LaunchAtLogin,
+		CloseAction:                  normalizeAppCloseAction(settings.CloseAction),
 	}
 	normalized.MenuBarResident = normalized.CloseAction == AppCloseActionKeepServiceInMenuBar
 	return normalized
@@ -129,11 +130,30 @@ func (a *App) GetAppRuntimeSettings() (*AppRuntimeSettings, error) {
 }
 
 func (a *App) UpdateAppRuntimeSettings(input AppRuntimeSettings) (*AppRuntimeSettings, error) {
-	settings, err := saveAppRuntimeSettings(input)
+	current, err := loadAppRuntimeSettings()
+	if err != nil {
+		return nil, err
+	}
+	current.LaunchAtLogin = input.LaunchAtLogin
+	current.CloseAction = input.CloseAction
+	settings, err := saveAppRuntimeSettings(current)
 	if err != nil {
 		return nil, err
 	}
 	a.applyMenuBarResident(settings)
+	return &settings, nil
+}
+
+func (a *App) SetCodexModelCatalogSyncEnabled(enabled bool) (*AppRuntimeSettings, error) {
+	settings, err := loadAppRuntimeSettings()
+	if err != nil {
+		return nil, err
+	}
+	settings.CodexModelCatalogSyncEnabled = enabled
+	settings, err = saveAppRuntimeSettings(settings)
+	if err != nil {
+		return nil, err
+	}
 	return &settings, nil
 }
 

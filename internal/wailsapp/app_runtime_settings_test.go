@@ -134,3 +134,35 @@ func TestShouldPreventCloseForRuntimeSettings(t *testing.T) {
 		t.Fatal("shouldPreventCloseForRuntimeSettings(keep service) = false, want true")
 	}
 }
+
+func TestCodexModelCatalogSyncPreferencePersistsAcrossRuntimeSettingsUpdates(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+
+	app := New("", "", "")
+	updated, err := app.SetCodexModelCatalogSyncEnabled(true)
+	if err != nil {
+		t.Fatalf("SetCodexModelCatalogSyncEnabled(true): %v", err)
+	}
+	if !updated.CodexModelCatalogSyncEnabled {
+		t.Fatal("CodexModelCatalogSyncEnabled = false after enable")
+	}
+
+	if _, err := app.UpdateAppRuntimeSettings(AppRuntimeSettings{
+		LaunchAtLogin: false,
+		CloseAction:   AppCloseActionKeepServiceInMenuBar,
+	}); err != nil {
+		t.Fatalf("UpdateAppRuntimeSettings: %v", err)
+	}
+
+	loaded, err := app.GetAppRuntimeSettings()
+	if err != nil {
+		t.Fatalf("GetAppRuntimeSettings: %v", err)
+	}
+	if !loaded.CodexModelCatalogSyncEnabled {
+		t.Fatal("CodexModelCatalogSyncEnabled was reset by unrelated runtime settings update")
+	}
+	if loaded.CloseAction != AppCloseActionKeepServiceInMenuBar {
+		t.Fatalf("CloseAction = %q, want keep menu bar", loaded.CloseAction)
+	}
+}

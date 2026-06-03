@@ -814,12 +814,13 @@ func (a *App) GetAppRuntimeSettings() (*AppRuntimeSettings, error) {
 		return nil, err
 	}
 	return &AppRuntimeSettings{
-		LaunchAtLogin:          result.LaunchAtLogin,
-		LaunchAtLoginSupported: result.LaunchAtLoginSupported,
-		LaunchAgentPath:        result.LaunchAgentPath,
-		CloseAction:            result.CloseAction,
-		MenuBarResident:        result.MenuBarResident,
-		ConfigPath:             result.ConfigPath,
+		CodexModelCatalogSyncEnabled: result.CodexModelCatalogSyncEnabled,
+		LaunchAtLogin:                result.LaunchAtLogin,
+		LaunchAtLoginSupported:       result.LaunchAtLoginSupported,
+		LaunchAgentPath:              result.LaunchAgentPath,
+		CloseAction:                  result.CloseAction,
+		MenuBarResident:              result.MenuBarResident,
+		ConfigPath:                   result.ConfigPath,
 	}, nil
 }
 
@@ -832,12 +833,29 @@ func (a *App) UpdateAppRuntimeSettings(input AppRuntimeSettings) (*AppRuntimeSet
 		return nil, err
 	}
 	return &AppRuntimeSettings{
-		LaunchAtLogin:          result.LaunchAtLogin,
-		LaunchAtLoginSupported: result.LaunchAtLoginSupported,
-		LaunchAgentPath:        result.LaunchAgentPath,
-		CloseAction:            result.CloseAction,
-		MenuBarResident:        result.MenuBarResident,
-		ConfigPath:             result.ConfigPath,
+		CodexModelCatalogSyncEnabled: result.CodexModelCatalogSyncEnabled,
+		LaunchAtLogin:                result.LaunchAtLogin,
+		LaunchAtLoginSupported:       result.LaunchAtLoginSupported,
+		LaunchAgentPath:              result.LaunchAgentPath,
+		CloseAction:                  result.CloseAction,
+		MenuBarResident:              result.MenuBarResident,
+		ConfigPath:                   result.ConfigPath,
+	}, nil
+}
+
+func (a *App) SetCodexModelCatalogSyncEnabled(enabled bool) (*AppRuntimeSettings, error) {
+	result, err := a.core.SetCodexModelCatalogSyncEnabled(enabled)
+	if err != nil {
+		return nil, err
+	}
+	return &AppRuntimeSettings{
+		CodexModelCatalogSyncEnabled: result.CodexModelCatalogSyncEnabled,
+		LaunchAtLogin:                result.LaunchAtLogin,
+		LaunchAtLoginSupported:       result.LaunchAtLoginSupported,
+		LaunchAgentPath:              result.LaunchAgentPath,
+		CloseAction:                  result.CloseAction,
+		MenuBarResident:              result.MenuBarResident,
+		ConfigPath:                   result.ConfigPath,
 	}, nil
 }
 
@@ -1129,20 +1147,23 @@ func (a *App) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error
 	providers := make([]OpenAICompatibleProvider, 0, len(result))
 	for _, item := range result {
 		providers = append(providers, OpenAICompatibleProvider{
-			AccountKey: item.AccountKey,
-			Name:       item.Name,
-			Priority:   item.Priority,
-			Disabled:   item.Disabled,
-			BaseURL:    item.BaseURL,
-			Prefix:     item.Prefix,
-			ProxyURL:   item.ProxyURL,
-			APIKey:     item.APIKey,
-			APIKeys:    append([]string(nil), item.APIKeys...),
-			Models:     mapOpenAICompatibleModels(item.Models),
-			Headers:    item.Headers,
-			KeyCount:   item.KeyCount,
-			ModelCount: item.ModelCount,
-			HasHeaders: item.HasHeaders,
+			AccountKey:        item.AccountKey,
+			Name:              item.Name,
+			Priority:          item.Priority,
+			Disabled:          item.Disabled,
+			BaseURL:           item.BaseURL,
+			Prefix:            item.Prefix,
+			ProxyURL:          item.ProxyURL,
+			APIKey:            item.APIKey,
+			APIKeys:           append([]string(nil), item.APIKeys...),
+			Models:            mapOpenAICompatibleModels(item.Models),
+			Headers:           item.Headers,
+			FormatBaseURLs:    item.FormatBaseURLs,
+			ModelFetchAPIKey:  item.ModelFetchAPIKey,
+			ModelFetchBaseURL: item.ModelFetchBaseURL,
+			KeyCount:          item.KeyCount,
+			ModelCount:        item.ModelCount,
+			HasHeaders:        item.HasHeaders,
 		})
 	}
 	return providers, nil
@@ -1463,12 +1484,14 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 
 func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProviderInput) error {
 	return a.core.CreateOpenAICompatibleProvider(wailsapp.CreateOpenAICompatibleProviderInput{
-		Name:           input.Name,
-		BaseURL:        input.BaseURL,
-		Prefix:         input.Prefix,
-		APIKey:         input.APIKey,
-		FormatBaseURLs: input.FormatBaseURLs,
-		Models:         mapOpenAICompatibleModelsToWails(input.Models),
+		Name:              input.Name,
+		BaseURL:           input.BaseURL,
+		Prefix:            input.Prefix,
+		APIKey:            input.APIKey,
+		FormatBaseURLs:    input.FormatBaseURLs,
+		Models:            mapOpenAICompatibleModelsToWails(input.Models),
+		ModelFetchAPIKey:  input.ModelFetchAPIKey,
+		ModelFetchBaseURL: input.ModelFetchBaseURL,
 	})
 }
 
@@ -1478,15 +1501,17 @@ func (a *App) DeleteOpenAICompatibleProvider(name string) error {
 
 func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) error {
 	return a.core.UpdateOpenAICompatibleProvider(wailsapp.UpdateOpenAICompatibleProviderInput{
-		CurrentName: input.CurrentName,
-		Name:        input.Name,
-		BaseURL:     input.BaseURL,
-		Prefix:      input.Prefix,
-		ProxyURL:    input.ProxyURL,
-		APIKey:      input.APIKey,
-		APIKeys:     append([]string(nil), input.APIKeys...),
-		Headers:     input.Headers,
-		Models:      mapOpenAICompatibleModelsToWails(input.Models),
+		CurrentName:       input.CurrentName,
+		Name:              input.Name,
+		BaseURL:           input.BaseURL,
+		Prefix:            input.Prefix,
+		ProxyURL:          input.ProxyURL,
+		APIKey:            input.APIKey,
+		APIKeys:           append([]string(nil), input.APIKeys...),
+		Headers:           input.Headers,
+		Models:            mapOpenAICompatibleModelsToWails(input.Models),
+		ModelFetchAPIKey:  input.ModelFetchAPIKey,
+		ModelFetchBaseURL: input.ModelFetchBaseURL,
 	})
 }
 

@@ -385,6 +385,7 @@ export default function SettingsFeature({
         { launchAtLogin: nextLaunchAtLogin, closeAction: nextCloseAction },
         () =>
           UpdateAppRuntimeSettings({
+            codexModelCatalogSyncEnabled: false,
             launchAtLogin: nextLaunchAtLogin,
             launchAtLoginSupported,
             closeAction: nextCloseAction,

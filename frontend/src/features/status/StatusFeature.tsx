@@ -6,15 +6,18 @@ import {
   DisableGetTokensCodexModelCatalogProjection,
   EnableGetTokensCodexModelCatalogProjection,
   GetAccountStoreDiagnostics,
+  GetAppRuntimeSettings,
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
   GetRelayServiceConfig,
   ListRelaySupportedModels,
+  SetCodexModelCatalogSyncEnabled,
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
 import { main } from '../../../wailsjs/go/models';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/useDebug';
+import { hasWailsAppBindings } from '../../utils/previewMode';
 import { useI18n } from '../../context/I18nContext';
 import {
   RelayKeyEditorModal,
@@ -145,7 +148,7 @@ export default function StatusFeature({
     loadCodexLocalAuthStrategy()
   );
   const [supportsWebsockets, setSupportsWebsockets] = useState(true);
-  const [syncCodexModelCatalog, setSyncCodexModelCatalog] = useState(true);
+  const [syncCodexModelCatalog, setSyncCodexModelCatalog] = useState(false);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
   const [localCodexAuthState, setLocalCodexAuthState] = useState<main.LocalCodexAuthState | null>(null);
@@ -282,6 +285,31 @@ export default function StatusFeature({
       cancelled = true;
     };
   }, [sidecarStatus.code, t, trackRequest]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCodexModelCatalogSyncPreference() {
+      if (!hasWailsAppBindings()) {
+        setSyncCodexModelCatalog(false);
+        return;
+      }
+      try {
+        const settings = await trackRequest('GetAppRuntimeSettings', { args: [] }, () => GetAppRuntimeSettings());
+        if (!cancelled) {
+          setSyncCodexModelCatalog(Boolean(settings?.codexModelCatalogSyncEnabled));
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    void loadCodexModelCatalogSyncPreference();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [trackRequest]);
 
   useEffect(() => {
     let cancelled = false;
@@ -880,20 +908,42 @@ export default function StatusFeature({
     }
   }
 
+  async function persistCodexModelCatalogSyncPreference(enabled: boolean, reason?: string): Promise<boolean> {
+    try {
+      await trackRequest(
+        'SetCodexModelCatalogSyncEnabled',
+        { enabled, ...(reason ? { reason } : {}) },
+        () => SetCodexModelCatalogSyncEnabled(enabled)
+      );
+      return true;
+    } catch (error) {
+      console.error(error);
+      setLocalApplyMessage(`sync_model_catalog 保存失败：${toErrorMessage(error)}`);
+      return false;
+    }
+  }
+
   async function changeSyncCodexModelCatalog(nextValue: boolean) {
+    setSyncCodexModelCatalog(nextValue);
+    const saved = await persistCodexModelCatalogSyncPreference(nextValue);
+    if (!saved) {
+      setSyncCodexModelCatalog(!nextValue);
+      return;
+    }
+
     if (nextValue) {
-      setSyncCodexModelCatalog(true);
       const enabled = await enableCodexModelCatalogProjection();
       if (!enabled) {
         setSyncCodexModelCatalog(false);
+        void persistCodexModelCatalogSyncPreference(false, 'enable-failed');
       }
       return;
     }
 
-    setSyncCodexModelCatalog(false);
     const disabled = await disableCodexModelCatalogProjection();
     if (!disabled) {
       setSyncCodexModelCatalog(true);
+      void persistCodexModelCatalogSyncPreference(true, 'disable-failed');
     }
   }
 

@@ -264,6 +264,7 @@ test('getPrimaryCodexLiveRequest prefers active request, then last request, then
     activeRequestID: '',
     lastRequestID: 'gt-req-8913',
     authID: 'auth-file:team-codex-legacy',
+    accountKey: 'acct_legacy',
     authLabel: 'legacy-session-account@example.com',
     requests: [
       {
@@ -271,6 +272,7 @@ test('getPrimaryCodexLiveRequest prefers active request, then last request, then
         requestID: 'gt-req-8912',
         sequence: 1,
         authID: 'auth-file:team-codex-old',
+        accountKey: 'acct_old',
         authLabel: 'old-account@example.com',
       },
       {
@@ -278,6 +280,7 @@ test('getPrimaryCodexLiveRequest prefers active request, then last request, then
         requestID: 'gt-req-8913',
         sequence: 2,
         authID: 'auth-file:team-codex-new',
+        accountKey: 'acct_new',
         authLabel: 'new-account@example.com',
       },
     ],
@@ -300,6 +303,7 @@ test('getPrimaryCodexLiveRequest prefers active request, then last request, then
 
   const diagnostic = buildCodexLiveDiagnosticSummary(session, selected);
   assert.match(diagnostic, /auth: auth-file:team-codex-new \/ new-account@example.com/);
+  assert.match(diagnostic, /account_key: acct_new/);
 });
 
 test('buildLiveSessionQuotaDisplay and billing display reuse account card shapes', () => {
@@ -463,7 +467,10 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
         requestCount: 1,
         activeRequestID: 'req-1',
         model: 'gpt-5.5',
+        accountKey: 'acct_live',
         authLabel: 'team-codex@example.com',
+        authDetached: true,
+        authDisabled: true,
         downstreamTransport: 'websocket',
         upstreamTransport: 'websocket',
         fallbackConfidence: 'not-a-confidence',
@@ -491,6 +498,9 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
             startedAt: '2026-05-21T08:00:00Z',
             downstreamTransport: 'websocket',
             upstreamTransport: 'websocket',
+            accountKey: 'acct_live',
+            authDetached: true,
+            authDisabled: true,
             timing: { outputTokensPerSecond: 42, firstTokenMs: 800 },
             timeline: [],
           },
@@ -500,6 +510,12 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
   });
 
   assert.equal(snapshot.source, 'live');
+  assert.equal(snapshot.sessions[0].accountKey, 'acct_live');
+  assert.equal(snapshot.sessions[0].authDetached, true);
+  assert.equal(snapshot.sessions[0].authDisabled, true);
+  assert.equal(snapshot.sessions[0].requests[0].accountKey, 'acct_live');
+  assert.equal(snapshot.sessions[0].requests[0].authDetached, true);
+  assert.equal(snapshot.sessions[0].requests[0].authDisabled, true);
   assert.equal(snapshot.sessions[0].requests[0].timing?.outputTokensPerSecond, 42);
   assert.equal(snapshot.sessions[0].fallbackConfidence, undefined);
   assert.equal(snapshot.sessions[0].timingSummary?.sampleCount, 2);

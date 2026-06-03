@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ApplyClaudeCodeAPIKeyConfigToLocal,
   ApplyDeepLinkImport,
@@ -17,32 +17,36 @@ import {
   PreviewDeepLinkImport,
   UpdateRateLimitRule,
   VerifyOpenAICompatibleProvider,
-} from '../../../wailsjs/go/main/App';
-import { main } from '../../../wailsjs/go/models';
-import { EventsOn } from '../../../wailsjs/runtime/runtime';
-import { useDebug } from '../../context/useDebug';
-import { useI18n } from '../../context/I18nContext';
-import AccountCardSkeleton from './components/AccountCardSkeleton';
-import AccountImportModal from './components/AccountImportModal';
-import AccountLocalCliApplyConfirm from './components/AccountLocalCliApplyConfirm';
-import DeepLinkAccountImportConfirm from './components/DeepLinkAccountImportConfirm';
-import AccountGroupSection from './components/AccountGroupSection';
-import AccountsHeader from './components/AccountsHeader';
-import AccountsToolbar, { AccountsSelectionActions } from './components/AccountsToolbar';
-import ApiKeyComposeModal from './components/ApiKeyComposeModal';
-import CodexOAuthModal from './components/CodexOAuthModal';
-import OpenAICompatibleComposeModal from './components/OpenAICompatibleComposeModal';
-import OpenAICompatibleDetailModal from './components/OpenAICompatibleDetailModal';
-import UnifiedComposeModal, { type UnifiedComposeFormState } from './components/UnifiedComposeModal';
-import UnifiedAccountDetailModal from './components/UnifiedAccountDetailModal';
-import { useAccountsPageStateContext } from './AccountsPageStateContext';
-import useOpenAICompatibleState from './hooks/useOpenAICompatibleState';
-import { getAccountsPreviewRelayModelNames } from './previewData';
-import { isCodexAuthFile } from './model/accountPresentation';
-import { readAccountClipboardFallback } from './model/accountClipboard';
-import { findAccountDetailByID } from './model/accountDetailSelection';
-import { buildRelayModelProviderSignature } from './model/apiKeyModelCatalog';
-import useGroupCardHeights from './hooks/useGroupCardHeights';
+} from "../../../wailsjs/go/main/App";
+import { main } from "../../../wailsjs/go/models";
+import { EventsOn } from "../../../wailsjs/runtime/runtime";
+import { useDebug } from "../../context/useDebug";
+import { useI18n } from "../../context/I18nContext";
+import AccountCardSkeleton from "./components/AccountCardSkeleton";
+import AccountImportModal from "./components/AccountImportModal";
+import AccountLocalCliApplyConfirm from "./components/AccountLocalCliApplyConfirm";
+import DeepLinkAccountImportConfirm from "./components/DeepLinkAccountImportConfirm";
+import AccountGroupSection from "./components/AccountGroupSection";
+import AccountsHeader from "./components/AccountsHeader";
+import AccountsToolbar, {
+  AccountsSelectionActions,
+} from "./components/AccountsToolbar";
+import ApiKeyComposeModal from "./components/ApiKeyComposeModal";
+import CodexOAuthModal from "./components/CodexOAuthModal";
+import OpenAICompatibleComposeModal from "./components/OpenAICompatibleComposeModal";
+import OpenAICompatibleDetailModal from "./components/OpenAICompatibleDetailModal";
+import UnifiedComposeModal, {
+  type UnifiedComposeFormState,
+} from "./components/UnifiedComposeModal";
+import UnifiedAccountDetailModal from "./components/UnifiedAccountDetailModal";
+import { useAccountsPageStateContext } from "./AccountsPageStateContext";
+import useOpenAICompatibleState from "./hooks/useOpenAICompatibleState";
+import { getAccountsPreviewRelayModelNames } from "./previewData";
+import { isCodexAuthFile } from "./model/accountPresentation";
+import { readAccountClipboardFallback } from "./model/accountClipboard";
+import { findAccountDetailByID } from "./model/accountDetailSelection";
+import { buildRelayModelProviderSignature } from "./model/apiKeyModelCatalog";
+import useGroupCardHeights from "./hooks/useGroupCardHeights";
 import {
   buildAccountDetailFrameHash,
   buildAccountDetailScriptFrameHash,
@@ -50,14 +54,14 @@ import {
   clearAccountDetailScriptFrameHash,
   readFrameHashState,
   type AccountDetailScriptRoute,
-} from '../../utils/pagePersistence';
-import { hasWailsAppBindings, hasWailsRuntime } from '../../utils/previewMode';
-import type { AccountRecord } from './model/types';
+} from "../../utils/pagePersistence";
+import { hasWailsAppBindings, hasWailsRuntime } from "../../utils/previewMode";
+import type { AccountRecord } from "./model/types";
 import {
   resolveAccountLocalCliMappings,
   type AccountCliApplyDraft,
   type AccountLocalCliMapping,
-} from './model/accountLocalCliMapping';
+} from "./model/accountLocalCliMapping";
 import {
   ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY,
   DEFAULT_ACCOUNT_LIST_DISPLAY_MODE,
@@ -66,18 +70,18 @@ import {
   type AccountGroupMode,
   type AccountListDisplayMode,
   type AccountSortMode,
-} from './model/accountListLayout';
+} from "./model/accountListLayout";
 import {
   ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
   shouldScheduleAccountUsageRefresh,
-} from './model/accountUsage';
-import { shouldShowAccountSkeletons } from './model/accountSnapshot';
-import { toggleAccountGroupSelection } from './model/accountSelection';
-import type { OpenAICompatibleProvider } from './model/openAICompatible';
-import type { VendorPreset } from './model/vendorPresets';
-import { emptyApiKeyForm } from './model/accountConfig';
-import type { AccountImportPayloadItem } from './model/accountTransfer';
-import { toErrorMessage } from '../../utils/error';
+} from "./model/accountUsage";
+import { shouldShowAccountSkeletons } from "./model/accountSnapshot";
+import { toggleAccountGroupSelection } from "./model/accountSelection";
+import type { OpenAICompatibleProvider } from "./model/openAICompatible";
+import type { VendorPreset } from "./model/vendorPresets";
+import { emptyApiKeyForm } from "./model/accountConfig";
+import type { AccountImportPayloadItem } from "./model/accountTransfer";
+import { toErrorMessage } from "../../utils/error";
 
 interface AccountsFeatureProps {
   workspace?: string;
@@ -88,8 +92,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   const { trackRequest } = useDebug();
   const pageRef = useRef<HTMLDivElement | null>(null);
   const processedDeepLinksRef = useRef<Set<string>>(new Set());
-  const [initialImportPasteContent, setInitialImportPasteContent] = useState('');
-  const [initialImportItems, setInitialImportItems] = useState<AccountImportPayloadItem[]>([]);
+  const [initialImportPasteContent, setInitialImportPasteContent] =
+    useState("");
+  const [initialImportItems, setInitialImportItems] = useState<
+    AccountImportPayloadItem[]
+  >([]);
   const {
     loading,
     accountsLoaded,
@@ -173,49 +180,72 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   } = useAccountsPageStateContext();
 
   const [isUnifiedComposeOpen, setIsUnifiedComposeOpen] = useState(false);
-  const [unifiedComposeForm, setUnifiedComposeForm] = useState<UnifiedComposeFormState>({
-    ...emptyApiKeyForm,
-    formatBaseUrls: {},
-    billingCurl: '',
-    billingEnabled: false,
-  });
-  const [unifiedComposeError, setUnifiedComposeError] = useState('');
-  const [unifiedComposePreset, setUnifiedComposePreset] = useState<VendorPreset | null>(null);
-  const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() => readInitialDisplayMode());
-  const [relayKeyItems, setRelayKeyItems] = useState<main.RelayServiceAPIKeyItem[]>([]);
-  const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
-  const [localCodexAuthState, setLocalCodexAuthState] = useState<main.LocalCodexAuthState | null>(null);
-  const [localCodexProviderState, setLocalCodexProviderState] = useState<main.LocalCodexModelProviderStateView | null>(null);
-  const [localCliDraft, setLocalCliDraft] = useState<AccountCliApplyDraft | null>(null);
-  const [localCliApplyMessage, setLocalCliApplyMessage] = useState('');
+  const [unifiedComposeForm, setUnifiedComposeForm] =
+    useState<UnifiedComposeFormState>({
+      ...emptyApiKeyForm,
+      formatBaseUrls: {},
+      billingCurl: "",
+      billingEnabled: false,
+      modelFetchApiKey: "",
+      modelFetchBaseUrl: "",
+    });
+  const [unifiedComposeError, setUnifiedComposeError] = useState("");
+  const [unifiedComposePreset, setUnifiedComposePreset] =
+    useState<VendorPreset | null>(null);
+  const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() =>
+    readInitialDisplayMode(),
+  );
+  const [relayKeyItems, setRelayKeyItems] = useState<
+    main.RelayServiceAPIKeyItem[]
+  >([]);
+  const [relayEndpoints, setRelayEndpoints] = useState<
+    main.RelayServiceEndpoint[]
+  >([]);
+  const [localCodexAuthState, setLocalCodexAuthState] =
+    useState<main.LocalCodexAuthState | null>(null);
+  const [localCodexProviderState, setLocalCodexProviderState] =
+    useState<main.LocalCodexModelProviderStateView | null>(null);
+  const [localCliDraft, setLocalCliDraft] =
+    useState<AccountCliApplyDraft | null>(null);
+  const [localCliApplyMessage, setLocalCliApplyMessage] = useState("");
   const [isApplyingLocalCli, setIsApplyingLocalCli] = useState(false);
-  const [deepLinkRawURL, setDeepLinkRawURL] = useState('');
-  const [deepLinkPreview, setDeepLinkPreview] = useState<main.DeepLinkImportPreview | null>(null);
-  const [deepLinkResult, setDeepLinkResult] = useState<main.DeepLinkApplyResult | null>(null);
-  const [deepLinkApplyMessage, setDeepLinkApplyMessage] = useState('');
+  const [deepLinkRawURL, setDeepLinkRawURL] = useState("");
+  const [deepLinkPreview, setDeepLinkPreview] =
+    useState<main.DeepLinkImportPreview | null>(null);
+  const [deepLinkResult, setDeepLinkResult] =
+    useState<main.DeepLinkApplyResult | null>(null);
+  const [deepLinkApplyMessage, setDeepLinkApplyMessage] = useState("");
   const [isApplyingDeepLink, setIsApplyingDeepLink] = useState(false);
-  const [accountDetailIDFromHash, setAccountDetailIDFromHash] = useState(() => readAccountDetailIDFromHash());
-  const [accountDetailScriptFromHash, setAccountDetailScriptFromHash] = useState<AccountDetailScriptRoute | ''>(() => readAccountDetailScriptFromHash());
+  const [accountDetailIDFromHash, setAccountDetailIDFromHash] = useState(() =>
+    readAccountDetailIDFromHash(),
+  );
+  const [accountDetailScriptFromHash, setAccountDetailScriptFromHash] =
+    useState<AccountDetailScriptRoute | "">(() =>
+      readAccountDetailScriptFromHash(),
+    );
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
-  const loadRelayModelNames = useCallback(async (isCancelled: () => boolean = () => false) => {
-    if (!hasWailsAppBindings()) {
-      setRelayModelNames(getAccountsPreviewRelayModelNames());
-      return;
-    }
-    if (!ready) {
-      setRelayModelNames([]);
-      return;
-    }
-    try {
-      const result = await ListRelaySupportedModels();
-      if (isCancelled()) return;
-      const models = result?.models || [];
-      setRelayModelNames(models.map((m) => m.name).filter(Boolean));
-    } catch {
-      if (!isCancelled()) setRelayModelNames([]);
-    }
-  }, [ready]);
+  const loadRelayModelNames = useCallback(
+    async (isCancelled: () => boolean = () => false) => {
+      if (!hasWailsAppBindings()) {
+        setRelayModelNames(getAccountsPreviewRelayModelNames());
+        return;
+      }
+      if (!ready) {
+        setRelayModelNames([]);
+        return;
+      }
+      try {
+        const result = await ListRelaySupportedModels();
+        if (isCancelled()) return;
+        const models = result?.models || [];
+        setRelayModelNames(models.map((m) => m.name).filter(Boolean));
+      } catch {
+        if (!isCancelled()) setRelayModelNames([]);
+      }
+    },
+    [ready],
+  );
 
   const openAICompatibleState = useOpenAICompatibleState({
     ready,
@@ -242,33 +272,42 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         if (cancelled) return;
         setRelayKeyItems([
           main.RelayServiceAPIKeyItem.createFrom({
-            value: 'sk-gettokens-preview-account-template',
+            value: "sk-gettokens-preview-account-template",
           }),
         ]);
         setRelayEndpoints([
           main.RelayServiceEndpoint.createFrom({
-            id: 'localhost',
-            kind: 'localhost',
-            host: '127.0.0.1',
-            baseUrl: 'http://127.0.0.1:8317/v1',
+            id: "localhost",
+            kind: "localhost",
+            host: "127.0.0.1",
+            baseUrl: "http://127.0.0.1:8317/v1",
           }),
         ]);
-        setLocalCodexAuthState(main.LocalCodexAuthState.createFrom({
-          hasAuthFile: true,
-          authMode: 'chatgpt',
-          hasTokens: true,
-          canPreserveChatGPTAuth: true,
-        }));
-        setLocalCodexProviderState(main.LocalCodexModelProviderStateView.createFrom({
-          currentModel: 'gpt-5.4',
-          hasExplicitCurrentModel: true,
-          currentProviderID: 'team-codex-relay',
-          currentProviderName: 'Team Codex Relay',
-          currentProviderIsBuiltin: false,
-          currentProviderExists: true,
-          hasExplicitCurrentProvider: true,
-          providers: [{ providerID: 'team-codex-relay', providerName: 'Team Codex Relay' }],
-        }));
+        setLocalCodexAuthState(
+          main.LocalCodexAuthState.createFrom({
+            hasAuthFile: true,
+            authMode: "chatgpt",
+            hasTokens: true,
+            canPreserveChatGPTAuth: true,
+          }),
+        );
+        setLocalCodexProviderState(
+          main.LocalCodexModelProviderStateView.createFrom({
+            currentModel: "gpt-5.4",
+            hasExplicitCurrentModel: true,
+            currentProviderID: "team-codex-relay",
+            currentProviderName: "Team Codex Relay",
+            currentProviderIsBuiltin: false,
+            currentProviderExists: true,
+            hasExplicitCurrentProvider: true,
+            providers: [
+              {
+                providerID: "team-codex-relay",
+                providerName: "Team Codex Relay",
+              },
+            ],
+          }),
+        );
         return;
       }
 
@@ -280,14 +319,27 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
       try {
         const [config, authState, providerState] = await Promise.all([
-          trackRequest('GetRelayServiceConfig', { args: [] }, () => GetRelayServiceConfig()),
-          trackRequest('GetLocalCodexAuthState', { args: [] }, () => GetLocalCodexAuthState()),
-          trackRequest('GetLocalCodexModelProviderStateView', { args: [] }, () => GetLocalCodexModelProviderStateView()),
+          trackRequest("GetRelayServiceConfig", { args: [] }, () =>
+            GetRelayServiceConfig(),
+          ),
+          trackRequest("GetLocalCodexAuthState", { args: [] }, () =>
+            GetLocalCodexAuthState(),
+          ),
+          trackRequest(
+            "GetLocalCodexModelProviderStateView",
+            { args: [] },
+            () => GetLocalCodexModelProviderStateView(),
+          ),
         ]);
         if (cancelled) {
           return;
         }
-        setRelayKeyItems(config.apiKeyItems || (config.apiKeys || []).map((value) => main.RelayServiceAPIKeyItem.createFrom({ value })));
+        setRelayKeyItems(
+          config.apiKeyItems ||
+            (config.apiKeys || []).map((value) =>
+              main.RelayServiceAPIKeyItem.createFrom({ value }),
+            ),
+        );
         setRelayEndpoints(config.endpoints || []);
         setLocalCodexAuthState(authState);
         setLocalCodexProviderState(providerState);
@@ -309,7 +361,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     };
   }, [ready, trackRequest]);
   useEffect(() => {
-    if (selectedAccount?.credentialSource !== 'api-key') {
+    if (selectedAccount?.credentialSource !== "api-key") {
       return;
     }
     let cancelled = false;
@@ -317,54 +369,75 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     return () => {
       cancelled = true;
     };
-  }, [loadRelayModelNames, selectedAccount?.credentialSource, selectedAccount?.id]);
+  }, [
+    loadRelayModelNames,
+    selectedAccount?.credentialSource,
+    selectedAccount?.id,
+  ]);
 
-  const accountCardHeights = useGroupCardHeights(pageRef, groupedAccounts, loading, selectedAccountIDs, displayMode);
+  const accountCardHeights = useGroupCardHeights(
+    pageRef,
+    groupedAccounts,
+    loading,
+    selectedAccountIDs,
+    displayMode,
+  );
   const isAggregateWorkspace = true;
   const usageAccounts = useMemo(() => accounts, [accounts]);
   const previewMode = !hasWailsAppBindings();
-  const selectedRelayEndpoint = useMemo(() => (
-    relayEndpoints[0] || main.RelayServiceEndpoint.createFrom({
-      id: 'localhost',
-      kind: 'localhost',
-      host: '127.0.0.1',
-      baseUrl: `http://127.0.0.1:${sidecarStatus.port || 8317}/v1`,
-    })
-  ), [relayEndpoints, sidecarStatus.port]);
+  const selectedRelayEndpoint = useMemo(
+    () =>
+      relayEndpoints[0] ||
+      main.RelayServiceEndpoint.createFrom({
+        id: "localhost",
+        kind: "localhost",
+        host: "127.0.0.1",
+        baseUrl: `http://127.0.0.1:${sidecarStatus.port || 8317}/v1`,
+      }),
+    [relayEndpoints, sidecarStatus.port],
+  );
 
-  const openDeepLinkImport = useCallback(async (rawURL: string) => {
-    const normalizedURL = rawURL.trim();
-    if (!normalizedURL || processedDeepLinksRef.current.has(normalizedURL)) {
-      return;
-    }
-    processedDeepLinksRef.current.add(normalizedURL);
-    setDeepLinkApplyMessage('正在解析 deep link...');
-    try {
-      const preview = await trackRequest(
-        'PreviewDeepLinkImport',
-        { redactedURL: normalizedURL.replace(/(payload=)[^&]+/i, '$1[REDACTED]') },
-        () => PreviewDeepLinkImport(normalizedURL),
-      );
-      setDeepLinkRawURL(normalizedURL);
-      setDeepLinkPreview(preview);
-      setDeepLinkResult(null);
-      setDeepLinkApplyMessage('');
-    } catch (error) {
-      console.error(error);
-      setAccountActionNotice({
-        tone: 'error',
-        message: `Deep link 解析失败：${toErrorMessage(error)}`,
-      });
-      setDeepLinkApplyMessage('');
-    }
-  }, [setAccountActionNotice, trackRequest]);
+  const openDeepLinkImport = useCallback(
+    async (rawURL: string) => {
+      const normalizedURL = rawURL.trim();
+      if (!normalizedURL || processedDeepLinksRef.current.has(normalizedURL)) {
+        return;
+      }
+      processedDeepLinksRef.current.add(normalizedURL);
+      setDeepLinkApplyMessage("正在解析 deep link...");
+      try {
+        const preview = await trackRequest(
+          "PreviewDeepLinkImport",
+          {
+            redactedURL: normalizedURL.replace(
+              /(payload=)[^&]+/i,
+              "$1[REDACTED]",
+            ),
+          },
+          () => PreviewDeepLinkImport(normalizedURL),
+        );
+        setDeepLinkRawURL(normalizedURL);
+        setDeepLinkPreview(preview);
+        setDeepLinkResult(null);
+        setDeepLinkApplyMessage("");
+      } catch (error) {
+        console.error(error);
+        setAccountActionNotice({
+          tone: "error",
+          message: `Deep link 解析失败：${toErrorMessage(error)}`,
+        });
+        setDeepLinkApplyMessage("");
+      }
+    },
+    [setAccountActionNotice, trackRequest],
+  );
 
   useEffect(() => {
     if (!hasWailsRuntime() || !hasWailsAppBindings()) {
       return;
     }
-    const offDeepLink = EventsOn('deeplink:import', (rawURL: string) => {
-      void openDeepLinkImport(String(rawURL || ''));
+    const offDeepLink = EventsOn("deeplink:import", (rawURL: string) => {
+      void openDeepLinkImport(String(rawURL || ""));
       void ConsumePendingDeepLinks().catch((error) => {
         console.error(error);
       });
@@ -383,7 +456,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   useEffect(() => {
     if (
-      typeof window === 'undefined' ||
+      typeof window === "undefined" ||
       !shouldScheduleAccountUsageRefresh({
         ready,
         hasRuntimeBindings: hasWailsAppBindings(),
@@ -403,16 +476,16 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   }, [loadAccountUsage, ready, usageAccounts]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
     function syncDetailIDFromHash() {
       const hashState = readFrameHashState(window.location.hash);
-      setAccountDetailIDFromHash(hashState?.accountDetailID ?? '');
-      setAccountDetailScriptFromHash(hashState?.accountDetailScript ?? '');
+      setAccountDetailIDFromHash(hashState?.accountDetailID ?? "");
+      setAccountDetailScriptFromHash(hashState?.accountDetailScript ?? "");
     }
-    window.addEventListener('hashchange', syncDetailIDFromHash);
-    return () => window.removeEventListener('hashchange', syncDetailIDFromHash);
+    window.addEventListener("hashchange", syncDetailIDFromHash);
+    return () => window.removeEventListener("hashchange", syncDetailIDFromHash);
   }, []);
 
   useEffect(() => {
@@ -428,7 +501,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         const provider = openAICompatibleState.providers.find(
           (item) =>
             item.accountKey === account.id ||
-            item.name.trim().toLowerCase() === account.provider.trim().toLowerCase(),
+            item.name.trim().toLowerCase() ===
+              account.provider.trim().toLowerCase(),
         );
         if (provider) {
           openAICompatibleState.openDetailModal(provider);
@@ -448,39 +522,56 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const updateDisplayMode = useCallback((nextMode: AccountListDisplayMode) => {
     setDisplayMode(nextMode);
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
     try {
-      window.localStorage.setItem(ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY, nextMode);
+      window.localStorage.setItem(
+        ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY,
+        nextMode,
+      );
     } catch {
       // The current hash still reflects the active session if storage is unavailable.
     }
-    window.location.hash = buildAccountListViewHash(window.location.hash, { displayMode: nextMode });
+    window.location.hash = buildAccountListViewHash(window.location.hash, {
+      displayMode: nextMode,
+    });
   }, []);
 
-  const updateGroupMode = useCallback((nextMode: AccountGroupMode) => {
-    setGroupMode(nextMode);
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.location.hash = buildAccountListViewHash(window.location.hash, { groupMode: nextMode });
-  }, [setGroupMode]);
+  const updateGroupMode = useCallback(
+    (nextMode: AccountGroupMode) => {
+      setGroupMode(nextMode);
+      if (typeof window === "undefined") {
+        return;
+      }
+      window.location.hash = buildAccountListViewHash(window.location.hash, {
+        groupMode: nextMode,
+      });
+    },
+    [setGroupMode],
+  );
 
-  const updateSortMode = useCallback((nextMode: AccountSortMode) => {
-    setSortMode(nextMode);
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.location.hash = buildAccountListViewHash(window.location.hash, { sortMode: nextMode });
-  }, [setSortMode]);
+  const updateSortMode = useCallback(
+    (nextMode: AccountSortMode) => {
+      setSortMode(nextMode);
+      if (typeof window === "undefined") {
+        return;
+      }
+      window.location.hash = buildAccountListViewHash(window.location.hash, {
+        sortMode: nextMode,
+      });
+    },
+    [setSortMode],
+  );
 
   const toggleGroupSelection = useCallback(
     (groupAccounts: AccountRecord[]) => {
       if (!isSelectionMode || groupAccounts.length === 0) {
         return;
       }
-      setSelectedAccountIDs((prev) => toggleAccountGroupSelection(prev, groupAccounts));
+      setSelectedAccountIDs((prev) =>
+        toggleAccountGroupSelection(prev, groupAccounts),
+      );
     },
     [isSelectionMode, setSelectedAccountIDs],
   );
@@ -502,46 +593,56 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   );
 
   const markAccountDetailInHash = useCallback((detailID: string) => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
     setAccountDetailIDFromHash(detailID);
-    setAccountDetailScriptFromHash('');
-    const nextHash = buildAccountDetailFrameHash(window.location.hash, detailID);
+    setAccountDetailScriptFromHash("");
+    const nextHash = buildAccountDetailFrameHash(
+      window.location.hash,
+      detailID,
+    );
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
     }
   }, []);
 
   const clearAccountDetailInHash = useCallback(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
-    setAccountDetailIDFromHash('');
-    setAccountDetailScriptFromHash('');
+    setAccountDetailIDFromHash("");
+    setAccountDetailScriptFromHash("");
     const nextHash = clearAccountDetailFrameHash(window.location.hash);
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
     }
   }, []);
 
-  const openAccountDetailScriptRoute = useCallback((script: AccountDetailScriptRoute) => {
-    if (typeof window === 'undefined' || !selectedAccount) {
-      return;
-    }
-    setAccountDetailIDFromHash(selectedAccount.id);
-    setAccountDetailScriptFromHash(script);
-    const nextHash = buildAccountDetailScriptFrameHash(window.location.hash, selectedAccount.id, script);
-    if (window.location.hash !== nextHash) {
-      window.location.hash = nextHash;
-    }
-  }, [selectedAccount]);
+  const openAccountDetailScriptRoute = useCallback(
+    (script: AccountDetailScriptRoute) => {
+      if (typeof window === "undefined" || !selectedAccount) {
+        return;
+      }
+      setAccountDetailIDFromHash(selectedAccount.id);
+      setAccountDetailScriptFromHash(script);
+      const nextHash = buildAccountDetailScriptFrameHash(
+        window.location.hash,
+        selectedAccount.id,
+        script,
+      );
+      if (window.location.hash !== nextHash) {
+        window.location.hash = nextHash;
+      }
+    },
+    [selectedAccount],
+  );
 
   const closeAccountDetailScriptRoute = useCallback(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
-    setAccountDetailScriptFromHash('');
+    setAccountDetailScriptFromHash("");
     const nextHash = clearAccountDetailScriptFrameHash(window.location.hash);
     if (window.location.hash !== nextHash) {
       window.location.hash = nextHash;
@@ -556,7 +657,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           (item) =>
             item.accountKey === account.id ||
             item.name.trim().toLowerCase() === providerName ||
-            item.name.trim().toLowerCase() === account.provider.trim().toLowerCase(),
+            item.name.trim().toLowerCase() ===
+              account.provider.trim().toLowerCase(),
         );
         if (provider) {
           openAICompatibleState.openDetailModal(provider);
@@ -576,75 +678,102 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   }, [clearAccountDetailInHash, setSelectedAccount]);
 
   const openUnifiedCompose = useCallback(() => {
-    setUnifiedComposeError('');
+    setUnifiedComposeError("");
     setUnifiedComposePreset(null);
-    setUnifiedComposeForm({ ...emptyApiKeyForm, formatBaseUrls: {}, billingCurl: '', billingEnabled: false });
+    setUnifiedComposeForm({
+      ...emptyApiKeyForm,
+      formatBaseUrls: {},
+      billingCurl: "",
+      billingEnabled: false,
+      modelFetchApiKey: "",
+      modelFetchBaseUrl: "",
+    });
     setIsUnifiedComposeOpen(true);
   }, []);
 
-  const handlePresetApply = useCallback(
-    (preset: VendorPreset) => {
-      const formatBaseUrls: Record<string, string> = {};
-      for (const fmt of preset.supportedFormats) {
-        const presetUrl = preset.formatBaseUrls?.[fmt] ?? preset.baseUrl;
-        if (presetUrl) formatBaseUrls[fmt] = presetUrl;
-      }
-      const quotaCurl = preset.quotaCurlTemplate
-        ?? `curl -sS "${preset.baseUrl}/usage" -H "Authorization: Bearer {{apiKey}}"`;
-      setUnifiedComposePreset(preset);
-      setUnifiedComposeForm((prev) => ({
-        ...prev,
-        label: preset.name,
-        baseUrl: preset.baseUrl,
-        formatBaseUrls,
-        quotaCurl,
-        quotaEnabled: true,
-        billingCurl: preset.billingCurlTemplate ?? prev.billingCurl,
-        billingEnabled: Boolean(preset.billingCurlTemplate),
-      }));
-      setUnifiedComposeError('');
-    },
-    [],
-  );
+  const handlePresetApply = useCallback((preset: VendorPreset) => {
+    const formatBaseUrls: Record<string, string> = {};
+    for (const fmt of preset.supportedFormats) {
+      const presetUrl = preset.formatBaseUrls?.[fmt] ?? preset.baseUrl;
+      if (presetUrl) formatBaseUrls[fmt] = presetUrl;
+    }
+    const quotaCurl =
+      preset.quotaCurlTemplate ??
+      `curl -sS "${preset.baseUrl}/usage" -H "Authorization: Bearer {{apiKey}}"`;
+    setUnifiedComposePreset(preset);
+    setUnifiedComposeForm((prev) => ({
+      ...prev,
+      label: preset.name,
+      baseUrl: preset.baseUrl,
+      formatBaseUrls,
+      quotaCurl,
+      quotaEnabled: true,
+      billingCurl: preset.billingCurlTemplate ?? prev.billingCurl,
+      billingEnabled: Boolean(preset.billingCurlTemplate),
+      modelFetchApiKey: "",
+      modelFetchBaseUrl: preset.modelFetchBaseUrl ?? "",
+    }));
+    setUnifiedComposeError("");
+  }, []);
 
   const handleUnifiedComposeSubmit = useCallback(async () => {
     const apiKey = unifiedComposeForm.apiKey.trim();
     if (!apiKey) {
-      setUnifiedComposeError('API Key is required');
+      setUnifiedComposeError("API Key is required");
       return;
     }
     const baseUrl = unifiedComposeForm.baseUrl.trim();
     if (!baseUrl) {
-      setUnifiedComposeError('Base URL is required');
+      setUnifiedComposeError("Base URL is required");
       return;
     }
 
-    const providerName = unifiedComposeForm.label.trim() || resolveProviderNameFromBaseUrl(baseUrl);
+    const providerName =
+      unifiedComposeForm.label.trim() ||
+      resolveProviderNameFromBaseUrl(baseUrl);
     if (!providerName) {
-      setUnifiedComposeError('Provider name is required');
+      setUnifiedComposeError("Provider name is required");
       return;
     }
-    const formatBaseUrls = normalizeUnifiedComposeFormatBaseUrls(unifiedComposeForm.formatBaseUrls);
+    const formatBaseUrls = normalizeUnifiedComposeFormatBaseUrls(
+      unifiedComposeForm.formatBaseUrls,
+    );
     const models = buildUnifiedComposeProviderModels(unifiedComposePreset);
 
     try {
       await trackRequest(
-        'CreateOpenAICompatibleProvider',
-        { name: providerName, baseUrl, source: 'unified-compose' },
+        "CreateOpenAICompatibleProvider",
+        { name: providerName, baseUrl, source: "unified-compose" },
         () =>
-          CreateOpenAICompatibleProvider(main.CreateOpenAICompatibleProviderInput.createFrom({
-            name: providerName,
-            apiKey,
-            baseUrl,
-            prefix: '',
-            formatBaseUrls: Object.keys(formatBaseUrls).length > 0 ? formatBaseUrls : undefined,
-            models: models.length > 0 ? models : undefined,
-          })),
+          CreateOpenAICompatibleProvider(
+            main.CreateOpenAICompatibleProviderInput.createFrom({
+              name: providerName,
+              apiKey,
+              baseUrl,
+              prefix: "",
+              formatBaseUrls:
+                Object.keys(formatBaseUrls).length > 0
+                  ? formatBaseUrls
+                  : undefined,
+              models: models.length > 0 ? models : undefined,
+              modelFetchApiKey:
+                unifiedComposeForm.modelFetchApiKey?.trim() || "",
+              modelFetchBaseUrl:
+                unifiedComposeForm.modelFetchBaseUrl?.trim() || "",
+            }),
+          ),
       );
       setIsUnifiedComposeOpen(false);
       setUnifiedComposePreset(null);
-      setUnifiedComposeForm({ ...emptyApiKeyForm, formatBaseUrls: {}, billingCurl: '', billingEnabled: false });
-      setUnifiedComposeError('');
+      setUnifiedComposeForm({
+        ...emptyApiKeyForm,
+        formatBaseUrls: {},
+        billingCurl: "",
+        billingEnabled: false,
+        modelFetchApiKey: "",
+        modelFetchBaseUrl: "",
+      });
+      setUnifiedComposeError("");
       await loadAccounts();
     } catch (err) {
       setUnifiedComposeError(err instanceof Error ? err.message : String(err));
@@ -664,7 +793,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     clearAccountDetailInHash();
   }, [clearAccountDetailInHash, openAICompatibleState]);
 
-  const selectedAccountIsCodexAPIKey = selectedAccount ? isCodexAPIKeyAccount(selectedAccount) : false;
+  const selectedAccountIsCodexAPIKey = selectedAccount
+    ? isCodexAPIKeyAccount(selectedAccount)
+    : false;
 
   const resolveLocalCliMappingsForAccount = useCallback(
     (account: AccountRecord) =>
@@ -672,16 +803,17 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         account,
         relayKeyItems,
         relayEndpoint: selectedRelayEndpoint,
-        selectedModel: relayModelNames[0] || 'GT',
-        selectedReasoningEffort: 'medium',
+        selectedModel: relayModelNames[0] || "GT",
+        selectedReasoningEffort: "medium",
         supportsWebsockets: true,
-        sidecarReady: previewMode || sidecarStatus.code === 'ready',
+        sidecarReady: previewMode || sidecarStatus.code === "ready",
         previewMode,
         currentCodexProviderState: localCodexProviderState,
         localCodexAuthState,
         accountBlockedReason: accountRateLimitByID[account.id]?.blocked
-          ? accountRateLimitByID[account.id]?.blockReason || '账号当前被路由保护阻塞'
-          : '',
+          ? accountRateLimitByID[account.id]?.blockReason ||
+            "账号当前被路由保护阻塞"
+          : "",
       }),
     [
       accountRateLimitByID,
@@ -699,7 +831,8 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     (account: AccountRecord) =>
       resolveLocalCliMappingsForAccount(account).map((mapping) => ({
         id: mapping.id,
-        label: mapping.target === 'codex' ? '应用到 Codex' : '应用到 Claude Code',
+        label:
+          mapping.target === "codex" ? "应用到 Codex" : "应用到 Claude Code",
         detail: `${mapping.templateName} / ${mapping.sourceFormat.toUpperCase()}`,
         disabled: !mapping.enabled,
         disabledReason: mapping.disabledReason,
@@ -707,7 +840,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           if (!mapping.enabled) {
             return;
           }
-          setLocalCliApplyMessage('');
+          setLocalCliApplyMessage("");
           setLocalCliDraft(mapping.draft);
         },
       })),
@@ -716,52 +849,73 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   async function applyAccountLocalCliDraft(draft: AccountCliApplyDraft) {
     if (previewMode) {
-      setLocalCliApplyMessage(`PREVIEW ONLY / ${draft.target === 'codex' ? 'Codex' : 'Claude Code'} 草稿已确认，未调用 Wails 写入。`);
+      setLocalCliApplyMessage(
+        `PREVIEW ONLY / ${draft.target === "codex" ? "Codex" : "Claude Code"} 草稿已确认，未调用 Wails 写入。`,
+      );
       return;
     }
 
-    const blockingWarning = draft.source.warnings.find((warning) => warning.severity === 'blocking');
+    const blockingWarning = draft.source.warnings.find(
+      (warning) => warning.severity === "blocking",
+    );
     if (blockingWarning) {
       setLocalCliApplyMessage(blockingWarning.message);
       return;
     }
-    const relayKey = String(relayKeyItems[draft.source.relayKeyIndex]?.value || '').trim();
-    const codexUsesOAuthAuthFile = draft.target === 'codex' && draft.codex.authStrategy === 'replace_auth_with_oauth';
-    const codexUsesAccountAPIKey = draft.target === 'codex' && draft.codex.authStrategy === 'replace_auth_with_apikey';
-    const codexAPIKey = codexUsesAccountAPIKey ? String(draft.codex.apiKey || '').trim() : relayKey;
-    const claudeAPIKey = draft.target === 'claude' ? String(draft.claude.apiKey || relayKey).trim() : '';
-    if (draft.target === 'codex' && codexUsesAccountAPIKey && !codexAPIKey) {
-      setLocalCliApplyMessage('当前账号缺少 API Key，不能写入 Codex。');
+    const relayKey = String(
+      relayKeyItems[draft.source.relayKeyIndex]?.value || "",
+    ).trim();
+    const codexUsesOAuthAuthFile =
+      draft.target === "codex" &&
+      draft.codex.authStrategy === "replace_auth_with_oauth";
+    const codexUsesAccountAPIKey =
+      draft.target === "codex" &&
+      draft.codex.authStrategy === "replace_auth_with_apikey";
+    const codexAPIKey = codexUsesAccountAPIKey
+      ? String(draft.codex.apiKey || "").trim()
+      : relayKey;
+    const claudeAPIKey =
+      draft.target === "claude"
+        ? String(draft.claude.apiKey || relayKey).trim()
+        : "";
+    if (draft.target === "codex" && codexUsesAccountAPIKey && !codexAPIKey) {
+      setLocalCliApplyMessage("当前账号缺少 API Key，不能写入 Codex。");
       return;
     }
-    if (draft.target !== 'codex' && !claudeAPIKey) {
-      setLocalCliApplyMessage('缺少 GetTokens relay key，不能写入本机 CLI 配置。');
+    if (draft.target !== "codex" && !claudeAPIKey) {
+      setLocalCliApplyMessage(
+        "缺少 GetTokens relay key，不能写入本机 CLI 配置。",
+      );
       return;
     }
-    if (draft.target === 'codex' && !codexAPIKey && !codexUsesOAuthAuthFile) {
-      setLocalCliApplyMessage('缺少 GetTokens relay key，不能写入本机 CLI 配置。');
+    if (draft.target === "codex" && !codexAPIKey && !codexUsesOAuthAuthFile) {
+      setLocalCliApplyMessage(
+        "缺少 GetTokens relay key，不能写入本机 CLI 配置。",
+      );
       return;
     }
 
     setIsApplyingLocalCli(true);
     try {
-      if (draft.target === 'codex') {
-        let authFileContentBase64 = '';
-        if (draft.codex.authStrategy === 'replace_auth_with_oauth') {
-          const authFileName = String(draft.codex.authFileName || '').trim();
+      if (draft.target === "codex") {
+        let authFileContentBase64 = "";
+        if (draft.codex.authStrategy === "replace_auth_with_oauth") {
+          const authFileName = String(draft.codex.authFileName || "").trim();
           if (!authFileName) {
-            setLocalCliApplyMessage('OAuth 账号缺少 auth-file 名称，不能写入 Codex OAuth 配置。');
+            setLocalCliApplyMessage(
+              "OAuth 账号缺少 auth-file 名称，不能写入 Codex OAuth 配置。",
+            );
             return;
           }
           const authFile = await trackRequest(
-            'DownloadAuthFile',
-            { name: authFileName, target: 'codex-oauth-local-apply' },
+            "DownloadAuthFile",
+            { name: authFileName, target: "codex-oauth-local-apply" },
             () => DownloadAuthFile(authFileName),
           );
-          authFileContentBase64 = authFile.contentBase64 || '';
+          authFileContentBase64 = authFile.contentBase64 || "";
         }
         const result = await trackRequest(
-          'ApplyRelayServiceConfigToLocalV2',
+          "ApplyRelayServiceConfigToLocalV2",
           {
             apiKey: codexAPIKey,
             authFileName: draft.codex.authFileName,
@@ -774,35 +928,45 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             skipRelayKeyMetadata: codexUsesAccountAPIKey,
           },
           () =>
-            ApplyRelayServiceConfigToLocalV2(main.RelayLocalApplyInput.createFrom({
-              apiKey: codexAPIKey,
-              apiKeySet: draft.codex.apiKeySet ?? true,
-              authFileContentBase64,
-              authFileContentSet: draft.codex.authStrategy === 'replace_auth_with_oauth' && Boolean(authFileContentBase64),
-              baseURL: draft.codex.baseUrl,
-              baseURLSet: draft.codex.baseUrlSet ?? true,
-              model: draft.codex.model,
-              modelSet: draft.codex.modelSet ?? true,
-              reasoningEffort: draft.codex.reasoningEffort,
-              reasoningEffortSet: draft.codex.reasoningEffortSet ?? true,
-              providerID: draft.codex.providerID,
-              providerIDSet: draft.codex.providerIDSet ?? true,
-              providerName: draft.codex.providerName,
-              providerNameSet: draft.codex.providerNameSet ?? true,
-              requiresOpenAIAuth: draft.codex.requiresOpenAIAuth ?? true,
-              requiresOpenAIAuthSet: draft.codex.requiresOpenAIAuthSet ?? true,
-              wireAPI: draft.codex.wireAPI || 'responses',
-              wireAPISet: draft.codex.wireAPISet ?? true,
-              supportsWebsockets: draft.codex.supportsWebsockets,
-              supportsWebsocketsSet: draft.codex.supportsWebsocketsSet ?? true,
-              authStrategy: draft.codex.authStrategy,
-              skipRelayKeyMetadata: codexUsesAccountAPIKey,
-            })),
+            ApplyRelayServiceConfigToLocalV2(
+              main.RelayLocalApplyInput.createFrom({
+                apiKey: codexAPIKey,
+                apiKeySet: draft.codex.apiKeySet ?? true,
+                authFileContentBase64,
+                authFileContentSet:
+                  draft.codex.authStrategy === "replace_auth_with_oauth" &&
+                  Boolean(authFileContentBase64),
+                baseURL: draft.codex.baseUrl,
+                baseURLSet: draft.codex.baseUrlSet ?? true,
+                model: draft.codex.model,
+                modelSet: draft.codex.modelSet ?? true,
+                reasoningEffort: draft.codex.reasoningEffort,
+                reasoningEffortSet: draft.codex.reasoningEffortSet ?? true,
+                providerID: draft.codex.providerID,
+                providerIDSet: draft.codex.providerIDSet ?? true,
+                providerName: draft.codex.providerName,
+                providerNameSet: draft.codex.providerNameSet ?? true,
+                requiresOpenAIAuth: draft.codex.requiresOpenAIAuth ?? true,
+                requiresOpenAIAuthSet:
+                  draft.codex.requiresOpenAIAuthSet ?? true,
+                wireAPI: draft.codex.wireAPI || "responses",
+                wireAPISet: draft.codex.wireAPISet ?? true,
+                supportsWebsockets: draft.codex.supportsWebsockets,
+                supportsWebsocketsSet:
+                  draft.codex.supportsWebsocketsSet ?? true,
+                authStrategy: draft.codex.authStrategy,
+                skipRelayKeyMetadata: codexUsesAccountAPIKey,
+              }),
+            ),
         );
-        setLocalCliApplyMessage(`已写入 Codex：${result.configPath || result.codexHomePath}`);
+        setLocalCliApplyMessage(
+          `已写入 Codex：${result.configPath || result.codexHomePath}`,
+        );
         try {
-          const providerState = await trackRequest('GetLocalCodexModelProviderStateView', { args: [] }, () =>
-            GetLocalCodexModelProviderStateView()
+          const providerState = await trackRequest(
+            "GetLocalCodexModelProviderStateView",
+            { args: [] },
+            () => GetLocalCodexModelProviderStateView(),
           );
           setLocalCodexProviderState(providerState);
         } catch (refreshError) {
@@ -812,7 +976,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       }
 
       const result = await trackRequest(
-        'ApplyClaudeCodeAPIKeyConfigToLocal',
+        "ApplyClaudeCodeAPIKeyConfigToLocal",
         {
           apiKey: claudeAPIKey,
           baseURL: draft.claude.baseUrl,
@@ -826,25 +990,36 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             maxOutputTokens: draft.claude.maxOutputTokens,
             apiTimeoutMs: draft.claude.apiTimeoutMs,
             disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
-            claudeCodeAttributionHeader: draft.claude.claudeCodeAttributionHeader,
+            claudeCodeAttributionHeader:
+              draft.claude.claudeCodeAttributionHeader,
           },
         },
         () =>
-          ApplyClaudeCodeAPIKeyConfigToLocal(claudeAPIKey, draft.claude.baseUrl, {
-            authField: draft.claude.authField,
-            model: draft.claude.model,
-            defaultHaikuModel: draft.claude.defaultHaikuModel,
-            defaultSonnetModel: draft.claude.defaultSonnetModel,
-            defaultOpusModel: draft.claude.defaultOpusModel,
-            smallFastModel: draft.claude.smallFastModel,
-            maxOutputTokens: draft.claude.maxOutputTokens,
-            apiTimeoutMs: draft.claude.apiTimeoutMs,
-            disableNonEssentialTraffic: draft.claude.disableNonEssentialTraffic,
-            claudeCodeAttributionHeader: draft.claude.claudeCodeAttributionHeader,
-          }),
+          ApplyClaudeCodeAPIKeyConfigToLocal(
+            claudeAPIKey,
+            draft.claude.baseUrl,
+            {
+              authField: draft.claude.authField,
+              model: draft.claude.model,
+              defaultHaikuModel: draft.claude.defaultHaikuModel,
+              defaultSonnetModel: draft.claude.defaultSonnetModel,
+              defaultOpusModel: draft.claude.defaultOpusModel,
+              smallFastModel: draft.claude.smallFastModel,
+              maxOutputTokens: draft.claude.maxOutputTokens,
+              apiTimeoutMs: draft.claude.apiTimeoutMs,
+              disableNonEssentialTraffic:
+                draft.claude.disableNonEssentialTraffic,
+              claudeCodeAttributionHeader:
+                draft.claude.claudeCodeAttributionHeader,
+            },
+          ),
       );
-      const warningSuffix = result.warnings?.length ? ` / ${result.warnings.join(' / ')}` : '';
-      setLocalCliApplyMessage(`已写入 Claude Code：${result.settingsPath}${warningSuffix}`);
+      const warningSuffix = result.warnings?.length
+        ? ` / ${result.warnings.join(" / ")}`
+        : "";
+      setLocalCliApplyMessage(
+        `已写入 Claude Code：${result.settingsPath}${warningSuffix}`,
+      );
     } catch (error) {
       console.error(error);
       setLocalCliApplyMessage(`写入失败：${toErrorMessage(error)}`);
@@ -855,25 +1030,31 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   async function applyDeepLinkImport() {
     if (previewMode) {
-      setDeepLinkApplyMessage('PREVIEW ONLY / deep link 账号导入已确认，未调用 Wails 写入。');
+      setDeepLinkApplyMessage(
+        "PREVIEW ONLY / deep link 账号导入已确认，未调用 Wails 写入。",
+      );
       return;
     }
     if (!deepLinkRawURL) {
-      setDeepLinkApplyMessage('缺少 deep link 原始 URL，不能应用。');
+      setDeepLinkApplyMessage("缺少 deep link 原始 URL，不能应用。");
       return;
     }
     setIsApplyingDeepLink(true);
     try {
       const result = await trackRequest(
-        'ApplyDeepLinkImport',
-        { redactedURL: deepLinkPreview?.redactedURL || '[REDACTED]' },
+        "ApplyDeepLinkImport",
+        { redactedURL: deepLinkPreview?.redactedURL || "[REDACTED]" },
         () => ApplyDeepLinkImport(deepLinkRawURL),
       );
       setDeepLinkResult(result);
-      if (result.status === 'partial') {
-        setDeepLinkApplyMessage(`部分导入：成功 ${result.created || 0} 个，失败 ${result.failed || 0} 个。`);
-      } else if (result.status === 'failed') {
-        setDeepLinkApplyMessage(`导入失败：${result.failed || 0} 个账号未写入。`);
+      if (result.status === "partial") {
+        setDeepLinkApplyMessage(
+          `部分导入：成功 ${result.created || 0} 个，失败 ${result.failed || 0} 个。`,
+        );
+      } else if (result.status === "failed") {
+        setDeepLinkApplyMessage(
+          `导入失败：${result.failed || 0} 个账号未写入。`,
+        );
       } else {
         setDeepLinkApplyMessage(`已导入 ${result.created || 0} 个账号。`);
         await loadAccounts();
@@ -981,11 +1162,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           {accountActionNotice ? (
             <div
               className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
-                accountActionNotice.tone === 'error'
-                  ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]'
-                  : accountActionNotice.tone === 'warning'
-                    ? 'border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] text-[var(--color-status-warning)]'
-                    : 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]'
+                accountActionNotice.tone === "error"
+                  ? "border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]"
+                  : accountActionNotice.tone === "warning"
+                    ? "border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] text-[var(--color-status-warning)]"
+                    : "border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]"
               }`}
             >
               <span>{accountActionNotice.message}</span>
@@ -993,7 +1174,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                 onClick={() => setAccountActionNotice(null)}
                 className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
               >
-                {t('common.close')}
+                {t("common.close")}
               </button>
             </div>
           ) : null}
@@ -1006,17 +1187,20 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           {oauthBanner ? (
             <div
               className={`flex items-start justify-between gap-3 border-2 px-4 py-3 text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-wide ${
-                oauthBanner.tone === 'error'
-                  ? 'border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]'
-                  : oauthBanner.tone === 'success'
-                    ? 'border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]'
-                    : 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
+                oauthBanner.tone === "error"
+                  ? "border-[var(--color-status-danger)] bg-[color-mix(in_srgb,var(--color-status-danger)_10%,transparent)] text-[var(--color-status-danger)]"
+                  : oauthBanner.tone === "success"
+                    ? "border-[var(--color-status-success)] bg-[color-mix(in_srgb,var(--color-status-success)_10%,transparent)] text-[var(--color-status-success)]"
+                    : "border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]"
               }`}
             >
               <span>{oauthBanner.message}</span>
               {!isOAuthPending ? (
-                <button onClick={() => setOAuthBanner(null)} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-                  {t('common.close')}
+                <button
+                  onClick={() => setOAuthBanner(null)}
+                  className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                >
+                  {t("common.close")}
                 </button>
               ) : null}
             </div>
@@ -1030,10 +1214,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             </div>
           ) : filteredAccounts.length === 0 ? (
             <div className="border-2 border-dashed border-[var(--border-color)] p-20 text-center font-black uppercase italic text-[var(--text-muted)]">
-              {t('accounts.empty')}
+              {t("accounts.empty")}
             </div>
           ) : (
-            <div className={isSelectionMode ? 'space-y-8 !mt-4' : 'space-y-8'}>
+            <div className={isSelectionMode ? "space-y-8 !mt-4" : "space-y-8"}>
               {groupedAccounts.map((group) => (
                 <AccountGroupSection
                   key={group.id}
@@ -1057,9 +1241,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   onOpenDetails={openAccountDetail}
                   onRefreshQuota={(account) => void refreshCodexQuota(account)}
                   onStartReauth={(account) => void startCodexOAuth(account)}
-                  onToggleDisabled={(account) => void toggleAccountDisabled(account)}
+                  onToggleDisabled={(account) =>
+                    void toggleAccountDisabled(account)
+                  }
                   onRequestDelete={(accountID) => {
-                    setDeleteError('');
+                    setDeleteError("");
                     setPendingDeleteID(accountID);
                   }}
                   onCancelDelete={() => setPendingDeleteID(null)}
@@ -1071,221 +1257,283 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
             </div>
           )}
 
-      {selectedAccount ? (
-        <UnifiedAccountDetailModal
-          account={selectedAccount}
-          quotaState={selectedAccount.quotaKey ? codexQuotaByName[selectedAccount.quotaKey] : undefined}
-          usageSummary={accountUsageByID[selectedAccount.id]}
-          rateLimitStatus={accountRateLimitByID[selectedAccount.id]}
-          rateLimitStrategies={rateLimitStrategies}
-          rateLimitRulesAPI={previewMode
-            ? undefined
-            : {
-                list: ListRateLimitRules,
-                create: CreateRateLimitRule,
-                update: UpdateRateLimitRule,
-                delete: DeleteRateLimitRule,
+          {selectedAccount ? (
+            <UnifiedAccountDetailModal
+              account={selectedAccount}
+              quotaState={
+                selectedAccount.quotaKey
+                  ? codexQuotaByName[selectedAccount.quotaKey]
+                  : undefined
+              }
+              usageSummary={accountUsageByID[selectedAccount.id]}
+              rateLimitStatus={accountRateLimitByID[selectedAccount.id]}
+              rateLimitStrategies={rateLimitStrategies}
+              rateLimitRulesAPI={
+                previewMode
+                  ? undefined
+                  : {
+                      list: ListRateLimitRules,
+                      create: CreateRateLimitRule,
+                      update: UpdateRateLimitRule,
+                      delete: DeleteRateLimitRule,
+                    }
+              }
+              verifyState={apiKeyVerifyState}
+              modelNames={relayModelNames}
+              onClose={closeAccountDetail}
+              onRename={
+                selectedAccountIsCodexAPIKey ? renameSelectedApiKey : undefined
+              }
+              onSaveConfig={
+                selectedAccountIsCodexAPIKey
+                  ? (draft) => updateSelectedApiKeyConfig(draft)
+                  : undefined
+              }
+              onVerify={
+                selectedAccountIsCodexAPIKey
+                  ? (input) => void verifySelectedApiKey(input)
+                  : undefined
+              }
+              onTestQuotaCurl={
+                selectedAccountIsCodexAPIKey
+                  ? (input) => testSelectedApiKeyQuotaCurl(input)
+                  : undefined
+              }
+              onTestBillingCurl={
+                selectedAccountIsCodexAPIKey
+                  ? (input) => testSelectedApiKeyBillingCurl(input)
+                  : undefined
+              }
+              onRateLimitRulesChanged={() =>
+                void loadAccountRateLimits(usageAccounts)
+              }
+              activeScriptEditor={
+                selectedAccount.id === accountDetailIDFromHash
+                  ? accountDetailScriptFromHash
+                  : ""
+              }
+              onOpenScriptEditor={openAccountDetailScriptRoute}
+              onCloseScriptEditor={closeAccountDetailScriptRoute}
+              onStartReauth={
+                isCodexAuthFile(selectedAccount)
+                  ? () => {
+                      void startCodexOAuth(selectedAccount);
+                    }
+                  : undefined
+              }
+              onCancelReauth={cancelCodexOAuth}
+              isReauthing={oauthPendingAccountID === selectedAccount.id}
+            />
+          ) : null}
+
+          {openAICompatibleState.detailDraft ? (
+            <OpenAICompatibleDetailModal
+              t={t}
+              draft={openAICompatibleState.detailDraft}
+              rateLimitStatus={
+                accountRateLimitByID[
+                  openAICompatibleState.detailDraft.accountKey ||
+                    openAICompatibleState.detailDraft.currentName
+                ]
+              }
+              rateLimitStrategies={rateLimitStrategies}
+              rateLimitRulesAPI={
+                previewMode
+                  ? undefined
+                  : {
+                      list: ListRateLimitRules,
+                      create: CreateRateLimitRule,
+                      update: UpdateRateLimitRule,
+                      delete: DeleteRateLimitRule,
+                    }
+              }
+              verifyState={
+                openAICompatibleState.verifyStates[
+                  openAICompatibleState.detailDraft.currentName
+                ] ?? {
+                  model: openAICompatibleState.detailDraft.verifyModel,
+                  status: "idle",
+                  message: "",
+                  lastVerifiedAt: null,
+                }
+              }
+              remoteModelsState={
+                openAICompatibleState.remoteModelsStates[
+                  openAICompatibleState.detailDraft.currentName
+                ]
+              }
+              error={openAICompatibleState.detailError}
+              saving={openAICompatibleState.detailSaving}
+              onClose={closeOpenAICompatibleDetail}
+              onChange={openAICompatibleState.setDetailDraft}
+              onSave={openAICompatibleState.saveDetail}
+              onVerify={() => void openAICompatibleState.verifyDetail()}
+              onFetchModels={() =>
+                void openAICompatibleState.fetchDetailModels()
+              }
+              onApplyFetchedModels={
+                openAICompatibleState.applyFetchedModelsToDetailDraft
+              }
+              onRateLimitRulesChanged={() =>
+                void loadAccountRateLimits(usageAccounts)
+              }
+            />
+          ) : null}
+
+          {isApiKeyModalOpen ? (
+            <ApiKeyComposeModal
+              t={t}
+              form={apiKeyForm}
+              error={apiKeyFormError}
+              onClose={() => {
+                setIsApiKeyModalOpen(false);
+                setApiKeyFormError("");
               }}
-          verifyState={apiKeyVerifyState}
-          modelNames={relayModelNames}
-          onClose={closeAccountDetail}
-          onRename={selectedAccountIsCodexAPIKey ? renameSelectedApiKey : undefined}
-          onSaveConfig={selectedAccountIsCodexAPIKey
-            ? (draft) => updateSelectedApiKeyConfig(draft)
-            : undefined}
-          onVerify={selectedAccountIsCodexAPIKey ? (input) => void verifySelectedApiKey(input) : undefined}
-          onTestQuotaCurl={selectedAccountIsCodexAPIKey ? (input) => testSelectedApiKeyQuotaCurl(input) : undefined}
-          onTestBillingCurl={selectedAccountIsCodexAPIKey ? (input) => testSelectedApiKeyBillingCurl(input) : undefined}
-          onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
-          activeScriptEditor={selectedAccount.id === accountDetailIDFromHash ? accountDetailScriptFromHash : ''}
-          onOpenScriptEditor={openAccountDetailScriptRoute}
-          onCloseScriptEditor={closeAccountDetailScriptRoute}
-          onStartReauth={isCodexAuthFile(selectedAccount) ? () => { void startCodexOAuth(selectedAccount); } : undefined}
-          onCancelReauth={cancelCodexOAuth}
-          isReauthing={oauthPendingAccountID === selectedAccount.id}
-        />
-      ) : null}
-
-      {openAICompatibleState.detailDraft ? (
-        <OpenAICompatibleDetailModal
-          t={t}
-          draft={openAICompatibleState.detailDraft}
-          rateLimitStatus={accountRateLimitByID[openAICompatibleState.detailDraft.accountKey || openAICompatibleState.detailDraft.currentName]}
-          rateLimitStrategies={rateLimitStrategies}
-          rateLimitRulesAPI={previewMode
-            ? undefined
-            : {
-                list: ListRateLimitRules,
-                create: CreateRateLimitRule,
-                update: UpdateRateLimitRule,
-                delete: DeleteRateLimitRule,
+              onChange={(field, value) => {
+                setApiKeyForm((prev) => ({ ...prev, [field]: value }));
+                setApiKeyFormError("");
               }}
-          verifyState={
-            openAICompatibleState.verifyStates[openAICompatibleState.detailDraft.currentName] ?? {
-              model: openAICompatibleState.detailDraft.verifyModel,
-              status: 'idle',
-              message: '',
-              lastVerifiedAt: null,
-            }
-          }
-          remoteModelsState={openAICompatibleState.remoteModelsStates[openAICompatibleState.detailDraft.currentName]}
-          error={openAICompatibleState.detailError}
-          saving={openAICompatibleState.detailSaving}
-          onClose={closeOpenAICompatibleDetail}
-          onChange={openAICompatibleState.setDetailDraft}
-          onSave={openAICompatibleState.saveDetail}
-          onVerify={() => void openAICompatibleState.verifyDetail()}
-          onFetchModels={() => void openAICompatibleState.fetchDetailModels()}
-          onApplyFetchedModels={openAICompatibleState.applyFetchedModelsToDetailDraft}
-          onRateLimitRulesChanged={() => void loadAccountRateLimits(usageAccounts)}
-        />
-      ) : null}
+              onSubmit={submitApiKeyForm}
+              onFetchModels={async (input) => {
+                const result = await FetchOpenAICompatibleProviderModels(
+                  main.FetchOpenAICompatibleProviderModelsInput.createFrom(
+                    input,
+                  ),
+                );
+                return {
+                  models: (result.models ?? [])
+                    .map((m) => m.name)
+                    .filter(Boolean),
+                  message: result.message ?? "",
+                };
+              }}
+              onVerify={async (input) => {
+                const result = await VerifyOpenAICompatibleProvider(
+                  main.VerifyOpenAICompatibleProviderInput.createFrom(input),
+                );
+                return {
+                  success: result.success,
+                  message: result.message ?? "",
+                };
+              }}
+            />
+          ) : null}
 
-      {isApiKeyModalOpen ? (
-        <ApiKeyComposeModal
-          t={t}
-          form={apiKeyForm}
-          error={apiKeyFormError}
-          onClose={() => {
-            setIsApiKeyModalOpen(false);
-            setApiKeyFormError('');
-          }}
-          onChange={(field, value) => {
-            setApiKeyForm((prev) => ({ ...prev, [field]: value }));
-            setApiKeyFormError('');
-          }}
-          onSubmit={submitApiKeyForm}
-          onFetchModels={async (input) => {
-            const result = await FetchOpenAICompatibleProviderModels(
-              main.FetchOpenAICompatibleProviderModelsInput.createFrom(input),
-            );
-            return {
-              models: (result.models ?? []).map((m) => m.name).filter(Boolean),
-              message: result.message ?? '',
-            };
-          }}
-          onVerify={async (input) => {
-            const result = await VerifyOpenAICompatibleProvider(
-              main.VerifyOpenAICompatibleProviderInput.createFrom(input),
-            );
-            return { success: result.success, message: result.message ?? '' };
-          }}
-        />
-      ) : null}
+          {isUnifiedComposeOpen ? (
+            <UnifiedComposeModal
+              t={t}
+              form={unifiedComposeForm}
+              error={unifiedComposeError}
+              onClose={() => {
+                setIsUnifiedComposeOpen(false);
+                setUnifiedComposePreset(null);
+                setUnifiedComposeError("");
+              }}
+              onFormChange={(field, value) => {
+                setUnifiedComposeForm((prev) => ({ ...prev, [field]: value }));
+                setUnifiedComposeError("");
+              }}
+              onFormatBaseUrlChange={(format, value) => {
+                setUnifiedComposeForm((prev) => ({
+                  ...prev,
+                  formatBaseUrls: { ...prev.formatBaseUrls, [format]: value },
+                }));
+                setUnifiedComposeError("");
+              }}
+              onBillingCurlChange={(value) => {
+                setUnifiedComposeForm((prev) => ({
+                  ...prev,
+                  billingCurl: value,
+                  billingEnabled: value.trim().length > 0,
+                }));
+              }}
+              onBillingEnabledChange={(enabled) => {
+                setUnifiedComposeForm((prev) => ({
+                  ...prev,
+                  billingEnabled: enabled,
+                }));
+              }}
+              onPresetApply={handlePresetApply}
+              onSubmit={() => void handleUnifiedComposeSubmit()}
+            />
+          ) : null}
 
-      {isUnifiedComposeOpen ? (
-        <UnifiedComposeModal
-          t={t}
-          form={unifiedComposeForm}
-          error={unifiedComposeError}
-          onClose={() => {
-            setIsUnifiedComposeOpen(false);
-            setUnifiedComposePreset(null);
-            setUnifiedComposeError('');
-          }}
-          onFormChange={(field, value) => {
-            setUnifiedComposeForm((prev) => ({ ...prev, [field]: value }));
-            setUnifiedComposeError('');
-          }}
-          onFormatBaseUrlChange={(format, value) => {
-            setUnifiedComposeForm((prev) => ({
-              ...prev,
-              formatBaseUrls: { ...prev.formatBaseUrls, [format]: value },
-            }));
-            setUnifiedComposeError('');
-          }}
-          onBillingCurlChange={(value) => {
-            setUnifiedComposeForm((prev) => ({
-              ...prev,
-              billingCurl: value,
-              billingEnabled: value.trim().length > 0,
-            }));
-          }}
-          onBillingEnabledChange={(enabled) => {
-            setUnifiedComposeForm((prev) => ({
-              ...prev,
-              billingEnabled: enabled,
-            }));
-          }}
-          onPresetApply={handlePresetApply}
-          onSubmit={() => void handleUnifiedComposeSubmit()}
-        />
-      ) : null}
+          {isAccountImportModalOpen ? (
+            <AccountImportModal
+              t={t}
+              initialPasteContent={initialImportPasteContent}
+              onClose={() => {
+                setIsAccountImportModalOpen(false);
+                setInitialImportPasteContent("");
+                setInitialImportItems([]);
+              }}
+              onSubmit={async (items) => {
+                await submitAccountImport(items);
+                setInitialImportPasteContent("");
+                setInitialImportItems([]);
+              }}
+              initialItems={initialImportItems}
+            />
+          ) : null}
 
-      {isAccountImportModalOpen ? (
-        <AccountImportModal
-          t={t}
-          initialPasteContent={initialImportPasteContent}
-          onClose={() => {
-            setIsAccountImportModalOpen(false);
-            setInitialImportPasteContent('');
-            setInitialImportItems([]);
-          }}
-          onSubmit={async (items) => {
-            await submitAccountImport(items);
-            setInitialImportPasteContent('');
-            setInitialImportItems([]);
-          }}
-          initialItems={initialImportItems}
-        />
-      ) : null}
+          {oauthDialog ? (
+            <CodexOAuthModal
+              t={t}
+              existingName={oauthDialog.existingName}
+              url={oauthDialog.url}
+              onClose={cancelCodexOAuth}
+              onOpenInBrowser={openOAuthDialogInBrowser}
+            />
+          ) : null}
 
-      {oauthDialog ? (
-        <CodexOAuthModal
-          t={t}
-          existingName={oauthDialog.existingName}
-          url={oauthDialog.url}
-          onClose={cancelCodexOAuth}
-          onOpenInBrowser={openOAuthDialogInBrowser}
-        />
-      ) : null}
+          {localCliDraft ? (
+            <AccountLocalCliApplyConfirm
+              draft={localCliDraft}
+              relayKeyItems={relayKeyItems}
+              applying={isApplyingLocalCli}
+              resultMessage={localCliApplyMessage}
+              previewMode={previewMode}
+              onClose={() => {
+                setLocalCliDraft(null);
+                setLocalCliApplyMessage("");
+              }}
+              onDraftChange={(nextDraft) => {
+                setLocalCliDraft(nextDraft);
+                setLocalCliApplyMessage("");
+              }}
+              onApply={(draft) => void applyAccountLocalCliDraft(draft)}
+            />
+          ) : null}
 
-      {localCliDraft ? (
-        <AccountLocalCliApplyConfirm
-          draft={localCliDraft}
-          relayKeyItems={relayKeyItems}
-          applying={isApplyingLocalCli}
-          resultMessage={localCliApplyMessage}
-          previewMode={previewMode}
-          onClose={() => {
-            setLocalCliDraft(null);
-            setLocalCliApplyMessage('');
-          }}
-          onDraftChange={(nextDraft) => {
-            setLocalCliDraft(nextDraft);
-            setLocalCliApplyMessage('');
-          }}
-          onApply={(draft) => void applyAccountLocalCliDraft(draft)}
-        />
-      ) : null}
-
-      {deepLinkPreview ? (
-        <DeepLinkAccountImportConfirm
-          preview={deepLinkPreview}
-          result={deepLinkResult}
-          applying={isApplyingDeepLink}
-          resultMessage={deepLinkApplyMessage}
-          previewMode={previewMode}
-          onClose={() => {
-            setDeepLinkRawURL('');
-            setDeepLinkPreview(null);
-            setDeepLinkResult(null);
-            setDeepLinkApplyMessage('');
-          }}
-          onApply={() => void applyDeepLinkImport()}
-        />
-      ) : null}
+          {deepLinkPreview ? (
+            <DeepLinkAccountImportConfirm
+              preview={deepLinkPreview}
+              result={deepLinkResult}
+              applying={isApplyingDeepLink}
+              resultMessage={deepLinkApplyMessage}
+              previewMode={previewMode}
+              onClose={() => {
+                setDeepLinkRawURL("");
+                setDeepLinkPreview(null);
+                setDeepLinkResult(null);
+                setDeepLinkApplyMessage("");
+              }}
+              onApply={() => void applyDeepLinkImport()}
+            />
+          ) : null}
         </div>
       </div>
     </>
   );
 }
 
-function normalizeUnifiedComposeFormatBaseUrls(items: Partial<Record<string, string>>) {
+function normalizeUnifiedComposeFormatBaseUrls(
+  items: Partial<Record<string, string>>,
+) {
   const out: Record<string, string> = {};
   for (const [format, value] of Object.entries(items)) {
     const trimmedFormat = format.trim();
-    const trimmedValue = String(value || '').trim();
+    const trimmedValue = String(value || "").trim();
     if (!trimmedFormat || !trimmedValue) continue;
     out[trimmedFormat] = trimmedValue;
   }
@@ -1302,50 +1550,63 @@ function buildUnifiedComposeProviderModels(preset: VendorPreset | null) {
 
 function resolveProviderNameFromBaseUrl(baseUrl: string) {
   const trimmed = baseUrl.trim();
-  if (!trimmed) return '';
+  if (!trimmed) return "";
   try {
-    const host = new URL(trimmed).host.replace(/^api\./, '');
-    return host.split('.')[0] || host || '';
+    const host = new URL(trimmed).host.replace(/^api\./, "");
+    return host.split(".")[0] || host || "";
   } catch {
-    return trimmed.replace(/^https?:\/\//, '').split('/')[0]?.split('.')[0] || '';
+    return (
+      trimmed
+        .replace(/^https?:\/\//, "")
+        .split("/")[0]
+        ?.split(".")[0] || ""
+    );
   }
 }
 
 function readInitialDisplayMode(): AccountListDisplayMode {
-  if (typeof window === 'undefined') {
+  if (typeof window === "undefined") {
     return DEFAULT_ACCOUNT_LIST_DISPLAY_MODE;
   }
-  const hash = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : window.location.hash;
+  const hash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
   const params = new URLSearchParams(hash);
-  const hashDensity = params.get('density');
+  const hashDensity = params.get("density");
   if (hashDensity) {
     return parseAccountListDisplayMode(hashDensity);
   }
   try {
-    return parseAccountListDisplayMode(window.localStorage.getItem(ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY));
+    return parseAccountListDisplayMode(
+      window.localStorage.getItem(ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY),
+    );
   } catch {
     return DEFAULT_ACCOUNT_LIST_DISPLAY_MODE;
   }
 }
 
 function readAccountDetailIDFromHash() {
-  if (typeof window === 'undefined') {
-    return '';
+  if (typeof window === "undefined") {
+    return "";
   }
-  return readFrameHashState(window.location.hash)?.accountDetailID ?? '';
+  return readFrameHashState(window.location.hash)?.accountDetailID ?? "";
 }
 
-function readAccountDetailScriptFromHash(): AccountDetailScriptRoute | '' {
-  if (typeof window === 'undefined') {
-    return '';
+function readAccountDetailScriptFromHash(): AccountDetailScriptRoute | "" {
+  if (typeof window === "undefined") {
+    return "";
   }
-  return readFrameHashState(window.location.hash)?.accountDetailScript ?? '';
+  return readFrameHashState(window.location.hash)?.accountDetailScript ?? "";
 }
 
-function isOpenAICompatibleAccount(account: Pick<AccountRecord, 'accountKind' | 'id'>): boolean {
-  return account.accountKind === 'openai-compatible';
+function isOpenAICompatibleAccount(
+  account: Pick<AccountRecord, "accountKind" | "id">,
+): boolean {
+  return account.accountKind === "openai-compatible";
 }
 
-function isCodexAPIKeyAccount(account: Pick<AccountRecord, 'accountKind' | 'credentialSource' | 'id'>): boolean {
-  return account.accountKind === 'codex-api-key';
+function isCodexAPIKeyAccount(
+  account: Pick<AccountRecord, "accountKind" | "credentialSource" | "id">,
+): boolean {
+  return account.accountKind === "codex-api-key";
 }

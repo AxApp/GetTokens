@@ -424,3 +424,27 @@ npm --prefix frontend run build
 数据结构：sidecar `openai_compatible_accounts` 增加并自动补齐 `format_base_urls_json` 列，management DTO / Wails DTO / 前端 `AccountRecord.formatBaseUrls` 全链路回读。旧库启动时 `EnsureSchema` 自动补列，不需要用户手工迁移。
 
 回归：新增测试 `unified compose submits third-party vendors as openai-compatible accounts`，断言统一厂商入口不再调用 `CreateCodexAPIKey`，并继续传递 `formatBaseUrls` / `models`。
+
+## 2026-06-03 sync_model_catalog 期望状态持久化
+
+现象：`sync_model_catalog` 开关刷新 / 重启后不按用户上次选择展示。原因是前端状态曾硬编码为默认开启，并且只依赖 `~/.codex/config.toml` 的瞬时 `model_catalog_json`；但 GetTokens 退出/清理可能移除自己写入的 Codex config 值，不能把 Codex config 当作用户期望状态源。
+
+修复：在 GetTokens 自有 `app-runtime/settings.json` 中持久化 `codexModelCatalogSyncEnabled`。Status 页启动时从该字段初始化开关；开关变化先写 GetTokens settings，再执行 Enable/Disable。App / sidecar ready 后按该期望状态重新 apply 或清理 GetTokens 自己的 `model_catalog_json` 指针。
+
+补充：`ApplyRelayServiceConfigToLocalV2(modelCatalogProjectionMode=off)` 现在会移除 GetTokens 自己的 `model_catalog_json` 指针，并把期望状态持久化为关闭。
+
+退出清理边界：`Shutdown()` 只清理 GetTokens-owned `model_catalog_json = "<CODEX_HOME>/gettokens-model-catalog.json"` 指针，不改变 `codexModelCatalogSyncEnabled` 期望状态，也不删除外部 catalog 指针。其他 Codex root/provider/auth 字段暂未建立 ownership ledger，不能安全判断是否由用户原有配置产生，因此本轮不做自动删除。
+
+验证：`go test ./...`、`npm run typecheck --prefix frontend`、Status/Settings 相关前端单测、`npm run build --prefix frontend`、`bash docs-linhay/scripts/check-docs.sh`、`./scripts/wails-cli.sh build` 通过。
+
+## 2026-06-03 MiMo / DeepSeek Codex 路由修复
+
+现象 1：请求 `mimo-v2-pro` 时 sidecar 返回 `503 auth_unavailable: no auth available (providers=xiaomi mimo, model=mimo-v2-pro)`。根因是 account-store openai-compatible 运行态合成时把展示名 `Xiaomi MiMo` 直接当 provider key，生成了带空格的 provider，导致 registry / executor / scheduler provider key 不稳定。
+
+修复 1：`synthesizeAccountStoreOpenAICompat` 现在会把展示名规范化为稳定运行 provider key：`Xiaomi MiMo` / `mimo` / `xiaomimimo` 统一到 `xiaomimimo`，同时保留 `compat_name=Xiaomi MiMo` 作为展示名。临时新 sidecar 验证日志显示 `providers=xiaomimimo` 且选中 `provider=xiaomimimo ... compat=Xiaomi MiMo`；请求进入上游后返回 `401 Invalid API Key`，说明 GetTokens 路由和 auth 选择已修复，剩余是当前保存的 MiMo key 无效或过期。
+
+现象 2：请求 `deepseek-v4-pro` 时出现官方 ChatGPT 错误：`The 'deepseek-v4-pro' model is not supported when using Codex with a ChatGPT account.` 根因是 `deepseek-v4-*` 被作为 Codex builtin OpenAI-compatible 模型注册进了 Codex 非 API-key 账号（auth-file/OAuth/未知 auth_kind），导致 ChatGPT 账号被调度器认为支持 DeepSeek 模型。
+
+修复 2：Codex 只有明确 `auth_kind=apikey` / `api_key` 的账号可注册 OpenAI-compatible builtin；Codex auth-file / OAuth / 未知 kind 账号注册模型时会过滤 `Type=openai-compatibility`。临时新 sidecar 验证 `deepseek-v4-pro` 返回 HTTP 200，日志不再选择 ChatGPT auth-file，而是 fallback 到 `provider=deepseek`。
+
+验证：`go test ./internal/watcher/synthesizer ./sdk/cliproxy ./sdk/cliproxy/auth ./sdk/api/handlers -count=1` 通过；`./scripts/build-sidecar.sh darwin arm64 build/bin` 通过；临时 `:8318` sidecar 真实请求验证：`mimo-v2-pro` 从原 `auth_unavailable` 变为上游 `401 invalid_key`，`deepseek-v4-pro` 返回 `200`。

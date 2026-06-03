@@ -1,36 +1,44 @@
-import type { main, sidecar, updater } from '../wailsjs/go/models';
+import type { main, sidecar, updater } from "../wailsjs/go/models";
 
 export type AppPage =
-  | 'status'
-  | 'accounts'
-  | 'account-import'
-  | 'session-management'
-  | 'vendor-status'
-  | 'proxy-pool'
-  | 'codex'
-  | 'claude'
-  | 'usage-desk'
-  | 'settings'
-  | 'design-system'
-  | 'debug';
-export type AccountWorkspace = 'all';
+  | "status"
+  | "accounts"
+  | "account-import"
+  | "session-management"
+  | "vendor-status"
+  | "proxy-pool"
+  | "codex"
+  | "claude"
+  | "usage-desk"
+  | "settings"
+  | "design-system"
+  | "debug";
+export type AccountWorkspace = "all";
 export type CodexWorkspace =
-  | 'feature-config'
-  | 'binary-management'
-  | 'skills'
-  | 'mcp-servers'
-  | 'account-list'
-  | 'live-sessions'
-  | 'session-management'
-  | 'vendor-status'
-  | 'usage-codex';
-export type ClaudeWorkspace = 'account-list' | 'skills' | 'mcp-servers' | 'session-management' | 'usage' | 'settings' | 'claude-md' | 'subagents';
-export type SessionManagementWorkspace = 'codex' | 'claude';
-export type UsageDeskWorkspace = 'codex' | 'claude';
+  | "feature-config"
+  | "binary-management"
+  | "skills"
+  | "mcp-servers"
+  | "account-list"
+  | "live-sessions"
+  | "session-management"
+  | "vendor-status"
+  | "usage-codex";
+export type ClaudeWorkspace =
+  | "account-list"
+  | "skills"
+  | "mcp-servers"
+  | "session-management"
+  | "usage"
+  | "settings"
+  | "claude-md"
+  | "subagents";
+export type SessionManagementWorkspace = "codex" | "claude";
+export type UsageDeskWorkspace = "codex" | "claude";
 
-export type ThemeMode = 'system' | 'light' | 'dark';
+export type ThemeMode = "system" | "light" | "dark";
 
-export type LocaleCode = 'zh' | 'en';
+export type LocaleCode = "zh" | "en";
 
 export type SidecarStatus = sidecar.Status;
 export type ReleaseInfo = updater.ReleaseInfo;
@@ -44,16 +52,25 @@ export type CodexQuota = main.CodexQuotaResponse;
 
 export interface BillingDisplay {
   isAvailable: boolean;
-  balances: { currency: string; totalBalance: string; grantedBalance: string; toppedUpBalance: string }[];
+  balances: {
+    currency: string;
+    totalBalance: string;
+    grantedBalance: string;
+    toppedUpBalance: string;
+  }[];
 }
-export type CredentialSource = 'auth-file' | 'api-key';
+export type CredentialSource = "auth-file" | "api-key";
 export type AccountPlanType = string;
 
-export type ApiFormat = 'anthropic' | 'openai_chat' | 'openai_responses' | 'gemini_native';
+export type ApiFormat =
+  | "anthropic"
+  | "openai_chat"
+  | "openai_responses"
+  | "gemini_native";
 
 export interface AccountRecord {
   id: string;
-  accountKind?: 'auth-file' | 'codex-api-key' | 'openai-compatible' | string;
+  accountKind?: "auth-file" | "codex-api-key" | "openai-compatible" | string;
   provider: string;
   credentialSource: CredentialSource;
   displayName: string;
@@ -82,6 +99,8 @@ export interface AccountRecord {
   models?: Array<{ name: string; alias?: string }>;
   billingCurl?: string;
   billingEnabled?: boolean;
+  modelFetchApiKey?: string;
+  modelFetchBaseUrl?: string;
   rawAuthFile?: AuthFile;
 }
 

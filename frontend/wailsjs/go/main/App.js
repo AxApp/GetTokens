@@ -470,6 +470,10 @@ export function SetAuthFileStatus(arg1, arg2) {
   return window['go']['main']['App']['SetAuthFileStatus'](arg1, arg2);
 }
 
+export function SetCodexModelCatalogSyncEnabled(arg1) {
+  return window['go']['main']['App']['SetCodexModelCatalogSyncEnabled'](arg1);
+}
+
 export function StartCodexOAuth() {
   return window['go']['main']['App']['StartCodexOAuth']();
 }

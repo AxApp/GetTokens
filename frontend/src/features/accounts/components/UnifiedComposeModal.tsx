@@ -1,16 +1,20 @@
-import { useState } from 'react';
-import { TextInputField } from '../../../components/ui/FormField';
-import SearchInput from '../../../components/ui/SearchInput';
-import { getVendorPreset, getVendorPresets, type VendorPreset } from '../model/vendorPresets';
-import { formatShortLabel } from '../model/vendorPresetHelpers';
-import { resolveVendorDisplayName } from '../model/vendorIcons';
+import { useState } from "react";
+import { TextInputField } from "../../../components/ui/FormField";
+import SearchInput from "../../../components/ui/SearchInput";
+import {
+  getVendorPreset,
+  getVendorPresets,
+  type VendorPreset,
+} from "../model/vendorPresets";
+import { formatShortLabel } from "../model/vendorPresetHelpers";
+import { resolveVendorDisplayName } from "../model/vendorIcons";
 import {
   buildUnifiedComposeProviderAriaLabel,
   resolveUnifiedComposeFormatTitle,
   resolveUnifiedComposeModalCopy,
-} from '../model/unifiedComposeCopy';
-import type { ApiKeyFormState, Translator } from '../model/types';
-import AccountDetailModalFrame from './AccountDetailModalFrame';
+} from "../model/unifiedComposeCopy";
+import type { ApiKeyFormState, Translator } from "../model/types";
+import AccountDetailModalFrame from "./AccountDetailModalFrame";
 import {
   AccountDetailBody,
   AccountDetailModuleStack,
@@ -18,27 +22,29 @@ import {
   AccountDetailNotice,
   AccountDetailPill,
   AccountDetailSection,
-} from './AccountDetailPrimitives';
+} from "./AccountDetailPrimitives";
 import {
   AccountCurlEditorModal,
   buildBillingCurlTemplates,
   buildCurlVariables,
   buildQuotaCurlTemplates,
-} from './AccountCurlEditorModal';
-import VendorLogoMark from './VendorLogoMark';
+} from "./AccountCurlEditorModal";
+import VendorLogoMark from "./VendorLogoMark";
 
-const CATEGORY_ORDER: VendorPreset['category'][] = [
-  'official',
-  'cn_official',
-  'aggregator',
-  'third_party',
-  'cloud_provider',
+const CATEGORY_ORDER: VendorPreset["category"][] = [
+  "official",
+  "cn_official",
+  "aggregator",
+  "third_party",
+  "cloud_provider",
 ];
 
 export interface UnifiedComposeFormState extends ApiKeyFormState {
   formatBaseUrls: Partial<Record<string, string>>;
   billingCurl: string;
   billingEnabled: boolean;
+  modelFetchApiKey: string;
+  modelFetchBaseUrl: string;
 }
 
 interface UnifiedComposeModalProps {
@@ -46,7 +52,10 @@ interface UnifiedComposeModalProps {
   form: UnifiedComposeFormState;
   error: string;
   onClose: () => void;
-  onFormChange: (field: keyof ApiKeyFormState, value: string | boolean) => void;
+  onFormChange: (
+    field: keyof UnifiedComposeFormState,
+    value: string | boolean,
+  ) => void;
   onFormatBaseUrlChange: (format: string, value: string) => void;
   onBillingCurlChange: (value: string) => void;
   onBillingEnabledChange: (enabled: boolean) => void;
@@ -71,16 +80,20 @@ export default function UnifiedComposeModal({
   onPresetApply,
   onSubmit,
   initialShowPresets = true,
-  initialSelectedPresetID = '',
-  initialPresetSearch = '',
+  initialSelectedPresetID = "",
+  initialPresetSearch = "",
 }: UnifiedComposeModalProps) {
   const presets = getVendorPresets();
   const [presetSearch, setPresetSearch] = useState(initialPresetSearch);
   const [showPresets, setShowPresets] = useState(initialShowPresets);
-  const [selectedPresetID, setSelectedPresetID] = useState(initialSelectedPresetID);
+  const [selectedPresetID, setSelectedPresetID] = useState(
+    initialSelectedPresetID,
+  );
   const copy = resolveUnifiedComposeModalCopy(t);
 
-  const selectedPreset = selectedPresetID ? getVendorPreset(selectedPresetID) : undefined;
+  const selectedPreset = selectedPresetID
+    ? getVendorPreset(selectedPresetID)
+    : undefined;
 
   const filteredPresets = presetSearch.trim()
     ? presets.filter(
@@ -90,7 +103,7 @@ export default function UnifiedComposeModal({
       )
     : presets;
 
-  const presetsByCategory = new Map<VendorPreset['category'], VendorPreset[]>();
+  const presetsByCategory = new Map<VendorPreset["category"], VendorPreset[]>();
   for (const cat of CATEGORY_ORDER) {
     const items = filteredPresets.filter((p) => p.category === cat);
     if (items.length > 0) presetsByCategory.set(cat, items);
@@ -104,7 +117,7 @@ export default function UnifiedComposeModal({
 
   function handleBackToPresets() {
     setShowPresets(true);
-    setSelectedPresetID('');
+    setSelectedPresetID("");
   }
 
   const apiKeyFilled = form.apiKey.trim().length > 0;
@@ -124,11 +137,13 @@ export default function UnifiedComposeModal({
           onBackToPresets={handleBackToPresets}
         />
       }
-      error={error ? (
-        <AccountDetailNotice tone="danger" className="mx-6 mb-4 shrink-0">
-          {error}
-        </AccountDetailNotice>
-      ) : undefined}
+      error={
+        error ? (
+          <AccountDetailNotice tone="danger" className="mx-6 mb-4 shrink-0">
+            {error}
+          </AccountDetailNotice>
+        ) : undefined
+      }
       footer={
         <UnifiedComposeFooter
           copy={copy}
@@ -153,50 +168,55 @@ export default function UnifiedComposeModal({
             />
 
             <div className="space-y-4">
-              {Array.from(presetsByCategory.entries()).map(([category, items]) => (
-                <AccountDetailSection
-                  key={category}
-                  componentName="UnifiedComposeProviderCategorySection"
-                  eyebrow={copy.providerEyebrow}
-                  title={copy.categoryLabels[category]}
-                  meta={`${items.length}`}
-                  density="dense"
-                >
-                  <div className="grid grid-cols-3 gap-2">
-                    {items.map((preset) => (
-                      <button
-                        key={preset.id}
-                        onClick={() => handleSelectPreset(preset)}
-                        title={preset.name}
-                        aria-label={buildUnifiedComposeProviderAriaLabel(t, preset.name)}
-                        className="group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3 text-left transition-[border-color,box-shadow,transform] hover:border-[var(--text-primary)] hover:shadow-[4px_4px_0_var(--shadow-color)] active:scale-[0.98]"
-                      >
-                        <div className="flex min-w-0 items-start justify-between gap-2">
-                          <VendorLogoMark preset={preset} />
-                          <span className="max-w-[6.75rem] truncate border border-dashed border-[var(--border-color)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                            {copy.categoryLabels[preset.category]}
-                          </span>
-                        </div>
-                        <div className="mt-3 flex min-w-0 items-end">
-                          <div className="truncate text-[length:var(--font-size-ui-lg)] font-black tracking-normal text-[var(--text-primary)]">
-                            {resolveVendorDisplayName(preset)}
+              {Array.from(presetsByCategory.entries()).map(
+                ([category, items]) => (
+                  <AccountDetailSection
+                    key={category}
+                    componentName="UnifiedComposeProviderCategorySection"
+                    eyebrow={copy.providerEyebrow}
+                    title={copy.categoryLabels[category]}
+                    meta={`${items.length}`}
+                    density="dense"
+                  >
+                    <div className="grid grid-cols-3 gap-2">
+                      {items.map((preset) => (
+                        <button
+                          key={preset.id}
+                          onClick={() => handleSelectPreset(preset)}
+                          title={preset.name}
+                          aria-label={buildUnifiedComposeProviderAriaLabel(
+                            t,
+                            preset.name,
+                          )}
+                          className="group grid min-h-[7.25rem] grid-rows-[auto_1fr_auto] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-3 text-left transition-[border-color,box-shadow,transform] hover:border-[var(--text-primary)] hover:shadow-[4px_4px_0_var(--shadow-color)] active:scale-[0.98]"
+                        >
+                          <div className="flex min-w-0 items-start justify-between gap-2">
+                            <VendorLogoMark preset={preset} />
+                            <span className="max-w-[6.75rem] truncate border border-dashed border-[var(--border-color)] px-1.5 py-0.5 text-[length:var(--font-size-ui-3xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                              {copy.categoryLabels[preset.category]}
+                            </span>
                           </div>
-                        </div>
-                        <div className="mt-2 flex min-h-[1.25rem] flex-wrap content-end gap-1">
-                          {preset.supportedFormats.map((fmt) => (
-                            <AccountDetailPill
-                              key={fmt}
-                              className="!min-h-0 bg-[var(--bg-main)] !px-1.5 !py-0.5 !text-[length:var(--font-size-ui-3xs)] !tracking-[0.08em]"
-                            >
-                              {copy.formatTargetLabels[fmt]}
-                            </AccountDetailPill>
-                          ))}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </AccountDetailSection>
-              ))}
+                          <div className="mt-3 flex min-w-0 items-end">
+                            <div className="truncate text-[length:var(--font-size-ui-lg)] font-black tracking-normal text-[var(--text-primary)]">
+                              {resolveVendorDisplayName(preset)}
+                            </div>
+                          </div>
+                          <div className="mt-2 flex min-h-[1.25rem] flex-wrap content-end gap-1">
+                            {preset.supportedFormats.map((fmt) => (
+                              <AccountDetailPill
+                                key={fmt}
+                                className="!min-h-0 bg-[var(--bg-main)] !px-1.5 !py-0.5 !text-[length:var(--font-size-ui-3xs)] !tracking-[0.08em]"
+                              >
+                                {copy.formatTargetLabels[fmt]}
+                              </AccountDetailPill>
+                            ))}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </AccountDetailSection>
+                ),
+              )}
             </div>
           </div>
         ) : (
@@ -210,7 +230,7 @@ export default function UnifiedComposeModal({
               <TextInputField
                 title={copy.labelLabel}
                 value={form.label}
-                onChange={(event) => onFormChange('label', event.target.value)}
+                onChange={(event) => onFormChange("label", event.target.value)}
                 placeholder={labelPlaceholder}
                 aria-label={copy.labelLabel}
               />
@@ -219,20 +239,74 @@ export default function UnifiedComposeModal({
                 <TextInputField
                   title={copy.apiKeyLabel}
                   value={form.apiKey}
-                  onChange={(event) => onFormChange('apiKey', event.target.value)}
+                  onChange={(event) =>
+                    onFormChange("apiKey", event.target.value)
+                  }
                   data-unified-compose-api-key-plaintext="true"
-                  placeholder={selectedPreset?.apiKeyPlaceholder ?? 'sk-...'}
+                  placeholder={selectedPreset?.apiKeyPlaceholder ?? "sk-..."}
                   aria-label={copy.apiKeyLabel}
                 />
                 <TextInputField
                   title={copy.baseUrlPrimaryLabel}
                   value={form.baseUrl}
-                  onChange={(event) => onFormChange('baseUrl', event.target.value)}
-                  placeholder={selectedPreset?.baseUrl ?? 'https://api.example.com/anthropic'}
+                  onChange={(event) =>
+                    onFormChange("baseUrl", event.target.value)
+                  }
+                  placeholder={
+                    selectedPreset?.baseUrl ??
+                    "https://api.example.com/anthropic"
+                  }
                   aria-label={copy.baseUrlPrimaryLabel}
                 />
               </div>
+
+              {selectedPreset?.notes ? (
+                <AccountDetailNotice tone="neutral" className="normal-case">
+                  {selectedPreset.notes}
+                </AccountDetailNotice>
+              ) : null}
             </AccountDetailSection>
+
+            {selectedPreset?.requiresModelFetchApiKey ? (
+              <AccountDetailSection
+                componentName="UnifiedComposeModelFetchSection"
+                eyebrow="Model Catalog"
+                title="模型列表拉取（可选）"
+                span="wide"
+              >
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <TextInputField
+                    title="模型拉取 API Key（sk）"
+                    value={form.modelFetchApiKey}
+                    onChange={(event) =>
+                      onFormChange("modelFetchApiKey", event.target.value)
+                    }
+                    data-unified-compose-api-key-plaintext="true"
+                    placeholder={
+                      selectedPreset.modelFetchApiKeyPlaceholder ?? "sk-..."
+                    }
+                    aria-label="模型拉取 API Key"
+                  />
+                  <TextInputField
+                    title="Model Fetch Base URL"
+                    value={form.modelFetchBaseUrl}
+                    onChange={(event) =>
+                      onFormChange("modelFetchBaseUrl", event.target.value)
+                    }
+                    className="font-mono !text-[length:var(--font-size-ui-xs)]"
+                    placeholder={
+                      selectedPreset.modelFetchBaseUrl ??
+                      "https://api.xiaomimimo.com/v1"
+                    }
+                    aria-label="Model Fetch Base URL"
+                  />
+                </div>
+                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                  该 sk 仅用于 /models 拉取，不参与 agent 对话；agent
+                  对话继续使用上方 tp。
+                </div>
+              </AccountDetailSection>
+            ) : null}
 
             {selectedPreset && selectedPreset.supportedFormats.length > 0 ? (
               <AccountDetailSection
@@ -244,14 +318,19 @@ export default function UnifiedComposeModal({
               >
                 <div className="grid gap-3">
                   {selectedPreset.supportedFormats.map((fmt) => {
-                    const fmtBaseUrl = selectedPreset.formatBaseUrls?.[fmt] ?? selectedPreset.baseUrl;
+                    const fmtBaseUrl =
+                      selectedPreset.formatBaseUrls?.[fmt] ??
+                      selectedPreset.baseUrl;
                     return (
                       <div
                         key={fmt}
                         className="grid min-w-0 gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3 xl:grid-cols-[10rem_minmax(0,1fr)] xl:items-end"
                       >
                         <div className="min-w-0 space-y-1">
-                          <AccountDetailPill tone="success" className="!min-h-0 !py-0.5 !tracking-[0.12em]">
+                          <AccountDetailPill
+                            tone="success"
+                            className="!min-h-0 !py-0.5 !tracking-[0.12em]"
+                          >
                             {formatShortLabel(fmt)}
                           </AccountDetailPill>
                           <div className="truncate text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
@@ -260,8 +339,10 @@ export default function UnifiedComposeModal({
                         </div>
                         <TextInputField
                           title={resolveUnifiedComposeFormatTitle(t, fmt)}
-                          value={form.formatBaseUrls[fmt] ?? ''}
-                          onChange={(event) => onFormatBaseUrlChange(fmt, event.target.value)}
+                          value={form.formatBaseUrls[fmt] ?? ""}
+                          onChange={(event) =>
+                            onFormatBaseUrlChange(fmt, event.target.value)
+                          }
                           className="font-mono !text-[length:var(--font-size-ui-xs)]"
                           fieldClassName="min-w-0"
                           placeholder={fmtBaseUrl}
@@ -291,12 +372,17 @@ export default function UnifiedComposeModal({
               apiKey={form.apiKey}
               prefix={form.prefix}
               placeholder={copy.quotaCurlPlaceholder}
-              templates={buildQuotaCurlTemplates(form.baseUrl, selectedPreset?.quotaCurlTemplate ?? '')}
-              onValueChange={(value) => onFormChange('quotaCurl', value)}
-              onEnabledChange={(enabled) => onFormChange('quotaEnabled', enabled)}
+              templates={buildQuotaCurlTemplates(
+                form.baseUrl,
+                selectedPreset?.quotaCurlTemplate ?? "",
+              )}
+              onValueChange={(value) => onFormChange("quotaCurl", value)}
+              onEnabledChange={(enabled) =>
+                onFormChange("quotaEnabled", enabled)
+              }
               onApplyTemplate={(template) => {
-                onFormChange('quotaCurl', template);
-                onFormChange('quotaEnabled', true);
+                onFormChange("quotaCurl", template);
+                onFormChange("quotaEnabled", true);
               }}
             />
 
@@ -317,8 +403,14 @@ export default function UnifiedComposeModal({
                 baseUrl={form.baseUrl}
                 apiKey={form.apiKey}
                 prefix={form.prefix}
-                placeholder={selectedPreset?.billingCurlTemplate ?? 'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'}
-                templates={buildBillingCurlTemplates(form.baseUrl, selectedPreset?.billingCurlTemplate ?? '')}
+                placeholder={
+                  selectedPreset?.billingCurlTemplate ??
+                  'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'
+                }
+                templates={buildBillingCurlTemplates(
+                  form.baseUrl,
+                  selectedPreset?.billingCurlTemplate ?? "",
+                )}
                 onValueChange={onBillingCurlChange}
                 onEnabledChange={onBillingEnabledChange}
                 onApplyTemplate={(template) => {
@@ -334,9 +426,8 @@ export default function UnifiedComposeModal({
   );
 }
 
-
 interface UnifiedComposeCurlConfigSectionProps {
-  kind: 'quota' | 'billing';
+  kind: "quota" | "billing";
   componentName: string;
   eyebrow: string;
   title: string;
@@ -352,7 +443,12 @@ interface UnifiedComposeCurlConfigSectionProps {
   apiKey: string;
   prefix: string;
   placeholder: string;
-  templates: Array<{ id: string; title: string; body: string; description: string }>;
+  templates: Array<{
+    id: string;
+    title: string;
+    body: string;
+    description: string;
+  }>;
   onValueChange: (value: string) => void;
   onEnabledChange: (enabled: boolean) => void;
   onApplyTemplate: (template: string) => void;
@@ -382,22 +478,38 @@ function UnifiedComposeCurlConfigSection({
 }: UnifiedComposeCurlConfigSectionProps) {
   const [editorOpen, setEditorOpen] = useState(false);
   const hasScript = value.trim().length > 0;
-  const variables = buildCurlVariables({ apiKey, baseUrl, prefix, quotaCurl: '', quotaEnabled: false, billingCurl: '', billingEnabled: false, proxyUrl: '' });
+  const variables = buildCurlVariables({
+    apiKey,
+    baseUrl,
+    prefix,
+    quotaCurl: "",
+    quotaEnabled: false,
+    billingCurl: "",
+    billingEnabled: false,
+    proxyUrl: "",
+  });
 
   return (
     <AccountDetailSection
       componentName={componentName}
       eyebrow={eyebrow}
       title={title}
-      actions={(
-        <button type="button" onClick={() => setEditorOpen(true)} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+      actions={
+        <button
+          type="button"
+          onClick={() => setEditorOpen(true)}
+          className="btn-swiss !text-[length:var(--font-size-ui-2xs)]"
+        >
           {hasScript ? editLabel : addLabel}
         </button>
-      )}
+      }
       muted={!hasScript}
     >
       {hasScript ? (
-        <div data-unified-compose-curl-card={kind} className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+        <div
+          data-unified-compose-curl-card={kind}
+          className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3"
+        >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="flex items-center gap-2">
               <input
@@ -413,7 +525,10 @@ function UnifiedComposeCurlConfigSection({
               {configuredLabel}
             </span>
           </div>
-          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={value || undefined}>
+          <div
+            className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]"
+            title={value || undefined}
+          >
             {value}
           </div>
         </div>
@@ -452,11 +567,12 @@ function UnifiedComposeHeader({
   showPresets: boolean;
   onBackToPresets: () => void;
 }) {
-  const primaryTitle = selectedPreset && !showPresets
-    ? resolveVendorDisplayName(selectedPreset)
-    : showPresets
-      ? copy.selectTitle
-      : copy.configureTitle;
+  const primaryTitle =
+    selectedPreset && !showPresets
+      ? resolveVendorDisplayName(selectedPreset)
+      : showPresets
+        ? copy.selectTitle
+        : copy.configureTitle;
 
   return (
     <div className="space-y-3">
@@ -465,7 +581,9 @@ function UnifiedComposeHeader({
       </div>
       <div className="flex min-w-0 items-start justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          {selectedPreset && !showPresets ? <VendorLogoMark preset={selectedPreset} /> : null}
+          {selectedPreset && !showPresets ? (
+            <VendorLogoMark preset={selectedPreset} />
+          ) : null}
           <div className="min-w-0">
             <h3 className="truncate text-[length:var(--font-size-ui-xl)] font-black uppercase italic tracking-tight text-[var(--text-primary)]">
               {primaryTitle}
@@ -481,7 +599,10 @@ function UnifiedComposeHeader({
                       {copy.categoryLabels[selectedPreset.category]}
                     </AccountDetailPill>
                     {selectedPreset.supportedFormats.map((fmt) => (
-                      <AccountDetailPill key={fmt} className="!min-h-0 !py-0.5 !tracking-[0.12em]">
+                      <AccountDetailPill
+                        key={fmt}
+                        className="!min-h-0 !py-0.5 !tracking-[0.12em]"
+                      >
                         {formatShortLabel(fmt)}
                       </AccountDetailPill>
                     ))}
@@ -496,7 +617,11 @@ function UnifiedComposeHeader({
           </div>
         </div>
         {selectedPreset && !showPresets ? (
-          <button type="button" onClick={onBackToPresets} className="btn-swiss shrink-0 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]">
+          <button
+            type="button"
+            onClick={onBackToPresets}
+            className="btn-swiss shrink-0 !px-3 !py-2 !text-[length:var(--font-size-ui-xs)]"
+          >
             {copy.changeLabel}
           </button>
         ) : null}
@@ -530,7 +655,7 @@ function UnifiedComposeFooter({
   return (
     <>
       <button type="button" onClick={onClose} className="btn-swiss">
-        {t('common.cancel')}
+        {t("common.cancel")}
       </button>
       {showPresets ? (
         <button

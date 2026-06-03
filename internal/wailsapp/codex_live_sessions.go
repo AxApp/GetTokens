@@ -56,7 +56,10 @@ type CodexLiveSession struct {
 	LastRequestID       string                   `json:"lastRequestID,omitempty"`
 	Model               string                   `json:"model"`
 	AuthID              string                   `json:"authID,omitempty"`
+	AccountKey          string                   `json:"accountKey,omitempty"`
 	AuthLabel           string                   `json:"authLabel,omitempty"`
+	AuthDetached        bool                     `json:"authDetached,omitempty"`
+	AuthDisabled        bool                     `json:"authDisabled,omitempty"`
 	Provider            string                   `json:"provider,omitempty"`
 	DownstreamTransport string                   `json:"downstreamTransport"`
 	UpstreamTransport   string                   `json:"upstreamTransport"`
@@ -82,7 +85,10 @@ type CodexLiveRequest struct {
 	UpstreamTransport   string                   `json:"upstreamTransport"`
 	ConnectionReused    bool                     `json:"connectionReused,omitempty"`
 	AuthID              string                   `json:"authID,omitempty"`
+	AccountKey          string                   `json:"accountKey,omitempty"`
 	AuthLabel           string                   `json:"authLabel,omitempty"`
+	AuthDetached        bool                     `json:"authDetached,omitempty"`
+	AuthDisabled        bool                     `json:"authDisabled,omitempty"`
 	Provider            string                   `json:"provider,omitempty"`
 	ProxyRoute          string                   `json:"proxyRoute,omitempty"`
 	Usage               *CodexLiveTokenUsage     `json:"usage,omitempty"`
