@@ -70,18 +70,20 @@ export function SessionFeed({
         className="grid gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
       >
         <div>
-          <button
-            type="button"
-            onClick={() => setFeedMode(feedMode === 'sessions' ? 'requests' : 'sessions')}
-            className="group flex cursor-pointer items-baseline gap-2 text-left"
-          >
-            <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] group-hover:underline">
-              {t(feedMode === 'sessions' ? 'codex_live_sessions.title_sessions' : 'codex_live_sessions.title_requests')}
-            </h3>
-            <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)] transition-colors group-hover:text-[var(--text-primary)]">
-              {feedMode === 'sessions' ? t('codex_live_sessions.switch_to_requests') : t('codex_live_sessions.switch_to_sessions')}
-            </span>
-          </button>
+          <h3>
+            <button
+              type="button"
+              onClick={() => setFeedMode(feedMode === 'sessions' ? 'requests' : 'sessions')}
+              className="group flex cursor-pointer items-baseline gap-2 text-left"
+            >
+              <span className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] group-hover:underline">
+                {t(feedMode === 'sessions' ? 'codex_live_sessions.title_sessions' : 'codex_live_sessions.title_requests')}
+              </span>
+              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)] transition-colors group-hover:text-[var(--text-primary)]">
+                {feedMode === 'sessions' ? t('codex_live_sessions.switch_to_requests') : t('codex_live_sessions.switch_to_sessions')}
+              </span>
+            </button>
+          </h3>
           <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
             {feedMode === 'sessions' ? t('codex_live_sessions.session_feed_hint') : t('codex_live_sessions.request_feed_hint')}
           </p>
