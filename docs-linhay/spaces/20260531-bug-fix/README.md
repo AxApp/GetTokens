@@ -178,6 +178,7 @@ Then 结论应能通过 `qmd query --collection GetTokens` 检索到。
 5. `agent-browser` headless 验收 `#frame=codex&workspace=account-list&detail=codex-api-key%3Astable-001`：
    - 主模块列表不再包含 `AccountProxyRouteSection`。
    - `AccountCredentialVerifySection` 内存在 `data-account-credential-list-item="proxy-route"`。
+
    - `data-account-credential-verify-layout="vertical"`。
    - Header summary computed display 为 `flex`，grid template 为 `none`。
 6. 截图：`screenshots/20260531/accounts/20260531-codex-detail-credential-proxy-header-after-v01.png`。
@@ -329,3 +330,85 @@ sidecar `PatchAccountStatus` 在调用 `SetAccountStatus` 后继续执行 `apply
 2. `go test ./internal/gettokenshooks -count=1`
 3. `go build -o test-output ./cmd/server`
 4. `./scripts/ensure-sidecar.sh darwin arm64`
+
+## Bug 011：sync_model_catalog 把展示名写成请求模型
+### 复现
+1. 在 Status 页开启 `sync_model_catalog` 并应用到本地 Codex。
+2. 重启 Codex 后选择 GPT 系列模型，例如 `GPT 5.5 high`。
+3. 请求失败为 `unknown provider for model GPT 5.5`；本地 `~/.codex/gettokens-model-catalog.json` 中 `slug` 被写成 `GPT 5.5` 这类展示名。
+
+### 根因
+`OpenAICompatibleModel.Alias` 同时承载 route alias 和 display alias。catalog projection 无条件使用 `Alias` 作为 Codex static catalog `slug`，把 sidecar / `models_cache.json` 来源的 `display_name` 当成请求模型发送；sidecar registry 注册的是 `gpt-5.5` 等真实 model id，因此返回 unknown provider。
+
+### 修复
+1. `internal/wailsapp/codex_model_catalog_projection.go`：带空白字符的 alias 只作为 `display_name`，`slug` 使用 `Name`；不带空白的 alias 继续作为 Codex-facing route alias。
+2. `frontend/src/features/status/model/relayModelCatalog.ts` 和 `StatusPanels.tsx`：`sync_model_catalog` 预览使用相同 slug 规则。
+3. 新增 Go / Node 回归测试，覆盖 `GPT 5.5` 展示名不再成为请求 slug，并保留 `deepseek` route alias。
+
+### 验证
+1. `go test ./internal/wailsapp -run 'TestBuildGetTokensCodexModelCatalog|TestApplyRelayServiceConfigToLocalV2.*ModelCatalog|TestEnableGetTokensCodexModelCatalogProjection|TestDisableGetTokensCodexModelCatalogProjection' -count=1`
+2. `go test ./internal/wailsapp -count=1`
+3. `node --test frontend/src/features/status/tests/relayModelCatalog.test.mjs frontend/src/features/status/tests/statusTypography.test.mjs`
+4. `npm --prefix frontend run typecheck`
+
+### 运行态提示
+既有 `~/.codex/gettokens-model-catalog.json` 不会自动热刷新。修复版本生效后，需要重新执行本地 Codex apply 或关闭再开启 `sync_model_catalog`，然后重启 Codex；临时回滚可移除 `~/.codex/config.toml` 顶层 `model_catalog_json`。
+
+## Bug 012：openai-compatible account-store alias 未还原为上游模型名
+### 复现
+1. 创建 active openai-compatible DeepSeek 账号，模型配置为 `name=deepseek-v4-flash`、`alias=ds-test-flash`。
+2. 通过 GetTokens relay 发起 `/v1/responses`，请求体 `model=ds-test-flash`。
+3. sidecar 能选中 DeepSeek auth，但 DeepSeek 上游返回 400：只支持 `deepseek-v4-pro` 或 `deepseek-v4-flash`，不接受 `ds-test-flash`。
+
+### 根因
+进入 SQLite account-store 运行态后，openai-compatible 模型定义已经写入 `auth.Attributes["openai_compat_models"]`，但请求执行前的 alias pool 仍只读 `config.OpenAICompatibility`。因此 account-store openai-compatible alias 只参与路由选择，没有在传给 executor / 上游前还原成真实模型名。
+
+### 修复
+1. `sdk/cliproxy/auth/oauth_model_alias.go` 新增 `openai_compat_models` JSON 解码入口。
+2. `sdk/cliproxy/auth/conductor.go` 在 `resolveOpenAICompatUpstreamModelPool` 中优先消费 auth attribute 的模型映射，再回退 config。
+3. 新增 `TestManagerExecute_OpenAICompatAccountStoreAliasResolvesUpstreamModel`，覆盖 `ds-test-flash -> deepseek-v4-flash`。
+
+### 验证
+1. `go test ./sdk/cliproxy/auth -run TestManagerExecute_OpenAICompatAccountStoreAliasResolvesUpstreamModel -count=1`
+2. `go test ./sdk/cliproxy/auth ./sdk/cliproxy ./internal/watcher/synthesizer -count=1`
+3. `go test ./... -count=1`
+4. `./scripts/ensure-sidecar.sh darwin arm64`
+5. 临时 sidecar + 临时 account-store 真实 DeepSeek 请求：`model=ds-test-flash` 返回 HTTP 200，响应 `model=deepseek-v4-flash`，文本“DeepSeek alias 修复成功。”
+
+## Bug 013：DeepSeek 不支持 Codex WebSocket，必须触发 HTTP fallback
+### 复现
+1. Codex TUI 在 `/model` 中选择 `deepseek-v4-flash high`。
+2. 发起 prompt 后，Codex 仍保持 `/v1/responses` WebSocket transport。
+3. Proxyman 看不到 `api.deepseek.com` 请求；sidecar 日志显示 downstream WebSocket 仍在运行。
+
+### 根因
+DeepSeek openai-compatible 只支持 HTTP Chat Completions，不支持 Codex WebSocket。sidecar 之前允许 downstream WebSocket 连接后再内部转 SSE/HTTP，这会阻止 Codex 客户端触发自己的 HTTP fallback，也会让用户误以为 DeepSeek 已经通过 WSS 路由。
+
+### 修复
+1. WebSocket handler 在首条 `response.create` 模型可识别后，若该模型对应可用 openai-compatible auth 且 auth 不允许 WebSocket，主动关闭 downstream WebSocket。
+2. close code 使用 `1003`，原因包含 `retry over HTTP`，让 Codex 客户端切换到 HTTP `/v1/responses`。
+3. Codex OAuth / Codex API key 的 WSS 能力保持不变。
+
+### 验证
+1. `go test ./sdk/api/handlers/openai -run TestResponsesWebsocketClosesForOpenAICompatibleHTTPFallback -count=1`
+2. `go test ./sdk/api/handlers/openai ./sdk/cliproxy/auth ./sdk/cliproxy ./internal/watcher/synthesizer -count=1`
+3. `go test ./... -count=1`
+4. dev 临时 sidecar + 临时 openai-compatible DeepSeek 账号：带 Authorization 的 WSS 首包 close `1003`；随后 HTTP `/v1/responses` 返回 HTTP 200，文本“DeepSeek HTTP fallback 成功。”
+
+## Bug 014：添加第三方厂商账号配置页仍像旧表单
+
+### 现象
+账号池右上角主添加入口文案过泛，配置页进入厂商账号配置态后 endpoint 在凭据前方，API Key 使用密码输入，额度/余额配置仍是裸 textarea，和账号详情页的 cURL 配置体验不一致。
+
+### 修复
+1. `accounts.add_account` 文案调整为“添加第三方厂商账号”，英文为 `Add Third-Party Provider Account`。
+2. `UnifiedComposeModal` 配置态模块顺序改为：凭据 -> endpoint -> 额度 cURL -> 余额 cURL。
+3. API Key 输入使用明文输入，并增加测试标记锁定不回退为 password。
+4. 额度/余额配置复用账号详情的 `AccountCurlEditorModal`、empty state 和 script-card 结构；添加页只配置 curl，不在此处做实时额度/余额测试。
+
+### 验证
+```bash
+node --test frontend/src/features/accounts/tests/accountHeaderMenu.test.mjs frontend/src/features/accounts/tests/accountDetailLayout.test.mjs
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+```

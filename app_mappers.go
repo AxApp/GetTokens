@@ -544,6 +544,24 @@ func mapSidecarUsageAttributionBuckets(items []wailsapp.SidecarUsageAttributionB
 	return out
 }
 
+func mapAccountStoreDiagnostics(input *wailsapp.AccountStoreDiagnostics) *AccountStoreDiagnostics {
+	if input == nil {
+		return &AccountStoreDiagnostics{}
+	}
+	return &AccountStoreDiagnostics{
+		PathBasename: input.PathBasename,
+		Configured:   input.Configured,
+		Open:         input.Open,
+		ReadRecovery: AccountStoreReadRecoveryDiagnostics{
+			Count:             input.ReadRecovery.Count,
+			LastEndpoint:      input.ReadRecovery.LastEndpoint,
+			LastRecovered:     input.ReadRecovery.LastRecovered,
+			LastError:         input.ReadRecovery.LastError,
+			LastRecoveredUnix: input.ReadRecovery.LastRecoveredUnix,
+		},
+	}
+}
+
 func mapRateLimitStrategies(items []wailsapp.RateLimitStrategyMeta) []RateLimitStrategyMeta {
 	if len(items) == 0 {
 		return []RateLimitStrategyMeta{}

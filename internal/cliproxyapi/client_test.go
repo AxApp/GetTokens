@@ -54,96 +54,6 @@ func TestPutAPIKeys(t *testing.T) {
 	}
 }
 
-func TestListOpenAICompatibleProviders(t *testing.T) {
-	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-		if method != "GET" {
-			t.Fatalf("expected GET, got %s", method)
-		}
-		if path != "/v0/management/openai-compatibility" {
-			t.Fatalf("unexpected path: %s", path)
-		}
-		return []byte(`{"openai-compatibility":[{"name":"deepseek","disabled":true,"base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-test"}]}]}`), 200, nil
-	})
-
-	items, err := client.ListOpenAICompatibleProviders()
-	if err != nil {
-		t.Fatalf("ListOpenAICompatibleProviders returned error: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("unexpected provider count: %d", len(items))
-	}
-	if items[0].Name != "deepseek" {
-		t.Fatalf("unexpected provider name: %s", items[0].Name)
-	}
-	if items[0].BaseURL != "https://api.deepseek.com/v1" {
-		t.Fatalf("unexpected provider base url: %s", items[0].BaseURL)
-	}
-	if !items[0].Disabled {
-		t.Fatal("expected provider to keep disabled state")
-	}
-	if len(items[0].APIKeyEntries) != 1 || items[0].APIKeyEntries[0].APIKey != "sk-test" {
-		t.Fatalf("unexpected api key entries: %#v", items[0].APIKeyEntries)
-	}
-}
-
-func TestPutOpenAICompatibleProviders(t *testing.T) {
-	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-		if method != "PUT" {
-			t.Fatalf("expected PUT, got %s", method)
-		}
-		if path != "/v0/management/openai-compatibility" {
-			t.Fatalf("unexpected path: %s", path)
-		}
-		if contentType != "application/json" {
-			t.Fatalf("unexpected content type: %s", contentType)
-		}
-
-		payload, err := io.ReadAll(body)
-		if err != nil {
-			t.Fatalf("read body: %v", err)
-		}
-		got := strings.TrimSpace(string(payload))
-		want := `[{"name":"deepseek","disabled":true,"base-url":"https://api.deepseek.com/v1","api-key-entries":[{"api-key":"sk-test"}]}]`
-		if got != want {
-			t.Fatalf("unexpected payload: %s", got)
-		}
-		return nil, 200, nil
-	})
-
-	err := client.PutOpenAICompatibleProviders([]OpenAICompatibleProvider{
-		{
-			Name:     "deepseek",
-			Disabled: true,
-			BaseURL:  "https://api.deepseek.com/v1",
-			APIKeyEntries: []OpenAICompatibleAPIKeyEntry{
-				{APIKey: "sk-test"},
-			},
-		},
-	})
-	if err != nil {
-		t.Fatalf("PutOpenAICompatibleProviders returned error: %v", err)
-	}
-}
-
-func TestDeleteOpenAICompatibleProvider(t *testing.T) {
-	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-		if method != "DELETE" {
-			t.Fatalf("expected DELETE, got %s", method)
-		}
-		if path != "/v0/management/openai-compatibility" {
-			t.Fatalf("unexpected path: %s", path)
-		}
-		if got := query.Get("name"); got != "deepseek" {
-			t.Fatalf("unexpected provider name query: %s", got)
-		}
-		return nil, 200, nil
-	})
-
-	if err := client.DeleteOpenAICompatibleProvider("deepseek"); err != nil {
-		t.Fatalf("DeleteOpenAICompatibleProvider returned error: %v", err)
-	}
-}
-
 func TestUnifiedAccountsClientCRUDStatusAndPriority(t *testing.T) {
 	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
 		switch {
@@ -316,6 +226,26 @@ func TestRateLimitClientCRUDStatusAndEvents(t *testing.T) {
 	events, err := client.ListRateLimitEvents("codex-api-key:stable-001", 10)
 	if err != nil || len(events) != 1 || !events[0].Blocked {
 		t.Fatalf("events = %#v, err = %v", events, err)
+	}
+}
+
+func TestAccountStoreDiagnosticsClient(t *testing.T) {
+	client := New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+		if method != "GET" || path != "/v0/management/gettokens/account-store-diagnostics" {
+			t.Fatalf("unexpected request: %s %s", method, path)
+		}
+		return []byte(`{"path_basename":"accounts-v1.sqlite","configured":true,"open":true,"read_recovery":{"count":2,"last_endpoint":"accounts","last_recovered":true,"last_error":"query accounts: disk I/O error (522)","last_recovered_at_unix_ms":1780460000000}}`), 200, nil
+	})
+
+	diagnostics, err := client.GetAccountStoreDiagnostics()
+	if err != nil {
+		t.Fatalf("GetAccountStoreDiagnostics: %v", err)
+	}
+	if diagnostics.PathBasename != "accounts-v1.sqlite" || !diagnostics.Open || diagnostics.ReadRecovery.Count != 2 {
+		t.Fatalf("diagnostics = %+v", diagnostics)
+	}
+	if diagnostics.ReadRecovery.LastEndpoint != "accounts" || !strings.Contains(diagnostics.ReadRecovery.LastError, "disk I/O error (522)") {
+		t.Fatalf("diagnostics recovery = %+v", diagnostics.ReadRecovery)
 	}
 }
 

@@ -226,3 +226,139 @@ go test ./internal/watcher/synthesizer ./sdk/cliproxy ./sdk/api/handlers/openai 
 go build -o test-output ./cmd/server
 ./scripts/ensure-sidecar.sh darwin arm64
 ```
+
+## 2026-06-03 display alias slug 修复
+
+现象：开启 `sync_model_catalog` 后，Codex TUI 顶部显示 `model: GPT 5.5 high`，发起请求失败为 `unknown provider for model GPT 5.5`。本地 `~/.codex/gettokens-model-catalog.json` 中也能看到 `slug` 被写成 `GPT 5.5`、`GPT 5.4 Mini` 等展示名。
+
+根因：`OpenAICompatibleModel.Alias` 在不同来源里语义不一致。openai-compatible 账号映射里的 `Alias` 是可路由的 Codex-facing model alias，例如 `deepseek`；但 sidecar static model definitions 和本机 `models_cache.json` 的 `display_name` 也被映射到了同一个 `Alias` 字段，例如 `GPT 5.5`。`buildGetTokensCodexModelCatalog` 无条件优先用 `Alias` 生成 static catalog `slug`，导致 Codex 把展示名当请求 body `model` 发给 relay，而 sidecar registry 只注册真实 model id `gpt-5.5`。
+
+修复边界：
+
+- `internal/wailsapp/codex_model_catalog_projection.go`：生成 catalog 时，带空白字符的 alias 只作为 `display_name`；`slug` 回退到 `Name`。不带空白的 alias 继续视为 route alias，保留 `deepseek-chat -> deepseek` 这类 Codex-facing alias 能力。
+- `frontend/src/features/status/model/relayModelCatalog.ts` 与 `StatusPanels.tsx`：`sync_model_catalog` 预览采用同一 slug 规则，避免 UI 继续提示错误请求模型。
+- 回归测试覆盖 `GPT 5.5` / `GPT 5.4 Mini` 展示名不再成为请求 slug，同时保留 `deepseek` route alias。
+
+已验证：
+
+```bash
+go test ./internal/wailsapp -run 'TestBuildGetTokensCodexModelCatalog|TestApplyRelayServiceConfigToLocalV2.*ModelCatalog|TestEnableGetTokensCodexModelCatalogProjection|TestDisableGetTokensCodexModelCatalogProjection' -count=1
+go test ./internal/wailsapp -count=1
+node --test frontend/src/features/status/tests/relayModelCatalog.test.mjs frontend/src/features/status/tests/statusTypography.test.mjs
+npm --prefix frontend run typecheck
+```
+
+运行态处理：既有 `~/.codex/gettokens-model-catalog.json` 不会因代码修复自动热刷新。用户需要在 GetTokens Status 页重新执行一次本地 Codex apply 或关闭再开启 `sync_model_catalog`，然后重启 Codex；临时回滚仍可删除/注释 `~/.codex/config.toml` 顶层 `model_catalog_json`。
+
+## 2026-06-03 Codex cache + local supported catalog 修复
+
+口径校准：`sync_model_catalog` 的真源应是 `Codex 客户端已知可请求模型缓存` + `GetTokens 本地 active 账号支持的模型列表`。`openai-compatible` active 账号只要声明或拉取到的模型名与 Codex 请求模型匹配，就应支持 Codex `/v1/responses` -> openai-compatible -> Chat Completions 转换；但不能仅凭 sidecar static model definitions 把没有本地账号 backing 的 DeepSeek 写入 Codex `/model`。
+
+根因：`ListRelaySupportedModels` 把 sidecar `/v0/management/model-definitions/codex` 返回的 static definitions 当成完整可选模型来源合并，同时本地 Codex `models_cache.json` 只在聚合为空时 fallback。当前本机 SQLite 中 `openai_compatible_accounts = 0`，但 static definitions 仍可包含 `deepseek-v4-flash`，导致 catalog 让 Codex 可选择 DeepSeek；实际请求进入 sidecar 后没有 active openai-compatible auth 承接，失败为 `auth_unavailable: no auth available (providers=codex, model=deepseek-v4-flash)` 或 `unknown provider for model deepseek-v4-flash`。
+
+修复边界：
+
+- `internal/wailsapp/relay_model_catalog.go`：本地 Codex `models_cache.json` 常规并入 catalog；active openai-compatible / codex-api-key 模型常规并入 catalog；sidecar static definitions 只作为 metadata merge，给已存在的模型补充 display name、reasoning metadata，不再单独新增 catalog 模型。
+- `internal/wailsapp/relay_model_catalog_test.go`：新增 sidecar-only DeepSeek 不暴露的回归；同时保留 active provider 模型可进入 catalog、本地 Codex cache 始终进入 catalog、sidecar metadata 可补充已有模型的场景。
+- 运行态如果存在 active `openai-compatible` DeepSeek provider 且模型名为 `deepseek-v4-flash`，catalog 仍会同步该模型，Codex 请求仍由 sidecar 转换到 Chat Completions。
+
+已验证：
+
+```bash
+go test ./internal/wailsapp -run 'TestListRelaySupportedModelsIncludesLocalCodexModelsCache|TestListRelaySupportedModels(MergesSidecarModels|ProviderAliasOverridesSidecarAlias|DoesNotExposeSidecarOnlyDeepSeek|KeepsUserAliasAsOnlyCodexFacingModel)' -count=1
+go test ./internal/wailsapp -count=1
+node --test frontend/src/features/status/tests/relayModelCatalog.test.mjs frontend/src/features/status/tests/statusTypography.test.mjs
+```
+
+当前本机诊断：`/Users/linhey/.config/gettokens/accounts-v1.sqlite` 中没有 active `openai-compatible` 账号，只有一个名为 `DeepSeek` 的 `codex-api-key` 账号；按产品边界它不会进入 openai-compatible Responses -> Chat 转换链路。
+
+## 2026-06-03 接手复核记录
+
+接手会话 `019e8925-758c-7a32-b6b1-4525f4226371` 后复核当前修复闭环：
+
+- Wails catalog projection 已避免把 `GPT 5.5` / `GPT 5.4 Mini` 这类 display alias 写成 Codex request slug。
+- Status 页 `sync_model_catalog` 预览与后端使用同一 slug 规则。
+- `ListRelaySupportedModels` 已按“Codex 本机 cache + active 本地账号模型”为真源，sidecar static definitions 只补 metadata，不再把无 active backing 的 DeepSeek 暴露给 Codex `/model`。
+- CLIProxyAPI sidecar fork 当前 HEAD 为 `131b7740 fix: route openai-compatible account-store models`，本地 `build/bin/cli-proxy-api.meta.json` 已指向 `131b7740:clean`，sidecar 二进制无需重建。
+
+接手复核验证：
+
+```bash
+go test ./... -count=1
+go test ./internal/wailsapp -count=1
+node --test src/features/accounts/tests/rateLimit.test.mjs src/features/accounts/tests/accountCardInteractions.test.mjs src/features/status/tests/relayModelCatalog.test.mjs
+npm run typecheck
+(cd docs-linhay/references/CLIProxyAPI && go test ./... -count=1)
+docs-linhay/scripts/check-docs.sh
+```
+
+
+## 2026-06-03 openai-compatible alias 上游模型还原修复
+
+真实 DeepSeek 连通测试发现：account-store openai-compatible 账号声明 `name=deepseek-v4-flash`、`alias=ds-test-flash` 时，sidecar 能按 alias 选中 DeepSeek auth，但 executor 收到的 `req.Model` 仍是 `ds-test-flash`。DeepSeek 上游只接受 `deepseek-v4-flash` / `deepseek-v4-pro`，因此返回 400。
+
+根因：openai-compatible alias pool 只从运行时 `config.OpenAICompatibility` 读取模型映射。进入 SQLite 统一账号库后，account-store 合成出的 auth 已把非敏感模型定义写入 `auth.Attributes["openai_compat_models"]`，但 `Manager.resolveOpenAICompatUpstreamModelPool` 未消费该 attribute，导致 account-store openai-compatible alias 没有在执行前还原为 upstream `name`。
+
+修复边界：
+
+- `sdk/cliproxy/auth/oauth_model_alias.go`：新增轻量 JSON model alias entry 解码，复用既有 `resolveModelAliasPoolFromConfigModels` 逻辑。
+- `sdk/cliproxy/auth/conductor.go`：openai-compatible API-key auth 优先从 `auth.Attributes["openai_compat_models"]` 解析 alias -> upstream name；没有 attribute 命中时再回退 config。
+- `sdk/cliproxy/auth/openai_compat_pool_test.go`：新增 account-store openai-compatible alias 回归，确保客户端 `ds-test-flash` 执行时传给 executor 的模型为 `deepseek-v4-flash`。
+
+已验证：
+
+```bash
+go test ./sdk/cliproxy/auth -run TestManagerExecute_OpenAICompatAccountStoreAliasResolvesUpstreamModel -count=1
+go test ./sdk/cliproxy/auth ./sdk/cliproxy ./internal/watcher/synthesizer -count=1
+go test ./... -count=1
+./scripts/ensure-sidecar.sh darwin arm64
+```
+
+真实请求验证：使用临时 CLIProxyAPI + 临时 account-store openai-compatible DeepSeek 账号，模型配置 `name=deepseek-v4-flash`、`alias=ds-test-flash`；请求 `/v1/responses` 的 `model=ds-test-flash` 返回 HTTP 200，响应 `model=deepseek-v4-flash`，assistant 文本为“DeepSeek alias 修复成功。”
+
+## 2026-06-03 DeepSeek WebSocket -> HTTP fallback 修复
+
+用户在 Proxyman 中看不到 DeepSeek 请求后确认：DeepSeek 不支持 Codex WebSocket。Codex TUI 选中 `deepseek-v4-flash` 后仍保持 `/v1/responses` WebSocket transport，sidecar 不能在同一 downstream WebSocket 内伪装 DeepSeek 已支持 WSS；必须主动拒绝该 WebSocket，让 Codex 客户端切到 HTTP `/v1/responses`。
+
+修复边界：
+
+- `sdk/api/handlers/openai/openai_responses_websocket.go`：在首条 normalized `response.create` 取得模型后，若该模型存在可用 openai-compatible auth 且 auth 不允许 WebSocket，则发送 close code `1003` 并关闭 downstream WebSocket，提示客户端 retry over HTTP。
+- 仅对 openai-compatible / account-store compat auth 触发；Codex OAuth / Codex API key 的 WebSocket 能力保持原逻辑。
+- `sdk/api/handlers/openai/openai_responses_websocket_test.go`：新增 `TestResponsesWebsocketClosesForOpenAICompatibleHTTPFallback`，覆盖 authenticated WebSocket 首包被 close 1003，以触发 Codex HTTP fallback。
+
+dev 验证（不依赖正式版、不修改生产账号库）：
+
+1. 使用临时 account-store DB 创建 openai-compatible DeepSeek 账号。
+2. 启动临时 sidecar 端口 `28326`。
+3. 带 Authorization 的 WebSocket 请求 `model=deepseek-v4-flash` 返回 close `1003`: `websocket transport is not supported for model deepseek-v4-flash; retry over HTTP`。
+4. 同一临时 sidecar 的 HTTP `/v1/responses` 请求返回 HTTP 200，DeepSeek 文本为“DeepSeek HTTP fallback 成功。”
+
+已验证：
+
+```bash
+go test ./sdk/api/handlers/openai -run TestResponsesWebsocketClosesForOpenAICompatibleHTTPFallback -count=1
+go test ./sdk/api/handlers/openai ./sdk/cliproxy/auth ./sdk/cliproxy ./internal/watcher/synthesizer -count=1
+go test ./... -count=1
+./scripts/ensure-sidecar.sh darwin arm64
+```
+
+## 2026-06-03 路由诊断日志补强
+
+为排查 `GPT-5.5` display slug、DeepSeek 卡片协议类型、WebSocket/HTTP fallback 等问题，补充低敏默认日志：
+
+- `sdk/api/handlers/openai/openai_handlers.go`：`/v1/models` 输出时记录 catalog 模式、`client_version` 和模型数量。
+- `sdk/api/handlers/handlers.go`：请求模型解析时记录 original model、resolved model、base model、provider set；unknown provider 时以 warn 记录同一组字段。
+- `sdk/cliproxy/auth/conductor.go`：auth selection 从 debug 提升为 info，记录 provider、model、auth_id、account_key、kind、base_url、compat_name、websockets；API key 仍只打印脱敏值。
+
+这些日志用于快速区分：
+
+1. Codex 是否把 display name 当 request model 发出，例如 `GPT-5.5` vs `gpt-5.5`。
+2. 模型是否有 registry provider backing。
+3. 选中的是 Codex OAuth、Codex API key，还是 openai-compatible auth。
+4. openai-compatible 是否会触发 WebSocket close / HTTP fallback。
+
+已验证：
+
+```bash
+go test ./sdk/api/handlers/openai ./sdk/api/handlers ./sdk/cliproxy/auth -count=1
+```

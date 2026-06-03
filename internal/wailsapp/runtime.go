@@ -40,11 +40,6 @@ func (a *App) Startup(ctx context.Context) {
 						log.Printf("apply pending sidecar proxy settings failed: %v", err)
 					}
 				}()
-				go func() {
-					if err := a.syncStoredCodexAPIKeysToSidecar(); err != nil {
-						log.Printf("sync codex api keys to sidecar failed: %v", err)
-					}
-				}()
 			}
 			wailsRuntime.EventsEmit(ctx, "sidecar:status", status)
 		})

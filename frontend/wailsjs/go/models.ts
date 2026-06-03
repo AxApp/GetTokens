@@ -806,6 +806,63 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class AccountStoreReadRecoveryDiagnostics {
+	    count: number;
+	    lastEndpoint: string;
+	    lastRecovered: boolean;
+	    lastError: string;
+	    lastRecoveredAtUnixMs: number;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountStoreReadRecoveryDiagnostics(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.count = source["count"];
+	        this.lastEndpoint = source["lastEndpoint"];
+	        this.lastRecovered = source["lastRecovered"];
+	        this.lastError = source["lastError"];
+	        this.lastRecoveredAtUnixMs = source["lastRecoveredAtUnixMs"];
+	    }
+	}
+	export class AccountStoreDiagnostics {
+	    pathBasename: string;
+	    configured: boolean;
+	    open: boolean;
+	    readRecovery: AccountStoreReadRecoveryDiagnostics;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountStoreDiagnostics(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.pathBasename = source["pathBasename"];
+	        this.configured = source["configured"];
+	        this.open = source["open"];
+	        this.readRecovery = this.convertValues(source["readRecovery"], AccountStoreReadRecoveryDiagnostics);
+	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+
 	export class AnalyzeCodexSessionsInput {
 	    scope: string;
 	    projectID?: string;

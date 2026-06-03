@@ -1087,7 +1087,7 @@
   "accounts": {
     "title": "Accounts",
     "subtitle": "Authorized credential files",
-    "add_account": "Add Account",
+    "add_account": "Add Third-Party Provider Account",
     "header_actions_menu": "Account actions menu",
     "unified_compose_title_select": "Choose a Vendor",
     "unified_compose_title_configure": "Configure Account",
@@ -1109,6 +1109,7 @@
     "unified_compose_credentials": "Credentials",
     "unified_compose_quota_curl_placeholder": "curl -sS \"https://api.example.com/usage\" -H \"Authorization: Bearer {{apiKey}}\"",
     "unified_compose_billing_curl": "Balance cURL",
+    "unified_compose_billing_enabled": "Enable Balance",
     "unified_compose_provider_aria_prefix": "Select",
     "unified_compose_category_official": "Official",
     "unified_compose_category_cn_official": "Chinese Official",

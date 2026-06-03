@@ -21,6 +21,7 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Do not fetch accounts until sidecar is `ready`.
   - Reload from Wails after create/delete instead of hand-merging state.
   - Once `accounts-v1.sqlite` / `account-store-db` is configured, Codex runtime auth synthesis must treat SQLite as the source of truth even when the DB is missing, unreadable, or has zero active rows. Legacy `auth-dir/*.json`, `codex-api-key`, and `openai-compatibility` sources are migration inputs only; they must not become fallback runtime accounts after delete/restart.
+  - Account-store SQLite I/O failures such as `SQLITE_IOERR_SHORT_READ` / `disk I/O error (522)` are sidecar runtime failures, not frontend state issues. Fix them inside CLIProxyAPI account-store boundaries: upgrade/verify the SQLite driver, reset/reopen the cached store for recoverable read errors, retry read endpoints at most once, and return structured management errors such as `code=account_store_io_error` with `recoverable=true`. Account-card stale banners may summarize this as a user-readable cached-quota warning, but diagnostics surfaces must retain the raw error summary/tooltip for troubleshooting.
   - `codex api key` lives in local storage under `~/.config/gettokens-data/codex-api-keys/`, not in `auth-dir`.
   - `AccountsPage` is route-only; heavy assembly lives under `frontend/src/features/accounts/`.
   - Feature-internal layering for `accounts` is:
@@ -468,3 +469,12 @@ This skill unifies the technical rules for building, styling, and debugging GetT
 - Debug helpers are guarded by dev-only checks.
 - CLIProxyAPI patches are committed to the fork and reflected in the runtime binary.
 - Build metadata does not couple UI display labels to updater version comparison.
+
+## Session Distillation: Codex catalog / OpenAI-compatible routing diagnostics
+- Do not infer runtime protocol from provider display name or `base_url` substring. `codex-api-key` means Codex Responses/WebSocket-capable upstream; OpenAI-compatible Chat Completions providers such as DeepSeek must be represented as `openai-compatible` accounts or explicit protocol metadata, not as Codex API keys.
+- When Codex `/model` shows a model that fails at request time, inspect three layers before changing code:
+  1. `~/.codex/config.toml` and `gettokens-model-catalog.json` for request slug vs display name drift.
+  2. sidecar `/v1/models` and `/v1/models?client_version=...` for catalog exposure.
+  3. sidecar route logs for `route resolve` and `route auth selected` to see provider, account_key, kind, base_url, compat_name, and websocket capability.
+- For providers that do not support Codex WebSocket, verify in a dev or temporary sidecar first: authenticated downstream WSS should close with a fallback reason, and HTTP `/v1/responses` should then complete through the OpenAI-compatible executor.
+- Avoid using `/Applications/GetTokens.app` production state for exploratory route fixes. Use a temporary account-store DB and sidecar port, or Wails dev profile, then only apply production configuration changes after the protocol boundary is proven.

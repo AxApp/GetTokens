@@ -68,6 +68,7 @@ export function resolveUnifiedComposeModalCopy(t: Translator) {
     quotaCurlLabel: t('accounts.quota_curl'),
     quotaCurlPlaceholder: t('accounts.unified_compose_quota_curl_placeholder'),
     billingCurlLabel: t('accounts.unified_compose_billing_curl'),
+    billingEnabledLabel: t('accounts.unified_compose_billing_enabled'),
     categoryLabels: {
       official: resolveUnifiedComposeCategoryLabel(t, 'official'),
       cn_official: resolveUnifiedComposeCategoryLabel(t, 'cn_official'),

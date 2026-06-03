@@ -417,36 +417,6 @@ func markQuotaRuntimeStateStaleFromError(state *cliproxyapi.QuotaRuntimeState, e
 	return &next
 }
 
-func (a *App) getCodexAPIKeyQuota(id string) (*CodexQuotaResponse, error) {
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		return nil, err
-	}
-
-	var target *cliproxyAPIKeyQuotaSource
-	for _, item := range items {
-		if !codexAPIKeyInputMatchesID(item, id) {
-			continue
-		}
-		target = &cliproxyAPIKeyQuotaSource{
-			APIKey:       item.APIKey,
-			BaseURL:      item.BaseURL,
-			Prefix:       item.Prefix,
-			QuotaCurl:    item.QuotaCurl,
-			QuotaEnabled: item.QuotaEnabled,
-		}
-		break
-	}
-	if target == nil {
-		return nil, errors.New("账号不存在")
-	}
-	if !target.QuotaEnabled || strings.TrimSpace(target.QuotaCurl) == "" {
-		return nil, errors.New("codex api key 未配置额度 curl")
-	}
-
-	return a.executeCodexAPIKeyQuotaRequest(*target)
-}
-
 type TestCodexAPIKeyQuotaCurlInput struct {
 	APIKey    string `json:"apiKey"`
 	BaseURL   string `json:"baseUrl"`

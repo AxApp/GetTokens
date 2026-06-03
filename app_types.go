@@ -683,6 +683,21 @@ type SidecarUsageAttributionResponse struct {
 	Unresolved  []SidecarUsageAttributionItem `json:"unresolved,omitempty"`
 }
 
+type AccountStoreDiagnostics struct {
+	PathBasename string                              `json:"pathBasename"`
+	Configured   bool                                `json:"configured"`
+	Open         bool                                `json:"open"`
+	ReadRecovery AccountStoreReadRecoveryDiagnostics `json:"readRecovery"`
+}
+
+type AccountStoreReadRecoveryDiagnostics struct {
+	Count             int    `json:"count"`
+	LastEndpoint      string `json:"lastEndpoint"`
+	LastRecovered     bool   `json:"lastRecovered"`
+	LastError         string `json:"lastError"`
+	LastRecoveredUnix int64  `json:"lastRecoveredAtUnixMs"`
+}
+
 type RateLimitRulesInput struct {
 	AccountKey string `json:"accountKey,omitempty"`
 }

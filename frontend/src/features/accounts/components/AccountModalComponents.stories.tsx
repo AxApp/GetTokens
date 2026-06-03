@@ -630,6 +630,7 @@ function UnifiedComposeSample({
         onFormChange={() => undefined}
         onFormatBaseUrlChange={() => undefined}
         onBillingCurlChange={() => undefined}
+        onBillingEnabledChange={() => undefined}
         onPresetApply={() => undefined}
         onSubmit={() => undefined}
       />

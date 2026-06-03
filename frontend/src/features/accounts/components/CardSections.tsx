@@ -7,8 +7,32 @@ import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { formatQuotaResetDisplayWithUnix, hasDisplayableBilling } from '../model/accountQuota';
 import { resolveQuotaRemainingFillClass } from '../model/quotaColor';
+import { buildRuntimeWarningDisplay } from '../model/runtimeWarning';
 
 const FLOW_BASE = '12,58 50,44 92,48 134,34 176,60 218,50 260,42 302,40';
+
+
+interface RuntimeWarningBannerProps {
+  warning: string;
+  dataAttribute: 'data-account-quota-runtime-warning' | 'data-account-route-guard-runtime-warning';
+}
+
+function RuntimeWarningBanner({ warning, dataAttribute }: RuntimeWarningBannerProps) {
+  const display = buildRuntimeWarningDisplay(warning);
+  if (!display.summary) return null;
+  const dataProps = { [dataAttribute]: true };
+
+  return (
+    <div
+      className="min-w-0 overflow-hidden border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_12%,transparent)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--color-status-warning)]"
+      title={display.full}
+      {...dataProps}
+    >
+      <span className="mr-1">STALE</span>
+      <span className="normal-case tracking-normal">{display.summary}</span>
+    </div>
+  );
+}
 
 // ── Format Badges ──────────────────────────────────────────────────
 
@@ -254,14 +278,7 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
       onKeyDown={hasTokenProgress ? handleToggleDisplayModeKeyDown : undefined}
     >
       {runtimeWarning ? (
-        <div
-          className="min-w-0 border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_12%,transparent)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--color-status-warning)]"
-          title={runtimeWarning}
-          data-account-quota-runtime-warning
-        >
-          <span className="mr-1">STALE</span>
-          <span className="normal-case tracking-normal">{runtimeWarning}</span>
-        </div>
+        <RuntimeWarningBanner warning={runtimeWarning} dataAttribute="data-account-quota-runtime-warning" />
       ) : null}
       {windows.map((window) => {
         const resetTime = formatQuotaResetDisplayWithUnix(window.resetLabel, window.resetAtUnix);
@@ -447,14 +464,7 @@ export function RateLimitGuard({ rateLimitStatus }: RateLimitGuardProps) {
   return (
     <section className="grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3">
       {runtimeWarning ? (
-        <div
-          className="min-w-0 border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_12%,transparent)] px-2 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--color-status-warning)]"
-          title={runtimeWarning}
-          data-account-route-guard-runtime-warning
-        >
-          <span className="mr-1">STALE</span>
-          <span className="normal-case tracking-normal">{runtimeWarning}</span>
-        </div>
+        <RuntimeWarningBanner warning={runtimeWarning} dataAttribute="data-account-route-guard-runtime-warning" />
       ) : null}
       <div className="flex items-center justify-between gap-3">
         <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">

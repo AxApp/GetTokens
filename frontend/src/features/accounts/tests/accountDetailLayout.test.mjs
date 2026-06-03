@@ -88,6 +88,39 @@ test('account detail preserves api-key edit modules', () => {
   );
 });
 
+
+test('unified compose config page starts with plaintext credentials then endpoint and script modules', async () => {
+  const source = await readFile(new URL('../components/UnifiedComposeModal.tsx', import.meta.url), 'utf8');
+
+  const credentialIndex = source.indexOf('componentName="UnifiedComposeCredentialsSection"');
+  const endpointIndex = source.indexOf('componentName="UnifiedComposeEndpointSection"');
+  const quotaIndex = source.indexOf('componentName="UnifiedComposeQuotaSection"');
+  const billingIndex = source.indexOf('componentName="UnifiedComposeBillingSection"');
+
+  assert.ok(credentialIndex > 0, 'credentials section should exist');
+  assert.ok(endpointIndex > 0, 'endpoint section should exist');
+  assert.ok(quotaIndex > 0, 'quota script section should exist');
+  assert.ok(billingIndex > 0, 'billing script section should exist');
+  assert.ok(credentialIndex < endpointIndex, 'credentials should be the first config module');
+  assert.ok(endpointIndex < quotaIndex, 'endpoint config should follow credentials');
+  assert.ok(quotaIndex < billingIndex, 'quota should appear before billing');
+  assert.doesNotMatch(source, /title=\{copy\.apiKeyLabel\}[\s\S]{0,220}type="password"/);
+  assert.match(source, /data-unified-compose-api-key-plaintext="true"/);
+});
+
+test('unified compose quota and billing use account-detail curl script card pattern', async () => {
+  const source = await readFile(new URL('../components/UnifiedComposeModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /function UnifiedComposeCurlConfigSection/);
+  assert.match(source, /AccountCurlEditorModal/);
+  assert.match(source, /AccountDetailEmptyState/);
+  assert.match(source, /data-unified-compose-curl-card=\{kind\}/);
+  assert.match(source, /kind="quota"/);
+  assert.match(source, /kind="billing"/);
+  assert.doesNotMatch(source, /componentName="UnifiedComposeAdvancedSection"[\s\S]*?<textarea/);
+  assert.doesNotMatch(source, /componentName="UnifiedComposeBillingSection"[\s\S]*?<textarea/);
+});
+
 test('quota and billing curl editors are modal draft editors without local save buttons', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/AccountCurlEditorModal.tsx', import.meta.url), 'utf8');

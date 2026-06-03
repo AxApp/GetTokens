@@ -171,83 +171,37 @@ func resolveAttributionAccountKey(
 
 func (a *App) loadAuthIndexAttributionIndex() (map[string]string, error) {
 	out := map[string]string{}
-
-	authFiles, err := a.ListAuthFiles()
-	if err == nil {
-		for _, file := range authFiles.Files {
-			authIndex := normalizeAuthIndex(file.AuthIndex)
-			name := strings.TrimSpace(file.Name)
-			if authIndex == "" || name == "" {
-				continue
-			}
-			accountKey := "auth-file:" + name
-			if isUnifiedAccountID(authIndex) {
-				accountKey = authIndex
-			}
-			out["auth-index:"+authIndex] = accountKey
-		}
+	accounts, err := a.managementClient().ListAccounts()
+	if err != nil {
+		return out, err
 	}
-
-	stored, err := loadStoredCodexAPIKeys()
-	if err == nil {
-		storedByConfigIdentity := make(map[string]string, len(stored))
-		for _, item := range stored {
-			configIdentity := strings.TrimSpace(codexAPIKeyConfigIdentityFromInput(item))
-			localID := strings.TrimSpace(codexAPIKeyAssetIDFromInput(item))
-			if configIdentity == "" || localID == "" {
+	for _, account := range accounts {
+		accountKey := strings.TrimSpace(account.AccountKey)
+		if accountKey == "" {
+			continue
+		}
+		switch account.Kind {
+		case cliproxyapi.AccountKindAuthFile:
+			out["auth-index:"+accountKey] = accountKey
+		case cliproxyapi.AccountKindOpenAICompatible:
+			if account.OpenAICompatible == nil {
 				continue
 			}
-			storedByConfigIdentity[configIdentity] = localID
-		}
-
-		sidecarItems, sidecarErr := a.managementClient().ListCodexAPIKeys()
-		if sidecarErr == nil {
-			for _, item := range sidecarItems {
-				authIndex := strings.TrimSpace(item.AuthIndex)
+			var entries []cliproxyapi.OpenAICompatibleAPIKeyEntry
+			_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.APIKeyEntriesJSON)), &entries)
+			for _, entry := range entries {
+				authIndex := strings.TrimSpace(entry.AuthIndex)
 				if authIndex == "" {
-					continue
-				}
-				accountKey := strings.TrimSpace(item.LocalID)
-				if accountKey == "" {
-					configIdentity := strings.TrimSpace(codexAPIKeyConfigIdentityFromInput(codexAPIKeyInputFromKey(item)))
-					accountKey = storedByConfigIdentity[configIdentity]
-				}
-				if accountKey == "" {
 					continue
 				}
 				out["auth-index:"+authIndex] = accountKey
 			}
 		}
 	}
-
-	providers, err := a.managementClient().ListOpenAICompatibleProviders()
-	if err == nil {
-		for _, provider := range providers {
-			name := strings.TrimSpace(provider.Name)
-			if name == "" {
-				continue
-			}
-			for _, entry := range provider.APIKeyEntries {
-				authIndex := strings.TrimSpace(entry.AuthIndex)
-				if authIndex == "" {
-					continue
-				}
-				out["auth-index:"+authIndex] = "openai-compatible:" + name
-			}
-		}
-	}
-
 	return out, nil
 }
 
 func loadCodexAttributionIdentityIndex() (map[string]string, error) {
-	current, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		return nil, err
-	}
-	if err := rememberCodexAPIKeyAttributionIdentities(current); err != nil {
-		return nil, err
-	}
 	store, err := loadCodexAttributionIdentityStore()
 	if err != nil {
 		return nil, err
@@ -274,17 +228,22 @@ func loadCodexAttributionIdentityIndex() (map[string]string, error) {
 }
 
 func (a *App) loadOpenAICompatibleAttributionIndex() (map[string]string, error) {
-	providers, err := a.managementClient().ListOpenAICompatibleProviders()
+	accounts, err := a.managementClient().ListAccounts()
 	if err != nil {
 		return nil, err
 	}
 	out := map[string]string{}
-	for _, provider := range providers {
-		name := strings.TrimSpace(provider.Name)
-		if name == "" {
+	for _, account := range accounts {
+		if account.Kind != cliproxyapi.AccountKindOpenAICompatible {
 			continue
 		}
-		out[strings.ToLower(name)] = "openai-compatible:" + name
+		provider := openAICompatibleProviderFromUnifiedAccount(account)
+		name := strings.TrimSpace(provider.Name)
+		accountKey := strings.TrimSpace(provider.AccountKey)
+		if name == "" || accountKey == "" {
+			continue
+		}
+		out[strings.ToLower(name)] = accountKey
 	}
 	return out, nil
 }

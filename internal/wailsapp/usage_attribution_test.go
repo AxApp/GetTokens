@@ -18,8 +18,8 @@ func TestGetSidecarUsageAttributionResolvesCodexAPIKeyLocalID(t *testing.T) {
 		APIKey:  "sk-upstream",
 		BaseURL: "https://api.example.com/v1",
 	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persist codex api key: %v", err)
+	if err := rememberCodexAPIKeyAttributionIdentities([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
+		t.Fatalf("remember codex api key attribution: %v", err)
 	}
 	authID := buildStableRouteAuthID("codex:apikey", item.APIKey, item.BaseURL)
 	app := &App{
@@ -143,11 +143,12 @@ func TestGetSidecarUsageAttributionResolvesAuthIndexToAuthFileAndProvider(t *tes
 					]
 				}`), 200, nil
 			case ManagementAPIPrefix + "/accounts":
-				return []byte(`{"accounts":[{"account_key":"acct_auth","kind":"auth-file","title":"auth.json","provider":"codex","priority":1,"auth_file":{"source_file_name":"auth.json","auth_json":"{\"type\":\"codex\",\"email\":\"dev@example.com\",\"plan_type\":\"pro\"}","auth_type":"codex","email":"dev@example.com","plan_type":"pro"}}]}`), 200, nil
-			case ManagementAPIPrefix + "/codex-api-key":
-				return []byte(`{"codex-api-key":[]}`), 200, nil
-			case ManagementAPIPrefix + "/openai-compatibility":
-				return []byte(`{"openai-compatibility":[{"name":"MI","api-key-entries":[{"api-key":"tp-test","auth-index":"provider-001"}]}]}`), 200, nil
+				return []byte(`{"accounts":[
+					{"account_key":"acct_auth","kind":"auth-file","title":"auth.json","provider":"codex","priority":1,"auth_file":{"source_file_name":"auth.json","auth_type":"codex","email":"dev@example.com","plan_type":"pro"}},
+					{"account_key":"acct_mi","kind":"openai-compatible","title":"MI","provider":"MI","priority":2,"openai_compatible":{"provider_name":"MI","base_url":"https://api.example.com/v1","api_key_entries_json":"[{\"api-key\":\"tp-test\",\"auth-index\":\"provider-001\"}]"}}
+				]}`), 200, nil
+			case ManagementAPIPrefix + "/codex-api-key", ManagementAPIPrefix + "/openai-compatibility":
+				t.Fatalf("legacy attribution endpoint should not be used after account-store migration: %s", path)
 			default:
 				t.Fatalf("unexpected path: %s", path)
 			}
@@ -165,8 +166,8 @@ func TestGetSidecarUsageAttributionResolvesAuthIndexToAuthFileAndProvider(t *tes
 	if got := result.Items[0].AccountKey; got != "acct_auth" {
 		t.Fatalf("first account key = %q, want acct_auth", got)
 	}
-	if got := result.Items[1].AccountKey; got != "openai-compatible:MI" {
-		t.Fatalf("second account key = %q, want openai-compatible:MI", got)
+	if got := result.Items[1].AccountKey; got != "acct_mi" {
+		t.Fatalf("second account key = %q, want acct_mi", got)
 	}
 	if len(result.Unresolved) != 0 {
 		t.Fatalf("unresolved = %d, want 0", len(result.Unresolved))
@@ -181,8 +182,8 @@ func TestGetSidecarUsageAttributionIncludesUnresolvedSourceForJoinEvenWhenCaller
 		APIKey:  "sk-upstream",
 		BaseURL: "https://api.example.com/v1",
 	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persist codex api key: %v", err)
+	if err := rememberCodexAPIKeyAttributionIdentities([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
+		t.Fatalf("remember codex api key attribution: %v", err)
 	}
 	authID := buildStableRouteAuthID("codex:apikey", item.APIKey, item.BaseURL)
 	app := &App{

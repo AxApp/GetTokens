@@ -2,6 +2,7 @@ package wailsapp
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/url"
 	"strings"
@@ -9,44 +10,6 @@ import (
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
-
-func TestUpdateCodexAPIKeyLabelPersistsToStore(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	item := cliproxyapi.CodexAPIKeyInput{
-		APIKey:  "sk-test-1111",
-		BaseURL: "https://api.openai.com/v1",
-	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persistCodexAPIKeySet: %v", err)
-	}
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 item, got %d", len(items))
-	}
-
-	app := &App{}
-	if err := app.UpdateCodexAPIKeyLabel(UpdateCodexAPIKeyLabelInput{
-		ID:    codexAPIKeyAssetIDFromInput(items[0]),
-		Label: "PRIMARY PROD KEY",
-	}); err != nil {
-		t.Fatalf("UpdateCodexAPIKeyLabel: %v", err)
-	}
-
-	items, err = loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 item, got %d", len(items))
-	}
-	if items[0].Label != "PRIMARY PROD KEY" {
-		t.Fatalf("Label = %q, want PRIMARY PROD KEY", items[0].Label)
-	}
-}
 
 func TestUpdateAccountPrioritySupportsUnifiedOpenAICompatibleProvider(t *testing.T) {
 	account := testOpenAICompatibleAccount("acct_deepseek", "deepseek", 1, false, "https://api.deepseek.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-old"}}, nil, nil)
@@ -181,6 +144,142 @@ func TestSetAccountDisabledSupportsOpenAICompatibleProvider(t *testing.T) {
 	}
 }
 
+func TestListAccountsDoesNotFallbackToLegacyWhenAccountStoreErrors(t *testing.T) {
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "GET" && path == "/v0/management/accounts" {
+					return nil, 500, errors.New("account store unavailable")
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	accounts, err := app.ListAccounts()
+	if err == nil {
+		t.Fatalf("ListAccounts succeeded with legacy fallback accounts: %#v", accounts)
+	}
+	if !strings.Contains(err.Error(), "account store unavailable") {
+		t.Fatalf("ListAccounts error = %v, want account store error", err)
+	}
+}
+
+func TestCreateCodexAPIKeyDoesNotFallbackToLegacyWhenAccountStoreCreateFails(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	app := &App{
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method != "POST" || path != "/v0/management/accounts" {
+					t.Fatalf("unexpected request: %s %s", method, path)
+				}
+				return nil, 500, errors.New("account store write failed")
+			})
+		},
+	}
+
+	err := app.CreateCodexAPIKey(CreateCodexAPIKeyInput{
+		APIKey:  "sk-test-no-legacy-fallback",
+		Label:   "Should fail",
+		BaseURL: "https://api.openai.com/v1",
+	})
+	if err == nil {
+		t.Fatal("CreateCodexAPIKey succeeded, want account-store error")
+	}
+	if !strings.Contains(err.Error(), "account store write failed") {
+		t.Fatalf("CreateCodexAPIKey error = %v, want account-store error", err)
+	}
+}
+
+func TestUnifiedCodexAPIKeyMutationsDoNotFallbackToLegacyOnAccountStoreErrors(t *testing.T) {
+	newFailingApp := func() *App {
+		return &App{
+			managementAPI: func() *cliproxyapi.Client {
+				return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+					if path == "/v0/management/codex-api-key" {
+						t.Fatalf("unexpected legacy codex-api-key sync: %s %s", method, path)
+					}
+					return nil, 500, errors.New("account store mutation failed")
+				})
+			},
+		}
+	}
+
+	cases := []struct {
+		name string
+		run  func(*App) error
+	}{
+		{
+			name: "label",
+			run: func(app *App) error {
+				return app.UpdateCodexAPIKeyLabel(UpdateCodexAPIKeyLabelInput{ID: "acct_codex_key", Label: "Changed"})
+			},
+		},
+		{
+			name: "config",
+			run: func(app *App) error {
+				return app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{ID: "acct_codex_key", APIKey: "sk-new", BaseURL: "https://api.example.com/v1"})
+			},
+		},
+		{
+			name: "delete",
+			run: func(app *App) error {
+				return app.DeleteCodexAPIKey("acct_codex_key")
+			},
+		},
+		{
+			name: "priority",
+			run: func(app *App) error {
+				return app.UpdateCodexAPIKeyPriority("acct_codex_key", 1)
+			},
+		},
+		{
+			name: "status",
+			run: func(app *App) error {
+				return app.SetCodexAPIKeyStatus("acct_codex_key", true)
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.run(newFailingApp())
+			if err == nil {
+				t.Fatalf("%s succeeded, want account-store error", tc.name)
+			}
+			if !strings.Contains(err.Error(), "account store mutation failed") {
+				t.Fatalf("%s error = %v, want account-store error", tc.name, err)
+			}
+		})
+	}
+}
+
+func TestLegacyCodexAPIKeyIDsRejectedOutsideMigration(t *testing.T) {
+	app := &App{}
+	legacyID := "codex-api-key:stable-001"
+
+	checks := []struct {
+		name string
+		err  error
+	}{
+		{"label", app.UpdateCodexAPIKeyLabel(UpdateCodexAPIKeyLabelInput{ID: legacyID, Label: "Changed"})},
+		{"config", app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{ID: legacyID, APIKey: "sk-new", BaseURL: "https://api.example.com/v1"})},
+		{"delete", app.DeleteCodexAPIKey(legacyID)},
+		{"priority", app.UpdateCodexAPIKeyPriority(legacyID, 1)},
+		{"status", app.SetCodexAPIKeyStatus(legacyID, true)},
+	}
+
+	for _, check := range checks {
+		if check.err == nil {
+			t.Fatalf("%s accepted legacy id outside migration", check.name)
+		}
+		if !strings.Contains(check.err.Error(), "不支持的账号类型") {
+			t.Fatalf("%s error = %v, want unsupported account type", check.name, check.err)
+		}
+	}
+}
+
 func TestCreateCodexAPIKeyAllowsDuplicateConfigAsSeparateAccounts(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
@@ -232,269 +331,5 @@ func TestCreateCodexAPIKeyAllowsDuplicateConfigAsSeparateAccounts(t *testing.T) 
 		if item.CodexAPIKey.APIKey != "sk-test-duplicate" || item.CodexAPIKey.BaseURL != "https://api.openai.com/v1" || item.CodexAPIKey.Prefix != "team-a" {
 			t.Fatalf("unexpected duplicate item config: %#v", item)
 		}
-	}
-}
-
-func TestUpdateCodexAPIKeyConfigPreservesStableID(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	item := cliproxyapi.CodexAPIKeyInput{
-		LocalID: "codex-api-key:stable-001",
-		APIKey:  "sk-test-1111",
-		BaseURL: "https://api.openai.com/v1",
-		Prefix:  "team-a",
-	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persistCodexAPIKeySet: %v", err)
-	}
-
-	app := &App{
-		managementAPI: func() *cliproxyapi.Client {
-			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method != "PUT" || path != "/v0/management/codex-api-key" {
-					t.Fatalf("unexpected request: %s %s", method, path)
-				}
-				payload, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("read body: %v", err)
-				}
-				if !strings.Contains(string(payload), `"api-key":"sk-test-2222"`) {
-					t.Fatalf("unexpected payload: %s", payload)
-				}
-				return nil, 200, nil
-			})
-		},
-	}
-
-	if err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
-		ID:      "codex-api-key:stable-001",
-		APIKey:  "sk-test-2222",
-		BaseURL: "https://api.example.com/v2",
-		Prefix:  "team-b",
-	}); err != nil {
-		t.Fatalf("UpdateCodexAPIKeyConfig: %v", err)
-	}
-
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 item, got %d", len(items))
-	}
-	if got := items[0].LocalID; got != "codex-api-key:stable-001" {
-		t.Fatalf("LocalID = %q, want codex-api-key:stable-001", got)
-	}
-	if got := items[0].APIKey; got != "sk-test-2222" {
-		t.Fatalf("APIKey = %q, want sk-test-2222", got)
-	}
-	if got := items[0].BaseURL; got != "https://api.example.com/v2" {
-		t.Fatalf("BaseURL = %q, want https://api.example.com/v2", got)
-	}
-	if got := items[0].Prefix; got != "team-b" {
-		t.Fatalf("Prefix = %q, want team-b", got)
-	}
-}
-
-func TestUpdateCodexAPIKeyConfigPersistsQuotaCurl(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	item := cliproxyapi.CodexAPIKeyInput{
-		LocalID: "codex-api-key:stable-001",
-		APIKey:  "sk-test-1111",
-		BaseURL: "https://api.openai.com/v1",
-	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persistCodexAPIKeySet: %v", err)
-	}
-
-	app := &App{
-		managementAPI: func() *cliproxyapi.Client {
-			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method != "PUT" || path != "/v0/management/codex-api-key" {
-					t.Fatalf("unexpected request: %s %s", method, path)
-				}
-				payload, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("read body: %v", err)
-				}
-				if strings.Contains(string(payload), "quota-curl") || strings.Contains(string(payload), "quota-enabled") {
-					t.Fatalf("quota curl must stay local and not sync to sidecar: %s", payload)
-				}
-				return nil, 200, nil
-			})
-		},
-	}
-
-	const quotaCurl = `curl -sS "https://quota.example.com/api/codex/usage" -H "Authorization: Bearer {{apiKey}}"`
-	if err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
-		ID:           "codex-api-key:stable-001",
-		APIKey:       "sk-test-1111",
-		BaseURL:      "https://api.openai.com/v1",
-		QuotaCurl:    quotaCurl,
-		QuotaEnabled: true,
-	}); err != nil {
-		t.Fatalf("UpdateCodexAPIKeyConfig: %v", err)
-	}
-
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if len(items) != 1 {
-		t.Fatalf("expected 1 item, got %d", len(items))
-	}
-	if got := items[0].QuotaCurl; got != quotaCurl {
-		t.Fatalf("QuotaCurl = %q, want %q", got, quotaCurl)
-	}
-	if !items[0].QuotaEnabled {
-		t.Fatalf("QuotaEnabled = false, want true")
-	}
-}
-
-func TestUpdateCodexAPIKeyConfigPersistsProxyURL(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	item := cliproxyapi.CodexAPIKeyInput{
-		LocalID:  "codex-api-key:stable-001",
-		APIKey:   "sk-test-1111",
-		BaseURL:  "https://api.openai.com/v1",
-		ProxyURL: "direct",
-	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persistCodexAPIKeySet: %v", err)
-	}
-
-	app := &App{
-		managementAPI: func() *cliproxyapi.Client {
-			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method != "PUT" || path != "/v0/management/codex-api-key" {
-					t.Fatalf("unexpected request: %s %s", method, path)
-				}
-				payload, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("read body: %v", err)
-				}
-				if !strings.Contains(string(payload), `"proxy-url":"socks5://127.0.0.1:7890"`) {
-					t.Fatalf("proxy url not synced to sidecar: %s", payload)
-				}
-				return nil, 200, nil
-			})
-		},
-	}
-
-	if err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
-		ID:       "codex-api-key:stable-001",
-		APIKey:   "sk-test-1111",
-		BaseURL:  "https://api.openai.com/v1",
-		ProxyURL: "socks5://127.0.0.1:7890",
-	}); err != nil {
-		t.Fatalf("UpdateCodexAPIKeyConfig: %v", err)
-	}
-
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if got := items[0].ProxyURL; got != "socks5://127.0.0.1:7890" {
-		t.Fatalf("ProxyURL = %q, want socks5://127.0.0.1:7890", got)
-	}
-}
-
-func TestUpdateCodexAPIKeyConfigPersistsModels(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	item := cliproxyapi.CodexAPIKeyInput{
-		LocalID: "codex-api-key:stable-001",
-		APIKey:  "sk-test-1111",
-		BaseURL: "https://api.openai.com/v1",
-	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persistCodexAPIKeySet: %v", err)
-	}
-
-	app := &App{
-		managementAPI: func() *cliproxyapi.Client {
-			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method != "PUT" || path != "/v0/management/codex-api-key" {
-					t.Fatalf("unexpected request: %s %s", method, path)
-				}
-				payload, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("read body: %v", err)
-				}
-				if !strings.Contains(string(payload), `"models":[{"name":"mimo-v2.5-pro","alias":"claude-sonnet-4-6"}]`) {
-					t.Fatalf("models not synced to sidecar: %s", payload)
-				}
-				return nil, 200, nil
-			})
-		},
-	}
-
-	if err := app.UpdateCodexAPIKeyConfig(UpdateCodexAPIKeyConfigInput{
-		ID:      "codex-api-key:stable-001",
-		APIKey:  "sk-test-1111",
-		BaseURL: "https://api.openai.com/v1",
-		Models: []OpenAICompatibleModel{
-			{Name: "mimo-v2.5-pro", Alias: "claude-sonnet-4-6"},
-		},
-	}); err != nil {
-		t.Fatalf("UpdateCodexAPIKeyConfig: %v", err)
-	}
-
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if len(items) != 1 || len(items[0].Models) != 1 {
-		t.Fatalf("expected one persisted model, got %#v", items)
-	}
-	if got := items[0].Models[0]; got.Name != "mimo-v2.5-pro" || got.Alias != "claude-sonnet-4-6" {
-		t.Fatalf("unexpected model: %#v", got)
-	}
-}
-
-func TestDeleteCodexAPIKeyAcceptsDerivedConfigIDForStableLocalRecord(t *testing.T) {
-	t.Setenv("HOME", t.TempDir())
-
-	item := cliproxyapi.CodexAPIKeyInput{
-		LocalID: "codex-api-key:stable-001",
-		APIKey:  "sk-test-1111",
-		BaseURL: "https://api.openai.com/v1",
-		Prefix:  "team-a",
-	}
-	if err := persistCodexAPIKeySet([]cliproxyapi.CodexAPIKeyInput{item}); err != nil {
-		t.Fatalf("persistCodexAPIKeySet: %v", err)
-	}
-
-	app := &App{
-		managementAPI: func() *cliproxyapi.Client {
-			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
-				if method != "PUT" || path != "/v0/management/codex-api-key" {
-					t.Fatalf("unexpected request: %s %s", method, path)
-				}
-				payload, err := io.ReadAll(body)
-				if err != nil {
-					t.Fatalf("read body: %v", err)
-				}
-				if got := strings.TrimSpace(string(payload)); got != "[]" {
-					t.Fatalf("expected empty sidecar sync payload, got %s", got)
-				}
-				return nil, 200, nil
-			})
-		},
-	}
-
-	derivedID := codexAPIKeyConfigIdentityFromInput(item)
-	if err := app.DeleteCodexAPIKey(derivedID); err != nil {
-		t.Fatalf("DeleteCodexAPIKey: %v", err)
-	}
-
-	items, err := loadStoredCodexAPIKeys()
-	if err != nil {
-		t.Fatalf("loadStoredCodexAPIKeys: %v", err)
-	}
-	if len(items) != 0 {
-		t.Fatalf("expected store to be empty, got %#v", items)
 	}
 }

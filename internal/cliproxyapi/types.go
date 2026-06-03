@@ -224,6 +224,21 @@ type AccountWriteRequest struct {
 	OpenAICompatible *OpenAICompatibleAccountCredential `json:"openai_compatible,omitempty"`
 }
 
+type AccountStoreDiagnostics struct {
+	PathBasename string                              `json:"path_basename"`
+	Configured   bool                                `json:"configured"`
+	Open         bool                                `json:"open"`
+	ReadRecovery AccountStoreReadRecoveryDiagnostics `json:"read_recovery"`
+}
+
+type AccountStoreReadRecoveryDiagnostics struct {
+	Count             int    `json:"count"`
+	LastEndpoint      string `json:"last_endpoint"`
+	LastRecovered     bool   `json:"last_recovered"`
+	LastError         string `json:"last_error"`
+	LastRecoveredUnix int64  `json:"last_recovered_at_unix_ms"`
+}
+
 type RateLimitStrategyMeta struct {
 	ID               string   `json:"id"`
 	Name             string   `json:"name"`

@@ -463,6 +463,14 @@ func (a *App) GetSidecarUsageAttribution(input SidecarUsageAttributionInput) (*S
 	return mapSidecarUsageAttributionResponse(result), nil
 }
 
+func (a *App) GetAccountStoreDiagnostics() (*AccountStoreDiagnostics, error) {
+	result, err := a.core.GetAccountStoreDiagnostics()
+	if err != nil {
+		return nil, err
+	}
+	return mapAccountStoreDiagnostics(result), nil
+}
+
 func (a *App) ListRateLimitStrategies() ([]RateLimitStrategyMeta, error) {
 	result, err := a.core.ListRateLimitStrategies()
 	if err != nil {

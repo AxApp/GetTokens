@@ -67,6 +67,8 @@ export function FinalizeCodexOAuth(arg1:main.CompleteCodexOAuthInput):Promise<vo
 
 export function GetAccountMigrationPreview():Promise<main.AccountMigrationPreview>;
 
+export function GetAccountStoreDiagnostics():Promise<main.AccountStoreDiagnostics>;
+
 export function GetAllRateLimitStatuses():Promise<Array<main.RateLimitState>>;
 
 export function GetAppRuntimeSettings():Promise<main.AppRuntimeSettings>;

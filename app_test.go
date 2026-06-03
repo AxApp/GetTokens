@@ -105,6 +105,39 @@ func TestMapRateLimitStatePreservesExplainFields(t *testing.T) {
 	}
 }
 
+func TestMapAccountStoreDiagnosticsUsesFrontendFieldNames(t *testing.T) {
+	input := &wailsapp.AccountStoreDiagnostics{
+		PathBasename: "accounts-v1.sqlite",
+		Configured:   true,
+		Open:         true,
+		ReadRecovery: wailsapp.AccountStoreReadRecoveryDiagnostics{
+			Count:             2,
+			LastEndpoint:      "accounts",
+			LastRecovered:     true,
+			LastError:         "query accounts: disk I/O error (522)",
+			LastRecoveredUnix: 1780460000000,
+		},
+	}
+
+	got := mapAccountStoreDiagnostics(input)
+	if got == nil || got.PathBasename != input.PathBasename || !got.Open || got.ReadRecovery.Count != 2 {
+		t.Fatalf("mapped diagnostics = %#v", got)
+	}
+	payload, err := json.Marshal(got)
+	if err != nil {
+		t.Fatalf("marshal diagnostics: %v", err)
+	}
+	text := string(payload)
+	for _, want := range []string{"pathBasename", "readRecovery", "lastRecoveredAtUnixMs"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("payload %s missing %s", text, want)
+		}
+	}
+	if strings.Contains(text, "path_basename") || strings.Contains(text, "read_recovery") {
+		t.Fatalf("payload %s should use frontend field names", text)
+	}
+}
+
 func TestBuildApplicationMenuKeepsCheckForUpdatesOutOfHelpMenu(t *testing.T) {
 	appMenu := buildApplicationMenuWithUpdateAction(func() {})
 	updateItem := findMenuItemByLabel(appMenu, macOSCheckForUpdatesMenuLabel)

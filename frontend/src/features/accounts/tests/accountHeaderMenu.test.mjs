@@ -81,4 +81,6 @@ test('AccountsHeader menu visible labels are localized from locale files', () =>
     assert.ok(Object.hasOwn(locale.accounts, 'import_accounts'));
     assert.ok(Object.hasOwn(locale.accounts, 'add_codex_api_key'));
   }
+  assert.equal(zh.accounts.add_account, '添加第三方厂商账号');
+  assert.equal(en.accounts.add_account, 'Add Third-Party Provider Account');
 });

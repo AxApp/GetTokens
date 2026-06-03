@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import FormField, { TextInputField } from '../../../components/ui/FormField';
+import { TextInputField } from '../../../components/ui/FormField';
 import SearchInput from '../../../components/ui/SearchInput';
-import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { getVendorPreset, getVendorPresets, type VendorPreset } from '../model/vendorPresets';
 import { formatShortLabel } from '../model/vendorPresetHelpers';
 import { resolveVendorDisplayName } from '../model/vendorIcons';
@@ -15,10 +14,17 @@ import AccountDetailModalFrame from './AccountDetailModalFrame';
 import {
   AccountDetailBody,
   AccountDetailModuleStack,
+  AccountDetailEmptyState,
   AccountDetailNotice,
   AccountDetailPill,
   AccountDetailSection,
 } from './AccountDetailPrimitives';
+import {
+  AccountCurlEditorModal,
+  buildBillingCurlTemplates,
+  buildCurlVariables,
+  buildQuotaCurlTemplates,
+} from './AccountCurlEditorModal';
 import VendorLogoMark from './VendorLogoMark';
 
 const CATEGORY_ORDER: VendorPreset['category'][] = [
@@ -43,6 +49,7 @@ interface UnifiedComposeModalProps {
   onFormChange: (field: keyof ApiKeyFormState, value: string | boolean) => void;
   onFormatBaseUrlChange: (format: string, value: string) => void;
   onBillingCurlChange: (value: string) => void;
+  onBillingEnabledChange: (enabled: boolean) => void;
   onPresetApply: (preset: VendorPreset) => void;
   onSubmit: () => void;
   initialShowPresets?: boolean;
@@ -60,6 +67,7 @@ export default function UnifiedComposeModal({
   onFormChange,
   onFormatBaseUrlChange,
   onBillingCurlChange,
+  onBillingEnabledChange,
   onPresetApply,
   onSubmit,
   initialShowPresets = true,
@@ -193,6 +201,39 @@ export default function UnifiedComposeModal({
           </div>
         ) : (
           <AccountDetailModuleStack layout="cards">
+            <AccountDetailSection
+              componentName="UnifiedComposeCredentialsSection"
+              eyebrow={copy.credentialEyebrow}
+              title={copy.credentialsLabel}
+              span="wide"
+            >
+              <TextInputField
+                title={copy.labelLabel}
+                value={form.label}
+                onChange={(event) => onFormChange('label', event.target.value)}
+                placeholder={labelPlaceholder}
+                aria-label={copy.labelLabel}
+              />
+
+              <div className="grid gap-4 xl:grid-cols-2">
+                <TextInputField
+                  title={copy.apiKeyLabel}
+                  value={form.apiKey}
+                  onChange={(event) => onFormChange('apiKey', event.target.value)}
+                  data-unified-compose-api-key-plaintext="true"
+                  placeholder={selectedPreset?.apiKeyPlaceholder ?? 'sk-...'}
+                  aria-label={copy.apiKeyLabel}
+                />
+                <TextInputField
+                  title={copy.baseUrlPrimaryLabel}
+                  value={form.baseUrl}
+                  onChange={(event) => onFormChange('baseUrl', event.target.value)}
+                  placeholder={selectedPreset?.baseUrl ?? 'https://api.example.com/anthropic'}
+                  aria-label={copy.baseUrlPrimaryLabel}
+                />
+              </div>
+            </AccountDetailSection>
+
             {selectedPreset && selectedPreset.supportedFormats.length > 0 ? (
               <AccountDetailSection
                 componentName="UnifiedComposeEndpointSection"
@@ -233,88 +274,170 @@ export default function UnifiedComposeModal({
               </AccountDetailSection>
             ) : null}
 
-            <AccountDetailSection
-              componentName="UnifiedComposeCredentialsSection"
-              eyebrow={copy.credentialEyebrow}
-              title={copy.credentialsLabel}
-              span="wide"
-            >
-              <TextInputField
-                title={copy.labelLabel}
-                value={form.label}
-                onChange={(event) => onFormChange('label', event.target.value)}
-                placeholder={labelPlaceholder}
-                aria-label={copy.labelLabel}
-              />
-
-              <div className="grid gap-4 xl:grid-cols-2">
-                <TextInputField
-                  title={copy.apiKeyLabel}
-                  value={form.apiKey}
-                  onChange={(event) => onFormChange('apiKey', event.target.value)}
-                  type="password"
-                  placeholder={selectedPreset?.apiKeyPlaceholder ?? 'sk-...'}
-                  aria-label={copy.apiKeyLabel}
-                />
-                <TextInputField
-                  title={copy.baseUrlPrimaryLabel}
-                  value={form.baseUrl}
-                  onChange={(event) => onFormChange('baseUrl', event.target.value)}
-                  placeholder={selectedPreset?.baseUrl ?? 'https://api.example.com/anthropic'}
-                  aria-label={copy.baseUrlPrimaryLabel}
-                />
-              </div>
-            </AccountDetailSection>
-
-            <AccountDetailSection
-              componentName="UnifiedComposeAdvancedSection"
+            <UnifiedComposeCurlConfigSection
+              kind="quota"
+              componentName="UnifiedComposeQuotaSection"
               eyebrow={copy.automationEyebrow}
-              title={copy.advancedLabel}
-              muted
-            >
-              <div className="flex min-w-0 items-center justify-between gap-4 border-2 border-[var(--border-color)] bg-[var(--bg-main)] px-3 py-2">
-                <span className="min-w-0 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-primary)]">
-                  {copy.quotaTrackingLabel}
-                </span>
-                <ToggleSwitch
-                  label={copy.quotaTrackingLabel}
-                  checked={form.quotaEnabled}
-                  onChange={(checked) => onFormChange('quotaEnabled', checked)}
-                />
-              </div>
-              <FormField title={copy.quotaCurlLabel}>
-                <textarea
-                  value={form.quotaCurl}
-                  onChange={(event) => onFormChange('quotaCurl', event.target.value)}
-                  className="input-swiss min-h-28 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
-                  placeholder={copy.quotaCurlPlaceholder}
-                  aria-label={copy.quotaCurlLabel}
-                />
-              </FormField>
-            </AccountDetailSection>
+              title={copy.quotaCurlLabel}
+              enabledLabel={copy.quotaTrackingLabel}
+              emptyMessage="未配置额度脚本，添加后可在账号详情中测试并展示额度"
+              configuredLabel="已配置额度 cURL"
+              addLabel="添加"
+              editLabel="编辑脚本"
+              editorTitle="额度脚本"
+              value={form.quotaCurl}
+              enabled={form.quotaEnabled}
+              baseUrl={form.baseUrl}
+              apiKey={form.apiKey}
+              prefix={form.prefix}
+              placeholder={copy.quotaCurlPlaceholder}
+              templates={buildQuotaCurlTemplates(form.baseUrl, selectedPreset?.quotaCurlTemplate ?? '')}
+              onValueChange={(value) => onFormChange('quotaCurl', value)}
+              onEnabledChange={(enabled) => onFormChange('quotaEnabled', enabled)}
+              onApplyTemplate={(template) => {
+                onFormChange('quotaCurl', template);
+                onFormChange('quotaEnabled', true);
+              }}
+            />
 
-            {selectedPreset?.billingCurlTemplate ? (
-              <AccountDetailSection
+            {selectedPreset?.billingCurlTemplate || form.billingCurl ? (
+              <UnifiedComposeCurlConfigSection
+                kind="billing"
                 componentName="UnifiedComposeBillingSection"
                 eyebrow={copy.billingEyebrow}
                 title={copy.billingLabel}
-                muted
-              >
-                <FormField title={copy.billingCurlLabel}>
-                  <textarea
-                    value={form.billingCurl}
-                    onChange={(event) => onBillingCurlChange(event.target.value)}
-                    className="input-swiss min-h-28 w-full resize-y font-mono !text-[length:var(--font-size-ui-xs)]"
-                    placeholder={selectedPreset.billingCurlTemplate}
-                    aria-label={copy.billingCurlLabel}
-                  />
-                </FormField>
-              </AccountDetailSection>
+                enabledLabel={copy.billingEnabledLabel}
+                emptyMessage="未配置余额脚本，添加后可在账号详情中测试并展示余额"
+                configuredLabel="已配置余额 cURL"
+                addLabel="添加"
+                editLabel="编辑脚本"
+                editorTitle="余额脚本"
+                value={form.billingCurl}
+                enabled={form.billingEnabled}
+                baseUrl={form.baseUrl}
+                apiKey={form.apiKey}
+                prefix={form.prefix}
+                placeholder={selectedPreset?.billingCurlTemplate ?? 'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'}
+                templates={buildBillingCurlTemplates(form.baseUrl, selectedPreset?.billingCurlTemplate ?? '')}
+                onValueChange={onBillingCurlChange}
+                onEnabledChange={onBillingEnabledChange}
+                onApplyTemplate={(template) => {
+                  onBillingCurlChange(template);
+                  onBillingEnabledChange(true);
+                }}
+              />
             ) : null}
           </AccountDetailModuleStack>
         )}
       </AccountDetailBody>
     </AccountDetailModalFrame>
+  );
+}
+
+
+interface UnifiedComposeCurlConfigSectionProps {
+  kind: 'quota' | 'billing';
+  componentName: string;
+  eyebrow: string;
+  title: string;
+  enabledLabel: string;
+  emptyMessage: string;
+  configuredLabel: string;
+  addLabel: string;
+  editLabel: string;
+  editorTitle: string;
+  value: string;
+  enabled: boolean;
+  baseUrl: string;
+  apiKey: string;
+  prefix: string;
+  placeholder: string;
+  templates: Array<{ id: string; title: string; body: string; description: string }>;
+  onValueChange: (value: string) => void;
+  onEnabledChange: (enabled: boolean) => void;
+  onApplyTemplate: (template: string) => void;
+}
+
+function UnifiedComposeCurlConfigSection({
+  kind,
+  componentName,
+  eyebrow,
+  title,
+  enabledLabel,
+  emptyMessage,
+  configuredLabel,
+  addLabel,
+  editLabel,
+  editorTitle,
+  value,
+  enabled,
+  baseUrl,
+  apiKey,
+  prefix,
+  placeholder,
+  templates,
+  onValueChange,
+  onEnabledChange,
+  onApplyTemplate,
+}: UnifiedComposeCurlConfigSectionProps) {
+  const [editorOpen, setEditorOpen] = useState(false);
+  const hasScript = value.trim().length > 0;
+  const variables = buildCurlVariables({ apiKey, baseUrl, prefix, quotaCurl: '', quotaEnabled: false, billingCurl: '', billingEnabled: false, proxyUrl: '' });
+
+  return (
+    <AccountDetailSection
+      componentName={componentName}
+      eyebrow={eyebrow}
+      title={title}
+      actions={(
+        <button type="button" onClick={() => setEditorOpen(true)} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+          {hasScript ? editLabel : addLabel}
+        </button>
+      )}
+      muted={!hasScript}
+    >
+      {hasScript ? (
+        <div data-unified-compose-curl-card={kind} className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(event) => onEnabledChange(event.target.checked)}
+              />
+              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {enabledLabel}
+              </span>
+            </label>
+            <span className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              {configuredLabel}
+            </span>
+          </div>
+          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={value || undefined}>
+            {value}
+          </div>
+        </div>
+      ) : (
+        <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+          {emptyMessage}
+        </AccountDetailEmptyState>
+      )}
+
+      {editorOpen ? (
+        <AccountCurlEditorModal
+          title={editorTitle}
+          value={value}
+          enabled={enabled}
+          variables={variables}
+          templates={templates}
+          placeholder={placeholder}
+          onValueChange={onValueChange}
+          onEnabledChange={onEnabledChange}
+          onApplyTemplate={onApplyTemplate}
+          onClose={() => setEditorOpen(false)}
+        />
+      ) : null}
+    </AccountDetailSection>
   );
 }
 

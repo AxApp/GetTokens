@@ -8,6 +8,12 @@ type RateLimitRuleState = cliproxyapi.RateLimitRuleState
 type RateLimitSourceState = cliproxyapi.RateLimitSourceState
 type RateLimitState = cliproxyapi.RateLimitState
 type RateLimitEvent = cliproxyapi.RateLimitEvent
+type AccountStoreDiagnostics = cliproxyapi.AccountStoreDiagnostics
+type AccountStoreReadRecoveryDiagnostics = cliproxyapi.AccountStoreReadRecoveryDiagnostics
+
+func (a *App) GetAccountStoreDiagnostics() (*AccountStoreDiagnostics, error) {
+	return a.managementClient().GetAccountStoreDiagnostics()
+}
 
 func (a *App) ListRateLimitStrategies() ([]RateLimitStrategyMeta, error) {
 	return a.managementClient().ListRateLimitStrategies()

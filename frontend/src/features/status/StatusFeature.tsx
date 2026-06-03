@@ -5,6 +5,7 @@ import {
   ApplyRelayServiceConfigToLocalV2,
   DisableGetTokensCodexModelCatalogProjection,
   EnableGetTokensCodexModelCatalogProjection,
+  GetAccountStoreDiagnostics,
   GetLocalCodexAuthState,
   GetLocalCodexModelProviderStateView,
   GetRelayServiceConfig,
@@ -52,6 +53,7 @@ import {
   type RelayProviderEditorState,
 } from './model/relayLocalState';
 import { mergeRelayModelCatalog, resolveRelayModelReasoningProfile } from './model/relayModelCatalog';
+import { buildAccountStoreDiagnosticsView } from './model/accountStoreDiagnostics';
 import {
   mergeRelayProviderCatalog,
   type RelayProviderOption,
@@ -72,6 +74,47 @@ const defaultSidecarStatus: SidecarStatus = {
   gitHash: '',
   startedAtUnix: 0,
 };
+
+function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildAccountStoreDiagnosticsView> }) {
+  const toneClass =
+    view.tone === 'critical'
+      ? 'border-[var(--color-status-danger)] text-[var(--color-status-danger)]'
+      : view.tone === 'warning'
+        ? 'border-[var(--color-status-warning)] text-[var(--color-status-warning)]'
+        : view.tone === 'success'
+          ? 'border-[var(--color-status-success)] text-[var(--color-status-success)]'
+          : 'border-[var(--border-color)] text-[var(--text-muted)]';
+
+  return (
+    <section
+      className="card-swiss grid gap-4 p-4"
+      data-account-store-diagnostics-panel
+    >
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            ACCOUNT STORE
+          </div>
+          <div className="mt-1 truncate font-mono text-[length:var(--font-size-ui-md)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+            {view.headline}
+          </div>
+        </div>
+        <div className={`shrink-0 border-2 px-3 py-1 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] ${toneClass}`}>
+          {view.recoveryLine}
+        </div>
+      </div>
+      {view.errorSummary ? (
+        <div
+          className="min-w-0 overflow-hidden border border-[var(--color-status-warning)] bg-[color-mix(in_srgb,var(--color-status-warning)_10%,transparent)] px-3 py-2 font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--color-status-warning)]"
+          title={view.fullError}
+          data-account-store-diagnostics-error
+        >
+          {view.errorSummary}
+        </div>
+      ) : null}
+    </section>
+  );
+}
 
 export default function StatusFeature({
   sidecarStatus = defaultSidecarStatus,
@@ -106,6 +149,7 @@ export default function StatusFeature({
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
   const [localCodexAuthState, setLocalCodexAuthState] = useState<main.LocalCodexAuthState | null>(null);
+  const [accountStoreDiagnostics, setAccountStoreDiagnostics] = useState<main.AccountStoreDiagnostics | null>(null);
   const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [claudeApplyMessage, setClaudeApplyMessage] = useState('');
   const [isApplyingToLocal, setIsApplyingToLocal] = useState(false);
@@ -323,6 +367,37 @@ export default function StatusFeature({
     }
 
     void loadRelaySupportedModels();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sidecarStatus.code, trackRequest]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAccountStoreDiagnostics() {
+      if (sidecarStatus.code !== 'ready') {
+        setAccountStoreDiagnostics(null);
+        return;
+      }
+
+      try {
+        const result = await trackRequest('GetAccountStoreDiagnostics', { args: [] }, () =>
+          GetAccountStoreDiagnostics()
+        );
+        if (!cancelled) {
+          setAccountStoreDiagnostics(result);
+        }
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setAccountStoreDiagnostics(null);
+        }
+      }
+    }
+
+    void loadAccountStoreDiagnostics();
 
     return () => {
       cancelled = true;
@@ -873,6 +948,10 @@ export default function StatusFeature({
     }
   }
 
+  const accountStoreDiagnosticsView = useMemo(
+    () => buildAccountStoreDiagnosticsView(accountStoreDiagnostics),
+    [accountStoreDiagnostics]
+  );
   const healthzHasError = healthz.startsWith('ERROR:') || healthz.startsWith('FAIL:');
   const trimmedStatusMessage = sidecarStatus.message.trim();
   const statusHeadline =
@@ -959,6 +1038,7 @@ export default function StatusFeature({
             isDisablingModelCatalog={isDisablingModelCatalog}
             onChangeSyncCodexModelCatalog={(nextValue) => void changeSyncCodexModelCatalog(nextValue)}
           />
+          <AccountStoreDiagnosticsPanel view={accountStoreDiagnosticsView} />
         </section>
       </div>
 

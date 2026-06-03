@@ -29,22 +29,6 @@ func New(request RequestFunc) *Client {
 	return &Client{request: request}
 }
 
-func (c *Client) ListCodexAPIKeys() ([]CodexAPIKey, error) {
-	body, _, err := c.request("GET", "/v0/management/codex-api-key", nil, nil, "")
-	if err != nil {
-		return nil, err
-	}
-
-	var response CodexAPIKeysResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, err
-	}
-	if response.Items == nil {
-		return []CodexAPIKey{}, nil
-	}
-	return response.Items, nil
-}
-
 func (c *Client) ListAPIKeys() ([]string, error) {
 	body, _, err := c.request("GET", "/v0/management/api-keys", nil, nil, "")
 	if err != nil {
@@ -77,50 +61,6 @@ func (c *Client) PutAPIKeys(items []string) error {
 	return err
 }
 
-func (c *Client) PutCodexAPIKeys(items []CodexAPIKeyInput) error {
-	if items == nil {
-		items = []CodexAPIKeyInput{}
-	}
-
-	payload, err := json.Marshal(items)
-	if err != nil {
-		return err
-	}
-
-	_, _, err = c.request("PUT", "/v0/management/codex-api-key", nil, bytes.NewReader(payload), "application/json")
-	return err
-}
-
-func (c *Client) ListOpenAICompatibleProviders() ([]OpenAICompatibleProvider, error) {
-	body, _, err := c.request("GET", "/v0/management/openai-compatibility", nil, nil, "")
-	if err != nil {
-		return nil, err
-	}
-
-	var response OpenAICompatibleProvidersResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, err
-	}
-	if response.Items == nil {
-		return []OpenAICompatibleProvider{}, nil
-	}
-	return response.Items, nil
-}
-
-func (c *Client) PutOpenAICompatibleProviders(items []OpenAICompatibleProvider) error {
-	if items == nil {
-		items = []OpenAICompatibleProvider{}
-	}
-
-	payload, err := json.Marshal(items)
-	if err != nil {
-		return err
-	}
-
-	_, _, err = c.request("PUT", "/v0/management/openai-compatibility", nil, bytes.NewReader(payload), "application/json")
-	return err
-}
-
 func (c *Client) ListOAuthModelAliases() (map[string][]OAuthModelAlias, error) {
 	body, _, err := c.request("GET", "/v0/management/oauth-model-alias", nil, nil, "")
 	if err != nil {
@@ -148,41 +88,6 @@ func (c *Client) PutOAuthModelAliases(items map[string][]OAuthModelAlias) error 
 	}
 
 	_, _, err = c.request("PUT", "/v0/management/oauth-model-alias", nil, bytes.NewReader(payload), "application/json")
-	return err
-}
-
-func (c *Client) PatchCodexAPIKey(index int, value CodexAPIKeyPatch) error {
-	payload, err := json.Marshal(struct {
-		Index int              `json:"index"`
-		Value CodexAPIKeyPatch `json:"value"`
-	}{
-		Index: index,
-		Value: value,
-	})
-	if err != nil {
-		return err
-	}
-
-	_, _, err = c.request("PATCH", "/v0/management/codex-api-key", nil, bytes.NewReader(payload), "application/json")
-	return err
-}
-
-func (c *Client) DeleteCodexAPIKey(apiKey string, baseURL string) error {
-	query := url.Values{}
-	query.Set("api-key", apiKey)
-	if baseURL != "" {
-		query.Set("base-url", baseURL)
-	}
-
-	_, _, err := c.request("DELETE", "/v0/management/codex-api-key", query, nil, "")
-	return err
-}
-
-func (c *Client) DeleteOpenAICompatibleProvider(name string) error {
-	query := url.Values{}
-	query.Set("name", name)
-
-	_, _, err := c.request("DELETE", "/v0/management/openai-compatibility", query, nil, "")
 	return err
 }
 
@@ -448,6 +353,18 @@ func (c *Client) UpdateRateLimitRule(rule RateLimitRule) ([]RateLimitRule, error
 func (c *Client) DeleteRateLimitRule(id string) error {
 	_, _, err := c.request("DELETE", "/v0/management/gettokens/rate-limit-rules/"+url.PathEscape(id), nil, nil, "")
 	return err
+}
+
+func (c *Client) GetAccountStoreDiagnostics() (*AccountStoreDiagnostics, error) {
+	body, _, err := c.request("GET", "/v0/management/gettokens/account-store-diagnostics", nil, nil, "")
+	if err != nil {
+		return nil, err
+	}
+	var response AccountStoreDiagnostics
+	if err := json.Unmarshal(body, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
 
 func (c *Client) GetAllRateLimitStatuses() ([]RateLimitState, error) {

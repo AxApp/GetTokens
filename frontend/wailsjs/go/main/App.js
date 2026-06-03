@@ -126,6 +126,10 @@ export function GetAccountMigrationPreview() {
   return window['go']['main']['App']['GetAccountMigrationPreview']();
 }
 
+export function GetAccountStoreDiagnostics() {
+  return window['go']['main']['App']['GetAccountStoreDiagnostics']();
+}
+
 export function GetAllRateLimitStatuses() {
   return window['go']['main']['App']['GetAllRateLimitStatuses']();
 }

@@ -7,6 +7,25 @@ import (
 	"testing"
 )
 
+func TestAccountStoreDiagnosticsBridgeCallsManagementAPI(t *testing.T) {
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != "GET" || path != ManagementAPIPrefix+"/gettokens/account-store-diagnostics" {
+				t.Fatalf("unexpected request: %s %s", method, path)
+			}
+			return []byte(`{"path_basename":"accounts-v1.sqlite","configured":true,"open":true,"read_recovery":{"count":1,"last_endpoint":"accounts","last_recovered":true,"last_error":"sql: database is closed","last_recovered_at_unix_ms":1780460000000}}`), 200, nil
+		},
+	}
+
+	diagnostics, err := app.GetAccountStoreDiagnostics()
+	if err != nil {
+		t.Fatalf("GetAccountStoreDiagnostics: %v", err)
+	}
+	if diagnostics.PathBasename != "accounts-v1.sqlite" || !diagnostics.Open || diagnostics.ReadRecovery.Count != 1 {
+		t.Fatalf("diagnostics = %+v", diagnostics)
+	}
+}
+
 func TestRateLimitBridgeCallsManagementAPI(t *testing.T) {
 	app := &App{
 		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {

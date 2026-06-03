@@ -1198,6 +1198,12 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               billingEnabled: value.trim().length > 0,
             }));
           }}
+          onBillingEnabledChange={(enabled) => {
+            setUnifiedComposeForm((prev) => ({
+              ...prev,
+              billingEnabled: enabled,
+            }));
+          }}
           onPresetApply={handlePresetApply}
           onSubmit={() => void handleUnifiedComposeSubmit()}
         />
