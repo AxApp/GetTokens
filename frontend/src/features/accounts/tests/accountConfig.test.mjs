@@ -320,6 +320,10 @@ test('generated Wails account models preserve quota curl fields', () => {
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class TestCodexAPIKeyQuotaCurlInput[\s\S]*quotaCurl: string;/);
   assert.match(source, /export class AccountRecord[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
+  assert.match(source, /export class AccountRecord[\s\S]*platformCookie\?: string;/);
+  assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*platformCookie\?: string;/);
+  assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*platformCookie\?: string;/);
+  assert.match(source, /export class TestCodexAPIKeyQuotaCurlInput[\s\S]*platformCookie\?: string;/);
   assert.match(source, /export class AccountRecord[\s\S]*modelFetchApiKey\?: string;[\s\S]*modelFetchBaseUrl\?: string;/);
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);

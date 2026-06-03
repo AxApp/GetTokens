@@ -316,3 +316,30 @@ multiModeProfiles: [
 
 - `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs`：通过。
 - `cd frontend && npx tsc --noEmit`：通过。
+
+## 2026-06-03 平台 Cookie 独立变量化
+
+### 需求修正
+
+用户明确要求：Cookie 不应只作为一次性替换进 cURL 的文本，而应像 `{{apiKey}}` 一样成为独立输入变量；cURL 模板中保留占位符。
+
+### 实现
+
+- 新增 `platformCookie` 字段贯通：
+  - Wails `AccountRecord` / `CreateCodexAPIKeyInput` / `UpdateCodexAPIKeyConfigInput` / `TestCodexAPIKeyQuotaCurlInput`
+  - 前端 `ApiKeyFormState` / `ApiKeyConfigDraft` / UnifiedCompose form
+  - sidecar `codex_api_key_accounts.platform_cookie` SQLite 列
+  - sidecar quota/billing test request `platform_cookie`
+- cURL 模板从 `-b "<PASTE_PLATFORM_COOKIE>"` 改为 `-b "{{platformCookie}}"`。
+- cURL 编辑器变量区新增 `platformCookie`，提示区支持 `{{apiKey}} / {{baseUrl}} / {{prefix}} / {{platformCookie}}`。
+- Xiaomi 添加第三方厂商账号页与账号详情页都提供「平台 Cookie」独立输入框；保存后运行 quota / billing curl 时由 sidecar 将 `{{platformCookie}}` 替换为保存值。
+- 输入会去除前缀 `Cookie:`，只保存 cookie 内容本身。
+
+### 验证
+
+- `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs`：通过。
+- `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs frontend/src/features/accounts/tests/accountDetailLayout.test.mjs frontend/src/features/accounts/tests/openAICompatible.test.mjs`：66/66 通过。
+- `cd frontend && npx tsc --noEmit`：通过。
+- `go test ./internal/...`：通过。
+- sidecar reference：`go test ./internal/gettokens/accountstore ./internal/api/handlers/management` 通过。
+- `./scripts/wails-cli.sh build`：通过，已重新生成 Wails bindings 并重建 sidecar。
