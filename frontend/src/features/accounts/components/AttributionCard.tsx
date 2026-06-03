@@ -9,9 +9,8 @@ import {
   BillingBalance,
   QuotaBars,
   RateLimitGuard,
-  TrafficSection,
+  TrafficMetricsModule,
   UnsupportedQuotaPlaceholder,
-  UsageMetrics,
   formatCountMetric,
   formatTokenMetric,
 } from './CardSections';
@@ -226,9 +225,7 @@ export default function AttributionCard({
 
       {showAttribution ? (
         <>
-          <TrafficSection usageSummary={usageSummary} t={t} />
-
-          <UsageMetrics usageSummary={usageSummary} t={t} />
+          <TrafficMetricsModule usageSummary={usageSummary} t={t} />
 
           <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
           <BillingBalance billing={billing} />

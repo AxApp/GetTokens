@@ -23,6 +23,7 @@ import {
   BillingBalance,
   QuotaBars,
   RateLimitGuard,
+  TrafficMetricsModule,
   TrafficSection,
   UnsupportedQuotaPlaceholder,
   UsageMetrics,
@@ -774,7 +775,7 @@ function CardSectionsSample() {
   return (
     <DesignSystemStoryFrame label="DS-SECTIONS">
       <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <TrafficSection usageSummary={healthyUsageSummary} t={t} />
+        <TrafficMetricsModule usageSummary={healthyUsageSummary} t={t} />
         <div className="border-b border-dashed border-[var(--border-color)] p-4">
           <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
         </div>

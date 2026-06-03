@@ -64,14 +64,29 @@ export function FormatBadges({ account }: FormatBadgesProps) {
 interface TrafficSectionProps {
   usageSummary?: AccountUsageSummary;
   t: Translator;
+  embedded?: boolean;
 }
 
-export function TrafficSection({ usageSummary, t }: TrafficSectionProps) {
+interface TrafficMetricsModuleProps {
+  usageSummary?: AccountUsageSummary;
+  t: Translator;
+}
+
+export function TrafficMetricsModule({ usageSummary, t }: TrafficMetricsModuleProps) {
+  return (
+    <section className="account-card-traffic-module grid border-b border-dashed border-[var(--border-color)]">
+      <TrafficSection usageSummary={usageSummary} t={t} embedded />
+      <UsageMetrics usageSummary={usageSummary} t={t} embedded />
+    </section>
+  );
+}
+
+export function TrafficSection({ usageSummary, t, embedded = false }: TrafficSectionProps) {
   const flow = buildTrafficCurveState(usageSummary);
   const sourceLabel = resolveUsageSourceLabel(usageSummary);
 
   return (
-    <section className="account-card-traffic grid gap-3 border-b border-dashed border-[var(--border-color)] px-4 py-3">
+    <section className={`account-card-traffic grid gap-3 px-4 py-3 ${embedded ? '' : 'border-b border-dashed border-[var(--border-color)]'}`}>
       <TrafficSummary
         label={t('accounts.recent_requests')}
         value={formatCountMetric(usageSummary?.requestCount ?? 0)}
@@ -403,6 +418,7 @@ export function BillingBalance({ billing }: BillingBalanceProps) {
 interface UsageMetricsProps {
   usageSummary?: AccountUsageSummary;
   t: Translator;
+  embedded?: boolean;
 }
 
 function formatUsageCountMetric(value: number) {
@@ -437,11 +453,11 @@ function UsageCell({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function UsageMetrics({ usageSummary, t }: UsageMetricsProps) {
+export function UsageMetrics({ usageSummary, t, embedded = false }: UsageMetricsProps) {
   if (!usageSummary) return null;
 
   return (
-    <section className="account-card-usage-metrics grid border-b border-dashed border-[var(--border-color)]">
+    <section className={`account-card-usage-metrics grid ${embedded ? 'border-t' : 'border-b'} border-dashed border-[var(--border-color)]`}>
       <UsageCell label={t('accounts.recent_requests')} value={formatUsageCountMetric(usageSummary.requestCount ?? 0)} />
       <UsageCell label={t('accounts.total_tokens')} value={formatUsageTokenMetric(usageSummary.totalTokens ?? 0)} />
       <UsageCell label="CACHED" value={formatUsageTokenMetric(usageSummary.cachedInputTokens ?? 0)} />

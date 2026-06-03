@@ -125,6 +125,19 @@ test('quota rows keep label and percentage together above the progress bar', asy
   assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
 });
 
+
+test('full attribution cards group traffic and usage statistics in one module component', async () => {
+  const cardSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(sectionsSource, /export function TrafficMetricsModule\(\{ usageSummary, t \}: TrafficMetricsModuleProps\)/);
+  assert.match(sectionsSource, /account-card-traffic-module/);
+  assert.match(sectionsSource, /<TrafficSection usageSummary=\{usageSummary\} t=\{t\} embedded \/>/);
+  assert.match(sectionsSource, /<UsageMetrics usageSummary=\{usageSummary\} t=\{t\} embedded \/>/);
+  assert.match(cardSource, /TrafficMetricsModule usageSummary=\{usageSummary\} t=\{t\}/);
+  assert.doesNotMatch(cardSource, /<TrafficSection usageSummary=\{usageSummary\} t=\{t\} \/>[\s\S]*<UsageMetrics usageSummary=\{usageSummary\} t=\{t\} \/>/);
+});
+
 test('quota bars can toggle from percent to token progress when token counts exist', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
