@@ -3,7 +3,9 @@ import type { AccountRecord, ApiFormat, BillingDisplay } from '../../../types';
 import { useI18n } from '../../../context/I18nContext';
 import { toErrorMessage } from '../../../utils/error';
 import {
+  buildBillingCurlSetupGuide,
   buildBillingCurlTemplate,
+  buildQuotaCurlSetupGuide,
   buildQuotaCurlTemplate,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
@@ -595,6 +597,14 @@ export function AccountQuotaSection({
     () => buildQuotaCurlTemplates(draft.baseUrl, quotaTemplate),
     [draft.baseUrl, quotaTemplate],
   );
+  const quotaSetupGuide = useMemo(
+    () => buildQuotaCurlSetupGuide({
+      displayName: account.displayName,
+      provider: account.provider,
+      baseUrl: draft.baseUrl,
+    }),
+    [account.displayName, account.provider, draft.baseUrl],
+  );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
   const hasQuotaScript = draft.quotaCurl.trim().length > 0;
 
@@ -721,6 +731,7 @@ export function AccountQuotaSection({
           variables={buildCurlVariables(draft)}
           templates={quotaTemplates}
           placeholder='curl -sS "{{baseUrl}}/usage" -H "Authorization: Bearer {{apiKey}}"'
+          setupGuide={quotaSetupGuide}
           onValueChange={(value) => setDraft((prev) => ({ ...prev, quotaCurl: value }))}
           onEnabledChange={(enabled) => setDraft((prev) => ({ ...prev, quotaEnabled: enabled }))}
           onApplyTemplate={(template) => setDraft((prev) => ({ ...prev, quotaCurl: template, quotaEnabled: true }))}
@@ -756,6 +767,14 @@ export function AccountBillingSection({
   const billingTemplates = useMemo(
     () => buildBillingCurlTemplates(draft.baseUrl, billingTemplate),
     [billingTemplate, draft.baseUrl],
+  );
+  const billingSetupGuide = useMemo(
+    () => buildBillingCurlSetupGuide({
+      displayName: account.displayName,
+      provider: account.provider,
+      baseUrl: draft.baseUrl,
+    }),
+    [account.displayName, account.provider, draft.baseUrl],
   );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
   const hasBillingScript = draft.billingCurl.trim().length > 0;
@@ -906,6 +925,7 @@ export function AccountBillingSection({
           variables={buildCurlVariables(draft)}
           templates={billingTemplates}
           placeholder={billingTemplate || 'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'}
+          setupGuide={billingSetupGuide}
           onValueChange={(value) => setDraft((prev) => ({ ...prev, billingCurl: value }))}
           onEnabledChange={(enabled) => setDraft((prev) => ({ ...prev, billingEnabled: enabled }))}
           onApplyTemplate={(template) => setDraft((prev) => ({ ...prev, billingCurl: template, billingEnabled: true }))}

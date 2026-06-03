@@ -98,7 +98,7 @@ export const CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES: readonly ProviderDefau
     defaultModel: 'mimo-v2.5-pro',
     sonnetModel: 'mimo-v2.5-pro',
     opusModel: 'mimo-v2.5-pro',
-    officialSwitchableModels: ['mimo-v2.5-pro[1m]', 'mimo-v2.5', 'mimo-v2.5-tts'],
+    officialSwitchableModels: ['mimo-v2.5-pro[1m]', 'mimo-v2.5-pro', 'mimo-v2-pro', 'mimo-v2.5', 'mimo-v2-omni', 'mimo-v2-flash', 'mimo-v2.5-tts'],
   },
   {
     providerId: 'minimax',

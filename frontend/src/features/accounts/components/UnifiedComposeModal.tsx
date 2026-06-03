@@ -381,6 +381,7 @@ export default function UnifiedComposeModal({
               apiKey={form.apiKey}
               prefix={form.prefix}
               placeholder={copy.quotaCurlPlaceholder}
+              setupGuide={selectedPreset?.quotaSetupGuide}
               templates={buildQuotaCurlTemplates(
                 form.baseUrl,
                 selectedPreset?.quotaCurlTemplate ?? "",
@@ -416,6 +417,7 @@ export default function UnifiedComposeModal({
                   selectedPreset?.billingCurlTemplate ??
                   'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'
                 }
+                setupGuide={selectedPreset?.billingSetupGuide}
                 templates={buildBillingCurlTemplates(
                   form.baseUrl,
                   selectedPreset?.billingCurlTemplate ?? "",
@@ -452,6 +454,7 @@ interface UnifiedComposeCurlConfigSectionProps {
   apiKey: string;
   prefix: string;
   placeholder: string;
+  setupGuide?: string[];
   templates: Array<{
     id: string;
     title: string;
@@ -480,6 +483,7 @@ function UnifiedComposeCurlConfigSection({
   apiKey,
   prefix,
   placeholder,
+  setupGuide,
   templates,
   onValueChange,
   onEnabledChange,
@@ -555,6 +559,7 @@ function UnifiedComposeCurlConfigSection({
           variables={variables}
           templates={templates}
           placeholder={placeholder}
+          setupGuide={setupGuide}
           onValueChange={onValueChange}
           onEnabledChange={onEnabledChange}
           onApplyTemplate={onApplyTemplate}

@@ -1279,7 +1279,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                     }
               }
               verifyState={apiKeyVerifyState}
-              modelNames={relayModelNames}
+              modelNames={resolveAccountVerifyModelNames(
+                selectedAccount,
+                relayModelNames,
+              )}
               onClose={closeAccountDetail}
               onRename={
                 selectedAccountIsCodexAPIKey ? renameSelectedApiKey : undefined
@@ -1609,4 +1612,17 @@ function isCodexAPIKeyAccount(
   account: Pick<AccountRecord, "accountKind" | "credentialSource" | "id">,
 ): boolean {
   return account.accountKind === "codex-api-key";
+}
+
+function resolveAccountVerifyModelNames(
+  account: AccountRecord,
+  fallback: string[],
+): string[] {
+  const accountModels = (account.models || [])
+    .map((model) => String(model.name || "").trim())
+    .filter(Boolean);
+  if (accountModels.length > 0) {
+    return Array.from(new Set(accountModels));
+  }
+  return fallback;
 }

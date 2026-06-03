@@ -131,7 +131,7 @@ test('unified compose submits third-party vendors as openai-compatible accounts'
 
   assert.match(submitBlock, /CreateOpenAICompatibleProvider/);
   assert.match(submitBlock, /main\.CreateOpenAICompatibleProviderInput\.createFrom/);
-  assert.match(submitBlock, /'CreateOpenAICompatibleProvider'/);
+  assert.match(submitBlock, /[\"']CreateOpenAICompatibleProvider[\"']/);
   assert.match(submitBlock, /formatBaseUrls/);
   assert.match(submitBlock, /models: models\.length > 0 \? models : undefined/);
   assert.doesNotMatch(submitBlock, /CreateCodexAPIKey/);
@@ -224,12 +224,12 @@ test('quota and billing curl editors are driven by account detail script hash ro
 
   assert.match(featureSource, /buildAccountDetailScriptFrameHash/);
   assert.match(featureSource, /clearAccountDetailScriptFrameHash/);
-  assert.match(featureSource, /setAccountDetailScriptFromHash\(hashState\?\.accountDetailScript \?\? ''\)/);
-  assert.match(featureSource, /activeScriptEditor=\{selectedAccount\.id === accountDetailIDFromHash \? accountDetailScriptFromHash : ''\}/);
-  assert.match(detailSource, /activeScriptEditor\?: AccountDetailScriptRoute \| ''/);
-  assert.match(detailSource, /editorOpen=\{props\.activeScriptEditor === 'quota'\}/);
-  assert.match(detailSource, /onOpenEditor=\{\(\) => props\.onOpenScriptEditor\?\.\('quota'\)\}/);
-  assert.match(detailSource, /editorOpen=\{props\.activeScriptEditor === 'billing'\}/);
+  assert.match(featureSource, /setAccountDetailScriptFromHash\(hashState\?\.accountDetailScript \?\? [\"'][\"']\)/);
+  assert.match(featureSource, /activeScriptEditor=\{[\s\S]*?selectedAccount\.id === accountDetailIDFromHash[\s\S]*?\? accountDetailScriptFromHash[\s\S]*?: [\"'][\"'][\s\S]*?\}/);
+  assert.match(detailSource, /activeScriptEditor\?: AccountDetailScriptRoute \| [\"'][\"']/);
+  assert.match(detailSource, /editorOpen=\{props\.activeScriptEditor === [\"']quota[\"']\}/);
+  assert.match(detailSource, /onOpenEditor=\{\(\) => props\.onOpenScriptEditor\?\.\([\"']quota[\"']\)\}/);
+  assert.match(detailSource, /editorOpen=\{props\.activeScriptEditor === [\"']billing[\"']\}/);
   assert.match(sectionSource, /editorOpen: routedEditorOpen/);
   assert.match(sectionSource, /const editorOpen = routedEditorOpen \?\? localEditorOpen/);
   assert.match(navigationSource, /accountDetailScript: hashState\?\.accountDetailScript \?\? null/);
@@ -263,10 +263,10 @@ test('account detail close clears local hash state before selected account can r
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const closeHashBlock = source.match(/const clearAccountDetailInHash = useCallback\(\(\) => \{[\s\S]*?\n  \}, \[\]\);/)?.[0] ?? '';
 
-  assert.match(closeHashBlock, /setAccountDetailIDFromHash\(''\);/);
+  assert.match(closeHashBlock, /setAccountDetailIDFromHash\([\"'][\"']\);/);
   assert.match(closeHashBlock, /clearAccountDetailFrameHash\(window\.location\.hash\)/);
   assert.ok(
-    closeHashBlock.indexOf("setAccountDetailIDFromHash('');") < closeHashBlock.indexOf('clearAccountDetailFrameHash(window.location.hash)'),
+    Math.max(closeHashBlock.indexOf("setAccountDetailIDFromHash('');"), closeHashBlock.indexOf('setAccountDetailIDFromHash("");')) < closeHashBlock.indexOf('clearAccountDetailFrameHash(window.location.hash)'),
     'local detail state must be cleared before hashchange can re-run account hydration',
   );
 });

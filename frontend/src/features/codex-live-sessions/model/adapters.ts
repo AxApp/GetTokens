@@ -78,8 +78,11 @@ function mapBackendCodexLiveSession(session: main.CodexLiveSession): CodexLiveSe
     authID: session.authID || undefined,
     accountKey: (session as any).accountKey || undefined,
     authLabel: session.authLabel || undefined,
-    authDetached: Boolean((session as any).authDetached),
-    authDisabled: Boolean((session as any).authDisabled),
+    accountPresent: Boolean((session as any).accountPresent),
+    accountCoarseAvailable: Boolean((session as any).accountCoarseAvailable),
+    accountFilteredReasons: Array.isArray((session as any).accountFilteredReasons)
+      ? (session as any).accountFilteredReasons.filter((reason: unknown) => typeof reason === 'string')
+      : undefined,
     provider: session.provider || undefined,
     downstreamTransport: normalizeTransport(session.downstreamTransport),
     upstreamTransport: normalizeTransport(session.upstreamTransport),
@@ -109,8 +112,11 @@ function mapBackendCodexLiveRequest(request: main.CodexLiveRequest): CodexLiveRe
     authID: request.authID || undefined,
     accountKey: (request as any).accountKey || undefined,
     authLabel: request.authLabel || undefined,
-    authDetached: Boolean((request as any).authDetached),
-    authDisabled: Boolean((request as any).authDisabled),
+    accountPresent: Boolean((request as any).accountPresent),
+    accountCoarseAvailable: Boolean((request as any).accountCoarseAvailable),
+    accountFilteredReasons: Array.isArray((request as any).accountFilteredReasons)
+      ? (request as any).accountFilteredReasons.filter((reason: unknown) => typeof reason === 'string')
+      : undefined,
     provider: request.provider || undefined,
     proxyRoute: request.proxyRoute || undefined,
     usage: request.usage

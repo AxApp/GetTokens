@@ -164,6 +164,15 @@ test('official provider profile is authoritative and generates editable mapping 
   assert.equal(CLAUDE_CODE_PROVIDER_DEFAULT_MODEL_PROFILES.every((profile) => profile.source === 'official'), true);
 });
 
+
+test('Xiaomi MiMo official Claude Code profile includes current switchable chat models', () => {
+  const mimo = resolveClaudeCodeProviderProfile('mimo');
+  assert.ok(mimo);
+  assert.ok(mimo.officialSwitchableModels.includes('mimo-v2-flash'));
+  assert.ok(mimo.officialSwitchableModels.includes('mimo-v2-pro'));
+  assert.ok(mimo.officialSwitchableModels.includes('mimo-v2-omni'));
+});
+
 test('Claude Code request order helpers preserve top-to-bottom runtime order', () => {
   const rows = [
     { id: 'a', priority: 3 },

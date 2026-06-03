@@ -35,8 +35,9 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 				"model":"gpt-5.5",
 					"authID":"auth-file:team",
 					"accountKey":"acct_live",
-					"authDetached":true,
-					"authDisabled":true,
+					"accountPresent":true,
+					"accountCoarseAvailable":false,
+					"accountFilteredReasons":["account-disabled"],
 					"downstreamTransport":"websocket",
 					"upstreamTransport":"websocket",
 					"timingSummary":{
@@ -67,7 +68,7 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 	if session.SessionID != "ws-session-1" || session.ProjectName != "GetTokens" || len(session.Requests) != 0 {
 		t.Fatalf("unexpected session payload: %#v", session)
 	}
-	if session.AccountKey != "acct_live" || !session.AuthDetached || !session.AuthDisabled {
+	if session.AccountKey != "acct_live" || !session.AccountPresent || session.AccountCoarseAvailable || !containsLiveSessionReasonForTest(session.AccountFilteredReasons, "account-disabled") {
 		t.Fatalf("unexpected account state: %#v", session)
 	}
 	if session.TimingSummary == nil || session.TimingSummary.SampleCount != 2 || session.TimingSummary.SequenceFrom != 4 || session.TimingSummary.SequenceTo != 5 {
@@ -76,6 +77,15 @@ func TestGetCodexLiveSessionsSnapshotReadsSidecarManagementAPI(t *testing.T) {
 	if session.TimingSummary.Averages.TotalDurationMs == nil || *session.TimingSummary.Averages.TotalDurationMs != 2500 {
 		t.Fatalf("unexpected timing summary averages: %#v", session.TimingSummary.Averages)
 	}
+}
+
+func containsLiveSessionReasonForTest(values []string, target string) bool {
+	for _, value := range values {
+		if value == target {
+			return true
+		}
+	}
+	return false
 }
 
 func TestGetCodexLiveSessionsSnapshotPropagatesInvalidJSON(t *testing.T) {

@@ -269,8 +269,8 @@ test('provider modules keep React Fast Refresh compatible exports', async () => 
   assert.doesNotMatch(debugProviderSource, /export function useDebug/);
   assert.match(accountsProviderSource, /export function AccountsPageStateProvider/);
   assert.doesNotMatch(accountsProviderSource, /export function useAccountsPageStateContext/);
-  assert.match(accountsFeatureSource, /from '\.\/AccountsPageStateContext'/);
-  assert.match(accountImportSource, /from '\.\.\/features\/accounts\/AccountsPageStateContext'/);
+  assert.match(accountsFeatureSource, /from [\"']\.\/AccountsPageStateContext[\"']/);
+  assert.match(accountImportSource, /from [\"']\.\.\/features\/accounts\/AccountsPageStateContext[\"']/);
 });
 
 test('component stories expose an overview state matrix', async () => {

@@ -20,6 +20,8 @@ export interface VendorPreset {
   websiteUrl?: string;
   quotaCurlTemplate?: string;
   billingCurlTemplate?: string;
+  quotaSetupGuide?: string[];
+  billingSetupGuide?: string[];
   notes?: string;
   consoleUrl?: string;
   variantLabel?: string;
@@ -35,6 +37,16 @@ export function getFormatBaseUrl(
 ): string {
   return preset.formatBaseUrls?.[format] ?? preset.baseUrl;
 }
+
+
+const XIAOMI_MIMO_COOKIE_GUIDE = [
+  "登录 platform.xiaomimimo.com，并保持当前浏览器会话有效。",
+  "打开目标页面：余额进入 console/balance，Token Plan 用量进入 console/plan-manage。",
+  "打开浏览器开发者工具 Network，刷新页面或点击页面上的查询/刷新按钮。",
+  "找到 /api/v1/balance 或 /api/v1/tokenPlan/usage 请求，复制 Request Headers 里的 Cookie 值。",
+  "将模板中的 <PASTE_PLATFORM_COOKIE> 替换为 Cookie 内容；不要包含 Cookie: 前缀。",
+  "Cookie 属于登录凭证且可能过期，请仅保存在本机可信环境，失效后重新复制。",
+];
 
 export const vendorPresets: VendorPreset[] = [
   // ==================== Official ====================
@@ -201,8 +213,9 @@ export const vendorPresets: VendorPreset[] = [
     apiFormat: "openai_chat",
     supportedFormats: ["openai_chat", "anthropic"],
     baseUrl: "https://api.xiaomimimo.com/v1",
-    quotaCurlTemplate:
-      'curl -sS "https://platform.xiaomimimo.com/api/v1/tokenPlan/usage" -H "accept: */*" -H "accept-language: zh" -H "content-type: application/json" -b "<PASTE_PLATFORM_COOKIE>" -H "referer: https://platform.xiaomimimo.com/console/plan-manage" -H "x-timezone: Asia/Shanghai"',
+    billingCurlTemplate:
+      'curl -sS "https://platform.xiaomimimo.com/api/v1/balance" -H "accept: */*" -H "accept-language: zh" -H "content-type: application/json" -b "<PASTE_PLATFORM_COOKIE>" -H "referer: https://platform.xiaomimimo.com/console/balance" -H "x-timezone: Asia/Shanghai"',
+    billingSetupGuide: XIAOMI_MIMO_COOKIE_GUIDE,
     formatBaseUrls: {
       openai_chat: "https://api.xiaomimimo.com/v1",
       anthropic: "https://api.xiaomimimo.com/anthropic",
@@ -238,6 +251,10 @@ export const vendorPresets: VendorPreset[] = [
     baseUrl: "https://token-plan-cn.xiaomimimo.com/v1",
     quotaCurlTemplate:
       'curl -sS "https://platform.xiaomimimo.com/api/v1/tokenPlan/usage" -H "accept: */*" -H "accept-language: zh" -H "content-type: application/json" -b "<PASTE_PLATFORM_COOKIE>" -H "referer: https://platform.xiaomimimo.com/console/plan-manage" -H "x-timezone: Asia/Shanghai"',
+    quotaSetupGuide: XIAOMI_MIMO_COOKIE_GUIDE,
+    billingCurlTemplate:
+      'curl -sS "https://platform.xiaomimimo.com/api/v1/balance" -H "accept: */*" -H "accept-language: zh" -H "content-type: application/json" -b "<PASTE_PLATFORM_COOKIE>" -H "referer: https://platform.xiaomimimo.com/console/balance" -H "x-timezone: Asia/Shanghai"',
+    billingSetupGuide: XIAOMI_MIMO_COOKIE_GUIDE,
     formatBaseUrls: {
       openai_chat: "https://token-plan-cn.xiaomimimo.com/v1",
       anthropic: "https://token-plan-cn.xiaomimimo.com/anthropic",

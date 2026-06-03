@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 
 import {
   buildApiKeyConfigDraft,
+  buildBillingCurlSetupGuide,
   buildBillingCurlTemplate,
+  buildQuotaCurlSetupGuide,
   buildQuotaCurlTemplate,
   hasApiKeyConfigChanges,
   listApiKeyConfigMissingFields,
@@ -249,14 +251,53 @@ test('buildBillingCurlTemplate resolves known vendor presets', () => {
 
 test('buildQuotaCurlTemplate resolves Xiaomi MiMo token plan usage preset without secrets', () => {
   const template = buildQuotaCurlTemplate({
-    displayName: 'Xiaomi MiMo',
+    displayName: 'Xiaomi MiMo Token Plan',
     provider: 'codex',
-    baseUrl: 'https://api.xiaomimimo.com/v1',
+    baseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
   });
 
   assert.match(template, /https:\/\/platform\.xiaomimimo\.com\/api\/v1\/tokenPlan\/usage/);
   assert.match(template, /<PASTE_PLATFORM_COOKIE>/);
   assert.doesNotMatch(template, /api-platform_serviceToken=/);
+});
+
+test('buildBillingCurlTemplate resolves Xiaomi MiMo balance preset without secrets', () => {
+  const template = buildBillingCurlTemplate({
+    displayName: 'Xiaomi MiMo API',
+    provider: 'codex',
+    baseUrl: 'https://api.xiaomimimo.com/v1',
+  });
+
+  assert.match(template, /https:\/\/platform\.xiaomimimo\.com\/api\/v1\/balance/);
+  assert.match(template, /<PASTE_PLATFORM_COOKIE>/);
+  assert.doesNotMatch(template, /api-platform_serviceToken=/);
+});
+
+test('Xiaomi MiMo curl setup guides explain how to copy platform cookies', () => {
+  const quotaGuide = buildQuotaCurlSetupGuide({
+    displayName: 'Xiaomi MiMo Token Plan',
+    provider: 'codex',
+    baseUrl: 'https://token-plan-cn.xiaomimimo.com/v1',
+  });
+  const billingGuide = buildBillingCurlSetupGuide({
+    displayName: 'Xiaomi MiMo API',
+    provider: 'codex',
+    baseUrl: 'https://api.xiaomimimo.com/v1',
+  });
+
+  assert.ok(quotaGuide.length >= 3);
+  assert.ok(billingGuide.length >= 3);
+  assert.match(quotaGuide.join(' '), /Cookie/);
+  assert.match(billingGuide.join(' '), /<PASTE_PLATFORM_COOKIE>/);
+});
+
+
+test('Unified compose persists dedicated model fetch credential when creating Token Plan preset', async () => {
+  const source = readFileSync(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  assert.match(source, /modelFetchApiKey:\s*unifiedComposeForm\.modelFetchApiKey\?\.trim\(\) \|\| ""/);
+  assert.match(source, /modelFetchBaseUrl:\s*unifiedComposeForm\.modelFetchBaseUrl\?\.trim\(\) \|\| ""/);
+  assert.match(source, /billingCurl:\s*preset\.billingCurlTemplate \?\? prev\.billingCurl/);
+  assert.match(source, /billingEnabled:\s*Boolean\(preset\.billingCurlTemplate\)/);
 });
 
 test('generated Wails account models preserve quota curl fields', () => {
@@ -268,6 +309,7 @@ test('generated Wails account models preserve quota curl fields', () => {
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*quotaCurl\?: string;[\s\S]*quotaEnabled\?: boolean;/);
   assert.match(source, /export class TestCodexAPIKeyQuotaCurlInput[\s\S]*quotaCurl: string;/);
   assert.match(source, /export class AccountRecord[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
+  assert.match(source, /export class AccountRecord[\s\S]*modelFetchApiKey\?: string;[\s\S]*modelFetchBaseUrl\?: string;/);
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
   assert.match(source, /export class CodexQuotaResponse[\s\S]*billing\?: CodexQuotaBillingInfo;/);

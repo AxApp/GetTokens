@@ -153,7 +153,7 @@ test('account detail modals keep rate limit CRUD injected by the page shell', as
   assert.doesNotMatch(detailSource, /CreateRateLimitRule|DeleteRateLimitRule|ListRateLimitRules|UpdateRateLimitRule/);
   assert.match(detailSource, /rateLimitRulesAPI\?: RateLimitRulesAPI/);
   assert.match(detailSource, /rateLimitRulesAPI=\{rateLimitRulesAPI\}/);
-  assert.match(featureSource, /rateLimitRulesAPI=\{previewMode\s*\?/);
+  assert.match(featureSource, /rateLimitRulesAPI=\{[\s\S]*?previewMode\s*\?/);
   assert.doesNotMatch(codexDetailSource, /CreateRateLimitRule|DeleteRateLimitRule|ListRateLimitRules|UpdateRateLimitRule/);
   assert.match(codexDetailSource, /rateLimitRulesAPI\?: RateLimitRulesAPI/);
   assert.match(codexDetailSource, /rateLimitRulesAPI=\{rateLimitRulesAPI\}/);

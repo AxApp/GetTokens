@@ -81,6 +81,40 @@ func TestParseDeepLinkImportPayloadSupportsMultipleAccounts(t *testing.T) {
 	}
 }
 
+func TestParseDeepLinkImportPayloadPreservesOpenAICompatibleModelFetchCredential(t *testing.T) {
+	rawURL := buildDeepLinkTestURL(`{
+		"schema": "gettokens.import.v1",
+		"accounts": [
+			{
+				"ref": "mimo-token-plan",
+				"kind": "openai-compatible",
+				"openai_compatible": {
+					"provider_name": "Xiaomi MiMo Token Plan",
+					"base_url": " https://token-plan-cn.xiaomimimo.com/v1 ",
+					"api_key_entries_json": "[{\"api-key\":\"tp-agent\"}]",
+					"model_fetch_api_key": " sk-models ",
+					"model_fetch_base_url": " https://api.xiaomimimo.com/v1 "
+				}
+			}
+		]
+	}`)
+
+	request, err := ParseDeepLinkImportURL(rawURL)
+	if err != nil {
+		t.Fatalf("ParseDeepLinkImportURL returned error: %v", err)
+	}
+	credential := request.Accounts[0].Write.OpenAICompatible
+	if credential == nil {
+		t.Fatalf("missing openai compatible credential")
+	}
+	if credential.ModelFetchAPIKey != "sk-models" {
+		t.Fatalf("ModelFetchAPIKey = %q, want sk-models", credential.ModelFetchAPIKey)
+	}
+	if credential.ModelFetchBaseURL != "https://api.xiaomimimo.com/v1" {
+		t.Fatalf("ModelFetchBaseURL = %q", credential.ModelFetchBaseURL)
+	}
+}
+
 func TestParseDeepLinkImportPayloadSupportsDevScheme(t *testing.T) {
 	rawURL := strings.Replace(buildDeepLinkTestURL(`{
 		"schema": "gettokens.import.v1",

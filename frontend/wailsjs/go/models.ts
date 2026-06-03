@@ -749,6 +749,8 @@ export namespace main {
 	    formatBaseUrls?: Record<string, string>;
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
+	    modelFetchApiKey?: string;
+	    modelFetchBaseUrl?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new AccountRecord(source);
@@ -786,6 +788,8 @@ export namespace main {
 	        this.formatBaseUrls = source["formatBaseUrls"];
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
+	        this.modelFetchApiKey = source["modelFetchApiKey"];
+	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -2201,8 +2205,9 @@ export namespace main {
 	    authID?: string;
 	    accountKey?: string;
 	    authLabel?: string;
-	    authDetached?: boolean;
-	    authDisabled?: boolean;
+	    accountPresent: boolean;
+	    accountCoarseAvailable: boolean;
+	    accountFilteredReasons?: string[];
 	    provider?: string;
 	    proxyRoute?: string;
 	    usage?: CodexLiveTokenUsage;
@@ -2231,8 +2236,9 @@ export namespace main {
 	        this.authID = source["authID"];
 	        this.accountKey = source["accountKey"];
 	        this.authLabel = source["authLabel"];
-	        this.authDetached = source["authDetached"];
-	        this.authDisabled = source["authDisabled"];
+	        this.accountPresent = source["accountPresent"];
+	        this.accountCoarseAvailable = source["accountCoarseAvailable"];
+	        this.accountFilteredReasons = source["accountFilteredReasons"];
 	        this.provider = source["provider"];
 	        this.proxyRoute = source["proxyRoute"];
 	        this.usage = this.convertValues(source["usage"], CodexLiveTokenUsage);
@@ -2352,8 +2358,9 @@ export namespace main {
 	    authID?: string;
 	    accountKey?: string;
 	    authLabel?: string;
-	    authDetached?: boolean;
-	    authDisabled?: boolean;
+	    accountPresent: boolean;
+	    accountCoarseAvailable: boolean;
+	    accountFilteredReasons?: string[];
 	    provider?: string;
 	    downstreamTransport: string;
 	    upstreamTransport: string;
@@ -2386,8 +2393,9 @@ export namespace main {
 	        this.authID = source["authID"];
 	        this.accountKey = source["accountKey"];
 	        this.authLabel = source["authLabel"];
-	        this.authDetached = source["authDetached"];
-	        this.authDisabled = source["authDisabled"];
+	        this.accountPresent = source["accountPresent"];
+	        this.accountCoarseAvailable = source["accountCoarseAvailable"];
+	        this.accountFilteredReasons = source["accountFilteredReasons"];
 	        this.provider = source["provider"];
 	        this.downstreamTransport = source["downstreamTransport"];
 	        this.upstreamTransport = source["upstreamTransport"];

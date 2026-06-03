@@ -88,7 +88,7 @@ const profiles: ClaudeCodeAccountListWorkbenchProps['profiles'] = [
     provider: 'Xiaomi MiMo',
     plan: 'Claude Code integration',
     defaultModel: 'mimo-v2.5-pro',
-    switchableModels: ['mimo-v2.5-pro[1m]', 'mimo-v2.5', 'mimo-v2.5-tts'],
+    switchableModels: ['mimo-v2.5-pro[1m]', 'mimo-v2.5-pro', 'mimo-v2-pro', 'mimo-v2.5', 'mimo-v2-omni', 'mimo-v2-flash', 'mimo-v2.5-tts'],
     localApplyHint: 'ANTHROPIC_BASE_URL + ANTHROPIC_AUTH_TOKEN',
   },
   {

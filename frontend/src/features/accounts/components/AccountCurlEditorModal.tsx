@@ -17,6 +17,7 @@ export function AccountCurlEditorModal({
   variables,
   templates,
   placeholder,
+  setupGuide,
   onValueChange,
   onEnabledChange,
   onApplyTemplate,
@@ -28,6 +29,7 @@ export function AccountCurlEditorModal({
   variables: Array<{ label: string; value: string }>;
   templates: CurlTemplateOption[];
   placeholder: string;
+  setupGuide?: string[];
   onValueChange: (value: string) => void;
   onEnabledChange: (enabled: boolean) => void;
   onApplyTemplate: (template: string) => void;
@@ -195,6 +197,18 @@ export function AccountCurlEditorModal({
           </section>
         </div>
         <aside className="grid content-start gap-4 p-4">
+          {setupGuide?.length ? (
+            <section className="grid gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
+              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                获取 Cookie 指引
+              </div>
+              <ol className="list-decimal space-y-1 pl-4 text-[length:var(--font-size-ui-xs)] font-bold leading-relaxed text-[var(--text-primary)]">
+                {setupGuide.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
           <section className="grid gap-2">
             <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
               TEMPLATES

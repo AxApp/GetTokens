@@ -432,6 +432,8 @@ func normalizeDeepLinkOpenAICompatibleCredential(input cliproxyapi.OpenAICompati
 	input.APIKeyEntriesJSON = strings.TrimSpace(input.APIKeyEntriesJSON)
 	input.HeadersJSON = strings.TrimSpace(input.HeadersJSON)
 	input.ModelsJSON = strings.TrimSpace(input.ModelsJSON)
+	input.ModelFetchAPIKey = strings.TrimSpace(input.ModelFetchAPIKey)
+	input.ModelFetchBaseURL = strings.TrimSpace(input.ModelFetchBaseURL)
 	return input
 }
 

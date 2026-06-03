@@ -93,8 +93,9 @@ export interface CodexLiveRequest {
   authID?: string;
   accountKey?: string;
   authLabel?: string;
-  authDetached?: boolean;
-  authDisabled?: boolean;
+  accountPresent?: boolean;
+  accountCoarseAvailable?: boolean;
+  accountFilteredReasons?: string[];
   provider?: string;
   proxyRoute?: string;
   usage?: CodexLiveTokenUsage;
@@ -122,8 +123,9 @@ export interface CodexLiveSession {
   authID?: string;
   accountKey?: string;
   authLabel?: string;
-  authDetached?: boolean;
-  authDisabled?: boolean;
+  accountPresent?: boolean;
+  accountCoarseAvailable?: boolean;
+  accountFilteredReasons?: string[];
   provider?: string;
   downstreamTransport: CodexLiveTransport;
   upstreamTransport: CodexLiveTransport;

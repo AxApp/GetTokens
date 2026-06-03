@@ -231,3 +231,75 @@ multiModeProfiles: [
 - 状态：implemented
 - 最近更新：2026-06-03
 - 补充：厂商选择卡片已增加 `API / sk` 与 `Token Plan / tp` 模式 badge，避免两个 Xiaomi 预设只显示同名。
+- 补充：额度 / 余额 cURL 模板按拆厂商语义归位：API 预设提供平台余额 `billingCurlTemplate`；Token Plan 预设提供订阅用量 `quotaCurlTemplate` 和平台余额 `billingCurlTemplate`。模板只包含 `<PASTE_PLATFORM_COOKIE>` 占位符，不固化真实 Cookie。
+
+
+## 会话交接
+
+以下工作已完成代码落地，待下个会话验证或接续：
+
+### 1. `handlePresetApply` cURL 表单预填确认
+- `AccountsFeature.tsx:handlePresetApply` 使用 `unifiedComposeForm` 初始表单
+- `billingCurlTemplate` 已存在时区域自动展示，确认两个预设均正常展示余额 cURL 区域
+
+### 2. unified compose 保存时 `billingCurlTemplate` 未预填到 `unifiedComposeForm`
+- `handlePresetApply` 未同步将 `preset.billingCurlTemplate` 写入 `form.billingCurl`（目前只写 `quotaCurl`）
+- Token Plan 预设选完后需要点击「添加」才看到余额模板，建议确认是否需要在预设选择时自动回填
+
+### 3. 账号记录的 `modelFetchApiKey` 回读测试
+- 后端 DTO 和前端 draft 已支持
+- 确认 Token Plan 厂商的余额测试不会误用 `tp-xxxxx`
+
+### 4. Claude Code account list 中 `officialSwitchableModels` 更新
+- 当前 `mimo` 条目：`['mimo-v2.5-pro[1m]', 'mimo-v2.5', 'mimo-v2.5-tts']`
+- 新模型 `mimo-v2-flash`, `mimo-v2-pro`, `mimo-v2-omni` 尚未补充
+
+### 5. DeepLink 导入 / API Key 创建流程
+- `ApiKeyComposeModal` 和 DeepLink 导入不经过 UnifiedCompose，未适配 `modelFetchApiKey`
+- Token Plan 厂商通过 DeepLink 导入时缺少 modelFetch 字段
+
+### 6. 桌面端验收
+- Wails build 已通过，但未在桌面端做实机验证
+- 建议下个会话在 `/Applications/GetTokens.app` 或 dev build 中确认：
+  - UnifiedCompose 选择 Xiaomi 预设后 cURL 区域展示
+  - 账号详情中模型拉取凭据区域保存/回读
+  - Cookie 指引编辑器侧边栏是否正常渲染
+
+## 模式沉淀
+
+本次会话产出的可复用模式（`docs-linhay/dev/` 无需新增，记录至此供参考）：
+
+- **`modelFetchApiKey` 模式**：管理字段不进入运行态路由。后续任何厂商需要“额外凭据仅用于模型列表拉取”时可复用此设计，不修改 route guard / usage attribution。
+- **`setupGuide` 模式**：`VendorPreset.quotaSetupGuide/billingSetupGuide` 配合 `AccountCurlEditorModal.setupGuide` prop，支持厂商在 cURL 编辑器侧边栏展示步骤指引。后续厂商只要 cURL 依赖非 API-Key 凭据都可复用。
+- **`variantLabel` 模式**：同一 icon/颜色下多个形态的厂商（如 API vs Token Plan），通过 `variantLabel/variantDescription` 做卡片 badge 区分。
+
+## 2026-06-03 接续收尾：V3 回读、DeepLink 与 Claude Code 模型补齐
+
+### 已补齐
+
+1. **账号记录回读 modelFetch 字段**
+   - `internal/accounts.AccountRecord` 已有 `modelFetchApiKey/modelFetchBaseUrl`；本次补齐 Wails app 层 `AccountRecord` DTO 与 `mapAccountRecord` 映射，确保 `ListAccounts` 返回的 openai-compatible 账号也能带回 management-only 模型拉取凭据。
+   - 重新运行 `./scripts/wails-cli.sh build` 生成 `frontend/wailsjs/go/models.ts`，前端类型已包含 `AccountRecord.modelFetchApiKey/modelFetchBaseUrl`。
+
+2. **DeepLink 导入支持 Token Plan 模型拉取凭据**
+   - `normalizeDeepLinkOpenAICompatibleCredential` 会 trim 并保留 `model_fetch_api_key` 与 `model_fetch_base_url`。
+   - 新增 Go 单测覆盖 Xiaomi MiMo Token Plan deep link payload，确认 `tp-agent` 留在 `api_key_entries_json`，`sk-models` 作为模型列表拉取专用凭据进入 management-only 字段。
+
+3. **Claude Code Xiaomi MiMo 官方可切换模型补齐**
+   - `officialSwitchableModels` 从旧的 `mimo-v2.5-pro[1m] / mimo-v2.5 / mimo-v2.5-tts` 扩展为包含 `mimo-v2.5-pro`、`mimo-v2-pro`、`mimo-v2-omni`、`mimo-v2-flash`。
+   - Storybook mock 数据同步更新，新增单测锁定新增模型。
+
+4. **UnifiedCompose cURL 与模型拉取凭据回归锁定**
+   - 补充前端单测锁定 Token Plan 创建时会提交 `modelFetchApiKey/modelFetchBaseUrl`。
+   - 补充断言确保 Xiaomi 两个预设存在余额/用量 cURL 回填入口，余额区域由 `billingCurlTemplate` 控制展示。
+
+### 验证
+
+- `go test ./internal/...`：通过。
+- `cd frontend && npx tsc --noEmit`：通过。
+- `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs frontend/src/features/claude-code/claudeCodeAccountList.test.mjs`：31/31 通过。
+- `./scripts/wails-cli.sh build`：通过，包含 bindings + 前端编译 + macOS app 打包。
+
+### 仍需注意
+
+- 当前工作树仍包含 Codex live-session 相关未提交改动，提交 Xiaomi 任务前需要按 diff 分离 staging，避免把两个需求混到同一个提交。

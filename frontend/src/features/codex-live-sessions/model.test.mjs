@@ -469,8 +469,9 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
         model: 'gpt-5.5',
         accountKey: 'acct_live',
         authLabel: 'team-codex@example.com',
-        authDetached: true,
-        authDisabled: true,
+        accountPresent: true,
+        accountCoarseAvailable: false,
+        accountFilteredReasons: ['rate-limit'],
         downstreamTransport: 'websocket',
         upstreamTransport: 'websocket',
         fallbackConfidence: 'not-a-confidence',
@@ -499,8 +500,9 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
             downstreamTransport: 'websocket',
             upstreamTransport: 'websocket',
             accountKey: 'acct_live',
-            authDetached: true,
-            authDisabled: true,
+            accountPresent: true,
+            accountCoarseAvailable: false,
+            accountFilteredReasons: ['rate-limit'],
             timing: { outputTokensPerSecond: 42, firstTokenMs: 800 },
             timeline: [],
           },
@@ -511,11 +513,13 @@ test('mapBackendCodexLiveSessionsSnapshot normalizes live Wails snapshot for the
 
   assert.equal(snapshot.source, 'live');
   assert.equal(snapshot.sessions[0].accountKey, 'acct_live');
-  assert.equal(snapshot.sessions[0].authDetached, true);
-  assert.equal(snapshot.sessions[0].authDisabled, true);
+  assert.equal(snapshot.sessions[0].accountPresent, true);
+  assert.equal(snapshot.sessions[0].accountCoarseAvailable, false);
+  assert.deepEqual(snapshot.sessions[0].accountFilteredReasons, ['rate-limit']);
   assert.equal(snapshot.sessions[0].requests[0].accountKey, 'acct_live');
-  assert.equal(snapshot.sessions[0].requests[0].authDetached, true);
-  assert.equal(snapshot.sessions[0].requests[0].authDisabled, true);
+  assert.equal(snapshot.sessions[0].requests[0].accountPresent, true);
+  assert.equal(snapshot.sessions[0].requests[0].accountCoarseAvailable, false);
+  assert.deepEqual(snapshot.sessions[0].requests[0].accountFilteredReasons, ['rate-limit']);
   assert.equal(snapshot.sessions[0].requests[0].timing?.outputTokensPerSecond, 42);
   assert.equal(snapshot.sessions[0].fallbackConfidence, undefined);
   assert.equal(snapshot.sessions[0].timingSummary?.sampleCount, 2);
