@@ -74,7 +74,8 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
 - Codex `/model` 展示与 GetTokens runtime route 是两条边界：runtime 真源仍是 sidecar / account store / channel routing；`model_catalog_json` 只是让本地 Codex TUI 稳定展示可选模型的 projection。
 - GetTokens 只管理 `CODEX_HOME/gettokens-model-catalog.json`。写入 `config.toml` 顶层 `model_catalog_json` 时必须指向这个 GetTokens-owned 文件，不把 account store 或 provider preset 当成 catalog 真源。
 - `model_catalog_json` 会完全替换 Codex 内置和远程 catalog；生成文件必须覆盖当前 relay 可选的完整模型集合，不能只写 DeepSeek 或某个单一账号模型。
-- 生成 slug 使用 client-facing model：有 `OpenAICompatibleModel.Alias` 时用 alias，否则用 name；这保证用户在 `/model` 里选到的值就是 sidecar route engine 的请求模型输入。
+- 生成 slug 使用 sidecar 可路由的 client-facing model：真正 route alias（例如 `models[].name = deepseek-chat`、`models[].alias = deepseek`）用 alias，否则用 name；这保证用户在 `/model` 里选到的值就是 sidecar route engine 的请求模型输入。
+- 大小写/格式展示名不是 route alias：当 `OpenAICompatibleModel.Alias` 与 `Name` 仅大小写不同（例如 `name=gpt-5.5`、`alias=GPT-5.5` 或 `name=gpt-5.4-mini`、`alias=GPT-5.4-Mini`）时，catalog `slug` 必须保留真实模型 ID，`display_name` 才使用展示名；否则 Codex 会发送 `GPT-5.5` 并触发 sidecar `unknown provider for model GPT-5.5`。
 - 如果用户已有外部 `model_catalog_json`，默认保留并返回冲突提示；除非用户明确确认接管，不得静默覆盖。
 - Status 页 `/model` 同步开关必须双向立即写配置：打开时写入 GetTokens-owned `model_catalog_json` pointer，关闭时只移除指向 `gettokens-model-catalog.json` 的 pointer；不得删除或改写用户外部 catalog。
 - Codex 只在启动时读取 static catalog；前端保存后必须提示重启 Codex 后生效。
