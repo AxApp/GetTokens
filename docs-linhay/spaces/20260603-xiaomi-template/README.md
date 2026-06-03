@@ -516,3 +516,42 @@ credentialFields: [XIAOMI_MIMO_PLATFORM_COOKIE_FIELD, ...XIAOMI_MIMO_MODEL_FETCH
 
 - DeepLink 导入 `model_fetch_api_key` / `model_fetch_base_url` 完整闭环验证（sidecar 导入验收）。
 - Wails 桌面端真实渲染验收（选预设 → 账号详情 model fetch 区域确认）。
+
+## 2026-06-03 补充 3：DeepLink + sidecar model_fetch 闭环修复
+
+### 问题
+
+`normalizeDeepLinkOpenAICompatibleCredential` 已保留 `ModelFetchAPIKey` / `ModelFetchBaseURL` trim 路径，但 sidecar（CLIProxyAPI fork）的 `oidc-api-compatible` 的 `OpenAICompatibleCredential` 和 SQLite `openai_compatible_accounts` 表中完全缺失这两个字段，导致 DeepLink 导入时字段被 JSON 反序列化丢弃。
+
+### 修复
+
+在 sidecar 中补齐完整链路：
+
+- `accountstore.OpenAICompatibleCredential` 新增 `ModelFetchAPIKey` / `ModelFetchBaseURL`（`model_fetch_api_key` / `model_fetch_base_url` JSON tag）
+- SQLite `openai_compatible_accounts` 表新增 `model_fetch_api_key TEXT NOT NULL DEFAULT ''` 和 `model_fetch_base_url TEXT NOT NULL DEFAULT ''`
+- `EnsureSchema` 新增自动补列迁移
+- `attachCredential` SELECT + `insertCredentialRows` INSERT 均已更新
+- 新增 `TestOpenAICompatibleModelFetchFieldsRoundTrip` 覆盖 SQLite 保存/回读
+
+### 验证
+
+- CLIProxyAPI：`go test ./internal/gettokens/accountstore ./internal/api/handlers/management -count=1` 通过
+- GetTokens：`go test ./internal/accounts ./internal/cliproxyapi ./internal/wailsapp -count=1` 通过
+- 前端：66/66 测试通过（44 account + 22 openai-compatible）
+- `cd frontend && npx tsc --noEmit` 通过
+- sidecar `go build ./cmd/server` 成功
+- `./scripts/wails-cli.sh build` 成功（bindings 重生成 + 前端编译通过）
+
+### 轮次总结
+
+| 优先级 | 内容 | 状态 |
+|--------|------|------|
+| 1 | `curlVariables: Record<string,string>` 通用替换链路 | ✅ |
+| 2 | `modelFetch` 详情页并入 credentialFields 通用渲染 | ✅ |
+| 3 | DeepLink 导入闭环验证 | ✅ |
+| 3 | Wails 桌面端真实渲染验收 | ⏳ 需桌面端手动确认 |
+
+仍待 Wails 桌面端手动确认：
+- 新建 Xiaomi Token Plan 账号 → 确认 3 个 credentialFields 输入框（平台 Cookie / 模型拉取 API Key / Model Fetch Base URL）
+- 进入账号详情 → 确认 model_fetch 凭据区域正确渲染
+- cURL 编辑器变量区按声明展示 {{platformCookie}}
