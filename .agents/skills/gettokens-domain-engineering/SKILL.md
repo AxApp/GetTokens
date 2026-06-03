@@ -83,6 +83,29 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - `StatusPage` -> `features/status/StatusFeature.tsx`
   - `SettingsPage` -> `features/settings/SettingsFeature.tsx`
 
+
+## Session Account Affinity & Failure Budget Routing
+
+### 原则
+- **Session Account Lease**：同一个 Codex session（按 `session_id + provider + model_family` 识别）在同一账号上失败达到固定次数（默认 2）后才释放 lease 切到下一个账号。
+- **Soft Quota ≠ Eviction**：本地 quota=0 / remaining=0 只是软信号，不驱逐当前 session。Codex 存在"最后一个任务即使额度归零也可继续完成"的行为，直接按 quota=0 切账号会打断尚可完成的任务。
+- **Hard Failure Budget**：仅真实 upstream terminal error（429 usage limit、401 auth invalid、stream closed before completed、websocket 1008 policy violation）累计 session failure budget。
+- **Disabled Account Immediate Switch**：用户禁用账号是明确操作意图，必须立即生效。禁用时清除该账号在所有 session 的 affinity binding + bump pool epoch，当前已 commit 的请求不中断，但下一个请求必须走其他账号。
+- **Enabled Account Immediate Entry**：用户启用账号后，`SetRouteDisabled(false)` 必须清空该账号的 stale transient route block（`Unavailable / NextRetryAfter / ModelStates / Quota / LastError`）并 upsert scheduler，使账号无需重启即可参与候选。
+- **Pool Epoch**：任何影响路由候选的操作（启用/禁用/新增/删除/重登/auth file 更新/credential 变更）必须推进全局 epoch，使 session affinity 在下一次请求时感知候选池变化并重新评估 lease。
+- **Post-Commit Freeze**：流式请求在第一个 upstream event 或第一个 downstream write 后 commit，此后同一请求不允许跨账号拼接输出。失败只计入 session failure budget，等下一次请求再重新选。
+- **Pre-Commit Fallback**：OAuth refresh 失败、上游握手失败、首次 bootstrap error 等 pre-commit 错误仍可在同一请求内 fallback 到下一个账号。
+- **Migration Backups Exclusion**：`migration-backups/**` 目录下的旧 auth 文件永不参与 runtime routing 候选，仅在人工恢复时使用。
+
+### 实现要点
+- `SessionAffinitySelector` 扩展：`FailureBudget`（默认2）、`RecordRouteFailure`、`RecordRouteSuccess`、`BumpPoolEpoch`
+- `SessionCache` 扩展：`failureCount`（同 session+auth 失败计数）、`poolEpoch`（账号池版本号）
+- `Manager.conductor` 的 `Execute/ExecuteCount/ExecuteStream` 路径均需在成功/失败时调用 `recordSessionRouteSuccess/Failure`
+- `applyAccountStoreStatusChange`：禁用时 `InvalidateAuth` + `BumpPoolEpoch`，启用时 `SetRouteDisabled(false)` 清 stale block
+- `rewriteRouteCandidates`：缓存命中但 auth 不在候选池时自动 invalidate 并 fallback，不再卡在 stale binding
+- `synthesizeAccountStoreAuthFile`：过滤 `isMigrationBackupAuthFileName`
+- 配置项（待暴露到 `config.yaml`）：`session_failure_budget: 2`, `session_failure_window_seconds: 300`
+
 ## 3. Relay Service Config Boundary
 - **Model**: Relay service client keys are sidecar top-level `api-keys`, not upstream provider assets such as `codex-api-key`.
 - **Rules**:
