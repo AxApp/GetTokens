@@ -1,5 +1,17 @@
 import type { ApiFormat } from "../../../types";
 
+export type VendorCredentialFieldID = "platformCookie" | "modelFetchApiKey" | "modelFetchBaseUrl";
+
+export interface VendorCredentialField {
+  id: VendorCredentialFieldID;
+  label: string;
+  placeholder?: string;
+  help?: string;
+  secret?: boolean;
+  variableName?: string;
+  scope: "curl" | "model_fetch";
+}
+
 export interface VendorPreset {
   id: string;
   name: string;
@@ -29,6 +41,7 @@ export interface VendorPreset {
   modelFetchBaseUrl?: string;
   modelFetchApiKeyPlaceholder?: string;
   requiresModelFetchApiKey?: boolean;
+  credentialFields?: VendorCredentialField[];
 }
 
 export function getFormatBaseUrl(
@@ -46,6 +59,34 @@ const XIAOMI_MIMO_COOKIE_GUIDE = [
   "找到 /api/v1/balance 或 /api/v1/tokenPlan/usage 请求，复制 Request Headers 里的 Cookie 值。",
   "在账号配置里的“平台 Cookie”输入框粘贴 Cookie；cURL 模板保持 {{platformCookie}} 占位符。",
   "Cookie 属于登录凭证且可能过期，请仅保存在本机可信环境，失效后重新复制。",
+];
+
+const XIAOMI_MIMO_PLATFORM_COOKIE_FIELD: VendorCredentialField = {
+  id: "platformCookie",
+  label: "平台 Cookie",
+  placeholder: "用于 {{platformCookie}}，不要包含 Cookie: 前缀",
+  help: "仅用于平台余额 / 用量 cURL 的 {{platformCookie}} 变量，不参与 agent 对话。",
+  secret: true,
+  variableName: "platformCookie",
+  scope: "curl",
+};
+
+const XIAOMI_MIMO_MODEL_FETCH_FIELDS: VendorCredentialField[] = [
+  {
+    id: "modelFetchApiKey",
+    label: "模型拉取 API Key（sk）",
+    placeholder: "sk-...",
+    help: "仅用于 /models 拉取模型列表，不参与 agent 对话，也不用于 cURL。",
+    secret: true,
+    scope: "model_fetch",
+  },
+  {
+    id: "modelFetchBaseUrl",
+    label: "Model Fetch Base URL",
+    placeholder: "https://api.xiaomimimo.com/v1",
+    help: "模型列表拉取使用的 API Base URL；agent 对话继续使用上方 Base URL。",
+    scope: "model_fetch",
+  },
 ];
 
 export const vendorPresets: VendorPreset[] = [
@@ -216,6 +257,7 @@ export const vendorPresets: VendorPreset[] = [
     billingCurlTemplate:
       'curl -sS "https://platform.xiaomimimo.com/api/v1/balance" -H "accept: */*" -H "accept-language: zh" -H "content-type: application/json" -b "{{platformCookie}}" -H "referer: https://platform.xiaomimimo.com/console/balance" -H "x-timezone: Asia/Shanghai"',
     billingSetupGuide: XIAOMI_MIMO_COOKIE_GUIDE,
+    credentialFields: [XIAOMI_MIMO_PLATFORM_COOKIE_FIELD],
     formatBaseUrls: {
       openai_chat: "https://api.xiaomimimo.com/v1",
       anthropic: "https://api.xiaomimimo.com/anthropic",
@@ -255,6 +297,7 @@ export const vendorPresets: VendorPreset[] = [
     billingCurlTemplate:
       'curl -sS "https://platform.xiaomimimo.com/api/v1/balance" -H "accept: */*" -H "accept-language: zh" -H "content-type: application/json" -b "{{platformCookie}}" -H "referer: https://platform.xiaomimimo.com/console/balance" -H "x-timezone: Asia/Shanghai"',
     billingSetupGuide: XIAOMI_MIMO_COOKIE_GUIDE,
+    credentialFields: [XIAOMI_MIMO_PLATFORM_COOKIE_FIELD, ...XIAOMI_MIMO_MODEL_FETCH_FIELDS],
     formatBaseUrls: {
       openai_chat: "https://token-plan-cn.xiaomimimo.com/v1",
       anthropic: "https://token-plan-cn.xiaomimimo.com/anthropic",

@@ -105,6 +105,7 @@ func checkAndEmitAvailableUpdate(
 }
 
 func (a *App) Shutdown() {
+	a.stopCodexModelCatalogRefreshAfterAccountMutation()
 	if err := a.cleanupOwnedCodexModelCatalogProjectionOnShutdown(); err != nil {
 		log.Printf("cleanup owned Codex model catalog projection on shutdown failed: %v", err)
 	}

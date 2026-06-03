@@ -384,3 +384,75 @@ go test ./internal/wailsapp -run 'TestRelayModelAccountCache|TestListRelaySuppor
 go test ./internal/wailsapp -run 'TestListRelaySupportedModels|TestRelayModelAccountCache|TestApplyPersistedCodexModelCatalogCacheSnapshot|TestCodexAPIKeyAccountCacheUsesLocalID|TestLoadRelaySupportedModelsFromAccountCache'
 go test ./internal/wailsapp
 ```
+
+## 2026-06-03 App 运行中账号变更及时刷新
+
+针对“app 启动中/运行中缓存需要及时修改”的补充要求，本轮将账号模型缓存刷新从启动链路扩展到账号变更链路：
+
+- 新增 `refreshCodexModelCatalogAfterAccountMutation` / `scheduleCodexModelCatalogRefreshAfterAccountMutation`。
+- Wails App 已进入运行态（`ctx != nil`）后，账号变更成功会异步触发一次 Codex model catalog 同步。
+- 覆盖入口：
+  - `SetAccountDisabled`
+  - `UpdateAccountPriority`
+  - `CreateCodexAPIKey`
+  - `UpdateCodexAPIKeyLabel`
+  - `UpdateCodexAPIKeyConfig`
+  - `DeleteCodexAPIKey`
+  - `UpdateCodexAPIKeyPriority`
+  - `SetCodexAPIKeyStatus`
+  - `CreateOpenAICompatibleProvider`
+  - `UpdateOpenAICompatibleProvider`
+  - `DeleteOpenAICompatibleProvider`
+  - `UpdateOpenAICompatibleProviderPriority`
+- 同步开启且当前账号聚合为空时，会移除 GetTokens `model_catalog_json` 指针，避免禁用/删除账号后旧 catalog 继续暴露模型。
+- `fetchSidecarStaticModelDefinitions` 在无 sidecar/测试场景下改为安全降级，避免仅靠账号库存刷新模型缓存时误触 sidecar nil panic。
+
+验证：
+
+```bash
+go test ./internal/wailsapp -run 'TestRefreshCodexModelCatalogAfterAccountMutation'
+go test ./internal/wailsapp
+```
+
+## 2026-06-03 P0 稳定性优化：去抖、单飞、即时 prune、diff 写入
+
+在账号变更及时刷新基础上，继续补齐高频操作下的稳定性：
+
+- 账号变更触发的 catalog/cache refresh 改为 coordinator 模式：默认 150ms debounce，刷新执行期间收到的新请求只标记 pending，当前刷新完成后最多再串行执行一轮。
+- App 运行中连续新增/编辑/禁用/排序账号时，不再为每次操作立即并发打 account-store / provider `/models` / catalog 写入。
+- 删除账号、禁用账号成功后，会先按 `accountKey` 从账号模型缓存中即时 prune，再调度全量刷新；即使后续全量刷新失败，也不会继续保留明确已删除/禁用账号的缓存模型。
+- `gettokens-model-catalog.json` 写入前增加 byte-level diff：内容不变时不改写文件，减少 mtime 变化和“需要重启 Codex”的误判。
+- prune 失败只记录日志，不把已经成功的账号 mutation 反向包装成失败；后续全量刷新仍会尝试收敛缓存。
+
+新增/更新测试：
+
+```bash
+go test ./internal/wailsapp -run 'TestPruneRelayModelAccountCacheEntries|TestScheduleCodexModelCatalogRefresh|TestApplyGetTokensCodexModelCatalogProjectionDoesNotRewriteUnchangedCatalog'
+go test ./internal/wailsapp
+go test ./...
+```
+
+## 2026-06-03 模型目录诊断 API 与 trace 文件
+
+为继续提升“为什么模型不显示”的可解释性，本轮新增后端诊断与 trace：
+
+- `internal/wailsapp/codex_model_catalog_diagnostics.go`：新增 `GetCodexModelCatalogDiagnostics`。
+- Root Wails 层同步暴露 `GetCodexModelCatalogDiagnostics`，并通过 `./scripts/wails-cli.sh build` 重新生成 `frontend/wailsjs` bindings。
+- 诊断返回：
+  - `codexHomePath`、`configPath`、GetTokens `catalogPath`、当前配置的 `model_catalog_json`。
+  - `syncEnabled`、是否存在 `model_catalog_json` 指针、是否指向 GetTokens 管理路径。
+  - catalog/cache/trace 文件存在性、更新时间、模型数量、缓存账号数量。
+  - 当前 Codex root `model` / `model_provider` 及是否显式配置。
+  - catalog 中模型与账号缓存来源关联：`sourceAccounts`、`sourceKinds`、`providerNames`。
+  - warnings：同步未开启、外部 catalog 指针、缺少 pointer、catalog 文件不存在、账号模型缓存为空。
+- 新增 trace 文件：`~/.config/gettokens-data/codex-model-account-cache/catalog-trace-v1.json`。
+- 每次 `ListRelaySupportedModels` 聚合成功后，写入 trace，包含 generatedAt、cachePath、catalogPath、参与账号快照与模型来源。
+
+验证：
+
+```bash
+go test ./internal/wailsapp -run 'TestCodexModelCatalogDiagnostics|TestRelayModelCatalogTraceWritten'
+go test ./...
+./scripts/wails-cli.sh build
+docs-linhay/scripts/check-docs.sh
+```

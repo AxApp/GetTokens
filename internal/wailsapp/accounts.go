@@ -3,6 +3,7 @@ package wailsapp
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"strings"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
@@ -58,6 +59,14 @@ func (a *App) SetAccountDisabled(id string, disabled bool) error {
 	targetID := strings.TrimSpace(id)
 	if isUnifiedAccountID(targetID) {
 		_, err := a.managementClient().PatchAccountStatus(targetID, disabled)
+		if err == nil {
+			if disabled {
+				if pruneErr := pruneRelayModelAccountCacheEntries(targetID); pruneErr != nil {
+					log.Printf("prune relay model account cache for %s failed: %v", targetID, pruneErr)
+				}
+			}
+			a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+		}
 		return err
 	}
 	return errors.New("不支持的账号类型")
@@ -93,6 +102,9 @@ func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
 		return errors.New("account-store management client 未就绪")
 	}
 	_, err := a.managementClient().CreateAccount(codexAPIKeyCreateAccountWrite(input))
+	if err == nil {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -114,6 +126,9 @@ func (a *App) UpdateCodexAPIKeyLabel(input UpdateCodexAPIKeyLabelInput) error {
 	write := accountWriteFromUnified(*account)
 	write.Title = strings.TrimSpace(input.Label)
 	_, err = a.managementClient().PatchAccount(targetID, write)
+	if err == nil {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -154,6 +169,9 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 	write.CodexAPIKey.BillingEnabled = input.BillingEnabled && write.CodexAPIKey.BillingCurl != ""
 	write.CodexAPIKey.PlatformCookie = normalizePlatformCookie(input.PlatformCookie)
 	_, err = a.managementClient().PatchAccount(targetID, write)
+	if err == nil {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -165,7 +183,14 @@ func (a *App) DeleteCodexAPIKey(id string) error {
 	if !a.hasManagementClient() {
 		return errors.New("account-store management client 未就绪")
 	}
-	return a.managementClient().DeleteAccount(targetID)
+	err := a.managementClient().DeleteAccount(targetID)
+	if err == nil {
+		if pruneErr := pruneRelayModelAccountCacheEntries(targetID); pruneErr != nil {
+			log.Printf("prune relay model account cache for %s failed: %v", targetID, pruneErr)
+		}
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
+	return err
 }
 
 func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
@@ -177,6 +202,9 @@ func (a *App) UpdateCodexAPIKeyPriority(id string, priority int) error {
 		return errors.New("account-store management client 未就绪")
 	}
 	_, err := a.managementClient().PatchAccountPriority(targetID, priority)
+	if err == nil {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -189,6 +217,14 @@ func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
 		return errors.New("account-store management client 未就绪")
 	}
 	_, err := a.managementClient().PatchAccountStatus(targetID, disabled)
+	if err == nil {
+		if disabled {
+			if pruneErr := pruneRelayModelAccountCacheEntries(targetID); pruneErr != nil {
+				return pruneErr
+			}
+		}
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -196,6 +232,9 @@ func (a *App) UpdateAccountPriority(input UpdateAccountPriorityInput) error {
 	targetID := strings.TrimSpace(input.ID)
 	if isUnifiedAccountID(targetID) {
 		_, err := a.managementClient().PatchAccountPriority(targetID, input.Priority)
+		if err == nil {
+			a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+		}
 		return err
 	}
 	return errors.New("不支持的账号类型")

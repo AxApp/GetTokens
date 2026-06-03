@@ -1,6 +1,6 @@
 import type { AccountRecord } from "../../../types";
 import { buildDefaultCodexQuotaCurl } from "./accountConfig.ts";
-import { getVendorPreset } from "./vendorPresets.ts";
+import { getVendorPreset, type VendorCredentialField } from "./vendorPresets.ts";
 import { resolveVendorPresetID } from "./vendorPresetHelpers.ts";
 
 export interface ApiKeyConfigDraft {
@@ -119,6 +119,19 @@ export function buildBillingCurlSetupGuide(
 ) {
   const preset = resolveVendorPreset(account);
   return preset?.billingSetupGuide ?? [];
+}
+
+export function buildVendorCredentialFields(
+  account: Pick<ConfigSource, "displayName" | "provider" | "baseUrl">,
+): VendorCredentialField[] {
+  const preset = resolveVendorPreset(account);
+  return preset?.credentialFields ?? [];
+}
+
+export function buildVendorCurlVariableFields(
+  account: Pick<ConfigSource, "displayName" | "provider" | "baseUrl">,
+): VendorCredentialField[] {
+  return buildVendorCredentialFields(account).filter((field) => field.scope === "curl" && field.variableName);
 }
 
 function resolveVendorPreset(

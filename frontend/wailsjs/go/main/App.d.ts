@@ -113,6 +113,8 @@ export function GetCodexLocalUsage():Promise<main.LocalProjectedUsageResponse>;
 
 export function GetCodexMcpServers():Promise<main.CodexMcpServersSnapshot>;
 
+export function GetCodexModelCatalogDiagnostics():Promise<main.CodexModelCatalogDiagnostics>;
+
 export function GetCodexQuota(arg1:string):Promise<main.CodexQuotaResponse>;
 
 export function GetCodexSessionDetail(arg1:string):Promise<main.SessionManagementSessionDetail>;

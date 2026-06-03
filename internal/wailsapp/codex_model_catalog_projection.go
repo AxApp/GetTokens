@@ -1,11 +1,14 @@
 package wailsapp
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -197,11 +200,22 @@ func applyGetTokensCodexModelCatalogProjection(
 	if err != nil {
 		return "", "", "", false, err
 	}
-	if err := writeFileAtomically(catalogPath, catalogBody, 0600); err != nil {
+	if err := writeFileAtomicallyIfChanged(catalogPath, catalogBody, 0600); err != nil {
 		return "", "", "", false, err
 	}
 
 	return nextConfig, catalogPath, "", true, nil
+}
+
+func writeFileAtomicallyIfChanged(path string, body []byte, mode os.FileMode) error {
+	existing, err := os.ReadFile(path)
+	if err == nil && bytes.Equal(existing, body) {
+		return nil
+	}
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return writeFileAtomically(path, body, mode)
 }
 
 func mergeCodexModelCatalogPointer(configBody string, catalogPath string, overrideExternal bool) (string, string, bool) {
@@ -316,6 +330,79 @@ func applyPersistedCodexModelCatalogCacheSnapshot() error {
 	}
 	_, err = enableGetTokensCodexModelCatalogProjection(models, false)
 	return err
+}
+
+const defaultCodexModelCatalogRefreshDebounce = 150 * time.Millisecond
+
+func (a *App) refreshCodexModelCatalogAfterAccountMutation() error {
+	if a == nil || a.ctx == nil {
+		return nil
+	}
+	if a.codexModelCatalogRefreshFunc != nil {
+		return a.codexModelCatalogRefreshFunc()
+	}
+	return a.applyPersistedCodexModelCatalogSyncSetting()
+}
+
+func (a *App) scheduleCodexModelCatalogRefreshAfterAccountMutation() {
+	if a == nil || a.ctx == nil {
+		return
+	}
+	a.codexModelCatalogRefreshMu.Lock()
+	if a.codexModelCatalogRefreshRunning {
+		a.codexModelCatalogRefreshPending = true
+		a.codexModelCatalogRefreshMu.Unlock()
+		return
+	}
+	debounce := a.codexModelCatalogRefreshDebounce
+	if debounce <= 0 {
+		debounce = defaultCodexModelCatalogRefreshDebounce
+	}
+	if a.codexModelCatalogRefreshTimer != nil {
+		a.codexModelCatalogRefreshTimer.Stop()
+	}
+	a.codexModelCatalogRefreshTimer = time.AfterFunc(debounce, a.runCodexModelCatalogRefreshAfterAccountMutation)
+	a.codexModelCatalogRefreshMu.Unlock()
+}
+
+func (a *App) stopCodexModelCatalogRefreshAfterAccountMutation() {
+	if a == nil {
+		return
+	}
+	a.codexModelCatalogRefreshMu.Lock()
+	if a.codexModelCatalogRefreshTimer != nil {
+		a.codexModelCatalogRefreshTimer.Stop()
+		a.codexModelCatalogRefreshTimer = nil
+	}
+	a.codexModelCatalogRefreshPending = false
+	a.codexModelCatalogRefreshMu.Unlock()
+}
+
+func (a *App) runCodexModelCatalogRefreshAfterAccountMutation() {
+	a.codexModelCatalogRefreshMu.Lock()
+	if a.codexModelCatalogRefreshRunning {
+		a.codexModelCatalogRefreshPending = true
+		a.codexModelCatalogRefreshMu.Unlock()
+		return
+	}
+	a.codexModelCatalogRefreshRunning = true
+	a.codexModelCatalogRefreshPending = false
+	a.codexModelCatalogRefreshMu.Unlock()
+
+	for {
+		if err := a.refreshCodexModelCatalogAfterAccountMutation(); err != nil {
+			log.Printf("refresh Codex model catalog after account mutation failed: %v", err)
+		}
+
+		a.codexModelCatalogRefreshMu.Lock()
+		if !a.codexModelCatalogRefreshPending {
+			a.codexModelCatalogRefreshRunning = false
+			a.codexModelCatalogRefreshMu.Unlock()
+			return
+		}
+		a.codexModelCatalogRefreshPending = false
+		a.codexModelCatalogRefreshMu.Unlock()
+	}
 }
 
 func (a *App) applyPersistedCodexModelCatalogSyncSetting() error {

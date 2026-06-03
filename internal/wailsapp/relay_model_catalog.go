@@ -48,6 +48,9 @@ func (a *App) ListRelaySupportedModels() ([]OpenAICompatibleModel, error) {
 	if err := saveRelayModelAccountCache(snapshots); err != nil {
 		log.Printf("save relay model account cache failed: %v", err)
 	}
+	if err := saveRelayModelCatalogTrace(models, snapshots); err != nil {
+		log.Printf("save relay model catalog trace failed: %v", err)
+	}
 	return models, nil
 }
 
@@ -105,6 +108,9 @@ func parseRelayStringMapJSON(raw string) map[string]string {
 // OpenAICompatibleModel. These definitions represent the known models the relay can route.
 // If the sidecar is unavailable or the request fails, returns nil without error (graceful degradation).
 func (a *App) fetchSidecarStaticModelDefinitions() ([]OpenAICompatibleModel, error) {
+	if a == nil || (a.sidecar == nil && a.sidecarRequest == nil) {
+		return nil, nil
+	}
 	body, _, err := a.SidecarRequest(http.MethodGet, ManagementAPIPrefix+"/model-definitions/codex", nil, nil, "")
 	if err != nil {
 		// Sidecar not ready, request failed (network, timeout, etc), or other error

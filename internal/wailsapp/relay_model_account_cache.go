@@ -35,27 +35,44 @@ func relayModelAccountCachePath() (string, error) {
 }
 
 func loadRelayModelAccountCache() ([]relayModelAccountSnapshot, error) {
-	path, err := relayModelAccountCachePath()
+	payload, err := loadRelayModelAccountCachePayload()
 	if err != nil {
 		return nil, err
+	}
+	return payload.Accounts, nil
+}
+
+func loadRelayModelAccountCachePayload() (relayModelAccountCachePayload, error) {
+	path, err := relayModelAccountCachePath()
+	if err != nil {
+		return relayModelAccountCachePayload{}, err
 	}
 	body, err := readOptionalTextFile(path)
 	if err != nil {
-		return nil, err
+		return relayModelAccountCachePayload{}, err
 	}
-	return parseRelayModelAccountCache(body)
+	return parseRelayModelAccountCachePayload(body)
 }
 
 func parseRelayModelAccountCache(body string) ([]relayModelAccountSnapshot, error) {
+	payload, err := parseRelayModelAccountCachePayload(body)
+	if err != nil {
+		return nil, err
+	}
+	return payload.Accounts, nil
+}
+
+func parseRelayModelAccountCachePayload(body string) (relayModelAccountCachePayload, error) {
 	trimmed := strings.TrimSpace(body)
 	if trimmed == "" {
-		return nil, nil
+		return relayModelAccountCachePayload{}, nil
 	}
 	var payload relayModelAccountCachePayload
 	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
-		return nil, err
+		return relayModelAccountCachePayload{}, err
 	}
-	return normalizeRelayModelAccountSnapshots(payload.Accounts), nil
+	payload.Accounts = normalizeRelayModelAccountSnapshots(payload.Accounts)
+	return payload, nil
 }
 
 func saveRelayModelAccountCache(snapshots []relayModelAccountSnapshot) error {
@@ -73,6 +90,118 @@ func saveRelayModelAccountCache(snapshots []relayModelAccountSnapshot) error {
 		return err
 	}
 	return writeFileAtomically(path, append(body, '\n'), 0600)
+}
+
+type relayModelCatalogTracePayload struct {
+	GeneratedAtUnixMs int64                         `json:"generatedAtUnixMs"`
+	CachePath         string                        `json:"cachePath"`
+	CatalogPath       string                        `json:"catalogPath"`
+	Accounts          []relayModelAccountSnapshot   `json:"accounts"`
+	Models            []relayModelCatalogTraceModel `json:"models"`
+}
+
+type relayModelCatalogTraceModel struct {
+	Slug           string   `json:"slug"`
+	DisplayName    string   `json:"displayName,omitempty"`
+	SourceAccounts []string `json:"sourceAccounts,omitempty"`
+	SourceKinds    []string `json:"sourceKinds,omitempty"`
+	ProviderNames  []string `json:"providerNames,omitempty"`
+}
+
+func relayModelCatalogTracePath() (string, error) {
+	cachePath, err := relayModelAccountCachePath()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(filepath.Dir(cachePath), relayModelCatalogTraceFileName), nil
+}
+
+func loadRelayModelCatalogTrace() (relayModelCatalogTracePayload, error) {
+	path, err := relayModelCatalogTracePath()
+	if err != nil {
+		return relayModelCatalogTracePayload{}, err
+	}
+	body, err := readOptionalTextFile(path)
+	if err != nil {
+		return relayModelCatalogTracePayload{}, err
+	}
+	if strings.TrimSpace(body) == "" {
+		return relayModelCatalogTracePayload{}, nil
+	}
+	var payload relayModelCatalogTracePayload
+	if err := json.Unmarshal([]byte(body), &payload); err != nil {
+		return relayModelCatalogTracePayload{}, err
+	}
+	payload.Accounts = normalizeRelayModelAccountSnapshots(payload.Accounts)
+	return payload, nil
+}
+
+func saveRelayModelCatalogTrace(models []OpenAICompatibleModel, snapshots []relayModelAccountSnapshot) error {
+	path, err := relayModelCatalogTracePath()
+	if err != nil {
+		return err
+	}
+	cachePath, err := relayModelAccountCachePath()
+	if err != nil {
+		return err
+	}
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		codexHome = ""
+	}
+	index := buildDiagnosticCacheModelIndex(snapshots)
+	traceModels := make([]relayModelCatalogTraceModel, 0, len(models))
+	for _, model := range normalizeProviderModels(models) {
+		slug := resolveCodexModelCatalogSlug(model)
+		if slug == "" {
+			continue
+		}
+		diagnostic := index[slug]
+		traceModels = append(traceModels, relayModelCatalogTraceModel{
+			Slug:           slug,
+			DisplayName:    strings.TrimSpace(model.Alias),
+			SourceAccounts: append([]string(nil), diagnostic.SourceAccounts...),
+			SourceKinds:    append([]string(nil), diagnostic.SourceKinds...),
+			ProviderNames:  append([]string(nil), diagnostic.ProviderNames...),
+		})
+	}
+	payload := relayModelCatalogTracePayload{
+		GeneratedAtUnixMs: time.Now().UnixMilli(),
+		CachePath:         cachePath,
+		CatalogPath:       getGetTokensCodexModelCatalogPath(codexHome),
+		Accounts:          normalizeRelayModelAccountSnapshots(snapshots),
+		Models:            traceModels,
+	}
+	body, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return err
+	}
+	return writeFileAtomically(path, append(body, '\n'), 0600)
+}
+
+func pruneRelayModelAccountCacheEntries(accountKeys ...string) error {
+	remove := make(map[string]struct{})
+	for _, accountKey := range accountKeys {
+		trimmed := strings.TrimSpace(accountKey)
+		if trimmed != "" {
+			remove[trimmed] = struct{}{}
+		}
+	}
+	if len(remove) == 0 {
+		return nil
+	}
+	snapshots, err := loadRelayModelAccountCache()
+	if err != nil {
+		return err
+	}
+	next := make([]relayModelAccountSnapshot, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		if _, ok := remove[strings.TrimSpace(snapshot.AccountKey)]; ok {
+			continue
+		}
+		next = append(next, snapshot)
+	}
+	return saveRelayModelAccountCache(next)
 }
 
 func normalizeRelayModelAccountSnapshots(snapshots []relayModelAccountSnapshot) []relayModelAccountSnapshot {

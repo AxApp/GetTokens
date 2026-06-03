@@ -1193,6 +1193,57 @@ func (a *App) ListRelaySupportedModels() (*RelaySupportedModelsResult, error) {
 	}, nil
 }
 
+func (a *App) GetCodexModelCatalogDiagnostics() (*CodexModelCatalogDiagnostics, error) {
+	result, err := a.core.GetCodexModelCatalogDiagnostics()
+	if err != nil {
+		return nil, err
+	}
+	return mapCodexModelCatalogDiagnostics(result), nil
+}
+
+func mapCodexModelCatalogDiagnostics(result *wailsapp.CodexModelCatalogDiagnostics) *CodexModelCatalogDiagnostics {
+	if result == nil {
+		return nil
+	}
+	models := make([]CodexModelCatalogDiagnosticModel, 0, len(result.Models))
+	for _, model := range result.Models {
+		models = append(models, CodexModelCatalogDiagnosticModel{
+			Slug:           model.Slug,
+			DisplayName:    model.DisplayName,
+			SourceAccounts: append([]string(nil), model.SourceAccounts...),
+			SourceKinds:    append([]string(nil), model.SourceKinds...),
+			ProviderNames:  append([]string(nil), model.ProviderNames...),
+		})
+	}
+	return &CodexModelCatalogDiagnostics{
+		SyncEnabled:                result.SyncEnabled,
+		CodexHomePath:              result.CodexHomePath,
+		ConfigPath:                 result.ConfigPath,
+		CatalogPath:                result.CatalogPath,
+		ConfiguredCatalogPath:      result.ConfiguredCatalogPath,
+		HasModelCatalogPointer:     result.HasModelCatalogPointer,
+		HasGetTokensCatalogPointer: result.HasGetTokensCatalogPointer,
+		CatalogExists:              result.CatalogExists,
+		CatalogUpdatedAtUnixMs:     result.CatalogUpdatedAtUnixMs,
+		CatalogModelCount:          result.CatalogModelCount,
+		CachePath:                  result.CachePath,
+		CacheExists:                result.CacheExists,
+		CacheUpdatedAtUnixMs:       result.CacheUpdatedAtUnixMs,
+		CachedAccountCount:         result.CachedAccountCount,
+		CachedModelCount:           result.CachedModelCount,
+		TracePath:                  result.TracePath,
+		TraceExists:                result.TraceExists,
+		TraceUpdatedAtUnixMs:       result.TraceUpdatedAtUnixMs,
+		CurrentModel:               result.CurrentModel,
+		CurrentProviderID:          result.CurrentProviderID,
+		CurrentProviderName:        result.CurrentProviderName,
+		HasExplicitCurrentModel:    result.HasExplicitCurrentModel,
+		HasExplicitCurrentProvider: result.HasExplicitCurrentProvider,
+		Models:                     models,
+		Warnings:                   append([]string(nil), result.Warnings...),
+	}
+}
+
 func (a *App) ListLocalCodexProviderViews() ([]LocalCodexModelProviderView, error) {
 	result, err := a.core.ListLocalCodexModelProviders()
 	if err != nil {

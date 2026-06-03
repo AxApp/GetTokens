@@ -16,25 +16,31 @@ import (
 )
 
 type App struct {
-	ctx                      context.Context
-	sidecar                  *sidecar.Manager
-	updater                  *updater.Updater
-	version                  string
-	releaseLabel             string
-	sidecarRequest           sidecarRequestFunc
-	relayRequest             sidecarRelayRequestFunc
-	managementAPI            func() *cliproxyapi.Client
-	sidecarProxyMu           sync.Mutex
-	sidecarProxyPendingApply bool
-	authFileCacheMu          sync.RWMutex
-	authFileMetadataCache    map[string]authFileMetadataCacheEntry
-	localUsageMu             sync.RWMutex
-	localUsage               localUsageRuntimeState
-	claudeLocalUsage         localUsageRuntimeState
-	sessionMgmtMu            sync.RWMutex
-	sessionMgmt              sessionManagementRuntimeState
-	codexBinary              *codexbinary.Service
-	menuBar                  *menubar.Controller
+	ctx                              context.Context
+	sidecar                          *sidecar.Manager
+	updater                          *updater.Updater
+	version                          string
+	releaseLabel                     string
+	sidecarRequest                   sidecarRequestFunc
+	relayRequest                     sidecarRelayRequestFunc
+	managementAPI                    func() *cliproxyapi.Client
+	sidecarProxyMu                   sync.Mutex
+	sidecarProxyPendingApply         bool
+	authFileCacheMu                  sync.RWMutex
+	authFileMetadataCache            map[string]authFileMetadataCacheEntry
+	localUsageMu                     sync.RWMutex
+	localUsage                       localUsageRuntimeState
+	claudeLocalUsage                 localUsageRuntimeState
+	sessionMgmtMu                    sync.RWMutex
+	sessionMgmt                      sessionManagementRuntimeState
+	codexModelCatalogRefreshMu       sync.Mutex
+	codexModelCatalogRefreshTimer    *time.Timer
+	codexModelCatalogRefreshRunning  bool
+	codexModelCatalogRefreshPending  bool
+	codexModelCatalogRefreshDebounce time.Duration
+	codexModelCatalogRefreshFunc     func() error
+	codexBinary                      *codexbinary.Service
+	menuBar                          *menubar.Controller
 }
 
 type localUsageRuntimeState struct {

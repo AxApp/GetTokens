@@ -478,6 +478,42 @@ type RelaySupportedModelsResult struct {
 	Models []OpenAICompatibleModel `json:"models"`
 }
 
+type CodexModelCatalogDiagnosticModel struct {
+	Slug           string   `json:"slug"`
+	DisplayName    string   `json:"displayName,omitempty"`
+	SourceAccounts []string `json:"sourceAccounts,omitempty"`
+	SourceKinds    []string `json:"sourceKinds,omitempty"`
+	ProviderNames  []string `json:"providerNames,omitempty"`
+}
+
+type CodexModelCatalogDiagnostics struct {
+	SyncEnabled                bool                               `json:"syncEnabled"`
+	CodexHomePath              string                             `json:"codexHomePath"`
+	ConfigPath                 string                             `json:"configPath"`
+	CatalogPath                string                             `json:"catalogPath"`
+	ConfiguredCatalogPath      string                             `json:"configuredCatalogPath,omitempty"`
+	HasModelCatalogPointer     bool                               `json:"hasModelCatalogPointer"`
+	HasGetTokensCatalogPointer bool                               `json:"hasGetTokensCatalogPointer"`
+	CatalogExists              bool                               `json:"catalogExists"`
+	CatalogUpdatedAtUnixMs     int64                              `json:"catalogUpdatedAtUnixMs,omitempty"`
+	CatalogModelCount          int                                `json:"catalogModelCount"`
+	CachePath                  string                             `json:"cachePath"`
+	CacheExists                bool                               `json:"cacheExists"`
+	CacheUpdatedAtUnixMs       int64                              `json:"cacheUpdatedAtUnixMs,omitempty"`
+	CachedAccountCount         int                                `json:"cachedAccountCount"`
+	CachedModelCount           int                                `json:"cachedModelCount"`
+	TracePath                  string                             `json:"tracePath"`
+	TraceExists                bool                               `json:"traceExists"`
+	TraceUpdatedAtUnixMs       int64                              `json:"traceUpdatedAtUnixMs,omitempty"`
+	CurrentModel               string                             `json:"currentModel"`
+	CurrentProviderID          string                             `json:"currentProviderID"`
+	CurrentProviderName        string                             `json:"currentProviderName"`
+	HasExplicitCurrentModel    bool                               `json:"hasExplicitCurrentModel"`
+	HasExplicitCurrentProvider bool                               `json:"hasExplicitCurrentProvider"`
+	Models                     []CodexModelCatalogDiagnosticModel `json:"models,omitempty"`
+	Warnings                   []string                           `json:"warnings,omitempty"`
+}
+
 type LocalCodexModelProviderView struct {
 	ProviderID   string `json:"providerID"`
 	ProviderName string `json:"providerName"`

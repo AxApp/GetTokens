@@ -303,12 +303,15 @@ test('Unified compose persists dedicated model fetch credential when creating To
 });
 
 
-test('Unified compose Xiaomi cURL section exposes platform cookie variable to cURL editor', () => {
-  const source = readFileSync(new URL('../components/UnifiedComposeModal.tsx', import.meta.url), 'utf8');
-  assert.match(source, /平台 Cookie/);
-  assert.match(source, /platformCookie/);
-  assert.match(source, /\{\{platformCookie\}\}/);
-  assert.match(source, /AccountCurlEditorModal/);
+test('vendor presets drive auxiliary credentials and cURL variables generically', () => {
+  const composeSource = readFileSync(new URL('../components/UnifiedComposeModal.tsx', import.meta.url), 'utf8');
+  const presetSource = readFileSync(new URL('../model/vendorPresets.ts', import.meta.url), 'utf8');
+  assert.match(composeSource, /UnifiedComposeCredentialFieldsSection/);
+  assert.match(composeSource, /CredentialFieldGroup/);
+  assert.match(composeSource, /credentialFields=\{selectedPreset\?\.credentialFields/);
+  assert.match(presetSource, /credentialFields: \[XIAOMI_MIMO_PLATFORM_COOKIE_FIELD/);
+  assert.match(presetSource, /variableName: "platformCookie"/);
+  assert.match(presetSource, /scope: "model_fetch"/);
 });
 
 test('generated Wails account models preserve quota curl fields', () => {

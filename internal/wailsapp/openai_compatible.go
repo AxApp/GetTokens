@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -140,6 +141,9 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 		strings.TrimSpace(input.ModelFetchAPIKey),
 		strings.TrimSpace(input.ModelFetchBaseURL),
 	))
+	if err == nil {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -152,7 +156,14 @@ func (a *App) DeleteOpenAICompatibleProvider(name string) error {
 	if err != nil {
 		return err
 	}
-	return a.managementClient().DeleteAccount(account.AccountKey)
+	err = a.managementClient().DeleteAccount(account.AccountKey)
+	if err == nil {
+		if pruneErr := pruneRelayModelAccountCacheEntries(account.AccountKey); pruneErr != nil {
+			log.Printf("prune relay model account cache for %s failed: %v", account.AccountKey, pruneErr)
+		}
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
+	return err
 }
 
 func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProviderInput) error {
@@ -223,6 +234,9 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		strings.TrimSpace(input.ModelFetchAPIKey),
 		strings.TrimSpace(input.ModelFetchBaseURL),
 	))
+	if err == nil {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -236,6 +250,9 @@ func (a *App) UpdateOpenAICompatibleProviderPriority(name string, priority int) 
 		return err
 	}
 	_, err = a.managementClient().PatchAccountPriority(account.AccountKey, priority)
+	if err == nil {
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 
@@ -249,6 +266,14 @@ func (a *App) SetOpenAICompatibleProviderStatus(name string, disabled bool) erro
 		return err
 	}
 	_, err = a.managementClient().PatchAccountStatus(account.AccountKey, disabled)
+	if err == nil {
+		if disabled {
+			if pruneErr := pruneRelayModelAccountCacheEntries(account.AccountKey); pruneErr != nil {
+				log.Printf("prune relay model account cache for %s failed: %v", account.AccountKey, pruneErr)
+			}
+		}
+		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
+	}
 	return err
 }
 

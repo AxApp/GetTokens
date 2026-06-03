@@ -7,6 +7,8 @@ import {
   buildBillingCurlTemplate,
   buildQuotaCurlSetupGuide,
   buildQuotaCurlTemplate,
+  buildVendorCredentialFields,
+  buildVendorCurlVariableFields,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
 import {
@@ -28,6 +30,7 @@ import {
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
+import type { VendorCredentialField } from '../model/vendorPresets';
 import { QuotaBars } from './CardSections';
 import {
   AccountDetailEmptyState,
@@ -227,6 +230,11 @@ export function AccountCredentialVerifySection({
   onVerify,
   onProxyValidityChange,
 }: AccountCredentialVerifySectionProps) {
+  const credentialFields = useMemo(
+    () => buildVendorCredentialFields({ displayName: '', provider: '', baseUrl: draft.baseUrl }),
+    [draft.baseUrl],
+  );
+
   return (
     <AccountDetailSection
       componentName="AccountCredentialVerifySection"
@@ -258,13 +266,14 @@ export function AccountCredentialVerifySection({
               placeholder="/v1"
               onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
             />
-            <CredentialInputField
-              label="平台 Cookie"
-              value={draft.platformCookie ?? ""}
-              placeholder="用于 {{platformCookie}}，不要包含 Cookie: 前缀"
-              onChange={(value) => setDraft((prev) => ({ ...prev, platformCookie: value }))}
-              secret
-            />
+            {credentialFields.map((field) => (
+              <VendorCredentialInputField
+                key={field.id}
+                field={field}
+                draft={draft}
+                onChange={(value) => setDraft((prev) => writeDraftCredentialField(prev, field.id, value))}
+              />
+            ))}
           </div>
         </section>
 
@@ -415,6 +424,45 @@ function readCredentialProxyNodes(): ProxyNodeRecord[] {
   return readStoredProxyNodes(window.localStorage);
 }
 
+function VendorCredentialInputField({
+  field,
+  draft,
+  onChange,
+}: {
+  field: VendorCredentialField;
+  draft: ApiKeyConfigDraft;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <CredentialInputField
+      label={field.label}
+      value={readDraftCredentialField(draft, field.id)}
+      placeholder={field.placeholder}
+      onChange={onChange}
+      secret={field.secret}
+      help={field.help}
+    />
+  );
+}
+
+function readDraftCredentialField(draft: ApiKeyConfigDraft, fieldID: VendorCredentialField['id']) {
+  switch (fieldID) {
+    case 'platformCookie':
+      return draft.platformCookie ?? '';
+    default:
+      return '';
+  }
+}
+
+function writeDraftCredentialField(draft: ApiKeyConfigDraft, fieldID: VendorCredentialField['id'], value: string): ApiKeyConfigDraft {
+  switch (fieldID) {
+    case 'platformCookie':
+      return { ...draft, platformCookie: value };
+    default:
+      return draft;
+  }
+}
+
 function CredentialInputField({
   label,
   value,
@@ -422,6 +470,7 @@ function CredentialInputField({
   onChange,
   onCopy,
   secret,
+  help,
 }: {
   label: string;
   value: string;
@@ -429,6 +478,7 @@ function CredentialInputField({
   onChange: (value: string) => void;
   onCopy?: () => void;
   secret?: boolean;
+  help?: string;
 }) {
   return (
     <label className="grid min-w-0 gap-1.5">
@@ -456,6 +506,11 @@ function CredentialInputField({
           </button>
         ) : null}
       </div>
+      {help ? (
+        <span className="text-[length:var(--font-size-ui-2xs)] font-bold leading-relaxed text-[var(--text-muted)]">
+          {help}
+        </span>
+      ) : null}
     </label>
   );
 }
@@ -615,6 +670,14 @@ export function AccountQuotaSection({
     }),
     [account.displayName, account.provider, draft.baseUrl],
   );
+  const quotaCurlVariableFields = useMemo(
+    () => buildVendorCurlVariableFields({
+      displayName: account.displayName,
+      provider: account.provider,
+      baseUrl: draft.baseUrl,
+    }),
+    [account.displayName, account.provider, draft.baseUrl],
+  );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
   const hasQuotaScript = draft.quotaCurl.trim().length > 0;
 
@@ -739,7 +802,7 @@ export function AccountQuotaSection({
           title="额度脚本"
           value={draft.quotaCurl}
           enabled={draft.quotaEnabled}
-          variables={buildCurlVariables(draft)}
+          variables={buildCurlVariables(draft, quotaCurlVariableFields)}
           templates={quotaTemplates}
           placeholder='curl -sS "{{baseUrl}}/usage" -H "Authorization: Bearer {{apiKey}}"'
           setupGuide={quotaSetupGuide}
@@ -781,6 +844,14 @@ export function AccountBillingSection({
   );
   const billingSetupGuide = useMemo(
     () => buildBillingCurlSetupGuide({
+      displayName: account.displayName,
+      provider: account.provider,
+      baseUrl: draft.baseUrl,
+    }),
+    [account.displayName, account.provider, draft.baseUrl],
+  );
+  const billingCurlVariableFields = useMemo(
+    () => buildVendorCurlVariableFields({
       displayName: account.displayName,
       provider: account.provider,
       baseUrl: draft.baseUrl,
@@ -934,7 +1005,7 @@ export function AccountBillingSection({
           title="余额脚本"
           value={draft.billingCurl}
           enabled={draft.billingEnabled}
-          variables={buildCurlVariables(draft)}
+          variables={buildCurlVariables(draft, billingCurlVariableFields)}
           templates={billingTemplates}
           placeholder={billingTemplate || 'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'}
           setupGuide={billingSetupGuide}

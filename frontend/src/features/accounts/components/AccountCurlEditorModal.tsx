@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
+import type { VendorCredentialField } from '../model/vendorPresets';
 import { writeAccountClipboardText } from '../model/accountClipboard';
 
 interface CurlTemplateOption {
@@ -146,7 +147,7 @@ export function AccountCurlEditorModal({
               </span>
             </label>
             <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              支持 {'{{apiKey}}'} / {'{{baseUrl}}'} / {'{{prefix}}'} / {'{{platformCookie}}'}
+              支持 {'{{apiKey}}'} / {'{{baseUrl}}'} / {'{{prefix}}'} 及厂商变量
             </div>
           </div>
           <textarea
@@ -237,13 +238,28 @@ export function AccountCurlEditorModal({
   );
 }
 
-export function buildCurlVariables(draft: ApiKeyConfigDraft) {
-  return [
+export function buildCurlVariables(draft: ApiKeyConfigDraft, vendorFields: VendorCredentialField[] = []) {
+  const baseVariables = [
     { label: 'apiKey', value: maskSecret(draft.apiKey) },
     { label: 'baseUrl', value: draft.baseUrl || '{{baseUrl}}' },
     { label: 'prefix', value: draft.prefix || '{{prefix}}' },
-    { label: 'platformCookie', value: maskSecret(draft.platformCookie ?? "") },
   ];
+  const vendorVariables = vendorFields
+    .filter((field) => field.scope === 'curl' && field.variableName)
+    .map((field) => ({
+      label: field.variableName || field.id,
+      value: maskSecret(readDraftCredentialField(draft, field.id)),
+    }));
+  return [...baseVariables, ...vendorVariables];
+}
+
+function readDraftCredentialField(draft: ApiKeyConfigDraft, fieldID: VendorCredentialField['id']) {
+  switch (fieldID) {
+    case 'platformCookie':
+      return draft.platformCookie ?? '';
+    default:
+      return '';
+  }
 }
 
 export function buildQuotaCurlTemplates(baseUrl: string, vendorTemplate: string): CurlTemplateOption[] {

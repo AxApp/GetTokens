@@ -218,6 +218,10 @@ export function GetCodexMcpServers() {
   return window['go']['main']['App']['GetCodexMcpServers']();
 }
 
+export function GetCodexModelCatalogDiagnostics() {
+  return window['go']['main']['App']['GetCodexModelCatalogDiagnostics']();
+}
+
 export function GetCodexQuota(arg1) {
   return window['go']['main']['App']['GetCodexQuota'](arg1);
 }

@@ -4,6 +4,7 @@ import SearchInput from "../../../components/ui/SearchInput";
 import {
   getVendorPreset,
   getVendorPresets,
+  type VendorCredentialField,
   type VendorPreset,
 } from "../model/vendorPresets";
 import { formatShortLabel } from "../model/vendorPresetHelpers";
@@ -275,56 +276,14 @@ export default function UnifiedComposeModal({
                 </AccountDetailNotice>
               ) : null}
 
-              {selectedPreset?.quotaSetupGuide?.length || selectedPreset?.billingSetupGuide?.length ? (
-                <TextInputField
-                  title="平台 Cookie"
-                  value={form.platformCookie ?? ""}
-                  onChange={(event) => onFormChange("platformCookie", event.target.value)}
-                  placeholder="用于 {{platformCookie}}，不要包含 Cookie: 前缀"
-                  aria-label="平台 Cookie"
-                />
-              ) : null}
             </AccountDetailSection>
 
-            {selectedPreset?.requiresModelFetchApiKey ? (
-              <AccountDetailSection
-                componentName="UnifiedComposeModelFetchSection"
-                eyebrow="Model Catalog"
-                title="模型列表拉取（可选）"
-                span="wide"
-              >
-                <div className="grid gap-4 xl:grid-cols-2">
-                  <TextInputField
-                    title="模型拉取 API Key（sk）"
-                    value={form.modelFetchApiKey}
-                    onChange={(event) =>
-                      onFormChange("modelFetchApiKey", event.target.value)
-                    }
-                    data-unified-compose-api-key-plaintext="true"
-                    placeholder={
-                      selectedPreset.modelFetchApiKeyPlaceholder ?? "sk-..."
-                    }
-                    aria-label="模型拉取 API Key"
-                  />
-                  <TextInputField
-                    title="Model Fetch Base URL"
-                    value={form.modelFetchBaseUrl}
-                    onChange={(event) =>
-                      onFormChange("modelFetchBaseUrl", event.target.value)
-                    }
-                    className="font-mono !text-[length:var(--font-size-ui-xs)]"
-                    placeholder={
-                      selectedPreset.modelFetchBaseUrl ??
-                      "https://api.xiaomimimo.com/v1"
-                    }
-                    aria-label="Model Fetch Base URL"
-                  />
-                </div>
-                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                  该 sk 仅用于 /models 拉取，不参与 agent 对话；agent
-                  对话继续使用上方 tp。
-                </div>
-              </AccountDetailSection>
+            {selectedPreset?.credentialFields?.length ? (
+              <UnifiedComposeCredentialFieldsSection
+                fields={selectedPreset.credentialFields}
+                form={form}
+                onFormChange={onFormChange}
+              />
             ) : null}
 
             {selectedPreset && selectedPreset.supportedFormats.length > 0 ? (
@@ -393,6 +352,7 @@ export default function UnifiedComposeModal({
               platformCookie={form.platformCookie ?? ""}
               placeholder={copy.quotaCurlPlaceholder}
               setupGuide={selectedPreset?.quotaSetupGuide}
+              credentialFields={selectedPreset?.credentialFields?.filter((field) => field.scope === "curl") ?? []}
               templates={buildQuotaCurlTemplates(
                 form.baseUrl,
                 selectedPreset?.quotaCurlTemplate ?? "",
@@ -430,6 +390,7 @@ export default function UnifiedComposeModal({
                   'curl -sS "{{baseUrl}}/billing" -H "Authorization: Bearer {{apiKey}}"'
                 }
                 setupGuide={selectedPreset?.billingSetupGuide}
+                credentialFields={selectedPreset?.credentialFields?.filter((field) => field.scope === "curl") ?? []}
                 templates={buildBillingCurlTemplates(
                   form.baseUrl,
                   selectedPreset?.billingCurlTemplate ?? "",
@@ -448,6 +409,86 @@ export default function UnifiedComposeModal({
     </AccountDetailModalFrame>
   );
 }
+
+function UnifiedComposeCredentialFieldsSection({
+  fields,
+  form,
+  onFormChange,
+}: {
+  fields: VendorCredentialField[];
+  form: UnifiedComposeFormState;
+  onFormChange: UnifiedComposeModalProps['onFormChange'];
+}) {
+  const curlFields = fields.filter((field) => field.scope === 'curl');
+  const modelFetchFields = fields.filter((field) => field.scope === 'model_fetch');
+  return (
+    <AccountDetailSection
+      componentName="UnifiedComposeCredentialFieldsSection"
+      eyebrow="Aux Credentials"
+      title="厂商辅助凭据与变量"
+      span="wide"
+    >
+      {curlFields.length ? (
+        <CredentialFieldGroup title="cURL 变量" fields={curlFields} form={form} onFormChange={onFormChange} />
+      ) : null}
+      {modelFetchFields.length ? (
+        <CredentialFieldGroup title="模型列表拉取" fields={modelFetchFields} form={form} onFormChange={onFormChange} />
+      ) : null}
+    </AccountDetailSection>
+  );
+}
+
+function CredentialFieldGroup({
+  title,
+  fields,
+  form,
+  onFormChange,
+}: {
+  title: string;
+  fields: VendorCredentialField[];
+  form: UnifiedComposeFormState;
+  onFormChange: UnifiedComposeModalProps['onFormChange'];
+}) {
+  return (
+    <section className="grid gap-3">
+      <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+        {title}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-2">
+        {fields.map((field) => (
+          <TextInputField
+            key={field.id}
+            title={field.label}
+            value={readUnifiedComposeCredentialField(form, field.id)}
+            onChange={(event) => onFormChange(field.id, event.target.value)}
+            data-unified-compose-api-key-plaintext={field.secret ? "true" : undefined}
+            placeholder={field.placeholder}
+            aria-label={field.label}
+          />
+        ))}
+      </div>
+      {fields.map((field) => field.help ? (
+        <div key={`${field.id}-help`} className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          {field.help}
+        </div>
+      ) : null)}
+    </section>
+  );
+}
+
+function readUnifiedComposeCredentialField(form: UnifiedComposeFormState, fieldID: VendorCredentialField['id']) {
+  switch (fieldID) {
+    case 'platformCookie':
+      return form.platformCookie ?? '';
+    case 'modelFetchApiKey':
+      return form.modelFetchApiKey ?? '';
+    case 'modelFetchBaseUrl':
+      return form.modelFetchBaseUrl ?? '';
+    default:
+      return '';
+  }
+}
+
 
 interface UnifiedComposeCurlConfigSectionProps {
   kind: "quota" | "billing";
@@ -468,6 +509,7 @@ interface UnifiedComposeCurlConfigSectionProps {
   platformCookie: string;
   placeholder: string;
   setupGuide?: string[];
+  credentialFields: VendorCredentialField[];
   templates: Array<{
     id: string;
     title: string;
@@ -498,6 +540,7 @@ function UnifiedComposeCurlConfigSection({
   platformCookie = "",
   placeholder,
   setupGuide,
+  credentialFields,
   templates,
   onValueChange,
   onEnabledChange,
@@ -515,7 +558,7 @@ function UnifiedComposeCurlConfigSection({
     billingCurl: "",
     billingEnabled: false,
     proxyUrl: "",
-  });
+  }, credentialFields);
 
   return (
     <AccountDetailSection
