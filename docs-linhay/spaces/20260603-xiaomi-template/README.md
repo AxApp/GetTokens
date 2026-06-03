@@ -231,7 +231,7 @@ multiModeProfiles: [
 - 状态：implemented
 - 最近更新：2026-06-03
 - 补充：厂商选择卡片已增加 `API / sk` 与 `Token Plan / tp` 模式 badge，避免两个 Xiaomi 预设只显示同名。
-- 补充：额度 / 余额 cURL 模板按拆厂商语义归位：API 预设提供平台余额 `billingCurlTemplate`；Token Plan 预设提供订阅用量 `quotaCurlTemplate` 和平台余额 `billingCurlTemplate`。模板只包含 `<PASTE_PLATFORM_COOKIE>` 占位符，不固化真实 Cookie。
+- 补充：额度 / 余额 cURL 模板按拆厂商语义归位：API 预设提供平台余额 `billingCurlTemplate`；Token Plan 预设提供订阅用量 `quotaCurlTemplate` 和平台余额 `billingCurlTemplate`。模板使用 `{{platformCookie}}` 占位符，不固化真实 Cookie。
 
 
 ## 会话交接
@@ -263,7 +263,7 @@ multiModeProfiles: [
 - 建议下个会话在 `/Applications/GetTokens.app` 或 dev build 中确认：
   - UnifiedCompose 选择 Xiaomi 预设后 cURL 区域展示
   - 账号详情中模型拉取凭据区域保存/回读
-  - Cookie 指引编辑器侧边栏是否正常渲染
+  - Cookie 指引和 `{{platformCookie}}` 变量提示是否正常渲染
 
 ## 模式沉淀
 
@@ -308,9 +308,7 @@ multiModeProfiles: [
 
 ### 交互补齐
 
-- 在 UnifiedCompose 添加第三方厂商账号页中，若当前厂商 cURL 模板/指引包含 `<PASTE_PLATFORM_COOKIE>`，对应的 quota/billing cURL section 会展示临时 `Platform Cookie` 输入区。
-- 用户可在创建页直接粘贴 Cookie 值，点击「填入 cURL」后自动替换模板里的 `<PASTE_PLATFORM_COOKIE>`，并启用对应 cURL。
-- 该输入值只用于生成当前 cURL 文本，不作为独立字段保存；最终持久化的仍是完整 cURL，避免新增一套 Cookie 凭据存储模型。
+- 在 UnifiedCompose 添加第三方厂商账号页中，若当前厂商 cURL 模板/指引需要平台 Cookie，会展示独立「平台 Cookie」输入框。cURL 文本保持 `{{platformCookie}}` 占位符，保存后由 quota/billing cURL 执行链替换变量。
 
 ### 验证
 

@@ -52,6 +52,8 @@
 19. 项目级 Codex subagent 配置统一放在 `.codex/agents/`，默认命名为 `gettokens_*`；除非正在验证模型路由能力，否则 agent 默认继承父会话模型，只用职责、sandbox 和 reasoning effort 区分任务面。
 20. 主控 agent 可根据任务判断自主新增、删除或修改 `.codex/agents/*.toml`，不需要逐次请求授权；但必须说明判断依据，验证 TOML 可解析，并更新 `docs-linhay/dev/20260530-codex-project-subagents.md` 与 memory。
 21. 工作台内详情类或调试类 modal 默认必须使用覆盖整个应用窗口视口（包括 sidebar 区域）的遮罩层，面板四周保留可见遮罩与投影间距，并具备可恢复的独立 hash 路由。打开 modal 时写入 `detail=<id>` 或 `modal=<route>`，关闭时只移除对应标记；全局 hash canonicalizer 不得丢弃仍属于当前 frame/workspace 的 modal/detail 参数。
+22. 上下游自身限制不由 GetTokens 默认兜底：若根因属于 Codex CLI / Codex upstream 的协议行为、请求体限制或服务端限制，而非 GetTokens sidecar 引入的重复、放大、错误转换或本地限制，默认只做定位、证据保留和规避建议；只有确认是 GetTokens 转发层自身 bug，或用户明确授权做兼容层，才进入 GetTokens 侧实现。
+23. 未经用户明确授权，不得触碰正式版 GetTokens：修复与验证默认只在 dev 环境、本仓库构建产物或明确指定的测试环境中进行；禁止擅自修改 `/Applications/GetTokens.app` 正式版二进制、重启/kill 正式版进程、替换正式版 sidecar 或改动正式版配置。
 
 ## 2. 标准工作流（必须）
 1. 明确需求边界与验收条件。
