@@ -57,8 +57,8 @@ export interface UnifiedAccountDetailProps {
   onRename?: (nextName: string) => void;
   onSaveConfig?: (draft: ApiKeyConfigDraft) => Promise<void>;
   onVerify?: (input: { apiKey: string; baseUrl: string; model: string }) => void;
-  onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string }) => Promise<any>;
-  onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string }) => Promise<any>;
+  onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
+  onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
   onRateLimitRulesChanged?: () => void;
   activeScriptEditor?: AccountDetailScriptRoute | '';
   onOpenScriptEditor?: (script: AccountDetailScriptRoute) => void;

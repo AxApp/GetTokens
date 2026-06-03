@@ -460,7 +460,7 @@ function CredentialFieldGroup({
             key={field.id}
             title={field.label}
             value={readUnifiedComposeCredentialField(form, field.id)}
-            onChange={(event) => onFormChange(field.id, event.target.value)}
+            onChange={(event) => onFormChange(field.id as keyof UnifiedComposeFormState, event.target.value)}
             data-unified-compose-api-key-plaintext={field.secret ? "true" : undefined}
             placeholder={field.placeholder}
             aria-label={field.label}

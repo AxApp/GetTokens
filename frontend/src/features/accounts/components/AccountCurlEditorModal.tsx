@@ -254,12 +254,10 @@ export function buildCurlVariables(draft: ApiKeyConfigDraft, vendorFields: Vendo
 }
 
 function readDraftCredentialField(draft: ApiKeyConfigDraft, fieldID: VendorCredentialField['id']) {
-  switch (fieldID) {
-    case 'platformCookie':
-      return draft.platformCookie ?? '';
-    default:
-      return '';
+  if (fieldID === 'platformCookie') {
+    return draft.platformCookie ?? draft.curlVariables?.platformCookie ?? '';
   }
+  return draft.curlVariables?.[fieldID] ?? '';
 }
 
 export function buildQuotaCurlTemplates(baseUrl: string, vendorTemplate: string): CurlTemplateOption[] {

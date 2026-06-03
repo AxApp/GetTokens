@@ -164,6 +164,7 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       billingCurl: 'billing',
       billingEnabled: true,
       platformCookie: '',
+      curlVariables: {},
       proxyUrl: 'socks5://127.0.0.1:7890',
     }),
     {
@@ -175,6 +176,7 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       billingCurl: 'billing',
       billingEnabled: true,
       platformCookie: '',
+      curlVariables: {},
       proxyUrl: 'socks5://127.0.0.1:7890',
     },
   );
@@ -327,6 +329,10 @@ test('generated Wails account models preserve quota curl fields', () => {
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*platformCookie\?: string;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*platformCookie\?: string;/);
   assert.match(source, /export class TestCodexAPIKeyQuotaCurlInput[\s\S]*platformCookie\?: string;/);
+  assert.match(source, /export class AccountRecord[\s\S]*curlVariables\?: Record<string, string>;/);
+  assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*curlVariables\?: Record<string, string>;/);
+  assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*curlVariables\?: Record<string, string>;/);
+  assert.match(source, /export class TestCodexAPIKeyQuotaCurlInput[\s\S]*curlVariables\?: Record<string, string>;/);
   assert.match(source, /export class AccountRecord[\s\S]*modelFetchApiKey\?: string;[\s\S]*modelFetchBaseUrl\?: string;/);
   assert.match(source, /export class CreateCodexAPIKeyInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);
   assert.match(source, /export class UpdateCodexAPIKeyConfigInput[\s\S]*billingCurl\?: string;[\s\S]*billingEnabled\?: boolean;/);

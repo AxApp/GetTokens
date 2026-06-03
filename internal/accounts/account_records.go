@@ -96,6 +96,7 @@ type AccountRecord struct {
 	BillingCurl       string                   `json:"billingCurl,omitempty"`
 	BillingEnabled    bool                     `json:"billingEnabled,omitempty"`
 	PlatformCookie    string                   `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string        `json:"curlVariables,omitempty"`
 	ModelFetchAPIKey  string                   `json:"modelFetchApiKey,omitempty"`
 	ModelFetchBaseURL string                   `json:"modelFetchBaseUrl,omitempty"`
 }
@@ -256,6 +257,8 @@ func BuildCodexAPIKeyAccountRecord(key cliproxyapi.CodexAPIKey) AccountRecord {
 		FormatBaseURLs:   cloneStringMap(key.FormatBaseURLs),
 		BillingCurl:      strings.TrimSpace(key.BillingCurl),
 		BillingEnabled:   key.BillingEnabled && strings.TrimSpace(key.BillingCurl) != "",
+		PlatformCookie:   strings.TrimSpace(key.PlatformCookie),
+		CurlVariables:    cloneStringMap(key.CurlVariables),
 	}
 }
 
@@ -371,6 +374,8 @@ func buildUnifiedCodexAPIKeyAccountRecord(account cliproxyapi.UnifiedAccount) Ac
 		key.Headers = parseStringMapJSON(credential.HeadersJSON)
 		key.Models = parseCodexModelsJSON(credential.ModelsJSON)
 		key.ExcludedModels = parseStringListJSON(credential.ExcludedModelsJSON)
+		key.PlatformCookie = strings.TrimSpace(credential.PlatformCookie)
+		key.CurlVariables = parseStringMapJSON(credential.CurlVariablesJSON)
 	}
 	record := BuildCodexAPIKeyAccountRecord(key)
 	record.Status = unifiedStatus(account)

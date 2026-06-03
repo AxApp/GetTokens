@@ -64,6 +64,7 @@ export interface ApiKeyFormState {
   quotaCurl: string;
   quotaEnabled: boolean;
   platformCookie?: string;
+  curlVariables?: Record<string, string>;
 }
 
 export interface ClickEventLike {

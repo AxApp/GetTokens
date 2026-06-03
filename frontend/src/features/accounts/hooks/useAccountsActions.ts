@@ -32,7 +32,7 @@ import {
   resolveCopiedOpenAICompatibleProviderName,
   resolveNumberedDuplicateTitle,
 } from '../model/accountTransfer';
-import type { ApiKeyConfigDraft } from '../model/accountDetailConfig';
+import { normalizeCurlVariables, type ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
 import { publishAccountDisabledChange } from '../model/accountDisabledSync';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
@@ -202,6 +202,7 @@ export default function useAccountsActions({
             quotaCurl: trimmedQuotaCurl,
             quotaEnabled: Boolean(apiKeyForm.quotaEnabled && trimmedQuotaCurl),
             platformCookie: (apiKeyForm.platformCookie ?? "").trim(),
+            curlVariables: normalizeCurlVariables(apiKeyForm.curlVariables, apiKeyForm.platformCookie),
           }))
       );
       setIsApiKeyModalOpen(false);
@@ -488,6 +489,7 @@ export default function useAccountsActions({
       const nextQuotaCurl = draft.quotaCurl.trim();
       const nextBillingCurl = draft.billingCurl.trim();
       const nextPlatformCookie = (draft.platformCookie ?? "").trim();
+      const nextCurlVariables = normalizeCurlVariables(draft.curlVariables, nextPlatformCookie);
       const nextProxyURL = draft.proxyUrl.trim();
       if (!nextAPIKey) {
         setDeleteError(`SAVE ERROR: ${t('accounts.api_key_required')}`);
@@ -507,6 +509,7 @@ export default function useAccountsActions({
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
                 platformCookie: nextPlatformCookie,
+                curlVariables: nextCurlVariables,
                 proxyUrl: nextProxyURL,
               }
             : prev
@@ -527,6 +530,7 @@ export default function useAccountsActions({
                   prefix: nextPrefix,
                   quotaCurl: nextQuotaCurl,
                   platformCookie: nextPlatformCookie,
+                  curlVariables: nextCurlVariables,
                 })
               )
           );
@@ -547,6 +551,7 @@ export default function useAccountsActions({
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
                 platformCookie: nextPlatformCookie,
+                curlVariables: nextCurlVariables,
                 proxyUrl: nextProxyURL,
               })
             )
@@ -564,6 +569,7 @@ export default function useAccountsActions({
                 billingCurl: nextBillingCurl,
                 billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
                 platformCookie: nextPlatformCookie,
+                curlVariables: nextCurlVariables,
                 proxyUrl: nextProxyURL,
               }
             : prev

@@ -1,6 +1,6 @@
 import type { ApiFormat } from "../../../types";
 
-export type VendorCredentialFieldID = "platformCookie" | "modelFetchApiKey" | "modelFetchBaseUrl";
+export type VendorCredentialFieldID = string;
 
 export interface VendorCredentialField {
   id: VendorCredentialFieldID;

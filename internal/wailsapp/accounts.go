@@ -48,6 +48,7 @@ type CreateCodexAPIKeyInput struct {
 	BillingCurl    string                  `json:"billingCurl,omitempty"`
 	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 	PlatformCookie string                  `json:"platformCookie,omitempty"`
+	CurlVariables  map[string]string       `json:"curlVariables,omitempty"`
 }
 
 type UpdateAccountPriorityInput struct {
@@ -89,6 +90,7 @@ type UpdateCodexAPIKeyConfigInput struct {
 	BillingCurl    string                  `json:"billingCurl,omitempty"`
 	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 	PlatformCookie string                  `json:"platformCookie,omitempty"`
+	CurlVariables  map[string]string       `json:"curlVariables,omitempty"`
 }
 
 func (a *App) CreateCodexAPIKey(input CreateCodexAPIKeyInput) error {
@@ -168,6 +170,7 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 	write.CodexAPIKey.BillingCurl = strings.TrimSpace(input.BillingCurl)
 	write.CodexAPIKey.BillingEnabled = input.BillingEnabled && write.CodexAPIKey.BillingCurl != ""
 	write.CodexAPIKey.PlatformCookie = normalizePlatformCookie(input.PlatformCookie)
+	write.CodexAPIKey.CurlVariablesJSON = mustJSONString(normalizeCurlVariables(input.CurlVariables, input.PlatformCookie))
 	_, err = a.managementClient().PatchAccount(targetID, write)
 	if err == nil {
 		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()
@@ -264,6 +267,8 @@ func codexAPIKeyCreateAccountWrite(input CreateCodexAPIKeyInput) cliproxyapi.Acc
 			HeadersJSON:        mustJSONString(input.Headers),
 			ModelsJSON:         mustJSONString(codexModelsFromOpenAICompatibleModels(input.Models)),
 			ExcludedModelsJSON: mustJSONString(input.ExcludedModels),
+			PlatformCookie:     normalizePlatformCookie(input.PlatformCookie),
+			CurlVariablesJSON:  mustJSONString(normalizeCurlVariables(input.CurlVariables, input.PlatformCookie)),
 		},
 	}
 }
@@ -328,6 +333,24 @@ func codexModelsFromOpenAICompatibleModels(items []OpenAICompatibleModel) []clip
 			Name:  model.Name,
 			Alias: model.Alias,
 		})
+	}
+	return out
+}
+
+func normalizeCurlVariables(values map[string]string, platformCookie string) map[string]string {
+	out := make(map[string]string, len(values)+1)
+	for key, value := range values {
+		trimmedKey := strings.TrimSpace(key)
+		if trimmedKey == "" {
+			continue
+		}
+		out[trimmedKey] = strings.TrimSpace(value)
+	}
+	if cookie := normalizePlatformCookie(platformCookie); cookie != "" {
+		out["platformCookie"] = cookie
+	}
+	if len(out) == 0 {
+		return nil
 	}
 	return out
 }

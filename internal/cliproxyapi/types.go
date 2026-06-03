@@ -25,6 +25,7 @@ type CodexAPIKey struct {
 	BillingCurl    string            `json:"billing-curl,omitempty"`
 	BillingEnabled bool              `json:"billing-enabled,omitempty"`
 	PlatformCookie string            `json:"platform-cookie,omitempty"`
+	CurlVariables  map[string]string `json:"curl-variables,omitempty"`
 }
 
 type CodexAPIKeysResponse struct {
@@ -50,6 +51,7 @@ type CodexAPIKeyInput struct {
 	BillingCurl    string            `json:"billing-curl,omitempty"`
 	BillingEnabled bool              `json:"billing-enabled,omitempty"`
 	PlatformCookie string            `json:"platform-cookie,omitempty"`
+	CurlVariables  map[string]string `json:"curl-variables,omitempty"`
 }
 
 type CodexAPIKeyPatch struct {
@@ -136,6 +138,7 @@ type CodexAPIKeyAccountCredential struct {
 	BillingCurl        string `json:"billing_curl,omitempty"`
 	BillingEnabled     bool   `json:"billing_enabled,omitempty"`
 	PlatformCookie     string `json:"platform_cookie,omitempty"`
+	CurlVariablesJSON  string `json:"curl_variables_json,omitempty"`
 	FormatBaseURLsJSON string `json:"format_base_urls_json,omitempty"`
 	HeadersJSON        string `json:"headers_json,omitempty"`
 	ModelsJSON         string `json:"models_json,omitempty"`
@@ -371,11 +374,12 @@ type QuotaRuntimeState struct {
 }
 
 type QuotaCurlTestInput struct {
-	APIKey         string `json:"api_key"`
-	BaseURL        string `json:"base_url"`
-	Prefix         string `json:"prefix,omitempty"`
-	QuotaCurl      string `json:"quota_curl,omitempty"`
-	BillingCurl    string `json:"billing_curl,omitempty"`
-	PlatformCookie string `json:"platform_cookie,omitempty"`
-	AccountKey     string `json:"account_key,omitempty"`
+	APIKey         string            `json:"api_key"`
+	BaseURL        string            `json:"base_url"`
+	Prefix         string            `json:"prefix,omitempty"`
+	QuotaCurl      string            `json:"quota_curl,omitempty"`
+	BillingCurl    string            `json:"billing_curl,omitempty"`
+	PlatformCookie string            `json:"platform_cookie,omitempty"`
+	CurlVariables  map[string]string `json:"curl_variables,omitempty"`
+	AccountKey     string            `json:"account_key,omitempty"`
 }

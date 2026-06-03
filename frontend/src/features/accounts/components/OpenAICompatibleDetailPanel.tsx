@@ -8,6 +8,8 @@ import {
   type ProviderRemoteModelsState,
   type ProviderVerifyState,
 } from "../model/openAICompatible";
+import { getVendorPreset, type VendorCredentialField } from "../model/vendorPresets";
+import { resolveVendorPresetID } from "../model/vendorPresetHelpers";
 import AccountProxyRouteSection from "./AccountProxyRouteSection";
 import {
   AccountDetailBody,
@@ -39,6 +41,93 @@ function formatLastVerifiedAt(timestamp: number | null) {
     return "—";
   }
   return new Date(timestamp).toLocaleString();
+}
+
+
+function renderModelFetchCredentialFields({
+  draft,
+  onChange,
+  baseUrl,
+}: {
+  draft: OpenAICompatibleProviderDraft;
+  onChange: (next: OpenAICompatibleProviderDraft) => void;
+  baseUrl: string;
+}) {
+  const vendorPresetID = resolveVendorPresetID(draft.name || draft.currentName || "", baseUrl);
+  const vendorPreset = vendorPresetID ? getVendorPreset(vendorPresetID) : undefined;
+  const modelFetchFields = (vendorPreset?.credentialFields ?? []).filter(
+    (field) => field.scope === "model_fetch",
+  );
+
+  if (modelFetchFields.length === 0 && !draft.modelFetchApiKey && !draft.modelFetchBaseUrl) {
+    return null;
+  }
+
+  return (
+    <AccountDetailSection
+      componentName="OpenAICompatibleModelFetchSection"
+      muted
+      eyebrow="Model Catalog"
+      title="模型列表拉取凭据"
+    >
+      <div className="grid gap-4 md:grid-cols-2">
+        {modelFetchFields.map((field) => (
+          <label key={field.id} className="space-y-2">
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
+              {field.label}
+            </div>
+            <input
+              value={readModelFetchDraftField(draft, field.id)}
+              onChange={(event) =>
+                onChange(writeModelFetchDraftField(draft, field.id, event.target.value))
+              }
+              className="input-swiss w-full"
+              type={field.secret ? "password" : "text"}
+              placeholder={
+                field.placeholder ||
+                (field.id === "modelFetchApiKey" ? "sk-..." : baseUrl)
+              }
+            />
+            {field.help ? (
+              <span className="text-[length:var(--font-size-ui-2xs)] font-bold leading-relaxed text-[var(--text-muted)]">
+                {field.help}
+              </span>
+            ) : null}
+          </label>
+        ))}
+      </div>
+      <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
+        此 Key 只用于 /models 拉取，不参与 agent 对话、route guard 或
+        usage attribution。
+      </div>
+    </AccountDetailSection>
+  );
+}
+
+function readModelFetchDraftField(draft: OpenAICompatibleProviderDraft, fieldID: string): string {
+  switch (fieldID) {
+    case "modelFetchApiKey":
+      return draft.modelFetchApiKey ?? "";
+    case "modelFetchBaseUrl":
+      return draft.modelFetchBaseUrl ?? "";
+    default:
+      return "";
+  }
+}
+
+function writeModelFetchDraftField(
+  draft: OpenAICompatibleProviderDraft,
+  fieldID: string,
+  value: string,
+): OpenAICompatibleProviderDraft {
+  switch (fieldID) {
+    case "modelFetchApiKey":
+      return { ...draft, modelFetchApiKey: value };
+    case "modelFetchBaseUrl":
+      return { ...draft, modelFetchBaseUrl: value };
+    default:
+      return draft;
+  }
 }
 
 export default function OpenAICompatibleDetailPanel({
@@ -201,63 +290,11 @@ export default function OpenAICompatibleDetailPanel({
               ) : null}
             </AccountDetailSection>
 
-            {selectedPreset?.requiresModelFetchApiKey ||
-            draft.modelFetchApiKey ||
-            draft.modelFetchBaseUrl ? (
-              <AccountDetailSection
-                componentName="OpenAICompatibleModelFetchSection"
-                muted
-                eyebrow="Model Catalog"
-                title="模型列表拉取凭据"
-              >
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="space-y-2">
-                    <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                      API Key（仅用于拉取模型）
-                    </div>
-                    <input
-                      value={draft.modelFetchApiKey || ""}
-                      onChange={(event) =>
-                        onChange({
-                          ...draft,
-                          modelFetchApiKey: event.target.value,
-                        })
-                      }
-                      className="input-swiss w-full"
-                      type="text"
-                      placeholder={
-                        selectedPreset?.modelFetchApiKeyPlaceholder ||
-                        selectedPreset?.apiKeyPlaceholder ||
-                        "sk-..."
-                      }
-                    />
-                  </label>
-                  <label className="space-y-2">
-                    <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                      Model Fetch Base URL
-                    </div>
-                    <input
-                      value={draft.modelFetchBaseUrl || ""}
-                      onChange={(event) =>
-                        onChange({
-                          ...draft,
-                          modelFetchBaseUrl: event.target.value,
-                        })
-                      }
-                      className="input-swiss w-full"
-                      type="text"
-                      placeholder={
-                        selectedPreset?.modelFetchBaseUrl || draft.baseUrl
-                      }
-                    />
-                  </label>
-                </div>
-                <div className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                  此 Key 只用于 /models 拉取，不参与 agent 对话、route guard 或
-                  usage attribution。
-                </div>
-              </AccountDetailSection>
-            ) : null}
+            {renderModelFetchCredentialFields({
+              draft,
+              onChange,
+              baseUrl: draft.baseUrl,
+            })}
 
             <AccountProxyRouteSection
               proxyUrl={draft.proxyUrl}

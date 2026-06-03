@@ -341,3 +341,178 @@ multiModeProfiles: [
 - `go test ./internal/...`：通过。
 - sidecar reference：`go test ./internal/gettokens/accountstore ./internal/api/handlers/management` 通过。
 - `./scripts/wails-cli.sh build`：通过，已重新生成 Wails bindings 并重建 sidecar。
+
+## 2026-06-03 通用化：辅助凭据与变量声明驱动
+
+### 背景与需求
+
+用户指出：当前 `platformCookie` 虽然是独立字段了，但仍然是 Xiaomi 特判——展示逻辑靠 `requiresModelFetchApiKey`、`quotaSetupGuide` 等字段来推导，不够通用。用户要求**所有输入框都要能作为 `{{变量名}}` 在 cURL 里使用**。
+
+### 实现改动
+
+#### 1. 新增 `VendorCredentialField` 声明式类型（vendorPresets.ts）
+
+```ts
+export type VendorCredentialFieldID = "platformCookie" | "modelFetchApiKey" | "modelFetchBaseUrl";
+
+export interface VendorCredentialField {
+  id: VendorCredentialFieldID;
+  label: string;
+  placeholder?: string;
+  help?: string;
+  secret?: boolean;
+  variableName?: string;    // 映射到 cURL 占位符：{{variableName}}
+  scope: "curl" | "model_fetch";  // cURL 变量 vs 模型列表拉取凭据
+}
+```
+
+#### 2. `VendorPreset` 增加 `credentialFields` 数组
+
+Xiaomi 预设声明：
+
+```ts
+// API 预设：仅平台 Cookie
+credentialFields: [XIAOMI_MIMO_PLATFORM_COOKIE_FIELD]
+
+// Token Plan 预设：平台 Cookie + 模型拉取 key + baseUrl
+credentialFields: [XIAOMI_MIMO_PLATFORM_COOKIE_FIELD, ...XIAOMI_MIMO_MODEL_FETCH_FIELDS]
+```
+
+#### 3. UI 组件统一渲染（不再有 Xiaomi if/else）
+
+- **UnifiedComposeModal**：新增 `UnifiedComposeCredentialFieldsSection` 组件，读取 `selectedPreset.credentialFields`，按 `scope` 分组渲染为 `cURL 变量` 和 `模型列表拉取` 两组输入框。
+- **AccountDetailSections**：新增 `VendorCredentialInputField` 组件，同样按 preset 声明渲染辅助字段。
+- **AccountCurlEditorModal**：`buildCurlVariables(draft, vendorFields)` 改为接受 vendor fields 参数，自动将 scope=curl 且含有 variableName 的字段加入变量列表。
+
+#### 4. 前向兼容
+
+`VendorPreset.requiredModelFetchApiKey`、`modelFetchApiKeyPlaceholder` 等旧字段保留未删除；字段级 `platformCookie` 也保留。新增 `credentialFields` 与旧字段并存。
+
+### 局限与待完成
+
+1. **底层仍为固定字段**：`platformCookie` / `modelFetchApiKey` / `modelFetchBaseUrl` 在 Wails DTO、内联 types、draft 模型中仍是固定成员字段。真正“万能变量”需要升级为 `curlVariables: Record<string, string>`。
+2. **sidecar 替换链仍是特判**：`applyQuotaCurlPlaceholders` 只替换已知的 `{{apiKey}} / {{baseUrl}} / {{prefix}} / {{platformCookie}}`。如果新增任意变量名，sidecar 端的通用替换需要后端 `curlVariables` 传递。
+3. **账号详情保存/回读**：详情页的 `VendorCredentialInputField` 当前只处理 `platformCookie`。`modelFetchApiKey` 的详情编辑走的是 `OpenAICompatibleDetailPanel` 的独立区域，未纳入此通用渲染。
+
+### 验证
+
+- `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs`：通过（`vendor presets drive auxiliary credentials and cURL variables generically` 测试锁定声明式渲染）。
+- `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`：44/44 通过。
+- `cd frontend && npx tsc --noEmit`：通过。
+
+## 会话交接
+
+### 已提交（已入库）
+
+| 提交 | 主题 | 文件 |
+|------|------|------|
+| `111036c` | fix: distinguish xiaomi provider presets | vendorPresets / AccountsFeature |
+| `16e21d1` | chore: close live session projection workflow | live session models |
+| `4ac7d9f` | fix: finalize xiaomi quota curls and codex payload notes | cURL / accountDetailConfig |
+| `31a0559` | docs: record Xiaomi platform cookie variable flow | memory / space |
+| `376e143` | docs: record codex upstream limit boundary | domain skill / AGENTS |
+| `52325bb` | fix: cache account-backed codex model catalog | account cache + catalog |
+| `76a7226` | feat: add codex model catalog diagnostics | catalog diagnostics |
+
+### 未提交（工作区中）
+
+- Codex live-session UI 改进（`CodexLiveSessionsFeature.tsx` + `snapshotMerge` + `app_codex_live_sessions.*`）
+- 不属于 Xiaomi 任务，是另一条并行线
+
+### 待完成（需下个会话接手）
+
+1. **将 `curlVariables` 从固定字段升级为 `Record<string, string>`**
+   - 当前 `platformCookie` / `modelFetchApiKey` / `modelFetchBaseUrl` 仍是固定字段
+   - 需要升级 Wails DTO、sidecar account-store SQLite（new column `curl_variables_json`）、`ApiKeyConfigDraft` 前端类型
+   - sidecar `applyQuotaCurlPlaceholders` 需要支持动态变量替换（从 `quotaCurlInput` 接收 `map[string]string` 而非逐个参数）
+   - UI 侧再不需要新增固定字段；preset 声明新变量后保存/回读/替换自动完成
+
+2. **账号详情 `modelFetchApiKey` 纳入通用 `credentialFields` 渲染**
+   - 当前详情页的模型拉取 key 走的是 `OpenAICompatibleDetailPanel` 的独立区域（`requiresModelFetchApiKey` 判读）
+   - 应合并到 `AccountCredentialVerifySection` 的 `credentialFields` 通用渲染逻辑中
+
+3. **Claude Code account list `officialSwitchableModels` 完整更新**
+   - `mimo-v2.5-pro`, `mimo-v2-pro`, `mimo-v2-omni`, `mimo-v2-flash` 已在 vendorPresets 中列出
+   - Claude Code profile 已加入，但 `mimo-v2.5-asr`, `mimo-v2.5-tts` 等非对话模型需确认是否跟随
+
+4. **DeepLink 导入 `modelFetchApiKey` 支持**
+   - `normalizeDeepLinkOpenAICompatibleCredential` 已保留 `model_fetch_api_key/model_fetch_base_url`
+   - 但 `compileDeepLinkAccountWrite` 的 `OpenAICompatible` 分支使用 `normalizeDeepLinkOpenAICompatibleCredential` 只 Trim，后续保存时需要确认 sidecar account-store 正确写入
+
+5. **UnifiedCompose `billingCurlTemplate` 预设自动回填确认**
+   - `handlePresetApply` 中 `billingCurl` 使用 `preset.billingCurlTemplate ?? prev.billingCurl`
+   - 已确认回填逻辑存在；但选中预设后余额 cURL 区域展示依赖 `selectedPreset.billingCurlTemplate || form.billingCurl` 非空判断
+   - 需要桌面端最终验证
+
+### 模式沉淀小结
+
+本轮沉淀了以下可复用模式：
+
+| 模式 | 入口 | 适用范围 |
+|------|------|---------|
+| `credentialFields` 声明式辅助凭据 | `VendorPreset.credentialFields` | 任何需要额外输入框的厂商 |
+| `{{variableName}}` cURL 变量替换 | `buildCurlVariables` + `applyQuotaCurlPlaceholders` | 任意 cURL 模板的占位符替换 |
+| `scope: "curl" / "model_fetch"` 分组 | UI 组件自动分组渲染 | 区分 cURL 变量和模型拉取凭据 |
+| `variantLabel` 同 icon 多形态区分 | vendor card badge | API vs Token Plan 等 |
+
+
+## 2026-06-03 补充：curlVariables 通用替换链路落地
+
+本轮完成辅助凭据“最后一公里”的第一部分：将 cURL 变量从单个 `platformCookie` 特判扩展为 `curlVariables: Record<string, string>`。
+
+### 已完成
+
+- Wails DTO 增加 `curlVariables?: Record<string, string>`：
+  - `AccountRecord`
+  - `CreateCodexAPIKeyInput`
+  - `UpdateCodexAPIKeyConfigInput`
+  - `TestCodexAPIKeyQuotaCurlInput`
+- 前端账号详情 `ApiKeyConfigDraft` 增加 `curlVariables`，`VendorCredentialField.id` 放宽为任意字符串。
+- `credentialFields` 中 `scope=curl` 的任意字段可写入 draft `curlVariables[field.id]`，cURL 编辑器变量区也按声明展示。
+- sidecar account-store 为 `codex_api_key_accounts` 新增 `curl_variables_json TEXT NOT NULL DEFAULT '{}'`，并在 schema ensure 中补列。
+- sidecar `quota-test` / `billing-test` 请求支持 `curl_variables`，`applyQuotaCurlPlaceholders` 支持替换任意 `{{key}}`。
+- 兼容保留 `platformCookie`：保存时同步进入 `curlVariables.platformCookie`，旧字段仍可回读与替换。
+
+### 验证
+
+- CLIProxyAPI：新增 `TestQuotaDraftReplacesArbitraryCurlVariables`，覆盖 `{{organizationId}}` 任意变量替换。
+- CLIProxyAPI：新增 `TestCodexAPIKeyCurlVariablesRoundTrip`，覆盖 SQLite `curl_variables_json` 保存/回读。
+- GetTokens：`go test ./internal/accounts ./internal/cliproxyapi ./internal/wailsapp -count=1` 通过。
+- CLIProxyAPI：`go test ./internal/gettokens/accountstore ./internal/api/handlers/management -count=1` 通过。
+- 前端：`node --test frontend/src/features/accounts/tests/accountConfig.test.mjs frontend/src/features/accounts/tests/accountDetailLayout.test.mjs` 44/44 通过。
+- 前端：`cd frontend && npx tsc --noEmit` 通过。
+
+### 未完成
+
+- 账号详情 `modelFetchApiKey` / `modelFetchBaseUrl` 仍在 `OpenAICompatibleDetailPanel` 内作为独立区域编辑；尚未完全并入 `credentialFields` 通用渲染路径。
+- DeepLink 的 `model_fetch_api_key` / `model_fetch_base_url` 仅完成保留与 trim 路径复核，尚未做完整导入闭环验收。
+- Wails 桌面端真实渲染、选预设后 billing cURL 展示仍待桌面验收。
+
+## 2026-06-03 补充 2：modelFetch 详情页并入 credentialFields 通用渲染
+
+### 已完成
+
+`OpenAICompatibleDetailPanel` 中硬编码的模型拉取凭据区域（`modelFetchApiKey` / `modelFetchBaseUrl` 输入框）已替换为 credentialFields 声明式通用渲染：
+
+- 在 `OpenAICompatibleDetailPanel` 中通过 `resolveVendorPresetID` + `getVendorPreset` 解析当前账号对应的厂商预设。
+- 过滤 `vendorPreset.credentialFields` 中 `scope === "model_fetch"` 的字段。
+- 每个字段按声明（`label / placeholder / secret / help`）自动渲染，不再硬编码 JSX。
+- 新增 `readModelFetchDraftField` / `writeModelFetchDraftField` 辅助函数处理 `OpenAICompatibleProviderDraft` 与 credentialField ID 的映射。
+- 兼容保留：若 draft 中已有 `modelFetchApiKey` / `modelFetchBaseUrl` 值但未匹配到 credentialFields 时，仍显示凭据区域。
+
+### 当前状态
+
+- `UnifiedComposeModal`（创建新账号）：已在上一轮完成 credentialFields 按 scope 分组渲染（curl / model_fetch）。
+- `OpenAICompatibleDetailPanel`（编辑已有账号）：本轮完成 model_fetch 字段的 credentialFields 通用化。
+- `requiresModelFetchApiKey` 保留在 `openAICompatible.ts` 中用于 `resolveOpenAICompatibleModelFetchConfig` 的业务逻辑（判断模型拉取是否需要专用 key），不涉及渲染。
+
+### 验证
+
+- `node --test frontend/src/features/accounts/tests/accountConfig.test.mjs frontend/src/features/accounts/tests/accountDetailLayout.test.mjs`：44/44 通过。
+- `node --test frontend/src/features/accounts/tests/openAICompatible.test.mjs`：22/22 通过。
+- `cd frontend && npx tsc --noEmit`：通过。
+
+### 仍待完成
+
+- DeepLink 导入 `model_fetch_api_key` / `model_fetch_base_url` 完整闭环验证（sidecar 导入验收）。
+- Wails 桌面端真实渲染验收（选预设 → 账号详情 model fetch 区域确认）。

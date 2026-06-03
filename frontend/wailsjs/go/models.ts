@@ -750,6 +750,7 @@ export namespace main {
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
 	    platformCookie?: string;
+	    curlVariables?: Record<string, string>;
 	    modelFetchApiKey?: string;
 	    modelFetchBaseUrl?: string;
 
@@ -790,6 +791,7 @@ export namespace main {
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
 	        this.platformCookie = source["platformCookie"];
+	        this.curlVariables = source["curlVariables"];
 	        this.modelFetchApiKey = source["modelFetchApiKey"];
 	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
 	    }
@@ -3127,6 +3129,7 @@ export namespace main {
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
 	    platformCookie?: string;
+	    curlVariables?: Record<string, string>;
 
 	    static createFrom(source: any = {}) {
 	        return new CreateCodexAPIKeyInput(source);
@@ -3149,6 +3152,7 @@ export namespace main {
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
 	        this.platformCookie = source["platformCookie"];
+	        this.curlVariables = source["curlVariables"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -5482,6 +5486,7 @@ export namespace main {
 	    prefix?: string;
 	    quotaCurl: string;
 	    platformCookie?: string;
+	    curlVariables?: Record<string, string>;
 
 	    static createFrom(source: any = {}) {
 	        return new TestCodexAPIKeyQuotaCurlInput(source);
@@ -5494,6 +5499,7 @@ export namespace main {
 	        this.prefix = source["prefix"];
 	        this.quotaCurl = source["quotaCurl"];
 	        this.platformCookie = source["platformCookie"];
+	        this.curlVariables = source["curlVariables"];
 	    }
 	}
 	export class UpdateAccountPriorityInput {
@@ -5522,6 +5528,7 @@ export namespace main {
 	    billingCurl?: string;
 	    billingEnabled?: boolean;
 	    platformCookie?: string;
+	    curlVariables?: Record<string, string>;
 
 	    static createFrom(source: any = {}) {
 	        return new UpdateCodexAPIKeyConfigInput(source);
@@ -5540,6 +5547,7 @@ export namespace main {
 	        this.billingCurl = source["billingCurl"];
 	        this.billingEnabled = source["billingEnabled"];
 	        this.platformCookie = source["platformCookie"];
+	        this.curlVariables = source["curlVariables"];
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -418,11 +418,12 @@ func markQuotaRuntimeStateStaleFromError(state *cliproxyapi.QuotaRuntimeState, e
 }
 
 type TestCodexAPIKeyQuotaCurlInput struct {
-	APIKey         string `json:"apiKey"`
-	BaseURL        string `json:"baseUrl"`
-	Prefix         string `json:"prefix,omitempty"`
-	QuotaCurl      string `json:"quotaCurl"`
-	PlatformCookie string `json:"platformCookie,omitempty"`
+	APIKey         string            `json:"apiKey"`
+	BaseURL        string            `json:"baseUrl"`
+	Prefix         string            `json:"prefix,omitempty"`
+	QuotaCurl      string            `json:"quotaCurl"`
+	PlatformCookie string            `json:"platformCookie,omitempty"`
+	CurlVariables  map[string]string `json:"curlVariables,omitempty"`
 }
 
 func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaResponse, error) {
@@ -433,6 +434,7 @@ func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*Co
 		QuotaCurl:      strings.TrimSpace(input.QuotaCurl),
 		QuotaEnabled:   true,
 		PlatformCookie: normalizePlatformCookie(input.PlatformCookie),
+		CurlVariables:  normalizeQuotaCurlVariables(input.CurlVariables, input.PlatformCookie),
 	}
 	if source.APIKey == "" {
 		return nil, errors.New("api key 不能为空")
@@ -453,6 +455,7 @@ func (a *App) executeCodexAPIKeyQuotaRequest(source cliproxyAPIKeyQuotaSource) (
 		Prefix:         strings.TrimSpace(source.Prefix),
 		QuotaCurl:      strings.TrimSpace(source.QuotaCurl),
 		PlatformCookie: strings.TrimSpace(source.PlatformCookie),
+		CurlVariables:  source.CurlVariables,
 	})
 	if err != nil {
 		return nil, err
@@ -467,6 +470,25 @@ type cliproxyAPIKeyQuotaSource struct {
 	QuotaCurl      string
 	QuotaEnabled   bool
 	PlatformCookie string
+	CurlVariables  map[string]string
+}
+
+func normalizeQuotaCurlVariables(values map[string]string, platformCookie string) map[string]string {
+	out := make(map[string]string, len(values)+1)
+	for key, value := range values {
+		trimmedKey := strings.TrimSpace(key)
+		if trimmedKey == "" {
+			continue
+		}
+		out[trimmedKey] = strings.TrimSpace(value)
+	}
+	if cookie := normalizePlatformCookie(platformCookie); cookie != "" {
+		out["platformCookie"] = cookie
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func parseDebugResponse(body string) interface{} {
@@ -489,6 +511,7 @@ func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*
 		QuotaCurl:      strings.TrimSpace(input.QuotaCurl),
 		QuotaEnabled:   true,
 		PlatformCookie: normalizePlatformCookie(input.PlatformCookie),
+		CurlVariables:  normalizeQuotaCurlVariables(input.CurlVariables, input.PlatformCookie),
 	}
 	if source.APIKey == "" {
 		return nil, errors.New("api key 不能为空")
@@ -503,6 +526,7 @@ func (a *App) TestCodexAPIKeyBillingCurl(input TestCodexAPIKeyQuotaCurlInput) (*
 		Prefix:         strings.TrimSpace(source.Prefix),
 		BillingCurl:    strings.TrimSpace(source.QuotaCurl),
 		PlatformCookie: strings.TrimSpace(source.PlatformCookie),
+		CurlVariables:  source.CurlVariables,
 	})
 	if err != nil {
 		return nil, err

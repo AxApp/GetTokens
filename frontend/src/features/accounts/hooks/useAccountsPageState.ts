@@ -22,6 +22,7 @@ import {
   emptyApiKeyForm,
   loadAPIKeyLabels,
 } from '../model/accountConfig';
+import { normalizeCurlVariables } from '../model/accountDetailConfig';
 import {
   defaultAccountsFilterState,
   persistAccountsFilterState,
@@ -595,13 +596,14 @@ export default function useAccountsPageState({
   );
 
   const testSelectedApiKeyQuotaCurl = useCallback(
-    async (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string }): Promise<CodexQuota> => {
+    async (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }): Promise<CodexQuota> => {
       const nextInput = {
         apiKey: input.apiKey.trim(),
         baseUrl: input.baseUrl.trim(),
         prefix: input.prefix.trim(),
         quotaCurl: input.quotaCurl.trim(),
         platformCookie: input.platformCookie?.trim() ?? '',
+        curlVariables: normalizeCurlVariables(input.curlVariables, input.platformCookie),
       };
       return trackRequest(
         'TestCodexAPIKeyQuotaCurl',
@@ -613,13 +615,14 @@ export default function useAccountsPageState({
   );
 
   const testSelectedApiKeyBillingCurl = useCallback(
-    async (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string }) => {
+    async (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => {
       const nextInput = {
         apiKey: input.apiKey.trim(),
         baseUrl: input.baseUrl.trim(),
         prefix: input.prefix.trim(),
         quotaCurl: input.billingCurl.trim(),
         platformCookie: input.platformCookie?.trim() ?? '',
+        curlVariables: normalizeCurlVariables(input.curlVariables, input.platformCookie),
       };
       return trackRequest(
         'TestCodexAPIKeyBillingCurl',

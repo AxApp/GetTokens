@@ -88,7 +88,7 @@ export interface AccountQuotaSectionProps {
   editorOpen?: boolean;
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
-  onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string }) => Promise<any>;
+  onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
 }
 
 export interface AccountBillingSectionProps {
@@ -99,7 +99,7 @@ export interface AccountBillingSectionProps {
   editorOpen?: boolean;
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
-  onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string }) => Promise<any>;
+  onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
 }
 
 export interface AccountDetailFooterProps {
@@ -446,21 +446,18 @@ function VendorCredentialInputField({
 }
 
 function readDraftCredentialField(draft: ApiKeyConfigDraft, fieldID: VendorCredentialField['id']) {
-  switch (fieldID) {
-    case 'platformCookie':
-      return draft.platformCookie ?? '';
-    default:
-      return '';
+  if (fieldID === 'platformCookie') {
+    return draft.platformCookie ?? draft.curlVariables?.platformCookie ?? '';
   }
+  return draft.curlVariables?.[fieldID] ?? '';
 }
 
 function writeDraftCredentialField(draft: ApiKeyConfigDraft, fieldID: VendorCredentialField['id'], value: string): ApiKeyConfigDraft {
-  switch (fieldID) {
-    case 'platformCookie':
-      return { ...draft, platformCookie: value };
-    default:
-      return draft;
+  const nextVariables = { ...(draft.curlVariables ?? {}), [fieldID]: value };
+  if (fieldID === 'platformCookie') {
+    return { ...draft, platformCookie: value, curlVariables: nextVariables };
   }
+  return { ...draft, curlVariables: nextVariables };
 }
 
 function CredentialInputField({
@@ -714,6 +711,7 @@ export function AccountQuotaSection({
         prefix: draft.prefix,
         quotaCurl: draft.quotaCurl.trim(),
         platformCookie: (draft.platformCookie ?? "").trim(),
+        curlVariables: draft.curlVariables,
       });
       setTestResult(result);
       setTestStatus('success');
@@ -895,6 +893,7 @@ export function AccountBillingSection({
         prefix: draft.prefix,
         billingCurl: draft.billingCurl.trim(),
         platformCookie: (draft.platformCookie ?? "").trim(),
+        curlVariables: draft.curlVariables,
       });
       const nextBilling = normalizeBillingDisplay(result);
       setTestBilling(nextBilling);

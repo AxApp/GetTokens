@@ -12,6 +12,7 @@ export interface ApiKeyConfigDraft {
   billingCurl: string;
   billingEnabled: boolean;
   platformCookie?: string;
+  curlVariables?: Record<string, string>;
   proxyUrl: string;
 }
 
@@ -27,6 +28,7 @@ type ConfigSource = Pick<
   | "billingCurl"
   | "billingEnabled"
   | "platformCookie"
+  | "curlVariables"
   | "proxyUrl"
 >;
 
@@ -56,7 +58,8 @@ export function buildApiKeyConfigDraft(
     quotaEnabled: account.quotaEnabled ?? quotaCurl.trim().length > 0,
     billingCurl,
     billingEnabled: account.billingEnabled ?? billingCurl.trim().length > 0,
-    platformCookie: account.platformCookie ?? "",
+    platformCookie: account.platformCookie ?? account.curlVariables?.platformCookie ?? "",
+    curlVariables: normalizeCurlVariables(account.curlVariables, account.platformCookie),
     proxyUrl: account.proxyUrl ?? "",
   };
 }
@@ -75,6 +78,7 @@ export function hasApiKeyConfigChanges(
     current.billingCurl !== draft.billingCurl ||
     current.billingEnabled !== draft.billingEnabled ||
     current.platformCookie !== draft.platformCookie ||
+    !isSameCurlVariables(current.curlVariables, draft.curlVariables) ||
     current.proxyUrl !== draft.proxyUrl
   );
 }
@@ -88,6 +92,27 @@ export function listApiKeyConfigMissingFields(draft: ApiKeyConfigDraft) {
     fields.push("Base URL");
   }
   return fields;
+}
+
+export function normalizeCurlVariables(values?: Record<string, string>, platformCookie?: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  Object.entries(values ?? {}).forEach(([key, value]) => {
+    const trimmedKey = key.trim();
+    if (!trimmedKey) return;
+    out[trimmedKey] = String(value ?? '').trim();
+  });
+  const cookie = (platformCookie ?? '').trim();
+  if (cookie) {
+    out.platformCookie = cookie;
+  }
+  return out;
+}
+
+export function isSameCurlVariables(a?: Record<string, string>, b?: Record<string, string>) {
+  const left = normalizeCurlVariables(a);
+  const right = normalizeCurlVariables(b);
+  const keys = Array.from(new Set([...Object.keys(left), ...Object.keys(right)])).sort();
+  return keys.every((key) => (left[key] ?? '') === (right[key] ?? ''));
 }
 
 export function buildQuotaCurlTemplate(

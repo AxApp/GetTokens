@@ -100,6 +100,7 @@ export interface AccountRecord {
   billingCurl?: string;
   billingEnabled?: boolean;
   platformCookie?: string;
+  curlVariables?: Record<string, string>;
   modelFetchApiKey?: string;
   modelFetchBaseUrl?: string;
   rawAuthFile?: AuthFile;

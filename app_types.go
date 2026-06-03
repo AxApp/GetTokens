@@ -125,6 +125,7 @@ type AccountRecord struct {
 	BillingCurl       string                  `json:"billingCurl,omitempty"`
 	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
 	PlatformCookie    string                  `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	ModelFetchAPIKey  string                  `json:"modelFetchApiKey,omitempty"`
 	ModelFetchBaseURL string                  `json:"modelFetchBaseUrl,omitempty"`
 }
@@ -173,6 +174,7 @@ type CreateCodexAPIKeyInput struct {
 	BillingCurl    string                  `json:"billingCurl,omitempty"`
 	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 	PlatformCookie string                  `json:"platformCookie,omitempty"`
+	CurlVariables  map[string]string       `json:"curlVariables,omitempty"`
 }
 
 type UpdateCodexAPIKeyPriorityInput struct {
@@ -197,14 +199,16 @@ type UpdateCodexAPIKeyConfigInput struct {
 	BillingCurl    string                  `json:"billingCurl,omitempty"`
 	BillingEnabled bool                    `json:"billingEnabled,omitempty"`
 	PlatformCookie string                  `json:"platformCookie,omitempty"`
+	CurlVariables  map[string]string       `json:"curlVariables,omitempty"`
 }
 
 type TestCodexAPIKeyQuotaCurlInput struct {
-	APIKey         string `json:"apiKey"`
-	BaseURL        string `json:"baseUrl"`
-	Prefix         string `json:"prefix,omitempty"`
-	QuotaCurl      string `json:"quotaCurl"`
-	PlatformCookie string `json:"platformCookie,omitempty"`
+	APIKey         string            `json:"apiKey"`
+	BaseURL        string            `json:"baseUrl"`
+	Prefix         string            `json:"prefix,omitempty"`
+	QuotaCurl      string            `json:"quotaCurl"`
+	PlatformCookie string            `json:"platformCookie,omitempty"`
+	CurlVariables  map[string]string `json:"curlVariables,omitempty"`
 }
 
 type UpdateAccountPriorityInput struct {

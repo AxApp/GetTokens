@@ -15,6 +15,7 @@ export const emptyApiKeyForm = {
   quotaCurl: '',
   quotaEnabled: true,
   platformCookie: '',
+  curlVariables: {},
 };
 
 export function normalizeBaseUrl(value: string) {
