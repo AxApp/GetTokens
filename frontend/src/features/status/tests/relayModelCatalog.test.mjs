@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   filterRelayModelCatalogByQuery,
   mergeRelayModelCatalog,
+  resolveRelayModelCatalogSlug,
   resolveRelayModelReasoningProfile,
   sortRelayModelCatalogByNameDesc,
 } from '../model/relayModelCatalog.ts';
@@ -150,5 +151,30 @@ test('filterRelayModelCatalogByQuery matches name and alias with trimmed lowerca
   assert.deepEqual(
     filtered.map((item) => item.name),
     ['gpt-5.5'],
+  );
+});
+
+test('resolveRelayModelCatalogSlug uses display aliases only for labels', () => {
+  assert.equal(
+    resolveRelayModelCatalogSlug({
+      name: 'gpt-5.5',
+      alias: 'GPT 5.5',
+      supportedReasoningEfforts: [],
+      defaultReasoningEffort: '',
+      fromAccountPool: true,
+      fromCustom: false,
+    }),
+    'gpt-5.5',
+  );
+  assert.equal(
+    resolveRelayModelCatalogSlug({
+      name: 'deepseek-chat',
+      alias: 'deepseek',
+      supportedReasoningEfforts: [],
+      defaultReasoningEffort: '',
+      fromAccountPool: true,
+      fromCustom: false,
+    }),
+    'deepseek',
   );
 });

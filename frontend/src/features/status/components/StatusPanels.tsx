@@ -18,7 +18,7 @@ import {
   type RelayModelEditorState,
 } from '../model/relayLocalState';
 import type { RelayResolvedModelOption } from '../model/relayModelCatalog';
-import { sortRelayModelCatalogByNameDesc } from '../model/relayModelCatalog';
+import { resolveRelayModelCatalogSlug, sortRelayModelCatalogByNameDesc } from '../model/relayModelCatalog';
 import type { RelayProviderOption } from '../model/relayProviderCatalog';
 import { RELAY_CODEX_DEFAULT_MODEL } from '../../accounts/model/accountConfig';
 
@@ -165,7 +165,7 @@ export function StatusApplyLocalSection({
     const seen = new Set<string>();
     return sortedRelayModels
       .map((model) => {
-        const slug = (model.alias || model.name || '').trim();
+        const slug = resolveRelayModelCatalogSlug(model);
         const name = (model.name || '').trim();
         if (!slug || seen.has(slug)) {
           return null;

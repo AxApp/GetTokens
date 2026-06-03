@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -59,10 +60,7 @@ func buildGetTokensCodexModelCatalog(models []OpenAICompatibleModel) ([]byte, er
 	seen := make(map[string]bool)
 	entries := make([]codexModelCatalogEntry, 0, len(normalized))
 	for _, item := range normalized {
-		slug := strings.TrimSpace(item.Alias)
-		if slug == "" {
-			slug = strings.TrimSpace(item.Name)
-		}
+		slug := resolveCodexModelCatalogSlug(item)
 		if slug == "" || seen[slug] {
 			continue
 		}
@@ -76,8 +74,8 @@ func buildGetTokensCodexModelCatalog(models []OpenAICompatibleModel) ([]byte, er
 
 		entry := codexModelCatalogEntry{
 			Slug:                       slug,
-			DisplayName:                slug,
-			Description:                buildCodexModelCatalogDescription(item),
+			DisplayName:                resolveCodexModelCatalogDisplayName(item, slug),
+			Description:                buildCodexModelCatalogDescription(item, slug),
 			Visibility:                 "list",
 			SupportedInAPI:             true,
 			Priority:                   len(entries),
@@ -109,13 +107,34 @@ func buildGetTokensCodexModelCatalog(models []OpenAICompatibleModel) ([]byte, er
 	return append(body, '\n'), nil
 }
 
-func buildCodexModelCatalogDescription(model OpenAICompatibleModel) string {
+func resolveCodexModelCatalogSlug(model OpenAICompatibleModel) string {
 	name := strings.TrimSpace(model.Name)
 	alias := strings.TrimSpace(model.Alias)
-	if alias == "" || alias == name {
+	if isCodexRouteModelAlias(alias) {
+		return alias
+	}
+	return name
+}
+
+func resolveCodexModelCatalogDisplayName(model OpenAICompatibleModel, slug string) string {
+	alias := strings.TrimSpace(model.Alias)
+	if alias != "" {
+		return alias
+	}
+	return strings.TrimSpace(slug)
+}
+
+func buildCodexModelCatalogDescription(model OpenAICompatibleModel, slug string) string {
+	name := strings.TrimSpace(model.Name)
+	if strings.TrimSpace(slug) == "" || strings.TrimSpace(slug) == name {
 		return "GetTokens relay model"
 	}
 	return fmt.Sprintf("GetTokens relay alias for %s", name)
+}
+
+func isCodexRouteModelAlias(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	return trimmed != "" && strings.IndexFunc(trimmed, unicode.IsSpace) == -1
 }
 
 func buildCodexModelCatalogReasoningLevels(efforts []string) []codexModelCatalogReasoning {

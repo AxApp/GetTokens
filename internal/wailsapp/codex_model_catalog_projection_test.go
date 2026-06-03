@@ -59,6 +59,55 @@ func TestBuildGetTokensCodexModelCatalogProjectsAliasesAndReasoning(t *testing.T
 	}
 }
 
+func TestBuildGetTokensCodexModelCatalogUsesModelIDForDisplayAliases(t *testing.T) {
+	body, err := buildGetTokensCodexModelCatalog([]OpenAICompatibleModel{
+		{
+			Name:  "gpt-5.5",
+			Alias: "GPT 5.5",
+		},
+		{
+			Name:  "gpt-5.4-mini",
+			Alias: "GPT 5.4 Mini",
+		},
+		{
+			Name:  "deepseek-chat",
+			Alias: "deepseek",
+		},
+	})
+	if err != nil {
+		t.Fatalf("buildGetTokensCodexModelCatalog returned error: %v", err)
+	}
+
+	var payload struct {
+		Models []map[string]any `json:"models"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		t.Fatalf("catalog is not valid JSON: %v\n%s", err, string(body))
+	}
+	if len(payload.Models) != 3 {
+		t.Fatalf("models length = %d, want 3: %s", len(payload.Models), string(body))
+	}
+
+	got := make(map[string]string, len(payload.Models))
+	for _, model := range payload.Models {
+		slug, _ := model["slug"].(string)
+		displayName, _ := model["display_name"].(string)
+		got[slug] = displayName
+	}
+	if got["gpt-5.5"] != "GPT 5.5" {
+		t.Fatalf("gpt-5.5 should use model id as slug and display alias as display name: %#v", got)
+	}
+	if got["gpt-5.4-mini"] != "GPT 5.4 Mini" {
+		t.Fatalf("gpt-5.4-mini should use model id as slug and display alias as display name: %#v", got)
+	}
+	if got["deepseek"] != "deepseek" {
+		t.Fatalf("route alias should remain usable as catalog slug: %#v", got)
+	}
+	if _, ok := got["GPT 5.5"]; ok {
+		t.Fatalf("display alias must not become request slug: %#v", got)
+	}
+}
+
 func TestApplyRelayServiceConfigToLocalV2WritesGetTokensModelCatalogPointer(t *testing.T) {
 	codexHome := filepath.Join(t.TempDir(), ".codex")
 	t.Setenv("CODEX_HOME", codexHome)

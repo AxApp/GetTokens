@@ -181,3 +181,13 @@ test('codex config rows render hierarchical path labels instead of flat dotted t
   assert.doesNotMatch(modelProvidersSource, /\{row\.path\.join\('\.'\)\}/);
   assert.doesNotMatch(modelProvidersSource, /\{pathDisplay\.primaryLabel\}/);
 });
+
+test('status page exposes account-store diagnostics panel with summarized errors', async () => {
+  const source = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /GetAccountStoreDiagnostics/);
+  assert.match(source, /buildAccountStoreDiagnosticsView/);
+  assert.match(source, /data-account-store-diagnostics-panel/);
+  assert.match(source, /data-account-store-diagnostics-error/);
+  assert.match(source, /title=\{view\.fullError\}/);
+});

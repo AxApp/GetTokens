@@ -16,14 +16,9 @@ import (
 type relayModelFetcher func(FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error)
 
 func (a *App) ListRelaySupportedModels() ([]OpenAICompatibleModel, error) {
-	providers, err := a.ListOpenAICompatibleProviders()
+	providers, codexKeys, err := a.loadRelayAccountStoreInventory()
 	if err != nil {
 		return nil, err
-	}
-
-	codexKeys, err := a.loadCodexAPIKeys()
-	if err != nil {
-		codexKeys = nil
 	}
 
 	localCodexModels, err := loadLocalCodexModelsCache()
@@ -43,6 +38,55 @@ func (a *App) ListRelaySupportedModels() ([]OpenAICompatibleModel, error) {
 		}
 		return result.Models, nil
 	}, localCodexModels, sidecarModels), nil
+}
+
+func (a *App) loadRelayAccountStoreInventory() ([]OpenAICompatibleProvider, []cliproxyapi.CodexAPIKey, error) {
+	accounts, err := a.managementClient().ListAccounts()
+	if err != nil {
+		return nil, nil, err
+	}
+	providers := make([]OpenAICompatibleProvider, 0, len(accounts))
+	codexKeys := make([]cliproxyapi.CodexAPIKey, 0, len(accounts))
+	for _, account := range accounts {
+		switch account.Kind {
+		case cliproxyapi.AccountKindOpenAICompatible:
+			providers = append(providers, openAICompatibleProviderFromUnifiedAccount(account))
+		case cliproxyapi.AccountKindCodexAPIKey:
+			if account.CodexAPIKey == nil {
+				continue
+			}
+			codexKeys = append(codexKeys, cliproxyapi.CodexAPIKey{
+				LocalID:    strings.TrimSpace(account.AccountKey),
+				APIKey:     strings.TrimSpace(account.CodexAPIKey.APIKey),
+				Label:      strings.TrimSpace(account.Title),
+				Priority:   account.Priority,
+				Disabled:   account.Disabled,
+				Prefix:     strings.TrimSpace(account.CodexAPIKey.Prefix),
+				BaseURL:    strings.TrimSpace(account.CodexAPIKey.BaseURL),
+				ProxyURL:   strings.TrimSpace(account.CodexAPIKey.ProxyURL),
+				Models:     parseRelayCodexModelsJSON(account.CodexAPIKey.ModelsJSON),
+				Headers:    parseRelayStringMapJSON(account.CodexAPIKey.HeadersJSON),
+				Websockets: account.CodexAPIKey.Websockets,
+			})
+		}
+	}
+	return providers, codexKeys, nil
+}
+
+func parseRelayCodexModelsJSON(raw string) []cliproxyapi.CodexModel {
+	var items []cliproxyapi.CodexModel
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &items); err != nil {
+		return nil
+	}
+	return items
+}
+
+func parseRelayStringMapJSON(raw string) map[string]string {
+	var items map[string]string
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &items); err != nil {
+		return nil
+	}
+	return items
 }
 
 // fetchSidecarStaticModelDefinitions fetches the static model definitions from the
@@ -160,14 +204,15 @@ func listRelaySupportedModels(
 		appendRelaySupportedModels(merged, models)
 	}
 
-	// Sidecar static definitions provide the known model roster from the relay's registry.
-	// They are merged after provider/key models so that user-configured aliases and reasoning
-	// efforts take precedence; the sidecar definitions only fill in what is missing.
-	appendRelaySupportedModels(merged, sidecarModels)
+	// Codex's local models cache represents models the Codex client already knows
+	// how to request. Keep it in the projected catalog alongside GetTokens local
+	// account-backed models so syncing the catalog does not hide built-in choices.
+	appendRelaySupportedModels(merged, localCodexModels)
 
-	if len(merged) == 0 {
-		appendRelaySupportedModels(merged, localCodexModels)
-	}
+	// Sidecar static definitions provide metadata for models that already have an
+	// account-backed runtime auth. They must not expose sidecar-only models to the
+	// local Codex catalog, because selecting such a model would route to no auth.
+	mergeRelaySupportedModelMetadata(merged, sidecarModels)
 
 	if len(merged) == 0 {
 		return nil
@@ -290,6 +335,16 @@ func appendRelaySupportedModels(target map[string]OpenAICompatibleModel, items [
 		current, ok := target[item.Name]
 		if !ok {
 			target[item.Name] = item
+			continue
+		}
+		target[item.Name] = mergeRelaySupportedModel(current, item)
+	}
+}
+
+func mergeRelaySupportedModelMetadata(target map[string]OpenAICompatibleModel, items []OpenAICompatibleModel) {
+	for _, item := range normalizeProviderModels(items) {
+		current, ok := target[item.Name]
+		if !ok {
 			continue
 		}
 		target[item.Name] = mergeRelaySupportedModel(current, item)

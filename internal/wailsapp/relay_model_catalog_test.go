@@ -72,37 +72,39 @@ func TestListRelaySupportedModelsAggregatesRemoteLocalAndCodexKeyModels(t *testi
 	}
 }
 
-func TestListRelaySupportedModelsFallsBackToLocalCodexModelsCacheWhenAggregatedEmpty(t *testing.T) {
-	models := listRelaySupportedModels(nil, nil, nil, []OpenAICompatibleModel{
+func TestListRelaySupportedModelsIncludesLocalCodexModelsCache(t *testing.T) {
+	providers := []OpenAICompatibleProvider{
+		{
+			Name:    "deepseek",
+			BaseURL: "https://api.deepseek.com/v1",
+			APIKey:  "sk-deepseek",
+			Models: []OpenAICompatibleModel{
+				{Name: "deepseek-v4-flash"},
+			},
+		},
+	}
+
+	models := listRelaySupportedModels(providers, nil, nil, []OpenAICompatibleModel{
 		{Name: "gpt-5.4", SupportedReasoningEfforts: []string{"low", "medium", "high", "xhigh"}, DefaultReasoningEffort: "medium"},
 		{Name: "gpt-5.4-mini", SupportedReasoningEfforts: []string{"low", "medium", "high", "xhigh"}, DefaultReasoningEffort: "medium"},
 	}, nil)
 
-	if len(models) != 2 {
-		t.Fatalf("unexpected fallback model count: %#v", models)
+	if len(models) != 3 {
+		t.Fatalf("unexpected model count: %#v", models)
 	}
-	if models[0].Name != "gpt-5.4" || models[1].Name != "gpt-5.4-mini" {
-		t.Fatalf("unexpected fallback models: %#v", models)
+	if models[0].Name != "deepseek-v4-flash" || models[1].Name != "gpt-5.4" || models[2].Name != "gpt-5.4-mini" {
+		t.Fatalf("unexpected merged models: %#v", models)
 	}
 }
 
 func TestListRelaySupportedModelsSortsModelFamilyFromLargeToSmall(t *testing.T) {
-	models := listRelaySupportedModels(nil, nil, nil, nil, []OpenAICompatibleModel{
-		{Name: "gpt-5.2"},
-		{Name: "gpt-4.1"},
-		{Name: "gpt-5.4-mini"},
-		{Name: "gpt-5.5"},
-		{Name: "gpt-5.3-codex"},
-		{Name: "gpt-5.4"},
-	})
+	names := []string{"gpt-5.2", "gpt-4.1", "gpt-5.4-mini", "gpt-5.5", "gpt-5.3-codex", "gpt-5.4"}
+	sortModelNames(names)
 
 	want := []string{"gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex", "gpt-5.2", "gpt-4.1"}
-	if len(models) != len(want) {
-		t.Fatalf("unexpected model count: %#v", models)
-	}
-	for index, name := range want {
-		if models[index].Name != name {
-			t.Fatalf("model[%d] = %q, want %q; full list: %#v", index, models[index].Name, name, models)
+	for index, name := range names {
+		if name != want[index] {
+			t.Fatalf("model[%d] = %q, want %q; full list: %#v", index, name, want[index], names)
 		}
 	}
 }
@@ -223,12 +225,21 @@ func TestParseSidecarModelDefinitionsEmpty(t *testing.T) {
 }
 
 func TestListRelaySupportedModelsMergesSidecarModels(t *testing.T) {
+	codexKeys := []cliproxyapi.CodexAPIKey{
+		{
+			APIKey: "sk-codex",
+			Models: []cliproxyapi.CodexModel{
+				{Name: "gpt-5.4"},
+				{Name: "gpt-5.4-mini"},
+			},
+		},
+	}
 	sidecarModels := []OpenAICompatibleModel{
 		{Name: "gpt-5.4", Alias: "GPT 5.4", SupportedReasoningEfforts: []string{"low", "medium", "high"}},
 		{Name: "gpt-5.4-mini", Alias: "GPT 5.4 Mini"},
 	}
 
-	models := listRelaySupportedModels(nil, nil, nil, nil, sidecarModels)
+	models := listRelaySupportedModels(nil, codexKeys, nil, nil, sidecarModels)
 	if len(models) != 2 {
 		t.Fatalf("expected 2 sidecar models, got %d: %#v", len(models), models)
 	}
@@ -254,8 +265,8 @@ func TestListRelaySupportedModelsProviderAliasOverridesSidecarAlias(t *testing.T
 	}
 
 	models := listRelaySupportedModels(providers, nil, nil, nil, sidecarModels)
-	if len(models) != 2 {
-		t.Fatalf("expected 2 models, got %d: %#v", len(models), models)
+	if len(models) != 1 {
+		t.Fatalf("expected 1 account-backed model, got %d: %#v", len(models), models)
 	}
 
 	var gpt54 *OpenAICompatibleModel
@@ -272,6 +283,17 @@ func TestListRelaySupportedModelsProviderAliasOverridesSidecarAlias(t *testing.T
 	}
 	if len(gpt54.SupportedReasoningEfforts) != 3 {
 		t.Fatalf("expected sidecar reasoning efforts to be merged in: %#v", gpt54)
+	}
+}
+
+func TestListRelaySupportedModelsDoesNotExposeSidecarOnlyDeepSeek(t *testing.T) {
+	models := listRelaySupportedModels(nil, nil, nil, nil, []OpenAICompatibleModel{
+		{Name: "deepseek-v4-flash"},
+		{Name: "deepseek-v4-pro"},
+	})
+
+	if len(models) != 0 {
+		t.Fatalf("sidecar-only DeepSeek models should not be exposed without active openai-compatible backing: %#v", models)
 	}
 }
 

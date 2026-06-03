@@ -106,6 +106,12 @@ export function filterRelayModelCatalogByQuery(
   });
 }
 
+export function resolveRelayModelCatalogSlug(model: Pick<RelayResolvedModelOption, 'name' | 'alias'>): string {
+  const name = String(model?.name || '').trim();
+  const alias = String(model?.alias || '').trim();
+  return isRelayModelRouteAlias(alias) ? alias : name;
+}
+
 function mergeRelayResolvedModelOption(
   current: RelayResolvedModelOption | undefined,
   incoming: RelayResolvedModelOption,
@@ -153,4 +159,8 @@ function normalizeRelayReasoningEfforts(values: string[] | undefined): string[] 
 function normalizeCatalogReasoningEffort(value: string | undefined): string {
   const trimmed = String(value || '').trim().toLowerCase();
   return relayReasoningEffortOptions.includes(trimmed) ? trimmed : '';
+}
+
+function isRelayModelRouteAlias(value: string): boolean {
+  return value !== '' && !/\s/.test(value);
 }
