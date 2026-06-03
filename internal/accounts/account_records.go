@@ -160,6 +160,7 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 		Prefix:           prefix,
 		ProxyURL:         proxyURL,
 		SupportedFormats: resolveDefaultFormats(name),
+		FormatBaseURLs:   cloneStringMap(provider.FormatBaseURLs),
 	}
 }
 

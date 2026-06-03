@@ -384,20 +384,21 @@ type ClaudeCodeAccountRoutingProbeAttempt struct {
 }
 
 type OpenAICompatibleProvider struct {
-	AccountKey string                  `json:"accountKey,omitempty"`
-	Name       string                  `json:"name"`
-	Priority   int                     `json:"priority,omitempty"`
-	Disabled   bool                    `json:"disabled,omitempty"`
-	BaseURL    string                  `json:"baseUrl"`
-	Prefix     string                  `json:"prefix,omitempty"`
-	ProxyURL   string                  `json:"proxyUrl,omitempty"`
-	APIKey     string                  `json:"apiKey"`
-	APIKeys    []string                `json:"apiKeys,omitempty"`
-	Models     []OpenAICompatibleModel `json:"models,omitempty"`
-	Headers    map[string]string       `json:"headers,omitempty"`
-	KeyCount   int                     `json:"keyCount,omitempty"`
-	ModelCount int                     `json:"modelCount,omitempty"`
-	HasHeaders bool                    `json:"hasHeaders,omitempty"`
+	AccountKey     string                  `json:"accountKey,omitempty"`
+	Name           string                  `json:"name"`
+	Priority       int                     `json:"priority,omitempty"`
+	Disabled       bool                    `json:"disabled,omitempty"`
+	BaseURL        string                  `json:"baseUrl"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	ProxyURL       string                  `json:"proxyUrl,omitempty"`
+	APIKey         string                  `json:"apiKey"`
+	APIKeys        []string                `json:"apiKeys,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
+	Headers        map[string]string       `json:"headers,omitempty"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
+	KeyCount       int                     `json:"keyCount,omitempty"`
+	ModelCount     int                     `json:"modelCount,omitempty"`
+	HasHeaders     bool                    `json:"hasHeaders,omitempty"`
 }
 
 type OpenAICompatibleModel struct {
@@ -408,10 +409,12 @@ type OpenAICompatibleModel struct {
 }
 
 type CreateOpenAICompatibleProviderInput struct {
-	Name    string `json:"name"`
-	BaseURL string `json:"baseUrl"`
-	Prefix  string `json:"prefix,omitempty"`
-	APIKey  string `json:"apiKey"`
+	Name           string                  `json:"name"`
+	BaseURL        string                  `json:"baseUrl"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	APIKey         string                  `json:"apiKey"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
 }
 
 type UpdateOpenAICompatibleProviderInput struct {

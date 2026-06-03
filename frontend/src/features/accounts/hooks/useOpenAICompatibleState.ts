@@ -167,12 +167,12 @@ export default function useOpenAICompatibleState({ ready, trackRequest, t }: Use
     try {
       setFormError('');
       await trackRequest('CreateOpenAICompatibleProvider', { ...form }, () =>
-        CreateOpenAICompatibleProvider({
+        CreateOpenAICompatibleProvider(main.CreateOpenAICompatibleProviderInput.createFrom({
           name: form.name,
           baseUrl: form.baseUrl,
           prefix: '',
           apiKey: form.apiKey,
-        }),
+        })),
       );
       setIsCreateModalOpen(false);
       setSelectedPresetID('');

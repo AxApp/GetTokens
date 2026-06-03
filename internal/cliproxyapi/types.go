@@ -83,14 +83,15 @@ type OAuthModelAliasesResponse struct {
 }
 
 type OpenAICompatibleProvider struct {
-	Name          string                        `json:"name"`
-	Priority      int                           `json:"priority,omitempty"`
-	Disabled      bool                          `json:"disabled,omitempty"`
-	Prefix        string                        `json:"prefix,omitempty"`
-	BaseURL       string                        `json:"base-url"`
-	APIKeyEntries []OpenAICompatibleAPIKeyEntry `json:"api-key-entries,omitempty"`
-	Models        []OpenAICompatibleModel       `json:"models,omitempty"`
-	Headers       map[string]string             `json:"headers,omitempty"`
+	Name           string                        `json:"name"`
+	Priority       int                           `json:"priority,omitempty"`
+	Disabled       bool                          `json:"disabled,omitempty"`
+	Prefix         string                        `json:"prefix,omitempty"`
+	BaseURL        string                        `json:"base-url"`
+	APIKeyEntries  []OpenAICompatibleAPIKeyEntry `json:"api-key-entries,omitempty"`
+	Models         []OpenAICompatibleModel       `json:"models,omitempty"`
+	Headers        map[string]string             `json:"headers,omitempty"`
+	FormatBaseURLs map[string]string             `json:"format-base-urls,omitempty"`
 }
 
 type OpenAICompatibleProvidersResponse struct {
@@ -145,6 +146,7 @@ type OpenAICompatibleAccountCredential struct {
 	Prefix             string `json:"prefix,omitempty"`
 	APIKeyEntriesJSON  string `json:"api_key_entries_json"`
 	HeadersJSON        string `json:"headers_json,omitempty"`
+	FormatBaseURLsJSON string `json:"format_base_urls_json,omitempty"`
 	ModelsJSON         string `json:"models_json,omitempty"`
 }
 

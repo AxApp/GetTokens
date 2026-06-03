@@ -4,7 +4,7 @@ import {
   ApplyDeepLinkImport,
   ApplyRelayServiceConfigToLocalV2,
   ConsumePendingDeepLinks,
-  CreateCodexAPIKey,
+  CreateOpenAICompatibleProvider,
   CreateRateLimitRule,
   DeleteRateLimitRule,
   DownloadAuthFile,
@@ -180,6 +180,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     billingEnabled: false,
   });
   const [unifiedComposeError, setUnifiedComposeError] = useState('');
+  const [unifiedComposePreset, setUnifiedComposePreset] = useState<VendorPreset | null>(null);
   const [displayMode, setDisplayMode] = useState<AccountListDisplayMode>(() => readInitialDisplayMode());
   const [relayKeyItems, setRelayKeyItems] = useState<main.RelayServiceAPIKeyItem[]>([]);
   const [relayEndpoints, setRelayEndpoints] = useState<main.RelayServiceEndpoint[]>([]);
@@ -576,6 +577,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const openUnifiedCompose = useCallback(() => {
     setUnifiedComposeError('');
+    setUnifiedComposePreset(null);
     setUnifiedComposeForm({ ...emptyApiKeyForm, formatBaseUrls: {}, billingCurl: '', billingEnabled: false });
     setIsUnifiedComposeOpen(true);
   }, []);
@@ -589,6 +591,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       }
       const quotaCurl = preset.quotaCurlTemplate
         ?? `curl -sS "${preset.baseUrl}/usage" -H "Authorization: Bearer {{apiKey}}"`;
+      setUnifiedComposePreset(preset);
       setUnifiedComposeForm((prev) => ({
         ...prev,
         label: preset.name,
@@ -616,38 +619,37 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       return;
     }
 
-    const formatBaseUrls: Record<string, string> = {};
-    for (const [fmt, url] of Object.entries(unifiedComposeForm.formatBaseUrls)) {
-      const trimmed = (url as string).trim();
-      if (trimmed) formatBaseUrls[fmt] = trimmed;
+    const providerName = unifiedComposeForm.label.trim() || resolveProviderNameFromBaseUrl(baseUrl);
+    if (!providerName) {
+      setUnifiedComposeError('Provider name is required');
+      return;
     }
+    const formatBaseUrls = normalizeUnifiedComposeFormatBaseUrls(unifiedComposeForm.formatBaseUrls);
+    const models = buildUnifiedComposeProviderModels(unifiedComposePreset);
 
     try {
       await trackRequest(
-        'CreateCodexAPIKey',
-        { baseUrl },
+        'CreateOpenAICompatibleProvider',
+        { name: providerName, baseUrl, source: 'unified-compose' },
         () =>
-          CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom({
+          CreateOpenAICompatibleProvider(main.CreateOpenAICompatibleProviderInput.createFrom({
+            name: providerName,
             apiKey,
-            label: unifiedComposeForm.label.trim(),
             baseUrl,
-            formatBaseUrls: Object.keys(formatBaseUrls).length > 0 ? formatBaseUrls : undefined,
-            priority: 0,
             prefix: '',
-            quotaCurl: unifiedComposeForm.quotaCurl.trim(),
-            quotaEnabled: Boolean(unifiedComposeForm.quotaEnabled && unifiedComposeForm.quotaCurl.trim()),
-            billingCurl: unifiedComposeForm.billingCurl?.trim() ?? '',
-            billingEnabled: Boolean(unifiedComposeForm.billingEnabled && (unifiedComposeForm.billingCurl?.trim() ?? '')),
+            formatBaseUrls: Object.keys(formatBaseUrls).length > 0 ? formatBaseUrls : undefined,
+            models: models.length > 0 ? models : undefined,
           })),
       );
       setIsUnifiedComposeOpen(false);
+      setUnifiedComposePreset(null);
       setUnifiedComposeForm({ ...emptyApiKeyForm, formatBaseUrls: {}, billingCurl: '', billingEnabled: false });
       setUnifiedComposeError('');
       await loadAccounts();
     } catch (err) {
       setUnifiedComposeError(err instanceof Error ? err.message : String(err));
     }
-  }, [unifiedComposeForm, trackRequest, loadAccounts]);
+  }, [unifiedComposeForm, unifiedComposePreset, trackRequest, loadAccounts]);
 
   const openOpenAICompatibleDetail = useCallback(
     (provider: OpenAICompatibleProvider) => {
@@ -1178,6 +1180,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
           error={unifiedComposeError}
           onClose={() => {
             setIsUnifiedComposeOpen(false);
+            setUnifiedComposePreset(null);
             setUnifiedComposeError('');
           }}
           onFormChange={(field, value) => {
@@ -1276,6 +1279,36 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       </div>
     </>
   );
+}
+
+function normalizeUnifiedComposeFormatBaseUrls(items: Partial<Record<string, string>>) {
+  const out: Record<string, string> = {};
+  for (const [format, value] of Object.entries(items)) {
+    const trimmedFormat = format.trim();
+    const trimmedValue = String(value || '').trim();
+    if (!trimmedFormat || !trimmedValue) continue;
+    out[trimmedFormat] = trimmedValue;
+  }
+  return out;
+}
+
+function buildUnifiedComposeProviderModels(preset: VendorPreset | null) {
+  if (!preset) return [];
+  return preset.modelSuggestions
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .map((name) => ({ name, alias: name }));
+}
+
+function resolveProviderNameFromBaseUrl(baseUrl: string) {
+  const trimmed = baseUrl.trim();
+  if (!trimmed) return '';
+  try {
+    const host = new URL(trimmed).host.replace(/^api\./, '');
+    return host.split('.')[0] || host || '';
+  } catch {
+    return trimmed.replace(/^https?:\/\//, '').split('/')[0]?.split('.')[0] || '';
+  }
 }
 
 function readInitialDisplayMode(): AccountListDisplayMode {

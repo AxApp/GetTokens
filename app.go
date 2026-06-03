@@ -1463,10 +1463,12 @@ func (a *App) UpdateCodexAPIKeyConfig(input UpdateCodexAPIKeyConfigInput) error 
 
 func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProviderInput) error {
 	return a.core.CreateOpenAICompatibleProvider(wailsapp.CreateOpenAICompatibleProviderInput{
-		Name:    input.Name,
-		BaseURL: input.BaseURL,
-		Prefix:  input.Prefix,
-		APIKey:  input.APIKey,
+		Name:           input.Name,
+		BaseURL:        input.BaseURL,
+		Prefix:         input.Prefix,
+		APIKey:         input.APIKey,
+		FormatBaseURLs: input.FormatBaseURLs,
+		Models:         mapOpenAICompatibleModelsToWails(input.Models),
 	})
 }
 

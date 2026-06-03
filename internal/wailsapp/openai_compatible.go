@@ -11,20 +11,21 @@ import (
 )
 
 type OpenAICompatibleProvider struct {
-	AccountKey string                  `json:"accountKey,omitempty"`
-	Name       string                  `json:"name"`
-	Priority   int                     `json:"priority,omitempty"`
-	Disabled   bool                    `json:"disabled,omitempty"`
-	BaseURL    string                  `json:"baseUrl"`
-	Prefix     string                  `json:"prefix,omitempty"`
-	ProxyURL   string                  `json:"proxyUrl,omitempty"`
-	APIKey     string                  `json:"apiKey"`
-	APIKeys    []string                `json:"apiKeys,omitempty"`
-	Models     []OpenAICompatibleModel `json:"models,omitempty"`
-	Headers    map[string]string       `json:"headers,omitempty"`
-	KeyCount   int                     `json:"keyCount,omitempty"`
-	ModelCount int                     `json:"modelCount,omitempty"`
-	HasHeaders bool                    `json:"hasHeaders,omitempty"`
+	AccountKey     string                  `json:"accountKey,omitempty"`
+	Name           string                  `json:"name"`
+	Priority       int                     `json:"priority,omitempty"`
+	Disabled       bool                    `json:"disabled,omitempty"`
+	BaseURL        string                  `json:"baseUrl"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	ProxyURL       string                  `json:"proxyUrl,omitempty"`
+	APIKey         string                  `json:"apiKey"`
+	APIKeys        []string                `json:"apiKeys,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
+	Headers        map[string]string       `json:"headers,omitempty"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
+	KeyCount       int                     `json:"keyCount,omitempty"`
+	ModelCount     int                     `json:"modelCount,omitempty"`
+	HasHeaders     bool                    `json:"hasHeaders,omitempty"`
 }
 
 type OpenAICompatibleModel struct {
@@ -35,10 +36,12 @@ type OpenAICompatibleModel struct {
 }
 
 type CreateOpenAICompatibleProviderInput struct {
-	Name    string `json:"name"`
-	BaseURL string `json:"baseUrl"`
-	Prefix  string `json:"prefix,omitempty"`
-	APIKey  string `json:"apiKey"`
+	Name           string                  `json:"name"`
+	BaseURL        string                  `json:"baseUrl"`
+	Prefix         string                  `json:"prefix,omitempty"`
+	APIKey         string                  `json:"apiKey"`
+	FormatBaseURLs map[string]string       `json:"formatBaseUrls,omitempty"`
+	Models         []OpenAICompatibleModel `json:"models,omitempty"`
 }
 
 type UpdateOpenAICompatibleProviderInput struct {
@@ -112,6 +115,11 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 	if err := a.ensureOpenAICompatibleProviderNameAvailable(name, ""); err != nil {
 		return err
 	}
+	models := normalizeProviderModels(input.Models)
+	nextModels := make([]cliproxyapi.OpenAICompatibleModel, 0, len(models))
+	for _, model := range models {
+		nextModels = append(nextModels, cliproxyapi.OpenAICompatibleModel{Name: model.Name, Alias: model.Alias})
+	}
 	_, err := a.managementClient().CreateAccount(openAICompatibleAccountWrite(
 		name,
 		name,
@@ -121,7 +129,8 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 		strings.TrimSpace(input.Prefix),
 		[]cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: apiKey}},
 		nil,
-		nil,
+		normalizeFormatBaseURLs(input.FormatBaseURLs),
+		nextModels,
 	))
 	return err
 }
@@ -201,6 +210,7 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		prefix,
 		entries,
 		normalizeVerifyHeaders(input.Headers),
+		parseStringMapJSON(target.OpenAICompatible.FormatBaseURLsJSON),
 		nextModels,
 	))
 	return err
@@ -577,19 +587,20 @@ func openAICompatibleProviderFromSidecarConfig(item cliproxyapi.OpenAICompatible
 		})
 	}
 	return OpenAICompatibleProvider{
-		Name:       strings.TrimSpace(item.Name),
-		Priority:   item.Priority,
-		Disabled:   item.Disabled,
-		BaseURL:    strings.TrimSpace(item.BaseURL),
-		Prefix:     strings.TrimSpace(item.Prefix),
-		ProxyURL:   proxyURL,
-		APIKey:     apiKey,
-		APIKeys:    apiKeys,
-		Models:     models,
-		Headers:    cloneHeaders(item.Headers),
-		KeyCount:   len(item.APIKeyEntries),
-		ModelCount: len(item.Models),
-		HasHeaders: len(item.Headers) > 0,
+		Name:           strings.TrimSpace(item.Name),
+		Priority:       item.Priority,
+		Disabled:       item.Disabled,
+		BaseURL:        strings.TrimSpace(item.BaseURL),
+		Prefix:         strings.TrimSpace(item.Prefix),
+		ProxyURL:       proxyURL,
+		APIKey:         apiKey,
+		APIKeys:        apiKeys,
+		Models:         models,
+		Headers:        cloneHeaders(item.Headers),
+		FormatBaseURLs: cloneHeaders(item.FormatBaseURLs),
+		KeyCount:       len(item.APIKeyEntries),
+		ModelCount:     len(item.Models),
+		HasHeaders:     len(item.Headers) > 0,
 	}
 }
 
@@ -609,6 +620,7 @@ func unifiedOpenAICompatibleProvider(account cliproxyapi.UnifiedAccount) cliprox
 	provider.Prefix = strings.TrimSpace(account.OpenAICompatible.Prefix)
 	_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.APIKeyEntriesJSON)), &provider.APIKeyEntries)
 	_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.HeadersJSON)), &provider.Headers)
+	_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.FormatBaseURLsJSON)), &provider.FormatBaseURLs)
 	_ = json.Unmarshal([]byte(strings.TrimSpace(account.OpenAICompatible.ModelsJSON)), &provider.Models)
 	return provider
 }
@@ -652,6 +664,7 @@ func openAICompatibleAccountWrite(
 	prefix string,
 	entries []cliproxyapi.OpenAICompatibleAPIKeyEntry,
 	headers map[string]string,
+	formatBaseURLs map[string]string,
 	models []cliproxyapi.OpenAICompatibleModel,
 ) cliproxyapi.AccountWriteRequest {
 	trimmedName := strings.TrimSpace(name)
@@ -668,9 +681,37 @@ func openAICompatibleAccountWrite(
 			Prefix:             strings.TrimSpace(prefix),
 			APIKeyEntriesJSON:  mustJSONString(entries),
 			HeadersJSON:        mustJSONString(headers),
+			FormatBaseURLsJSON: mustJSONString(formatBaseURLs),
 			ModelsJSON:         mustJSONString(models),
 		},
 	}
+}
+
+func normalizeFormatBaseURLs(items map[string]string) map[string]string {
+	if len(items) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(items))
+	for key, value := range items {
+		trimmedKey := strings.TrimSpace(key)
+		trimmedValue := strings.TrimSpace(value)
+		if trimmedKey == "" || trimmedValue == "" {
+			continue
+		}
+		out[trimmedKey] = trimmedValue
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func parseStringMapJSON(raw string) map[string]string {
+	var values map[string]string
+	if err := json.Unmarshal([]byte(strings.TrimSpace(raw)), &values); err != nil {
+		return nil
+	}
+	return normalizeFormatBaseURLs(values)
 }
 
 func normalizeReasoningEfforts(items []string) []string {

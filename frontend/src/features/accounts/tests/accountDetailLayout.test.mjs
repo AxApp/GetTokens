@@ -121,6 +121,23 @@ test('unified compose quota and billing use account-detail curl script card patt
   assert.doesNotMatch(source, /componentName="UnifiedComposeBillingSection"[\s\S]*?<textarea/);
 });
 
+test('unified compose submits third-party vendors as openai-compatible accounts', async () => {
+  const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const submitStart = source.indexOf('const handleUnifiedComposeSubmit = useCallback(async () => {');
+  const submitEnd = source.indexOf('}, [unifiedComposeForm, unifiedComposePreset, trackRequest, loadAccounts]);', submitStart);
+  const submitBlock = submitStart >= 0 && submitEnd > submitStart
+    ? source.slice(submitStart, submitEnd)
+    : '';
+
+  assert.match(submitBlock, /CreateOpenAICompatibleProvider/);
+  assert.match(submitBlock, /main\.CreateOpenAICompatibleProviderInput\.createFrom/);
+  assert.match(submitBlock, /'CreateOpenAICompatibleProvider'/);
+  assert.match(submitBlock, /formatBaseUrls/);
+  assert.match(submitBlock, /models: models\.length > 0 \? models : undefined/);
+  assert.doesNotMatch(submitBlock, /CreateCodexAPIKey/);
+  assert.doesNotMatch(submitBlock, /main\.CreateCodexAPIKeyInput\.createFrom/);
+});
+
 test('quota and billing curl editors are modal draft editors without local save buttons', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/AccountCurlEditorModal.tsx', import.meta.url), 'utf8');

@@ -412,3 +412,15 @@ node --test frontend/src/features/accounts/tests/accountHeaderMenu.test.mjs fron
 npm --prefix frontend run typecheck
 npm --prefix frontend run build
 ```
+
+## 2026-06-03 第三方厂商账号新增协议修复
+
+现象：用户删除旧 DeepSeek 卡片后，从账号池右上角“添加第三方厂商账号”重新新增 DeepSeek，Codex 选择 `deepseek-v4-flash` 后一直 Working，Proxyman 看不到 `api.deepseek.com` 请求。
+
+排查结论：这不是 DeepSeek 个例，而是统一厂商入口的协议边界错误。该入口展示的是 OpenAI-compatible/第三方厂商 preset，但提交时仍调用 `CreateCodexAPIKey`，导致 DeepSeek、OpenRouter、SiliconFlow 等厂商被写成 `kind=codex-api-key`、`provider=codex`，sidecar 继续走 Codex/WSS 路由，不会进入 OpenAI-compatible Chat Completions executor。
+
+修复：`UnifiedCompose` 提交改为调用 `CreateOpenAICompatibleProvider`，统一厂商入口以 `openai-compatible` account 作为第三方厂商主类型；同时把 preset / 表单里的 `formatBaseUrls` 和默认模型写入 account-store，保留“同一厂商账号同时支持 Anthropic 与 OpenAI-compatible”的能力。单独的“添加 Codex API Key”入口继续保留 `codex-api-key` 语义。
+
+数据结构：sidecar `openai_compatible_accounts` 增加并自动补齐 `format_base_urls_json` 列，management DTO / Wails DTO / 前端 `AccountRecord.formatBaseUrls` 全链路回读。旧库启动时 `EnsureSchema` 自动补列，不需要用户手工迁移。
+
+回归：新增测试 `unified compose submits third-party vendors as openai-compatible accounts`，断言统一厂商入口不再调用 `CreateCodexAPIKey`，并继续传递 `formatBaseUrls` / `models`。

@@ -3050,6 +3050,8 @@ export namespace main {
 	    baseUrl: string;
 	    prefix?: string;
 	    apiKey: string;
+	    formatBaseUrls?: Record<string, string>;
+	    models?: OpenAICompatibleModel[];
 
 	    static createFrom(source: any = {}) {
 	        return new CreateOpenAICompatibleProviderInput(source);
@@ -3061,7 +3063,27 @@ export namespace main {
 	        this.baseUrl = source["baseUrl"];
 	        this.prefix = source["prefix"];
 	        this.apiKey = source["apiKey"];
+	        this.formatBaseUrls = source["formatBaseUrls"];
+	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
 	    }
+
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
 	}
 	export class DeepLinkAccountApplyResultItem {
 	    index: number;
@@ -3634,6 +3656,7 @@ export namespace main {
 	    apiKeys?: string[];
 	    models?: OpenAICompatibleModel[];
 	    headers?: Record<string, string>;
+	    formatBaseUrls?: Record<string, string>;
 	    keyCount?: number;
 	    modelCount?: number;
 	    hasHeaders?: boolean;
@@ -3655,6 +3678,7 @@ export namespace main {
 	        this.apiKeys = source["apiKeys"];
 	        this.models = this.convertValues(source["models"], OpenAICompatibleModel);
 	        this.headers = source["headers"];
+	        this.formatBaseUrls = source["formatBaseUrls"];
 	        this.keyCount = source["keyCount"];
 	        this.modelCount = source["modelCount"];
 	        this.hasHeaders = source["hasHeaders"];
