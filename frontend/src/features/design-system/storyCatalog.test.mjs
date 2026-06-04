@@ -21,6 +21,7 @@ import {
   getDesignSystemStoryStats,
   resolveDesignSystemInspectOpenURL,
   resolveDesignSystemStorybookOpenURL,
+  resolveDesignSystemViteOpenURL,
   resolveDesignSystemWebOpenURL,
 } from './storyCatalog.ts';
 import { resolveStorybookLocale, storybookLocaleOptions } from './storybookGlobals.ts';
@@ -203,6 +204,19 @@ test('design system storybook open url uses dev bridge only in dev mode', () => 
   assert.equal(
     resolveDesignSystemStorybookOpenURL({ dev: true, origin: 'wails://wails.localhost:34115' }),
     `http://127.0.0.1:34115${DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH}`,
+  );
+});
+
+
+test('design system 5173 web open url always targets the vite app design-system frame', () => {
+  assert.equal(resolveDesignSystemViteOpenURL(), 'http://127.0.0.1:5173/#frame=design-system');
+  assert.equal(
+    resolveDesignSystemViteOpenURL({ origin: 'http://127.0.0.1:34115' }),
+    'http://127.0.0.1:5173/#frame=design-system',
+  );
+  assert.equal(
+    resolveDesignSystemViteOpenURL({ origin: 'wails://wails.localhost:34115' }),
+    'http://127.0.0.1:5173/#frame=design-system',
   );
 });
 

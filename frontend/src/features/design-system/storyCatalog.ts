@@ -13,7 +13,9 @@ export interface DesignSystemStoryGroup {
 }
 
 export const DESIGN_SYSTEM_STORYBOOK_PORT = 6006;
+export const DESIGN_SYSTEM_VITE_PORT = 5173;
 export const DESIGN_SYSTEM_STORYBOOK_URL = `http://127.0.0.1:${DESIGN_SYSTEM_STORYBOOK_PORT}`;
+export const DESIGN_SYSTEM_VITE_URL = `http://127.0.0.1:${DESIGN_SYSTEM_VITE_PORT}`;
 export const DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH = '/__dev/design-system/storybook/open';
 export const DESIGN_SYSTEM_WEB_FRAME_HASH = '#frame=design-system';
 export const DESIGN_SYSTEM_INSPECT_QUERY_PARAM = 'inspect';
@@ -32,6 +34,12 @@ export function resolveDesignSystemStorybookOpenURL(input?: {
   }
 
   return `${resolveDesignSystemDevServerOrigin(input?.origin)}${DESIGN_SYSTEM_STORYBOOK_DEV_OPEN_PATH}`;
+}
+
+export function resolveDesignSystemViteOpenURL(_input?: {
+  origin?: string;
+}) {
+  return `${DESIGN_SYSTEM_VITE_URL}/${DESIGN_SYSTEM_WEB_FRAME_HASH}`;
 }
 
 export function resolveDesignSystemWebOpenURL(input?: {

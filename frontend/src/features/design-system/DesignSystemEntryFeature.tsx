@@ -15,6 +15,7 @@ import {
   getDesignSystemStoryStats,
   resolveDesignSystemInspectOpenURL,
   resolveDesignSystemStorybookOpenURL,
+  resolveDesignSystemViteOpenURL,
   resolveDesignSystemWebOpenURL,
 } from './storyCatalog';
 
@@ -26,6 +27,9 @@ export default function DesignSystemEntryFeature() {
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
   const webOpenURL = resolveDesignSystemWebOpenURL({
+    origin: typeof window === 'undefined' ? undefined : window.location.origin,
+  });
+  const viteOpenURL = resolveDesignSystemViteOpenURL({
     origin: typeof window === 'undefined' ? undefined : window.location.origin,
   });
   const inspectOpenURL = resolveDesignSystemInspectOpenURL({
@@ -69,6 +73,15 @@ export default function DesignSystemEntryFeature() {
                     rel="noreferrer"
                   >
                     {t('design_system.inspect_elements')}
+                  </a>
+                  <a
+                    className="btn-swiss bg-[var(--accent-blue)] !text-white"
+                    href={viteOpenURL}
+                    onClick={(event) => openExternalURL(event, viteOpenURL)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('design_system.open_5173_web')}
                   </a>
                   <a
                     className="btn-swiss"
