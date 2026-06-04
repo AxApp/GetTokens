@@ -384,7 +384,7 @@ function buildCodexDraft(
       requiresOpenAIAuthSet: true,
       wireAPI: 'responses',
       wireAPISet: true,
-      supportsWebsockets: input.supportsWebsockets ?? true,
+      supportsWebsockets: input.supportsWebsockets ?? false,
       supportsWebsocketsSet: true,
       authStrategy,
       authFileName,

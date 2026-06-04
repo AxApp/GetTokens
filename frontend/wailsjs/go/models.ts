@@ -3605,6 +3605,7 @@ export namespace main {
 	export class LocalCodexModelProviderView {
 	    providerID: string;
 	    providerName: string;
+	    baseUrl?: string;
 
 	    static createFrom(source: any = {}) {
 	        return new LocalCodexModelProviderView(source);
@@ -3614,6 +3615,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.providerID = source["providerID"];
 	        this.providerName = source["providerName"];
+	        this.baseUrl = source["baseUrl"];
 	    }
 	}
 	export class LocalCodexModelProviderStateView {
@@ -3621,8 +3623,11 @@ export namespace main {
 	    hasExplicitCurrentModel: boolean;
 	    currentProviderID: string;
 	    currentProviderName: string;
+	    currentProviderBaseUrl?: string;
 	    currentProviderIsBuiltin: boolean;
 	    currentProviderExists: boolean;
+	    currentProviderSupportsWebsockets: boolean;
+	    currentProviderSupportsWebsocketsSet: boolean;
 	    hasExplicitCurrentProvider: boolean;
 	    providers: LocalCodexModelProviderView[];
 
@@ -3636,8 +3641,11 @@ export namespace main {
 	        this.hasExplicitCurrentModel = source["hasExplicitCurrentModel"];
 	        this.currentProviderID = source["currentProviderID"];
 	        this.currentProviderName = source["currentProviderName"];
+	        this.currentProviderBaseUrl = source["currentProviderBaseUrl"];
 	        this.currentProviderIsBuiltin = source["currentProviderIsBuiltin"];
 	        this.currentProviderExists = source["currentProviderExists"];
+	        this.currentProviderSupportsWebsockets = source["currentProviderSupportsWebsockets"];
+	        this.currentProviderSupportsWebsocketsSet = source["currentProviderSupportsWebsocketsSet"];
 	        this.hasExplicitCurrentProvider = source["hasExplicitCurrentProvider"];
 	        this.providers = this.convertValues(source["providers"], LocalCodexModelProviderView);
 	    }

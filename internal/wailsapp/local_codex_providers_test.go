@@ -83,6 +83,7 @@ model_provider = "corp"
 [model_providers.corp]
 name = "Corp Relay"
 base_url = "http://relay.example/v1"
+supports_websockets = true
 `)
 
 	if state.CurrentModel != "gpt-5.5-codex" {
@@ -96,6 +97,12 @@ base_url = "http://relay.example/v1"
 	}
 	if state.CurrentProviderName != "Corp Relay" {
 		t.Fatalf("CurrentProviderName = %q, want Corp Relay", state.CurrentProviderName)
+	}
+	if state.CurrentProviderBaseURL != "http://relay.example/v1" {
+		t.Fatalf("CurrentProviderBaseURL = %q, want http://relay.example/v1", state.CurrentProviderBaseURL)
+	}
+	if !state.CurrentProviderSupportsWebsocketsSet || !state.CurrentProviderSupportsWebsockets {
+		t.Fatalf("CurrentProviderSupportsWebsockets = %v set=%v, want true set=true", state.CurrentProviderSupportsWebsockets, state.CurrentProviderSupportsWebsocketsSet)
 	}
 	if state.CurrentProviderIsBuiltin {
 		t.Fatalf("CurrentProviderIsBuiltin = true, want false")

@@ -806,7 +806,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         relayEndpoint: selectedRelayEndpoint,
         selectedModel: relayModelNames[0] || "GT",
         selectedReasoningEffort: "medium",
-        supportsWebsockets: true,
+        supportsWebsockets: false,
         sidecarReady: previewMode || sidecarStatus.code === "ready",
         previewMode,
         currentCodexProviderState: localCodexProviderState,

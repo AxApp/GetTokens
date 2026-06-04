@@ -793,6 +793,8 @@
     "local_cli_wire_api": "Wire API",
     "local_cli_target": "目标",
     "local_cli_patch": "Patch",
+    "local_cli_websocket_risk_detected": "检测到当前本地 Codex provider 已开启 supports_websockets=true。保持当前开关关闭并点击应用，会改写为 HTTP Responses，避免 WebSocket 断流放大为 Conversation interrupted。",
+    "local_cli_websocket_risk_opt_in": "当前本地 Codex provider 已开启 WebSocket；继续保持此开关打开属于高级 opt-in，若上游 WS 不稳定仍可能触发 interrupted。",
     "local_cli_conflict": "冲突",
     "local_cli_controlled_fields": "受控字段",
     "local_cli_required": "必填",

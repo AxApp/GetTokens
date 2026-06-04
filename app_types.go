@@ -521,17 +521,21 @@ type CodexModelCatalogDiagnostics struct {
 type LocalCodexModelProviderView struct {
 	ProviderID   string `json:"providerID"`
 	ProviderName string `json:"providerName"`
+	BaseURL      string `json:"baseUrl,omitempty"`
 }
 
 type LocalCodexModelProviderStateView struct {
-	CurrentModel               string                        `json:"currentModel"`
-	HasExplicitCurrentModel    bool                          `json:"hasExplicitCurrentModel"`
-	CurrentProviderID          string                        `json:"currentProviderID"`
-	CurrentProviderName        string                        `json:"currentProviderName"`
-	CurrentProviderIsBuiltin   bool                          `json:"currentProviderIsBuiltin"`
-	CurrentProviderExists      bool                          `json:"currentProviderExists"`
-	HasExplicitCurrentProvider bool                          `json:"hasExplicitCurrentProvider"`
-	Providers                  []LocalCodexModelProviderView `json:"providers"`
+	CurrentModel                         string                        `json:"currentModel"`
+	HasExplicitCurrentModel              bool                          `json:"hasExplicitCurrentModel"`
+	CurrentProviderID                    string                        `json:"currentProviderID"`
+	CurrentProviderName                  string                        `json:"currentProviderName"`
+	CurrentProviderBaseURL               string                        `json:"currentProviderBaseUrl,omitempty"`
+	CurrentProviderIsBuiltin             bool                          `json:"currentProviderIsBuiltin"`
+	CurrentProviderExists                bool                          `json:"currentProviderExists"`
+	CurrentProviderSupportsWebsockets    bool                          `json:"currentProviderSupportsWebsockets"`
+	CurrentProviderSupportsWebsocketsSet bool                          `json:"currentProviderSupportsWebsocketsSet"`
+	HasExplicitCurrentProvider           bool                          `json:"hasExplicitCurrentProvider"`
+	Providers                            []LocalCodexModelProviderView `json:"providers"`
 }
 
 type RelayServiceEndpoint struct {

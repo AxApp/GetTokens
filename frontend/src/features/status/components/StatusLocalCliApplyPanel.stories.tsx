@@ -237,6 +237,7 @@ function LocalCliApplySample({
         onCopyText={() => undefined}
         relayKeyDisplayName={(_, index) => `Relay Key ${index + 1}`}
         supportsWebsockets
+        localCodexProviderWebsocketRisk={false}
         onToggleSupportsWebsockets={() => undefined}
         syncCodexModelCatalog
         isDisablingModelCatalog={false}

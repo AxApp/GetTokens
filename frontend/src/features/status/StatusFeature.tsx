@@ -119,6 +119,12 @@ function AccountStoreDiagnosticsPanel({ view }: { view: ReturnType<typeof buildA
   );
 }
 
+function normalizeRelayEndpointURL(value: unknown) {
+  return String(value || '')
+    .trim()
+    .replace(/\/+$/, '');
+}
+
 export default function StatusFeature({
   sidecarStatus = defaultSidecarStatus,
   version = 'dev',
@@ -147,11 +153,14 @@ export default function StatusFeature({
   const [codexLocalAuthStrategy, setCodexLocalAuthStrategy] = useState<CodexLocalAuthStrategy>(() =>
     loadCodexLocalAuthStrategy()
   );
-  const [supportsWebsockets, setSupportsWebsockets] = useState(true);
+  const [supportsWebsockets, setSupportsWebsockets] = useState(false);
   const [syncCodexModelCatalog, setSyncCodexModelCatalog] = useState(false);
   const [relayKeyEditor, setRelayKeyEditor] = useState<RelayKeyEditorState | null>(null);
   const [relayProviderEditor, setRelayProviderEditor] = useState<RelayProviderEditorState | null>(null);
   const [localCodexAuthState, setLocalCodexAuthState] = useState<main.LocalCodexAuthState | null>(null);
+  const [localCodexProviderState, setLocalCodexProviderState] = useState<main.LocalCodexModelProviderStateView | null>(
+    null
+  );
   const [accountStoreDiagnostics, setAccountStoreDiagnostics] = useState<main.AccountStoreDiagnostics | null>(null);
   const [localApplyMessage, setLocalApplyMessage] = useState('');
   const [claudeApplyMessage, setClaudeApplyMessage] = useState('');
@@ -176,6 +185,12 @@ export default function StatusFeature({
       host: '127.0.0.1',
       baseUrl: `http://127.0.0.1:${sidecarStatus.port || 8317}/v1`,
     };
+  const localCodexProviderWebsocketRisk =
+    Boolean(localCodexProviderState?.currentProviderSupportsWebsocketsSet) &&
+    Boolean(localCodexProviderState?.currentProviderSupportsWebsockets) &&
+    localCodexProviderState?.currentProviderID === selectedRelayProvider.id &&
+    normalizeRelayEndpointURL(localCodexProviderState?.currentProviderBaseUrl) ===
+      normalizeRelayEndpointURL(selectedEndpoint.baseUrl);
   const visibleRelayEndpoints = relayEndpoints
     .filter((endpoint) => isLANAccessEnabled || endpoint.kind !== 'lan')
     .slice(0, 3);
@@ -322,6 +337,7 @@ export default function StatusFeature({
         if (cancelled) {
           return;
         }
+        setLocalCodexProviderState(providerState);
         const activeProvider =
           providerState?.currentProviderID
             ? [
@@ -1083,6 +1099,7 @@ export default function StatusFeature({
             onCopyText={(value, successMessage) => void copyText(value, successMessage)}
             relayKeyDisplayName={relayKeyDisplayName}
             supportsWebsockets={supportsWebsockets}
+            localCodexProviderWebsocketRisk={localCodexProviderWebsocketRisk}
             onToggleSupportsWebsockets={() => setSupportsWebsockets((prev) => !prev)}
             syncCodexModelCatalog={syncCodexModelCatalog}
             isDisablingModelCatalog={isDisablingModelCatalog}

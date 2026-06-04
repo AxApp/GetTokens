@@ -9,17 +9,21 @@ import (
 type LocalCodexModelProvider struct {
 	ProviderID   string `json:"providerID"`
 	ProviderName string `json:"providerName"`
+	BaseURL      string `json:"baseUrl,omitempty"`
 }
 
 type LocalCodexModelProviderState struct {
-	CurrentModel               string                    `json:"currentModel"`
-	HasExplicitCurrentModel    bool                      `json:"hasExplicitCurrentModel"`
-	CurrentProviderID          string                    `json:"currentProviderID"`
-	CurrentProviderName        string                    `json:"currentProviderName"`
-	CurrentProviderIsBuiltin   bool                      `json:"currentProviderIsBuiltin"`
-	CurrentProviderExists      bool                      `json:"currentProviderExists"`
-	HasExplicitCurrentProvider bool                      `json:"hasExplicitCurrentProvider"`
-	Providers                  []LocalCodexModelProvider `json:"providers"`
+	CurrentModel                         string                    `json:"currentModel"`
+	HasExplicitCurrentModel              bool                      `json:"hasExplicitCurrentModel"`
+	CurrentProviderID                    string                    `json:"currentProviderID"`
+	CurrentProviderName                  string                    `json:"currentProviderName"`
+	CurrentProviderBaseURL               string                    `json:"currentProviderBaseUrl,omitempty"`
+	CurrentProviderIsBuiltin             bool                      `json:"currentProviderIsBuiltin"`
+	CurrentProviderExists                bool                      `json:"currentProviderExists"`
+	CurrentProviderSupportsWebsockets    bool                      `json:"currentProviderSupportsWebsockets"`
+	CurrentProviderSupportsWebsocketsSet bool                      `json:"currentProviderSupportsWebsocketsSet"`
+	HasExplicitCurrentProvider           bool                      `json:"hasExplicitCurrentProvider"`
+	Providers                            []LocalCodexModelProvider `json:"providers"`
 }
 
 func (a *App) ListLocalCodexModelProviders() ([]LocalCodexModelProvider, error) {
@@ -69,27 +73,42 @@ func parseLocalCodexModelProviderState(configBody string) LocalCodexModelProvide
 	}
 
 	currentProviderName := currentProviderID
+	currentProviderBaseURL := ""
+	currentProviderSupportsWebsockets := false
+	currentProviderSupportsWebsocketsSet := false
 	currentProviderExists := currentProviderIsBuiltin
 	for _, provider := range providers {
 		if provider.ProviderID == currentProviderID {
 			currentProviderName = provider.ProviderName
+			currentProviderBaseURL = provider.BaseURL
 			currentProviderExists = true
 			break
 		}
+	}
+	if providerState, ok := parseLocalCodexModelProviderDetails(configBody, currentProviderID); ok {
+		if strings.TrimSpace(providerState.ProviderName) != "" {
+			currentProviderName = providerState.ProviderName
+		}
+		currentProviderBaseURL = providerState.BaseURL
+		currentProviderSupportsWebsockets = providerState.SupportsWebsockets
+		currentProviderSupportsWebsocketsSet = providerState.SupportsWebsocketsSet
 	}
 	if currentProviderIsBuiltin && currentProviderID == relayCodexOpenAIProviderID {
 		currentProviderName = "OpenAI"
 	}
 
 	return LocalCodexModelProviderState{
-		CurrentModel:               currentModel,
-		HasExplicitCurrentModel:    hasExplicitCurrentModel,
-		CurrentProviderID:          currentProviderID,
-		CurrentProviderName:        currentProviderName,
-		CurrentProviderIsBuiltin:   currentProviderIsBuiltin,
-		CurrentProviderExists:      currentProviderExists,
-		HasExplicitCurrentProvider: hasExplicitCurrentProvider,
-		Providers:                  providers,
+		CurrentModel:                         currentModel,
+		HasExplicitCurrentModel:              hasExplicitCurrentModel,
+		CurrentProviderID:                    currentProviderID,
+		CurrentProviderName:                  currentProviderName,
+		CurrentProviderBaseURL:               currentProviderBaseURL,
+		CurrentProviderIsBuiltin:             currentProviderIsBuiltin,
+		CurrentProviderExists:                currentProviderExists,
+		CurrentProviderSupportsWebsockets:    currentProviderSupportsWebsockets,
+		CurrentProviderSupportsWebsocketsSet: currentProviderSupportsWebsocketsSet,
+		HasExplicitCurrentProvider:           hasExplicitCurrentProvider,
+		Providers:                            providers,
 	}
 }
 
@@ -132,6 +151,7 @@ func parseLocalCodexModelProviders(configBody string) []LocalCodexModelProvider 
 		}
 
 		providerName := providerID
+		baseURL := ""
 		end := len(lines)
 		for next := index + 1; next < len(lines); next++ {
 			if isTomlSectionHeader(lines[next]) {
@@ -144,7 +164,10 @@ func parseLocalCodexModelProviders(configBody string) []LocalCodexModelProvider 
 				if strings.TrimSpace(value) != "" {
 					providerName = strings.TrimSpace(value)
 				}
-				break
+				continue
+			}
+			if value, ok := parseTomlStringKeyValue(lines[next], "base_url"); ok {
+				baseURL = strings.TrimSpace(value)
 			}
 		}
 
@@ -152,10 +175,58 @@ func parseLocalCodexModelProviders(configBody string) []LocalCodexModelProvider 
 		providers = append(providers, LocalCodexModelProvider{
 			ProviderID:   providerID,
 			ProviderName: providerName,
+			BaseURL:      baseURL,
 		})
 	}
 
 	return providers
+}
+
+type localCodexModelProviderDetails struct {
+	ProviderName          string
+	BaseURL               string
+	SupportsWebsockets    bool
+	SupportsWebsocketsSet bool
+}
+
+func parseLocalCodexModelProviderDetails(configBody string, providerID string) (localCodexModelProviderDetails, bool) {
+	providerID = strings.TrimSpace(providerID)
+	if providerID == "" {
+		return localCodexModelProviderDetails{}, false
+	}
+	lines, _ := splitTomlDocument(configBody)
+	for index := 0; index < len(lines); index++ {
+		sectionName, ok := parseModelProvidersSectionHeader(lines[index])
+		if !ok || sectionName != providerID {
+			continue
+		}
+		details := localCodexModelProviderDetails{}
+		end := len(lines)
+		for next := index + 1; next < len(lines); next++ {
+			if isTomlSectionHeader(lines[next]) {
+				end = next
+				break
+			}
+		}
+		for next := index + 1; next < end; next++ {
+			if value, ok := parseTomlStringKeyValue(lines[next], "name"); ok {
+				details.ProviderName = strings.TrimSpace(value)
+				continue
+			}
+			if value, ok := parseTomlStringKeyValue(lines[next], "base_url"); ok {
+				details.BaseURL = strings.TrimSpace(value)
+				continue
+			}
+			if key, value, isBool, ok := parseTomlBoolKeyValue(lines[next]); ok && key == "supports_websockets" {
+				details.SupportsWebsocketsSet = true
+				if isBool {
+					details.SupportsWebsockets = value
+				}
+			}
+		}
+		return details, true
+	}
+	return localCodexModelProviderDetails{}, false
 }
 
 func parseModelProvidersSectionHeader(line string) (string, bool) {

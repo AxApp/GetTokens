@@ -68,6 +68,7 @@ interface StatusApplyLocalSectionProps {
   onCopyText: (value: string, successMessage?: string) => void;
   relayKeyDisplayName: (value: string, index: number) => string;
   supportsWebsockets: boolean;
+  localCodexProviderWebsocketRisk: boolean;
   onToggleSupportsWebsockets: () => void;
   syncCodexModelCatalog: boolean;
   isDisablingModelCatalog: boolean;
@@ -114,6 +115,7 @@ export function StatusApplyLocalSection({
   onCopyText,
   relayKeyDisplayName,
   supportsWebsockets,
+  localCodexProviderWebsocketRisk,
   onToggleSupportsWebsockets,
   syncCodexModelCatalog,
   isDisablingModelCatalog,
@@ -452,17 +454,26 @@ export function StatusApplyLocalSection({
               </div>
 
               {selectedRelayProvider.id !== 'openai' ? (
-                <div className="flex items-center justify-between">
-                  <span className="text-[length:var(--font-size-ui-lg)] font-bold tracking-[0.08em] text-[var(--text-primary)]">
-                    supports_websockets
-                  </span>
-                  <ToggleSwitch
-                    label="supports_websockets"
-                    checked={supportsWebsockets}
-                    disabled={isApplyingToLocal}
-                    className="h-9 w-16"
-                    onChange={onToggleSupportsWebsockets}
-                  />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[length:var(--font-size-ui-lg)] font-bold tracking-[0.08em] text-[var(--text-primary)]">
+                      supports_websockets
+                    </span>
+                    <ToggleSwitch
+                      label="supports_websockets"
+                      checked={supportsWebsockets}
+                      disabled={isApplyingToLocal}
+                      className="h-9 w-16"
+                      onChange={onToggleSupportsWebsockets}
+                    />
+                  </div>
+                  {localCodexProviderWebsocketRisk ? (
+                    <div className="border-2 border-[var(--color-status-danger)] bg-[var(--bg-main)] px-3 py-2 text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--color-status-danger)]">
+                      {supportsWebsockets
+                        ? t('status.local_cli_websocket_risk_opt_in')
+                        : t('status.local_cli_websocket_risk_detected')}
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

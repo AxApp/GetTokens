@@ -147,6 +147,13 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - `openai-compatible:<name>`
 - 路由探测用的 loopback header 是调试口子；不要把它和持久化账号配置混在一起。
 
+### 7.1 Codex WebSocket relay failure boundary
+- GetTokens-managed local Codex provider 默认必须写 `supports_websockets=false`，WebSocket 只能作为高级 opt-in；显式开启时必须对齐 Codex `Provider.websocket_url_for_path()` 语义：`http://` 转 `ws://`、`https://` 转 `wss://`，`ws://` / `wss://` 原样保留。Status 页应检测当前本地 GetTokens relay provider 的存量 `supports_websockets=true` 并提示显式修复，不静默改用户配置。
+- Codex upstream WebSocket 的 `408 stream closed before response.completed`、`session_closed`、abnormal close、timeout 属于 WebSocket transport failure，只能熔断该 auth 的 WebSocket 能力，不能创建 auth/model 全局 route guard，也不能把后续 HTTP Responses 放大成 `503 auth_unavailable`。覆盖范围必须同时包括 stream chunk 错误、bootstrap error、handshake `408/5xx`、dial 失败、send/retry-send 失败；这些错误都要带 `TransportFailureKindWebsocket`，并在 auth manager 直接错误分支和 stream chunk 分支都被识别。
+- Codex auth 显式 `websockets=false` 或 WebSocket circuit 命中时，downstream WebSocket 应关闭并提示 retry over HTTP；openai-compatible provider 继续走 HTTP fallback。
+- 不能把所有 408 都跳过 route guard；只有带 WebSocket transport failure 标记的错误才跳过 auth 全局不可用更新。
+- 相关回归至少覆盖 mock upstream 408 后 no route guard、WS circuit open、后续不返回 `auth_unavailable`，以及 Codex `websockets=false` 会 force HTTP fallback。
+
 ## 8. 验证
 - 前端结构或 UI 调整：
   - `npm --prefix frontend run typecheck`

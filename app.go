@@ -1260,14 +1260,17 @@ func (a *App) GetLocalCodexModelProviderStateView() (*LocalCodexModelProviderSta
 	}
 
 	return &LocalCodexModelProviderStateView{
-		CurrentModel:               result.CurrentModel,
-		HasExplicitCurrentModel:    result.HasExplicitCurrentModel,
-		CurrentProviderID:          result.CurrentProviderID,
-		CurrentProviderName:        result.CurrentProviderName,
-		CurrentProviderIsBuiltin:   result.CurrentProviderIsBuiltin,
-		CurrentProviderExists:      result.CurrentProviderExists,
-		HasExplicitCurrentProvider: result.HasExplicitCurrentProvider,
-		Providers:                  mapLocalCodexModelProviderViews(result.Providers),
+		CurrentModel:                         result.CurrentModel,
+		HasExplicitCurrentModel:              result.HasExplicitCurrentModel,
+		CurrentProviderID:                    result.CurrentProviderID,
+		CurrentProviderName:                  result.CurrentProviderName,
+		CurrentProviderBaseURL:               result.CurrentProviderBaseURL,
+		CurrentProviderIsBuiltin:             result.CurrentProviderIsBuiltin,
+		CurrentProviderExists:                result.CurrentProviderExists,
+		CurrentProviderSupportsWebsockets:    result.CurrentProviderSupportsWebsockets,
+		CurrentProviderSupportsWebsocketsSet: result.CurrentProviderSupportsWebsocketsSet,
+		HasExplicitCurrentProvider:           result.HasExplicitCurrentProvider,
+		Providers:                            mapLocalCodexModelProviderViews(result.Providers),
 	}, nil
 }
 
@@ -1290,6 +1293,7 @@ func mapLocalCodexModelProviderViews(result []wailsapp.LocalCodexModelProvider) 
 		providers = append(providers, LocalCodexModelProviderView{
 			ProviderID:   item.ProviderID,
 			ProviderName: item.ProviderName,
+			BaseURL:      item.BaseURL,
 		})
 	}
 	return providers

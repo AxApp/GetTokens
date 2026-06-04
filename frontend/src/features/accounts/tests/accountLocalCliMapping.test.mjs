@@ -127,6 +127,8 @@ test('OpenAI API key account generates Codex API key draft', () => {
   assert.equal(actions[0].draft.codex.providerID, 'team-codex-relay');
   assert.equal(actions[0].draft.codex.model, 'GT');
   assert.equal(actions[0].draft.codex.reasoningEffort, 'xhigh');
+  assert.equal(actions[0].draft.codex.supportsWebsockets, false);
+  assert.equal(actions[0].draft.codex.supportsWebsocketsSet, true);
 });
 
 test('Codex API key account apply does not require a relay key', () => {
