@@ -183,6 +183,20 @@ func listRelaySupportedModels(
 	return models
 }
 
+func relayModelFetchBaseURL(provider OpenAICompatibleProvider) string {
+	if value := strings.TrimSpace(provider.ModelFetchBaseURL); value != "" {
+		return value
+	}
+	return strings.TrimSpace(provider.BaseURL)
+}
+
+func relayModelFetchAPIKey(provider OpenAICompatibleProvider) string {
+	if value := strings.TrimSpace(provider.ModelFetchAPIKey); value != "" {
+		return value
+	}
+	return strings.TrimSpace(provider.APIKey)
+}
+
 func listRelaySupportedModelsWithAccountSnapshots(
 	providers []OpenAICompatibleProvider,
 	codexKeys []cliproxyapi.CodexAPIKey,
@@ -202,10 +216,12 @@ func listRelaySupportedModelsWithAccountSnapshots(
 		accountModels := make([]OpenAICompatibleModel, 0, len(provider.Models))
 		accountModels = append(accountModels, provider.Models...)
 
-		if fetcher != nil && strings.TrimSpace(provider.BaseURL) != "" && strings.TrimSpace(provider.APIKey) != "" {
+		fetchBaseURL := relayModelFetchBaseURL(provider)
+		fetchAPIKey := relayModelFetchAPIKey(provider)
+		if fetcher != nil && fetchBaseURL != "" && fetchAPIKey != "" {
 			remoteModels, err := fetcher(FetchOpenAICompatibleProviderModelsInput{
-				BaseURL: provider.BaseURL,
-				APIKey:  provider.APIKey,
+				BaseURL: fetchBaseURL,
+				APIKey:  fetchAPIKey,
 				Headers: cloneHeaders(provider.Headers),
 			})
 			if err == nil {

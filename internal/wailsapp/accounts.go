@@ -223,7 +223,7 @@ func (a *App) SetCodexAPIKeyStatus(id string, disabled bool) error {
 	if err == nil {
 		if disabled {
 			if pruneErr := pruneRelayModelAccountCacheEntries(targetID); pruneErr != nil {
-				return pruneErr
+				log.Printf("prune relay model account cache for %s failed: %v", targetID, pruneErr)
 			}
 		}
 		a.scheduleCodexModelCatalogRefreshAfterAccountMutation()

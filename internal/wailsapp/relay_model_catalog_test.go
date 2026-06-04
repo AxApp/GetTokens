@@ -8,6 +8,56 @@ import (
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
 
+func TestListRelaySupportedModelsUsesDedicatedModelFetchCredentials(t *testing.T) {
+	providers := []OpenAICompatibleProvider{
+		{
+			Name:              "mimo-token-plan",
+			BaseURL:           "https://runtime.example.com/v1",
+			APIKey:            "tp-runtime",
+			ModelFetchBaseURL: "https://models.example.com/v1",
+			ModelFetchAPIKey:  "sk-model-fetch",
+		},
+	}
+
+	models := listRelaySupportedModels(providers, nil, func(input FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error) {
+		if input.BaseURL != "https://models.example.com/v1" {
+			t.Fatalf("unexpected model fetch base url: %#v", input)
+		}
+		if input.APIKey != "sk-model-fetch" {
+			t.Fatalf("unexpected model fetch api key: %#v", input)
+		}
+		return []OpenAICompatibleModel{{Name: "mimo-v1"}}, nil
+	}, nil, nil)
+
+	if len(models) != 1 || models[0].Name != "mimo-v1" {
+		t.Fatalf("unexpected models: %#v", models)
+	}
+}
+
+func TestListRelaySupportedModelsFallsBackToRuntimeCredentialsWhenModelFetchCredentialsMissing(t *testing.T) {
+	providers := []OpenAICompatibleProvider{
+		{
+			Name:    "deepseek",
+			BaseURL: "https://api.deepseek.com/v1",
+			APIKey:  "sk-runtime",
+		},
+	}
+
+	models := listRelaySupportedModels(providers, nil, func(input FetchOpenAICompatibleProviderModelsInput) ([]OpenAICompatibleModel, error) {
+		if input.BaseURL != "https://api.deepseek.com/v1" {
+			t.Fatalf("unexpected fallback base url: %#v", input)
+		}
+		if input.APIKey != "sk-runtime" {
+			t.Fatalf("unexpected fallback api key: %#v", input)
+		}
+		return []OpenAICompatibleModel{{Name: "deepseek-chat"}}, nil
+	}, nil, nil)
+
+	if len(models) != 1 || models[0].Name != "deepseek-chat" {
+		t.Fatalf("unexpected models: %#v", models)
+	}
+}
+
 func TestListRelaySupportedModelsAggregatesRemoteLocalAndCodexKeyModels(t *testing.T) {
 	providers := []OpenAICompatibleProvider{
 		{

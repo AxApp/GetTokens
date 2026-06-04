@@ -1,15 +1,76 @@
 package wailsapp
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
 )
+
+func TestSetCodexAPIKeyStatusIgnoresPruneErrorAndSchedulesRefresh(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	cachePath, err := relayModelAccountCachePath()
+	if err != nil {
+		t.Fatalf("relayModelAccountCachePath: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(cachePath), 0700); err != nil {
+		t.Fatalf("mkdir cache dir: %v", err)
+	}
+	if err := os.WriteFile(cachePath, []byte("{ invalid json"), 0600); err != nil {
+		t.Fatalf("write corrupt cache: %v", err)
+	}
+
+	account := cliproxyapi.UnifiedAccount{
+		AccountKey: "acct_codex_key",
+		Kind:       cliproxyapi.AccountKindCodexAPIKey,
+		Title:      "Codex Key",
+		Provider:   "codex",
+		CodexAPIKey: &cliproxyapi.CodexAPIKeyAccountCredential{
+			APIKey:  "sk-test-1111",
+			BaseURL: "https://api.openai.com/v1",
+		},
+	}
+	refreshCalled := make(chan struct{}, 1)
+	patchCalled := false
+	app := &App{
+		ctx:                              context.Background(),
+		codexModelCatalogRefreshDebounce: time.Millisecond,
+		codexModelCatalogRefreshFunc: func() error {
+			refreshCalled <- struct{}{}
+			return nil
+		},
+		managementAPI: func() *cliproxyapi.Client {
+			return cliproxyapi.New(func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+				if method == "PATCH" && path == "/v0/management/accounts/acct_codex_key/status" {
+					patchCalled = true
+					return testAccountResponse(t, account), 200, nil
+				}
+				t.Fatalf("unexpected request: %s %s", method, path)
+				return nil, 0, nil
+			})
+		},
+	}
+
+	if err := app.SetCodexAPIKeyStatus("acct_codex_key", true); err != nil {
+		t.Fatalf("SetCodexAPIKeyStatus returned prune error after successful patch: %v", err)
+	}
+	if !patchCalled {
+		t.Fatalf("expected PatchAccountStatus to be called")
+	}
+	select {
+	case <-refreshCalled:
+	case <-time.After(2 * time.Second):
+		t.Fatalf("expected catalog refresh to be scheduled despite prune failure")
+	}
+}
 
 func TestUpdateAccountPrioritySupportsUnifiedOpenAICompatibleProvider(t *testing.T) {
 	account := testOpenAICompatibleAccount("acct_deepseek", "deepseek", 1, false, "https://api.deepseek.com/v1", "", []cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: "sk-old"}}, nil, nil)
