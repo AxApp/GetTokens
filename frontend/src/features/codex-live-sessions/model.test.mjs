@@ -1526,17 +1526,21 @@ test('desktop live sessions state keeps only prior real live rows as cache after
   assert.equal(failed.sessions[0].sessionID, codexLiveSessionsPreviewSnapshot.sessions[0].sessionID);
 });
 
-test('mergeCodexLiveSessionsSnapshot retains rows omitted by a later live poll until cleared locally', () => {
+test('mergeCodexLiveSessionsSnapshot treats a later live poll as authoritative and drops omitted rows', () => {
   const firstSession = codexLiveSessionsPreviewSnapshot.sessions[0];
-  const secondSession = {
+  const detachedSession = {
     ...codexLiveSessionsPreviewSnapshot.sessions[1],
-    sessionID: 'retained-after-empty-poll',
+    sessionID: 'filtered-detached-account',
+    authLabel: '78cline.murals+gzu@icloud.com',
+    accountPresent: false,
+    accountCoarseAvailable: false,
+    accountFilteredReasons: ['account-detached'],
     startedAt: '2026-05-31T09:59:00.000Z',
   };
   const current = {
     ...codexLiveSessionsPreviewSnapshot,
     source: 'live',
-    sessions: [firstSession, secondSession],
+    sessions: [firstSession, detachedSession],
   };
   const next = {
     ...codexLiveSessionsPreviewSnapshot,
@@ -1549,7 +1553,8 @@ test('mergeCodexLiveSessionsSnapshot retains rows omitted by a later live poll u
 
   assert.deepEqual(
     merged.sessions.map((session) => session.sessionID),
-    [firstSession.sessionID, secondSession.sessionID],
+    [firstSession.sessionID],
   );
+  assert.equal(merged.sessions.some((session) => session.authLabel === '78cline.murals+gzu@icloud.com'), false);
   assert.equal(merged.summary.activeSessions, merged.sessions.filter((session) => ['active', 'streaming'].includes(session.status)).length);
 });

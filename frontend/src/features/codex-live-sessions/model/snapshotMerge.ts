@@ -38,7 +38,9 @@ export function mergeCodexLiveSessionsSnapshot(
     return mergeCodexLiveSession(currentSession, nextSession, current.source);
   });
 
-  const retainedSessions = current.sessions.filter((session) => !nextIDs.has(session.sessionID));
+  const retainedSessions = shouldRetainSessionsOmittedByNextSnapshot(current, next)
+    ? current.sessions.filter((session) => !nextIDs.has(session.sessionID))
+    : [];
   if (retainedSessions.length > 0) {
     changed = true;
     sessions.push(...retainedSessions);
@@ -52,6 +54,17 @@ export function mergeCodexLiveSessionsSnapshot(
     ...next,
     sessions,
   });
+}
+
+function shouldRetainSessionsOmittedByNextSnapshot(
+  current: CodexLiveSessionSnapshot,
+  next: CodexLiveSessionSnapshot,
+): boolean {
+  // A live sidecar poll is authoritative: if sidecar omits a row, it may have
+  // been pruned by runtime account projection (detached/disabled/rate-limited).
+  // Retaining omitted live rows in the browser re-surfaces accounts that the
+  // sidecar intentionally filtered out.
+  return current.source !== 'live' && next.source !== 'live';
 }
 
 function mergeCodexLiveSession(

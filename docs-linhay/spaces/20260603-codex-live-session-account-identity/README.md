@@ -79,3 +79,58 @@
 ## 当前状态
 - 状态：completed-dev-mock-verified
 - 最近更新：2026-06-03
+
+## 2026-06-04 复发排查：前端 live merge 重新保留已过滤行
+
+### 现场现象
+- 用户反馈正式环境最新代码中，运行会话列表仍显示 `78cline.murals+gzu@icloud.com`。
+- 用户确认账号池中已经没有该账号，但列表仍出现 1 个会话行。
+
+### 根因结论
+- 2026-06-03 的 sidecar 修复已经让默认 `GET /v0/management/gettokens/live-sessions` 通过 `RuntimeAccountProjection` 过滤 detached / disabled / rate-limit 等粗不可用账号。
+- 但前端 `mergeCodexLiveSessionsSnapshot()` 存在旧策略：同为 `source=live` 的后续轮询如果缺少某个 session，会把当前浏览器状态里的缺失行重新 append 回去。
+- 因此 sidecar 下一轮即使已经不返回已删除账号的会话，前端仍可能把上一轮残留的 `authLabel` 行保留下来，造成“账号池没有该账号但运行会话仍显示”的假象。
+
+### 修复口径
+- `source=live` 的 sidecar poll 视为权威快照；后续 live poll 省略的行不再由浏览器保留。
+- cache/failure 场景仍由 `buildCodexLiveSessionsLoadFailureSnapshot()` 负责保留上一轮真实 live 行，用于明确的 `source=cache` 状态；不得在正常 live merge 中保留 sidecar 已过滤行。
+
+### 验证
+- 新增/更新前端回归：`mergeCodexLiveSessionsSnapshot treats a later live poll as authoritative and drops omitted rows`，fixture 覆盖 `78cline.murals+gzu@icloud.com` detached 行被后续 live poll 删除。
+- 已通过：`node --test frontend/src/features/codex-live-sessions/model.test.mjs`。
+- `cd frontend && npm run typecheck` 未通过，失败来自当前工作区既有 OpenAI-compatible billing 改动的类型缺口（`OpenAICompatibleProvider` 缺少 `quotaCurl/quotaEnabled/billingCurl/billingEnabled/platformCookie/curlVariables`），与本次 live sessions 修复无关。
+
+### 状态
+- 状态：frontend-fix-verified-unit
+- 最近更新：2026-06-04
+
+## 2026-06-04 深层修复：账号删除/禁用时清理 sidecar live tracker
+
+### 为什么前一版还不够
+仅修前端 live merge 仍属于展示层兜底：它可以避免浏览器把已过滤行加回来，但如果 sidecar 内存 tracker 本身继续保留已删除/已禁用账号的 session，后续任何新入口、诊断入口或非前端调用仍可能再次看到旧账号身份。
+
+### 根本原因收敛
+账号池变更与 live-session tracker 缺少运行态联动：
+- account-store 删除账号后会触发 runtime auth removal，但旧 live-session tracker 只依赖快照出口过滤，没有主动删除该账号的当前会话行。
+- account-store 禁用账号后会 route guard + 关闭 Codex WebSocket，但旧 live-session tracker 同样保留账号行，直到 retention/clear 或前端过滤。
+
+### 本次深层修复
+- sidecar 新增 `PruneCodexLiveSessionsForAccount(authID, accountKey, reason)`，从 live-session tracker 内存态删除匹配 `authID` 或 `accountKey` 的当前会话，并同步清理 `requestMap` / active auth counts。
+- `Service.applyCoreAuthRemoval()` 在 Codex auth 被删除/移除时调用 live tracker prune，再关闭 Codex WebSocket。
+- `Service.applyAccountStoreStatusChange()` 在 Codex 账号禁用时调用 live tracker prune，再执行 WebSocket 关闭；重新启用只清 route guard，不恢复旧 tracker 行。
+- 前端仍保留“live poll 权威快照”修复，作为 UI 层不抵消 sidecar 过滤的防线。
+
+### 新增回归
+- `TestPruneCodexLiveSessionsForAccountRemovesDeletedAccountRows`：删除 auth/account 后，只保留无关 session，active auth counts 不再含目标账号。
+- `TestPruneCodexLiveSessionsForAccountMatchesAccountKeyWhenAuthIDChanged`：即使 runtime authID 已变化，只要 accountKey 命中，也能清理旧会话行。
+- 继续保留前端 `78cline.murals+gzu@icloud.com` fixture，确保 UI 不再保留后续 live poll 省略的 detached 行。
+
+### 验证
+- `node --test frontend/src/features/codex-live-sessions/model.test.mjs`
+- `cd docs-linhay/references/CLIProxyAPI && go test ./internal/gettokenshooks ./internal/gettokensrouting ./sdk/cliproxy`
+- `bash docs-linhay/scripts/check-docs.sh`
+- `./scripts/ensure-sidecar.sh darwin arm64`，dev sidecar 已重建到 `build/bin/cli-proxy-api`；未触碰正式版 `/Applications/GetTokens.app`。
+
+### 状态
+- 状态：sidecar-root-fix-and-frontend-guard-verified
+- 最近更新：2026-06-04
