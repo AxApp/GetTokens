@@ -1,0 +1,6 @@
+interface:
+  display_name: "GetTokens Frontend Design Quality"
+  short_description: "GetTokens 桌面前端设计质量流程"
+  default_prompt: "Use $gettokens-frontend-design-quality to shape, audit, polish, harden, and verify this GetTokens frontend surface."
+policy:
+  allow_implicit_invocation: true
