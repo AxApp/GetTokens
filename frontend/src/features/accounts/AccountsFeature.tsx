@@ -4,6 +4,7 @@ import {
   ApplyDeepLinkImport,
   ApplyRelayServiceConfigToLocalV2,
   ConsumePendingDeepLinks,
+  CreateCodexAPIKey,
   CreateOpenAICompatibleProvider,
   CreateRateLimitRule,
   DeleteRateLimitRule,
@@ -80,6 +81,11 @@ import { toggleAccountGroupSelection } from "./model/accountSelection";
 import type { OpenAICompatibleProvider } from "./model/openAICompatible";
 import type { VendorPreset } from "./model/vendorPresets";
 import { emptyApiKeyForm } from "./model/accountConfig";
+import {
+  buildUnifiedComposeCodexAPIKeyInput,
+  normalizeUnifiedComposeFormatBaseUrls,
+  shouldCreateUnifiedComposeAsCodexAPIKey,
+} from "./model/unifiedComposeCreateTarget";
 import type { AccountImportPayloadItem } from "./model/accountTransfer";
 import { toErrorMessage } from "../../utils/error";
 
@@ -741,29 +747,47 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     const models = buildUnifiedComposeProviderModels(unifiedComposePreset);
 
     try {
-      await trackRequest(
-        "CreateOpenAICompatibleProvider",
-        { name: providerName, baseUrl, source: "unified-compose" },
-        () =>
-          CreateOpenAICompatibleProvider(
-            main.CreateOpenAICompatibleProviderInput.createFrom({
-              name: providerName,
-              apiKey,
-              baseUrl,
-              prefix: "",
-              formatBaseUrls:
-                Object.keys(formatBaseUrls).length > 0
-                  ? formatBaseUrls
-                  : undefined,
-              models: models.length > 0 ? models : undefined,
-              platformCookie: (unifiedComposeForm.platformCookie ?? "").trim(),
-              modelFetchApiKey:
-                unifiedComposeForm.modelFetchApiKey?.trim() || "",
-              modelFetchBaseUrl:
-                unifiedComposeForm.modelFetchBaseUrl?.trim() || "",
-            }),
-          ),
-      );
+      if (shouldCreateUnifiedComposeAsCodexAPIKey(unifiedComposePreset)) {
+        const codexInput = buildUnifiedComposeCodexAPIKeyInput({
+          providerName,
+          apiKey,
+          baseUrl,
+          formatBaseUrls,
+          models,
+          quotaCurl: unifiedComposeForm.quotaCurl,
+          quotaEnabled: unifiedComposeForm.quotaEnabled,
+          billingCurl: unifiedComposeForm.billingCurl,
+          billingEnabled: unifiedComposeForm.billingEnabled,
+          platformCookie: unifiedComposeForm.platformCookie,
+          curlVariables: unifiedComposeForm.curlVariables,
+        });
+        await trackRequest(
+          "CreateCodexAPIKey",
+          { name: providerName, baseUrl, source: "unified-compose" },
+          () => CreateCodexAPIKey(main.CreateCodexAPIKeyInput.createFrom(codexInput)),
+        );
+      } else {
+        await trackRequest(
+          "CreateOpenAICompatibleProvider",
+          { name: providerName, baseUrl, source: "unified-compose" },
+          () =>
+            CreateOpenAICompatibleProvider(
+              main.CreateOpenAICompatibleProviderInput.createFrom({
+                name: providerName,
+                apiKey,
+                baseUrl,
+                prefix: "",
+                formatBaseUrls,
+                models: models.length > 0 ? models : undefined,
+                platformCookie: (unifiedComposeForm.platformCookie ?? "").trim(),
+                modelFetchApiKey:
+                  unifiedComposeForm.modelFetchApiKey?.trim() || "",
+                modelFetchBaseUrl:
+                  unifiedComposeForm.modelFetchBaseUrl?.trim() || "",
+              }),
+            ),
+        );
+      }
       setIsUnifiedComposeOpen(false);
       setUnifiedComposePreset(null);
       setUnifiedComposeForm({
@@ -1531,18 +1555,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
   );
 }
 
-function normalizeUnifiedComposeFormatBaseUrls(
-  items: Partial<Record<string, string>>,
-) {
-  const out: Record<string, string> = {};
-  for (const [format, value] of Object.entries(items)) {
-    const trimmedFormat = format.trim();
-    const trimmedValue = String(value || "").trim();
-    if (!trimmedFormat || !trimmedValue) continue;
-    out[trimmedFormat] = trimmedValue;
-  }
-  return out;
-}
 
 function buildUnifiedComposeProviderModels(preset: VendorPreset | null) {
   if (!preset) return [];
