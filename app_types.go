@@ -403,6 +403,12 @@ type OpenAICompatibleProvider struct {
 	ProxyURL          string                  `json:"proxyUrl,omitempty"`
 	APIKey            string                  `json:"apiKey"`
 	APIKeys           []string                `json:"apiKeys,omitempty"`
+	QuotaCurl         string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled      bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl       string                  `json:"billingCurl,omitempty"`
+	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie    string                  `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	Models            []OpenAICompatibleModel `json:"models,omitempty"`
 	Headers           map[string]string       `json:"headers,omitempty"`
 	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
@@ -425,6 +431,12 @@ type CreateOpenAICompatibleProviderInput struct {
 	BaseURL           string                  `json:"baseUrl"`
 	Prefix            string                  `json:"prefix,omitempty"`
 	APIKey            string                  `json:"apiKey"`
+	QuotaCurl         string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled      bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl       string                  `json:"billingCurl,omitempty"`
+	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie    string                  `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
 	Models            []OpenAICompatibleModel `json:"models,omitempty"`
 	ModelFetchAPIKey  string                  `json:"modelFetchApiKey,omitempty"`
@@ -439,6 +451,12 @@ type UpdateOpenAICompatibleProviderInput struct {
 	ProxyURL          *string                 `json:"proxyUrl,omitempty"`
 	APIKey            string                  `json:"apiKey"`
 	APIKeys           []string                `json:"apiKeys,omitempty"`
+	QuotaCurl         string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled      bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl       string                  `json:"billingCurl,omitempty"`
+	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie    string                  `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	Headers           map[string]string       `json:"headers,omitempty"`
 	Models            []OpenAICompatibleModel `json:"models,omitempty"`
 	ModelFetchAPIKey  string                  `json:"modelFetchApiKey,omitempty"`

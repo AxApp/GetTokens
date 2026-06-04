@@ -138,6 +138,60 @@ func TestMapAccountStoreDiagnosticsUsesFrontendFieldNames(t *testing.T) {
 	}
 }
 
+func TestOpenAICompatibleRootDTOsPreserveBillingFields(t *testing.T) {
+	payloads := []struct {
+		name  string
+		value interface{}
+	}{
+		{
+			name: "provider",
+			value: OpenAICompatibleProvider{
+				QuotaCurl:      "curl https://api.example.com/usage",
+				QuotaEnabled:   true,
+				BillingCurl:    "curl https://api.example.com/billing",
+				BillingEnabled: true,
+				PlatformCookie: "session=abc",
+				CurlVariables:  map[string]string{"region": "cn"},
+			},
+		},
+		{
+			name: "create",
+			value: CreateOpenAICompatibleProviderInput{
+				QuotaCurl:      "curl https://api.example.com/usage",
+				QuotaEnabled:   true,
+				BillingCurl:    "curl https://api.example.com/billing",
+				BillingEnabled: true,
+				PlatformCookie: "session=abc",
+				CurlVariables:  map[string]string{"region": "cn"},
+			},
+		},
+		{
+			name: "update",
+			value: UpdateOpenAICompatibleProviderInput{
+				QuotaCurl:      "curl https://api.example.com/usage",
+				QuotaEnabled:   true,
+				BillingCurl:    "curl https://api.example.com/billing",
+				BillingEnabled: true,
+				PlatformCookie: "session=abc",
+				CurlVariables:  map[string]string{"region": "cn"},
+			},
+		},
+	}
+
+	for _, payload := range payloads {
+		body, err := json.Marshal(payload.value)
+		if err != nil {
+			t.Fatalf("marshal %s dto: %v", payload.name, err)
+		}
+		text := string(body)
+		for _, want := range []string{"quotaCurl", "quotaEnabled", "billingCurl", "billingEnabled", "platformCookie", "curlVariables"} {
+			if !strings.Contains(text, want) {
+				t.Fatalf("%s dto payload %s missing %s", payload.name, text, want)
+			}
+		}
+	}
+}
+
 func TestBuildApplicationMenuKeepsCheckForUpdatesOutOfHelpMenu(t *testing.T) {
 	appMenu := buildApplicationMenuWithUpdateAction(func() {})
 	updateItem := findMenuItemByLabel(appMenu, macOSCheckForUpdatesMenuLabel)
