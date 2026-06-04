@@ -88,6 +88,67 @@ export function buildCodexLiveRequestFeedRows(sessions: readonly CodexLiveSessio
     });
 }
 
+export function buildCodexLiveHistoryRequestFeedRows(
+  sessions: readonly CodexLiveSession[],
+  requests: readonly CodexLiveRequest[],
+): CodexLiveRequestFeedRow[] {
+  const sessionsByID = new Map(sessions.map((session) => [session.sessionID, session]));
+  return requests
+    .map((request) => {
+      const session = sessionsByID.get(request.sessionID) ?? buildFallbackSessionFromRequest(request);
+      return {
+        rowID: `${request.sessionID}:${request.requestID}`,
+        session,
+        request,
+        requestID: request.requestID,
+        sequence: request.sequence,
+        model: request.model,
+        status: request.status,
+        startedAt: request.startedAt,
+      };
+    })
+    .sort(compareRequestFeedRows);
+}
+
+function compareRequestFeedRows(left: CodexLiveRequestFeedRow, right: CodexLiveRequestFeedRow): number {
+  const rightTime = Date.parse(right.startedAt);
+  const leftTime = Date.parse(left.startedAt);
+  const safeRight = Number.isNaN(rightTime) ? 0 : rightTime;
+  const safeLeft = Number.isNaN(leftTime) ? 0 : leftTime;
+  if (safeRight !== safeLeft) {
+    return safeRight - safeLeft;
+  }
+  if (right.sequence !== left.sequence) {
+    return right.sequence - left.sequence;
+  }
+  return left.requestID.localeCompare(right.requestID);
+}
+
+function buildFallbackSessionFromRequest(request: CodexLiveRequest): CodexLiveSession {
+  return {
+    sessionID: request.sessionID,
+    status: request.status,
+    startedAt: request.startedAt,
+    lastEventAt: request.completedAt || request.startedAt,
+    durationMs: request.timing?.totalDurationMs ?? 0,
+    requestCount: request.sequence > 0 ? request.sequence : 1,
+    activeRequestID: request.completedAt ? undefined : request.requestID,
+    lastRequestID: request.requestID,
+    model: request.model,
+    authID: request.authID,
+    accountKey: request.accountKey,
+    authLabel: request.authLabel,
+    accountPresent: request.accountPresent ?? false,
+    accountCoarseAvailable: request.accountCoarseAvailable ?? false,
+    accountFilteredReasons: request.accountFilteredReasons,
+    provider: request.provider,
+    downstreamTransport: request.downstreamTransport,
+    upstreamTransport: request.upstreamTransport,
+    recentEvents: request.timeline,
+    requests: [request],
+  };
+}
+
 export function buildRequestRowSummary(row: CodexLiveRequestFeedRow, t: Translate) {
   const request = row.request;
   const projectName = row.session.projectName?.trim() || t('codex_live_sessions.unknown_project');

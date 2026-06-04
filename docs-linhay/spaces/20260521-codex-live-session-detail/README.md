@@ -234,3 +234,30 @@ Then 详情区展示 Rate / time measurements，并包含 TTFT、first token、s
 - 回归测试：`codex live session timing chart uses a fixed viewport without horizontal panning` 新增测量门禁断言；验证 `node --test src/features/codex-live-sessions/model.test.mjs`、`npm run typecheck`、`npm run build` 通过。
 - 浏览器验收：本地 `http://localhost:5173/#frame=codex&workspace=live-sessions` 复验 `shellWidth=884`、`svg viewBox=0 0 884 224`、选中 marker 与 SVG 圆点 X 轴中心差 `0px`。
 - 截图证据：`docs-linhay/spaces/20260521-codex-live-session-detail/screenshots/20260527/live-sessions/20260527-live-sessions-timing-trend-after-v01.png`。
+
+## 2026-06-04 会话列表表头与右侧总览校正
+
+- 产品语义校正：左侧 `SessionFeed` 只保留会话列表，不再通过点击表头切换到请求列表视图。
+- 交互补充：点击左侧 `SessionFeed` 表头会清空当前会话选中态并回到右侧请求汇总；点击会话行仍进入单会话详情。
+- 表头统计恢复为列表汇总：显示当前筛选后会话数与全部请求数，例如 `N 个会话 · M 个请求`；请求仍可通过搜索 request id 定位到所属会话。
+- 右侧未选中会话时不再自动打开第一条会话详情，而是展示当前列表的请求总览；总览保留紧凑汇总卡片、请求耗时趋势图和请求列表，不再展示原整块统计条。
+- 清空入口移到页面顶部操作区；左侧会话列表表头不再承载清空按钮。
+- 图表数据来源修复：未选中会话的总览会额外加载不带 `session_id` 的全局 `GetCodexLiveSessionHistory({ sessionID: '', window: 'all', limit: 80 })`，避免真实 live snapshot 不携带 embedded request timing 时总览图表空白。
+- 回归测试：新增 `codex live session feed header summarizes all requests without switching to a request view` 与 `codex live sessions workbench keeps the right pane as overview until a session is selected`。
+- 验证：`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck` 通过；无头浏览器打开 `http://127.0.0.1:5173/#frame=codex&workspace=live-sessions` 验证顶部有清空按钮、左侧表头区点击后显示汇总、右侧标题为 `请求总览 / 请求耗时趋势 / 请求列表`、图表线条存在、图表点数为 31、页面无“切换至请求”。
+- 截图证据：`docs-linhay/spaces/20260521-codex-live-session-detail/screenshots/20260604/live-sessions/20260604-live-sessions-nav-after-v03.png`。
+
+## 2026-06-04 Open Design 参与的总览卡片化修正
+
+- Open Design 状态：用户启动后本机 `od status --json` 正常，版本 `0.8.0`，可读取 design-systems registry；本轮选取 `ant` 作为数据密集桌面工作台参考，采用其 4/8/12/16 间距、清晰层级和一致网格原则，不引入新的品牌色。
+- 设计判断：`SessionOverview` 原第 165 行是整块信息条，`运行总览 / 请求总览 / 会话请求状态串` 挤在同一平面，不利于扫读。改为 4 个同级卡片：身份说明、请求总量、运行态、风险态；后续按用户反馈把卡片最小高度从 `9rem` 压到 `5.75rem`，移除 identity 卡里的说明长句，浏览器实测整排高度 `92px`。
+- 样式复用：汇总图表改为 `OverviewTimingTrend`，复用会话详情的 `TimingTrendChart`、footer 指标条和 header 排版；汇总请求列表删除自定义行，改为复用会话详情 `Timeline` 请求时间线样式。
+- 验证：`node --test frontend/src/features/codex-live-sessions/model.test.mjs`、`npm --prefix frontend run typecheck` 通过；无头浏览器验证 summary cards=4、cardHeights=`[92,92,92,92]`、图表 line path 存在、pointCount=41、timeline 文本显示 `请求时间线 15 行`、trend/timeline shell 均为 `session-style`。
+- 截图证据：before `docs-linhay/spaces/20260521-codex-live-session-detail/screenshots/20260604/live-sessions/20260604-live-sessions-summary-before-v01.png`；after `docs-linhay/spaces/20260521-codex-live-session-detail/screenshots/20260604/live-sessions/20260604-live-sessions-overview-after-v06.png`。
+
+## 2026-06-04 会话列表表头回汇总交互
+
+- 用户补充：`SessionFeed` 表头应当可点击显示汇总。
+- 实现：`SessionFeed` 表头从静态 `div` 改为 `div role="button"`，新增 `data-codex-session-feed-overview-trigger="true"` 与 `aria-pressed`；`CodexLiveSessionsWorkbench` 传入 `onShowOverview={() => setSelectedSessionID(undefined)}`，只清空会话选中态，不恢复请求列表视图切换。表头总览态与会话行选中态统一使用 `codex-live-session-list-item-selected`，避免出现独立选中样式；选中态加重为 `text-primary 12%` 背景并带 3px 左侧 rail。
+- 验证：无头浏览器点击第一条会话后 `selectedRows=1`、`aria-pressed=false`、右侧离开汇总；再点击表头后 `selectedRows=0`、`aria-pressed=true`、右侧出现 `请求总览` 与 `请求耗时趋势`。等待 `transition-colors` 结束后，表头总览态与会话行选中态 computed background 均为 `color(srgb 0.88 0.88 0.88)`，box-shadow 均为 `rgb(0, 0, 0) 3px 0px 0px 0px inset`。
+- 截图证据：`docs-linhay/spaces/20260521-codex-live-session-detail/screenshots/20260604/live-sessions/20260604-live-sessions-overview-after-v08.png`。

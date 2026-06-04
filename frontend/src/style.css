@@ -315,6 +315,15 @@
     box-shadow: 4px 4px 0px 0px var(--shadow-color);
   }
 
+  .codex-live-session-list-item-selected {
+    background-color: color-mix(in srgb, var(--text-primary) 12%, var(--bg-main));
+    box-shadow: inset 3px 0 0 var(--text-primary);
+  }
+
+  .codex-live-session-list-item-idle:hover {
+    background-color: color-mix(in srgb, var(--border-color) 5%, var(--bg-main));
+  }
+
   .usage-desk-control-bar {
     container-type: inline-size;
     display: flex;

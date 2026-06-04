@@ -10,7 +10,12 @@ import {
   getPrimaryCodexLiveRequest,
   getSelectedCodexLiveSession,
 } from './model/selectors.ts';
-import { buildCodexLiveRequestFeedRows, buildRequestRowSummary, buildSessionRowSummary } from './components/formatters.ts';
+import {
+  buildCodexLiveHistoryRequestFeedRows,
+  buildCodexLiveRequestFeedRows,
+  buildRequestRowSummary,
+  buildSessionRowSummary,
+} from './components/formatters.ts';
 import { copyCodexLiveSessionID } from './components/sessionClipboard.ts';
 import {
   buildLiveSessionBillingDisplay,
@@ -234,6 +239,29 @@ test('buildCodexLiveRequestFeedRows rolls up embedded requests and row-only acti
   assert.equal(rows[0].requestID, 'row-only-active-request');
   assert.equal(rows[0].sequence, 7);
   assert.ok(rows.some((row) => row.requestID === withEmbeddedRequests.requests[0].requestID));
+});
+
+test('buildCodexLiveHistoryRequestFeedRows keeps global history timing usable for overview charts', () => {
+  const session = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0],
+    requests: [],
+  };
+  const request = {
+    ...codexLiveSessionsPreviewSnapshot.sessions[0].requests[0],
+    requestID: 'history-req-1',
+    sessionID: session.sessionID,
+    timing: {
+      totalDurationMs: 2400,
+      firstEventMs: 800,
+    },
+  };
+
+  const rows = buildCodexLiveHistoryRequestFeedRows([session], [request]);
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].request?.requestID, 'history-req-1');
+  assert.equal(rows[0].request?.timing?.firstEventMs, 800);
+  assert.equal(rows[0].session.sessionID, session.sessionID);
 });
 
 test('buildRequestRowSummary designs request rollup labels around request, project, model, and timing', () => {
@@ -758,20 +786,73 @@ test('codex live session surfaces use larger typography tokens for the dense wor
 });
 
 
-test('codex live session feed header is clickable and toggles between sessions and requests', async () => {
+test('codex live session feed header summarizes all requests without switching to a request view', async () => {
   const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+  const workbenchSource = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../style.css', import.meta.url), 'utf8');
   const zhLocale = JSON.parse(await readFile(new URL('../../locales/zh.json', import.meta.url), 'utf8'));
 
-  assert.match(feedSource, /feedMode === 'sessions'/);
-  assert.match(feedSource, /setFeedMode\(feedMode === 'sessions' \? 'requests' : 'sessions'\)/);
+  assert.doesNotMatch(feedSource, /feedMode/);
+  assert.doesNotMatch(feedSource, /setFeedMode/);
+  assert.doesNotMatch(feedSource, /<RequestRow/);
+  assert.doesNotMatch(feedSource, /switch_to_requests/);
+  assert.match(feedSource, /onShowOverview/);
+  assert.match(feedSource, /data-codex-session-feed-overview-trigger="true"/);
+  assert.match(workbenchSource, /onShowOverview=\{\(\) => setSelectedSessionID\(undefined\)\}/);
+  assert.match(feedSource, /codex-live-session-list-item-selected/);
+  assert.match(feedSource, /codex-live-session-list-item-idle/);
+  assert.match(styleSource, /\.codex-live-session-list-item-selected/);
+  assert.match(styleSource, /var\(--text-primary\) 12%, var\(--bg-main\)/);
+  assert.match(styleSource, /box-shadow: inset 3px 0 0 var\(--text-primary\)/);
+  assert.match(styleSource, /\.codex-live-session-list-item-idle:hover/);
+  assert.doesNotMatch(feedSource, /var\(--text-primary\)_4%,transparent/);
   assert.match(feedSource, /buildCodexLiveRequestFeedRows\(sessions\)/);
-  assert.match(feedSource, /<RequestRow/);
-  assert.ok(zhLocale.codex_live_sessions.title_sessions);
-  assert.ok(zhLocale.codex_live_sessions.title_requests);
-  assert.ok(zhLocale.codex_live_sessions.switch_to_sessions);
-  assert.ok(zhLocale.codex_live_sessions.switch_to_requests);
+  assert.match(feedSource, /requestRows\.length/);
+  assert.ok(zhLocale.codex_live_sessions.session_feed);
   assert.equal(zhLocale.codex_live_sessions.session_rows, '个会话');
   assert.equal(zhLocale.codex_live_sessions.request_rows, '个请求');
+});
+
+test('codex live sessions workbench keeps the right pane as overview until a session is selected', async () => {
+  const workbenchSource = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+  const zhLocale = JSON.parse(await readFile(new URL('../../locales/zh.json', import.meta.url), 'utf8'));
+
+  assert.doesNotMatch(workbenchSource, /getSelectedCodexLiveSession\(sessions, selectedSessionID\)/);
+  assert.match(workbenchSource, /sessions\.find\(\(session\) => session\.sessionID === selectedSessionID\)/);
+  assert.match(workbenchSource, /overviewSessions=\{sessions\}/);
+  assert.match(workbenchSource, /overviewRequestCount=\{overviewRequestRows\.length\}/);
+  assert.match(workbenchSource, /overviewRequestRows=\{overviewRequestRows\}/);
+  assert.match(workbenchSource, /buildCodexLiveHistoryRequestFeedRows\(sessions, overviewRequests\)/);
+  assert.match(detailSource, /SessionOverview/);
+  assert.match(detailSource, /data-codex-overview-summary-cards="true"/);
+  assert.match(detailSource, /OverviewSummaryCard/);
+  assert.match(detailSource, /min-h-\[5\.75rem\]/);
+  assert.doesNotMatch(detailSource, /min-h-\[9rem\]/);
+  assert.doesNotMatch(detailSource, /overview_hint\) : t\('codex_live_sessions\.no_running_sessions'\)/);
+  assert.match(detailSource, /OverviewTimingTrend/);
+  assert.match(detailSource, /data-codex-overview-trend-shell="session-style"/);
+  assert.match(detailSource, /TimingTrendChart[\s\S]*trend=\{trend\}/);
+  assert.match(detailSource, /data-codex-overview-timeline-shell="session-style"/);
+  assert.match(detailSource, /<Timeline requests=\{overviewRequests\} fallbackEvents=\{\[\]\} t=\{t\} \/>/);
+  assert.doesNotMatch(detailSource, /function OverviewRequestList/);
+  assert.doesNotMatch(detailSource, /buildRequestRowSummary\(row, t\)/);
+  assert.doesNotMatch(detailSource, /grid-cols-2 border border-\\\[color:color-mix\\\(in_srgb,var\\\(--border-color\\\)_32%,transparent\\\)\\\] md:grid-cols-4/);
+  assert.ok(zhLocale.codex_live_sessions.overview_title);
+  assert.ok(zhLocale.codex_live_sessions.overview_hint);
+  assert.ok(zhLocale.codex_live_sessions.overview_request_list);
+  assert.ok(zhLocale.codex_live_sessions.overview_risk);
+});
+
+test('codex live sessions clear action lives in the page navigation actions', async () => {
+  const workbenchSource = await readFile(new URL('./components/CodexLiveSessionsWorkbench.tsx', import.meta.url), 'utf8');
+  const feedSource = await readFile(new URL('./components/CodexLiveSessionFeed.tsx', import.meta.url), 'utf8');
+
+  assert.match(workbenchSource, /<Trash2 className="h-3\.5 w-3\.5"/);
+  assert.match(workbenchSource, /title=\{t\('codex_live_sessions\.clear_sessions_title'\)\}/);
+  assert.match(workbenchSource, /onClearSessions\?\.\(\)/);
+  assert.doesNotMatch(feedSource, /clear_sessions_title/);
+  assert.doesNotMatch(feedSource, /onClearSessions/);
 });
 
 test('codex live session feed renders session id as an independent copy target', async () => {
@@ -950,6 +1031,11 @@ test('codex live sessions feature splits row snapshot polling from detail histor
   assert.match(featureSource, /resolveCodexLiveSessionsPollIntervalMs/);
   assert.match(featureSource, /resolveCodexLiveSessionDetailPollIntervalMs/);
   assert.match(featureSource, /detailRequestVersionRef/);
+  assert.match(featureSource, /overviewRequestVersionRef/);
+  assert.match(featureSource, /const loadOverview = useCallback/);
+  assert.match(featureSource, /GetCodexLiveSessionHistory\(\{\s*sessionID: '',\s*window: 'all',\s*limit: 80,\s*offset: 0,\s*\}\)/);
+  assert.match(featureSource, /overviewRequests=\{!selectedSessionID \? overviewState\.requests : \[\]\}/);
+  assert.match(featureSource, /onClearSessions=\{clearSessions\}/);
 });
 
 test('buildCodexLiveRequestTimingTrend orders request timing metrics by request start time', () => {

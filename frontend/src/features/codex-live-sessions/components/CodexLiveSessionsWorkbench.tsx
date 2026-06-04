@@ -1,4 +1,4 @@
-import { Copy, SlidersHorizontal } from 'lucide-react';
+import { Copy, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import SearchInput from '../../../components/ui/SearchInput';
@@ -9,7 +9,6 @@ import {
   buildCodexLiveDiagnosticSummary,
   filterCodexLiveSessions,
   getPrimaryCodexLiveRequest,
-  getSelectedCodexLiveSession,
 } from '../model/selectors';
 import type {
   CodexLiveRequest,
@@ -20,10 +19,14 @@ import type {
 import { SessionDetail } from './CodexLiveSessionDetail';
 import { SessionFeed } from './CodexLiveSessionFeed';
 import { SourceBadge } from './CodexLiveSessionSummary';
+import { buildCodexLiveHistoryRequestFeedRows, buildCodexLiveRequestFeedRows } from './formatters';
 
 interface CodexLiveSessionsWorkbenchProps {
   snapshot: CodexLiveSessionSnapshot;
   detailRequests?: readonly CodexLiveRequest[];
+  overviewRequests?: readonly CodexLiveRequest[];
+  overviewLoading?: boolean;
+  overviewError?: string;
   detailLoading?: boolean;
   detailError?: string;
   initialSelectedSessionID?: string;
@@ -42,6 +45,9 @@ const transportOptions: ReadonlyArray<SegmentedOption<CodexLiveTransportFilter>>
 export default function CodexLiveSessionsWorkbench({
   snapshot,
   detailRequests = [],
+  overviewRequests = [],
+  overviewLoading = false,
+  overviewError,
   detailLoading = false,
   detailError,
   initialSelectedSessionID,
@@ -74,7 +80,14 @@ export default function CodexLiveSessionsWorkbench({
     () => filterCodexLiveSessions({ sessions: snapshot.sessions, query, statusFilter, transportFilter }),
     [query, snapshot.sessions, statusFilter, transportFilter],
   );
-  const selectedSession = getSelectedCodexLiveSession(sessions, selectedSessionID);
+  const requestRows = useMemo(() => buildCodexLiveRequestFeedRows(sessions), [sessions]);
+  const overviewRequestRows = useMemo(
+    () => overviewRequests.length > 0 ? buildCodexLiveHistoryRequestFeedRows(sessions, overviewRequests) : requestRows,
+    [overviewRequests, requestRows, sessions],
+  );
+  const selectedSession = selectedSessionID
+    ? sessions.find((session) => session.sessionID === selectedSessionID)
+    : undefined;
   const selectedSessionWithDetail = useMemo(
     () =>
       selectedSession
@@ -148,6 +161,19 @@ export default function CodexLiveSessionsWorkbench({
                 iconStrokeWidth={2.5}
                 className="text-[length:var(--font-size-ui-xs)]"
               />
+              <button
+                type="button"
+                className="btn-swiss flex items-center gap-2 !px-3 !py-2 text-[length:var(--font-size-ui-xs)]"
+                onClick={() => {
+                  setSelectedSessionID(undefined);
+                  onClearSessions?.();
+                }}
+                disabled={!onClearSessions || snapshot.sessions.length === 0}
+                title={t('codex_live_sessions.clear_sessions_title')}
+              >
+                <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                {t('codex_live_sessions.clear_sessions')}
+              </button>
               <button
                 type="button"
                 className="btn-swiss flex items-center gap-2 !px-3 !py-2 text-[length:var(--font-size-ui-xs)]"
@@ -240,16 +266,18 @@ export default function CodexLiveSessionsWorkbench({
             onSelectSession={(sessionID) => {
               setSelectedSessionID((currentSessionID) => (currentSessionID === sessionID ? undefined : sessionID));
             }}
-            onClearSessions={() => {
-              setSelectedSessionID(undefined);
-              onClearSessions?.();
-            }}
+            onShowOverview={() => setSelectedSessionID(undefined)}
             t={t}
           />
           <div className="min-w-0">
             <SessionDetail
               session={selectedSessionWithDetail}
               request={selectedRequest}
+              overviewSessions={sessions}
+              overviewRequestCount={overviewRequestRows.length}
+              overviewRequestRows={overviewRequestRows}
+              overviewLoading={overviewLoading}
+              overviewError={overviewError}
               loading={detailLoading}
               errorMessage={detailError}
               t={t}

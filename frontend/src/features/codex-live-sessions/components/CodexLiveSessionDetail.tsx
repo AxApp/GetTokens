@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
 import AttributionCard, { type AttributionCardBadge } from '../../accounts/components/AttributionCard';
 import type { AccountUsageSummary } from '../../accounts/model/accountUsage';
-import { groupTimelineByLane } from '../model/selectors';
+import { buildCodexLiveSessionSummary, groupTimelineByLane } from '../model/selectors';
 import type {
   CodexLiveRequest,
   CodexLiveSession,
@@ -15,6 +15,7 @@ import {
   formatOptionalRate,
   severityDotClass,
   statusLabelKeys,
+  type CodexLiveRequestFeedRow,
 } from './formatters';
 import {
   buildLiveSessionBillingDisplay,
@@ -40,12 +41,22 @@ import {
 export function SessionDetail({
   session,
   request,
+  overviewSessions = [],
+  overviewRequestCount = 0,
+  overviewRequestRows = [],
+  overviewLoading = false,
+  overviewError,
   loading = false,
   errorMessage,
   t,
 }: {
   session?: CodexLiveSession;
   request?: CodexLiveRequest;
+  overviewSessions?: readonly CodexLiveSession[];
+  overviewRequestCount?: number;
+  overviewRequestRows?: readonly CodexLiveRequestFeedRow[];
+  overviewLoading?: boolean;
+  overviewError?: string;
   loading?: boolean;
   errorMessage?: string;
   t: Translate;
@@ -54,11 +65,16 @@ export function SessionDetail({
 
   if (!session) {
     return (
-      <div className="grid w-full place-items-center border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-6 shadow-[6px_6px_0_var(--shadow-color)]">
-        <div className="max-w-sm text-center text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-          {t('codex_live_sessions.no_running_sessions')}
-        </div>
-      </div>
+      <SessionOverview
+        sessions={overviewSessions}
+        requestCount={overviewRequestCount}
+        requestRows={overviewRequestRows}
+        selectedMetric={selectedTimingMetric}
+        onSelectMetric={setSelectedTimingMetric}
+        loading={overviewLoading}
+        errorMessage={overviewError}
+        t={t}
+      />
     );
   }
 
@@ -107,6 +123,247 @@ export function SessionDetail({
           <TransportLane events={timeline} t={t} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SessionOverview({
+  sessions,
+  requestCount,
+  requestRows,
+  selectedMetric,
+  onSelectMetric,
+  loading,
+  errorMessage,
+  t,
+}: {
+  sessions: readonly CodexLiveSession[];
+  requestCount: number;
+  requestRows: readonly CodexLiveRequestFeedRow[];
+  selectedMetric: CodexLiveTimingTrendMetric;
+  onSelectMetric: (metric: CodexLiveTimingTrendMetric) => void;
+  loading?: boolean;
+  errorMessage?: string;
+  t: Translate;
+}) {
+  const summary = buildCodexLiveSessionSummary(sessions);
+  const overviewRequests = requestRows.flatMap((row) => (row.request ? [row.request] : []));
+
+  return (
+    <section className="grid min-w-0 gap-5" data-codex-live-overview="true">
+      <div
+        className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)]"
+        data-codex-overview-summary-cards="true"
+      >
+        <section className="grid min-h-[5.75rem] min-w-0 content-between border border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] bg-[var(--bg-main)] p-2.5" data-codex-overview-card="identity">
+          <div className="min-w-0">
+            <p className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              {t('codex_live_sessions.overview_kicker')}
+            </p>
+            <h3 className="mt-1.5 font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+              {t('codex_live_sessions.overview_title')}
+            </h3>
+          </div>
+          <span className="mt-2 h-1 w-8 bg-[color:color-mix(in_srgb,var(--text-primary)_18%,transparent)]" aria-hidden="true" />
+        </section>
+        <OverviewSummaryCard
+          label={t('codex_live_sessions.requests')}
+          primaryValue={`${requestCount}`}
+          primaryLabel={t('codex_live_sessions.request_rows')}
+          secondaryValue={`${sessions.length} ${t('codex_live_sessions.session_rows')}`}
+        />
+        <OverviewSummaryCard
+          label={t('codex_live_sessions.summary_active')}
+          primaryValue={`${summary.activeSessions}`}
+          primaryLabel={t('codex_live_sessions.session_rows')}
+          secondaryValue={`${summary.activeRequests} ${t('codex_live_sessions.summary_requests')}`}
+          accent="success"
+        />
+        <OverviewSummaryCard
+          label={t('codex_live_sessions.overview_risk')}
+          primaryValue={`${summary.degradedSessions}`}
+          primaryLabel={t('codex_live_sessions.summary_degraded')}
+          secondaryValue={`${summary.errorSessions} ${t('codex_live_sessions.summary_failed')}`}
+          accent={summary.errorSessions > 0 ? 'danger' : summary.degradedSessions > 0 ? 'warning' : 'neutral'}
+        />
+        {loading || errorMessage ? (
+          <div className="flex min-h-8 items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-1.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase lg:col-span-4">
+            <span className="text-[var(--text-muted)]">
+              {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
+            </span>
+            {errorMessage ? <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span> : null}
+          </div>
+        ) : null}
+      </div>
+
+      <div className="grid min-w-0 gap-3 border border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[var(--bg-main)] p-4" data-codex-overview-trend-shell="session-style">
+        <OverviewTimingTrend
+          requests={overviewRequests}
+          selectedMetric={selectedMetric}
+          onSelectMetric={onSelectMetric}
+          t={t}
+        />
+      </div>
+
+      <div className="grid min-w-0 gap-3 border border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[var(--bg-main)] p-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+          <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+            {t('codex_live_sessions.overview_request_list')}
+          </h3>
+          <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+            {requestRows.length} {t('codex_live_sessions.request_rows')}
+          </span>
+        </div>
+        <div data-codex-overview-timeline-shell="session-style">
+          <Timeline requests={overviewRequests} fallbackEvents={[]} t={t} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function OverviewSummaryCard({
+  label,
+  primaryValue,
+  primaryLabel,
+  secondaryValue,
+  accent = 'neutral',
+}: {
+  label: string;
+  primaryValue: string;
+  primaryLabel: string;
+  secondaryValue: string;
+  accent?: 'neutral' | 'success' | 'warning' | 'danger';
+}) {
+  const accentClass = {
+    neutral: 'bg-[color:color-mix(in_srgb,var(--text-muted)_18%,transparent)]',
+    success: 'bg-[var(--color-status-success)]',
+    warning: 'bg-[var(--color-status-warning)]',
+    danger: 'bg-[var(--color-status-danger)]',
+  }[accent];
+
+  return (
+    <section className="grid min-h-[5.75rem] min-w-0 content-between border border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] bg-[var(--bg-main)] p-2.5" data-codex-overview-card="metric">
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <p className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
+          {label}
+        </p>
+        <span className={`h-2.5 w-2.5 shrink-0 ${accentClass}`} />
+      </div>
+      <div className="min-w-0">
+        <div className="flex min-w-0 items-baseline gap-2">
+          <span className="font-mono text-[length:var(--font-size-ui-2xl)] font-black leading-none text-[var(--text-primary)]">
+            {primaryValue}
+          </span>
+          <span className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
+            {primaryLabel}
+          </span>
+        </div>
+        <p className="mt-2 truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+          {secondaryValue}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function OverviewTimingTrend({
+  requests,
+  selectedMetric,
+  onSelectMetric,
+  t,
+}: {
+  requests: readonly CodexLiveRequest[];
+  selectedMetric: CodexLiveTimingTrendMetric;
+  onSelectMetric: (metric: CodexLiveTimingTrendMetric) => void;
+  t: Translate;
+}) {
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    const refreshID = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(refreshID);
+  }, []);
+
+  const activeRequest = requests.find((request) => !request.completedAt && ['active', 'streaming', 'reconnecting'].includes(request.status));
+  const trend = buildCodexLiveRequestTimingTrend(requests, activeRequest, { nowMs });
+  const latestPoint = trend.points[trend.points.length - 1];
+  const selectedSeries = getTimingTrendSeries(selectedMetric);
+  const selectedRequestID = activeRequest?.requestID || latestPoint?.requestID || '';
+
+  return (
+    <section className="grid min-w-0 gap-3" aria-label={t('codex_live_sessions.request_timing_trend')}>
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-5 gap-y-3">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="badge-swiss">{t('codex_live_sessions.overview_kicker')}</span>
+            <span className="min-w-0 max-w-full truncate font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_72%,var(--text-primary))]">
+              {latestPoint?.requestID || t('codex_live_sessions.timing_trend_empty')}
+            </span>
+          </div>
+          <h3 className="mt-3 font-mono text-[length:var(--font-size-ui-2xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+            {t('codex_live_sessions.request_timing_trend')}
+          </h3>
+        </div>
+        <TimingMetricSelector selectedMetric={selectedMetric} onSelectMetric={onSelectMetric} t={t} />
+      </div>
+
+      <div className="grid gap-3">
+        <TimingTrendChart
+          trend={trend}
+          selectedMetric={selectedMetric}
+          selectedRequestID={selectedRequestID}
+          t={t}
+        />
+
+        <div className="grid gap-2 border-t border-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)] pt-3 md:grid-cols-[1fr_auto] md:items-start">
+          <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-2">
+            <TimingTrendFooterItem label={t('codex_live_sessions.requests')} value={`${requests.length}`} />
+            <TimingTrendFooterItem label={t('codex_live_sessions.latest_sample')} value={latestPoint?.label || t('codex_live_sessions.timing_trend_empty')} />
+          </div>
+
+          <div className="flex min-w-0 flex-wrap justify-start gap-x-4 gap-y-2 md:justify-end">
+            <div className="grid grid-cols-[0.75rem_auto_auto] items-center gap-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase">
+              <span className="h-2 w-2" style={{ backgroundColor: selectedSeries.color }} />
+              <span className="font-black text-[var(--text-muted)]">{t(selectedSeries.labelKey)}</span>
+              <span className="font-black text-[var(--text-primary)]">
+                {formatOptionalDuration(latestPoint?.values[selectedMetric] ?? undefined)}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TimingMetricSelector({
+  selectedMetric,
+  onSelectMetric,
+  t,
+}: {
+  selectedMetric: CodexLiveTimingTrendMetric;
+  onSelectMetric: (metric: CodexLiveTimingTrendMetric) => void;
+  t: Translate;
+}) {
+  return (
+    <div className="flex min-w-0 flex-wrap justify-end gap-1">
+      {timingTrendSeries.slice(0, 4).map((series) => {
+        const active = selectedMetric === series.id;
+        return (
+          <button
+            key={series.id}
+            type="button"
+            className={`h-7 border px-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase transition-colors ${
+              active
+                ? 'border-[var(--text-primary)] bg-[var(--text-primary)] text-[var(--bg-main)]'
+                : 'border-[color:color-mix(in_srgb,var(--border-color)_42%,transparent)] text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)]'
+            }`}
+            onClick={() => onSelectMetric(series.id)}
+          >
+            {t(series.labelKey)}
+          </button>
+        );
+      })}
     </div>
   );
 }

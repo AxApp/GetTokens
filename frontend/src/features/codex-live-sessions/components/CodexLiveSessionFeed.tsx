@@ -6,9 +6,7 @@ import type {
 } from '../model/types';
 import {
   buildCodexLiveRequestFeedRows,
-  buildRequestRowSummary,
   buildSessionRowSummary,
-  statusDotClass,
 } from './formatters';
 import { getPrimaryCodexLiveRequest } from '../model/selectors';
 import { copyCodexLiveSessionID, SESSION_ID_COPY_RESET_MS } from './sessionClipboard';
@@ -18,20 +16,18 @@ export function SessionFeed({
   sessions,
   selectedSessionID,
   onSelectSession,
-  onClearSessions,
+  onShowOverview,
   t,
 }: {
   sessions: readonly CodexLiveSession[];
   selectedSessionID?: string;
   onSelectSession: (sessionID: string) => void;
-  onClearSessions?: () => void;
+  onShowOverview: () => void;
   t: Translate;
 }) {
   const [copiedSessionID, setCopiedSessionID] = useState<string>();
-  const [feedMode, setFeedMode] = useState<'sessions' | 'requests'>('sessions');
   const copyResetTimerRef = useRef<number | null>(null);
   const requestRows = buildCodexLiveRequestFeedRows(sessions);
-  const visibleCount = feedMode === 'sessions' ? sessions.length : requestRows.length;
 
   useEffect(() => {
     return () => {
@@ -64,54 +60,49 @@ export function SessionFeed({
   }
 
   return (
-    <div className="min-h-0 min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_78%,var(--bg-surface))] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]">
+    <div className="min-h-0 min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]">
       <div
+        role="button"
+        tabIndex={0}
         data-debug={undefined}
-        className="grid gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 md:grid-cols-[1fr_auto] md:items-end"
+        data-codex-session-feed-overview-trigger="true"
+        aria-pressed={!selectedSessionID}
+        onClick={onShowOverview}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onShowOverview();
+          }
+        }}
+        className={`grid w-full cursor-pointer gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left transition-colors md:grid-cols-[1fr_auto] md:items-end ${
+          !selectedSessionID ? 'codex-live-session-list-item-selected' : 'codex-live-session-list-item-idle'
+        }`}
       >
         <div>
           <h3>
-            <button
-              type="button"
-              onClick={() => setFeedMode(feedMode === 'sessions' ? 'requests' : 'sessions')}
-              className="group flex cursor-pointer items-baseline gap-2 text-left"
-            >
-              <span className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)] group-hover:underline">
-                {t(feedMode === 'sessions' ? 'codex_live_sessions.title_sessions' : 'codex_live_sessions.title_requests')}
-              </span>
-              <span className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)] transition-colors group-hover:text-[var(--text-primary)]">
-                {feedMode === 'sessions' ? t('codex_live_sessions.switch_to_requests') : t('codex_live_sessions.switch_to_sessions')}
-              </span>
-            </button>
+            <span className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+              {t('codex_live_sessions.session_feed')}
+            </span>
           </h3>
           <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-            {feedMode === 'sessions' ? t('codex_live_sessions.session_feed_hint') : t('codex_live_sessions.request_feed_hint')}
+            {t('codex_live_sessions.session_feed_hint')}
           </p>
         </div>
         <div className="flex items-center justify-end gap-2">
           <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
-            {visibleCount} {feedMode === 'sessions' ? t('codex_live_sessions.session_rows') : t('codex_live_sessions.request_rows')}
+            {sessions.length} {t('codex_live_sessions.session_rows')} · {requestRows.length} {t('codex_live_sessions.request_rows')}
           </span>
-          <button
-            type="button"
-            className="btn-swiss h-8 !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
-            onClick={onClearSessions}
-            disabled={!onClearSessions || sessions.length === 0}
-            title={t('codex_live_sessions.clear_sessions_title')}
-          >
-            {t('codex_live_sessions.clear_sessions')}
-          </button>
         </div>
       </div>
 
       <div>
-        {visibleCount === 0 ? (
+        {sessions.length === 0 ? (
           <div className="p-6">
             <div className="border-2 border-dashed border-[var(--border-color)] p-5 text-center font-bold text-[var(--text-muted)]">
-              {feedMode === 'sessions' ? t('codex_live_sessions.empty') : t('codex_live_sessions.request_feed_empty')}
+              {t('codex_live_sessions.empty')}
             </div>
           </div>
-        ) : feedMode === 'sessions' ? (
+        ) : (
           <div className="divide-y divide-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)]">
             {sessions.map((session) => {
               const request = getPrimaryCodexLiveRequest(session);
@@ -129,18 +120,6 @@ export function SessionFeed({
                 />
               );
             })}
-          </div>
-        ) : (
-          <div className="divide-y divide-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)]">
-            {requestRows.map((row) => (
-              <RequestRow
-                key={row.rowID}
-                row={row}
-                selected={row.session.sessionID === selectedSessionID}
-                onSelect={() => onSelectSession(row.session.sessionID)}
-                t={t}
-              />
-            ))}
           </div>
         )}
       </div>
@@ -182,57 +161,6 @@ async function writeClipboardText(value: string): Promise<void> {
 }
 
 
-function RequestRow({
-  row,
-  selected,
-  onSelect,
-  t,
-}: {
-  row: ReturnType<typeof buildCodexLiveRequestFeedRows>[number];
-  selected: boolean;
-  onSelect: () => void;
-  t: Translate;
-}) {
-  const summary = buildRequestRowSummary(row, t);
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onSelect();
-        }
-      }}
-      aria-expanded={selected}
-      className={`grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
-        selected
-          ? 'bg-[color-mix(in_srgb,var(--text-primary)_7%,var(--bg-main))]'
-          : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'
-      }`}
-    >
-      <span className="col-start-1 row-start-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black leading-snug text-[var(--text-primary)]">
-        {summary.requestLabel}
-      </span>
-      <span className="col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug uppercase text-[var(--text-muted)]">
-        {summary.transportLabel}
-      </span>
-      <span className="col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">
-        {summary.projectLabel} · {summary.modelLabel}
-      </span>
-      <span className="col-start-1 row-start-3 min-w-0 self-center truncate font-mono text-[length:var(--font-size-ui-xs)] font-bold leading-snug text-[var(--text-muted)]">
-        {summary.accountLabel} · {summary.timingLabel}
-      </span>
-      <span className="col-start-2 row-span-2 row-start-2 inline-flex items-center justify-end gap-1 justify-self-end text-right font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">
-        <span className={`h-2 w-2 rounded-full ${statusDotClass(row.status)}`} />
-        {summary.sequenceLabel} · {summary.statusLabel}
-      </span>
-    </div>
-  );
-}
-
 function SessionRow({
   session,
   request,
@@ -265,9 +193,7 @@ function SessionRow({
       }}
       aria-expanded={selected}
       className={`grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
-        selected
-          ? 'bg-[color-mix(in_srgb,var(--text-primary)_7%,var(--bg-main))]'
-          : 'hover:bg-[color-mix(in_srgb,var(--border-color)_5%,var(--bg-main))]'
+        selected ? 'codex-live-session-list-item-selected' : 'codex-live-session-list-item-idle'
       }`}
     >
       <span className="col-start-1 row-start-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black leading-snug text-[var(--text-primary)]">

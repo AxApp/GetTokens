@@ -29,6 +29,13 @@ interface CodexLiveSessionDetailState {
   error?: string;
 }
 
+interface CodexLiveSessionOverviewState {
+  requests: CodexLiveRequest[];
+  generatedAt: string;
+  loading: boolean;
+  error?: string;
+}
+
 export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSessionsFeatureProps) {
   const sidecarReady = sidecarStatus?.code === 'ready';
   const browserMode = !hasWailsAppBindings();
@@ -41,10 +48,16 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
     generatedAt: '',
     loading: false,
   });
+  const [overviewState, setOverviewState] = useState<CodexLiveSessionOverviewState>({
+    requests: [],
+    generatedAt: '',
+    loading: false,
+  });
   const [documentHidden, setDocumentHidden] = useState(() =>
     typeof document !== 'undefined' ? document.visibilityState !== 'visible' : false,
   );
   const detailRequestVersionRef = useRef(0);
+  const overviewRequestVersionRef = useRef(0);
 
   const loadSnapshot = useCallback(async () => {
     if (browserMode) {
@@ -81,8 +94,10 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
         await ClearCodexLiveSessions();
       }
       detailRequestVersionRef.current += 1;
+      overviewRequestVersionRef.current += 1;
       setSelectedSessionID(undefined);
       setDetailState({ sessionID: undefined, requests: [], generatedAt: '', loading: false });
+      setOverviewState({ requests: [], generatedAt: '', loading: false });
       setSnapshot((current) => ({
         ...current,
         summary: {
@@ -100,6 +115,55 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
       setSnapshot((current) => buildCodexLiveSessionsLoadFailureSnapshot(current));
     }
   }, [browserMode, sidecarReady]);
+
+  const loadOverview = useCallback(async () => {
+    if (selectedSessionID) {
+      return;
+    }
+    if (browserMode) {
+      overviewRequestVersionRef.current += 1;
+      const requests = snapshot.sessions.flatMap((session) => session.requests);
+      setOverviewState({ requests, generatedAt: snapshot.generatedAt, loading: false });
+      return;
+    }
+    if (!sidecarReady) {
+      overviewRequestVersionRef.current += 1;
+      setOverviewState((current) => ({ ...current, loading: false }));
+      return;
+    }
+
+    setOverviewState((current) => ({ ...current, loading: true }));
+    const requestVersion = overviewRequestVersionRef.current + 1;
+    overviewRequestVersionRef.current = requestVersion;
+
+    try {
+      const nextHistory = await GetCodexLiveSessionHistory({
+        sessionID: '',
+        window: 'all',
+        limit: 80,
+        offset: 0,
+      });
+      const history = mapBackendCodexLiveSessionHistory(nextHistory);
+      if (overviewRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      setOverviewState({
+        requests: history.items,
+        generatedAt: history.generatedAt,
+        loading: false,
+      });
+    } catch (error) {
+      if (overviewRequestVersionRef.current != requestVersion) {
+        return;
+      }
+      console.error(error);
+      setOverviewState((current) => ({
+        ...current,
+        loading: false,
+        error: error instanceof Error ? error.message : 'overview-load-failed',
+      }));
+    }
+  }, [browserMode, selectedSessionID, sidecarReady, snapshot.generatedAt, snapshot.sessions]);
 
   const loadDetail = useCallback(async () => {
     if (!selectedSessionID) {
@@ -211,6 +275,10 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
   }, [browserMode, detailState.sessionID, loadDetail, selectedSessionID]);
 
   useEffect(() => {
+    void loadOverview();
+  }, [loadOverview]);
+
+  useEffect(() => {
     const pollMs = resolveCodexLiveSessionDetailPollIntervalMs({
       browserMode,
       sidecarReady,
@@ -228,18 +296,41 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
     };
   }, [browserMode, documentHidden, loadDetail, selectedSessionID, sidecarReady]);
 
+  useEffect(() => {
+    const pollMs = resolveCodexLiveSessionDetailPollIntervalMs({
+      browserMode,
+      sidecarReady,
+      hidden: documentHidden,
+      hasSelection: !selectedSessionID,
+    });
+    if (pollMs === null) {
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      void loadOverview();
+    }, pollMs);
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [browserMode, documentHidden, loadOverview, selectedSessionID, sidecarReady]);
+
   const handleRefresh = useCallback(() => {
     void refreshSnapshot();
     void loadDetail();
-  }, [loadDetail, refreshSnapshot]);
+    void loadOverview();
+  }, [loadDetail, loadOverview, refreshSnapshot]);
 
   return (
     <CodexLiveSessionsWorkbench
       snapshot={snapshot}
       detailRequests={detailState.sessionID === selectedSessionID ? detailState.requests : []}
+      overviewRequests={!selectedSessionID ? overviewState.requests : []}
+      overviewLoading={!selectedSessionID && overviewState.loading}
+      overviewError={!selectedSessionID ? overviewState.error : undefined}
       detailLoading={detailState.loading}
       detailError={detailState.sessionID === selectedSessionID ? detailState.error : undefined}
       onRefresh={handleRefresh}
+      onClearSessions={clearSessions}
       onSelectionChange={setSelectedSessionID}
     />
   );
