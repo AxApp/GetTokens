@@ -58,6 +58,12 @@ export interface OpenAICompatibleProviderDraft extends OpenAICompatibleProviderF
   models: OpenAICompatibleModelRow[];
   verifyModel: string;
   proxyUrl: string;
+  quotaCurl?: string;
+  quotaEnabled?: boolean;
+  billingCurl?: string;
+  billingEnabled?: boolean;
+  platformCookie?: string;
+  curlVariables?: Record<string, string>;
   modelFetchApiKey?: string;
   modelFetchBaseUrl?: string;
 }
@@ -301,6 +307,12 @@ export function buildOpenAICompatibleProviderDraft(
     name: provider.name,
     baseUrl: provider.baseUrl,
     apiKey: provider.apiKey || "",
+    quotaCurl: provider.quotaCurl || "",
+    quotaEnabled: Boolean(provider.quotaEnabled && provider.quotaCurl),
+    billingCurl: provider.billingCurl || "",
+    billingEnabled: Boolean(provider.billingEnabled && provider.billingCurl),
+    platformCookie: provider.platformCookie || "",
+    curlVariables: provider.curlVariables || {},
     headersText: buildHeadersText(provider.headers),
     modelFetchApiKey: provider.modelFetchApiKey || "",
     modelFetchBaseUrl:

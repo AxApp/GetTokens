@@ -133,6 +133,10 @@ test('unified compose submits third-party vendors as openai-compatible accounts'
   assert.match(submitBlock, /main\.CreateOpenAICompatibleProviderInput\.createFrom/);
   assert.match(submitBlock, /[\"']CreateOpenAICompatibleProvider[\"']/);
   assert.match(submitBlock, /formatBaseUrls/);
+  assert.match(submitBlock, /quotaCurl: unifiedComposeForm\.quotaCurl/);
+  assert.match(submitBlock, /quotaEnabled: unifiedComposeForm\.quotaEnabled/);
+  assert.match(submitBlock, /billingCurl: unifiedComposeForm\.billingCurl/);
+  assert.match(submitBlock, /billingEnabled: unifiedComposeForm\.billingEnabled/);
   assert.match(submitBlock, /models: models\.length > 0 \? models : undefined/);
   assert.doesNotMatch(submitBlock, /CreateCodexAPIKey/);
   assert.doesNotMatch(submitBlock, /main\.CreateCodexAPIKeyInput\.createFrom/);

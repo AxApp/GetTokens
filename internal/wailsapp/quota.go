@@ -26,6 +26,8 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 		switch account.Kind {
 		case cliproxyapi.AccountKindCodexAPIKey:
 			return a.getUnifiedCodexAPIKeyQuota(account)
+		case cliproxyapi.AccountKindOpenAICompatible:
+			return a.getUnifiedOpenAICompatibleQuota(account)
 		case cliproxyapi.AccountKindAuthFile:
 			if account.AuthFile == nil {
 				return nil, fmt.Errorf("auth file 不存在: %s", name)
@@ -156,6 +158,24 @@ func (a *App) getUnifiedCodexAPIKeyQuota(account *cliproxyapi.UnifiedAccount) (*
 	}
 	if !target.QuotaEnabled || target.QuotaCurl == "" {
 		return nil, errors.New("codex api key 未配置额度 curl")
+	}
+	state, err := a.managementClient().RefreshQuota(account.AccountKey, true, false)
+	if err != nil {
+		if cachedState, cacheErr := a.managementClient().GetQuotaStatus(account.AccountKey); cacheErr == nil && quotaRuntimeStateHasDisplayQuota(cachedState) {
+			return mapQuotaRuntimeStateToCodexQuotaResponse(markQuotaRuntimeStateStaleFromError(cachedState, err)), nil
+		}
+		return nil, err
+	}
+	return mapQuotaRuntimeStateToCodexQuotaResponse(state), nil
+}
+
+func (a *App) getUnifiedOpenAICompatibleQuota(account *cliproxyapi.UnifiedAccount) (*CodexQuotaResponse, error) {
+	if account == nil || account.Kind != cliproxyapi.AccountKindOpenAICompatible || account.OpenAICompatible == nil {
+		return nil, errors.New("账号不存在")
+	}
+	credential := account.OpenAICompatible
+	if strings.TrimSpace(credential.QuotaCurl) == "" || !credential.QuotaEnabled {
+		return nil, errors.New("openai-compatible 账号未配置额度 curl")
 	}
 	state, err := a.managementClient().RefreshQuota(account.AccountKey, true, false)
 	if err != nil {

@@ -755,6 +755,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                 Object.keys(formatBaseUrls).length > 0
                   ? formatBaseUrls
                   : undefined,
+              quotaCurl: unifiedComposeForm.quotaCurl,
+              quotaEnabled: unifiedComposeForm.quotaEnabled,
+              billingCurl: unifiedComposeForm.billingCurl,
+              billingEnabled: unifiedComposeForm.billingEnabled,
+              curlVariables: unifiedComposeForm.curlVariables,
               models: models.length > 0 ? models : undefined,
               platformCookie: (unifiedComposeForm.platformCookie ?? "").trim(),
               modelFetchApiKey:

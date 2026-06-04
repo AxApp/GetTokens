@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/linhay/gettokens/internal/cliproxyapi"
@@ -120,6 +121,10 @@ func TestBuildUnifiedOpenAICompatibleAccountRecordKeepsAccountKeyAndKind(t *test
 			ProviderName:      "deepseek",
 			BaseURL:           "https://api.deepseek.com/v1",
 			APIKeyEntriesJSON: `[{"api-key":"sk-test-987654"}]`,
+			QuotaCurl:         `curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+			QuotaEnabled:      true,
+			BillingCurl:       `curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+			BillingEnabled:    true,
 		},
 	})
 
@@ -131,6 +136,15 @@ func TestBuildUnifiedOpenAICompatibleAccountRecordKeepsAccountKeyAndKind(t *test
 	}
 	if got := record.DisplayName; got != "DeepSeek Team" {
 		t.Fatalf("DisplayName = %q, want DeepSeek Team", got)
+	}
+	if got := record.QuotaKey; got != "acct_00000000-0000-4000-8000-000000000001" {
+		t.Fatalf("QuotaKey = %q, want account key", got)
+	}
+	if !record.QuotaEnabled || !strings.Contains(record.QuotaCurl, "/user/balance") {
+		t.Fatalf("quota config not projected: enabled=%v curl=%q", record.QuotaEnabled, record.QuotaCurl)
+	}
+	if !record.BillingEnabled || !strings.Contains(record.BillingCurl, "/user/balance") {
+		t.Fatalf("billing config not projected: enabled=%v curl=%q", record.BillingEnabled, record.BillingCurl)
 	}
 }
 

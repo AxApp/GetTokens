@@ -588,6 +588,12 @@ func TestCreateOpenAICompatibleProviderCreatesUnifiedAccount(t *testing.T) {
 					if write.OpenAICompatible.BaseURL != "https://api.deepseek.com/v1" || write.OpenAICompatible.Prefix != "team-a" {
 						t.Fatalf("unexpected provider config: %#v", write.OpenAICompatible)
 					}
+					if !write.OpenAICompatible.QuotaEnabled || !strings.Contains(write.OpenAICompatible.QuotaCurl, "/user/balance") {
+						t.Fatalf("quota config not persisted: %#v", write.OpenAICompatible)
+					}
+					if !write.OpenAICompatible.BillingEnabled || !strings.Contains(write.OpenAICompatible.BillingCurl, "/user/balance") {
+						t.Fatalf("billing config not persisted: %#v", write.OpenAICompatible)
+					}
 					var entries []cliproxyapi.OpenAICompatibleAPIKeyEntry
 					if err := json.Unmarshal([]byte(write.OpenAICompatible.APIKeyEntriesJSON), &entries); err != nil {
 						t.Fatalf("unmarshal entries: %v", err)
@@ -604,10 +610,14 @@ func TestCreateOpenAICompatibleProviderCreatesUnifiedAccount(t *testing.T) {
 	}
 
 	if err := app.CreateOpenAICompatibleProvider(CreateOpenAICompatibleProviderInput{
-		Name:    "deepseek",
-		BaseURL: "https://api.deepseek.com/v1",
-		Prefix:  "team-a",
-		APIKey:  "sk-new",
+		Name:           "deepseek",
+		BaseURL:        "https://api.deepseek.com/v1",
+		Prefix:         "team-a",
+		APIKey:         "sk-new",
+		QuotaCurl:      `curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+		QuotaEnabled:   true,
+		BillingCurl:    `curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+		BillingEnabled: true,
 	}); err != nil {
 		t.Fatalf("CreateOpenAICompatibleProvider returned error: %v", err)
 	}

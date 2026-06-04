@@ -201,6 +201,56 @@ func TestGetCodexQuotaLoadsUnifiedCodexAPIKeyCredential(t *testing.T) {
 	}
 }
 
+func TestGetCodexQuotaLoadsUnifiedOpenAICompatibleCredential(t *testing.T) {
+	const accountKey = "acct_00000000-0000-4000-8000-000000000204"
+	gotQuotaRefresh := false
+
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method == http.MethodGet && path == ManagementAPIPrefix+"/accounts/"+accountKey {
+				payload, _ := json.Marshal(map[string]any{
+					"account_key": accountKey,
+					"kind":        "openai-compatible",
+					"title":       "DeepSeek",
+					"provider":    "deepseek",
+					"openai_compatible": map[string]any{
+						"provider_name":         "deepseek",
+						"base_url":              "https://api.deepseek.com/v1",
+						"api_key_entries_json":  `[{"api-key":"sk-deepseek"}]`,
+						"quota_curl":            `curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+						"quota_enabled":         true,
+						"billing_curl":          `curl -sS "https://api.deepseek.com/user/balance" -H "Authorization: Bearer {{apiKey}}"`,
+						"billing_enabled":       true,
+						"curl_variables_json":   `{}`,
+						"format_base_urls_json": `{}`,
+					},
+				})
+				return payload, http.StatusOK, nil
+			}
+			if method == http.MethodPost && path == ManagementAPIPrefix+"/gettokens/quota-refresh/"+accountKey {
+				gotQuotaRefresh = true
+				return []byte(`{"account_key":"` + accountKey + `","status":"success","plan_type":"billing","windows":[],"billing":{"is_available":true,"balance_infos":[{"currency":"USD","total_balance":"42.00","granted_balance":"12.00","topped_up_balance":"30.00"}]},"sources":[]}`), http.StatusOK, nil
+			}
+			t.Fatalf("unexpected sidecar request: %s %s", method, path)
+			return nil, 0, nil
+		},
+	}
+
+	quota, err := app.GetCodexQuota(accountKey)
+	if err != nil {
+		t.Fatalf("GetCodexQuota: %v", err)
+	}
+	if !gotQuotaRefresh {
+		t.Fatal("expected sidecar-native quota refresh endpoint")
+	}
+	if quota.Billing == nil || !quota.Billing.IsAvailable || len(quota.Billing.BalanceInfos) != 1 {
+		t.Fatalf("billing = %#v, want DeepSeek balance", quota.Billing)
+	}
+	if quota.Billing.BalanceInfos[0].TotalBalance != "42.00" {
+		t.Fatalf("balance = %#v, want total 42.00", quota.Billing.BalanceInfos[0])
+	}
+}
+
 func TestGetCodexQuotaMarksCachedUnifiedQuotaStaleWhenRefreshFails(t *testing.T) {
 	const accountKey = "acct_00000000-0000-4000-8000-000000000202"
 	const refreshErr = "ensure account store metadata: database is locked (SQLITE_BUSY)"

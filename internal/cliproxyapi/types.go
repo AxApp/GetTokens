@@ -93,6 +93,12 @@ type OpenAICompatibleProvider struct {
 	Prefix         string                        `json:"prefix,omitempty"`
 	BaseURL        string                        `json:"base-url"`
 	APIKeyEntries  []OpenAICompatibleAPIKeyEntry `json:"api-key-entries,omitempty"`
+	QuotaCurl      string                        `json:"quota-curl,omitempty"`
+	QuotaEnabled   bool                          `json:"quota-enabled,omitempty"`
+	BillingCurl    string                        `json:"billing-curl,omitempty"`
+	BillingEnabled bool                          `json:"billing-enabled,omitempty"`
+	PlatformCookie string                        `json:"platform-cookie,omitempty"`
+	CurlVariables  map[string]string             `json:"curl-variables,omitempty"`
 	Models         []OpenAICompatibleModel       `json:"models,omitempty"`
 	Headers        map[string]string             `json:"headers,omitempty"`
 	FormatBaseURLs map[string]string             `json:"format-base-urls,omitempty"`
@@ -151,6 +157,12 @@ type OpenAICompatibleAccountCredential struct {
 	BaseURL            string `json:"base_url"`
 	Prefix             string `json:"prefix,omitempty"`
 	APIKeyEntriesJSON  string `json:"api_key_entries_json"`
+	QuotaCurl          string `json:"quota_curl,omitempty"`
+	QuotaEnabled       bool   `json:"quota_enabled,omitempty"`
+	BillingCurl        string `json:"billing_curl,omitempty"`
+	BillingEnabled     bool   `json:"billing_enabled,omitempty"`
+	PlatformCookie     string `json:"platform_cookie,omitempty"`
+	CurlVariablesJSON  string `json:"curl_variables_json,omitempty"`
 	HeadersJSON        string `json:"headers_json,omitempty"`
 	FormatBaseURLsJSON string `json:"format_base_urls_json,omitempty"`
 	ModelsJSON         string `json:"models_json,omitempty"`

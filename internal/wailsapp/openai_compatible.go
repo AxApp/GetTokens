@@ -21,6 +21,12 @@ type OpenAICompatibleProvider struct {
 	ProxyURL          string                  `json:"proxyUrl,omitempty"`
 	APIKey            string                  `json:"apiKey"`
 	APIKeys           []string                `json:"apiKeys,omitempty"`
+	QuotaCurl         string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled      bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl       string                  `json:"billingCurl,omitempty"`
+	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie    string                  `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	Models            []OpenAICompatibleModel `json:"models,omitempty"`
 	Headers           map[string]string       `json:"headers,omitempty"`
 	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
@@ -43,6 +49,12 @@ type CreateOpenAICompatibleProviderInput struct {
 	BaseURL           string                  `json:"baseUrl"`
 	Prefix            string                  `json:"prefix,omitempty"`
 	APIKey            string                  `json:"apiKey"`
+	QuotaCurl         string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled      bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl       string                  `json:"billingCurl,omitempty"`
+	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie    string                  `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	FormatBaseURLs    map[string]string       `json:"formatBaseUrls,omitempty"`
 	Models            []OpenAICompatibleModel `json:"models,omitempty"`
 	ModelFetchAPIKey  string                  `json:"modelFetchApiKey,omitempty"`
@@ -57,6 +69,12 @@ type UpdateOpenAICompatibleProviderInput struct {
 	ProxyURL          *string                 `json:"proxyUrl,omitempty"`
 	APIKey            string                  `json:"apiKey"`
 	APIKeys           []string                `json:"apiKeys,omitempty"`
+	QuotaCurl         string                  `json:"quotaCurl,omitempty"`
+	QuotaEnabled      bool                    `json:"quotaEnabled,omitempty"`
+	BillingCurl       string                  `json:"billingCurl,omitempty"`
+	BillingEnabled    bool                    `json:"billingEnabled,omitempty"`
+	PlatformCookie    string                  `json:"platformCookie,omitempty"`
+	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	Headers           map[string]string       `json:"headers,omitempty"`
 	Models            []OpenAICompatibleModel `json:"models,omitempty"`
 	ModelFetchAPIKey  string                  `json:"modelFetchApiKey,omitempty"`
@@ -136,6 +154,12 @@ func (a *App) CreateOpenAICompatibleProvider(input CreateOpenAICompatibleProvide
 		strings.TrimSpace(input.Prefix),
 		[]cliproxyapi.OpenAICompatibleAPIKeyEntry{{APIKey: apiKey}},
 		nil,
+		strings.TrimSpace(input.QuotaCurl),
+		input.QuotaEnabled,
+		strings.TrimSpace(input.BillingCurl),
+		input.BillingEnabled,
+		normalizePlatformCookie(input.PlatformCookie),
+		normalizeQuotaCurlVariables(input.CurlVariables, input.PlatformCookie),
 		normalizeFormatBaseURLs(input.FormatBaseURLs),
 		nextModels,
 		strings.TrimSpace(input.ModelFetchAPIKey),
@@ -229,6 +253,12 @@ func (a *App) UpdateOpenAICompatibleProvider(input UpdateOpenAICompatibleProvide
 		prefix,
 		entries,
 		normalizeVerifyHeaders(input.Headers),
+		strings.TrimSpace(input.QuotaCurl),
+		input.QuotaEnabled,
+		strings.TrimSpace(input.BillingCurl),
+		input.BillingEnabled,
+		normalizePlatformCookie(input.PlatformCookie),
+		normalizeQuotaCurlVariables(input.CurlVariables, input.PlatformCookie),
 		parseStringMapJSON(target.OpenAICompatible.FormatBaseURLsJSON),
 		nextModels,
 		strings.TrimSpace(input.ModelFetchAPIKey),
@@ -664,6 +694,12 @@ func openAICompatibleProviderFromUnifiedAccount(account cliproxyapi.UnifiedAccou
 	provider := openAICompatibleProviderFromSidecarConfig(unifiedOpenAICompatibleProvider(account))
 	provider.AccountKey = strings.TrimSpace(account.AccountKey)
 	if account.OpenAICompatible != nil {
+		provider.QuotaCurl = strings.TrimSpace(account.OpenAICompatible.QuotaCurl)
+		provider.QuotaEnabled = account.OpenAICompatible.QuotaEnabled && provider.QuotaCurl != ""
+		provider.BillingCurl = strings.TrimSpace(account.OpenAICompatible.BillingCurl)
+		provider.BillingEnabled = account.OpenAICompatible.BillingEnabled && provider.BillingCurl != ""
+		provider.PlatformCookie = strings.TrimSpace(account.OpenAICompatible.PlatformCookie)
+		provider.CurlVariables = parseStringMapJSON(account.OpenAICompatible.CurlVariablesJSON)
 		provider.ModelFetchAPIKey = strings.TrimSpace(account.OpenAICompatible.ModelFetchAPIKey)
 		provider.ModelFetchBaseURL = strings.TrimSpace(account.OpenAICompatible.ModelFetchBaseURL)
 	}
@@ -703,6 +739,12 @@ func openAICompatibleAccountWrite(
 	prefix string,
 	entries []cliproxyapi.OpenAICompatibleAPIKeyEntry,
 	headers map[string]string,
+	quotaCurl string,
+	quotaEnabled bool,
+	billingCurl string,
+	billingEnabled bool,
+	platformCookie string,
+	curlVariables map[string]string,
 	formatBaseURLs map[string]string,
 	models []cliproxyapi.OpenAICompatibleModel,
 	modelFetchAPIKey string,
@@ -721,6 +763,12 @@ func openAICompatibleAccountWrite(
 			BaseURL:            strings.TrimSpace(baseURL),
 			Prefix:             strings.TrimSpace(prefix),
 			APIKeyEntriesJSON:  mustJSONString(entries),
+			QuotaCurl:          strings.TrimSpace(quotaCurl),
+			QuotaEnabled:       quotaEnabled && strings.TrimSpace(quotaCurl) != "",
+			BillingCurl:        strings.TrimSpace(billingCurl),
+			BillingEnabled:     billingEnabled && strings.TrimSpace(billingCurl) != "",
+			PlatformCookie:     normalizePlatformCookie(platformCookie),
+			CurlVariablesJSON:  mustJSONString(normalizeQuotaCurlVariables(curlVariables, platformCookie)),
 			HeadersJSON:        mustJSONString(headers),
 			FormatBaseURLsJSON: mustJSONString(formatBaseURLs),
 			ModelsJSON:         mustJSONString(models),

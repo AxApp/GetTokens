@@ -157,6 +157,12 @@ func BuildOpenAICompatibleProviderAccountRecord(provider cliproxyapi.OpenAICompa
 		APIKey:           apiKey,
 		APIKeys:          apiKeys,
 		Headers:          cloneStringMap(provider.Headers),
+		QuotaCurl:        strings.TrimSpace(provider.QuotaCurl),
+		QuotaEnabled:     provider.QuotaEnabled && strings.TrimSpace(provider.QuotaCurl) != "",
+		BillingCurl:      strings.TrimSpace(provider.BillingCurl),
+		BillingEnabled:   provider.BillingEnabled && strings.TrimSpace(provider.BillingCurl) != "",
+		PlatformCookie:   strings.TrimSpace(provider.PlatformCookie),
+		CurlVariables:    cloneStringMap(provider.CurlVariables),
 		Models:           openAICompatibleModelsToCodexModels(provider.Models),
 		KeyFingerprint:   APIKeyFingerprint(apiKey),
 		KeySuffix:        APIKeySuffix(apiKey),
@@ -399,6 +405,12 @@ func buildUnifiedOpenAICompatibleAccountRecord(account cliproxyapi.UnifiedAccoun
 		provider.BaseURL = strings.TrimSpace(credential.BaseURL)
 		provider.Prefix = strings.TrimSpace(credential.Prefix)
 		provider.APIKeyEntries = parseOpenAICompatibleAPIKeyEntriesJSON(credential.APIKeyEntriesJSON)
+		provider.QuotaCurl = strings.TrimSpace(credential.QuotaCurl)
+		provider.QuotaEnabled = credential.QuotaEnabled && provider.QuotaCurl != ""
+		provider.BillingCurl = strings.TrimSpace(credential.BillingCurl)
+		provider.BillingEnabled = credential.BillingEnabled && provider.BillingCurl != ""
+		provider.PlatformCookie = strings.TrimSpace(credential.PlatformCookie)
+		provider.CurlVariables = parseStringMapJSON(credential.CurlVariablesJSON)
 		provider.Headers = parseStringMapJSON(credential.HeadersJSON)
 		provider.FormatBaseURLs = parseStringMapJSON(credential.FormatBaseURLsJSON)
 		provider.Models = parseOpenAICompatibleModelsJSON(credential.ModelsJSON)
