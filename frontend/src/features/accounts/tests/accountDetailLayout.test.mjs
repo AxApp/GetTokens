@@ -121,7 +121,7 @@ test('unified compose quota and billing use account-detail curl script card patt
   assert.doesNotMatch(source, /componentName="UnifiedComposeBillingSection"[\s\S]*?<textarea/);
 });
 
-test('unified compose routes balance-aware presets to codex api key accounts and keeps plain providers openai-compatible', async () => {
+test('unified compose submits third-party vendors as openai-compatible accounts', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const submitStart = source.indexOf('const handleUnifiedComposeSubmit = useCallback(async () => {');
   const submitEnd = source.indexOf('}, [unifiedComposeForm, unifiedComposePreset, trackRequest, loadAccounts]);', submitStart);
@@ -129,15 +129,13 @@ test('unified compose routes balance-aware presets to codex api key accounts and
     ? source.slice(submitStart, submitEnd)
     : '';
 
-  assert.match(submitBlock, /shouldCreateUnifiedComposeAsCodexAPIKey\(unifiedComposePreset\)/);
-  assert.match(submitBlock, /buildUnifiedComposeCodexAPIKeyInput/);
-  assert.match(submitBlock, /CreateCodexAPIKey/);
-  assert.match(submitBlock, /main\.CreateCodexAPIKeyInput\.createFrom/);
-  assert.match(submitBlock, /quotaCurl: unifiedComposeForm\.quotaCurl/);
-  assert.match(submitBlock, /billingCurl: unifiedComposeForm\.billingCurl/);
   assert.match(submitBlock, /CreateOpenAICompatibleProvider/);
   assert.match(submitBlock, /main\.CreateOpenAICompatibleProviderInput\.createFrom/);
+  assert.match(submitBlock, /[\"']CreateOpenAICompatibleProvider[\"']/);
+  assert.match(submitBlock, /formatBaseUrls/);
   assert.match(submitBlock, /models: models\.length > 0 \? models : undefined/);
+  assert.doesNotMatch(submitBlock, /CreateCodexAPIKey/);
+  assert.doesNotMatch(submitBlock, /main\.CreateCodexAPIKeyInput\.createFrom/);
 });
 
 test('quota and billing curl editors are modal draft editors without local save buttons', async () => {
