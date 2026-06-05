@@ -58,7 +58,7 @@ export function AccountOrderRow({
   usageSummary?: AccountUsageSummary;
   rateLimitStatus?: RateLimitState;
 }) {
-  const cardDensity = density === 'full' ? 'full' : 'compact';
+  const cardDensity = density === 'full' ? 'full' : 'list';
   const endpointLabel = buildEndpointLabel(row);
   const policyMuted = Boolean(routePolicyState && !routePolicyState.participates);
   const policyRankLabel = routePolicyState?.participates
