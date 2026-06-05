@@ -50,7 +50,7 @@ export interface RateLimitRulesAPI {
   delete: (input: { id: string }) => Promise<unknown>;
 }
 
-const RATE_LIMIT_RULE_SURFACE_CLASS = 'bg-[var(--bg-surface)]/35 px-3 py-2';
+const RATE_LIMIT_RULE_SURFACE_CLASS = 'bg-[var(--bg-surface)]/35 py-2';
 const RATE_LIMIT_RULE_STACK_CLASS = 'space-y-2';
 const RATE_LIMIT_RULE_LIST_CLASS = 'space-y-2';
 

@@ -13,12 +13,12 @@ import {
   AccountDetailFooter,
   AccountDetailHeader,
   AccountQuotaSection,
+  type APIKeyVerifyState,
 } from './AccountDetailSections';
 import {
   AccountDetailBody,
   AccountDetailModuleStack,
 } from './AccountDetailPrimitives';
-import ApiKeyDetailModal, { type APIKeyVerifyState } from './ApiKeyDetailModal';
 import ApiKeyComposeModal from './ApiKeyComposeModal';
 import CodexOAuthModal from './CodexOAuthModal';
 import AccountImportModal from './AccountImportModal';
@@ -330,6 +330,18 @@ const apiKeyUsageSummary: AccountUsageSummary = {
   },
 };
 
+const apiKeyDetailBilling: BillingDisplay = {
+  isAvailable: true,
+  balances: [
+    {
+      currency: 'USD',
+      totalBalance: '120.00',
+      grantedBalance: '80.00',
+      toppedUpBalance: '40.00',
+    },
+  ],
+};
+
 const apiKeyRateLimitStatus: RateLimitState = {
   accountKey: 'codex-api-key-preview',
   blocked: false,
@@ -462,58 +474,6 @@ function ApiKeyComposeSample({
   );
 }
 
-function ApiKeyDetailSample({
-  label,
-  verifyStateKey = 'success',
-}: {
-  label: string;
-  verifyStateKey?: keyof typeof apiKeyVerifyStates;
-}) {
-  const { t } = useI18n();
-  return (
-    <ModalViewport label={label}>
-      <ApiKeyDetailModal
-        t={t}
-        account={apiKeyDetailAccount}
-        usageSummary={apiKeyUsageSummary}
-        rateLimitStatus={apiKeyRateLimitStatus}
-        verifyState={apiKeyVerifyStates[verifyStateKey]}
-        modelNames={['gpt-5.4-mini', 'gpt-5.4', 'gpt-5.2']}
-        rateLimitRulesAPI={previewRateLimitRulesAPI}
-        onClose={() => undefined}
-        onRename={() => undefined}
-        onSaveConfig={async () => undefined}
-        onVerify={() => undefined}
-        onTestQuotaCurl={async () => ({
-          planType: 'Pro',
-          windows: [
-            {
-              id: 'five-hour',
-              label: '5H WINDOW',
-              remainingPercent: 64,
-              usedLabel: '36%',
-              resetLabel: '02:10:00',
-            },
-          ],
-        } as unknown as CodexQuota)}
-        onRateLimitRulesChanged={() => undefined}
-      />
-    </ModalViewport>
-  );
-}
-
-const apiKeyDetailBilling: BillingDisplay = {
-  isAvailable: true,
-  balances: [
-    {
-      currency: 'USD',
-      totalBalance: '120.00',
-      grantedBalance: '80.00',
-      toppedUpBalance: '40.00',
-    },
-  ],
-};
-
 function AccountDetailSectionsSample({
   label,
   saving = false,
@@ -524,9 +484,11 @@ function AccountDetailSectionsSample({
   missing?: boolean;
 }) {
   const [draft, setDraft] = useState({
+    label: apiKeyDetailAccount.displayName ?? '',
     apiKey: apiKeyDetailAccount.apiKey ?? '',
     baseUrl: missing ? '' : apiKeyDetailAccount.baseUrl ?? '',
     prefix: apiKeyDetailAccount.prefix ?? '',
+    models: apiKeyDetailAccount.models ?? [],
     quotaCurl: apiKeyDetailAccount.quotaCurl ?? '',
     quotaEnabled: Boolean(apiKeyDetailAccount.quotaEnabled),
     billingCurl: 'curl -sS "https://example.com/api/billing" -H "Authorization: Bearer {{apiKey}}"',
@@ -714,14 +676,6 @@ function AccountModalsOverview() {
       </section>
 
       <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
-        <h3 className="text-sm font-black uppercase italic tracking-normal">API 密钥详情状态</h3>
-        <div className="grid gap-4 xl:grid-cols-2">
-          <ApiKeyDetailSample label="DS-API-KEY-DETAIL-SUCCESS" />
-          <ApiKeyDetailSample label="DS-API-KEY-DETAIL-VERIFY-ERROR" verifyStateKey="error" />
-        </div>
-      </section>
-
-      <section className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-main)] p-4">
         <h3 className="text-sm font-black uppercase italic tracking-normal">统一账号详情区块</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountDetailSectionsSample label="DS-ACCOUNT-DETAIL-SECTIONS-READY" />
@@ -782,10 +736,6 @@ export const AccountImport: Story = {
 
 export const ApiKeyCompose: Story = {
   render: () => <ApiKeyComposeSample label="DS-API-KEY-FILLED-QUOTA" formKey="filled" probe="ready" />,
-};
-
-export const ApiKeyDetail: Story = {
-  render: () => <ApiKeyDetailSample label="DS-API-KEY-DETAIL-SUCCESS" />,
 };
 
 export const AccountDetailSections: Story = {

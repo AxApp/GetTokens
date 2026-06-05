@@ -10,7 +10,7 @@ export type AccountDetailModuleID =
 
 export function buildAccountDetailModulePlan(account: Pick<AccountRecord, 'credentialSource'>): AccountDetailModuleID[] {
   if (account.credentialSource === 'api-key') {
-    return ['credentials', 'rate-limit', 'quota', 'billing'];
+    return ['credentials', 'models', 'rate-limit', 'quota', 'billing'];
   }
 
   if (account.credentialSource === 'auth-file') {

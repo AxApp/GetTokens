@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GetTokens · Account Detail Redesign v02</title>
+  <style>
+    :root {
+      --paper: #f3f0e8;
+      --panel: #fffdf6;
+      --panel-2: #ebe6d9;
+      --ink: #0d0d0d;
+      --muted: #6e695f;
+      --hair: rgba(13,13,13,.18);
+      --line: #0d0d0d;
+      --red: #e3261c;
+      --green: #08784a;
+      --blue: #1d52d1;
+      --amber: #a96500;
+      --shadow: 7px 7px 0 #0d0d0d;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); min-width: 1440px; }
+    body:before { content:""; position: fixed; inset: 0; pointer-events:none; opacity:.22; mix-blend-mode:multiply; background-image: radial-gradient(rgba(13,13,13,.2) .65px, transparent .65px); background-size: 5px 5px; }
+    button, input, textarea { font: inherit; color: inherit; }
+    .page { padding: 28px; }
+    .cover { border: 3px solid var(--line); background: var(--panel); box-shadow: var(--shadow); padding: 24px; margin-bottom: 22px; display:grid; grid-template-columns: 1fr 520px; gap: 24px; align-items:end; }
+    .kicker, .mono { font-family: var(--mono); }
+    .kicker { font-size: 11px; letter-spacing: .22em; text-transform: uppercase; font-weight: 1000; color: var(--muted); }
+    h1 { margin: 8px 0 0; font-size: clamp(48px, 5.2vw, 82px); line-height: .84; letter-spacing: -.06em; text-transform: uppercase; font-weight: 1000; font-style: italic; }
+    .cover p { margin: 12px 0 0; color: var(--muted); max-width: 900px; font-size: 14px; line-height: 1.62; font-weight: 800; }
+    .brief { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .brief div { min-height: 78px; border: 2px solid var(--line); background: var(--panel-2); padding: 12px; }
+    .brief b { display:block; font-size: 11px; letter-spacing:.18em; text-transform:uppercase; }
+    .brief span { display:block; margin-top: 8px; font-size: 12px; line-height:1.45; color:var(--muted); font-weight:850; }
+    .state-switch { display:flex; gap: 10px; margin: 0 0 18px; }
+    .switch { border: 2px solid var(--line); background: var(--panel); padding: 9px 12px; box-shadow: 3px 3px 0 var(--line); font-family: var(--mono); font-size: 11px; letter-spacing:.14em; text-transform:uppercase; font-weight:1000; cursor:pointer; }
+    .switch[aria-pressed="true"] { background: var(--ink); color: var(--panel); }
+    .design-shell { border: 4px solid var(--line); background: #1b1b1b; padding: 10px; box-shadow: var(--shadow); }
+    .app-frame { height: 900px; border: 3px solid var(--line); background: rgba(13,13,13,.76); padding: 26px; display:grid; place-items:center; }
+    .modal { width: min(1360px, calc(100vw - 90px)); height: 830px; border: 3px solid var(--line); background: var(--panel); display:grid; grid-template-rows: 64px minmax(0,1fr) 78px; box-shadow: 11px 11px 0 rgba(0,0,0,.45); }
+    .topbar { display:grid; grid-template-columns: 320px minmax(0,1fr) 360px; border-bottom: 2px solid var(--line); background: var(--panel-2); }
+    .topbar > div { border-right: 2px solid var(--line); padding: 12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; }
+    .topbar > div:last-child { border-right:0; }
+    .sys { font-family: var(--mono); font-size: 10px; font-weight:1000; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+    .top-title { font-size: 16px; font-weight:1000; text-transform:uppercase; font-style:italic; letter-spacing:-.02em; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .body { min-height:0; display:grid; grid-template-columns: 282px minmax(0,1fr) 330px; }
+    .rail, .main, .inspector { min-height:0; overflow:auto; }
+    .rail { border-right:2px solid var(--line); background:#f0eadf; }
+    .main { background:var(--panel); }
+    .inspector { border-left:2px solid var(--line); background:#f7f4ed; }
+    .section { border-bottom:2px solid var(--line); padding:16px; }
+    .section.compact { padding:12px 16px; }
+    .eyebrow { font-family: var(--mono); font-size:10px; font-weight:1000; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+    .label { font-family: var(--mono); font-size:10px; font-weight:1000; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+    .account-name { font-size: 34px; line-height:.92; letter-spacing:-.05em; text-transform:uppercase; font-weight:1000; font-style:italic; margin:0 0 12px; }
+    .input { width:100%; border:2px solid var(--line); background:#fff; padding:9px 10px; min-height:38px; font-family:var(--mono); font-size:13px; font-weight:850; outline:none; }
+    .input:focus, .textarea:focus { box-shadow: inset 0 0 0 2px var(--blue); }
+    .textarea { width:100%; min-height:92px; resize:vertical; border:2px solid var(--line); background:#fff; padding:10px; font-family:var(--mono); font-size:12px; font-weight:800; line-height:1.45; }
+    .pill { display:inline-flex; align-items:center; min-height:24px; border:1.5px solid var(--line); background:#fff; padding:4px 8px; font-family:var(--mono); font-size:10px; font-weight:1000; letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; }
+    .pill.green { color:var(--green); border-color:var(--green); } .pill.red { color:var(--red); border-color:var(--red); } .pill.blue { color:var(--blue); border-color:var(--blue); } .pill.amber { color:var(--amber); border-color:var(--amber); }
+    .button { border:2px solid var(--line); background:#fff; padding:9px 12px; font-family:var(--mono); font-size:11px; font-weight:1000; letter-spacing:.12em; text-transform:uppercase; box-shadow:3px 3px 0 #cac2b5; cursor:pointer; }
+    .button.primary { background:var(--ink); color:var(--panel); box-shadow:3px 3px 0 #8f887d; }
+    .button.danger { color:var(--red); border-color:var(--red); }
+    .button:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+    .kv { display:grid; grid-template-columns: 112px minmax(0,1fr); gap:10px; padding:8px 0; border-top:1px dashed var(--hair); align-items:start; }
+    .kv:first-of-type { border-top:0; }
+    .kv b { font-family:var(--mono); font-size:10px; font-weight:1000; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+    .kv span { min-width:0; overflow:hidden; text-overflow:ellipsis; font-size:12px; font-weight:900; line-height:1.35; }
+    .big-status { border:2px solid var(--line); background:#fff; padding:12px; margin-top:12px; }
+    .big-status strong { display:block; margin:8px 0; font-size:20px; line-height:1; text-transform:uppercase; font-weight:1000; font-style:italic; }
+    .status-ready .big-status strong { color:var(--green); } .status-dirty .big-status strong { color:var(--amber); } .status-loading .big-status strong { color:var(--blue); } .status-error .big-status strong { color:var(--red); }
+    .metric-grid { display:grid; grid-template-columns:1fr 1fr; border:2px solid var(--line); margin-top:12px; }
+    .metric { padding:10px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); min-height:64px; background:#fff; }
+    .metric:nth-child(2n){ border-right:0; } .metric:nth-last-child(-n+2){ border-bottom:0; }
+    .metric data { display:block; font-size:18px; font-weight:1000; letter-spacing:-.03em; margin-top:5px; }
+    .module { border-bottom:2px solid var(--line); padding:18px; }
+    .module-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; border-bottom:2px dashed var(--line); padding-bottom:10px; margin-bottom:14px; }
+    .module h2 { margin:0; font-size:18px; line-height:1; text-transform:uppercase; font-style:italic; letter-spacing:-.02em; }
+    .module-desc { color:var(--muted); font-size:12px; line-height:1.45; font-weight:800; margin-top:6px; }
+    .form-grid { display:grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); gap:12px; }
+    .field { display:grid; gap:7px; }
+    .notice { border:2px solid var(--line); background:#fff9e6; padding:10px; color:var(--muted); font-size:12px; line-height:1.45; font-weight:850; }
+    .notice.red { background:#fff1ef; border-color:var(--red); color:var(--red); }
+    .notice.green { background:#effaf2; border-color:var(--green); color:var(--green); }
+    .headers-row { display:grid; grid-template-columns: minmax(0,1fr) auto; gap:12px; align-items:start; }
+    .model-toolbar { display:grid; grid-template-columns: minmax(0,1fr) auto auto; gap:10px; align-items:center; }
+    .source-card { border:2px solid var(--line); background:#f2ede2; padding:11px; }
+    .model-table { border:2px solid var(--line); margin-top:12px; }
+    .model-row { display:grid; grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr) 110px; border-bottom:1px solid var(--line); min-height:42px; }
+    .model-row:last-child { border-bottom:0; }
+    .model-row > div { border-right:1px solid var(--line); padding:9px 10px; min-width:0; display:flex; align-items:center; }
+    .model-row > div:last-child { border-right:0; justify-content:flex-end; }
+    .model-row.header { background:var(--panel-2); font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; font-weight:1000; color:var(--muted); }
+    .model-row input { width:100%; border:0; background:transparent; font-family:var(--mono); font-size:13px; font-weight:850; outline:0; }
+    .remote-drawer { margin-top:12px; border:2px solid var(--blue); background:#eef3ff; padding:12px; display:grid; grid-template-columns: minmax(0,1fr) auto; gap:10px; align-items:center; }
+    .chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .chip { border:2px solid var(--line); background:#fff; padding:7px 9px; font-family:var(--mono); font-size:11px; font-weight:1000; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; }
+    .chip.active { background:var(--ink); color:var(--panel); }
+    .verify-box { border:2px solid var(--line); background:#fff; padding:12px; display:grid; gap:10px; }
+    .inline { display:flex; gap:8px; align-items:center; justify-content:space-between; }
+    .bar { height:12px; border:2px solid var(--line); background:linear-gradient(90deg,var(--green) 0 46%, transparent 46%); margin:8px 0; }
+    .status-dirty .bar { background:linear-gradient(90deg,var(--amber) 0 74%, transparent 74%); }
+    .status-error .bar { background:linear-gradient(90deg,var(--red) 0 94%, transparent 94%); }
+    .footer { border-top:2px solid var(--line); background:var(--panel-2); display:grid; grid-template-columns: minmax(0,1fr) auto; gap:14px; align-items:center; padding:14px 18px; }
+    .footer-message { display:flex; align-items:center; gap:12px; min-width:0; }
+    .footer-message strong { font-size:13px; text-transform:uppercase; letter-spacing:.08em; }
+    .footer-message span { color:var(--muted); font-size:12px; font-weight:850; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .actions { display:flex; gap:10px; }
+    .state-panel { display:none; }
+    .status-ready .for-ready, .status-dirty .for-dirty, .status-loading .for-loading, .status-error .for-error { display:block; }
+    .status-ready .hide-ready, .status-dirty .hide-dirty, .status-loading .hide-loading, .status-error .hide-error { display:none !important; }
+    .footer .save-error { display:none; } .status-error .footer .save-error { display:inline-flex; }
+    .status-error .footer .save-normal { display:none; }
+    .status-loading .spinner { display:inline-block; width:12px; height:12px; border:2px solid var(--blue); border-top-color:transparent; animation:spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .callouts { margin-top:22px; display:grid; grid-template-columns: repeat(3,1fr); gap:14px; }
+    .callout { border:2px solid var(--line); background:var(--panel); padding:14px; box-shadow:4px 4px 0 var(--line); }
+    .callout h3 { margin:0 0 8px; font-size:15px; text-transform:uppercase; font-style:italic; }
+    .callout p { margin:0; color:var(--muted); font-size:12px; line-height:1.55; font-weight:850; }
+  </style>
+</head>
+<body class="status-ready">
+  <main class="page">
+    <section class="cover">
+      <div>
+        <div class="kicker">GETTOKENS / ACCOUNT DETAIL / REDESIGN V02</div>
+        <h1>Provider Control Workbench</h1>
+        <p>重新思考账号详情页的交互形态：从一条长表单改为三栏工作台。左侧稳定显示身份与状态，中间处理配置与模型目录，右侧处理验证、代理与限流，底部统一承担保存门禁。</p>
+      </div>
+      <div class="brief">
+        <div><b>Source</b><span>OpenAICompatibleDetailPanel / AccountProxyRouteSection / RateLimitRulesSection</span></div>
+        <div><b>Authority</b><span>Draft 属于前端；账号、routing、quota、rate-limit 事实不由前端伪造。</span></div>
+        <div><b>Mode</b><span>macOS Wails desktop；全应用视口 modal；中高密度工具感。</span></div>
+        <div><b>Key Change</b><span>Summary 从右上角小卡改为左侧 Identity Rail + 右侧 Run Inspector。</span></div>
+      </div>
+    </section>
+
+    <div class="state-switch" aria-label="切换设计状态">
+      <button class="switch" data-state="ready" aria-pressed="true">READY</button>
+      <button class="switch" data-state="dirty" aria-pressed="false">DIRTY EDIT</button>
+      <button class="switch" data-state="loading" aria-pressed="false">LOADING</button>
+      <button class="switch" data-state="error" aria-pressed="false">BLOCKED ERROR</button>
+    </div>
+
+    <section class="design-shell">
+      <div class="app-frame">
+        <article class="modal" role="dialog" aria-label="账号详情重新设计">
+          <header class="topbar">
+            <div><span class="sys">ACCOUNT DETAIL</span><span class="pill green hide-error hide-dirty hide-loading">ACTIVE</span><span class="pill amber for-dirty state-panel">UNSAVED</span><span class="pill blue for-loading state-panel">BUSY</span><span class="pill red for-error state-panel">BLOCKED</span></div>
+            <div><span class="top-title">DeepSeek Provider / OpenAI-Compatible</span><span class="sys">detail=openai-compatible:deepseek</span></div>
+            <div><span class="sys">FRAME ACCOUNTS</span><button class="button">ESC CLOSE</button></div>
+          </header>
+
+          <div class="body">
+            <aside class="rail">
+              <section class="section">
+                <div class="eyebrow">Identity Rail</div>
+                <h2 class="account-name">DeepSeek</h2>
+                <label class="field">
+                  <span class="label">账号名称</span>
+                  <input class="input" value="DeepSeek" />
+                </label>
+                <div class="big-status">
+                  <span class="label">最近验证摘要</span>
+                  <strong class="hide-dirty hide-loading hide-error">账号验证成功</strong>
+                  <strong class="for-dirty state-panel">配置已修改</strong>
+                  <strong class="for-loading state-panel"><span class="spinner"></span> 验证中</strong>
+                  <strong class="for-error state-panel">代理配置阻断</strong>
+                  <div class="kv"><b>Model</b><span>deepseek-v4-pro</span></div>
+                  <div class="kv"><b>Current</b><span>deepseek</span></div>
+                  <div class="kv"><b>Last</b><span class="hide-loading hide-error">2026-06-04 16:20</span><span class="for-loading state-panel">pending...</span><span class="for-error state-panel">—</span></div>
+                </div>
+                <div class="metric-grid">
+                  <div class="metric"><span class="label">Models</span><data>2/18</data></div>
+                  <div class="metric"><span class="label">Headers</span><data>2</data></div>
+                  <div class="metric"><span class="label">Proxy</span><data class="hide-error">Pool</data><data class="for-error state-panel">Bad</data></div>
+                  <div class="metric"><span class="label">Rules</span><data>3</data></div>
+                </div>
+              </section>
+
+              <section class="section compact">
+                <div class="eyebrow">Source + Ownership</div>
+                <div class="kv"><b>Endpoint</b><span>Draft → Wails save</span></div>
+                <div class="kv"><b>Verify</b><span>ProviderVerifyState</span></div>
+                <div class="kv"><b>Models</b><span>Remote / Local / Preset</span></div>
+                <div class="kv"><b>Rate</b><span>Sidecar rules</span></div>
+              </section>
+
+              <section class="section compact">
+                <div class="eyebrow">Route Snapshot</div>
+                <div class="kv"><b>Mode</b><span class="hide-error">Pool node</span><span class="for-error state-panel">Custom URL</span></div>
+                <div class="kv"><b>Node</b><span class="hide-error">Tokyo-01 / 42ms</span><span class="for-error state-panel">custom://</span></div>
+                <div class="notice red for-error state-panel">Proxy URL 无效，保存按钮必须禁用。</div>
+              </section>
+            </aside>
+
+            <main class="main">
+              <section class="module">
+                <div class="module-head">
+                  <div><div class="eyebrow">01 / Endpoint</div><h2>连接基础配置</h2><p class="module-desc">首屏主任务：base URL 与 API Key。验证会读取当前 draft，但不会自动保存。</p></div>
+                  <span class="pill amber for-dirty state-panel">2 fields changed</span><span class="pill green hide-dirty hide-loading hide-error">saved</span>
+                </div>
+                <div class="form-grid">
+                  <label class="field"><span class="label">Base URL</span><input class="input" value="https://api.deepseek.com/v1" /></label>
+                  <label class="field"><span class="label">API Key</span><input class="input" value="sk-••••••••••••••••" /></label>
+                </div>
+                <div class="notice" style="margin-top:12px">Preset 可继续提供 notes 与 consoleUrl，但不再挤在顶部 header；它属于 endpoint 模块的辅助说明。</div>
+              </section>
+
+              <section class="module">
+                <div class="module-head">
+                  <div><div class="eyebrow">02 / HTTP Headers</div><h2>自定义请求头</h2><p class="module-desc">默认折叠成摘要；有内容或用户展开时显示 textarea。</p></div>
+                  <button class="button">展开 / 收起</button>
+                </div>
+                <div class="headers-row">
+                  <textarea class="textarea">HTTP-Referer: https://gettokens.local
+X-Title: GetTokens Workbench</textarea>
+                  <div class="source-card"><div class="label">Parse status</div><div style="margin-top:8px"><span class="pill green hide-error">2 headers</span><span class="pill red for-error state-panel">bad header</span></div><p class="module-desc">错误只提示解析问题，不替代后端验证。</p></div>
+                </div>
+              </section>
+
+              <section class="module">
+                <div class="module-head">
+                  <div><div class="eyebrow">03 / Model Catalog</div><h2>模型目录与别名映射</h2><p class="module-desc">把本地草稿与远端候选放在同一张表中，避免“拉取远端模型”与“使用远端模型”的动作脱节。</p></div>
+                  <div class="model-toolbar"><span class="pill blue for-loading state-panel">fetching</span><span class="pill green hide-loading hide-error">remote ready</span><button class="button">拉取远端模型</button><button class="button primary">使用远端模型</button></div>
+                </div>
+                <div class="source-card">
+                  <div class="inline"><div><span class="label">当前候选来源</span><div class="title" style="margin-top:6px;font-weight:1000">远端模型已拉取，尚未全部应用</div></div><span class="pill blue">remote / local compare</span></div>
+                </div>
+                <div class="model-table">
+                  <div class="model-row header"><div>Local model</div><div>Alias / Display</div><div>Action</div></div>
+                  <div class="model-row"><div><input value="deepseek-v4-pro"></div><div><input value="DeepSeek V4 Pro"></div><div><button class="button danger">删除</button></div></div>
+                  <div class="model-row"><div><input value="deepseek-v4-flash"></div><div><input value="DeepSeek V4 Flash"></div><div><button class="button danger">删除</button></div></div>
+                  <div class="model-row"><div><input value=""></div><div><input value=""></div><div><button class="button">新增</button></div></div>
+                </div>
+                <div class="remote-drawer hide-error">
+                  <div><span class="label">Remote delta</span><p class="module-desc" style="margin:6px 0 0">远端返回 18 个模型，其中 2 个已在本地，16 个可追加。应用前用户可审阅，不自动覆盖别名。</p></div>
+                  <button class="button primary">Review & Apply</button>
+                </div>
+                <div class="notice red for-error state-panel" style="margin-top:12px">远端模型拉取失败：401 unauthorized。保留本地模型列表并允许手动输入验证模型。</div>
+              </section>
+            </main>
+
+            <aside class="inspector">
+              <section class="section">
+                <div class="eyebrow">Run Inspector</div>
+                <h2 class="title" style="margin:0 0 12px;text-transform:uppercase;font-style:italic">连接验证</h2>
+                <div class="chips">
+                  <button class="chip">deepseek-v4-flash</button>
+                  <button class="chip active">deepseek-v4-pro</button>
+                  <button class="chip hide-error">deepseek-reasoner</button>
+                </div>
+                <div class="verify-box" style="margin-top:12px">
+                  <label class="field"><span class="label">测试模型</span><input class="input" value="deepseek-v4-pro" /></label>
+                  <button class="button primary"><span class="hide-loading">验证账号</span><span class="for-loading state-panel">验证中...</span></button>
+                  <div class="notice green hide-dirty hide-loading hide-error">验证成功：当前 draft 可访问该模型。</div>
+                  <div class="notice for-dirty state-panel">当前配置未保存；验证只证明 draft 可用。</div>
+                  <div class="notice red for-error state-panel">验证失败或无法执行：先修复 proxy / endpoint。</div>
+                </div>
+              </section>
+
+              <section class="section compact">
+                <div class="eyebrow">Proxy Route</div>
+                <div class="inline"><span class="pill hide-error">inherit</span><span class="pill green hide-error">pool Tokyo-01</span><span class="pill red for-error state-panel">custom invalid</span></div>
+                <input class="input" style="margin-top:10px" value="socks5://127.0.0.1:7890" />
+                <div class="notice red for-error state-panel" style="margin-top:10px">custom:// 不是有效代理地址。</div>
+              </section>
+
+              <section class="section compact">
+                <div class="eyebrow">Rate Limit Rules</div>
+                <div class="bar"></div>
+                <div class="kv"><b>RPM</b><span>42 / 120</span></div>
+                <div class="kv"><b>TPM</b><span>0.8M / 1.2M</span></div>
+                <div class="kv"><b>Dirty</b><span class="hide-dirty">No</span><span class="for-dirty state-panel">Yes, save with account</span></div>
+                <button class="button" style="margin-top:10px;width:100%">编辑规则</button>
+              </section>
+
+              <section class="section compact">
+                <div class="eyebrow">Evidence Log</div>
+                <div class="kv"><b>Fetch</b><span class="hide-error">18 models / 1.2s</span><span class="for-error state-panel">401 unauthorized</span></div>
+                <div class="kv"><b>Verify</b><span class="hide-loading hide-error">success / 346ms</span><span class="for-loading state-panel">pending</span><span class="for-error state-panel">blocked</span></div>
+                <div class="kv"><b>Save</b><span>not requested</span></div>
+              </section>
+            </aside>
+          </div>
+
+          <footer class="footer">
+            <div class="footer-message">
+              <span class="pill green hide-dirty hide-loading hide-error">READY</span>
+              <span class="pill amber for-dirty state-panel">DIRTY</span>
+              <span class="pill blue for-loading state-panel">BUSY</span>
+              <span class="pill red for-error state-panel">BLOCKED</span>
+              <div>
+                <strong class="hide-dirty hide-loading hide-error">账号验证成功</strong>
+                <strong class="for-dirty state-panel">存在未保存更改</strong>
+                <strong class="for-loading state-panel">正在处理请求</strong>
+                <strong class="for-error state-panel">保存被阻断</strong>
+                <span class="hide-dirty hide-loading hide-error">最近验证可用；可继续保存或关闭。</span>
+                <span class="for-dirty state-panel">Endpoint、headers、models 或 rate-limit 已修改，保存后写入 Wails/sidecar。</span>
+                <span class="for-loading state-panel">验证/拉取/保存期间不清空已有数据。</span>
+                <span class="for-error state-panel">proxyRouteError 优先级最高：修复代理地址后才能保存。</span>
+              </div>
+            </div>
+            <div class="actions">
+              <button class="button primary save-normal">保存更改</button>
+              <button class="button save-error" disabled>保存不可用</button>
+              <button class="button">放弃操作</button>
+            </div>
+          </footer>
+        </article>
+      </div>
+    </section>
+
+    <section class="callouts">
+      <article class="callout"><h3>交互重构 01：状态不再散落</h3><p>验证摘要从右上角小卡移到左侧 Identity Rail；运行操作集中到右侧 Run Inspector。用户扫一眼左右两栏就能判断“这个账号是谁、现在能不能用、为什么不能保存”。</p></article>
+      <article class="callout"><h3>交互重构 02：模型目录变成工作表</h3><p>现有模型、本地别名、远端候选、应用动作合并到一个表格语境中，避免“拉取远端模型”按钮和模型行编辑彼此割裂。</p></article>
+      <article class="callout"><h3>交互重构 03：底部是唯一保存门禁</h3><p>footer 只做一件事：解释当前是否能保存以及为什么。优先级保持现有业务：proxyRouteError > rateLimitDirty > verifyState.message > idle。</p></article>
+    </section>
+  </main>
+  <script>
+    const buttons = [...document.querySelectorAll('.switch')];
+    const body = document.body;
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const state = button.dataset.state;
+        body.className = `status-${state}`;
+        buttons.forEach((item) => item.setAttribute('aria-pressed', String(item === button)));
+      });
+    });
+  </script>
+</body>
+</html>

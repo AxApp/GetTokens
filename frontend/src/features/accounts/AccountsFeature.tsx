@@ -15,6 +15,7 @@ import {
   ListRateLimitRules,
   ListRelaySupportedModels,
   PreviewDeepLinkImport,
+  UpdateOpenAICompatibleProvider,
   UpdateRateLimitRule,
   VerifyOpenAICompatibleProvider,
 } from "../../../wailsjs/go/main/App";
@@ -34,7 +35,6 @@ import AccountsToolbar, {
 import ApiKeyComposeModal from "./components/ApiKeyComposeModal";
 import CodexOAuthModal from "./components/CodexOAuthModal";
 import OpenAICompatibleComposeModal from "./components/OpenAICompatibleComposeModal";
-import OpenAICompatibleDetailModal from "./components/OpenAICompatibleDetailModal";
 import UnifiedComposeModal, {
   type UnifiedComposeFormState,
 } from "./components/UnifiedComposeModal";
@@ -45,7 +45,10 @@ import { getAccountsPreviewRelayModelNames } from "./previewData";
 import { isCodexAuthFile } from "./model/accountPresentation";
 import { readAccountClipboardFallback } from "./model/accountClipboard";
 import { findAccountDetailByID } from "./model/accountDetailSelection";
-import { buildRelayModelProviderSignature } from "./model/apiKeyModelCatalog";
+import {
+  buildRelayModelProviderSignature,
+  normalizeAPIKeyModelNames,
+} from "./model/apiKeyModelCatalog";
 import useGroupCardHeights from "./hooks/useGroupCardHeights";
 import {
   buildAccountDetailFrameHash,
@@ -80,6 +83,11 @@ import { toggleAccountGroupSelection } from "./model/accountSelection";
 import type { OpenAICompatibleProvider } from "./model/openAICompatible";
 import type { VendorPreset } from "./model/vendorPresets";
 import { emptyApiKeyForm } from "./model/accountConfig";
+import {
+  normalizeApiKeyConfigModels,
+  normalizeCurlVariables,
+  type ApiKeyConfigDraft,
+} from "./model/accountDetailConfig";
 import type { AccountImportPayloadItem } from "./model/accountTransfer";
 import { toErrorMessage } from "../../utils/error";
 
@@ -225,6 +233,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     );
 
   const [relayModelNames, setRelayModelNames] = useState<string[]>([]);
+  const [accountModelNamesByID, setAccountModelNamesByID] = useState<Record<string, string[]>>({});
   const loadRelayModelNames = useCallback(
     async (isCancelled: () => boolean = () => false) => {
       if (!hasWailsAppBindings()) {
@@ -249,7 +258,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const openAICompatibleState = useOpenAICompatibleState({
     ready,
-    t,
     trackRequest,
   });
   const relayModelProviderSignature = useMemo(
@@ -497,25 +505,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     }
     const account = findAccountDetailByID(accounts, accountDetailIDFromHash);
     if (account) {
-      if (isOpenAICompatibleAccount(account)) {
-        const provider = openAICompatibleState.providers.find(
-          (item) =>
-            item.accountKey === account.id ||
-            item.name.trim().toLowerCase() ===
-              account.provider.trim().toLowerCase(),
-        );
-        if (provider) {
-          openAICompatibleState.openDetailModal(provider);
-          return;
-        }
-      }
       setSelectedAccount(account);
     }
   }, [
     accountDetailIDFromHash,
     accounts,
-    openAICompatibleState.openDetailModal,
-    openAICompatibleState.providers,
     selectedAccount?.id,
     setSelectedAccount,
   ]);
@@ -651,25 +645,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const openAccountDetail = useCallback(
     (account: AccountRecord) => {
-      if (isOpenAICompatibleAccount(account)) {
-        const providerName = account.provider.trim().toLowerCase();
-        const provider = openAICompatibleState.providers.find(
-          (item) =>
-            item.accountKey === account.id ||
-            item.name.trim().toLowerCase() === providerName ||
-            item.name.trim().toLowerCase() ===
-              account.provider.trim().toLowerCase(),
-        );
-        if (provider) {
-          openAICompatibleState.openDetailModal(provider);
-          markAccountDetailInHash(account.id);
-          return;
-        }
-      }
       setSelectedAccount(account);
       markAccountDetailInHash(account.id);
     },
-    [markAccountDetailInHash, openAICompatibleState, setSelectedAccount],
+    [markAccountDetailInHash, setSelectedAccount],
   );
 
   const closeAccountDetail = useCallback(() => {
@@ -788,20 +767,140 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
 
   const openOpenAICompatibleDetail = useCallback(
     (provider: OpenAICompatibleProvider) => {
-      openAICompatibleState.openDetailModal(provider);
-      markAccountDetailInHash(provider.accountKey || provider.name);
+      const providerAccount = findOpenAICompatibleAccountForProvider(
+        accounts,
+        provider,
+      );
+      if (!providerAccount) {
+        return;
+      }
+      setSelectedAccount(providerAccount);
+      markAccountDetailInHash(providerAccount.id);
     },
-    [markAccountDetailInHash, openAICompatibleState],
+    [accounts, markAccountDetailInHash, setSelectedAccount],
   );
-
-  const closeOpenAICompatibleDetail = useCallback(() => {
-    openAICompatibleState.closeDetailModal();
-    clearAccountDetailInHash();
-  }, [clearAccountDetailInHash, openAICompatibleState]);
 
   const selectedAccountIsCodexAPIKey = selectedAccount
     ? isCodexAPIKeyAccount(selectedAccount)
     : false;
+  const selectedAccountCanSaveApiConfig = selectedAccount?.credentialSource === "api-key";
+
+  const saveSelectedApiLikeConfig = useCallback(
+    async (draft: ApiKeyConfigDraft) => {
+      if (!selectedAccount || selectedAccount.credentialSource !== "api-key") {
+        return;
+      }
+      if (isCodexAPIKeyAccount(selectedAccount)) {
+        await updateSelectedApiKeyConfig(draft);
+        return;
+      }
+      if (!isOpenAICompatibleAccount(selectedAccount)) {
+        return;
+      }
+
+      const nextAPIKey = draft.apiKey.trim();
+      const nextBaseURL = draft.baseUrl.trim();
+      const nextPrefix = draft.prefix.trim();
+      const nextQuotaCurl = draft.quotaCurl.trim();
+      const nextBillingCurl = draft.billingCurl.trim();
+      const nextPlatformCookie = (draft.platformCookie ?? "").trim();
+      const nextCurlVariables = normalizeCurlVariables(draft.curlVariables, nextPlatformCookie);
+      const nextProxyURL = draft.proxyUrl.trim();
+      const nextModels = normalizeApiKeyConfigModels(draft.models);
+      const nextLabel = draft.label.trim();
+      const nextAPIKeys = selectedAccount.apiKeys && selectedAccount.apiKeys.length > 0
+        ? [nextAPIKey, ...selectedAccount.apiKeys.slice(1)].filter(Boolean)
+        : nextAPIKey
+          ? [nextAPIKey]
+          : [];
+
+      if (!nextAPIKey) {
+        setDeleteError(`SAVE ERROR: ${t("accounts.api_key_required")}`);
+        return;
+      }
+
+      if (!hasWailsAppBindings()) {
+        setSelectedAccount((prev) =>
+          prev
+            ? {
+                ...prev,
+                displayName: nextLabel || prev.displayName,
+                provider: nextLabel || prev.provider,
+                apiKey: nextAPIKey,
+                apiKeys: nextAPIKeys,
+                baseUrl: nextBaseURL,
+                prefix: nextPrefix,
+                quotaCurl: nextQuotaCurl,
+                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+                billingCurl: nextBillingCurl,
+                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                platformCookie: nextPlatformCookie,
+                curlVariables: nextCurlVariables,
+                proxyUrl: nextProxyURL,
+                models: nextModels,
+              }
+            : prev,
+        );
+        return;
+      }
+
+      try {
+        await trackRequest(
+          "UpdateOpenAICompatibleProvider",
+          { id: selectedAccount.id, baseUrl: nextBaseURL, models: nextModels },
+          () =>
+            UpdateOpenAICompatibleProvider(
+              main.UpdateOpenAICompatibleProviderInput.createFrom({
+                currentName: selectedAccount.id.startsWith("acct_") ? selectedAccount.id : selectedAccount.provider,
+                name: nextLabel || selectedAccount.provider,
+                baseUrl: nextBaseURL,
+                prefix: nextPrefix,
+                proxyUrl: nextProxyURL,
+                apiKey: nextAPIKey,
+                apiKeys: nextAPIKeys,
+                quotaCurl: nextQuotaCurl,
+                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+                billingCurl: nextBillingCurl,
+                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                platformCookie: nextPlatformCookie,
+                curlVariables: nextCurlVariables,
+                headers: selectedAccount.headers || {},
+                models: nextModels,
+                modelFetchApiKey: selectedAccount.modelFetchApiKey || "",
+                modelFetchBaseUrl: selectedAccount.modelFetchBaseUrl || "",
+              }),
+            ),
+        );
+        setSelectedAccount((prev) =>
+          prev
+            ? {
+                ...prev,
+                displayName: nextLabel || prev.displayName,
+                provider: nextLabel || prev.provider,
+                apiKey: nextAPIKey,
+                apiKeys: nextAPIKeys,
+                baseUrl: nextBaseURL,
+                prefix: nextPrefix,
+                quotaCurl: nextQuotaCurl,
+                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+                billingCurl: nextBillingCurl,
+                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+                platformCookie: nextPlatformCookie,
+                curlVariables: nextCurlVariables,
+                proxyUrl: nextProxyURL,
+                models: nextModels,
+              }
+            : prev,
+        );
+        await loadAccounts({ refreshSupplementalData: false });
+      } catch (error) {
+        console.error(error);
+        setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
+        throw error;
+      }
+    },
+    [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, t, trackRequest, updateSelectedApiKeyConfig],
+  );
 
   const resolveLocalCliMappingsForAccount = useCallback(
     (account: AccountRecord) =>
@@ -1289,18 +1388,55 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                 selectedAccount,
                 relayModelNames,
               )}
+              localModelNames={relayModelNames}
+              cachedModelNames={accountModelNamesByID[selectedAccount.id] ?? []}
               onClose={closeAccountDetail}
               onRename={
                 selectedAccountIsCodexAPIKey ? renameSelectedApiKey : undefined
               }
               onSaveConfig={
-                selectedAccountIsCodexAPIKey
-                  ? (draft) => updateSelectedApiKeyConfig(draft)
+                selectedAccountCanSaveApiConfig
+                  ? (draft) => saveSelectedApiLikeConfig(draft)
                   : undefined
               }
               onVerify={
                 selectedAccountIsCodexAPIKey
                   ? (input) => void verifySelectedApiKey(input)
+                  : undefined
+              }
+              onFetchModels={
+                selectedAccountCanSaveApiConfig
+                  ? async (input) => {
+                      if (!hasWailsAppBindings()) {
+                        const previewModels = normalizeAPIKeyModelNames(
+                          (selectedAccount.models ?? []).map((model) => model.name),
+                        );
+                        setAccountModelNamesByID((prev) => ({
+                          ...prev,
+                          [selectedAccount.id]: previewModels,
+                        }));
+                        return {
+                          models: previewModels,
+                          message: `PREVIEW MODELS / ${previewModels.length}`,
+                        };
+                      }
+                      const result = await FetchOpenAICompatibleProviderModels(
+                        main.FetchOpenAICompatibleProviderModelsInput.createFrom(input),
+                      );
+                      const fetchedModels = normalizeAPIKeyModelNames(
+                        (result.models ?? [])
+                          .map((model) => model.name)
+                          .filter(Boolean),
+                      );
+                      setAccountModelNamesByID((prev) => ({
+                        ...prev,
+                        [selectedAccount.id]: fetchedModels,
+                      }));
+                      return {
+                        models: fetchedModels,
+                        message: result.message ?? "",
+                      };
+                    }
                   : undefined
               }
               onTestQuotaCurl={
@@ -1332,60 +1468,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               }
               onCancelReauth={cancelCodexOAuth}
               isReauthing={oauthPendingAccountID === selectedAccount.id}
-            />
-          ) : null}
-
-          {openAICompatibleState.detailDraft ? (
-            <OpenAICompatibleDetailModal
-              t={t}
-              draft={openAICompatibleState.detailDraft}
-              rateLimitStatus={
-                accountRateLimitByID[
-                  openAICompatibleState.detailDraft.accountKey ||
-                    openAICompatibleState.detailDraft.currentName
-                ]
-              }
-              rateLimitStrategies={rateLimitStrategies}
-              rateLimitRulesAPI={
-                previewMode
-                  ? undefined
-                  : {
-                      list: ListRateLimitRules,
-                      create: CreateRateLimitRule,
-                      update: UpdateRateLimitRule,
-                      delete: DeleteRateLimitRule,
-                    }
-              }
-              verifyState={
-                openAICompatibleState.verifyStates[
-                  openAICompatibleState.detailDraft.currentName
-                ] ?? {
-                  model: openAICompatibleState.detailDraft.verifyModel,
-                  status: "idle",
-                  message: "",
-                  lastVerifiedAt: null,
-                }
-              }
-              remoteModelsState={
-                openAICompatibleState.remoteModelsStates[
-                  openAICompatibleState.detailDraft.currentName
-                ]
-              }
-              error={openAICompatibleState.detailError}
-              saving={openAICompatibleState.detailSaving}
-              onClose={closeOpenAICompatibleDetail}
-              onChange={openAICompatibleState.setDetailDraft}
-              onSave={openAICompatibleState.saveDetail}
-              onVerify={() => void openAICompatibleState.verifyDetail()}
-              onFetchModels={() =>
-                void openAICompatibleState.fetchDetailModels()
-              }
-              onApplyFetchedModels={
-                openAICompatibleState.applyFetchedModelsToDetailDraft
-              }
-              onRateLimitRulesChanged={() =>
-                void loadAccountRateLimits(usageAccounts)
-              }
             />
           ) : null}
 
@@ -1612,6 +1694,23 @@ function isOpenAICompatibleAccount(
   account: Pick<AccountRecord, "accountKind" | "id">,
 ): boolean {
   return account.accountKind === "openai-compatible";
+}
+
+function findOpenAICompatibleAccountForProvider(
+  accounts: AccountRecord[],
+  provider: OpenAICompatibleProvider,
+): AccountRecord | null {
+  const providerAccountKey = String(provider.accountKey || "").trim();
+  const providerName = String(provider.name || "").trim().toLowerCase();
+  return accounts.find((account) => {
+    if (!isOpenAICompatibleAccount(account)) {
+      return false;
+    }
+    if (providerAccountKey && account.id === providerAccountKey) {
+      return true;
+    }
+    return String(account.provider || "").trim().toLowerCase() === providerName;
+  }) ?? null;
 }
 
 function isCodexAPIKeyAccount(

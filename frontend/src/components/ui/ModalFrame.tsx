@@ -1,8 +1,9 @@
-import type { CSSProperties, MouseEvent, ReactNode } from 'react';
+import type { CSSProperties, HTMLAttributes, MouseEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 type ModalFrameSize = 'sm' | 'md' | 'lg' | 'xl' | 'detail';
 type ModalFramePosition = 'fixed' | 'absolute';
+type ModalFramePanelAttributes = HTMLAttributes<HTMLDivElement> & Record<`data-${string}`, string | undefined>;
 
 interface ModalFrameProps {
   children: ReactNode;
@@ -20,6 +21,7 @@ interface ModalFrameProps {
   headerClassName?: string;
   bodyClassName?: string;
   footerClassName?: string;
+  panelAttributes?: ModalFramePanelAttributes;
   portal?: boolean;
   zIndexClassName?: string;
   coverViewport?: boolean;
@@ -54,6 +56,7 @@ export default function ModalFrame({
   headerClassName = 'px-6 py-5',
   bodyClassName = '',
   footerClassName = '',
+  panelAttributes,
   portal = false,
   zIndexClassName = 'z-50',
   coverViewport = false,
@@ -87,6 +90,7 @@ export default function ModalFrame({
       onClick={handleBackdropClick}
     >
       <div
+        {...panelAttributes}
         data-design-system-component="true"
         data-design-system-component-name="ModalFrame"
         role="dialog"

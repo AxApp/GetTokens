@@ -158,3 +158,43 @@ Score: <0-20> / 20
 - 可跨模块复用且与本 skill 同域：更新本 skill，不新增相似 frontend skill。
 - 明显不同域：再新增独立 skill。
 - repo-wide 长期治理规则：再同步 `AGENTS.md`，不要把一次性偏好升级为全局规则。
+
+### 4.4 Live/detail surface consistency rule
+
+当同一页面存在“总览 / 选中项详情 / 项目维度 / 会话维度”等多个状态时，先识别这些状态是否展示同一类内容模块；如果是同类模块，必须共用同一套外壳和行样式，而不是只修用户刚指出的单个实例。
+
+适用模块：趋势图、请求时间线、请求列表、项目/会话列表、summary cards、详情卡片。
+
+执行顺序：
+1. 找出同类模块的所有入口：overview、selected detail、project view、empty/single/many rows。
+2. 先统一组件职责和外壳：border、background、shadow、header 分隔、content padding、scroll container。
+3. 再统一行级样式：选中态、hover、metric pill、空态、单条数据高度。
+4. 避免“外层旧 wrapper + 内部新组件”导致双重卡片或两套视觉语言。
+5. 单条数据不应被固定 `min-height` 撑成大空白；列表高度应由内容自然增长，再用 `max-height` 控制滚动。
+6. 浏览器验收至少覆盖：overview、选中项、单条数据、多条数据；截图写入对应 space。
+
+常见反例：
+- 只把 selected detail 图表改成新样式，overview 图表仍是旧样式。
+- 请求列表和请求时间线在同页使用不同外壳。
+- 项目行点击改变左侧列表结构，导致用户预期的“选择后右侧汇总”变成“下钻”。
+- 控制维度放到全局 sidebar，实际应放在页面 header / workspace header 的局部控制区。
+
+### 4.5 Unified detail module rail rule
+
+当详情页采用左侧 rail + 右侧内容的 band layout 时，模块显隐控制只能有一个权威入口；如果左侧 rail 已经提供 checkbox / tab / switch，子模块 header 内不得重复提供同义 enabled 控件。
+
+适用模块：账号详情 Balance/Quota/Billing、可选配置模块、调试详情中的开关型子模块。
+
+执行顺序：
+1. 先定义外层模块状态枚举，例如 `quota-billing / quota-only / billing-only / empty`，而不是用多个布尔值在 JSX 中交叉短路。
+2. 左侧 rail 控制模块是否渲染；取消模块后对应子 section 必须完全不输出，而不是 disabled 或空壳继续占位。
+3. 只剩一个模块时，该模块使用单模块形态占满内容区；两个模块时才进入左右等分或上下分栏。
+4. 子模块 header 只保留模块内动作，例如编辑、测试、刷新；不再重复显隐开关。
+5. 嵌套子模块 header 使用紧凑 title/action row：左侧 title/meta，右侧 actions，避免 eyebrow、title、meta、actions 分散成多行碎片。
+6. 共享组件复用到详情页时，需要显式关闭卡片列表语义的装饰线（例如 card row divider），避免把账号卡的分隔线带进详情内容区。
+
+常见反例：
+- 左侧 rail 有“额度模块”，Quota header 里又有“启用额度”。
+- 取消额度模块后仍渲染 Quota 空壳，只是 checkbox 变成未选中。
+- 只剩余额模块时仍保留两栏布局或左侧空列。
+- 把账号卡中的 quota row divider 原样复用到详情页，导致模块内部多一条虚线。

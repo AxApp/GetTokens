@@ -3,15 +3,13 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout.ts';
 import { findAccountDetailByID } from '../model/accountDetailSelection.ts';
+import { normalizeQuotaTestDisplay } from '../model/accountQuota.ts';
 
 test('account detail no longer mounts runtime evidence overview sections', async () => {
   const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
-  const openAICompatibleSource = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(unifiedSource, /AccountDetailOverviewGrid/);
-  assert.doesNotMatch(openAICompatibleSource, /AccountDetailOverviewGrid/);
   assert.doesNotMatch(unifiedSource, /AccountRuntimeEvidenceSection/);
-  assert.doesNotMatch(openAICompatibleSource, /AccountRuntimeEvidenceSection/);
 });
 
 test('account detail frame uses the fullscreen detail modal shell', async () => {
@@ -45,28 +43,91 @@ test('auth-file summary keeps raw content hidden and retains model catalog', asy
 
 test('runtime quota rows use a full-width visible progress track', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const quotaModelSource = await readFile(new URL('../model/accountQuota.ts', import.meta.url), 'utf8');
 
-  assert.match(source, /<QuotaBars quotaDisplay=\{quotaDisplay\} t=\{t\} \/>/);
+  assert.match(source, /normalizeQuotaTestDisplay\(testResult\)/);
+  assert.match(source, /<QuotaBars quotaDisplay=\{visibleQuotaDisplay\} t=\{t\} showDivider=\{false\} \/>/);
+  assert.match(quotaModelSource, /export function normalizeQuotaTestDisplay/);
+  assert.match(quotaModelSource, /status: 'success'/);
   assert.doesNotMatch(source, /data-account-quota-progress-track/);
   assert.doesNotMatch(source, /data-account-quota-progress-fill/);
 });
 
-test('api key credential, verify, and proxy route stack vertically in one module', async () => {
+test('quota curl test result normalizes returned windows for detail quota bars', () => {
+  const display = normalizeQuotaTestDisplay({
+    planType: 'PRO',
+    windows: [
+      {
+        id: 'one-hour',
+        label: '1H',
+        remainingPercent: 77.4,
+        usedTokens: 2260,
+        limitTokens: 10000,
+        resetAtUnix: 1800000000,
+      },
+    ],
+  });
+
+  assert.equal(display?.status, 'success');
+  assert.equal(display?.planType, 'PRO');
+  assert.equal(display?.windows.length, 1);
+  assert.equal(display?.windows[0].remainingPercent, 77);
+  assert.equal(display?.windows[0].usedLabel, '23%');
+  assert.equal(display?.windows[0].usedTokens, 2260);
+  assert.equal(display?.windows[0].limitTokens, 10000);
+  assert.equal(display?.windows[0].resetAtUnix, 1800000000);
+});
+
+test('api key credential module uses left-right credential and connection layout', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
 
   assert.match(source, /export function AccountCredentialVerifySection/);
-  assert.match(source, /data-account-credential-verify-layout="vertical"/);
-  assert.match(source, /data-account-credential-fields="stacked"/);
+  assert.match(source, /data-account-credential-verify-layout="v09-split"/);
+  assert.match(source, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
+  assert.match(source, /data-account-credential-left-pane="credential-connection"/);
+  assert.match(source, /data-account-credential-right-pane="route"/);
+  assert.match(source, /lg:border-l-2/);
+  assert.match(source, /data-account-credential-fields="balanced-grid"/);
+  assert.match(source, /label="账号名称"/);
   assert.match(source, /data-account-credential-field-label="above"/);
   assert.doesNotMatch(source, /data-account-credential-field-label="embedded"/);
   assert.match(source, /data-account-credential-list-item="credential"/);
   assert.match(source, /data-account-credential-list-item="connection"/);
   assert.match(source, /data-account-credential-list-item="proxy-route"/);
+  assert.ok(
+    source.indexOf('data-account-credential-left-pane="credential-connection"') < source.indexOf('<VerifyConnectionPanel'),
+    'connection short-message panel should be in the left credential module',
+  );
+  assert.ok(
+    source.indexOf('data-account-credential-right-pane="route"') < source.indexOf('<CredentialProxyRoutePanel'),
+    'right pane should only own the route panel',
+  );
   assert.match(modalSource, /<AccountCredentialVerifySection[\s\S]*?span="wide"/);
   assert.doesNotMatch(source, /export function AccountCredentialsSection/);
   assert.doesNotMatch(source, /export function AccountVerifySection/);
-  assert.doesNotMatch(source, /xl:grid-cols-\[minmax\(0,1\.15fr\)_minmax\(0,0\.85fr\)\]/);
+  assert.doesNotMatch(source, /data-account-credential-verify-layout="v09-low-nesting"/);
+});
+
+test('credential module edits account name before credential secrets', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const configSource = await readFile(new URL('../model/accountDetailConfig.ts', import.meta.url), 'utf8');
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const credentialBlock = source.match(/<div data-account-credential-fields="balanced-grid"[\s\S]*?<\/div>\n\s*<\/section>/)?.[0] ?? '';
+
+  assert.match(configSource, /label: string;/);
+  assert.match(configSource, /label: account\.displayName \?\? ""/);
+  assert.match(configSource, /current\.label !== draft\.label/);
+  assert.match(credentialBlock, /label="账号名称"[\s\S]*label="API 密钥"/);
+  assert.ok(
+    credentialBlock.indexOf('label="账号名称"') < credentialBlock.indexOf('label="API 密钥"'),
+    'account name should be edited before API key in the credential module',
+  );
+  assert.match(actionsSource, /const nextLabel = draft\.label\.trim\(\)/);
+  assert.match(actionsSource, /UpdateCodexAPIKeyLabel/);
+  assert.match(featureSource, /const nextLabel = draft\.label\.trim\(\)/);
+  assert.match(featureSource, /name: nextLabel \|\| selectedAccount\.provider/);
 });
 
 test('browser preview account detail uses local detail data without Wails bindings', async () => {
@@ -84,7 +145,7 @@ test('browser preview account detail uses local detail data without Wails bindin
 test('account detail preserves api-key edit modules', () => {
   assert.deepEqual(
     buildAccountDetailModulePlan({ credentialSource: 'api-key' }),
-    ['credentials', 'rate-limit', 'quota', 'billing'],
+    ['credentials', 'models', 'rate-limit', 'quota', 'billing'],
   );
 });
 
@@ -156,21 +217,28 @@ test('quota and billing curl editors are modal draft editors without local save 
   assert.doesNotMatch(modalSource, /保存模板/);
 });
 
-test('quota and billing test actions live in section headers', async () => {
+test('quota and billing script controls live in section headers', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountBillingSection/)?.[0] ?? '';
   const billingBlock = source.match(/export function AccountBillingSection[\s\S]*?\nfunction RuntimeKV/)?.[0] ?? '';
+  const quotaActionsBlock = quotaBlock.match(/const quotaActions = \([\s\S]*?\n  \);/)?.[0] ?? '';
   const billingActionsBlock = billingBlock.match(/const billingActions = \([\s\S]*?\n  \);/)?.[0] ?? '';
 
   assert.match(quotaBlock, /actions=\{quotaActions\}/);
   assert.match(quotaBlock, /const quotaActions = \(/);
   assert.match(billingBlock, /actions=\{billingActions\}/);
   assert.match(billingBlock, /const billingActions = \(/);
+  assert.match(quotaActionsBlock, /编辑脚本/);
+  assert.match(billingActionsBlock, /编辑脚本/);
+  assert.doesNotMatch(quotaActionsBlock, /启用额度/);
+  assert.doesNotMatch(billingActionsBlock, /启用余额/);
+  assert.doesNotMatch(quotaActionsBlock, /quotaEnabled: event\.target\.checked/);
+  assert.doesNotMatch(billingActionsBlock, /billingEnabled: event\.target\.checked/);
   assert.doesNotMatch(quotaBlock, /<div className="flex flex-wrap items-center gap-2">\s*<button onClick=\{runQuotaTest\}/);
   assert.doesNotMatch(billingBlock, /<div className="flex flex-wrap items-center gap-2">\s*<button onClick=\{runBillingTest\}/);
   assert.ok(
-    billingActionsBlock.indexOf('onClick={runBillingTest}') < billingActionsBlock.indexOf('onClick={openEditor}'),
-    'billing add button should be the rightmost header action',
+    quotaActionsBlock.indexOf('编辑脚本') < quotaActionsBlock.indexOf('onClick={runQuotaTest}'),
+    'quota edit control should be before the test action in the header',
   );
 });
 
@@ -178,24 +246,45 @@ test('quota and billing detail share empty-state and script-card structure', asy
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountBillingSection/)?.[0] ?? '';
   const billingBlock = source.match(/export function AccountBillingSection[\s\S]*?\nfunction RuntimeKV/)?.[0] ?? '';
-  const billingActionsBlock = billingBlock.match(/const billingActions = \([\s\S]*?\n  \);/)?.[0] ?? '';
 
   assert.match(quotaBlock, /const hasQuotaScript = draft\.quotaCurl\.trim\(\)\.length > 0/);
   assert.match(quotaBlock, /<AccountDetailEmptyState/);
   assert.match(quotaBlock, /暂无额度脚本/);
   assert.match(quotaBlock, /\{hasQuotaScript \? \(/);
+  assert.doesNotMatch(quotaBlock, /justify-between gap-3/);
   assert.match(billingBlock, /const hasBillingScript = draft\.billingCurl\.trim\(\)\.length > 0/);
   assert.match(billingBlock, /const liveBalances = liveBilling\?\.isAvailable \? liveBilling\.balances : \[\]/);
   assert.match(billingBlock, /<AccountDetailEmptyState/);
   assert.match(billingBlock, />\s*添加\s*<\/button>/);
   assert.match(billingBlock, /\{hasBillingScript \? \(/);
-  assert.doesNotMatch(billingActionsBlock, /编辑脚本/);
+  assert.doesNotMatch(billingBlock, /justify-between gap-3/);
+});
+
+test('quota script preview uses a fixed two-line readable height', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const quotaBlock = source.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountBillingSection/)?.[0] ?? '';
+
+  assert.match(quotaBlock, /data-account-quota-script-preview="two-line"/);
+  assert.match(quotaBlock, /min-h-\[2\.75rem\]/);
+  assert.match(quotaBlock, /line-clamp-2/);
+  assert.doesNotMatch(quotaBlock, /<div className="truncate font-mono[^"]*" title=\{draft\.quotaCurl \|\| undefined\}>/);
+});
+
+test('quota split layout removes quota window divider and stretches script card', async () => {
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const cardSectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(cardSectionsSource, /showDivider = true/);
+  assert.match(cardSectionsSource, /showDivider \? 'border-b border-dashed border-\[var\(--border-color\)\]' : ''/);
+  assert.match(sectionSource, /<QuotaBars quotaDisplay=\{visibleQuotaDisplay\} t=\{t\} showDivider=\{false\} \/>/);
+  assert.match(sectionSource, /grid-rows-\[auto_minmax\(0,1fr\)\]/);
+  assert.match(sectionSource, /const quotaScriptCardClassName = layoutMode === 'split'/);
+  assert.match(sectionSource, /grid h-full min-h-\[8\.75rem\] content-start gap-3/);
 });
 
 test('runtime evidence section is removed from account detail surfaces', async () => {
   const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
   const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
-  const openAICompatibleSource = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
   const storySource = await readFile(new URL('../components/AccountModalComponents.stories.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(sectionSource, /export function AccountRuntimeEvidenceSection/);
@@ -209,11 +298,6 @@ test('runtime evidence section is removed from account detail surfaces', async (
   assert.doesNotMatch(unifiedSource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(unifiedSource, /AccountDetailOverviewGrid/);
   assert.doesNotMatch(unifiedSource, /AccountEvidenceSection/);
-
-  assert.doesNotMatch(openAICompatibleSource, /AccountRuntimeEvidenceSection/);
-  assert.doesNotMatch(openAICompatibleSource, /buildOpenAICompatibleEvidenceRows/);
-  assert.doesNotMatch(openAICompatibleSource, /OpenAICompatibleEvidenceSection/);
-  assert.doesNotMatch(openAICompatibleSource, /AccountDetailOverviewGrid/);
 
   assert.doesNotMatch(storySource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(storySource, /AccountRuntimeSnapshotSection/);
@@ -297,4 +381,356 @@ test('api-key config save has an explicit browser preview path', async () => {
   assert.match(saveBlock, /setSelectedAccount\(\(prev\) =>/);
   assert.match(saveBlock, /quotaCurl: nextQuotaCurl/);
   assert.match(saveBlock, /return;/);
+});
+test('account detail header removes status pill and uses type label for codex auth-file', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /const operationalState = resolveAccountOperationalState/);
+  assert.doesNotMatch(source, /operationalState\.label/);
+  assert.match(source, /function resolveAccountHeaderTypeLabel/);
+  assert.match(source, /return 'CODEX OAUTH'/);
+  assert.match(source, /return 'CODEX API KEY'/);
+  assert.match(source, /return 'OPENAI COMPATIBLE'/);
+  assert.doesNotMatch(source, /resolveAccountPrimaryLabel\(account\)/);
+});
+
+test('account detail verify copy is scoped to sending one short message', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /短消息验证/);
+  assert.match(source, /短消息内容/);
+  assert.match(source, /发送验证/);
+  assert.match(source, /send one short chat message only/);
+  assert.doesNotMatch(source, /验证连接/);
+  assert.doesNotMatch(source, /credential \+ proxy \+ model route/);
+});
+test('account detail footer status copy stays on a single line', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-detail-footer-status="single-line"/);
+  assert.match(source, /whitespace-nowrap/);
+  assert.match(source, /overflow-hidden/);
+  assert.match(source, /text-ellipsis/);
+});
+test('account detail credential fields are plaintext and use balanced grid spacing hooks', async () => {
+  const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-credential-fields="balanced-grid"/);
+  assert.match(source, /data-account-credential-field="plaintext"/);
+  assert.doesNotMatch(source, /type=\{secret \? 'password' : 'text'\}/);
+  assert.doesNotMatch(source, /type="password"/);
+});
+
+test('codex auth-file detail is database config management, not raw file summary', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /账号名称/);
+  assert.match(source, /配置预览/);
+  assert.match(source, /下载配置/);
+  assert.match(source, /应用配置/);
+  assert.match(source, /SQLite account store/);
+  assert.doesNotMatch(source, /文件摘要/);
+  assert.doesNotMatch(source, /脱敏/);
+  assert.doesNotMatch(source, /复制原文/);
+});
+test('account detail proxy route only selects saved proxy nodes', async () => {
+  const source = await readFile(new URL('../components/AccountProxyRouteSection.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /data-account-proxy-route-editor="saved-node-only"/);
+  assert.doesNotMatch(source, /\(\['inherit', 'direct', 'custom'\] as const\)\.map/);
+  assert.doesNotMatch(source, /onModeChange: \(mode: AccountProxyMode\) => void/);
+  assert.match(source, /账号详情只选择已保存的代理池节点/);
+});
+
+test('auth-file compatible model catalog renders source-to-route mapping cards', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const modelGridBlock = source.match(/<div data-account-model-mapping-grid="source-route"[\s\S]*?<datalist id="account-detail-model-source-options">/)?.[0] ?? '';
+
+  assert.match(source, /data-account-model-mapping-grid="source-route"/);
+  assert.match(source, /data-account-model-mapping-card=\{editable \? 'editable' : 'readonly'\}/);
+  assert.match(source, /data-account-model-mapping-input="source"/);
+  assert.match(source, /data-account-model-mapping-input="alias"/);
+  assert.doesNotMatch(source, /data-account-model-default-list="true"/);
+  assert.doesNotMatch(source, /当前账号支持模型<\/div>/);
+  assert.match(source, /import \{ RefreshCw, Trash2 \} from 'lucide-react'/);
+  assert.match(source, /aria-label="拉取模型"/);
+  assert.match(source, /<RefreshCw/);
+  assert.match(source, /填入支持模型/);
+  assert.doesNotMatch(source, />默认模型</);
+  assert.doesNotMatch(source, />Source Model</);
+  assert.doesNotMatch(source, />Alias \/ Route</);
+  assert.match(source, /sourceModelOptionNames/);
+  assert.match(source, /aliasModelOptionNames/);
+  assert.match(source, /import \{ Combobox \} from '..\/..\/..\/components\/ui\/Combobox\.tsx'/);
+  assert.match(source, /data-account-model-mapping-input="source"[\s\S]*<Combobox[\s\S]*options=\{sourceModelOptionNames\}/);
+  assert.match(source, /data-account-model-mapping-input="alias"[\s\S]*<Combobox[\s\S]*options=\{aliasModelOptionNames\}/);
+  assert.doesNotMatch(source, /align="right"/);
+  assert.doesNotMatch(source, /account-detail-model-source-options/);
+  assert.doesNotMatch(source, /account-detail-model-alias-options/);
+  assert.doesNotMatch(modelGridBlock, /max-h-40/);
+  assert.doesNotMatch(modelGridBlock, /overflow-auto/);
+  assert.match(source, /aria-label="删除映射"/);
+  assert.match(source, /<Trash2/);
+  assert.match(source, /暂无模型映射；可拉取模型后添加映射，或直接手动添加。/);
+  assert.match(source, /title="模型映射"/);
+  assert.match(source, /title="模型映射"[\s\S]*bandActionDivider=\{false\}/);
+  assert.match(source, /onAddModelMapping/);
+  assert.match(source, /fetchRemoteModelMappings/);
+  assert.match(source, /applyDefaultModelMappings/);
+  assert.match(source, /已新增映射/);
+  assert.match(source, /暂无当前账号支持模型，可先拉取模型或手动添加映射/);
+  assert.match(source, /sourceModelOptionNames\.map\(\(name\) => \(\{ name, alias: '' \}\)\)/);
+  const fetchBlock = source.match(/async function fetchRemoteModelMappings\(\)[\s\S]*?\n  \}/)?.[0] ?? '';
+  assert.doesNotMatch(fetchBlock, /setConfigDraftModels/);
+  assert.match(fetchBlock, /已缓存 \$\{nextNames\.length\} 个当前账号支持模型/);
+  const defaultModelBlock = source.match(/function resolveDefaultModelMappingNames[\s\S]*?\n\}/)?.[0] ?? '';
+  assert.match(defaultModelBlock, /accountModelNames/);
+  assert.match(defaultModelBlock, /presetModelNames/);
+  assert.doesNotMatch(defaultModelBlock, /modelNames/);
+  assert.doesNotMatch(defaultModelBlock, /gpt-5\.4/);
+});
+
+test('api-key detail model mappings are part of the saved config draft', async () => {
+  const configSource = await readFile(new URL('../model/accountDetailConfig.ts', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const actionsSource = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(configSource, /models: Array<\{ name: string; alias\?: string \}>/);
+  assert.match(configSource, /normalizeApiKeyConfigModels\(account\.models\)/);
+  assert.match(configSource, /!isSameApiKeyConfigModels\(current\.models, draft\.models\)/);
+  assert.match(modalSource, /setDraft\(\(prev\) => \(\{ \.\.\.prev, models: nextModels \}\)\)/);
+  assert.match(actionsSource, /models: normalizeApiKeyConfigModels\(draft\.models\)/);
+  assert.match(actionsSource, /models: nextModels/);
+  assert.match(featureSource, /selectedAccountCanSaveApiConfig/);
+  assert.match(featureSource, /UpdateOpenAICompatibleProvider/);
+  assert.match(featureSource, /models: nextModels/);
+  assert.match(modalSource, /onFetchModels\?: \(input: \{ apiKey: string; baseUrl: string; headers\?: Record<string, string> \}/);
+  assert.match(modalSource, /localModelNames\?: string\[\]/);
+  assert.match(modalSource, /cachedModelNames\?: string\[\]/);
+  assert.match(featureSource, /localModelNames=\{relayModelNames\}/);
+  assert.match(featureSource, /cachedModelNames=\{accountModelNamesByID\[selectedAccount\.id\] \?\? \[\]\}/);
+  assert.match(featureSource, /setAccountModelNamesByID/);
+  assert.match(modalSource, /resolveDefaultModelMappingNames/);
+  assert.match(featureSource, /FetchOpenAICompatibleProviderModels/);
+});
+test('auth-file config management keeps apply API boundary explicit', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const authFileBlock = source.match(/function AuthFileSummarySection[\s\S]*?\nfunction CompatibleModelsSection/)?.[0] ?? '';
+
+  assert.match(source, /data-auth-file-config-management="ui-placeholder"/);
+  assert.match(source, /data-auth-file-config-action="preview"/);
+  assert.match(source, /data-auth-file-config-action="download"/);
+  assert.match(source, /data-auth-file-config-action="apply"/);
+  assert.match(authFileBlock, /bandActionDivider=\{false\}/);
+  assert.match(authFileBlock, /data-auth-file-config-action="preview"[\s\S]*data-auth-file-config-action="download"[\s\S]*data-auth-file-config-action="apply"/);
+  assert.doesNotMatch(authFileBlock, /md:grid-cols-\[minmax\(0,1fr\)_auto\]/);
+  assert.match(primitiveSource, /bandActionDivider = true/);
+  assert.match(primitiveSource, /bandActionDividerClassName = bandActionDivider/);
+  assert.match(source, /待接入 account-store management API/);
+  assert.doesNotMatch(source, /ApplyAuthFileConfig/);
+  assert.doesNotMatch(source, /SaveAuthFileConfig/);
+});
+test('real account detail modal uses v09 band row layout instead of card grid', async () => {
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(primitiveSource, /AccountDetailModuleStackLayout = 'flow' \| 'cards' \| 'bands'/);
+  assert.match(primitiveSource, /data-account-detail-section-layout="band"/);
+  assert.match(primitiveSource, /data-account-detail-band-index/);
+  assert.match(modalSource, /<AccountDetailModuleStack layout="bands">/);
+  assert.doesNotMatch(modalSource, /<AccountDetailModuleStack layout="cards">/);
+});
+test('real account detail header uses v09 compact two-column summary', async () => {
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(sectionSource, /data-account-detail-header="v09-compact"/);
+  assert.match(sectionSource, /grid-cols-\[10\.5rem_minmax\(0,1fr\)\]/);
+  assert.match(primitiveSource, /grid-cols-\[10\.5rem_minmax\(0,1fr\)\]/);
+  assert.match(sectionSource, /data-account-detail-header-account-type/);
+  assert.match(sectionSource, /\{accountTypeLabel\}/);
+  assert.match(sectionSource, /data-account-detail-header-chips/);
+  assert.match(sectionSource, /data-account-detail-header-description/);
+  assert.doesNotMatch(sectionSource, /data-account-detail-header-last/);
+  assert.doesNotMatch(sectionSource, /Last<\/span><span>runtime/);
+  assert.doesNotMatch(sectionSource, /Latency<\/span><span>—/);
+  assert.match(sectionSource, /类型/);
+  assert.match(sectionSource, /凭据/);
+  assert.match(sectionSource, /验证/);
+  assert.match(sectionSource, /路由/);
+  assert.match(sectionSource, /text-base font-black uppercase italic/);
+  assert.match(sectionSource, /whitespace-normal break-words \[overflow-wrap:break-word\]/);
+  assert.doesNotMatch(sectionSource, /<span className="block truncate">\{primaryLabel\}/);
+  assert.doesNotMatch(sectionSource, /onClick=\{\(\) => \(onRename \? setEditing\(true\) : null\)\}/);
+  assert.match(modalSource, /headerClassName="p-0"/);
+});
+
+test('account detail header chips and description are spaced without an internal divider', async () => {
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const middleHeaderBlock = sectionSource.match(/<div className="grid min-w-0 content-center gap-1[\s\S]*?<\/div>\n\s*<\/div>\n\s*\);/)?.[0] ?? '';
+
+  assert.match(middleHeaderBlock, /content-center gap-1/);
+  assert.match(middleHeaderBlock, /data-account-detail-header-description/);
+  assert.doesNotMatch(middleHeaderBlock, /data-account-detail-header-description="true" className="[^"]*border-t/);
+  assert.doesNotMatch(middleHeaderBlock, /border-r-2/);
+});
+
+test('account detail quota and billing render as v09 equal split only when billing is displayable', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /hasDisplayableBilling/);
+  assert.match(source, /const hasBillingModule = hasDisplayableBilling\(liveBilling\) \|\| configDraft\.billingEnabled/);
+  assert.match(source, /const showBillingModule = hasBillingModule \|\| props\.activeScriptEditor === 'billing'/);
+  assert.match(source, /\{showBalanceSplit \? \(/);
+  assert.match(source, /data-account-balance-panel="quota-billing"/);
+  assert.match(source, /data-account-balance-pane="quota-left"/);
+  assert.match(source, /data-account-balance-pane="billing-right"/);
+  assert.match(source, /data-account-balance-divider="full-height"/);
+  assert.match(source, /grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
+  assert.match(source, /componentName="AccountBalanceSplitSection"/);
+});
+
+test('account detail balance keeps one quota module with windows left and script right when billing is empty', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const quotaOnlyBlock = source.match(/data-account-balance-panel="quota-only"[\s\S]*?data-account-balance-pane="quota-full"[\s\S]*?\{quotaSection\}/)?.[0] ?? '';
+
+  assert.match(source, /data-account-balance-panel="quota-only"/);
+  assert.match(source, /data-account-balance-pane="quota-full"/);
+  assert.match(quotaOnlyBlock, /className="grid min-w-0"/);
+  assert.doesNotMatch(quotaOnlyBlock, /data-account-balance-divider="full-height"/);
+  assert.doesNotMatch(quotaOnlyBlock, /billing-right/);
+  assert.match(sectionSource, /layoutMode = 'split'/);
+  assert.match(sectionSource, /data-account-quota-layout=\{layoutMode\}/);
+  assert.match(sectionSource, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
+  assert.match(sectionSource, /data-account-quota-pane="windows"/);
+  assert.match(sectionSource, /data-account-quota-pane="script"/);
+  assert.match(source, /layoutMode=\{showBalanceSplit \? 'stack' : 'split'\}/);
+  assert.ok(
+    sectionSource.indexOf('data-account-quota-pane="windows"') < sectionSource.indexOf('data-account-quota-pane="script"'),
+    'quota windows should stay left and curl/script preview should move to the right pane',
+  );
+});
+
+test('account detail hides quota section when quota module is unchecked and shows billing-only panel', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const splitBlock = source.match(/\{showBalanceSplit \? \([\s\S]*?\) : showQuotaModule \? \(/)?.[0] ?? '';
+  const quotaOnlyBlock = source.match(/\) : showQuotaModule \? \([\s\S]*?\) : showBillingModule \? \(/)?.[0] ?? '';
+  const billingOnlyBlock = source.match(/\) : showBillingModule \? \([\s\S]*?\) : \(/)?.[0] ?? '';
+
+  assert.match(source, /const showQuotaModule = configDraft\.quotaEnabled \|\| props\.activeScriptEditor === 'quota'/);
+  assert.match(source, /const showBillingModule = hasBillingModule \|\| props\.activeScriptEditor === 'billing'/);
+  assert.match(source, /const showBalanceSplit = showQuotaModule && showBillingModule/);
+  assert.match(source, /data-account-balance-panel="billing-only"/);
+  assert.match(source, /data-account-balance-pane="billing-full"/);
+  assert.match(billingOnlyBlock, /\{billingSection\}/);
+  assert.doesNotMatch(billingOnlyBlock, /\{quotaSection\}/);
+  assert.match(quotaOnlyBlock, /\{quotaSection\}/);
+  assert.doesNotMatch(quotaOnlyBlock, /\{billingSection\}/);
+  assert.match(splitBlock, /\{quotaSection\}[\s\S]*\{billingSection\}/);
+});
+
+test('account detail uses vertical quota internals when quota and billing are both visible', async () => {
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(sectionSource, /type AccountQuotaLayoutMode = 'split' \| 'stack'/);
+  assert.match(sectionSource, /const quotaLayoutClassName = layoutMode === 'split'/);
+  assert.match(sectionSource, /: 'grid min-w-0 gap-3'/);
+  assert.match(source, /layoutMode=\{showBalanceSplit \? 'stack' : 'split'\}/);
+  assert.match(source, /data-account-balance-panel="quota-billing"/);
+});
+
+test('account detail quota pane renders runtime windows before falling back to test result', async () => {
+  const sectionSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(sectionSource, /buildQuotaDisplay\(\{/);
+  assert.match(sectionSource, /runtimeQuotaDisplay\.windows\.length/);
+  assert.match(sectionSource, /visibleQuotaDisplay = quotaDisplay\?\.windows\?\.length[\s\S]*runtimeQuotaDisplay\.windows\.length[\s\S]*testQuotaDisplay/);
+  assert.match(sectionSource, /visibleQuotaSource === 'runtime'/);
+  assert.match(sectionSource, /visibleQuotaSource === 'test' \? 'QUOTA \(TEST\)' : 'QUOTA'/);
+});
+
+test('balance rail exposes quota and billing module checkboxes instead of a top-right add button', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+
+  assert.match(primitiveSource, /railControls\?: ReactNode/);
+  assert.match(primitiveSource, /data-account-detail-band-rail-controls/);
+  assert.match(source, /railControls=\{balanceRailControls\}/);
+  assert.match(source, /data-account-balance-rail-toggle="quota"/);
+  assert.match(source, /data-account-balance-rail-toggle="billing"/);
+  assert.match(source, /checked=\{configDraft\.quotaEnabled\}/);
+  assert.match(source, /checked=\{hasBillingModule\}/);
+  assert.match(source, /const hasBillingModule = hasDisplayableBilling\(liveBilling\) \|\| configDraft\.billingEnabled/);
+  assert.match(source, /const showBillingModule = hasBillingModule \|\| props\.activeScriptEditor === 'billing'/);
+  assert.doesNotMatch(source, /添加余额模块/);
+  const quotaToggleBlock = source.match(/const handleQuotaModuleToggle = \(checked: boolean\) => \{[\s\S]*?\n                \};/)?.[0] ?? '';
+  const billingToggleBlock = source.match(/const handleBillingModuleToggle = \(checked: boolean\) => \{[\s\S]*?\n                \};/)?.[0] ?? '';
+
+  assert.match(quotaToggleBlock, /quotaEnabled: checked/);
+  assert.match(billingToggleBlock, /billingEnabled: checked/);
+  assert.doesNotMatch(quotaToggleBlock, /onOpenScriptEditor/);
+  assert.doesNotMatch(billingToggleBlock, /onOpenScriptEditor/);
+  assert.match(source, /onOpenEditor=\{\(\) => props\.onOpenScriptEditor\?\.\('billing'\)\}/);
+});
+
+test('openai compatible account detail uses the single unified detail page', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const unifiedSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(featureSource, /OpenAICompatibleDetailModal/);
+  assert.doesNotMatch(featureSource, /openAICompatibleState\.detailDraft/);
+  assert.doesNotMatch(featureSource, /openAICompatibleState\.openDetailModal/);
+  assert.match(featureSource, /findOpenAICompatibleAccountForProvider/);
+  assert.match(featureSource, /setSelectedAccount\(providerAccount\)/);
+  assert.match(unifiedSource, /<AccountDetailModuleStack layout="bands">/);
+});
+
+test('account detail production path has one detail modal surface', async () => {
+  const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+
+  assert.equal((source.match(/<UnifiedAccountDetailModal/g) || []).length, 1);
+  assert.doesNotMatch(source, /<OpenAICompatibleDetailModal/);
+  assert.doesNotMatch(source, /<ApiKeyDetailModal/);
+});
+
+test('band detail sections reset nested modules so quota titles share the action row', async () => {
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const bandBlock = primitiveSource.match(/if \(isBandLayout\) \{[\s\S]*?\n  \}/)?.[0] ?? '';
+  const quotaBlock = sectionsSource.match(/export function AccountQuotaSection[\s\S]*?\nexport function AccountBillingSection/)?.[0] ?? '';
+
+  assert.match(
+    bandBlock,
+    /<AccountDetailModuleLayoutContext\.Provider value="flow">/,
+    'band content must not force nested quota or billing sections to render another left rail',
+  );
+  assert.match(quotaBlock, /title="额度追踪"[\s\S]*?actions=\{quotaActions\}/);
+  assert.doesNotMatch(quotaBlock, /data-account-detail-band-index/);
+});
+
+test('balance split child headers do not add extra top or dashed divider lines', async () => {
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+  const modalSource = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+
+  assert.match(primitiveSource, /topBorder = true/);
+  assert.match(primitiveSource, /headerDivider = true/);
+  assert.match(primitiveSource, /dividerClassName = divider/);
+  assert.equal((modalSource.match(/topBorder=\{false\}/g) || []).length, 2);
+  assert.equal((modalSource.match(/headerDivider=\{false\}/g) || []).length, 2);
+  assert.equal((sectionsSource.match(/!border-0 !bg-transparent/g) || []).length, 2);
+});
+
+test('nested account detail section headers use a compact title and action row', async () => {
+  const primitiveSource = await readFile(new URL('../components/AccountDetailPrimitives.tsx', import.meta.url), 'utf8');
+
+  assert.match(primitiveSource, /data-account-detail-section-title-row="compact"/);
+  assert.match(primitiveSource, /data-account-detail-section-action-row="compact"/);
+  assert.match(primitiveSource, /sm:items-center sm:justify-between/);
+  assert.doesNotMatch(primitiveSource, /<div className="min-w-0 space-y-1">/);
 });

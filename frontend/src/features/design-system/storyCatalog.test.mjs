@@ -463,14 +463,6 @@ test('account detail modules expose design-system anatomy and runtime states', a
     new URL('../../features/accounts/components/UnifiedAccountDetailModal.tsx', import.meta.url),
     'utf8',
   );
-  const openAICompatibleDetailSource = await readFile(
-    new URL('../../features/accounts/components/OpenAICompatibleDetailPanel.tsx', import.meta.url),
-    'utf8',
-  );
-  const openAICompatibleModalSource = await readFile(
-    new URL('../../features/accounts/components/OpenAICompatibleDetailModal.tsx', import.meta.url),
-    'utf8',
-  );
   const codexDetailSource = await readFile(
     new URL('../../features/codex/components/CodexAccountDetailModal.tsx', import.meta.url),
     'utf8',
@@ -500,12 +492,9 @@ test('account detail modules expose design-system anatomy and runtime states', a
   assert.doesNotMatch(modalStorySource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(modalStorySource, /AccountRuntimeSnapshotSection/);
   assert.match(modalStorySource, /layout="cards"/);
-  assert.match(unifiedDetailSource, /layout="cards"/);
+  assert.match(unifiedDetailSource, /layout="bands"/);
   assert.doesNotMatch(unifiedDetailSource, /AccountRuntimeEvidenceSection/);
   assert.doesNotMatch(unifiedDetailSource, /AccountDetailOverviewGrid/);
-  assert.match(openAICompatibleDetailSource, /layout="cards"/);
-  assert.doesNotMatch(openAICompatibleModalSource, /AccountRuntimeEvidenceSection/);
-  assert.doesNotMatch(openAICompatibleModalSource, /AccountDetailOverviewGrid/);
   assert.match(codexDetailSource, /layout="cards"/);
   assert.doesNotMatch(sectionsSource, /componentName="AccountQuotaSection"[\s\S]{0,220}span="wide"/);
   assert.doesNotMatch(sectionsSource, /componentName="AccountBillingSection"[\s\S]{0,220}span="wide"/);

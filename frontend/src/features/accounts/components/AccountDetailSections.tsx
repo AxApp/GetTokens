@@ -19,14 +19,9 @@ import {
 import {
   buildAccountProxyRouteDraft,
   formatAccountProxySummary,
-  type AccountProxyMode,
   type AccountProxyRouteDraft,
 } from '../model/accountProxyRoute.ts';
-import { selectQuotaWindows } from '../model/accountQuota';
-import {
-  resolveAccountOperationalState,
-  resolveAccountPrimaryLabel,
-} from '../model/accountPresentation';
+import { buildQuotaDisplay, normalizeQuotaTestDisplay, selectQuotaWindows } from '../model/accountQuota';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import type { CodexQuotaState, QuotaDisplay } from '../model/types';
 import { formatLabel } from '../model/vendorPresetHelpers';
@@ -79,6 +74,8 @@ interface VerifyConnectionPanelProps {
   onVerify?: (input: { apiKey: string; baseUrl: string; model: string }) => void;
 }
 
+type AccountQuotaLayoutMode = 'split' | 'stack';
+
 export interface AccountQuotaSectionProps {
   account: AccountRecord;
   draft: ApiKeyConfigDraft;
@@ -89,6 +86,9 @@ export interface AccountQuotaSectionProps {
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
+  topBorder?: boolean;
+  headerDivider?: boolean;
+  layoutMode?: AccountQuotaLayoutMode;
 }
 
 export interface AccountBillingSectionProps {
@@ -100,6 +100,8 @@ export interface AccountBillingSectionProps {
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
+  topBorder?: boolean;
+  headerDivider?: boolean;
 }
 
 export interface AccountDetailFooterProps {
@@ -116,109 +118,53 @@ const DEFAULT_VERIFY_MODEL = 'gpt-5.4-mini';
 
 export function AccountDetailHeader({
   account,
-  usageSummary,
-  onRename,
-  onStartReauth,
-  onCancelReauth,
-  isReauthing,
 }: AccountDetailHeaderProps) {
-  const { t } = useI18n();
-  const [editing, setEditing] = useState(false);
-  const [draftName, setDraftName] = useState(account.displayName);
-
-  useEffect(() => {
-    setDraftName(account.displayName);
-  }, [account.displayName]);
-
-  const primaryLabel = resolveAccountPrimaryLabel(account);
-  const operationalState = resolveAccountOperationalState(account, usageSummary, undefined, t);
-  const canReauth = account.credentialSource === 'auth-file' && account.provider === 'codex';
-  const formats = (account.supportedFormats && account.supportedFormats.length > 0
-    ? account.supportedFormats
-    : ['anthropic']) as ApiFormat[];
-
-  function saveName() {
-    const trimmed = draftName.trim();
-    if (trimmed && trimmed !== account.displayName) {
-      onRename?.(trimmed);
-    }
-    setEditing(false);
-  }
+  const accountTypeLabel = resolveAccountHeaderTypeLabel(account);
+  const credentialLabel = account.credentialSource === 'auth-file'
+    ? 'Database OAuth'
+    : account.provider === 'codex'
+      ? 'Codex Key'
+      : 'API Key';
+  const routeLabel = account.proxyUrl ? 'Proxy Node' : 'Default Route';
+  const balanceLabel = account.credentialSource === 'auth-file' ? 'Provider' : 'Configured';
+  const description = account.credentialSource === 'auth-file'
+    ? 'Database-managed OAuth account · config preview/apply · provider managed quota'
+    : account.provider === 'codex'
+      ? 'Codex API key account · prefix · short-message verification · quota/billing scripts'
+      : 'API Key provider · custom headers · model mapping · short-message verification';
 
   return (
-    <div className="space-y-3">
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.2em] text-[var(--text-muted)]">
-        {account.credentialSource === 'auth-file' ? 'AUTH FILE' : 'API KEY'}
-      </div>
-
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          {editing ? (
-            <input
-              value={draftName}
-              onChange={(event) => setDraftName(event.target.value)}
-              onBlur={saveName}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') saveName();
-                if (event.key === 'Escape') setEditing(false);
-              }}
-              className="input-swiss text-lg font-black uppercase"
-              autoFocus
-            />
-          ) : (
-            <button
-              onClick={() => (onRename ? setEditing(true) : null)}
-              className={`text-lg font-black uppercase italic tracking-tight ${onRename ? 'cursor-pointer hover:underline' : 'cursor-default'}`}
-            >
-              {primaryLabel}
-            </button>
-          )}
-          <AccountDetailPill
-            tone={operationalState.tone === 'positive' ? 'success' : operationalState.tone === 'warning' ? 'warning' : 'danger'}
-            className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-xs)] !tracking-[0.12em]"
-          >
-            {operationalState.label}
-          </AccountDetailPill>
-        </div>
-
-        {canReauth ? (
-          <button onClick={isReauthing ? onCancelReauth : onStartReauth} className="btn-swiss whitespace-nowrap !text-[length:var(--font-size-ui-xs)]">
-            {isReauthing ? t('accounts.cancel_reauth') : t('accounts.reauth')}
-          </button>
-        ) : null}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-          {account.provider.toUpperCase()}
-        </span>
-        <div className="flex flex-wrap gap-1.5">
-          {formats.map((fmt) => (
-            <AccountDetailPill key={fmt} className="!min-h-0 !py-0.5 !tracking-[0.12em]">
-              {formatLabel(fmt)}
-            </AccountDetailPill>
-          ))}
+    <div data-account-detail-header="v09-compact" className="grid min-w-0 grid-cols-[10.5rem_minmax(0,1fr)] bg-[var(--bg-surface)]">
+      <div data-account-detail-header-account-type="true" className="flex min-w-0 items-center border-r-2 border-[var(--border-color)] px-4 py-3">
+        <div className="w-full min-w-0 text-left text-base font-black uppercase italic leading-tight tracking-tight">
+          <span className="block whitespace-normal break-words [overflow-wrap:break-word]">{accountTypeLabel}</span>
         </div>
       </div>
 
-      {account.baseUrl ? (
-        <div className="truncate text-[length:var(--font-size-ui-xs)] font-mono text-[var(--text-muted)]">
-          {account.baseUrl}
+      <div className="grid min-w-0 content-center gap-1 px-2.5 py-2">
+        <div data-account-detail-header-chips="true" className="flex min-w-0 items-center gap-1.5 overflow-hidden">
+          <AccountDetailPill className="!min-h-0 !border-2 !bg-[var(--text-primary)] !py-1 !text-[length:var(--font-size-ui-2xs)] !text-[var(--bg-main)]">类型: {account.credentialSource === 'auth-file' ? 'Codex Auth-file / OAuth' : account.provider === 'codex' ? 'Codex API Key' : 'OpenAI-compatible'}</AccountDetailPill>
+          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">凭据: {credentialLabel}</AccountDetailPill>
+          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">验证: Short Message</AccountDetailPill>
+          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">路由: {routeLabel}</AccountDetailPill>
+          <AccountDetailPill className="!min-h-0 !border-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">余额/额度: {balanceLabel}</AccountDetailPill>
         </div>
-      ) : null}
-
-      {account.formatBaseUrls && Object.keys(account.formatBaseUrls).length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {Object.entries(account.formatBaseUrls).map(([fmt, url]) => (
-            <div key={fmt} className="text-[length:var(--font-size-ui-2xs)] font-mono text-[var(--text-muted)]">
-              <span className="font-black uppercase text-[var(--text-primary)]">{formatLabel(fmt as ApiFormat)}:</span>{' '}
-              <span className="truncate">{String(url)}</span>
-            </div>
-          ))}
+        <div data-account-detail-header-description="true" className="flex min-w-0 items-center pl-0.5 font-mono text-[length:var(--font-size-ui-xs)] font-black leading-tight text-[var(--text-muted)]">
+          <span className="truncate">{description}</span>
         </div>
-      ) : null}
+      </div>
     </div>
   );
+}
+
+function resolveAccountHeaderTypeLabel(account: AccountRecord) {
+  if (account.credentialSource === 'auth-file') {
+    return 'CODEX OAUTH';
+  }
+  if (account.provider === 'codex' || account.accountKind === 'codex-api-key') {
+    return 'CODEX API KEY';
+  }
+  return 'OPENAI COMPATIBLE';
 }
 
 export function AccountCredentialVerifySection({
@@ -242,53 +188,62 @@ export function AccountCredentialVerifySection({
       title="凭据与验证"
       span={span}
     >
-      <div data-account-credential-verify-layout="vertical" className="grid min-w-0 gap-4">
-        <section data-account-credential-list-item="credential" className="grid gap-3 border-b border-dashed border-[var(--border-color)] pb-4">
-          <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            CREDENTIAL
-          </div>
-          <div data-account-credential-fields="stacked" className="grid gap-3">
-            <CredentialInputField
-              label="API 密钥"
-              value={draft.apiKey}
-              onChange={(value) => setDraft((prev) => ({ ...prev, apiKey: value }))}
-              onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
-            />
-            <CredentialInputField
-              label="基础 URL"
-              value={draft.baseUrl}
-              onChange={(value) => setDraft((prev) => ({ ...prev, baseUrl: value }))}
-              onCopy={() => void navigator.clipboard.writeText(draft.baseUrl)}
-            />
-            <CredentialInputField
-              label="前缀"
-              value={draft.prefix}
-              placeholder="/v1"
-              onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
-            />
-            {credentialFields.map((field) => (
-              <VendorCredentialInputField
-                key={field.id}
-                field={field}
-                draft={draft}
-                onChange={(value) => setDraft((prev) => writeDraftCredentialField(prev, field.id, value))}
+      <div data-account-credential-verify-layout="v09-split" className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div data-account-credential-left-pane="credential-connection" className="grid content-start gap-4 lg:pr-4">
+          <section data-account-credential-list-item="credential" className="grid content-start gap-3">
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              CREDENTIAL
+            </div>
+            <div data-account-credential-fields="balanced-grid" className="grid gap-3">
+              <CredentialInputField
+                label="账号名称"
+                value={draft.label}
+                onChange={(value) => setDraft((prev) => ({ ...prev, label: value }))}
               />
-            ))}
-          </div>
-        </section>
+              <CredentialInputField
+                label="API 密钥"
+                value={draft.apiKey}
+                onChange={(value) => setDraft((prev) => ({ ...prev, apiKey: value }))}
+                onCopy={() => void navigator.clipboard.writeText(draft.apiKey)}
+              />
+              <CredentialInputField
+                label="基础 URL"
+                value={draft.baseUrl}
+                onChange={(value) => setDraft((prev) => ({ ...prev, baseUrl: value }))}
+                onCopy={() => void navigator.clipboard.writeText(draft.baseUrl)}
+              />
+              <CredentialInputField
+                label="前缀"
+                value={draft.prefix}
+                placeholder="/v1"
+                onChange={(value) => setDraft((prev) => ({ ...prev, prefix: value }))}
+              />
+              {credentialFields.map((field) => (
+                <VendorCredentialInputField
+                  key={field.id}
+                  field={field}
+                  draft={draft}
+                  onChange={(value) => setDraft((prev) => writeDraftCredentialField(prev, field.id, value))}
+                />
+              ))}
+            </div>
+          </section>
 
-        <VerifyConnectionPanel
-          draft={draft}
-          verifyState={verifyState}
-          modelNames={modelNames}
-          onVerify={onVerify}
-        />
+          <VerifyConnectionPanel
+            draft={draft}
+            verifyState={verifyState}
+            modelNames={modelNames}
+            onVerify={onVerify}
+          />
+        </div>
 
-        <CredentialProxyRoutePanel
-          proxyUrl={draft.proxyUrl}
-          onProxyUrlChange={(nextProxyURL) => setDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
-          onValidityChange={onProxyValidityChange}
-        />
+        <div data-account-credential-right-pane="route" className="grid min-w-0 content-start border-t-2 border-[var(--border-color)] pt-4 lg:border-l-2 lg:border-t-0 lg:pl-4 lg:pt-0">
+          <CredentialProxyRoutePanel
+            proxyUrl={draft.proxyUrl}
+            onProxyUrlChange={(nextProxyURL) => setDraft((prev) => ({ ...prev, proxyUrl: nextProxyURL }))}
+            onValidityChange={onProxyValidityChange}
+          />
+        </div>
       </div>
     </AccountDetailSection>
   );
@@ -360,24 +315,6 @@ function CredentialProxyRoutePanel({
     }
   }
 
-  function changeMode(mode: AccountProxyMode) {
-    if (mode === 'inherit') {
-      commitDraft({ mode, proxyNodeID: '', proxyUrl: '' }, true);
-      return;
-    }
-    if (mode === 'direct') {
-      commitDraft({ mode, proxyNodeID: '', proxyUrl: 'direct' }, true);
-      return;
-    }
-
-    const selected = proxyOptions[0];
-    if (!selected) {
-      commitDraft({ mode, proxyNodeID: '', proxyUrl: '' }, false);
-      return;
-    }
-    commitDraft({ mode, proxyNodeID: selected.node.id, proxyUrl: selected.proxyUrl }, true);
-  }
-
   function selectProxy(nextProxyURL: string) {
     const selected = proxyOptions.find((item) => item.proxyUrl === nextProxyURL);
     commitDraft(
@@ -391,7 +328,7 @@ function CredentialProxyRoutePanel({
   }
 
   return (
-    <section data-account-credential-list-item="proxy-route" className="grid gap-3 border-t border-dashed border-[var(--border-color)] pt-4">
+    <section data-account-credential-list-item="proxy-route" className="grid gap-3 pt-4">
       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
         <div>
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -410,7 +347,6 @@ function CredentialProxyRoutePanel({
         draft={draft}
         proxyOptions={proxyOptions}
         hasDetachedCurrentURL={hasDetachedCurrentURL}
-        onModeChange={changeMode}
         onProxySelect={selectProxy}
       />
     </section>
@@ -466,8 +402,9 @@ function CredentialInputField({
   placeholder,
   onChange,
   onCopy,
-  secret,
+  secret: _secret,
   help,
+  className = 'md:col-span-12',
 }: {
   label: string;
   value: string;
@@ -476,9 +413,10 @@ function CredentialInputField({
   onCopy?: () => void;
   secret?: boolean;
   help?: string;
+  className?: string;
 }) {
   return (
-    <label className="grid min-w-0 gap-1.5">
+    <label data-account-credential-field="plaintext" className={`grid min-w-0 gap-1.5 ${className}`}>
       <span
         data-account-credential-field-label="above"
         className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]"
@@ -487,7 +425,7 @@ function CredentialInputField({
       </span>
       <div className="flex min-w-0 items-center gap-2">
         <input
-          type={secret ? 'password' : 'text'}
+          type="text"
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
@@ -555,16 +493,16 @@ function VerifyConnectionPanel({
   }, [isModelMenuOpen]);
 
   return (
-    <section data-account-credential-list-item="connection" className="grid gap-3 border-b border-dashed border-[var(--border-color)] pb-4">
+    <section data-account-credential-list-item="connection" className="grid gap-3 border-t-2 border-[var(--border-color)] pt-4">
       <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
         CONNECTION
       </div>
       <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
-        验证连接
+        短消息验证
       </div>
       {vs.lastVerifiedAt ? (
         <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
-          上次验证：{new Date(vs.lastVerifiedAt).toLocaleString()}
+          上次发送：{new Date(vs.lastVerifiedAt).toLocaleString()}
         </div>
       ) : null}
 
@@ -614,15 +552,19 @@ function VerifyConnectionPanel({
           disabled={vs.status === 'loading'}
           className="btn-swiss whitespace-nowrap !text-[length:var(--font-size-ui-xs)]"
         >
-          {vs.status === 'loading' ? '验证中...' : '验证'}
+          {vs.status === 'loading' ? '发送中...' : '发送验证'}
         </button>
+      </div>
+
+      <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        短消息内容：请回复 OK，用于连通性验证 · send one short chat message only
       </div>
 
       {vs.status !== 'idle' ? (
         <div className={`text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-wide ${
           vs.status === 'success' ? 'text-[var(--color-status-success)]' : vs.status === 'error' ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
         }`}>
-          {vs.message}
+          {vs.status === 'loading' ? 'sending short message…' : vs.message}
         </div>
       ) : null}
     </section>
@@ -639,6 +581,9 @@ export function AccountQuotaSection({
   onOpenEditor,
   onCloseEditor,
   onTestQuotaCurl,
+  topBorder = true,
+  headerDivider = true,
+  layoutMode = 'split',
 }: AccountQuotaSectionProps) {
   const { t } = useI18n();
   const [localEditorOpen, setLocalEditorOpen] = useState(false);
@@ -646,7 +591,21 @@ export function AccountQuotaSection({
   const [testMessage, setTestMessage] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
   const liveWindows = quotaState?.quota ? selectQuotaWindows(quotaState.quota) : [];
-  const quotaWindows = quotaDisplay?.windows ?? [];
+  const runtimeQuotaDisplay = useMemo(() => buildQuotaDisplay({
+    ...account,
+    quotaEnabled: draft.quotaEnabled,
+    quotaCurl: draft.quotaCurl,
+    billingEnabled: draft.billingEnabled,
+    billingCurl: draft.billingCurl,
+  }, quotaState), [account, draft.quotaEnabled, draft.quotaCurl, draft.billingEnabled, draft.billingCurl, quotaState]);
+  const testQuotaDisplay = useMemo(() => normalizeQuotaTestDisplay(testResult), [testResult]);
+  const visibleQuotaDisplay = quotaDisplay?.windows?.length
+    ? quotaDisplay
+    : runtimeQuotaDisplay.windows.length
+      ? runtimeQuotaDisplay
+      : testQuotaDisplay;
+  const visibleQuotaSource = quotaDisplay?.windows?.length || runtimeQuotaDisplay.windows.length ? 'runtime' : testQuotaDisplay ? 'test' : 'empty';
+  const visibleQuotaWindows = visibleQuotaDisplay?.windows ?? [];
   const quotaTemplate = useMemo(
     () => buildQuotaCurlTemplate({
       displayName: account.displayName,
@@ -677,6 +636,15 @@ export function AccountQuotaSection({
   );
   const editorOpen = routedEditorOpen ?? localEditorOpen;
   const hasQuotaScript = draft.quotaCurl.trim().length > 0;
+  const quotaLayoutClassName = layoutMode === 'split'
+    ? 'grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]'
+    : 'grid min-w-0 gap-3';
+  const quotaScriptPaneClassName = layoutMode === 'split'
+    ? 'grid min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-3 self-stretch border-t-2 border-[var(--border-color)] pt-4 lg:border-l-2 lg:border-t-0 lg:pl-4 lg:pt-0'
+    : 'grid min-w-0 content-start gap-3 border-t-2 border-[var(--border-color)] pt-3';
+  const quotaScriptCardClassName = layoutMode === 'split'
+    ? 'grid h-full min-h-[8.75rem] content-start gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3'
+    : 'grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3';
 
   function openEditor() {
     if (onOpenEditor) {
@@ -723,6 +691,11 @@ export function AccountQuotaSection({
 
   const quotaActions = (
     <>
+      {hasQuotaScript ? (
+        <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+          编辑脚本
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={runQuotaTest}
@@ -748,52 +721,58 @@ export function AccountQuotaSection({
       componentName="AccountQuotaSection"
       eyebrow="Quota"
       title="额度追踪"
-      meta={liveWindows.length > 0 ? `实时 ${liveWindows.length} 个窗口` : undefined}
+      meta={visibleQuotaSource === 'runtime' ? `实时 ${visibleQuotaWindows.length || liveWindows.length} 个窗口` : testQuotaDisplay ? `测试 ${testQuotaDisplay.windows.length} 个窗口` : undefined}
       actions={quotaActions}
+      topBorder={topBorder}
+      headerDivider={headerDivider}
     >
 
-      {quotaWindows.length > 0 ? (
-        <div className="grid gap-2">
+      <div data-account-quota-layout={layoutMode} className={quotaLayoutClassName}>
+        <div data-account-quota-pane="windows" className="grid min-w-0 content-start gap-3">
+          {visibleQuotaWindows.length > 0 ? (
+            <div className="grid gap-2">
+              <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                {visibleQuotaSource === 'test' ? 'QUOTA (TEST)' : 'QUOTA'}
+              </div>
+              {visibleQuotaDisplay ? <QuotaBars quotaDisplay={visibleQuotaDisplay} t={t} showDivider={false} /> : null}
+            </div>
+          ) : (
+            <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+              {hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
+            </AccountDetailEmptyState>
+          )}
+
+          {testStatus === 'success' && testResult ? (
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-success)]">
+              OK - {testResult.planType ?? 'quota'} {testResult.windows?.length ? `${testResult.windows.length} windows` : ''}
+            </div>
+          ) : null}
+          {testStatus === 'error' ? (
+            <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
+          ) : null}
+        </div>
+
+        <aside data-account-quota-pane="script" className={quotaScriptPaneClassName}>
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-            QUOTA
+            SCRIPT
           </div>
-          {quotaDisplay ? <QuotaBars quotaDisplay={quotaDisplay} t={t} /> : null}
-        </div>
-      ) : (
-        <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
-          {hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
-        </AccountDetailEmptyState>
-      )}
-
-      {hasQuotaScript ? (
-        <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={draft.quotaEnabled}
-                onChange={(event) => setDraft((prev) => ({ ...prev, quotaEnabled: event.target.checked }))}
-              />
-              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用额度</span>
-            </label>
-            <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
-              编辑脚本
-            </button>
-          </div>
-          <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.quotaCurl || undefined}>
-            {draft.quotaCurl || '未配置额度脚本'}
-          </div>
-        </div>
-      ) : null}
-
-      {testStatus === 'success' && testResult ? (
-        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-success)]">
-          OK - {testResult.planType ?? 'quota'} {testResult.windows?.length ? `${testResult.windows.length} windows` : ''}
-        </div>
-      ) : null}
-      {testStatus === 'error' ? (
-        <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--color-status-danger)]">{testMessage}</div>
-      ) : null}
+          {hasQuotaScript ? (
+            <div className={quotaScriptCardClassName}>
+              <div
+                data-account-quota-script-preview="two-line"
+                className="line-clamp-2 min-h-[2.75rem] overflow-hidden break-all font-mono text-[length:var(--font-size-ui-xs)] leading-[1.35rem] text-[var(--text-muted)]"
+                title={draft.quotaCurl || undefined}
+              >
+                {draft.quotaCurl || '未配置额度脚本'}
+              </div>
+            </div>
+          ) : (
+            <div className="border-2 border-dashed border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-4 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              暂无额度脚本
+            </div>
+          )}
+        </aside>
+      </div>
 
       {editorOpen ? (
         <AccountCurlEditorModal
@@ -823,6 +802,8 @@ export function AccountBillingSection({
   onOpenEditor,
   onCloseEditor,
   onTestBillingCurl,
+  topBorder = true,
+  headerDivider = true,
 }: AccountBillingSectionProps) {
   const [localEditorOpen, setLocalEditorOpen] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -909,6 +890,11 @@ export function AccountBillingSection({
 
   const billingActions = (
     <>
+      {hasBillingScript ? (
+        <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
+          编辑脚本
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={runBillingTest}
@@ -936,6 +922,8 @@ export function AccountBillingSection({
       title="余额"
       meta={liveBilling ? '实时余额已就绪' : undefined}
       actions={billingActions}
+      topBorder={topBorder}
+      headerDivider={headerDivider}
     >
 
       {liveBalances.length > 0 ? (
@@ -952,26 +940,13 @@ export function AccountBillingSection({
           ))}
         </div>
       ) : (
-        <AccountDetailEmptyState className="py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+        <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
           {hasBillingScript ? '暂无余额数据，可测试余额脚本确认接口返回' : '暂无余额脚本，添加后可测试并展示余额'}
         </AccountDetailEmptyState>
       )}
 
       {hasBillingScript ? (
         <div className="grid gap-3 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] p-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={draft.billingEnabled}
-                onChange={(event) => setDraft((prev) => ({ ...prev, billingEnabled: event.target.checked }))}
-              />
-              <span className="text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">启用余额</span>
-            </label>
-            <button onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
-              编辑脚本
-            </button>
-          </div>
           <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] text-[var(--text-muted)]" title={draft.billingCurl || undefined}>
             {draft.billingCurl || '未配置余额脚本'}
           </div>
@@ -1052,7 +1027,10 @@ export function AccountDetailFooter({
 
   return (
     <>
-      <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+      <div
+        data-account-detail-footer-status="single-line"
+        className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]"
+      >
         {isApiKey && missingFields.length > 0
           ? `缺少：${missingFields.join(', ')}`
           : dirtyMessage}

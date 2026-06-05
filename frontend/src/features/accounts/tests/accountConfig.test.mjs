@@ -168,9 +168,11 @@ test('buildApiKeyConfigDraft keeps billing fields for unified detail editing', (
       proxyUrl: 'socks5://127.0.0.1:7890',
     }),
     {
+      label: '',
       apiKey: 'sk-test',
       baseUrl: 'https://api.deepseek.com/v1',
       prefix: '/relay/',
+      models: [],
       quotaCurl: 'quota',
       quotaEnabled: true,
       billingCurl: 'billing',

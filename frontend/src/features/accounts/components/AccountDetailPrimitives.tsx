@@ -2,7 +2,7 @@ import { createContext, useContext, type HTMLAttributes, type ReactNode } from '
 
 type AccountDetailTone = 'neutral' | 'success' | 'warning' | 'danger';
 export type AccountDetailSectionDensity = 'standard' | 'dense' | 'hero';
-export type AccountDetailModuleStackLayout = 'flow' | 'cards';
+export type AccountDetailModuleStackLayout = 'flow' | 'cards' | 'bands';
 export type AccountDetailSectionSpan = 'auto' | 'wide';
 
 const AccountDetailModuleLayoutContext = createContext<AccountDetailModuleStackLayout>('flow');
@@ -43,6 +43,10 @@ interface AccountDetailSectionProps {
   span?: AccountDetailSectionSpan;
   inset?: boolean;
   muted?: boolean;
+  topBorder?: boolean;
+  headerDivider?: boolean;
+  bandActionDivider?: boolean;
+  railControls?: ReactNode;
   className?: string;
 }
 
@@ -52,6 +56,7 @@ interface AccountDetailSectionHeaderProps {
   meta?: ReactNode;
   actions?: ReactNode;
   className?: string;
+  divider?: boolean;
 }
 
 export function AccountDetailSectionHeader({
@@ -60,13 +65,17 @@ export function AccountDetailSectionHeader({
   meta,
   actions,
   className = '',
+  divider = true,
 }: AccountDetailSectionHeaderProps) {
+  const dividerClassName = divider
+    ? 'border-b border-dashed border-[var(--border-color)] pb-2'
+    : '';
   return (
     <div
       data-account-detail-section-header="standard"
-      className={`flex min-w-0 flex-col gap-2 border-b border-dashed border-[var(--border-color)] pb-2 sm:flex-row sm:items-start sm:justify-between ${className}`}
+      className={`flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${dividerClassName} ${className}`}
     >
-      <div className="min-w-0 space-y-1">
+      <div data-account-detail-section-title-row="compact" className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
         {eyebrow ? (
           <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
             {eyebrow}
@@ -78,12 +87,12 @@ export function AccountDetailSectionHeader({
           </h3>
         ) : null}
         {meta ? (
-          <div className="break-words font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
             {meta}
           </div>
         ) : null}
       </div>
-      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-1.5">{actions}</div> : null}
+      {actions ? <div data-account-detail-section-action-row="compact" className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">{actions}</div> : null}
     </div>
   );
 }
@@ -99,10 +108,65 @@ export function AccountDetailSection({
   span = 'auto',
   inset = false,
   muted = false,
+  topBorder = true,
+  headerDivider = true,
+  bandActionDivider = true,
+  railControls,
   className = '',
 }: AccountDetailSectionProps) {
   const moduleLayout = useContext(AccountDetailModuleLayoutContext);
+  const isBandLayout = moduleLayout === 'bands' && !inset;
   const isCardLayout = moduleLayout === 'cards' && !inset;
+
+  if (isBandLayout) {
+    const bandActionDividerClassName = bandActionDivider
+      ? 'border-b border-dashed border-[var(--border-color)] pb-2'
+      : '';
+    return (
+      <section
+        data-design-system-component="true"
+        data-design-system-component-name={componentName}
+        data-account-detail-section-layout="band"
+        className={`grid min-w-0 grid-cols-[10.5rem_minmax(0,1fr)] border-b-2 border-[var(--border-color)] bg-[var(--bg-main)] ${muted ? 'bg-[var(--bg-surface)]/35' : ''} ${className}`}
+      >
+        <aside data-account-detail-band-index="true" className="min-w-0 border-r-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-4 py-4">
+          {eyebrow ? (
+            <div className="font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              {eyebrow}
+            </div>
+          ) : null}
+          {title ? (
+            <h3 className="mt-2 text-[length:var(--font-size-ui-sm)] font-black uppercase italic leading-tight tracking-tight text-[var(--text-primary)]">
+              {title}
+            </h3>
+          ) : null}
+          {railControls ? (
+            <div data-account-detail-band-rail-controls="true" className="mt-5 grid gap-2">
+              {railControls}
+            </div>
+          ) : null}
+        </aside>
+        <div className="min-w-0 px-4 py-4">
+          {meta || actions ? (
+            <div className={`mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between ${bandActionDividerClassName}`}>
+              {meta ? (
+                <div className="min-w-0 break-words font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                  {meta}
+                </div>
+              ) : <span />}
+              {actions ? <div className="flex shrink-0 flex-wrap items-center gap-1.5">{actions}</div> : null}
+            </div>
+          ) : null}
+          <AccountDetailModuleLayoutContext.Provider value="flow">
+            <div data-account-detail-section-body="compact" className={`min-w-0 ${sectionBodyDensityClassNames[density]}`}>
+              {children}
+            </div>
+          </AccountDetailModuleLayoutContext.Provider>
+        </div>
+      </section>
+    );
+  }
+
   const shellClassName = isCardLayout
     ? cardSectionDensityClassNames[density]
     : inset
@@ -110,7 +174,9 @@ export function AccountDetailSection({
       : sectionDensityClassNames[density];
   const borderClassName = isCardLayout
     ? 'border-2 bg-[var(--bg-main)]'
-    : 'border-t-2';
+    : topBorder
+      ? 'border-t-2'
+      : 'border-t-0';
   const spanClassName = isCardLayout && span === 'wide' ? 'lg:col-span-2' : '';
   const heightClassName = isCardLayout ? 'h-full' : '';
 
@@ -126,6 +192,7 @@ export function AccountDetailSection({
           title={title}
           meta={meta}
           actions={actions}
+          divider={headerDivider}
         />
       ) : null}
       <div data-account-detail-section-body="compact" className={`min-w-0 ${sectionBodyDensityClassNames[density]}`}>
@@ -141,7 +208,7 @@ export function AccountDetailBody({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div {...props} data-account-detail-body="module-surface" className={`space-y-6 bg-[var(--bg-main)] px-6 py-6 ${className}`}>
+    <div {...props} data-account-detail-body="module-surface" className={`bg-[var(--bg-main)] ${className}`}>
       {children}
     </div>
   );
@@ -218,7 +285,9 @@ export function AccountDetailModuleStack({
 }) {
   const layoutClassName = layout === 'cards'
     ? `grid min-w-0 gap-4 ${cardColumns === 1 ? 'lg:grid-cols-1' : 'lg:grid-cols-2'}`
-    : 'min-w-0';
+    : layout === 'bands'
+      ? 'min-w-0 border-t-2 border-[var(--border-color)]'
+      : 'min-w-0';
 
   return (
     <AccountDetailModuleLayoutContext.Provider value={layout}>

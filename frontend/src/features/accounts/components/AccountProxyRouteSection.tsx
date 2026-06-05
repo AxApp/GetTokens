@@ -8,7 +8,6 @@ import {
 import {
   buildAccountProxyRouteDraft,
   formatAccountProxySummary,
-  type AccountProxyMode,
   type AccountProxyRouteDraft,
 } from '../model/accountProxyRoute.ts';
 import {
@@ -108,24 +107,6 @@ export default function AccountProxyRouteSection({
     }
   }
 
-  function changeMode(mode: AccountProxyMode) {
-    if (mode === 'inherit') {
-      commitDraft({ mode, proxyNodeID: '', proxyUrl: '' }, true);
-      return;
-    }
-    if (mode === 'direct') {
-      commitDraft({ mode, proxyNodeID: '', proxyUrl: 'direct' }, true);
-      return;
-    }
-
-    const selected = proxyOptions[0];
-    if (!selected) {
-      commitDraft({ mode, proxyNodeID: '', proxyUrl: '' }, false);
-      return;
-    }
-    commitDraft({ mode, proxyNodeID: selected.node.id, proxyUrl: selected.proxyUrl }, true);
-  }
-
   function selectProxy(nextProxyURL: string) {
     const selected = proxyOptions.find((item) => item.proxyUrl === nextProxyURL);
     commitDraft(
@@ -155,7 +136,6 @@ export default function AccountProxyRouteSection({
         draft={draft}
         proxyOptions={proxyOptions}
         hasDetachedCurrentURL={hasDetachedCurrentURL}
-        onModeChange={changeMode}
         onProxySelect={selectProxy}
       />
     </AccountDetailSection>
@@ -167,14 +147,12 @@ export function AccountProxyRouteEditor({
   draft,
   proxyOptions,
   hasDetachedCurrentURL,
-  onModeChange,
   onProxySelect,
 }: {
   readonlyReason?: string;
   draft: AccountProxyRouteDraft;
   proxyOptions: Array<{ node: ProxyNodeRecord; proxyUrl: string }>;
   hasDetachedCurrentURL: boolean;
-  onModeChange: (mode: AccountProxyMode) => void;
   onProxySelect: (proxyUrl: string) => void;
 }) {
   const { t } = useI18n();
@@ -188,55 +166,33 @@ export function AccountProxyRouteEditor({
   }
 
   return (
-    <>
-      <div className="grid grid-cols-3 border-2 border-[var(--border-color)]">
-        {(['inherit', 'direct', 'custom'] as const).map((mode) => (
-          <button
-            key={mode}
-            type="button"
-            onClick={() => onModeChange(mode)}
-            className={`min-h-9 border-r-2 border-[var(--border-color)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] last:border-r-0 ${
-              draft.mode === mode
-                ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
-                : 'bg-[var(--bg-main)] text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
-            }`}
-          >
-            {mode === 'inherit'
-              ? t('accounts.proxy_route_inherit')
-              : mode === 'direct'
-                ? t('accounts.proxy_route_direct')
-                : t('accounts.proxy_route_custom')}
-          </button>
-        ))}
+    <div data-account-proxy-route-editor="saved-node-only" className="space-y-2">
+      <div className="text-[length:var(--font-size-ui-2xs)] font-bold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        账号详情只选择已保存的代理池节点；刷新、测速、增删节点在代理池页面完成。
       </div>
-
-      {draft.mode === 'custom' ? (
-        <div className="space-y-2">
-          <select
-            value={draft.proxyUrl}
-            onChange={(event) => onProxySelect(event.target.value)}
-            disabled={proxyOptions.length === 0 && !hasDetachedCurrentURL}
-            className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
-          >
-            {draft.proxyUrl ? null : <option value="">{t('accounts.proxy_route_select_placeholder')}</option>}
-            {hasDetachedCurrentURL ? (
-              <option value={draft.proxyUrl}>
-                {t('accounts.proxy_route_current_url')}: {draft.proxyUrl}
-              </option>
-            ) : null}
-            {proxyOptions.map(({ node, proxyUrl: nodeProxyURL }) => (
-              <option key={node.id} value={nodeProxyURL}>
-                {node.name} · {node.protocol} · {node.host}:{node.port} · {node.latencyMs}ms
-              </option>
-            ))}
-          </select>
-          {proxyOptions.length === 0 && !draft.proxyUrl ? (
-            <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
-              {t('accounts.proxy_route_no_nodes')}
-            </div>
-          ) : null}
+      <select
+        value={draft.proxyUrl}
+        onChange={(event) => onProxySelect(event.target.value)}
+        disabled={proxyOptions.length === 0 && !hasDetachedCurrentURL}
+        className="input-swiss w-full font-mono !text-[length:var(--font-size-ui-xs)]"
+      >
+        {draft.proxyUrl ? null : <option value="">{t('accounts.proxy_route_select_placeholder')}</option>}
+        {hasDetachedCurrentURL ? (
+          <option value={draft.proxyUrl}>
+            {t('accounts.proxy_route_current_url')}: {draft.proxyUrl}
+          </option>
+        ) : null}
+        {proxyOptions.map(({ node, proxyUrl: nodeProxyURL }) => (
+          <option key={node.id} value={nodeProxyURL}>
+            {node.name} · {node.protocol} · {node.host}:{node.port} · {node.latencyMs}ms
+          </option>
+        ))}
+      </select>
+      {proxyOptions.length === 0 && !draft.proxyUrl ? (
+        <div className="border border-[var(--border-color)] bg-[var(--bg-surface)] px-3 py-2 text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          {t('accounts.proxy_route_no_nodes')}
         </div>
       ) : null}
-    </>
+    </div>
   );
 }

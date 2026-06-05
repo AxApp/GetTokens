@@ -549,9 +549,11 @@ function UnifiedComposeCurlConfigSection({
   const [editorOpen, setEditorOpen] = useState(false);
   const hasScript = value.trim().length > 0;
   const variables = buildCurlVariables({
+    label: "",
     apiKey,
     baseUrl,
     prefix,
+    models: [],
     quotaCurl: "",
     quotaEnabled: false,
     platformCookie: platformCookie ?? "",

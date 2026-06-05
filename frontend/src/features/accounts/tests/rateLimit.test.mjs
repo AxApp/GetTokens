@@ -87,6 +87,8 @@ test('rate limit rules section edits account-card rules without matchKey fallbac
   assert.doesNotMatch(source, /RATE_LIMIT_RULE_SURFACE_CLASS = 'bg-\[var\(--bg-surface\)\]\/35 px-3 py-3'/);
   assert.doesNotMatch(source, /formatRateLimitMetric\(ruleState\.currentUsage\) \/ \$\{formatRateLimitMetric/);
   assert.match(source, /RATE_LIMIT_RULE_SURFACE_CLASS/);
+  assert.match(source, /RATE_LIMIT_RULE_SURFACE_CLASS = 'bg-\[var\(--bg-surface\)\]\/35 py-2'/);
+  assert.doesNotMatch(source, /RATE_LIMIT_RULE_SURFACE_CLASS = 'bg-\[var\(--bg-surface\)\]\/35 px-3/);
   assert.match(source, /RATE_LIMIT_RULE_STACK_CLASS/);
   assert.match(source, /RATE_LIMIT_RULE_LIST_CLASS/);
   assert.match(source, /density="dense"/);
@@ -162,8 +164,6 @@ test('route guard configured account cards replace the generic frame inspector l
 test('account detail callers do not pass attribution keys into rate limit rules', async () => {
   const files = [
     '../components/UnifiedAccountDetailModal.tsx',
-    '../components/ApiKeyDetailModal.tsx',
-    '../components/OpenAICompatibleDetailModal.tsx',
     '../../codex/components/CodexAccountDetailModal.tsx',
   ];
 

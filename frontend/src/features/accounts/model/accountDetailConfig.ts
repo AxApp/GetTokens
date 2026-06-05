@@ -4,9 +4,11 @@ import { getVendorPreset, type VendorCredentialField } from "./vendorPresets.ts"
 import { resolveVendorPresetID } from "./vendorPresetHelpers.ts";
 
 export interface ApiKeyConfigDraft {
+  label: string;
   apiKey: string;
   baseUrl: string;
   prefix: string;
+  models: Array<{ name: string; alias?: string }>;
   quotaCurl: string;
   quotaEnabled: boolean;
   billingCurl: string;
@@ -23,6 +25,7 @@ type ConfigSource = Pick<
   | "apiKey"
   | "baseUrl"
   | "prefix"
+  | "models"
   | "quotaCurl"
   | "quotaEnabled"
   | "billingCurl"
@@ -51,9 +54,11 @@ export function buildApiKeyConfigDraft(
       baseUrl,
     });
   return {
+    label: account.displayName ?? "",
     apiKey: account.apiKey ?? "",
     baseUrl,
     prefix: account.prefix ?? "",
+    models: normalizeApiKeyConfigModels(account.models),
     quotaCurl,
     quotaEnabled: account.quotaEnabled ?? quotaCurl.trim().length > 0,
     billingCurl,
@@ -70,6 +75,7 @@ export function hasApiKeyConfigChanges(
 ) {
   const current = buildApiKeyConfigDraft(account);
   return (
+    current.label !== draft.label ||
     current.apiKey !== draft.apiKey ||
     current.baseUrl !== draft.baseUrl ||
     current.prefix !== draft.prefix ||
@@ -79,7 +85,8 @@ export function hasApiKeyConfigChanges(
     current.billingEnabled !== draft.billingEnabled ||
     current.platformCookie !== draft.platformCookie ||
     !isSameCurlVariables(current.curlVariables, draft.curlVariables) ||
-    current.proxyUrl !== draft.proxyUrl
+    current.proxyUrl !== draft.proxyUrl ||
+    !isSameApiKeyConfigModels(current.models, draft.models)
   );
 }
 
@@ -113,6 +120,29 @@ export function isSameCurlVariables(a?: Record<string, string>, b?: Record<strin
   const right = normalizeCurlVariables(b);
   const keys = Array.from(new Set([...Object.keys(left), ...Object.keys(right)])).sort();
   return keys.every((key) => (left[key] ?? '') === (right[key] ?? ''));
+}
+
+export function normalizeApiKeyConfigModels(models?: Array<{ name?: string; alias?: string }>): Array<{ name: string; alias?: string }> {
+  const normalized: Array<{ name: string; alias?: string }> = [];
+  const seen = new Set<string>();
+  for (const model of models ?? []) {
+    const name = String(model.name ?? '').trim();
+    const alias = String(model.alias ?? '').trim();
+    const key = `${name}\u0000${alias}`;
+    if (!name || seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    normalized.push(alias && alias !== name ? { name, alias } : { name });
+  }
+  return normalized;
+}
+
+export function isSameApiKeyConfigModels(
+  a?: Array<{ name?: string; alias?: string }>,
+  b?: Array<{ name?: string; alias?: string }>,
+) {
+  return JSON.stringify(normalizeApiKeyConfigModels(a)) === JSON.stringify(normalizeApiKeyConfigModels(b));
 }
 
 export function buildQuotaCurlTemplate(

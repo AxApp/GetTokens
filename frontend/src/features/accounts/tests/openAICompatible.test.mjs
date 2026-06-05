@@ -379,27 +379,19 @@ test('shouldRefreshRemoteModels returns true only when cache is empty or stale f
   assert.equal(shouldRefreshRemoteModels(1000, 1000 + 24 * 60 * 60 * 1000), true);
 });
 
-test('openai compatible detail uses a single-column form stack inside the modal', async () => {
-  const source = await readFile(new URL('../components/OpenAICompatibleDetailPanel.tsx', import.meta.url), 'utf8');
+test('openai compatible provider detail opens through the unified account detail page', async () => {
+  const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /<AccountDetailModuleStack layout="cards" cardColumns=\{1\}>/);
+  assert.match(source, /function findOpenAICompatibleAccountForProvider/);
+  assert.match(source, /setSelectedAccount\(providerAccount\)/);
+  assert.match(source, /markAccountDetailInHash\(providerAccount\.id\)/);
+  assert.doesNotMatch(source, /OpenAICompatibleDetailModal/);
+  assert.doesNotMatch(source, /openAICompatibleState\.openDetailModal/);
 });
 
-test('openai compatible model rows avoid narrow vertical delete buttons', async () => {
-  const source = await readFile(new URL('../components/OpenAICompatibleDetailPanel.tsx', import.meta.url), 'utf8');
+test('legacy openai compatible detail components are not part of the production detail route', async () => {
+  const featureSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /md:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)\]/);
-  assert.match(source, /xl:grid-cols-\[minmax\(0,1fr\)_minmax\(0,1fr\)_auto\]/);
-  assert.match(source, /whitespace-nowrap/);
-  assert.match(source, /md:col-span-2 md:justify-self-start xl:col-span-1 xl:justify-self-end/);
-});
-
-test('openai compatible detail does not mount runtime evidence overview', async () => {
-  const source = await readFile(new URL('../components/OpenAICompatibleDetailModal.tsx', import.meta.url), 'utf8');
-
-  assert.doesNotMatch(source, /AccountRuntimeEvidenceSection/);
-  assert.doesNotMatch(source, /usageSummary=\{usageSummary\}/);
-  assert.doesNotMatch(source, /buildOpenAICompatibleEvidenceRows/);
-  assert.doesNotMatch(source, /AccountRuntimeSnapshotSection|AccountEvidenceSection/);
-  assert.doesNotMatch(source, /lg:grid-cols-1 2xl:grid-cols/);
+  assert.equal((featureSource.match(/<UnifiedAccountDetailModal/g) || []).length, 1);
+  assert.doesNotMatch(featureSource, /<OpenAICompatibleDetailModal/);
 });

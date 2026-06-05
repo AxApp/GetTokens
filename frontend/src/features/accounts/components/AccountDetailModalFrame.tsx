@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import ModalFrame from '../../../components/ui/ModalFrame';
+
+type AccountDetailPanelAttributes = HTMLAttributes<HTMLDivElement> & Record<`data-${string}`, string | undefined>;
 
 interface AccountDetailModalFrameProps {
   children: ReactNode;
@@ -10,6 +12,7 @@ interface AccountDetailModalFrameProps {
   headerClassName?: string;
   bodyClassName?: string;
   footerClassName?: string;
+  panelAttributes?: AccountDetailPanelAttributes;
 }
 
 export default function AccountDetailModalFrame({
@@ -21,6 +24,7 @@ export default function AccountDetailModalFrame({
   headerClassName = 'px-6 py-5',
   bodyClassName = '',
   footerClassName = '',
+  panelAttributes,
 }: AccountDetailModalFrameProps) {
   return (
     <ModalFrame
@@ -32,6 +36,7 @@ export default function AccountDetailModalFrame({
       headerClassName={headerClassName}
       bodyClassName={bodyClassName}
       footerClassName={footerClassName}
+      panelAttributes={panelAttributes}
     >
       {children}
     </ModalFrame>

@@ -32,7 +32,7 @@ import {
   resolveCopiedOpenAICompatibleProviderName,
   resolveNumberedDuplicateTitle,
 } from '../model/accountTransfer';
-import { normalizeCurlVariables, type ApiKeyConfigDraft } from '../model/accountDetailConfig';
+import { normalizeApiKeyConfigModels, normalizeCurlVariables, type ApiKeyConfigDraft } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
 import { publishAccountDisabledChange } from '../model/accountDisabledSync';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
@@ -491,6 +491,8 @@ export default function useAccountsActions({
       const nextPlatformCookie = (draft.platformCookie ?? "").trim();
       const nextCurlVariables = normalizeCurlVariables(draft.curlVariables, nextPlatformCookie);
       const nextProxyURL = draft.proxyUrl.trim();
+      const nextModels = normalizeApiKeyConfigModels(draft.models);
+      const nextLabel = draft.label.trim();
       if (!nextAPIKey) {
         setDeleteError(`SAVE ERROR: ${t('accounts.api_key_required')}`);
         return;
@@ -501,6 +503,7 @@ export default function useAccountsActions({
           prev
             ? {
                 ...prev,
+                displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
                 apiKey: nextAPIKey,
                 baseUrl: nextBaseURL,
                 prefix: nextPrefix,
@@ -511,6 +514,7 @@ export default function useAccountsActions({
                 platformCookie: nextPlatformCookie,
                 curlVariables: nextCurlVariables,
                 proxyUrl: nextProxyURL,
+                models: nextModels,
               }
             : prev
         );
@@ -518,6 +522,20 @@ export default function useAccountsActions({
       }
 
       try {
+        if (nextLabel !== selectedAccount.displayName) {
+          await trackRequest(
+            'UpdateCodexAPIKeyLabel',
+            { id: selectedAccount.id, label: nextLabel },
+            () =>
+              UpdateCodexAPIKeyLabel(
+                main.UpdateCodexAPIKeyLabelInput.createFrom({
+                  id: selectedAccount.id,
+                  label: nextLabel,
+                })
+              )
+          );
+        }
+
         if (draft.quotaEnabled && nextQuotaCurl) {
           await trackRequest(
             'TestCodexAPIKeyQuotaCurl',
@@ -553,14 +571,16 @@ export default function useAccountsActions({
                 platformCookie: nextPlatformCookie,
                 curlVariables: nextCurlVariables,
                 proxyUrl: nextProxyURL,
+                models: normalizeApiKeyConfigModels(draft.models),
               })
             )
-        );
+          );
 
         setSelectedAccount((prev) =>
           prev
             ? {
                 ...prev,
+                displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
                 apiKey: nextAPIKey,
                 baseUrl: nextBaseURL,
                 prefix: nextPrefix,
@@ -571,6 +591,7 @@ export default function useAccountsActions({
                 platformCookie: nextPlatformCookie,
                 curlVariables: nextCurlVariables,
                 proxyUrl: nextProxyURL,
+                models: nextModels,
               }
             : prev
         );

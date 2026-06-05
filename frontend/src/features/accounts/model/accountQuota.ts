@@ -84,6 +84,63 @@ export function buildQuotaDisplay(account: AccountRecord, state?: CodexQuotaStat
   };
 }
 
+export function normalizeQuotaTestDisplay(result: unknown): QuotaDisplay | undefined {
+  if (!result || typeof result !== 'object') {
+    return undefined;
+  }
+  const record = result as Record<string, any>;
+  const rawWindows = Array.isArray(record.windows) ? record.windows : [];
+  const windows = rawWindows
+    .map((window, index) => normalizeQuotaTestWindow(window, index))
+    .filter((window): window is QuotaWindowDisplay => Boolean(window));
+
+  if (windows.length === 0) {
+    return undefined;
+  }
+
+  return {
+    status: 'success',
+    planType: String(record.planType ?? record.plan_type ?? '').trim(),
+    windows,
+    refreshing: false,
+    blocked: Boolean(record.blocked),
+    blockReason: String(record.blockReason ?? record.block_reason ?? '').trim() || undefined,
+    stale: Boolean(record.stale),
+    degradedReason: String(record.degradedReason ?? record.degraded_reason ?? '').trim() || undefined,
+  };
+}
+
+function normalizeQuotaTestWindow(window: unknown, index: number): QuotaWindowDisplay | undefined {
+  if (!window || typeof window !== 'object') {
+    return undefined;
+  }
+  const record = window as Record<string, any>;
+  const remainingPercent = normalizePercent(record.remainingPercent ?? record.remaining_percent);
+  const usedPercent = remainingPercent === null ? null : Math.max(0, 100 - remainingPercent);
+  const id = String(record.id ?? record.windowID ?? record.window_id ?? `test-window-${index + 1}`).trim();
+  const label = String(record.label ?? record.name ?? id).trim();
+  if (!label) {
+    return undefined;
+  }
+
+  return {
+    id: id || `test-window-${index + 1}`,
+    label,
+    remainingPercent,
+    usedLabel: String(record.usedLabel ?? record.used_label ?? (usedPercent === null ? '--' : `${usedPercent}%`)).trim() || '--',
+    usedTokens: normalizeQuotaTokenCount(record.usedTokens ?? record.used_tokens),
+    limitTokens: normalizeQuotaTokenCount(record.limitTokens ?? record.limit_tokens),
+    remainingTokens: normalizeQuotaTokenCount(record.remainingTokens ?? record.remaining_tokens),
+    resetLabel: String(record.resetLabel ?? record.reset_label ?? '--').trim() || '--',
+    resetAtUnix: normalizeQuotaResetUnix(record.resetAtUnix ?? record.reset_at_unix),
+  };
+}
+
+function normalizeQuotaResetUnix(value: unknown) {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+}
+
 function quotaRuntimeDisplayState(quota: CodexQuota) {
   const sources = Array.isArray((quota as any).sources)
     ? (quota as any).sources.map((source: any) => ({

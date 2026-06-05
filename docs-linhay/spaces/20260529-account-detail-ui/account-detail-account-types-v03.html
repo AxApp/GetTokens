@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GetTokens · Account Detail Account Types v03</title>
+  <style>
+    :root {
+      --paper:#f2efe7; --panel:#fffdf6; --panel2:#ebe5d8; --ink:#0d0d0d; --muted:#6d675d;
+      --line:#0d0d0d; --hair:rgba(13,13,13,.18); --red:#e3261c; --green:#08784a; --blue:#1d52d1; --amber:#a96500; --violet:#654bd8;
+      --shadow:7px 7px 0 #0d0d0d; --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; --sans:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+    *{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);min-width:1480px} body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;mix-blend-mode:multiply;background-image:radial-gradient(rgba(13,13,13,.22) .65px,transparent .65px);background-size:5px 5px}.page{padding:28px}.mono,.k{font-family:var(--mono)}.k{font-size:11px;letter-spacing:.22em;text-transform:uppercase;font-weight:1000;color:var(--muted)}
+    .cover{border:3px solid var(--line);background:var(--panel);box-shadow:var(--shadow);padding:24px;margin-bottom:18px;display:grid;grid-template-columns:1fr 520px;gap:24px;align-items:end}.cover h1{margin:8px 0 0;font-size:clamp(48px,5.4vw,86px);line-height:.84;letter-spacing:-.06em;text-transform:uppercase;font-style:italic;font-weight:1000}.cover p{margin:12px 0 0;color:var(--muted);font-size:14px;line-height:1.62;font-weight:850;max-width:920px}.brief{display:grid;grid-template-columns:1fr 1fr;gap:10px}.brief div{border:2px solid var(--line);background:var(--panel2);padding:12px;min-height:78px}.brief b{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase}.brief span{display:block;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.45;font-weight:850}
+    .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-bottom:18px;align-items:end}.tabs,.states{display:flex;gap:9px;flex-wrap:wrap}.tab,.state{border:2px solid var(--line);background:var(--panel);box-shadow:3px 3px 0 var(--line);padding:9px 11px;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:1000;cursor:pointer}.tab[aria-pressed="true"],.state[aria-pressed="true"]{background:var(--ink);color:var(--panel)}.state{box-shadow:none}.state[aria-pressed="true"]{background:#333}
+    .shell{border:4px solid var(--line);background:#1b1b1b;padding:10px;box-shadow:var(--shadow)}.app{height:900px;border:3px solid var(--line);background:rgba(13,13,13,.76);padding:24px;display:grid;place-items:center}.modal{width:min(1380px,calc(100vw - 88px));height:835px;border:3px solid var(--line);background:var(--panel);display:grid;grid-template-rows:64px minmax(0,1fr)78px;box-shadow:11px 11px 0 rgba(0,0,0,.46)}.top{display:grid;grid-template-columns:320px minmax(0,1fr)380px;border-bottom:2px solid var(--line);background:var(--panel2)}.top>div{border-right:2px solid var(--line);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0}.top>div:last-child{border-right:0}.sys{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;font-weight:1000;color:var(--muted)}.top-title{font-size:16px;font-weight:1000;text-transform:uppercase;font-style:italic;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .body{min-height:0;display:grid;grid-template-columns:286px minmax(0,1fr)336px}.rail,.main,.inspect{min-height:0;overflow:auto}.rail{border-right:2px solid var(--line);background:#f0eadf}.main{background:var(--panel)}.inspect{border-left:2px solid var(--line);background:#f7f4ed}.section{border-bottom:2px solid var(--line);padding:16px}.section.compact{padding:12px 16px}.ey{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;font-weight:1000;color:var(--muted);margin-bottom:8px}.label{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:1000;color:var(--muted)}.name{font-size:32px;line-height:.92;letter-spacing:-.05em;text-transform:uppercase;font-weight:1000;font-style:italic;margin:0 0 12px}.pill{display:inline-flex;align-items:center;min-height:24px;border:1.5px solid var(--line);background:#fff;padding:4px 8px;font-family:var(--mono);font-size:10px;font-weight:1000;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}.green{color:var(--green);border-color:var(--green)}.red{color:var(--red);border-color:var(--red)}.blue{color:var(--blue);border-color:var(--blue)}.amber{color:var(--amber);border-color:var(--amber)}.violet{color:var(--violet);border-color:var(--violet)}.input,.textarea{width:100%;border:2px solid var(--line);background:#fff;padding:9px 10px;min-height:38px;font-family:var(--mono);font-size:13px;font-weight:850;outline:0}.textarea{min-height:90px;line-height:1.45;resize:vertical}.button{border:2px solid var(--line);background:#fff;padding:9px 12px;font-family:var(--mono);font-size:10px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase;box-shadow:3px 3px 0 #cac2b5;cursor:pointer}.button.primary{background:var(--ink);color:var(--panel);box-shadow:3px 3px 0 #8f887d}.button.danger{color:var(--red);border-color:var(--red)}.button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}.kv{display:grid;grid-template-columns:112px minmax(0,1fr);gap:10px;padding:8px 0;border-top:1px dashed var(--hair);align-items:start}.kv:first-of-type{border-top:0}.kv b{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:1000;color:var(--muted)}.kv span{font-size:12px;font-weight:900;line-height:1.35;min-width:0;overflow:hidden;text-overflow:ellipsis}.status-card{border:2px solid var(--line);background:#fff;padding:12px;margin-top:12px}.status-card strong{display:block;margin:8px 0;font-size:20px;line-height:1;text-transform:uppercase;font-style:italic;font-weight:1000}.metric-grid{display:grid;grid-template-columns:1fr 1fr;border:2px solid var(--line);margin-top:12px}.metric{padding:10px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);min-height:62px;background:#fff}.metric:nth-child(2n){border-right:0}.metric:nth-last-child(-n+2){border-bottom:0}.metric data{display:block;font-size:18px;font-weight:1000;letter-spacing:-.03em;margin-top:5px}.module{border-bottom:2px solid var(--line);padding:18px}.module-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:2px dashed var(--line);padding-bottom:10px;margin-bottom:14px}.module h2{margin:0;font-size:18px;line-height:1;text-transform:uppercase;font-style:italic;letter-spacing:-.02em}.desc{color:var(--muted);font-size:12px;line-height:1.45;font-weight:850;margin-top:6px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.field{display:grid;gap:7px}.notice{border:2px solid var(--line);background:#fff9e6;padding:10px;color:var(--muted);font-size:12px;line-height:1.45;font-weight:850}.notice.red{background:#fff1ef;border-color:var(--red);color:var(--red)}.notice.green{background:#effaf2;border-color:var(--green);color:var(--green)}.notice.blue{background:#eef3ff;border-color:var(--blue);color:var(--blue)}.table{border:2px solid var(--line);margin-top:12px}.row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr) 110px;border-bottom:1px solid var(--line);min-height:42px}.row:last-child{border-bottom:0}.row>div{border-right:1px solid var(--line);padding:9px 10px;min-width:0;display:flex;align-items:center}.row>div:last-child{border-right:0;justify-content:flex-end}.row.header{background:var(--panel2);font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;font-weight:1000;color:var(--muted)}.row input{width:100%;border:0;background:transparent;font-family:var(--mono);font-size:13px;font-weight:850;outline:0}.chips{display:flex;flex-wrap:wrap;gap:8px}.chip{border:2px solid var(--line);background:#fff;padding:7px 9px;font-family:var(--mono);font-size:10px;font-weight:1000;letter-spacing:.1em;text-transform:uppercase}.chip.active{background:var(--ink);color:var(--panel)}.verify{border:2px solid var(--line);background:#fff;padding:12px;display:grid;gap:10px;margin-top:12px}.bar{height:12px;border:2px solid var(--line);margin:8px 0;background:linear-gradient(90deg,var(--green) 0 46%,transparent 46%)}.footer{border-top:2px solid var(--line);background:var(--panel2);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 18px}.footer-msg{display:flex;align-items:center;gap:12px;min-width:0}.footer-msg strong{font-size:13px;text-transform:uppercase;letter-spacing:.08em}.footer-msg span{display:block;color:var(--muted);font-size:12px;font-weight:850;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;gap:10px}.type-only,.state-only{display:none}.type-compatible .t-compatible,.type-codex-api .t-codex-api,.type-codex-oauth .t-codex-oauth,.type-claude .t-claude,.type-token-plan .t-token-plan{display:block}.type-compatible .ti-compatible,.type-codex-api .ti-codex-api,.type-codex-oauth .ti-codex-oauth,.type-claude .ti-claude,.type-token-plan .ti-token-plan{display:inline-flex}.state-ready .s-ready,.state-dirty .s-dirty,.state-loading .s-loading,.state-error .s-error{display:block}.state-ready .si-ready,.state-dirty .si-dirty,.state-loading .si-loading,.state-error .si-error{display:inline-flex}.hide-compatible,.hide-codex-api,.hide-codex-oauth,.hide-claude,.hide-token-plan,.hide-ready,.hide-dirty,.hide-loading,.hide-error{display:block}.type-compatible .hide-compatible,.type-codex-api .hide-codex-api,.type-codex-oauth .hide-codex-oauth,.type-claude .hide-claude,.type-token-plan .hide-token-plan,.state-ready .hide-ready,.state-dirty .hide-dirty,.state-loading .hide-loading,.state-error .hide-error{display:none!important}.spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--blue);border-top-color:transparent;animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.compare{margin-top:20px;border:3px solid var(--line);background:var(--panel);box-shadow:var(--shadow);padding:18px}.compare h2{margin:0 0 12px;font-size:24px;text-transform:uppercase;font-style:italic}.matrix{display:grid;grid-template-columns:220px repeat(5,1fr);border:2px solid var(--line)}.matrix>div{border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px;min-height:58px;font-size:12px;font-weight:850}.matrix>div:nth-child(6n){border-right:0}.matrix .head{background:var(--panel2);font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:1000;color:var(--muted)}
+  </style>
+</head>
+<body class="type-compatible state-ready">
+  <main class="page">
+    <section class="cover">
+      <div>
+        <div class="k">GETTOKENS / ACCOUNT DETAIL / ACCOUNT TYPES V03</div>
+        <h1>Multi-Type Account Workbench</h1>
+        <p>完整模拟不同账号类型在同一账号详情框架下的差异：OpenAI-compatible、Codex API Key、Codex Auth-file/OAuth、Claude Code、Token Plan。目标是先统一交互骨架，再让每种账号只替换必要模块。</p>
+      </div>
+      <div class="brief">
+        <div><b>Shared Frame</b><span>Identity Rail / Configuration Stack / Run Inspector / Command Bar。</span></div>
+        <div><b>Type Delta</b><span>凭据来源、模型目录、验证动作、quota/billing、reauth 与 local CLI 映射。</span></div>
+        <div><b>Authority</b><span>账号/凭据/限流事实来自 Wails/sidecar；UI draft 保存后回写。</span></div>
+        <div><b>Design Rule</b><span>同一保存门禁，同一状态语言；不同类型只显示自身合法操作。</span></div>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <div class="tabs" aria-label="账号类型">
+        <button class="tab" data-type="compatible" aria-pressed="true">OpenAI-Compatible</button>
+        <button class="tab" data-type="codex-api" aria-pressed="false">Codex API Key</button>
+        <button class="tab" data-type="codex-oauth" aria-pressed="false">Codex Auth-file</button>
+        <button class="tab" data-type="claude" aria-pressed="false">Claude Code</button>
+        <button class="tab" data-type="token-plan" aria-pressed="false">Token Plan</button>
+      </div>
+      <div class="states" aria-label="状态">
+        <button class="state" data-state="ready" aria-pressed="true">READY</button>
+        <button class="state" data-state="dirty" aria-pressed="false">DIRTY</button>
+        <button class="state" data-state="loading" aria-pressed="false">LOADING</button>
+        <button class="state" data-state="error" aria-pressed="false">ERROR</button>
+      </div>
+    </div>
+
+    <section class="shell">
+      <div class="app">
+        <article class="modal" role="dialog" aria-label="不同账号类型详情模拟">
+          <header class="top">
+            <div><span class="sys">ACCOUNT DETAIL</span><span class="pill green si-ready state-only">READY</span><span class="pill amber si-dirty state-only">DIRTY</span><span class="pill blue si-loading state-only">BUSY</span><span class="pill red si-error state-only">ERROR</span></div>
+            <div>
+              <span class="top-title type-only t-compatible">DeepSeek / OpenAI-Compatible Provider</span>
+              <span class="top-title type-only t-codex-api">Codex Stable / API Key Account</span>
+              <span class="top-title type-only t-codex-oauth">codex-pro.json / Auth-file OAuth</span>
+              <span class="top-title type-only t-claude">Claude Code Pro / OAuth Account</span>
+              <span class="top-title type-only t-token-plan">MiMo Token Plan / Split Credential Provider</span>
+              <span class="sys">detail=&lt;account-id&gt;</span>
+            </div>
+            <div><span class="sys">FRAME ACCOUNTS</span><button class="button">ESC CLOSE</button></div>
+          </header>
+
+          <div class="body">
+            <aside class="rail">
+              <section class="section">
+                <div class="ey">Identity Rail</div>
+                <h2 class="name type-only t-compatible">DeepSeek</h2>
+                <h2 class="name type-only t-codex-api">Codex Stable</h2>
+                <h2 class="name type-only t-codex-oauth">codex-pro.json</h2>
+                <h2 class="name type-only t-claude">Claude Code Pro</h2>
+                <h2 class="name type-only t-token-plan">MiMo Plan</h2>
+                <label class="field"><span class="label">账号名称 / Display</span><input class="input type-only t-compatible" value="DeepSeek"><input class="input type-only t-codex-api" value="Codex Stable"><input class="input type-only t-codex-oauth" value="codex-pro.json"><input class="input type-only t-claude" value="Claude Code Pro"><input class="input type-only t-token-plan" value="MiMo Token Plan"></label>
+                <div class="status-card">
+                  <span class="label">Primary status</span>
+                  <strong class="si-ready state-only green">可用</strong><strong class="si-dirty state-only amber">存在未保存更改</strong><strong class="si-loading state-only blue"><span class="spinner"></span> 处理中</strong><strong class="si-error state-only red">需要处理</strong>
+                  <div class="kv"><b>Source</b><span class="type-only t-compatible">API key + OpenAI compatible</span><span class="type-only t-codex-api">Codex API key</span><span class="type-only t-codex-oauth">Auth file / OAuth refresh</span><span class="type-only t-claude">Claude Code OAuth</span><span class="type-only t-token-plan">tp key + sk model fetch key</span></div>
+                  <div class="kv"><b>Verify</b><span class="si-ready state-only">success at 16:20</span><span class="si-dirty state-only">draft not verified</span><span class="si-loading state-only">pending...</span><span class="si-error state-only">failed / blocked</span></div>
+                  <div class="kv"><b>Authority</b><span>Wails projection + sidecar</span></div>
+                </div>
+                <div class="metric-grid">
+                  <div class="metric"><span class="label">Models</span><data class="type-only t-compatible">2</data><data class="type-only t-codex-api">4</data><data class="type-only t-codex-oauth">12</data><data class="type-only t-claude">3</data><data class="type-only t-token-plan">5</data></div>
+                  <div class="metric"><span class="label">Quota</span><data class="hide-codex-oauth hide-claude">ON</data><data class="type-only t-codex-oauth">Provider</data><data class="type-only t-claude">Plan</data></div>
+                  <div class="metric"><span class="label">Proxy</span><data class="si-error state-only red">Bad</data><data class="hide-error">Pool</data></div>
+                  <div class="metric"><span class="label">Rules</span><data>3</data></div>
+                </div>
+              </section>
+
+              <section class="section compact">
+                <div class="ey">Type Contract</div>
+                <div class="kv type-only t-compatible"><b>Edit</b><span>name/baseUrl/apiKey/headers/models/proxy/rate-limit</span></div>
+                <div class="kv type-only t-codex-api"><b>Edit</b><span>apiKey/baseUrl/prefix/quota/billing/proxy/rate-limit</span></div>
+                <div class="kv type-only t-codex-oauth"><b>Edit</b><span>rename/proxy/rate-limit; auth actions via file APIs</span></div>
+                <div class="kv type-only t-claude"><b>Edit</b><span>project binding/local CLI mapping/reauth/rate-limit</span></div>
+                <div class="kv type-only t-token-plan"><b>Edit</b><span>tp chat key + sk model-fetch key + split base URLs</span></div>
+              </section>
+            </aside>
+
+            <main class="main">
+              <section class="module type-only t-compatible">
+                <div class="module-head"><div><div class="ey">01 / Compatible Endpoint</div><h2>Provider Endpoint + API Key</h2><p class="desc">OpenAI-compatible 账号主配置，验证和模型拉取读取当前 draft。</p></div><span class="pill green si-ready state-only">saved</span><span class="pill amber si-dirty state-only">dirty</span></div>
+                <div class="grid2"><label class="field"><span class="label">Base URL</span><input class="input" value="https://api.deepseek.com/v1"></label><label class="field"><span class="label">API Key</span><input class="input" value="sk-••••••••••"></label></div>
+              </section>
+
+              <section class="module type-only t-codex-api">
+                <div class="module-head"><div><div class="ey">01 / Codex API Key</div><h2>凭据、Prefix 与脚本能力</h2><p class="desc">API Key 账号重点是 credential verify、quota curl、billing curl 与 prefix。</p></div><span class="pill blue">api-key</span></div>
+                <div class="grid3"><label class="field"><span class="label">API Key</span><input class="input" value="sk-codex-••••••"></label><label class="field"><span class="label">Base URL</span><input class="input" value="https://api.openai.com/v1"></label><label class="field"><span class="label">Prefix</span><input class="input" value="/v1"></label></div>
+                <div class="notice" style="margin-top:12px">Quota/Billing 通过 curl modal 编辑，script=quota / script=billing 独立路由，不覆盖 detail。</div>
+              </section>
+
+              <section class="module type-only t-codex-oauth">
+                <div class="module-head"><div><div class="ey">01 / Auth File Actions</div><h2>OAuth Auth-file 管理</h2><p class="desc">不编辑 API Key；重点是 reauth、normalize、download、模型目录刷新。</p></div><span class="pill violet">OAuth</span></div>
+                <div class="grid2"><div class="notice blue"><b>Auth file</b><br>~/.codex/auth.json / codex-pro.json<br>包含 access_token 与 refresh_token 摘要，不展示完整密钥。</div><div class="grid2"><button class="button">Normalize</button><button class="button">Download</button><button class="button primary">Reauth</button><button class="button">Refresh Models</button></div></div>
+              </section>
+
+              <section class="module type-only t-claude">
+                <div class="module-head"><div><div class="ey">01 / Claude Code Account</div><h2>项目绑定与本地 CLI 映射</h2><p class="desc">Claude Code 类型更关注本地 CLI 应用、项目绑定、OAuth 恢复和 Anthropic 格式路由。</p></div><span class="pill violet">Claude</span></div>
+                <div class="grid2"><label class="field"><span class="label">Project Binding</span><input class="input" value="~/Desktop/projects/gettokens"></label><label class="field"><span class="label">Local CLI Slot</span><input class="input" value="claude-code-pro"></label></div>
+                <div class="notice" style="margin-top:12px">Claude Code 账号不显示 OpenAI-compatible headers/model alias 表；使用 Claude channel routing 与 Anthropic 格式。</div>
+              </section>
+
+              <section class="module type-only t-token-plan">
+                <div class="module-head"><div><div class="ey">01 / Split Credential</div><h2>对话 Key 与模型拉取 Key 分离</h2><p class="desc">Token Plan 使用 tp- key 执行 agent 对话，额外 sk- key 仅用于 /models 拉取。</p></div><span class="pill amber">split</span></div>
+                <div class="grid2"><label class="field"><span class="label">Chat Base URL</span><input class="input" value="https://token-plan-cn.xiaomimimo.com/v1"></label><label class="field"><span class="label">Chat API Key</span><input class="input" value="tp-••••••••"></label><label class="field"><span class="label">Model Fetch URL</span><input class="input" value="https://api.xiaomimimo.com/v1"></label><label class="field"><span class="label">Model Fetch Key</span><input class="input" value="sk-••••••••"></label></div>
+              </section>
+
+              <section class="module hide-codex-oauth hide-claude">
+                <div class="module-head"><div><div class="ey">02 / HTTP Headers</div><h2>自定义 Headers</h2><p class="desc">OpenAI-compatible/Token Plan/API Key 可配置 headers；OAuth/Auth-file 与 Claude 默认不暴露。</p></div><button class="button">展开/收起</button></div>
+                <textarea class="textarea">HTTP-Referer: https://gettokens.local
+X-Title: GetTokens Workbench</textarea>
+              </section>
+
+              <section class="module">
+                <div class="module-head"><div><div class="ey">03 / Model Catalog</div><h2>模型目录</h2><p class="desc type-only t-compatible">本地模型 + 远端模型候选，可审阅后应用。</p><p class="desc type-only t-codex-api">API Key 验证模型列表，可从 preview/Wails 提供。</p><p class="desc type-only t-codex-oauth">Auth-file 模型来自 GetAuthFileModels，不编辑 API Key。</p><p class="desc type-only t-claude">Claude 模型是 channel routing 候选，不使用 OpenAI models endpoint。</p><p class="desc type-only t-token-plan">远端模型通过 modelFetchKey 拉取，不能用 tp 对话 key 代替。</p></div><div><button class="button hide-claude">拉取远端模型</button> <button class="button primary hide-claude">使用远端模型</button></div></div>
+                <div class="table">
+                  <div class="row header"><div>Model / Source</div><div>Alias / Route</div><div>Action</div></div>
+                  <div class="row type-only t-compatible"><div><input value="deepseek-v4-pro"></div><div><input value="DeepSeek V4 Pro"></div><div><button class="button danger">删除</button></div></div>
+                  <div class="row type-only t-compatible"><div><input value="deepseek-v4-flash"></div><div><input value="DeepSeek Flash"></div><div><button class="button danger">删除</button></div></div>
+                  <div class="row type-only t-codex-api"><div><input value="gpt-5.4-mini"></div><div><input value="fast verify"></div><div><button class="button danger">删除</button></div></div>
+                  <div class="row type-only t-codex-api"><div><input value="gpt-5.4"></div><div><input value="stable"></div><div><button class="button danger">删除</button></div></div>
+                  <div class="row type-only t-codex-oauth"><div><input value="gpt-5.5" readonly></div><div><input value="oauth available" readonly></div><div><span class="pill violet">read</span></div></div>
+                  <div class="row type-only t-codex-oauth"><div><input value="codex-mini-latest" readonly></div><div><input value="codex" readonly></div><div><span class="pill violet">read</span></div></div>
+                  <div class="row type-only t-claude"><div><input value="claude-sonnet-4.5" readonly></div><div><input value="anthropic" readonly></div><div><span class="pill violet">route</span></div></div>
+                  <div class="row type-only t-claude"><div><input value="claude-haiku-4.5" readonly></div><div><input value="fallback" readonly></div><div><span class="pill violet">route</span></div></div>
+                  <div class="row type-only t-token-plan"><div><input value="mimo-v2.5-pro"></div><div><input value="Plan Pro"></div><div><button class="button danger">删除</button></div></div>
+                  <div class="row type-only t-token-plan"><div><input value="mimo-v2-flash"></div><div><input value="Plan Flash"></div><div><button class="button danger">删除</button></div></div>
+                </div>
+                <div class="notice red si-error state-only" style="margin-top:12px">当前状态模拟错误：远端模型拉取/验证失败时保留已有模型，不自动清空。</div>
+              </section>
+
+              <section class="module type-only t-codex-api">
+                <div class="module-head"><div><div class="ey">04 / Quota + Billing</div><h2>Curl 脚本与实时结果</h2><p class="desc">API Key 账号专属：配额与余额脚本使用独立 modal 路由。</p></div><div><button class="button">编辑 Quota</button> <button class="button">编辑 Billing</button></div></div>
+                <div class="grid2"><div class="notice green">Quota: 72% remaining / reset 18:00</div><div class="notice green">Billing: 120.00 USD total</div></div>
+              </section>
+            </main>
+
+            <aside class="inspect">
+              <section class="section">
+                <div class="ey">Run Inspector</div>
+                <h2 style="margin:0 0 12px;text-transform:uppercase;font-style:italic">验证与操作</h2>
+                <div class="chips">
+                  <span class="chip active type-only t-compatible">deepseek-v4-pro</span><span class="chip type-only t-compatible">deepseek-v4-flash</span>
+                  <span class="chip active type-only t-codex-api">gpt-5.4-mini</span><span class="chip type-only t-codex-api">gpt-5.4</span>
+                  <span class="chip active type-only t-codex-oauth">刷新模型</span><span class="chip type-only t-codex-oauth">Reauth</span>
+                  <span class="chip active type-only t-claude">验证 CLI</span><span class="chip type-only t-claude">应用本地</span>
+                  <span class="chip active type-only t-token-plan">mimo-v2.5-pro</span><span class="chip type-only t-token-plan">fetch models</span>
+                </div>
+                <div class="verify">
+                  <label class="field hide-codex-oauth hide-claude"><span class="label">测试模型</span><input class="input type-only t-compatible" value="deepseek-v4-pro"><input class="input type-only t-codex-api" value="gpt-5.4-mini"><input class="input type-only t-token-plan" value="mimo-v2.5-pro"></label>
+                  <button class="button primary"><span class="hide-loading">执行验证</span><span class="si-loading state-only">验证中...</span></button>
+                  <div class="notice green si-ready state-only">当前账号类型验证成功。</div><div class="notice si-dirty state-only">验证读取当前 draft，但不会自动保存。</div><div class="notice blue si-loading state-only">请求处理中，保留旧数据。</div><div class="notice red si-error state-only">验证失败或被 proxy/credential 阻断。</div>
+                </div>
+              </section>
+
+              <section class="section compact hide-claude">
+                <div class="ey">Proxy Route</div>
+                <div class="chips"><span class="pill">inherit</span><span class="pill green hide-error">pool Tokyo-01</span><span class="pill red si-error state-only">custom invalid</span></div>
+                <input class="input" style="margin-top:10px" value="socks5://127.0.0.1:7890">
+              </section>
+
+              <section class="section compact">
+                <div class="ey">Rate Limit / Routing</div>
+                <div class="bar"></div>
+                <div class="kv"><b>Strategy</b><span class="type-only t-compatible">openai-compatible route guard</span><span class="type-only t-codex-api">codex channel route</span><span class="type-only t-codex-oauth">oauth shared window</span><span class="type-only t-claude">anthropic route order</span><span class="type-only t-token-plan">split credential route</span></div>
+                <div class="kv"><b>Dirty</b><span class="si-dirty state-only">Yes, save together</span><span class="hide-dirty">No</span></div>
+                <button class="button" style="width:100%;margin-top:10px">编辑规则</button>
+              </section>
+
+              <section class="section compact">
+                <div class="ey">Evidence Log</div>
+                <div class="kv"><b>Credential</b><span class="hide-error">accepted</span><span class="si-error state-only">unauthorized</span></div>
+                <div class="kv"><b>Models</b><span class="hide-loading">ready</span><span class="si-loading state-only">loading...</span></div>
+                <div class="kv"><b>Save</b><span>not requested</span></div>
+              </section>
+            </aside>
+          </div>
+
+          <footer class="footer">
+            <div class="footer-msg">
+              <span class="pill green si-ready state-only">READY</span><span class="pill amber si-dirty state-only">DIRTY</span><span class="pill blue si-loading state-only">BUSY</span><span class="pill red si-error state-only">BLOCKED</span>
+              <div><strong class="si-ready state-only">账号详情可保存/关闭</strong><strong class="si-dirty state-only">存在未保存更改</strong><strong class="si-loading state-only">请求处理中</strong><strong class="si-error state-only">保存被阻断</strong><span class="si-ready state-only">当前账号类型状态正常。</span><span class="si-dirty state-only">保存后写入对应 Wails/sidecar 权威来源。</span><span class="si-loading state-only">验证、拉取或保存过程中不清空已有信息。</span><span class="si-error state-only">修复 credential/proxy/reauth 错误后才能保存。</span></div>
+            </div>
+            <div class="actions"><button class="button primary hide-error">保存更改</button><button class="button si-error state-only" disabled>保存不可用</button><button class="button">放弃操作</button></div>
+          </footer>
+        </article>
+      </div>
+    </section>
+
+    <section class="compare">
+      <h2>账号类型差异矩阵</h2>
+      <div class="matrix">
+        <div class="head">能力 / 类型</div><div class="head">OpenAI-compatible</div><div class="head">Codex API Key</div><div class="head">Codex Auth-file</div><div class="head">Claude Code</div><div class="head">Token Plan</div>
+        <div class="head">凭据编辑</div><div>baseUrl / apiKey / headers</div><div>apiKey / baseUrl / prefix</div><div>不编辑 API Key，使用 auth-file actions</div><div>OAuth / local CLI mapping</div><div>tp chat key + sk model fetch key</div>
+        <div class="head">模型目录</div><div>local + remote apply</div><div>验证候选 + preview/Wails</div><div>GetAuthFileModels 只读/刷新</div><div>Claude route candidates</div><div>modelFetchKey 拉取</div>
+        <div class="head">验证动作</div><div>按模型验证兼容接口</div><div>API Key 连接验证</div><div>刷新 token / 模型目录</div><div>验证 Claude CLI/OAuth</div><div>验证对话 key，另测模型拉取 key</div>
+        <div class="head">Quota/Billing</div><div>可扩展 curl/供应商能力</div><div>quota/billing curl modal</div><div>provider managed</div><div>plan / channel status</div><div>plan quota + model fetch status</div>
+        <div class="head">保存阻断</div><div>proxy/header/credential/model</div><div>missingFields/proxy/script</div><div>reauth/file read failure</div><div>local apply/OAuth failure</div><div>任一 split credential 缺失</div>
+      </div>
+    </section>
+  </main>
+  <script>
+    const body=document.body;
+    const typeButtons=[...document.querySelectorAll('.tab')];
+    const stateButtons=[...document.querySelectorAll('.state')];
+    let currentType='compatible'; let currentState='ready';
+    function render(){ body.className=`type-${currentType} state-${currentState}`; typeButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.type===currentType))); stateButtons.forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.state===currentState))); }
+    typeButtons.forEach(b=>b.addEventListener('click',()=>{currentType=b.dataset.type; render();}));
+    stateButtons.forEach(b=>b.addEventListener('click',()=>{currentState=b.dataset.state; render();}));
+  </script>
+</body>
+</html>

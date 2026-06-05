@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GetTokens · 现有账号详情页模块状态梳理</title>
+  <style>
+    :root{
+      --bg:#f3f0e7;--paper:#fffdf7;--paper2:#eee8dc;--ink:#111;--muted:#706b62;--line:#111;
+      --green:#087a4a;--amber:#a65f00;--red:#c23830;--blue:#2657d7;--purple:#6b4fd6;
+      --shadow:7px 7px 0 #111;--col:392px;--left:270px;--head:168px;
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:var(--ink);background:radial-gradient(circle at 0 0,rgba(255,255,255,.8),transparent 420px),var(--bg)
+    }
+    *{box-sizing:border-box} body{margin:0;min-width:2280px}.page{padding:28px}.mono,.k{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}.k{font-size:11px;font-weight:1000;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+    .hero{display:grid;grid-template-columns:minmax(720px,1fr)560px;gap:24px;align-items:end;border:3px solid var(--line);background:var(--paper);box-shadow:var(--shadow);padding:26px;margin-bottom:22px}.hero h1{margin:8px 0 0;font-size:40px;line-height:.94;letter-spacing:-.05em;text-transform:uppercase;font-style:italic}.hero p{margin:12px 0 0;max-width:900px;color:var(--muted);font-size:14px;line-height:1.65;font-weight:800}.meta{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mcard{border:2px solid var(--line);background:var(--paper2);padding:12px;min-height:82px}.mcard b{display:block;font-size:11px;letter-spacing:.16em;text-transform:uppercase}.mcard span{display:block;margin-top:8px;color:var(--muted);font-size:12px;line-height:1.45;font-weight:800}.note{border:2px dashed var(--line);background:#fff8e4;padding:14px;margin:0 0 18px;color:var(--muted);font-size:12px;line-height:1.6;font-weight:850}.tabs{display:flex;gap:10px;margin-bottom:14px}.tab{border:2px solid var(--line);background:var(--paper);box-shadow:3px 3px 0 var(--line);padding:8px 10px;font-size:11px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase}.tab.on{background:#111;color:#fff}.board-title{margin:28px 0 12px;display:flex;align-items:flex-end;justify-content:space-between}.board-title h2{margin:0;font-size:28px;line-height:1;text-transform:uppercase;font-style:italic;letter-spacing:-.04em}.board-title p{margin:0;color:var(--muted);font-size:12px;font-weight:900}.wrap{border:3px solid var(--line);background:var(--paper);box-shadow:var(--shadow);overflow:auto;max-height:calc(100vh - 220px);margin-bottom:34px}.board{display:grid;grid-template-columns:var(--left) repeat(5,var(--col));width:max-content}.corner,.state,.mod,.cell{border-right:2px solid var(--line);border-bottom:2px solid var(--line)}.corner,.state{position:sticky;top:0;z-index:4;background:#e8dfcf;height:var(--head)}.corner{left:0;z-index:5;padding:16px}.state{padding:15px;display:grid;align-content:space-between}.state h3{margin:0;font-size:18px;line-height:.98;text-transform:uppercase;font-style:italic;letter-spacing:-.03em}.state p{margin:10px 0 0;color:var(--muted);font-size:12px;line-height:1.45;font-weight:800}.badge{display:inline-flex;border:2px solid var(--line);background:#fff;padding:4px 7px;font-size:10px;font-weight:1000;letter-spacing:.12em;text-transform:uppercase}.mod{position:sticky;left:0;z-index:3;background:#eee6d8;padding:16px;min-height:178px}.mod .idx{font-size:12px;font-weight:1000;margin-bottom:12px}.mod h4{margin:0;font-size:17px;line-height:1;text-transform:uppercase;font-style:italic}.mod p{margin:10px 0 0;color:var(--muted);font-size:12px;line-height:1.45;font-weight:800}.cell{background:var(--paper);padding:14px;min-height:178px}.cell:nth-child(odd){background:#fbf8f0}.panel{border:2px solid var(--line);background:#fffef9;padding:12px;min-height:136px}.panel.soft{border-color:rgba(17,17,17,.22);background:#faf7ef}.ey{font-size:10px;font-weight:1000;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}.title{font-size:14px;font-weight:1000;line-height:1.08;text-transform:uppercase;font-style:italic;margin-bottom:8px}.copy{color:var(--muted);font-size:12px;line-height:1.45;font-weight:800}.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}.stack{display:grid;gap:8px}.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.input,.textarea{width:100%;border:2px solid var(--line);background:#fff;padding:8px 9px;font:850 12px/1.25 ui-monospace,SFMono-Regular,Menlo,monospace;margin-top:7px;min-height:34px}.textarea{min-height:86px;white-space:pre-wrap}.pill{display:inline-flex;align-items:center;min-height:22px;padding:3px 7px;border:1.5px solid var(--line);background:#fff;font:1000 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.1em}.green{color:var(--green);border-color:var(--green)}.amber{color:var(--amber);border-color:var(--amber)}.red{color:var(--red);border-color:var(--red)}.blue{color:var(--blue);border-color:var(--blue)}.purple{color:var(--purple);border-color:var(--purple)}.btn{border:2px solid var(--line);background:#111;color:#fff;padding:8px 10px;font-size:10px;font-weight:1000;letter-spacing:.14em;text-transform:uppercase;box-shadow:3px 3px 0 #cfc8bb}.btn.light{background:#fff;color:#111}.kv{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px;padding:6px 0;border-top:1px dashed rgba(17,17,17,.22);font-size:11px}.kv b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}.kv span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:950}.list{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px}.list li{display:flex;justify-content:space-between;gap:8px;border-top:1px dashed rgba(17,17,17,.22);padding-top:6px;font-size:11px;font-weight:900}.bar{height:12px;border:2px solid var(--line);margin:10px 0 4px;background:linear-gradient(90deg,var(--green) 0 62%,transparent 62%)}.bar.warn{background:linear-gradient(90deg,var(--amber) 0 88%,transparent 88%)}.bar.danger{background:linear-gradient(90deg,var(--red) 0 96%,transparent 96%)}.source{font-size:10px;color:var(--muted);margin-top:8px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.foot{height:86px;border:3px solid var(--line);background:#f7f4ed;display:flex;align-items:center;justify-content:space-between;padding:16px}.overlay{border:3px solid var(--line);background:rgba(17,17,17,.75);padding:14px;min-height:150px;display:grid;place-items:center}.modal{width:100%;border:2px solid var(--line);box-shadow:5px 5px 0 #111;background:var(--paper);padding:12px}
+  </style>
+</head>
+<body>
+<main class="page">
+  <section class="hero">
+    <div>
+      <div class="k">OPEN DESIGN / FROM EXISTING FRONTEND + BUSINESS PAGE</div>
+      <h1>账号详情页现有模块状态梳理稿</h1>
+      <p>本稿不复刻线上截图，而是按仓库现有前端组件与业务流梳理。主板对应 <span class="mono">OpenAICompatibleDetailPanel</span> 这类「兼容 OpenAI 账号」详情；附板补充 <span class="mono">UnifiedAccountDetailModal</span> 的 API Key/Auth-file 账号详情差异。</p>
+    </div>
+    <div class="meta">
+      <div class="mcard"><b>Primary Source</b><span>frontend/src/features/accounts/components/OpenAICompatibleDetailPanel.tsx</span></div>
+      <div class="mcard"><b>Support Source</b><span>AccountProxyRouteSection、RateLimitRulesSection、UnifiedAccountDetailModal</span></div>
+      <div class="mcard"><b>Axis Y</b><span>按现有组件模块：Header、Endpoint、ModelFetch、Proxy、Headers、Models、Verify、RateLimit、Error、Footer</span></div>
+      <div class="mcard"><b>Axis X</b><span>按业务状态：空闲、编辑、拉取/验证中、成功、错误/受阻</span></div>
+    </div>
+  </section>
+  <div class="note"><b>纠偏说明：</b>上一版错误地做成了抽象账号详情状态板；此版改为从现有前端组件和业务状态出发。设计修改时请优先改模块结构、状态信息密度、按钮位置和保存门禁；不要把截图里的临时线上布局当作唯一事实来源。</div>
+  <div class="tabs"><span class="tab on">A / OpenAI-Compatible Provider Detail</span><span class="tab">B / Unified API Key + Auth File Detail</span><span class="tab">Desktop Wails Modal</span></div>
+
+  <section class="board-title"><h2>A. 兼容 OpenAI 账号详情 / OpenAICompatibleDetailPanel</h2><p>纵向：真实组件顺序；横向：业务状态</p></section>
+  <section class="wrap"><div class="board">
+    <div class="corner"><div class="k">MODULE ↓ / STATE →</div><p class="copy">首列是现有模块；每个单元展示该模块在不同业务状态下应该暴露的信息和动作。</p></div>
+    <header class="state"><div><span class="badge">IDLE</span><h3>空闲 / 已保存</h3></div><p>现有配置可读，未触发远端拉取或验证。</p></header>
+    <header class="state"><div><span class="badge">EDIT</span><h3>编辑 / Dirty</h3></div><p>用户修改 name/baseUrl/apiKey/headers/models/proxy/rate-limit。</p></header>
+    <header class="state"><div><span class="badge">LOADING</span><h3>拉取 / 验证中</h3></div><p>远端模型拉取、账号验证、rate-limit 保存等异步态。</p></header>
+    <header class="state"><div><span class="badge">SUCCESS</span><h3>成功 / 已应用</h3></div><p>远端模型成功、验证成功、规则保存成功。</p></header>
+    <header class="state"><div><span class="badge">ERROR</span><h3>错误 / 受阻</h3></div><p>配置错误、proxy 无效、远端失败、保存被禁用。</p></header>
+
+    <aside class="mod"><div class="idx mono">A01</div><h4>Modal Frame</h4><p><span class="mono">AccountDetailModalFrame</span> 承载详情；全屏遮罩、内部滚动、底部 footer 固定。</p><div class="source">源：OpenAICompatibleDetailModal</div></aside>
+    <div class="cell"><div class="overlay"><div class="modal"><div class="ey">Frame</div><div class="title">详情面板覆盖应用视口</div><p class="copy">正文滚动，header/footer 不丢失。</p></div></div></div>
+    <div class="cell"><div class="overlay"><div class="modal"><div class="ey">Frame Dirty</div><p class="copy">编辑正文时不跳出 modal；footer message 汇总 dirty。</p></div></div></div>
+    <div class="cell"><div class="overlay"><div class="modal"><div class="ey">Frame Busy</div><span class="pill blue">saving / loading</span><p class="copy">按钮 disabled，但滚动与查看仍可用。</p></div></div></div>
+    <div class="cell"><div class="overlay"><div class="modal"><div class="ey">Frame OK</div><span class="pill green">complete</span><p class="copy">保存成功后关闭或保持当前详情由业务决定。</p></div></div></div>
+    <div class="cell"><div class="overlay"><div class="modal"><div class="ey">Frame Error</div><span class="pill red">error notice</span><p class="copy">错误不覆盖正文；靠 footer/error notice 给出原因。</p></div></div></div>
+
+    <aside class="mod"><div class="idx mono">A02</div><h4>Header + Verify Summary</h4><p>顶部账号 badge、账号名称输入、右侧最近验证摘要：model、message、currentName、lastVerifiedAt。</p><div class="source">源：OpenAICompatibleDetailPanel header</div></aside>
+    <div class="cell"><div class="panel"><div class="ey">兼容 OPENAI 账号</div><div class="title">账号名称</div><input class="input" value="deepseek"/><div class="kv"><b>最近验证摘要</b><span>尚未执行验证</span></div><div class="kv"><b>当前主标识</b><span>deepseek</span></div><div class="kv"><b>最近验证时间</b><span>—</span></div></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Name editing</div><input class="input" value="deepseek-cn-prod"/><div class="row"><span class="pill amber">name dirty</span><span class="copy">currentName 仍显示旧值</span></div></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Verify running</div><div class="title blue">验证中...</div><div class="kv"><b>Model</b><span>deepseek-v4-pro</span></div><div class="kv"><b>Current</b><span>deepseek</span></div></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Verify success</div><div class="title green">账号验证成功</div><div class="kv"><b>Model</b><span>deepseek-v4-pro</span></div><div class="kv"><b>Last</b><span>2026-06-04 16:20</span></div></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Verify failed</div><div class="title red">账号验证失败</div><div class="kv"><b>Model</b><span>deepseek-v4-pro</span></div><p class="copy red">401 / model not found / network failed</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A03</div><h4>Endpoint</h4><p>Provider 基础配置：baseUrl、apiKey、preset notes、consoleUrl。决定 agent 对话与验证路径。</p><div class="source">componentName=OpenAICompatibleEndpointSection</div></aside>
+    <div class="cell"><div class="panel"><div class="ey">Endpoint</div><label class="copy">Base URL</label><input class="input" value="https://api.deepseek.com/v1"/><label class="copy">API Key</label><input class="input" value="sk-••••••••••"/></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Endpoint dirty</div><input class="input" value="https://gateway.example.com/v1"/><input class="input" value="sk-new..."/><span class="pill amber">保存后生效</span></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Endpoint during verify</div><input class="input" value="https://api.deepseek.com/v1"/><p class="copy blue">验证使用当前 draft，而不等待保存。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Preset note</div><p class="copy green">若 vendor preset 有 notes / consoleUrl，显示说明与“打开控制台 →”。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Endpoint invalid</div><input class="input" value="not-url"/><p class="copy red">业务层保存/验证返回错误；footer 或 error notice 承接。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A04</div><h4>Model Fetch Credentials</h4><p>仅当 vendor 需要独立 /models 拉取凭据，或 draft 已存在 modelFetchApiKey/modelFetchBaseUrl 时显示。</p><div class="source">renderModelFetchCredentialFields</div></aside>
+    <div class="cell"><div class="panel soft"><div class="ey">Hidden</div><p class="copy">DeepSeek 等普通 provider 默认不显示此模块。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Token Plan</div><input class="input" value="modelFetchApiKey: sk-..."/><input class="input" value="modelFetchBaseUrl: https://api.xiaomimimo.com/v1"/><p class="copy">只用于 /models，不参与 agent 对话、route guard、usage attribution。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Fetch uses this</div><span class="pill blue">models loading</span><p class="copy">拉取模型时使用 modelFetch credential。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Applied source</div><span class="pill green">remote credential ok</span><p class="copy">远端模型列表可写入 draft.models。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Missing key</div><p class="copy red">requiresModelFetchApiKey 但未填：拉取模型失败，agent 对话 key 不应代替。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A05</div><h4>Proxy Route</h4><p>账号级 proxyUrl：inherit/direct/pool/custom。无效 proxyRouteError 会禁用保存。</p><div class="source">AccountProxyRouteSection</div></aside>
+    <div class="cell"><div class="panel"><div class="ey">Proxy</div><div class="row"><span class="pill green">inherit</span><span class="copy">继承系统代理</span></div></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Proxy edit</div><div class="stack"><span class="pill">direct</span><span class="pill green">pool node</span><span class="pill">custom</span></div><input class="input" value="socks5://127.0.0.1:7890"/></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Proxy resolving</div><span class="pill blue">检查节点</span><p class="copy">节点列表来自本地 proxy pool。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Proxy OK</div><span class="pill green">Tokyo-01 · 42ms</span><p class="copy">保存后由 sidecar 热路径使用。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Proxy invalid</div><input class="input" value="custom://"/><p class="copy red">proxyRouteError 出现在 footer，保存 disabled。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A06</div><h4>HTTP Headers</h4><p>可折叠自定义 headers。draft.headersText 有值或点击 +/- 后显示 textarea。</p><div class="source">OpenAICompatibleHeadersSection</div></aside>
+    <div class="cell"><div class="panel"><div class="ey">Collapsed</div><div class="row"><div class="title">自定义 Headers</div><button class="btn light">+</button></div><p class="copy">无 headersText 时默认收起。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Expanded dirty</div><textarea class="textarea">HTTP-Referer: https://example.com
+X-Title: GetTokens</textarea><span class="pill amber">headers dirty</span></div></div>
+    <div class="cell"><div class="panel"><div class="ey">During verify</div><textarea class="textarea">Authorization: Bearer sk-...
+X-Title: GetTokens</textarea><p class="copy blue">验证请求读取当前 draft headers。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Persisted</div><button class="btn light">−</button><p class="copy green">保存后卡片默认保持展开，因为 headersText 有值。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Malformed</div><textarea class="textarea">Bad Header Without Colon</textarea><p class="copy red">解析失败由业务端错误返回，不在 UI 伪造成功。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A07</div><h4>Model Catalog</h4><p>draft.models 编辑；远端 models 拉取；成功后“使用远端模型”应用 remoteModelsState.models。</p><div class="source">OpenAICompatibleModelsSection</div></aside>
+    <div class="cell"><div class="panel"><div class="ey">Local / Preset</div><div class="kv"><b>来源</b><span>预设/本地模型</span></div><ul class="list"><li><span>deepseek-v4-flash</span><b>alias empty</b></li><li><span>deepseek-v4-pro</span><b>alias empty</b></li></ul><button class="btn light">新增模型</button></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Model rows editing</div><div class="split"><input class="input" value="deepseek-v4-pro"/><input class="input" value="DeepSeek Pro"/></div><div class="split"><input class="input" value=""/><input class="input" value=""/></div><span class="pill amber">models dirty</span></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Remote loading</div><div class="kv"><b>来源</b><span>拉取中</span></div><span class="pill blue">正在拉取远端模型</span><p class="copy">按钮 disabled，避免重复请求。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Remote success</div><div class="kv"><b>来源</b><span>远端模型</span></div><p class="copy green">已拉取模型列表</p><div class="row"><button class="btn">使用远端模型</button><button class="btn light">拉取远端模型</button></div></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Remote error / empty</div><div class="kv"><b>来源</b><span>本地/空</span></div><p class="copy red">拉取失败：网络错误或鉴权失败。</p><button class="btn light">重试拉取</button></div></div>
+
+    <aside class="mod"><div class="idx mono">A08</div><h4>Connection Verify</h4><p>建议模型 chips、verifyModel 输入、datalist 复用远端/本地模型、验证按钮与 hint。</p><div class="source">OpenAICompatibleVerifySection</div></aside>
+    <div class="cell"><div class="panel"><div class="ey">Verify model</div><div class="row"><span class="pill">deepseek-v4-flash</span><span class="pill green">deepseek-v4-pro</span></div><input class="input" value="deepseek-v4-pro"/><button class="btn">验证账号</button><p class="copy">可以从模型候选中选，也可以手动输入。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Custom model dirty</div><input class="input" value="custom-router-model"/><span class="pill amber">verifyModel draft</span></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Verifying</div><input class="input" value="deepseek-v4-pro"/><button class="btn">验证中...</button><p class="copy blue">verifyState.status=loading</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Verified</div><span class="pill green">账号验证成功</span><p class="copy green">header summary 与 footer message 同步展示成功信息。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Verify blocked/failed</div><input class="input" value=""/><p class="copy red">openai_provider_test_model_required 或服务端返回失败。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A09</div><h4>Rate Limit Rules</h4><p>作为 afterSections 注入，加载/编辑/删除/保存规则；dirty 会写入 footerMessage。</p><div class="source">RateLimitRulesSection</div></aside>
+    <div class="cell"><div class="panel"><div class="ey">Runtime status</div><div class="bar"></div><div class="kv"><b>RPM</b><span>42 / 120</span></div><div class="kv"><b>Window</b><span>1 minute</span></div></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Rules dirty</div><div class="split"><input class="input" value="requests"/><input class="input" value="90 / min"/></div><span class="pill amber">rate_limit_dirty</span></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Saving rules</div><span class="pill blue">saving rules</span><p class="copy">主保存先 onSave，再调用 rateLimitRulesRef.save。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Saved</div><span class="pill green">rules saved</span><p class="copy green">onRateLimitRulesChanged 刷新运行态。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">API failed</div><p class="copy red">list/create/update/delete 失败时展示 rateLimitMessage；不丢本地 draft。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A10</div><h4>Error Notice</h4><p>组件底部 footer 上方的 danger notice，承接 onSave/onVerify/onFetchModels 等业务错误。</p><div class="source">error prop + AccountDetailNotice</div></aside>
+    <div class="cell"><div class="panel soft"><div class="ey">No Error</div><p class="copy">空闲态不显示 error notice。</p></div></div>
+    <div class="cell"><div class="panel soft"><div class="ey">No blocking error</div><p class="copy">普通 dirty 不使用 danger notice。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Transient</div><p class="copy blue">加载中不提前显示错误。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Resolved</div><p class="copy green">成功后清空 error。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">Danger</div><p class="copy red">保存失败 / 拉取模型失败 / 验证失败的具体业务错误。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">A11</div><h4>Footer / Save Gate</h4><p>footer message 优先级：proxyRouteError → rateLimitDirty footerMessage → verifyState.message → idle。保存按钮受 saving/proxyRouteError 限制。</p><div class="source">OpenAICompatibleDetailPanel footer</div></aside>
+    <div class="cell"><div class="foot"><span class="copy">尚未执行验证</span><div><button class="btn">保存更改</button> <button class="btn light">放弃操作</button></div></div></div>
+    <div class="cell"><div class="foot"><span class="copy amber">限流规则未保存 / 配置已修改</span><div><button class="btn">保存更改</button> <button class="btn light">放弃操作</button></div></div></div>
+    <div class="cell"><div class="foot"><span class="copy blue">验证中 / 保存中</span><div><button class="btn">加载中</button> <button class="btn light">放弃操作</button></div></div></div>
+    <div class="cell"><div class="foot"><span class="copy green">账号验证成功</span><div><button class="btn">保存更改</button> <button class="btn light">关闭</button></div></div></div>
+    <div class="cell"><div class="foot"><span class="copy red">Proxy URL 无效，保存不可用</span><div><button class="btn light">保存禁用</button> <button class="btn light">放弃操作</button></div></div></div>
+  </div></section>
+
+  <section class="board-title"><h2>B. Unified 账号详情差异 / API Key + Auth File</h2><p>来自 buildAccountDetailModulePlan：api-key 与 auth-file 模块不同</p></section>
+  <section class="wrap"><div class="board">
+    <div class="corner"><div class="k">MODULE ↓ / SOURCE →</div><p class="copy">这部分不是 OpenAI-compatible provider 详情，而是 Codex/API key/auth-file 统一详情。</p></div>
+    <header class="state"><div><span class="badge">API KEY</span><h3>Api-key account</h3></div><p>credentials → rate-limit → quota → billing。</p></header>
+    <header class="state"><div><span class="badge">AUTH FILE</span><h3>Auth-file account</h3></div><p>auth-file-actions → models → rate-limit。</p></header>
+    <header class="state"><div><span class="badge">EDIT</span><h3>编辑闭环</h3></div><p>configDirty / rateLimitDirty / script routes。</p></header>
+    <header class="state"><div><span class="badge">RUNTIME</span><h3>运行态</h3></div><p>quota/billing/usage/rate-limit 来自业务状态。</p></header>
+    <header class="state"><div><span class="badge">BLOCK</span><h3>阻断态</h3></div><p>missingFields、status notice、上游/本地错误分离。</p></header>
+
+    <aside class="mod"><div class="idx mono">B01</div><h4>Header</h4><p>账号类型、可重命名标题、状态 pill、provider/format/baseUrl 摘要；auth-file 支持 reauth。</p></aside>
+    <div class="cell"><div class="panel"><div class="ey">API KEY</div><div class="title">Codex Stable</div><span class="pill green">active</span><p class="copy">可点击标题重命名。</p></div></div>
+    <div class="cell"><div class="panel"><div class="ey">AUTH FILE</div><div class="title">codex-pro.json</div><span class="pill purple">OAuth</span><button class="btn light">Reauth</button></div></div>
+    <div class="cell"><div class="panel"><input class="input" value="New Account Name"/><span class="pill amber">rename dirty</span></div></div>
+    <div class="cell"><div class="panel"><div class="kv"><b>Provider</b><span>codex/openai</span></div><div class="kv"><b>Formats</b><span>responses / anthropic</span></div></div></div>
+    <div class="cell"><div class="panel"><span class="pill red">disabled / expired</span><p class="copy red">Header 下方显示 status notice。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">B02</div><h4>Credential / Verify</h4><p>API Key 专属：API Key、Base URL、Prefix、vendor credentials、验证模型、proxy route。</p></aside>
+    <div class="cell"><div class="panel"><input class="input" value="sk-••••••"/><input class="input" value="https://api.openai.com/v1"/><input class="input" value="/v1"/></div></div>
+    <div class="cell"><div class="panel soft"><p class="copy">Auth-file 不编辑 API Key；转入 auth-file actions 与 models。</p></div></div>
+    <div class="cell"><div class="panel"><input class="input" value="gpt-5.4-mini"/><button class="btn">验证</button><span class="pill amber">draft</span></div></div>
+    <div class="cell"><div class="panel"><span class="pill green">verified</span><p class="copy">lastVerifiedAt + verifyState.message。</p></div></div>
+    <div class="cell"><div class="panel"><p class="copy red">缺少 API Key / Base URL / proxy invalid → missingFields 阻断保存。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">B03</div><h4>Quota / Billing / Curl Modal</h4><p>API Key 专属：quota 和 billing 模块；script=quota/billing 独立路由打开 curl 编辑器。</p></aside>
+    <div class="cell"><div class="panel"><div class="bar"></div><span class="pill green">quota script on</span><div class="kv"><b>Billing</b><span>120 USD</span></div></div></div>
+    <div class="cell"><div class="panel soft"><p class="copy">Auth-file 默认不显示 curl quota/billing 编辑模块。</p></div></div>
+    <div class="cell"><div class="panel"><div class="overlay"><div class="modal"><div class="ey">script=quota</div><textarea class="textarea">curl ... {{apiKey}}</textarea><span class="pill">变量插入/复制</span></div></div></div></div>
+    <div class="cell"><div class="panel"><span class="pill blue">测试配额/余额</span><p class="copy">返回结果写入模块内部 testResult/testBilling。</p></div></div>
+    <div class="cell"><div class="panel"><p class="copy red">脚本无返回或测试失败：模块空态/错误态，不伪造 sidecar 状态。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">B04</div><h4>Auth File Actions + Models</h4><p>Auth-file 专属：Normalize、Download、模型目录、刷新模型，不依赖 API Key draft。</p></aside>
+    <div class="cell"><div class="panel soft"><p class="copy">API Key 不显示 auth-file actions。</p></div></div>
+    <div class="cell"><div class="panel"><div class="kv"><b>File</b><span>codex-pro.json</span></div><div class="row"><button class="btn light">Normalize</button><button class="btn light">Download</button></div><ul class="list"><li><span>gpt-5.5</span><b>oauth</b></li><li><span>codex-mini-latest</span><b>codex</b></li></ul></div></div>
+    <div class="cell"><div class="panel"><button class="btn">刷新模型目录</button><span class="pill amber">reauthing</span></div></div>
+    <div class="cell"><div class="panel"><span class="pill green">models loaded</span><p class="copy">来自 GetAuthFileModels / previewData。</p></div></div>
+    <div class="cell"><div class="panel"><p class="copy red">读取失败 / token 过期：只提示与提供 reauth，不改正式版配置。</p></div></div>
+
+    <aside class="mod"><div class="idx mono">B05</div><h4>Common Save Gate</h4><p>统一详情保存：API Key configDirty + rateLimitDirty；auth-file reauth 独立；关闭清理 detail/script hash。</p></aside>
+    <div class="cell"><div class="foot"><span class="copy">无未保存变更</span><button class="btn light">关闭</button></div></div>
+    <div class="cell"><div class="foot"><span class="copy purple">OAuth reauth</span><button class="btn light">取消 reauth</button></div></div>
+    <div class="cell"><div class="foot"><span class="copy amber">配置/限流未保存</span><button class="btn">保存并关闭</button></div></div>
+    <div class="cell"><div class="foot"><span class="copy green">保存成功</span><button class="btn light">关闭</button></div></div>
+    <div class="cell"><div class="foot"><span class="copy red">缺少字段，保存不可用</span><button class="btn light">disabled</button></div></div>
+  </div></section>
+
+  <div class="note"><b>设计改稿建议：</b>如果要贴近线上截图里的视觉，可以在不改变这些模块边界的前提下调整密度、线框、标题、按钮位置；但业务状态必须保留：远端模型拉取、使用远端模型、验证模型、headers 折叠、proxy 保存门禁、rate-limit dirty、error notice、footer message 优先级。</div>
+</main>
+</body>
+</html>

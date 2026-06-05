@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { RefreshCw, Trash2 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import {
   DownloadAuthFile,
   GetAuthFileModels,
@@ -7,8 +8,10 @@ import {
 import { useDebug } from '../../../context/useDebug';
 import { useI18n } from '../../../context/I18nContext';
 import type { AccountRecord } from '../../../types';
+import { toErrorMessage } from '../../../utils/error';
 import type { AccountDetailScriptRoute } from '../../../utils/pagePersistence';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
+import { Combobox } from '../../../components/ui/Combobox.tsx';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
 import type { AccountUsageSummary } from '../model/accountUsage';
 import {
@@ -18,10 +21,13 @@ import {
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout';
-import { extractBilling } from '../model/accountQuota';
+import { normalizeAPIKeyModelNames } from '../model/apiKeyModelCatalog';
+import { extractBilling, hasDisplayableBilling } from '../model/accountQuota';
 import { buildAccountDetailStatusMessage } from '../model/accountPresentation';
 import type { RateLimitState, RateLimitStrategyMeta } from '../model/rateLimit';
 import type { CodexQuotaState } from '../model/types';
+import { getVendorPreset } from '../model/vendorPresets';
+import { resolveVendorPresetID } from '../model/vendorPresetHelpers';
 import AccountDetailModalFrame from './AccountDetailModalFrame';
 import {
   AccountBillingSection,
@@ -53,10 +59,13 @@ export interface UnifiedAccountDetailProps {
   rateLimitRulesAPI?: RateLimitRulesAPI;
   verifyState?: APIKeyVerifyState;
   modelNames?: string[];
+  localModelNames?: string[];
+  cachedModelNames?: string[];
   onClose: () => void;
   onRename?: (nextName: string) => void;
   onSaveConfig?: (draft: ApiKeyConfigDraft) => Promise<void>;
   onVerify?: (input: { apiKey: string; baseUrl: string; model: string }) => void;
+  onFetchModels?: (input: { apiKey: string; baseUrl: string; headers?: Record<string, string> }) => Promise<{ models: string[]; message: string }>;
   onTestQuotaCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; quotaCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
   onTestBillingCurl?: (input: { apiKey: string; baseUrl: string; prefix: string; billingCurl: string; platformCookie?: string; curlVariables?: Record<string, string> }) => Promise<any>;
   onRateLimitRulesChanged?: () => void;
@@ -93,6 +102,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     account.billingCurl,
     account.billingEnabled,
     account.proxyUrl,
+    account.models,
     isApiKey,
   ]);
 
@@ -150,7 +160,9 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   return (
     <AccountDetailModalFrame
       onClose={onClose}
+      panelAttributes={{ 'data-account-detail-modal': 'unified' }}
       header={<AccountDetailHeader {...props} />}
+      headerClassName="p-0"
       error={statusMessage ? <AccountDetailStatusNotice message={statusMessage} /> : undefined}
       footer={
         <AccountDetailFooter
@@ -165,7 +177,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       }
     >
       <AccountDetailBody>
-        <AccountDetailModuleStack layout="cards">
+        <AccountDetailModuleStack layout="bands">
           {buildAccountDetailModulePlan(account).map((moduleID) => {
             switch (moduleID) {
               case 'credentials':
@@ -184,7 +196,19 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
               case 'auth-file-actions':
                 return <AuthFileSummarySection key={moduleID} account={account} />;
               case 'models':
-                return <CompatibleModelsSection key={moduleID} account={account} />;
+                return (
+                  <CompatibleModelsSection
+                    key={moduleID}
+                    account={account}
+                    draft={configDraft}
+                    setDraft={setConfigDraft}
+                    modelNames={props.modelNames}
+                    localModelNames={props.localModelNames}
+                    cachedModelNames={props.cachedModelNames}
+                    editable={isApiKey && Boolean(onSaveConfig)}
+                    onFetchModels={props.onFetchModels}
+                  />
+                );
               case 'rate-limit':
                 return (
                   <RateLimitSection
@@ -194,10 +218,45 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     onRateLimitDirtyChange={setRateLimitDirty}
                   />
                 );
-              case 'quota':
-                return (
+              case 'quota': {
+                const hasBillingModule = hasDisplayableBilling(liveBilling) || configDraft.billingEnabled;
+                const showQuotaModule = configDraft.quotaEnabled || props.activeScriptEditor === 'quota';
+                const showBillingModule = hasBillingModule || props.activeScriptEditor === 'billing';
+                const showBalanceSplit = showQuotaModule && showBillingModule;
+                const handleQuotaModuleToggle = (checked: boolean) => {
+                  setConfigDraft((prev) => ({ ...prev, quotaEnabled: checked }));
+                  if (!checked && props.activeScriptEditor === 'quota') {
+                    props.onCloseScriptEditor?.();
+                  }
+                };
+                const handleBillingModuleToggle = (checked: boolean) => {
+                  setConfigDraft((prev) => ({ ...prev, billingEnabled: checked }));
+                  if (!checked && props.activeScriptEditor === 'billing') {
+                    props.onCloseScriptEditor?.();
+                  }
+                };
+                const balanceRailControls = (
+                  <div className="grid gap-2">
+                    <label data-account-balance-rail-toggle="quota" className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      <input
+                        type="checkbox"
+                        checked={configDraft.quotaEnabled}
+                        onChange={(event) => handleQuotaModuleToggle(event.target.checked)}
+                      />
+                      <span>额度模块</span>
+                    </label>
+                    <label data-account-balance-rail-toggle="billing" className="flex items-center gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                      <input
+                        type="checkbox"
+                        checked={hasBillingModule}
+                        onChange={(event) => handleBillingModuleToggle(event.target.checked)}
+                      />
+                      <span>余额模块</span>
+                    </label>
+                  </div>
+                );
+                const quotaSection = (
                   <AccountQuotaSection
-                    key={moduleID}
                     account={account}
                     draft={configDraft}
                     setDraft={setConfigDraft}
@@ -206,12 +265,13 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     onOpenEditor={() => props.onOpenScriptEditor?.('quota')}
                     onCloseEditor={props.onCloseScriptEditor}
                     onTestQuotaCurl={props.onTestQuotaCurl}
+                    topBorder={false}
+                    headerDivider={false}
+                    layoutMode={showBalanceSplit ? 'stack' : 'split'}
                   />
                 );
-              case 'billing':
-                return (
+                const billingSection = (
                   <AccountBillingSection
-                    key={moduleID}
                     account={account}
                     draft={configDraft}
                     setDraft={setConfigDraft}
@@ -220,8 +280,52 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
                     onOpenEditor={() => props.onOpenScriptEditor?.('billing')}
                     onCloseEditor={props.onCloseScriptEditor}
                     onTestBillingCurl={props.onTestBillingCurl}
+                    topBorder={false}
+                    headerDivider={false}
                   />
                 );
+
+                return (
+                  <AccountDetailSection
+                    key="quota-billing"
+                    componentName="AccountBalanceSplitSection"
+                    eyebrow="Balance"
+                    title="余额与额度"
+                    railControls={balanceRailControls}
+                    bandActionDivider={false}
+                  >
+                    {showBalanceSplit ? (
+                      <div data-account-balance-panel="quota-billing" className="relative grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                        <span data-account-balance-divider="full-height" className="pointer-events-none absolute bottom-0 left-1/2 top-0 w-0.5 -translate-x-1/2 bg-[var(--border-color)]" />
+                        <div data-account-balance-pane="quota-left" className="min-w-0 pr-4">
+                          {quotaSection}
+                        </div>
+                        <div data-account-balance-pane="billing-right" className="min-w-0 pl-4">
+                          {billingSection}
+                        </div>
+                      </div>
+                    ) : showQuotaModule ? (
+                      <div data-account-balance-panel="quota-only" className="grid min-w-0">
+                        <div data-account-balance-pane="quota-full" className="min-w-0">
+                          {quotaSection}
+                        </div>
+                      </div>
+                    ) : showBillingModule ? (
+                      <div data-account-balance-panel="billing-only" className="grid min-w-0">
+                        <div data-account-balance-pane="billing-full" className="min-w-0">
+                          {billingSection}
+                        </div>
+                      </div>
+                    ) : (
+                      <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
+                        请选择左侧额度模块或余额模块
+                      </AccountDetailEmptyState>
+                    )}
+                  </AccountDetailSection>
+                );
+              }
+              case 'billing':
+                return null;
               default:
                 return null;
             }
@@ -340,32 +444,37 @@ function AuthFileSummarySection({ account }: { account: AccountRecord }) {
     <AccountDetailSection
       componentName="AuthFileSummarySection"
       eyebrow="Auth File"
-      title="文件摘要"
+      title="配置管理"
+      bandActionDivider={false}
       actions={
         <>
-          <button onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-            {sanitizing ? '...' : '脱敏'}
+          <button data-auth-file-config-action="preview" onClick={handleSanitize} disabled={sanitizing || loading} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+            {sanitizing ? '...' : '预览配置'}
           </button>
-          <button onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-            {copyState === 'success' ? '已复制' : copyState === 'error' ? '失败' : '复制'}
+          <button data-auth-file-config-action="download" onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+            {copyState === 'success' ? '已下载' : copyState === 'error' ? '失败' : '下载配置'}
+          </button>
+          <button data-auth-file-config-action="apply" onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+            应用配置
           </button>
         </>
       }
     >
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+      <div data-auth-file-config-management="ui-placeholder" className="grid gap-3">
         <div className="space-y-2">
+          <label className="grid gap-1.5">
+            <span className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">账号名称</span>
+            <input className="input-swiss font-mono !text-[length:var(--font-size-ui-xs)]" value={account.displayName} readOnly />
+          </label>
           <div className="text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-            {account.name || 'UNKNOWN FILE'}
+            配置预览
           </div>
           <div className="flex flex-wrap gap-1.5">
-            <AccountDetailPill>RAW HIDDEN</AccountDetailPill>
-            <AccountDetailPill>{sanitizedContent ? 'SANITIZED READY' : 'SANITIZE ON DEMAND'}</AccountDetailPill>
+            <AccountDetailPill>SQLite account store</AccountDetailPill>
+            <AccountDetailPill>{sanitizedContent ? 'PREVIEW READY' : 'PREVIEW ON DEMAND'}</AccountDetailPill>
             <AccountDetailPill>{loading ? 'LOADING' : 'READY'}</AccountDetailPill>
           </div>
         </div>
-        <button onClick={handleCopy} disabled={!displayed} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
-          {copyState === 'success' ? '已复制' : copyState === 'error' ? '失败' : '复制原文'}
-        </button>
       </div>
       {loading ? (
         <div className="animate-pulse space-y-2">
@@ -374,20 +483,71 @@ function AuthFileSummarySection({ account }: { account: AccountRecord }) {
         </div>
       ) : (
         <div className="border-2 border-dashed border-[var(--border-color)] px-3 py-2 font-mono text-[length:var(--font-size-ui-2xs)] uppercase tracking-[0.1em] text-[var(--text-muted)]">
-          默认不展开原始内容；需要时可复制原文或先脱敏再复制。
+          配置预览基于账号数据库生成；可预览配置、下载配置，并在确认后应用到运行时。待接入 account-store management API。
         </div>
       )}
     </AccountDetailSection>
   );
 }
 
-function CompatibleModelsSection({ account }: { account: AccountRecord }) {
+function CompatibleModelsSection({
+  account,
+  draft,
+  setDraft,
+  modelNames = [],
+  localModelNames = [],
+  cachedModelNames = [],
+  editable,
+  onFetchModels,
+}: {
+  account: AccountRecord;
+  draft: ApiKeyConfigDraft;
+  setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
+  modelNames?: string[];
+  localModelNames?: string[];
+  cachedModelNames?: string[];
+  editable: boolean;
+  onFetchModels?: (input: { apiKey: string; baseUrl: string; headers?: Record<string, string> }) => Promise<{ models: string[]; message: string }>;
+}) {
   const { trackRequest } = useDebug();
   const [models, setModels] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [remoteModelStatus, setRemoteModelStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [remoteModelMessage, setRemoteModelMessage] = useState('');
+  const isAuthFile = account.credentialSource === 'auth-file';
+  const defaultModelNames = useMemo(
+    () => resolveDefaultModelMappingNames(account, draft),
+    [account, draft.baseUrl, draft.label],
+  );
+  const sourceModelOptionNames = useMemo(
+    () => normalizeAPIKeyModelNames([
+      ...cachedModelNames,
+      ...defaultModelNames,
+      ...(account.models ?? []).map((model) => model.name),
+      ...draft.models.map((model) => model.name),
+    ]),
+    [account.models, cachedModelNames, defaultModelNames, draft.models],
+  );
+  const aliasModelOptionNames = useMemo(
+    () => normalizeAPIKeyModelNames(localModelNames),
+    [localModelNames],
+  );
+
+  const staticModels = useMemo(() => {
+    if (editable) {
+      return draft.models;
+    }
+    const accountModels = account.models ?? [];
+    if (accountModels.length > 0) {
+      return accountModels;
+    }
+    return modelNames.map((name) => ({ name }));
+  }, [account.models, draft.models, editable, modelNames]);
+
+  const displayedModels = isAuthFile ? models : staticModels;
 
   useEffect(() => {
-    if (!account.name) return;
+    if (!isAuthFile || !account.name) return;
     let cancelled = false;
     setLoading(true);
     void (async () => {
@@ -410,28 +570,187 @@ function CompatibleModelsSection({ account }: { account: AccountRecord }) {
     return () => {
       cancelled = true;
     };
-  }, [account.name, trackRequest]);
+  }, [account.name, isAuthFile, trackRequest]);
+
+  function onAddModelMapping() {
+    const usedNames = new Set(draft.models.map((model) => String(model.name ?? '').trim()).filter(Boolean));
+    const nextSourceName = sourceModelOptionNames.find((name) => !usedNames.has(name)) ?? sourceModelOptionNames[0] ?? '';
+    const nextModels = [...draft.models, { name: nextSourceName, alias: '' }];
+    setConfigDraftModels(setDraft, nextModels);
+    setRemoteModelStatus('idle');
+    setRemoteModelMessage(nextSourceName ? `已新增映射：${nextSourceName}` : '已新增空映射，可手动输入 source model');
+  }
+
+  function applyDefaultModelMappings() {
+    if (sourceModelOptionNames.length === 0) {
+      setRemoteModelStatus('error');
+      setRemoteModelMessage('暂无当前账号支持模型，可先拉取模型或手动添加映射');
+      return;
+    }
+    setConfigDraftModels(setDraft, sourceModelOptionNames.map((name) => ({ name, alias: '' })));
+    setRemoteModelStatus('idle');
+    setRemoteModelMessage(`已填入 ${sourceModelOptionNames.length} 个当前账号支持模型`);
+  }
+
+  async function fetchRemoteModelMappings() {
+    if (!onFetchModels || !draft.apiKey.trim() || !draft.baseUrl.trim()) {
+      setRemoteModelStatus('error');
+      setRemoteModelMessage('缺少 API 密钥或基础 URL，无法拉取模型');
+      return;
+    }
+    setRemoteModelStatus('loading');
+    setRemoteModelMessage('');
+    try {
+      const result = await onFetchModels({
+        apiKey: draft.apiKey.trim(),
+        baseUrl: draft.baseUrl.trim(),
+        headers: account.headers || {},
+      });
+      const nextNames = normalizeAPIKeyModelNames(result.models);
+      setRemoteModelStatus('success');
+      setRemoteModelMessage(result.message || `已缓存 ${nextNames.length} 个当前账号支持模型`);
+    } catch (error) {
+      setRemoteModelStatus('error');
+      setRemoteModelMessage(toErrorMessage(error));
+    }
+  }
+
+  function updateModelMapping(index: number, patch: { name?: string; alias?: string }) {
+    const nextModels = draft.models.map((model, modelIndex) => (
+      modelIndex === index ? { ...model, ...patch } : model
+    ));
+    setConfigDraftModels(setDraft, nextModels);
+  }
+
+  function removeModelMapping(index: number) {
+    const nextModels = draft.models.filter((_, modelIndex) => modelIndex !== index);
+    setConfigDraftModels(setDraft, nextModels);
+  }
 
   return (
     <AccountDetailSection
       componentName="CompatibleModelsSection"
-      eyebrow="Model Catalog"
-      title="模型目录"
-      meta={models.length > 0 ? `${models.length} 个模型` : undefined}
+      eyebrow="Model Mapping"
+      title="模型映射"
+      meta={displayedModels.length > 0 ? `${displayedModels.length} 个模型` : undefined}
+      bandActionDivider={false}
+      actions={editable ? (
+        <>
+          <button
+            type="button"
+            onClick={() => void fetchRemoteModelMappings()}
+            disabled={remoteModelStatus === 'loading' || !onFetchModels}
+            className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+            aria-label="拉取模型"
+            title="拉取模型"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${remoteModelStatus === 'loading' ? 'animate-spin' : ''}`} strokeWidth={4} />
+          </button>
+          <button
+            type="button"
+            onClick={applyDefaultModelMappings}
+            className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+          >
+            填入支持模型
+          </button>
+          <button type="button" onClick={onAddModelMapping} className="btn-swiss !px-2 !py-1 !text-[length:var(--font-size-ui-2xs)]">
+            添加映射
+          </button>
+        </>
+      ) : undefined}
     >
+      {editable && remoteModelMessage ? (
+        <div
+          data-account-model-fetch-status={remoteModelStatus}
+          className={`font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] ${
+            remoteModelStatus === 'error' ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
+          }`}
+        >
+          {remoteModelMessage}
+        </div>
+      ) : null}
       {loading ? (
         <div className="h-4 w-1/3 animate-pulse bg-[var(--border-color)]" />
-      ) : models.length === 0 ? (
-        <AccountDetailEmptyState>暂无模型数据</AccountDetailEmptyState>
+      ) : displayedModels.length === 0 ? (
+        <AccountDetailEmptyState>
+          {editable ? '暂无模型映射；可拉取模型后添加映射，或直接手动添加。' : '暂无模型数据'}
+        </AccountDetailEmptyState>
       ) : (
-        <div className="flex max-h-28 flex-wrap gap-1.5 overflow-auto pr-1">
-          {models.map((model, index) => (
-            <AccountDetailPill key={index}>
-              {model.name ?? model.display_name ?? `MODEL ${index + 1}`}
-            </AccountDetailPill>
-          ))}
+        <div data-account-model-mapping-grid="source-route" className="grid gap-2 md:grid-cols-2">
+          {displayedModels.map((model, index) => {
+            const modelName = String(model.name ?? model.id ?? model.display_name ?? `MODEL ${index + 1}`);
+            const routeLabel = String(model.alias ?? (isAuthFile ? 'oauth available' : modelName));
+            return (
+              <div key={index} data-account-model-mapping-card={editable ? 'editable' : 'readonly'} className="grid min-h-14 grid-cols-[minmax(0,1fr)_2rem_minmax(0,1fr)_auto] items-center gap-2 border-2 border-[var(--border-color)] bg-[var(--bg-surface)] px-2 py-2">
+                <div className="min-w-0">
+                  {editable ? (
+                    <div data-account-model-mapping-input="source">
+                      <Combobox
+                        value={modelName}
+                        options={sourceModelOptionNames}
+                        placeholder={sourceModelOptionNames[0] || modelName || '选择 Source Model'}
+                        maxOptions={12}
+                        onChange={(value) => updateModelMapping(index, { name: value })}
+                      />
+                    </div>
+                  ) : (
+                    <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">{modelName}</div>
+                  )}
+                </div>
+                <div className="grid h-full place-items-center border-x border-dashed border-[var(--border-color)] text-[var(--text-muted)]">→</div>
+                <div className="min-w-0">
+                  {editable ? (
+                    <div data-account-model-mapping-input="alias">
+                      <Combobox
+                        value={String(model.alias ?? '')}
+                        options={aliasModelOptionNames}
+                        placeholder={aliasModelOptionNames[0] || modelName || '选择 Alias Model'}
+                        maxOptions={12}
+                        onChange={(value) => updateModelMapping(index, { alias: value })}
+                      />
+                    </div>
+                  ) : (
+                    <div className="truncate font-mono text-[length:var(--font-size-ui-xs)] font-black text-[var(--text-primary)]">{routeLabel}</div>
+                  )}
+                </div>
+                {editable ? (
+                  <button
+                    type="button"
+                    onClick={() => removeModelMapping(index)}
+                    className="btn-swiss !min-h-0 !px-1.5 !py-1 !text-[length:var(--font-size-ui-2xs)]"
+                    aria-label="删除映射"
+                    title="删除映射"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" strokeWidth={3} />
+                  </button>
+                ) : (
+                  <AccountDetailPill className="!min-h-0 !py-0.5 !text-[length:var(--font-size-ui-2xs)]">只读</AccountDetailPill>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </AccountDetailSection>
   );
+}
+
+function setConfigDraftModels(
+  setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>,
+  nextModels: Array<{ name: string; alias?: string }>,
+) {
+  setDraft((prev) => ({ ...prev, models: nextModels }));
+}
+
+function resolveDefaultModelMappingNames(
+  account: AccountRecord,
+  draft: ApiKeyConfigDraft,
+) {
+  const accountModelNames = (account.models ?? []).map((model) => model.name);
+  const presetID = resolveVendorPresetID(draft.label || account.displayName || account.provider, draft.baseUrl);
+  const presetModelNames = presetID ? getVendorPreset(presetID)?.modelSuggestions ?? [] : [];
+  return normalizeAPIKeyModelNames([
+    ...accountModelNames,
+    ...presetModelNames,
+  ]);
 }
