@@ -9,6 +9,8 @@ import {
   loadRelayModelOptions,
   resolveInitialRelayModelSelection,
   resolveInitialRelayProviderSelection,
+  resolveRelayEndpointSelection,
+  resolveSidecarManagementWebOpenURL,
   resolveCodexLocalApplyState,
   resolveUnifiedDiffLineTone,
   saveRelayModelOptions,
@@ -148,6 +150,25 @@ test('loadRelayModelOptions migrates legacy GT option to gpt-5.4', () => {
   } finally {
     storage.restore();
   }
+});
+
+test('resolveRelayEndpointSelection prefers LAN endpoint when LAN access is enabled', () => {
+  const endpoints = [
+    { id: 'localhost', kind: 'localhost', host: '127.0.0.1', baseUrl: 'http://127.0.0.1:8317/v1' },
+    { id: 'hostname', kind: 'hostname', host: 'nolon-mac', baseUrl: 'http://nolon-mac:8317/v1' },
+    { id: 'lan-1', kind: 'lan', host: '192.168.1.24', baseUrl: 'http://192.168.1.24:8317/v1' },
+  ];
+
+  assert.equal(resolveRelayEndpointSelection(endpoints, 'localhost', true), 'lan-1');
+  assert.equal(resolveRelayEndpointSelection(endpoints, 'lan-1', false), 'localhost');
+  assert.equal(resolveRelayEndpointSelection(endpoints, 'hostname', false), 'hostname');
+});
+
+test('resolveSidecarManagementWebOpenURL opens the real local sidecar management panel', () => {
+  assert.equal(resolveSidecarManagementWebOpenURL(), '');
+  assert.equal(resolveSidecarManagementWebOpenURL(0), '');
+  assert.equal(resolveSidecarManagementWebOpenURL(8317), 'http://127.0.0.1:8317/management.html');
+  assert.equal(resolveSidecarManagementWebOpenURL('18317'), 'http://127.0.0.1:18317/management.html');
 });
 
 test('buildCodexLocalApplyDiff preserves ChatGPT auth and writes experimental bearer token in preserve mode', () => {

@@ -14,10 +14,11 @@ import {
   SetCodexModelCatalogSyncEnabled,
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
+import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
 import { main } from '../../../wailsjs/go/models';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/useDebug';
-import { hasWailsAppBindings } from '../../utils/previewMode';
+import { hasWailsAppBindings, hasWailsRuntime } from '../../utils/previewMode';
 import { useI18n } from '../../context/I18nContext';
 import {
   RelayKeyEditorModal,
@@ -41,6 +42,8 @@ import {
   loadSelectedRelayReasoningEffort,
   resolveInitialRelayModelSelection,
   resolveInitialRelayProviderSelection,
+  resolveRelayEndpointSelection,
+  resolveSidecarManagementWebOpenURL,
   saveCodexLocalAuthStrategy,
   saveLANAccessEnabled,
   saveRelayKeyAliases,
@@ -275,9 +278,10 @@ export default function StatusFeature({
           return;
         }
         setRelayKeyItems(config.apiKeyItems || (config.apiKeys || []).map((value) => ({ value })));
-        setRelayEndpoints(config.endpoints || []);
+        const nextEndpoints = config.endpoints || [];
+        setRelayEndpoints(nextEndpoints);
         setSelectedKeyIndex(0);
-        setSelectedEndpointID(config.endpoints?.[0]?.id || 'localhost');
+        setSelectedEndpointID((prev) => resolveRelayEndpointSelection(nextEndpoints, prev, isLANAccessEnabled));
         setLocalApplyMessage('');
         setClaudeApplyMessage('');
       } catch (error) {
@@ -299,7 +303,7 @@ export default function StatusFeature({
     return () => {
       cancelled = true;
     };
-  }, [sidecarStatus.code, t, trackRequest]);
+  }, [isLANAccessEnabled, sidecarStatus.code, t, trackRequest]);
 
   useEffect(() => {
     let cancelled = false;
@@ -528,16 +532,12 @@ export default function StatusFeature({
   }, [relayProviderOptions, selectedRelayProviderID]);
 
   useEffect(() => {
-    if (isLANAccessEnabled) {
+    const nextEndpointID = resolveRelayEndpointSelection(relayEndpoints, selectedEndpointID, isLANAccessEnabled);
+    if (nextEndpointID === selectedEndpointID) {
       return;
     }
 
-    const currentEndpoint = relayEndpoints.find((endpoint) => endpoint.id === selectedEndpointID);
-    if (!currentEndpoint || currentEndpoint.kind !== 'lan') {
-      return;
-    }
-
-    setSelectedEndpointID(relayEndpoints.find((endpoint) => endpoint.kind !== 'lan')?.id || 'localhost');
+    setSelectedEndpointID(nextEndpointID);
   }, [isLANAccessEnabled, relayEndpoints, selectedEndpointID]);
 
   useEffect(() => {
@@ -603,6 +603,26 @@ export default function StatusFeature({
     }
   }
 
+  function openExternalURL(url: string) {
+    const trimmed = String(url || '').trim();
+    if (!trimmed) {
+      return;
+    }
+
+    if (hasWailsRuntime()) {
+      BrowserOpenURL(trimmed);
+      return;
+    }
+
+    if (typeof window !== 'undefined') {
+      window.open(trimmed, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  function openStatusWeb() {
+    openExternalURL(resolveSidecarManagementWebOpenURL(sidecarStatus.port));
+  }
+
   function setRelayKeyAliasesWithPersist(nextAliases: Record<string, string>) {
     setRelayKeyAliases(nextAliases);
     saveRelayKeyAliases(nextAliases);
@@ -629,9 +649,7 @@ export default function StatusFeature({
       const nextEndpoints = config.endpoints || [];
       setRelayEndpoints(nextEndpoints);
       setSelectedKeyIndex(Math.min(nextSelectedIndex, Math.max(nextKeys.length - 1, 0)));
-      setSelectedEndpointID((prev) =>
-        nextEndpoints.some((endpoint) => endpoint.id === prev) ? prev : (nextEndpoints[0]?.id || 'localhost')
-      );
+      setSelectedEndpointID((prev) => resolveRelayEndpointSelection(nextEndpoints, prev, isLANAccessEnabled));
       setLocalApplyMessage(t('status.service_keys_saved'));
       return true;
     } catch (error) {
@@ -1047,14 +1065,24 @@ export default function StatusFeature({
           align="center"
           actionsClassName="shrink-0"
           actions={
-            <div
-              className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black tracking-widest ${
-                sidecarStatus.code === 'ready' && !healthzHasError
-                  ? 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
-                  : 'border-[var(--color-status-danger)] bg-[var(--bg-main)] text-[var(--color-status-danger)]'
-              }`}
-            >
-              {statusHeadline}
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={openStatusWeb}
+                disabled={!sidecarStatus.port}
+                className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+              >
+                {t('common.open_web')}
+              </button>
+              <div
+                className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black tracking-widest ${
+                  sidecarStatus.code === 'ready' && !healthzHasError
+                    ? 'border-[var(--border-color)] bg-[var(--bg-main)] text-[var(--text-primary)]'
+                    : 'border-[var(--color-status-danger)] bg-[var(--bg-main)] text-[var(--color-status-danger)]'
+                }`}
+              >
+                {statusHeadline}
+              </div>
             </div>
           }
         />

@@ -73,6 +73,14 @@ export interface LocalCliTargetDrafts {
   claude: ClaudeCodeLocalApplyDraft;
 }
 
+export interface RelayEndpointLike {
+  id?: string;
+  kind?: string;
+  host?: string;
+}
+
+export const SIDECAR_MANAGEMENT_WEB_PATH = '/management.html';
+
 export interface CodexLocalApplyDiffInput {
   apiKey: string;
   apiKeySet?: boolean;
@@ -538,6 +546,35 @@ export function saveLANAccessEnabled(value: boolean) {
   } catch (error) {
     console.error(error);
   }
+}
+
+export function resolveRelayEndpointSelection(
+  endpoints: RelayEndpointLike[] | undefined,
+  previousEndpointID: string,
+  isLANAccessEnabled: boolean
+) {
+  const items = Array.isArray(endpoints) ? endpoints : [];
+  const previous = items.find((endpoint) => endpoint.id === previousEndpointID);
+
+  if (isLANAccessEnabled) {
+    const lanEndpoint = items.find((endpoint) => endpoint.kind === 'lan');
+    return lanEndpoint?.id || previous?.id || items[0]?.id || 'localhost';
+  }
+
+  if (previous && previous.kind !== 'lan') {
+    return previous.id || 'localhost';
+  }
+
+  return items.find((endpoint) => endpoint.kind !== 'lan')?.id || items[0]?.id || 'localhost';
+}
+
+export function resolveSidecarManagementWebOpenURL(port?: number | string | null) {
+  const numericPort = Number(port);
+  if (!Number.isFinite(numericPort) || numericPort <= 0) {
+    return '';
+  }
+
+  return `http://127.0.0.1:${Math.trunc(numericPort)}${SIDECAR_MANAGEMENT_WEB_PATH}`;
 }
 
 export function loadRelayModelOptions() {

@@ -48,6 +48,18 @@ test('status provider picker labels show only the model_provider id', async () =
   assert.doesNotMatch(labelFormatterSource, /ID:/);
 });
 
+test('status page header opens the real sidecar management web panel', async () => {
+  const statusFeatureSource = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
+
+  assert.match(statusFeatureSource, /resolveSidecarManagementWebOpenURL\(sidecarStatus\.port\)/);
+  assert.match(statusFeatureSource, /common\.open_web/);
+  assert.match(statusFeatureSource, /BrowserOpenURL/);
+  assert.match(statusFeatureSource, /function openStatusWeb/);
+  assert.match(statusFeatureSource, /disabled=\{!sidecarStatus\.port\}/);
+  assert.doesNotMatch(statusFeatureSource, /#frame=status/);
+  assert.doesNotMatch(statusFeatureSource, /window\.location\.origin/);
+});
+
 test('status provider creation only asks for model_provider value', async () => {
   const relayEditorsSource = await readFile(new URL('../components/RelayEditors.tsx', import.meta.url), 'utf8');
   const statusFeatureSource = await readFile(new URL('../StatusFeature.tsx', import.meta.url), 'utf8');
