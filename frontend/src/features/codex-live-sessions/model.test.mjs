@@ -1100,6 +1100,20 @@ test('codex live session detail header uses request timing trend chart', async (
   assert.doesNotMatch(detailSource, /font-size-ui-5xl/);
 });
 
+test('codex live overview loading notice does not push the timing trend down', async () => {
+  const detailSource = await readFile(new URL('./components/CodexLiveSessionDetail.tsx', import.meta.url), 'utf8');
+  const overviewSource = detailSource.slice(
+    detailSource.indexOf('function SessionOverview('),
+    detailSource.indexOf('function OverviewTimingTrend('),
+  );
+
+  assert.match(overviewSource, /<OverviewStatusNotice loading=\{loading\} errorMessage=\{errorMessage\} t=\{t\} \/>/);
+  assert.match(overviewSource, /data-codex-overview-status-overlay="true"/);
+  assert.match(overviewSource, /absolute right-0 top-\[calc\(100%\+0\.5rem\)\]/);
+  assert.doesNotMatch(overviewSource, /loading \|\| errorMessage \? \(\s*<div className="flex min-h-8 items-center justify-between gap-3 border border-dashed/);
+  assert.doesNotMatch(overviewSource, /lg:col-span-4/);
+});
+
 test('codex live sessions feature splits row snapshot polling from detail history loading', async () => {
   const featureSource = await readFile(new URL('./CodexLiveSessionsFeature.tsx', import.meta.url), 'utf8');
 

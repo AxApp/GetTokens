@@ -152,7 +152,7 @@ function SessionOverview({
   return (
     <section className="grid min-w-0 gap-5" data-codex-live-overview="true">
       <div
-        className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)]"
+        className="relative grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)_minmax(9rem,0.65fr)]"
         data-codex-overview-summary-cards="true"
       >
         <section className="grid min-h-[5.75rem] min-w-0 content-between border border-[color:color-mix(in_srgb,var(--border-color)_28%,transparent)] bg-[var(--bg-main)] p-2.5" data-codex-overview-card="identity">
@@ -186,14 +186,7 @@ function SessionOverview({
           secondaryValue={`${summary.errorSessions} ${t('codex_live_sessions.summary_failed')}`}
           accent={summary.errorSessions > 0 ? 'danger' : summary.degradedSessions > 0 ? 'warning' : 'neutral'}
         />
-        {loading || errorMessage ? (
-          <div className="flex min-h-8 items-center justify-between gap-3 border border-dashed border-[color:color-mix(in_srgb,var(--border-color)_35%,transparent)] px-3 py-1.5 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase lg:col-span-4">
-            <span className="text-[var(--text-muted)]">
-              {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
-            </span>
-            {errorMessage ? <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span> : null}
-          </div>
-        ) : null}
+        <OverviewStatusNotice loading={loading} errorMessage={errorMessage} t={t} />
       </div>
 
       <OverviewTimingTrend
@@ -211,6 +204,26 @@ function SessionOverview({
         t={t}
       />
     </section>
+  );
+}
+
+function OverviewStatusNotice({ loading, errorMessage, t }: { loading?: boolean; errorMessage?: string; t: Translate }) {
+  if (!loading && !errorMessage) {
+    return null;
+  }
+
+  return (
+    <div
+      className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-10 flex max-w-[min(32rem,100%)] items-center gap-3 bg-[var(--bg-main)] px-2.5 py-1 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase shadow-[0_0_0_1px_color-mix(in_srgb,var(--border-color)_28%,transparent),3px_3px_0_color-mix(in_srgb,var(--shadow-color)_42%,transparent)]"
+      data-codex-overview-status-overlay="true"
+      role="status"
+      aria-live="polite"
+    >
+      <span className="shrink-0 text-[var(--text-muted)]">
+        {loading ? t('codex_live_sessions.detail_loading') : t('codex_live_sessions.detail_stale')}
+      </span>
+      {errorMessage ? <span className="min-w-0 truncate text-right text-[var(--color-status-warning)]">{errorMessage}</span> : null}
+    </div>
   );
 }
 

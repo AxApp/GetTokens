@@ -94,7 +94,7 @@ test('account cards skip unsupported quota placeholder modules when telemetry is
   assert.doesNotMatch(source, /UnsupportedQuotaPlaceholder/);
   assert.match(source, /<QuotaBars quotaDisplay=\{resolvedQuotaDisplay\} t=\{t\} \/>/);
   assert.match(source, /<BillingBalance billing=\{billing\} \/>/);
-  assert.match(source, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+  assert.match(source, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} refreshing=\{rateLimitRefreshing \|\| usageRefreshing\} t=\{t\} \/>/);
 });
 
 test('quota bars surface stale runtime error reason on cards and details', async () => {
@@ -136,7 +136,7 @@ test('full attribution cards do not render the retired traffic metrics module', 
   assert.doesNotMatch(sectionsSource, /buildTrafficCurveState|AccountTrafficFlowState|TrafficChart|TrafficSummary/);
   assert.doesNotMatch(cardSource, /TrafficMetricsModule|TrafficSection|UsageMetrics/);
   assert.match(cardSource, /<QuotaBars quotaDisplay=\{resolvedQuotaDisplay\} t=\{t\} \/>/);
-  assert.match(cardSource, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+  assert.match(cardSource, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} refreshing=\{rateLimitRefreshing \|\| usageRefreshing\} t=\{t\} \/>/);
 });
 
 test('account card footer actions use a solid top divider with two equal columns', async () => {
