@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import type { ApiFormat, BillingDisplay } from '../../../types';
 import type { AccountRecord, QuotaDisplay, QuotaWindowDisplay, Translator } from '../model/types';
-import type { AccountUsageSummary } from '../model/accountUsage';
+import { resolveUnboundedTrafficActivityPercent, type AccountUsageSummary } from '../model/accountUsage';
 import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit';
 import { formatLabel } from '../model/vendorPresetHelpers';
 import { formatQuotaResetDisplayWithUnix, hasDisplayableBilling } from '../model/accountQuota';
@@ -285,17 +285,31 @@ function formatUsageTokenMetric(value: number | null | undefined) {
 interface RateLimitGuardProps {
   rateLimitStatus?: RateLimitState;
   usageSummary?: AccountUsageSummary;
+  refreshing?: boolean;
   t: Translator;
 }
 
-export function RateLimitGuard({ rateLimitStatus, usageSummary, t }: RateLimitGuardProps) {
+export function RateLimitGuard({ rateLimitStatus, usageSummary, refreshing = false, t }: RateLimitGuardProps) {
   const rows = buildRateLimitGuardRows(rateLimitStatus);
   const runtimeWarning = formatRateLimitRuntimeWarning(rateLimitStatus);
   const hasRows = rows.length > 0;
   const statusLabel = rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS';
+  const trafficBuckets = usageSummary?.trafficBuckets ?? [];
+  const requestActivityPercent = resolveUnboundedTrafficActivityPercent(
+    usageSummary?.requestCount ?? 0,
+    trafficBuckets.map((bucket) => bucket.requestCount),
+  );
+  const tokenActivityPercent = resolveUnboundedTrafficActivityPercent(
+    usageSummary?.totalTokens ?? 0,
+    trafficBuckets.map((bucket) => bucket.totalTokens),
+  );
 
   return (
-    <section className="grid gap-2.5 px-4 py-3">
+    <section
+      className="grid gap-2.5 px-4 py-3"
+      aria-busy={refreshing}
+      data-rate-limit-refreshing={refreshing ? 'true' : undefined}
+    >
       {runtimeWarning ? (
         <RuntimeWarningBanner warning={runtimeWarning} dataAttribute="data-account-route-guard-runtime-warning" />
       ) : null}
@@ -316,10 +330,14 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, t }: RateLimitGu
           <TrafficStatisticsRow
             label={t('accounts.today_requests')}
             value={formatUsageCountMetric(usageSummary?.requestCount ?? 0)}
+            activityPercent={requestActivityPercent}
+            refreshing={refreshing}
           />
           <TrafficStatisticsRow
             label={t('accounts.today_tokens')}
             value={formatUsageTokenMetric(usageSummary?.totalTokens ?? 0)}
+            activityPercent={tokenActivityPercent}
+            refreshing={refreshing}
           />
         </div>
       ) : null}
@@ -338,6 +356,12 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, t }: RateLimitGu
             <div className="grid min-w-0 gap-1">
               <div className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]">
                 <div className={`absolute inset-y-0 left-0 ${fillClass}`} style={{ width: `${row.fillPercent}%` }} />
+                {refreshing ? (
+                  <div
+                    className="account-card-quota-refresh-skeleton absolute inset-0 pointer-events-none"
+                    aria-hidden="true"
+                  />
+                ) : null}
               </div>
               <div className="flex min-w-0 items-center justify-between gap-2 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.1em] text-[var(--text-muted)]">
                 <span className="shrink-0">{row.windowLabel}</span>
@@ -351,7 +375,17 @@ export function RateLimitGuard({ rateLimitStatus, usageSummary, t }: RateLimitGu
   );
 }
 
-function TrafficStatisticsRow({ label, value }: { label: string; value: string }) {
+function TrafficStatisticsRow({
+  label,
+  value,
+  activityPercent,
+  refreshing,
+}: {
+  label: string;
+  value: string;
+  activityPercent: number;
+  refreshing: boolean;
+}) {
   return (
     <div className="account-card-traffic-statistics-row grid min-w-0 gap-1.5">
       <div className="flex min-w-0 items-baseline justify-between gap-2">
@@ -362,7 +396,20 @@ function TrafficStatisticsRow({ label, value }: { label: string; value: string }
           {value} / ∞
         </div>
       </div>
-      <div className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]" />
+      <div className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]">
+        <div
+          aria-hidden="true"
+          data-account-card-traffic-activity-fill
+          className="absolute inset-y-0 left-0 bg-[color-mix(in_srgb,var(--text-primary)_16%,transparent)]"
+          style={{ width: `${activityPercent}%` }}
+        />
+        {refreshing ? (
+          <div
+            className="account-card-quota-refresh-skeleton absolute inset-0 pointer-events-none"
+            aria-hidden="true"
+          />
+        ) : null}
+      </div>
     </div>
   );
 }

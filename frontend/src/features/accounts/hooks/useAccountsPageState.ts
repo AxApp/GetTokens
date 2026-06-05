@@ -160,8 +160,14 @@ export default function useAccountsPageState({
     toggleSelectionMode,
   } = useAccountSelectionState();
   const { codexQuotaByName, loadCodexQuotas, refreshCodexQuota } = useAccountsQuotaState(trackRequest);
-  const { accountUsageByID, loadAccountUsage } = useAccountsUsageState(trackRequest);
-  const { accountRateLimitByID, rateLimitStrategies, loadAccountRateLimits } = useAccountsRateLimitState(trackRequest);
+  const { accountUsageByID, usageRefreshingAccountIDSet, loadAccountUsage, refreshAccountUsage } = useAccountsUsageState(trackRequest);
+  const {
+    accountRateLimitByID,
+    rateLimitRefreshingAccountIDSet,
+    rateLimitStrategies,
+    loadAccountRateLimits,
+    refreshAccountRateLimits,
+  } = useAccountsRateLimitState(trackRequest);
 
   const authFileRecords = useMemo(
     () => (authFiles.length > 0 ? authFiles.map((account) => mapAuthFileToRecord(account)) : derivedAuthFileRecords),
@@ -261,7 +267,7 @@ export default function useAccountsPageState({
     [trackRequest]
   );
 
-  const loadAccounts = useCallback(async (options: { showLoading?: boolean; refreshSupplementalData?: boolean } = {}) => {
+  const loadAccounts = useCallback(async (options: { showLoading?: boolean; refreshSupplementalData?: boolean; showSupplementalRefreshing?: boolean } = {}) => {
     if (!ready) {
       return;
     }
@@ -281,7 +287,9 @@ export default function useAccountsPageState({
       );
       if (options.refreshSupplementalData ?? true) {
         void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
-        void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
+        void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts], {
+          showRefreshing: options.showSupplementalRefreshing === true,
+        });
         void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
       }
       return;
@@ -313,7 +321,9 @@ export default function useAccountsPageState({
       );
       if (options.refreshSupplementalData ?? true) {
         void loadCodexQuotas([...nextAuthFileRecords, ...apiKeyAccounts]);
-        void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts]);
+        void loadAccountUsage([...nextAuthFileRecords, ...apiKeyAccounts], {
+          showRefreshing: options.showSupplementalRefreshing === true,
+        });
         void loadAccountRateLimits([...nextAuthFileRecords, ...apiKeyAccounts]);
       }
     } catch (error) {
@@ -718,7 +728,9 @@ export default function useAccountsPageState({
     isAccountImportModalOpen,
     codexQuotaByName,
     accountUsageByID,
+    usageRefreshingAccountIDSet,
     accountRateLimitByID,
+    rateLimitRefreshingAccountIDSet,
     rateLimitStrategies,
     isSelectionMode,
     selectedAccountIDs,
@@ -731,7 +743,9 @@ export default function useAccountsPageState({
     allFilteredSelected,
     loadAccounts,
     loadAccountUsage,
+    refreshAccountUsage,
     loadAccountRateLimits,
+    refreshAccountRateLimits,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,

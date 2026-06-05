@@ -26,7 +26,9 @@ interface AccountCardProps {
   account: AccountRecord;
   quotaState?: CodexQuotaState;
   usageSummary?: AccountUsageSummary;
+  usageRefreshing?: boolean;
   rateLimitStatus?: RateLimitState;
+  rateLimitRefreshing?: boolean;
   minHeight?: number;
   density?: AccountListDisplayMode;
   ready: boolean;
@@ -66,7 +68,9 @@ export default function AccountCard({
   account,
   quotaState,
   usageSummary,
+  usageRefreshing = false,
   rateLimitStatus,
+  rateLimitRefreshing = false,
   minHeight,
   density = 'full',
   ready,
@@ -224,9 +228,11 @@ export default function AccountCard({
       failureReason={failureReason}
       badges={badges}
       usageSummary={usageSummary}
+      usageRefreshing={usageRefreshing}
       quotaDisplay={quotaDisplay}
       billing={billing}
       rateLimitStatus={rateLimitStatus}
+      rateLimitRefreshing={rateLimitRefreshing}
       tone={cardTone}
       density={density}
       cardID={account.id}

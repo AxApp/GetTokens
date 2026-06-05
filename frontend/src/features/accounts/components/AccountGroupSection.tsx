@@ -6,13 +6,18 @@ import { shouldEqualizeAccountCardDisplayMode } from '../model/accountCardLayout
 import AccountCard, { type AccountCardLocalCliAction } from './AccountCard';
 import AccountGroupSectionView from './AccountGroupSectionView';
 
+const EMPTY_RATE_LIMIT_REFRESHING_ACCOUNT_ID_SET = new Set<string>();
+const EMPTY_USAGE_REFRESHING_ACCOUNT_ID_SET = new Set<string>();
+
 interface AccountGroupSectionProps {
   t: Translator;
   group: AccountGroup;
   accountCardHeights: Record<string, number>;
   codexQuotaByName: Record<string, CodexQuotaState>;
   accountUsageByID: Record<string, AccountUsageSummary>;
+  usageRefreshingAccountIDSet?: ReadonlySet<string>;
   accountRateLimitByID: Record<string, RateLimitState>;
+  rateLimitRefreshingAccountIDSet?: ReadonlySet<string>;
   ready: boolean;
   isSelectionMode: boolean;
   selectedAccountIDSet: Set<string>;
@@ -41,7 +46,9 @@ export default function AccountGroupSection({
   accountCardHeights,
   codexQuotaByName,
   accountUsageByID,
+  usageRefreshingAccountIDSet = EMPTY_USAGE_REFRESHING_ACCOUNT_ID_SET,
   accountRateLimitByID,
+  rateLimitRefreshingAccountIDSet = EMPTY_RATE_LIMIT_REFRESHING_ACCOUNT_ID_SET,
   ready,
   isSelectionMode,
   selectedAccountIDSet,
@@ -80,7 +87,9 @@ export default function AccountGroupSection({
           account={account}
           quotaState={codexQuotaByName[account.quotaKey || '']}
           usageSummary={accountUsageByID[account.id]}
+          usageRefreshing={usageRefreshingAccountIDSet.has(account.id)}
           rateLimitStatus={accountRateLimitByID[account.id]}
+          rateLimitRefreshing={rateLimitRefreshingAccountIDSet.has(account.id)}
           minHeight={
             shouldEqualizeAccountCardDisplayMode(displayMode)
               ? accountCardHeights[account.id]

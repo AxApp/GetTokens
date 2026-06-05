@@ -14,6 +14,7 @@ import type { TrackRequest } from '../model/types';
 export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
   const [accountRateLimitByID, setAccountRateLimitByID] = useState<Record<string, RateLimitState>>({});
   const [rateLimitStrategies, setRateLimitStrategies] = useState<RateLimitStrategyMeta[]>(DEFAULT_RATE_LIMIT_STRATEGIES);
+  const [rateLimitRefreshingAccountIDSet, setRateLimitRefreshingAccountIDSet] = useState<Set<string>>(new Set());
   const latestAccountsRef = useRef<AccountRecord[]>([]);
 
   const loadAccountRateLimits = useCallback(
@@ -51,6 +52,52 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
     [trackRequest],
   );
 
+  const refreshAccountRateLimits = useCallback(
+    async (accounts: AccountRecord[]) => {
+      const accountIDs = accounts.map((account) => account.id).filter(Boolean);
+      if (accountIDs.length === 0) return;
+
+      const accountIDSet = new Set(accountIDs);
+      const startedAt = Date.now();
+      setRateLimitRefreshingAccountIDSet((prev) => new Set([...prev, ...accountIDs]));
+
+      try {
+        if (!hasWailsAppBindings()) {
+          setRateLimitStrategies(DEFAULT_RATE_LIMIT_STRATEGIES);
+          const previewMap = getAccountsPreviewRateLimitByID(accounts);
+          setAccountRateLimitByID((prev) => ({ ...prev, ...previewMap }));
+          return;
+        }
+
+        const [strategies, statuses] = await Promise.all([
+          trackRequest<any>('ListRateLimitStrategies', { args: [] }, () => ListRateLimitStrategies()),
+          trackRequest<any>('GetAllRateLimitStatuses', { args: [] }, () => GetAllRateLimitStatuses()),
+        ]);
+        setRateLimitStrategies(
+          Array.isArray(strategies) && strategies.length > 0 ? strategies : DEFAULT_RATE_LIMIT_STRATEGIES,
+        );
+        const statusMap = buildRateLimitStatusMap(statuses);
+        setAccountRateLimitByID((prev) => ({
+          ...prev,
+          ...Object.fromEntries(Object.entries(statusMap).filter(([accountID]) => accountIDSet.has(accountID))),
+        }));
+      } catch (error) {
+        console.error(error);
+      } finally {
+        const remainingFeedbackMs = Math.max(0, 350 - (Date.now() - startedAt));
+        if (remainingFeedbackMs > 0) {
+          await new Promise((resolve) => window.setTimeout(resolve, remainingFeedbackMs));
+        }
+        setRateLimitRefreshingAccountIDSet((prev) => {
+          const next = new Set(prev);
+          accountIDs.forEach((accountID) => next.delete(accountID));
+          return next;
+        });
+      }
+    },
+    [trackRequest],
+  );
+
   useEffect(() => {
     const timer = window.setInterval(() => {
       if (latestAccountsRef.current.length > 0) {
@@ -62,7 +109,9 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
 
   return {
     accountRateLimitByID,
+    rateLimitRefreshingAccountIDSet,
     rateLimitStrategies,
     loadAccountRateLimits,
+    refreshAccountRateLimits,
   };
 }

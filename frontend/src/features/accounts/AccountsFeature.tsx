@@ -127,7 +127,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     isAccountImportModalOpen,
     codexQuotaByName,
     accountUsageByID,
+    usageRefreshingAccountIDSet,
     accountRateLimitByID,
+    rateLimitRefreshingAccountIDSet,
     rateLimitStrategies,
     isSelectionMode,
     selectedAccountIDs,
@@ -141,7 +143,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     allFilteredSelected,
     loadAccounts,
     loadAccountUsage,
+    refreshAccountUsage,
     loadAccountRateLimits,
+    refreshAccountRateLimits,
     startCodexOAuth,
     cancelCodexOAuth,
     verifySelectedApiKey,
@@ -575,8 +579,10 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       groupAccounts.forEach((account) => {
         void refreshCodexQuota(account);
       });
+      void refreshAccountUsage(groupAccounts);
+      void refreshAccountRateLimits(groupAccounts);
     },
-    [refreshCodexQuota],
+    [refreshAccountRateLimits, refreshAccountUsage, refreshCodexQuota],
   );
 
   const setGroupDisabled = useCallback(
@@ -1208,7 +1214,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               void startCodexOAuth();
               setIsHeaderActionsMenuOpen(false);
             }}
-            onRefresh={loadAccounts}
+            onRefresh={() => void loadAccounts({ showSupplementalRefreshing: true })}
           />
 
           <AccountsToolbar
@@ -1331,7 +1337,9 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   accountCardHeights={accountCardHeights}
                   codexQuotaByName={codexQuotaByName}
                   accountUsageByID={accountUsageByID}
+                  usageRefreshingAccountIDSet={usageRefreshingAccountIDSet}
                   accountRateLimitByID={accountRateLimitByID}
+                  rateLimitRefreshingAccountIDSet={rateLimitRefreshingAccountIDSet}
                   ready={ready}
                   isSelectionMode={isSelectionMode}
                   selectedAccountIDSet={selectedAccountIDSet}
@@ -1344,7 +1352,11 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
                   onRefreshGroup={refreshGroupQuota}
                   onSetGroupDisabled={setGroupDisabled}
                   onOpenDetails={openAccountDetail}
-                  onRefreshQuota={(account) => void refreshCodexQuota(account)}
+                  onRefreshQuota={(account) => {
+                    void refreshCodexQuota(account);
+                    void refreshAccountUsage([account]);
+                    void refreshAccountRateLimits([account]);
+                  }}
                   onStartReauth={(account) => void startCodexOAuth(account)}
                   onToggleDisabled={(account) =>
                     void toggleAccountDisabled(account)

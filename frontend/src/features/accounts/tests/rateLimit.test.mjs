@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
+import { resolveUnboundedTrafficActivityPercent } from '../model/accountUsage.ts';
 import { buildRateLimitGuardRows } from '../model/rateLimit.ts';
 
 test('rate limit guard rows expose quota-like progress details for account cards', () => {
@@ -115,7 +116,45 @@ test('account cards render route guard module from the full card path', async ()
   const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
 
   assert.doesNotMatch(source, /showCompactRouteGuard|density === 'compact'/);
-  assert.match(source, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+  assert.match(source, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} refreshing=\{rateLimitRefreshing \|\| usageRefreshing\} t=\{t\} \/>/);
+});
+
+test('account quota refresh also refreshes route guard status and marks guard rows busy', async () => {
+  const pageSource = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const pageStateSource = await readFile(new URL('../hooks/useAccountsPageState.ts', import.meta.url), 'utf8');
+  const usageHookSource = await readFile(new URL('../hooks/useAccountsUsageState.ts', import.meta.url), 'utf8');
+  const rateLimitHookSource = await readFile(new URL('../hooks/useAccountsRateLimitState.ts', import.meta.url), 'utf8');
+  const groupSource = await readFile(new URL('../components/AccountGroupSection.tsx', import.meta.url), 'utf8');
+  const cardSource = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+  const attributionSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(rateLimitHookSource, /const \[rateLimitRefreshingAccountIDSet, setRateLimitRefreshingAccountIDSet\]/);
+  assert.match(rateLimitHookSource, /refreshAccountRateLimits/);
+  assert.match(usageHookSource, /const \[usageRefreshingAccountIDSet, setUsageRefreshingAccountIDSet\]/);
+  assert.match(usageHookSource, /refreshAccountUsage/);
+  assert.match(pageStateSource, /refreshAccountRateLimits/);
+  assert.match(pageStateSource, /refreshAccountUsage/);
+  assert.match(pageStateSource, /rateLimitRefreshingAccountIDSet/);
+  assert.match(pageStateSource, /usageRefreshingAccountIDSet/);
+  assert.match(pageSource, /void refreshAccountRateLimits\(groupAccounts\)/);
+  assert.match(pageSource, /void refreshAccountUsage\(groupAccounts\)/);
+  assert.match(pageSource, /void refreshAccountRateLimits\(\[account\]\)/);
+  assert.match(pageSource, /void refreshAccountUsage\(\[account\]\)/);
+  assert.match(pageSource, /loadAccounts\(\{ showSupplementalRefreshing: true \}\)/);
+  assert.match(groupSource, /rateLimitRefreshing=\{rateLimitRefreshingAccountIDSet\.has\(account\.id\)\}/);
+  assert.match(groupSource, /usageRefreshing=\{usageRefreshingAccountIDSet\.has\(account\.id\)\}/);
+  assert.match(cardSource, /rateLimitRefreshing\?: boolean/);
+  assert.match(cardSource, /usageRefreshing\?: boolean/);
+  assert.match(cardSource, /rateLimitRefreshing=\{rateLimitRefreshing\}/);
+  assert.match(cardSource, /usageRefreshing=\{usageRefreshing\}/);
+  assert.match(attributionSource, /rateLimitRefreshing\?: boolean/);
+  assert.match(attributionSource, /usageRefreshing\?: boolean/);
+  assert.match(attributionSource, /refreshing=\{rateLimitRefreshing \|\| usageRefreshing\}/);
+  assert.match(sectionsSource, /refreshing\?: boolean/);
+  assert.match(sectionsSource, /aria-busy=\{refreshing\}/);
+  assert.match(sectionsSource, /data-rate-limit-refreshing=\{refreshing \? 'true' : undefined\}/);
+  assert.match(sectionsSource, /account-card-quota-refresh-skeleton/);
 });
 
 test('full account cards keep unbounded traffic statistics rows without a heading', async () => {
@@ -124,7 +163,7 @@ test('full account cards keep unbounded traffic statistics rows without a headin
   const zhSource = await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8');
   const enSource = await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8');
 
-  assert.match(cardSource, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+  assert.match(cardSource, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} refreshing=\{rateLimitRefreshing \|\| usageRefreshing\} t=\{t\} \/>/);
   assert.doesNotMatch(sectionsSource, /if \(rows\.length === 0\) return null/);
   assert.doesNotMatch(sectionsSource, /const headerLabel = hasRows \? 'ROUTE GUARD' : t\('accounts\.traffic_statistics'\)/);
   assert.doesNotMatch(sectionsSource, /traffic_statistics_unbounded/);
@@ -134,10 +173,18 @@ test('full account cards keep unbounded traffic statistics rows without a headin
   assert.match(sectionsSource, /<TrafficStatisticsRow/);
   assert.match(sectionsSource, /value=\{formatUsageCountMetric\(usageSummary\?\.requestCount \?\? 0\)\}/);
   assert.match(sectionsSource, /value=\{formatUsageTokenMetric\(usageSummary\?\.totalTokens \?\? 0\)\}/);
+  assert.match(sectionsSource, /trafficBuckets\.map\(\(bucket\) => bucket\.requestCount\)/);
+  assert.match(sectionsSource, /trafficBuckets\.map\(\(bucket\) => bucket\.totalTokens\)/);
+  assert.match(sectionsSource, /activityPercent=\{requestActivityPercent\}/);
+  assert.match(sectionsSource, /activityPercent=\{tokenActivityPercent\}/);
   assert.doesNotMatch(sectionsSource, /value === 0\) return '—'/);
   assert.match(sectionsSource, /\{value\} \/ ∞/);
   const trafficRowSource = sectionsSource.slice(sectionsSource.indexOf('function TrafficStatisticsRow'));
   assert.match(trafficRowSource, /relative h-4 overflow-hidden border border-\[var\(--border-color\)\]/);
+  assert.match(trafficRowSource, /data-account-card-traffic-activity-fill/);
+  assert.match(trafficRowSource, /bg-\[color-mix\(in_srgb,var\(--text-primary\)_16%,transparent\)\]/);
+  assert.doesNotMatch(trafficRowSource, /color-chart-blue/);
+  assert.match(trafficRowSource, /width: `\$\{activityPercent\}%`/);
   assert.doesNotMatch(trafficRowSource, /<span className="shrink-0">0<\/span>/);
   assert.doesNotMatch(trafficRowSource, /<span className="min-w-0 truncate text-right text-\[var\(--text-primary\)\]">∞<\/span>/);
   assert.match(zhSource, /"today_requests": "今日请求"/);
@@ -146,6 +193,13 @@ test('full account cards keep unbounded traffic statistics rows without a headin
   assert.doesNotMatch(enSource, /traffic_statistics|Unlimited/);
   assert.doesNotMatch(zhSource, /暂无路由守卫规则|route_guard_unconfigured/);
   assert.doesNotMatch(enSource, /No route guard rules|route_guard_unconfigured/);
+});
+
+test('unbounded traffic activity percent uses recent buckets without inventing a quota', () => {
+  assert.equal(resolveUnboundedTrafficActivityPercent(0, [12, 8, 0]), 0);
+  assert.equal(resolveUnboundedTrafficActivityPercent(59, [14, 11, 9, 6]), 100);
+  assert.equal(resolveUnboundedTrafficActivityPercent(20, [100, 80, 50, 20]), 8);
+  assert.equal(resolveUnboundedTrafficActivityPercent(200, []), 12);
 });
 
 test('route guard configured account cards replace the generic frame inspector label with guard info', async () => {

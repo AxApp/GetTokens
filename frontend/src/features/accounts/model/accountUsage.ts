@@ -78,6 +78,31 @@ export interface AccountUsageAttributionBucket {
   totalTokens?: number;
 }
 
+export function resolveUnboundedTrafficActivityPercent(
+  currentValue: number,
+  bucketValues: Array<number | null | undefined>,
+): number {
+  const current = normalizeTrafficActivityValue(currentValue);
+  if (current <= 0) return 0;
+
+  const recentBuckets = bucketValues
+    .map((value) => normalizeTrafficActivityValue(value))
+    .filter((value) => value > 0);
+
+  if (recentBuckets.length === 0) return 12;
+
+  const baseline = Math.max(...recentBuckets) * recentBuckets.length;
+  if (baseline <= 0) return 12;
+
+  const percent = Math.round((current / baseline) * 100);
+  return Math.min(100, Math.max(8, percent));
+}
+
+function normalizeTrafficActivityValue(value: number | null | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.max(0, value);
+}
+
 export interface AccountUsageAttributionItem {
   attributionKey?: string;
   accountKey: string;

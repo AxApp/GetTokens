@@ -45,9 +45,11 @@ interface AttributionCardProps {
   failureReason?: string;
   badges?: AttributionCardBadge[];
   usageSummary?: AccountUsageSummary;
+  usageRefreshing?: boolean;
   quotaDisplay?: QuotaDisplay;
   billing?: BillingDisplay;
   rateLimitStatus?: RateLimitState;
+  rateLimitRefreshing?: boolean;
   tone?: AttributionCardTone;
   density?: AttributionCardDensity;
   leadingAction?: ReactNode;
@@ -71,9 +73,11 @@ export default function AttributionCard({
   failureReason = '',
   badges = [],
   usageSummary,
+  usageRefreshing = false,
   quotaDisplay,
   billing,
   rateLimitStatus,
+  rateLimitRefreshing = false,
   tone = 'neutral',
   density = 'full',
   leadingAction,
@@ -222,7 +226,7 @@ export default function AttributionCard({
 
       <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
       <BillingBalance billing={billing} />
-      <RateLimitGuard rateLimitStatus={rateLimitStatus} usageSummary={usageSummary} t={t} />
+      <RateLimitGuard rateLimitStatus={rateLimitStatus} usageSummary={usageSummary} refreshing={rateLimitRefreshing || usageRefreshing} t={t} />
 
       {customBody ? <div className="shrink-0 border-t-2 border-[var(--border-color)]">{customBody}</div> : null}
       {footer ? <div className="mt-auto border-t border-[var(--border-color)] px-4 pb-4 pt-3">{footer}</div> : null}
