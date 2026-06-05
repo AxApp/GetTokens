@@ -14,7 +14,7 @@ import {
 test('parseAccountListDisplayMode keeps existing full-card accounts layout as the default', () => {
   assert.equal(ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY, 'gettokens.accounts.display-mode');
   assert.equal(DEFAULT_ACCOUNT_LIST_DISPLAY_MODE, 'full');
-  assert.equal(parseAccountListDisplayMode('compact'), 'compact');
+  assert.equal(parseAccountListDisplayMode('compact'), 'full');
   assert.equal(parseAccountListDisplayMode('list'), 'list');
   assert.equal(parseAccountListDisplayMode('full'), 'full');
   assert.equal(parseAccountListDisplayMode('unknown'), 'full');
@@ -69,4 +69,13 @@ test('accounts selection actions render as one adaptive toolbar with overflow fa
   assert.match(source, /label=\{t\('accounts\.export_selected'\)\}/);
   assert.doesNotMatch(source, /className="border-t border-dashed border-\[var\(--border-color\)\] pt-4"/);
   assert.doesNotMatch(source, /className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed/);
+});
+
+test('accounts toolbar display mode switch only offers full and list views', async () => {
+  const source = await readFile(new URL('../components/AccountsToolbar.tsx', import.meta.url), 'utf8');
+
+  assert.match(source, /grid-cols-2/);
+  assert.match(source, /onDisplayModeChange\('full'\)/);
+  assert.match(source, /onDisplayModeChange\('list'\)/);
+  assert.doesNotMatch(source, /onDisplayModeChange\('compact'\)|display_mode_compact/);
 });

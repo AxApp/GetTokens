@@ -136,7 +136,7 @@ function AccountsToolbarOverview() {
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号工具栏</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
-          账号工作台搜索、筛选、密度切换和批量选择工具栏进入设计系统，用固定状态覆盖普通态、筛选菜单和批量操作栏。
+          账号工作台搜索、筛选、视图切换和批量选择工具栏进入设计系统，用固定状态覆盖普通态、筛选菜单和批量操作栏。
         </p>
       </div>
 
@@ -154,7 +154,6 @@ function AccountsToolbarOverview() {
           <AccountsToolbarSample
             label="DS-ACCOUNTS-TOOLBAR-SELECTION-EMPTY"
             initialSelectionMode
-            initialDisplayMode="compact"
           />
           <AccountsToolbarSample
             label="DS-ACCOUNTS-TOOLBAR-SELECTION-BULK"

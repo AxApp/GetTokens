@@ -9,9 +9,6 @@ import { formatQuotaResetDisplayWithUnix, hasDisplayableBilling } from '../model
 import { resolveQuotaRemainingFillClass } from '../model/quotaColor';
 import { buildRuntimeWarningDisplay } from '../model/runtimeWarning';
 
-const FLOW_BASE = '12,58 50,44 92,48 134,34 176,60 218,50 260,42 302,40';
-
-
 interface RuntimeWarningBannerProps {
   warning: string;
   dataAttribute: 'data-account-quota-runtime-warning' | 'data-account-route-guard-runtime-warning';
@@ -55,154 +52,6 @@ export function FormatBadges({ account }: FormatBadgesProps) {
           {formatLabel(fmt)}
         </span>
       ))}
-    </div>
-  );
-}
-
-// ── Traffic Section ────────────────────────────────────────────────
-
-interface TrafficSectionProps {
-  usageSummary?: AccountUsageSummary;
-  t: Translator;
-  embedded?: boolean;
-}
-
-interface TrafficMetricsModuleProps {
-  usageSummary?: AccountUsageSummary;
-  t: Translator;
-}
-
-export function TrafficMetricsModule({ usageSummary, t }: TrafficMetricsModuleProps) {
-  return (
-    <section
-      data-design-system-component="true"
-      data-design-system-component-name="TrafficMetricsModule"
-      className="account-card-traffic-module grid border-b border-dashed border-[var(--border-color)]"
-    >
-      <TrafficSection usageSummary={usageSummary} t={t} embedded />
-      <UsageMetrics usageSummary={usageSummary} t={t} embedded />
-    </section>
-  );
-}
-
-export function TrafficSection({ usageSummary, t, embedded = false }: TrafficSectionProps) {
-  const flow = buildTrafficCurveState(usageSummary);
-  const sourceLabel = resolveUsageSourceLabel(usageSummary);
-
-  return (
-    <section className={`account-card-traffic grid gap-3 px-4 py-3 ${embedded ? '' : 'border-b border-dashed border-[var(--border-color)]'}`}>
-      <TrafficSummary
-        label={t('accounts.recent_requests')}
-        value={formatCountMetric(usageSummary?.requestCount ?? 0)}
-        sourceLabel={sourceLabel}
-      />
-      <TrafficChart
-        flow={flow}
-        windowLabel={t('accounts.attribution_window')}
-        peakLabel={t('accounts.attribution_peak')}
-        nowLabel={t('accounts.attribution_now')}
-      />
-    </section>
-  );
-}
-
-interface TrafficSummaryProps {
-  label: string;
-  value: string;
-  sourceLabel: string;
-}
-
-export function TrafficSummary({ label, value, sourceLabel }: TrafficSummaryProps) {
-  return (
-    <div className="flex min-h-[6rem] flex-col justify-between">
-      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-        {label}
-      </div>
-      <div className="font-mono text-[length:var(--font-size-ui-display)] font-black leading-none text-[var(--text-primary)]">
-        {value}
-      </div>
-      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-        {sourceLabel}
-      </div>
-    </div>
-  );
-}
-
-interface TrafficChartProps {
-  flow: AccountTrafficFlowState;
-  windowLabel: string;
-  peakLabel: string;
-  nowLabel: string;
-}
-
-export function TrafficChart({ flow, windowLabel, peakLabel, nowLabel }: TrafficChartProps) {
-  return (
-    <div className="account-card-traffic-chart min-w-0 border-l-2 border-[var(--border-color)]">
-      <div className="account-card-flow-head mb-1 grid gap-2">
-        <TrafficHeadCell label={windowLabel} value={formatTokenMetric(flow.windowTokens)} />
-        <TrafficHeadCell label={peakLabel} value={formatTokenMetric(flow.peakTokens)} />
-        <TrafficHeadCell label={nowLabel} value={formatTokenMetric(flow.currentTokens)} />
-      </div>
-      <div
-        className="relative h-[4rem] overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, color-mix(in srgb, var(--border-color) 12%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--border-color) 10%, transparent) 1px, transparent 1px)',
-          backgroundSize: '28px 100%, 100% 22px',
-        }}
-      >
-        <svg viewBox="0 0 314 86" className="absolute inset-0 h-full w-full">
-          <polyline
-            fill="none"
-            stroke="color-mix(in srgb, var(--text-muted) 35%, transparent)"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            points={FLOW_BASE}
-          />
-          <path
-            d={flow.path}
-            fill="none"
-            stroke="var(--color-chart-attribution)"
-            strokeWidth="1.9"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="12 10"
-          >
-            <animate attributeName="stroke-dashoffset" from="22" to="0" dur="1.8s" repeatCount="indefinite" />
-          </path>
-          {flow.points.map((point) => (
-            <circle
-              key={point.key}
-              cx={point.x}
-              cy={point.y}
-              r={point.kind === 'latest' ? 4.8 : point.kind === 'peak' ? 4.2 : 3.4}
-              fill={point.kind === 'latest' ? 'var(--color-chart-attribution)' : point.kind === 'peak' ? 'var(--color-chart-peak)' : 'var(--bg-main)'}
-              stroke={point.kind === 'peak' ? 'var(--color-chart-primary)' : 'var(--color-chart-attribution)'}
-              strokeWidth="1.3"
-            />
-          ))}
-          <text x="10" y="79" fill="var(--text-muted)" fontSize="7" fontWeight="900">
-            24H
-          </text>
-          <text x="278" y="79" fill="var(--text-muted)" fontSize="7" fontWeight="900">
-            NOW
-          </text>
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function TrafficHeadCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex min-w-0 items-baseline justify-between gap-2">
-      <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.14em] text-[var(--text-muted)]">
-        {label}
-      </div>
-      <div className="shrink-0 truncate font-mono text-[length:var(--font-size-ui-md-compact)] font-black uppercase tracking-[0.04em] text-[var(--text-primary)]">
-        {value}
-      </div>
     </div>
   );
 }
@@ -252,11 +101,12 @@ export function AccountMiniMetric({ label, value }: { label: string; value: stri
 interface QuotaBarsProps {
   quotaDisplay: QuotaDisplay;
   t: Translator;
+  showDivider?: boolean;
 }
 
 type QuotaBarsDisplayMode = 'percent' | 'tokens';
 
-export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
+export function QuotaBars({ quotaDisplay, t, showDivider = true }: QuotaBarsProps) {
   const windows = quotaDisplay.windows ?? [];
   const [displayMode, setDisplayMode] = useState<QuotaBarsDisplayMode>('percent');
   if (windows.length === 0) return null;
@@ -283,7 +133,7 @@ export function QuotaBars({ quotaDisplay, t }: QuotaBarsProps) {
 
   return (
     <section
-      className={`grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3 ${
+      className={`grid gap-2.5 px-4 py-3 ${showDivider ? 'border-b border-dashed border-[var(--border-color)]' : ''} ${
         hasTokenProgress ? 'cursor-pointer transition-colors hover:bg-[var(--bg-surface)]' : ''
       }`}
       aria-busy={refreshing}
@@ -417,14 +267,6 @@ export function BillingBalance({ billing }: BillingBalanceProps) {
   );
 }
 
-// ── Usage Metrics Grid ─────────────────────────────────────────────
-
-interface UsageMetricsProps {
-  usageSummary?: AccountUsageSummary;
-  t: Translator;
-  embedded?: boolean;
-}
-
 function formatUsageCountMetric(value: number) {
   if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
@@ -432,70 +274,55 @@ function formatUsageCountMetric(value: number) {
 }
 
 function formatUsageTokenMetric(value: number | null | undefined) {
-  if (typeof value !== 'number' || value === 0) return '—';
+  if (typeof value !== 'number') return '0';
   if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
   if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
-  return String(Math.round(value));
-}
-
-function formatLatencyMetric(ms: number | null | undefined) {
-  if (typeof ms !== 'number' || ms === 0) return '—';
-  if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
-  return `${Math.round(ms)}ms`;
-}
-
-function UsageCell({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-r border-dashed border-[var(--border-color)] px-3 py-3 last:border-r-0">
-      <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
-        {label}
-      </div>
-      <div className="mt-1 font-mono text-[length:var(--font-size-ui-md)] font-black tabular-nums tracking-[-0.02em] text-[var(--text-primary)]">
-        {value}
-      </div>
-    </div>
-  );
-}
-
-export function UsageMetrics({ usageSummary, t, embedded = false }: UsageMetricsProps) {
-  if (!usageSummary) return null;
-
-  return (
-    <section className={`account-card-usage-metrics grid ${embedded ? 'border-t' : 'border-b'} border-dashed border-[var(--border-color)]`}>
-      <UsageCell label={t('accounts.recent_requests')} value={formatUsageCountMetric(usageSummary.requestCount ?? 0)} />
-      <UsageCell label={t('accounts.total_tokens')} value={formatUsageTokenMetric(usageSummary.totalTokens ?? 0)} />
-      <UsageCell label="CACHED" value={formatUsageTokenMetric(usageSummary.cachedInputTokens ?? 0)} />
-      <UsageCell label={t('accounts.average_latency')} value={formatLatencyMetric(usageSummary.averageLatencyMs ?? null)} />
-    </section>
-  );
+  return String(Math.max(0, Math.round(value)));
 }
 
 // ── Rate Limit Guard ───────────────────────────────────────────────
 
 interface RateLimitGuardProps {
   rateLimitStatus?: RateLimitState;
+  usageSummary?: AccountUsageSummary;
+  t: Translator;
 }
 
-export function RateLimitGuard({ rateLimitStatus }: RateLimitGuardProps) {
+export function RateLimitGuard({ rateLimitStatus, usageSummary, t }: RateLimitGuardProps) {
   const rows = buildRateLimitGuardRows(rateLimitStatus);
-  if (rows.length === 0) return null;
   const runtimeWarning = formatRateLimitRuntimeWarning(rateLimitStatus);
+  const hasRows = rows.length > 0;
+  const statusLabel = rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS';
 
   return (
-    <section className="grid gap-2.5 border-b border-dashed border-[var(--border-color)] px-4 py-3">
+    <section className="grid gap-2.5 px-4 py-3">
       {runtimeWarning ? (
         <RuntimeWarningBanner warning={runtimeWarning} dataAttribute="data-account-route-guard-runtime-warning" />
       ) : null}
-      <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
-          ROUTE GUARD
+      {hasRows ? (
+        <div className="flex items-center justify-between gap-3">
+          <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.18em] text-[var(--text-muted)]">
+            ROUTE GUARD
+          </div>
+          <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
+            rateLimitStatus?.blocked ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
+          }`}>
+            {statusLabel}
+          </div>
         </div>
-        <div className={`font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.12em] ${
-          rateLimitStatus?.blocked ? 'text-[var(--color-status-danger)]' : 'text-[var(--text-muted)]'
-        }`}>
-          {rateLimitStatus?.blocked ? rateLimitStatus.blockReason || 'BLOCKED' : 'PASS'}
+      ) : null}
+      {!hasRows ? (
+        <div data-account-card-traffic-statistics="unbounded" className="grid gap-2">
+          <TrafficStatisticsRow
+            label={t('accounts.today_requests')}
+            value={formatUsageCountMetric(usageSummary?.requestCount ?? 0)}
+          />
+          <TrafficStatisticsRow
+            label={t('accounts.today_tokens')}
+            value={formatUsageTokenMetric(usageSummary?.totalTokens ?? 0)}
+          />
         </div>
-      </div>
+      ) : null}
       {rows.map((row) => {
         const fillClass = row.tone === 'critical' ? 'bg-[var(--color-status-danger)]' : 'bg-[var(--color-status-warning)]';
         return (
@@ -521,6 +348,22 @@ export function RateLimitGuard({ rateLimitStatus }: RateLimitGuardProps) {
         );
       })}
     </section>
+  );
+}
+
+function TrafficStatisticsRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="account-card-traffic-statistics-row grid min-w-0 gap-1.5">
+      <div className="flex min-w-0 items-baseline justify-between gap-2">
+        <div className="min-w-0 truncate font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          {label}
+        </div>
+        <div className="shrink-0 text-right font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.08em] text-[var(--text-primary)]">
+          {value} / ∞
+        </div>
+      </div>
+      <div className="relative h-4 overflow-hidden border border-[var(--border-color)] bg-[var(--bg-surface)]" />
+    </div>
   );
 }
 
@@ -551,85 +394,6 @@ export function UnsupportedQuotaPlaceholder({ quotaDisplay, billing, t }: Unsupp
       </div>
     </section>
   );
-}
-
-export interface AccountTrafficPoint {
-  key: string;
-  x: number;
-  y: number;
-  value: number;
-  kind: 'normal' | 'latest' | 'peak';
-}
-
-export interface AccountTrafficFlowState {
-  path: string;
-  points: AccountTrafficPoint[];
-  windowTokens: number;
-  peakTokens: number;
-  currentTokens: number;
-}
-
-function buildTrafficCurveState(summary?: AccountUsageSummary): AccountTrafficFlowState {
-  const buckets = Array.isArray(summary?.trafficBuckets) && summary?.trafficBuckets.length > 0
-    ? summary.trafficBuckets.slice(-8)
-    : Array.from({ length: 8 }, (_, index) => ({
-        start: `slot-${index}`,
-        requestCount: 0,
-        failedCount: 0,
-        inputTokens: 0,
-        cachedInputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-      }));
-  const values = buckets.map((bucket) => Math.max(0, bucket.totalTokens || 0));
-  const max = Math.max(1, ...values);
-  const height = 86;
-  const top = 14;
-  const bottom = 18;
-  const left = 12;
-  const right = 12;
-  const step = buckets.length > 1 ? (314 - left - right) / (buckets.length - 1) : 0;
-  const usableHeight = height - top - bottom;
-  const points: AccountTrafficPoint[] = buckets.map((bucket, index) => {
-    const x = left + step * index;
-    const y = height - bottom - (Math.max(0, bucket.totalTokens || 0) / max) * usableHeight;
-    return {
-      key: `${bucket.start}-${index}`,
-      x: Number(x.toFixed(2)),
-      y: Number(y.toFixed(2)),
-      value: Math.max(0, bucket.totalTokens || 0),
-      kind: 'normal',
-    };
-  });
-  const peakValue = Math.max(...values);
-  const latestIndex = Math.max(0, points.length - 1);
-  points.forEach((point, index) => {
-    if (index === latestIndex) {
-      point.kind = 'latest';
-      return;
-    }
-    if (point.value === peakValue && peakValue > 0) {
-      point.kind = 'peak';
-    }
-  });
-  const path = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-  return {
-    path: points.length > 1 ? path : 'M 12 56 L 302 56',
-    points,
-    windowTokens: summary?.totalTokens ?? 0,
-    peakTokens: peakValue,
-    currentTokens: values[values.length - 1] ?? 0,
-  };
-}
-
-function resolveUsageSourceLabel(summary?: AccountUsageSummary) {
-  if (summary?.source === 'attribution') {
-    return 'ATTRIBUTION';
-  }
-  if (summary?.source === 'legacy') {
-    return 'LEGACY';
-  }
-  return 'NONE';
 }
 
 export function formatCountMetric(value: number) {

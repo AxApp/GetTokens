@@ -154,7 +154,7 @@ function AccountGroupSectionSample({
         t={t}
         group={{
           id: `group-${displayMode}`,
-          label: displayMode === 'list' ? 'List Density' : displayMode === 'compact' ? 'Compact Density' : 'Pro Accounts',
+          label: displayMode === 'list' ? 'List Density' : 'Pro Accounts',
           rank: 1,
           accounts,
         }}
@@ -227,7 +227,7 @@ function AccountGroupSectionOverview() {
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号分组</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
-          账号分组容器拆成无 Wails 的纯 view 后进入设计系统，用 mock 卡片覆盖完整、紧凑、列表和空分组布局。
+          账号分组容器拆成无 Wails 的纯 view 后进入设计系统，用 mock 卡片覆盖完整、列表和空分组布局。
         </p>
       </div>
 
@@ -235,7 +235,6 @@ function AccountGroupSectionOverview() {
         <h3 className="text-sm font-black uppercase italic tracking-normal">Group states</h3>
         <div className="grid gap-4">
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-FULL" />
-          <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-COMPACT" displayMode="compact" />
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-LIST" displayMode="list" />
           <AccountGroupSectionSample label="DS-ACCOUNT-GROUP-EMPTY" accounts={[]} />
           <AccountGroupSectionWrapperSample label="DS-ACCOUNT-GROUP-WRAPPER" />

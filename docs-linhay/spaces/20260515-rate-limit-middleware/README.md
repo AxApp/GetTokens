@@ -123,7 +123,7 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
 
 设计方向：
 1. 限流状态进入当前共享 `AttributionCard` 母版，作为 `Route Guard` 区域放在 quota 后、evidence 前；它表达路由候选是否被剔除，而不是另一条平台 quota。
-2. 超限账号同时影响左侧状态 rail、guard summary 与策略 chip；Codex 顺序卡在完整 / 缩略模式下都必须保留超限 chip 和 route policy 语义。
+2. 超限账号同时影响左侧状态 rail、guard summary 与策略 chip；账号池卡片视图只保留完整 / 列表两种模式，旧缩略模式已下线，旧 `density=compact` hash 统一回退到完整模式。
 3. 限流规则配置区在账号详情 modal 内独立为 `Route Guard Rules` section，位于 `Management` 与 `Verification` 之间，并展示 evaluator 快照时间与保存后立即评估语义。
 4. Usage Desk 若新增 `限流状态` 观察源，必须作为第三个 source 数据面接入，而不是复用现有 `真实请求量 / 本地投影用量` 的文案。
 5. 设计稿已经按 2026-05-15 后的账号归因卡母版重做；旧稿中“仅在旧账号卡上插入 Rate Limits 进度条”的口径不再作为实现依据。
@@ -150,7 +150,7 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
 
 ## 当前状态
 - 状态：implemented-verified
-- 最近更新：2026-05-22
+- 最近更新：2026-06-05
 - 实现摘要：
   - sidecar fork 已接入 `RateLimitStrategyRegistry`、`rate_limit_rules` / `rate_limit_events`、定时 `RateLimitEvaluator`、`rateLimitPolicy` 和 `/gettokens/rate-limit-*` management API。
   - sidecar fork 已追加 `AccountRouteGuardStore` / `accountRouteGuardPolicy`：`manual-disabled` 与 `rate-limit` 共用 RoutePolicy deny 机制，但 source 独立清理。
@@ -158,6 +158,10 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
   - Codex WebSocket P2 已支持同 downstream 连接内在下一轮请求释放 guarded pinned auth、重放 transcript，并按新 auth 重新建立 upstream conn。
   - GetTokens Go/Wails 已暴露策略、规则、状态与事件查询/保存方法，root `main.App` 绑定已同步。
   - 前端首期收敛在账号池、Codex 顺序卡与 OpenAI-compatible 账号：共享 `AttributionCard` 增加 `Route Guard` 区域，Codex API Key 与 OpenAI-compatible 详情均复用 `Route Guard Rules` 配置区。
+  - 2026-06-05：账号卡片没有配置 route guard 规则时也保留同一分段外壳，但不显示 `流量统计 / 无限上限` 头部；统计行保留进度条，不显示底部 `0 / ∞` 刻度文字；没有 quota/billing telemetry 时不再显示 `当前凭证无额度遥测` 占位模块。配置了规则的账号继续显示 `ROUTE GUARD` 与规则进度，避免把流量统计误绑定到 route guard 规则配置。
+  - 2026-06-05 追加：旧账号卡 `TrafficMetricsModule`（近期请求曲线、窗口/峰值/当前、CACHED/平均耗时网格）已从生产、Storybook 与组件代码中下线；账号卡流量入口收敛到下方今日请求/Token 统计行。
+  - 2026-06-05 追加：账号卡 footer 操作区移除上方 dashed 分割线，改由 footer wrapper 输出 solid 顶部分割线与固定上内边距；`详细参数` 与 `刷新额度` 固定同一行双列等分宽度，OAuth 重新授权等第三动作跨整行。
+  - 2026-06-05 追加：账号池展示模式移除 `缩略`；`AccountListDisplayMode` 只保留 `full | list`，toolbar 从三段切换改为 `完整 / 列表` 两段，旧 compact grid token、compact delete overlay、compact-only quota/billing 选择器和 Storybook/manifest/locale 入口同步清理。
 - 验收记录：
   - 2026-05-22 自动化：sidecar fork `go test ./internal/gettokenshooks ./internal/runtime/executor ./sdk/cliproxy ./sdk/api/handlers/openai` 与 `go test ./...` 均已通过。
   - 2026-05-22 回归新增：覆盖手动禁用 deny、手动/限流 source 互不误清、限流评估写入统一 guard、Codex auth 禁用触发 WebSocket close 且不误伤同 provider 其他账号。
@@ -170,3 +174,6 @@ Then 返回最近拦截事件列表，包含策略类型、窗口、当前用量
   - 主控追加修复：真实 Wails 体验发现 `Route Guard Rules` 编辑中会被后台 `rateLimitStatus` 刷新覆盖 draft，已增加 dirty draft 保护；Subagent 第二轮发现 OpenAI-compatible 详情缺少 `Route Guard Rules`，已抽出共享规则编辑区并接入 provider 详情。
   - 复验确认：账号池 preview、Codex API Key 详情、OpenAI-compatible 详情、Codex 顺序卡 blocked chip、真实 Wails UI 保存/刷新/blocked 状态均可见；本机测试规则已通过 management API 删除，`rules_len=0`、`blocked=false`，避免污染 dev 环境。
   - 追加 Wails binding 复验：dev app `VERSION 2026.05.16.16` 通过 UI 新增 `ui-smoke-20260516` 规则，API 确认 `match_key=auth-id:codex:apikey:a6ba88c12cad`、`limit_value=1`；随后通过 UI 删除，API 查询该 label 数量为 `0`。
+  - 2026-06-05 账号卡片展示回归：focused accounts/design-system tests、`npm --prefix frontend run typecheck` 通过；Playwright DOM 验收 `http://127.0.0.1:34115/#frame=accounts` 显示 `.account-card-traffic-module`、`.account-card-traffic`、`.account-card-usage-metrics` 均为 0，旧 `24H / 峰值 / 平均耗时` 组合不再存在；无规则卡片保留 `今日请求 / 今日 Token / ∞` 统计行与进度条，不显示 `流量统计 / 无限上限` 头部，且底部 `0/∞` 刻度为 0；`当前凭证无额度遥测` 占位 section 为 0；有规则卡片保留 `ROUTE GUARD` 进度条。截图见 [screenshots/20260605/account-cards/20260605-account-card-hide-unsupported-quota-after-v09.png](screenshots/20260605/account-cards/20260605-account-card-hide-unsupported-quota-after-v09.png)。
+  - 2026-06-05 footer 操作区回归：focused account card tests、`npm --prefix frontend run typecheck` 通过；Playwright DOM 验收 footer wrapper `borderTopStyle=solid`、`paddingTop=12px`，前置统计 section `borderBottomWidth=0px`，action grid `gridTemplateColumns=136px 136px`，`详细参数` 与 `刷新额度` 按相同宽度同一行显示。截图见 [screenshots/20260605/account-cards/20260605-account-card-footer-actions-solid-after-v05.png](screenshots/20260605/account-cards/20260605-account-card-footer-actions-solid-after-v05.png)。
+  - 2026-06-05 缩略模式下线回归：`node --test frontend/src/features/accounts/tests/accountListLayout.test.mjs frontend/src/features/accounts/tests/accountCardLayout.test.mjs frontend/src/features/accounts/tests/rateLimit.test.mjs frontend/src/features/accounts/tests/accountDeleteOverlay.test.mjs frontend/src/features/accounts/tests/accountSelectors.test.mjs frontend/src/features/design-system/storyCatalog.test.mjs` 与 `npm --prefix frontend run typecheck` 通过；Playwright DOM 验收 `#frame=accounts` 与 `#frame=accounts&density=compact` 均只显示 `完整 / 列表`，`缩略` 文案为 0，`.account-card-grid-compact` 为 0，旧 hash 回退到 `.account-card-grid-full`。截图见 [screenshots/20260605/account-cards/20260605-account-card-remove-compact-mode-after-v10.png](screenshots/20260605/account-cards/20260605-account-card-remove-compact-mode-after-v10.png)。

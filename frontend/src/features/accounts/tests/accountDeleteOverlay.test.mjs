@@ -84,39 +84,6 @@ test('buildAccountDeleteOverlay keeps list mode delete actions visible', () => {
   assert.doesNotMatch(markup, /grid gap-2 pt-3/);
 });
 
-test('buildAccountDeleteOverlay keeps compact mode delete actions inside the card', () => {
-  const markup = renderToStaticMarkup(
-    buildAccountDeleteOverlay({
-      t,
-      density: 'compact',
-      account: {
-        id: 'auth-file:team-codex-auth.json',
-        provider: 'codex',
-        credentialSource: 'auth-file',
-        displayName: 'Codex Primary Workbench',
-        status: 'active',
-        email: 'team-codex@example.com',
-        planType: 'Pro',
-        name: 'team-codex-auth.json',
-        baseUrl: 'https://api.openai.com/v1',
-        supportedFormats: ['openai_chat', 'openai_responses'],
-      },
-      primaryLabel: 'Codex Primary Workbench',
-      onCancelDelete: () => undefined,
-      onConfirmDelete: () => undefined,
-    }),
-  );
-
-  assert.match(markup, /data-account-card-delete-overlay="true"/);
-  assert.match(markup, /data-account-card-delete-overlay-density="compact"/);
-  assert.match(markup, /flex h-full min-h-\[10rem\] flex-col/);
-  assert.match(markup, /flex shrink-0 items-center justify-between gap-2/);
-  assert.match(markup, /common\.cancel/);
-  assert.match(markup, /common\.delete/);
-  assert.doesNotMatch(markup, /text-\[length:var\(--font-size-ui-xl-plus\)\]/);
-  assert.doesNotMatch(markup, /px-4 py-4/);
-});
-
 test('AttributionCard positions delete overlays across the full account card frame', () => {
   const source = readFileSync(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
 

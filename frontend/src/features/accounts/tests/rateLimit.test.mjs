@@ -109,12 +109,41 @@ test('rate limit rules section edits account-card rules without matchKey fallbac
 
 
 
-test('compact account cards still render route guard module when rules are configured', async () => {
+test('account cards render route guard module from the full card path', async () => {
   const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
 
-  assert.match(source, /const showCompactRouteGuard = density === 'compact' && hasRouteGuardRows/);
-  assert.match(source, /\{showCompactRouteGuard \? <RateLimitGuard rateLimitStatus=\{rateLimitStatus\} \/> : null\}/);
-  assert.match(source, /const hasRouteGuardRows = buildRateLimitGuardRows\(rateLimitStatus\)\.length > 0/);
+  assert.doesNotMatch(source, /showCompactRouteGuard|density === 'compact'/);
+  assert.match(source, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+});
+
+test('full account cards keep unbounded traffic statistics rows without a heading', async () => {
+  const cardSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+  const zhSource = await readFile(new URL('../../../locales/zh.json', import.meta.url), 'utf8');
+  const enSource = await readFile(new URL('../../../locales/en.json', import.meta.url), 'utf8');
+
+  assert.match(cardSource, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+  assert.doesNotMatch(sectionsSource, /if \(rows\.length === 0\) return null/);
+  assert.doesNotMatch(sectionsSource, /const headerLabel = hasRows \? 'ROUTE GUARD' : t\('accounts\.traffic_statistics'\)/);
+  assert.doesNotMatch(sectionsSource, /traffic_statistics_unbounded/);
+  assert.match(sectionsSource, /\{hasRows \? \(/);
+  assert.match(sectionsSource, /ROUTE GUARD/);
+  assert.match(sectionsSource, /data-account-card-traffic-statistics="unbounded"/);
+  assert.match(sectionsSource, /<TrafficStatisticsRow/);
+  assert.match(sectionsSource, /value=\{formatUsageCountMetric\(usageSummary\?\.requestCount \?\? 0\)\}/);
+  assert.match(sectionsSource, /value=\{formatUsageTokenMetric\(usageSummary\?\.totalTokens \?\? 0\)\}/);
+  assert.doesNotMatch(sectionsSource, /value === 0\) return '—'/);
+  assert.match(sectionsSource, /\{value\} \/ ∞/);
+  const trafficRowSource = sectionsSource.slice(sectionsSource.indexOf('function TrafficStatisticsRow'));
+  assert.match(trafficRowSource, /relative h-4 overflow-hidden border border-\[var\(--border-color\)\]/);
+  assert.doesNotMatch(trafficRowSource, /<span className="shrink-0">0<\/span>/);
+  assert.doesNotMatch(trafficRowSource, /<span className="min-w-0 truncate text-right text-\[var\(--text-primary\)\]">∞<\/span>/);
+  assert.match(zhSource, /"today_requests": "今日请求"/);
+  assert.match(zhSource, /"today_tokens": "今日 Token"/);
+  assert.doesNotMatch(zhSource, /traffic_statistics|无限上限/);
+  assert.doesNotMatch(enSource, /traffic_statistics|Unlimited/);
+  assert.doesNotMatch(zhSource, /暂无路由守卫规则|route_guard_unconfigured/);
+  assert.doesNotMatch(enSource, /No route guard rules|route_guard_unconfigured/);
 });
 
 test('route guard configured account cards replace the generic frame inspector label with guard info', async () => {

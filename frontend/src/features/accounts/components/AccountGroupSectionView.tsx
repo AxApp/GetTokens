@@ -147,9 +147,7 @@ export default function AccountGroupSectionView({
           className={
             displayMode === 'list'
               ? 'grid grid-cols-1 gap-3'
-              : displayMode === 'compact'
-                ? 'account-card-grid-compact grid gap-5'
-                : 'account-card-grid-full grid gap-8'
+              : 'account-card-grid-full grid gap-8'
           }
           data-plan-group-grid={group.id}
         >

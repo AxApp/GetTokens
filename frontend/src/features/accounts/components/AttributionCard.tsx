@@ -4,13 +4,10 @@ import type { AccountUsageSummary } from '../model/accountUsage';
 import { buildRateLimitGuardRows, type RateLimitState } from '../model/rateLimit';
 import type { BillingDisplay } from '../../../types';
 import type { QuotaDisplay, Translator } from '../model/types';
-import { resolveAccountCardValueSection } from '../model/accountQuota';
 import {
   BillingBalance,
   QuotaBars,
   RateLimitGuard,
-  TrafficMetricsModule,
-  UnsupportedQuotaPlaceholder,
   formatCountMetric,
   formatTokenMetric,
 } from './CardSections';
@@ -21,7 +18,7 @@ import {
   type AttributionCardTone,
 } from './attributionCardTone';
 
-type AttributionCardDensity = 'full' | 'compact' | 'list';
+type AttributionCardDensity = 'full' | 'list';
 
 
 function buildRouteGuardFrameDebugLabel(rateLimitStatus?: RateLimitState) {
@@ -90,18 +87,14 @@ export default function AttributionCard({
   interactive = true,
   onOpen,
 }: AttributionCardProps) {
-  const showAttribution = density !== 'compact';
   const accentBorderClass = ATTRIBUTION_CARD_TONE_BORDER_CLASS[tone];
   const accentFillClass = ATTRIBUTION_CARD_TONE_FILL_CLASS[tone];
   const resolvedQuotaDisplay = quotaDisplay ?? { status: 'unsupported', planType: '', windows: [] };
-  const compactValueSection = resolveAccountCardValueSection(resolvedQuotaDisplay, billing);
   const overlayFrameClass =
     density === 'list'
       ? 'absolute -inset-y-0.5 -left-2 -right-0.5 z-20'
       : 'absolute -inset-y-0.5 -left-1.5 -right-0.5 z-20';
   const routeGuardFrameDebugLabel = buildRouteGuardFrameDebugLabel(rateLimitStatus);
-  const hasRouteGuardRows = buildRateLimitGuardRows(rateLimitStatus).length > 0;
-  const showCompactRouteGuard = density === 'compact' && hasRouteGuardRows;
 
   if (density === 'list') {
     const planBadge = badges.find((badge) => badge.backgroundColor) ?? null;
@@ -227,35 +220,12 @@ export default function AttributionCard({
         {topActions ? <div className="account-card-top-actions absolute right-4 top-4 z-10">{topActions}</div> : null}
       </div>
 
-      {density === 'compact' ? (
-        compactValueSection === 'quota' ? (
-          <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
-        ) : compactValueSection === 'billing' ? (
-          <BillingBalance billing={billing} />
-        ) : (
-          <UnsupportedQuotaPlaceholder quotaDisplay={resolvedQuotaDisplay} billing={billing} t={t} />
-        )
-      ) : null}
-      {showCompactRouteGuard ? <RateLimitGuard rateLimitStatus={rateLimitStatus} /> : null}
-
-      {showAttribution ? (
-        <>
-          <TrafficMetricsModule usageSummary={usageSummary} t={t} />
-
-          <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
-          <BillingBalance billing={billing} />
-          <UnsupportedQuotaPlaceholder
-            quotaDisplay={resolvedQuotaDisplay}
-            billing={billing}
-            t={t}
-          />
-
-          <RateLimitGuard rateLimitStatus={rateLimitStatus} />
-        </>
-      ) : null}
+      <QuotaBars quotaDisplay={resolvedQuotaDisplay} t={t} />
+      <BillingBalance billing={billing} />
+      <RateLimitGuard rateLimitStatus={rateLimitStatus} usageSummary={usageSummary} t={t} />
 
       {customBody ? <div className="shrink-0 border-t-2 border-[var(--border-color)]">{customBody}</div> : null}
-      {footer ? <div className="mt-auto px-4 pb-4">{footer}</div> : null}
+      {footer ? <div className="mt-auto border-t border-[var(--border-color)] px-4 pb-4 pt-3">{footer}</div> : null}
       {overlay ? <div className={overlayFrameClass}>{overlay}</div> : null}
     </AccountCardFrame>
   );

@@ -203,13 +203,6 @@ export default function AccountCard({
     await copyText(buildAccountCardContentText(account));
   }
 
-  const actionColumnClass = supportsQuota(account)
-    ? canReauth
-      ? 'account-card-action-grid-3'
-      : 'account-card-action-grid-2'
-    : canReauth
-      ? 'account-card-action-grid-2'
-      : 'account-card-action-grid-1';
   const deleteOverlay = isPendingDelete
     ? buildAccountDeleteOverlay({
         t,
@@ -372,7 +365,7 @@ export default function AccountCard({
       footer={
         !showFooterActions || isPendingDelete || density === 'list' ? undefined : (
           <div
-            className={`account-card-action-grid grid gap-2 border-t border-dashed border-[var(--border-color)] pt-3 ${actionColumnClass}`}
+            className="account-card-action-grid grid gap-2"
             data-account-card-ignore-click="true"
             onClick={(event) => event.stopPropagation()}
             onKeyDown={(event) => event.stopPropagation()}
@@ -394,7 +387,7 @@ export default function AccountCard({
               <button
                 type="button"
                 onClick={() => onStartReauth(account)}
-                className="btn-swiss !py-1.5 !text-[length:var(--font-size-ui-xs)]"
+                className="btn-swiss account-card-action-grid-span !py-1.5 !text-[length:var(--font-size-ui-xs)]"
                 disabled={isOAuthPending}
               >
                 {isOAuthPending ? t('accounts.reauth_pending') : t('accounts.reauth')}

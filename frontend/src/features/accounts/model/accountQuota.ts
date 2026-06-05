@@ -1,8 +1,6 @@
 import type { AccountRecord, AuthFile, BillingDisplay, CodexQuota } from '../../../types';
 import type { CodexQuotaState, QuotaDisplay, QuotaWindowDisplay } from './types';
 
-export type AccountCardValueSection = 'quota' | 'billing' | 'placeholder';
-
 export function supportsQuota(account: AccountRecord) {
   const provider = String(account.provider || '').trim().toLowerCase();
   if (account.credentialSource === 'auth-file') {
@@ -205,19 +203,6 @@ export function extractBilling(quota: CodexQuota): BillingDisplay | undefined {
 
 export function hasDisplayableBilling(billing?: BillingDisplay) {
   return Boolean(billing?.isAvailable && billing.balances?.length);
-}
-
-export function resolveAccountCardValueSection(
-  quotaDisplay?: QuotaDisplay,
-  billing?: BillingDisplay,
-): AccountCardValueSection {
-  if ((quotaDisplay?.windows ?? []).length > 0) {
-    return 'quota';
-  }
-  if (hasDisplayableBilling(billing)) {
-    return 'billing';
-  }
-  return 'placeholder';
 }
 
 export function normalizePercent(value: number | null | undefined) {

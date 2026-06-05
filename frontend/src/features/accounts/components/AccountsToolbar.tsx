@@ -336,14 +336,11 @@ export default function AccountsToolbar({
               onChange={(value) => onSortModeChange(value as AccountSortMode)}
             />
             <div
-              className="grid h-10 shrink-0 grid-cols-3 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+              className="grid h-10 shrink-0 grid-cols-2 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
               data-account-card-ignore-click="true"
             >
               <DisplayModeButton active={displayMode === 'full'} bordered onClick={() => onDisplayModeChange('full')}>
                 {t('accounts.display_mode_full')}
-              </DisplayModeButton>
-              <DisplayModeButton active={displayMode === 'compact'} bordered onClick={() => onDisplayModeChange('compact')}>
-                {t('accounts.display_mode_compact')}
               </DisplayModeButton>
               <DisplayModeButton active={displayMode === 'list'} onClick={() => onDisplayModeChange('list')}>
                 {t('accounts.display_mode_list')}

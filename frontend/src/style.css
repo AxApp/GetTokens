@@ -233,7 +233,6 @@
     --line-height-ui-snug: 1.375;
     --line-height-ui-loose: 1.8;
     --account-card-grid-full-width: 20rem;
-    --account-card-grid-compact-width: 18rem;
     --gt-control-segmented-font-size: var(--font-size-ui-md-compact);
     --gt-control-segmented-min-height: 2.125rem;
     --gt-control-segmented-padding-inline: 0.625rem;
@@ -564,11 +563,6 @@
     justify-content: start;
   }
 
-  .account-card-grid-compact {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--account-card-grid-compact-width)), var(--account-card-grid-compact-width)));
-    justify-content: start;
-  }
-
   .codex-account-order-card-grid-full {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   }
@@ -624,16 +618,12 @@
     opacity: 0.72;
   }
 
-  .account-card-action-grid-1 {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .account-card-action-grid-2 {
+  .account-card-action-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .account-card-action-grid-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .account-card-action-grid-span {
+    grid-column: 1 / -1;
   }
 
   @container (min-width: 46rem) {
@@ -676,9 +666,6 @@
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .account-card-action-grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
   }
 
   @container (max-width: 288px) {

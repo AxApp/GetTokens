@@ -25,7 +25,6 @@ test('shouldEqualizeAccountCardGrid only equalizes actual multi-column card grid
 
 test('shouldEqualizeAccountCardDisplayMode includes side-by-side card layouts only', () => {
   assert.equal(shouldEqualizeAccountCardDisplayMode('full'), true);
-  assert.equal(shouldEqualizeAccountCardDisplayMode('compact'), true);
   assert.equal(shouldEqualizeAccountCardDisplayMode('list'), false);
 });
 
@@ -46,25 +45,18 @@ test('resolveAccountCardColumnHeights equalizes cards by rendered column', () =>
   );
 });
 
-test('account card grids use page-level fixed card widths instead of equal-width tracks', async () => {
+test('account card full grid uses page-level fixed card widths instead of equal-width tracks', async () => {
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
   assert.match(styleSource, /--account-card-grid-full-width:\s*20rem/);
-  assert.match(styleSource, /--account-card-grid-compact-width:\s*18rem/);
   assert.match(
     styleSource,
     /\.account-card-grid-full\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*var\(--account-card-grid-full-width\)\),\s*var\(--account-card-grid-full-width\)\)\)/s,
   );
-  assert.match(
-    styleSource,
-    /\.account-card-grid-compact\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*var\(--account-card-grid-compact-width\)\),\s*var\(--account-card-grid-compact-width\)\)\)/s,
-  );
   assert.match(styleSource, /\.account-card-grid-full\s*\{[^}]*justify-content:\s*start/s);
-  assert.match(styleSource, /\.account-card-grid-compact\s*\{[^}]*justify-content:\s*start/s);
   assert.doesNotMatch(styleSource, /\.account-card-grid-full\s*\{[^}]*repeat\(auto-fill,/s);
-  assert.doesNotMatch(styleSource, /\.account-card-grid-compact\s*\{[^}]*repeat\(auto-fill,/s);
   assert.doesNotMatch(styleSource, /\.account-card-grid-full\s*\{[^}]*minmax\([^;{]*,\s*1fr\)/s);
-  assert.doesNotMatch(styleSource, /\.account-card-grid-compact\s*\{[^}]*minmax\([^;{]*,\s*1fr\)/s);
+  assert.doesNotMatch(styleSource, /account-card-grid-compact|--account-card-grid-compact-width/);
 });
 
 test('list density keeps only the plan badge before metrics and actions', async () => {
@@ -96,6 +88,15 @@ test('quota bars render reset time from quota windows', async () => {
   assert.match(source, /t\('accounts\.quota_reset'\)/);
 });
 
+test('account cards skip unsupported quota placeholder modules when telemetry is absent', async () => {
+  const source = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /UnsupportedQuotaPlaceholder/);
+  assert.match(source, /<QuotaBars quotaDisplay=\{resolvedQuotaDisplay\} t=\{t\} \/>/);
+  assert.match(source, /<BillingBalance billing=\{billing\} \/>/);
+  assert.match(source, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+});
+
 test('quota bars surface stale runtime error reason on cards and details', async () => {
   const source = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
@@ -120,24 +121,39 @@ test('quota rows keep label and percentage together above the progress bar', asy
   const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
 
   assert.match(source, /account-card-quota-heading/);
-  assert.match(source, /className=\{`grid gap-2\.5 border-b border-dashed/);
+  assert.match(source, /showDivider = true/);
+  assert.match(source, /showDivider \? 'border-b border-dashed border-\[var\(--border-color\)\]' : ''/);
   assert.match(source, /className="account-card-quota-row grid min-w-0 gap-1\.5"/);
   assert.doesNotMatch(styleSource, /\.account-card-quota-row\s*\{[^}]*grid-template-columns:\s*4\.25rem/s);
 });
 
 
-test('full attribution cards group traffic and usage statistics in one module component', async () => {
+test('full attribution cards do not render the retired traffic metrics module', async () => {
   const cardSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
   const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
 
-  assert.match(sectionsSource, /export function TrafficMetricsModule\(\{ usageSummary, t \}: TrafficMetricsModuleProps\)/);
-  assert.match(sectionsSource, /data-design-system-component-name="TrafficMetricsModule"/);
-  assert.match(sectionsSource, /account-card-traffic-module grid border-b border-dashed border-\[var\(--border-color\)\]/);
-  assert.doesNotMatch(sectionsSource, /account-card-traffic-module grid border border-\[var\(--color-status-danger\)\]/);
-  assert.match(sectionsSource, /<TrafficSection usageSummary=\{usageSummary\} t=\{t\} embedded \/>/);
-  assert.match(sectionsSource, /<UsageMetrics usageSummary=\{usageSummary\} t=\{t\} embedded \/>/);
-  assert.match(cardSource, /TrafficMetricsModule usageSummary=\{usageSummary\} t=\{t\}/);
-  assert.doesNotMatch(cardSource, /<TrafficSection usageSummary=\{usageSummary\} t=\{t\} \/>[\s\S]*<UsageMetrics usageSummary=\{usageSummary\} t=\{t\} \/>/);
+  assert.doesNotMatch(sectionsSource, /TrafficMetricsModule|TrafficSection|UsageMetrics|account-card-traffic-module|account-card-usage-metrics/);
+  assert.doesNotMatch(sectionsSource, /buildTrafficCurveState|AccountTrafficFlowState|TrafficChart|TrafficSummary/);
+  assert.doesNotMatch(cardSource, /TrafficMetricsModule|TrafficSection|UsageMetrics/);
+  assert.match(cardSource, /<QuotaBars quotaDisplay=\{resolvedQuotaDisplay\} t=\{t\} \/>/);
+  assert.match(cardSource, /<RateLimitGuard rateLimitStatus=\{rateLimitStatus\} usageSummary=\{usageSummary\} t=\{t\} \/>/);
+});
+
+test('account card footer actions use a solid top divider with two equal columns', async () => {
+  const attributionSource = await readFile(new URL('../components/AttributionCard.tsx', import.meta.url), 'utf8');
+  const cardSource = await readFile(new URL('../components/AccountCard.tsx', import.meta.url), 'utf8');
+  const sectionsSource = await readFile(new URL('../components/CardSections.tsx', import.meta.url), 'utf8');
+  const styleSource = await readFile(new URL('../../../style.css', import.meta.url), 'utf8');
+
+  assert.match(attributionSource, /className="mt-auto border-t border-\[var\(--border-color\)\] px-4 pb-4 pt-3"/);
+  assert.match(cardSource, /className="account-card-action-grid grid gap-2"/);
+  assert.doesNotMatch(cardSource, /account-card-action-grid grid gap-2 border-t border-dashed/);
+  assert.doesNotMatch(sectionsSource, /<section className="grid gap-2\.5 border-b border-dashed border-\[var\(--border-color\)\] px-4 py-3">/);
+  assert.doesNotMatch(cardSource, /actionColumnClass|account-card-action-grid-1|account-card-action-grid-2|account-card-action-grid-3/);
+  assert.match(cardSource, /className="btn-swiss account-card-action-grid-span !py-1\.5/);
+  assert.match(styleSource, /\.account-card-action-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/s);
+  assert.match(styleSource, /\.account-card-action-grid-span\s*\{[^}]*grid-column:\s*1 \/ -1/s);
+  assert.doesNotMatch(styleSource, /account-card-action-grid-1|account-card-action-grid-2|account-card-action-grid-3/);
 });
 
 test('quota bars can toggle from percent to token progress when token counts exist', async () => {

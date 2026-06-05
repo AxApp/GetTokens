@@ -23,10 +23,7 @@ import {
   BillingBalance,
   QuotaBars,
   RateLimitGuard,
-  TrafficMetricsModule,
-  TrafficSection,
   UnsupportedQuotaPlaceholder,
-  UsageMetrics,
 } from './CardSections';
 
 const meta = {
@@ -358,7 +355,7 @@ function AccountCardSample({
 }: {
   label: string;
   account?: AccountRecord;
-  density?: 'full' | 'compact' | 'list';
+  density?: 'full' | 'list';
   selection?: boolean;
   selected?: boolean;
   pendingDelete?: boolean;
@@ -484,7 +481,7 @@ function AccountCardTemplateApplySample() {
               account={deepseekTemplateAccountRecord}
               usageSummary={healthyUsageSummary}
               rateLimitStatus={rateLimitStatus}
-              density="compact"
+              density="full"
               ready
               isSelectionMode={false}
               isSelected={false}
@@ -519,7 +516,7 @@ function AccountCardTemplateApplySample() {
               account={openAIApiKeyTemplateAccountRecord}
               usageSummary={healthyUsageSummary}
               rateLimitStatus={rateLimitStatus}
-              density="compact"
+              density="full"
               ready
               isSelectionMode={false}
               isSelected={false}
@@ -554,7 +551,7 @@ function AccountCardTemplateApplySample() {
               account={openAIOAuthTemplateAccountRecord}
               usageSummary={healthyUsageSummary}
               rateLimitStatus={rateLimitStatus}
-              density="compact"
+              density="full"
               ready
               isSelectionMode={false}
               isSelected={false}
@@ -740,7 +737,7 @@ function AttributionCardSample({
   failed = false,
 }: {
   tone?: 'positive' | 'warning' | 'critical' | 'neutral';
-  density?: 'full' | 'compact' | 'list';
+  density?: 'full' | 'list';
   failed?: boolean;
 }) {
   const { t } = useStoryCopy();
@@ -775,27 +772,14 @@ function CardSectionsSample() {
   return (
     <DesignSystemStoryFrame label="DS-SECTIONS">
       <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <TrafficMetricsModule usageSummary={healthyUsageSummary} t={t} />
         <div className="border-b border-dashed border-[var(--border-color)] p-4">
           <AccountMiniMetrics usageSummary={healthyUsageSummary} quotaDisplay={quotaDisplay} t={t} />
         </div>
-        <UsageMetrics usageSummary={healthyUsageSummary} t={t} />
         <QuotaBars quotaDisplay={quotaDisplay} t={t} />
         <QuotaBars quotaDisplay={refreshingQuotaDisplay} t={t} />
         <BillingBalance billing={billing} />
-        <RateLimitGuard rateLimitStatus={rateLimitStatus} />
+        <RateLimitGuard rateLimitStatus={rateLimitStatus} usageSummary={healthyUsageSummary} t={t} />
         <UnsupportedQuotaPlaceholder quotaDisplay={loadingQuotaDisplay} t={t} />
-      </div>
-    </DesignSystemStoryFrame>
-  );
-}
-
-function TrafficSectionSample() {
-  const { t } = useStoryCopy();
-  return (
-    <DesignSystemStoryFrame label="DS-TRAFFIC">
-      <div className="grid overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]">
-        <TrafficSection usageSummary={healthyUsageSummary} t={t} />
       </div>
     </DesignSystemStoryFrame>
   );
@@ -853,7 +837,7 @@ function AccountCardsOverview() {
         <h3 className="text-sm font-black uppercase italic tracking-normal">{zh ? '完整账号卡' : 'Full account card'}</h3>
         <div className="grid gap-4 xl:grid-cols-2">
           <AccountCardSample label="DS-ACCOUNT-CARD-READY" />
-          <AccountCardSample label="DS-ACCOUNT-CARD-COMPACT-QUOTA" density="compact" />
+          <AccountCardSample label="DS-ACCOUNT-CARD-QUOTA" />
           <AccountCardSample label="DS-ACCOUNT-CARD-SELECTION" selection selected />
           <AccountCardSample label="DS-ACCOUNT-CARD-PENDING-DELETE" pendingDelete />
           <AccountCardSample label="DS-ACCOUNT-CARD-LIST-BLOCKED" account={disabledAccountCardRecord} density="list" blocked />
@@ -878,7 +862,7 @@ function AccountCardsOverview() {
         <div className="grid gap-4 xl:grid-cols-2">
           <AttributionCardSample />
           <AttributionCardSample tone="critical" failed />
-          <AttributionCardSample tone="warning" density="compact" />
+          <AttributionCardSample tone="warning" />
           <AttributionCardSample tone="neutral" density="list" />
         </div>
       </section>
@@ -910,8 +894,8 @@ export const FullAccountCard: Story = {
   render: () => <AccountCardSample label="DS-ACCOUNT-CARD-READY" />,
 };
 
-export const CompactAccountCard: Story = {
-  render: () => <AccountCardSample label="DS-ACCOUNT-CARD-COMPACT-QUOTA" density="compact" />,
+export const QuotaAccountCard: Story = {
+  render: () => <AccountCardSample label="DS-ACCOUNT-CARD-QUOTA" />,
 };
 
 export const AccountTemplateApplyMenu: Story = {
@@ -926,17 +910,12 @@ export const AttributionFailed: Story = {
   render: () => <AttributionCardSample tone="critical" failed />,
 };
 
-export const AttributionCompactQuota: Story = {
-  render: () => <AttributionCardSample tone="warning" density="compact" />,
+export const AttributionQuota: Story = {
+  render: () => <AttributionCardSample tone="warning" />,
 };
 
 export const CardSections: Story = {
   render: () => <CardSectionsSample />,
-};
-
-export const TrafficSectionStory: Story = {
-  name: 'Traffic Section',
-  render: () => <TrafficSectionSample />,
 };
 
 export const MiniMetrics: Story = {

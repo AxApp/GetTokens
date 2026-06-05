@@ -379,7 +379,7 @@ function AccountsListOverview() {
       <div>
         <h2 className="text-2xl font-black uppercase italic tracking-normal">账号列表</h2>
         <p className="mt-2 max-w-3xl text-sm font-bold text-[var(--text-muted)]">
-          账号列表整体进入设计系统：页头、搜索筛选、密度切换、分组容器和真实账号卡片用同一组 mock 组合验收。
+          账号列表整体进入设计系统：页头、搜索筛选、视图切换、分组容器和真实账号卡片用同一组 mock 组合验收。
         </p>
       </div>
 
@@ -387,7 +387,6 @@ function AccountsListOverview() {
         <h3 className="text-sm font-black uppercase italic tracking-normal">Workbench states</h3>
         <div className="grid gap-5">
           <AccountsListSample label="DS-ACCOUNTS-LIST-FULL" />
-          <AccountsListSample label="DS-ACCOUNTS-LIST-COMPACT" initialDisplayMode="compact" initialSearchTerm="relay" />
           <AccountsListSample
             label="DS-ACCOUNTS-LIST-SELECTION"
             initialDisplayMode="list"
@@ -412,10 +411,6 @@ export const Overview: Story = {
 
 export const Full: Story = {
   render: () => <AccountsListSample label="DS-ACCOUNTS-LIST-FULL" />,
-};
-
-export const Compact: Story = {
-  render: () => <AccountsListSample label="DS-ACCOUNTS-LIST-COMPACT" initialDisplayMode="compact" initialSearchTerm="relay" />,
 };
 
 export const Selection: Story = {

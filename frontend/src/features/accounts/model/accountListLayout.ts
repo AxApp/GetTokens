@@ -2,7 +2,7 @@ export const ACCOUNT_LIST_DISPLAY_MODE_STORAGE_KEY = 'gettokens.accounts.display
 export const ACCOUNT_GROUP_MODE_STORAGE_KEY = 'gettokens.accounts.group-mode';
 export const ACCOUNT_SORT_MODE_STORAGE_KEY = 'gettokens.accounts.sort-mode';
 
-export type AccountListDisplayMode = 'full' | 'compact' | 'list';
+export type AccountListDisplayMode = 'full' | 'list';
 export type AccountGroupMode = 'plan' | 'source' | 'status' | 'provider' | 'resource';
 export type AccountSortMode = 'priority' | 'name' | 'status' | 'quota' | 'reset' | 'recent';
 
@@ -12,7 +12,7 @@ export const DEFAULT_ACCOUNT_SORT_MODE: AccountSortMode = 'priority';
 export const ACCOUNTS_SELECTION_ACTION_MENU_GAP = 16;
 
 export function parseAccountListDisplayMode(value: string | null | undefined): AccountListDisplayMode {
-  if (value === 'compact' || value === 'list' || value === 'full') {
+  if (value === 'list' || value === 'full') {
     return value;
   }
   return DEFAULT_ACCOUNT_LIST_DISPLAY_MODE;

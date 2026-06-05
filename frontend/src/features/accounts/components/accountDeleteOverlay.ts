@@ -8,7 +8,7 @@ interface BuildAccountDeleteOverlayParams {
   t: Translator;
   account: AccountRecord;
   primaryLabel: string;
-  density?: 'full' | 'compact' | 'list';
+  density?: 'full' | 'list';
   onCancelDelete: () => void;
   onConfirmDelete: (account: AccountRecord) => void;
 }
@@ -25,115 +25,6 @@ export function buildAccountDeleteOverlay({
     { label: '账号', value: primaryLabel },
     { label: '来源', value: sourceLabel(t, account.credentialSource) },
   ];
-
-  if (density === 'compact') {
-    return createElement(
-      'div',
-      {
-        className:
-          'flex h-full min-h-[10rem] flex-col overflow-hidden border-2 border-[color-mix(in_srgb,var(--color-status-danger)_50%,var(--border-color))] bg-[linear-gradient(180deg,color-mix(in_srgb,white_74%,var(--bg-main))_0%,color-mix(in_srgb,var(--bg-main)_88%,white)_100%)] shadow-[inset_0_1px_0_color-mix(in_srgb,white_78%,transparent),0_12px_32px_color-mix(in_srgb,var(--shadow-color)_18%,transparent)] backdrop-blur-[14px]',
-        'data-account-card-delete-overlay': 'true',
-        'data-account-card-delete-overlay-density': 'compact',
-        'data-account-card-ignore-click': 'true',
-        onClick: (event: MouseEvent) => event.stopPropagation(),
-        onKeyDown: (event: KeyboardEvent) => event.stopPropagation(),
-      },
-      createElement(
-        'div',
-        {
-          className:
-            'flex min-w-0 items-center gap-2 border-b-2 border-[color-mix(in_srgb,var(--color-status-danger)_28%,var(--border-color))] px-3 py-2',
-        },
-        createElement(
-          'span',
-          {
-            className:
-              'flex h-8 w-8 shrink-0 items-center justify-center border border-[color-mix(in_srgb,var(--color-status-danger)_36%,var(--border-color))] bg-[color-mix(in_srgb,white_72%,transparent)] text-[var(--color-status-danger)] shadow-[inset_0_1px_0_color-mix(in_srgb,white_90%,transparent)]',
-          },
-          createElement(AlertTriangle, { size: 16, strokeWidth: 3 }),
-        ),
-        createElement(
-          'div',
-          { className: 'min-w-0' },
-          createElement(
-            'div',
-            { className: 'font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.16em] text-[var(--color-status-danger)]' },
-            t('common.confirm_delete'),
-          ),
-          createElement(
-            'div',
-            { className: 'mt-0.5 truncate text-[length:var(--font-size-ui-lg)] font-black italic leading-tight text-[var(--text-primary)]' },
-            primaryLabel,
-          ),
-        ),
-      ),
-      createElement(
-        'div',
-        { className: 'flex flex-1 flex-col px-3 py-2' },
-        createElement(
-          'div',
-          { className: 'flex items-center gap-2' },
-          createElement('span', { className: 'h-2 w-2 shrink-0 bg-[var(--color-status-danger)]' }),
-          createElement(
-            'div',
-            { className: 'text-[length:var(--font-size-ui-xs)] font-black uppercase tracking-[0.14em] text-[var(--color-status-danger)]' },
-            t('accounts.card_delete'),
-          ),
-        ),
-        createElement('div', { className: 'mt-2 h-px bg-[color-mix(in_srgb,var(--border-color)_60%,transparent)]' }),
-        createElement(
-          'div',
-          { className: 'grid gap-1.5 pt-2' },
-          basicInfoRows.map((row) =>
-            createElement(
-              'div',
-              {
-                key: row.label,
-                className:
-                  'flex items-center gap-2 border-b border-[color-mix(in_srgb,var(--border-color)_48%,transparent)] pb-1.5 last:border-b-0 last:pb-0',
-              },
-              createElement(
-                'div',
-                { className: 'w-[2.75rem] shrink-0 font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] text-[var(--text-muted)]' },
-                row.label,
-              ),
-              createElement(
-                'div',
-                { className: 'min-w-0 truncate text-[length:var(--font-size-ui-2xs)] font-black leading-snug text-[var(--text-primary)]' },
-                row.value,
-              ),
-            ),
-          ),
-        ),
-      ),
-      createElement(
-        'div',
-        {
-          className:
-            'flex shrink-0 items-center justify-between gap-2 border-t-2 border-[color-mix(in_srgb,var(--text-primary)_54%,var(--border-color))] px-3 py-2',
-        },
-        createElement(
-          'button',
-          {
-            type: 'button',
-            onClick: onCancelDelete,
-            className: 'btn-swiss !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)]',
-          },
-          t('common.cancel'),
-        ),
-        createElement(
-          'button',
-          {
-            type: 'button',
-            onClick: () => onConfirmDelete(account),
-            className:
-              'btn-swiss !border-[var(--color-status-danger)] !bg-[var(--color-status-danger)] !px-2.5 !py-1.5 !text-[length:var(--font-size-ui-xs)] !text-white',
-          },
-          t('common.delete'),
-        ),
-      ),
-    );
-  }
 
   if (density === 'list') {
     return createElement(
