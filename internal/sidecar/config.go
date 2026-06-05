@@ -25,8 +25,10 @@ type sidecarConfig struct {
 	MaxRetryCredentials    int      `yaml:"max-retry-credentials"`
 	MaxRetryInterval       int      `yaml:"max-retry-interval"`
 	RemoteManagement       struct {
-		AllowRemote bool   `yaml:"allow-remote"`
-		SecretKey   string `yaml:"secret-key"`
+		AllowRemote            bool   `yaml:"allow-remote"`
+		SecretKey              string `yaml:"secret-key"`
+		DisableControlPanel    bool   `yaml:"disable-control-panel"`
+		DisableAutoUpdatePanel bool   `yaml:"disable-auto-update-panel"`
 	} `yaml:"remote-management"`
 }
 
@@ -55,6 +57,8 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 	}
 	cfg.RemoteManagement.AllowRemote = false
 	cfg.RemoteManagement.SecretKey = ManagementKey
+	cfg.RemoteManagement.DisableControlPanel = true
+	cfg.RemoteManagement.DisableAutoUpdatePanel = true
 
 	data, err := os.ReadFile(path)
 	if err == nil {
@@ -81,6 +85,8 @@ func writeConfig(path string, port int, authDir string) (string, error) {
 			}
 			remoteManagement := ensureMappingNode(root, "remote-management")
 			upsertMappingScalar(remoteManagement, "allow-remote", "false", "!!bool")
+			upsertMappingScalar(remoteManagement, "disable-control-panel", "true", "!!bool")
+			upsertMappingScalar(remoteManagement, "disable-auto-update-panel", "true", "!!bool")
 			upsertMappingScalar(remoteManagement, "secret-key", cfg.RemoteManagement.SecretKey, "!!str")
 			if err := applyRetryDefaults(root, path); err != nil {
 				return "", err

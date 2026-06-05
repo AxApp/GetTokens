@@ -10,7 +10,6 @@ import {
   resolveInitialRelayModelSelection,
   resolveInitialRelayProviderSelection,
   resolveRelayEndpointSelection,
-  resolveSidecarManagementWebOpenURL,
   resolveCodexLocalApplyState,
   resolveUnifiedDiffLineTone,
   saveRelayModelOptions,
@@ -162,13 +161,6 @@ test('resolveRelayEndpointSelection prefers LAN endpoint when LAN access is enab
   assert.equal(resolveRelayEndpointSelection(endpoints, 'localhost', true), 'lan-1');
   assert.equal(resolveRelayEndpointSelection(endpoints, 'lan-1', false), 'localhost');
   assert.equal(resolveRelayEndpointSelection(endpoints, 'hostname', false), 'hostname');
-});
-
-test('resolveSidecarManagementWebOpenURL opens the real local sidecar management panel', () => {
-  assert.equal(resolveSidecarManagementWebOpenURL(), '');
-  assert.equal(resolveSidecarManagementWebOpenURL(0), '');
-  assert.equal(resolveSidecarManagementWebOpenURL(8317), 'http://127.0.0.1:8317/management.html');
-  assert.equal(resolveSidecarManagementWebOpenURL('18317'), 'http://127.0.0.1:18317/management.html');
 });
 
 test('buildCodexLocalApplyDiff preserves ChatGPT auth and writes experimental bearer token in preserve mode', () => {

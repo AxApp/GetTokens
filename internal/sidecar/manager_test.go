@@ -212,6 +212,8 @@ func TestWriteConfigCreatesMinimalConfig(t *testing.T) {
 	assertContains(t, content, "max-retry-interval: 30")
 	assertContains(t, content, "remote-management:")
 	assertContains(t, content, "allow-remote: false")
+	assertContains(t, content, "disable-control-panel: true")
+	assertContains(t, content, "disable-auto-update-panel: true")
 	assertContains(t, content, "secret-key: "+ManagementKey)
 	assertContains(t, content, "api-keys:")
 	assertContains(t, content, "- "+apiKey)
@@ -367,6 +369,8 @@ codex-api-key:
     prefix: team-a
 remote-management:
   allow-remote: true
+  disable-control-panel: false
+  disable-auto-update-panel: false
   secret-key: old-key
 api-keys:
   - relay-key-1
@@ -400,6 +404,8 @@ api-keys:
 	assertContains(t, content, "auth-dir: "+dir)
 	assertContains(t, content, "usage-statistics-enabled: true")
 	assertContains(t, content, "allow-remote: false")
+	assertContains(t, content, "disable-control-panel: true")
+	assertContains(t, content, "disable-auto-update-panel: true")
 	assertContains(t, content, "secret-key: "+ManagementKey)
 	assertContains(t, content, "api-keys:")
 	assertContains(t, content, "- relay-key-1")

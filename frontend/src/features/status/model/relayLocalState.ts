@@ -79,8 +79,6 @@ export interface RelayEndpointLike {
   host?: string;
 }
 
-export const SIDECAR_MANAGEMENT_WEB_PATH = '/management.html';
-
 export interface CodexLocalApplyDiffInput {
   apiKey: string;
   apiKeySet?: boolean;
@@ -566,15 +564,6 @@ export function resolveRelayEndpointSelection(
   }
 
   return items.find((endpoint) => endpoint.kind !== 'lan')?.id || items[0]?.id || 'localhost';
-}
-
-export function resolveSidecarManagementWebOpenURL(port?: number | string | null) {
-  const numericPort = Number(port);
-  if (!Number.isFinite(numericPort) || numericPort <= 0) {
-    return '';
-  }
-
-  return `http://127.0.0.1:${Math.trunc(numericPort)}${SIDECAR_MANAGEMENT_WEB_PATH}`;
 }
 
 export function loadRelayModelOptions() {

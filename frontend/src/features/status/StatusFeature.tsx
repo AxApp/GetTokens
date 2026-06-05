@@ -14,11 +14,10 @@ import {
   SetCodexModelCatalogSyncEnabled,
   UpdateRelayServiceAPIKeys,
 } from '../../../wailsjs/go/main/App';
-import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
 import { main } from '../../../wailsjs/go/models';
 import WorkspacePageHeader from '../../components/ui/WorkspacePageHeader';
 import { useDebug } from '../../context/useDebug';
-import { hasWailsAppBindings, hasWailsRuntime } from '../../utils/previewMode';
+import { hasWailsAppBindings } from '../../utils/previewMode';
 import { useI18n } from '../../context/I18nContext';
 import {
   RelayKeyEditorModal,
@@ -43,7 +42,6 @@ import {
   resolveInitialRelayModelSelection,
   resolveInitialRelayProviderSelection,
   resolveRelayEndpointSelection,
-  resolveSidecarManagementWebOpenURL,
   saveCodexLocalAuthStrategy,
   saveLANAccessEnabled,
   saveRelayKeyAliases,
@@ -603,26 +601,6 @@ export default function StatusFeature({
     }
   }
 
-  function openExternalURL(url: string) {
-    const trimmed = String(url || '').trim();
-    if (!trimmed) {
-      return;
-    }
-
-    if (hasWailsRuntime()) {
-      BrowserOpenURL(trimmed);
-      return;
-    }
-
-    if (typeof window !== 'undefined') {
-      window.open(trimmed, '_blank', 'noopener,noreferrer');
-    }
-  }
-
-  function openStatusWeb() {
-    openExternalURL(resolveSidecarManagementWebOpenURL(sidecarStatus.port));
-  }
-
   function setRelayKeyAliasesWithPersist(nextAliases: Record<string, string>) {
     setRelayKeyAliases(nextAliases);
     saveRelayKeyAliases(nextAliases);
@@ -1066,14 +1044,6 @@ export default function StatusFeature({
           actionsClassName="shrink-0"
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={openStatusWeb}
-                disabled={!sidecarStatus.port}
-                className="btn-swiss !px-3 !py-1.5 !text-[length:var(--font-size-ui-xs)]"
-              >
-                {t('common.open_web')}
-              </button>
               <div
                 className={`max-w-[18rem] border-2 px-4 py-1 text-right text-xs font-black tracking-widest ${
                   sidecarStatus.code === 'ready' && !healthzHasError
