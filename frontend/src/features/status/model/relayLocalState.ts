@@ -763,6 +763,34 @@ export function saveSelectedRelayProvider(value: string) {
   }
 }
 
+export interface LocalCodexModelProviderStateLike {
+  currentProviderID?: string;
+  currentProviderSupportsWebsockets?: boolean;
+  currentProviderSupportsWebsocketsSet?: boolean;
+}
+
+export interface ResolveInitialSupportsWebsocketsSelectionInput {
+  selectedProviderID: string;
+  providerState?: LocalCodexModelProviderStateLike | null;
+  fallbackValue?: boolean;
+}
+
+export function resolveInitialSupportsWebsocketsSelection(
+  input: ResolveInitialSupportsWebsocketsSelectionInput
+) {
+  const selectedProviderID = String(input.selectedProviderID || '').trim();
+  const currentProviderID = String(input.providerState?.currentProviderID || '').trim();
+  if (
+    selectedProviderID &&
+    selectedProviderID === currentProviderID &&
+    input.providerState?.currentProviderSupportsWebsocketsSet
+  ) {
+    return Boolean(input.providerState.currentProviderSupportsWebsockets);
+  }
+
+  return Boolean(input.fallbackValue);
+}
+
 export function loadSelectedRelayReasoningEffort() {
   if (typeof window === 'undefined') {
     return RELAY_CODEX_DEFAULT_REASONING_EFFORT;

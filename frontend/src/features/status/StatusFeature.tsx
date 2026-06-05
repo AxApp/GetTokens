@@ -41,6 +41,7 @@ import {
   loadSelectedRelayReasoningEffort,
   resolveInitialRelayModelSelection,
   resolveInitialRelayProviderSelection,
+  resolveInitialSupportsWebsocketsSelection,
   resolveRelayEndpointSelection,
   saveCodexLocalAuthStrategy,
   saveLANAccessEnabled,
@@ -227,6 +228,16 @@ export default function StatusFeature({
     }
   }, [codexLocalPreflight.reason, t]);
 
+  function selectRelayProviderID(providerID: string) {
+    setSelectedRelayProviderID(providerID);
+    setSupportsWebsockets(
+      resolveInitialSupportsWebsocketsSelection({
+        selectedProviderID: providerID,
+        providerState: localCodexProviderState,
+      })
+    );
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -356,11 +367,16 @@ export default function StatusFeature({
             providerState?.providers || [],
             activeProvider
           );
-          setSelectedRelayProviderID(
-            resolveInitialRelayProviderSelection({
-              providerOptions: next,
-              activeProviderID: providerState?.currentProviderID,
-              hasExplicitActiveProvider: Boolean(providerState?.hasExplicitCurrentProvider),
+          const nextSelectedProviderID = resolveInitialRelayProviderSelection({
+            providerOptions: next,
+            activeProviderID: providerState?.currentProviderID,
+            hasExplicitActiveProvider: Boolean(providerState?.hasExplicitCurrentProvider),
+          });
+          setSelectedRelayProviderID(nextSelectedProviderID);
+          setSupportsWebsockets(
+            resolveInitialSupportsWebsocketsSelection({
+              selectedProviderID: nextSelectedProviderID,
+              providerState,
             })
           );
           return next;
@@ -839,11 +855,16 @@ export default function StatusFeature({
             providerState?.providers || [],
             activeProvider
           );
-          setSelectedRelayProviderID(
-            resolveInitialRelayProviderSelection({
-              providerOptions: next,
-              activeProviderID: providerState?.currentProviderID,
-              hasExplicitActiveProvider: Boolean(providerState?.hasExplicitCurrentProvider),
+          const nextSelectedProviderID = resolveInitialRelayProviderSelection({
+            providerOptions: next,
+            activeProviderID: providerState?.currentProviderID,
+            hasExplicitActiveProvider: Boolean(providerState?.hasExplicitCurrentProvider),
+          });
+          setSelectedRelayProviderID(nextSelectedProviderID);
+          setSupportsWebsockets(
+            resolveInitialSupportsWebsocketsSelection({
+              selectedProviderID: nextSelectedProviderID,
+              providerState,
             })
           );
           return next;
@@ -1089,7 +1110,7 @@ export default function StatusFeature({
             onSelectEndpointID={setSelectedEndpointID}
             onCopyEndpointBaseUrl={() => void copyText(selectedEndpoint.baseUrl, t('status.endpoint_copied'))}
             onOpenCreateRelayProviderEditor={openCreateRelayProviderEditor}
-            onSelectRelayProviderID={setSelectedRelayProviderID}
+            onSelectRelayProviderID={selectRelayProviderID}
             onSelectCodexLocalAuthStrategy={setCodexLocalAuthStrategy}
             onDeleteRelayProviderOption={deleteRelayProviderOption}
             onSelectRelayReasoningEffort={setSelectedRelayReasoningEffort}

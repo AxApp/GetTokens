@@ -9,6 +9,7 @@ import {
   loadRelayModelOptions,
   resolveInitialRelayModelSelection,
   resolveInitialRelayProviderSelection,
+  resolveInitialSupportsWebsocketsSelection,
   resolveRelayEndpointSelection,
   resolveCodexLocalApplyState,
   resolveUnifiedDiffLineTone,
@@ -70,6 +71,41 @@ test('resolveInitialRelayProviderSelection follows explicit Codex config provide
       hasExplicitActiveProvider: true,
     }),
     'corp'
+  );
+});
+
+test('resolveInitialSupportsWebsocketsSelection follows explicit current Codex provider config', () => {
+  const providerState = {
+    currentProviderID: 'gettokens',
+    currentProviderSupportsWebsockets: true,
+    currentProviderSupportsWebsocketsSet: true,
+  };
+
+  assert.equal(
+    resolveInitialSupportsWebsocketsSelection({
+      selectedProviderID: 'gettokens',
+      providerState,
+    }),
+    true
+  );
+  assert.equal(
+    resolveInitialSupportsWebsocketsSelection({
+      selectedProviderID: 'other',
+      providerState,
+    }),
+    false
+  );
+  assert.equal(
+    resolveInitialSupportsWebsocketsSelection({
+      selectedProviderID: 'gettokens',
+      providerState: {
+        currentProviderID: 'gettokens',
+        currentProviderSupportsWebsockets: false,
+        currentProviderSupportsWebsocketsSet: true,
+      },
+      fallbackValue: true,
+    }),
+    false
   );
 });
 

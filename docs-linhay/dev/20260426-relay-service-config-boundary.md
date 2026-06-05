@@ -258,6 +258,7 @@ sidecar 顶层 `api-keys` 原生支持列表，因此状态页不能再只建模
 因此：
 
 1. “一键应用”是 relay 相关配置的 merge，不是整份本地 Codex 配置的 replace
+2. 状态页的草稿显示也必须尊重当前 `config.toml`：当当前 `model_provider` 指向的 provider 显式写了 `supports_websockets = true/false` 时，`supports_websockets` 开关初始显示跟随该显式值；切到非当前 provider 时回到 GetTokens relay 的默认关闭策略。检测到当前 GetTokens relay provider 仍是 `true` 时，应先展示真实开启状态与风险提示，再允许用户关闭并应用为 `false`，不能为了默认规避 WebSocket 风险而把已有配置静默显示成关闭。
 
 ### 8. 状态页的 provider / model 目录要尽量贴近用户本地 Codex 现实
 
