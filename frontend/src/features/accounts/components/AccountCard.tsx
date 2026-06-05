@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FileText, MoreVertical, Power, RotateCw, Terminal, Trash2 } from 'lucide-react';
-import { buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
+import { buildQuotaBlockBadgeLabel, buildQuotaDisplay, extractBilling, supportsQuota } from '../model/accountQuota';
 import { buildAccountCardContentText } from '../model/accountCardActions';
 import { writeAccountClipboardText } from '../model/accountClipboard';
 import { decodeBase64Utf8, parseMaybeJSON } from '../model/accountConfig';
@@ -126,7 +126,7 @@ export default function AccountCard({
     badges.push({ label: rateLimitStatus.blockReason || 'ROUTE GUARD', tone: 'critical' });
   }
   if (quotaBlocked) {
-    badges.push({ label: quotaDisplay.blockReason || 'QUOTA EMPTY', tone: 'critical' });
+    badges.push({ label: buildQuotaBlockBadgeLabel(quotaDisplay, t) || t('accounts.quota_empty_badge'), tone: 'critical' });
   }
   const canToggleDisabled = canToggleRotationAccountDisabled(account);
 

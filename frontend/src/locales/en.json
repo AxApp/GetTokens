@@ -1332,6 +1332,8 @@
     "quota_window": "Window",
     "quota_usage": "Usage",
     "quota_reset": "Reset",
+    "quota_empty_badge": "Quota empty",
+    "quota_empty_badge_with_window": "{window} empty",
     "quota_syncing": "Quota syncing...",
     "quota_unavailable": "Quota unavailable",
     "quota_unsupported": "No quota telemetry",

@@ -1332,6 +1332,8 @@
     "quota_window": "窗口",
     "quota_usage": "用量",
     "quota_reset": "重置时间",
+    "quota_empty_badge": "额度已空",
+    "quota_empty_badge_with_window": "{window} 已空",
     "quota_syncing": "额度同步中...",
     "quota_unavailable": "额度暂不可用",
     "quota_unsupported": "当前凭证无额度遥测",

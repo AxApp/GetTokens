@@ -10,6 +10,7 @@ import {
 } from '../model/accountSelectors.ts';
 import {
   beginQuotaRefreshState,
+  buildQuotaBlockBadgeLabel,
   buildQuotaDisplay,
   failQuotaRefreshState,
 } from '../model/accountQuota.ts';
@@ -118,6 +119,53 @@ test('quota display preserves sidecar route guard explain fields', () => {
       nextReset: '2026-05-31T12:00:00Z',
     },
   ]);
+});
+
+test('quota blocked badge localizes quota empty reason and reset time', () => {
+  const previousTZ = process.env.TZ;
+  process.env.TZ = 'Asia/Shanghai';
+  try {
+    const quotaDisplay = buildQuotaDisplay(quotaAccount, {
+      status: 'success',
+      quota: {
+        ...quotaState.quota,
+        windows: [
+          { id: 'five-hour', label: '5H', remainingPercent: 0, resetLabel: '--', resetAtUnix: 1780690244 },
+          { id: 'weekly', label: '7D', remainingPercent: 35, resetLabel: '--', resetAtUnix: 1778498160 },
+        ],
+        status: 'success',
+        blocked: true,
+        blockReason: 'quota empty: five-hour; reset at 2026-06-05T20:10:44Z',
+        sources: [
+          {
+            source: 'quota-empty',
+            reason: 'quota empty: five-hour',
+            nextReset: '2026-06-05T20:10:44Z',
+          },
+        ],
+      },
+    });
+    const zh = (key) =>
+      ({
+        'accounts.quota_empty_badge': '额度已空',
+        'accounts.quota_empty_badge_with_window': '{window} 已空',
+      })[key] || key;
+    const en = (key) =>
+      ({
+        'accounts.quota_empty_badge': 'Quota empty',
+        'accounts.quota_empty_badge_with_window': '{window} empty',
+      })[key] || key;
+
+    assert.equal(buildQuotaBlockBadgeLabel(quotaDisplay, zh), '5H 已空 · 06/06 04:10');
+    assert.equal(buildQuotaBlockBadgeLabel(quotaDisplay, en), '5H empty · 06/06 04:10');
+    assert.doesNotMatch(buildQuotaBlockBadgeLabel(quotaDisplay, zh), /2026-06-05T20:10:44Z|quota empty/i);
+  } finally {
+    if (previousTZ === undefined) {
+      delete process.env.TZ;
+    } else {
+      process.env.TZ = previousTZ;
+    }
+  }
 });
 
 test('filterAccounts applies text query across key fields', () => {
