@@ -144,7 +144,7 @@ codex -a never exec --skip-git-repo-check --ephemeral --sandbox read-only --mode
 验收点：
 
 1. `~/.codex/gettokens-model-catalog.json` 存在，顶层为 `{"models":[...]}`，包含 `gpt-5.5`、`gpt-5.4`、`deepseek-v4-flash`、`deepseek-v4-pro` 等当前 relay 可选模型。
-2. `~/.codex/config.toml` 顶层存在绝对路径 `model_catalog_json = ".../gettokens-model-catalog.json"`。
+2. `~/.codex/config.toml` 顶层存在相对文件名 `model_catalog_json = "gettokens-model-catalog.json"`；历史绝对路径仍按 filename 识别为 GetTokens-owned pointer。
 3. 重启 Codex 后 `/model -> All models` 能看到 DeepSeek 模型。
 4. 选择 `deepseek-v4-flash` 后，请求仍命中 GetTokens relay `/v1/responses`，sidecar route engine 选择 openai-compatible DeepSeek executor，上游走 Chat Completions。
 5. 删除/关闭 projection 时，只移除 GetTokens 自己的 pointer，不删除用户外部 catalog。
@@ -455,4 +455,23 @@ go test ./internal/wailsapp -run 'TestCodexModelCatalogDiagnostics|TestRelayMode
 go test ./...
 ./scripts/wails-cli.sh build
 docs-linhay/scripts/check-docs.sh
+```
+
+## 2026-06-05 cc-switch filename pointer 兼容优化
+
+对照 cc-switch `03a9296c` 后，GetTokens 的 Codex model catalog pointer 采用同类路径策略：
+
+- 写入 `config.toml` 时使用相对文件名：`model_catalog_json = "gettokens-model-catalog.json"`。
+- `RelayLocalApplyResult.ModelCatalogPath` 仍返回绝对路径，供 UI/诊断展示实际文件位置。
+- 删除/ownership 判断按 basename 识别 `gettokens-model-catalog.json`，兼容历史绝对路径、当前相对文件名以及反斜杠路径文本。
+- 外部 catalog 仍按非 GetTokens filename 保留，不静默覆盖。
+
+该优化只提升 Codex config 路径 round-trip 稳定性，不改变默认 `model`，也不绕过 Codex.app 前端 Statsig 白名单。
+
+验证：
+
+```bash
+go test ./internal/wailsapp -run 'TestApplyRelayServiceConfigToLocalV2WritesGetTokensModelCatalogPointer|TestEnableGetTokensCodexModelCatalogProjectionWritesPointerWithoutRelayApply|TestDisableGetTokensCodexModelCatalogProjectionRemovesOnlyOwnedPointer|TestDisableGetTokensCodexModelCatalogProjectionRemovesRelativeOwnedPointer|TestApplyRelayServiceConfigToLocalV2DoesNotOverwriteExternalModelCatalogPointer' -count=1
+go test ./internal/wailsapp -run 'TestBuildGetTokensCodexModelCatalog|TestApplyRelayServiceConfigToLocalV2.*ModelCatalog|TestEnableGetTokensCodexModelCatalogProjection|TestDisableGetTokensCodexModelCatalogProjection|TestModelCatalogProjectionPublicMethodsPersistSyncPreference|TestShutdownRemovesOwnedModelCatalogPointerWithoutChangingSyncPreference|TestShutdownPreservesExternalModelCatalogPointer|TestApplyPersistedCodexModelCatalogCacheSnapshot|TestCodexModelCatalogDiagnostics' -count=1
+go test ./internal/wailsapp -count=1
 ```

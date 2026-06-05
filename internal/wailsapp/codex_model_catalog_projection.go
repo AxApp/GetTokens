@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 
 const (
 	gettokensCodexModelCatalogFilename   = "gettokens-model-catalog.json"
+	codexModelCatalogTemplateSlug        = "gpt-5.5"
 	relayModelCatalogProjectionOff       = "off"
 	relayModelCatalogProjectionGetTokens = "gettokens"
 )
@@ -60,8 +62,9 @@ func buildGetTokensCodexModelCatalog(models []OpenAICompatibleModel) ([]byte, er
 		return nil, fmt.Errorf("缺少可投影到 Codex /model 的模型")
 	}
 
+	template := loadCodexModelCatalogEntryTemplate()
 	seen := make(map[string]bool)
-	entries := make([]codexModelCatalogEntry, 0, len(normalized))
+	entries := make([]map[string]any, 0, len(normalized))
 	for _, item := range normalized {
 		slug := resolveCodexModelCatalogSlug(item)
 		if slug == "" || seen[slug] {
@@ -69,45 +72,214 @@ func buildGetTokensCodexModelCatalog(models []OpenAICompatibleModel) ([]byte, er
 		}
 		seen[slug] = true
 
-		reasoningEfforts := normalizeReasoningEfforts(item.SupportedReasoningEfforts)
-		defaultReasoning := normalizeReasoningEffort(item.DefaultReasoningEffort)
-		if defaultReasoning != "" && !containsString(reasoningEfforts, defaultReasoning) {
-			reasoningEfforts = normalizeReasoningEfforts(append(reasoningEfforts, defaultReasoning))
-		}
-
-		entry := codexModelCatalogEntry{
-			Slug:                       slug,
-			DisplayName:                resolveCodexModelCatalogDisplayName(item, slug),
-			Description:                buildCodexModelCatalogDescription(item, slug),
-			Visibility:                 "list",
-			SupportedInAPI:             true,
-			Priority:                   len(entries),
-			ShellType:                  "shell_command",
-			DefaultReasoningLevel:      defaultReasoning,
-			SupportedReasoningLevels:   buildCodexModelCatalogReasoningLevels(reasoningEfforts),
-			BaseInstructions:           "You are a helpful coding assistant.",
-			SupportsReasoningSummaries: false,
-			SupportVerbosity:           false,
-			SupportsParallelToolCalls:  true,
-			InputModalities:            []string{"text", "image"},
-			ServiceTiers:               []string{},
-			TruncationPolicy: codexModelCatalogTruncation{
-				Mode:  "bytes",
-				Limit: 10000,
-			},
-			ExperimentalSupportedTools: []string{},
-		}
+		entry := buildGetTokensCodexModelCatalogEntry(template, item, slug, len(entries))
 		entries = append(entries, entry)
 	}
 	if len(entries) == 0 {
 		return nil, fmt.Errorf("缺少可投影到 Codex /model 的模型")
 	}
 
-	body, err := json.MarshalIndent(codexModelCatalogPayload{Models: entries}, "", "  ")
+	body, err := json.MarshalIndent(map[string]any{"models": entries}, "", "  ")
 	if err != nil {
 		return nil, fmt.Errorf("序列化 Codex 模型目录失败: %w", err)
 	}
 	return append(body, '\n'), nil
+}
+
+func buildGetTokensCodexModelCatalogEntry(
+	template map[string]any,
+	item OpenAICompatibleModel,
+	slug string,
+	priority int,
+) map[string]any {
+	entry := cloneCodexModelCatalogTemplate(template)
+	if entry == nil {
+		entry = defaultGetTokensCodexModelCatalogTemplate()
+	}
+
+	reasoningEfforts := normalizeReasoningEfforts(item.SupportedReasoningEfforts)
+	defaultReasoning := normalizeReasoningEffort(item.DefaultReasoningEffort)
+	if defaultReasoning != "" && !containsString(reasoningEfforts, defaultReasoning) {
+		reasoningEfforts = normalizeReasoningEfforts(append(reasoningEfforts, defaultReasoning))
+	}
+
+	entry["slug"] = slug
+	entry["display_name"] = resolveCodexModelCatalogDisplayName(item, slug)
+	entry["description"] = buildCodexModelCatalogDescription(item, slug)
+	entry["visibility"] = "list"
+	entry["supported_in_api"] = true
+	entry["priority"] = priority
+	entry["shell_type"] = "shell_command"
+	entry["base_instructions"] = stringValueOrDefault(entry["base_instructions"], "You are a helpful coding assistant.")
+	entry["supports_parallel_tool_calls"] = true
+	entry["input_modalities"] = arrayValueOrDefault(entry["input_modalities"], []any{"text", "image"})
+	entry["experimental_supported_tools"] = arrayValueOrDefault(entry["experimental_supported_tools"], []any{})
+	entry["additional_speed_tiers"] = []any{}
+	entry["service_tiers"] = []any{}
+	entry["availability_nux"] = nil
+	entry["upgrade"] = nil
+
+	if defaultReasoning != "" {
+		entry["default_reasoning_level"] = defaultReasoning
+	}
+	if len(reasoningEfforts) > 0 {
+		entry["supported_reasoning_levels"] = buildCodexModelCatalogReasoningLevels(reasoningEfforts)
+	} else if _, ok := entry["supported_reasoning_levels"]; !ok {
+		entry["supported_reasoning_levels"] = []codexModelCatalogReasoning{}
+	}
+	if _, ok := entry["truncation_policy"]; !ok {
+		entry["truncation_policy"] = map[string]any{"mode": "bytes", "limit": 10000}
+	}
+	if _, ok := entry["supports_reasoning_summaries"]; !ok {
+		entry["supports_reasoning_summaries"] = false
+	}
+	if _, ok := entry["support_verbosity"]; !ok {
+		entry["support_verbosity"] = false
+	}
+
+	return entry
+}
+
+func cloneCodexModelCatalogTemplate(template map[string]any) map[string]any {
+	if len(template) == 0 {
+		return nil
+	}
+	body, err := json.Marshal(template)
+	if err != nil {
+		return nil
+	}
+	var cloned map[string]any
+	if err := json.Unmarshal(body, &cloned); err != nil {
+		return nil
+	}
+	return cloned
+}
+
+func arrayValueOrDefault(value any, fallback []any) any {
+	items, ok := value.([]any)
+	if !ok || items == nil {
+		return fallback
+	}
+	return items
+}
+
+func stringValueOrDefault(value any, fallback string) string {
+	text, ok := value.(string)
+	if !ok || strings.TrimSpace(text) == "" {
+		return fallback
+	}
+	return text
+}
+
+func loadCodexModelCatalogEntryTemplate() map[string]any {
+	if template := loadCodexModelCatalogEntryTemplateFromCache(); template != nil {
+		return template
+	}
+	if template := loadCodexModelCatalogEntryTemplateFromBundled(); template != nil {
+		return template
+	}
+	return loadStaticCodexModelCatalogEntryTemplate()
+}
+
+func loadCodexModelCatalogEntryTemplateFromCache() map[string]any {
+	codexHome, err := resolveCodexHomePath()
+	if err != nil {
+		return nil
+	}
+	body, err := os.ReadFile(filepath.Join(codexHome, "models_cache.json"))
+	if err != nil {
+		return nil
+	}
+	return findCodexModelCatalogEntryTemplate(body)
+}
+
+func loadCodexModelCatalogEntryTemplateFromBundled() map[string]any {
+	for _, candidate := range codexCLICandidatesForModelCatalog() {
+		output, err := exec.Command(candidate, "debug", "models", "--bundled").Output()
+		if err != nil {
+			continue
+		}
+		if template := findCodexModelCatalogEntryTemplate(output); template != nil {
+			return template
+		}
+	}
+	return nil
+}
+
+func codexCLICandidatesForModelCatalog() []string {
+	candidates := []string{"codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex"}
+	if home, err := os.UserHomeDir(); err == nil && home != "" {
+		candidates = append(candidates,
+			filepath.Join(home, ".nvm/current/bin/codex"),
+			filepath.Join(home, ".volta/bin/codex"),
+			filepath.Join(home, ".asdf/shims/codex"),
+			filepath.Join(home, ".local/bin/codex"),
+			filepath.Join(home, "Library/pnpm/codex"),
+		)
+	}
+	return dedupeStrings(candidates)
+}
+
+func dedupeStrings(items []string) []string {
+	seen := make(map[string]bool, len(items))
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		trimmed := strings.TrimSpace(item)
+		if trimmed == "" || seen[trimmed] {
+			continue
+		}
+		seen[trimmed] = true
+		out = append(out, trimmed)
+	}
+	return out
+}
+
+func findCodexModelCatalogEntryTemplate(body []byte) map[string]any {
+	var payload struct {
+		Models []map[string]any `json:"models"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil
+	}
+	for _, model := range payload.Models {
+		if slug, _ := model["slug"].(string); slug == codexModelCatalogTemplateSlug {
+			return model
+		}
+	}
+	return nil
+}
+
+func loadStaticCodexModelCatalogEntryTemplate() map[string]any {
+	return defaultGetTokensCodexModelCatalogTemplate()
+}
+
+func defaultGetTokensCodexModelCatalogTemplate() map[string]any {
+	return map[string]any{
+		"slug":                           codexModelCatalogTemplateSlug,
+		"display_name":                   "GPT-5.5",
+		"description":                    "Codex model template",
+		"default_reasoning_level":        "medium",
+		"supported_reasoning_levels":     []codexModelCatalogReasoning{{Effort: "low", Description: "Fast responses"}, {Effort: "medium", Description: "Balanced reasoning"}, {Effort: "high", Description: "Deep reasoning"}, {Effort: "xhigh", Description: "Extra high reasoning"}},
+		"shell_type":                     "shell_command",
+		"visibility":                     "list",
+		"supported_in_api":               true,
+		"priority":                       0,
+		"additional_speed_tiers":         []any{},
+		"service_tiers":                  []any{},
+		"availability_nux":               nil,
+		"upgrade":                        nil,
+		"base_instructions":              "You are a helpful coding assistant.",
+		"supports_reasoning_summaries":   false,
+		"support_verbosity":              false,
+		"truncation_policy":              map[string]any{"mode": "bytes", "limit": 10000},
+		"supports_parallel_tool_calls":   true,
+		"supports_image_detail_original": true,
+		"context_window":                 272000,
+		"max_context_window":             272000,
+		"experimental_supported_tools":   []any{},
+		"input_modalities":               []any{"text", "image"},
+		"supports_search_tool":           false,
+	}
 }
 
 func resolveCodexModelCatalogSlug(model OpenAICompatibleModel) string {
@@ -228,7 +400,7 @@ func mergeCodexModelCatalogPointer(configBody string, catalogPath string, overri
 		}
 	}
 
-	lines = upsertRootTomlKey(lines, "model_catalog_json", quoteTomlString(catalogPath), true)
+	lines = upsertRootTomlKey(lines, "model_catalog_json", quoteTomlString(gettokensCodexModelCatalogFilename), true)
 	if len(lines) == 0 {
 		return "", "", true
 	}
@@ -468,7 +640,22 @@ func isGetTokensCodexModelCatalogPath(value string, codexHome string) bool {
 	if trimmed == "" {
 		return false
 	}
+	if localPathBase(trimmed) == gettokensCodexModelCatalogFilename {
+		return true
+	}
 	return filepath.Clean(trimmed) == filepath.Clean(getGetTokensCodexModelCatalogPath(codexHome))
+}
+
+func localPathBase(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	index := strings.LastIndexAny(trimmed, `/\`)
+	if index >= 0 && index+1 < len(trimmed) {
+		return trimmed[index+1:]
+	}
+	return filepath.Base(trimmed)
 }
 
 func normalizeRelayModelCatalogProjectionMode(value string) string {
