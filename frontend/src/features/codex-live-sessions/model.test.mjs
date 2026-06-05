@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   buildCodexLiveDiagnosticSummary,
+  buildCodexLiveProjectSummaries,
   buildCodexLiveSessionSummary,
   filterCodexLiveSessions,
   formatCodexLiveTimingLine,
@@ -142,6 +143,82 @@ test('getSelectedCodexLiveSession keeps explicit conversation id or falls back t
   assert.equal(getSelectedCodexLiveSession(sessions)?.sessionID, sessions[0].sessionID);
   assert.equal(getSelectedCodexLiveSession(sessions, sessions[0].sessionID)?.sessionID, sessions[0].sessionID);
   assert.equal(getSelectedCodexLiveSession(sessions, 'missing-conversation-id')?.sessionID, sessions[0].sessionID);
+});
+
+
+test('buildCodexLiveProjectSummaries groups filtered sessions by project health', () => {
+  const sessions = [
+    {
+      ...codexLiveSessionsPreviewSnapshot.sessions[0],
+      sessionID: 'gettokens-streaming',
+      projectName: 'GetTokens',
+      status: 'streaming',
+      activeRequestID: 'gt-active',
+      requestCount: 3,
+      model: 'gpt-5.5',
+      authLabel: 'team-codex@example.com',
+      lastRequestID: 'gt-active',
+    },
+    {
+      ...codexLiveSessionsPreviewSnapshot.sessions[2],
+      sessionID: 'gettokens-degraded',
+      projectName: 'GetTokens',
+      status: 'degraded_http',
+      requestCount: 2,
+      model: 'gpt-5.4',
+      authLabel: 'fallback-router',
+      lastRequestID: 'gt-degraded',
+    },
+    {
+      ...codexLiveSessionsPreviewSnapshot.sessions[3],
+      sessionID: 'waza-failed',
+      projectName: 'Waza',
+      status: 'failed',
+      requestCount: 1,
+      model: 'gpt-5.4-mini',
+      authLabel: 'team-router.internal',
+      lastRequestID: 'gt-failed',
+    },
+    {
+      ...codexLiveSessionsPreviewSnapshot.sessions[1],
+      sessionID: 'unknown-project',
+      projectName: '',
+      status: 'completed',
+      activeRequestID: undefined,
+      requestCount: 1,
+      model: 'gpt-5.4',
+      authLabel: 'Local Relay Key',
+      lastRequestID: 'gt-unknown',
+    },
+  ];
+
+  const projects = buildCodexLiveProjectSummaries(sessions);
+
+  assert.deepEqual(projects.map((project) => project.projectName), ['Waza', 'GetTokens', 'Unknown project']);
+  assert.deepEqual(projects.map((project) => project.health), ['error', 'warning', 'idle']);
+  assert.deepEqual(projects.find((project) => project.projectName === 'GetTokens'), {
+    projectID: 'project:gettokens',
+    projectName: 'GetTokens',
+    sessionCount: 2,
+    activeSessionCount: 1,
+    completedSessionCount: 0,
+    degradedSessionCount: 1,
+    failedSessionCount: 0,
+    requestCount: 5,
+    activeRequestCount: 1,
+    websocketSessionCount: 1,
+    httpSessionCount: 1,
+    providerCounts: { codex: 2 },
+    modelCounts: { 'gpt-5.4': 1, 'gpt-5.5': 1 },
+    lastModel: 'gpt-5.5',
+    lastAuthLabel: 'team-codex@example.com',
+    lastRequestID: 'gt-active',
+    startedAt: '2026-05-21T18:20:00+08:00',
+    lastEventAt: '2026-05-21T18:35:18+08:00',
+    durationMs: 458034,
+    health: 'warning',
+    sessionIDs: ['gettokens-streaming', 'gettokens-degraded'],
+  });
 });
 
 test('buildCodexLiveSessionSummary derives counts from sessions', () => {
@@ -833,8 +910,8 @@ test('codex live sessions workbench keeps the right pane as overview until a ses
   assert.match(detailSource, /OverviewTimingTrend/);
   assert.match(detailSource, /data-codex-overview-trend-shell="session-style"/);
   assert.match(detailSource, /TimingTrendChart[\s\S]*trend=\{trend\}/);
-  assert.match(detailSource, /data-codex-overview-timeline-shell="session-style"/);
-  assert.match(detailSource, /<Timeline requests=\{overviewRequests\} fallbackEvents=\{\[\]\} t=\{t\} \/>/);
+  assert.match(detailSource, /data-codex-timeline-shell="session-style"/);
+  assert.match(detailSource, /title=\{t\('codex_live_sessions\.overview_request_list'\)\}/);
   assert.doesNotMatch(detailSource, /function OverviewRequestList/);
   assert.doesNotMatch(detailSource, /buildRequestRowSummary\(row, t\)/);
   assert.doesNotMatch(detailSource, /grid-cols-2 border border-\\\[color:color-mix\\\(in_srgb,var\\\(--border-color\\\)_32%,transparent\\\)\\\] md:grid-cols-4/);
@@ -955,7 +1032,7 @@ test('codex live session surfaces avoid nested card shells in the dense workbenc
   );
 
   assert.match(detailSource, /className="grid max-h-\[calc\(100vh-13rem\)\] min-w-0 w-full gap-5 overflow-y-auto overscroll-contain pr-1 scrollbar-stable"/);
-  assert.match(timingTrendSource, /<section className="grid min-w-0 gap-3"/);
+  assert.match(timingTrendSource, /data-codex-request-timing-trend-shell="session-style"/);
   assert.doesNotMatch(timingTrendSource, /className="min-w-0 border border-\[color:color-mix\(in_srgb,var\(--border-color\)_40%,transparent\)\] bg-\[color:color-mix\(in_srgb,var\(--bg-main\)_72%,var\(--bg-surface\)\)\] p-4 shadow/);
   assert.doesNotMatch(detailSource, /className="min-w-0 w-full border-2 border-\[var\(--border-color\)\] bg-\[var\(--bg-main\)\] shadow-\[6px_6px_0_var\(--shadow-color\)\]"/);
   assert.doesNotMatch(detailSource, /grid gap-5 border-b-2 border-\[var\(--border-color\)\] p-4/);
@@ -989,8 +1066,9 @@ test('codex live session detail uses fluid regions with bounded live growth and 
   assert.match(detailSource, /className="min-w-0" data-codex-detail-slot="account"/);
   assert.match(detailSource, /className="min-w-0" data-codex-detail-slot="session"/);
   assert.match(detailSource, /className="min-w-0 2xl:col-span-2" data-codex-detail-slot="transport"/);
-  assert.match(detailSource, /className="grid min-h-\[320px\] max-h-\[clamp\(360px,42vh,560px\)\] grid-rows-\[auto_minmax\(0,1fr\)\] gap-3"/);
-  assert.match(detailSource, /className="min-h-0 overflow-y-auto border border-\[color:color-mix\(in_srgb,var\(--border-color\)_34%,transparent\)\] bg-\[color:color-mix\(in_srgb,var\(--bg-main\)_82%,var\(--bg-surface\)\)\] scrollbar-stable"/);
+  assert.match(detailSource, /data-codex-timeline-shell="session-style"/);
+  assert.match(detailSource, /max-h-\[clamp\(12rem,42vh,34rem\)\] overflow-y-auto bg-\[var\(--bg-main\)\] scrollbar-stable/);
+  assert.doesNotMatch(detailSource, /grid min-h-\[320px\] max-h-\[clamp\(360px,42vh,560px\)\]/);
   assert.match(workbenchSource, /xl:grid-cols-\[minmax\(280px,340px\)_minmax\(0,1fr\)\]/);
   assert.doesNotMatch(workbenchSource, /xl:sticky/);
   assert.doesNotMatch(workbenchSource, /xl:max-h-\[calc\(100vh-2\.5rem\)\]/);
@@ -1012,8 +1090,8 @@ test('codex live session detail header uses request timing trend chart', async (
   );
   assert.doesNotMatch(trendSeriesSource, /timing_total/);
   assert.match(detailSource, /function TimingTrendChart/);
-  assert.match(detailSource, /flex min-w-0 flex-wrap items-start justify-between/);
-  assert.match(detailSource, /flex-nowrap items-center justify-end/);
+  assert.match(detailSource, /data-codex-request-timing-trend-shell="session-style"/);
+  assert.match(detailSource, /data-codex-overview-trend-shell="session-style"/);
   assert.match(detailSource, /\{session\.model\}[\s\S]*?·[\s\S]*?\{session\.downstreamTransport\} → \{session\.upstreamTransport\}/);
   assert.doesNotMatch(detailSource, /xl:grid-cols-\[minmax\(0,1fr\)_auto\]/);
   assert.doesNotMatch(detailSource, /<div className="mt-1 truncate">\{session\.downstreamTransport\} → \{session\.upstreamTransport\}<\/div>/);

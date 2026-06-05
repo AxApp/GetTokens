@@ -196,28 +196,20 @@ function SessionOverview({
         ) : null}
       </div>
 
-      <div className="grid min-w-0 gap-3 border border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[var(--bg-main)] p-4" data-codex-overview-trend-shell="session-style">
-        <OverviewTimingTrend
-          requests={overviewRequests}
-          selectedMetric={selectedMetric}
-          onSelectMetric={onSelectMetric}
-          t={t}
-        />
-      </div>
+      <OverviewTimingTrend
+        requests={overviewRequests}
+        selectedMetric={selectedMetric}
+        onSelectMetric={onSelectMetric}
+        t={t}
+      />
 
-      <div className="grid min-w-0 gap-3 border border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[var(--bg-main)] p-4">
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
-          <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
-            {t('codex_live_sessions.overview_request_list')}
-          </h3>
-          <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
-            {requestRows.length} {t('codex_live_sessions.request_rows')}
-          </span>
-        </div>
-        <div data-codex-overview-timeline-shell="session-style">
-          <Timeline requests={overviewRequests} fallbackEvents={[]} t={t} />
-        </div>
-      </div>
+      <Timeline
+        requests={overviewRequests}
+        fallbackEvents={[]}
+        title={t('codex_live_sessions.overview_request_list')}
+        countLabel={`${requestRows.length} ${t('codex_live_sessions.request_rows')}`}
+        t={t}
+      />
     </section>
   );
 }
@@ -291,8 +283,12 @@ function OverviewTimingTrend({
   const selectedRequestID = activeRequest?.requestID || latestPoint?.requestID || '';
 
   return (
-    <section className="grid min-w-0 gap-3" aria-label={t('codex_live_sessions.request_timing_trend')}>
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-5 gap-y-3">
+    <section
+      className="min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]"
+      aria-label={t('codex_live_sessions.request_timing_trend')}
+      data-codex-overview-trend-shell="session-style"
+    >
+      <div className="grid w-full gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="badge-swiss">{t('codex_live_sessions.overview_kicker')}</span>
@@ -300,14 +296,14 @@ function OverviewTimingTrend({
               {latestPoint?.requestID || t('codex_live_sessions.timing_trend_empty')}
             </span>
           </div>
-          <h3 className="mt-3 font-mono text-[length:var(--font-size-ui-2xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
         <TimingMetricSelector selectedMetric={selectedMetric} onSelectMetric={onSelectMetric} t={t} />
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 p-3">
         <TimingTrendChart
           trend={trend}
           selectedMetric={selectedMetric}
@@ -408,8 +404,12 @@ function RequestTimingTrend({
   const selectedSeries = getTimingTrendSeries(selectedMetric);
 
   return (
-    <section className="grid min-w-0 gap-3" aria-label={t('codex_live_sessions.request_timing_trend')}>
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-5 gap-y-3">
+    <section
+      className="min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]"
+      aria-label={t('codex_live_sessions.request_timing_trend')}
+      data-codex-request-timing-trend-shell="session-style"
+    >
+      <div className="grid w-full gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={session.status} t={t} />
@@ -418,18 +418,18 @@ function RequestTimingTrend({
               {currentRequestID}
             </span>
           </div>
-          <h3 className="mt-3 font-mono text-[length:var(--font-size-ui-2xl)] font-black uppercase tracking-normal text-[var(--text-primary)]">
+          <h3 className="mt-1 font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
             {t('codex_live_sessions.request_timing_trend')}
           </h3>
         </div>
-        <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-end gap-2 self-start overflow-hidden whitespace-nowrap pt-1 text-right font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_68%,var(--text-primary))]">
+        <div className="flex min-w-0 max-w-full flex-nowrap items-center justify-start gap-2 overflow-hidden whitespace-nowrap font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[color:color-mix(in_srgb,var(--text-muted)_68%,var(--text-primary))] md:justify-end md:text-right">
           <span className="shrink-0 text-[var(--text-primary)]">{session.model}</span>
           <span className="shrink-0 text-[color:color-mix(in_srgb,var(--text-muted)_54%,var(--text-primary))]">·</span>
           <span className="min-w-0 truncate">{session.downstreamTransport} → {session.upstreamTransport}</span>
         </div>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 p-3">
         <TimingTrendChart
           trend={trend}
           selectedMetric={selectedMetric}
@@ -869,7 +869,7 @@ function TimingMetrics({
           const rowClassName = `grid min-h-12 min-w-0 grid-cols-[1fr_auto] items-end gap-2 border px-2.5 py-2 font-mono text-[length:var(--font-size-ui-xs)] uppercase transition-colors ${
             selected
               ? 'border-[var(--text-primary)] bg-[var(--bg-main)] text-[var(--text-primary)] shadow-[0_1px_0_var(--shadow-color)]'
-              : 'border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_58%,transparent)] text-[var(--text-muted)] hover:border-[color:color-mix(in_srgb,var(--border-color)_46%,transparent)] hover:bg-[var(--bg-main)]'
+              : 'border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_58%,transparent)] text-[var(--text-muted)] hover:border-[color:color-mix(in_srgb,var(--border-color)_46%,transparent)] hover:bg-[var(--bg-surface)]'
           }`;
 
           const trendMetric = metric.trendMetric;
@@ -1088,10 +1088,14 @@ function SessionCard({ session, request, t }: { session: CodexLiveSession; reque
 function Timeline({
   requests,
   fallbackEvents,
+  title,
+  countLabel,
   t,
 }: {
   requests: readonly CodexLiveRequest[];
   fallbackEvents: readonly CodexLiveTimelineEvent[];
+  title?: string;
+  countLabel?: string;
   t: Translate;
 }) {
   const [detailTarget, setDetailTarget] = useState<
@@ -1105,17 +1109,28 @@ function Timeline({
   const visibleRowCount = requests.length > 0 ? visibleRequests.length : 1;
 
   return (
-    <div className="grid min-h-[320px] max-h-[clamp(360px,42vh,560px)] grid-rows-[auto_minmax(0,1fr)] gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase tracking-[0.16em] text-[var(--text-muted)]">
-          {t('codex_live_sessions.request_timeline')}
+    <section
+      className="min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]"
+      data-codex-timeline-shell="session-style"
+      aria-label={title ?? t('codex_live_sessions.request_timeline')}
+    >
+      <div className="grid w-full gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div className="min-w-0">
+          <h3 className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+            {title ?? t('codex_live_sessions.request_timeline')}
+          </h3>
+          {title ? (
+            <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+              {t('codex_live_sessions.request_timeline')}
+            </p>
+          ) : null}
         </div>
-        <div className="font-mono text-[length:var(--font-size-ui-xs)] font-black uppercase text-[var(--text-muted)]">
-          {visibleRowCount} {t('codex_live_sessions.rows')}
+        <div className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+          {countLabel ?? `${visibleRowCount} ${t('codex_live_sessions.rows')}`}
         </div>
       </div>
 
-      <div className="min-h-0 overflow-y-auto border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[color:color-mix(in_srgb,var(--bg-main)_82%,var(--bg-surface))] scrollbar-stable">
+      <div className="max-h-[clamp(12rem,42vh,34rem)] overflow-y-auto bg-[var(--bg-main)] scrollbar-stable">
         {requests.length === 0 ? (
           <TimelineFallbackRow
             summary={fallbackSummary}
@@ -1141,7 +1156,7 @@ function Timeline({
       {detailTarget?.type === 'fallback' ? (
         <FallbackTimelineDetailModal events={detailTarget.events} t={t} onClose={() => setDetailTarget(null)} />
       ) : null}
-    </div>
+    </section>
   );
 }
 
@@ -1188,7 +1203,7 @@ function TimelineSummaryRow({
     <button
       type="button"
       onClick={onOpen}
-      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--border-color)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-main)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
+      className={`grid min-h-11 w-full grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 overflow-hidden border-b border-[color:color-mix(in_srgb,var(--border-color)_20%,transparent)] px-3 py-2 text-left text-[length:var(--font-size-ui-sm)] transition-colors hover:bg-[var(--bg-surface)] active:scale-[0.995] last:border-b-0 ${dashed ? 'border-dashed' : ''}`}
       title={t('codex_live_sessions.detail')}
       aria-label={t('codex_live_sessions.detail')}
     >

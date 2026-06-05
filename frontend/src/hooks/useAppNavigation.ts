@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type {
   AppPage,
   ClaudeWorkspace,
+  CodexLiveSessionsView,
   CodexWorkspace,
   SessionManagementWorkspace,
   UsageDeskWorkspace as UsageDeskWorkspaceID,
@@ -14,12 +15,14 @@ import {
   isLegacyClaudeCodexWorkspace,
   persistActivePage,
   persistClaudeWorkspace,
+  persistCodexLiveSessionsView,
   persistCodexWorkspace,
   persistSessionManagementWorkspace,
   persistUsageDeskWorkspace,
   readFrameHashState,
   readStoredActivePage,
   readStoredClaudeWorkspace,
+  readStoredCodexLiveSessionsView,
   readStoredCodexWorkspace,
   readStoredSessionManagementWorkspace,
   readStoredUsageDeskWorkspace,
@@ -53,6 +56,17 @@ export function useAppNavigation() {
     }
     return storedWorkspace;
   });
+
+  const [activeCodexLiveSessionsView, setActiveCodexLiveSessionsView] = useState<CodexLiveSessionsView>(() => {
+    const storage = typeof window === 'undefined' ? null : window.localStorage;
+    const storedView = readStoredCodexLiveSessionsView(storage);
+    const hashState = typeof window === 'undefined' ? null : readFrameHashState(window.location.hash, pageAvailabilityOptions);
+    if (hashState?.page === 'codex' && hashState.codexWorkspace === 'live-sessions') {
+      return hashState.codexLiveSessionsView ?? 'session';
+    }
+    return storedView;
+  });
+
   const [activeClaudeWorkspace, setActiveClaudeWorkspace] = useState<ClaudeWorkspace>(() => {
     const storage = typeof window === 'undefined' ? null : window.localStorage;
     const storedWorkspace = readStoredClaudeWorkspace(storage);
@@ -88,6 +102,10 @@ export function useAppNavigation() {
   useEffect(() => {
     persistCodexWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeCodexWorkspace);
   }, [activeCodexWorkspace]);
+
+  useEffect(() => {
+    persistCodexLiveSessionsView(typeof window === 'undefined' ? null : window.localStorage, activeCodexLiveSessionsView);
+  }, [activeCodexLiveSessionsView]);
 
   useEffect(() => {
     persistClaudeWorkspace(typeof window === 'undefined' ? null : window.localStorage, activeClaudeWorkspace);
@@ -132,6 +150,7 @@ export function useAppNavigation() {
       {
         accountDetailScript: hashState?.accountDetailScript ?? null,
         claudeWorkspace: activeClaudeWorkspace,
+        codexLiveSessionsView: activeCodexWorkspace === 'live-sessions' ? activeCodexLiveSessionsView : null,
         density: activePage === 'accounts' ? readCurrentHashParam('density') : null,
         group: activePage === 'accounts' ? readCurrentHashParam('group') : null,
         modal,
@@ -143,6 +162,7 @@ export function useAppNavigation() {
     }
   }, [
     activeClaudeWorkspace,
+    activeCodexLiveSessionsView,
     activeCodexWorkspace,
     activePage,
     activeSessionManagementWorkspace,
@@ -168,6 +188,9 @@ export function useAppNavigation() {
       setActivePage(hashState.page);
       if (hashState.page === 'codex') {
         setActiveCodexWorkspace(hashState.codexWorkspace ?? 'feature-config');
+        if (hashState.codexWorkspace === 'live-sessions') {
+          setActiveCodexLiveSessionsView(hashState.codexLiveSessionsView ?? 'session');
+        }
       }
       if (hashState.page === 'claude') {
         setActiveClaudeWorkspace(hashState.claudeWorkspace ?? 'account-list');
@@ -191,6 +214,8 @@ export function useAppNavigation() {
     setActivePage,
     activeCodexWorkspace,
     setActiveCodexWorkspace,
+    activeCodexLiveSessionsView,
+    setActiveCodexLiveSessionsView,
     activeClaudeWorkspace,
     setActiveClaudeWorkspace,
     activeSessionManagementWorkspace,
@@ -211,6 +236,7 @@ function buildCanonicalFrameHashFromState(hashState: NonNullable<ReturnType<type
     {
       accountDetailScript: hashState.accountDetailScript ?? null,
       claudeWorkspace: hashState.claudeWorkspace ?? 'account-list',
+      codexLiveSessionsView: hashState.codexWorkspace === 'live-sessions' ? hashState.codexLiveSessionsView ?? 'session' : null,
       density: hashState.page === 'accounts' ? readCurrentHashParam('density') : null,
       group: hashState.page === 'accounts' ? readCurrentHashParam('group') : null,
       modal: hashState.modal ?? null,

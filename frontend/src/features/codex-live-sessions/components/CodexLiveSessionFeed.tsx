@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ClipboardSetText } from '../../../../wailsjs/runtime/runtime';
 import type {
+  CodexLiveProjectSummary,
   CodexLiveRequest,
   CodexLiveSession,
 } from '../model/types';
@@ -15,12 +16,16 @@ import type { Translate } from './types';
 export function SessionFeed({
   sessions,
   selectedSessionID,
+  title,
+  hint,
   onSelectSession,
   onShowOverview,
   t,
 }: {
   sessions: readonly CodexLiveSession[];
   selectedSessionID?: string;
+  title?: string;
+  hint?: string;
   onSelectSession: (sessionID: string) => void;
   onShowOverview: () => void;
   t: Translate;
@@ -81,14 +86,14 @@ export function SessionFeed({
         <div>
           <h3>
             <span className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
-              {t('codex_live_sessions.session_feed')}
+              {title ?? t('codex_live_sessions.session_feed')}
             </span>
           </h3>
           <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
-            {t('codex_live_sessions.session_feed_hint')}
+            {hint ?? t('codex_live_sessions.session_feed_hint')}
           </p>
         </div>
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
             {sessions.length} {t('codex_live_sessions.session_rows')} · {requestRows.length} {t('codex_live_sessions.request_rows')}
           </span>
@@ -123,6 +128,113 @@ export function SessionFeed({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+export function ProjectFeed({
+  projects,
+  selectedProjectID,
+  onSelectProject,
+  t,
+}: {
+  projects: readonly CodexLiveProjectSummary[];
+  selectedProjectID?: string;
+  onSelectProject: (projectID: string) => void;
+  t: Translate;
+}) {
+  return (
+    <div
+      className="min-h-0 min-w-0 overflow-hidden border border-[color:color-mix(in_srgb,var(--border-color)_34%,transparent)] bg-[var(--bg-main)] shadow-[0_1px_0_color-mix(in_srgb,var(--border-color)_18%,transparent)]"
+      data-codex-live-project-feed="true"
+    >
+      <div className="grid w-full gap-1 border-b border-[color:color-mix(in_srgb,var(--border-color)_24%,transparent)] px-4 py-3 text-left md:grid-cols-[1fr_auto] md:items-end">
+        <div>
+          <h3>
+            <span className="font-mono text-[length:var(--font-size-ui-xl)] font-black uppercase tracking-[0.12em] text-[var(--text-primary)]">
+              {t('codex_live_sessions.project_feed')}
+            </span>
+          </h3>
+          <p className="mt-1 text-[length:var(--font-size-ui-sm)] font-bold text-[var(--text-muted)]">
+            {t('codex_live_sessions.project_feed_hint')}
+          </p>
+        </div>
+        <div className="flex items-center justify-end gap-2">
+          <span className="font-mono text-[length:var(--font-size-ui-sm)] font-black uppercase text-[var(--text-muted)]">
+            {projects.length} {t('codex_live_sessions.project_rows')}
+          </span>
+        </div>
+      </div>
+
+      <div>
+        {projects.length === 0 ? (
+          <div className="p-6">
+            <div className="border-2 border-dashed border-[var(--border-color)] p-5 text-center font-bold text-[var(--text-muted)]">
+              {t('codex_live_sessions.project_empty')}
+            </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-[color:color-mix(in_srgb,var(--border-color)_22%,transparent)]">
+            {projects.map((project) => (
+              <ProjectRow
+                key={project.projectID}
+                project={project}
+                selected={project.projectID === selectedProjectID}
+                onSelect={() => onSelectProject(project.projectID)}
+                t={t}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProjectRow({
+  project,
+  selected,
+  onSelect,
+  t,
+}: {
+  project: CodexLiveProjectSummary;
+  selected: boolean;
+  onSelect: () => void;
+  t: Translate;
+}) {
+  const healthLabel = t(`codex_live_sessions.project_health_${project.health}`);
+  const modelLabel = project.lastModel || t('codex_live_sessions.unknown');
+  const authLabel = project.lastAuthLabel || t('codex_live_sessions.unknown_auth');
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={selected}
+      className={`grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-1 px-4 py-3 text-left transition-colors ${
+        selected ? 'codex-live-session-list-item-selected' : 'codex-live-session-list-item-idle'
+      }`}
+      data-codex-live-project-row={project.projectID}
+    >
+      <span className="col-start-1 row-start-1 min-w-0 truncate font-mono text-[length:var(--font-size-ui-lg)] font-black leading-snug text-[var(--text-primary)]">
+        {project.projectName}
+      </span>
+      <span className="col-start-2 row-start-1 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-sm)] font-black leading-snug uppercase text-[var(--text-muted)]">
+        {healthLabel}
+      </span>
+      <span className="col-start-1 row-start-2 min-w-0 self-center truncate font-mono text-[length:var(--font-size-ui-sm)] font-bold leading-snug text-[var(--text-muted)]">
+        {project.sessionCount} {t('codex_live_sessions.session_rows')} · {project.requestCount} {t('codex_live_sessions.request_rows')} · {modelLabel} / {authLabel}
+      </span>
+      <span className="col-start-2 row-start-2 min-w-0 self-center justify-self-end truncate text-right font-mono text-[length:var(--font-size-ui-2xs)] font-black uppercase text-[var(--text-muted)]">
+        A {project.activeSessionCount} · D {project.degradedSessionCount} · F {project.failedSessionCount}
+      </span>
     </div>
   );
 }

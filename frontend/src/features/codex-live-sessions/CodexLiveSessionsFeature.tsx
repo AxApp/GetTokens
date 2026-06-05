@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ClearCodexLiveSessions, GetCodexLiveSessionHistory, GetCodexLiveSessionsSnapshot } from '../../../wailsjs/go/main/App';
-import type { SidecarStatus } from '../../types';
+import type { CodexLiveSessionsView, SidecarStatus } from '../../types';
 import { hasWailsAppBindings } from '../../utils/previewMode';
 import CodexLiveSessionsWorkbench from './components/CodexLiveSessionsWorkbench';
 import { mapBackendCodexLiveSessionHistory, mapBackendCodexLiveSessionsSnapshot } from './model/adapters';
@@ -19,6 +19,8 @@ import type { CodexLiveRequest, CodexLiveSessionSnapshot } from './model/types';
 
 interface CodexLiveSessionsFeatureProps {
   sidecarStatus: SidecarStatus;
+  view: CodexLiveSessionsView;
+  onViewChange: (view: CodexLiveSessionsView) => void;
 }
 
 interface CodexLiveSessionDetailState {
@@ -36,7 +38,7 @@ interface CodexLiveSessionOverviewState {
   error?: string;
 }
 
-export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSessionsFeatureProps) {
+export default function CodexLiveSessionsFeature({ sidecarStatus, view, onViewChange }: CodexLiveSessionsFeatureProps) {
   const sidecarReady = sidecarStatus?.code === 'ready';
   const browserMode = !hasWailsAppBindings();
   const [snapshot, setSnapshot] = useState<CodexLiveSessionSnapshot>(() =>
@@ -323,6 +325,8 @@ export default function CodexLiveSessionsFeature({ sidecarStatus }: CodexLiveSes
   return (
     <CodexLiveSessionsWorkbench
       snapshot={snapshot}
+      view={view}
+      onViewChange={onViewChange}
       detailRequests={detailState.sessionID === selectedSessionID ? detailState.requests : []}
       overviewRequests={!selectedSessionID ? overviewState.requests : []}
       overviewLoading={!selectedSessionID && overviewState.loading}

@@ -14,6 +14,7 @@ export type AppPage =
   | "design-system"
   | "debug";
 export type AccountWorkspace = "all";
+export type CodexLiveSessionsView = "session" | "project";
 export type CodexWorkspace =
   | "feature-config"
   | "binary-management"

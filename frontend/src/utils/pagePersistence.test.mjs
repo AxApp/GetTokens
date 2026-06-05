@@ -6,6 +6,7 @@ import {
   ACCOUNT_WORKSPACE_STORAGE_KEY,
   CLAUDE_WORKSPACE_STORAGE_KEY,
   CODEX_WORKSPACE_STORAGE_KEY,
+  CODEX_LIVE_SESSIONS_VIEW_STORAGE_KEY,
   USAGE_DESK_WORKSPACE_STORAGE_KEY,
   SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY,
   USAGE_DESK_SOURCE_STORAGE_KEY,
@@ -29,6 +30,7 @@ import {
   isAppPage,
   isClaudeWorkspace,
   isCodexWorkspace,
+  isCodexLiveSessionsView,
   isLegacyClaudeCodexWorkspace,
   isSessionManagementWorkspace,
   isUsageDeskRangeStorageValue,
@@ -38,6 +40,7 @@ import {
   persistActivePage,
   persistClaudeWorkspace,
   persistCodexWorkspace,
+  persistCodexLiveSessionsView,
   persistSessionManagementWorkspace,
   persistUsageDeskRange,
   persistUsageDeskSource,
@@ -47,6 +50,7 @@ import {
   readStoredActivePage,
   readStoredClaudeWorkspace,
   readStoredCodexWorkspace,
+  readStoredCodexLiveSessionsView,
   readStoredSessionManagementWorkspace,
   readStoredUsageDeskRange,
   readStoredUsageDeskSource,
@@ -55,6 +59,7 @@ import {
   resolveInitialActivePage,
   resolveInitialClaudeWorkspace,
   resolveInitialCodexWorkspace,
+  resolveInitialCodexLiveSessionsView,
   resolveInitialSessionManagementWorkspace,
   resolveInitialUsageDeskRange,
   resolveInitialUsageDeskSource,
@@ -214,6 +219,49 @@ test('persistAccountWorkspace writes the selected workspace to storage', () => {
   persistAccountWorkspace(storage, 'all');
 
   assert.deepEqual(writes, [[ACCOUNT_WORKSPACE_STORAGE_KEY, 'all']]);
+});
+
+
+test('codex live sessions view accepts only session and project dimensions', () => {
+  assert.equal(isCodexLiveSessionsView('session'), true);
+  assert.equal(isCodexLiveSessionsView('project'), true);
+  assert.equal(isCodexLiveSessionsView('projects'), false);
+  assert.equal(isCodexLiveSessionsView('unknown'), false);
+  assert.equal(resolveInitialCodexLiveSessionsView('project'), 'project');
+  assert.equal(resolveInitialCodexLiveSessionsView('unknown'), 'session');
+
+  const storage = {
+    getItem(key) {
+      assert.equal(key, CODEX_LIVE_SESSIONS_VIEW_STORAGE_KEY);
+      return 'project';
+    },
+  };
+  assert.equal(readStoredCodexLiveSessionsView(storage), 'project');
+
+  const writes = [];
+  persistCodexLiveSessionsView({
+    setItem(key, value) {
+      writes.push([key, value]);
+    },
+  }, 'project');
+  assert.deepEqual(writes, [[CODEX_LIVE_SESSIONS_VIEW_STORAGE_KEY, 'project']]);
+});
+
+test('codex live sessions hash preserves project dimension view', () => {
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=live-sessions&view=project'), {
+    page: 'codex',
+    codexWorkspace: 'live-sessions',
+    codexLiveSessionsView: 'project',
+  });
+  assert.deepEqual(readFrameHashState('#frame=codex&workspace=live-sessions&view=invalid'), {
+    page: 'codex',
+    codexWorkspace: 'live-sessions',
+    codexLiveSessionsView: 'session',
+  });
+  assert.equal(
+    buildFrameHash('codex', 'all', 'live-sessions', 'codex', 'codex', null, { codexLiveSessionsView: 'project' }),
+    '#frame=codex&workspace=live-sessions&view=project',
+  );
 });
 
 test('isCodexWorkspace only accepts known codex subpages', () => {

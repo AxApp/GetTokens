@@ -2,6 +2,7 @@ import type {
   AccountWorkspace,
   AppPage,
   ClaudeWorkspace,
+  CodexLiveSessionsView,
   CodexWorkspace,
   SessionManagementWorkspace,
   UsageDeskWorkspace,
@@ -10,6 +11,7 @@ import type {
 export const ACTIVE_PAGE_STORAGE_KEY = 'gettokens.activePage';
 export const ACCOUNT_WORKSPACE_STORAGE_KEY = 'gettokens.accounts.workspace';
 export const CODEX_WORKSPACE_STORAGE_KEY = 'gettokens.codex.workspace';
+export const CODEX_LIVE_SESSIONS_VIEW_STORAGE_KEY = 'gettokens.codex.liveSessions.view';
 export const CLAUDE_WORKSPACE_STORAGE_KEY = 'gettokens.claude.workspace';
 export const SESSION_MANAGEMENT_WORKSPACE_STORAGE_KEY = 'gettokens.sessionManagement.workspace';
 export const USAGE_DESK_WORKSPACE_STORAGE_KEY = 'gettokens.usageDesk.workspace';
@@ -37,6 +39,7 @@ const developerAppPages: ReadonlySet<AppPage> = new Set([
   'debug',
 ]);
 const accountWorkspaces: ReadonlySet<AccountWorkspace> = new Set(['all']);
+const codexLiveSessionsViews: ReadonlySet<CodexLiveSessionsView> = new Set(['session', 'project']);
 const codexWorkspaces: ReadonlySet<CodexWorkspace> = new Set([
   'feature-config',
   'binary-management',
@@ -68,6 +71,7 @@ export interface FrameHashState {
   accountDetailScript?: AccountDetailScriptRoute;
   modal?: AccountListModalRoute;
   codexWorkspace?: CodexWorkspace;
+  codexLiveSessionsView?: CodexLiveSessionsView;
   claudeWorkspace?: ClaudeWorkspace;
   sessionManagementWorkspace?: SessionManagementWorkspace;
   usageDeskWorkspace?: UsageDeskWorkspace;
@@ -75,6 +79,7 @@ export interface FrameHashState {
 
 interface FrameHashOptions {
   accountDetailScript?: AccountDetailScriptRoute | null;
+  codexLiveSessionsView?: CodexLiveSessionsView | null;
   claudeWorkspace?: ClaudeWorkspace;
   density?: string | null;
   group?: string | null;
@@ -102,6 +107,10 @@ export function isAccountWorkspace(value: string | null | undefined): value is A
 
 export function isCodexWorkspace(value: string | null | undefined): value is CodexWorkspace {
   return typeof value === 'string' && codexWorkspaces.has(value as CodexWorkspace);
+}
+
+export function isCodexLiveSessionsView(value: string | null | undefined): value is CodexLiveSessionsView {
+  return typeof value === 'string' && codexLiveSessionsViews.has(value as CodexLiveSessionsView);
 }
 
 export function isClaudeWorkspace(value: string | null | undefined): value is ClaudeWorkspace {
@@ -182,6 +191,19 @@ export function readStoredCodexWorkspace(
   storage: Pick<Storage, 'getItem'> | null | undefined,
 ): CodexWorkspace {
   return resolveInitialCodexWorkspace(storage?.getItem(CODEX_WORKSPACE_STORAGE_KEY));
+}
+
+export function resolveInitialCodexLiveSessionsView(
+  storageValue: string | null | undefined,
+  fallback: CodexLiveSessionsView = 'session',
+): CodexLiveSessionsView {
+  return isCodexLiveSessionsView(storageValue) ? storageValue : fallback;
+}
+
+export function readStoredCodexLiveSessionsView(
+  storage: Pick<Storage, 'getItem'> | null | undefined,
+): CodexLiveSessionsView {
+  return resolveInitialCodexLiveSessionsView(storage?.getItem(CODEX_LIVE_SESSIONS_VIEW_STORAGE_KEY));
 }
 
 export function resolveInitialClaudeWorkspace(
@@ -277,6 +299,13 @@ export function persistCodexWorkspace(
   storage?.setItem(CODEX_WORKSPACE_STORAGE_KEY, workspace);
 }
 
+export function persistCodexLiveSessionsView(
+  storage: Pick<Storage, 'setItem'> | null | undefined,
+  view: CodexLiveSessionsView,
+): void {
+  storage?.setItem(CODEX_LIVE_SESSIONS_VIEW_STORAGE_KEY, view);
+}
+
 export function persistClaudeWorkspace(
   storage: Pick<Storage, 'setItem'> | null | undefined,
   workspace: ClaudeWorkspace,
@@ -368,10 +397,15 @@ export function readFrameHashState(
     }
     const detail = params.get('detail');
     const modal = params.get('modal');
+    const view = params.get('view');
+    const codexWorkspace = isCodexWorkspace(workspace) ? workspace : 'feature-config';
     const state: FrameHashState = {
       page,
-      codexWorkspace: isCodexWorkspace(workspace) ? workspace : 'feature-config',
+      codexWorkspace,
     };
+    if (codexWorkspace === 'live-sessions') {
+      state.codexLiveSessionsView = resolveInitialCodexLiveSessionsView(view);
+    }
     if (detail && detail.trim()) {
       state.accountDetailID = detail;
     }
@@ -440,6 +474,9 @@ export function buildFrameHash(
   }
   if (page === 'codex' && codexWorkspace !== 'feature-config') {
     params.set('workspace', codexWorkspace);
+  }
+  if (page === 'codex' && codexWorkspace === 'live-sessions' && options?.codexLiveSessionsView === 'project') {
+    params.set('view', 'project');
   }
   if (page === 'claude') {
     params.set('workspace', options?.claudeWorkspace ?? 'account-list');

@@ -6,20 +6,22 @@ import CodexExtensionsFeature from '../features/codex-extensions/CodexExtensions
 import UsageDeskFeature from '../features/accounts/UsageDeskFeature';
 import SessionManagementPage from './SessionManagementPage';
 import VendorStatusPage from './VendorStatusPage';
-import type { CodexWorkspace, SidecarStatus } from '../types';
+import type { CodexLiveSessionsView, CodexWorkspace, SidecarStatus } from '../types';
 
 interface CodexPageProps {
   workspace: CodexWorkspace;
   sidecarStatus: SidecarStatus;
+  liveSessionsView: CodexLiveSessionsView;
+  onLiveSessionsViewChange: (view: CodexLiveSessionsView) => void;
 }
 
-export default function CodexPage({ workspace, sidecarStatus }: CodexPageProps) {
+export default function CodexPage({ workspace, sidecarStatus, liveSessionsView, onLiveSessionsViewChange }: CodexPageProps) {
   if (workspace === 'account-list') {
     return <CodexAccountListFeature sidecarStatus={sidecarStatus} />;
   }
 
   if (workspace === 'live-sessions') {
-    return <CodexLiveSessionsFeature sidecarStatus={sidecarStatus} />;
+    return <CodexLiveSessionsFeature sidecarStatus={sidecarStatus} view={liveSessionsView} onViewChange={onLiveSessionsViewChange} />;
   }
 
   if (workspace === 'binary-management') {

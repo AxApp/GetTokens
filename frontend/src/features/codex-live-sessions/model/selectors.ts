@@ -1,4 +1,6 @@
 import type {
+  CodexLiveProjectHealth,
+  CodexLiveProjectSummary,
   CodexLiveRequest,
   CodexLiveSession,
   CodexLiveSessionFilter,
@@ -12,6 +14,9 @@ import type {
 const activeStatuses = new Set<CodexLiveSessionStatus>(['active', 'streaming']);
 const reconnectingStatuses = new Set<CodexLiveSessionStatus>(['reconnecting', 'upstream_disconnected']);
 const failedStatuses = new Set<CodexLiveSessionStatus>(['failed', 'cancelled']);
+const completedStatuses = new Set<CodexLiveSessionStatus>(['completed']);
+const unknownProjectID = 'project:unknown';
+const unknownProjectName = 'Unknown project';
 
 const statusRank: Record<CodexLiveSessionStatus, number> = {
   active: 0,
@@ -40,6 +45,149 @@ export function filterCodexLiveSessions(input: {
     .filter((session) => !query || buildSessionSearchText(session).includes(query))
     .slice()
     .sort(compareCodexLiveSessions);
+}
+
+
+export function buildCodexLiveProjectSummaries(sessions: readonly CodexLiveSession[]): CodexLiveProjectSummary[] {
+  const projects = new Map<string, CodexLiveProjectSummary>();
+
+  for (const session of sessions) {
+    const projectID = getCodexLiveProjectIDForSession(session);
+    const project = projects.get(projectID) ?? createEmptyProjectSummary(projectID, resolveCodexLiveProjectName(session));
+    projects.set(projectID, project);
+
+    project.sessionCount += 1;
+    project.requestCount += Math.max(0, session.requestCount || session.requests.length);
+    project.durationMs = Math.max(project.durationMs ?? 0, session.durationMs || 0);
+    project.sessionIDs.push(session.sessionID);
+
+    if (activeStatuses.has(session.status) || reconnectingStatuses.has(session.status)) {
+      project.activeSessionCount += 1;
+    }
+    if (completedStatuses.has(session.status)) {
+      project.completedSessionCount += 1;
+    }
+    if (session.status === 'degraded_http' || session.fallbackInferred) {
+      project.degradedSessionCount += 1;
+    }
+    if (failedStatuses.has(session.status)) {
+      project.failedSessionCount += 1;
+    }
+    if (session.activeRequestID) {
+      project.activeRequestCount += 1;
+    }
+    if (session.downstreamTransport === 'websocket' || session.upstreamTransport === 'websocket') {
+      project.websocketSessionCount += 1;
+    }
+    if (session.downstreamTransport === 'http' || session.upstreamTransport === 'http') {
+      project.httpSessionCount += 1;
+    }
+    if (session.provider) {
+      project.providerCounts[session.provider] = (project.providerCounts[session.provider] ?? 0) + 1;
+    }
+    if (session.model) {
+      project.modelCounts[session.model] = (project.modelCounts[session.model] ?? 0) + 1;
+    }
+
+    if (!project.startedAt || compareLiveSessionTime(project.startedAt, session.startedAt) > 0) {
+      project.startedAt = session.startedAt;
+    }
+    if (!project.lastEventAt || compareLiveSessionTime(project.lastEventAt, session.lastEventAt) < 0) {
+      project.lastEventAt = session.lastEventAt;
+      project.lastModel = session.model || project.lastModel;
+      project.lastAuthLabel = session.authLabel || project.lastAuthLabel;
+      project.lastRequestID = session.lastRequestID || session.activeRequestID || project.lastRequestID;
+    }
+  }
+
+  return Array.from(projects.values())
+    .map((project) => ({
+      ...project,
+      providerCounts: sortCountRecord(project.providerCounts),
+      modelCounts: sortCountRecord(project.modelCounts),
+      health: resolveProjectHealth(project),
+    }))
+    .sort(compareCodexLiveProjectSummaries);
+}
+
+export function getCodexLiveProjectIDForSession(session: Pick<CodexLiveSession, 'projectName'>): string {
+  const name = resolveCodexLiveProjectName(session);
+  if (name === unknownProjectName) {
+    return unknownProjectID;
+  }
+  const normalized = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized ? `project:${normalized}` : unknownProjectID;
+}
+
+function createEmptyProjectSummary(projectID: string, projectName: string): CodexLiveProjectSummary {
+  return {
+    projectID,
+    projectName,
+    sessionCount: 0,
+    activeSessionCount: 0,
+    completedSessionCount: 0,
+    degradedSessionCount: 0,
+    failedSessionCount: 0,
+    requestCount: 0,
+    activeRequestCount: 0,
+    websocketSessionCount: 0,
+    httpSessionCount: 0,
+    providerCounts: {},
+    modelCounts: {},
+    durationMs: 0,
+    health: 'idle',
+    sessionIDs: [],
+  };
+}
+
+function resolveCodexLiveProjectName(session: Pick<CodexLiveSession, 'projectName'>): string {
+  const projectName = session.projectName?.trim();
+  return projectName || unknownProjectName;
+}
+
+function resolveProjectHealth(project: CodexLiveProjectSummary): CodexLiveProjectHealth {
+  if (project.failedSessionCount > 0) {
+    return 'error';
+  }
+  if (project.degradedSessionCount > 0) {
+    return 'warning';
+  }
+  if (project.activeSessionCount > 0 || project.activeRequestCount > 0) {
+    return 'active';
+  }
+  return 'idle';
+}
+
+const projectHealthRank: Record<CodexLiveProjectHealth, number> = {
+  error: 0,
+  warning: 1,
+  active: 2,
+  idle: 3,
+};
+
+function compareCodexLiveProjectSummaries(a: CodexLiveProjectSummary, b: CodexLiveProjectSummary): number {
+  const healthDelta = projectHealthRank[a.health] - projectHealthRank[b.health];
+  if (healthDelta !== 0) {
+    return healthDelta;
+  }
+  const timeDelta = compareLiveSessionTime(a.lastEventAt ?? '', b.lastEventAt ?? '');
+  if (timeDelta !== 0) {
+    return timeDelta;
+  }
+  return a.projectName.localeCompare(b.projectName);
+}
+
+function sortCountRecord(record: Record<string, number>): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(record).sort((a, b) => {
+      const countDelta = b[1] - a[1];
+      return countDelta !== 0 ? countDelta : a[0].localeCompare(b[0]);
+    }),
+  );
 }
 
 export function compareCodexLiveSessions(a: CodexLiveSession, b: CodexLiveSession): number {

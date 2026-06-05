@@ -38,6 +38,8 @@ function AppShell() {
     setActivePage,
     activeCodexWorkspace,
     setActiveCodexWorkspace,
+    activeCodexLiveSessionsView,
+    setActiveCodexLiveSessionsView,
     activeClaudeWorkspace,
     setActiveClaudeWorkspace,
   } = useAppNavigation();
@@ -151,7 +153,7 @@ function AppShell() {
       return <ProxyPoolPage />;
     }
     if (activePage === 'codex') {
-      return <CodexPage workspace={activeCodexWorkspace} sidecarStatus={sidecarStatus} />;
+      return <CodexPage workspace={activeCodexWorkspace} sidecarStatus={sidecarStatus} liveSessionsView={activeCodexLiveSessionsView} onLiveSessionsViewChange={setActiveCodexLiveSessionsView} />;
     }
     if (activePage === 'claude') {
       return <ClaudePage workspace={activeClaudeWorkspace} sidecarStatus={sidecarStatus} />;
@@ -172,6 +174,7 @@ function AppShell() {
     return <AccountsPage workspace="all" />;
   }, [
     activeCodexWorkspace,
+    activeCodexLiveSessionsView,
     activeClaudeWorkspace,
     activePage,
     availableRelease,

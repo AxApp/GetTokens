@@ -61,7 +61,9 @@
     "update_available": "发现新版本",
     "update_now": "更新",
     "updating": "更新中",
-    "update_failed": "更新失败"
+    "update_failed": "更新失败",
+    "codex_live_sessions_view_session": "会话",
+    "codex_live_sessions_view_project": "项目"
   },
   "design_system": {
     "title": "设计系统",
@@ -442,7 +444,18 @@
     "request_timeline": "请求时间线",
     "redacted_diagnostic": "脱敏诊断",
     "title_sessions": "会话",
-    "title_requests": "请求"
+    "title_requests": "请求",
+    "project_feed": "项目运行态",
+    "project_feed_hint": "按项目聚合当前 retention 窗口内的 Codex 运行会话。选择项目后右侧直接显示该项目汇总、耗时趋势和请求列表。",
+    "project_rows": "项目",
+    "project_empty": "没有匹配的 Codex 运行项目",
+    "project_health_active": "运行",
+    "project_health_warning": "告警",
+    "project_health_error": "错误",
+    "project_health_idle": "空闲",
+    "view_switch_label": "运行会话维度",
+    "view_session": "会话",
+    "view_project": "项目"
   },
   "codex_extensions": {
     "skills_title": "Codex Skills",

@@ -295,8 +295,8 @@ export default function Sidebar({
                   <div className={submenuPanelClassName}>
                     <div className="space-y-2 pl-0">
                       {codexWorkspaceItems.map((workspace) => (
+                        <div key={workspace.id}>
                         <button
-                          key={workspace.id}
                           onClick={() => {
                             setActivePage('codex');
                             setHoveredSection(null);
@@ -311,6 +311,7 @@ export default function Sidebar({
                         >
                           {t(workspace.label)}
                         </button>
+                        </div>
                       ))}
                     </div>
                   </div>

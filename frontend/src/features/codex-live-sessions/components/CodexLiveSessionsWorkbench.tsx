@@ -4,10 +4,12 @@ import RefreshActionButton from '../../../components/ui/RefreshActionButton';
 import SearchInput from '../../../components/ui/SearchInput';
 import WorkspacePageHeader from '../../../components/ui/WorkspacePageHeader';
 import { useI18n } from '../../../context/I18nContext';
-import type { SegmentedOption } from '../../../types';
+import type { CodexLiveSessionsView, SegmentedOption } from '../../../types';
 import {
   buildCodexLiveDiagnosticSummary,
+  buildCodexLiveProjectSummaries,
   filterCodexLiveSessions,
+  getCodexLiveProjectIDForSession,
   getPrimaryCodexLiveRequest,
 } from '../model/selectors';
 import type {
@@ -17,12 +19,14 @@ import type {
   CodexLiveTransportFilter,
 } from '../model/types';
 import { SessionDetail } from './CodexLiveSessionDetail';
-import { SessionFeed } from './CodexLiveSessionFeed';
+import { ProjectFeed, SessionFeed } from './CodexLiveSessionFeed';
 import { SourceBadge } from './CodexLiveSessionSummary';
 import { buildCodexLiveHistoryRequestFeedRows, buildCodexLiveRequestFeedRows } from './formatters';
 
 interface CodexLiveSessionsWorkbenchProps {
   snapshot: CodexLiveSessionSnapshot;
+  view?: CodexLiveSessionsView;
+  onViewChange?: (view: CodexLiveSessionsView) => void;
   detailRequests?: readonly CodexLiveRequest[];
   overviewRequests?: readonly CodexLiveRequest[];
   overviewLoading?: boolean;
@@ -44,6 +48,8 @@ const transportOptions: ReadonlyArray<SegmentedOption<CodexLiveTransportFilter>>
 
 export default function CodexLiveSessionsWorkbench({
   snapshot,
+  view = 'session',
+  onViewChange,
   detailRequests = [],
   overviewRequests = [],
   overviewLoading = false,
@@ -60,6 +66,7 @@ export default function CodexLiveSessionsWorkbench({
   const [statusFilter, setStatusFilter] = useState<CodexLiveSessionFilter>('all');
   const [transportFilter, setTransportFilter] = useState<CodexLiveTransportFilter>('all');
   const [selectedSessionID, setSelectedSessionID] = useState(initialSelectedSessionID);
+  const [selectedProjectID, setSelectedProjectID] = useState<string>();
   const [copied, setCopied] = useState(false);
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
   const filterMenuRef = useRef<HTMLDivElement | null>(null);
@@ -76,16 +83,25 @@ export default function CodexLiveSessionsWorkbench({
     [t],
   );
 
-  const sessions = useMemo(
+  const filteredSessions = useMemo(
     () => filterCodexLiveSessions({ sessions: snapshot.sessions, query, statusFilter, transportFilter }),
     [query, snapshot.sessions, statusFilter, transportFilter],
+  );
+  const projects = useMemo(() => buildCodexLiveProjectSummaries(filteredSessions), [filteredSessions]);
+  const selectedProject = selectedProjectID ? projects.find((project) => project.projectID === selectedProjectID) : undefined;
+  const isProjectView = view === 'project';
+  const sessions = useMemo(
+    () => selectedProject
+      ? filteredSessions.filter((session) => getCodexLiveProjectIDForSession(session) === selectedProject.projectID)
+      : filteredSessions,
+    [filteredSessions, selectedProject],
   );
   const requestRows = useMemo(() => buildCodexLiveRequestFeedRows(sessions), [sessions]);
   const overviewRequestRows = useMemo(
     () => overviewRequests.length > 0 ? buildCodexLiveHistoryRequestFeedRows(sessions, overviewRequests) : requestRows,
     [overviewRequests, requestRows, sessions],
   );
-  const selectedSession = selectedSessionID
+  const selectedSession = !isProjectView && selectedSessionID
     ? sessions.find((session) => session.sessionID === selectedSessionID)
     : undefined;
   const selectedSessionWithDetail = useMemo(
@@ -103,6 +119,18 @@ export default function CodexLiveSessionsWorkbench({
     ? buildCodexLiveDiagnosticSummary(selectedSessionWithDetail, selectedRequest)
     : '';
   const filterLabel = buildCodexLiveFilterLabel(t, statusFilter, transportFilter, statusOptions, transportOptions);
+
+  useEffect(() => {
+    if (view !== 'project' && selectedProjectID) {
+      setSelectedProjectID(undefined);
+    }
+  }, [selectedProjectID, view]);
+
+  useEffect(() => {
+    if (selectedProjectID && !selectedProject) {
+      setSelectedProjectID(undefined);
+    }
+  }, [selectedProject, selectedProjectID]);
 
   useEffect(() => {
     onSelectionChange?.(selectedSession?.sessionID);
@@ -153,6 +181,31 @@ export default function CodexLiveSessionsWorkbench({
           actionsClassName="flex flex-wrap items-center justify-start gap-2 sm:justify-end"
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <div
+                className="grid grid-cols-2 overflow-hidden border-2 border-[var(--border-color)] bg-[var(--bg-main)]"
+                data-codex-live-sessions-view-header="true"
+                aria-label={t('codex_live_sessions.view_switch_label')}
+              >
+                {(['session', 'project'] as const).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    aria-pressed={view === item}
+                    onClick={() => {
+                      setSelectedSessionID(undefined);
+                      setSelectedProjectID(undefined);
+                      onViewChange?.(item);
+                    }}
+                    className={`h-9 min-w-16 px-3 text-[length:var(--font-size-ui-2xs)] font-black uppercase tracking-[0.12em] transition-colors ${
+                      view === item
+                        ? 'bg-[var(--text-primary)] text-[var(--bg-main)]'
+                        : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]'
+                    } ${item === 'session' ? 'border-r border-[var(--border-color)]' : ''}`}
+                  >
+                    {t(`codex_live_sessions.view_${item}`)}
+                  </button>
+                ))}
+              </div>
               <SourceBadge snapshot={snapshot} />
               <RefreshActionButton
                 onClick={onRefresh}
@@ -166,6 +219,7 @@ export default function CodexLiveSessionsWorkbench({
                 className="btn-swiss flex items-center gap-2 !px-3 !py-2 text-[length:var(--font-size-ui-xs)]"
                 onClick={() => {
                   setSelectedSessionID(undefined);
+                  setSelectedProjectID(undefined);
                   onClearSessions?.();
                 }}
                 disabled={!onClearSessions || snapshot.sessions.length === 0}
@@ -260,15 +314,27 @@ export default function CodexLiveSessionsWorkbench({
         </div>
 
         <div className="grid min-h-[620px] min-w-0 gap-5 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] xl:items-start">
-          <SessionFeed
-            sessions={sessions}
-            selectedSessionID={selectedSession?.sessionID}
-            onSelectSession={(sessionID) => {
-              setSelectedSessionID((currentSessionID) => (currentSessionID === sessionID ? undefined : sessionID));
-            }}
-            onShowOverview={() => setSelectedSessionID(undefined)}
-            t={t}
-          />
+          {isProjectView ? (
+            <ProjectFeed
+              projects={projects}
+              selectedProjectID={selectedProject?.projectID}
+              onSelectProject={(projectID) => {
+                setSelectedSessionID(undefined);
+                setSelectedProjectID((currentProjectID) => (currentProjectID === projectID ? undefined : projectID));
+              }}
+              t={t}
+            />
+          ) : (
+            <SessionFeed
+              sessions={sessions}
+              selectedSessionID={selectedSession?.sessionID}
+              onSelectSession={(sessionID) => {
+                setSelectedSessionID((currentSessionID) => (currentSessionID === sessionID ? undefined : sessionID));
+              }}
+              onShowOverview={() => setSelectedSessionID(undefined)}
+              t={t}
+            />
+          )}
           <div className="min-w-0">
             <SessionDetail
               session={selectedSessionWithDetail}

@@ -11,6 +11,7 @@ export type CodexLiveSessionStatus =
 export type CodexLiveTransport = 'websocket' | 'http' | 'unknown';
 
 export type CodexLiveSessionSource = 'live' | 'cache' | 'preview' | 'unavailable';
+export type CodexLiveProjectHealth = 'active' | 'warning' | 'error' | 'idle';
 
 export interface CodexLiveTokenUsage {
   inputTokens: number;
@@ -135,6 +136,30 @@ export interface CodexLiveSession {
   timingSummary?: CodexLiveTimingSummary;
   recentEvents: CodexLiveTimelineEvent[];
   requests: CodexLiveRequest[];
+}
+
+export interface CodexLiveProjectSummary {
+  projectID: string;
+  projectName: string;
+  sessionCount: number;
+  activeSessionCount: number;
+  completedSessionCount: number;
+  degradedSessionCount: number;
+  failedSessionCount: number;
+  requestCount: number;
+  activeRequestCount: number;
+  websocketSessionCount: number;
+  httpSessionCount: number;
+  providerCounts: Record<string, number>;
+  modelCounts: Record<string, number>;
+  lastModel?: string;
+  lastAuthLabel?: string;
+  lastRequestID?: string;
+  startedAt?: string;
+  lastEventAt?: string;
+  durationMs?: number;
+  health: CodexLiveProjectHealth;
+  sessionIDs: string[];
 }
 
 export interface CodexLiveSessionSummary {

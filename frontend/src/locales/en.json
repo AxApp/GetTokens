@@ -61,7 +61,9 @@
     "update_available": "Update Available",
     "update_now": "Update",
     "updating": "Updating",
-    "update_failed": "Update Failed"
+    "update_failed": "Update Failed",
+    "codex_live_sessions_view_session": "Sessions",
+    "codex_live_sessions_view_project": "Projects"
   },
   "design_system": {
     "title": "Design System",
@@ -442,7 +444,18 @@
     "request_timeline": "Request Timeline",
     "redacted_diagnostic": "Redacted Diagnostic",
     "title_sessions": "Sessions",
-    "title_requests": "Requests"
+    "title_requests": "Requests",
+    "project_feed": "Project Runtime",
+    "project_feed_hint": "Group Codex live sessions by project within the current retention window. Select a project to show its summary, timing trend, and request list on the right.",
+    "project_rows": "projects",
+    "project_empty": "No Codex live projects match this filter",
+    "project_health_active": "Active",
+    "project_health_warning": "Warning",
+    "project_health_error": "Error",
+    "project_health_idle": "Idle",
+    "view_switch_label": "Live sessions view",
+    "view_session": "Sessions",
+    "view_project": "Projects"
   },
   "codex_extensions": {
     "skills_title": "Codex Skills",
