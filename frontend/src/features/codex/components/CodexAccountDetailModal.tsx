@@ -160,6 +160,7 @@ export function CodexAccountDetailModal({
   const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
   const modulePlan = useMemo(() => buildCodexAccountDetailModulePlan(row), [row]);
   const isApiLikeAccount = row.sourceKind !== 'codex-auth-file';
+  const readOnlyQuotaScripts = row.sourceKind === 'codex-auth-file';
   const [configDraft, setConfigDraft] = useState<ApiKeyConfigDraft>(() => buildApiKeyConfigDraft(account));
   const [mappingDraft, setMappingDraft] = useState<CodexModelMappingRow[]>(() => buildEditableModelMappings(row));
   const [mappingError, setMappingError] = useState('');
@@ -293,6 +294,7 @@ export function CodexAccountDetailModal({
             setDraft={setConfigDraft}
             quotaState={quotaState}
             quotaDisplay={quotaDisplay}
+            readOnlyScripts={readOnlyQuotaScripts}
           />
         );
       case 'billing':
@@ -303,6 +305,7 @@ export function CodexAccountDetailModal({
             draft={configDraft}
             setDraft={setConfigDraft}
             liveBilling={billing}
+            readOnlyScripts={readOnlyQuotaScripts}
           />
         );
       case 'model-routing':

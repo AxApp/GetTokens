@@ -133,7 +133,7 @@ test('buildCodexAccountDetailModulePlan merges account detail modules with model
   );
   assert.deepEqual(
     buildCodexAccountDetailModulePlan({ sourceKind: 'codex-auth-file' }),
-    ['auth-file-actions', 'models', 'rate-limit', 'model-routing'],
+    ['auth-file-actions', 'models', 'rate-limit', 'quota', 'billing', 'model-routing'],
   );
 });
 
@@ -165,6 +165,18 @@ test('codex account detail folds proxy route into credential section', async () 
   assert.doesNotMatch(modalSource, /import AccountProxyRouteSection/);
   assert.doesNotMatch(modalSource, /case 'proxy-route':/);
   assert.match(modalSource, /<AccountCredentialVerifySection[\s\S]*?span="wide"[\s\S]*?onProxyValidityChange=\{setProxyRouteError\}/);
+});
+
+test('codex oauth detail renders quota and billing as read-only resource modules', async () => {
+  const modalSource = await readFile(new URL('./components/CodexAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const detailSectionsSource = await readFile(new URL('../accounts/components/AccountDetailSections.tsx', import.meta.url), 'utf8');
+
+  assert.match(modalSource, /const readOnlyQuotaScripts = row\.sourceKind === 'codex-auth-file'/);
+  assert.match(modalSource, /<AccountQuotaSection[\s\S]*?readOnlyScripts=\{readOnlyQuotaScripts\}/);
+  assert.match(modalSource, /<AccountBillingSection[\s\S]*?readOnlyScripts=\{readOnlyQuotaScripts\}/);
+  assert.match(detailSectionsSource, /readOnlyScripts\?: boolean/);
+  assert.match(detailSectionsSource, /const quotaActions = readOnlyScripts \? undefined :/);
+  assert.match(detailSectionsSource, /const billingActions = readOnlyScripts \? undefined :/);
 });
 
 test('codex model routing detail exposes fetch-model action from the account list', async () => {

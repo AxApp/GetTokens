@@ -82,6 +82,7 @@ export interface AccountQuotaSectionProps {
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
   quotaState?: CodexQuotaState;
   quotaDisplay?: QuotaDisplay;
+  readOnlyScripts?: boolean;
   editorOpen?: boolean;
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
@@ -96,6 +97,7 @@ export interface AccountBillingSectionProps {
   draft: ApiKeyConfigDraft;
   setDraft: Dispatch<SetStateAction<ApiKeyConfigDraft>>;
   liveBilling?: BillingDisplay;
+  readOnlyScripts?: boolean;
   editorOpen?: boolean;
   onOpenEditor?: () => void;
   onCloseEditor?: () => void;
@@ -577,6 +579,7 @@ export function AccountQuotaSection({
   setDraft,
   quotaState,
   quotaDisplay,
+  readOnlyScripts = false,
   editorOpen: routedEditorOpen,
   onOpenEditor,
   onCloseEditor,
@@ -689,7 +692,7 @@ export function AccountQuotaSection({
     }
   }
 
-  const quotaActions = (
+  const quotaActions = readOnlyScripts ? undefined : (
     <>
       {hasQuotaScript ? (
         <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
@@ -738,7 +741,9 @@ export function AccountQuotaSection({
             </div>
           ) : (
             <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
-              {hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
+              {readOnlyScripts
+                ? '暂无额度数据'
+                : hasQuotaScript ? '暂无额度数据，可测试额度脚本确认接口返回' : '暂无额度脚本，添加后可测试并展示额度'}
             </AccountDetailEmptyState>
           )}
 
@@ -798,6 +803,7 @@ export function AccountBillingSection({
   draft,
   setDraft,
   liveBilling,
+  readOnlyScripts = false,
   editorOpen: routedEditorOpen,
   onOpenEditor,
   onCloseEditor,
@@ -888,7 +894,7 @@ export function AccountBillingSection({
     }
   }
 
-  const billingActions = (
+  const billingActions = readOnlyScripts ? undefined : (
     <>
       {hasBillingScript ? (
         <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
@@ -941,7 +947,9 @@ export function AccountBillingSection({
         </div>
       ) : (
         <AccountDetailEmptyState className="!border-0 !bg-transparent px-0 py-4 text-left !text-[length:var(--font-size-ui-xs)] !tracking-[0.08em]">
-          {hasBillingScript ? '暂无余额数据，可测试余额脚本确认接口返回' : '暂无余额脚本，添加后可测试并展示余额'}
+          {readOnlyScripts
+            ? '暂无余额数据'
+            : hasBillingScript ? '暂无余额数据，可测试余额脚本确认接口返回' : '暂无余额脚本，添加后可测试并展示余额'}
         </AccountDetailEmptyState>
       )}
 

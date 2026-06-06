@@ -97,7 +97,7 @@ export function buildCodexAccountDetailModulePlan(
   row: Pick<CodexAccountRow, 'sourceKind'>,
 ): CodexAccountDetailModuleID[] {
   if (row.sourceKind === 'codex-auth-file') {
-    return ['auth-file-actions', 'models', 'rate-limit', 'model-routing'];
+    return ['auth-file-actions', 'models', 'rate-limit', 'quota', 'billing', 'model-routing'];
   }
 
   return ['credentials', 'rate-limit', 'quota', 'billing', 'model-routing'];
