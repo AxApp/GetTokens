@@ -164,6 +164,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     setAccountActionNotice,
     setSelectedAccountIDs,
     setIsHeaderActionsMenuOpen,
+    patchAccountLocally,
     openApiKeyModal,
     submitApiKeyForm,
     submitAccountImport,
@@ -799,28 +800,25 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         return;
       }
 
+      const localPatch: Partial<AccountRecord> = {
+        displayName: nextLabel || selectedAccount.displayName,
+        provider: nextLabel || selectedAccount.provider,
+        apiKey: nextAPIKey,
+        apiKeys: nextAPIKeys,
+        baseUrl: nextBaseURL,
+        prefix: nextPrefix,
+        quotaCurl: nextQuotaCurl,
+        quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+        billingCurl: nextBillingCurl,
+        billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+        platformCookie: nextPlatformCookie,
+        curlVariables: nextCurlVariables,
+        proxyUrl: nextProxyURL,
+        models: nextModels,
+      };
+
       if (!hasWailsAppBindings()) {
-        setSelectedAccount((prev) =>
-          prev
-            ? {
-                ...prev,
-                displayName: nextLabel || prev.displayName,
-                provider: nextLabel || prev.provider,
-                apiKey: nextAPIKey,
-                apiKeys: nextAPIKeys,
-                baseUrl: nextBaseURL,
-                prefix: nextPrefix,
-                quotaCurl: nextQuotaCurl,
-                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-                billingCurl: nextBillingCurl,
-                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-                platformCookie: nextPlatformCookie,
-                curlVariables: nextCurlVariables,
-                proxyUrl: nextProxyURL,
-                models: nextModels,
-              }
-            : prev,
-        );
+        patchAccountLocally(selectedAccount.id, localPatch);
         return;
       }
 
@@ -851,27 +849,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
               }),
             ),
         );
-        setSelectedAccount((prev) =>
-          prev
-            ? {
-                ...prev,
-                displayName: nextLabel || prev.displayName,
-                provider: nextLabel || prev.provider,
-                apiKey: nextAPIKey,
-                apiKeys: nextAPIKeys,
-                baseUrl: nextBaseURL,
-                prefix: nextPrefix,
-                quotaCurl: nextQuotaCurl,
-                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-                billingCurl: nextBillingCurl,
-                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-                platformCookie: nextPlatformCookie,
-                curlVariables: nextCurlVariables,
-                proxyUrl: nextProxyURL,
-                models: nextModels,
-              }
-            : prev,
-        );
+        patchAccountLocally(selectedAccount.id, localPatch);
         await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
@@ -879,7 +857,7 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
         throw error;
       }
     },
-    [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, t, trackRequest, updateSelectedApiKeyConfig],
+    [loadAccounts, patchAccountLocally, selectedAccount, setDeleteError, t, trackRequest, updateSelectedApiKeyConfig],
   );
 
   const resolveLocalCliMappingsForAccount = useCallback(

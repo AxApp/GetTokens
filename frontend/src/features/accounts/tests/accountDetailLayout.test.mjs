@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { buildAccountDetailModulePlan } from '../model/accountDetailLayout.ts';
-import { findAccountDetailByID } from '../model/accountDetailSelection.ts';
+import { findAccountDetailByID, patchAccountDetailByID } from '../model/accountDetailSelection.ts';
 import { normalizeQuotaTestDisplay } from '../model/accountQuota.ts';
 
 test('account detail no longer mounts runtime evidence overview sections', async () => {
@@ -347,6 +347,28 @@ test('account detail deep link resolves an account by stable id', () => {
   assert.equal(findAccountDetailByID(accounts, 'missing'), null);
 });
 
+test('account detail local patch updates by stable id and preserves the account id', () => {
+  const accounts = [
+    { id: 'acct_original', credentialSource: 'api-key', provider: 'codex', displayName: 'Before', apiKey: 'sk-old', baseUrl: 'https://old.example/v1', prefix: 'old', status: 'configured' },
+    { id: 'acct_other', credentialSource: 'api-key', provider: 'codex', displayName: 'Other', apiKey: 'sk-other', baseUrl: 'https://other.example/v1', prefix: '', status: 'configured' },
+  ];
+
+  const patched = patchAccountDetailByID(accounts, 'acct_original', {
+    id: 'acct_should_not_replace_original',
+    displayName: 'After',
+    apiKey: 'sk-new',
+    baseUrl: 'https://new.example/v1',
+    prefix: 'new',
+  });
+
+  assert.equal(patched[0].id, 'acct_original');
+  assert.equal(patched[0].displayName, 'After');
+  assert.equal(patched[0].apiKey, 'sk-new');
+  assert.equal(patched[0].baseUrl, 'https://new.example/v1');
+  assert.equal(patched[0].prefix, 'new');
+  assert.equal(patched[1], accounts[1]);
+});
+
 test('account detail close clears local hash state before selected account can rehydrate', async () => {
   const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
   const closeHashBlock = source.match(/const clearAccountDetailInHash = useCallback\(\(\) => \{[\s\S]*?\n  \}, \[\]\);/)?.[0] ?? '';
@@ -378,9 +400,42 @@ test('api-key config save has an explicit browser preview path', async () => {
   const saveBlock = source.match(/const updateSelectedApiKeyConfig = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';
 
   assert.match(saveBlock, /if \(!hasWailsAppBindings\(\)\) \{/);
-  assert.match(saveBlock, /setSelectedAccount\(\(prev\) =>/);
+  assert.match(saveBlock, /patchAccountLocally\(selectedAccount\.id, localPatch\)/);
   assert.match(saveBlock, /quotaCurl: nextQuotaCurl/);
   assert.match(saveBlock, /return;/);
+});
+
+test('codex api-key detail mutations patch local account list before reload', async () => {
+  const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
+  const renameBlock = source.match(/const renameSelectedApiKey = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';
+  const priorityBlock = source.match(/const updateSelectedApiKeyPriority = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';
+  const saveBlock = source.match(/const updateSelectedApiKeyConfig = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';
+
+  assert.match(source, /patchAccountLocally: \(accountID: string, patch: Partial<AccountRecord>\) => void;/);
+  assert.doesNotMatch(source, /setSelectedAccount: Dispatch<SetStateAction<AccountRecord \| null>>;/);
+  assert.match(renameBlock, /patchAccountLocally\(selectedAccount\.id, \{[\s\S]*displayName:/);
+  assert.match(priorityBlock, /patchAccountLocally\(selectedAccount\.id, \{ priority: nextPriority \}\)/);
+  assert.match(saveBlock, /const localPatch: Partial<AccountRecord> = \{/);
+  assert.match(saveBlock, /patchAccountLocally\(selectedAccount\.id, localPatch\)/);
+  assert.doesNotMatch(saveBlock, /setSelectedAccount\(\(prev\) =>/);
+  assert.ok(
+    saveBlock.indexOf('patchAccountLocally(selectedAccount.id, localPatch)') < saveBlock.indexOf('await loadAccounts({ refreshSupplementalData: false })'),
+    'saved api-key detail must patch visible account state before the final reload',
+  );
+});
+
+test('openai-compatible detail config save patches local account list before reload', async () => {
+  const source = await readFile(new URL('../AccountsFeature.tsx', import.meta.url), 'utf8');
+  const saveBlock = source.match(/const saveSelectedApiLikeConfig = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';
+
+  assert.match(source, /patchAccountLocally,/);
+  assert.match(saveBlock, /const localPatch: Partial<AccountRecord> = \{/);
+  assert.match(saveBlock, /patchAccountLocally\(selectedAccount\.id, localPatch\)/);
+  assert.doesNotMatch(saveBlock, /setSelectedAccount\(\(prev\) =>/);
+  assert.ok(
+    saveBlock.indexOf('patchAccountLocally(selectedAccount.id, localPatch)') < saveBlock.indexOf('await loadAccounts({ refreshSupplementalData: false })'),
+    'saved openai-compatible detail must patch visible account state before the final reload',
+  );
 });
 test('account detail header removes status pill and uses type label for codex auth-file', async () => {
   const source = await readFile(new URL('../components/AccountDetailSections.tsx', import.meta.url), 'utf8');

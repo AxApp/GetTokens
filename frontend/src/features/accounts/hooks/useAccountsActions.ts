@@ -51,7 +51,6 @@ interface UseAccountsActionsArgs {
   accounts: AccountRecord[];
   selectedAccount: AccountRecord | null;
   selectedAccounts: AccountRecord[];
-  setSelectedAccount: Dispatch<SetStateAction<AccountRecord | null>>;
   setPendingDeleteID: Dispatch<SetStateAction<string | null>>;
   setDeleteError: Dispatch<SetStateAction<string>>;
   setApiKeyFormError: Dispatch<SetStateAction<string>>;
@@ -61,6 +60,7 @@ interface UseAccountsActionsArgs {
   setSelectedAccountIDs: Dispatch<SetStateAction<string[]>>;
   setAccountActionNotice: Dispatch<SetStateAction<AccountActionNotice | null>>;
   removeDeletedAccountLocally: (account: AccountRecord) => void;
+  patchAccountLocally: (accountID: string, patch: Partial<AccountRecord>) => void;
   patchAccountDisabledLocally: (account: AccountRecord, disabled: boolean) => void;
   refreshAccountQuota: (account: AccountRecord) => Promise<void>;
   loadAccounts: (options?: { showLoading?: boolean; refreshSupplementalData?: boolean }) => Promise<void>;
@@ -74,7 +74,6 @@ export default function useAccountsActions({
   accounts,
   selectedAccount,
   selectedAccounts,
-  setSelectedAccount,
   setPendingDeleteID,
   setDeleteError,
   setApiKeyFormError,
@@ -84,6 +83,7 @@ export default function useAccountsActions({
   setSelectedAccountIDs,
   setAccountActionNotice,
   removeDeletedAccountLocally,
+  patchAccountLocally,
   patchAccountDisabledLocally,
   refreshAccountQuota,
   loadAccounts,
@@ -430,21 +430,16 @@ export default function useAccountsActions({
                 label: trimmedName,
               })
           );
-          setSelectedAccount((prev) =>
-            prev
-              ? {
-                  ...prev,
-                  displayName: trimmedName || fallbackAPIKeyDisplayName(prev.apiKey || ''),
-                }
-              : prev
-          );
+          patchAccountLocally(selectedAccount.id, {
+            displayName: trimmedName || fallbackAPIKeyDisplayName(selectedAccount.apiKey || ''),
+          });
           await loadAccounts({ refreshSupplementalData: false });
         } catch (error) {
           console.error(error);
         }
       })();
     },
-    [loadAccounts, selectedAccount, setSelectedAccount, trackRequest]
+    [loadAccounts, patchAccountLocally, selectedAccount, trackRequest]
   );
 
   const updateSelectedApiKeyPriority = useCallback(
@@ -465,16 +460,16 @@ export default function useAccountsActions({
               id: selectedAccount.id,
               priority: nextPriority,
             })
-        );
+          );
 
-        setSelectedAccount((prev) => (prev ? { ...prev, priority: nextPriority } : prev));
+        patchAccountLocally(selectedAccount.id, { priority: nextPriority });
         await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
         setDeleteError(`SAVE ERROR: ${toErrorMessage(error)}`);
       }
     },
-    [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, trackRequest]
+    [loadAccounts, patchAccountLocally, selectedAccount, setDeleteError, trackRequest]
   );
 
   const updateSelectedApiKeyConfig = useCallback(
@@ -498,26 +493,23 @@ export default function useAccountsActions({
         return;
       }
 
+      const localPatch: Partial<AccountRecord> = {
+        displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
+        apiKey: nextAPIKey,
+        baseUrl: nextBaseURL,
+        prefix: nextPrefix,
+        quotaCurl: nextQuotaCurl,
+        quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
+        billingCurl: nextBillingCurl,
+        billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
+        platformCookie: nextPlatformCookie,
+        curlVariables: nextCurlVariables,
+        proxyUrl: nextProxyURL,
+        models: nextModels,
+      };
+
       if (!hasWailsAppBindings()) {
-        setSelectedAccount((prev) =>
-          prev
-            ? {
-                ...prev,
-                displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
-                apiKey: nextAPIKey,
-                baseUrl: nextBaseURL,
-                prefix: nextPrefix,
-                quotaCurl: nextQuotaCurl,
-                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-                billingCurl: nextBillingCurl,
-                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-                platformCookie: nextPlatformCookie,
-                curlVariables: nextCurlVariables,
-                proxyUrl: nextProxyURL,
-                models: nextModels,
-              }
-            : prev
-        );
+        patchAccountLocally(selectedAccount.id, localPatch);
         return;
       }
 
@@ -576,25 +568,7 @@ export default function useAccountsActions({
             )
           );
 
-        setSelectedAccount((prev) =>
-          prev
-            ? {
-                ...prev,
-                displayName: nextLabel || fallbackAPIKeyDisplayName(nextAPIKey),
-                apiKey: nextAPIKey,
-                baseUrl: nextBaseURL,
-                prefix: nextPrefix,
-                quotaCurl: nextQuotaCurl,
-                quotaEnabled: Boolean(draft.quotaEnabled && nextQuotaCurl),
-                billingCurl: nextBillingCurl,
-                billingEnabled: Boolean(draft.billingEnabled && nextBillingCurl),
-                platformCookie: nextPlatformCookie,
-                curlVariables: nextCurlVariables,
-                proxyUrl: nextProxyURL,
-                models: nextModels,
-              }
-            : prev
-        );
+        patchAccountLocally(selectedAccount.id, localPatch);
         await loadAccounts({ refreshSupplementalData: false });
       } catch (error) {
         console.error(error);
@@ -602,7 +576,7 @@ export default function useAccountsActions({
         throw error;
       }
     },
-    [loadAccounts, selectedAccount, setDeleteError, setSelectedAccount, t, trackRequest]
+    [loadAccounts, patchAccountLocally, selectedAccount, setDeleteError, t, trackRequest]
   );
 
   const formatBulkActionMessage = useCallback(

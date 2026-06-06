@@ -43,6 +43,7 @@ import {
   removeDeletedAuthFile,
   shouldClearDeletedSelectedAccount,
 } from '../model/accountDelete';
+import { patchAccountDetailByID } from '../model/accountDetailSelection';
 import {
   filterSelectedAccountIDs,
   useAccountSelectionState,
@@ -354,6 +355,23 @@ export default function useAccountsPageState({
       setSelectedAccountIDs((prev) => prev.filter((id) => id !== account.id));
     },
     [setSelectedAccountIDs],
+  );
+
+  const patchAccountLocally = useCallback(
+    (accountID: string, patch: Partial<AccountRecord>) => {
+      setDerivedAuthFileRecords((prev) => patchAccountDetailByID(prev, accountID, patch));
+      setApiKeyRecords((prev) => patchAccountDetailByID(prev, accountID, patch));
+      setSelectedAccount((prev) =>
+        prev?.id === accountID
+          ? {
+              ...prev,
+              ...patch,
+              id: prev.id,
+            }
+          : prev,
+      );
+    },
+    [],
   );
 
   const patchAccountDisabledChangeLocally = useCallback(
@@ -754,7 +772,6 @@ export default function useAccountsPageState({
     accounts,
     selectedAccount,
     selectedAccounts,
-    setSelectedAccount,
     setPendingDeleteID,
     setDeleteError,
     setApiKeyFormError,
@@ -764,6 +781,7 @@ export default function useAccountsPageState({
     setSelectedAccountIDs,
     setAccountActionNotice,
     removeDeletedAccountLocally,
+    patchAccountLocally,
     patchAccountDisabledLocally,
     refreshAccountQuota: refreshCodexQuota,
     loadAccounts,
@@ -858,6 +876,7 @@ export default function useAccountsPageState({
     setAccountActionNotice,
     setSelectedAccountIDs,
     setIsHeaderActionsMenuOpen,
+    patchAccountLocally,
     openApiKeyModal,
     submitApiKeyForm,
     submitAccountImport,
