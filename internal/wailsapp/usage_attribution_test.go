@@ -75,6 +75,67 @@ func TestGetSidecarUsageAttributionResolvesCodexAPIKeyLocalID(t *testing.T) {
 	}
 }
 
+func TestGetSidecarUsageAttributionCanSkipAccountResolution(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	resolveAccountKeys := false
+	app := &App{
+		sidecarRequest: func(method string, path string, query url.Values, body io.Reader, contentType string) ([]byte, int, error) {
+			if method != "GET" {
+				t.Fatalf("unexpected method: %s", method)
+			}
+			switch path {
+			case ManagementAPIPrefix + "/gettokens/usage-attribution":
+				return []byte(`{
+					"window":"24h",
+					"bucket":"1h",
+					"generatedAt":"2026-05-15T00:00:00Z",
+					"items":[{
+						"attributionKey":"account:acct_runtime",
+						"attributionKind":"account_key",
+						"accountKey":"acct_runtime",
+						"provider":"codex",
+						"requestCount":2,
+						"totalTokens":30,
+						"buckets":[{"start":"2026-05-15T00:00:00Z","requestCount":2,"totalTokens":30}]
+					}],
+					"unresolved":[{
+						"attributionKey":"auth-index:needs_resolution",
+						"attributionKind":"auth_index",
+						"provider":"codex",
+						"requestCount":1,
+						"totalTokens":10,
+						"buckets":[{"start":"2026-05-15T00:00:00Z","requestCount":1,"totalTokens":10}]
+					}]
+				}`), 200, nil
+			case ManagementAPIPrefix + "/accounts", ManagementAPIPrefix + "/codex-api-key", ManagementAPIPrefix + "/openai-compatibility":
+				t.Fatalf("background attribution sync must not resolve accounts through %s", path)
+			default:
+				t.Fatalf("unexpected path: %s", path)
+			}
+			return nil, 404, nil
+		},
+	}
+
+	result, err := app.GetSidecarUsageAttribution(SidecarUsageAttributionInput{
+		Window:             "24h",
+		Bucket:             "1h",
+		ResolveAccountKeys: &resolveAccountKeys,
+	})
+	if err != nil {
+		t.Fatalf("GetSidecarUsageAttribution: %v", err)
+	}
+	if len(result.Items) != 1 {
+		t.Fatalf("items = %d, want 1", len(result.Items))
+	}
+	if got := result.Items[0].AccountKey; got != "acct_runtime" {
+		t.Fatalf("account key = %q, want sidecar account key", got)
+	}
+	if len(result.Unresolved) != 0 {
+		t.Fatalf("unresolved = %d, want 0 when not requested", len(result.Unresolved))
+	}
+}
+
 func TestCodexAttributionIdentityStoreKeepsHistoricalAuthID(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)

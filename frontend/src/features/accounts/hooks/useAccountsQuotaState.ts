@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { GetCodexQuota } from '../../../../wailsjs/go/main/App';
+import { GetAllQuotaStatuses, GetCodexQuota } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
 import { beginQuotaRefreshState, failQuotaRefreshState, supportsQuota } from '../model/accountQuota';
@@ -11,8 +11,8 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
   const [codexQuotaByName, setCodexQuotaByName] = useState<Record<string, CodexQuotaState>>({});
   const quotaRequestIdRef = useRef(0);
 
-  const loadCodexQuotas = useCallback(
-    async (items: AccountRecord[]) => {
+  const syncCodexQuotaStatuses = useCallback(
+    async (items: AccountRecord[], options: { replace?: boolean } = {}) => {
       if (!hasWailsAppBindings()) {
         setCodexQuotaByName(getAccountsPreviewQuotaStateByKey(items));
         return;
@@ -28,49 +28,60 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
       const requestID = quotaRequestIdRef.current;
 
       if (codexAccounts.length === 0) {
-        setCodexQuotaByName({});
+        if (options.replace !== false) {
+          setCodexQuotaByName({});
+        }
         return;
       }
 
-      setCodexQuotaByName(
-        codexAccounts.reduce<Record<string, CodexQuotaState>>((result, account) => {
-          result[account.quotaKey!] = beginQuotaRefreshState(cachedQuotaByName[account.quotaKey!]);
-          return result;
-        }, {})
-      );
-
-      const results = await Promise.all(
-        codexAccounts.map(async (account) => {
-          try {
-            const quota = await trackRequest('GetCodexQuota', { name: account.quotaKey }, () =>
-              GetCodexQuota(account.quotaKey!)
-            );
-            return [account.quotaKey!, { status: 'success', quota } satisfies CodexQuotaState] as const;
-          } catch (error) {
-            console.error(error);
-            return [
-              account.quotaKey!,
-              failQuotaRefreshState(cachedQuotaByName[account.quotaKey!], error) satisfies CodexQuotaState,
-            ] as const;
-          }
-        })
-      );
+      let quotaStatuses: any[] = [];
+      try {
+        quotaStatuses = await trackRequest('GetAllQuotaStatuses', { args: [] }, () => GetAllQuotaStatuses());
+      } catch (error) {
+        console.error(error);
+        if (Object.keys(cachedQuotaByName).length === 0) {
+          return;
+        }
+      }
 
       if (quotaRequestIdRef.current !== requestID) {
         return;
       }
 
-      const nextQuotaByName = results.reduce<Record<string, CodexQuotaState>>(
-        (result, [name, state]) => {
-          result[name] = state;
+      const accountKeySet = new Set(quotaKeys);
+      const runtimeQuotaByName = (quotaStatuses || []).reduce<Record<string, CodexQuotaState>>(
+        (result, quota) => {
+          const key = String(quota?.accountKey || '').trim();
+          if (key && accountKeySet.has(key)) {
+            result[key] = { status: 'success', quota } satisfies CodexQuotaState;
+          }
           return result;
-        },
-        {},
+        }, {}
       );
-      setCodexQuotaByName(nextQuotaByName);
-      persistAccountQuotaStates(typeof window === 'undefined' ? null : window.localStorage, nextQuotaByName);
+
+      setCodexQuotaByName((prev) => {
+        const nextQuotaByName = codexAccounts.reduce<Record<string, CodexQuotaState>>((result, account) => {
+          const key = account.quotaKey!;
+          result[key] =
+            runtimeQuotaByName[key] ||
+            cachedQuotaByName[key] ||
+            prev[key] ||
+            emptyRuntimeQuotaState(account);
+          return result;
+        }, {});
+        const next = options.replace === false ? { ...prev, ...nextQuotaByName } : nextQuotaByName;
+        persistAccountQuotaStates(typeof window === 'undefined' ? null : window.localStorage, next);
+        return next;
+      });
     },
     [trackRequest]
+  );
+
+  const loadCodexQuotas = useCallback(
+    async (items: AccountRecord[]) => {
+      await syncCodexQuotaStatuses(items);
+    },
+    [syncCodexQuotaStatuses],
   );
 
   const refreshCodexQuota = useCallback(
@@ -118,6 +129,23 @@ export default function useAccountsQuotaState(trackRequest: TrackRequest) {
   return {
     codexQuotaByName,
     loadCodexQuotas,
+    syncCodexQuotaStatuses,
     refreshCodexQuota,
+  };
+}
+
+function emptyRuntimeQuotaState(account: AccountRecord): CodexQuotaState {
+  return {
+    status: 'success',
+    quota: {
+      accountKey: account.quotaKey || account.id,
+      status: 'stale',
+      planType: account.planType || '',
+      windows: [],
+      stale: true,
+      degradedReason: 'Quota runtime status has not been observed yet.',
+      blocked: false,
+      sources: [],
+    } as any,
   };
 }

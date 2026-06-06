@@ -424,6 +424,80 @@ func mapCodexQuotaResponse(result *wailsapp.CodexQuotaResponse) *CodexQuotaRespo
 	}
 }
 
+func mapQuotaRuntimeStates(items []cliproxyapi.QuotaRuntimeState) []CodexQuotaResponse {
+	out := make([]CodexQuotaResponse, 0, len(items))
+	for index := range items {
+		if mapped := mapQuotaRuntimeState(&items[index]); mapped != nil {
+			out = append(out, *mapped)
+		}
+	}
+	return out
+}
+
+func mapQuotaRuntimeState(result *cliproxyapi.QuotaRuntimeState) *CodexQuotaResponse {
+	if result == nil {
+		return &CodexQuotaResponse{Windows: []CodexQuotaWindow{}}
+	}
+
+	windows := make([]CodexQuotaWindow, 0, len(result.Windows))
+	for _, window := range result.Windows {
+		windows = append(windows, CodexQuotaWindow{
+			ID:               window.ID,
+			Label:            window.Label,
+			RemainingPercent: window.RemainingPercent,
+			UsedTokens:       window.UsedTokens,
+			LimitTokens:      window.LimitTokens,
+			RemainingTokens:  window.RemainingTokens,
+			ResetLabel:       window.ResetLabel,
+			ResetAtUnix:      window.ResetAtUnix,
+		})
+	}
+	sources := make([]CodexQuotaSourceState, 0, len(result.Sources))
+	for _, source := range result.Sources {
+		sources = append(sources, CodexQuotaSourceState{
+			Source:    source.Source,
+			Reason:    source.Reason,
+			ExpiresAt: source.ExpiresAt,
+			NextReset: source.NextReset,
+		})
+	}
+
+	return &CodexQuotaResponse{
+		AccountKey:      result.AccountKey,
+		Source:          result.Source,
+		Status:          result.Status,
+		PlanType:        result.PlanType,
+		Windows:         windows,
+		Billing:         mapQuotaRuntimeBilling(result.Billing),
+		UpdatedAt:       result.UpdatedAt,
+		LastEvaluatedAt: result.LastEvaluatedAt,
+		Stale:           result.Stale,
+		DegradedReason:  result.DegradedReason,
+		Blocked:         result.Blocked,
+		BlockReason:     result.BlockReason,
+		Sources:         sources,
+	}
+}
+
+func mapQuotaRuntimeBilling(result *cliproxyapi.QuotaRuntimeBilling) *CodexQuotaBillingInfo {
+	if result == nil {
+		return nil
+	}
+	infos := make([]CodexQuotaBillingBalanceInfo, 0, len(result.BalanceInfos))
+	for _, info := range result.BalanceInfos {
+		infos = append(infos, CodexQuotaBillingBalanceInfo{
+			Currency:        info.Currency,
+			TotalBalance:    info.TotalBalance,
+			GrantedBalance:  info.GrantedBalance,
+			ToppedUpBalance: info.ToppedUpBalance,
+		})
+	}
+	return &CodexQuotaBillingInfo{
+		IsAvailable:  result.IsAvailable,
+		BalanceInfos: infos,
+	}
+}
+
 func mapCodexQuotaBillingInfo(result *wailsapp.CodexQuotaBillingInfo) *CodexQuotaBillingInfo {
 	if result == nil {
 		return nil
@@ -480,9 +554,10 @@ func mapLocalProjectedUsageResponse(result *wailsapp.LocalProjectedUsageResponse
 
 func mapSidecarUsageAttributionInput(input SidecarUsageAttributionInput) wailsapp.SidecarUsageAttributionInput {
 	return wailsapp.SidecarUsageAttributionInput{
-		Window:            input.Window,
-		Bucket:            input.Bucket,
-		IncludeUnresolved: input.IncludeUnresolved,
+		Window:             input.Window,
+		Bucket:             input.Bucket,
+		IncludeUnresolved:  input.IncludeUnresolved,
+		ResolveAccountKeys: input.ResolveAccountKeys,
 	}
 }
 

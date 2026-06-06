@@ -74,10 +74,6 @@ import {
   type AccountListDisplayMode,
   type AccountSortMode,
 } from "./model/accountListLayout";
-import {
-  ACCOUNT_USAGE_REFRESH_INTERVAL_MS,
-  shouldScheduleAccountUsageRefresh,
-} from "./model/accountUsage";
 import { shouldShowAccountSkeletons } from "./model/accountSnapshot";
 import { toggleAccountGroupSelection } from "./model/accountSelection";
 import type { OpenAICompatibleProvider } from "./model/openAICompatible";
@@ -142,7 +138,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
     selectedAccountIDSet,
     allFilteredSelected,
     loadAccounts,
-    loadAccountUsage,
     refreshAccountUsage,
     loadAccountRateLimits,
     refreshAccountRateLimits,
@@ -465,27 +460,6 @@ export default function AccountsFeature({ workspace }: AccountsFeatureProps) {
       offDeepLink();
     };
   }, [openDeepLinkImport]);
-
-  useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !shouldScheduleAccountUsageRefresh({
-        ready,
-        hasRuntimeBindings: hasWailsAppBindings(),
-        accounts: usageAccounts,
-      })
-    ) {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      void loadAccountUsage(usageAccounts);
-    }, ACCOUNT_USAGE_REFRESH_INTERVAL_MS);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [loadAccountUsage, ready, usageAccounts]);
 
   useEffect(() => {
     if (typeof window === "undefined") {

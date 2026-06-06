@@ -11,7 +11,15 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
   const [usageRefreshingAccountIDSet, setUsageRefreshingAccountIDSet] = useState<Set<string>>(new Set());
 
   const loadAccountUsage = useCallback(
-    async (accounts: AccountRecord[], options: { showRefreshing?: boolean; merge?: boolean } = {}) => {
+    async (
+      accounts: AccountRecord[],
+      options: {
+        showRefreshing?: boolean;
+        merge?: boolean;
+        resolveAccountKeys?: boolean;
+        fallbackUsageStatistics?: boolean;
+      } = {},
+    ) => {
       if (accounts.length === 0) {
         if (!options.merge) {
           setAccountUsageByID({});
@@ -36,11 +44,21 @@ export default function useAccountsUsageState(trackRequest: TrackRequest) {
 
         const attribution = await trackRequest<any>(
           'GetSidecarUsageAttribution',
-          { args: [{ window: '24h', bucket: '1h' }] },
-          () => GetSidecarUsageAttribution({ window: '24h', bucket: '1h' }),
+          { args: [{ window: '24h', bucket: '1h', resolveAccountKeys: options.resolveAccountKeys !== false }] },
+          () =>
+            GetSidecarUsageAttribution({
+              window: '24h',
+              bucket: '1h',
+              resolveAccountKeys: options.resolveAccountKeys !== false,
+            }),
         );
         const hasAttributionData = Array.isArray(attribution?.items) && attribution.items.length > 0;
         if (hasAttributionData) {
+          const usageMap = buildAccountUsageSummaryMap(accounts, attribution);
+          setAccountUsageByID((prev) => (mergeUsage ? { ...prev, ...usageMap } : usageMap));
+          return;
+        }
+        if (options.fallbackUsageStatistics === false) {
           const usageMap = buildAccountUsageSummaryMap(accounts, attribution);
           setAccountUsageByID((prev) => (mergeUsage ? { ...prev, ...usageMap } : usageMap));
           return;

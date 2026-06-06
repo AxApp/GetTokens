@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { GetAllRateLimitStatuses, ListRateLimitStrategies } from '../../../../wailsjs/go/main/App';
 import type { AccountRecord } from '../../../types';
 import { hasWailsAppBindings } from '../../../utils/previewMode';
@@ -15,11 +15,9 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
   const [accountRateLimitByID, setAccountRateLimitByID] = useState<Record<string, RateLimitState>>({});
   const [rateLimitStrategies, setRateLimitStrategies] = useState<RateLimitStrategyMeta[]>(DEFAULT_RATE_LIMIT_STRATEGIES);
   const [rateLimitRefreshingAccountIDSet, setRateLimitRefreshingAccountIDSet] = useState<Set<string>>(new Set());
-  const latestAccountsRef = useRef<AccountRecord[]>([]);
 
   const loadAccountRateLimits = useCallback(
     async (accounts: AccountRecord[]) => {
-      latestAccountsRef.current = accounts;
       if (accounts.length === 0) {
         setAccountRateLimitByID({});
         return;
@@ -97,15 +95,6 @@ export default function useAccountsRateLimitState(trackRequest: TrackRequest) {
     },
     [trackRequest],
   );
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      if (latestAccountsRef.current.length > 0) {
-        void loadAccountRateLimits(latestAccountsRef.current);
-      }
-    }, 30000);
-    return () => window.clearInterval(timer);
-  }, [loadAccountRateLimits]);
 
   return {
     accountRateLimitByID,

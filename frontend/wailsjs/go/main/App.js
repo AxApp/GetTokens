@@ -134,6 +134,10 @@ export function GetAccountStoreDiagnostics() {
   return window['go']['main']['App']['GetAccountStoreDiagnostics']();
 }
 
+export function GetAllQuotaStatuses() {
+  return window['go']['main']['App']['GetAllQuotaStatuses']();
+}
+
 export function GetAllRateLimitStatuses() {
   return window['go']['main']['App']['GetAllRateLimitStatuses']();
 }
@@ -268,6 +272,10 @@ export function GetLocalProjectedUsageSettings() {
 
 export function GetOAuthStatus(arg1) {
   return window['go']['main']['App']['GetOAuthStatus'](arg1);
+}
+
+export function GetQuotaStatus(arg1) {
+  return window['go']['main']['App']['GetQuotaStatus'](arg1);
 }
 
 export function GetRateLimitStatus(arg1) {

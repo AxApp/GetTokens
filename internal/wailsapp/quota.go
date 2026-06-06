@@ -49,6 +49,14 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	return a.getCodexAuthFileQuota(normalizeAuthIndex(authFile.AuthIndex), body)
 }
 
+func (a *App) GetAllQuotaStatuses() ([]cliproxyapi.QuotaRuntimeState, error) {
+	return a.managementClient().GetAllQuotaStatuses()
+}
+
+func (a *App) GetQuotaStatus(accountKey string) (*cliproxyapi.QuotaRuntimeState, error) {
+	return a.managementClient().GetQuotaStatus(accountKey)
+}
+
 func (a *App) getCodexAuthFileQuota(authIndex string, body []byte) (*CodexQuotaResponse, error) {
 	requestInfo, err := accountsdomain.ResolveCodexQuotaRequestInfo(body)
 	if err != nil {

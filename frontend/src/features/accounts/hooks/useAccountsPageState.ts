@@ -77,6 +77,12 @@ import type {
   Translator,
 } from '../model/types';
 import { shouldEnsureAccountSnapshot } from '../model/accountSnapshot';
+import {
+  ACCOUNT_RUNTIME_SYNC_INTERVAL_MS,
+  normalizeRuntimeSyncDocumentHidden,
+  shouldRunRuntimeSyncOnVisibilityRestore,
+  shouldScheduleAccountRuntimeSync,
+} from '../model/accountRuntimeSync';
 
 type OAuthFlowState =
   | {
@@ -159,7 +165,7 @@ export default function useAccountsPageState({
     toggleSelectAllFiltered: applyToggleSelectAllFiltered,
     toggleSelectionMode,
   } = useAccountSelectionState();
-  const { codexQuotaByName, loadCodexQuotas, refreshCodexQuota } = useAccountsQuotaState(trackRequest);
+  const { codexQuotaByName, loadCodexQuotas, syncCodexQuotaStatuses, refreshCodexQuota } = useAccountsQuotaState(trackRequest);
   const { accountUsageByID, usageRefreshingAccountIDSet, loadAccountUsage, refreshAccountUsage } = useAccountsUsageState(trackRequest);
   const {
     accountRateLimitByID,
@@ -172,6 +178,10 @@ export default function useAccountsPageState({
   const authFileRecords = useMemo(
     () => (authFiles.length > 0 ? authFiles.map((account) => mapAuthFileToRecord(account)) : derivedAuthFileRecords),
     [authFiles, derivedAuthFileRecords]
+  );
+  const runtimeSyncAccounts = useMemo(
+    () => [...authFileRecords, ...apiKeyRecords],
+    [apiKeyRecords, authFileRecords],
   );
 
   const {
@@ -396,6 +406,84 @@ export default function useAccountsPageState({
       void loadAccounts();
     }
   }, [accountsLoaded, loading, ready, loadAccounts]);
+
+  const syncAccountRuntime = useCallback(() => {
+    const hasRuntimeBindings = hasWailsAppBindings();
+    const documentHidden = normalizeRuntimeSyncDocumentHidden({
+      documentHidden: typeof document !== 'undefined' ? document.hidden : false,
+      hasRuntimeBindings,
+    });
+    if (
+      !shouldScheduleAccountRuntimeSync({
+        ready,
+        hasRuntimeBindings,
+        accountCount: runtimeSyncAccounts.length,
+        documentHidden,
+      })
+    ) {
+      return;
+    }
+    void syncCodexQuotaStatuses(runtimeSyncAccounts, { replace: false });
+    void loadAccountUsage(runtimeSyncAccounts, {
+      merge: true,
+      resolveAccountKeys: false,
+      fallbackUsageStatistics: false,
+    });
+    void loadAccountRateLimits(runtimeSyncAccounts);
+  }, [
+    loadAccountRateLimits,
+    loadAccountUsage,
+    ready,
+    runtimeSyncAccounts,
+    syncCodexQuotaStatuses,
+  ]);
+
+  useEffect(() => {
+    if (
+      typeof window === 'undefined' ||
+      !ready ||
+      !hasWailsAppBindings() ||
+      runtimeSyncAccounts.length === 0
+    ) {
+      return;
+    }
+
+    const readDocumentHidden = () =>
+      normalizeRuntimeSyncDocumentHidden({
+        documentHidden: typeof document !== 'undefined' ? document.hidden : false,
+        hasRuntimeBindings: hasWailsAppBindings(),
+      });
+
+    let wasHidden = readDocumentHidden();
+    const runSync = () => syncAccountRuntime();
+    const handleVisibilityChange = () => {
+      const documentHidden = readDocumentHidden();
+      const canSchedule = shouldScheduleAccountRuntimeSync({
+        ready,
+        hasRuntimeBindings: hasWailsAppBindings(),
+        accountCount: runtimeSyncAccounts.length,
+        documentHidden,
+      });
+      if (
+        shouldRunRuntimeSyncOnVisibilityRestore({
+          wasHidden,
+          documentHidden,
+          canSchedule,
+        })
+      ) {
+        runSync();
+      }
+      wasHidden = documentHidden;
+    };
+
+    runSync();
+    const timer = window.setInterval(runSync, ACCOUNT_RUNTIME_SYNC_INTERVAL_MS);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [ready, runtimeSyncAccounts.length, syncAccountRuntime]);
 
   useEffect(() => {
     if (!oauthFlow) {
@@ -743,6 +831,7 @@ export default function useAccountsPageState({
     allFilteredSelected,
     loadAccounts,
     loadAccountUsage,
+    syncCodexQuotaStatuses,
     refreshAccountUsage,
     loadAccountRateLimits,
     refreshAccountRateLimits,

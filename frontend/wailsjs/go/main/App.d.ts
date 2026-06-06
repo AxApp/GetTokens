@@ -71,6 +71,8 @@ export function GetAccountMigrationPreview():Promise<main.AccountMigrationPrevie
 
 export function GetAccountStoreDiagnostics():Promise<main.AccountStoreDiagnostics>;
 
+export function GetAllQuotaStatuses():Promise<Array<main.CodexQuotaResponse>>;
+
 export function GetAllRateLimitStatuses():Promise<Array<main.RateLimitState>>;
 
 export function GetAppRuntimeSettings():Promise<main.AppRuntimeSettings>;
@@ -138,6 +140,8 @@ export function GetLocalCodexModelProviderStateView():Promise<main.LocalCodexMod
 export function GetLocalProjectedUsageSettings():Promise<main.LocalProjectedUsageSettings>;
 
 export function GetOAuthStatus(arg1:string):Promise<main.OAuthStatusResult>;
+
+export function GetQuotaStatus(arg1:string):Promise<main.CodexQuotaResponse>;
 
 export function GetRateLimitStatus(arg1:main.RateLimitStatusInput):Promise<main.RateLimitState>;
 

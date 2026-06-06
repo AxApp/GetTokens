@@ -16,9 +16,10 @@ import (
 )
 
 type SidecarUsageAttributionInput struct {
-	Window            string `json:"window,omitempty"`
-	Bucket            string `json:"bucket,omitempty"`
-	IncludeUnresolved bool   `json:"includeUnresolved,omitempty"`
+	Window             string `json:"window,omitempty"`
+	Bucket             string `json:"bucket,omitempty"`
+	IncludeUnresolved  bool   `json:"includeUnresolved,omitempty"`
+	ResolveAccountKeys *bool  `json:"resolveAccountKeys,omitempty"`
 }
 
 type SidecarUsageAttributionResponse struct {
@@ -89,6 +90,12 @@ func (a *App) GetSidecarUsageAttribution(input SidecarUsageAttributionInput) (*S
 	}
 	if response.Unresolved == nil {
 		response.Unresolved = []SidecarUsageAttributionItem{}
+	}
+	if input.ResolveAccountKeys != nil && !*input.ResolveAccountKeys {
+		if !input.IncludeUnresolved {
+			response.Unresolved = []SidecarUsageAttributionItem{}
+		}
+		return &response, nil
 	}
 	resolved, err := a.resolveSidecarUsageAttributionAccountKeys(&response)
 	if err != nil {

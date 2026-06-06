@@ -1075,6 +1075,22 @@ func (a *App) GetCodexQuota(name string) (*CodexQuotaResponse, error) {
 	return mapCodexQuotaResponse(result), nil
 }
 
+func (a *App) GetAllQuotaStatuses() ([]CodexQuotaResponse, error) {
+	result, err := a.core.GetAllQuotaStatuses()
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaRuntimeStates(result), nil
+}
+
+func (a *App) GetQuotaStatus(accountKey string) (*CodexQuotaResponse, error) {
+	result, err := a.core.GetQuotaStatus(accountKey)
+	if err != nil {
+		return nil, err
+	}
+	return mapQuotaRuntimeState(result), nil
+}
+
 func (a *App) TestCodexAPIKeyQuotaCurl(input TestCodexAPIKeyQuotaCurlInput) (*CodexQuotaResponse, error) {
 	result, err := a.core.TestCodexAPIKeyQuotaCurl(wailsapp.TestCodexAPIKeyQuotaCurlInput{
 		APIKey:    input.APIKey,

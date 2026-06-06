@@ -692,8 +692,8 @@ export function AccountQuotaSection({
     }
   }
 
-  const quotaActions = readOnlyScripts ? undefined : (
-    <>
+  const quotaActions = (
+    readOnlyScripts ? null : <>
       {hasQuotaScript ? (
         <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
           编辑脚本
@@ -894,8 +894,8 @@ export function AccountBillingSection({
     }
   }
 
-  const billingActions = readOnlyScripts ? undefined : (
-    <>
+  const billingActions = (
+    readOnlyScripts ? null : <>
       {hasBillingScript ? (
         <button type="button" onClick={openEditor} className="btn-swiss !text-[length:var(--font-size-ui-2xs)]">
           编辑脚本

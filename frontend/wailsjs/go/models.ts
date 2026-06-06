@@ -5404,6 +5404,7 @@ export namespace main {
 	    window?: string;
 	    bucket?: string;
 	    includeUnresolved?: boolean;
+	    resolveAccountKeys?: boolean;
 
 	    static createFrom(source: any = {}) {
 	        return new SidecarUsageAttributionInput(source);
@@ -5414,6 +5415,7 @@ export namespace main {
 	        this.window = source["window"];
 	        this.bucket = source["bucket"];
 	        this.includeUnresolved = source["includeUnresolved"];
+	        this.resolveAccountKeys = source["resolveAccountKeys"];
 	    }
 	}
 	export class SidecarUsageAttributionItem {

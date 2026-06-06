@@ -719,9 +719,10 @@ type UsageStatisticsResponse struct {
 }
 
 type SidecarUsageAttributionInput struct {
-	Window            string `json:"window,omitempty"`
-	Bucket            string `json:"bucket,omitempty"`
-	IncludeUnresolved bool   `json:"includeUnresolved,omitempty"`
+	Window             string `json:"window,omitempty"`
+	Bucket             string `json:"bucket,omitempty"`
+	IncludeUnresolved  bool   `json:"includeUnresolved,omitempty"`
+	ResolveAccountKeys *bool  `json:"resolveAccountKeys,omitempty"`
 }
 
 type SidecarUsageAttributionBucket struct {
