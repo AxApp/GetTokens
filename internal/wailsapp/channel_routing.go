@@ -39,13 +39,14 @@ type ChannelAccountGroup struct {
 }
 
 type ChannelRoutingConfig struct {
-	Channel            string                       `json:"channel"`
-	RouteMode          ChannelRouteMode             `json:"routeMode"`
-	OrderedAccountIDs  []string                     `json:"orderedAccountIDs"`
-	AccountGroups      []ChannelAccountGroup        `json:"accountGroups,omitempty"`
-	ChannelGroupStates map[string]ChannelGroupState `json:"channelGroupStates"`
-	ShadowEnabled      bool                         `json:"shadowEnabled,omitempty"`
-	ShadowRouteMode    ChannelRouteMode             `json:"shadowRouteMode,omitempty"`
+	Channel                     string                       `json:"channel"`
+	RouteMode                   ChannelRouteMode             `json:"routeMode"`
+	OrderedAccountIDs           []string                     `json:"orderedAccountIDs"`
+	ManualRequestableAccountIDs []string                     `json:"manualRequestableAccountIDs,omitempty"`
+	AccountGroups               []ChannelAccountGroup        `json:"accountGroups,omitempty"`
+	ChannelGroupStates          map[string]ChannelGroupState `json:"channelGroupStates"`
+	ShadowEnabled               bool                         `json:"shadowEnabled,omitempty"`
+	ShadowRouteMode             ChannelRouteMode             `json:"shadowRouteMode,omitempty"`
 }
 
 type ChannelRoutingConfigMeta struct {
@@ -320,6 +321,7 @@ func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg Chan
 	groupLookup := channelAccountGroupLookup(cfg.AccountGroups, cfg.ChannelGroupStates)
 	groupMembership := channelAccountGroupMembership(groupLookup)
 	channelOrder := rankIDs(cfg.OrderedAccountIDs)
+	manualRequestable := idSet(cfg.ManualRequestableAccountIDs)
 	tried := idSet(input.TriedAccountIDs)
 	candidates := make([]channelRouteCandidate, 0, len(accounts))
 	filtered := make([]ChannelRoutingFilteredAccount, 0)
@@ -344,8 +346,8 @@ func buildChannelRouteablePool(accounts []accountsdomain.AccountRecord, cfg Chan
 			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: reason})
 			continue
 		}
-		if !accountRequestable(account) {
-			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: "account-unrequestable"})
+		if reason, ok := accountRequestable(account, manualRequestable); !ok {
+			filtered = append(filtered, ChannelRoutingFilteredAccount{ID: account.ID, Reason: reason})
 			continue
 		}
 		groupID, groupOrder, ok, reason := effectiveChannelGroup(account.ID, groupLookup, groupMembership)
@@ -447,13 +449,14 @@ func defaultChannelRoutingStore() channelRoutingStore {
 
 func defaultChannelRoutingConfig(channel string) ChannelRoutingConfig {
 	return ChannelRoutingConfig{
-		Channel:            channel,
-		RouteMode:          ChannelRouteModeSequential,
-		OrderedAccountIDs:  []string{},
-		AccountGroups:      []ChannelAccountGroup{},
-		ChannelGroupStates: map[string]ChannelGroupState{},
-		ShadowEnabled:      false,
-		ShadowRouteMode:    ChannelRouteModeBalanced,
+		Channel:                     channel,
+		RouteMode:                   ChannelRouteModeSequential,
+		OrderedAccountIDs:           []string{},
+		ManualRequestableAccountIDs: []string{},
+		AccountGroups:               []ChannelAccountGroup{},
+		ChannelGroupStates:          map[string]ChannelGroupState{},
+		ShadowEnabled:               false,
+		ShadowRouteMode:             ChannelRouteModeBalanced,
 	}
 }
 
@@ -465,13 +468,14 @@ func normalizeChannelRoutingConfig(input ChannelRoutingConfig, fallbackChannel s
 	meta := ChannelRoutingConfigMeta{}
 	routeMode := normalizeChannelRouteMode(input.RouteMode, ChannelRouteModeSequential, &meta)
 	return ChannelRoutingConfig{
-		Channel:            channel,
-		RouteMode:          routeMode,
-		OrderedAccountIDs:  normalizeIDList(input.OrderedAccountIDs),
-		AccountGroups:      normalizeChannelAccountGroups(input.AccountGroups),
-		ChannelGroupStates: normalizeChannelGroupStates(input.ChannelGroupStates),
-		ShadowEnabled:      input.ShadowEnabled,
-		ShadowRouteMode:    normalizeShadowRouteModeWithMeta(input.ShadowRouteMode, routeMode, &meta),
+		Channel:                     channel,
+		RouteMode:                   routeMode,
+		OrderedAccountIDs:           normalizeIDList(input.OrderedAccountIDs),
+		ManualRequestableAccountIDs: normalizeIDList(input.ManualRequestableAccountIDs),
+		AccountGroups:               normalizeChannelAccountGroups(input.AccountGroups),
+		ChannelGroupStates:          normalizeChannelGroupStates(input.ChannelGroupStates),
+		ShadowEnabled:               input.ShadowEnabled,
+		ShadowRouteMode:             normalizeShadowRouteModeWithMeta(input.ShadowRouteMode, routeMode, &meta),
 	}, meta
 }
 
@@ -614,28 +618,63 @@ func effectiveChannelGroup(accountID string, groups map[string]ChannelAccountGro
 }
 
 func accountSupportsChannel(account accountsdomain.AccountRecord, channel string) bool {
-	format := "codex"
 	if channel == "claude" {
-		format = "anthropic"
+		for _, item := range account.SupportedFormats {
+			if strings.TrimSpace(item) == accountsdomain.APIFmtAnthropic {
+				return true
+			}
+		}
+		return false
+	}
+
+	if account.AccountKind == accountsdomain.AccountKindCodexAPIKey ||
+		account.AccountKind == accountsdomain.AccountKindOpenAICompatible ||
+		strings.TrimSpace(strings.ToLower(account.Provider)) == "codex" {
+		return true
 	}
 	for _, item := range account.SupportedFormats {
-		if strings.TrimSpace(item) == format {
+		switch strings.TrimSpace(item) {
+		case "codex", accountsdomain.APIFmtOpenAIResponses, accountsdomain.APIFmtOpenAIChat:
 			return true
 		}
 	}
 	return false
 }
 
-func accountRequestable(account accountsdomain.AccountRecord) bool {
+func accountRequestable(account accountsdomain.AccountRecord, manualRequestable map[string]struct{}) (string, bool) {
 	status := strings.TrimSpace(strings.ToLower(account.Status))
 	switch status {
-	case "", "active", "configured", "ok", "ready":
-		return true
+	case "active", "local", "ok", "ready":
+		return "", true
+	case "configured", "":
+		if accountHasRequestabilityEvidence(account.Requestability) {
+			return "", true
+		}
+		if _, ok := manualRequestable[account.ID]; ok {
+			return "", true
+		}
+		if account.AccountKind == accountsdomain.AccountKindOpenAICompatible {
+			return "", true
+		}
+		return "waiting-check", false
 	case "disabled", "error", "unavailable", "blocked", "cooldown":
-		return false
+		return "account-unrequestable", false
 	default:
+		return "account-unrequestable", false
+	}
+}
+
+func accountHasRequestabilityEvidence(requestability accountsdomain.AccountRequestability) bool {
+	if requestability.Manual {
 		return true
 	}
+	for _, raw := range requestability.Evidence {
+		switch strings.TrimSpace(strings.ToLower(raw)) {
+		case "active", "local", "ready", "ok", "verified", "manual", "usage", "quota", "configured-provider":
+			return true
+		}
+	}
+	return false
 }
 
 func findChannelRouteCandidate(candidates []channelRouteCandidate, accountID string) (channelRouteCandidate, bool) {

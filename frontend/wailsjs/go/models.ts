@@ -700,6 +700,21 @@ export namespace main {
 	}
 
 
+	export class AccountRequestability {
+	    evidence?: string[];
+	    manual?: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new AccountRequestability(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.evidence = source["evidence"];
+	        this.manual = source["manual"];
+	    }
+	}
+
 	export class OpenAICompatibleModel {
 	    name: string;
 	    alias?: string;
@@ -753,6 +768,7 @@ export namespace main {
 	    curlVariables?: Record<string, string>;
 	    modelFetchApiKey?: string;
 	    modelFetchBaseUrl?: string;
+	    requestability?: AccountRequestability;
 
 	    static createFrom(source: any = {}) {
 	        return new AccountRecord(source);
@@ -794,6 +810,7 @@ export namespace main {
 	        this.curlVariables = source["curlVariables"];
 	        this.modelFetchApiKey = source["modelFetchApiKey"];
 	        this.modelFetchBaseUrl = source["modelFetchBaseUrl"];
+	        this.requestability = this.convertValues(source["requestability"], AccountRequestability);
 	    }
 
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -1175,6 +1192,7 @@ export namespace main {
 	    channel: string;
 	    routeMode: string;
 	    orderedAccountIDs: string[];
+	    manualRequestableAccountIDs?: string[];
 	    accountGroups?: ChannelAccountGroup[];
 	    channelGroupStates: Record<string, ChannelGroupState>;
 	    shadowEnabled?: boolean;
@@ -1189,6 +1207,7 @@ export namespace main {
 	        this.channel = source["channel"];
 	        this.routeMode = source["routeMode"];
 	        this.orderedAccountIDs = source["orderedAccountIDs"];
+	        this.manualRequestableAccountIDs = source["manualRequestableAccountIDs"];
 	        this.accountGroups = this.convertValues(source["accountGroups"], ChannelAccountGroup);
 	        this.channelGroupStates = this.convertValues(source["channelGroupStates"], ChannelGroupState, true);
 	        this.shadowEnabled = source["shadowEnabled"];

@@ -1691,13 +1691,14 @@ func (a *App) DeleteClaudeCodeSubagent(input DeleteClaudeCodeSubagentInputDTO) e
 
 func mapWailsChannelRoutingConfig(input ChannelRoutingConfig) wailsapp.ChannelRoutingConfig {
 	return wailsapp.ChannelRoutingConfig{
-		Channel:            input.Channel,
-		RouteMode:          wailsapp.ChannelRouteMode(input.RouteMode),
-		OrderedAccountIDs:  append([]string(nil), input.OrderedAccountIDs...),
-		AccountGroups:      mapWailsChannelAccountGroups(input.AccountGroups),
-		ChannelGroupStates: mapWailsChannelGroupStates(input.ChannelGroupStates),
-		ShadowEnabled:      input.ShadowEnabled,
-		ShadowRouteMode:    wailsapp.ChannelRouteMode(input.ShadowRouteMode),
+		Channel:                     input.Channel,
+		RouteMode:                   wailsapp.ChannelRouteMode(input.RouteMode),
+		OrderedAccountIDs:           append([]string(nil), input.OrderedAccountIDs...),
+		ManualRequestableAccountIDs: append([]string(nil), input.ManualRequestableAccountIDs...),
+		AccountGroups:               mapWailsChannelAccountGroups(input.AccountGroups),
+		ChannelGroupStates:          mapWailsChannelGroupStates(input.ChannelGroupStates),
+		ShadowEnabled:               input.ShadowEnabled,
+		ShadowRouteMode:             wailsapp.ChannelRouteMode(input.ShadowRouteMode),
 	}
 }
 
@@ -1706,13 +1707,14 @@ func mapChannelRoutingConfig(input *wailsapp.ChannelRoutingConfig) *ChannelRouti
 		return nil
 	}
 	return &ChannelRoutingConfig{
-		Channel:            input.Channel,
-		RouteMode:          string(input.RouteMode),
-		OrderedAccountIDs:  append([]string(nil), input.OrderedAccountIDs...),
-		AccountGroups:      mapChannelAccountGroups(input.AccountGroups),
-		ChannelGroupStates: mapChannelGroupStates(input.ChannelGroupStates),
-		ShadowEnabled:      input.ShadowEnabled,
-		ShadowRouteMode:    string(input.ShadowRouteMode),
+		Channel:                     input.Channel,
+		RouteMode:                   string(input.RouteMode),
+		OrderedAccountIDs:           append([]string(nil), input.OrderedAccountIDs...),
+		ManualRequestableAccountIDs: append([]string(nil), input.ManualRequestableAccountIDs...),
+		AccountGroups:               mapChannelAccountGroups(input.AccountGroups),
+		ChannelGroupStates:          mapChannelGroupStates(input.ChannelGroupStates),
+		ShadowEnabled:               input.ShadowEnabled,
+		ShadowRouteMode:             string(input.ShadowRouteMode),
 	}
 }
 

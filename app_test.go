@@ -58,6 +58,28 @@ func TestFetchVendorStatusRSSErrorOnNon2xx(t *testing.T) {
 	}
 }
 
+func TestChannelRoutingRootMappingPreservesManualRequestableAccountIDs(t *testing.T) {
+	root := ChannelRoutingConfig{
+		Channel:                     "codex",
+		RouteMode:                   "balanced",
+		OrderedAccountIDs:           []string{"auth-file:codex.json"},
+		ManualRequestableAccountIDs: []string{"codex-api-key:manual"},
+		ChannelGroupStates:          map[string]ChannelGroupState{},
+	}
+	core := mapWailsChannelRoutingConfig(root)
+	if got := core.ManualRequestableAccountIDs; len(got) != 1 || got[0] != "codex-api-key:manual" {
+		t.Fatalf("core ManualRequestableAccountIDs = %#v", got)
+	}
+
+	roundtrip := mapChannelRoutingConfig(&core)
+	if roundtrip == nil {
+		t.Fatal("mapChannelRoutingConfig returned nil")
+	}
+	if got := roundtrip.ManualRequestableAccountIDs; len(got) != 1 || got[0] != "codex-api-key:manual" {
+		t.Fatalf("roundtrip ManualRequestableAccountIDs = %#v", got)
+	}
+}
+
 func TestMapRateLimitStatePreservesExplainFields(t *testing.T) {
 	input := &wailsapp.RateLimitState{
 		AccountKey:      "acct_00000000-0000-4000-8000-000000000001",
@@ -344,6 +366,28 @@ func TestMapAccountRecordPreservesStatusMessage(t *testing.T) {
 	}
 	if got := record.AccountKind; got != "auth-file" {
 		t.Fatalf("AccountKind = %q, want auth-file", got)
+	}
+}
+
+func TestMapAccountRecordPreservesRequestabilityEvidence(t *testing.T) {
+	record := mapAccountRecord(accountsdomain.AccountRecord{
+		ID:               "codex-api-key:verified",
+		AccountKind:      accountsdomain.AccountKindCodexAPIKey,
+		Provider:         "codex",
+		CredentialSource: accountsdomain.CredentialSourceAPIKey,
+		DisplayName:      "Verified",
+		Status:           "configured",
+		Requestability: accountsdomain.AccountRequestability{
+			Evidence: []string{"verified"},
+			Manual:   true,
+		},
+	})
+
+	if !record.Requestability.Manual {
+		t.Fatal("Requestability.Manual = false, want true")
+	}
+	if got := record.Requestability.Evidence; len(got) != 1 || got[0] != "verified" {
+		t.Fatalf("Requestability.Evidence = %#v, want [verified]", got)
 	}
 }
 

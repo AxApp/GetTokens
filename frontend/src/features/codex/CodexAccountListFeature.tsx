@@ -76,6 +76,7 @@ import {
   mergeCodexAuthFileModelMappings,
   normalizeCodexModelMappingsForProvider,
   patchCodexAccountRowDisabled,
+  patchCodexAccountRowManualRequestable,
   reorderCodexAccountRows,
   resolveCodexRoutingProbeDefaultModel,
   type CodexAccountRow,
@@ -97,6 +98,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pendingToggleID, setPendingToggleID] = useState<string | null>(null);
+  const [pendingManualRequestableID, setPendingManualRequestableID] = useState<string | null>(null);
   const [pendingMappingID, setPendingMappingID] = useState<string | null>(null);
   const [loadingAuthFileModelID, setLoadingAuthFileModelID] = useState<string | null>(null);
   const [authFileModelMappings, setAuthFileModelMappings] = useState<Record<string, CodexModelMappingRow[]>>({});
@@ -242,6 +244,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       const nextRows = applyChannelOrderToRows(buildCodexAccountRows({
         accounts: accountRows,
         providers: nextProviders,
+        manualRequestableAccountIDs: normalizedConfig.manualRequestableAccountIDs,
       }), normalizedConfig.orderedAccountIDs);
       const nextUsageAccounts = nextRows.map((row) => codexRowToAccountRecord(row));
       void loadCodexQuotas(accountRows);
@@ -671,9 +674,9 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
   async function persistChannelRoutingConfig(
     nextConfig: ChannelRoutingConfig,
     options: { reloadAfterSave?: boolean } = {},
-  ) {
+  ): Promise<boolean> {
     if (!ready || saving) {
-      return;
+      return false;
     }
 
     setSaving(true);
@@ -693,9 +696,11 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
       } else {
         setMessage('');
       }
+      return true;
     } catch (error) {
       console.error(error);
       setMessage(`${t('codex.account_list_save_failed')}: ${toErrorMessage(error)}`);
+      return false;
     } finally {
       setSaving(false);
     }
@@ -769,7 +774,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
         candidates,
         filtered: orderedRows
           .filter((row) => !row.requestable)
-          .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : 'account-unrequestable' })),
+          .map((row) => ({ id: row.id, reason: row.disabled ? 'account-disabled' : row.blockReason || 'account-unrequestable' })),
         steps: [
           `mode:${nextConfig.routeMode}`,
           `candidates:${candidates.length}`,
@@ -914,6 +919,60 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
     } finally {
       setPendingToggleID(null);
     }
+  }
+
+  async function toggleManualRequestable(row: CodexAccountRow) {
+    if (!ready || saving || pendingManualRequestableID) {
+      return;
+    }
+
+    const nextManualRequestable = row.manualRequestable !== true;
+    const previousRows = orderedRows;
+    const previousConfig = channelConfig;
+    const nextManualRequestableAccountIDs = new Set(channelConfig.manualRequestableAccountIDs);
+    if (nextManualRequestable) {
+      nextManualRequestableAccountIDs.add(row.id);
+    } else {
+      nextManualRequestableAccountIDs.delete(row.id);
+    }
+    const nextRows = orderedRows.map((item) =>
+      item.id === row.id ? patchCodexAccountRowManualRequestable(item, nextManualRequestable) : item,
+    );
+    const nextConfig = withCurrentChannelOrder(
+      updateChannelRoutingConfig(channelConfig, {
+        manualRequestableAccountIDs: Array.from(nextManualRequestableAccountIDs),
+      }),
+      nextRows.map((item) => item.id),
+    );
+
+    setPendingManualRequestableID(row.id);
+    setOrderedRows(nextRows);
+    setChannelConfig(nextConfig);
+    setChannelExplain(null);
+    setMessage('');
+
+    if (browserMode) {
+      setPendingManualRequestableID(null);
+      setMessage(
+        nextManualRequestable
+          ? t('codex.account_list_manual_requestable_saved')
+          : t('codex.account_list_manual_requestable_removed'),
+      );
+      return;
+    }
+
+    const saved = await persistChannelRoutingConfig(nextConfig, { reloadAfterSave: false });
+    if (saved) {
+      setMessage(
+        nextManualRequestable
+          ? t('codex.account_list_manual_requestable_saved')
+          : t('codex.account_list_manual_requestable_removed'),
+      );
+    } else {
+      setOrderedRows(previousRows);
+      setChannelConfig(previousConfig);
+    }
+    setPendingManualRequestableID(null);
   }
 
   async function saveDetailConfig(row: CodexAccountRow, draft: ApiKeyConfigDraft, mappings: CodexModelMappingRow[]) {
@@ -1150,6 +1209,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           rows={orderedRows}
           draggedID={draggedID}
           pendingToggleID={pendingToggleID}
+          pendingManualRequestableID={pendingManualRequestableID}
           latestRoutingProbeAccountID={latestRoutingProbeAccountID}
           routePolicyRowStates={routePolicyRowStates}
           codexQuotaByName={codexQuotaByName}
@@ -1170,6 +1230,7 @@ export default function CodexAccountListFeature({ sidecarStatus }: CodexAccountL
           onDrop={handleDrop}
           onOpenDetail={openDetail}
           onToggle={(row) => void toggleAccount(row)}
+          onToggleManualRequestable={(row) => void toggleManualRequestable(row)}
         />
       </div>
       {routeProbeOpen ? (
@@ -1234,6 +1295,7 @@ function buildDefaultChannelRoutingConfig(channel: 'codex', orderedAccountIDs: s
       channel,
       routeMode: 'sequential',
       orderedAccountIDs,
+      manualRequestableAccountIDs: [],
       accountGroups: [],
       channelGroupStates: {},
       shadowEnabled: false,
@@ -1249,6 +1311,7 @@ function mapWailsChannelRoutingConfig(input: main.ChannelRoutingConfig | null | 
       channel: input?.channel || channel,
       routeMode: input?.routeMode,
       orderedAccountIDs: input?.orderedAccountIDs || [],
+      manualRequestableAccountIDs: input?.manualRequestableAccountIDs || [],
       accountGroups: input?.accountGroups || [],
       channelGroupStates: input?.channelGroupStates || {},
       shadowEnabled: input?.shadowEnabled,

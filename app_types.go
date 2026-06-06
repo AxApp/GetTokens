@@ -128,6 +128,12 @@ type AccountRecord struct {
 	CurlVariables     map[string]string       `json:"curlVariables,omitempty"`
 	ModelFetchAPIKey  string                  `json:"modelFetchApiKey,omitempty"`
 	ModelFetchBaseURL string                  `json:"modelFetchBaseUrl,omitempty"`
+	Requestability    AccountRequestability   `json:"requestability,omitempty"`
+}
+
+type AccountRequestability struct {
+	Evidence []string `json:"evidence,omitempty"`
+	Manual   bool     `json:"manual,omitempty"`
 }
 
 type AccountMigrationPreview struct {
@@ -248,13 +254,14 @@ type ChannelAccountGroup struct {
 }
 
 type ChannelRoutingConfig struct {
-	Channel            string                       `json:"channel"`
-	RouteMode          string                       `json:"routeMode"`
-	OrderedAccountIDs  []string                     `json:"orderedAccountIDs"`
-	AccountGroups      []ChannelAccountGroup        `json:"accountGroups,omitempty"`
-	ChannelGroupStates map[string]ChannelGroupState `json:"channelGroupStates"`
-	ShadowEnabled      bool                         `json:"shadowEnabled,omitempty"`
-	ShadowRouteMode    string                       `json:"shadowRouteMode,omitempty"`
+	Channel                     string                       `json:"channel"`
+	RouteMode                   string                       `json:"routeMode"`
+	OrderedAccountIDs           []string                     `json:"orderedAccountIDs"`
+	ManualRequestableAccountIDs []string                     `json:"manualRequestableAccountIDs,omitempty"`
+	AccountGroups               []ChannelAccountGroup        `json:"accountGroups,omitempty"`
+	ChannelGroupStates          map[string]ChannelGroupState `json:"channelGroupStates"`
+	ShadowEnabled               bool                         `json:"shadowEnabled,omitempty"`
+	ShadowRouteMode             string                       `json:"shadowRouteMode,omitempty"`
 }
 
 type ChannelRoutingConfigMeta struct {

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	accountsdomain "github.com/linhay/gettokens/internal/accounts"
 )
@@ -40,6 +41,17 @@ func TestNormalizeChannelRoutingConfigDropsLegacyRoutingFields(t *testing.T) {
 	}
 	if got := meta.InvalidModes; len(got) != 1 || got[0] != "weighted" {
 		t.Fatalf("InvalidModes = %#v", got)
+	}
+}
+
+func TestNormalizeChannelRoutingConfigKeepsManualRequestableAccountIDs(t *testing.T) {
+	normalized, _ := normalizeChannelRoutingConfig(ChannelRoutingConfig{
+		Channel:                     "codex",
+		ManualRequestableAccountIDs: []string{" codex-api-key:manual ", "codex-api-key:manual", ""},
+	}, "codex")
+
+	if got := normalized.ManualRequestableAccountIDs; len(got) != 1 || got[0] != "codex-api-key:manual" {
+		t.Fatalf("ManualRequestableAccountIDs = %#v", got)
 	}
 }
 
@@ -119,6 +131,127 @@ func TestExplainChannelRoutingSequentialFiltersDisabledAndUnsupportedAccounts(t 
 	}
 	assertFilteredReason(t, result.Filtered, "auth-file:codex-b.json", "account-disabled")
 	assertFilteredReason(t, result.Filtered, "openai-compatible:anthropic", "channel-unsupported")
+}
+
+func TestExplainChannelRoutingSeparatesWaitingCheckFromManualRequestable(t *testing.T) {
+	accounts := []accountsdomain.AccountRecord{
+		{
+			ID:               "codex-api-key:waiting",
+			AccountKind:      accountsdomain.AccountKindCodexAPIKey,
+			Provider:         "codex",
+			CredentialSource: accountsdomain.CredentialSourceAPIKey,
+			DisplayName:      "Waiting",
+			Status:           "configured",
+			Priority:         0,
+			SupportedFormats: []string{"codex"},
+		},
+		{
+			ID:               "codex-api-key:manual",
+			AccountKind:      accountsdomain.AccountKindCodexAPIKey,
+			Provider:         "codex",
+			CredentialSource: accountsdomain.CredentialSourceAPIKey,
+			DisplayName:      "Manual",
+			Status:           "configured",
+			Priority:         1,
+			SupportedFormats: []string{"codex"},
+		},
+		{
+			ID:               "auth-file:fallback.json",
+			AccountKind:      accountsdomain.AccountKindAuthFile,
+			Provider:         "codex",
+			CredentialSource: accountsdomain.CredentialSourceAuthFile,
+			DisplayName:      "Fallback",
+			Status:           "active",
+			Priority:         2,
+			SupportedFormats: []string{"codex"},
+		},
+		{
+			ID:               "openai-compatible:router",
+			AccountKind:      accountsdomain.AccountKindOpenAICompatible,
+			Provider:         "router",
+			CredentialSource: accountsdomain.CredentialSourceAPIKey,
+			DisplayName:      "Router",
+			Status:           "configured",
+			Priority:         3,
+			SupportedFormats: []string{"codex"},
+		},
+	}
+
+	result := explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:           "codex",
+		RouteMode:         "sequential",
+		OrderedAccountIDs: []string{"codex-api-key:waiting", "codex-api-key:manual", "auth-file:fallback.json", "openai-compatible:router"},
+	}, ChannelRoutingExplainInput{})
+
+	if result.SelectedAccountID != "auth-file:fallback.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:fallback.json", result.SelectedAccountID)
+	}
+	assertFilteredReason(t, result.Filtered, "codex-api-key:waiting", "waiting-check")
+	assertFilteredReason(t, result.Filtered, "codex-api-key:manual", "waiting-check")
+	assertCandidateIDs(t, result.Candidates, []string{"auth-file:fallback.json", "openai-compatible:router"})
+
+	result = explainChannelRoutingWithAccounts(accounts, ChannelRoutingConfig{
+		Channel:                     "codex",
+		RouteMode:                   "sequential",
+		OrderedAccountIDs:           []string{"codex-api-key:waiting", "codex-api-key:manual", "auth-file:fallback.json", "openai-compatible:router"},
+		ManualRequestableAccountIDs: []string{"codex-api-key:manual"},
+	}, ChannelRoutingExplainInput{})
+
+	if result.SelectedAccountID != "codex-api-key:manual" {
+		t.Fatalf("SelectedAccountID = %q, want codex-api-key:manual", result.SelectedAccountID)
+	}
+	assertFilteredReason(t, result.Filtered, "codex-api-key:waiting", "waiting-check")
+	assertCandidateIDs(t, result.Candidates, []string{"codex-api-key:manual", "auth-file:fallback.json", "openai-compatible:router"})
+}
+
+func TestExplainChannelRoutingManualRequestableStillHonorsRuntimeBlocks(t *testing.T) {
+	expiresAt := time.Now().UTC().Add(time.Hour).Format(time.RFC3339Nano)
+	accounts := []accountsdomain.AccountRecord{
+		{
+			ID:               "codex-api-key:manual",
+			AccountKind:      accountsdomain.AccountKindCodexAPIKey,
+			Provider:         "codex",
+			CredentialSource: accountsdomain.CredentialSourceAPIKey,
+			DisplayName:      "Manual",
+			Status:           "configured",
+			Priority:         0,
+			SupportedFormats: []string{"codex"},
+		},
+		{
+			ID:               "auth-file:fallback.json",
+			AccountKind:      accountsdomain.AccountKindAuthFile,
+			Provider:         "codex",
+			CredentialSource: accountsdomain.CredentialSourceAuthFile,
+			DisplayName:      "Fallback",
+			Status:           "active",
+			Priority:         1,
+			SupportedFormats: []string{"codex"},
+		},
+	}
+
+	result := explainChannelRoutingWithRuntime(accounts, ChannelRoutingConfig{
+		Channel:                     "codex",
+		RouteMode:                   "sequential",
+		OrderedAccountIDs:           []string{"codex-api-key:manual", "auth-file:fallback.json"},
+		ManualRequestableAccountIDs: []string{"codex-api-key:manual"},
+	}, ChannelRoutingExplainInput{}, map[string]ChannelAccountRuntimeState{
+		"codex-api-key:manual": {
+			AccountID: "codex-api-key:manual",
+			Sources: map[string]ChannelRuntimeStateSource{
+				"rate-limit": {
+					Source:    "rate-limit",
+					Reason:    "quota window exhausted",
+					ExpiresAt: expiresAt,
+				},
+			},
+		},
+	})
+
+	if result.SelectedAccountID != "auth-file:fallback.json" {
+		t.Fatalf("SelectedAccountID = %q, want auth-file:fallback.json", result.SelectedAccountID)
+	}
+	assertFilteredReason(t, result.Filtered, "codex-api-key:manual", "runtime-rate-limit")
+	assertCandidateIDs(t, result.Candidates, []string{"auth-file:fallback.json"})
 }
 
 func TestExplainChannelRoutingDropsLegacyProjectModeAndProjectBindings(t *testing.T) {
@@ -364,4 +497,20 @@ func assertStepContains(t *testing.T, steps []string, want string) {
 		}
 	}
 	t.Fatalf("step %q not found in %#v", want, steps)
+}
+
+func assertCandidateIDs(t *testing.T, candidates []ChannelRoutingCandidate, want []string) {
+	t.Helper()
+	got := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		got = append(got, candidate.ID)
+	}
+	if len(got) != len(want) {
+		t.Fatalf("candidate IDs = %#v, want %#v", got, want)
+	}
+	for index := range want {
+		if got[index] != want[index] {
+			t.Fatalf("candidate IDs = %#v, want %#v", got, want)
+		}
+	}
 }

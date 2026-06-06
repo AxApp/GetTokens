@@ -157,7 +157,7 @@ export function CodexAccountDetailModal({
   onFetchModelOptions?: () => void;
 }) {
   const account = useMemo(() => buildCodexQuotaSummaryAccount(row), [row]);
-  const blockedLabel = row.blockReason === 'disabled' ? t('codex.account_list_block_disabled') : row.blockReason;
+  const blockedLabel = buildCodexBlockedLabel(row, t);
   const modulePlan = useMemo(() => buildCodexAccountDetailModulePlan(row), [row]);
   const isApiLikeAccount = row.sourceKind !== 'codex-auth-file';
   const readOnlyQuotaScripts = row.sourceKind === 'codex-auth-file';
@@ -378,6 +378,16 @@ export function CodexAccountDetailModal({
       </AccountDetailBody>
     </AccountDetailModalFrame>
   );
+}
+
+function buildCodexBlockedLabel(row: CodexAccountRow, t: (key: string) => string): string {
+  if (row.blockReason === 'disabled') {
+    return t('codex.account_list_block_disabled');
+  }
+  if (row.blockReason === 'waiting-check') {
+    return t('codex.account_list_block_waiting_check');
+  }
+  return row.blockReason;
 }
 
 function CodexRateLimitSection({

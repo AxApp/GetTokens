@@ -64,6 +64,10 @@ func mapAccountRecord(record accountsdomain.AccountRecord) AccountRecord {
 		PlatformCookie:    record.PlatformCookie,
 		ModelFetchAPIKey:  record.ModelFetchAPIKey,
 		ModelFetchBaseURL: record.ModelFetchBaseURL,
+		Requestability: AccountRequestability{
+			Evidence: append([]string(nil), record.Requestability.Evidence...),
+			Manual:   record.Requestability.Manual,
+		},
 	}
 }
 

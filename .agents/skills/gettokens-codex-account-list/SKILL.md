@@ -22,6 +22,12 @@ description: GetTokens Codex 账号列表：Codex Channel Routing、账号请求
   - `codex-api-key`
   - `openai-compatible`
 - 禁用账号保留在排序中，但不参与运行时请求候选。
+- Codex 请求资格不得只按 `configured` 判断：
+  - `configured` 且没有 requestability evidence 的账号应标记为 `waiting-check`，继续显示在请求顺序列表，但不进入 requestable candidates / explain / probe 候选。
+  - `active / local / ready / ok / verified / manual / usage / quota / configured-provider` 可作为请求资格证据；usage/quota 只是证据之一，不是唯一入口。
+  - openai-compatible provider 使用 `configured-provider` 证据，不应因为没有 usage/quota 成功记录被误判为待检测。
+  - 用户手动确认“我知道能用”应保存到 Codex `ChannelRoutingConfig.manualRequestableAccountIDs`，只作为 requestability evidence，不写入账号凭证本体。
+  - 手动确认不得绕过 disabled、runtime guard、quota-empty、cooldown、auth-error、model-unavailable 等硬阻塞。
 - 对 `codex-api-key`，禁用不能只停留在 GetTokens 本地 store：sidecar `codex-api-key` 配置必须保存 `disabled:true`，CLIProxyAPI synthesizer 必须生成 disabled runtime auth，之后由 `manual-disabled` route guard 排除候选。
 - 禁用优先级高于 session sticky、失败降级和 retry；Codex WebSocket pinned auth 命中禁用后必须释放 pin、断开旧 upstream，并在下一请求边界重新进入 route engine。
 - 激活账号只重新进入可路由账号池，等待下一轮 route / retry，不抢占当前 stream / sticky。

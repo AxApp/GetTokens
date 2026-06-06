@@ -195,6 +195,7 @@ function RowSample({
           density={density}
           dragged={dragged}
           pending={pending}
+          manualPending={false}
           t={t}
           onDragStart={() => undefined}
           onDragOver={noopDragEvent}
@@ -203,6 +204,7 @@ function RowSample({
           onDrop={() => undefined}
           onOpenDetail={() => undefined}
           onToggle={() => undefined}
+          onToggleManualRequestable={() => undefined}
           probeHit={probeHit}
           routePolicyState={routePolicyStates[row.id]}
           quotaState={row.quotaKey === 'team-codex' ? quotaState : undefined}
@@ -252,6 +254,7 @@ function SectionSample({
           rows={sampleRows}
           draggedID={null}
           pendingToggleID={saving ? rows[1]?.id ?? null : null}
+          pendingManualRequestableID={null}
           latestRoutingProbeAccountID={routingProbeRunning ? rows[0]?.id ?? '' : ''}
           routePolicyRowStates={routePolicyStates}
           codexQuotaByName={{ 'team-codex': quotaState, 'disabled-backup': quotaState }}
@@ -278,6 +281,7 @@ function SectionSample({
           onDrop={() => undefined}
           onOpenDetail={() => undefined}
           onToggle={() => undefined}
+          onToggleManualRequestable={() => undefined}
           initialDensity={density}
         />
       </div>

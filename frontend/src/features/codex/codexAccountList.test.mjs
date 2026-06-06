@@ -62,6 +62,9 @@ test('buildCodexAccountRows merges codex auth files, codex api keys, and openai-
         displayName: 'Prod Key',
         status: 'configured',
         priority: 4,
+        requestability: {
+          evidence: ['verified'],
+        },
       },
       {
         id: 'auth-file:claude.json',
@@ -101,6 +104,9 @@ test('buildCodexAccountRows keeps codex api key model mappings from stored accou
         credentialSource: 'api-key',
         displayName: 'Relay Key',
         status: 'configured',
+        requestability: {
+          evidence: ['verified'],
+        },
         models: [
           { name: 'deepseek-chat', alias: 'gpt-5.4' },
           { name: 'deepseek-reasoner', alias: '' },
@@ -234,6 +240,82 @@ test('buildCodexAccountRows keeps disabled or errored accounts in order but mark
   );
 });
 
+test('buildCodexAccountRows separates waiting check from verified requestability evidence', () => {
+  const rows = buildCodexAccountRows({
+    accounts: [
+      {
+        id: 'codex-api-key:waiting',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Waiting Key',
+        status: 'configured',
+      },
+      {
+        id: 'codex-api-key:verified',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Verified Key',
+        status: 'configured',
+        requestability: {
+          evidence: ['verified'],
+        },
+      },
+      {
+        id: 'codex-api-key:manual',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Manual Key',
+        status: 'configured',
+        requestability: {
+          manual: true,
+        },
+      },
+      {
+        id: 'codex-api-key:manual-disabled',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Manual Disabled',
+        status: 'configured',
+        disabled: true,
+        requestability: {
+          manual: true,
+        },
+      },
+    ],
+    providers: [],
+  });
+
+  assert.deepEqual(
+    Object.fromEntries(rows.map((row) => [row.id, [row.requestable, row.blockReason, row.manualRequestable]])),
+    {
+      'codex-api-key:waiting': [false, 'waiting-check', false],
+      'codex-api-key:verified': [true, '', false],
+      'codex-api-key:manual': [true, '', true],
+      'codex-api-key:manual-disabled': [false, 'disabled', true],
+    },
+  );
+});
+
+test('buildCodexAccountRows accepts manual requestable IDs from channel routing config', () => {
+  const rows = buildCodexAccountRows({
+    accounts: [
+      {
+        id: 'codex-api-key:manual-config',
+        provider: 'codex',
+        credentialSource: 'api-key',
+        displayName: 'Manual Config',
+        status: 'configured',
+      },
+    ],
+    providers: [],
+    manualRequestableAccountIDs: [' codex-api-key:manual-config ', 'codex-api-key:manual-config'],
+  });
+
+  assert.equal(rows[0].requestable, true);
+  assert.equal(rows[0].manualRequestable, true);
+  assert.deepEqual(rows[0].requestabilityEvidence, ['manual']);
+});
+
 test('patchCodexAccountRowDisabled keeps Codex requestability in sync with account disabled events', () => {
   const row = {
     id: 'codex-api-key:stable',
@@ -242,6 +324,8 @@ test('patchCodexAccountRowDisabled keeps Codex requestability in sync with accou
     provider: 'codex',
     requestable: true,
     blockReason: '',
+    requestabilityEvidence: ['manual'],
+    manualRequestable: true,
     status: 'configured',
     baseUrl: 'https://api.openai.com/v1',
     prefix: '',
@@ -256,6 +340,8 @@ test('patchCodexAccountRowDisabled keeps Codex requestability in sync with accou
       disabled: true,
       requestable: false,
       blockReason: 'disabled',
+      requestabilityEvidence: ['manual'],
+      manualRequestable: true,
       status: 'disabled',
     },
   );
@@ -267,6 +353,38 @@ test('patchCodexAccountRowDisabled keeps Codex requestability in sync with accou
       disabled: false,
       requestable: true,
       blockReason: '',
+      requestabilityEvidence: ['manual'],
+      manualRequestable: true,
+      status: 'configured',
+    },
+  );
+});
+
+test('patchCodexAccountRowDisabled returns configured accounts without evidence to waiting check', () => {
+  const row = {
+    id: 'codex-api-key:waiting',
+    label: 'Waiting',
+    sourceKind: 'codex-api-key',
+    provider: 'codex',
+    requestable: false,
+    blockReason: 'disabled',
+    requestabilityEvidence: [],
+    manualRequestable: false,
+    disabled: true,
+    status: 'disabled',
+    baseUrl: 'https://api.openai.com/v1',
+    prefix: '',
+    keySuffix: '1111',
+    modelMappings: [],
+  };
+
+  assert.deepEqual(
+    patchCodexAccountRowDisabled(row, false),
+    {
+      ...row,
+      disabled: false,
+      requestable: false,
+      blockReason: 'waiting-check',
       status: 'configured',
     },
   );
@@ -281,6 +399,9 @@ test('buildCodexAccountRows preserves account quota and billing metadata for sha
         credentialSource: 'api-key',
         displayName: 'Prod Key',
         status: 'configured',
+        requestability: {
+          evidence: ['verified'],
+        },
         quotaKey: 'codex-api-key:stable',
         quotaCurl: 'curl https://quota.example.test',
         quotaEnabled: true,

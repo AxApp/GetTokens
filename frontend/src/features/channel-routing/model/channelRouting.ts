@@ -30,6 +30,7 @@ export interface ChannelRoutingConfig {
   channel: ChannelID;
   routeMode: ChannelRouteMode;
   orderedAccountIDs: string[];
+  manualRequestableAccountIDs: string[];
   accountGroups: ChannelAccountGroup[];
   channelGroupStates: Record<string, ChannelGroupState>;
   shadowEnabled: boolean;
@@ -40,6 +41,7 @@ export interface ChannelRoutingConfigDraft {
   channel?: unknown;
   routeMode?: unknown;
   orderedAccountIDs?: unknown;
+  manualRequestableAccountIDs?: unknown;
   accountGroups?: unknown;
   channelGroupStates?: unknown;
   shadowEnabled?: unknown;
@@ -217,6 +219,7 @@ export function normalizeChannelRoutingConfig(
       channel: normalizeChannel(draft.channel, defaults.channel),
       routeMode: routeModeResult,
       orderedAccountIDs: normalizeOrderedAccountIDs(draft.orderedAccountIDs),
+      manualRequestableAccountIDs: normalizeOrderedAccountIDs(draft.manualRequestableAccountIDs),
       accountGroups: normalizeAccountGroups(draft.accountGroups),
       channelGroupStates: normalizeChannelGroupStates(draft.channelGroupStates),
       shadowEnabled: draft.shadowEnabled === true,
@@ -237,6 +240,9 @@ export function updateChannelRoutingConfig(
     orderedAccountIDs: patch.orderedAccountIDs
       ? normalizeOrderedAccountIDs(patch.orderedAccountIDs)
       : [...config.orderedAccountIDs],
+    manualRequestableAccountIDs: patch.manualRequestableAccountIDs
+      ? normalizeOrderedAccountIDs(patch.manualRequestableAccountIDs)
+      : [...config.manualRequestableAccountIDs],
     accountGroups: patch.accountGroups
       ? normalizeAccountGroups(patch.accountGroups)
       : config.accountGroups.map((group) => ({ ...group, accountIDs: [...group.accountIDs] })),
@@ -510,6 +516,8 @@ function formatChannelRoutingFilteredReason(reason: string): string {
       return '账号已禁用';
     case 'account-unrequestable':
       return '账号暂不可请求';
+    case 'waiting-check':
+      return '待检测';
     case 'group-disabled-or-missing':
       return '账号组不可用';
     case 'runtime-manual-disabled':

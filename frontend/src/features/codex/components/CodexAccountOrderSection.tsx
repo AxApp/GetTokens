@@ -48,6 +48,7 @@ export function CodexAccountOrderSection({
   rows,
   draggedID,
   pendingToggleID,
+  pendingManualRequestableID,
   latestRoutingProbeAccountID,
   routePolicyRowStates,
   codexQuotaByName,
@@ -68,6 +69,7 @@ export function CodexAccountOrderSection({
   onDrop,
   onOpenDetail,
   onToggle,
+  onToggleManualRequestable = () => undefined,
   initialDensity,
   initialAccountFilter,
 }: {
@@ -82,6 +84,7 @@ export function CodexAccountOrderSection({
   rows: CodexAccountRow[];
   draggedID: string | null;
   pendingToggleID: string | null;
+  pendingManualRequestableID?: string | null;
   latestRoutingProbeAccountID: string;
   routePolicyRowStates: Record<string, CodexRoutePolicyRowState>;
   codexQuotaByName: Record<string, CodexQuotaState>;
@@ -102,6 +105,7 @@ export function CodexAccountOrderSection({
   onDrop: () => void;
   onOpenDetail: (id: string) => void;
   onToggle: (row: CodexAccountRow) => void;
+  onToggleManualRequestable?: (row: CodexAccountRow) => void;
   initialDensity?: CodexAccountOrderDisplayMode;
   initialAccountFilter?: CodexAccountOrderFilter | 'all';
 }) {
@@ -210,6 +214,7 @@ export function CodexAccountOrderSection({
               density={density}
               dragged={draggedID === row.id}
               pending={pendingToggleID === row.id}
+              manualPending={pendingManualRequestableID === row.id}
               t={t}
               onDragStart={onDragStart}
               onDragOver={onDragOver}
@@ -218,6 +223,7 @@ export function CodexAccountOrderSection({
               onDrop={onDrop}
               onOpenDetail={() => onOpenDetail(row.id)}
               onToggle={() => onToggle(row)}
+              onToggleManualRequestable={() => onToggleManualRequestable(row)}
               probeHit={latestRoutingProbeAccountID === row.id}
               routePolicyState={routePolicyRowStates[row.id]}
               quotaState={row.quotaKey ? codexQuotaByName[row.quotaKey] : undefined}

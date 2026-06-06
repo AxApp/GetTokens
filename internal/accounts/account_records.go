@@ -99,6 +99,12 @@ type AccountRecord struct {
 	CurlVariables     map[string]string        `json:"curlVariables,omitempty"`
 	ModelFetchAPIKey  string                   `json:"modelFetchApiKey,omitempty"`
 	ModelFetchBaseURL string                   `json:"modelFetchBaseUrl,omitempty"`
+	Requestability    AccountRequestability    `json:"requestability,omitempty"`
+}
+
+type AccountRequestability struct {
+	Evidence []string `json:"evidence,omitempty"`
+	Manual   bool     `json:"manual,omitempty"`
 }
 
 func BuildAccountRecords(authFiles []AuthFileRecord, codexKeys []cliproxyapi.CodexAPIKey) []AccountRecord {

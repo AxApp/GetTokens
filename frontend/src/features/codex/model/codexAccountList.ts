@@ -53,6 +53,8 @@ export interface CodexAccountRow {
   priority?: number;
   requestable: boolean;
   blockReason: string;
+  requestabilityEvidence?: string[];
+  manualRequestable?: boolean;
   status: string;
   baseUrl: string;
   prefix: string;
@@ -78,6 +80,7 @@ export interface CodexAccountRow {
 export interface BuildCodexAccountRowsInput {
   accounts: AccountRecord[];
   providers: OpenAICompatibleProvider[];
+  manualRequestableAccountIDs?: string[];
 }
 
 export type CodexAccountOrderEdge = 'top' | 'bottom';
@@ -104,10 +107,11 @@ export function buildCodexAccountDetailModulePlan(
 }
 
 export function buildCodexAccountRows(input: BuildCodexAccountRowsInput): CodexAccountRow[] {
+  const manualRequestableAccountIDs = new Set(normalizeIDList(input.manualRequestableAccountIDs));
   const rows = [
     ...input.accounts
       .filter(isCodexRequestAccount)
-      .map((account) => mapAccountRecordToCodexRow(account)),
+      .map((account) => mapAccountRecordToCodexRow(account, manualRequestableAccountIDs)),
     ...input.providers.map((provider) => mapOpenAICompatibleProviderToCodexRow(provider)),
   ];
 
@@ -183,13 +187,42 @@ export function patchCodexAccountRowDisabled(row: CodexAccountRow, disabled: boo
     : String(row.status || '').trim().toUpperCase() === 'DISABLED'
       ? 'configured'
       : row.status;
-  const requestable = !disabled && isRequestableStatus(status);
+  const requestability = resolveCodexAccountRequestability({
+    status,
+    disabled,
+    sourceKind: row.sourceKind,
+    accountKind: sourceKindToAccountKind(row.sourceKind),
+    evidence: row.requestabilityEvidence || [],
+    manualRequestable: row.manualRequestable === true,
+    statusMessage: row.blockReason,
+  });
   return {
     ...row,
     disabled,
-    requestable,
-    blockReason: requestable ? '' : disabled ? 'disabled' : row.blockReason || status,
+    requestable: requestability.requestable,
+    blockReason: requestability.blockReason,
+    requestabilityEvidence: requestability.evidence,
+    manualRequestable: requestability.manualRequestable,
     status,
+  };
+}
+
+export function patchCodexAccountRowManualRequestable(row: CodexAccountRow, manualRequestable: boolean): CodexAccountRow {
+  const requestability = resolveCodexAccountRequestability({
+    status: row.status,
+    disabled: row.disabled,
+    sourceKind: row.sourceKind,
+    accountKind: sourceKindToAccountKind(row.sourceKind),
+    evidence: (row.requestabilityEvidence || []).filter((item) => item !== 'manual'),
+    manualRequestable,
+    statusMessage: row.blockReason,
+  });
+  return {
+    ...row,
+    requestable: requestability.requestable,
+    blockReason: requestability.blockReason,
+    requestabilityEvidence: requestability.evidence,
+    manualRequestable: requestability.manualRequestable,
   };
 }
 
@@ -219,6 +252,10 @@ export function buildCodexQuotaSummaryAccount(row: CodexAccountRow): AccountReco
     supportedFormats: normalizeSupportedFormats(row.supportedFormats),
     formatBaseUrls: row.formatBaseUrls,
     models: row.models,
+    requestability: {
+      evidence: row.requestabilityEvidence || [],
+      manual: row.manualRequestable === true,
+    },
   };
 }
 
@@ -238,10 +275,18 @@ function isCodexRequestAccount(account: AccountRecord) {
   return provider === 'codex' || account.accountKind === 'codex-api-key';
 }
 
-function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
+function mapAccountRecordToCodexRow(account: AccountRecord, manualRequestableAccountIDs: Set<string>): CodexAccountRow {
   const status = String(account.status || '').trim();
-  const requestable = isRequestableStatus(status) && !account.disabled;
   const sourceKind = account.credentialSource === 'auth-file' ? 'codex-auth-file' : 'codex-api-key';
+  const requestability = resolveCodexAccountRequestability({
+    status,
+    disabled: Boolean(account.disabled),
+    sourceKind,
+    accountKind: account.accountKind,
+    evidence: account.requestability?.evidence,
+    manualRequestable: account.requestability?.manual === true || manualRequestableAccountIDs.has(account.id),
+    statusMessage: account.statusMessage,
+  });
   return {
     id: account.id,
     label: String(account.email || account.displayName || account.name || account.id).trim(),
@@ -249,8 +294,10 @@ function mapAccountRecordToCodexRow(account: AccountRecord): CodexAccountRow {
     provider: String(account.provider || 'codex').trim(),
     quotaKey: account.quotaKey,
     priority: account.priority,
-    requestable,
-    blockReason: requestable ? '' : buildAccountBlockReason(account),
+    requestable: requestability.requestable,
+    blockReason: requestability.blockReason,
+    requestabilityEvidence: requestability.evidence,
+    manualRequestable: requestability.manualRequestable,
     status,
     baseUrl: String(account.baseUrl || '').trim(),
     prefix: String(account.prefix || '').trim(),
@@ -280,14 +327,24 @@ function mapOpenAICompatibleProviderToCodexRow(provider: OpenAICompatibleProvide
   const name = String(provider.name || '').trim();
   const accountKey = String(provider.accountKey || '').trim();
   const disabled = Boolean(provider.disabled);
+  const requestability = resolveCodexAccountRequestability({
+    status: disabled ? 'disabled' : 'configured',
+    disabled,
+    sourceKind: 'openai-compatible',
+    accountKind: 'openai-compatible',
+    evidence: ['configured-provider'],
+    manualRequestable: false,
+  });
   return {
     id: accountKey || name,
     label: name || 'openai-compatible',
     sourceKind: 'openai-compatible',
     provider: name || 'openai-compatible',
     priority: Number(provider.priority || 0),
-    requestable: !disabled,
-    blockReason: disabled ? 'disabled' : '',
+    requestable: requestability.requestable,
+    blockReason: requestability.blockReason,
+    requestabilityEvidence: requestability.evidence,
+    manualRequestable: requestability.manualRequestable,
     status: disabled ? 'disabled' : 'configured',
     baseUrl: String(provider.baseUrl || '').trim(),
     prefix: String(provider.prefix || '').trim(),
@@ -304,7 +361,7 @@ function mapOpenAICompatibleProviderToCodexRow(provider: OpenAICompatibleProvide
 
 function isRequestableStatus(status: string) {
   const normalized = status.trim().toUpperCase();
-  return normalized === 'ACTIVE' || normalized === 'CONFIGURED' || normalized === 'LOCAL';
+  return normalized === 'ACTIVE' || normalized === 'LOCAL' || normalized === 'READY' || normalized === 'OK';
 }
 
 function readAccountModels(account: AccountRecord): Array<{ name: string; alias?: string }> {
@@ -325,11 +382,99 @@ function readAccountModels(account: AccountRecord): Array<{ name: string; alias?
   });
 }
 
-function buildAccountBlockReason(account: AccountRecord) {
-  if (account.disabled) {
-    return 'disabled';
+function sourceKindToAccountKind(sourceKind: CodexAccountSourceKind): string {
+  switch (sourceKind) {
+    case 'codex-auth-file':
+      return 'auth-file';
+    case 'codex-api-key':
+      return 'codex-api-key';
+    case 'openai-compatible':
+      return 'openai-compatible';
+    default:
+      return '';
   }
-  return String(account.statusMessage || account.status || '').trim() || 'unavailable';
+}
+
+function normalizeRequestabilityEvidence(input: unknown): string[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of input) {
+    const evidence = String(item ?? '').trim().toLowerCase();
+    if (!evidence || seen.has(evidence)) {
+      continue;
+    }
+    seen.add(evidence);
+    out.push(evidence);
+  }
+  return out;
+}
+
+function normalizeIDList(input: unknown): string[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of input) {
+    const id = String(item ?? '').trim();
+    if (!id || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+function hasRequestabilityEvidence(evidence: string[]): boolean {
+  return evidence.some((item) =>
+    ['active', 'local', 'ready', 'ok', 'verified', 'manual', 'usage', 'quota', 'configured-provider'].includes(item),
+  );
+}
+
+function resolveCodexAccountRequestability(input: {
+  status: string;
+  disabled?: boolean;
+  sourceKind: CodexAccountSourceKind;
+  accountKind?: string;
+  evidence?: unknown;
+  manualRequestable?: boolean;
+  statusMessage?: string;
+}): { requestable: boolean; blockReason: string; evidence: string[]; manualRequestable: boolean } {
+  const evidence = normalizeRequestabilityEvidence(input.evidence);
+  const manualRequestable = input.manualRequestable === true;
+  if (manualRequestable && !evidence.includes('manual')) {
+    evidence.push('manual');
+  }
+  const status = String(input.status || '').trim();
+  const normalizedStatus = status.toUpperCase();
+
+  if (input.disabled || normalizedStatus === 'DISABLED') {
+    return { requestable: false, blockReason: 'disabled', evidence, manualRequestable };
+  }
+  if (isRequestableStatus(status) && !evidence.includes(normalizedStatus.toLowerCase())) {
+    evidence.push(normalizedStatus.toLowerCase());
+  }
+  if (input.sourceKind === 'openai-compatible' || String(input.accountKind || '').trim() === 'openai-compatible') {
+    if (!evidence.includes('configured-provider')) {
+      evidence.push('configured-provider');
+    }
+  }
+  if (hasRequestabilityEvidence(evidence)) {
+    return { requestable: true, blockReason: '', evidence, manualRequestable };
+  }
+  if (normalizedStatus === 'CONFIGURED' || normalizedStatus === '') {
+    return { requestable: false, blockReason: 'waiting-check', evidence, manualRequestable };
+  }
+  return {
+    requestable: false,
+    blockReason: String(input.statusMessage || status).trim() || 'unavailable',
+    evidence,
+    manualRequestable,
+  };
 }
 
 function compareCodexAccountRows(left: CodexAccountRow, right: CodexAccountRow) {

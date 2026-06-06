@@ -104,6 +104,10 @@ export interface AccountRecord {
   curlVariables?: Record<string, string>;
   modelFetchApiKey?: string;
   modelFetchBaseUrl?: string;
+  requestability?: {
+    evidence?: string[];
+    manual?: boolean;
+  };
   rawAuthFile?: AuthFile;
 }
 
