@@ -7,8 +7,6 @@ import {
   DeleteOpenAICompatibleProvider,
   DownloadAuthFile,
   SetAccountDisabled,
-  TestCodexAPIKeyBillingCurl,
-  TestCodexAPIKeyQuotaCurl,
   UpdateCodexAPIKeyConfig,
   UpdateCodexAPIKeyLabel,
   UpdateCodexAPIKeyPriority,
@@ -37,7 +35,6 @@ import {
   normalizeApiKeyConfigModels,
   normalizeCurlVariables,
   normalizeFormatBaseUrls as normalizeDetailFormatBaseUrls,
-  resolveManagementBaseUrl,
   type ApiKeyConfigDraft,
 } from '../model/accountDetailConfig';
 import { resolveAccountDeleteRequest } from '../model/accountDelete';
@@ -490,10 +487,6 @@ export default function useAccountsActions({
       const nextAPIKey = draft.apiKey.trim();
       const nextBaseURL = draft.baseUrl.trim();
       const nextFormatBaseURLs = normalizeDetailFormatBaseUrls(draft.formatBaseUrls);
-      const nextManagementBaseURL = resolveManagementBaseUrl({
-        baseUrl: nextBaseURL,
-        formatBaseUrls: nextFormatBaseURLs,
-      });
       const nextPrefix = draft.prefix.trim();
       const nextQuotaCurl = draft.quotaCurl.trim();
       const nextBillingCurl = draft.billingCurl.trim();
@@ -536,42 +529,6 @@ export default function useAccountsActions({
                 main.UpdateCodexAPIKeyLabelInput.createFrom({
                   id: selectedAccount.id,
                   label: nextLabel,
-                })
-              )
-          );
-        }
-
-        if (draft.quotaEnabled && nextQuotaCurl) {
-          await trackRequest(
-            'TestCodexAPIKeyQuotaCurl',
-            { id: selectedAccount.id, baseUrl: nextManagementBaseURL },
-            () =>
-              TestCodexAPIKeyQuotaCurl(
-                main.TestCodexAPIKeyQuotaCurlInput.createFrom({
-                  apiKey: nextAPIKey,
-                  baseUrl: nextManagementBaseURL,
-                  prefix: nextPrefix,
-                  quotaCurl: nextQuotaCurl,
-                  platformCookie: nextPlatformCookie,
-                  curlVariables: nextCurlVariables,
-                })
-              )
-          );
-        }
-
-        if (draft.billingEnabled && nextBillingCurl) {
-          await trackRequest(
-            'TestCodexAPIKeyBillingCurl',
-            { id: selectedAccount.id, baseUrl: nextManagementBaseURL },
-            () =>
-              TestCodexAPIKeyBillingCurl(
-                main.TestCodexAPIKeyQuotaCurlInput.createFrom({
-                  apiKey: nextAPIKey,
-                  baseUrl: nextManagementBaseURL,
-                  prefix: nextPrefix,
-                  quotaCurl: nextBillingCurl,
-                  platformCookie: nextPlatformCookie,
-                  curlVariables: nextCurlVariables,
                 })
               )
           );

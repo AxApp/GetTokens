@@ -13,9 +13,10 @@ Quota curl 不是完整 curl 运行时，也不执行 shell。它是结构化 HT
 1. 解析 URL、method、headers、body、cookie，并替换 `{{apiKey}} / {{baseUrl}} / {{prefix}}`。
 2. 继续拒绝 shell 能力：管道、重定向、多命令、反引号、`$()`。
 3. 对暂不支持但不需要 shell 执行的 curl 参数采用宽容策略：记录为 ignored option，然后继续发起请求。
-4. 请求成功时不提示 ignored option，直接允许保存。
-5. 请求失败或响应无法解析时，把 ignored option 作为排查提示附加到错误信息。
-6. 前端保存启用 quota curl 的配置前，先用当前草稿调用 `TestCodexAPIKeyQuotaCurl`；测试成功后才保存。
+4. 请求成功时不提示 ignored option。
+5. 请求失败或响应无法解析时，把 ignored option 作为排查提示附加到显式测试或刷新错误信息。
+6. 账号详情保存是数据库 mutation，不验证 quota/billing 网络可用性；`apiKey / baseUrl / prefix / quotaCurl / billingCurl / 模型映射` 应先持久化。
+7. quota/billing 的网络验证只属于显式用户动作，例如详情页“测试”、账号刷新额度、`quota-test` 或 `billing-test`。
 
 ## 不纳入
 

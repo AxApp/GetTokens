@@ -84,6 +84,7 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
   const [configDraft, setConfigDraft] = useState<ApiKeyConfigDraft>(() => buildApiKeyConfigDraft(account));
   const [proxyRouteError, setProxyRouteError] = useState('');
   const [savingConfig, setSavingConfig] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [rateLimitDirty, setRateLimitDirty] = useState(false);
   const rateLimitRulesRef = useRef<RateLimitRulesSectionHandle>(null);
 
@@ -109,7 +110,12 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
 
   useEffect(() => {
     setRateLimitDirty(false);
+    setSaveError('');
   }, [account.id]);
+
+  useEffect(() => {
+    setSaveError('');
+  }, [configDraft]);
 
   const configDirty = useMemo(
     () => (isApiKey ? hasApiKeyConfigChanges(account, configDraft) : false),
@@ -136,11 +142,23 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
     () => buildAccountDetailStatusMessage(account, t),
     [account, t],
   );
+  const saveErrorMessage = useMemo(
+    () =>
+      saveError
+        ? {
+            tone: 'danger' as const,
+            title: '保存失败',
+            body: saveError,
+          }
+        : null,
+    [saveError],
+  );
 
   async function saveConfig() {
     if (savingConfig || missingFields.length > 0) {
       return;
     }
+    setSaveError('');
     setSavingConfig(true);
     try {
       if (isApiKey && configDirty && onSaveConfig) {
@@ -153,6 +171,8 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
         }
       }
       onClose();
+    } catch (error) {
+      setSaveError(toErrorMessage(error));
     } finally {
       setSavingConfig(false);
     }
@@ -164,7 +184,13 @@ export default function UnifiedAccountDetailModal(props: UnifiedAccountDetailPro
       panelAttributes={{ 'data-account-detail-modal': 'unified' }}
       header={<AccountDetailHeader {...props} />}
       headerClassName="p-0"
-      error={statusMessage ? <AccountDetailStatusNotice message={statusMessage} /> : undefined}
+      error={
+        saveErrorMessage ? (
+          <AccountDetailStatusNotice message={saveErrorMessage} />
+        ) : statusMessage ? (
+          <AccountDetailStatusNotice message={statusMessage} />
+        ) : undefined
+      }
       footer={
         <AccountDetailFooter
           isApiKey={isApiKey}

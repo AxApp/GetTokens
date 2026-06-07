@@ -77,7 +77,7 @@
    - 一条 Claude 草稿的 `sourceFormat / baseUrl / authField`
    - 一条 Codex 草稿的 `sourceFormat / baseUrl / model/provider`
 7. 账号详情页必须体现三端配置：能展示、编辑并保存每个能力对应的 endpoint；保存后本地 CLI 草稿读取详情页保存值。
-8. 余额与额度脚本必须与三端配置对齐：模板、变量展示、测试调用、保存前预检都使用同一管理 base URL 解析规则。
+8. 余额与额度脚本必须与三端配置对齐：模板、变量展示、显式测试和刷新额度都使用同一管理 base URL 解析规则；账号详情保存只持久化数据库字段，不做网络预检。
 9. 账号资产级多端能力必须贯穿新建、编辑、复制、导入、恢复、本地 CLI apply、`/models`、quota/billing 管理接口；不能只在 `sub2api/new-api` 预设或详情页展示层生效。
 10. 实现完成后需运行聚焦测试、类型检查和文档结构检查。
 
@@ -143,7 +143,7 @@
    - `anthropic` -> `anthropic`
 2. 已对齐余额 / 额度管理接口：
    - 新增 `resolveManagementBaseUrl`，优先使用 `formatBaseUrls.openai_chat`，否则回落主 `baseUrl`
-   - 额度和余额脚本模板、变量面板、测试调用、保存前预检都使用同一管理 base URL
+   - 额度和余额脚本模板、变量面板、测试调用、刷新额度都使用同一管理 base URL；保存动作不触发 quota/billing 网络请求
    - Codex API Key 根层 Wails DTO 到 internal DTO 的 `platformCookie` / `curlVariables` 透传已补齐
 3. 尚未完成：
    - `sub2api` 与 `new-api` 厂商预设落地

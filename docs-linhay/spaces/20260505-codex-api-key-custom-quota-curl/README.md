@@ -126,7 +126,7 @@ And 未配置、加载失败、无窗口的 codex-api-key 不满足该筛选
 - 修复旧半保存数据迁移：若本地 store 已有 `quota-curl` 但缺少 `quota-enabled`，加载时按启用处理；显式写了 `quota-enabled:false` 的配置仍保持禁用。
 - curl parser 支持浏览器复制 curl 常见的反斜杠换行格式，避免多行 `curl ... \` + `-H ...` 被解析成错误 URL。
 - curl parser 支持 `-b / --cookie`，按结构化请求写入 `Cookie` header；该能力仍不执行 shell，也不承诺完整模拟 curl 的 cookie jar / 文件读取语义。
-- curl parser 对暂不支持的安全参数采用宽容策略：忽略参数后继续发起结构化请求；保存启用 quota curl 的配置前会先测试当前草稿，请求通过才保存，请求失败时错误会附带已忽略参数提示。
+- curl parser 对暂不支持的安全参数采用宽容策略：忽略参数后继续发起结构化请求；账号详情保存不再预检 quota curl 网络可用性，失败时的已忽略参数提示只出现在显式“测试请求”或刷新额度错误中。
 - Xiaomi MiMo 预设新增订阅额度模板，指向 `https://platform.xiaomimimo.com/api/v1/tokenPlan/usage`，模板只保留 `<PASTE_PLATFORM_COOKIE>` 占位，不把真实 Cookie 固化到仓库。
 - 后端新增 MiMo `tokenPlan/usage` 响应归一：`data.usage.items[].plan_total_token` 映射为 `PLAN` 窗口，`data.monthUsage.items[].month_total_token` 映射为 `MONTH` 窗口，按 `percent` 或 `used / limit` 计算剩余百分比。
 

@@ -118,7 +118,7 @@
 8. 为余额 / 额度管理接口增加测试：
    - `resolveManagementBaseUrl` 优先使用 `openai_chat`
    - `buildApiKeyConfigDraft` 用管理 endpoint 生成通用 quota 模板和厂商 billing 模板
-   - 保存配置时 quota / billing curl 都在 `UpdateCodexAPIKeyConfig` 前预检
+   - 保存配置时直接通过 `UpdateCodexAPIKeyConfig` 持久化 quota / billing curl；网络可用性只在显式测试或刷新额度时验证
    - Wails root DTO 到 internal DTO 透传 `platformCookie / curlVariables`
 9. 为模型拉取增加测试：
    - `/models` 优先使用 `modelFetchBaseUrl/modelFetchApiKey`
@@ -137,7 +137,7 @@
 5. 在 `ApiKeyConfigDraft` 中加入 `formatBaseUrls`，让详情页编辑状态可承载三端 endpoint。
 6. 在账号详情页凭据区新增三端配置面板，默认展示 `openai-compatible / codex API / anthropic` 与对应 Base URL。
 7. 在 Wails root DTO、`internal/wailsapp` DTO 和更新实现中补齐 `FormatBaseURLs`，保存时写入 account-store。
-8. 新增 `resolveManagementBaseUrl`，让 quota / billing 脚本模板、变量面板、测试调用、保存前预检使用统一管理 base URL。
+8. 新增 `resolveManagementBaseUrl`，让 quota / billing 脚本模板、变量面板、测试调用、刷新额度使用统一管理 base URL；保存动作不触发 quota/billing 网络请求。
 9. 在 Wails root DTO mapper 中补齐 Codex API Key 的 `platformCookie / curlVariables` 透传。
 10. 在 `frontend/src/features/accounts/model/vendorPresets.ts` 新增 `sub2api`、`new-api` 厂商预设。
 11. 对齐旧 OpenAI-compatible provider 入口：优先复用 `vendorPresets`，若必须保留旧 preset 列表，则只增加从统一预设派生的薄别名。
@@ -171,8 +171,8 @@
 3. Codex API Key 与 openai-compatible provider 更新链路已保存 `formatBaseUrls`。
 4. 余额 / 额度管理接口已对齐：
    - `resolveManagementBaseUrl` 优先使用 `formatBaseUrls.openai_chat`
-   - quota / billing 模板、变量按钮、测试调用、保存前预检均使用该管理 base URL
-   - Codex API Key 保存前会分别预检启用的 quota curl 与 billing curl
+   - quota / billing 模板、变量按钮、测试调用、刷新额度均使用该管理 base URL
+   - Codex API Key 保存只写入数据库字段；启用的 quota curl 与 billing curl 只在显式测试/刷新中请求网络
    - 根层 App 到 internal Wails DTO 的 `platformCookie / curlVariables` 透传已锁测试
 5. 已补齐需求设计 v01，冻结 relay 预设默认分类、三端 endpoint 默认值、创建流/详情页/本地 CLI/管理接口对齐口径。
 

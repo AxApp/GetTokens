@@ -294,8 +294,8 @@ This skill unifies the technical rules for building, styling, and debugging GetT
   - Keep shell operators blocked: pipes, redirects, multi-command separators, backticks, and `$()` remain parse errors.
   - Support known HTTP-shaping options directly: URL, method, headers, body, and cookie.
   - For unsupported but safe curl options, ignore the option and still attempt the request. Do not fail fast solely because the option is unknown.
-  - Record ignored options on the parsed request. If the request succeeds, stay silent and allow save. If the request fails or the response cannot be parsed, append the ignored-option hint to the user-facing error so the user can debug the copied curl.
-  - When saving an enabled quota curl from the account detail UI, preflight the current draft with `TestCodexAPIKeyQuotaCurl` before `UpdateCodexAPIKeyConfig`; save only after the test succeeds.
+  - Record ignored options on the parsed request. If the request succeeds, stay silent. If the request fails or the response cannot be parsed, append the ignored-option hint to the user-facing test/refresh error so the user can debug the copied curl.
+  - Account detail save is a database mutation and must not preflight quota/billing curl network availability. Persist `apiKey / baseUrl / prefix / quotaCurl / billingCurl / model mappings` first; use explicit user actions such as `测试`, `刷新额度`, `quota-test`, or `billing-test` to validate network reachability and response parsing.
   - Do not promise full curl compatibility. Cookie jar files, `.netrc`, file upload, config files, proxy/TLS runtime behavior, and other curl-native features need explicit support before they are considered effective.
 - **Menu Bar Quota Snapshot Boundary**:
   - Menu bar popover must display sidecar quota runtime snapshots, not raw account inventory. An account existing in `/accounts` is not evidence that quota/balance is ready.

@@ -426,6 +426,22 @@ test('account detail save closes only after config and rate-limit saves finish',
   );
 });
 
+test('account detail save failures are visible inside the modal instead of looking inert', async () => {
+  const source = await readFile(new URL('../components/UnifiedAccountDetailModal.tsx', import.meta.url), 'utf8');
+  const saveBlock = source.match(/async function saveConfig\(\) \{[\s\S]*?\n  \}/)?.[0] ?? '';
+
+  assert.match(source, /const \[saveError, setSaveError\] = useState\(''\)/);
+  assert.match(source, /const saveErrorMessage = useMemo/);
+  assert.match(source, /useEffect\(\(\) => \{[\s\S]*setSaveError\(''\);[\s\S]*\}, \[configDraft\]\)/);
+  assert.match(saveBlock, /setSaveError\(''\)/);
+  assert.match(saveBlock, /catch \(error\) \{[\s\S]*setSaveError\(toErrorMessage\(error\)\)/);
+  assert.match(source, /saveErrorMessage \? \([\s\S]*<AccountDetailStatusNotice message=\{saveErrorMessage\}/);
+  assert.ok(
+    saveBlock.indexOf('await onSaveConfig(configDraft)') < saveBlock.indexOf('onClose();'),
+    'save must not close the detail modal until the failing save path has been skipped',
+  );
+});
+
 test('api-key config save has an explicit browser preview path', async () => {
   const source = await readFile(new URL('../hooks/useAccountsActions.ts', import.meta.url), 'utf8');
   const saveBlock = source.match(/const updateSelectedApiKeyConfig = useCallback\([\s\S]*?\n  \);/)?.[0] ?? '';

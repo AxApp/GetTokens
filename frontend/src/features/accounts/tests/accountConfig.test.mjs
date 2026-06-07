@@ -462,20 +462,19 @@ test('generated Wails app bindings expose quota curl draft test method', () => {
   assert.match(source, /export function TestCodexAPIKeyBillingCurl\(arg1\)/);
 });
 
-test('api key config save preflights enabled quota and billing curls before persisting', () => {
+test('api key config save persists database fields without quota or billing network preflight', () => {
   const source = readFileSync(accountsActionsPath, 'utf8');
-  const testIndex = source.indexOf("'TestCodexAPIKeyQuotaCurl'");
-  const billingTestIndex = source.indexOf("'TestCodexAPIKeyBillingCurl'");
-  const updateIndex = source.indexOf("'UpdateCodexAPIKeyConfig'");
+  const saveStart = source.indexOf('const updateSelectedApiKeyConfig = useCallback(');
+  const saveEnd = source.indexOf('const formatBulkActionMessage = useCallback(', saveStart);
+  const saveBlock = source.slice(saveStart, saveEnd);
+  const updateIndex = saveBlock.indexOf("'UpdateCodexAPIKeyConfig'");
 
-  assert.ok(testIndex >= 0, 'save action should test enabled quota curl');
-  assert.ok(billingTestIndex >= 0, 'save action should test enabled billing curl');
+  assert.ok(saveStart >= 0, 'updateSelectedApiKeyConfig block should exist');
   assert.ok(updateIndex >= 0, 'save action should persist api key config');
-  assert.ok(testIndex < updateIndex, 'quota curl test should run before config update');
-  assert.ok(billingTestIndex < updateIndex, 'billing curl test should run before config update');
-  assert.match(source, /if \(draft\.quotaEnabled && nextQuotaCurl\)/);
-  assert.match(source, /if \(draft\.billingEnabled && nextBillingCurl\)/);
-  assert.match(source, /const nextManagementBaseURL = resolveManagementBaseUrl\(\{\s*baseUrl: nextBaseURL,\s*formatBaseUrls: nextFormatBaseURLs,\s*}\);/);
-  assert.match(source, /TestCodexAPIKeyQuotaCurl[\s\S]*baseUrl: nextManagementBaseURL/);
-  assert.match(source, /TestCodexAPIKeyBillingCurl[\s\S]*baseUrl: nextManagementBaseURL/);
+  assert.doesNotMatch(saveBlock, /TestCodexAPIKeyQuotaCurl/);
+  assert.doesNotMatch(saveBlock, /TestCodexAPIKeyBillingCurl/);
+  assert.doesNotMatch(saveBlock, /resolveManagementBaseUrl/);
+  assert.doesNotMatch(saveBlock, /nextManagementBaseURL/);
+  assert.match(saveBlock, /quotaCurl: nextQuotaCurl/);
+  assert.match(saveBlock, /billingCurl: nextBillingCurl/);
 });
